@@ -70,7 +70,6 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/results_collector.hpp>
 #include <boost/test/results_reporter.hpp>
-#include <boost/test/test_observer.hpp>
 #include <boost/test/unit_test_log.hpp>
 #include <boost/test/unit_test_log_formatter.hpp>
 #include <boost/test/output/plain_report_formatter.hpp>
@@ -79,8 +78,42 @@
 #include <boost/test/output/xml_log_formatter.hpp>
 #include <boost/test/utils/xml_printer.hpp>
 #include <boost/test/detail/global_typedef.hpp>
-#include <boost/test/detail/unit_test_parameters.hpp>
 #include <boost/test/debug.hpp>
+
+#if BOOST_VERSION >= 105900
+#  include <boost/test/tree/observer.hpp>
+#  include <boost/test/unit_test_parameters.hpp>
+#  define IGNORE_STATUS , true
+#else
+#  include <boost/test/test_observer.hpp>
+#  include <boost/test/detail/unit_test_parameters.hpp>
+#  define OF_XML    XML
+#  define TUT_CASE  tut_case
+#  define TUT_SUITE tut_suite
+#  define IGNORE_STATUS
+#endif
+
+#if BOOST_VERSION >= 106000
+#  define attr_value utils::attr_value
+#  define RTCFG(type, new_name, old_name) \
+    but::runtime_config::get<type >(but::runtime_config::new_name)
+#else
+#  define RTCFG(type, new_name, old_name) but::runtime_config::old_name()
+#  if BOOST_VERSION >= 105900
+#    define BOOST_TEST_I_TRY      BOOST_TEST_IMPL_TRY
+#    define BOOST_TEST_I_CATCH    BOOST_TEST_IMPL_CATCH
+#    define BOOST_TEST_I_CATCH0   BOOST_TEST_IMPL_CATCH0
+#    define BOOST_TEST_I_CATCHALL BOOST_TEST_IMPL_CATCHALL
+#  else
+#    define BOOST_TEST_I_TRY             try
+#    define BOOST_TEST_I_CATCH(type, ex) catch (type const& ex)
+#    define BOOST_TEST_I_CATCH0(type)    catch (type const&)
+#    define BOOST_TEST_I_CATCHALL()      catch (...)
+#  endif
+#endif
+
+#define CONFIGURED_FILTERS \
+    RTCFG(std::vector<std::string>, RUN_FILTERS, test_to_run)
 
 #ifdef NCBI_COMPILER_MSVC
 #  pragma warning(pop)
@@ -100,6 +133,31 @@ namespace but = boost::unit_test;
 
 
 BEGIN_NCBI_SCOPE
+
+#if BOOST_VERSION >= 105900
+inline
+static bool s_IsEnabled(const but::test_unit& tu) {
+    return tu.is_enabled();
+}
+
+inline
+static void s_SetEnabled(but::test_unit& tu, bool enabled) {
+    but::test_unit::run_status rs
+        = enabled ? but::test_unit::RS_ENABLED : but::test_unit::RS_DISABLED;
+    tu.p_default_status.set(rs);
+    tu.p_run_status.set(rs);
+}
+#else
+inline
+static bool s_IsEnabled(const but::test_unit& tu) {
+    return tu.p_enabled;
+}
+
+inline
+static void s_SetEnabled(but::test_unit& tu, bool enabled) {
+    tu.p_enabled.set(enabled);
+}
+#endif
 
 const char* kTestsDisableSectionName = "UNITTESTS_DISABLE";
 const char* kTestsToFixSectionName = "UNITTESTS_TOFIX";
@@ -189,7 +247,13 @@ public:
                                           unsigned long elapsed);
     virtual
     void test_unit_skipped(ostream& ostr, but::test_unit const& tu);
-#if BOOST_VERSION >= 104200
+#if BOOST_VERSION >= 105900
+    virtual
+    void log_exception_start(ostream& ostr, but::log_checkpoint_data const& lcd,
+                             boost::execution_exception const& ex);
+    virtual
+    void log_exception_finish(ostream& ostr);
+#elif BOOST_VERSION >= 104200
     virtual
     void log_exception    (ostream& ostr, but::log_checkpoint_data const& lcd,
                                           boost::execution_exception const& ex);
@@ -209,6 +273,17 @@ public:
     using TBoostLogFormatter::log_entry_value;
     virtual
     void log_entry_finish (ostream& ostr);
+
+#if BOOST_VERSION >= 105900
+    virtual
+    void entry_context_start(ostream& ostr, but::log_level l);
+
+    virtual
+    void log_entry_context(ostream& ostr, but::const_string value);
+
+    virtual
+    void entry_context_finish (ostream& ostr);
+#endif
 
 private:
     /// Standard logger from Boost for particular report format
@@ -557,7 +632,7 @@ CNcbiBoostReporter::CNcbiBoostReporter()
 inline void
 CNcbiBoostReporter::SetOutputFormat(but::output_format format)
 {
-    if (format == but::XML) {
+    if (format == but::OF_XML) {
         m_IsXML = true;
         m_Upper = new but::output::xml_report_formatter();
     }
@@ -576,7 +651,7 @@ CNcbiBoostLogger::CNcbiBoostLogger(void)
 inline void
 CNcbiBoostLogger::SetOutputFormat(but::output_format format)
 {
-    if (format == but::XML) {
+    if (format == but::OF_XML) {
         m_IsXML = true;
         m_Upper = new but::output::xml_log_formatter();
     }
@@ -694,7 +769,7 @@ CNcbiTestTreeElement::EnsureDep(CNcbiTestTreeElement* from)
     TElemsList parents;
 
     CNcbiTestTreeElement* parElem = this;
-    if (m_TestUnit->p_type != but::tut_suite) {
+    if (m_TestUnit->p_type != but::TUT_SUITE) {
         parElem = m_Parent;
     }
     do {
@@ -913,8 +988,8 @@ CNcbiTestApplication::AddTestDependsOn(but::test_unit* tu,
 inline void
 CNcbiTestApplication::SetTestDisabled(but::test_unit* tu)
 {
-    if (but::runtime_config::test_to_run().empty()) {
-        tu->p_enabled.set(false);
+    if (CONFIGURED_FILTERS.empty()) {
+        s_SetEnabled(*tu, false);
         m_DisabledTests.insert(tu);
     }
 }
@@ -1006,13 +1081,13 @@ CNcbiTestApplication::x_ActualizeDeps(void)
 {
     ITERATE(TUnitToManyMap, it, m_TestDeps) {
         but::test_unit* test = it->first;
-        if (!m_DisabledTests.count(test) && !test->p_enabled) {
+        if (!m_DisabledTests.count(test) && !s_IsEnabled(*test)) {
             continue;
         }
 
         ITERATE(TUnitsSet, dep_it, it->second) {
             but::test_unit* dep_test = *dep_it;
-            if (!m_DisabledTests.count(dep_test) && !dep_test->p_enabled) {
+            if (!m_DisabledTests.count(dep_test) && !s_IsEnabled(*dep_test)) {
                 continue;
             }
 
@@ -1400,8 +1475,8 @@ CNcbiTestApplication::x_EnableAllTests(bool enable)
 {
     ITERATE(TStringToUnitMap, it, m_AllTests) {
         but::test_unit* tu = it->second;
-        if (tu->p_type == but::tut_case) {
-            tu->p_enabled.set(enable);
+        if (tu->p_type == but::TUT_CASE) {
+            s_SetEnabled(*tu, enable);
 
             /*
             For full correctness this functionality should exist but it
@@ -1409,7 +1484,7 @@ CNcbiTestApplication::x_EnableAllTests(bool enable)
             then it will not be possible to get list of tests inside this
             suite to be included in the report.
 
-            if (enable  &&  tu->p_type == but::tut_suite) {
+            if (enable  &&  tu->p_type == but::TUT_SUITE) {
                 but::results_collector.results(tu->p_id).p_skipped = false;
             }
             */
@@ -1456,7 +1531,7 @@ CNcbiTestApplication::ReEnableAllTests(void)
     // Disabled tests can accidentally become not included in full list if
     // they were disabled in initialization
     ITERATE(TUnitsSet, it, m_DisabledTests) {
-        (*it)->p_enabled.set(true);
+        s_SetEnabled(**it, true);
     }
 }
 
@@ -1490,7 +1565,11 @@ CNcbiTestApplication::AdjustTestTimeout(but::test_unit* tu)
             CNcbiEnvironment env;
             printf("Maximum execution time of %s seconds is exceeded",
                    m_TimeoutStr.c_str());
+#if BOOST_VERSION >= 105900
+            raise(SIGALRM);
+#else
             throw but::test_being_aborted();
+#endif
         }
         new_timeout = (unsigned int)(m_Timeout - elapsed);
     }
@@ -1535,7 +1614,7 @@ CNcbiTestApplication::GetRanTestsCount(void)
     int result = 0;
     ITERATE(TStringToUnitMap, it, m_AllTests) {
         but::test_unit* tu = it->second;
-        if (tu->p_type.get() != but::tut_case)
+        if (tu->p_type != but::TUT_CASE)
             continue;
 
         string str = GetTestResultString(tu);
@@ -1566,7 +1645,8 @@ CNcbiTestApplication::IsTestToFix(const but::test_unit* tu)
 inline void
 CNcbiTestApplication::x_SetupBoostReporters(void)
 {
-    but::output_format format = but::runtime_config::report_format();
+    but::output_format format = RTCFG(but::output_format, REPORT_FORMAT,
+                                      report_format);
 
     CNcbiEnvironment env;
     string is_autobuild = env.Get("NCBI_AUTOMATED_BUILD");
@@ -1574,7 +1654,7 @@ CNcbiTestApplication::x_SetupBoostReporters(void)
         // There shouldn't be any message box in the automated build mode
         SuppressSystemMessageBox(fSuppress_All);
 
-        format = but::XML;
+        format = but::OF_XML;
         but::results_reporter::set_level(but::DETAILED_REPORT);
 
         string boost_rep = env.Get("NCBI_BOOST_REPORT_FILE");
@@ -1593,7 +1673,8 @@ CNcbiTestApplication::x_SetupBoostReporters(void)
     m_Reporter->SetOutputFormat(format);
     but::results_reporter::set_format(m_Reporter);
 
-    m_Logger->SetOutputFormat(but::runtime_config::log_format());
+    m_Logger->SetOutputFormat(RTCFG(but::output_format, LOG_FORMAT,
+                                    log_format));
     but::unit_test_log.set_formatter(m_Logger);
 }
 
@@ -1656,14 +1737,16 @@ CNcbiTestApplication::x_CollectAllTests(void)
 {
     m_AllTests.clear();
     CNcbiTestsCollector collector;
-    but::traverse_test_tree(but::framework::master_test_suite(), collector);
+    but::traverse_test_tree(but::framework::master_test_suite(), collector
+                            IGNORE_STATUS);
 }
 
 inline int
 CNcbiTestApplication::x_GetEnabledTestsCount(void)
 {
     but::test_case_counter tcc;
-    but::traverse_test_tree(but::framework::master_test_suite(), tcc);
+    but::traverse_test_tree(but::framework::master_test_suite(), tcc
+                            IGNORE_STATUS);
     return (int)tcc.p_count;
 }
 
@@ -1707,23 +1790,24 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
         x_CollectAllTests();
 
         but::traverse_test_tree(but::framework::master_test_suite(),
-                                m_TreeBuilder);
+                                m_TreeBuilder IGNORE_STATUS);
 
         // We do not read configuration if particular tests were given in
         // command line
         if (x_CallUserFuncs(eTestUserFuncDeps)
-            &&  (!but::runtime_config::test_to_run().empty()
-                 ||  x_ReadConfiguration()))
+            &&  (!CONFIGURED_FILTERS.empty()  ||  x_ReadConfiguration()))
         {
             // Call should be doubled to support manual adding of
             // test cases inside NCBITEST_INIT_TREE().
             x_CollectAllTests();
+#if BOOST_VERSION < 105900
             if (x_GetEnabledTestsCount() == 0) {
                 SetGloballyDisabled();
                 x_AddDummyTest();
             }
+#endif
 #ifdef NCBI_COMPILER_WORKSHOP
-            else if (!but::runtime_config::test_to_run().empty()) {
+            else if (!CONFIGURED_FILTERS.empty()) {
                 printf("Parameter --run_test is not supported in current configuration\n");
                 x_EnableAllTests(false);
                 x_AddDummyTest();
@@ -1867,7 +1951,7 @@ CNcbiBoostReporter::test_unit_report_start(but::test_unit const&  tu,
                                         const_cast<but::test_unit*>(&tu));
 
     if (m_IsXML) {
-        ostr << '<' << (tu.p_type == but::tut_case ? "TestCase" : "TestSuite")
+        ostr << '<' << (tu.p_type == but::TUT_CASE ? "TestCase" : "TestSuite")
              << " name"   << but::attr_value() << tu.p_name.get()
              << " result" << but::attr_value() << descr;
 
@@ -1875,7 +1959,7 @@ CNcbiBoostReporter::test_unit_report_start(but::test_unit const&  tu,
     }
     else {
         ostr << std::setw( m_Indent ) << ""
-            << "Test " << (tu.p_type == but::tut_case ? "case " : "suite " )
+            << "Test " << (tu.p_type == but::TUT_CASE ? "case " : "suite " )
             << "\"" << tu.p_name << "\" " << descr;
 
         ostr << '\n';
@@ -1898,6 +1982,22 @@ void
 CNcbiBoostReporter::do_confirmation_report(but::test_unit const&  tu,
                                            std::ostream&          ostr)
 {
+#if BOOST_VERSION >= 105900
+    if (tu.p_type == but::TUT_SUITE  &&  tu.p_line_num == 0) {
+        but::test_results const& tr = but::results_collector.results(tu.p_id);
+
+        if ( !m_IsXML ) {
+            if (tr.p_test_cases_skipped > 0) {
+                ostr << "*** Skipped " << tr.p_test_cases_skipped
+                     << " test(s)\n";
+            } else if (tr.p_skipped) {
+                ostr << "*** Skipped some tests\n";
+            }
+        }
+        const_cast<bool&>(tr.p_skipped.get()) = false;
+        const_cast<but::counter_t&>(tr.p_test_cases_skipped.get()) = 0;
+    }
+#endif
     m_Upper->do_confirmation_report(tu, ostr);
 }
 
@@ -1948,7 +2048,21 @@ CNcbiBoostLogger::test_unit_skipped(ostream& ostr, but::test_unit const& tu)
     m_Upper->test_unit_skipped(ostr, tu);
 }
 
-#if BOOST_VERSION >= 104200
+#if BOOST_VERSION >= 105900
+void
+CNcbiBoostLogger::log_exception_start(ostream& ostr,
+                                      but::log_checkpoint_data const& lcd,
+                                      boost::execution_exception const& ex)
+{
+    m_Upper->log_exception_start(ostr, lcd, ex);
+}
+
+void
+CNcbiBoostLogger::log_exception_finish(ostream& ostr)
+{
+    m_Upper->log_exception_finish(ostr);
+}
+#elif BOOST_VERSION >= 104200
 void
 CNcbiBoostLogger::log_exception(ostream& ostr, but::log_checkpoint_data const& lcd,
                                 boost::execution_exception const& ex)
@@ -1983,6 +2097,23 @@ CNcbiBoostLogger::log_entry_finish(ostream& ostr)
     m_Upper->log_entry_finish(ostr);
 }
 
+#if BOOST_VERSION >= 105900
+void CNcbiBoostLogger::entry_context_start(ostream& ostr, but::log_level l)
+{
+    m_Upper->entry_context_start(ostr, l);
+}
+
+void CNcbiBoostLogger::log_entry_context(ostream& ostr,
+                                         but::const_string value)
+{
+    m_Upper->log_entry_context(ostr, value);
+}
+
+void CNcbiBoostLogger::entry_context_finish (ostream& ostr)
+{
+    m_Upper->entry_context_finish(ostr);
+}
+#endif
 
 void
 RegisterNcbiTestUserFunc(TNcbiTestUserFunction func,
@@ -2039,10 +2170,17 @@ END_NCBI_SCOPE
 
 using namespace but;
 
+static int    s_NcbiArgc;
+static char** s_NcbiArgv;
+
 /// Global initialization function called from Boost framework
 test_suite*
-init_unit_test_suite(int argc, char* argv[])
+init_unit_test_suite(int argc, char** argv)
 {
+    if (s_NcbiArgc > 0) {
+        argc = s_NcbiArgc;
+        argv = s_NcbiArgv;
+    }
     return NCBI_NS_NCBI::s_GetTestApp().InitTestFramework(argc, argv);
 }
 
@@ -2058,28 +2196,99 @@ init_unit_test_suite(int argc, char* argv[])
 #include "teamcity_boost.cpp"
 
 
-// This main() is mostly a copy from Boost's unit_test_main.ipp
+// This main() is based on a unification of code from various Boost versions'
+// unit_test_main.ipp, matching 1.60.0's where reasonably possible.
 int
 main(int argc, char* argv[])
 {
-    int result = boost::exit_success;
+    int result_code = boost::exit_success;
+    bool made_report = false;
 
-    try {
+    BOOST_TEST_I_TRY {
+#if BOOST_VERSION >= 106000
+        std::vector<char*> boost_args(1, argv[0]), ncbi_args;
+        for (int i = 0;  i < argc;  ++i) {
+            NCBI_NS_NCBI::CTempString s(argv[i]);
+            if (NCBI_NS_NCBI::NStr::StartsWith(s, "--")) {
+                boost_args.push_back(argv[i]);
+            } else if (s.size() == 2  &&  s[0] == '-'
+                       &&  s[1] >= 'a'  &&  s[1] <= 'z') {
+                boost_args.push_back(argv[i]);
+                if (i + 1 < argc  &&  argv[i+1][0] != '-') {
+                    boost_args.push_back(argv[++i]);
+                }
+            } else {
+                ncbi_args.push_back(argv[i]);
+            }
+        }
+        s_NcbiArgc = ncbi_args.size();
+        s_NcbiArgv = ncbi_args.data();
+        framework::init
+            (&init_unit_test_suite, boost_args.size(), boost_args.data());
+#else
         framework::init( &init_unit_test_suite, argc, argv );
+#endif
 
+#if BOOST_VERSION >= 105900
+        if( RTCFG(bool, WAIT_FOR_DEBUGGER, wait_for_debugger) ) {
+            results_reporter::get_stream() << "Press any key to continue..." << std::endl;
+
+            std::getchar();
+            results_reporter::get_stream() << "Continuing..." << std::endl;
+        }
+
+        framework::finalize_setup_phase();
+
+        output_format list_cont = RTCFG(output_format, LIST_CONTENT,
+                                        list_content);
+        if( list_cont != but::OF_INVALID ) {
+            if( list_cont == but::OF_DOT ) {
+                ut_detail::dot_content_reporter reporter( results_reporter::get_stream() );
+
+                traverse_test_tree( framework::master_test_suite().p_id, reporter, true );
+            }
+            else {
+                ut_detail::hrf_content_reporter reporter( results_reporter::get_stream() );
+
+                traverse_test_tree( framework::master_test_suite().p_id, reporter, true );
+            }
+
+            return boost::exit_success;
+        }
+
+        if( RTCFG(bool, LIST_LABELS, list_labels) ) {
+            ut_detail::labels_collector collector;
+
+            traverse_test_tree( framework::master_test_suite().p_id, collector, true );
+
+            results_reporter::get_stream() << "Available labels:\n  ";
+            std::copy( collector.labels().begin(), collector.labels().end(), 
+                       std::ostream_iterator<std::string>( results_reporter::get_stream(), "\n  " ) );
+            results_reporter::get_stream() << "\n";
+
+            return boost::exit_success;
+        }
+#else
         if( !runtime_config::test_to_run().is_empty() ) {
             test_case_filter filter( runtime_config::test_to_run() );
 
             traverse_test_tree( framework::master_test_suite().p_id, filter );
         }
+#endif
 
         framework::run();
 
-        // Let's try to make report in case of any error after all catches.
-        //results_reporter::make_report();
+        results_reporter::make_report();
+        made_report = true;
 
-        if (!runtime_config::no_result_code()) {
-            result = results_collector.results( framework::master_test_suite().p_id ).result_code();
+        if (
+#if BOOST_VERSION >= 106000
+            runtime_config::get<bool>( runtime_config::RESULT_CODE )
+#else
+            !runtime_config::no_result_code()
+#endif
+            ) {
+            result_code = results_collector.results( framework::master_test_suite().p_id ).result_code();
             if (!NCBI_NS_NCBI::s_GetTestApp().HasTestErrors()
                 &&  NCBI_NS_NCBI::s_GetTestApp().HasTestTimeouts())
             {
@@ -2089,36 +2298,48 @@ main(int argc, char* argv[])
                        " (for autobuild scripts: NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS)\n");
             }
         }
+
     }
-#if BOOST_VERSION >= 104200
-    catch( framework::nothing_to_test const& ) {
-        result = boost::exit_success;
+#if BOOST_VERSION >= 106000
+    BOOST_TEST_I_CATCH( framework::nothing_to_test, ex ) {
+        result_code = ex.m_result_code;
+    }
+#elif BOOST_VERSION >= 104200
+    BOOST_TEST_I_CATCH0( framework::nothing_to_test ) {
+        result_code = boost::exit_success;
     }
 #endif
-    catch( framework::internal_error const& ex ) {
+    BOOST_TEST_I_CATCH( framework::internal_error, ex ) {
         results_reporter::get_stream() << "Boost.Test framework internal error: " << ex.what() << std::endl;
-        
-        result = boost::exit_exception_failure;
+
+        result_code = boost::exit_exception_failure;
     }
-    catch( framework::setup_error const& ex ) {
+    BOOST_TEST_I_CATCH( framework::setup_error, ex ) {
         results_reporter::get_stream() << "Test setup error: " << ex.what() << std::endl;
-        
-        result = boost::exit_exception_failure;
+
+        result_code = boost::exit_exception_failure;
     }
-    catch( std::exception const& ex ) {
+    BOOST_TEST_I_CATCH( std::exception, ex ) {
         results_reporter::get_stream() << "Test framework error: " << ex.what() << std::endl;
 
-        result = boost::exit_exception_failure;
+        result_code = boost::exit_exception_failure;
     }
-    catch( ... ) {
+    BOOST_TEST_I_CATCHALL() {
         results_reporter::get_stream() << "Boost.Test framework internal error: unknown reason" << std::endl;
-        
-        result = boost::exit_exception_failure;
+
+        result_code = boost::exit_exception_failure;
     }
 
-    results_reporter::make_report();
+    // Report results now if an exception precluded doing so earlier.
+    if ( !made_report ) {
+        results_reporter::make_report();
+    }
+
+#if BOOST_VERSION >= 105900
+    framework::shutdown();
+#endif
 
     delete NCBI_NS_NCBI::s_TestApp;
-    NCBI_NS_NCBI::GetDiagContext().SetExitCode(result);
-    return result;
+    NCBI_NS_NCBI::GetDiagContext().SetExitCode(result_code);
+    return result_code;
 }

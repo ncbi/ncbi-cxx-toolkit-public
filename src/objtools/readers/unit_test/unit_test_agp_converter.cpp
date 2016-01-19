@@ -299,7 +299,7 @@ BOOST_AUTO_TEST_CASE(MasterTest)
             const string & sTestName,
             const TMapSuffixToFile & mapSuffixToFile ) 
         {
-            BOOST_MESSAGE("Starting test: " << sTestName);
+            BOOST_TEST_MESSAGE("Starting test: " << sTestName);
 
             CRef<CBioseq> pTemplateBioseq = 
                 s_Asn1TextFileToClass<CBioseq>(mapSuffixToFile.find("template.asn")->second);

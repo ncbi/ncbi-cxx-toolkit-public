@@ -85,10 +85,80 @@
 // the framework.
 #undef BOOST_CHECK_THROW_IMPL
 #undef BOOST_CHECK_NO_THROW_IMPL
-#undef BOOST_FIXTURE_TEST_CASE
+#ifdef BOOST_FIXTURE_TEST_CASE_WITH_DECOR
+#  undef BOOST_FIXTURE_TEST_CASE_WITH_DECOR
+#else
+#  undef BOOST_FIXTURE_TEST_CASE
+#endif
 #undef BOOST_PARAM_TEST_CASE
 
-#define BOOST_CHECK_THROW_IMPL( S, E, P, prefix, TL )                    \
+#if BOOST_VERSION >= 105900
+#  if BOOST_VERSION >= 106000
+#    define BOOST_CHECK_THROW_IMPL( S, E, P, postfix, TL )              \
+do {                                                                    \
+    try {                                                               \
+        BOOST_TEST_PASSPOINT();                                         \
+        S;                                                              \
+        BOOST_TEST_TOOL_IMPL( 2, false, "exception " BOOST_STRINGIZE(E) \
+                              " expected but not raised",               \
+                              TL, CHECK_MSG, _ );                       \
+    } catch( E const& ex ) {                                            \
+        ::boost::unit_test::ut_detail::ignore_unused_variable_warning( ex ); \
+        BOOST_TEST_TOOL_IMPL( 2, P,                                     \
+                              "exception \"" BOOST_STRINGIZE( E )       \
+                              "\" raised as expected" postfix,          \
+                              TL, CHECK_MSG, _  );                      \
+    } catch (...) {                                                     \
+        BOOST_TEST_TOOL_IMPL( 2, false,                                 \
+                              "an unexpected exception was thrown by "  \
+                              BOOST_STRINGIZE( S ),                     \
+                              TL, CHECK_MSG, _ );                       \
+    }                                                                   \
+} while( ::boost::test_tools::tt_detail::dummy_cond() )                 \
+/**/
+#  else
+#    define BOOST_CHECK_THROW_IMPL( S, E, P, prefix, TL )               \
+do {                                                                    \
+    try {                                                               \
+        BOOST_TEST_PASSPOINT();                                         \
+        S;                                                              \
+        BOOST_TEST_TOOL_IMPL( 2, false, "exception " BOOST_STRINGIZE(E) \
+                              " is expected",                           \
+                              TL, CHECK_MSG, _ );                       \
+    } catch( E const& ex ) {                                            \
+        ::boost::unit_test::ut_detail::ignore_unused_variable_warning( ex ); \
+        BOOST_TEST_TOOL_IMPL( 2, P, prefix BOOST_STRINGIZE( E ) " is caught", \
+                              TL, CHECK_MSG, _  );                      \
+    } catch (...) {                                                     \
+        BOOST_TEST_TOOL_IMPL( 2, false,                                 \
+                              "an unexpected exception was thrown by "  \
+                              BOOST_STRINGIZE( S ),                     \
+                              TL, CHECK_MSG, _ );                       \
+    }                                                                   \
+} while( ::boost::test_tools::tt_detail::dummy_cond() )                 \
+/**/
+#  endif
+
+#  define BOOST_CHECK_NO_THROW_IMPL( S, TL )                            \
+do {                                                                    \
+    try {                                                               \
+        S;                                                              \
+        BOOST_TEST_TOOL_IMPL( 2, true, "no exceptions thrown by "       \
+                              BOOST_STRINGIZE( S ),                     \
+                              TL, CHECK_MSG, _ );                       \
+    } catch (std::exception& ex) {                                      \
+        BOOST_TEST_TOOL_IMPL( 2, false, "an std::exception was thrown by " \
+                              BOOST_STRINGIZE( S ) " : " << ex.what(),  \
+                              TL, CHECK_MSG, _ );                       \
+    } catch( ... ) {                                                    \
+        BOOST_TEST_TOOL_IMPL( 2, false, "a nonstandard exception thrown by " \
+                              BOOST_STRINGIZE( S ),                     \
+                              TL, CHECK_MSG, _ );                       \
+    }                                                                   \
+} while( ::boost::test_tools::tt_detail::dummy_cond() )                 \
+/**/
+#else
+#  define BOOST_CHECK_THROW_IMPL( S, E, P, prefix, TL )                  \
 try {                                                                    \
     BOOST_TEST_PASSPOINT();                                              \
     S;                                                                   \
@@ -106,7 +176,7 @@ catch (...) {                                                            \
 }                                                                        \
 /**/
 
-#define BOOST_CHECK_NO_THROW_IMPL( S, TL )                                   \
+#  define BOOST_CHECK_NO_THROW_IMPL( S, TL )                                 \
 try {                                                                        \
     S;                                                                       \
     BOOST_CHECK_IMPL( true, "no exceptions thrown by " BOOST_STRINGIZE( S ), \
@@ -123,6 +193,7 @@ catch( ... ) {                                                               \
                       TL, CHECK_MSG );                                       \
 }                                                                            \
 /**/
+#endif
 
 #if BOOST_VERSION >= 104200
 #  define NCBI_BOOST_LOCATION()  , boost::execution_exception::location()
@@ -130,7 +201,52 @@ catch( ... ) {                                                               \
 #  define NCBI_BOOST_LOCATION()
 #endif
 
-#define BOOST_FIXTURE_TEST_CASE( test_name, F )                         \
+#ifdef BOOST_FIXTURE_TEST_CASE_NO_DECOR
+#  define NCBI_BOOST_DECORATOR_ARG \
+    , boost::unit_test::decorator::collector::instance()
+#else
+#  define NCBI_BOOST_DECORATOR_ARG
+#endif
+
+#ifdef BOOST_FIXTURE_TEST_CASE_NO_DECOR
+#  define BOOST_FIXTURE_TEST_CASE_WITH_DECOR( test_name, F, decorators ) \
+struct test_name : public F { void test_method(); };                    \
+                                                                        \
+static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
+{                                                                       \
+    BOOST_TEST_CHECKPOINT('"' << #test_name << "\" fixture entry.");    \
+    test_name t;                                                        \
+    BOOST_TEST_CHECKPOINT('"' << #test_name << "\" entry.");            \
+    try {                                                               \
+        t.test_method();                                                \
+    }                                                                   \
+    catch (NCBI_NS_NCBI::CException& ex) {                              \
+        ERR_POST("Uncaught exception in \""                             \
+                 << boost::unit_test                                    \
+                         ::framework::current_test_case().p_name        \
+                 << "\"" << ex);                                        \
+        throw boost::execution_exception(                               \
+                boost::execution_exception::cpp_exception_error, ""     \
+                NCBI_BOOST_LOCATION() );                                \
+    }                                                                   \
+    BOOST_TEST_CHECKPOINT('"' << #test_name << "\" exit.");             \
+}                                                                       \
+                                                                        \
+struct BOOST_AUTO_TC_UNIQUE_ID( test_name ) {};                         \
+                                                                        \
+static ::NCBI_NS_NCBI::SNcbiTestRegistrar                               \
+BOOST_JOIN( BOOST_JOIN( test_name, _registrar ), __LINE__ ) (           \
+    boost::unit_test::make_test_case(                                   \
+        &BOOST_AUTO_TC_INVOKER( test_name ), #test_name,                \
+        __FILE__, __LINE__ ),                                           \
+    ::NCBI_NS_NCBI::SNcbiTestTCTimeout<                                 \
+        BOOST_AUTO_TC_UNIQUE_ID( test_name )>::instance()->value(),     \
+    decorators );                                                       \
+                                                                        \
+void test_name::test_method()                                           \
+/**/
+#else
+#  define BOOST_FIXTURE_TEST_CASE( test_name, F )                       \
 struct test_name : public F { void test_method(); };                    \
                                                                         \
 static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
@@ -163,6 +279,7 @@ BOOST_JOIN( BOOST_JOIN( test_name, _registrar ), __LINE__ ) (           \
                                                                         \
 void test_name::test_method()                                           \
 /**/
+#endif
 
 #define BOOST_PARAM_TEST_CASE( function, begin, end )                       \
     ::NCBI_NS_NCBI::NcbiTestGenTestCases( function,                         \
@@ -193,7 +310,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 /// @sa BOOST_PARAM_TEST_CASE
 #define BOOST_AUTO_PARAM_TEST_CASE( function, begin, end )               \
     BOOST_AUTO_TU_REGISTRAR(function) (                                  \
-                            BOOST_PARAM_TEST_CASE(function, begin, end)) \
+                            BOOST_PARAM_TEST_CASE(function, begin, end)  \
+                            NCBI_BOOST_DECORATOR_ARG)                    \
 /**/
 
 #define BOOST_TIMEOUT(M)                                        \
@@ -206,12 +324,30 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 
 
 
-#define NCBITEST_CHECK_IMPL(P, check_descr, TL, CT)                          \
+#if BOOST_VERSION >= 105900
+
+#  define NCBITEST_CHECK_IMPL_EX(frwd_type, P, check_descr, TL, CT, ARGS)    \
+    BOOST_CHECK_NO_THROW_IMPL(                                               \
+        BOOST_TEST_TOOL_IMPL(frwd_type, P, check_descr, TL, CT, ARGS), TL)
+
+#  define NCBITEST_CHECK_IMPL(P, check_descr, TL, CT)                        \
+    NCBITEST_CHECK_IMPL_EX(2, P, check_descr, TL, CT, _)
+
+#  define NCBITEST_CHECK_WITH_ARGS_IMPL(P, check_descr, TL, CT, ARGS)        \
+    NCBITEST_CHECK_IMPL_EX(0, ::boost::test_tools::tt_detail::P(),           \
+                           check_descr, TL, CT, ARGS)
+
+#else
+
+#  define NCBITEST_CHECK_IMPL(P, check_descr, TL, CT)                        \
     BOOST_CHECK_NO_THROW_IMPL(BOOST_CHECK_IMPL(P, check_descr, TL, CT), TL)
 
-#define NCBITEST_CHECK_WITH_ARGS_IMPL(P, check_descr, TL, CT, ARGS)          \
+#  define NCBITEST_CHECK_WITH_ARGS_IMPL(P, check_descr, TL, CT, ARGS)        \
     BOOST_CHECK_NO_THROW_IMPL(BOOST_CHECK_WITH_ARGS_IMPL(                    \
     ::boost::test_tools::tt_detail::P(), check_descr, TL, CT, ARGS), TL)
+
+#endif
+
 
 
 // Several analogs to BOOST_* macros that make simultaneous checking of
@@ -599,7 +735,6 @@ static ::NCBI_NS_NCBI::SNcbiTestUserFuncReg                            \
 NCBITEST_AUTOREG_OBJ(&NCBITEST_AUTOREG_HELPER, ::NCBI_NS_NCBI::type);  \
 static void NCBITEST_AUTOREG_FUNC(type)(::NCBI_NS_NCBI::param_decl)
 
-
 /// Extension auto-registrar from Boost.Test that can automatically set the
 /// timeout for unit.
 struct SNcbiTestRegistrar
@@ -610,24 +745,36 @@ struct SNcbiTestRegistrar
     SNcbiTestRegistrar(boost::unit_test::test_case* tc,
                        boost::unit_test::counter_t  exp_fail,
                        unsigned int                 timeout)
-        : TParent(tc, exp_fail)
+        : TParent(tc NCBI_BOOST_DECORATOR_ARG, exp_fail)
     {
         tc->p_timeout.set(timeout);
     }
 
+#ifdef BOOST_FIXTURE_TEST_CASE_WITH_DECOR
+    SNcbiTestRegistrar(boost::unit_test::test_case*            tc,
+                       unsigned int                            timeout,
+                       boost::unit_test::decorator::collector& decorator)
+        : TParent(tc, decorator)
+    {
+        tc->p_timeout.set(timeout);
+    }
+#endif
+
     SNcbiTestRegistrar(boost::unit_test::test_case* tc,
                        boost::unit_test::counter_t  exp_fail)
-        : TParent(tc, exp_fail)
+        : TParent(tc NCBI_BOOST_DECORATOR_ARG, exp_fail)
     {}
 
+#ifndef BOOST_FIXTURE_TEST_CASE_WITH_DECOR
     explicit
     SNcbiTestRegistrar(boost::unit_test::const_string ts_name)
         : TParent(ts_name)
     {}
+#endif
 
     explicit
     SNcbiTestRegistrar(boost::unit_test::test_unit_generator const& tc_gen)
-        : TParent(tc_gen)
+        : TParent(tc_gen NCBI_BOOST_DECORATOR_ARG)
     {}
 
     explicit
@@ -675,11 +822,16 @@ class CNcbiTestParamTestCaseGenerator
     : public boost::unit_test::test_unit_generator
 {
 public:
-    CNcbiTestParamTestCaseGenerator(
-                    boost::unit_test::callback1<ParamType> const& test_func,
-                    boost::unit_test::const_string                name,
-                    ParamIter                                     par_begin,
-                    ParamIter                                     par_end)
+#if BOOST_VERSION >= 105900
+    typedef boost::function<void (ParamType)> TTestFunc;
+#else
+    typedef boost::unit_test::callback1<ParamType> TTestFunc;
+#endif
+
+    CNcbiTestParamTestCaseGenerator(TTestFunc const&               test_func,
+                                    boost::unit_test::const_string name,
+                                    ParamIter                      par_begin,
+                                    ParamIter                      par_end)
         : m_TestFunc(test_func),
           m_Name(boost::unit_test::ut_detail::normalize_test_case_name(name)),
           m_ParBegin(par_begin),
@@ -696,12 +848,18 @@ public:
         if( m_ParBegin == m_ParEnd )
             return NULL;
 
-        boost::unit_test::ut_detail::test_func_with_bound_param<ParamType>
-                                    bound_test_func( m_TestFunc, *m_ParBegin );
         string this_name(m_Name);
         this_name += NStr::IntToString(++m_CaseIndex);
+#if BOOST_VERSION >= 105900
+        boost::unit_test::test_unit* res
+            = new boost::unit_test::test_case
+                (this_name, boost::bind(m_TestFunc, *m_ParBegin));
+#else
+        boost::unit_test::ut_detail::test_func_with_bound_param<ParamType>
+                                    bound_test_func( m_TestFunc, *m_ParBegin );
         boost::unit_test::test_unit* res
                   = new boost::unit_test::test_case(this_name, bound_test_func);
+#endif
         ++m_ParBegin;
 
         return res;
@@ -709,11 +867,11 @@ public:
 
 private:
     // Data members
-    boost::unit_test::callback1<ParamType>  m_TestFunc;
-    string                                  m_Name;
-    mutable ParamIter                       m_ParBegin;
-    ParamIter                               m_ParEnd;
-    mutable int                             m_CaseIndex;
+    TTestFunc         m_TestFunc;
+    string            m_Name;
+    mutable ParamIter m_ParBegin;
+    ParamIter         m_ParEnd;
+    mutable int       m_CaseIndex;
 };
 
 
@@ -721,7 +879,7 @@ private:
 /// special test case generator.
 template<typename ParamType, typename ParamIter>
 inline CNcbiTestParamTestCaseGenerator<ParamType, ParamIter>
-NcbiTestGenTestCases(boost::unit_test::callback1<ParamType> const& test_func,
+NcbiTestGenTestCases(typename CNcbiTestParamTestCaseGenerator<ParamType, ParamIter>::TTestFunc const& test_func,
                      boost::unit_test::const_string                name,
                      ParamIter                                     par_begin,
                      ParamIter                                     par_end)

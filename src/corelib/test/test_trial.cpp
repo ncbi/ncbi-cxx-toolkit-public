@@ -70,7 +70,6 @@ NCBI_DEFINE_CTYPE_FUNC(toupper)
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/results_collector.hpp>
 #include <boost/test/results_reporter.hpp>
-#include <boost/test/test_observer.hpp>
 #include <boost/test/unit_test_log.hpp>
 #include <boost/test/unit_test_log_formatter.hpp>
 #include <boost/test/output/plain_report_formatter.hpp>
@@ -79,9 +78,15 @@ NCBI_DEFINE_CTYPE_FUNC(toupper)
 #include <boost/test/output/xml_log_formatter.hpp>
 #include <boost/test/utils/xml_printer.hpp>
 #include <boost/test/detail/global_typedef.hpp>
-#include <boost/test/detail/unit_test_parameters.hpp>
 #include <boost/test/debug.hpp>
 
+#if BOOST_VERSION >= 105900
+#  include <boost/test/tree/observer.hpp>
+#  include <boost/test/unit_test_parameters.hpp>
+#else
+#  include <boost/test/test_observer.hpp>
+#  include <boost/test/detail/unit_test_parameters.hpp>
+#endif
 
 #include <common/test_assert.h>  /* This header must go last */
 

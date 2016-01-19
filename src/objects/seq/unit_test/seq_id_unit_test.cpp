@@ -473,7 +473,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGenbank)
 {
     CRef<CSeq_id> id;
 
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("gb|")))
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("gb|")));
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("gb|U12345.1|AMU12345")));
     BOOST_CHECK(id->IsGenbank());
     BOOST_CHECK_EQUAL(id->GetGenbank().GetAccession(), string("U12345"));
@@ -806,7 +806,7 @@ static const size_t kNumFastaStrings
 static void s_TestFastaRoundTrip(const char* s)
 {
     CRef<CSeq_id> id;
-    BOOST_MESSAGE("Testing round trip for " << s);
+    BOOST_TEST_MESSAGE(string("Testing round trip for ") << s);
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(s)));
     BOOST_CHECK_EQUAL(id->AsFastaString(), s);
     for (SIZE_TYPE pos = strlen(s) - 1;
@@ -814,7 +814,7 @@ static void s_TestFastaRoundTrip(const char* s)
          --pos) {
         CRef<CSeq_id> id2;
         string ss(s, pos);
-        BOOST_MESSAGE("Testing equality with " << ss);
+        BOOST_TEST_MESSAGE("Testing equality with " << ss);
         BOOST_CHECK_NO_THROW(id2.Reset(new CSeq_id(ss)));
         BOOST_CHECK_EQUAL(id2->AsFastaString(), s);
         BOOST_CHECK(id->Match(*id2));

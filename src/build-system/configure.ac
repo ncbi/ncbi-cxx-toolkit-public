@@ -5217,7 +5217,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          fi
          with_boost=no
          ;;
-      1_3[[5-9]] | 1_3[[5-9]]_* | 1_4* | 1_5[[0-7]] | 1_5[[0-7]]_* ) ;;
+      1_3[[5-9]] | 1_3[[5-9]]_* | 1_[[45]]* | 1_60 | 1_60_* ) ;;
       '' ) with_boost=no ;;
       * )
          AC_MSG_WARN(
@@ -5332,7 +5332,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
           [ncbi_cv_lib_boost_regex=yes], [ncbi_cv_lib_boost_regex=no])])
 
    AC_CACHE_CHECK([for Boost.Spirit$in_path], ncbi_cv_lib_boost_spirit,
-      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      CPPFLAGS="$BOOST_INCLUDE -DBOOST_ERROR_CODE_HEADER_ONLY $orig_CPPFLAGS"
       LIBS="$RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
           [AC_LANG_PROGRAM([[#include <boost/spirit.hpp>

@@ -297,8 +297,8 @@ BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
     CSeqAlignFilter filter;
     CRef<CSeqDB> db;
 
-    BOOST_REQUIRE_NO_THROW(db = filter.PrepareSeqDB(db_name, use_prot, fname_gis);)
-    BOOST_REQUIRE_NO_THROW(filter.FilterSeqalignsExt(fname_in, fname_out, db);)
+    BOOST_REQUIRE_NO_THROW(db = filter.PrepareSeqDB(db_name, use_prot, fname_gis););
+    BOOST_REQUIRE_NO_THROW(filter.FilterSeqalignsExt(fname_in, fname_out, db););
 
     // check the results
 
