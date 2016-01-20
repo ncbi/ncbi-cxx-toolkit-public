@@ -85,6 +85,7 @@ class CSeq_align;
 class CSeq_graph;
 class CSeq_feat;
 class CBioseq;
+class CSeq_literal;
 class CUser_object;
 class CUser_field;
 class CID2S_Split_Info;
@@ -681,7 +682,7 @@ public:
     // return raw unclipped sequence length
     TSeqPos GetRawSeqLength(void) const;
     // return clipping start position within raw unclipped sequence
-    TSeqPos GetSeqStart(EClipType clip_type = eDefaultClip) const;
+    TSeqPos GetSeqOffset(EClipType clip_type = eDefaultClip) const;
     // return effective sequence length, depending on clip type
     TSeqPos GetSeqLength(EClipType clip_type = eDefaultClip) const;
 
@@ -746,8 +747,7 @@ public:
 
         fInst_ncbi4na = 0<<3,
         fInst_delta   = 1<<3,
-        fInst_split   = 2<<3,
-        fMaskInst     = fInst_ncbi4na|fInst_delta|fInst_split,
+        fMaskInst     = fInst_ncbi4na|fInst_delta,
         fDefaultInst  = fInst_delta,
 
         fSeqDescr     = 1<<4,
@@ -787,9 +787,7 @@ public:
     bool HasQualityGraph(void) const;
     void GetQualityVec(vector<INSDC_quality_phred>& quality_vec) const;
     void GetQualityAnnot(TAnnotSet& annot_set,
-                         TFlags flags = fDefaultFlags,
-                         TSeqPos pos = 0,
-                         TSeqPos len = kInvalidSeqPos) const;
+                         TFlags flags = fDefaultFlags) const;
     string GetQualityAnnotName(void) const;
 
     NCBI_gb_state GetGBState(void) const;
@@ -799,7 +797,8 @@ public:
     CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
     CRef<CDelta_ext> GetDelta(TSeqPos pos, TSeqPos len) const;
     CRef<CDelta_ext> GetDelta(TSeqPos pos, TSeqPos len,
-                              TWGSContigGapInfo gap_info) const;
+                              TWGSContigGapInfo gap_info,
+                              vector< COpenRange<TSeqPos> >* split = 0) const;
     CRef<CSeq_data> Get2na(TSeqPos pos, TSeqPos len) const;
     CRef<CSeq_data> Get4na(TSeqPos pos, TSeqPos len) const;
 
@@ -846,6 +845,49 @@ protected:
 
     TSeqPos x_GetQualityArraySize(void) const;
     void x_AddQualityChunkInfo(SWGSCreateInfo& info) const;
+    void x_GetQualityAnnot(TAnnotSet& annot_set,
+                           SWGSCreateInfo& info,
+                           TSeqPos pos = 0,
+                           TSeqPos len = kInvalidSeqPos) const;
+
+    const Uint1* x_GetUnpacked4na(TSeqPos pos, TSeqPos len) const;
+    TSeqPos x_GetGapLength(TSeqPos pos, TSeqPos len) const;
+    TSeqPos x_Get2naLength(TSeqPos pos, TSeqPos len) const;
+    TSeqPos x_Get4naLength(TSeqPos pos, TSeqPos len,
+                           TSeqPos stop_2na_len, TSeqPos stop_gap_len) const;
+
+    struct SSegment {
+        COpenRange<TSeqPos> range;
+        bool is_gap;
+        CRef<CSeq_literal> literal;
+    };
+    enum EInstSegmentFlags {
+        fInst_MakeData  = 1<<0,
+        fInst_MakeGaps  = 1<<1,
+        fInst_SplitInfo = 1<<2,
+        fInst_WholeData = 1<<3,
+        fInst_MakeDelta = fInst_MakeData|fInst_MakeGaps,
+        fInst_MakeSplit = fInst_MakeGaps|fInst_SplitInfo,
+        fInst_MakeChunk = fInst_MakeData|fInst_WholeData
+    };
+    typedef int TInstSegmentFlags;
+    typedef vector<SSegment> TSegments;
+
+    COpenRange<TSeqPos> x_NormalizeSeqRange(COpenRange<TSeqPos> range) const;
+    void x_AddGap(TSegments& segments,
+                  TSeqPos pos, TSeqPos len,
+                  const TWGSContigGapInfo& gap_info) const;
+    void x_SetDelta(CSeq_inst& inst, const TSegments& segments) const;
+    void x_SetDeltaOrData(CSeq_inst& inst, const TSegments& segments) const;
+
+    void x_GetSegments(TSegments& data,
+                       COpenRange<TSeqPos> range,
+                       TWGSContigGapInfo gap_info,
+                       TInstSegmentFlags flags) const;
+    void x_GetSegments(TSegments& segments,
+                       COpenRange<TSeqPos> range) const;
+
+    CRef<CSeq_inst> x_GetSeq_inst(SWGSCreateInfo& info) const;
 
 private:
     CWGSDb m_Db;
@@ -932,6 +974,7 @@ public:
     };
     typedef int TFlags;
 
+    CRef<CSeq_id> GetId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
 
     bool HasSeq_descr(TFlags flags = fDefaultFlags) const;
@@ -1109,6 +1152,7 @@ public:
     };
     typedef int TFlags;
 
+    CRef<CSeq_id> GetId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
 
     // reference protein accession WP_

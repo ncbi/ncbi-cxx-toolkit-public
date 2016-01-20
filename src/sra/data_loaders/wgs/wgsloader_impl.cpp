@@ -1002,8 +1002,6 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                     }
                 }
                 if ( GetSplitSequenceParam() ) {
-                    flags &= ~it.fMaskInst;
-                    flags |= it.fInst_split;
                 }
                 entry = it.GetSeq_entry(flags);
             }
