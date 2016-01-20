@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistory)
     CEutilsClient cli;
     stringstream content;
     
-    cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled);
+    BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
     stringstream content;
    
     cli.SetMaxReturn(101); 
-    cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled);
+    BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
     if ( retstart + retmax < count ) {
         int next_start = count - retmax;
         stringstream next_chunk;
-        cli.SearchHistory("pubmed", "asthma", web_env, query_key, next_start, next_chunk);
+        BOOST_REQUIRE_NO_THROW(cli.SearchHistory("pubmed", "asthma", web_env, query_key, next_start, next_chunk));
 
         string body = next_chunk.str();
         xml::document doc(body.c_str(), body.size(), NULL);
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(TestSummaryHistory)
     stringstream content;
    
     cli.SetMaxReturn(101); 
-    cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled);
+    BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
     stringstream content;
    
     cli.SetMaxReturn(101); 
-    cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled);
+    BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
     int query_key = NStr::StringToNumeric<int>(items.begin()->get_content());
 
     stringstream history;
-    cli.FetchHistory("pubmed", web_env, query_key, 10, CEutilsClient::eContentType_xml, history);
+    BOOST_REQUIRE_NO_THROW(cli.FetchHistory("pubmed", web_env, query_key, 10, CEutilsClient::eContentType_xml, history));
     
     {{
         string body = history.str();
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(TestLinkHistory)
     uids.push_back(157427902);
 
     cli.SetMaxReturn(101); 
-    cli.Link("protein", "gene", uids, content, "neighbor_history");
+    BOOST_REQUIRE_NO_THROW(cli.Link("protein", "gene", uids, content, "neighbor_history"));
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();

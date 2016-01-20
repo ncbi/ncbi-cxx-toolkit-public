@@ -632,7 +632,7 @@ Uint8 CEutilsClient::x_Search(const string& db,
                     NcbiStreamCopy(ostr, istr);
                     ostr.close();
 
-                    if(!ostr) {
+                    if(!ostr || 200 != istr.GetStatusCode()) {
                         NCBI_THROW(CException, eUnknown, "Failure while writing entrez xml response to file: " + xml_file);
                     }
 
@@ -725,7 +725,7 @@ string CEutilsClient::x_GetHostName() const
 {
     static const char kEutils[]   = "eutils.ncbi.nlm.nih.gov";
     static const char kEutilsLB[] = "eutils_lb";
-
+    
     if (!m_HostName.empty()) {
         return m_HostName;
     }
@@ -758,12 +758,14 @@ void CEutilsClient::x_Get(string const& path,
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
             string hostname = x_GetHostName();
+ 
             CConn_HttpStream istr(hostname,
                                   path);
             m_Url.push_back(x_BuildUrl(hostname, path, params));
+            
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
-            if (NcbiStreamCopy(ostr, istr)) {
+            if (NcbiStreamCopy(ostr, istr) && 200 == istr.GetStatusCode()) {
                 success = true;
                 break;
             }
@@ -778,7 +780,7 @@ void CEutilsClient::x_Get(string const& path,
             SleepSec(sleep_secs);
         }
     }
-
+    
     if ( !success ) {
         ostringstream msg;
         msg << "Failed to execute request: "
@@ -882,7 +884,7 @@ void CEutilsClient::x_Link(const string& db_from,
                     NcbiStreamCopy(ostr, istr);
                     ostr.close();
                     parser.parse_file(xml_file.c_str(), &msgs);
-                    if(!ostr) {
+                    if(!ostr || 200 != istr.GetStatusCode()) {
                         NCBI_THROW(CException, eUnknown, "Failure while writing entrez xml response to file: " + xml_file);
                     }
                 }
@@ -970,7 +972,7 @@ void CEutilsClient::x_Link(const string& db_from,
             m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
-            if (NcbiStreamCopy(ostr, istr)) {
+            if (NcbiStreamCopy(ostr, istr) && 200 == istr.GetStatusCode()) {
                 success = true;
                 break;
             }
@@ -1062,17 +1064,19 @@ void CEutilsClient::x_Summary(const string& db,
             // slurp up all the output.
             stringbuf sb;
             istr >> &sb;
-            string docstr(sb.str());
+            if ( 200 == istr.GetStatusCode() ) {
+                string docstr(sb.str());
 
-            // LOG_POST(Info << "Raw results: " << docstr );
+                // LOG_POST(Info << "Raw results: " << docstr );
 
-            // turn it into an xml::document
-            xml::error_messages msgs;
-            xml::document xmldoc(docstr.data(), docstr.size(), &msgs );
+                // turn it into an xml::document
+                xml::error_messages msgs;
+                xml::document xmldoc(docstr.data(), docstr.size(), &msgs );
 
-            docsums.swap(xmldoc);
-            success = true;
-            break;
+                docsums.swap(xmldoc);
+                success = true;
+                break;
+            }
         }
         catch (const xml::parser_exception& e) {
             ERR_POST_X(6, Warning << "failed on attempt " << retries + 1
@@ -1174,7 +1178,7 @@ void CEutilsClient::x_Fetch(const string& db,
             m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
-            if (NcbiStreamCopy(ostr, istr)) {
+            if (NcbiStreamCopy(ostr, istr) && 200 == istr.GetStatusCode()) {
                 success = true;
                 break;
             }

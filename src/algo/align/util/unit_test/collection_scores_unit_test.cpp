@@ -76,12 +76,15 @@ NCBITEST_INIT_CMDLINE(arg_desc)
     arg_desc->AddKey("seq-entry", 
                      "SeqEntryPath",
                      "Path to sequences.",
-                     CArgDescriptions::eInputFile);
+                     CArgDescriptions::eInputFile,
+                     CArgDescriptions::fBinary);
  
     arg_desc->AddKey("aligns", 
                      "InputData",
                      "Concatenated Seq-aligns used to generate gene models",
-                     CArgDescriptions::eInputFile);
+                     CArgDescriptions::eInputFile,
+                     CArgDescriptions::fBinary);
+
     arg_desc->AddFlag("input-binary", 
                       "Input data is ASN.1 Binary.");
                         
