@@ -2046,7 +2046,7 @@ void CProcessor_ID2::x_FixCompression(CID2_Reply_Data& data)
         COSSWriter writer(new_data.SetData());
         CWStream wstream(&writer);
         CCompressionOStream stream(wstream,
-                                   new CZipStreamCompressor,
+                                   new CZipStreamCompressor(ICompression::eLevel_Lowest),
                                    CCompressionIStream::fOwnProcessor);
         ITERATE ( CID2_Reply_Data::TData, it, data.GetData() ) {
             stream.write(&(**it)[0], (*it)->size());
