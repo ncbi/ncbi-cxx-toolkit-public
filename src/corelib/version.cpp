@@ -516,31 +516,46 @@ string CVersion::GetPackageConfig(void)
     return NCBI_PACKAGE_CONFIG;
 }
 
+
 string CVersion::Print(const string& appname, TPrintFlags flags) const
 {
     CNcbiOstrstream os;
+
     if (flags & fVersionInfo) {
         os << appname << ": " << m_VersionInfo->Print() << endl;
     }
+
     if (flags & fComponents) {
-        ITERATE( vector< AutoPtr< CComponentVersionInfo> >, c, m_Components) {
+        ITERATE(vector< AutoPtr< CComponentVersionInfo> >, c, m_Components) {
             os << ' ' <<  (*c)->Print() << endl;
         }
     }
+
 #if NCBI_PACKAGE
     if (flags & ( fPackageShort | fPackageFull )) {
-        os << "Package: " << GetPackageName() << ' '
+        os << " Package: " << GetPackageName() << ' '
            << GetPackageVersion().Print() << ", build "
            << __DATE__ << ' ' << __TIME__
            << endl;
     }
-#ifdef NCBI_SIGNATURE
     if (flags & fPackageFull) {
-        os << ' ' << NCBI_SIGNATURE << endl;
-        os << ' ' << GetPackageConfig() << endl;
+        os << " Package-Config: " << ' ' << GetPackageConfig() << endl;
     }
 #endif
+
+#ifdef NCBI_SIGNATURE
+    if (flags & fBuildSignature) {
+        os << " Build-Signature: " << ' ' << NCBI_SIGNATURE << endl;
+    }
 #endif
+
+#ifdef NCBI_BUILD_TAG
+    if (flags & fBuildTag) {
+        os << " Build-Tag: " << ' ' << NCBI_AS_STRING(NCBI_BUILD_TAG)
+           << endl;
+    }
+#endif
+
     return CNcbiOstrstreamToString(os);
 }
 
