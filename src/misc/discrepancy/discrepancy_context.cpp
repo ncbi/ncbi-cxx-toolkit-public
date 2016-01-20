@@ -31,6 +31,7 @@
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
 #include <sstream>
+#include <objects/general/Dbtag.hpp>
 #include <objects/macro/Source_location.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/seq_macros.hpp>
@@ -311,6 +312,31 @@ bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag)
     // http://www.ncbi.nlm.nih.gov/genomes/locustag/Proposal.pdf
 
     return !regexp.IsMatch(locus_tag); 
+}
+
+const CSeq_id *
+CDiscrepancyContext::GetProteinId(void)
+{
+    static const CSeq_id * protein_id = NULL;
+    static size_t count = 0;
+    if (count == m_Count_Bioseq) {
+        return protein_id;
+    }
+    count = m_Count_Bioseq;
+    protein_id = NULL;
+    if( ! GetCurrentBioseq()->IsSetId() ) {
+        // NULL
+        return protein_id;
+    }
+    const CBioseq::TId& bioseq_ids = GetCurrentBioseq()->GetId();
+    ITERATE(CBioseq::TId, id_it, bioseq_ids) {
+        const CSeq_id & seq_id = **id_it;
+        if( seq_id.IsGeneral() && ! seq_id.GetGeneral().IsSkippable() ) {
+            protein_id = &seq_id;
+            break;
+        }
+    }
+    return protein_id;
 }
 
 

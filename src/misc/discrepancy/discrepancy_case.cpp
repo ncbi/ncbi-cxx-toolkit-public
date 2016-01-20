@@ -91,6 +91,28 @@ DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
 }
 
 
+// MISSING_PROTEIN_ID
+DISCREPANCY_CASE(MISSING_PROTEIN_ID, CSeq_inst, eDisc, "Missing Protein ID")
+{
+    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+    if( ! bioseq || ! bioseq->IsAa() ) {
+        return;
+    }
+
+    if( ! context.GetProteinId() ) {
+        m_Objs["[n] protein[s] [has] invalid ID[s]."].Add(
+            *new CDiscrepancyObject(
+                context.GetCurrentBioseq(), context.GetScope(),
+                context.GetFile(), context.GetKeepRef()));
+    }
+}
+
+DISCREPANCY_SUMMARIZE(MISSING_PROTEIN_ID)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 // SHORT_SEQUENCES
 DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc, "Find Short Sequences")
 {
@@ -343,7 +365,8 @@ static bool ShouldIgnore(const string& product)
 
 static bool LocationsOverlapOnSameStrand(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope)
 {
-    return StrandsMatch(loc1, loc2) && sequence::Compare(loc1, loc2, scope) != sequence::eNoOverlap;
+    return StrandsMatch(loc1, loc2) &&
+        sequence::Compare(loc1, loc2, scope, sequence::fCompareOverlapping) != sequence::eNoOverlap;
 }
 
 
@@ -494,7 +517,7 @@ DISCREPANCY_CASE(OVERLAPPING_RRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Overlapping rRN
         const CSeq_feat* other_seq_feat = dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer());
         const CSeq_loc& other_location = other_seq_feat->GetLocation();
 
-        if (sequence::Compare(this_location, other_location, &context.GetScope()) != sequence::eNoOverlap) {
+        if (sequence::Compare(this_location, other_location, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
             // We add with unique=false because it's O(num overlaps) each time to uniquify.
             // We do it at the end instead.
             m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."]
@@ -931,7 +954,7 @@ DISCREPANCY_SUMMARIZE(QUALITY_SCORES)
     size_t quals = m_Objs["has qual scores"].GetObjects().size();
     m_Objs.clear();
 
-    string some = NStr::IntToString(all_na - quals);
+    string some = NStr::NumericToString(all_na - quals);
     if (all_na == quals) {
         m_Objs["Quality scores are present on all sequences"];
     }
