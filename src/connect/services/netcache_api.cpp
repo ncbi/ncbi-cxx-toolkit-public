@@ -261,6 +261,13 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
     m_Service->Init(this, service, config, section, s_NetCacheConfigSections);
 }
 
+SNetCacheAPIImpl::SNetCacheAPIImpl(const string& api_name,
+        const string& client_name, INetServerConnectionListener* listener) :
+    m_Service(new SNetServiceImpl(api_name, client_name, listener)),
+    m_DefaultParameters(eVoid)
+{
+}
+
 SNetCacheAPIImpl::SNetCacheAPIImpl(SNetServerInPool* server,
         SNetCacheAPIImpl* parent) :
     m_Service(new SNetServiceImpl(server, parent->m_Service)),

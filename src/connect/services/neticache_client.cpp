@@ -139,8 +139,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& service_name,
             const string& client_name,
             const string& cache_name) :
-        SNetCacheAPIImpl(new SNetServiceImpl(s_NetICacheAPIName,
-                client_name, new CNetICacheServerListener)),
+        SNetCacheAPIImpl(s_NetICacheAPIName, client_name,
+                new CNetICacheServerListener),
         m_CacheFlags(ICache::fBestPerformance)
     {
         m_DefaultParameters.SetCacheName(cache_name);
@@ -153,8 +153,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& service_name,
             const string& client_name,
             const string& cache_name) :
-        SNetCacheAPIImpl(new SNetServiceImpl(s_NetICacheAPIName,
-                client_name, new CNetICacheServerListener)),
+        SNetCacheAPIImpl(s_NetICacheAPIName, client_name,
+                new CNetICacheServerListener),
         m_CacheFlags(ICache::fBestPerformance)
     {
         m_DefaultParameters.SetCacheName(cache_name);
