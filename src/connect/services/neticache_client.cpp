@@ -132,15 +132,21 @@ static string s_KeyVersionSubkeyToBlobID(
 
 static const char s_NetICacheAPIName[] = "NetICacheClient";
 
-struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
+struct SNetICacheListenerHolder
+{
+    CNetICacheServerListener listener;
+    SNetICacheListenerHolder() { listener.DoNotDeleteThisObject(); }
+};
+
+struct SNetICacheClientImpl : private SNetICacheListenerHolder,
+    public SNetCacheAPIImpl, protected CConnIniter
 {
     SNetICacheClientImpl(CConfig* config,
             const string& section,
             const string& service_name,
             const string& client_name,
             const string& cache_name) :
-        SNetCacheAPIImpl(s_NetICacheAPIName, client_name,
-                new CNetICacheServerListener),
+        SNetCacheAPIImpl(s_NetICacheAPIName, client_name, &listener),
         m_CacheFlags(ICache::fBestPerformance)
     {
         m_DefaultParameters.SetCacheName(cache_name);
@@ -153,8 +159,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& service_name,
             const string& client_name,
             const string& cache_name) :
-        SNetCacheAPIImpl(s_NetICacheAPIName, client_name,
-                new CNetICacheServerListener),
+        SNetCacheAPIImpl(s_NetICacheAPIName, client_name, &listener),
         m_CacheFlags(ICache::fBestPerformance)
     {
         m_DefaultParameters.SetCacheName(cache_name);
