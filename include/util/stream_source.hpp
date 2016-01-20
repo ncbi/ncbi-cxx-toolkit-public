@@ -184,13 +184,30 @@ public:
     ///
     operator bool();
 
+    /// Resets the iterator to the first stream in the class
+    ///
+    /// @return self
+    CInputStreamSource& Rewind(void);
+
+    /// Returns the current file name
+    string GetCurrFileName(void) const;
+
+    /// Returns the current file index and the total number of files
+    ///
+    /// @param count
+    ///   address of variable which receives the total number of files
+    /// @return
+    ///   the current file index
+    size_t GetCurrFileIndex(size_t* count = nullptr) const;
+
 private:
     CArgs m_Args;
     string m_Prefix;
 
     CNcbiIstream* m_Istr;
     auto_ptr<CNcbiIfstream> m_IstrOwned;
-    list<string> m_Files;
+    vector<string> m_Files;
+    size_t m_CurrIndex;
     string m_CurrFile;
 
     /// forbidden

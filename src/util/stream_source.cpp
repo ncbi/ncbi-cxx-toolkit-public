@@ -117,13 +117,13 @@ vector<string> CInputStreamSource::RecreateInputArgs(const CArgs& args, const st
 
 
 CInputStreamSource::CInputStreamSource()
-    : m_Istr(NULL)
+    : m_Istr(NULL), m_CurrIndex(0)
 {
 }
 
 
 CInputStreamSource::CInputStreamSource(const CArgs& args, const string& prefix)
-    : m_Istr(NULL)
+    : m_Istr(NULL), m_CurrIndex(0)
 {
     InitArgs(args, prefix);
 }
@@ -168,13 +168,13 @@ void CInputStreamSource::InitStream(CNcbiIstream& istr, const string& fname)
                    "attempt to init already initted class");
     }
     if (! istr) {
-        string msg();
         NCBI_THROW(CException, eUnknown,
                    "CInputStreamSource::InitStream(): "
                    "stream is bad");
     }
     m_Istr = &istr;
     m_CurrFile = fname;
+    m_CurrIndex = 0;
 }
 
 
@@ -197,7 +197,7 @@ void CInputStreamSource::InitFile(const string& file_path)
     **/
 
     m_Files.push_back(file_path);
-    ++(*this);
+    Rewind();
 }
 
 
@@ -218,7 +218,7 @@ void CInputStreamSource::InitManifest(const string& manifest)
 
     _TRACE("Added " << m_Files.size() << " files from input manifest");
 
-    ++(*this);
+    Rewind();
 }
 
 
@@ -255,7 +255,7 @@ void CInputStreamSource::InitFilesInDirSubtree(const string& file_path,
               fFF_File | fFF_Recursive);
     _TRACE("Added " << m_Files.size() << " files from input path");
 
-    ++(*this);
+    Rewind();
 }
 
 
@@ -322,9 +322,8 @@ CInputStreamSource& CInputStreamSource::operator++()
     m_CurrFile.erase();
 
     // Advance to the next stream, if there is any.
-    if (! m_Files.empty()) {
-        m_CurrFile = m_Files.front();
-        m_Files.pop_front();
+    if (m_CurrIndex < m_Files.size()) {
+        m_CurrFile = m_Files[m_CurrIndex++];
         m_IstrOwned.reset(new CNcbiIfstream(m_CurrFile.c_str()));
         if (m_IstrOwned->fail()) {
             // Do not provide to clients with streams that are already
@@ -334,17 +333,35 @@ CInputStreamSource& CInputStreamSource::operator++()
             NCBI_THROW(CException, eUnknown, msg + m_CurrFile);
         }
     }
-
     return *this;
 }
 
+CInputStreamSource& CInputStreamSource::Rewind(void)
+{
+    m_CurrIndex = 0;
+    ++(*this);
+    return *this;
+}
+
+string CInputStreamSource::GetCurrFileName(void) const
+{
+    return m_CurrFile;
+}
+
+size_t CInputStreamSource::GetCurrFileIndex(size_t* count) const
+{
+    if (count) {
+        *count = m_Files.size();
+    }
+    return m_CurrIndex;
+}
 
 CInputStreamSource::operator bool()
 {
     // The stream contains data if it references a stream (given on input)
     // owns a stream (extracted from a manifest), or still has a non-empty
     // queued list of files.
-    return (m_Istr  ||  m_IstrOwned.get()  ||  ! m_Files.empty());
+    return (m_Istr  ||  m_IstrOwned.get()  ||  m_CurrIndex < m_Files.size());
 }
 
 
