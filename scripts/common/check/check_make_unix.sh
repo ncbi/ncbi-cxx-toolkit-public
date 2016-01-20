@@ -608,7 +608,7 @@ EOF_launch
                 load_avg="\`uptime | sed -e 's/.*averages*: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
                 rm \$launch_sh
 
-                sed -e '/ ["][$][@]["].*\$/ {
+                LC_ALL=C sed -e '/ ["][$][@]["].*\$/ {
                         s/^.*: //
                         s/ ["][$][@]["].*$//
                 }' \$x_log >> \$x_test_out
