@@ -235,6 +235,10 @@ void CDriverContext::ResetEnvSybase(void)
     // If user forces his own Sybase client path using $RESET_SYBASE
     // and $SYBASE -- use that unconditionally.
     try {
+        if (env.Get("LC_ALL") == "POSIX") {
+            // Canonicalize, since locales.dat might list C but not POSIX.
+            env.Set("LC_ALL", "C");
+        }
         if (!env.Get("SYBASE").empty()) {
             string reset = env.Get("RESET_SYBASE");
             if ( !reset.empty() && NStr::StringToBool(reset)) {
