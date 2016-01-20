@@ -56,6 +56,7 @@ struct SNetStorageServerParameters : SServer_Parameters
     bool            log_timing_nst_api;
     bool            log_timing_client_socket;
     string          admin_client_names;
+    string          data_path;
 };
 
 END_NCBI_SCOPE

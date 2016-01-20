@@ -41,8 +41,8 @@
 USING_NCBI_SCOPE;
 
 
-CNetStorageServer *  CNetStorageServer::sm_netstorage_server = NULL;
-
+CNetStorageServer *     CNetStorageServer::sm_netstorage_server = NULL;
+const string            kCrashFlagFileName("CRASH_FLAG");
 
 
 CNetStorageServer::CNetStorageServer()
@@ -56,6 +56,7 @@ CNetStorageServer::CNetStorageServer()
      m_LogTimingClientSocket(default_log_timing_client_socket),
      m_SessionID("s" + x_GenerateGUID()),
      m_NetworkTimeout(0),
+     m_DataPath("./data." + NStr::NumericToString(m_Port)),
      m_StartTime(CNSTPreciseTime::Current()),
      m_AnybodyCanReconfigure(false),
      m_NeedDecryptCacheReset(false),
@@ -91,6 +92,7 @@ CNetStorageServer::SetParameters(
         m_LogTimingClientSocket = params.log_timing_client_socket;
         m_NetworkTimeout = params.network_timeout;
         m_AdminClientNames = x_GetAdminClientNames(params.admin_client_names);
+        m_DataPath = params.data_path;
         return CJsonNode::NewNullNode();
     }
 
@@ -128,6 +130,7 @@ CNetStorageServer::SetParameters(
         m_LogTimingNSTAPI == params.log_timing_nst_api &&
         m_LogTimingClientSocket == params.log_timing_client_socket &&
         m_NetworkTimeout == params.network_timeout &&
+        m_DataPath == params.data_path &&
         current_params.max_connections == params.max_connections &&
         added.empty() &&
         deleted.empty())
@@ -187,6 +190,16 @@ CNetStorageServer::SetParameters(
         m_NetworkTimeout = params.network_timeout;
     }
 
+    if (m_DataPath != params.data_path) {
+        CJsonNode   values = CJsonNode::NewObjectNode();
+
+        values.SetByKey("Old", CJsonNode::NewStringNode(m_DataPath));
+        values.SetByKey("New", CJsonNode::NewStringNode(params.data_path));
+        diff.SetByKey("data_path", values);
+
+        m_DataPath = params.data_path;
+    }
+
     if (current_params.max_connections != params.max_connections) {
         CJsonNode   values = CJsonNode::NewObjectNode();
 
@@ -199,7 +212,6 @@ CNetStorageServer::SetParameters(
         current_params.max_connections = params.max_connections;
         CServer::SetParameters(current_params);
     }
-
 
     if (!added.empty() || !deleted.empty())
         diff.SetByKey("admin_client_name", x_diffInJson(added, deleted));
@@ -503,5 +515,136 @@ CNetStorageServer::x_diffInJson(const vector<string> &  added,
     }
 
     return diff;
+}
+
+
+string  CNetStorageServer::x_GetCrashFlagFileName(void) const
+{
+    return CFile::MakePath(m_DataPath, kCrashFlagFileName);
+}
+
+
+bool  CNetStorageServer::x_DoesCrashFlagFileExist(void) const
+{
+    return CFile(x_GetCrashFlagFileName()).Exists();
+}
+
+
+void  CNetStorageServer::CheckStartAfterCrash(void)
+{
+    if (x_DoesCrashFlagFileExist()) {
+        // There could be two reasons:
+        // - start after crash
+        // - previous instance could not remove the file by some reasons, e.g.
+        //   due to changed permissions
+        RegisterAlert(eStartAfterCrash,
+                      "The server did not stop gracefully last time");
+
+        // Try to remove the file to check the permissions and re-create it
+        string      error = RemoveCrashFlagFile();
+        if (!error.empty()) {
+            ERR_POST(error);
+            RegisterAlert(eCrashSignalFileCreation, error);
+            return;
+        }
+
+        error = CreateCrashFlagFile();
+        if (!error.empty()) {
+            ERR_POST(error);
+            RegisterAlert(eCrashSignalFileCreation, error);
+            return;
+        }
+
+        // Here: the crash flag file has been successfully re-created
+        return;
+    }
+
+    // Here: the crash flag file does not exist.
+    // Check that the directory exists
+    bool    dir_created = true;
+    if (!CDirEntry(m_DataPath).Exists()) {
+        string  msg = "The data path directory " + m_DataPath +
+                      " does not exist. It is OK if it is a first time "
+                      "server start. Otherwise someone may have removed the "
+                      "directory and this may mask the previous instance "
+                      "crash";
+        RegisterAlert(eDataPathAbsence, msg);
+        ERR_POST(msg);
+
+        // Create the directory recursively
+        try {
+            CDir        dir(m_DataPath);
+            if (dir.CreatePath() == false) {
+                msg = "Error creating the data path directory " + m_DataPath;
+                RegisterAlert(eCrashSignalFileCreation, msg);
+                ERR_POST(msg);
+                dir_created = false;
+            }
+        } catch (const exception &  ex) {
+            msg = "Error while creating the data path directory (" +
+                  m_DataPath + "): " + ex.what();
+            RegisterAlert(eCrashSignalFileCreation, msg);
+            ERR_POST(msg);
+            dir_created = false;
+        } catch (...) {
+            msg = "Unknown error while creating the data path directory (" +
+                  m_DataPath + ")";
+            RegisterAlert(eCrashSignalFileCreation, msg);
+            ERR_POST(msg);
+            dir_created = false;
+        }
+    }
+
+    // Create the flag file
+    if (dir_created) {
+        string      error = CreateCrashFlagFile();
+        if (!error.empty()) {
+            ERR_POST(error);
+            RegisterAlert(eCrashSignalFileCreation, error);
+        }
+    }
+}
+
+
+string  CNetStorageServer::CreateCrashFlagFile(void)
+{
+    try {
+        CFile   crash_file(x_GetCrashFlagFileName());
+        if (!crash_file.Exists()) {
+            CFileIO     f;
+            f.Open(x_GetCrashFlagFileName(),
+                   CFileIO_Base::eCreate,
+                   CFileIO_Base::eReadWrite);
+            f.Close();
+        }
+    } catch (const exception &  ex) {
+        return "Error while creating the start-after-crash detection "
+               "file (" + x_GetCrashFlagFileName() + "): " + ex.what();
+    } catch (...) {
+        return "Unknown error while creating the start-after-crash "
+               "detection file (" + x_GetCrashFlagFileName() + ").";
+    }
+    return kEmptyStr;
+}
+
+
+string  CNetStorageServer::RemoveCrashFlagFile(void)
+{
+    try {
+        CFile       crash_file(x_GetCrashFlagFileName());
+        if (crash_file.Exists())
+            crash_file.Remove();
+    } catch (const exception &  ex) {
+        return "Error while removing the start-after-crash detection "
+               "file (" + x_GetCrashFlagFileName() + "): " + ex.what() +
+               "\nWhen the server restarts with the same data path it will "
+               "set the 'StartAfterCrash' alert";
+    } catch (...) {
+        return "Unknown error while removing the start-after-crash detection "
+               "file (" + x_GetCrashFlagFileName() + "). When the server "
+               "restarts with the same data path it will set the "
+               "'StartAfterCrash' alert";
+    }
+    return kEmptyStr;
 }
 

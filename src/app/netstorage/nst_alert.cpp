@@ -44,16 +44,19 @@ struct AlertToId
 
 
 const AlertToId     alertToIdMap[] = {
-                        { eStartupConfig,          "StartupConfig" },
-                        { eReconfigure,            "Reconfigure" },
-                        { ePidFile,                "PidFile" },
-                        { eDB,                     "Database" },
-                        { eAccess,                 "AccessDenied" },
-                        { eConfigOutOfSync,        "ConfigOutOfSync" },
-                        { eDecryptDBPass,          "DecryptDBPassword" },
-                        { eDecryptAdminNames,      "DecryptAdminNames" },
-                        { eDBConnect,              "DatabaseConnect" },
-                        { eDecryptInNetStorageAPI, "DecryptInNetStorageAPI" }
+        { eStartupConfig,               "StartupConfig" },
+        { eReconfigure,                 "Reconfigure" },
+        { ePidFile,                     "PidFile" },
+        { eDB,                          "Database" },
+        { eAccess,                      "AccessDenied" },
+        { eConfigOutOfSync,             "ConfigOutOfSync" },
+        { eDecryptDBPass,               "DecryptDBPassword" },
+        { eDecryptAdminNames,           "DecryptAdminNames" },
+        { eDBConnect,                   "DatabaseConnect" },
+        { eDecryptInNetStorageAPI,      "DecryptInNetStorageAPI" },
+        { eStartAfterCrash,             "StartAfterCrash" },
+        { eDataPathAbsence,             "DataPathAbsence" },
+        { eCrashSignalFileCreation,     "CrashSignalFileCreation" }
                                      };
 const size_t        alertToIdMapSize = sizeof(alertToIdMap) / sizeof(AlertToId);
 

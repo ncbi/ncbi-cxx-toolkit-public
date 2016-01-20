@@ -155,6 +155,7 @@ private:
     bool                        m_LogTimingClientSocket;
     string                      m_SessionID;
     unsigned int                m_NetworkTimeout;
+    string                      m_DataPath;
     CNSTPreciseTime             m_StartTime;
     string                      m_CommandLine;
     CCompoundIDPool             m_CompoundIDPool;
@@ -192,11 +193,17 @@ public:
     void  RegisterNetStorageAPIDecryptError(const string &  message);
     void  ReportNetStorageAPIDecryptSuccess(void);
 
+    void  CheckStartAfterCrash(void);
+    string  CreateCrashFlagFile(void);
+    string  RemoveCrashFlagFile(void);
+
 private:
     string  x_GenerateGUID(void) const;
     set<string> x_GetAdminClientNames(const string &  client_names);
     CJsonNode  x_diffInJson(const vector<string> &  added,
                             const vector<string> &  deleted) const;
+    string  x_GetCrashFlagFileName(void) const;
+    bool    x_DoesCrashFlagFileExist(void) const;
 };
 
 

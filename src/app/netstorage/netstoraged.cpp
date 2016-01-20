@@ -241,6 +241,8 @@ int CNetStorageDApp::Run(void)
     // signs and simply does not work.
     server->GetDb().InitialConnect();
 
+    server->CheckStartAfterCrash();
+
     // Start auxiliary threads
     server->RunServiceThread();
 
@@ -277,6 +279,10 @@ int CNetStorageDApp::Run(void)
 
     // Stop auxiliary threads
     server->StopServiceThread();
+
+    string  remove_crash_flag_file_error = server->RemoveCrashFlagFile();
+    if (!remove_crash_flag_file_error.empty())
+        ERR_POST(remove_crash_flag_file_error);
 
     if (args[kNodaemonArgName])
         NcbiCout << "Server stopped" << NcbiEndl;

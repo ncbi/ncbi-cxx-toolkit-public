@@ -55,7 +55,11 @@ enum EAlertType {
     eDecryptDBPass = 6,
     eDecryptAdminNames = 7,
     eDBConnect = 8,
-    eDecryptInNetStorageAPI = 9
+    eDecryptInNetStorageAPI = 9,
+
+    eStartAfterCrash = 10,
+    eDataPathAbsence = 11,
+    eCrashSignalFileCreation = 12
 };
 
 enum EAlertAckResult {

@@ -96,5 +96,8 @@ void SNetStorageServerParameters::Read(const IRegistry &    reg,
         decrypt_warning = "[server]/admin_client_name "
                           "unknown decrypting error";
     }
+
+    string      default_data_path = "./data." + NStr::NumericToString(port);
+    data_path = reg.GetString(sname, "data_path", default_data_path);
 }
 
