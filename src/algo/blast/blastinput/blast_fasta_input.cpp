@@ -136,7 +136,12 @@ public:
         const string line = NStr::TruncateSpaces_Unsafe(*++GetLineReader());
         if ( !line.empty() && isalnum(line.data()[0]&0xff) ) {
             try {
-                CRef<CSeq_id> id(new CSeq_id(line));
+                CRef<CSeq_id> id(new CSeq_id(line, (CSeq_id::fParse_AnyRaw | 
+							CSeq_id::fParse_ValidLocal)));
+		if (id->IsLocal()  &&  !NStr::StartsWith(line, "lcl|") ) {
+                    // Expected to throw an exception.
+                    id.Reset(new CSeq_id(line));
+		}
                 CRef<CBioseq> bioseq(x_CreateBioseq(id));
                 CRef<CSeq_entry> retval(new CSeq_entry());
                 retval->SetSeq(*bioseq);

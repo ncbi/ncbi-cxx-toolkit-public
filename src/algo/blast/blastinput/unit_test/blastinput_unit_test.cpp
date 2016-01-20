@@ -1346,6 +1346,44 @@ BOOST_AUTO_TEST_CASE(ReadMultipleSequencesFromSequencer)
     BOOST_REQUIRE(blast::IsLocalId(query_vector.front().seqloc->GetId()));
 }
 
+BOOST_AUTO_TEST_CASE(ReadMultipleSequencesFromSequencerParseLocalIds)
+{
+    CNcbiIfstream infile("data/DF-1.txt");
+    const bool kIsProtein(false);
+    const bool kParseID(true);
+    SDataLoaderConfig dlconfig(kIsProtein);
+    CBlastInputSourceConfig iconfig(dlconfig, objects::eNa_strand_other, false, kParseID);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    const size_t kNumQueries(96);
+
+    BOOST_REQUIRE(source->End() == false);
+
+    CScope scope(*CObjectManager::GetInstance());
+    blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
+    BOOST_REQUIRE_EQUAL(kNumQueries, query_vector.size());
+    BOOST_REQUIRE(blast::IsLocalId(query_vector.front().seqloc->GetId()));
+    // Check that the first three IDs went through.
+    BOOST_REQUIRE_EQUAL(query_vector[0].seqloc->GetId()->AsFastaString(), string("lcl|seq#474_A03_564_c_T3+40.ab1"));
+    BOOST_REQUIRE_EQUAL(query_vector[1].seqloc->GetId()->AsFastaString(), string("lcl|seq#474_A01_564_a_T3+40.ab1"));
+    BOOST_REQUIRE_EQUAL(query_vector[2].seqloc->GetId()->AsFastaString(), string("lcl|seq#474_A02_564_b_T3+40.ab1"));
+}
+
+BOOST_AUTO_TEST_CASE(ReadSequenceWithlclID)
+{
+    CNcbiIfstream infile("data/localid.txt");
+    const bool kIsProtein(false);
+    const bool kParseID(true);
+    SDataLoaderConfig dlconfig(kIsProtein);
+    CBlastInputSourceConfig iconfig(dlconfig, objects::eNa_strand_other, false, kParseID);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+
+    CScope scope(*CObjectManager::GetInstance());
+    blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
+    BOOST_REQUIRE(blast::IsLocalId(query_vector.front().seqloc->GetId()));
+    // Check that the local ID went through.
+    BOOST_REQUIRE_EQUAL(query_vector[0].seqloc->GetId()->AsFastaString(), string("lcl|mylocalID555"));
+}
+
 // This input file contains several sequences in FASTA format, but one of them
 // is empty, this should proceed with no problems
 BOOST_AUTO_TEST_CASE(ReadMultipleSequences_OneEmpty)
