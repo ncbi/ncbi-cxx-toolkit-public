@@ -107,6 +107,14 @@ void CSDB_Exception::x_Init(const CDiagCompileInfo&, const string&,
     }
 }
 
+void CSDB_Exception::x_Assign(const CException& src)
+{
+    CException::x_Assign(src);
+    const CSDB_Exception* sdb_src = dynamic_cast<const CSDB_Exception*>(&src);
+    _ASSERT(sdb_src != NULL);
+    m_Context = sdb_src->m_Context;
+}
+
 
 static EDB_Type
 s_ConvertType(ESDB_Type type)
@@ -2702,15 +2710,26 @@ CQueryImpl::PurgeResults(void)
 {
     x_CheckCanWork();
     m_HasExplicitMode = true; // Doesn't particularly matter at this point!
-    for (;;) {
+    bool has_more = true;
+    while (has_more) {
         try {
-            if (HasMoreResultSets()) {
+            if ((has_more = HasMoreResultSets())) {
                 BeginNewRS();
-            } else {
-                break;
             }
         } catch (CSDB_Exception& e) {
-            ERR_POST_X(15, Warning << e);
+            while (has_more) {
+                try {
+                    if ((has_more = HasMoreResultSets())) {
+                        BeginNewRS();
+                    }
+                } catch (CSDB_Exception& e2) {
+                    has_more = true;
+                    // Not technically the correct relationship, but by far
+                    // the simplest way to consolidate the exceptions.
+                    e.AddPrevious(&e2);
+                }
+            }
+            throw;
         }
     }
 }

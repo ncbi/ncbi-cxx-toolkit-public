@@ -122,6 +122,8 @@ protected:
     void x_Init(const CDiagCompileInfo& info, const string& message,
                 const CException* prev_exception, EDiagSev severity);
 
+    void x_Assign(const CException& src);
+
 private:
     CConstRef<CDB_Exception::SContext> m_Context;
 };
