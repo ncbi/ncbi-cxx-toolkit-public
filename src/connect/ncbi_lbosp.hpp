@@ -88,6 +88,7 @@ private:
 };
 
 
+
 END_NCBI_SCOPE
 
 #endif /* CONNECT___NCBI_LBOSP__HPP */

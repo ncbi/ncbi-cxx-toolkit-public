@@ -49,6 +49,7 @@ extern "C" {
  *  451 - DNS resolve failed for healthcheck URL
  *  452 - Invalid arguments provided, request was not sent to LBOS
  *  453 - Memory allocation error encountered
+ *  454 - LBOS output could not be parsed
  *  550 - LBOS mapper is OFF in the current process
  */
 static const int kLBOSSuccess         = 200;

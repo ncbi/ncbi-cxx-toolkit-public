@@ -73,7 +73,7 @@ static const char* kLBOSHealthcheckUrlVariable = "HEALTHCHECK";
 static const char* kLBOSDomainVariable         = "lbos_domain";
 
 
-static SConnNetInfo* s_EmptyNetInfo       =  NULL; /* Do..                   */
+static SConnNetInfo* s_EmptyNetInfo       =   NULL; /* Do..                  */
 static       char* s_LBOS_CurrentDomain   =   NULL; /*  ..not..              */
 static       char* s_LBOS_Lbosresolver    =   NULL; /*      ..change..       */
 static       char* s_LBOS_CurrentRole     =   NULL; /*          ..after init */

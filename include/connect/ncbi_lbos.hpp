@@ -64,7 +64,7 @@ public:
     * @note
     *  If you want to announce a service that is on the same machine that
     *  announces it (i.e., if server announces itself), you can write
-    *  "0.0.0.0" for IP (this is convention with lbos). You still have to
+    *  "0.0.0.0" for IP in both "host" and "healthcheck_url". You still have to
     *  provide port, even if you write "0.0.0.0".
     * @return
     *  Returns nothing if announcement was successful. Otherwise, throws an
@@ -198,20 +198,19 @@ class NCBI_XNCBI_EXPORT CLBOSException : public CException
 public:
     typedef int TErrCode;
     enum EErrCode {
-        e_LBOSNoLBOS,               /**< lbos was not found                   */
-        e_LBOSDNSResolveError,      /**< Local address not resolved           */
-        e_LBOSInvalidArgs,          /**< Arguments not valid                  */
-        e_LBOSDeannounceFail,       /**< Error while deannounce/              */
-        e_LBOSNotFound,             /**< For de-announcement only. Did not
-                                     find such server to deannounce           */
-        e_LBOSOff,                  /**< LBOS mapper is off for any of two
-                                     reasons: either it is not enabled in
-                                     registry, or no LBOS was found at
-                                     initialization                           */
-        e_LBOSMemAllocError,        /**< A memory allocation error encountered*/
-        e_LBOSCorruptOutput,        /**< LBOS returned unexpected output      */
-        e_LBOSBadRequest,           /**< LBOS returned "400 Bad Request"      */
-        e_LBOSUnknown               /**< No information about this error
+        e_LBOSNoLBOS = 0,           /**< lbos was not found                   */
+        e_LBOSDNSResolveError = 1,  /**< Local address not resolved           */
+        e_LBOSInvalidArgs = 2,      /**< Arguments not valid                  */
+        e_LBOSNotFound = 3,         /**< For de-announcement only. Did not
+                                         find such server to deannounce       */
+        e_LBOSOff = 4,              /**< LBOS mapper is off for any of two
+                                         reasons: either it is not enabled in
+                                         registry, or no LBOS was found at
+                                         initialization                       */
+        e_LBOSMemAllocError = 5,    /**< A memory allocation error encountered*/
+        e_LBOSCorruptOutput = 6,    /**< LBOS returned unexpected output      */
+        e_LBOSBadRequest = 7,       /**< LBOS returned "400 Bad Request"      */
+        e_LBOSUnknown = 8           /**< No information about this error
                                      code meaning                             */
     };
 
@@ -227,10 +226,12 @@ public:
                    unsigned short status_code);
     virtual ~CLBOSException(void) throw();
     
-    /** Get original status code and status message from LBOS in a string     */
+    /** Get original status code and status message from LBOS in a string */
     virtual const char* what() const throw();
 
-    /** Translate from the error code value to its string representation.     */
+    /** Translate from the error code value to its string representation
+    *  (only for errors that were returned by this library, real LBOS
+    *  errors will not be processed) */
     virtual const char* GetErrCodeString(void) const;
 
     /** Translate from numerical HTTP status code to lbos-specific

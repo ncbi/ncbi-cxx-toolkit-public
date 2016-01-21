@@ -36,9 +36,6 @@
 
 USING_NCBI_SCOPE;
 
-#ifdef NCBI_THREADS
-static CHealthcheckThread* s_HealthchecKThread;
-#endif
 
 
 /**  Main class of this program which will be used for testing. Based on the
@@ -183,7 +180,7 @@ void CTestLBOSApp::SwapAddressesTest(int idx)
     test;                                                                      \
     TestApp_IntraGroupSyncPoint();                                             \
     if (idx == 1) {                                                            \
-        s_ClearZooKeeper();                                                    \
+        s_ClearZooKeeper(idx);                                                 \
     } else {                                                                   \
         SleepMilliSec(500);                                                    \
     }                                                                          \
@@ -246,12 +243,12 @@ bool CTestLBOSApp::TestApp_Init(void)
     CCObjHolder<char> status_message(NULL);
     LBOS_ServiceVersionSet("/lbostest", "1.0.0",
                               &*lbos_answer, &*status_message);
-#ifdef NCBI_THREADS
     s_HealthchecKThread = new CHealthcheckThread;
+#ifdef NCBI_THREADS
     s_HealthchecKThread->Run();
 #endif
 #ifdef DEANNOUNCE_ALL_BEFORE_TEST
-    s_ClearZooKeeper();
+    s_ClearZooKeeper(kSingleThreadNumber);
 #endif
     return true;
 }

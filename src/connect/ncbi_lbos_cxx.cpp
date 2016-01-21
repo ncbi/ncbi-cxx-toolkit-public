@@ -50,7 +50,9 @@ static const char* kLBOSServerHostVariable("HOST");
 static const char* kLBOSPortVariable("PORT");
 static const char* kLBOSHealthcheckUrlVariable("HEALTHCHECK");
 
-/// Functor template for deleting object.
+const SConnNetInfo* kEmptyNetInfo = ConnNetInfo_Create(NULL);
+
+/// Functor template for deleting object (for AutoPtr<>)
 template<class X>
 struct Free
 {
@@ -123,11 +125,20 @@ std::string CLBOSIpCache::HostnameTryFind(string service, string hostname,
 std::string CLBOSIpCache::HostnameResolve(string service, string hostname, 
                                       string version, unsigned short port)
 {
-    if (hostname == "")
-        hostname = CSocketAPI::GetLocalHostAddress();
+    /* LBOS behavior - if DNS could not resolve hostname, throw 400 Bad Request.
+    * Here we emulate LBOS behavior.
+    * Here we try to resolve hostname before
+    * sending it to LBOS, so we should return the same answer as LBOS would
+    * do.*/
+    if (hostname == "") {
+        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+            CLBOSException::e_LBOSBadRequest, "400 Bad Request",
+            kLBOSBadRequest);
+    }
     map<CLBOSIpCacheKey, string>::iterator pos;
     CLBOSIpCacheKey key(service, hostname, version, port);
     pos = x_IpCache->find(key);
+    /* If hostname is already in the cache, return previously resolved IP */
     if (pos != x_IpCache->end())
         return pos->second;
     /* We did not find IP in the cache. Then we resolve the hostname to IP and
@@ -136,13 +147,20 @@ std::string CLBOSIpCache::HostnameResolve(string service, string hostname,
        to rewrite) */
     string host =
         CSocketAPI::HostPortToString(CSocketAPI::gethostbyname(hostname), 0);
+    /* If gethostbyname() could not resolve the hostname, it will return ":0".
+       In this case we go back to the original hostname, so that LBOS can try 
+       to resolve it itself. */
+    if (host == ":0") {
+        host = hostname; 
+    }
+    /* Save pair */
     std::pair<map<CLBOSIpCacheKey, string>::iterator, bool> res =
         x_IpCache->insert(std::pair<CLBOSIpCacheKey, string>(key, host));
     return res.first->second;
 }
 
 void CLBOSIpCache::HostnameDelete(string service, string hostname, 
-                              string version, unsigned short port)
+                                  string version, unsigned short port)
 {
     if (hostname == "")
         hostname = CSocketAPI::GetLocalHostAddress();
@@ -192,11 +210,11 @@ void LBOS::Announce(const string& service, const string& version,
     if (cur_host == "")
     {
         SConnNetInfo * healthcheck_info;
-        healthcheck_info = ConnNetInfo_Create(NULL);
+        healthcheck_info = ConnNetInfo_Clone(kEmptyNetInfo);
         healthcheck_info->host[0] = '\0'; /* to be sure that it will be
                                           * overridden                      */
+        /* Save info about host */
         ConnNetInfo_ParseURL(healthcheck_info, healthcheck_url.c_str());
-        /* Create new element of list*/
         cur_host = healthcheck_info->host;
         /* If we could not parse healthcheck URL, throw "Invalid Arguments" */
         if (cur_host == "") {
@@ -211,20 +229,10 @@ void LBOS::Announce(const string& service, const string& version,
     if (cur_host == "0.0.0.0") {
         ip = cur_host;
     } else {
+        /* We make a guard here because CLBOSIpCache saves resolution results 
+           to its static storage */
         CFastMutexGuard spawn_guard(s_GlobalLock);
         ip = CLBOSIpCache::HostnameResolve(service, cur_host, version, port);
-    }
-    /* If DNS could not resolve hostname - throw 400 Bad Request. 
-     * Here we emulate LBOS behavior.
-     * If we used the same function from C library, it would return 
-     * "400 Bad Request" from LBOS, because it does not try to resolve 
-     * hostnames before sending them. Here we try to resolve hostname before 
-     * sending it to LBOS, so we should return the same answer as LBOS would 
-     * do.*/
-    if (ip == ":0") {
-        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                             CLBOSException::e_LBOSBadRequest, "400 Bad Request",
-                             kLBOSBadRequest);
     }
     /* If healthcheck is on the same host as server, we try to replace hostname 
      * with IP in healthcheck URL, too */
@@ -299,7 +307,9 @@ void LBOS::Deannounce(const string&         service,
                                             &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
     /* Nothing thrown - deannounce successful! */
-    if (host != "" && host != "0.0.0.0") {
+    /* Then remove resolution result from cache */
+    if (host != "" /* invalid input */ &&
+        host != "0.0.0.0" /* not handled by cache */) {
         CLBOSIpCache::HostnameDelete(service, host, version, port);
     }
 }
@@ -364,9 +374,8 @@ string LBOS::ServiceVersionGet(const string&  service,
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
                                   status_message_aptr(&status_message_str);
-    unsigned short result = 
-        LBOS_ServiceVersionGet(service.c_str(),&*body_aptr,
-                                      &*status_message_aptr);
+    unsigned short result = LBOS_ServiceVersionGet(service.c_str(), &*body_aptr,
+                                                   &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
     SLbosConfigure res = ParseLbosConfigureAnswer(*body_aptr);
     if (exists != NULL) {
@@ -384,9 +393,9 @@ string LBOS::ServiceVersionSet(const string&  service,
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
                                   status_message_aptr(&status_message_str);
     unsigned short result = LBOS_ServiceVersionSet(service.c_str(),
-                                                      new_version.c_str(),
-                                                      &*body_aptr,
-                                                      &*status_message_aptr);
+                                                   new_version.c_str(),
+                                                   &*body_aptr,
+                                                   &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
     SLbosConfigure res = ParseLbosConfigureAnswer(*body_aptr);
     if (existed != NULL) {
@@ -448,33 +457,49 @@ unsigned short CLBOSException::GetStatusCode(void) const {
 const char* CLBOSException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
+        /* 400 */
+    case e_LBOSBadRequest:
+        return "";
+        /* 404 */
+    case e_LBOSNotFound:
+        return "";
+        /* 450 */
     case e_LBOSNoLBOS:
         return "LBOS was not found";
-    case e_LBOSNotFound:
-        return "Healthcheck URL is not working or lbos could not resolve"
-               "host of healthcheck URL";
+        /* 451 */
     case e_LBOSDNSResolveError:
-        return "Could not get IP of current machine";
+        return "DNS error. Possibly, cannot get IP of current machine or "
+               "resolve provided hostname for the server";
+        /* 452 */
+    case e_LBOSInvalidArgs:
+        return "Invalid arguments were provided. No request to LBOS was sent";
+        /* 453 */
     case e_LBOSMemAllocError:
         return "Memory allocation error happened while performing request";
+        /* 454 */
+    case e_LBOSCorruptOutput:
+        return "Failed to parse LBOS output.";
+        /* 550 */
     case e_LBOSOff:
-        return "lbos functionality is turned OFF. Check config file.";
-    case e_LBOSInvalidArgs:
-        return "Invalid arguments were provided. No request to lbos was sent";
+        return "LBOS functionality is turned OFF. Check config file.";
     default:
-        return "Unknown lbos error code";
+        return "Unknown LBOS error code";
     }
 }
 
 
 CLBOSException::CLBOSException(void) : m_StatusCode(0)
 {
-
 }
 
 
-CLBOSException::CLBOSException(const CDiagCompileInfo& info, const CException* prev_exception, const CExceptionArgs<EErrCode>& args, const string& message, unsigned short status_code) : CException(info, prev_exception, (message),
-    args.GetSeverity(), 0)
+CLBOSException::CLBOSException(const CDiagCompileInfo& info, 
+                               const CException* prev_exception, 
+                               const CExceptionArgs<EErrCode>& args, 
+                               const string& message, 
+                               unsigned short status_code) 
+    : CException(info, prev_exception, (message),
+      args.GetSeverity(), 0)
 {
 
     x_Init(info, message, prev_exception, args.GetSeverity());
@@ -488,7 +513,13 @@ CLBOSException::CLBOSException(const CDiagCompileInfo& info, const CException* p
 }
 
 
-CLBOSException::CLBOSException(const CDiagCompileInfo& info, const CException* prev_exception, EErrCode err_code, const string& message, unsigned short status_code, EDiagSev severity /*= eDiag_Error*/) : CException(info, prev_exception, (message), severity, 0)
+CLBOSException::CLBOSException(const CDiagCompileInfo& info, 
+                               const CException* prev_exception, 
+                               EErrCode err_code, 
+                               const string& message, 
+                               unsigned short status_code, 
+                               EDiagSev severity /*= eDiag_Error*/) 
+    : CException(info, prev_exception, (message), severity, 0)
 {
     x_Init(info, message, prev_exception, severity);
     x_InitErrCode((CException::EErrCode) err_code);

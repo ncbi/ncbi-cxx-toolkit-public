@@ -47,9 +47,8 @@ NCBITEST_INIT_CMDLINE(args)
                                CArgDescriptions::eString);
 }
 
-#ifdef NCBI_THREADS
-static CHealthcheckThread* s_HealthchecKThread;
 
+#ifdef NCBI_THREADS
 NCBITEST_AUTO_FINI()
 {
     s_HealthchecKThread->Stop(); // Stop listening on the socket
@@ -88,23 +87,105 @@ NCBITEST_AUTO_INIT()
                                   &status_message.Get());
     lbos_answer = NULL;
     status_message = NULL;
-    LOG_POST(Error << "Updating /lbostest version to 1.0.0...");
-    LBOS::ServiceVersionSet("/lbostest", "1.0.0");
-    LOG_POST(Error << "/lbostest version successfully updated!");
-#ifdef NCBI_THREADS
+    string lbostest_version = LBOS::ServiceVersionGet("/lbostest");
+    LOG_POST(Error << "Current /lbostest version is " << lbostest_version);
+    if (lbostest_version != "1.0.0") {
+        LOG_POST(Error << "Updating /lbostest version to 1.0.0...");
+        LBOS::ServiceVersionSet("/lbostest", "1.0.0");
+        LOG_POST(Error << "/lbostest version successfully updated!");
+    }
     s_HealthchecKThread = new CHealthcheckThread;
+#ifdef NCBI_THREADS
     s_HealthchecKThread->Run();
 #endif
 #ifdef DEANNOUNCE_ALL_BEFORE_TEST
-    s_ClearZooKeeper();
+    s_ClearZooKeeper(kSingleThreadNumber);
 #endif
 }
 
-BOOST_AUTO_TEST_CASE
-(DTab__NonStandardVersion__FoundWithRequestContextDTab)
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( ExceptionCodeTests )////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(ExceptionCodeTests__CheckCodes)
 {
-    DTab::NonStandardVersion__FoundWithRequestContextDTab();
+    ExceptionCodes::CheckCodes();
 }
+
+BOOST_AUTO_TEST_CASE(ExceptionCodeTests__CheckErrorCodeStrings)
+{
+    ExceptionCodes::CheckErrorCodeStrings();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( IPCacheTests )//////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(IPCacheTests__AnnounceHostInHealthcheck__TryFindReturnsHostIP)
+{
+    IPCache::AnnounceHostInHealthcheck__TryFindReturnsHostIP();
+}
+
+BOOST_AUTO_TEST_CASE(IPCacheTests__AnnounceHostSeparate__TryFindReturnsHostkIP)
+{
+    IPCache::AnnounceHostSeparate__TryFindReturnsHostkIP();
+}
+
+
+BOOST_AUTO_TEST_CASE(IPCacheTests__NotAnnounceHost__TryFindReturnsTheSame)
+{
+    IPCache::NotAnnounceHost__TryFindReturnsTheSame();
+}
+
+
+BOOST_AUTO_TEST_CASE(IPCacheTests__ResolveHost__TryFindReturnsIP)
+{
+    IPCache::ResolveHost__TryFindReturnsIP();
+}
+
+
+BOOST_AUTO_TEST_CASE(IPCacheTests__ResolveIP__TryFindReturnsIP)
+{
+    IPCache::ResolveIP__TryFindReturnsIP();
+}
+
+
+BOOST_AUTO_TEST_CASE(IPCacheTests__ResolveEmpty__Error)
+{
+    IPCache::ResolveEmpty__Error();
+}
+
+
+BOOST_AUTO_TEST_CASE(IPCacheTests__Resolve0000__ReturnInvalidIP)
+{
+    IPCache::Resolve0000__Return0000();
+}
+
+
+BOOST_AUTO_TEST_CASE(IPCacheTests__DeannounceHost__TryFindDoesNotFind)
+{
+    IPCache::DeannounceHost__TryFindDoesNotFind();
+}
+
+
+BOOST_AUTO_TEST_CASE(IPCacheTests__ResolveTwice__SecondTimeNoOp)
+{
+    IPCache::ResolveTwice__SecondTimeNoOp();
+}
+
+BOOST_AUTO_TEST_CASE(IPCacheTests__DeleteTwice__SecondTimeNoOp)
+{
+    IPCache::DeleteTwice__SecondTimeNoOp();
+}
+
+BOOST_AUTO_TEST_CASE(IPCacheTests__TryFindTwice__SecondTimeNoOp)
+{
+    IPCache::TryFindTwice__SecondTimeNoOp();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( ConfigureEndpoint )/////////////////////////////////////
