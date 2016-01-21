@@ -14,7 +14,7 @@ SUB_PROJ = asn2asn asn2fasta asn2flat asnval asn_cleanup \
            discrep_report discrepancy_report biosample_chk gap_stats table2asn \
            srcchk tableval ncbi_encrypt ssub_fork
 
-EXPENDABLE_SUB_PROJ = split_cache wig2table netcache rmblastn dblb
+EXPENDABLE_SUB_PROJ = split_cache wig2table netcache rmblastn dblb tls
 
 REQUIRES = app
 
