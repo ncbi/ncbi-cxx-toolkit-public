@@ -256,7 +256,6 @@ public:
     CGetInfo(const SCtx& ctx, CNetStorageObject object, Uint8 size)
         : TGetInfoBase(ctx, object, size)
     {
-        BOOST_CHECK_CTX(object.GetSize() == size, m_Ctx);
     }
 };
 
@@ -267,7 +266,6 @@ public:
     CGetInfo(const SCtx& ctx, CNetStorageObject object, Uint8 size)
         : TGetInfoBase(ctx, object, size)
     {
-        BOOST_CHECK_CTX(object.GetSize() == size, m_Ctx);
     }
 
 private:
@@ -277,6 +275,38 @@ private:
     }
 };
 
+
+class CGetSize : private CNetStorageObject
+{
+public:
+    CGetSize(const SCtx& ctx, CNetStorageObject object, Uint8 size)
+        : CNetStorageObject(object),
+          m_Ctx(ctx),
+          m_Size(size)
+    {}
+
+    template <class TLocation>
+    void Check()
+    {
+        BOOST_CHECK_CTX(GetSize() == m_Size, m_Ctx);
+    }
+
+private:
+    const SCtx m_Ctx;
+    Uint8 m_Size;
+};
+
+template <>
+void CGetSize::Check<TLocationNotFound>()
+{
+    BOOST_CHECK_THROW_CTX(GetSize(), CNetStorageException, m_Ctx);
+}
+
+template <>
+void CGetSize::Check<TLocationRelocated>()
+{
+    BOOST_CHECK_THROW_CTX(GetSize(), CNetStorageException, m_Ctx);
+}
 
 // Convenience class for random generator
 struct CRandomSingleton
@@ -1525,6 +1555,9 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
     CNetStorageObject object(Open(netstorage, id));
     CGetInfo<TLocation>(Ctx("Reading existent object info").Line(__LINE__),
             object, data->Size()).Check(TLoc::loc_info);
+    CGetSize(Ctx("Reading existent object size").Line(__LINE__),
+            Open(netstorage, id), data->Size()).Check<TLocation>();
+
     LOG_POST(Trace << "Removing existent object");
     BOOST_CHECK_CTX(Remove(netstorage, id) == eNSTRR_Removed, ctx);
 
