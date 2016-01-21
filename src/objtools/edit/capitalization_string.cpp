@@ -765,7 +765,8 @@ bool FixStateAbbreviationsInCitSub(CCit_sub& sub)
             if (NStr::CompareNocase(country, "United States of America") == 0 ||
                 NStr::CompareNocase(country, "United States") == 0 ||
                 NStr::CompareNocase(country, "U.S.A.") == 0 ||
-                NStr::CompareNocase(country, "U S A") == 0 ) 
+                NStr::CompareNocase(country, "U S A") == 0 ||
+                NStr::CompareNocase(country, "US") == 0) 
             {
                 std.SetCountry("USA");
                 modified = true;
