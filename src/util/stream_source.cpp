@@ -278,6 +278,19 @@ CNcbiIstream& CInputStreamSource::GetStream(string* fname)
     NCBI_THROW(CException, eUnknown, "All input streams consumed");
 }
 
+CNcbiIstream& CInputStreamSource::GetStream(void)
+{
+    if (m_Istr) {
+        return *m_Istr;
+    }
+
+    if (m_IstrOwned.get()) {
+        return *m_IstrOwned;
+    }
+
+    NCBI_THROW(CException, eUnknown, "All input streams consumed");
+}
+
 
 CNcbiIstream& CInputStreamSource::operator*()
 {
@@ -343,12 +356,12 @@ CInputStreamSource& CInputStreamSource::Rewind(void)
     return *this;
 }
 
-string CInputStreamSource::GetCurrFileName(void) const
+string CInputStreamSource::GetCurrentFileName(void) const
 {
     return m_CurrFile;
 }
 
-size_t CInputStreamSource::GetCurrFileIndex(size_t* count) const
+size_t CInputStreamSource::GetCurrentStreamIndex(size_t* count) const
 {
     if (count) {
         *count = m_Files.size();

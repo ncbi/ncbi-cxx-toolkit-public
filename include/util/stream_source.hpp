@@ -150,12 +150,19 @@ public:
     ///
     void InitArgs(const CArgs& args, const string &prefix = "input");
 
-    /// Access the current stream, with or without the file name
+    /// Access the current stream
     ///
-    /// @param fname (optional) return the name of the current file
     /// @return The current stream
     ///
-    CNcbiIstream& GetStream(string* fname = NULL);
+    CNcbiIstream& GetStream(void);
+
+    /// Access the current stream, and get the file name
+    ///
+    /// @param fname receives the name of the current file
+    /// @return The current stream
+    ///
+    NCBI_DEPRECATED
+    CNcbiIstream& GetStream(string* fname);
 
     /// Dereferencing the stream class returns the current stream
     /// @return The current stream
@@ -190,7 +197,7 @@ public:
     CInputStreamSource& Rewind(void);
 
     /// Returns the current file name
-    string GetCurrFileName(void) const;
+    string GetCurrentFileName(void) const;
 
     /// Returns the current file index and the total number of files
     ///
@@ -198,7 +205,7 @@ public:
     ///   address of variable which receives the total number of files
     /// @return
     ///   the current file index
-    size_t GetCurrFileIndex(size_t* count = nullptr) const;
+    size_t GetCurrentStreamIndex(size_t* count = nullptr) const;
 
 private:
     CArgs m_Args;
