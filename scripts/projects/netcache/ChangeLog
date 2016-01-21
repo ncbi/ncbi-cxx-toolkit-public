@@ -149,6 +149,9 @@ December 10, 2015
 version 6.9.2 (CXX-7646)
 bug fixes
 
-
+January 21, 2015
+version 6.9.3 (CXX-7681)
+Added configuration report, corrected meaning of setup priority.
+Redesigned periodic syncronization algorithm.
 
 
