@@ -131,9 +131,9 @@ CTaxFormat::~CTaxFormat()
             for(size_t i = 0; i < it->second.seqInfoList.size(); i++) {
                 SSeqInfo* seqInfo = it->second.seqInfoList[i];
                 if(seqInfo) delete seqInfo;        
-            }        
-            delete m_BlastResTaxInfo;
+            }                    
         }
+        delete m_BlastResTaxInfo;
     }
     if(m_TaxTreeinfo) {
         delete m_TaxTreeinfo;
