@@ -500,14 +500,27 @@ IState* CNetCache::StartWrite(const void* buf, size_t count,
 
 Uint8 CNetCache::GetSizeImpl()
 {
-    return m_Client.GetBlobSize(
-            m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
-            nc_cache_name = m_ObjectLoc.GetAppDomain());
+    // TODO:
+    // Consider using CONVERT_NETCACHEEXCEPTION for all CNetCache methods
+    try {
+        return m_Client.GetBlobSize(
+                m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
+                nc_cache_name = m_ObjectLoc.GetAppDomain());
+    }
+    catch (CNetCacheException& e) {
+        if (e.GetErrCode() == CNetCacheException::eBlobNotFound) {
+            NCBI_RETHROW_FMT(e, CNetStorageException, eNotExists, e.GetMsg());
+        }
+        throw;
+    }
 }
 
 
 CNetStorageObjectInfo CNetCache::GetInfoImpl()
 {
+    // TODO:
+    // Check why CNetCacheException is not rethrown for any error code
+    // except eBlobNotFound
     CJsonNode blob_info = CJsonNode::NewObjectNode();
 
     try {
