@@ -274,7 +274,7 @@ public:
     void SetFirst(bool f = true) {
         m_First = f;
     }
-    static void PrintState(CSrvSocketTask& task, Uint2 slot, bool one_slot);
+    static void PrintState(CSrvSocketTask& task, const CTempString& mask);
 
 private:
     State x_StartScanSlots(void);
@@ -345,6 +345,7 @@ private:
     TSyncSlotsList::const_iterator m_NextSlotIt;
     Uint8 m_StartTime;
     Uint8 m_CntUnfinished;
+    set<CNCActiveHandler*> m_SyncHandlers;
 };
 
 

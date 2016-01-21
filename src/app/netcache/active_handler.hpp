@@ -391,6 +391,7 @@ public:
     void ResetSizeRdWr(void) {
         m_SizeToWriteReq = m_SizeToReadReq = 0;
     }
+    friend class CNCActiveSyncControl;
 };
 
 inline void

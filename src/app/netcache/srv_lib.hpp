@@ -266,6 +266,9 @@ public:
     static void StartCtxRequest(CRequestContext* ctx);
     static void StopCtxRequest(CRequestContext* ctx);
     static bool IsCtxRunning(CRequestContext* ctx);
+    static CRequestContext& GetRequestContext(void) {
+        return *(CRequestContext*)nullptr;
+    }
 
 public:
     enum EDefaultHitIDFlags {

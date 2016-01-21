@@ -313,6 +313,7 @@ CNCPeerControl::x_GetPooledConnImpl(void)
 
     m_BusyConns.push_back(*conn);
 
+    conn->m_LastActive = CSrvTime::CurSecs();
     return conn;
 }
 
@@ -346,6 +347,23 @@ CNCPeerControl::x_UpdateHasTasks(void)
             << ", m_SyncList: " << m_SyncList.size());
         m_HasBGTasks = false;
     }
+
+#if 1
+    size_t conn = m_BusyConns.size() + 1;
+    if (conn < (size_t)m_ActiveConns) {
+        m_ActiveConns = conn;
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugConnAdjusted1, "PutConnToPool");
+#endif
+    }
+    if (conn < (size_t)m_BGConns) {
+        m_BGConns = conn;
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugConnAdjusted2, "PutConnToPool");
+#endif
+    }
+#endif
+
 }
 
 bool
@@ -421,6 +439,7 @@ CNCPeerControl::x_CreateNewConn(bool for_bg)
         m_ObjLock.Lock();
         m_BusyConns.push_back(*conn);
         m_ObjLock.Unlock();
+        conn->m_LastActive = CSrvTime::CurSecs();
     }
 
     return conn;
@@ -472,10 +491,11 @@ CNCPeerControl::x_GetBGConnImpl(void)
 {
     CNCActiveHandler* conn = x_GetPooledConnImpl();
     m_ObjLock.Unlock();
-    if (conn)
+    if (conn) {
         conn->SetReservedForBG(true);
-    else
+    } else {
         conn = x_CreateNewConn(true);
+    }
     return conn;
 }
 
@@ -514,12 +534,9 @@ retry:
         }
         is_locked = false;
     }
-    else if (m_HasBGTasks
-             /*&&  m_BGConns < CNCDistributionConf::GetMaxPeerBGConns()*/)
-    {
+    else if (m_HasBGTasks && conn) {
         // m_ObjLock is locked
-        x_IncBGConns();
-        if (!m_SmallMirror.empty()  ||  !m_BigMirror.empty()) {
+        if (!m_SmallMirror.empty() || !m_BigMirror.empty()) {
             SNCMirrorEvent* event;
             if (!m_SmallMirror.empty()) {
                 event = m_SmallMirror.front();
@@ -531,61 +548,43 @@ retry:
             }
             s_MirrorQueueSize.Add(-1);
             x_UpdateHasTasks();
+            conn->SetReservedForBG(true);
+            x_IncBGConns();
             m_ObjLock.Unlock();
             is_locked = false;
-
-            if (conn) {
-                conn->SetReservedForBG(true);
-            } else {
-                conn = x_CreateNewConn(true);
-            }
-            if (conn) {
-                x_ProcessMirrorEvent(conn, event);
-            } else {
-                x_DeleteMirrorEvent(event);
-                // unlocked now; we need to lock to retry
-                m_ObjLock.Lock();
-                x_DecBGConns();
-                goto retry;
-            }
+            x_ProcessMirrorEvent(conn, event);
         }
         else if (!m_SyncList.empty()) {
-            CNCActiveSyncControl* sync_ctrl = *m_NextTaskSync;
+            bool is_valid = false;
+            CNCActiveSyncControl* sync_ctrl = nullptr;
             SSyncTaskInfo task_info;
-            bool is_valid = true;
-            if (!sync_ctrl->GetNextTask(task_info, &is_valid)) {
-                TNCActiveSyncListIt cur_it = m_NextTaskSync;
-                ++m_NextTaskSync;
-                m_SyncList.erase(cur_it);
+            while (!is_valid && !m_SyncList.empty()) {
+                sync_ctrl = *m_NextTaskSync;
+                if (!sync_ctrl->GetNextTask(task_info, &is_valid)) {
+                    TNCActiveSyncListIt cur_it = m_NextTaskSync;
+                    ++m_NextTaskSync;
+                    m_SyncList.erase(cur_it);
+                } else  {
+                    ++m_NextTaskSync;
+                }
+                if (m_NextTaskSync == m_SyncList.end()) {
+                    m_NextTaskSync = m_SyncList.begin();
+                }
             }
-            else 
-                ++m_NextTaskSync;
-            if (m_NextTaskSync == m_SyncList.end())
-                m_NextTaskSync = m_SyncList.begin();
             x_UpdateHasTasks();
-            if (!is_valid) {
-                goto retry;
-            }
-            m_ObjLock.Unlock();
-            is_locked = false;
-
-            if (conn) {
+            if (is_valid) {
                 conn->SetReservedForBG(true);
-            } else {
-                conn = x_CreateNewConn(true);
-            }
-            if (conn) {
+                x_IncBGConns();
+                m_ObjLock.Unlock();
+                is_locked = false;
                 sync_ctrl->ExecuteSyncTask(task_info, conn);
             } else {
-                sync_ctrl->CmdFinished(eSynNetworkError, eSynActionNone, NULL, NC_SYNC_HINT);
-                // unlocked now; we need to lock to retry
-                m_ObjLock.Lock();
-                x_DecBGConns();
-                goto retry;
+                m_ObjLock.Unlock();
+                is_locked = false;
             }
         }
         else {
-            SRV_FATAL("Unexpected state");
+            m_HasBGTasks = false;
         }
     }
     else {
@@ -894,7 +893,8 @@ void CNCPeerControl::PrintState(CSrvSocketTask& task)
                     peer->m_HasBGTasks ? "true" : "false");
         task.WriteText(eol).WriteText("activeConns").WriteText(is).WriteNumber(peer->m_ActiveConns);
         task.WriteText(eol).WriteText("bGConns").WriteText(is).WriteNumber(peer->m_BGConns);
-
+        task.WriteText(eol).WriteText("cntBusyConns").WriteText(is).WriteNumber(peer->m_BusyConns.size());
+        task.WriteText(eol).WriteText("cntPooledConns").WriteText(is).WriteNumber(peer->m_PooledConns.size());
         task.WriteText("\n}");
     }
     task.WriteText("]");
@@ -1070,13 +1070,7 @@ bool
 CNCPeerControl::FinishSync(CNCActiveSyncControl* sync_ctrl)
 {
     m_ObjLock.Lock();
-// 24jul15: not sure:
-//  sync_ctrl may have been added into m_SyncList, meaning processing of some tasks were delayed
-//  now we should make sure that finalization is really the last step
-//  it seems safer to put this one into m_SyncList always, to ensure it will be last indeed
-#if 1
-//    if (x_ReserveBGConn()) {
-    if (m_SyncList.empty() && x_ReserveBGConn()) {
+    if (x_ReserveBGConn()) {
         CNCActiveHandler* conn = x_GetBGConnImpl(); // m_ObjLock.Unlock
         if (!conn) {
             x_UnreserveBGConn();
@@ -1088,7 +1082,6 @@ CNCPeerControl::FinishSync(CNCActiveSyncControl* sync_ctrl)
         sync_ctrl->ExecuteSyncTask(task_info, conn);
     }
     else
-#endif
     {
         m_SyncList.push_back(sync_ctrl);
         if (m_NextTaskSync == m_SyncList.end())

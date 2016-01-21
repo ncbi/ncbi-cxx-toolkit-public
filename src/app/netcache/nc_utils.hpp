@@ -223,6 +223,10 @@ public:
         eDebugCacheWrong,
         eDebugWrongCacheFound1,
         eDebugWrongCacheFound2,
+        eDebugSyncAborted1,
+        eDebugSyncAborted2,
+        eDebugConnAdjusted1,
+        eDebugConnAdjusted2,
 #endif
         eLastAlert
     };

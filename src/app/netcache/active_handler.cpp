@@ -1187,13 +1187,7 @@ CNCActiveHandler::x_CleanCmdResources(void)
         // us a chance to set it.
         hub->SetStatus(m_CmdSuccess? eNCHubSuccess: eNCHubError);
     }
-    else {
-        if (!m_CmdSuccess)
-            x_FinishSyncCmd(eSynNetworkError, NC_SYNC_HINT);
-        else if (m_SyncCtrl) {
-            SRV_FATAL("Unfinished sync command");
-        }
-    }
+    x_FinishSyncCmd(m_CmdSuccess ? eSynOK : eSynNetworkError, NC_SYNC_HINT);
     m_ErrMsg.clear();
     m_Response.clear();
     m_CmdStarted = false;
@@ -1220,9 +1214,7 @@ CNCActiveHandler::x_ProcessPeerError(void)
 {
     m_ErrMsg = m_Response;
     m_CmdSuccess = true;
-    if (m_SyncCtrl != NULL) {
-        x_FinishSyncCmd(eSynAborted, NC_SYNC_HINT);
-    }
+    x_FinishSyncCmd(eSynAborted, NC_SYNC_HINT);
     GetDiagCtx()->SetRequestStatus(eStatus_OK);
     return &CNCActiveHandler::x_FinishCommand;
 }
@@ -2133,8 +2125,9 @@ CNCActiveHandler::x_WaitOneLineAnswer(void)
 {
     if (m_CmdFromClient  &&  !m_Client)
         return &CNCActiveHandler::x_CloseCmdAndConn;
-    if (!m_Proxy->FlushIsDone())
+    if (!m_Proxy->FlushIsDone()) {
         return NULL;
+    }
 
     bool has_line = m_Proxy->ReadLine(&m_Response);
     if (!has_line  &&  m_Proxy->NeedEarlyClose()) {
@@ -2142,8 +2135,9 @@ CNCActiveHandler::x_WaitOneLineAnswer(void)
             return &CNCActiveHandler::x_CloseCmdAndConn;
         return &CNCActiveHandler::x_ConnClosedReplaceable;
     }
-    if (!has_line)
+    if (!has_line) {
         return NULL;
+    }
 
     if (!m_GotAnyAnswer) {
         m_GotAnyAnswer = true;
@@ -2293,11 +2287,22 @@ CNCActiveHandler::CloseForShutdown(void)
 void
 CNCActiveHandler::CheckCommandTimeout(void)
 {
-    if (!m_CmdStarted)
-        return;
-
     CNCActiveHandler_Proxy* proxy = ACCESS_ONCE(m_Proxy);
-    if (!proxy)
+    if (!proxy) {
+        return;
+    }
+
+    if (CSrvTime::CurSecs() - m_LastActive
+        > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) {
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugSyncAborted2, "CheckCommandTimeout");
+#endif
+        SRV_LOG(Error, "Command aborted by timeout");
+        proxy->m_NeedToClose = true;
+        proxy->SetRunnable();
+    }
+
+    if (!m_CmdStarted)
         return;
 
     int delay_time = CSrvTime::CurSecs() - proxy->m_LastActive;

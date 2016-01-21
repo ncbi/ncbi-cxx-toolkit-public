@@ -3668,16 +3668,8 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
         } else if (section == "alerts") {
             CNCAlerts::Report(*this, false);
         } else if (section == "sync") {
-            Uint2 slot = 0;
-            bool one_slot = false;
-            if (params.find("port") != params.end()) {
-                try {
-                    slot = NStr::StringToUInt(params["port"]);
-                    one_slot = true;
-                } catch (...) {
-                }
-            }
-            CNCActiveSyncControl::PrintState(*this, slot, one_slot);
+            CTempString mask = params.find("port") != params.end() ? params.at("port") : CTempString(kEmptyStr);
+            CNCActiveSyncControl::PrintState(*this, mask);
         } else if (section == "db") {
             CTempString mask = params.find("port") != params.end() ? params.at("port") : CTempString(kEmptyStr);
             CNCBlobStorage::WriteDbInfo(*this, mask);

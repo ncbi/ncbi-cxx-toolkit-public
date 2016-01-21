@@ -796,6 +796,7 @@ CNCActiveSyncControl::x_DoPeriodicSync(void)
     }
 
     m_StartedCmds = 1;
+    m_SyncHandlers.clear();
     conn->SyncStart(this, m_LocalStartRecNo, m_RemoteStartRecNo);
     return &CNCActiveSyncControl::x_WaitSyncStarted;
 }
@@ -829,27 +830,8 @@ CNCActiveSyncControl::x_WaitSyncStarted(void)
 CNCActiveSyncControl::State
 CNCActiveSyncControl::x_ExecuteSyncCommands(void)
 {
-    // next command to execute
     x_CalcNextTask();
-    // if no more commands
-    if (m_NextTask == eSynNeedFinalize)
-        return &CNCActiveSyncControl::x_ExecuteFinalize;
-    // add to list of active
-    // as there are free connections between these two servers
-    // these commands will be executed
-    m_SlotSrv->last_active_time = CSrvTime::CurSecs();
-    if (m_SlotSrv->peer->AddSyncControl(this))
-        return &CNCActiveSyncControl::x_WaitForExecutingTasks;
-
-// it is probably network error, so maybe there is no point in canceling sync - it will fail
-    m_Result = eSynNetworkError;
-    m_Hint = NC_SYNC_HINT;
-#if 0
-    m_NextTask = eSynNeedFinalize;
-    return &CNCActiveSyncControl::x_ExecuteFinalize;
-#else
-    return &CNCActiveSyncControl::x_FinishSync;
-#endif
+    return &CNCActiveSyncControl::x_WaitForExecutingTasks;
 }
 
 CNCActiveSyncControl::State
@@ -858,50 +840,71 @@ CNCActiveSyncControl::x_ExecuteFinalize(void)
     if (m_FinishSyncCalled) {
         SRV_FATAL("Command finalized already");
     }
-    if (m_NeedReply) {
-        m_NeedReply = false;
-        if (!CTaskServer::IsInShutdown() && m_SlotSrv->peer->FinishSync(this)) {
+    if (!CTaskServer::IsInShutdown()) {
+        if (m_SlotSrv->peer->FinishSync(this)) {
             m_FinishSyncCalled = true;
             return &CNCActiveSyncControl::x_WaitForExecutingTasks;
+        } else {
+            RunAfter(1);
+            return NULL;
         }
-        m_Result = eSynNetworkError;
-        m_Hint = NC_SYNC_HINT;
     }
+    m_Result = eSynNetworkError;
+    m_Hint = NC_SYNC_HINT;
     return &CNCActiveSyncControl::x_FinishSync;
 }
 
 CNCActiveSyncControl::State
 CNCActiveSyncControl::x_WaitForExecutingTasks(void)
 {
-    ESynTaskType next_task;
-    Uint4 started_cmds;
-    m_Lock.Lock();
-    next_task = m_NextTask;
-    started_cmds = m_StartedCmds;
-    m_Lock.Unlock();
-
-    if (started_cmds == 0) {
-        switch (next_task) {
-        case eSynNoTask:
-// normally, we come here later
+    if (CTaskServer::IsInShutdown()) {
+        return NULL;
+    }
+    bool is_locked = false;
+    m_Lock.Lock(); is_locked = true;
+    if (m_NextTask == eSynNoTask) {
+        if (m_SyncHandlers.empty()) {
+            m_Lock.Unlock();
             return &CNCActiveSyncControl::x_FinishSync;
-        case eSynNeedFinalize:
-// normally, we come here first
-            if (!m_FinishSyncCalled)
-                return &CNCActiveSyncControl::x_ExecuteFinalize;
-            // fall through
-        default:
-            break;
+        }
+    } else if (m_NextTask == eSynNeedFinalize) {
+        if (m_SyncHandlers.empty()) {
+        	CNCActiveHandler* conn = m_SlotSrv->peer->GetBGConn();
+            if (conn) {
+                m_SyncHandlers.insert(conn);
+                SSyncTaskInfo task_info;
+                GetNextTask(task_info);
+                m_Lock.Unlock(); is_locked = false;
+                ExecuteSyncTask(task_info, conn);
+            }
+        }
+    } else {
+        for (;m_NextTask > eSynNeedFinalize;) {
+        	CNCActiveHandler* conn = m_SlotSrv->peer->GetBGConn();
+            if (!conn) {
+                break;
+            }
+            if (!is_locked) {m_Lock.Lock(); is_locked = true;}
+            m_SyncHandlers.insert(conn);
+            SSyncTaskInfo task_info;
+            GetNextTask(task_info);
+            m_Lock.Unlock(); is_locked = false;
+            ExecuteSyncTask(task_info, conn);
         }
     }
-    if (CSrvTime::CurSecs() - m_SlotSrv->last_active_time
-        > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) {
-        SRV_LOG(Error, "Active periodic sync aborted by timeout");
-        m_Result = eSynAborted;
-        m_Hint = NC_SYNC_HINT;
-        return &CNCActiveSyncControl::x_FinishSync;
+    if (is_locked) {
+        if (m_SyncHandlers.empty()) {
+            m_Result = eSynServerBusy;
+            m_Hint = NC_SYNC_HINT;
+            m_Lock.Unlock();
+            return &CNCActiveSyncControl::x_FinishSync;
+        }
+        ITERATE(set<CNCActiveHandler*>, h, m_SyncHandlers) {
+            (*h)->CheckCommandTimeout();
+        }
+        m_Lock.Unlock();
+        RunAfter(1);
     }
-    RunAfter(CNCDistributionConf::GetPeriodicSyncTimeout() / kUSecsPerSecond);
     return NULL;
 }
 
@@ -1311,7 +1314,7 @@ CNCActiveSyncControl::x_DoFinalize(CNCActiveHandler* conn)
 bool
 CNCActiveSyncControl::GetNextTask(SSyncTaskInfo& task_info, bool* is_valid)
 {
-    m_Lock.Lock();
+//    m_Lock.Lock();
     if (m_NextTask == eSynNoTask) {
         if (is_valid) {
             *is_valid = false;
@@ -1336,7 +1339,7 @@ CNCActiveSyncControl::GetNextTask(SSyncTaskInfo& task_info, bool* is_valid)
     m_SlotSrv->last_active_time = CSrvTime::CurSecs();
     x_CalcNextTask();
     bool has_more = m_NextTask != eSynNeedFinalize  &&  m_NextTask != eSynNoTask;
-    m_Lock.Unlock();
+//    m_Lock.Unlock();
     if (is_valid) {
         *is_valid = true;
     }
@@ -1378,6 +1381,8 @@ void
 CNCActiveSyncControl::CmdFinished(ESyncResult res, ESynActionType action, CNCActiveHandler* conn, int hint)
 {
     m_Lock.Lock();
+    m_SyncHandlers.erase(conn);
+    --m_StartedCmds;
     if (res == eSynOK) {
         switch (action) {
         case eSynActionRead:
@@ -1415,24 +1420,42 @@ CNCActiveSyncControl::CmdFinished(ESyncResult res, ESynActionType action, CNCAct
         }
     }
 
-    if (res == eSynAborted  &&  m_Result != eSynNetworkError) {
-        m_Result = eSynAborted;
-        m_Hint = hint;
-    } else if (res != eSynOK) {
-        m_Result = res;
-        m_Hint = hint;
+    if (m_Result == eSynOK) {
+        if (res == eSynAborted  &&  m_Result != eSynNetworkError) {
+            m_Result = eSynAborted;
+            m_Hint = hint;
+        } else if (res != eSynOK) {
+            m_Result = res;
+            m_Hint = hint;
+        }
+    }
+    if (m_Result != eSynOK) {
+        if (m_NextTask >= eSynNeedFinalize) {
+            m_NextTask = eSynNeedFinalize;
+        } else {
+            m_NextTask = eSynNoTask;
+        }
     }
 
-    if ((m_StartedCmds == 0 || --m_StartedCmds == 0)
-        &&  (m_NextTask == eSynNeedFinalize  ||  m_NextTask == eSynNoTask))
-    {
-        SetRunnable();
-    }
+    SetRunnable();
     m_Lock.Unlock();
 }
 
-void CNCActiveSyncControl::PrintState(CSrvSocketTask& task, Uint2 slot, bool one_slot)
+void CNCActiveSyncControl::PrintState(CSrvSocketTask& task, const CTempString& mask)
 {
+    Uint2 slot = 0;
+    bool one_slot = false, is_audit = false;
+    if (!mask.empty()) {
+        is_audit = mask == "audit";
+        if (!is_audit) {
+            try {
+                slot = NStr::StringToUInt(mask);
+                one_slot = true;
+            } catch (...) {
+            }
+        }
+    }
+
     char buf[50];
     string is("\": "), iss("\": \""), eol(",\n\"");
 
@@ -1462,6 +1485,46 @@ void CNCActiveSyncControl::PrintState(CSrvSocketTask& task, Uint2 slot, bool one
         task.WriteText(eol).WriteText("Progress").WriteText(is ).WriteNumber( (int)(*c)->m_Progress);
         task.WriteText(eol).WriteText("FinishSyncCalled").WriteText(is ).WriteBool( (*c)->m_FinishSyncCalled);
         task.WriteText(eol).WriteText("NeedReply").WriteText(is ).WriteBool( (*c)->m_NeedReply);
+
+        CSrvTime((*c)->m_LastActive).Print(buf, CSrvTime::eFmtJson);
+        task.WriteText(eol).WriteText("LastActive").WriteText(is ).WriteText( buf);
+        task.WriteText(eol).WriteText("cntHandlers").WriteText(is ).WriteNumber( (*c)->m_SyncHandlers.size());
+        if (is_audit) {
+            task.WriteText(eol).WriteText("Handlers").WriteText(is );
+            task.WriteText("[");
+            bool first = true;
+            ITERATE(set<CNCActiveHandler*>, h, (*c)->m_SyncHandlers) {
+                if (first) {
+                    first = false;
+                } else {
+                    task.WriteText(",");
+                }
+                CSrvTime((*h)->m_LastActive).Print(buf, CSrvTime::eFmtJson);
+                task.WriteText("\n{\"");
+                task.WriteText("LastActive").WriteText(is ).WriteText( buf);
+
+                task.WriteText(eol).WriteText("m_Client").WriteText(is ).WriteBool( (*h)->m_Client != nullptr);
+                task.WriteText(eol).WriteText("m_SyncCtrl").WriteText(is ).WriteBool( (*h)->m_SyncCtrl != nullptr);
+                task.WriteText(eol).WriteText("m_Proxy").WriteText(is ).WriteBool( (*h)->m_Proxy != nullptr);
+
+                task.WriteText(eol).WriteText("m_ProcessingStarted").WriteText(is ).WriteBool( (*h)->m_ProcessingStarted);
+                task.WriteText(eol).WriteText("m_CmdStarted").WriteText(is ).WriteBool( (*h)->m_CmdStarted);
+                task.WriteText(eol).WriteText("m_GotAnyAnswer").WriteText(is ).WriteBool( (*h)->m_GotAnyAnswer);
+                task.WriteText(eol).WriteText("m_GotCmdAnswer").WriteText(is ).WriteBool( (*h)->m_GotCmdAnswer);
+                task.WriteText(eol).WriteText("m_GotClientResponse").WriteText(is ).WriteBool( (*h)->m_GotClientResponse);
+                task.WriteText(eol).WriteText("m_BlobExists").WriteText(is ).WriteBool( (*h)->m_BlobExists);
+                task.WriteText(eol).WriteText("m_CmdSuccess").WriteText(is ).WriteBool( (*h)->m_CmdSuccess);
+                task.WriteText(eol).WriteText("m_CmdFromClient").WriteText(is ).WriteBool( (*h)->m_CmdFromClient);
+                task.WriteText(eol).WriteText("m_Purge").WriteText(is ).WriteBool( (*h)->m_Purge);
+
+                task.WriteText(eol).WriteText("m_CmdToSend").WriteText(iss ).WriteText( (*h)->m_CmdToSend).WriteText("\"");;
+                task.WriteText(eol).WriteText("m_Response").WriteText(iss ).WriteText( (*h)->m_Response).WriteText("\"");;
+                task.WriteText(eol).WriteText("m_ErrMsg").WriteText(iss ).WriteText( (*h)->m_ErrMsg).WriteText("\"");;
+
+                task.WriteText("}");
+            }
+            task.WriteText("]");
+        }
         task.WriteText("\n}");
     }
     task.WriteText("],\n");

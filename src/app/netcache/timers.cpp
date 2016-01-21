@@ -121,12 +121,13 @@ s_ExecuteTimerTicket(STimerTicket* ticket)
 
 retry_set_flags:
     TSrvTaskFlags old_flags = ACCESS_ONCE(task->m_TaskFlags);
-    _ASSERT(old_flags & fTaskOnTimer);
-    TSrvTaskFlags new_flags = old_flags - fTaskOnTimer;
-    if (!AtomicCAS(task->m_TaskFlags, old_flags, new_flags))
-        goto retry_set_flags;
+    if (old_flags & fTaskOnTimer) {
+        TSrvTaskFlags new_flags = old_flags - fTaskOnTimer;
+        if (!AtomicCAS(task->m_TaskFlags, old_flags, new_flags))
+            goto retry_set_flags;
 
-    task->SetRunnable();
+        task->SetRunnable();
+    }
     delete ticket;
 }
 
