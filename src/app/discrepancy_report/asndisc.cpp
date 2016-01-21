@@ -53,12 +53,14 @@ public:
 
 protected:
     string x_ConstructOutputName(const string& input);
+    string x_ConstructMacroName(const string& input);
     vector<CSeq_entry_Handle> x_ReadFile(const string& filename);
     void x_ParseDirectory(const string& name, bool recursive);
     void x_ProcessFile(const string& filename);
     void x_ProcessAll(const string& outname);
     void x_Output(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests);
     void x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& list);
+    void x_OutputMacro(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests);
 
     CScope m_Scope;
     string m_SuspectRules;
@@ -66,11 +68,12 @@ protected:
     vector<string> m_Files;
     vector<string> m_Tests;
     bool m_Ext;
+    bool m_AutoFix;
+    bool m_Macro;
 };
 
 
-CDiscRepApp::CDiscRepApp(void) :
-    m_Scope(*CObjectManager::GetInstance()), m_Ext(false)
+CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_Ext(false), m_AutoFix(false), m_Macro(false)
 {
 }
 
@@ -89,11 +92,11 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
     {
         str+="TESTS\n";
         const vector<string> Name = GetDiscrepancyNames();
-        ITERATE(vector<string>, nm, Name) {
+        ITERATE (vector<string>, nm, Name) {
             str += "   ";
             str += *nm;
             const vector<string> Alias = GetDiscrepancyAliases(*nm);
-            ITERATE(vector<string>, al, Alias) {
+            ITERATE (vector<string>, al, Alias) {
                 str += " / ";
                 str += *al;
             }
@@ -130,6 +133,8 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("L", "LineageToUse", "Default lineage", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("X", "ExpandCategories", "Expand Report Categories (comma-delimited list of test names or ALL)", CArgDescriptions::eString);
+    arg_desc->AddFlag("F", "Autofix");
+    arg_desc->AddFlag("R", "Generate Autofix MACRO file");
 
 /*
     arg_desc->AddOptionalKey("M", "MessageLevel", 
@@ -153,6 +158,15 @@ string CDiscRepApp::x_ConstructOutputName(const string& input)
     string path = args["r"] ? args["r"].AsString() : fname.GetDir();
     string ext = args["s"] ? args["s"].AsString() : ".dr";
     return CDirEntry::MakePath(path, fname.GetBase(), ext);
+}
+
+
+string CDiscRepApp::x_ConstructMacroName(const string& input)
+{
+    const CArgs& args = GetArgs();
+    CDirEntry fname(input);
+    string path = args["r"] ? args["r"].AsString() : fname.GetDir();
+    return CDirEntry::MakePath(path, fname.GetBase(), "macro.txt");
 }
 
 
@@ -205,7 +219,7 @@ vector<CSeq_entry_Handle> CDiscRepApp::x_ReadFile(const string& fname)
         CRef<CSeq_submit> ss(new CSeq_submit);
         in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
         if (ss->IsSetData() && ss->GetData().IsEntrys()) {
-            ITERATE(CSeq_submit::TData::TEntrys, it, ss->GetData().GetEntrys()) {
+            ITERATE (CSeq_submit::TData::TEntrys, it, ss->GetData().GetEntrys()) {
                 seh.push_back(m_Scope.AddTopLevelSeqEntry(**it));
             }
         }
@@ -239,7 +253,7 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
     string ext = GetArgs()["x"].AsString();
     if (!Dir.Exists() || !Dir.IsDir()) return;
     CDir::TEntries Entries = Dir.GetEntries();
-    ITERATE(CDir::TEntries, entry, Entries) {
+    ITERATE (CDir::TEntries, entry, Entries) {
         if ((*entry)->GetName() == "." || (*entry)->GetName() == "..") continue;
         if (recursive && (*entry)->IsDir()) x_ParseDirectory((*entry)->GetPath(), true);
         if ((*entry)->IsFile() && (*entry)->GetExt() == ext) m_Files.push_back((*entry)->GetPath());
@@ -250,7 +264,7 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 void CDiscRepApp::x_ProcessFile(const string& fname)
 {
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(m_Scope);
-    ITERATE(vector<string>, tname, m_Tests) {
+    ITERATE (vector<string>, tname, m_Tests) {
         Tests->AddTest(*tname);
     }
 
@@ -258,11 +272,14 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
     Tests->SetLineage(m_Lineage);
 
     vector<CSeq_entry_Handle> seh = x_ReadFile(fname);
-    ITERATE(vector<CSeq_entry_Handle>, sh, seh) {
+    ITERATE (vector<CSeq_entry_Handle>, sh, seh) {
         Tests->Parse(*sh);
         m_Scope.RemoveTopLevelSeqEntry(*sh);
     }
     Tests->Summarize();
+    if (m_Macro) {
+        x_OutputMacro(x_ConstructMacroName(fname), Tests->GetTests());
+    }
     x_Output(x_ConstructOutputName(fname), Tests->GetTests());
 }
 
@@ -270,29 +287,32 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
 void CDiscRepApp::x_ProcessAll(const string& outname)
 {
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(m_Scope);
-    ITERATE(vector<string>, tname, m_Tests) {
+    ITERATE (vector<string>, tname, m_Tests) {
         Tests->AddTest(*tname);
     }
 
     Tests->SetSuspectRules(m_SuspectRules);
     Tests->SetLineage(m_Lineage);
 
-    ITERATE(vector<string>, fname, m_Files) {
+    ITERATE (vector<string>, fname, m_Files) {
         vector<CSeq_entry_Handle> seh = x_ReadFile(*fname);
-        ITERATE(vector<CSeq_entry_Handle>, sh, seh) {
+        ITERATE (vector<CSeq_entry_Handle>, sh, seh) {
             Tests->SetFile(*fname);
             Tests->Parse(*sh);
             m_Scope.RemoveTopLevelSeqEntry(*sh);
         }
     }
     Tests->Summarize();
+    if (m_Macro) {
+        x_OutputMacro(x_ConstructMacroName(outname), Tests->GetTests());
+    }
     x_Output(outname, Tests->GetTests());
 }
 
 
 void CDiscRepApp::x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& list)
 {
-    ITERATE(TReportItemList, it, list) {
+    ITERATE (TReportItemList, it, list) {
         if ((*it)->IsExtended() && !m_Ext) {
             continue;
         }
@@ -304,7 +324,7 @@ void CDiscRepApp::x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& l
         }
         else {
             TReportObjectList det = (*it)->GetDetails();
-            ITERATE(TReportObjectList, obj, det) {
+            ITERATE (TReportObjectList, obj, det) {
                 out << (*obj)->GetText() << "\n";
                 cout << (*obj)->GetText() << "\n";  // TODO: remove from the final version
             }
@@ -323,19 +343,46 @@ void CDiscRepApp::x_Output(const string& filename, const vector<CRef<CDiscrepanc
     out << "Discrepancy Report Results\n\n";
 
     out << "Summary\n";
-    ITERATE(vector<CRef<CDiscrepancyCase> >, tst, tests) {
+    ITERATE (vector<CRef<CDiscrepancyCase> >, tst, tests) {
         TReportItemList rep = (*tst)->GetReport();
-        ITERATE(TReportItemList, it, rep) {
+        ITERATE (TReportItemList, it, rep) {
             out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
         }
     }
     if (summary) return;
 
     out << "\nDetailed Report\n\n";
-    ITERATE(vector<CRef<CDiscrepancyCase> >, tst, tests) {
+    ITERATE (vector<CRef<CDiscrepancyCase> >, tst, tests) {
         TReportItemList rep = (*tst)->GetReport();
         x_RecursiveOutput(out, rep);
     }
+}
+
+
+void CDiscRepApp::x_OutputMacro(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests)
+{
+    if (tests.empty()) {
+        return;
+    }
+    set<string> Fixes;
+    ITERATE (vector<CRef<CDiscrepancyCase> >, tst, tests) {
+        TReportItemList& list = (*tst)->GetReport();
+        ITERATE (TReportItemList, it, list) {
+            if ((*it)->CanAutofix()) {
+                Fixes.insert((*it)->GetTitle());
+            }
+        }
+    }
+    if (Fixes.empty()) {
+        cout << "No Autofixes found!\n";
+        return;
+    }
+    CNcbiOfstream out(filename.c_str(), ofstream::out);
+    out << "MACRO Autofix \"Perform autofix\"\nFOR EACH TSEntry\nDo\n";
+    ITERATE (set<string>, it, Fixes) {
+        out << "    PerformDiscrAutofix(\"" << *it << "\")\n";
+    }
+    out << "Done\n";
 }
 
 
@@ -348,7 +395,7 @@ int CDiscRepApp::Run(void)
     if (args["e"]) {
         list<string> List;
         NStr::Split(args["e"].AsString(), ", ", List);
-        ITERATE(list<string>, s, List) {
+        ITERATE (list<string>, s, List) {
             string name = GetDiscrepancyCaseName(*s);
             if (name.empty()) {
                 ERR_POST("Test name not found: " + *s);
@@ -364,7 +411,7 @@ int CDiscRepApp::Run(void)
     if (args["d"]) {
         list<string> List;
         NStr::Split(args["d"].AsString(), ", ", List);
-        ITERATE(list<string>, s, List) {
+        ITERATE (list<string>, s, List) {
             string name = GetDiscrepancyCaseName(*s);
             if (name.empty()) {
                 ERR_POST("Test name not found: " + *s);
@@ -383,7 +430,7 @@ int CDiscRepApp::Run(void)
     if (args["X"]) {
         list<string> List;
         NStr::Split(args["X"].AsString(), ", ", List);
-        ITERATE(list<string>, s, List) {
+        ITERATE (list<string>, s, List) {
             if (*s != "ALL") {
                 ERR_POST("Unknown option: " + *s);
                 return 1;
@@ -403,14 +450,16 @@ int CDiscRepApp::Run(void)
     }
 
     // set defaults
-    if(args["w"]) m_SuspectRules = args["w"].AsString();
-    if(args["L"]) m_Lineage = args["L"].AsString();
+    if (args["w"]) m_SuspectRules = args["w"].AsString();
+    if (args["L"]) m_Lineage = args["L"].AsString();
+    if (args["F"]) m_AutoFix = args["F"].AsBoolean();
+    if (args["R"]) m_Macro = args["R"].AsBoolean();
 
     // run tests
     if (args["o"]) {
         x_ProcessAll(args["o"].AsString());
     } else {
-        ITERATE(vector<string>, f, m_Files) {
+        ITERATE (vector<string>, f, m_Files) {
             x_ProcessFile(*f);
         }
     }
