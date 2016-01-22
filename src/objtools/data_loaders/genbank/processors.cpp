@@ -40,9 +40,9 @@
 #include <objtools/data_loaders/genbank/impl/statistics.hpp>
 
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
-#include <objtools/data_loaders/genbank/impl/split_parser.hpp>
 #include <objtools/error_codes.hpp>
 
+#include <objmgr/impl/split_parser.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/annot_selector.hpp>
 

@@ -29,25 +29,23 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objtools/data_loaders/genbank/impl/split_parser.hpp>
-#include <objtools/error_codes.hpp>
-
-#include <objmgr/objmgr_exception.hpp>
-
+#include <objmgr/impl/split_parser.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
-
+#include <objmgr/objmgr_exception.hpp>
+#include <objmgr/error_codes.hpp>
 #include <objects/seqsplit/seqsplit__.hpp>
 
-
-#define NCBI_USE_ERRCODE_X   Objtools_Rd_Split
+#define NCBI_USE_ERRCODE_X   ObjMgr_Rd_Split
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
 
+NCBI_DEFINE_ERR_SUBCODE_X(1);
+
+BEGIN_SCOPE(objects)
 
 void CSplitParser::Attach(CTSE_Info& tse, const CID2S_Split_Info& split)
 {
@@ -93,14 +91,12 @@ CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
         case CID2S_Chunk_Content::e_Seq_assembly:
             x_Attach(*ret, content.GetSeq_assembly());
             break;
-#ifdef OBJECTS_SEQSPLIT_ID2S_SEQ_FEAT_IDS_INFO_HPP
         case CID2S_Chunk_Content::e_Feat_ids:
             ITERATE ( CID2S_Chunk_Content::TFeat_ids, it2,
                       content.GetFeat_ids() ) {
                 x_Attach(*ret, **it2);
             }
             break;
-#endif
         default:
             ERR_POST_X_ONCE(1, "ID2 Split parser: Unexpected split data: "<<content.Which());
         }
@@ -333,7 +329,6 @@ void CSplitParser::x_AddGiInterval(TLocationSet& vec, TGi gi,
 void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
                             const CID2S_Seq_feat_Ids_Info& ids)
 {
-#ifdef OBJECTS_SEQSPLIT_ID2S_SEQ_FEAT_IDS_INFO_HPP
     chunk.x_AddFeat_ids();
     ITERATE ( CID2S_Seq_feat_Ids_Info::TFeat_types, it, ids.GetFeat_types() ) {
         const CID2S_Feat_type_Info& type = **it;
@@ -383,7 +378,6 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
             }
         }
     }
-#endif
 }
 
 

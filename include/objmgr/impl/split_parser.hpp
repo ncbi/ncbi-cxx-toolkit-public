@@ -54,7 +54,7 @@ class CTSE_Info;
 class CTSE_Chunk_Info;
 class CSeq_id_Handle;
 
-class NCBI_XREADER_EXPORT CSplitParser
+class NCBI_XOBJMGR_EXPORT CSplitParser
 {
 public:
     static void Attach(CTSE_Info& tse, const CID2S_Split_Info& split);
