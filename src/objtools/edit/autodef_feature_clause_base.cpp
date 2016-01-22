@@ -655,7 +655,7 @@ void CAutoDefFeatureClause_Base::PluralizeInterval()
 
 void CAutoDefFeatureClause_Base::PluralizeDescription()
 {
-    if (NStr::IsBlank(m_Description)) {
+    if (NStr::IsBlank(m_Description) || !NStr::IsBlank(m_Typeword)) {
         return;
     }
     m_Description += "s";

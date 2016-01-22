@@ -1765,5 +1765,52 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3602)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SB_5494)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetGenome(entry, CBioSource::eGenome_mitochondrion);
+    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    misc->SetComment("contains 12S ribosomal RNA gene, tRNA-Val (trnV) gene, and 16S ribosomal RNA gene");
+    misc->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    misc->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    AddTitle(entry, "Sebaea microphylla 12S ribosomal RNA gene, partial sequence; tRNA-Val (trnV) gene, complete sequence; and 16S ribosomal RNA gene, partial sequence; mitochondrial.");
+
+    CheckDeflineMatches(entry);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_5447)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds1 = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> prot1 = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
+    prot1->SetData().SetProt().SetName().front() = "hypothetical protein";
+    CRef<CSeq_feat> cds2 = unit_test_util::AddMiscFeature(nuc);
+    cds2->SetData().SetCdregion();
+    cds2->ResetComment();
+    cds2->SetLocation().SetInt().SetFrom(cds1->GetLocation().GetStart(eExtreme_Positional));
+    cds2->SetLocation().SetInt().SetTo(nuc->GetSeq().GetInst().GetLength() - 1);
+    
+    CRef<CSeq_entry> pentry(new CSeq_entry());
+    pentry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+    pentry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    pentry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIN");
+    pentry->SetSeq().SetInst().SetLength(8);
+
+    CRef<objects::CSeq_id> pid(new objects::CSeq_id());
+    pid->SetLocal().SetStr("prot2");
+    pentry->SetSeq().SetId().push_back(pid);
+    entry->SetSet().SetSeq_set().push_back(pentry);
+    cds2->SetProduct().SetWhole().SetLocal().SetStr("prot2");
+    CRef<CSeq_feat> prot2 = unit_test_util::AddProtFeat(pentry);
+    prot2->SetData().SetProt().SetName().front() = "hypothetical protein";
+
+    AddTitle(nuc, "Sebaea microphylla hypothetical protein genes, complete cds.");
+    CheckDeflineMatches(entry, true);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
