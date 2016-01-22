@@ -90,9 +90,11 @@ public:
     /// This version will throw an exception if the field
     /// doesn't exist.
     const CUser_field&     GetField(const string& str,
-                                    const string& delim = ".") const;
+                                    const string& delim = ".",
+                                    NStr::ECase use_case = NStr::eCase) const;
     CConstRef<CUser_field> GetFieldRef(const string& str,
-                                       const string& delim = ".") const;
+                                       const string& delim = ".",
+                                       NStr::ECase use_case = NStr::eCase) const;
 
     /// Access a named field in this user object.  This is a little
     /// sneaky in that it interprets a delimiter for recursion.  The
@@ -100,14 +102,17 @@ public:
     /// sub-object if a new sub-object needs to be created
     CUser_field&      SetField(const string& str,
                                const string& delim = ".",
-                               const string& obj_subtype = kEmptyStr);
+                               const string& obj_subtype = kEmptyStr,
+                               NStr::ECase use_case = NStr::eCase);
     CRef<CUser_field> SetFieldRef(const string& str,
                                   const string& delim = ".",
-                                  const string& obj_subtype = kEmptyStr);
+                                  const string& obj_subtype = kEmptyStr,
+                                  NStr::ECase use_case = NStr::eCase);
 
     /// Verify that a named field exists
     bool HasField(const string& str,
-                  const string& delim = ".") const;
+                  const string& delim = ".",
+                  NStr::ECase use_case = NStr::eCase) const;
 
     /// enum controlling what to return for a label
     /// this mirrors a request inside of feature::GetLabel()

@@ -71,8 +71,13 @@ NCBITEST_AUTO_INIT()
 BOOST_AUTO_TEST_CASE(s_TestModelEvidence)
 {
     const string test = "TestModelEvidence";
+    const string test_no_case = "testmodelevidencE";
     BOOST_CHECK(data.HasField(test));
+    BOOST_CHECK( ! data.HasField(test_no_case));
+    BOOST_CHECK( data.HasField(test_no_case, ".", NStr::eNocase) );
     BOOST_CHECK(data.GetFieldRef(test));
+    BOOST_CHECK( ! data.GetFieldRef(test_no_case, ".", NStr::eCase));
+    BOOST_CHECK(data.GetFieldRef(test_no_case, ".", NStr::eNocase));
     const CUser_object& uo(data.GetField(test).GetData().GetObject());
 
     BOOST_CHECK(uo.HasField("Method"));
@@ -80,6 +85,9 @@ BOOST_AUTO_TEST_CASE(s_TestModelEvidence)
 
     BOOST_CHECK_EQUAL(uo.GetField("Method")
             .GetData().GetStr(), "BestRefSeq");
+    BOOST_CHECK_EQUAL(uo.GetField("method", ".", NStr::eNocase)
+            .GetData().GetStr(), "BestRefSeq");
+
 }
 
 /// Test that spurious fields aren't found.
@@ -159,6 +167,10 @@ BOOST_AUTO_TEST_CASE(s_TestNesting)
     BOOST_CHECK(data.GetFieldRef("TestNesting.FieldsField.Nested"));
     BOOST_CHECK_EQUAL(data.GetField("TestNesting.FieldsField.Nested")
             .GetData().GetStr(), "NestedStr");
+    BOOST_CHECK_EQUAL(
+        data.GetField("TESTNESTING.fieldsfield.NESTED", ".", NStr::eNocase)
+            .GetData().GetStr(),
+        "NestedStr");
 
     /// Test GetFieldsMap
     CConstRef<CUser_field> pTestField = data.GetFieldRef(test);

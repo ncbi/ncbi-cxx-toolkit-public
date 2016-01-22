@@ -131,12 +131,14 @@ public:
     /// string 'str' on the delimiters; if the field doesn't exist, an
     /// exception will be thrown.
     const CUser_field&     GetField(const string& str,
-                                    const string& delim = ".") const;
+                                    const string& delim = ".",
+                                    NStr::ECase use_case = NStr::eCase) const;
 
     /// Return a field reference representing the tokenized key, or a
     /// NULL reference if the key doesn't exist.
     CConstRef<CUser_field> GetFieldRef(const string& str,
-                                       const string& delim = ".") const;
+                                       const string& delim = ".",
+                                       NStr::ECase use_case = NStr::eCase) const;
 
     /// For functions that don't use delims, we instead use a chain of names.
     struct NCBI_GENERAL_EXPORT SFieldNameChain {
@@ -188,21 +190,25 @@ public:
     /// Access a named field in this user field.  This will tokenize the
     /// string 'str' on the delimiters and recursively add fields where needed
     CUser_field&      SetField(const string& str,
-                               const string& delim = ".");
+                               const string& delim = ".",
+                               NStr::ECase use_case = NStr::eCase);
 
     /// Return a field reference representing the tokenized key, or a
     /// NULL reference if the key cannot be created for some reason.
     CRef<CUser_field> SetFieldRef(const string& str,
-                                  const string& delim = ".");
+                                  const string& delim = ".",
+                                  NStr::ECase use_case = NStr::eCase);
 
     /// Verify that a named field exists
     bool HasField(const string& str,
-                  const string& delim = ".") const;
+                  const string& delim = ".",
+                  NStr::ECase use_case = NStr::eCase) const;
                   
     /// Delete the named field.
     /// return true if successful. false if field doesn't exist.
     bool DeleteField(const string& str,
-                     const string& delim = ".");
+                     const string& delim = ".",
+                     NStr::ECase use_case = NStr::eCase);
 
 
 private:

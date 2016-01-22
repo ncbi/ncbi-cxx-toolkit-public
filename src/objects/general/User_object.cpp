@@ -65,9 +65,10 @@ CUser_object::~CUser_object(void)
 // on a set of user-defined delimiters
 //
 const CUser_field& CUser_object::GetField(const string& str,
-                                          const string& delim) const
+                                          const string& delim,
+                                          NStr::ECase use_case) const
 {
-    CConstRef<CUser_field> ref(GetFieldRef(str, delim));
+    CConstRef<CUser_field> ref(GetFieldRef(str, delim, use_case));
     if (ref.Empty()) {
         NCBI_THROW(CCoreException, eNullPtr,
                    "Unable to find User-field " + str);
@@ -77,7 +78,8 @@ const CUser_field& CUser_object::GetField(const string& str,
 
 
 CConstRef<CUser_field> CUser_object::GetFieldRef(const string& str,
-                                                 const string& delim) const
+                                                 const string& delim,
+                                                 NStr::ECase use_case) const
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
@@ -107,7 +109,7 @@ CConstRef<CUser_field> CUser_object::GetFieldRef(const string& str,
         const CUser_field& field = **field_iter;
         if (field.IsSetLabel()  &&  field.GetLabel().IsStr()) {
             const string& this_label = field.GetLabel().GetStr();
-            if (this_label == first) {
+            if ( NStr::Equal(this_label, first, use_case) ) {
                 found = true;
             }
         }
@@ -117,7 +119,7 @@ CConstRef<CUser_field> CUser_object::GetFieldRef(const string& str,
 
         if ( !sub.empty() ) {
             CConstRef<CUser_field> field_ref =
-                (*field_iter)->GetFieldRef(sub, delim);
+                (*field_iter)->GetFieldRef(sub, delim, use_case);
             if (field_ref) {
                 return field_ref;
             }
@@ -130,9 +132,10 @@ CConstRef<CUser_field> CUser_object::GetFieldRef(const string& str,
 
 
 bool CUser_object::HasField(const string& str,
-                            const string& delim) const
+                            const string& delim,
+                            NStr::ECase use_case) const
 {
-    return GetFieldRef(str, delim).GetPointer() ? true : false;
+    return GetFieldRef(str, delim, use_case).GetPointer() ? true : false;
 }
 
 
@@ -142,15 +145,17 @@ bool CUser_object::HasField(const string& str,
 //
 CUser_field& CUser_object::SetField(const string& str,
                                     const string& delim,
-                                    const string& obj_subtype)
+                                    const string& obj_subtype,
+                                    NStr::ECase use_case)
 {
-    return *SetFieldRef(str, delim, obj_subtype);
+    return *SetFieldRef(str, delim, obj_subtype, use_case);
 }
 
 
 CRef<CUser_field> CUser_object::SetFieldRef(const string& str,
                                             const string& delim,
-                                            const string& /* obj_subtype */)
+                                            const string& /* obj_subtype */,
+                                            NStr::ECase use_case)
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
@@ -161,7 +166,8 @@ CRef<CUser_field> CUser_object::SetFieldRef(const string& str,
     NON_CONST_ITERATE(TData, field_iter, SetData()) {
         CUser_field& field = **field_iter;
         if (field.GetLabel().IsStr()  &&
-            field.GetLabel().GetStr() == toks.front()) {
+            NStr::Equal(field.GetLabel().GetStr(), toks.front(), use_case))
+        {
             field_ref = *field_iter;
             break;
         }
@@ -176,7 +182,7 @@ CRef<CUser_field> CUser_object::SetFieldRef(const string& str,
     toks.pop_front();
     if (toks.size()) {
         string s = NStr::Join(toks, delim);
-        CRef<CUser_field> f = field_ref->SetFieldRef(s, delim);
+        CRef<CUser_field> f = field_ref->SetFieldRef(s, delim, use_case);
         field_ref = f;
     }
 

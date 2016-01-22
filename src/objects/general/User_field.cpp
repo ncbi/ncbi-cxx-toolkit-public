@@ -54,7 +54,6 @@ CUser_field::~CUser_field(void)
 }
 
 
-
 /// add fields to the current user field
 CUser_field& CUser_field::AddField(const string& label,
                                    const string& value,
@@ -210,9 +209,10 @@ CUser_field& CUser_field::AddField(const string& label,
 /// string 'str' on the delimiters; if the field doesn't exist, an
 /// exception will be thrown.
 const CUser_field& CUser_field::GetField(const string& str,
-                                         const string& delim) const
+                                         const string& delim,
+                                         NStr::ECase use_case) const
 {
-    CConstRef<CUser_field> f = GetFieldRef(str, delim);
+    CConstRef<CUser_field> f = GetFieldRef(str, delim, use_case);
     if ( !f ) {
         NCBI_THROW(CException, eUnknown,
                    "failed to find field named " + str);
@@ -224,7 +224,8 @@ const CUser_field& CUser_field::GetField(const string& str,
 /// Return a field reference representing the tokenized key, or a
 /// NULL reference if the key doesn't exist.
 CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
-                                                const string& delim) const
+                                                const string& delim,
+                                                NStr::ECase use_case) const
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
@@ -232,7 +233,9 @@ CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
     CConstRef<CUser_field> f(this);
     if ( !f->GetData().IsFields() ) {
         if (toks.size() == 1  &&
-            f->GetLabel().IsStr()  &&  f->GetLabel().GetStr() == toks.front()) {
+            f->GetLabel().IsStr()  &&
+            NStr::Equal(f->GetLabel().GetStr(), toks.front(), use_case))
+        {
             return f;
         } else {
             return CConstRef<CUser_field>();
@@ -249,7 +252,9 @@ CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
             ITERATE (TData::TFields, field_iter, f->GetData().GetFields()) {
                 const CUser_field& field = **field_iter;
                 if (field.GetLabel().IsStr()
-                    &&  field.GetLabel().GetStr() == *iter) {
+                    &&  NStr::Equal(
+                        field.GetLabel().GetStr(), *iter, use_case) )
+                {
                     if (iter != last  &&  field.GetData().IsFields()) {
                         new_f = *field_iter;
                         break;
@@ -324,9 +329,10 @@ void CUser_field::GetFieldsMap(
 /// Access a named field in this user field.  This will tokenize the
 /// string 'str' on the delimiters and recursively add fields where needed
 CUser_field& CUser_field::SetField(const string& str,
-                                   const string& delim)
+                                   const string& delim,
+                                   NStr::ECase use_case)
 {
-    CRef<CUser_field> f = SetFieldRef(str, delim);
+    CRef<CUser_field> f = SetFieldRef(str, delim, use_case);
     return *f;
 }
 
@@ -334,7 +340,8 @@ CUser_field& CUser_field::SetField(const string& str,
 /// Return a field reference representing the tokenized key, or a
 /// NULL reference if the key cannot be created for some reason.
 CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
-                                           const string& delim)
+                                           const string& delim,
+                                           NStr::ECase use_case)
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
@@ -350,7 +357,8 @@ CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
         CRef<CUser_field> new_f;
         NON_CONST_ITERATE (TData::TFields, field_iter, f->SetData().SetFields()) {
             const CUser_field& field = **field_iter;
-            if (field.GetLabel().GetStr() == *iter) {
+            if (NStr::Equal(field.GetLabel().GetStr(), *iter, use_case) )
+            {
                 if (iter == last) {
                     new_f = *field_iter;
                     break;
@@ -380,9 +388,10 @@ CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
 
 /// Verify that a named field exists
 bool CUser_field::HasField(const string& str,
-                           const string& delim) const
+                           const string& delim,
+                           NStr::ECase use_case) const
 {
-    CConstRef<CUser_field> f = GetFieldRef(str, delim);
+    CConstRef<CUser_field> f = GetFieldRef(str, delim, use_case);
     return f.GetPointer() != NULL;
 }
 
@@ -390,7 +399,8 @@ bool CUser_field::HasField(const string& str,
 
 /// delete a named field.
 bool CUser_field::DeleteField(const string& str,
-                              const string& delim)
+                              const string& delim,
+                              NStr::ECase use_case)
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
@@ -407,7 +417,8 @@ bool CUser_field::DeleteField(const string& str,
         NON_CONST_ITERATE (TData::TFields, field_iter, f->SetData().SetFields()) {
             const CUser_field& field = **field_iter;
             if (field.GetLabel().IsStr()
-                &&  field.GetLabel().GetStr() == *iter) {
+                &&  NStr::Equal(field.GetLabel().GetStr(), *iter, use_case) )
+            {
                 if (iter != last  &&  field.GetData().IsFields()) {
                     new_f = *field_iter;
                     break;
