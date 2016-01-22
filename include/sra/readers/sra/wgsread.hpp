@@ -760,7 +760,14 @@ public:
         fMaskAnnot    = fSeqAnnot|fQualityGraph,
         fDefaultAnnot = fSeqAnnot|fQualityGraph,
 
-        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst
+        fSplitQualityGraph  = 1<<8,
+        fSplitSeqData       = 1<<9,
+        fSplitProducts      = 1<<10,
+        fSplitAll     = fSplitQualityGraph | fSplitSeqData | fSplitProducts,
+        fSplitMask    = fSplitQualityGraph | fSplitSeqData | fSplitProducts,
+        fDefaultSplit = fSplitAll,
+
+        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst|fDefaultSplit
     };
     typedef int TFlags;
 

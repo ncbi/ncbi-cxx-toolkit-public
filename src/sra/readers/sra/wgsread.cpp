@@ -3345,19 +3345,19 @@ void CWGSSeqIterator::x_CreateEntry(SWGSCreateInfo& info) const
 bool CWGSSeqIterator::x_InitSplit(SWGSCreateInfo& info) const
 {
     // split data if...
-    if ( kEnableSplitData &&
+    if ( kEnableSplitData && (info.flags & fSplitSeqData) &&
          ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
          HasGapInfo() && // we have explicit gap info
          GetSeqLength() > kDataChunkSize // data is big enough
         ) {
         info.split_data = true;
     }
-    if ( kEnableSplitProd &&
+    if ( kEnableSplitProd && (info.flags & fSplitProducts) &&
          sx_HasMoreProducts(m_Db, GetLocFeatRowIdRange(), kProdPerChunk) ) {
         // split products if there are many enough
         info.split_prod = true;
     }
-    if ( kEnableSplitQual &&
+    if ( kEnableSplitQual && (info.flags & fSplitQualityGraph) &&
          CanHaveQualityGraph() ) {
         info.split_qual = true;
     }

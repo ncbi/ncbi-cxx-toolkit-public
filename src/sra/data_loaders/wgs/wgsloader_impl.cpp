@@ -37,6 +37,8 @@
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/seqres/seqres__.hpp>
+#include <objects/seqsplit/ID2S_Split_Info.hpp>
+#include <objects/seqsplit/ID2S_Chunk.hpp>
 
 //#define USE_ID2_CLIENT
 #ifdef USE_ID2_CLIENT
@@ -48,6 +50,7 @@
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
+#include <objmgr/impl/split_parser.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
@@ -950,29 +953,13 @@ bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const string& acc) const
 }
 
 
-
-static CSeq_id_Handle s_GetAccessId(const CWGSSeqIterator& it)
-{
-    if ( TGi gi = it.GetGi() ) {
-        return CSeq_id_Handle::GetHandle(gi);
-    }
-    else if ( CRef<CSeq_id> id = it.GetAccSeq_id() ) {
-        return CSeq_id_Handle::GetHandle(*id);
-    }
-    else if ( CRef<CSeq_id> id = it.GetGeneralSeq_id() ) {
-        return CSeq_id_Handle::GetHandle(*id);
-    }
-    return CSeq_id_Handle();
-}
-
-
 void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                             CTSE_LoadLock& load_lock) const
 {
     if ( !load_lock.IsLoaded() ) {
         NCBI_gb_state gb_state = 0;
         CRef<CSeq_entry> entry;
-        vector<CRef<CTSE_Chunk_Info> > chunks;
+        CRef<CID2S_Split_Info> split;
         if ( blob_id.m_SeqType == 'S' ) {
             if ( CWGSScaffoldIterator it = GetScaffoldIterator(blob_id) ) {
                 entry = it.GetSeq_entry();
@@ -988,22 +975,16 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
             if ( CWGSSeqIterator it = GetContigIterator(blob_id) ) {
                 gb_state = it.GetGBState();
                 CWGSSeqIterator::TFlags flags = it.fDefaultFlags;
-                if ( GetSplitQualityGraphParam() ) {
-                    flags &= ~it.fQualityGraph;
-                    if ( it.CanHaveQualityGraph() ) {
-                        CRef<CTSE_Chunk_Info> chunk
-                            (new CTSE_Chunk_Info(kChunkId_QualityGraph));
-                        CSeq_id_Handle id = s_GetAccessId(it);
-                        chunk->x_AddAnnotPlace(id);
-                        chunk->x_AddAnnotType(CAnnotName(it.GetQualityAnnotName()),
-                                              SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
-                                              id, CRange<TSeqPos>(0, it.GetSeqLength()));
-                        chunks.push_back(chunk);
-                    }
+                if ( !GetSplitQualityGraphParam() ) {
+                    flags &= ~it.fSplitQualityGraph;
                 }
-                if ( GetSplitSequenceParam() ) {
+                if ( !GetSplitSequenceParam() ) {
+                    flags &= ~it.fSplitSeqData;
                 }
-                entry = it.GetSeq_entry(flags);
+                split = it.GetSplitInfo(flags);
+                if ( !split ) {
+                    entry = it.GetSeq_entry(flags);
+                }
             }
         }
         CBioseq_Handle::TBioseqStateFlags state = 0;
@@ -1023,17 +1004,18 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                 break;
             }
         }
-        if ( !entry ) {
+        if ( !entry && !split ) {
             state |= CBioseq_Handle::fState_no_data;
         }
         if ( state ) {
             load_lock->SetBlobState(state);
         }
-        if ( entry ) {
+        if ( split ) {
+            _ASSERT(!entry);
+            CSplitParser::Attach(*load_lock, *split);
+        }
+        else if ( entry ) {
             load_lock->SetSeq_entry(*entry);
-            NON_CONST_ITERATE ( vector<CRef<CTSE_Chunk_Info> >, it, chunks ) {
-                load_lock->GetSplitInfo().AddChunk(**it);
-            }
         }
     }
 }
@@ -1042,17 +1024,11 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
 void CWGSFileInfo::LoadChunk(const CWGSBlobId& blob_id,
                              CTSE_Chunk_Info& chunk_info) const
 {
-    if ( chunk_info.GetChunkId() == kChunkId_QualityGraph ) {
-        if ( blob_id.m_SeqType == '\0' ) {
-            CWGSSeqIterator it = GetContigIterator(blob_id);
-            CTSE_Chunk_Info::TPlace place(s_GetAccessId(it), 0);
-            CBioseq::TAnnot annot_set;
-            it.GetQualityAnnot(annot_set);
-            ITERATE ( CBioseq::TAnnot, it, annot_set ) {
-                chunk_info.x_LoadAnnot(place, **it);
-            }
-            chunk_info.SetLoaded();
-        }
+    if ( blob_id.m_SeqType == '\0' ) {
+        CWGSSeqIterator it = GetContigIterator(blob_id);
+        CRef<CID2S_Chunk> chunk = it.GetChunk(chunk_info.GetChunkId());
+        CSplitParser::Load(chunk_info, *chunk);
+        chunk_info.SetLoaded();
     }
 }
 
