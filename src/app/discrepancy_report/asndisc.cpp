@@ -366,7 +366,7 @@ void CDiscRepApp::x_OutputMacro(const string& filename, const vector<CRef<CDiscr
     }
     set<string> Fixes;
     ITERATE (vector<CRef<CDiscrepancyCase> >, tst, tests) {
-        TReportItemList& list = (*tst)->GetReport();
+        const TReportItemList& list = (*tst)->GetReport();
         ITERATE (TReportItemList, it, list) {
             if ((*it)->CanAutofix()) {
                 Fixes.insert((*it)->GetTitle());
