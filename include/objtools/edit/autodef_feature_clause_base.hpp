@@ -156,7 +156,7 @@ public:
     static vector<string> GetMiscRNAElements(const string& product);
     static vector<string> GetTrnaIntergenicSpacerClausePhrases(const string& comment);
     static bool IsValidFeatureClausePhrase(const string& phrase);
-    static vector<string> CAutoDefFeatureClause_Base::GetFeatureClausePhrases(string comment);
+    static vector<string> GetFeatureClausePhrases(string comment);
     static CAutoDefFeatureClause_Base *ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last);
 
    
