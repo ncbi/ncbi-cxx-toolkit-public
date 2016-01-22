@@ -390,6 +390,9 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
 }
 
 
+
+
+
 bool CAutoDef::x_AddtRNAAndOther(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause)
 {
     if (cf.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature ||
@@ -397,53 +400,20 @@ bool CAutoDef::x_AddtRNAAndOther(CBioseq_Handle bh, const CSeq_feat& cf, const C
         return false;
     }
 
-    string comment = cf.GetComment();
-    if (NStr::StartsWith(comment, "contains ")) {
-        comment = comment.substr(9);
-    }
-
-    size_t pos = NStr::Find(comment, " and ");
-    if (pos == string::npos) {
-        return false;
-    }
-    string trna_str = comment.substr(0, pos);
-    string other_str = comment.substr(pos + 5);
-
-    CAutoDefParsedClause* other = NULL;
-    if (NStr::Equal(other_str, "control region") ||
-        NStr::Equal(other_str, "D-loop")) {
-        // create a clause of the appropriate type
-        other = new CAutoDefParsedClause(bh, cf, mapped_loc, false, true);  
-        other->SetTypeword(other_str);
-        other->SetTypewordFirst(false);
-    } else {
+    vector<string> phrases = CAutoDefFeatureClause_Base::GetFeatureClausePhrases(cf.GetComment());
+    if (phrases.size() < 2) {
         return false;
     }
 
-    vector<string> trna_str_list;
-    NStr::Tokenize(trna_str, ",", trna_str_list);
-    vector<CAutoDefParsedtRNAClause*> trna_clause_list;
-    bool is_first = true;
-    ITERATE(vector<string>, it, trna_str_list) {
-        if (!NStr::IsBlank(*it)) {
-            CAutoDefParsedtRNAClause* trna = s_tRNAClauseFromNote(bh, cf, mapped_loc, *it, is_first, false);
-            if (trna) {
-                trna_clause_list.push_back(trna);
-            } else {
-                ITERATE(vector<CAutoDefParsedtRNAClause*>, tc, trna_clause_list) {
-                    delete(*tc);
-                }
-                delete other;
-                return false;
-            }
-            is_first = false;
-        }
+    bool first = true;
+    string last = phrases.back();
+    phrases.pop_back();
+    ITERATE(vector<string>, it, phrases) {
+        main_clause.AddSubclause(CAutoDefFeatureClause_Base::ClauseFromPhrase(*it, bh, cf, mapped_loc, first, false));
+        first = false;
     }
+    main_clause.AddSubclause(CAutoDefFeatureClause_Base::ClauseFromPhrase(last, bh, cf, mapped_loc, first, true));
 
-    ITERATE(vector<CAutoDefParsedtRNAClause*>, it, trna_clause_list) {
-        main_clause.AddSubclause(*it);
-    }
-    main_clause.AddSubclause(other);
     return true;
 }
 

@@ -1750,5 +1750,20 @@ BOOST_AUTO_TEST_CASE(Test_TargetedLocusName)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_3602)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetGenome(entry, CBioSource::eGenome_mitochondrion);
+    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    misc->SetComment("contains tRNA-Pro gene, control region, tRNA-Phe  gene, and 12S ribosomal RNA gene");
+    misc->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    misc->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    AddTitle(entry, "Sebaea microphylla tRNA-Pro gene, partial sequence; control region and tRNA-Phe gene, complete sequence; and 12S ribosomal RNA gene, partial sequence; mitochondrial.");
+
+    CheckDeflineMatches(entry);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

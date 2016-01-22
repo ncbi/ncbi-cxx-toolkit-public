@@ -844,6 +844,7 @@ bool ShareInterval(const CSeq_loc& loc1, const CSeq_loc& loc2)
 }
 
 
+
 /* This function determines whether two CDS clauses meet the conditions for
  * alternative splicing, and if so, it returns the name of the alternatively
  * spliced product.  In order to be alternatively spliced, the two CDSs 
@@ -1922,6 +1923,90 @@ vector<string> CAutoDefFeatureClause_Base::GetTrnaIntergenicSpacerClausePhrases(
     }
     return elements;
 }
+
+
+bool CAutoDefFeatureClause_Base::IsValidFeatureClausePhrase(const string& phrase)
+{
+    string product_name = "";
+    string gene_name = "";
+    if (NStr::Equal(phrase, "control region") ||
+        NStr::Equal(phrase, "D-loop")) {
+        return true;
+    } else if (CAutoDefParsedtRNAClause::ParseString(phrase, gene_name, product_name))  {
+        return true;
+    } else if (x_GetRnaMiscWordType(phrase) != eMiscRnaWordType_Unrecognized) {
+        return true;
+    }
+    return false;
+}
+
+
+vector<string> CAutoDefFeatureClause_Base::GetFeatureClausePhrases(string comment)
+{
+    vector<string> phrases;
+
+    if (NStr::StartsWith(comment, "contains ")) {
+        comment = comment.substr(9);
+    }
+    vector<string> elements;
+    NStr::Tokenize(comment, ",", elements);
+    bool fail = false;
+    ITERATE(vector<string>, it, elements)
+    {
+        CTempString phrase = *it;
+        NStr::TruncateSpacesInPlace(phrase);
+        if (NStr::StartsWith(phrase, "and ")) {
+            phrase = phrase.substr(4);
+        }
+        size_t pos = NStr::Find(phrase, " and ");
+        if (pos != string::npos) {
+            string one = phrase.substr(0, pos);
+            string two = phrase.substr(pos + 5);
+            if (IsValidFeatureClausePhrase(one) && IsValidFeatureClausePhrase(two)) {
+                phrases.push_back(one);
+                phrases.push_back(two);
+            } else {
+                fail = true;
+                break;
+            }
+        } else {
+            if (IsValidFeatureClausePhrase(phrase)) {
+                phrases.push_back(phrase);
+            } else {
+                fail = true;
+                break;
+            }
+        }
+    }
+    if (fail) {
+        phrases.clear();
+    }
+    return phrases;
+}
+
+
+CAutoDefFeatureClause_Base * CAutoDefFeatureClause_Base::ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last)
+{
+    CAutoDefFeatureClause_Base *clause = NULL;
+
+    if (NStr::Equal(phrase, "control region") ||
+        NStr::Equal(phrase, "D-loop")) {
+        // create a clause of the appropriate type
+        CAutoDefParsedClause* other = new CAutoDefParsedClause(bh, cf, mapped_loc, first, last);
+        other->SetTypeword(phrase);
+        other->SetTypewordFirst(false);
+        return other;
+    } else if (x_GetRnaMiscWordType(phrase) != eMiscRnaWordType_Unrecognized) {
+        CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, mapped_loc, first, last);
+        new_clause->SetMiscRNAWord(phrase);
+        return new_clause;
+    } else {
+        CAutoDefParsedtRNAClause* trna = s_tRNAClauseFromNote(bh, cf, mapped_loc, phrase, first, last);
+        return trna;
+    }
+}
+
+
 
 
 

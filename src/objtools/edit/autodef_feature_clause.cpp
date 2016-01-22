@@ -1796,6 +1796,9 @@ void CAutoDefParsedClause::SetMiscRNAWord(const string& phrase)
         }
     } else if (word_type == eMiscRnaWordType_RNA) {
         m_Description = phrase;
+        if (NStr::EndsWith(m_Description, " gene")) {
+            m_Description = m_Description.substr(0, m_Description.length() - 5);
+        }
         SetTypeword("gene");
         SetTypewordFirst(false);
     }
