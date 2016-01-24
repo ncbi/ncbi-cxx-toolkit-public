@@ -162,7 +162,7 @@ void CInputStreamSource::InitArgs(const CArgs& args, const string &prefix)
 ///
 void CInputStreamSource::InitStream(CNcbiIstream& istr, const string& fname)
 {
-    if (m_Istr  ||  ! m_Files.empty()) {
+    if (m_Istr  ||  m_CurrIndex < m_Files.size()) {
         NCBI_THROW(CException, eUnknown,
                    "CInputStreamSource::InitManifest(): "
                    "attempt to init already initted class");
@@ -172,6 +172,7 @@ void CInputStreamSource::InitStream(CNcbiIstream& istr, const string& fname)
                    "CInputStreamSource::InitStream(): "
                    "stream is bad");
     }
+    m_Files.clear();
     m_Istr = &istr;
     m_CurrFile = fname;
     m_CurrIndex = 0;
@@ -182,7 +183,7 @@ void CInputStreamSource::InitStream(CNcbiIstream& istr, const string& fname)
 ///
 void CInputStreamSource::InitFile(const string& file_path)
 {
-    if (m_Istr  ||  ! m_Files.empty()) {
+    if (m_Istr  ||  m_CurrIndex < m_Files.size()) {
         NCBI_THROW(CException, eUnknown,
                    "CInputStreamSource::InitFile(): "
                    "attempt to init already initted class");
@@ -196,6 +197,7 @@ void CInputStreamSource::InitFile(const string& file_path)
     }
     **/
 
+    m_Files.clear();
     m_Files.push_back(file_path);
     Rewind();
 }
@@ -206,12 +208,13 @@ void CInputStreamSource::InitFile(const string& file_path)
 /// @see CFileManifest
 void CInputStreamSource::InitManifest(const string& manifest)
 {
-    if (m_Istr  || !  m_Files.empty()) {
+    if (m_Istr  || m_CurrIndex < m_Files.size()) {
         NCBI_THROW(CException, eUnknown,
                    "CInputStreamSource::InitManifest(): "
                    "attempt to init already initted class");
     }
 
+    m_Files.clear();
     CFileManifest src(manifest);
     vector<string> all(src.GetAllFilePaths());
     std::copy( all.begin(), all.end(), std::back_inserter(m_Files));
@@ -227,7 +230,7 @@ void CInputStreamSource::InitManifest(const string& manifest)
 void CInputStreamSource::InitFilesInDirSubtree(const string& file_path,
                                                const string& file_mask)
 {
-    if (m_Istr  ||  ! m_Files.empty()) {
+    if (m_Istr  ||  m_CurrIndex < m_Files.size()) {
         NCBI_THROW(CException, eUnknown,
                    "CInputStreamSource::InitFilesInDirSubtree(): "
                    "atemmpt to init already initted class");
@@ -249,6 +252,7 @@ void CInputStreamSource::InitFilesInDirSubtree(const string& file_path,
         masks.push_back("*");
     }
 
+    m_Files.clear();
     FindFiles(m_Files,
               paths.begin(), paths.end(),
               masks.begin(), masks.end(),
