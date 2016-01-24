@@ -46,6 +46,7 @@ Xext needs3party X11
 Xpm needs3party $(ORIG_LIBS)
 Xpm needs3party X11
 access needs xser
+accnmap needs dbapi
 ads needs $(SEQ_LIBS)
 ads needs pub
 affy needs3party $(CURL_LIBS)
@@ -1467,6 +1468,7 @@ xobjedit needs xalnmgr
 xobjmanip needs general
 xobjmgr needs genome_collection
 xobjmgr needs seqedit
+xobjmgr needs seqsplit
 xobjread needs creaders
 xobjread needs submit
 xobjreadex needs $(OBJREAD_LIBS)
