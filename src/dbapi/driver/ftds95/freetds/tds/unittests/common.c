@@ -58,6 +58,14 @@ int
 try_tds_login(TDSLOGIN ** login, TDSSOCKET ** tds, const char *appname, int verbose)
 {
 	TDSLOGIN *connection;
+    const char* base_appname;
+
+    base_appname = strrchr(appname, '/');
+    if (base_appname == NULL) {
+        base_appname = appname;
+    } else {
+        ++base_appname;
+    }
 
 	if (verbose) {
 		fprintf(stdout, "Entered tds_try_login()\n");
@@ -86,7 +94,7 @@ try_tds_login(TDSLOGIN ** login, TDSSOCKET ** tds, const char *appname, int verb
 	}
 	tds_set_passwd(*login, PASSWORD);
 	tds_set_user(*login, USER);
-	tds_set_app(*login, appname);
+    tds_set_app(*login, base_appname);
 	tds_set_host(*login, "myhost");
 	tds_set_library(*login, "TDS-Library");
 	tds_set_server(*login, SERVER);
