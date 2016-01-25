@@ -145,7 +145,7 @@ BEGIN_NCBI_SCOPE
 
 
 // This class is for internal use only.
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 class CSyncQueue_InternalAutoLock;
 
 
@@ -153,15 +153,17 @@ class CSyncQueue_InternalAutoLock;
 template <class Type, class Container>
 class CSyncQueue_I_Base;
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 class CSyncQueue_I;
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 class CSyncQueue_ConstAccessGuard;
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 class CSyncQueue_AccessGuard;
 
+
+class CSyncQueue_DefaultTraits;
 
 
 /// Thread-safe queue object with a blocking mechanism.
@@ -171,8 +173,20 @@ class CSyncQueue_AccessGuard;
 /// long time for some bulk operations. This can be achieved by
 /// CSyncQueue::T*AccessGuard classes.
 ///
-/// CSyncQueue can be used with C++ Toolkit threads as well as with any kind
-/// of native threads. The only difference between these cases is passing
+/// CSyncQueue can be used in single threaded applications or multithreaded
+/// applications with C++ Toolkit threads as well as with any kind of
+/// native threads. In case of multithreaded applications a CSyncQueue object
+/// could be used only from one thread or from many threads. To distinguish
+/// how the object is accessed the template supports the 'Traits' parameter.
+/// The traits in particular report if the the queue is accessed from many
+/// threads (see the CSyncQueue_DefaultTraits::IsUsedConcurrently() description
+/// for the details of what could happen if the IsUsedConcurrently() is not
+/// implemented properly). The default traits suppose that the C++ Toolkit
+/// CThread class is used to create threads.
+///
+/// There is a difference as well of how the timeouts are handled depending on
+/// what threads are used in the application if so: the C++ Toolkit threads or
+/// some other threads. The only difference between these cases is passing
 /// NULL as timeout in methods Push(), Pop() and Clear(). When C++ Toolkit
 /// CThread class is used to create application's threads then NULL value will
 /// mean indefinite timeout (as stated in comments to those methods). But if
@@ -192,13 +206,18 @@ class CSyncQueue_AccessGuard;
 ///   pop_front(). For other containers you need to implement an adaptor to
 ///   use it in CSyncQueue. For STL set, multiset and priority_queue classes
 ///   adaptors implemented further in this file.
+/// @param Traits
+///   Traits which are used to alter internal behavior. Currently it only
+///   affects the way how the number of running threads is detected.
+///   @sa CSyncQueue_DefaultTraits
 
-template < class Type, class Container = deque<Type> >
+template < class Type, class Container = deque<Type>,
+           class Traits = CSyncQueue_DefaultTraits >
 class CSyncQueue
 {
 public:
     /// Short name of this queue type
-    typedef CSyncQueue<Type, Container>              TThisType;
+    typedef CSyncQueue<Type, Container, Traits>      TThisType;
     /// Type of values stored in the queue
     typedef typename Container::value_type           TValue;
     /// Type of size of the queue
@@ -306,9 +325,10 @@ public:
 
 public:
     /// Type of access guardian for constant queue
-    typedef CSyncQueue_ConstAccessGuard<Type, Container>    TConstAccessGuard;
+    typedef CSyncQueue_ConstAccessGuard<Type, Container,
+                                        Traits>             TConstAccessGuard;
     /// Type of access guardian for non-constant queue
-    typedef CSyncQueue_AccessGuard<Type, Container>         TAccessGuard;
+    typedef CSyncQueue_AccessGuard<Type, Container, Traits> TAccessGuard;
 
 private:
     /// Type of underlying iterator
@@ -316,9 +336,11 @@ private:
     /// Type of underlying constant iterator
     typedef typename Container::const_iterator              TNativeConstIter;
     /// Constant iterator on this queue
-    typedef CSyncQueue_I<Type, Container, TNativeConstIter> TConstIterator;
+    typedef CSyncQueue_I<Type, Container,
+                         TNativeConstIter, Traits>          TConstIterator;
     /// Non-constant iterator on this queue
-    typedef CSyncQueue_I<Type, Container, TNativeIter>      TIterator;
+    typedef CSyncQueue_I<Type, Container,
+                         TNativeIter, Traits>               TIterator;
 
 private:
     // Prohibit copy and assignment
@@ -327,7 +349,8 @@ private:
 
     /// Short name of auto-lock for this queue type.
     /// For internal use only.
-    typedef CSyncQueue_InternalAutoLock<Type, Container> TAutoLock;
+    typedef CSyncQueue_InternalAutoLock<Type, Container, Traits>
+                                                            TAutoLock;
 
     /// Lock access to the queue.
     /// @note  This call will block if the queue is already locked by
@@ -517,13 +540,77 @@ private:
     mutable int m_LockCount;
 
     //
-    friend class CSyncQueue_ConstAccessGuard <Type, Container>;
-    friend class CSyncQueue_AccessGuard      <Type, Container>;
-    friend class CSyncQueue_InternalAutoLock <Type, Container>;
-    friend class CSyncQueue_I                <Type, Container, TNativeIter>;
-    friend class CSyncQueue_I                <Type, Container, TNativeConstIter>;
+    friend class CSyncQueue_ConstAccessGuard <Type, Container, Traits>;
+    friend class CSyncQueue_AccessGuard      <Type, Container, Traits>;
+    friend class CSyncQueue_InternalAutoLock <Type, Container, Traits>;
+    friend class CSyncQueue_I                <Type, Container,
+                                              TNativeIter, Traits>;
+    friend class CSyncQueue_I                <Type, Container,
+                                              TNativeConstIter, Traits>;
 };
 
+
+
+/// Default traits for the CSyncQueue class.
+/// It also serves as a base class for user defined CSyncQueue traits.
+class CSyncQueue_DefaultTraits
+{
+    public:
+        /// Tells if the queue can be used from many threads.
+        ///
+        /// Derived classes can re-implement this method. If this method
+        /// provides incorrect information then the following two cases lead
+        /// to specific problems:
+        /// 1. The application is in a single thread mode or does not use the
+        ///    queue from many threads concurrently but the method tells the
+        ///    queue can be used concurrently:
+        ///    the methods with timeouts will wait for the specified timeout
+        ///    even if it is an infinite one.
+        /// 2. The application is multithreaded and the queue is used from many
+        ///    threads but the method tells the queue cannot be used
+        ///    concurrently:
+        ///    the methods with timeouts will return right away without waiting
+        ///    during the specified timeout.
+        static bool  IsUsedConcurrently(void)
+        {
+            return CThread::GetThreadsCount() > 0;
+        }
+
+        /// At the moment the only requirement to the traits is to provide
+        /// a static function which tells f the queue can be used from many
+        /// threads (IsUsedConcurrently()).
+        /// Later on the traits could be extended while the CSyncQueue template
+        /// arguments will not be changed.
+        /// To make sure that future extensions of the traits won't break the
+        /// existing user code the alternative implementations of the
+        /// CSyncQueue traits must derive from CSyncQueue_DefaultTraits.
+        static void
+        CSyncQueue_Traits_Must_Be_Inherited_From_CSyncQueue_DefaultTraits(void)
+        {}
+};
+
+
+/// Convenience trait implementation which tells that the queue can be used
+/// from many threads.
+class CSyncQueue_Traits_ConcurrencyOn : public CSyncQueue_DefaultTraits
+{
+    public:
+        static bool IsUsedConcurrently(void)
+        {
+            return true;
+        }
+};
+
+/// Convenience trait implementation which tells that the queue cannot be used
+/// from many threads.
+class CSyncQueue_Traits_ConcurrencyOff : public CSyncQueue_DefaultTraits
+{
+    public:
+        static bool IsUsedConcurrently(void)
+        {
+            return false;
+        }
+};
 
 
 
@@ -538,12 +625,12 @@ private:
 /// Full description and examples of using look here:
 /// @ref CSyncQueueDescription.
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 class CSyncQueue_ConstAccessGuard
 {
 public:
     /// Queue type that this object can guard
-    typedef const CSyncQueue<Type, Container>           TQueue;
+    typedef const CSyncQueue<Type, Container, Traits>   TQueue;
     /// Type of size of the queue
     typedef typename TQueue::TSize                      TSize;
     /// Type of values stored in the queue
@@ -595,7 +682,7 @@ public:
 
 private:
     // Prohibit assignment and copy constructor
-    typedef CSyncQueue_ConstAccessGuard<Type, Container> TThisType;
+    typedef CSyncQueue_ConstAccessGuard<Type, Container, Traits> TThisType;
     CSyncQueue_ConstAccessGuard(const TThisType&);
     TThisType& operator= (const TThisType&);
 
@@ -617,9 +704,11 @@ private:
 
     // friends
     friend
-    class CSyncQueue_I<Type, Container, typename TQueue::TNativeIter>;
+    class CSyncQueue_I<Type, Container,
+                       typename TQueue::TNativeIter, Traits>;
     friend
-    class CSyncQueue_I<Type, Container, typename TQueue::TNativeConstIter>;
+    class CSyncQueue_I<Type, Container,
+                       typename TQueue::TNativeConstIter, Traits>;
 };
 
 
@@ -633,15 +722,16 @@ private:
 /// Full description and examples of using look here:
 /// @ref CSyncQueueDescription.
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 class CSyncQueue_AccessGuard
-    : public CSyncQueue_ConstAccessGuard<Type, Container>
+    : public CSyncQueue_ConstAccessGuard<Type, Container, Traits>
 {
 public:
     /// Short name of the ancestor class
-    typedef CSyncQueue_ConstAccessGuard<Type, Container>   TBaseType;
+    typedef CSyncQueue_ConstAccessGuard<Type, Container, Traits>
+                                                           TBaseType;
     /// Queue type that this object can guard
-    typedef CSyncQueue<Type, Container>                    TQueue;
+    typedef CSyncQueue<Type, Container, Traits>            TQueue;
     /// Type of size of the queue
     typedef typename TQueue::TSize                         TSize;
     /// Type of values stored in the queue
@@ -713,7 +803,7 @@ public:
 
 private:
     // Prohibit assignment and copy constructor
-    typedef CSyncQueue_AccessGuard<Type, Container> TThisType;
+    typedef CSyncQueue_AccessGuard<Type, Container, Traits> TThisType;
     CSyncQueue_AccessGuard(const TThisType&);
     TThisType& operator= (const TThisType&);
 };
@@ -754,18 +844,20 @@ public:
 /// All iterators can normally operate only when access guardian is active.
 /// When access guardian is destroyed all iterator methods will throw
 /// CSyncQueueException.
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 class CSyncQueue_I : public CSyncQueue_I_Base<Type, Container>
 {
 public:
     /// Short name for this type
-    typedef CSyncQueue_I<Type, Container, TNativeIterator>  TThisType;
+    typedef CSyncQueue_I<Type, Container,
+                         TNativeIterator, Traits>           TThisType;
     /// Queue type that this object will iterate over
-    typedef CSyncQueue<Type, Container>                     TQueue;
+    typedef CSyncQueue<Type, Container, Traits>             TQueue;
     /// Type of constant access guardian
-    typedef CSyncQueue_ConstAccessGuard<Type, Container>    TConstAccessGuard;
+    typedef CSyncQueue_ConstAccessGuard<Type,
+                                        Container, Traits>  TConstAccessGuard;
     /// Type of access guardian
-    typedef CSyncQueue_AccessGuard<Type, Container>         TAccessGuard;
+    typedef CSyncQueue_AccessGuard<Type, Container, Traits> TAccessGuard;
     /// Type of the difference between to iterators
     typedef typename TNativeIterator::difference_type       TDiff;
     /// Type of reference to stored value
@@ -858,8 +950,8 @@ private:
 
 
     // friends
-    friend class CSyncQueue_ConstAccessGuard<Type, Container>;
-    friend class CSyncQueue_AccessGuard<Type, Container>;
+    friend class CSyncQueue_ConstAccessGuard<Type, Container, Traits>;
+    friend class CSyncQueue_AccessGuard<Type, Container, Traits>;
 
     // Const iterator must be friend of non-const iterator. But const
     // iterator cannot be friend of itself (gives compile error on
@@ -867,7 +959,7 @@ private:
     typedef typename
     GetTypeWhenNotEqual<typename TQueue::TNativeConstIter,
                         TNativeIterator>::Result       TIntrnNativeConstIter;
-    friend class CSyncQueue_I<Type, Container, TIntrnNativeConstIter>;
+    friend class CSyncQueue_I<Type, Container, TIntrnNativeConstIter, Traits>;
 };
 
 
@@ -1058,12 +1150,12 @@ inline void ThrowSyncQueueEmpty(void) {
 /// For internal use in CSyncQueue only. Do not use it in your applications.
 /// Use CSyncQueue_AccessLock instead.
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 class CSyncQueue_InternalAutoLock
 {
 public:
     /// Short name for queue type that this object can lock
-    typedef CSyncQueue<Type, Container>   TQueue;
+    typedef CSyncQueue<Type, Container, Traits>   TQueue;
 
     /// Default ctor
     CSyncQueue_InternalAutoLock() : m_Queue(NULL)  {}
@@ -1119,7 +1211,7 @@ public:
 
 private:
     // Prohibit assignment and copy constructor
-    typedef CSyncQueue_InternalAutoLock<Type, Container> TMyType;
+    typedef CSyncQueue_InternalAutoLock<Type, Container, Traits> TMyType;
     CSyncQueue_InternalAutoLock(const TMyType&);
     TMyType& operator= (const TMyType&);
 
@@ -1131,9 +1223,9 @@ private:
 
 //   CSyncQueue
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-CSyncQueue<Type, Container>::CSyncQueue(TSize max_size)
+CSyncQueue<Type, Container, Traits>::CSyncQueue(TSize max_size)
     : m_Size(0),
       m_MaxSize(max_size),
       m_TrigLock(1, 1),
@@ -1147,28 +1239,32 @@ CSyncQueue<Type, Container>::CSyncQueue(TSize max_size)
         NCBI_THROW(CSyncQueueException, eWrongMaxSize,
                    "Maximum size of the queue must be greater than zero");
     }
+
+    // This is only to enforce inheritance of the Traits class from
+    // CSyncQueue_DefaultTraits class.
+    Traits::CSyncQueue_Traits_Must_Be_Inherited_From_CSyncQueue_DefaultTraits();
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-bool CSyncQueue<Type, Container>::IsEmpty(void) const
+bool CSyncQueue<Type, Container, Traits>::IsEmpty(void) const
 {
     return m_Size == 0;
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-bool CSyncQueue<Type, Container>::IsFull(void) const
+bool CSyncQueue<Type, Container, Traits>::IsFull(void) const
 {
     return m_Size >= m_MaxSize;
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-bool CSyncQueue<Type, Container>::x_Lock(const CTimeSpan* timeout) const
+bool CSyncQueue<Type, Container, Traits>::x_Lock(const CTimeSpan* timeout) const
 {
     if (timeout) {
         if ( !m_TrigLock.TryWait(CTimeout(*timeout)) ) {
@@ -1183,9 +1279,9 @@ bool CSyncQueue<Type, Container>::x_Lock(const CTimeSpan* timeout) const
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::x_Unlock(void) const
+void CSyncQueue<Type, Container, Traits>::x_Unlock(void) const
 {
     if (!IsFull()   &&  m_CntWaitNotFull.Get() > 0) {
         m_TrigNotFull.Post();
@@ -1198,11 +1294,12 @@ void CSyncQueue<Type, Container>::x_Unlock(void) const
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::x_DoubleLock(TAutoLock*       my_lock,
-                                               TAutoLock*       other_lock,
-                                               const TThisType& other_obj)
+void CSyncQueue<Type, Container, Traits>::x_DoubleLock(
+                                                TAutoLock*       my_lock,
+                                                TAutoLock*       other_lock,
+                                                const TThisType& other_obj)
     const
 {
     // The order of locking is significant
@@ -1220,9 +1317,10 @@ void CSyncQueue<Type, Container>::x_DoubleLock(TAutoLock*       my_lock,
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
+void CSyncQueue<Type, Container, Traits>::x_LockAndWait(
+                                                TAutoLock*       lock,
                                                 const CTimeSpan* full_tmo,
                                                 const CTimeSpan* service_tmo,
                                                 TCheckFunc       func_to_check,
@@ -1237,12 +1335,18 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
     if (full_tmo) {
         real_timeout.reset(new CTimeSpan(*full_tmo));
     }
-    else if (CThread::GetThreadsCount() == 0) {
-        // If we are in single-thread mode or we didn't run other threads
-        // then we will wait forever. Avoid it and let's think that timeout
-        // was ran over.
+    #if defined(NCBI_THREADS)
+    else if (!Traits::IsUsedConcurrently()) {
+        // If the queue is not used from many threads then we will wait forever.
+        // Avoid it and let's think that timeout was ran over.
         real_timeout.reset(new CTimeSpan(0.0));
     }
+    #else
+    else {
+        // Single-thread mode
+        real_timeout.reset(new CTimeSpan(0.0));
+    }
+    #endif
 
     if (real_timeout.get()) {
         // finite timeout
@@ -1301,9 +1405,9 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>
+void CSyncQueue<Type, Container, Traits>
     ::x_LockAndWaitWhileFull(TAutoLock*       lock, 
                              const CTimeSpan* full_tmo,
                              const CTimeSpan* service_tmo)
@@ -1314,9 +1418,9 @@ void CSyncQueue<Type, Container>
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>
+void CSyncQueue<Type, Container, Traits>
     ::x_LockAndWaitWhileEmpty(TAutoLock* lock, 
                              const CTimeSpan* full_tmo,
                              const CTimeSpan* service_tmo)
@@ -1327,9 +1431,10 @@ void CSyncQueue<Type, Container>
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::x_GuardedLock(const CTimeSpan* timeout) const
+void CSyncQueue<Type, Container, Traits>::x_GuardedLock(
+                                                const CTimeSpan* timeout) const
 {
     if (x_IsGuarded()) {
         ++m_LockCount;
@@ -1349,9 +1454,9 @@ void CSyncQueue<Type, Container>::x_GuardedLock(const CTimeSpan* timeout) const
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::x_GuardedUnlock(void) const
+void CSyncQueue<Type, Container, Traits>::x_GuardedUnlock(void) const
 {
     _ASSERT( x_IsGuarded() );
 
@@ -1365,9 +1470,9 @@ void CSyncQueue<Type, Container>::x_GuardedUnlock(void) const
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-bool CSyncQueue<Type, Container>::x_IsGuarded(void) const
+bool CSyncQueue<Type, Container, Traits>::x_IsGuarded(void) const
 {
     if (m_CurGuardTID == TThreadSystemID(kThreadSystemID_None))
         return false;
@@ -1378,27 +1483,27 @@ bool CSyncQueue<Type, Container>::x_IsGuarded(void) const
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TSize
-    CSyncQueue<Type, Container>::GetSize(void) const
+typename CSyncQueue<Type, Container, Traits>::TSize
+    CSyncQueue<Type, Container, Traits>::GetSize(void) const
 {
     return m_Size;
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TSize
-    CSyncQueue<Type, Container>::GetMaxSize(void) const
+typename CSyncQueue<Type, Container, Traits>::TSize
+    CSyncQueue<Type, Container, Traits>::GetMaxSize(void) const
 {
     return m_MaxSize;
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::x_Push_NonBlocking(const TValue& elem)
+void CSyncQueue<Type, Container, Traits>::x_Push_NonBlocking(const TValue& elem)
 {
     // NOTE. This check is active only when the queue is under access guard
     if ( IsFull() ) {
@@ -1410,10 +1515,10 @@ void CSyncQueue<Type, Container>::x_Push_NonBlocking(const TValue& elem)
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TValue
-    CSyncQueue<Type, Container>::x_Pop_NonBlocking(void)
+typename CSyncQueue<Type, Container, Traits>::TValue
+    CSyncQueue<Type, Container, Traits>::x_Pop_NonBlocking(void)
 {
     // NOTE. This check is active only when the queue is under access guard
     if (IsEmpty()) {
@@ -1427,20 +1532,20 @@ typename CSyncQueue<Type, Container>::TValue
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::x_Clear_NonBlocking(void)
+void CSyncQueue<Type, Container, Traits>::x_Clear_NonBlocking(void)
 {
     m_Store.clear();
     m_Size = 0;
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::Push(const TValue&    elem,
-                                       const CTimeSpan* full_tmo,
-                                       const CTimeSpan* service_tmo)
+void CSyncQueue<Type, Container, Traits>::Push(const TValue&    elem,
+                                               const CTimeSpan* full_tmo,
+                                               const CTimeSpan* service_tmo)
 {
     TAutoLock lock;
 
@@ -1452,20 +1557,20 @@ void CSyncQueue<Type, Container>::Push(const TValue&    elem,
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::Push(const TValue&    elem,
-                                       const CTimeSpan* timeout)
+void CSyncQueue<Type, Container, Traits>::Push(const TValue&    elem,
+                                               const CTimeSpan* timeout)
 {
     Push(elem, timeout, timeout);
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TValue
-    CSyncQueue<Type, Container>::Pop(const CTimeSpan* full_tmo,
-                                     const CTimeSpan* service_tmo)
+typename CSyncQueue<Type, Container, Traits>::TValue
+    CSyncQueue<Type, Container, Traits>::Pop(const CTimeSpan* full_tmo,
+                                             const CTimeSpan* service_tmo)
 {
     TAutoLock lock;
 
@@ -1477,18 +1582,18 @@ typename CSyncQueue<Type, Container>::TValue
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TValue
-CSyncQueue<Type, Container>::Pop(const CTimeSpan* timeout)
+typename CSyncQueue<Type, Container, Traits>::TValue
+CSyncQueue<Type, Container, Traits>::Pop(const CTimeSpan* timeout)
 {
     return Pop(timeout, timeout);
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::Clear(const CTimeSpan* timeout)
+void CSyncQueue<Type, Container, Traits>::Clear(const CTimeSpan* timeout)
 {
     TAutoLock lock;
 
@@ -1502,9 +1607,9 @@ void CSyncQueue<Type, Container>::Clear(const CTimeSpan* timeout)
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue<Type, Container>::CopyTo(TThisType* other) const
+void CSyncQueue<Type, Container, Traits>::CopyTo(TThisType* other) const
 {
     if (this != other) {
         TAutoLock my_lock;
@@ -1540,46 +1645,46 @@ void CSyncQueue<Type, Container>::CopyTo(TThisType* other) const
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TNativeIter
-    CSyncQueue<Type, Container>::x_Begin()
+typename CSyncQueue<Type, Container, Traits>::TNativeIter
+    CSyncQueue<Type, Container, Traits>::x_Begin()
 {
     return m_Store.begin();
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TNativeConstIter
-    CSyncQueue<Type, Container>::x_Begin() const
+typename CSyncQueue<Type, Container, Traits>::TNativeConstIter
+    CSyncQueue<Type, Container, Traits>::x_Begin() const
 {
     return m_Store.begin();
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TNativeIter
-    CSyncQueue<Type, Container>::x_End()
+typename CSyncQueue<Type, Container, Traits>::TNativeIter
+    CSyncQueue<Type, Container, Traits>::x_End()
 {
     return m_Store.end();
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TNativeConstIter
-    CSyncQueue<Type, Container>::x_End() const
+typename CSyncQueue<Type, Container, Traits>::TNativeConstIter
+    CSyncQueue<Type, Container, Traits>::x_End() const
 {
     return m_Store.end();
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TNativeIter
-    CSyncQueue<Type, Container>::x_Erase(TNativeIter iter)
+typename CSyncQueue<Type, Container, Traits>::TNativeIter
+    CSyncQueue<Type, Container, Traits>::x_Erase(TNativeIter iter)
 {
     TNativeIter res = m_Store.erase(iter);
     --m_Size;
@@ -1587,11 +1692,11 @@ typename CSyncQueue<Type, Container>::TNativeIter
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue<Type, Container>::TNativeIter
-    CSyncQueue<Type, Container>::x_Erase(TNativeIter from_iter,
-                                         TNativeIter to_iter)
+typename CSyncQueue<Type, Container, Traits>::TNativeIter
+    CSyncQueue<Type, Container, Traits>::x_Erase(TNativeIter from_iter,
+                                                 TNativeIter to_iter)
 {
     // Count number of elements to delete. Some container's iterators
     // don't have operator- and operator<. So we have to imitate them.
@@ -1618,9 +1723,9 @@ typename CSyncQueue<Type, Container>::TNativeIter
 
 //   CSyncQueue_I
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>::
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>::
 CSyncQueue_I(TConstAccessGuard* guard, const TNativeIterator& iter)
     : m_Guard(guard),
       m_Iter (iter),
@@ -1631,18 +1736,18 @@ CSyncQueue_I(TConstAccessGuard* guard, const TNativeIterator& iter)
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>::~CSyncQueue_I(void)
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>::~CSyncQueue_I(void)
 {
     if ( m_Valid )
         m_Guard->x_RemoveIter(this);
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>::
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>::
 CSyncQueue_I(const TThisType& other)
     : m_Valid(false)
 {
@@ -1650,9 +1755,9 @@ CSyncQueue_I(const TThisType& other)
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>::
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>::
 CSyncQueue_I(const TInternalNonConst& other)
     : m_Guard(other.m_Guard),
       m_Iter (other.m_Iter),
@@ -1663,10 +1768,10 @@ CSyncQueue_I(const TInternalNonConst& other)
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>&
-    CSyncQueue_I<Type, Container, TNativeIterator>
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>&
+    CSyncQueue_I<Type, Container, TNativeIterator, Traits>
         ::operator= (const TThisType& other)
 {
     if ( m_Valid )
@@ -1683,9 +1788,9 @@ CSyncQueue_I<Type, Container, TNativeIterator>&
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-void CSyncQueue_I<Type, Container, TNativeIterator>::Invalidate(void)
+void CSyncQueue_I<Type, Container, TNativeIterator, Traits>::Invalidate(void)
 {
     m_Guard->x_RemoveIter(this);
     m_Valid = false;
@@ -1694,9 +1799,9 @@ void CSyncQueue_I<Type, Container, TNativeIterator>::Invalidate(void)
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-void CSyncQueue_I<Type, Container, TNativeIterator>
+void CSyncQueue_I<Type, Container, TNativeIterator, Traits>
     ::CheckGuard(TConstAccessGuard *guard) const
 {
     if (m_Guard != guard) {
@@ -1705,9 +1810,10 @@ void CSyncQueue_I<Type, Container, TNativeIterator>
     }
 }
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-void CSyncQueue_I<Type, Container, TNativeIterator>::CheckValid(void) const
+void CSyncQueue_I<Type, Container,
+                  TNativeIterator, Traits>::CheckValid(void) const
 {
     if ( !m_Valid ) {
         NCBI_THROW(CSyncQueueException, eIterNotValid,
@@ -1717,9 +1823,9 @@ void CSyncQueue_I<Type, Container, TNativeIterator>::CheckValid(void) const
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-void CSyncQueue_I<Type, Container, TNativeIterator>
+void CSyncQueue_I<Type, Container, TNativeIterator, Traits>
     ::CheckMatched(const TThisType& other) const
 {
     if (m_Guard != other.m_Guard) {
@@ -1729,19 +1835,19 @@ void CSyncQueue_I<Type, Container, TNativeIterator>
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
 TNativeIterator
-    CSyncQueue_I<Type, Container, TNativeIterator>::x_GetBase() const
+    CSyncQueue_I<Type, Container, TNativeIterator, Traits>::x_GetBase() const
 {
     return m_Iter;
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>&
-    CSyncQueue_I<Type, Container, TNativeIterator>::operator++ (void)
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>&
+    CSyncQueue_I<Type, Container, TNativeIterator, Traits>::operator++ (void)
 {
     CheckValid();
 
@@ -1750,10 +1856,10 @@ CSyncQueue_I<Type, Container, TNativeIterator>&
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>
-    CSyncQueue_I<Type, Container, TNativeIterator>::operator++ (int)
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>
+    CSyncQueue_I<Type, Container, TNativeIterator, Traits>::operator++ (int)
 {
     CheckValid();
 
@@ -1763,10 +1869,10 @@ CSyncQueue_I<Type, Container, TNativeIterator>
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>&
-    CSyncQueue_I<Type, Container, TNativeIterator>::operator-- (void)
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>&
+    CSyncQueue_I<Type, Container, TNativeIterator, Traits>::operator-- (void)
 {
     CheckValid();
 
@@ -1775,10 +1881,10 @@ CSyncQueue_I<Type, Container, TNativeIterator>&
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>
-    CSyncQueue_I<Type, Container, TNativeIterator>::operator-- (int)
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>
+    CSyncQueue_I<Type, Container, TNativeIterator, Traits>::operator-- (int)
 {
     CheckValid();
 
@@ -1788,10 +1894,11 @@ CSyncQueue_I<Type, Container, TNativeIterator>
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>&
-    CSyncQueue_I<Type, Container, TNativeIterator>::operator+= (TDiff offset)
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>&
+    CSyncQueue_I<Type, Container,
+                 TNativeIterator, Traits>::operator+= (TDiff offset)
 {
     CheckValid();
 
@@ -1800,10 +1907,11 @@ CSyncQueue_I<Type, Container, TNativeIterator>&
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>&
-    CSyncQueue_I<Type, Container, TNativeIterator>::operator-= (TDiff offset)
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>&
+    CSyncQueue_I<Type, Container,
+                 TNativeIterator, Traits>::operator-= (TDiff offset)
 {
     CheckValid();
 
@@ -1812,10 +1920,10 @@ CSyncQueue_I<Type, Container, TNativeIterator>&
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>
-    CSyncQueue_I<Type, Container, TNativeIterator>
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>
+    CSyncQueue_I<Type, Container, TNativeIterator, Traits>
         ::operator+ (TDiff offset) const
 {
     CheckValid();
@@ -1826,20 +1934,20 @@ CSyncQueue_I<Type, Container, TNativeIterator>
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator> operator+
-(typename CSyncQueue_I<Type, Container, TNativeIterator>::TDiff  offset,
- const    CSyncQueue_I<Type, Container, TNativeIterator>&        iter)
+CSyncQueue_I<Type, Container, TNativeIterator, Traits> operator+
+(typename CSyncQueue_I<Type, Container, TNativeIterator, Traits>::TDiff  offset,
+ const    CSyncQueue_I<Type, Container, TNativeIterator, Traits>&        iter)
 {
     return iter + offset;
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-CSyncQueue_I<Type, Container, TNativeIterator>
-    CSyncQueue_I<Type, Container, TNativeIterator>
+CSyncQueue_I<Type, Container, TNativeIterator, Traits>
+    CSyncQueue_I<Type, Container, TNativeIterator, Traits>
         ::operator- (TDiff offset) const
 {
     CheckValid();
@@ -1850,10 +1958,10 @@ CSyncQueue_I<Type, Container, TNativeIterator>
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-typename CSyncQueue_I<Type, Container, TNativeIterator>::TDiff
-    CSyncQueue_I<Type, Container, TNativeIterator>
+typename CSyncQueue_I<Type, Container, TNativeIterator, Traits>::TDiff
+    CSyncQueue_I<Type, Container, TNativeIterator, Traits>
         ::operator- (const TThisType& other) const
 {
     CheckValid();
@@ -1865,23 +1973,26 @@ typename CSyncQueue_I<Type, Container, TNativeIterator>::TDiff
 
 
 // Additional difference between const and non-const iterators
-template <class Type, class Container, class TNativeIterL, class TNativeIterR>
+template <class Type, class Container,
+          class TNativeIterL, class TNativeIterR, class Traits>
 inline
-typename CSyncQueue_I<Type, Container, TNativeIterL>::TDiff
-    operator- (const CSyncQueue_I<Type, Container, TNativeIterL>&  left,
-               const CSyncQueue_I<Type, Container, TNativeIterR>&  right)
+typename CSyncQueue_I<Type, Container, TNativeIterL, Traits>::TDiff
+    operator- (const CSyncQueue_I<Type, Container, TNativeIterL, Traits>&  left,
+               const CSyncQueue_I<Type, Container, TNativeIterR, Traits>&  right)
 {
     typedef typename
-        CSyncQueue<Type, Container>::TAccessGuard::TConstIterator TConstIterator;
+        CSyncQueue<Type, Container, Traits>::TAccessGuard::TConstIterator
+                                                                TConstIterator;
 
     return TConstIterator(left) - TConstIterator(right);
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-typename CSyncQueue_I<Type, Container, TNativeIterator>::TRef
-    CSyncQueue_I<Type, Container, TNativeIterator>::operator* (void) const
+typename CSyncQueue_I<Type, Container, TNativeIterator, Traits>::TRef
+    CSyncQueue_I<Type, Container,
+                 TNativeIterator, Traits>::operator* (void) const
 {
     CheckValid();
 
@@ -1889,10 +2000,11 @@ typename CSyncQueue_I<Type, Container, TNativeIterator>::TRef
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-typename CSyncQueue_I<Type, Container, TNativeIterator>::TPtr
-    CSyncQueue_I<Type, Container, TNativeIterator>::operator-> (void) const
+typename CSyncQueue_I<Type, Container, TNativeIterator, Traits>::TPtr
+    CSyncQueue_I<Type, Container,
+                 TNativeIterator, Traits>::operator-> (void) const
 {
     CheckValid();
 
@@ -1900,10 +2012,10 @@ typename CSyncQueue_I<Type, Container, TNativeIterator>::TPtr
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-typename CSyncQueue_I<Type, Container, TNativeIterator>::TRef
-    CSyncQueue_I<Type, Container, TNativeIterator>
+typename CSyncQueue_I<Type, Container, TNativeIterator, Traits>::TRef
+    CSyncQueue_I<Type, Container, TNativeIterator, Traits>
         ::operator[] (TDiff offset) const
 {
     CheckValid();
@@ -1912,9 +2024,9 @@ typename CSyncQueue_I<Type, Container, TNativeIterator>::TRef
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-bool CSyncQueue_I<Type, Container, TNativeIterator>
+bool CSyncQueue_I<Type, Container, TNativeIterator, Traits>
     ::operator== (const TThisType& other) const
 {
     CheckMatched(other);
@@ -1923,18 +2035,18 @@ bool CSyncQueue_I<Type, Container, TNativeIterator>
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-bool CSyncQueue_I<Type, Container, TNativeIterator>
+bool CSyncQueue_I<Type, Container, TNativeIterator, Traits>
     ::operator!= (const TThisType& other) const
 {
     return !(*this == other);
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-bool CSyncQueue_I<Type, Container, TNativeIterator>
+bool CSyncQueue_I<Type, Container, TNativeIterator, Traits>
     ::operator< (const TThisType& other) const
 {
     CheckMatched(other);
@@ -1943,27 +2055,27 @@ bool CSyncQueue_I<Type, Container, TNativeIterator>
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-bool CSyncQueue_I<Type, Container, TNativeIterator>
+bool CSyncQueue_I<Type, Container, TNativeIterator, Traits>
     ::operator> (const TThisType& other) const
 {
     return other < *this;
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-bool CSyncQueue_I<Type, Container, TNativeIterator>
+bool CSyncQueue_I<Type, Container, TNativeIterator, Traits>
     ::operator<= (const TThisType& other) const
 {
     return !(other < *this);
 }
 
 
-template <class Type, class Container, class TNativeIterator>
+template <class Type, class Container, class TNativeIterator, class Traits>
 inline
-bool CSyncQueue_I<Type, Container, TNativeIterator>
+bool CSyncQueue_I<Type, Container, TNativeIterator, Traits>
     ::operator>= (const TThisType& other) const
 {
     return !(*this < other);
@@ -1972,61 +2084,81 @@ bool CSyncQueue_I<Type, Container, TNativeIterator>
 
 // Additional comparing between const and non-const iterators
 
-template <class Type, class Container, class TNativeIterL, class TNativeIterR>
+template <class Type, class Container,
+          class TNativeIterL, class TNativeIterR, class Traits>
 inline
-bool operator== (const CSyncQueue_I<Type, Container, TNativeIterL>&  left,
-                 const CSyncQueue_I<Type, Container, TNativeIterR>&  right)
+bool operator== (const CSyncQueue_I<Type, Container,
+                                    TNativeIterL, Traits>&  left,
+                 const CSyncQueue_I<Type, Container,
+                                    TNativeIterR, Traits>&  right)
 {
     typedef
-        typename CSyncQueue<Type, Container>::TConstIterator  TConstIterator;
+        typename CSyncQueue<Type, Container, Traits>::TConstIterator
+                                                            TConstIterator;
 
     return TConstIterator(left) == TConstIterator(right);
 }
 
 
-template <class Type, class Container, class TNativeIterL, class TNativeIterR>
+template <class Type, class Container,
+          class TNativeIterL, class TNativeIterR, class Traits>
 inline
-bool operator!= (const CSyncQueue_I<Type, Container, TNativeIterL>&  left,
-                 const CSyncQueue_I<Type, Container, TNativeIterR>&  right)
+bool operator!= (const CSyncQueue_I<Type, Container,
+                                    TNativeIterL, Traits>&  left,
+                 const CSyncQueue_I<Type, Container,
+                                    TNativeIterR, Traits>&  right)
 {
     return !(left == right);
 }
 
 
-template <class Type, class Container, class TNativeIterL, class TNativeIterR>
+template <class Type, class Container,
+          class TNativeIterL, class TNativeIterR, class Traits>
 inline
-bool operator< (const CSyncQueue_I<Type, Container, TNativeIterL>&  left,
-                const CSyncQueue_I<Type, Container, TNativeIterR>&  right)
+bool operator< (const CSyncQueue_I<Type, Container,
+                                   TNativeIterL, Traits>&  left,
+                const CSyncQueue_I<Type, Container,
+                                   TNativeIterR, Traits>&  right)
 {
     typedef
-        typename CSyncQueue<Type, Container>::TConstIterator  TConstIterator;
+        typename CSyncQueue<Type, Container, Traits>::TConstIterator
+                                                            TConstIterator;
 
     return TConstIterator(left) < TConstIterator(right);
 }
 
 
-template <class Type, class Container, class TNativeIterL, class TNativeIterR>
+template <class Type, class Container,
+          class TNativeIterL, class TNativeIterR, class Traits>
 inline
-bool operator> (const CSyncQueue_I<Type, Container, TNativeIterL>&  left,
-                const CSyncQueue_I<Type, Container, TNativeIterR>&  right)
+bool operator> (const CSyncQueue_I<Type, Container,
+                                   TNativeIterL, Traits>&  left,
+                const CSyncQueue_I<Type, Container,
+                                   TNativeIterR, Traits>&  right)
 {
     return right < left;
 }
 
 
-template <class Type, class Container, class TNativeIterL, class TNativeIterR>
+template <class Type, class Container,
+          class TNativeIterL, class TNativeIterR, class Traits>
 inline
-bool operator<= (const CSyncQueue_I<Type, Container, TNativeIterL>&  left,
-                 const CSyncQueue_I<Type, Container, TNativeIterR>&  right)
+bool operator<= (const CSyncQueue_I<Type, Container,
+                                    TNativeIterL, Traits>&  left,
+                 const CSyncQueue_I<Type, Container,
+                                    TNativeIterR, Traits>&  right)
 {
     return !(right < left);
 }
 
 
-template <class Type, class Container, class TNativeIterL, class TNativeIterR>
+template <class Type, class Container,
+          class TNativeIterL, class TNativeIterR, class Traits>
 inline
-bool operator>= (const CSyncQueue_I<Type, Container, TNativeIterL>&  left,
-                 const CSyncQueue_I<Type, Container, TNativeIterR>&  right)
+bool operator>= (const CSyncQueue_I<Type, Container,
+                                    TNativeIterL, Traits>&  left,
+                 const CSyncQueue_I<Type, Container,
+                                    TNativeIterR, Traits>&  right)
 {
     return !(left < right);
 }
@@ -2035,9 +2167,9 @@ bool operator>= (const CSyncQueue_I<Type, Container, TNativeIterL>&  left,
 
 //   CSyncQueue_ConstAccessGuard
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-CSyncQueue_ConstAccessGuard<Type, Container>::
+CSyncQueue_ConstAccessGuard<Type, Container, Traits>::
 CSyncQueue_ConstAccessGuard(TQueue& queue_to_guard)
     : m_Queue(queue_to_guard)
 {
@@ -2045,9 +2177,10 @@ CSyncQueue_ConstAccessGuard(TQueue& queue_to_guard)
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-CSyncQueue_ConstAccessGuard<Type, Container>::~CSyncQueue_ConstAccessGuard()
+CSyncQueue_ConstAccessGuard<Type, Container,
+                            Traits>::~CSyncQueue_ConstAccessGuard()
 {
     NON_CONST_ITERATE(typename list<TIterBase*>, it, m_Iters)
     {
@@ -2058,54 +2191,55 @@ CSyncQueue_ConstAccessGuard<Type, Container>::~CSyncQueue_ConstAccessGuard()
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue_ConstAccessGuard<Type, Container>::x_AddIter(TIterBase* iter)
+void CSyncQueue_ConstAccessGuard<Type, Container,
+                                 Traits>::x_AddIter(TIterBase* iter)
 {
     m_Iters.push_back(iter);
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-void CSyncQueue_ConstAccessGuard<Type, Container>
+void CSyncQueue_ConstAccessGuard<Type, Container, Traits>
     ::x_RemoveIter(TIterBase* iter)
 {
     m_Iters.remove(iter);
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_ConstAccessGuard<Type, Container>::TIterator
-    CSyncQueue_ConstAccessGuard<Type, Container>::Begin(void)
+typename CSyncQueue_ConstAccessGuard<Type, Container, Traits>::TIterator
+    CSyncQueue_ConstAccessGuard<Type, Container, Traits>::Begin(void)
 {
     return TIterator(this, m_Queue.x_Begin());
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_ConstAccessGuard<Type, Container>::TIterator
-    CSyncQueue_ConstAccessGuard<Type, Container>::End(void)
+typename CSyncQueue_ConstAccessGuard<Type, Container, Traits>::TIterator
+    CSyncQueue_ConstAccessGuard<Type, Container, Traits>::End(void)
 {
     return TIterator(this, m_Queue.x_End());
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_ConstAccessGuard<Type, Container>::TRevIterator
-    CSyncQueue_ConstAccessGuard<Type, Container>::RBegin(void)
+typename CSyncQueue_ConstAccessGuard<Type, Container, Traits>::TRevIterator
+    CSyncQueue_ConstAccessGuard<Type, Container, Traits>::RBegin(void)
 {
     return TRevIterator(End());
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_ConstAccessGuard<Type, Container>::TRevIterator
-    CSyncQueue_ConstAccessGuard<Type, Container>::REnd(void)
+typename CSyncQueue_ConstAccessGuard<Type, Container, Traits>::TRevIterator
+    CSyncQueue_ConstAccessGuard<Type, Container, Traits>::REnd(void)
 {
     return TRevIterator(Begin());
 }
@@ -2115,10 +2249,10 @@ typename CSyncQueue_ConstAccessGuard<Type, Container>::TRevIterator
 // if 'const CSyncQueue<Type,Container>' change to
 // 'typename CSyncQueue_ConstAccessGuard<Type, Container>::TQueue'
 // then MSVC gives an error - it cannot propagate const specifier here
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-const CSyncQueue<Type,Container>&
-    CSyncQueue_ConstAccessGuard<Type, Container>::Queue(void) const
+const CSyncQueue<Type,Container, Traits>&
+    CSyncQueue_ConstAccessGuard<Type, Container, Traits>::Queue(void) const
 {
     return m_Queue;
 }
@@ -2127,38 +2261,38 @@ const CSyncQueue<Type,Container>&
 
 //   CSyncQueue_AccessGuard
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-CSyncQueue_AccessGuard<Type, Container>
+CSyncQueue_AccessGuard<Type, Container, Traits>
     ::CSyncQueue_AccessGuard(TQueue& queue_to_guard)
         : TBaseType(queue_to_guard)
 {}
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_AccessGuard<Type, Container>::TQueue&
-    CSyncQueue_AccessGuard<Type, Container>::Queue(void) const
+typename CSyncQueue_AccessGuard<Type, Container, Traits>::TQueue&
+    CSyncQueue_AccessGuard<Type, Container, Traits>::Queue(void) const
 {
     return const_cast<TQueue&> (TBaseType::Queue());
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_AccessGuard<Type, Container>::TIterator
-    CSyncQueue_AccessGuard<Type, Container>::Erase(TIterator iter)
+typename CSyncQueue_AccessGuard<Type, Container, Traits>::TIterator
+    CSyncQueue_AccessGuard<Type, Container, Traits>::Erase(TIterator iter)
 {
     iter.CheckGuard(this);
     return TIterator(this, Queue().x_Erase(iter.x_GetBase()));
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_AccessGuard<Type, Container>::TIterator
-    CSyncQueue_AccessGuard<Type, Container>::Erase(TIterator  from_iter,
-                                                   TIterator  to_iter)
+typename CSyncQueue_AccessGuard<Type, Container, Traits>::TIterator
+    CSyncQueue_AccessGuard<Type, Container, Traits>::Erase(TIterator  from_iter,
+                                                           TIterator  to_iter)
 {
     from_iter.CheckGuard(this);
     to_iter.CheckGuard(this);
@@ -2168,37 +2302,37 @@ typename CSyncQueue_AccessGuard<Type, Container>::TIterator
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_AccessGuard<Type, Container>::TIterator
-    CSyncQueue_AccessGuard<Type, Container>::Begin(void)
+typename CSyncQueue_AccessGuard<Type, Container, Traits>::TIterator
+    CSyncQueue_AccessGuard<Type, Container, Traits>::Begin(void)
 {
     return TIterator(this, Queue().x_Begin());
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_AccessGuard<Type, Container>::TIterator
-    CSyncQueue_AccessGuard<Type, Container>::End(void)
+typename CSyncQueue_AccessGuard<Type, Container, Traits>::TIterator
+    CSyncQueue_AccessGuard<Type, Container, Traits>::End(void)
 {
     return TIterator(this, Queue().x_End());
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_AccessGuard<Type, Container>::TRevIterator
-    CSyncQueue_AccessGuard<Type, Container>::RBegin(void)
+typename CSyncQueue_AccessGuard<Type, Container, Traits>::TRevIterator
+    CSyncQueue_AccessGuard<Type, Container, Traits>::RBegin(void)
 {
     return TRevIterator(End());
 }
 
 
-template <class Type, class Container>
+template <class Type, class Container, class Traits>
 inline
-typename CSyncQueue_AccessGuard<Type, Container>::TRevIterator
-    CSyncQueue_AccessGuard<Type, Container>::REnd(void)
+typename CSyncQueue_AccessGuard<Type, Container, Traits>::TRevIterator
+    CSyncQueue_AccessGuard<Type, Container, Traits>::REnd(void)
 {
     return TRevIterator(Begin());
 }

@@ -51,7 +51,19 @@ USING_NCBI_SCOPE;
 /////////////////////////////////////////////////////////////////////////////
 //  Test application
 
-typedef CSyncQueue<int> TQueue;
+
+// Basically reproduces the default implementation
+class CMySyncQueueTraits : public CSyncQueue_DefaultTraits
+{
+    public:
+        static unsigned int  IsUsedConcurrently(void)
+        {
+            return CThread::GetThreadsCount() > 0;
+        }
+};
+
+
+typedef CSyncQueue<int, deque<int>, CMySyncQueueTraits> TQueue;
 
 class CTestQueueApp : public CThreadedApp
 {
