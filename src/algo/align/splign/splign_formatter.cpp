@@ -792,7 +792,7 @@ const
                 CRef<CObject_id> oid (new CObject_id);
                 oid->SetStr("algo");
                 uf->SetLabel(*oid);
-                string verstr (CSplign::s_GetVersion().Print("Splign"));
+                string verstr (CSplign::s_GetVersion().Print("Splign", CVersion::fVersionInfo));
                 verstr.erase(remove_if(verstr.begin(), verstr.end(), PIsSpace), 
                              verstr.end());
                 uf->SetData().SetStr(CUtf8::AsUTF8(verstr, eEncoding_UTF8));
