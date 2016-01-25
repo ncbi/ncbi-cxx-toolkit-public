@@ -57,6 +57,9 @@ static int tds8_do_login(TDSSOCKET * tds, TDSCONNECTION * connection);
 #endif
 static int tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection);
 
+#undef MIN
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+
 void
 tds_set_version(TDSLOGIN * tds_login, short major_ver, short minor_ver)
 {
@@ -840,14 +843,16 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
     const char *domain = "";
     const char *user_name = tds_dstr_cstr(&connection->user_name);
     const char *p;
-    TDS_USMALLINT user_name_len = strlen(user_name);
-    TDS_USMALLINT host_name_len = tds_dstr_len(&connection->client_host_name);
-    TDS_USMALLINT app_name_len = tds_dstr_len(&connection->app_name);
+
+#define LENGTH_TO_SEND(x) MIN(tds_dstr_len(&connection->x), 128)
+    TDS_USMALLINT user_name_len = LENGTH_TO_SEND(user_name);
+    TDS_USMALLINT host_name_len = LENGTH_TO_SEND(client_host_name);
+    TDS_USMALLINT app_name_len = LENGTH_TO_SEND(app_name);
     size_t password_len = tds_dstr_len(&connection->password);
-    TDS_USMALLINT server_name_len = tds_dstr_len(&connection->server_name);
-    TDS_USMALLINT library_len = tds_dstr_len(&connection->library);
-    TDS_USMALLINT language_len = tds_dstr_len(&connection->language);
-    TDS_USMALLINT database_len = tds_dstr_len(&connection->database);
+    TDS_USMALLINT server_name_len = LENGTH_TO_SEND(server_name);
+    TDS_USMALLINT library_len = LENGTH_TO_SEND(library);
+    TDS_USMALLINT language_len = LENGTH_TO_SEND(language);
+    TDS_USMALLINT database_len = LENGTH_TO_SEND(database);
     TDS_USMALLINT domain_len = strlen(domain);
     TDS_USMALLINT auth_len = 0;
 
