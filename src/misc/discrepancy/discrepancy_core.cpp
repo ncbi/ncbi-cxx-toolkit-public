@@ -253,7 +253,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
     CType<CSeq_feat>::AddTo(i);
 #define ENABLE_DISCREPANCY_TYPE(type) if (m_Enable_##type) CType<type>::AddTo(i);
     ENABLE_DISCREPANCY_TYPE(CSeq_inst)
-    ENABLE_DISCREPANCY_TYPE(CSeq_feat)
+    // ENABLE_DISCREPANCY_TYPE(CSeq_feat) - don't need!
     ENABLE_DISCREPANCY_TYPE(CSeqFeatData)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ), it is handled separately!
     ENABLE_DISCREPANCY_TYPE(CBioSource)
@@ -290,6 +290,12 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         else if (CType<CSeq_feat>::Match(i)) {
             m_Current_Seq_feat.Reset(m_Scope->GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
             m_Count_Seq_feat++;
+            if (m_Enable_CSeq_feat) {
+                const CSeq_feat& obj = *CType<CSeq_feat>::Get(i);
+                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSeq_feat>* >, it, m_All_CSeq_feat) {
+                    Call(**it, obj);
+                }
+            }
         }
 #define HANDLE_DISCREPANCY_TYPE(type) \
         else if (m_Enable_##type && CType<type>::Match(i)) {                                    \
@@ -298,9 +304,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
                 Call(**it, obj);                                                                \
             }                                                                                   \
         }
-        if (false); // to check types (e.g.CBioseq,CSeq_feat) from the beginning 
         HANDLE_DISCREPANCY_TYPE(CSeq_inst)  // no semicolon!
-        HANDLE_DISCREPANCY_TYPE(CSeq_feat)
         HANDLE_DISCREPANCY_TYPE(CSeqFeatData)
         HANDLE_DISCREPANCY_TYPE(CBioSource)
         HANDLE_DISCREPANCY_TYPE(COrgName)
