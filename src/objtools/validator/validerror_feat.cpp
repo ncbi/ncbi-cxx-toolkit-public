@@ -5653,7 +5653,7 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
     } else {
 
         CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct (*(bsh.GetCompleteBioseq()));
-        if (mrna.GetPointer() != &feat) {
+        if (mrna && mrna.GetPointer() != &feat) {
             PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleMRNAproducts,
                     "Same product Bioseq from multiple mRNA features", feat);
         }
