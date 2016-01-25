@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
+#include <objects/general/Dbtag.hpp>
 #include <objects/macro/Molecule_type.hpp>
 #include <objects/macro/Molecule_class_type.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
@@ -99,11 +100,12 @@ DISCREPANCY_CASE(MISSING_PROTEIN_ID, CSeq_inst, eDisc, "Missing Protein ID")
         return;
     }
 
-    if( ! context.GetProteinId() ) {
+    const CSeq_id * protein_id = context.GetProteinId();
+    if( ! protein_id ) {
         m_Objs["[n] protein[s] [has] invalid ID[s]."].Add(
             *new CDiscrepancyObject(
                 context.GetCurrentBioseq(), context.GetScope(),
-                context.GetFile(), context.GetKeepRef()));
+                context.GetFile(), context.GetKeepRef()), false);
     }
 }
 
@@ -112,6 +114,65 @@ DISCREPANCY_SUMMARIZE(MISSING_PROTEIN_ID)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// INCONSISTENT_PROTEIN_ID
+DISCREPANCY_CASE(INCONSISTENT_PROTEIN_ID, CSeq_inst, eDisc,
+                 "Inconsistent Protein ID")
+{
+    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+    if( ! bioseq || ! bioseq->IsAa() ) {
+        return;
+    }
+
+    const CSeq_id * protein_id = context.GetProteinId();
+    if( ! protein_id ) {
+        return;
+    }
+    _ASSERT(protein_id->IsGeneral());
+    CTempString protein_id_prefix(
+        GET_STRING_FLD_OR_BLANK(protein_id->GetGeneral(), Db));
+    if( protein_id_prefix.empty() ) {
+        return;
+    }
+    string protein_id_prefix_lowercase = protein_id_prefix;
+    NStr::ToLower(protein_id_prefix_lowercase);
+
+    // find (or create if none before) the canonical form of the
+    // protein_id_prefix since case-insensitivity means it could have
+    // multiple forms.  Here, the canonical form is the way it appears
+    // the first time.
+    CReportNode& canonical_forms_node = m_Objs["canonical forms"][protein_id_prefix_lowercase];
+    CTempString canonical_protein_id_prefix;
+    if( canonical_forms_node.empty() ) {
+        // haven't seen this protein_id_prefix_lowercase before so we have
+        // to set the canonical form.
+        canonical_protein_id_prefix = protein_id_prefix;
+        canonical_forms_node[protein_id_prefix];
+    } else {
+        // use previously set canonical form;
+        canonical_protein_id_prefix =
+            canonical_forms_node.GetMap().begin()->first;
+    }
+    _ASSERT(NStr::EqualNocase(protein_id_prefix, canonical_protein_id_prefix));
+
+    m_Objs[kEmptyStr]["[n] sequence[s] [has] protein ID prefix " + canonical_protein_id_prefix].Add(
+        *new CDiscrepancyObject(
+            context.GetCurrentBioseq(), context.GetScope(),
+            context.GetFile(), context.GetKeepRef()), false);
+}
+
+DISCREPANCY_SUMMARIZE(INCONSISTENT_PROTEIN_ID)
+{
+    // if _all_ are identical, don't report
+    CReportNode& reports_collected = m_Objs[kEmptyStr];
+    if( reports_collected.GetMap().size() <= 1 ) {
+        // if there are no sequences or all sequences have the same
+        // canonical protein id, then do not show any discrepancy
+        return;
+    }
+
+    m_ReportItems = reports_collected.Export(*this)->GetSubitems();
+}
 
 // SHORT_SEQUENCES
 DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc, "Find Short Sequences")
