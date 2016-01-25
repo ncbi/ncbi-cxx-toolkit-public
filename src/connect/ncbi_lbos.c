@@ -759,7 +759,7 @@ char** g_LBOS_GetLBOSAddressesEx (ELBOSFindMethod priority_find_method,
 #endif /* 0 */
             break;
         case eLBOSFindMethod_Lbosresolve :
-#ifndef NCBI_OS_MSWIN
+#ifdef NCBI_OS_LINUX
             lbosaddress = s_LBOS_ReadLbosresolver();
             if (g_LBOS_StringIsNullOrEmpty(lbosaddress)) {
                 CORE_LOG_X(1, eLOG_Warning, "Trying to find LBOS using "
@@ -804,7 +804,7 @@ static const char* s_LBOS_ReadRole()
     /*
      * If no role previously read, fill it. Of course, not on MSWIN
      */
-#ifndef NCBI_OS_MSWIN
+#ifdef NCBI_OS_LINUX
     if (s_LBOS_CurrentRole == NULL) {
         size_t len;
         char str[kMaxLineSize];
@@ -864,7 +864,7 @@ static const char* s_LBOS_ReadRole()
             s_LBOS_CurrentRole = strdup(role);
         CORE_UNLOCK;
     }
-#endif /* #ifndef NCBI_OS_MSWIN */
+#endif /* #ifdef NCBI_OS_LINUX */
     return s_LBOS_CurrentRole;
 }
 
@@ -894,7 +894,7 @@ static const char* s_LBOS_ReadDomain()
         if (s_LBOS_CurrentDomain != NULL)
             return s_LBOS_CurrentDomain;
 
-#ifndef NCBI_OS_MSWIN
+#ifdef NCBI_OS_LINUX
         else { /* If nothing found in registry, check /etc/ncbi/domain */
             FILE* domain_file;
             size_t len;
@@ -939,7 +939,7 @@ static const char* s_LBOS_ReadDomain()
                 s_LBOS_CurrentDomain = strdup(str);
             CORE_UNLOCK;
         }
-#endif /*#ifndef NCBI_OS_MSWIN*/
+#endif /* #ifdef NCBI_OS_LINUX */
     }
     return s_LBOS_CurrentDomain;
 }
@@ -949,7 +949,7 @@ static const char* s_LBOS_ReadDomain()
  * Returned string is read-only, may reside in 'data' memory area             */
 static const char* s_LBOS_ReadLbosresolver(void)
 {
-#ifndef NCBI_OS_MSWIN
+#ifdef NCBI_OS_LINUX
     if (s_LBOS_Lbosresolver == NULL) {
         FILE* lbosresolver_file;
         size_t len;
@@ -996,7 +996,7 @@ static const char* s_LBOS_ReadLbosresolver(void)
             s_LBOS_Lbosresolver = strdup(str + 7);
         CORE_UNLOCK;
     }
-#endif /*#ifndef NCBI_OS_MSWIN*/
+#endif /* #ifdef NCBI_OS_LINUX */
     return s_LBOS_Lbosresolver;
 }
 
