@@ -115,8 +115,8 @@ bool CUCSCRegionWriter::WriteAnnot(
             feat.GetLocation().GetId()->GetLabel(&label, CSeq_id::eContent);
 
             m_Os << label << separator 
-                 << from_loc << separator
-                 << to_loc;
+                 << from_loc + 1 << separator
+                 << to_loc + 1;
             if (!strand.empty())
                 m_Os << separator << strand;
             m_Os << endl;
