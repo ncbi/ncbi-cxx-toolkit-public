@@ -1018,7 +1018,7 @@ void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
 CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
 {
     int flags = 0;
-    flags |= CGff3Reader::fAllIdsAsLocal;
+    //flags |= CGff3Reader::fAllIdsAsLocal;
     flags |= CGff3Reader::fNewCode;
     flags |= CGff3Reader::fGenbankMode;
     flags |= CGff3Reader::fRetainLocusIds;
@@ -1043,6 +1043,7 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
         fte.GenerateLocusTags();
         fte.GenerateProteinAndTranscriptIds();
         fte.SubmitFixProducts();
+        startingLocusTagNumber = fte.PendingLocusTagNumber();
     }
 
 
