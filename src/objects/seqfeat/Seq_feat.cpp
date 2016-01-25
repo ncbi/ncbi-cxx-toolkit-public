@@ -442,6 +442,87 @@ bool CSeq_feat::HasExceptionText(const string & exception_text ) const
         p_exception_text_set->end() );
 }
 
+
+// second element in pair indicates whether exception text is
+// permitted only for RefSeq records
+typedef SStaticPair<const char*, bool>  TExceptionPairElem;
+static const TExceptionPairElem k_LegalExceptionMap[] = {
+    { "16S ribosomal RNA and 23S ribosomal RNA overlap", true },
+    { "16S ribosomal RNA and 5S ribosomal RNA overlap", true },
+    { "23S ribosomal RNA and 16S ribosomal RNA overlap", true },
+    { "23S ribosomal RNA and 5S ribosomal RNA overlap", true },
+    { "5S ribosomal RNA and 16S ribosomal RNA overlap", true },
+    { "5S ribosomal RNA and 23S ribosomal RNA overlap", true },
+    { "adjusted for low-quality genome", true },
+    { "alternative processing", false },
+    { "alternative start codon", false },
+    { "annotated by transcript or proteomic data", false },
+    { "artificial frameshift", false },
+    { "artificial location", false },
+    { "dicistronic gene", false },
+    { "gene split at contig boundary", false },
+    { "gene split at sequence boundary", false },
+    { "genetic code exception", false },
+    { "heterogeneous population sequenced", false },
+    { "low-quality sequence region", false },
+    { "mismatches in transcription", true },
+    { "mismatches in translation", true },
+    { "modified codon recognition", false },
+    { "nonconsensus splice site", false },
+    { "rearrangement required for product", false },
+    { "reasons given in citation", false },
+    { "ribosomal slippage", false },
+    { "RNA editing", false },
+    { "trans-splicing", false },
+    { "transcribed product replaced", false },
+    { "transcribed pseudogene", false },
+    { "translated product replaced", false },
+    { "translation initiation by tRNA-Leu at CUG codon", true },
+    { "unclassified transcription discrepancy", true },
+    { "unclassified translation discrepancy", true },
+    { "unextendable partial coding region", false }
+};
+typedef CStaticArrayMap<const char*, bool, PNocase_CStr> TExceptionPairMap;
+DEFINE_STATIC_ARRAY_MAP(TExceptionPairMap, sc_ExceptionPairMap, k_LegalExceptionMap);
+
+vector<string> CSeq_feat::GetListOfLegalExceptions(bool include_refseq)
+{
+    vector<string> exception_list;
+
+    TExceptionPairMap::const_iterator it = sc_ExceptionPairMap.begin();
+    while (it != sc_ExceptionPairMap.end()) {
+        if (include_refseq || !it->second) {
+            exception_list.push_back(it->first);
+        }
+        ++it;
+    }
+
+    return exception_list;
+}
+
+
+bool CSeq_feat::IsExceptionTextInLegalList(const string& exception_text, bool allow_refseq)
+{
+    TExceptionPairMap::const_iterator it = sc_ExceptionPairMap.find(exception_text.c_str());
+    if (it != sc_ExceptionPairMap.end() && (allow_refseq || !it->second)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CSeq_feat::IsExceptionTextRefSeqOnly(const string& exception_text)
+{
+    TExceptionPairMap::const_iterator it = sc_ExceptionPairMap.find(exception_text.c_str());
+    if (it == sc_ExceptionPairMap.end()) {
+        return false;
+    } else {
+        return it->second;
+    }
+}
+
+
 CConstRef<CUser_object> CSeq_feat::FindExt(const string& ext_type) const
 {
     CConstRef<CUser_object> ret;

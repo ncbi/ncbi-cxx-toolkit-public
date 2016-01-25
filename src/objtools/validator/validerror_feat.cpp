@@ -6190,48 +6190,6 @@ void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
 }
 
 
-static const string s_LegalExceptionStrings[] = {
-    "RNA editing",
-    "reasons given in citation",
-    "rearrangement required for product",
-    "ribosomal slippage",
-    "trans-splicing",
-    "alternative processing",
-    "artificial frameshift",
-    "nonconsensus splice site",
-    "modified codon recognition",
-    "alternative start codon",
-    "dicistronic gene",
-    "transcribed product replaced",
-    "translated product replaced",
-    "transcribed pseudogene",
-    "annotated by transcript or proteomic data",
-    "heterogeneous population sequenced",
-    "low-quality sequence region",
-    "unextendable partial coding region",
-    "artificial location",
-    "gene split at contig boundary",
-    "gene split at sequence boundary",
-    "genetic code exception",
-};
-
-
-static const string s_RefseqExceptionStrings [] = {
-    "unclassified transcription discrepancy",
-    "unclassified translation discrepancy",
-    "mismatches in transcription",
-    "mismatches in translation",
-    "adjusted for low-quality genome",
-    "translation initiation by tRNA-Leu at CUG codon",
-    "16S ribosomal RNA and 23S ribosomal RNA overlap",
-    "16S ribosomal RNA and 5S ribosomal RNA overlap",
-    "23S ribosomal RNA and 16S ribosomal RNA overlap",
-    "23S ribosomal RNA and 5S ribosomal RNA overlap",
-    "5S ribosomal RNA and 16S ribosomal RNA overlap",
-    "5S ribosomal RNA and 23S ribosomal RNA overlap"
-};
-
-
 void CValidError_feat::ValidateExcept(const CSeq_feat& feat)
 {
     if (feat.IsSetExcept_text() && !NStr::IsBlank (feat.GetExcept_text()) && (!feat.IsSetExcept() || !feat.GetExcept())) {
@@ -6309,11 +6267,8 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
         if (NStr::IsBlank(*it)) {
             continue;
         }
-        for (size_t i = 0; !found && i < sizeof(s_LegalExceptionStrings) / sizeof(string); i++) {
-            if (NStr::EqualNocase (s_LegalExceptionStrings[i], str)) {
-                found = true;
-            }
-        }
+        found = CSeq_feat::IsExceptionTextInLegalList(str, false);
+
         if ( found ) {
             if (NStr::EqualNocase(str, "reasons given in citation")) {
                 reasons_in_cit = true;
@@ -6338,11 +6293,9 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
                     }
                 }
                 if (check_refseq) {
-                    for (size_t i = 0; !found && i < sizeof(s_RefseqExceptionStrings) / sizeof(string); i++) {
-                        if (NStr::EqualNocase (s_RefseqExceptionStrings[i], str)) {
-                            found = true;
-                            refseq_except = true;
-                        }
+                    if (CSeq_feat::IsExceptionTextRefSeqOnly(str)) {
+                        found = true;
+                        refseq_except = true;
                     }
                 }
             }
@@ -6370,12 +6323,7 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
             "Exception explanation text is also found in feature comment", feat);
     }
     if (refseq_except) {
-        bool found_just_the_exception = false;
-        for (size_t i = 0; !found_just_the_exception && i < sizeof(s_RefseqExceptionStrings) / sizeof(string); i++) {
-            if (NStr::EqualNocase (s_RefseqExceptionStrings[i], str)) {
-                found_just_the_exception = true;
-            }
-        }
+        bool found_just_the_exception = CSeq_feat::IsExceptionTextRefSeqOnly(str);
 
         if ( ! found_just_the_exception ) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_ExceptionProblem, 

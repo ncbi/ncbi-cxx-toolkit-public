@@ -102,6 +102,17 @@ public:
     /// and reset the except flag if there are no exception texts left.
     void RemoveExceptText(const string & exception_text);
 
+    /// Produces the list of legal exceptions. Note that more than one of
+    /// these values might occur in Seq-feat.exception_text, separated by
+    /// commas, however RefSeq-only exceptions should only appear alone.
+    static vector<string> GetListOfLegalExceptions(bool include_refseq);
+
+    /// Indicates whether this specific text occurs in the list of legal exceptions
+    static bool IsExceptionTextInLegalList(const string& exception_text, bool allow_refseq);
+
+    /// Indicates whether this specific text is a RefSeq-only exception
+    static bool IsExceptionTextRefSeqOnly(const string& exception_text);
+
     /// Return a specified DB xref.  This will find the *first* item in the
     /// given referenced database.  If no item is found, an empty CConstRef<>
     /// is returned.
