@@ -1422,13 +1422,13 @@ void CAutoDefFeatureClause_Base::GroupSegmentedCDSs (bool suppress_allele)
 }
 
 
-void CAutoDefFeatureClause_Base::RemoveFeaturesByType(unsigned int feature_type)
+void CAutoDefFeatureClause_Base::RemoveFeaturesByType(unsigned int feature_type, bool except_promoters)
 {
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        if ((unsigned int)m_ClauseList[k]->GetMainFeatureSubtype() == feature_type) {
+        if ((unsigned int)m_ClauseList[k]->GetMainFeatureSubtype() == feature_type && (!except_promoters || !m_ClauseList[k]->IsPromoter())) {
             m_ClauseList[k]->MarkForDeletion();
         } else if (!m_ClauseList[k]->IsMarkedForDeletion()) {
-            m_ClauseList[k]->RemoveFeaturesByType(feature_type);
+            m_ClauseList[k]->RemoveFeaturesByType(feature_type, except_promoters);
         }        
     }
 }
@@ -1454,12 +1454,12 @@ bool CAutoDefFeatureClause_Base::IsFeatureTypeLonely(unsigned int feature_type)
 }
 
 
-void CAutoDefFeatureClause_Base::RemoveFeaturesInmRNAsByType(unsigned int feature_type)
+void CAutoDefFeatureClause_Base::RemoveFeaturesInmRNAsByType(unsigned int feature_type, bool except_promoters)
 {
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
         if (m_ClauseList[k]->HasmRNA() 
             || m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_mRNA) {
-            m_ClauseList[k]->RemoveFeaturesByType(feature_type);
+            m_ClauseList[k]->RemoveFeaturesByType(feature_type, except_promoters);
         }
     }
 }
@@ -2005,9 +2005,6 @@ CAutoDefFeatureClause_Base * CAutoDefFeatureClause_Base::ClauseFromPhrase(const 
         return trna;
     }
 }
-
-
-
 
 
 END_SCOPE(objects)

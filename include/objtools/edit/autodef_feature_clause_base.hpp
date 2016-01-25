@@ -139,9 +139,9 @@ public:
     string FindGeneProductName(CAutoDefFeatureClause_Base *gene_clause);
     void AssignGeneProductNames(CAutoDefFeatureClause_Base *main_clause, bool suppress_allele);
     
-    void RemoveFeaturesByType(unsigned int feature_type);
+    void RemoveFeaturesByType(unsigned int feature_type, bool except_promoter = false);
     bool IsFeatureTypeLonely(unsigned int feature_type);
-    void RemoveFeaturesInmRNAsByType(unsigned int feature_type);
+    void RemoveFeaturesInmRNAsByType(unsigned int feature_type, bool except_promoter = false);
     
     virtual bool ShouldRemoveExons();
     
@@ -149,6 +149,8 @@ public:
     
     virtual bool IsBioseqPrecursorRNA();
     void RemoveBioseqPrecursorRNAs();
+
+    virtual bool IsPromoter() { return false; }
 
     void Consolidate(CAutoDefFeatureClause_Base& other, bool suppress_allele);
     void TakeSubclauses(CAutoDefFeatureClause_Base& other);

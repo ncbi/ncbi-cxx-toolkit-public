@@ -79,8 +79,8 @@ public:
         eOptionFieldType_SuppressMobileElementSubfeatures,
         eOptionFieldType_KeepExons,
         eOptionFieldType_KeepIntrons,
-        eOptionFieldType_KeepPromoters,
         eOptionFieldType_UseFakePromoters,
+        eOptionFieldType_KeepRegulatoryFeatures,
         eOptionFieldType_KeepLTRs,
         eOptionFieldType_Keep3UTRs,
         eOptionFieldType_Keep5UTRs,
@@ -130,9 +130,6 @@ public:
     bool GetUseFakePromoters() const { return m_BooleanFlags[eOptionFieldType_UseFakePromoters]; }
     void SetUseFakePromoters(bool val = true) {
         m_BooleanFlags[eOptionFieldType_UseFakePromoters] = val;
-        if (val) {
-            m_BooleanFlags[eOptionFieldType_KeepPromoters] = true;
-        }
     }
 
     CBioSource::TGenome GetProductFlag() const { return m_ProductFlag; };
@@ -182,7 +179,7 @@ public:
     AUTODEFBOOLFIELD(SuppressMobileElementSubfeatures)
     AUTODEFBOOLFIELD(KeepExons)
     AUTODEFBOOLFIELD(KeepIntrons)
-    AUTODEFBOOLFIELD(KeepPromoters)
+    AUTODEFBOOLFIELD(KeepRegulatoryFeatures)
     AUTODEFBOOLFIELD(KeepLTRs)
     AUTODEFBOOLFIELD(Keep3UTRs)
     AUTODEFBOOLFIELD(Keep5UTRs)

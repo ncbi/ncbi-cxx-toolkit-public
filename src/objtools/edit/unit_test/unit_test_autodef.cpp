@@ -295,7 +295,10 @@ void CheckAutoDefOptions
         expected_num_fields++;
     }
     if (opts.GetUseFakePromoters()) {
-        expected_num_fields += 2;
+        expected_num_fields ++;
+    }
+    if (opts.GetKeepRegulatoryFeatures()) {
+        expected_num_fields++;
     }
     if (opts.GetKeepIntrons()) {
         expected_num_fields++;
@@ -328,7 +331,6 @@ void CheckAutoDefOptions
     }
     if (opts.GetUseFakePromoters()) {
         BOOST_CHECK_EQUAL(HasBoolField(user, "UseFakePromoters"), 1);
-        BOOST_CHECK_EQUAL(HasBoolField(user, "KeepPromoters"), 1);
     }
     if (opts.GetKeepIntrons()) {
         BOOST_CHECK_EQUAL(HasBoolField(user, "KeepIntrons"), 1);
@@ -1808,6 +1810,67 @@ BOOST_AUTO_TEST_CASE(Test_GB_5447)
 
     AddTitle(nuc, "Sebaea microphylla hypothetical protein genes, complete cds.");
     CheckDeflineMatches(entry, true);
+
+}
+
+
+void MakeRegulatoryFeatureTest(const string& regulatory_class, const string& defline_interval, bool use_fake_promoters, bool keep_regulatory)
+{
+    objects::CAutoDef autodef;
+    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    if (!NStr::IsBlank(regulatory_class)) {
+        CRef<objects::CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
+        feat->SetData().SetImp().SetKey("regulatory");
+        CRef<CGb_qual> q(new CGb_qual("regulatory_class", regulatory_class));
+        feat->SetQual().push_back(q);
+    }
+    AddTitle(nuc, "Sebaea microphylla fake protein name gene, " + defline_interval);
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    autodef.AddSources(seh);
+    if (use_fake_promoters) {
+        autodef.SetUseFakePromoters(true);
+    }
+    if (keep_regulatory) {
+        autodef.SetKeepRegulatoryFeatures(true);
+    }
+
+    CheckDeflineMatches(seh, autodef, mod_combo);
+    scope->RemoveTopLevelSeqEntry(seh);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(GB_5537)
+{
+    // a sequence with no promoter, but we set the FakePromoter flag
+    MakeRegulatoryFeatureTest(kEmptyStr, "promoter region and complete cds.", true, false);
+
+    // a sequence with a promoter, but no flags
+    MakeRegulatoryFeatureTest("promoter", "complete cds.", false, false);
+
+    // a sequence with a promoter, set the FakePromoter flag
+    MakeRegulatoryFeatureTest("promoter", "promoter region and complete cds.", true, false);
+
+    // a sequence with a promoter, set keep regulatory
+    MakeRegulatoryFeatureTest("promoter", "promoter region and complete cds.", false, true);
+
+    // a sequence with a promoter, set keep regulatory and FakePromoter
+    MakeRegulatoryFeatureTest("promoter", "promoter region and complete cds.", true, true);
+
+    // a sequence with an enhancer, but no flags
+    MakeRegulatoryFeatureTest("enhancer", "complete cds.", false, false);
+
+    // a sequence with an enhancer, set fake promoters flag
+    MakeRegulatoryFeatureTest("enhancer", "promoter region and complete cds.", true, false);
+
+    // a sequence with an enhancer, set keep regulatory
+    MakeRegulatoryFeatureTest("enhancer", "enhancer and complete cds.", false, true);
 
 }
 

@@ -92,6 +92,9 @@ void CAutoDefOptions::InitFromUserObject(const CUser_object& obj)
     ITERATE(CUser_object::TData, it, obj.GetData()) {
         if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr()) {}
         TFieldType field_type = GetFieldType((*it)->GetLabel().GetStr());
+        if (field_type == eOptionFieldType_Unknown && NStr::EqualNocase((*it)->GetLabel().GetStr(), "KeepPromoters")) {
+            field_type = eOptionFieldType_KeepRegulatoryFeatures;
+        }
         if (field_type != eOptionFieldType_Unknown) {
             if (x_IsBoolean(field_type)) {
                 if ((*it)->IsSetData() && (*it)->GetData().IsBool() && (*it)->GetData().GetBool()) {
@@ -169,7 +172,7 @@ const TNameValPair sc_FieldTypes[] = {
         { "KeepLTRs", CAutoDefOptions::eOptionFieldType_KeepLTRs },
         { "KeepMobileElements", CAutoDefOptions::eOptionFieldType_KeepMobileElements },
         { "KeepPrecursorRNA", CAutoDefOptions::eOptionFieldType_KeepPrecursorRNA },
-        { "KeepPromoters", CAutoDefOptions::eOptionFieldType_KeepPromoters },
+        { "KeepRegulatoryFeatures", CAutoDefOptions::eOptionFieldType_KeepRegulatoryFeatures },
         { "KeepRepeatRegion", CAutoDefOptions::eOptionFieldType_KeepRepeatRegion },
         { "KeepuORFs", CAutoDefOptions::eOptionFieldType_KeepuORFs },
         { "LeaveParenthetical", CAutoDefOptions::eOptionFieldType_LeaveParenthetical },

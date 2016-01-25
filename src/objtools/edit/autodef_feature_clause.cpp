@@ -196,6 +196,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || subtype == CSeqFeatData::eSubtype_ncRNA
         || subtype == CSeqFeatData::eSubtype_preRNA
         || subtype == CSeqFeatData::eSubtype_D_loop
+        || subtype == CSeqFeatData::eSubtype_regulatory
         || IsNoncodingProductFeat()
         || IsMobileElement()
         || IsInsertionSequence()
@@ -299,6 +300,18 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
             if (IsEndogenousVirusSourceFeature()) {
                 typeword = "endogenous virus";
                 return true;
+            }
+            break;
+        case CSeqFeatData::eSubtype_regulatory:
+            if (m_MainFeat.IsSetQual()) {
+                ITERATE(CSeq_feat::TQual, q, m_MainFeat.GetQual()) {
+                    if ((*q)->IsSetQual() &&
+                        NStr::Equal((*q)->GetQual(), "regulatory_class") &&
+                        (*q)->IsSetVal() && !NStr::IsBlank((*q)->GetVal())) {
+                        typeword = (*q)->GetVal();
+                        return true;
+                    }
+                }
             }
             break;
         default:
@@ -612,40 +625,8 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
             product_name = m_MainFeat.GetComment();
         }
         return true;
-#if 0
-        if (subtype == CSeqFeatData::eSubtype_tRNA) {
-            string label;
-
-            feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
-            if (NStr::Equal(label, "tRNA-Xxx")) {
-                label = "tRNA-OTHER";
-            } else if (!NStr::StartsWith(label, "tRNA-")) {
-                label = "tRNA-" + label;
-            }
-            product_name = label;
-            return true;
-        } else {
-            product_name = m_MainFeat.GetNamedQual("product");
-            if (NStr::IsBlank(product_name)) {
-                if (subtype == CSeqFeatData::eSubtype_otherRNA
-                    || subtype == CSeqFeatData::eSubtype_misc_RNA) {
-                    if (m_MainFeat.CanGetComment()) {
-                        product_name = m_MainFeat.GetComment();
-                        if (!NStr::IsBlank(product_name)) {
-                            string::size_type pos = NStr::Find(product_name, ";");
-                            if (pos != NCBI_NS_STD::string::npos) {
-                                product_name = product_name.substr(0, pos);
-                            }
-                        }
-                    }
-                } else if (m_MainFeat.GetData().GetRna().IsSetExt()
-                    && m_MainFeat.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
-                    product_name = m_MainFeat.GetData().GetRna().GetExt().GetName();
-                }
-            }
-            return true;
-        }
-#endif
+    } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_regulatory) {
+        return true;
     } else {
         string label;
         
@@ -875,6 +856,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval, bool suppres
     
     if (IsSatelliteClause() 
         || IsPromoter() 
+        || subtype == CSeqFeatData::eSubtype_regulatory
         || subtype == CSeqFeatData::eSubtype_exon
         || subtype == CSeqFeatData::eSubtype_intron
         || subtype == CSeqFeatData::eSubtype_5UTR
@@ -1175,7 +1157,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *par
             || parent_clause->IsGeneCluster()) {
             ok_to_group = true;
         }
-    } else if (IsPromoter()) {
+    } else if (IsPromoter() || subtype == CSeqFeatData::eSubtype_regulatory) {
         if (parent_subtype == CSeqFeatData::eSubtype_cdregion
             || parent_subtype == CSeqFeatData::eSubtype_mRNA
             || parent_subtype == CSeqFeatData::eSubtype_gene

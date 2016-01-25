@@ -97,7 +97,7 @@ public:
     void SuppressMobileElementAndInsertionSequenceSubfeatures(bool suppress);
     void SetKeepExons(bool keep);
     void SetKeepIntrons(bool keep);
-    void SetKeepPromoters(bool keep);
+    void SetKeepRegulatoryFeatures(bool keep);
     void SetKeepLTRs(bool keep);
     void SetKeep3UTRs(bool keep);
     void SetKeep5UTRs(bool keep);
@@ -251,11 +251,10 @@ void CAutoDef::SetKeepIntrons(bool keep)
 
 
 inline
-void CAutoDef::SetKeepPromoters(bool keep)
+void CAutoDef::SetKeepRegulatoryFeatures(bool keep)
 {
-    m_Options.SetKeepPromoters(keep);
+    m_Options.SetKeepRegulatoryFeatures(keep);
 }
-
 
 inline
 void CAutoDef::SetKeepLTRs(bool keep)
