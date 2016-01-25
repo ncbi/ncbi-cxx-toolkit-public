@@ -3072,20 +3072,65 @@ const string& GetTargetedLocusName(const CGene_ref& gene)
 }
 
 
+const string& GetTargetedLocusName(const CProt_ref& prot)
+{
+    if (prot.IsSetName() &&
+        prot.GetName().size() > 0) {
+        return prot.GetName().front();
+    } else {
+        return kEmptyStr;
+    }
+
+}
+
+
+string GetTargetedLocusName(const CRNA_ref& rna)
+{
+    return rna.GetRnaProductName();
+}
+
+
+string GetTargetedLocusName(const CSeq_feat& feat)
+{
+    string tln = kEmptyStr;
+    if (feat.IsSetData()) {
+        switch (feat.GetData().Which()) {
+            case CSeqFeatData::e_Prot:
+                tln = GetTargetedLocusName(feat.GetData().GetProt());
+                break;
+            case CSeqFeatData::e_Gene:
+                tln = GetTargetedLocusName(feat.GetData().GetGene());
+                break;
+            case CSeqFeatData::e_Rna:
+                tln = GetTargetedLocusName(feat.GetData().GetRna());
+                break;
+            case CSeqFeatData::e_Imp:
+                if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature &&
+                    feat.IsSetComment()) {
+                    tln = feat.GetComment();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    return tln;
+}
+
+
 string GetTargetedLocusName(const CSeq_feat& cds, CScope& scope)
 {
     string tls = kEmptyStr;
     CConstRef <CSeq_feat> gene_for_feat = GetGeneForFeature(cds, scope);
     if (gene_for_feat) {
-        tls = GetTargetedLocusName(gene_for_feat->GetData().GetGene());
+        tls = GetTargetedLocusName(*gene_for_feat);
     }
     if (NStr::IsBlank(tls) && cds.IsSetProduct()) {
         CBioseq_Handle prot = scope.GetBioseqHandle(cds.GetProduct());
         if (prot) {
             CFeat_CI f(prot, CSeqFeatData::eSubtype_prot);
-            if (f && f->GetData().GetProt().IsSetName() &&
-                f->GetData().GetProt().GetName().size() > 0) {
-                tls = f->GetData().GetProt().GetName().front();
+            if (f) {
+                tls = GetTargetedLocusName(*(f->GetSeq_feat()));
             }
         }
     }
@@ -3108,19 +3153,14 @@ string GenerateTargetedLocusName(CBioseq_Handle seq)
             tls = GetTargetedLocusName(f->GetData().GetGene());
             break;
         case CSeqFeatData::e_Rna:
-            tls = f->GetData().GetRna().GetRnaProductName();
-            quit = true;
-            break;
         case CSeqFeatData::e_Imp:
-            if (f->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature &&
-                f->IsSetComment()) {
-                tls = f->GetComment();
-                quit = true;
-            }
+            tls = GetTargetedLocusName(*(f->GetSeq_feat()));
+            quit = true;
             break;
         default:
             break;
         }
+        ++f;
     }
     return tls;
 }

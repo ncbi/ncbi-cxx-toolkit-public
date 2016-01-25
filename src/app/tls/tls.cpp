@@ -46,6 +46,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objectio.hpp>
+#include <serial/objhook.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
@@ -53,7 +54,7 @@
 // Objects includes
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Bioseq.hpp>
-
+#include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -371,7 +372,6 @@ int CTLSApp::Run(void)
     m_MasterHandler.OpenInputFile(master_file, args["b"]);
     m_MasterHandler.OpenOutputFile(args["masterout"] ? args["masterout"].AsString() : master_file + ".tls", args["b"]);
     m_MasterHandler.ProcessAsnInput();
-
             
     return 0;
 }

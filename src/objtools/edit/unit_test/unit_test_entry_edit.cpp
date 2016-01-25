@@ -1465,5 +1465,44 @@ BOOST_AUTO_TEST_CASE(Test_GetTargetedLocusNameConsensus)
     BOOST_CHECK_EQUAL(edit::GetTargetedLocusNameConsensus("this is not a match", "something else entirely"), kEmptyStr);
 }
 
+
+void CheckTargetedLocusEntry(CRef<CSeq_entry> entry, const string& expected)
+{
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
+    BOOST_CHECK_EQUAL(edit::GenerateTargetedLocusName(*bi), expected);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GetTargetedLocusName)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
+    BOOST_CHECK_EQUAL(edit::GetTargetedLocusName(*prot), "fake protein name");
+    CheckTargetedLocusEntry(entry, "fake protein name");
+
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(cds);
+    gene->SetData().SetGene().SetLocus("XYZ");
+    BOOST_CHECK_EQUAL(edit::GetTargetedLocusName(*gene), "XYZ");
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    unit_test_util::AddFeat(gene, nuc);
+    CheckTargetedLocusEntry(entry, "XYZ");
+    
+    CRef<CSeq_feat> rna = unit_test_util::AddMiscFeature(entry);    
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    string remainder;
+    rna->SetData().SetRna().SetRnaProductName("18S ribosomal RNA", remainder);
+    BOOST_CHECK_EQUAL(edit::GetTargetedLocusName(*rna), "18S ribosomal RNA");
+
+    CRef<CSeq_feat> imp = unit_test_util::AddMiscFeature(entry);
+    imp->SetData().SetImp().SetKey("misc_feature");
+    imp->SetComment("uce");
+    BOOST_CHECK_EQUAL(edit::GetTargetedLocusName(*imp), "uce");
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
