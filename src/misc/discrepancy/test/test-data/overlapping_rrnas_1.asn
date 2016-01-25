@@ -1,0 +1,440 @@
+Seq-entry ::= set {
+    class genbank ,
+    seq-set {
+set {
+  class nuc-prot ,
+  descr {
+    source {
+      genome genomic ,
+      org {
+        taxname "Staphylococcus" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 1279 } } ,
+        syn {
+          "Aurococcus" } ,
+        orgname {
+          name
+            partial {
+              {
+                fixed-level other ,
+                level "genus" ,
+                name "Staphylococcus" } } ,
+          mod {
+            {
+              subtype strain ,
+              subname "Staphylococcus" } ,
+            {
+              subtype variety ,
+              subname "Single" } } ,
+          lineage "Bacteria; Firmicutes; Bacilli; Bacillales" ,
+          gcode 11 ,
+          div "BCT" } } ,
+      subtype {
+        {
+          subtype country ,
+          name "China" } ,
+        {
+          subtype isolation-source ,
+          name "Pseudomonas sp." } ,
+        {
+          subtype altitude ,
+          name "50 m" } ,
+        {
+          subtype other ,
+          name "[cultured bacterial source]" } } } } ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "Seq1" } ,
+      descr {
+        molinfo {
+          biomol genomic ,
+          completeness complete } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 1448 ,
+        topology circular ,
+        strand ds ,
+        seq-data
+          ncbi2na '5C31390B6260486289F9D7786F269A1AB8B046E8C17173087A8C1F6A016
+89C3168C333E0593AF432E021AFF9ED1F323A359964F272FAC2B069F14290639B2585E22AE3694
+47A078846B521D71A8A492CA837D643A9809786890659B8B8E0ADF68DB0077BCF2A08103BB0B07
+391B7E1AC5C34809469C1C6E524966B0C6CAE909BCD683CFA9B02666CA6BFFC2DE3B80951A7416
+E8AB4FA01E801F8B9208A02E83D4EEC9AE03992233A28114BA60A61FDEB7B078678EE6026EA8D0
+128F2315EB2D465B018E2E70BBCAABF5957CB9E49C193C247597AA2C61642BE01D0283E1AA1591
+09AE893BAFC3D824198205F140DF84D77855DC88C8BFD57DAA848B84AEB93AFB6D276EDB88EFAB
+C2D590626415F09F2F94D3C2FA91DC2F8796B8405A282BAA386D034D3957CE3FA9C446E710E843
+102A4980598AD090354C0BEF74BDA3ECB790761CCE09E83672C36C8D24E71AE0C6F56ADFB11165
+6D114622FEC115825AE8B053FA2725B60AEA1038F'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  rna {
+                    type rRNA,
+                    ext name ""
+                  },
+                location
+                  int {
+                    from 0 ,
+                    to 1441 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq1" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                    lim gt } },
+{
+                data
+                  rna {
+                    type rRNA,
+                    ext name ""
+                  },
+                location
+                  int {
+                    from 0 ,
+                    to 1441 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq1" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                    lim gt } },
+
+              {
+                data
+                  cdregion {
+                    frame two ,
+                    code {
+                      id 11 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "Seq1_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 1447 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq1" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } ,
+              {
+                data
+                  cdregion {
+                    frame two ,
+                    code {
+                      id 11 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "Seq1_2" ,
+                location
+                  int {
+                    from 0 ,
+                    to 1447 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq1" ,
+                    fuzz-from
+                      lim lt } } } } } } ,
+    seq {
+      id {
+        local
+          str "Seq1_1" } ,
+      descr {
+        molinfo {
+          biomol peptide ,
+          tech concept-trans ,
+          completeness no-ends } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 482 ,
+        seq-data
+          ncbieaa "LIHASRANRRGACSSDVSGGRVSNTWITYL*DWDNFGKPELIPDNILNRMVQ**KTVLL
+SLIDGSAPH*LVGKVTAYQGNDA*PT*EGDRPHWN*DTVQTPTGGSSRESSAMGESLTEQRRVSDEGLRIVKLCY*GR
+TNV*VTMHVLTVPNQKATANYVPAAAVIRRWQALSGIIGRKARVGGFLSLM*KPTAQPWRVIGNWKT*VQKRKVEFHV
+*R*NAQRYGGTPVAKATFWSVTDADVRKRGDQTGLDTLVVHAVNDEC*VLGGFRPLVLQLTH*ALRLGSTTARLKLKG
+IDGDPHKRWSMWFNSKQREEPYQILTSSDPSRDRVFPFGGQSDRWCMVVVSSCREMLG*VPQRAQPLSLVAIIKLGTL
+S*LPVTNRRKVGMTSNHHAPYDLGYTRATMDNTKGSETARSSKSHKVVLSSDCSLQLDYMKLESLVIVDQHATVNTFP
+GLVHTARHTTRVCNTRSRWSNHLELAVEGGTND" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                     } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 0 ,
+                    to 481 ,
+                    id
+                      local
+                        str "Seq1_1" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    seq {
+      id {
+        local
+          str "Seq1_2" } ,
+      descr {
+        molinfo {
+          biomol peptide ,
+          tech concept-trans ,
+          completeness no-left } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 482 ,
+        seq-data
+          ncbieaa "LIHASRANRRGACSSDVSGGRVSNTWITYL*DWDNFGKPELIPDNILNRMVQ**KTVLL
+SLIDGSAPH*LVGKVTAYQGNDA*PT*EGDRPHWN*DTVQTPTGGSSRESSAMGESLTEQRRVSDEGLRIVKLCY*GR
+TNV*VTMHVLTVPNQKATANYVPAAAVIRRWQALSGIIGRKARVGGFLSLM*KPTAQPWRVIGNWKT*VQKRKVEFHV
+*R*NAQRYGGTPVAKATFWSVTDADVRKRGDQTGLDTLVVHAVNDEC*VLGGFRPLVLQLTH*ALRLGSTTARLKLKG
+IDGDPHKRWSMWFNSKQREEPYQILTSSDPSRDRVFPFGGQSDRWCMVVVSSCREMLG*VPQRAQPLSLVAIIKLGTL
+S*LPVTNRRKVGMTSNHHAPYDLGYTRATMDNTKGSETARSSKSHKVVLSSDCSLQLDYMKLESLVIVDQHATVNTFP
+GLVHTARHTTRVCNTRSRWSNHLELAVEGGTND" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                     } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 0 ,
+                    to 481 ,
+                    id
+                      local
+                        str "Seq1_2" ,
+                    fuzz-from
+                    lim lt } } } } } } } } ,
+set {
+  class nuc-prot ,
+  descr {
+    source {
+      genome genomic ,
+      org {
+        taxname "Staphylococcus" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 1279 } } ,
+        syn {
+          "Aurococcus" } ,
+        orgname {
+          name
+            partial {
+              {
+                fixed-level other ,
+                level "genus" ,
+                name "Staphylococcus" } } ,
+          mod {
+            {
+              subtype strain ,
+              subname "Staphylococcus" } ,
+            {
+              subtype variety ,
+              subname "Single" } } ,
+          lineage "Bacteria; Firmicutes; Bacilli; Bacillales" ,
+          gcode 11 ,
+          div "BCT" } } ,
+      subtype {
+        {
+          subtype country ,
+          name "China" } ,
+        {
+          subtype isolation-source ,
+          name "Pseudomonas sp." } ,
+        {
+          subtype altitude ,
+          name "50 m" } ,
+        {
+          subtype other ,
+          name "[cultured bacterial source]" } } } } ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "Seq2" } ,
+      descr {
+        molinfo {
+          biomol genomic ,
+          completeness complete } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 1448 ,
+        topology circular ,
+        strand ds ,
+        seq-data
+          ncbi2na '5C31390B6260486289F9D7786F269A1AB8B046E8C17173087A8C1F6A016
+89C3168C333E0593AF432E021AFF9ED1F323A359964F272FAC2B069F14290639B2585E22AE3694
+47A078846B521D71A8A492CA837D643A9809786890659B8B8E0ADF68DB0077BCF2A08103BB0B07
+391B7E1AC5C34809469C1C6E524966B0C6CAE909BCD683CFA9B02666CA6BFFC2DE3B80951A7416
+E8AB4FA01E801F8B9208A02E83D4EEC9AE03992233A28114BA60A61FDEB7B078678EE6026EA8D0
+128F2315EB2D465B018E2E70BBCAABF5957CB9E49C193C247597AA2C61642BE01D0283E1AA1591
+09AE893BAFC3D824198205F140DF84D77855DC88C8BFD57DAA848B84AEB93AFB6D276EDB88EFAB
+C2D590626415F09F2F94D3C2FA91DC2F8796B8405A282BAA386D034D3957CE3FA9C446E710E843
+102A4980598AD090354C0BEF74BDA3ECB790761CCE09E83672C36C8D24E71AE0C6F56ADFB11165
+6D114622FEC115825AE8B053FA2725B60AEA1038F'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame two ,
+                    code {
+                      id 11 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "Seq2_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 1447 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq2" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } ,
+              {
+                data
+                  cdregion {
+                    frame two ,
+                    code {
+                      id 11 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "Seq2_2" ,
+                location
+                  int {
+                    from 0 ,
+                    to 1447 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq2" ,
+                    fuzz-from
+                      lim lt } } } } } } ,
+    seq {
+      id {
+        local
+          str "Seq2_1" } ,
+      descr {
+        molinfo {
+          biomol peptide ,
+          tech concept-trans ,
+          completeness no-ends } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 482 ,
+        seq-data
+          ncbieaa "LIHASRANRRGACSSDVSGGRVSNTWITYL*DWDNFGKPELIPDNILNRMVQ**KTVLL
+SLIDGSAPH*LVGKVTAYQGNDA*PT*EGDRPHWN*DTVQTPTGGSSRESSAMGESLTEQRRVSDEGLRIVKLCY*GR
+TNV*VTMHVLTVPNQKATANYVPAAAVIRRWQALSGIIGRKARVGGFLSLM*KPTAQPWRVIGNWKT*VQKRKVEFHV
+*R*NAQRYGGTPVAKATFWSVTDADVRKRGDQTGLDTLVVHAVNDEC*VLGGFRPLVLQLTH*ALRLGSTTARLKLKG
+IDGDPHKRWSMWFNSKQREEPYQILTSSDPSRDRVFPFGGQSDRWCMVVVSSCREMLG*VPQRAQPLSLVAIIKLGTL
+S*LPVTNRRKVGMTSNHHAPYDLGYTRATMDNTKGSETARSSKSHKVVLSSDCSLQLDYMKLESLVIVDQHATVNTFP
+GLVHTARHTTRVCNTRSRWSNHLELAVEGGTND" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                     } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 0 ,
+                    to 481 ,
+                    id
+                      local
+                        str "Seq2_1" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    seq {
+      id {
+        local
+          str "Seq2_2" } ,
+      descr {
+        molinfo {
+          biomol peptide ,
+          tech concept-trans ,
+          completeness no-left } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 482 ,
+        seq-data
+          ncbieaa "LIHASRANRRGACSSDVSGGRVSNTWITYL*DWDNFGKPELIPDNILNRMVQ**KTVLL
+SLIDGSAPH*LVGKVTAYQGNDA*PT*EGDRPHWN*DTVQTPTGGSSRESSAMGESLTEQRRVSDEGLRIVKLCY*GR
+TNV*VTMHVLTVPNQKATANYVPAAAVIRRWQALSGIIGRKARVGGFLSLM*KPTAQPWRVIGNWKT*VQKRKVEFHV
+*R*NAQRYGGTPVAKATFWSVTDADVRKRGDQTGLDTLVVHAVNDEC*VLGGFRPLVLQLTH*ALRLGSTTARLKLKG
+IDGDPHKRWSMWFNSKQREEPYQILTSSDPSRDRVFPFGGQSDRWCMVVVSSCREMLG*VPQRAQPLSLVAIIKLGTL
+S*LPVTNRRKVGMTSNHHAPYDLGYTRATMDNTKGSETARSSKSHKVVLSSDCSLQLDYMKLESLVIVDQHATVNTFP
+GLVHTARHTTRVCNTRSRWSNHLELAVEGGTND" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                     } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 0 ,
+                    to 481 ,
+                    id
+                      local
+                        str "Seq2_2" ,
+                    fuzz-from
+                      lim lt } } } } } } } }
+    } }
+
+
+

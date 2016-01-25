@@ -299,8 +299,7 @@ static void s_GetRnaRefLabel
                 }
             }
         }
-        if ((flags & fFGL_Type) == 0  &&  type_label != 0
-            &&  tmp_label.find(*type_label) == string::npos) {
+        if ((flags & fFGL_Type) == 0  &&  type_label != 0 && !tmp_label.empty() && tmp_label.find(*type_label) == string::npos) {
             *label += *type_label + "-" + tmp_label;
         } else if (!tmp_label.empty()) {
             *label += tmp_label;

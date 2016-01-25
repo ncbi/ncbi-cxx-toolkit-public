@@ -20,6 +20,7 @@ N_RUNS			N_RUNS			N_RUNS			normal_delta.asn
 N_RUNS-X		N_RUNS			N_RUNS			normal_delta.asn	-X	N_RUNS-X.gold.txt	C Toolkit calculates location incorrectly for delta seqs
 NOTE_NO_TRANSL		NOTE_NO_TRANSL		NOTE_NO_TRANSL		NOTE_NO_TRANSL.asn		NOTE_NO_TRANSL.gold.txt	C version detects the same sequence twice
 OVERLAPPING_RRNAS	OVERLAPPING_RRNAS	TEST_OVERLAPPING_RRNAS	overlapping_rrnas.asn
+OVERLAPPING_RRNAS-1	OVERLAPPING_RRNAS	TEST_OVERLAPPING_RRNAS	overlapping_rrnas_1.asn
 NO_ANNOTATION           NO_ANNOTATION           NO_ANNOTATION           no_annotation_seq.asn
 NO_ANNOTATION-1         NO_ANNOTATION           NO_ANNOTATION           no_annotation_set.asn
 PARTIAL_CDS_COMPLETE_SEQUENCE	PARTIAL_CDS_COMPLETE_SEQUENCE	PARTIAL_CDS_COMPLETE_SEQUENCE	partial_cds_complete_sequence.asn
@@ -42,3 +43,4 @@ ZERO_BASECOUNT		ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn		ZERO_BASECOU
 ZERO_BASECOUNT-X	ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn	-X	ZERO_BASECOUNT-X.gold.txt	C Toolkit counts the same sequence multiple times
 
 ### Please keep the tests in alphabetical order!
+
