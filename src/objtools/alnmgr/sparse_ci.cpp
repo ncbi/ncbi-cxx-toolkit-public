@@ -359,7 +359,9 @@ CSparse_CI::CSparse_CI(const CSparseAln&   aln,
     : m_Flags(flags),
       m_Aln(aln.m_Aln),
       m_Row(row),
-      m_TotalRange(TSignedRange::GetWhole())
+      m_TotalRange(TSignedRange::GetWhole()),
+      m_AnchorDirect(true),
+      m_RowDirect(true)
 {
     x_InitIterator();
 }
@@ -372,7 +374,9 @@ CSparse_CI::CSparse_CI(const CSparseAln&   aln,
     : m_Flags(flags),
       m_Aln(aln.m_Aln),
       m_Row(row),
-      m_TotalRange(range)
+      m_TotalRange(range),
+      m_AnchorDirect(true),
+      m_RowDirect(true)
 {
     x_InitIterator();
 }
