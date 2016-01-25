@@ -52,6 +52,9 @@ static TDSRET tds_send_login(TDSSOCKET * tds, TDSLOGIN * login);
 static TDSRET tds71_do_login(TDSSOCKET * tds, TDSLOGIN * login);
 static TDSRET tds7_send_login(TDSSOCKET * tds, TDSLOGIN * login);
 
+#undef MIN
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+
 void
 tds_set_version(TDSLOGIN * tds_login, TDS_TINYINT major_ver, TDS_TINYINT minor_ver)
 {
@@ -814,7 +817,7 @@ tds7_send_login(TDSSOCKET * tds, TDSLOGIN * login)
 
 #define SET_FIELD_DSTR(field, dstr) do { \
 	data_fields[field].ptr = tds_dstr_cstr(&(dstr)); \
-	data_fields[field].len = tds_dstr_len(&(dstr)); \
+	data_fields[field].len = MIN(tds_dstr_len(&(dstr)), 128);	\
 	} while(0)
 
 	/* setup data fields */
