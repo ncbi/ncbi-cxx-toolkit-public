@@ -768,14 +768,31 @@ string CValidErrorFormat::GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scop
 
     // Append label for bioseq of feature location
     if (!suppress_context && scope) {
+        bool find_failed = false;
         try {
             CBioseq_Handle hnd = scope->GetBioseqHandle(ft.GetLocation());
-            if( hnd ) {
+            if (hnd) {
                 desc += CValidErrorFormat::GetBioseqLabel(hnd);
+            }
+        } catch (CObjMgrException& ex) {
+            if (ex.GetErrCode() == CObjMgrException::eFindFailed) {
+                find_failed = true;
             }
         } catch (CException ) {
         } catch (std::exception ) {
         };
+        if (find_failed) {
+            try {
+                CSeq_loc_CI li(ft.GetLocation());
+                CBioseq_Handle hnd = scope->GetBioseqHandle(li.GetSeq_id());
+                if (hnd) {
+                    desc += CValidErrorFormat::GetBioseqLabel(hnd);
+                }
+
+            } catch (CException) {
+            } catch (std::exception) {
+            };
+        }
     }
 
     // Append label for product of feature

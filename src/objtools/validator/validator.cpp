@@ -491,6 +491,9 @@ bool CValidator::IsSeqLocCorrectlyOrdered(const CSeq_loc& loc, CScope& scope)
     CBioseq_Handle seq;
     try {
         CBioseq_Handle seq = scope.GetBioseqHandle(loc);
+    } catch (CObjMgrException& ex) {
+        // no way to tell
+        return true;
     } catch (const exception& e) {
         // no way to tell
         return true;

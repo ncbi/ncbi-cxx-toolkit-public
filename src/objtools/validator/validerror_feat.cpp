@@ -7975,6 +7975,13 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                             "Gene cross-reference is not on expected strand", feat);
                     }
                 }
+            } catch (CObjMgrException& e) {
+                if (e.GetErrCode() == CObjMgrException::eFindFailed) {
+                    // cannot evaluate further
+                    return;
+                } else {
+                    PostErr(eDiag_Info, eErr_INTERNAL_Exception, e.GetMsg(), feat);
+                }
             } catch (CException& e) {
                 PostErr(eDiag_Info, eErr_INTERNAL_Exception, e.GetMsg(), feat);
             }
