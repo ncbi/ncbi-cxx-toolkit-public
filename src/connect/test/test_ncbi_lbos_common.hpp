@@ -2501,12 +2501,8 @@ void FakeErrorInput__ShouldNotCrash()
             }
             ss << ":" << (i + 1) * 215;
             SOCK_StringToHostPort(ss.str().c_str(), &temp_ip, &temp_port);
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[j]->host == temp_ip,
-                                   "Problem with recognizing IP "
-                                   "in massive input");
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[j]->port == temp_port,
-                                   "Problem with recognizing IP "
-                                   "in massive input");
+            NCBITEST_CHECK_EQUAL_MT_SAFE(hostports[j]->host, temp_ip);
+            NCBITEST_CHECK_EQUAL_MT_SAFE(hostports[j]->port, temp_port);
             j++;
         }
         NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 80, "Mapper should find 80 hosts, but "
