@@ -1140,6 +1140,8 @@ private:
     void ReportCdTransErrors(const CSeq_feat& feat,
         bool show_stop, bool got_stop, bool no_end, int ragged,
         bool report_errors, bool& has_errors);
+
+    EDiagSev x_SeverityForDonor(bool relax_to_warning);
     void ValidateDonor (ENa_strand strand, TSeqPos stop, const CSeqVector& vec, TSeqPos seq_len,
                         bool rare_consensus_not_expected, 
                         const string& label, bool report_errors, bool relax_to_warning, bool &has_errors, const CSeq_feat& feat, bool is_last);
