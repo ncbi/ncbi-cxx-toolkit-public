@@ -2119,6 +2119,19 @@ void CValidError_feat::ValidateIntron (
     }
 }
 
+
+EDiagSev CValidError_feat::x_SeverityForDonor(bool relax_to_warning)
+{
+    EDiagSev sev = eDiag_Error;
+    if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+        sev = eDiag_Info;
+    } else if (relax_to_warning) {
+        sev = eDiag_Warning;
+    }
+    return sev;
+}
+
+
 void CValidError_feat::ValidateDonor 
 (ENa_strand strand, 
  TSeqPos    stop, 
@@ -2153,13 +2166,7 @@ void CValidError_feat::ValidateDonor
             else {
                 has_errors = true;
                 if (report_errors) {
-                    EDiagSev sev = eDiag_Error;
-                    if (is_last || (m_Imp.IsGpipe() && m_Imp.IsGenomic())) {
-                        sev = eDiag_Info;
-                    } else if (relax_to_warning) {
-                        sev = eDiag_Warning;
-                    }
-                    PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                    PostErr(x_SeverityForDonor(relax_to_warning), eErr_SEQ_FEAT_NotSpliceConsensusDonor,
                                 "Splice donor consensus (GT) not found after exon ending at position "
                                 + NStr::IntToString (stop + 1) + " of " + label,
                                 feat);
@@ -2275,13 +2282,7 @@ void CValidError_feat::ValidateDonorAcceptorPair
                 else {
                     has_errors = true;
                     if (report_errors) {
-                        EDiagSev sev = eDiag_Error;
-                        if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
-                            sev = eDiag_Info;
-                        } else if (relax_to_warning) {
-                            sev = eDiag_Warning;
-                        }
-                        PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                        PostErr(x_SeverityForDonor(relax_to_warning), eErr_SEQ_FEAT_NotSpliceConsensusDonor,
                                  "Splice donor consensus (GT) not found after exon ending at position "
                                  + NStr::IntToString (stop + 1) + " of " + label,
                                  feat);
@@ -2325,13 +2326,7 @@ void CValidError_feat::ValidateDonorAcceptorPair
             else {
                 has_errors = true;
                 if (report_errors) {
-                    EDiagSev sev = eDiag_Error;
-                    if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
-                        sev = eDiag_Info;
-                    } else if (relax_to_warning) {
-                        sev = eDiag_Warning;
-                    }
-                    PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                    PostErr(x_SeverityForDonor(relax_to_warning), eErr_SEQ_FEAT_NotSpliceConsensusDonor,
                                 "Splice donor consensus (GT) not found after exon ending at position "
                                 + NStr::IntToString (stop + 1) + " of " + label,
                                 feat);
