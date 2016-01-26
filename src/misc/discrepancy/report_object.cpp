@@ -40,6 +40,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/misc/sequence_util_macros.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -54,7 +55,6 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/edit/apply_object.hpp>
-
 
 BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(NDiscrepancy)
@@ -76,6 +76,10 @@ void CReportObject::SetText(CScope& scope)
     }
     else if (m_Seqdesc) {
         m_Text = GetTextObjectDescription(*m_Seqdesc, scope);
+    }
+    else if (m_Bioseq_set) {
+        CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(*m_Bioseq_set);
+        m_Text = GetTextObjectDescription(bssh);
     }
 
     if (!NStr::IsBlank(m_Filename)) {
@@ -199,7 +203,7 @@ CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq, CSeq_id::E_Choice choice)
             best_score = (*it)->BaseBestRankScore();
         }
     }
-    return best_seq_id;  
+    return best_seq_id;
 }
 
 
@@ -487,18 +491,82 @@ string CReportObject::GetTextObjectDescription(CBioseq_Handle bsh)
     return rval;
 }
 
+string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
+{
+    CNcbiOstrstream result_strm;
+
+    CBioseq_set::EClass bioseq_set_class =
+        GET_FIELD_OR_DEFAULT(bssh, Class, CBioseq_set::eClass_not_set);
+    if( bioseq_set_class == CBioseq_set::eClass_segset ||
+        bioseq_set_class == CBioseq_set::eClass_nuc_prot )
+    {
+        switch(bioseq_set_class) {
+        case CBioseq_set::eClass_segset:
+            result_strm << "ss|";
+            break;
+        case CBioseq_set::eClass_nuc_prot:
+            result_strm << "np|";
+            break;
+        default:
+            _TROUBLE;
+        }
+
+        // get representative bioseq from bioseq-set
+        CBioseq_CI bioseq_ci(bssh);
+        if( ! bioseq_ci ) {
+            return "(EMPTY BIOSEQ-SET)";
+        }
+        const CBioseq_Handle & main_bsh = *bioseq_ci;
+        CConstRef<CSeq_id> best_seq_id = GetBestId(
+            *main_bsh.GetCompleteBioseq(), CSeq_id::e_Genbank);
+        _ASSERT(best_seq_id);  // a Bioseq must have at least one Seq-id
+        {
+            string seq_id_str;
+            best_seq_id->GetLabel(&seq_id_str, CSeq_id::eContent);
+            result_strm << seq_id_str;
+        }
+
+    } else {
+        // get first child of bssh (which could be a bioseq or bioseq-set)
+        CSeq_entry_CI direct_child_ci(bssh); // NOT recursive
+        if( ! direct_child_ci ) {
+            // no child, so this is the best we can do
+            return "BioseqSet";
+        }
+
+        result_strm << "Set containing ";
+        if( direct_child_ci->IsSeq() ) {
+            CConstRef<CSeq_id> best_seq_id = GetBestId(
+                *direct_child_ci->GetSeq().GetCompleteBioseq(),
+                CSeq_id::e_Genbank);
+            _ASSERT(best_seq_id);  // a Bioseq must have at least one Seq-id
+            {
+                string seq_id_str;
+                best_seq_id->GetLabel(&seq_id_str, CSeq_id::eContent);
+                result_strm << seq_id_str;
+            }
+        } else {
+            _ASSERT(direct_child_ci->IsSet());
+            result_strm << GetTextObjectDescription(direct_child_ci->GetSet());
+        }
+    }
+
+    return (string)CNcbiOstrstreamToString(result_strm);
+}
+
 
 void CReportObject::DropReference()
 {
     m_Bioseq.Reset();
     m_Seq_feat.Reset();
     m_Seqdesc.Reset();
+    m_Bioseq_set.Reset();
 }
 
 
 void CReportObject::DropReference(CScope& scope) 
 {
-    if (!m_Bioseq && !m_Seq_feat && !m_Seqdesc) {
+    if (!m_Bioseq && !m_Seq_feat && !m_Seqdesc && !m_Bioseq_set) {
         return;
     }
     if (NStr::IsBlank(m_Text)) {
@@ -523,8 +591,8 @@ bool CReportObject::Equal(const CReportObj& obj) const
         return false;
     }
     
-    if (m_Bioseq || m_Seq_feat || m_Seqdesc || other.m_Bioseq || other.m_Seq_feat || other.m_Seqdesc) {
-        return (m_Bioseq.GetPointer() == other.m_Bioseq.GetPointer() && m_Seq_feat.GetPointer() == other.m_Seq_feat.GetPointer() && m_Seqdesc.GetPointer() == other.m_Seqdesc.GetPointer());
+    if (m_Bioseq || m_Seq_feat || m_Seqdesc || m_Bioseq_set || other.m_Bioseq || other.m_Seq_feat || other.m_Seqdesc || other.m_Bioseq_set ) {
+        return (m_Bioseq.GetPointer() == other.m_Bioseq.GetPointer() && m_Seq_feat.GetPointer() == other.m_Seq_feat.GetPointer() && m_Seqdesc.GetPointer() == other.m_Seqdesc.GetPointer() && m_Bioseq_set.GetPointer() == other.m_Bioseq_set.GetPointer());
     }            
 
     string cmp1 = GetText();

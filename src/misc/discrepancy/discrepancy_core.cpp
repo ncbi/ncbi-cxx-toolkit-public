@@ -221,6 +221,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     REGISTER_DISCREPANCY_TYPE(COrgName)
     REGISTER_DISCREPANCY_TYPE(CRNA_ref)
     REGISTER_DISCREPANCY_TYPE(CSeq_annot)
+    REGISTER_DISCREPANCY_TYPE(CBioseq_set)
     return false;
 }
 
@@ -260,6 +261,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
     ENABLE_DISCREPANCY_TYPE(COrgName)
     ENABLE_DISCREPANCY_TYPE(CRNA_ref)
     ENABLE_DISCREPANCY_TYPE(CSeq_annot)
+    // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
     
     for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
         CTypesConstIterator::TIteratorContext ctx = i.GetContextData();
@@ -286,6 +288,13 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         else if (CType<CBioseq_set>::Match(i)) {
             m_Current_Bioseq.Reset();
             Update_Bioseq_set_Stack(i);
+            if( m_Enable_CBioseq_set ) {
+                const CBioseq_set & obj = *CType<CBioseq_set>::Get(i);
+                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CBioseq_set>* >, it, m_All_CBioseq_set)
+                {
+                    Call(**it, obj);
+                }
+            }
         }
         else if (CType<CSeq_feat>::Match(i)) {
             m_Current_Seq_feat.Reset(m_Scope->GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());

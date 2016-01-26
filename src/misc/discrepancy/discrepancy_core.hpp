@@ -120,6 +120,14 @@ public:
             DropReference();
         }
     }
+    CDiscrepancyObject(CConstRef<CBioseq_set> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
+    {
+        SetFilename(filename);
+        SetText(scope);
+        if(!keep_ref) {
+            DropReference();
+        }
+    }
     bool CanAutofix(void) const { return m_Autofix; }
     CConstRef<CObject> GetMoreInfo() { return m_More; }
 protected:
@@ -257,7 +265,8 @@ public:
             INIT_DISCREPANCY_TYPE(CBioSource),
             INIT_DISCREPANCY_TYPE(CRNA_ref),
             INIT_DISCREPANCY_TYPE(COrgName),
-            INIT_DISCREPANCY_TYPE(CSeq_annot)
+            INIT_DISCREPANCY_TYPE(CSeq_annot),
+            INIT_DISCREPANCY_TYPE(CBioseq_set)
         {}
     bool AddTest(const string& name);
     void Parse(const objects::CSeq_entry_Handle& handle);
@@ -318,6 +327,10 @@ protected:
     ADD_DISCREPANCY_TYPE(CRNA_ref)
     ADD_DISCREPANCY_TYPE(COrgName)
     ADD_DISCREPANCY_TYPE(CSeq_annot)
+    // CBioseq_set should be used only for examining top-level
+    // features of the set, and never to subvert the visitor pattern
+    // by iterating over the contents oneself
+    ADD_DISCREPANCY_TYPE(CBioseq_set)
 };
 
 

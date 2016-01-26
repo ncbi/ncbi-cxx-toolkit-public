@@ -47,6 +47,7 @@ public:
     CReportObject(CConstRef<CBioseq> obj, CScope& scope) : m_Bioseq(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CSeq_feat> obj, CScope& scope) : m_Seq_feat(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CSeqdesc> obj, CScope& scope) : m_Seqdesc(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CBioseq_set> obj, CScope& scope) : m_Bioseq_set(obj), m_Scope(scope) {}
     ~CReportObject() {}
 
     const string& GetText() const { return m_Text; }
@@ -85,6 +86,7 @@ public:
     static string GetTextObjectDescription(const CSeqdesc& sd, CScope& scope);
     static string GetTextObjectDescription(const CSeqdesc& sd);
     static string GetTextObjectDescription(CBioseq_Handle bsh);
+    static string GetTextObjectDescription(CBioseq_set_Handle bssh);
 
     static bool AlreadyInList(const TReportObjectList& list, const CReportObject& new_obj);
 
@@ -103,19 +105,23 @@ public:
         if (m_Seqdesc) {
             return CConstRef<CSerialObject>(&*m_Seqdesc);
         }
+        if( m_Bioseq_set ) {
+            return CConstRef<CSerialObject>(&*m_Bioseq_set);
+        }
         return CConstRef<CSerialObject>();
     }
 
 protected:
-    string                m_Text;
-    string                m_ShortName;
-    string                m_FeatureTable;
-    string                m_XML;
-    CConstRef<CBioseq>    m_Bioseq;
-    CConstRef<CSeq_feat>  m_Seq_feat;
-    CConstRef<CSeqdesc>   m_Seqdesc;
-    string                m_Filename;
-    CScope&               m_Scope;
+    string                 m_Text;
+    string                 m_ShortName;
+    string                 m_FeatureTable;
+    string                 m_XML;
+    CConstRef<CBioseq>     m_Bioseq;
+    CConstRef<CSeq_feat>   m_Seq_feat;
+    CConstRef<CSeqdesc>    m_Seqdesc;
+    CConstRef<CBioseq_set> m_Bioseq_set;
+    string                 m_Filename;
+    CScope&                m_Scope;
 };
 
 
