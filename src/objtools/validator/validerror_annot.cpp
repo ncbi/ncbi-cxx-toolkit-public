@@ -189,6 +189,8 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
             } else if ((*feat_it)->IsSetLocation()) {
                 for ( CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it ) {
                     const CSeq_id& id = loc_it.GetSeq_id();
+                    CBioseq_Handle in_record = m_Scope->GetBioseqHandleFromTSE(id, m_Imp.GetTSE());
+                    if (!in_record) continue;
 
                     // Since IsBioseqWithIdInSet is linear in the number of
                     // bioseqs in bssh, if this turns out to be an issue
