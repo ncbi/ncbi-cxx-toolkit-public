@@ -48,6 +48,7 @@ public:
     ~CExpectedError();
 
     void Test(const CValidErrItem& err_item);
+    bool Match(const CValidErrItem& err_item, bool ignore_severity = false);
 
     void SetAccession (string accession) { m_Accession = accession; }
     void SetSeverity (EDiagSev severity) { m_Severity = severity; }
@@ -55,6 +56,7 @@ public:
     void SetErrMsg (string err_msg) { m_ErrMsg = err_msg; }
 
     const string& GetErrMsg(void) { return m_ErrMsg; }
+    static void PrintSeenError(const CValidErrItem& err_item);
 
 private:
     string m_Accession;

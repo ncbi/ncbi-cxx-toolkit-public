@@ -5756,11 +5756,7 @@ void CValidError_feat::ValidateCommonCDSProduct
     CBioseq_Handle prod;
     const CSeq_id * sid = feat.GetProduct().GetId();
     if (sid) {
-        CBioseq_Handle inner_bsh =
-            GetCache().GetBioseqHandleFromLocation(
-                m_Scope,
-                feat.GetLocation(), m_Imp.GetTSE_Handle());
-        prod = m_Scope->GetBioseqHandleFromTSE(*sid, inner_bsh);
+        prod = m_Scope->GetBioseqHandleFromTSE(*sid, m_Imp.GetTSE_Handle());
     }
     if ( !prod ) {
         const CSeq_id* sid = 0;
@@ -7688,6 +7684,74 @@ static bool s_LocationStrandsIncompatible (const CSeq_loc& loc1, const CSeq_loc&
 }
 
 
+bool CValidError_feat::x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key)
+{
+    bool found = false;
+    if (bsh.IsAa()) {
+        const CSeq_feat* cds = GetCDSForProduct(bsh);
+        if (cds != 0) {
+            if (cds->IsSetLocation()) {
+                const CSeq_loc& loc = cds->GetLocation();
+                const CSeq_id* id = loc.GetId();
+                if (id != NULL) {
+                    CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
+                    if (nbsh) {
+                        CCacheImpl::SFeatStrKey label_key(CCacheImpl::eFeatKeyStr_Label, nbsh, key);
+                        const CCacheImpl::TFeatValue & feats = GetCache().GetFeatStrKeyToFeats(label_key, m_Imp.GetTSE_Handle());
+                        if (!feats.empty()) {
+                            found = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return found;
+}
+
+
+bool CValidError_feat::x_ShouldReportSuspiciousGeneXref(const CSeq_feat& feat, CBioseq_Handle bsh, bool good_loc_bad_strand)
+{
+    // report suspicious gene xrefs
+
+    if (good_loc_bad_strand) {
+        return false;
+    }
+    // only test if drosophila, because
+    // curated fly source still has duplicate features
+    CSeqdesc_CI dbsrc_i(bsh, CSeqdesc::e_Source);
+    if (!dbsrc_i || !dbsrc_i->GetSource().IsSetTaxname() ||
+        !NStr::StartsWith(dbsrc_i->GetSource().GetTaxname(), "Drosophila ", NStr::eNocase)) {
+        return false;
+    }
+
+    if (feat.IsSetExcept_text() && NStr::Find(feat.GetExcept_text(), "dicistronic gene") != string::npos) {
+        // but not if feature has dicistronic gene exception
+        return false;
+    }
+
+    bool do_report = false;
+    // only do test if in gen-prod-set or has one of a specific kind of accession
+    FOR_EACH_SEQID_ON_BIOSEQ(it, *bsh.GetCompleteBioseq()) {
+        if ((*it)->IsOther() && (*it)->GetOther().IsSetAccession()) {
+            const string& accession = (*it)->GetOther().GetAccession();
+            if (NStr::StartsWith(accession, "NT_")
+                || NStr::StartsWith(accession, "NC_")
+                || NStr::StartsWith(accession, "NG_")
+                || NStr::StartsWith(accession, "NW_")) {
+                do_report = true;
+                break;
+            }
+        }
+    }
+    if (!do_report && GetGenProdSetParent(bsh)) {
+        do_report = true;
+    }
+
+    return do_report;
+}
+
+
 // Check for redundant gene Xref
 // Do not call if feat is gene
 void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
@@ -7712,12 +7776,41 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     /*
     CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
     */
-    CFeat_CI gene_it(*m_Scope, feat.GetLocation(), SAnnotSelector (CSeqFeatData::e_Gene));
+    CFeat_CI gene_it(bsh, SAnnotSelector (CSeqFeatData::e_Gene));
     CFeat_CI prev_gene;
     string label = "?";
     bool xref_match_same_as_overlap = false;
+    size_t num_match_by_locus = 0;
+    size_t num_match_by_locus_tag = 0;
+    bool good_loc_bad_strand = false;
 
     for ( ; gene_it; ++gene_it) {
+        bool bad_strand = s_LocationStrandsIncompatible(gene_it->GetLocation(), feat.GetLocation(), m_Scope);
+        if (gene_xref && gene_xref->IsSetLocus() &&
+            gene_it->GetData().GetGene().IsSetLocus() &&
+            NStr::Equal(gene_xref->GetLocus(), gene_it->GetData().GetGene().GetLocus())) {
+            num_match_by_locus++;
+            if (bad_strand) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+                    "Gene cross-reference is not on expected strand", feat);
+            }
+        }
+        if (gene_xref && gene_xref->IsSetLocus_tag() &&
+            gene_it->GetData().GetGene().IsSetLocus_tag() &&
+            NStr::Equal(gene_xref->GetLocus_tag(), gene_it->GetData().GetGene().GetLocus_tag())) {
+            num_match_by_locus_tag++;
+            if (bad_strand) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+                    "Gene cross-reference is not on expected strand", feat);
+            }
+            if ((!gene_xref->IsSetLocus() || NStr::IsBlank(gene_xref->GetLocus())) &&
+                gene_it->GetData().GetGene().IsSetLocus() &&
+                !NStr::IsBlank(gene_it->GetData().GetGene().GetLocus())) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutLocus,
+                    "Feature has Gene Xref with locus_tag but no locus, gene with locus_tag and locus exists", feat);
+            }
+        }
+
         if (TestForOverlapEx (gene_it->GetLocation(), feat.GetLocation(), 
           gene_it->GetLocation().IsInt() ? eOverlap_Contained : eOverlap_Subset, m_Scope) >= 0) {
             size_t len = GetLength(gene_it->GetLocation(), m_Scope);
@@ -7736,12 +7829,22 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 } else {
                     xref_match_same_as_overlap = false;
                 }
+                if (bad_strand) {
+                    good_loc_bad_strand = true;
+                } else {
+                    good_loc_bad_strand = false;
+                }
             } else if (len == max) {
                 equivalent |= s_GeneRefsAreEquivalent(gene_it->GetData().GetGene(), prev_gene->GetData().GetGene(), label);
                 num_genes++;
                 if (gene_it->IsSetExcept() && gene_it->IsSetExcept_text() &&
                     NStr::FindNoCase (gene_it->GetExcept_text(), "trans-splicing") != string::npos) {
                     num_trans_spliced++;
+                }
+                if (bad_strand) {
+                    good_loc_bad_strand = true;
+                } else {
+                    good_loc_bad_strand = false;
                 }
             }
         }
@@ -7800,80 +7903,16 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 "Unnecessary gene cross-reference " + label, feat);
         } else {
             // report suspicious gene xrefs
-            bool do_report = true;
-            if (feat.IsSetExcept_text() && NStr::Find (feat.GetExcept_text(), "dicistronic gene") != string::npos) {
-                // but not if feature has dicistronic gene exception
-                do_report = false;
-            }
-
-            if (do_report) {
-                do_report = false;
-                // only do test if in gen-prod-set or has one of a specific kind of accession
-                FOR_EACH_SEQID_ON_BIOSEQ (it, *bsh.GetCompleteBioseq()) {
-                    if ((*it)->IsOther() && (*it)->GetOther().IsSetAccession()) {
-                        const string& accession = (*it)->GetOther().GetAccession();
-                        if (NStr::StartsWith (accession, "NT_")
-                            || NStr::StartsWith (accession, "NC_")
-                            || NStr::StartsWith (accession, "NG_")
-                            || NStr::StartsWith (accession, "NW_")) {
-                            do_report = true;
-                            break;
-                        }
-                    }
-                }
-                if (!do_report && GetGenProdSetParent (bsh)) {
-                    do_report = true;
-                }
-            }
-            if (do_report) {
-                do_report = false;
-                // only test if drosophila, because
-                // curated fly source still has duplicate features
-                CSeqdesc_CI dbsrc_i(bsh, CSeqdesc::e_Source);
-                if (dbsrc_i && dbsrc_i->GetSource().IsSetTaxname()
-                    && NStr::StartsWith (dbsrc_i->GetSource().GetTaxname(), "Drosophila ", NStr::eNocase)) {
-                    do_report = true;
-                }
-            }
-            if (do_report) {
+            if (x_ShouldReportSuspiciousGeneXref(feat, bsh, good_loc_bad_strand)) {
                 string xref_label;
                 gene_xref->GetLabel(&xref_label);
-                vector < CConstRef <CSeq_feat> > features_with_label = GetFeaturesWithLabel (bsh, xref_label, m_Scope);
-                if (features_with_label.size() > 0) {
-                    // ignore if gene xref is necessary because of strandedness
-                    vector < CConstRef <CSeq_feat> >::iterator f1 = features_with_label.begin();
-                    if (Compare (feat.GetLocation(), (*f1)->GetLocation(),
-                        m_Scope, fCompareOverlapping) == eContained) {
-                        ENa_strand strand1 = eNa_strand_unknown;
-                        ENa_strand strand2 = eNa_strand_unknown;
-                        if ((*f1)->IsSetLocation() && (*f1)->GetLocation().IsSetStrand()) {
-                            strand1 = (*f1)->GetLocation().GetStrand();
-                        }
-                        if (feat.IsSetLocation() && feat.GetLocation().IsSetStrand()) {
-                            strand2 = feat.GetLocation().GetStrand();
-                        }
-                        if (strand1 == strand2) {
-                            do_report = false;
-                        } else if (strand1 == eNa_strand_unknown && strand2 != eNa_strand_minus) {
-                            do_report = false;
-                        } else if (strand1 != eNa_strand_minus && strand2 == eNa_strand_unknown) {
-                            do_report = false;
-                        } else if (strand1 == eNa_strand_both && strand2 != eNa_strand_minus) {
-                            do_report = false;
-                        } else if (strand1 != eNa_strand_minus && strand2 == eNa_strand_both) {
-                            do_report = false;
-                        }
-                    }
+                if (NStr::IsBlank(xref_label)) {
+                    xref_label = "?";
                 }
-                if (do_report) {
-                    if (NStr::IsBlank(xref_label)) {
-                        xref_label = "?";
-                    }
                     
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_SuspiciousGeneXref, 
-                             "Curated Drosophila record should not have gene cross-reference " + xref_label,
-                             feat);
-                }
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_SuspiciousGeneXref, 
+                         "Curated Drosophila record should not have gene cross-reference " + xref_label,
+                         feat);
             }
         }
 
@@ -7901,108 +7940,19 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 
 
         // find gene on bioseq to match genexref
-        bool found = false;
-        if (gene_xref->IsSetLocus() && !NStr::IsBlank (gene_xref->GetLocus())) {
-            const string& locus = gene_xref->GetLocus();
-            CCacheImpl::SFeatStrKey label_key(CCacheImpl::eFeatKeyStr_Label, bsh, locus);
-            try {
-                const CCacheImpl::TFeatValue & feats =
-                    GetCache().GetFeatStrKeyToFeats(label_key, m_Imp.GetTSE_Handle());
-                if (!feats.empty()) {
-                    found = true;
-                    const CMappedFeat & gene = feats[0];  // only look at first
-                    if (s_LocationStrandsIncompatible(
-                        gene.GetLocation(), feat.GetLocation(), m_Scope))
-                    {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
-                            "Gene cross-reference is not on expected strand", feat);
-                    }
-                }
-            } catch (CObjMgrException& e) {
-                if (e.GetErrCode() == CObjMgrException::eFindFailed) {
-                    // cannot evaluate further
-                    return;
-                } else {
-                    PostErr(eDiag_Info, eErr_INTERNAL_Exception, e.GetMsg(), feat);
-                }
-            } catch (CException& e) {
-                PostErr(eDiag_Info, eErr_INTERNAL_Exception, e.GetMsg(), feat);
-            }
-
-            if (!found && bsh.IsAa()) {
-                const CSeq_feat* cds = GetCDSForProduct(bsh);
-                if ( cds != 0 ) {
-                    if (cds->IsSetLocation()) {
-                        const CSeq_loc& loc = cds->GetLocation();
-                        const CSeq_id* id = loc.GetId();
-                        if (id != NULL) {
-                            CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
-                            if (nbsh) {
-                                CCacheImpl::SFeatStrKey label_key(CCacheImpl::eFeatKeyStr_Label, nbsh, gene_xref->GetLocus());
-                                const CCacheImpl::TFeatValue & feats = GetCache().GetFeatStrKeyToFeats(label_key, m_Imp.GetTSE_Handle());
-                                if( ! feats.empty() ) {
-                                    found = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (!found) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
-                         "Feature has gene locus cross-reference but no equivalent gene feature exists", feat);
-            }
+        if (gene_xref->IsSetLocus() &&
+            !NStr::IsBlank (gene_xref->GetLocus()) &&
+            num_match_by_locus == 0 &&
+            !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
+                "Feature has gene locus cross-reference but no equivalent gene feature exists", feat);
         }
         if (gene_xref->IsSetLocus_tag() 
-            && !NStr::IsBlank (gene_xref->GetLocus_tag()))
-        {
-            CTempString locus_tag = gene_xref->GetLocus_tag();
-            CCacheImpl::SFeatStrKey gene_key(
-                CCacheImpl::eFeatKeyStr_LocusTag, bsh, locus_tag);
-            const CCacheImpl::TFeatValue & feats = GetCache().GetFeatStrKeyToFeats(gene_key, m_Imp.GetTSE_Handle());
-            if( ! feats.empty() ) {
-                found = true;
-                const CMappedFeat & gene = feats[0];
-                if (s_LocationStrandsIncompatible(
-                        gene.GetLocation(), feat.GetLocation(), m_Scope))
-                {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
-                             "Gene cross-reference is not on expected strand", feat);
-                }
-            }
-
-            if (!found && bsh.IsAa() && gene_xref->IsSetLocus()) {
-                const CSeq_feat* cds = GetCDSForProduct(bsh);
-                if ( cds != 0 ) {
-                    if (cds->IsSetLocation()) {
-                        const CSeq_loc& loc = cds->GetLocation();
-                        const CSeq_id* id = loc.GetId();
-                        if (id != NULL) {
-                            CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
-                            if (nbsh) {
-                                string locus = gene_xref->GetLocus();
-                                CCacheImpl::SFeatStrKey gene_key(
-                                    CCacheImpl::eFeatKeyStr_Label, nbsh, locus);
-                                const CCacheImpl::TFeatValue & feats = GetCache().GetFeatStrKeyToFeats(gene_key, m_Imp.GetTSE_Handle());
-                                if( ! feats.empty() ) {
-                                    found = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (!found) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
-                         "Feature has gene locus_tag cross-reference but no equivalent gene feature exists", feat);
-            }
-            if ((!gene_xref->IsSetLocus() || NStr::IsBlank (gene_xref->GetLocus()))
-                && found && feats[0].GetData().GetGene().IsSetLocus() 
-                && !NStr::IsBlank (feats[0].GetData().GetGene().GetLocus()))
-            {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutLocus,
-                         "Feature has Gene Xref with locus_tag but no locus, gene with locus_tag and locus exists", feat);
-            }
+            && !NStr::IsBlank (gene_xref->GetLocus_tag()) &&
+            num_match_by_locus_tag == 0 &&
+            !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus_tag())) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
+                        "Feature has gene locus_tag cross-reference but no equivalent gene feature exists", feat);
         }
     }
 

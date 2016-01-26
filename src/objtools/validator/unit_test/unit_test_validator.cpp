@@ -140,6 +140,31 @@ CExpectedError::~CExpectedError()
 }
 
 
+bool CExpectedError::Match(const CValidErrItem& err_item, bool ignore_severity)
+{
+    if (!NStr::IsBlank(m_Accession) && !NStr::IsBlank(err_item.GetAccnver()) &&
+        !NStr::Equal(err_item.GetAccnver(), m_Accession)) {
+        return false;
+    }
+    if (!NStr::Equal(err_item.GetErrCode(), m_ErrCode)) {
+        return false;
+    }
+    string msg = err_item.GetMsg();
+    size_t pos = NStr::Find(msg, " EXCEPTION: NCBI C++ Exception:");
+    if (pos != string::npos) {
+        msg = msg.substr(0, pos);
+    }
+
+    if (!NStr::Equal(msg, m_ErrMsg)) {
+        return false;
+    }
+    if (!ignore_severity && m_ErrCode != err_item.GetErrCode()) {
+        return false;
+    }
+    return true;
+}
+
+
 void CExpectedError::Test(const CValidErrItem& err_item)
 {
     if (!NStr::IsBlank (m_Accession) && !NStr::IsBlank (err_item.GetAccnver())) {
@@ -156,6 +181,16 @@ void CExpectedError::Test(const CValidErrItem& err_item)
 }
 
 
+void CExpectedError::PrintSeenError(const CValidErrItem& err_item)
+{
+    string description = err_item.GetAccnver() + ":"
+        + CValidErrItem::ConvertSeverity(err_item.GetSeverity()) + ":"
+        + err_item.GetErrCode() + ":"
+        + err_item.GetMsg();
+    printf("%s\n", description.c_str());
+
+}
+
 static bool s_debugMode = false;
 
 void WriteErrors(const CValidError& eval, bool debug_mode)
@@ -164,11 +199,7 @@ void WriteErrors(const CValidError& eval, bool debug_mode)
         printf ("\n-\n");
     }
     for ( CValidError_CI vit(eval); vit; ++vit) {
-        string description =  vit->GetAccnver() + ":"
-                + CValidErrItem::ConvertSeverity(vit->GetSeverity()) + ":"
-                + vit->GetErrCode() + ":"
-                + vit->GetMsg();
-        printf ("%s\n", description.c_str());
+        CExpectedError::PrintSeenError(*vit);
     }
     if (debug_mode) {
         printf ("\n\n");
@@ -179,7 +210,6 @@ void WriteErrors(const CValidError& eval, bool debug_mode)
 void CheckErrors(const CValidError& eval,
                  vector< CExpectedError* >& expected_errors)
 {
-    size_t err_pos = 0;
     bool   problem_found = false;
 
     if (s_debugMode) {
@@ -187,29 +217,51 @@ void CheckErrors(const CValidError& eval,
         return;
     }
 
-    for ( CValidError_CI vit(eval); vit; ++vit) {
-        while (err_pos < expected_errors.size() && !expected_errors[err_pos]) {
-            ++err_pos;
-        }
-        if (err_pos < expected_errors.size()) {
-            expected_errors[err_pos]->Test(*vit);
-            ++err_pos;
+    vector<bool> expected_found;
+    for (size_t i = 0; i < expected_errors.size(); i++) {
+        if (expected_errors[i]) {
+            expected_found.push_back(false);
         } else {
-            string description =  vit->GetAccnver() + ":"
-                + CValidErrItem::ConvertSeverity(vit->GetSeverity()) + ":"
-                + vit->GetErrCode() + ":"
-                + vit->GetMsg();
-            BOOST_CHECK_EQUAL(description, "Unexpected error");
+            expected_found.push_back(true);
+        }
+    }
+
+    for (CValidError_CI vit(eval); vit; ++vit) {
+        bool found = false;
+        for (size_t i = 0; i < expected_errors.size(); i++) {
+            if (!expected_found[i] && expected_errors[i]->Match(*vit)) {
+                expected_found[i] = true;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            for (size_t i = 0; i < expected_errors.size(); i++) {
+                if (!expected_found[i] && expected_errors[i]->Match(*vit, true)) {
+                    printf("Problem with ");
+                    CExpectedError::PrintSeenError(*vit);
+                    expected_errors[i]->Test(*vit);
+                    expected_found[i] = true;
+                    found = true;
+                    problem_found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            BOOST_CHECK_EQUAL("Unexpected error", "Error not found");
+            CExpectedError::PrintSeenError(*vit);
             problem_found = true;
         }
     }
-    while (err_pos < expected_errors.size()) {
-        if (expected_errors[err_pos]) {
-            BOOST_CHECK_EQUAL(expected_errors[err_pos]->GetErrMsg(), "Expected error not found");
+
+    for (size_t i = 0; i < expected_errors.size(); i++) {
+        if (!expected_found[i]) {
+            BOOST_CHECK_EQUAL(expected_errors[i]->GetErrMsg(), "Expected error not found");
             problem_found = true;
         }
-        ++err_pos;
     }
+
     if (problem_found) {
         WriteErrors (eval, false);
     }
@@ -14851,10 +14903,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousGeneXref)
 
     STANDARD_SETUP
 
-    expected_errors.push_back (new CExpectedError("NT_123456", eDiag_Warning, "SuspiciousGeneXref",
-                                "Curated Drosophila record should not have gene cross-reference other gene"));
     expected_errors.push_back (new CExpectedError("NT_123456", eDiag_Warning, "GeneXrefStrandProblem",
                                 "Gene cross-reference is not on expected strand"));
+    expected_errors.push_back(new CExpectedError("NT_123456", eDiag_Warning, "SuspiciousGeneXref",
+        "Curated Drosophila record should not have gene cross-reference other gene"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
