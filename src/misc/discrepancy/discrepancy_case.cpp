@@ -744,6 +744,40 @@ DISCREPANCY_SUMMARIZE(ZERO_BASECOUNT)
 }
 
 
+// NONWGS_SETS_PRESENT
+DISCREPANCY_CASE(NONWGS_SETS_PRESENT, CBioseq_set, eDisc,
+                 "Eco, mut, phy or pop sets present")
+{
+    _ASSERT(&obj == &*context.GetCurrentBioseq_set());
+
+    if( ! obj.IsSetClass() ) {
+        return;
+    }
+
+    CBioseq_set::EClass bioseq_set_class = obj.GetClass();
+    switch(bioseq_set_class) {
+    case CBioseq_set::eClass_eco_set:
+    case CBioseq_set::eClass_mut_set:
+    case CBioseq_set::eClass_phy_set:
+    case CBioseq_set::eClass_pop_set:
+        // non-WGS set found
+        m_Objs["[n] set[s] [is] of type eco, mut, phy or pop"].Add(
+            *new CDiscrepancyObject(
+                context.GetCurrentBioseq_set(), context.GetScope(),
+                context.GetFile(), context.GetKeepRef()),
+            false);
+        break;
+    default:
+        // other types are fine
+        break;
+    }
+}
+
+DISCREPANCY_SUMMARIZE(NONWGS_SETS_PRESENT)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
 DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc|eOncaller, "No annotation")
 {
     if (obj.IsAa() || context.HasFeatures()) {
