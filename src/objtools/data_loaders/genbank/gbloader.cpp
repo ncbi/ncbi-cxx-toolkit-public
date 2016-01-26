@@ -979,7 +979,7 @@ static const bool s_LoadBulkBlobs = true;
 TSeqPos CGBDataLoader::GetSequenceLength(const CSeq_id_Handle& sih)
 {
     if ( CReadDispatcher::CannotProcess(sih) ) {
-        return 0;
+        return kInvalidSeqPos;
     }
     CGBReaderRequestResult result(this, sih);
     CLoadLockLength lock(result, sih);
