@@ -1291,3 +1291,34 @@ BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
 
     }}
 }
+
+BOOST_AUTO_TEST_CASE(ORDERED_LOCATION_Autofix)
+{
+    CRef<CSeq_entry> entry = ReadEntryFromFile("../test/test-data/ORDERED_LOCATION.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+    Set->AddTest("ORDERED_LOCATION");
+    Set->Parse(seh);
+    Set->Summarize();
+
+    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_CHECK( ! rep.empty() );
+
+    NON_CONST_ITERATE( TReportItemList, rep_it, rep ) {
+        CReportItem & rep_item = **rep_it;
+        BOOST_CHECK(rep_item.CanAutofix());
+        CRef<CAutofixReport> fix_rpt = rep_item.Autofix(scope);
+        BOOST_CHECK_EQUAL( fix_rpt->GetN(), 2 );
+    }
+
+    CRef<CSeq_entry> expected_entry = ReadEntryFromFile("../test/test-data/ORDERED_LOCATION.after_autofix.asn");
+    BOOST_CHECK_MESSAGE(
+        entry->Equals(*expected_entry),
+        "Autofix did not match expected.  Expected result: \n" << MSerial_AsnText << *expected_entry << "\nActual entry: \n" << MSerial_AsnText << *seh.GetCompleteSeq_entry());
+}

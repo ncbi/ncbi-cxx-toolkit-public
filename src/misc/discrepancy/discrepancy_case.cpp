@@ -875,6 +875,78 @@ DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+// ORDERED_LOCATION
+DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eOncaller,
+                 "Location is ordered (intervals interspersed with gaps)")
+{
+    if( ! obj.IsSetLocation() ) {
+        return;
+    }
+
+    CSeq_loc_CI loc_ci(obj.GetLocation(), CSeq_loc_CI::eEmpty_Allow);
+    for( ; loc_ci; ++loc_ci) {
+        if( loc_ci.GetEmbeddingSeq_loc().IsNull() ) {
+            CReportNode & message_report_node =
+                m_Objs["[n] feature[s] [has] ordered location[s]"];
+            message_report_node.Autofix();
+            message_report_node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true, true), false);
+            return;
+        }
+    }
+}
+
+DISCREPANCY_SUMMARIZE(ORDERED_LOCATION)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
+{
+    TReportObjectList list = item->GetDetails();
+    size_t num_fixed = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        CDiscrepancyObject& obj =
+            *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+        const CSeq_feat* orig_seq_feat =
+            dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
+        _ASSERT(orig_seq_feat);
+        // no need to check CanAutofix because ordered locations are
+        // always fixable
+        _ASSERT(orig_seq_feat->IsSetLocation());
+        // rebuild new loc but without the NULL parts
+        CSeq_loc_I new_loc_creator(
+            *SerialClone(orig_seq_feat->GetLocation()));
+        while( new_loc_creator ) {
+            if( new_loc_creator.GetEmbeddingSeq_loc().IsNull() ) {
+                new_loc_creator.Delete();
+            } else {
+                ++new_loc_creator;
+            }
+        }
+        if( ! new_loc_creator.HasChanges()) {
+            // inefficient, but I suppose it's possible if something
+            // elsewhere already fixed this
+            continue;
+        }
+
+        // replace the Seq-feat
+        CRef<CSeq_loc> new_seq_feat_loc = new_loc_creator.MakeSeq_loc(
+            CSeq_loc_I::eMake_PreserveType);
+        CRef<CSeq_feat> replacement_seq_feat(SerialClone(*orig_seq_feat));
+        replacement_seq_feat->SetLocation(*new_seq_feat_loc);
+        try {
+            CSeq_feat_EditHandle seq_feat_h(scope.GetSeq_featHandle(
+                                                *orig_seq_feat));
+            seq_feat_h.Replace(*replacement_seq_feat);
+            ++num_fixed;
+        } catch (...) {
+            // feature may have already been removed
+        }
+    }
+
+    return CRef<CAutofixReport>(num_fixed ? new CAutofixReport("ORDERED_LOCATION: [n] features with ordered locations fixed", num_fixed) : 0);
+}
+
 
 DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc, "Missing locus tags")
 {
