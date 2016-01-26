@@ -180,6 +180,10 @@ sub normalize_detail
   $str=~s/:plus([<]?\d+-[>]?\d+)/:$1/;
   $str=~s/:minus([<]?\d+-[>]?\d+)/:c$1/;
 
+  # C seems to prefer "()" for seq-loc-mix but C++ seems to prefer "[]"
+  $str=~s/\t\[/\t\(/;
+  $str=~s/\]$/\)/;
+
   return $str;
 }
 
