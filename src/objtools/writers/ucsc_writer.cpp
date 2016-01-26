@@ -68,7 +68,7 @@ CUCSCRegionWriter::~CUCSCRegionWriter()
 //  ----------------------------------------------------------------------------
 bool CUCSCRegionWriter::WriteAnnot( 
     const CSeq_annot& annot,
-    const CTempString& separator)
+    const CTempString& separators)
 //  ----------------------------------------------------------------------------
 {
     if( annot.CanGetDesc() ) {
@@ -78,6 +78,8 @@ bool CUCSCRegionWriter::WriteAnnot(
             }
         }
     }
+    string separator = separators;
+    separator.append("\t\t\t");
     
     if (annot.IsSetData() && annot.GetData().IsFtable())
     {
@@ -104,7 +106,8 @@ bool CUCSCRegionWriter::WriteAnnot(
 
             const string& region = feat.GetData().GetRegion();
             string strand;
-            if (feat.GetLocation().IsSetStrand())
+            if ((m_uFlags & fSkipStrand) == 0 &&
+               feat.GetLocation().IsSetStrand())
             {
                 if (feat.GetLocation().GetStrand() == eNa_strand_plus)
                     strand = "+";
@@ -114,11 +117,11 @@ bool CUCSCRegionWriter::WriteAnnot(
             string label;
             feat.GetLocation().GetId()->GetLabel(&label, CSeq_id::eContent);
 
-            m_Os << label << separator 
-                 << from_loc + 1 << separator
+            m_Os << label << separator[0] 
+                 << from_loc + 1 << separator[1]
                  << to_loc + 1;
             if (!strand.empty())
-                m_Os << separator << strand;
+                m_Os << separator[2] << strand;
             m_Os << endl;
         }
 

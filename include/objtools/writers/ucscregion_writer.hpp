@@ -44,6 +44,11 @@ class NCBI_XOBJWRITE_EXPORT CUCSCRegionWriter:
 //  ============================================================================
 {
 public:
+    enum eFlags
+    {
+      fNormal,
+      fSkipStrand
+    };
     /// Constructor.
     /// @param scope
     ///   scope to be used for ID reference resolution (it's OK to create one
@@ -64,7 +69,7 @@ public:
 
     virtual ~CUCSCRegionWriter();
 
-    bool WriteAnnot(const CSeq_annot&, const CTempString& separator="\t");
+    bool WriteAnnot(const CSeq_annot&, const CTempString& separators="\t");
 
 protected:
     CScope& m_Scope;
