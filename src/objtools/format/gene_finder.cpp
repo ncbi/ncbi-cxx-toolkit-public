@@ -677,6 +677,8 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible(
     return GetFeatViaSubsetThenExtremesIfPossible_Helper( ctx, scope, *cleaned_location, sought_type, filtering_gene_xref );
 }
 
+SAFE_CONST_STATIC_STRING(kGbLoader, "GBLOADER");
+
 // static
 CConstRef<CSeq_feat> 
 CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper(
@@ -686,27 +688,28 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper(
     // holds reference to temporary scope if it's used
     CRef<CScope> temp_scope;
 
-    const static string kGbLoader = "GBLOADER";
     bool needToAddGbLoaderBack = false;
     if( scope && ( ctx.IsEMBL() || ctx.IsDDBJ() ) && 
-        scope->GetObjectManager().FindDataLoader(kGbLoader) ) 
+        scope->GetObjectManager().FindDataLoader(*kGbLoader) ) 
     {
         // try to remove the GBLOADER temporarily
         try {
-            scope->RemoveDataLoader(kGbLoader);
+            scope->RemoveDataLoader(*kGbLoader);
             needToAddGbLoaderBack = true;
         } catch(...) {
             // we couldn't remove the GBLOADER temporarily, so we make a temporary substitute CScope
-
-            // add copy of scope, but without the gbloader
-            // TODO: check if this call is fast
-            scope = new CScope(*CObjectManager::GetInstance());
-            scope->AddDefaults();
-            scope->RemoveDataLoader(kGbLoader);
-            temp_scope.Reset(scope);
+            scope = NULL;
         }
     }
 
+    if (scope == NULL) {
+        // TODO: check if this call is fast
+        temp_scope.Reset(new CScope(*CObjectManager::GetInstance()));
+        temp_scope->AddDefaults();
+        temp_scope->RemoveDataLoader(*kGbLoader);
+        scope = temp_scope.GetPointer();
+    }
+    
     CConstRef<CSeq_feat> feat;
     feat = GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
         ctx, scope, location, sought_type,
@@ -718,7 +721,7 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper(
     }
 
     if( needToAddGbLoaderBack ) {
-        scope->AddDataLoader(kGbLoader);
+        scope->AddDataLoader(*kGbLoader);
     }
 
     return feat;
