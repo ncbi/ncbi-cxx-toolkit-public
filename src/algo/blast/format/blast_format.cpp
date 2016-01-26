@@ -742,12 +742,15 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
         if (m_FormatType == CFormattingArgs::eTabularWithComments) {
             string strProgVersion =
                 NStr::ToUpper(m_Program) + " " + blast::CBlastVersion().Print();
-            CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
 	    string dbname;
 	    if (m_IsDbScan)
 		dbname = string("User specified sequence set (Input: ") + m_SubjectTag + string(")");
 	    else 
 		dbname = m_DbName;
+            CConstRef<CBioseq> subject_bioseq;
+            // dbname used in place of Bioseq in most cases.
+            if (dbname.empty())
+            	subject_bioseq.Reset(x_CreateSubjectBioseq());
             tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
                                 dbname, results.GetRID(), itr_num, aln_set,
                                 subject_bioseq);
