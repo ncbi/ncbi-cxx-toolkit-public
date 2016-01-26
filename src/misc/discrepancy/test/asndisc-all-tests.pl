@@ -59,6 +59,20 @@ foreach my $line (@lines)
 die "$exe_c does not exist!\n" unless -e $exe_c;
 die "$exe_cpp does not exist!\n" unless -e $exe_cpp;
 
+###
+###   Get the test list
+###
+
+my %all_cases;
+
+my $reading = 0;
+foreach my $line (`$exe_cpp -help`)
+{ chomp $line;
+  if ($line eq 'TESTS'){ $reading = 1; next;}
+  next unless $reading;
+  $line=~s/\/.*$//; $line=~s/^\s*//; $line=~s/\s*$//;
+  $all_cases{$line} = 0 if $line ne '';
+}
 
 ###
 ###   Run all tests
@@ -68,7 +82,8 @@ my $pass = 0;
 my $fail = 0;
 
 foreach my $test (sort keys %tests)
-{ my $cmd = "perl $script $test -c $exe_c -cpp $exe_cpp";
+{ $all_cases{$tests{$test}{arg}}++;
+  my $cmd = "perl $script $test -c $exe_c -cpp $exe_cpp";
   $cmd = "$cmd -keep" if $keep_output;
   $cmd = "$cmd -quiet" if $quiet;
   print "##teamcity[testStarted name='$test' captureStandardOutput='true']\n";
@@ -88,6 +103,25 @@ foreach my $test (sort keys %tests)
   }
   print "##teamcity[testFinished name='$test']\n";
 }
+
+my $covered = 0;
+
+foreach my $key (sort keys %all_cases)
+{ $covered++ if $all_cases{$key};
+
+#  print "$key\t$all_cases{$key}\n";
+
+}
+
+my $cases = scalar keys %all_cases;
+print "\nCOVERED: $covered of $cases\n";
+if ($covered != $cases)
+{ print "MISSING:\n";
+  foreach my $key (sort keys %all_cases)
+  { print "\t$key\n" unless $all_cases{$key};
+  }
+}
+
 
 my $total = $pass + $fail;
 print "\nPASS: $pass of $total\n";
