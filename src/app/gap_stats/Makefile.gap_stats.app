@@ -15,5 +15,9 @@ LIBS = $(LIBXSLT_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(LIBXML_LIBS) $(NETWORK_LIBS)
 
 REQUIRES = objects LIBXML LIBXSLT algo
 
+CHECK_CMD = python3 test_gap_stats.py
+CHECK_COPY = test_gap_stats.py test_data
+CHECK_REQUIRES = unix
+
 WATCHERS = kornbluh
 

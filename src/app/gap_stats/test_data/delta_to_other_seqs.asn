@@ -1,0 +1,23 @@
+Seq-entry ::= seq {
+    id { local str "Seq1" },
+    inst {
+        repr delta,
+        mol na,
+        length 3285,
+        ext delta {
+            loc whole genbank {
+                name "SEG_AF096165S" ,
+                accession "AH008761",
+                version 2
+            },
+            literal {
+                length 42
+            },
+            loc whole genbank {
+                accession "KC741204",
+                version 1
+            }
+        }
+    }
+}
+
