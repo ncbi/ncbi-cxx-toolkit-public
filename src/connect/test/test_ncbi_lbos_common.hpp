@@ -122,14 +122,14 @@
 
 
 /* Boost checks are not thread-safe, so they need to be handled appropriately */
-#define MT_SAFE(E)                                                \
+#define MT_SAFE(E)                                                            \
     {{                                                                        \
-        WRITE_LOG("Waiting for Boost test mutex...", kSingleThreadNumber);             \
+        /*WRITE_LOG("Waiting for Boost test mutex...", kSingleThreadNumber);*/\
         CFastMutexGuard spawn_guard(s_BoostTestLock);                         \
-        WRITE_LOG("Lock acquired!", kSingleThreadNumber);                              \
+        /*WRITE_LOG("Lock acquired!", kSingleThreadNumber);*/                 \
         E;                                                                    \
     }}                                                                        \
-    WRITE_LOG("Lock released!", kSingleThreadNumber);
+    //WRITE_LOG("Lock released!", kSingleThreadNumber);
 #define NCBITEST_CHECK_MESSAGE_MT_SAFE(P,M)                       \
             MT_SAFE(NCBITEST_CHECK_MESSAGE(P, M))
 #define NCBITEST_REQUIRE_MESSAGE_MT_SAFE(P,M)                     \
@@ -1681,12 +1681,12 @@ namespace ComposeLBOSAddress
 void LBOSExists__ShouldReturnLbos()
 {
     CLBOSStatus lbos_status(true, true);
-#ifndef NCBI_COMPILER_MSVC 
+#ifdef NCBI_OS_LINUX 
     char* result = g_LBOS_ComposeLBOSAddress();
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(result),
                              "LBOS address was not constructed appropriately");
     free(result);
-#endif
+#endif /* #ifdef NCBI_OS_LINUX */
 }
 
 /* Thread-unsafe because of g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles().
@@ -2471,8 +2471,10 @@ void FakeErrorInput__ShouldNotCrash()
                                     g_LBOS_UnitTesting_GetLBOSFuncs()->Read, 
                                     s_FakeReadDiscoveryCorrupt<200>);
     CCObjArrayHolder<SSERV_Info> hostports(
-                        g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(
-                            "lbosdevacvancbinlmnih.gov", "/lbos", *net_info));
+        g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(
+                                                 "lbosdevacvancbinlmnih.gov", 
+                                                 "/lbos", 
+                                                 *net_info));
     int i=0, /* iterate test numbers*/
         j=0; /*iterate hostports from ResolveIPPort */
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*hostports != NULL,
@@ -2489,24 +2491,29 @@ void FakeErrorInput__ShouldNotCrash()
                << std::setfill('0') << std::setw(3) << i + 4;
             if (
                     i < 100 
+#ifndef NCBI_OS_DARWIN /* MacOS does not understand octals in IP, 
+                          so 8 and 9 work fine */
                     && 
                     (
                         ss.str().find('8') != string::npos 
                         ||
                         ss.str().find('9') != string::npos
                     )
+#endif /* NCBI_OS_DARWIN */
                 ) 
             {
+                WRITE_LOG(ss.str() << "Has 8 or 9, skipping", 
+                          kSingleThreadNumber);
                 continue;
             }
             ss << ":" << (i + 1) * 215;
+            WRITE_LOG("Expecting IP:port" << ss.str(), kSingleThreadNumber);
             SOCK_StringToHostPort(ss.str().c_str(), &temp_ip, &temp_port);
             NCBITEST_CHECK_EQUAL_MT_SAFE(hostports[j]->host, temp_ip);
             NCBITEST_CHECK_EQUAL_MT_SAFE(hostports[j]->port, temp_port);
             j++;
         }
-        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 80, "Mapper should find 80 hosts, but "
-                                        "did not.");
+        NCBITEST_CHECK_EQUAL_MT_SAFE(i, 80);
    }
    /* g_LBOS_UnitTesting_GetLBOSFuncs()->Read = temp_func_pointer;*/
 }
@@ -2539,7 +2546,7 @@ void SpecificMethod__FirstInResult()
     addresses = g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_Registry, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[0]), registry_lbos);
 
-#ifndef NCBI_OS_MSWIN
+#ifdef NCBI_OS_LINUX
     /* We have to fake last method, because its result is dependent on
      * location */
     /* III. etc/ncbi address (should be 127.0.0.1) */
@@ -2557,7 +2564,7 @@ void SpecificMethod__FirstInResult()
     addresses = g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_Lbosresolve, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[0]), lbosresolver);
     
-#endif /* #ifndef NCBI_OS_MSWIN */
+#endif /* #ifdef NCBI_OS_LINUX */
 }
 
 void CustomHostNotProvided__SkipCustomHost()
@@ -2586,8 +2593,7 @@ void NoConditions__AddressDefOrder()
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(addresses[1] ==  NULL,
                              "LBOS address list was not closed after the "
                              "first item");
-
-#ifndef NCBI_OS_MSWIN
+#ifdef NCBI_OS_LINUX
     /* II. Registry has no entries - check that LBOS is read from
      *     /etc/ncbi/lbosresolver */
     WRITE_LOG("2. Checking LBOS address when registry LBOS is not provided",
@@ -2611,47 +2617,8 @@ void NoConditions__AddressDefOrder()
 
     /* Cleanup */
     registry.Set("CONN", "lbos", lbos);
-#endif
+#endif /* #ifdef NCBI_OS_LINUX */
 
-#if 0
-    CCObjArrayHolder<char> addresses(
-                           g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_Registry));
-    WRITE_LOG("2. Checking registry LBOS address", kSingleThreadNumber);
-    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(addresses[1] !=  NULL,
-                             "LBOS address list ended too soon");
-    /* III. /etc/ncbi/lbosresolver */
-    string registry_lbos =
-            CNcbiApplication::Instance()->GetConfig().Get("CONN", "LBOS");
-    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[1]), registry_lbos);
-
-    /* IV. Default */
-    WRITE_LOG("3. Checking localhost LBOS address", kSingleThreadNumber);
-    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(addresses[2] !=  NULL,
-                             "LBOS address list ended too soon");
-    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[2]), "127.0.0.1:8080");
-
-#ifndef NCBI_OS_MSWIN
-    WRITE_LOG("4. Checking first etc/ncbi LBOS address", kSingleThreadNumber);
-    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(addresses[3] !=  NULL,
-                             "LBOS address list ended too soon");
-    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[3]), "lbos.foo");
-
-    WRITE_LOG("5. Checking second etc/ncbi LBOS address", kSingleThreadNumber);
-    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(addresses[4] !=  NULL,
-                             "LBOS address list ended too soon");
-    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[4]), "lbos.foo:8080");
-
-    WRITE_LOG("6. Checking last NULL element in LBOS address list",
-              kSingleThreadNumber);
-    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(addresses[5] ==  NULL,
-                             "LBOS address list does not end where expected");
-#else
-    WRITE_LOG("3. Checking last NULL element in LBOS address list",
-              kSingleThreadNumber);
-    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(addresses[3] == NULL,
-                             "LBOS address list does not end where expected");
-#endif
-#endif
 }
 } /* namespace GetLBOSAddress */
 
@@ -3377,15 +3344,17 @@ void AllOK__LBOSAnswerProvided(int thread_num = -1)
     s_SelectPort(count_before, node_name, port, thread_num);
     /* Announce */
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                  (string("http://") + s_GetMyHost() + ":" PORT_STR(PORT) "/health").c_str(),
+                  string("http://lbos.dev.be-md.ncbi.nlm.nih.gov:" 
+                  PORT_STR(PORT) "/health").c_str(),
                   &lbos_answer.Get(), &lbos_status_message.Get(), thread_num);
 
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Announcement function did not return "
                            "LBOS answer as expected");
     /* Cleanup */
-    s_DeannounceC(node_name.c_str(), "1.0.0", NULL, port, 
-                  NULL, NULL, thread_num);
+    s_DeannounceC(node_name.c_str(), "1.0.0", 
+                  "lbos.dev.be-md.ncbi.nlm.nih.gov", port, NULL, NULL, 
+                  thread_num);
     lbos_answer = NULL;
     lbos_status_message = NULL;
 
