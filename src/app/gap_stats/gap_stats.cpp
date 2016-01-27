@@ -298,6 +298,7 @@ public:
     virtual int  Run(void);
 private:
     CSeq_inst::EMol m_MolFilter;
+    size_t m_MaxResolveCount;
     GA m_gapAnalysis;
     GA::ESortGapLength m_eSort;
     GA::ESortDir m_eSortDir;
@@ -344,6 +345,7 @@ private:
 
 CGapStatsApplication::CGapStatsApplication(void) :
     m_MolFilter(CSeq_inst::eMol_na),
+    m_MaxResolveCount(kMax_Int),
     // default to all unless user adds the gap types manually
     m_fGapAddFlags(
         // all by default
@@ -449,6 +451,24 @@ void CGapStatsApplication::Init(void)
     arg_desc->SetConstraint("assume-mol", &(*new CArgAllow_Strings,
         "na", "aa"));
 
+    arg_desc->SetCurrentGroup("RESOLVING SEQUENCES");
+    
+    arg_desc->AddFlag(
+        "no-gbload", "If set, avoids using the GenBank data loader");
+
+    arg_desc->AddDefaultKey(
+        "max-resolve-count", "MAX_COUNT",
+        "How deep to resolve when following far references.  Note that being "
+        "unable to resolve a far reference whether due to reaching max "
+        "resolve count or any other reason will result in an error since "
+        "unable to calculate 'gaps' if cannot get sequence.  Zero disables "
+        "all far reference resolution.",
+        CArgDescriptions::eInteger,
+        NStr::NumericToString(kMax_Int) // Default is "effectively unlimited"
+        );
+    arg_desc->SetConstraint(
+        "max-resolve-count", new CArgAllow_Integers(0, kMax_Int));
+
     arg_desc->SetCurrentGroup("HISTOGRAM");
 
     arg_desc->AddFlag("show-hist",
@@ -476,12 +496,12 @@ void CGapStatsApplication::Init(void)
     arg_desc->SetDependency(
         "hist-algo", CArgDescriptions::eRequires, "show-hist" );
 
-    arg_desc->SetCurrentGroup("DEBUGGING");
-
-    arg_desc->AddFlag("trigger-internal-error",
-        "Since this program should never trigger an "
-        "internal error (hopefully), this flag causes one "
-        "to happen for testing purposes");
+    // hide debugging args, but leave in source control, at least for now
+    // arg_desc->SetCurrentGroup("DEBUGGING");
+    // arg_desc->AddFlag("trigger-internal-error",
+    //     "Since this program should never trigger an "
+    //     "internal error (hopefully), this flag causes one "
+    //     "to happen for testing purposes");
 
     // Setup arg.descriptions for this application
     arg_desc->SetCurrentGroup(kEmptyStr);
@@ -533,7 +553,7 @@ int CGapStatsApplication::Run(void)
 
     // if we're here, there was a fatal exception, which we now output
     _ASSERT(p_out_message);
-    x_PrintOutMessage(*p_out_message, cout);
+    x_PrintOutMessage(*p_out_message, cerr);
 
     // failure
     return 1;
@@ -541,16 +561,19 @@ int CGapStatsApplication::Run(void)
 
 int CGapStatsApplication::RunNoCatch(void)
 {
+    int exit_code = 0;
+    
     // Get arguments
     const CArgs & args = GetArgs();
 
-    // if requested, trigger an internal error for testing
-    // purposes.
-    if( args["trigger-internal-error"] ) {
-        throw std::runtime_error(
-            "This runtime_error was specifically requested "
-            "via a program parameter");
-    }
+    // hide debugging args, but leave in source control, at least for now
+    // // if requested, trigger an internal error for testing
+    // // purposes.
+    // if( args["trigger-internal-error"] ) {
+    //     throw std::runtime_error(
+    //         "This runtime_error was specifically requested "
+    //         "via a program parameter");
+    // }
 
     // load variables set by args
     const string & sMol = args["mol"].AsString();
@@ -564,6 +587,8 @@ int CGapStatsApplication::RunNoCatch(void)
         // shouldn't happen
         NCBI_USER_THROW_FMT("Unsupported mol: " << sMol);
     }
+
+    m_MaxResolveCount = args["max-resolve-count"].AsInteger();
 
     const string & sAssumeMol = args["assume-mol"].AsString();
     if( sAssumeMol == "na" ) {
@@ -681,7 +706,8 @@ int CGapStatsApplication::RunNoCatch(void)
             // a thrown SOutMessage indicates we give up on this file_or_accn.
             // (Note that a non-thrown SOutMessage would just be printed
             // but would not halt processing of the file_or_accn)
-            x_PrintOutMessage(out_message, cout);
+            x_PrintOutMessage(out_message, cerr);
+            exit_code = 1;
         } catch(...) {
             // Unexpected exceptions make us give up without processing
             // further files-or-accns.
@@ -692,7 +718,7 @@ int CGapStatsApplication::RunNoCatch(void)
             SOutMessage out_message(
                 sFileOrAccn, SOutMessage::kFatalStr,
                 "INTERNAL_ERROR", "Unexpected exception");
-            x_PrintOutMessage(out_message, cout);
+            x_PrintOutMessage(out_message, cerr);
 
             throw;
         }
@@ -723,7 +749,7 @@ int CGapStatsApplication::RunNoCatch(void)
         x_PrintHistogram(num_bins, eHistAlgo);
     }
 
-    return 0;
+    return exit_code;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -739,7 +765,9 @@ CGapStatsApplication::x_GetScope(void)
     if( ! s_scope ) {
         // set up singleton scope
         CRef<CObjectManager> pObjMgr( CObjectManager::GetInstance() );
-        CGBDataLoader::RegisterInObjectManager(*pObjMgr);
+        if( ! GetArgs()["no-gbload"] ) {
+            CGBDataLoader::RegisterInObjectManager(*pObjMgr);
+        }
         s_scope.Reset( new CScope(*pObjMgr) );
         s_scope->AddDefaults();
     }
@@ -800,7 +828,16 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
     CSeq_entry_Handle entry_h;
 
     // if file exists, load from that
-    if( CDirEntry(sFileOrAccn).IsFile() ) {
+    if( CDirEntry(sFileOrAccn).Exists() ) {
+
+        if( ! CDirEntry(sFileOrAccn).IsFile() ) {
+            throw SOutMessage(
+                sFileOrAccn,
+                SOutMessage::kErrorStr,
+                "NON_FILE_INPUT",
+                FORMAT("This exists but is not a plain file: "
+                       << sFileOrAccn));
+        }
 
         // auto-detect format and object type
         CNcbiIfstream in_file(sFileOrAccn.c_str(), ios::in | ios::binary );
@@ -932,7 +969,10 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
         entry_h,
         m_MolFilter,
         CBioseq_CI::eLevel_All,
-        m_fGapAddFlags);
+        m_fGapAddFlags,
+        0, // CGapAnalysis::TFlags
+        m_MaxResolveCount
+        );
 
     // conserve memory
     x_GetScope()->ResetDataAndHistory();
@@ -1235,10 +1275,14 @@ void CGapStatsApplication::x_PrintSeqsForGapLengths(void)
                     *gap_type_seq_ids_it, "gap_type");
                 cout << "\t\t" << pchGapName << ":" << endl;
 
-                ITERATE(xml::node, seq_info_it, *gap_type_seq_ids_it) {
-                    cout << "\t\t\t"
-                         << find_node_attr_or_die(*seq_info_it, "seq_id")
-                         << endl;
+                if( gap_type_seq_ids_it->size() ) {
+                    ITERATE(xml::node, seq_info_it, *gap_type_seq_ids_it) {
+                        cout << "\t\t\t"
+                             << find_node_attr_or_die(*seq_info_it, "seq_id")
+                             << endl;
+                    }
+                } else {
+                    cout << "\t\t\t(NONE)" << endl;
                 }
             }
         }
@@ -1310,8 +1354,15 @@ void CGapStatsApplication::x_PrintHistogram(
         const size_t kDigitsInUint8 = numeric_limits<Uint8>::digits10;
 
         // a histogram for each gap type
-        ITERATE_GAP_TYPES(gap_type_it) {
-            const char * pchGapName = gap_type_it->second;
+        _ASSERT(hist_root_node.get_name() == CTempString("histogram_list"));
+        ITERATE(xml::node, hist_node_it, hist_root_node) {
+            const xml::node & hist_node = *hist_node_it;
+            _ASSERT(hist_node.get_name() == CTempString("histogram"));
+            const xml::attributes & hist_node_attrs =
+                hist_node_it->get_attributes();
+
+            const char * pchGapName = find_attrib_attr_or_die(
+                hist_node_attrs, "gap_type").data();
 
             CTablePrinter::SColInfoVec vecColInfos;
             vecColInfos.AddCol("Range", 1 + 2*kDigitsInUint8);
@@ -1321,7 +1372,8 @@ void CGapStatsApplication::x_PrintHistogram(
 
             cout << "HISTOGRAM FOR " << pchGapName << ":" << endl;
 
-            ITERATE(xml::node, bin_node_it, hist_root_node) {
+            ITERATE(xml::node, bin_node_it, hist_node) {
+                _ASSERT(bin_node_it->get_name() == CTempString("bin"));
                 const xml::attributes & bin_node_attrs =
                     bin_node_it->get_attributes();
 
@@ -1364,3 +1416,12 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CGapStatsApplication().AppMain(argc, argv);
 }
+
+// just for debugging purposes
+void print_xml_node(xml::node *a_node)
+{
+    string as_str;
+    a_node->save_to_string(as_str);
+    cerr << as_str << endl;
+}
+
