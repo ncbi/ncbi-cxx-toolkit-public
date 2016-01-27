@@ -91,26 +91,24 @@ foreach my $test (sort keys %tests)
   open(STDOUT, '>/dev/null') if $quiet;
   my $result = system($cmd);
   open(STDOUT, '>&OLD_STDOUT') if $quiet;
+  
+  print "##teamcity[testFailed name='$test' message='$result']\n" if ($result);
+  print "##teamcity[testFinished name='$test']\n";
 
   if ($result)
-  { ##print "$test: FAIL!\n";
-    print "##teamcity[testFailed name='$test' message='$result']\n";
+  { print "$test: FAIL!\n\n";
     $fail++;
   }
   else
   { print "$test: PASS!\n\n";
     $pass++;
   }
-  print "##teamcity[testFinished name='$test']\n";
 }
 
 my $covered = 0;
 
 foreach my $key (sort keys %all_cases)
 { $covered++ if $all_cases{$key};
-
-#  print "$key\t$all_cases{$key}\n";
-
 }
 
 my $cases = scalar keys %all_cases;
@@ -121,7 +119,6 @@ if ($covered != $cases)
   { print "\t$key\n" unless $all_cases{$key};
   }
 }
-
 
 my $total = $pass + $fail;
 print "\nPASS: $pass of $total\n";
