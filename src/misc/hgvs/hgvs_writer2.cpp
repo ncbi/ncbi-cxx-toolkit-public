@@ -868,10 +868,9 @@ string CHgvsParser::x_AsHgvsInstExpression(
          : asserted_seq->GetLength() < s_max_literal_length  ? x_SeqLiteralToStr(*asserted_seq, is_prot, is_mito)
          :                                                     NStr::NumericToString(asserted_seq->GetLength());
 
-
     string inst_str = "";
     bool append_delta = false;
-    if(inst.GetType() == CVariation_inst::eType_identity
+    if(   inst.GetType() == CVariation_inst::eType_identity
        || inst.GetType() == CVariation_inst::eType_prot_silent)
     {
         //Prepend the asserted sequence, but only if its lengh is under threshold.
@@ -882,6 +881,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
         //  NC_000001:g.100000_100123124= - wrong, can't use literal's length "124"
         inst_str = (   asserted_seq 
                     && asserted_seq->GetLength() < s_max_literal_length  
+                    && asserted_seq->IsSetSeq_data()
                     && !is_prot ? asserted_seq_str : "") 
                   + "=";
     } else if(inst.GetType() == CVariation_inst::eType_inv) {
@@ -984,9 +984,10 @@ string CHgvsParser::x_AsHgvsInstExpression(
                 if(   inst_str == variant_str + ">"
                    || inst_str == "del" + variant_str + "ins")
                 {
-                    //instead of "G>G"          report "G="
+                    // instead of "G>G"          report "G=", but not "1=", 
+                    // since "1" will coalesce into prefixed position.
                     //instead of "delACTinsACT" report "ACT="
-                    inst_str = variant_str + "=";
+                    inst_str = (isdigit(variant_str.at(0)) ? "" : variant_str) + "=";
                 } else {
                     inst_str += variant_str;
                 }
