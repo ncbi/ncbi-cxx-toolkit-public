@@ -739,9 +739,26 @@ extern void NcbiLog_SetHitID(const char* hit_id);
  *    The caller is responsible for freeing the returned sub-hit ID string!
  *    Use free() or NcbiLog_FreeMemory().
  *  @sa
-  *   NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_FreeMemory
+  *   NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_FreeMemory, NcbiLog_GetCurrentSubHitID
  */
 extern char* NcbiLog_GetNextSubHitID(void);
+
+
+/** Get the last generated sub-hit ID.
+ *
+ *  @return
+ *    Last generated sub-hit ID.
+ *    if NcbiLog_GetNextSubHitID() has never been called, it returns subhit
+ *    with the current value of the counter, which is zero.
+ *  @attention
+ *    This function should be called after NcbiLog_AppRun().
+ *  @attention
+ *    The caller is responsible for freeing the returned sub-hit ID string!
+ *    Use free() or NcbiLog_FreeMemory().
+ *  @sa
+  *   NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_FreeMemory, NcbiLog_GetNextSubHitID
+ */
+extern char* NcbiLog_GetCurrentSubHitID(void);
 
 
 /** 

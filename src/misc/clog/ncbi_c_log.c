@@ -2653,27 +2653,19 @@ extern void NcbiLog_NewHitID(void)
 }
 
 
-extern char* NcbiLog_GetNextSubHitID(void)
+/* Log request/app-wide hit ID. See NcbiLog_GetNextSubHitID().
+ */
+static char* s_GetSubHitID(TNcbiLog_Context ctx, INT /*bool*/ need_increment)
 {
-    TNcbiLog_Context ctx = NULL;
-    char*            hit_id = NULL;
-    unsigned int*    sub_id = NULL;
-    char             buf[NCBILOG_HITID_MAX+1];
+    char*          hit_id = NULL;
+    unsigned int*  sub_id = NULL;
+    char           buf[NCBILOG_HITID_MAX + 1];
     int n;
-
-    MT_LOCK_API;
-    ctx = s_GetContext();
-
-    /* Enforce calling this method after NcbiLog_AppStart() */
-    if (sx_Info->state == eNcbiLog_NotSet ||
-        sx_Info->state == eNcbiLog_AppBegin) {
-        TROUBLE_MSG("NcbiLog_GetNextSubHitID() can be used after NcbiLog_AppStart() only");
-    }
 
     VERIFY(sx_Info->phid[0]);
 
     /* Select PHID to use */
-    if ( s_IsInsideRequest(ctx) ) {
+    if (s_IsInsideRequest(ctx)) {
         if (ctx->phid[0]) {
             hit_id = ctx->phid;
             sub_id = &ctx->phid_sub_id;
@@ -2691,18 +2683,56 @@ extern char* NcbiLog_GetNextSubHitID(void)
     /* Generate sub hit ID */
     assert(strlen(hit_id) + 6 <= NCBILOG_HITID_MAX);
     if (strlen(hit_id) + 6 > NCBILOG_HITID_MAX) {
-        MT_UNLOCK;
         return NULL;
     }
-    n = sprintf(buf, "%s.%d", hit_id, ++(*sub_id));
-    ++sub_id;
-
-    MT_UNLOCK;
-
+    if (need_increment) {
+        ++(*sub_id);
+    }
+    n = sprintf(buf, "%s.%d", hit_id, *sub_id);
     if (n <= 0) {
         return NULL;  /* error */
     }
     return s_StrDup(buf);
+}
+
+
+extern char* NcbiLog_GetCurrentSubHitID(void)
+{
+    TNcbiLog_Context ctx = NULL;
+    char* subhit_id = NULL;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+
+    /* Enforce calling this method after NcbiLog_AppStart() */
+    if (sx_Info->state == eNcbiLog_NotSet ||
+        sx_Info->state == eNcbiLog_AppBegin) {
+        TROUBLE_MSG("NcbiLog_GetCurrentSubHitID() can be used after NcbiLog_AppStart() only");
+    }
+    subhit_id = s_GetSubHitID(ctx, 0);
+
+    MT_UNLOCK;
+    return subhit_id;
+}
+
+
+extern char* NcbiLog_GetNextSubHitID(void)
+{
+    TNcbiLog_Context ctx = NULL;
+    char* subhit_id = NULL;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+
+    /* Enforce calling this method after NcbiLog_AppStart() */
+    if (sx_Info->state == eNcbiLog_NotSet ||
+        sx_Info->state == eNcbiLog_AppBegin) {
+        TROUBLE_MSG("NcbiLog_GetNextSubHitID() can be used after NcbiLog_AppStart() only");
+    }
+    subhit_id = s_GetSubHitID(ctx, 1);
+
+    MT_UNLOCK;
+    return subhit_id;
 }
 
 
