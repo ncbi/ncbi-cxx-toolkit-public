@@ -2655,7 +2655,7 @@ extern void NcbiLog_NewHitID(void)
 
 /* Log request/app-wide hit ID. See NcbiLog_GetNextSubHitID().
  */
-static char* s_GetSubHitID(TNcbiLog_Context ctx, INT /*bool*/ need_increment)
+static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment)
 {
     char*          hit_id = NULL;
     unsigned int*  sub_id = NULL;
