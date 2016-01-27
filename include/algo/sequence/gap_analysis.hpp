@@ -102,7 +102,8 @@ public:
         CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
         CBioseq_CI::EBioseqLevelFlag level = CBioseq_CI::eLevel_All,
         TAddFlag add_flags = fAddFlag_All,
-        TFlag fFlags = 0);
+        TFlag fFlags = 0,
+        size_t max_resolve_count = kMax_Int);
 
     /// Similar to AddSeqEntryGaps, but for one Bioseq.
     ///
@@ -113,7 +114,8 @@ public:
     void AddBioseqGaps(
         const CBioseq_Handle & bioseq_h,
         TAddFlag add_flags = fAddFlag_All,
-        TFlag fFlags = 0);
+        TFlag fFlags = 0,
+        size_t max_resolve_count = kMax_Int);
 
     /// AddSeqEntryGaps is more convenient, but if you want finer-grained
     /// control you can use this function to tell this class about 

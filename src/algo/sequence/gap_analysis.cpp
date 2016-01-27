@@ -63,18 +63,20 @@ void CGapAnalysis::AddSeqEntryGaps(
     CSeq_inst::EMol filter,
     CBioseq_CI::EBioseqLevelFlag level,
     TAddFlag add_flags,
-    TFlag fFlags)
+    TFlag fFlags,
+    size_t max_resolve_count)
 {
     CBioseq_CI bioseq_ci(entry_h, filter, level);
     for( ; bioseq_ci; ++bioseq_ci ) {
-        AddBioseqGaps(*bioseq_ci, add_flags, fFlags);
+        AddBioseqGaps(*bioseq_ci, add_flags, fFlags, max_resolve_count);
     }
 }
 
 void CGapAnalysis::AddBioseqGaps(
     const CBioseq_Handle & bioseq_h,
     TAddFlag add_flags,
-    TFlag fFlags)
+    TFlag fFlags,
+    size_t max_resolve_count)
 {
     // get CSeq_id of CBioseq
     TSeqIdConstRef pSeqId = bioseq_h.GetSeqId();
@@ -89,12 +91,21 @@ void CGapAnalysis::AddBioseqGaps(
         seq_map_flags |= CSeqMap::fFindData;
     }
 
+    TSeqPos end_of_last_segment = 0;  // exclusive
+    bool all_segments_and_in_order = true;
+
     SSeqMapSelector selector;
-    selector.SetFlags(seq_map_flags);
+    selector.SetFlags(seq_map_flags).SetResolveCount(max_resolve_count);
     CSeqMap_CI seqmap_ci(bioseq_h, selector);
     for( ; seqmap_ci; ++seqmap_ci ) {
+        if( seqmap_ci.GetPosition() != end_of_last_segment ) {
+            all_segments_and_in_order = false;
+        }
+        end_of_last_segment = seqmap_ci.GetEndPosition();
+
         CSeqMap::ESegmentType seg_type = seqmap_ci.GetType();
-        if(seg_type == CSeqMap::eSeqGap) {
+        switch(seg_type) {
+        case CSeqMap::eSeqGap:
             _ASSERT(add_flags & fAddFlag_IncludeSeqGaps);
             AddGap(
                 eGapType_SeqGap, pSeqId,
@@ -102,17 +113,31 @@ void CGapAnalysis::AddBioseqGaps(
                 bioseq_len,
                 seqmap_ci.GetPosition(), seqmap_ci.GetEndPosition(),
                 fFlags);
-        } else if( seg_type == CSeqMap::eSeqData) {
+            break;
+        case CSeqMap::eSeqData:
             _ASSERT(add_flags & fAddFlag_IncludeUnknownBases);
             x_AddGapsFromBases(
                 seqmap_ci, pSeqId,
                 bioseq_len, fFlags);
-        } else {
-            ERR_POST(
-                Warning << 
+            break;
+        default:
+            NCBI_USER_THROW_FMT(
                 "This segment type is not supported at this time: " <<
                 static_cast<int>(seg_type) );
         }
+    }
+
+    if( end_of_last_segment != bioseq_len ) {
+        all_segments_and_in_order = false;
+    }
+    if( ! all_segments_and_in_order ) {
+        ERR_POST(
+            Warning << "Not all segments on bioseq '"
+            << pSeqId->AsFastaString() << "' were in order "
+            "or some positions appear to have been skipped.  "
+            "One possible reason is that there were far references for "
+            "which no attempt was made to resolve due to max resolve count "
+            "being reached.");
     }
 }
 
