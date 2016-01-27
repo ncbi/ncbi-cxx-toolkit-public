@@ -72,6 +72,7 @@
 
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbidbg.hpp>
+#include <serial/serialdef.hpp>
 #include <iterator>
 
 #define RAPIDJSON_NOMEMBERITERATORCLASS
@@ -142,7 +143,7 @@ public:
     CJson_ConstObject GetObject(void) const;
 
     /// Convert the contents of the node into string
-    std::string ToString(void) const;
+    std::string ToString(TSerial_Json_Flags flags = 0) const;
 
     ~CJson_ConstNode(void) {}
     /// Note: this does not copy Node data
@@ -1015,12 +1016,12 @@ public:
     std::string GetReadError(void) const;
 
     /// Write JSON data into a stream
-    void Write(std::ostream& out) const;
+    void Write(std::ostream& out, TSerial_Json_Flags flags = 0) const;
 
     /// Write JSON data into a file
-    void Write(const std::string& filename) const {
+    void Write(const std::string& filename, TSerial_Json_Flags flags = 0) const {
         std::ofstream out(filename.c_str());
-        Write(out);
+        Write(out, flags);
     }
 
     /// Traverse the document contents
@@ -1182,10 +1183,16 @@ inline CJson_ConstObject CJson_ConstNode::GetObject(void) const {
     return CJson_ConstObject(m_Impl);
 }
 inline std::string
-CJson_ConstNode::ToString(void) const {
+CJson_ConstNode::ToString(TSerial_Json_Flags flags) const {
     ncbi::CNcbiOstrstream os;
     rapidjson::CppOStream ofs(os);
     rapidjson::PrettyWriter<rapidjson::CppOStream> writer(ofs);
+    if (flags & fSerial_Json_NoIndentation) {
+        writer.SetIndent(' ', 0);
+    }
+    if (flags & fSerial_Json_NoEol) {
+        writer.SetWriteEol(false);
+    }
     m_Impl->Accept(writer);
     return std::string( ncbi::CNcbiOstrstreamToString(os) );
 }
@@ -2194,9 +2201,15 @@ inline std::string CJson_Document::GetReadError() const {
     return rapidjson::GetParseError_En(m_DocImpl.GetParseError());
 }
 
-inline void CJson_Document::Write(std::ostream& out) const {
+inline void CJson_Document::Write(std::ostream& out, TSerial_Json_Flags flags) const {
     rapidjson::CppOStream ofs(out);
     rapidjson::PrettyWriter<rapidjson::CppOStream> writer(ofs);
+    if (flags & fSerial_Json_NoIndentation) {
+        writer.SetIndent(' ', 0);
+    }
+    if (flags & fSerial_Json_NoEol) {
+        writer.SetWriteEol(false);
+    }
     m_DocImpl.Accept(writer);
 }
 

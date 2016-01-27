@@ -43,7 +43,7 @@ public:
         \param levelDepth Initial capacity of stack.
     */
     PrettyWriter(OutputStream& os, StackAllocator* allocator = 0, size_t levelDepth = Base::kDefaultLevelDepth) : 
-        Base(os, allocator, levelDepth), indentChar_(' '), indentCharCount_(4) {}
+        Base(os, allocator, levelDepth), indentChar_(' '), indentCharCount_(4), eol_(true) {}
 
     //! Set custom indentation.
     /*! \param indentChar       Character for indentation. Must be whitespace character (' ', '\\t', '\\n', '\\r').
@@ -54,6 +54,12 @@ public:
         RAPIDJSON_ASSERT(indentChar == ' ' || indentChar == '\t' || indentChar == '\n' || indentChar == '\r');
         indentChar_ = indentChar;
         indentCharCount_ = indentCharCount;
+        return *this;
+    }
+
+// NCBI - added
+    PrettyWriter& SetWriteEol(bool eol) {
+        eol_ = eol;
         return *this;
     }
 
@@ -97,7 +103,7 @@ public:
         bool empty = Base::level_stack_.template Pop<typename Base::Level>(1)->valueCount == 0;
 
         if (!empty) {
-            Base::os_->Put('\n');
+            WriteEol();
             WriteIndent();
         }
         bool ret = Base::WriteEndObject();
@@ -121,7 +127,7 @@ public:
         bool empty = Base::level_stack_.template Pop<typename Base::Level>(1)->valueCount == 0;
 
         if (!empty) {
-            Base::os_->Put('\n');
+            WriteEol();
             WriteIndent();
         }
         bool ret = Base::WriteEndArray();
@@ -151,17 +157,17 @@ protected:
             if (level->inArray) {
                 if (level->valueCount > 0) {
                     Base::os_->Put(','); // add comma if it is not the first element in array
-                    Base::os_->Put('\n');
+                    WriteEol();
                 }
                 else
-                    Base::os_->Put('\n');
+                    WriteEol();
                 WriteIndent();
             }
             else {  // in object
                 if (level->valueCount > 0) {
                     if (level->valueCount % 2 == 0) {
                         Base::os_->Put(',');
-                        Base::os_->Put('\n');
+                        WriteEol();
                     }
                     else {
                         Base::os_->Put(':');
@@ -169,7 +175,7 @@ protected:
                     }
                 }
                 else
-                    Base::os_->Put('\n');
+                    WriteEol();
 
                 if (level->valueCount % 2 == 0)
                     WriteIndent();
@@ -189,8 +195,17 @@ protected:
         PutN(*Base::os_, indentChar_, count);
     }
 
+// NCBI
+// added WriteEol
+    void WriteEol()  {
+        if (eol_) {
+            Base::os_->Put('\n');
+        }
+    }
+
     Ch indentChar_;
     unsigned indentCharCount_;
+    bool eol_;
 
 private:
     // Prohibit copy constructor & assignment operator.
