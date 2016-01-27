@@ -625,7 +625,7 @@ extern void NcbiLog_AppSetSession(const char* session);
  *
  *  @return
  *    - copy of the current application-wide SID (URL-encoded);
- *    - NULL, if SID is unknown or not set yet.
+ *    - NULL, if SID is unknown, not set yet, or on error.
  *  @attention
  *    This function should be called after NcbiLog_AppRun().
  *  @attention
@@ -693,7 +693,7 @@ extern void NcbiLog_NewSession(void);
  *    (P)HID will be unset if the parameter is NULL or point to empty string,
  *    and PHID has not been logged yet.
  *  @sa
- *    NcbiLog_AppRun, NcbiLog_SetHitID, NcbiLog_GetNextSubHitID
+ *    NcbiLog_AppRun, NcbiLog_SetHitID, NcbiLog_AppGetHitID, NcbiLog_GetNextSubHitID
  */
 extern void NcbiLog_AppSetHitID(const char* hit_id);
 
@@ -723,9 +723,42 @@ extern void NcbiLog_AppSetHitID(const char* hit_id);
  *    (P)HID will be unset if the parameter is NULL or point to empty string.
  *  @sa
  *    NcbiLog_AppSetHitID, NcbiLog_ReqStart, NcbiLog_ReqRun, NcbiLog_ReqStop,
- *    NcbiLog_GetNextSubHitID
+ *    NcbiLog_AppGetHitID, NcbiLog_GetNextSubHitID
  */
 extern void NcbiLog_SetHitID(const char* hit_id);
+
+
+/** Get hit ID (HID, a.k.a. PHID) for the whole application.
+ *
+ *  @return
+ *    - copy of the current application-wide (P)HID (URL-encoded);
+ *    - NULL on error.
+ *  @attention
+ *    This function should be called after NcbiLog_AppRun().
+ *  @attention
+ *    The caller is responsible for freeing the returned SID string!
+ *    Use free() or NcbiLog_FreeMemory().
+ *  @sa
+ *    NcbiLog_AppSetHitID, NcbiLog_AppRun
+ */
+extern char* NcbiLog_AppGetHitID(void);
+
+
+/** Get hit ID (HID, a.k.a. PHID) for the request.
+ *
+ *  @return
+ *    - copy of the current request (P)HID (URL-encoded);
+ *    - if not set, copy of the application-wide (P)HID;
+ *    - NULL, if called outside request, or on error.
+ *  @attention
+ *    This function should be called inside request, after NcbiLog_ReqRun().
+ *  @attention
+ *    The caller is responsible for freeing the returned SID string!
+ *    Use free() or NcbiLog_FreeMemory().
+ *  @sa
+ *    NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_ReqRun
+ */
+extern char* NcbiLog_GetHitID(void);
 
 
 /** Generate a sub-hit ID based on the currently effective

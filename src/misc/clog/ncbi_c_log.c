@@ -2606,7 +2606,7 @@ static void s_LogHitID(TNcbiLog_Context ctx, const char* hit_id)
 extern void NcbiLog_AppSetHitID(const char* hit_id)
 {
     MT_LOCK_API;
-    /* Enforce calling this method before NcbiLog_AppStart() */
+    /* Enforce calling this method after NcbiLog_AppStart() */
     if (sx_Info->state != eNcbiLog_NotSet  &&
         sx_Info->state != eNcbiLog_AppBegin) {
         TROUBLE_MSG("NcbiLog_AppSetHitID() can be used before NcbiLog_App[Start/Run]() only");
@@ -2650,6 +2650,46 @@ extern void NcbiLog_AppNewHitID(void)
 extern void NcbiLog_NewHitID(void)
 {
     return;
+}
+
+
+extern char* NcbiLog_AppGetHitID(void)
+{
+    char* phid = NULL;
+
+    MT_LOCK_API;
+    /* Enforce calling this method after NcbiLog_AppStart() */
+    if (sx_Info->state == eNcbiLog_NotSet ||
+        sx_Info->state == eNcbiLog_AppBegin) {
+        TROUBLE_MSG("NcbiLog_AppGetHitID() can be used after NcbiLog_AppStart() only");
+    }
+    if (sx_Info->phid[0]) {
+        phid = s_StrDup((char*)sx_Info->phid);
+    }
+    MT_UNLOCK;
+    return phid;
+}
+
+
+extern char* NcbiLog_GetHitID(void)
+{
+    TNcbiLog_Context ctx = NULL;
+    char* phid = NULL;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+
+    if ( s_IsInsideRequest(ctx) ) {
+        if (ctx->phid[0]) {
+            phid = s_StrDup(ctx->phid);
+        } else {
+            if (sx_Info->phid[0]  &&  sx_Info->phid_inherit) {
+                phid = s_StrDup((char*)sx_Info->phid);
+            }
+        }
+    }
+    MT_UNLOCK;
+    return phid;
 }
 
 
@@ -3056,7 +3096,7 @@ extern void NcbiLog_ReqRun(void)
     if (!ctx->phid[0]) {
         char phid_str[NCBILOG_HITID_MAX + 1];
         /* Usually we should always have app-wide PHID, but not 
-           in the case for ncbi_applog utility */
+           in the case of ncbi_applog utility */
         /* VERIFY(sx_Info->phid[0]); */
         if (sx_Info->phid[0]  &&  sx_Info->phid_inherit) {
             /* Just log app-wide PHID, do not set it as request specific
