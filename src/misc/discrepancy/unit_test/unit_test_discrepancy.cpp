@@ -1294,7 +1294,7 @@ BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
 
 BOOST_AUTO_TEST_CASE(ORDERED_LOCATION_Autofix)
 {
-    CRef<CSeq_entry> entry = ReadEntryFromFile("../test/test-data/ORDERED_LOCATION.asn");
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/ORDERED_LOCATION.asn");
     BOOST_REQUIRE(entry);
     CScope scope(*CObjectManager::GetInstance());
     scope.AddDefaults();
@@ -1317,7 +1317,7 @@ BOOST_AUTO_TEST_CASE(ORDERED_LOCATION_Autofix)
         BOOST_CHECK_EQUAL( fix_rpt->GetN(), 2 );
     }
 
-    CRef<CSeq_entry> expected_entry = ReadEntryFromFile("../test/test-data/ORDERED_LOCATION.after_autofix.asn");
+    CRef<CSeq_entry> expected_entry = ReadEntryFromFile("test_data/ORDERED_LOCATION.after_autofix.asn");
     BOOST_CHECK_MESSAGE(
         entry->Equals(*expected_entry),
         "Autofix did not match expected.  Expected result: \n" << MSerial_AsnText << *expected_entry << "\nActual entry: \n" << MSerial_AsnText << *seh.GetCompleteSeq_entry());
