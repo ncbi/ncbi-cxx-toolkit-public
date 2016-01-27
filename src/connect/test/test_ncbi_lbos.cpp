@@ -1480,8 +1480,12 @@ BOOST_AUTO_TEST_CASE(MultiThreading_test1)
 BOOST_AUTO_TEST_SUITE_END()
 
 
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE(ResolveViaLBOS)////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /* Moved to be last because not very important and very long                 */
 BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash)
 {
     ResolveViaLBOS::FakeErrorInput__ShouldNotCrash();
 }
+BOOST_AUTO_TEST_SUITE_END()
