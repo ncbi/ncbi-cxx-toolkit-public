@@ -50,41 +50,33 @@ string SNetStorage_NetCacheBlob::GetLoc()
     return m_BlobKey;
 }
 
-#define CONVERT_NETCACHEEXCEPTION(read_write, reading_writing) \
+#define CONVERT_NETCACHEEXCEPTION(reading_writing) \
     catch (CNetCacheException& e) { \
         switch (e.GetErrCode()) { \
         case CNetCacheException::eAuthenticationError: \
         case CNetCacheException::eAccessDenied: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eAuthError, \
-                    "Authentication or authorization error " \
-                    "while accessing NetCache blob " << \
-                    m_BlobKey); \
+                    "while " reading_writing " " << m_BlobKey); \
         case CNetCacheException::eBlobNotFound: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eNotExists, \
-                    "NetCache blob " << m_BlobKey << \
-                    " does not exist"); \
+                    "while " reading_writing " " << m_BlobKey); \
         case CNetCacheException::eKeyFormatError: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eInvalidArg, \
-                    "Cannot " read_write " NetCache blob " << \
-                    m_BlobKey); \
+                    "while " reading_writing " " << m_BlobKey); \
         case CNetCacheException::eNotImplemented: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eNotSupported, \
-                    "Cannot " read_write " NetCache blob " << \
-                    m_BlobKey); \
+                    "while " reading_writing " " << m_BlobKey); \
         case CNetCacheException::eServerError: \
         case CNetCacheException::eUnknownCommand: \
         case CNetCacheException::eInvalidServerResponse: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eServerError, \
-                    "NetCache server error while " reading_writing " " << \
-                    m_BlobKey); \
+                    "while " reading_writing " " << m_BlobKey); \
         case CNetCacheException::eBlobClipped: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eIOError, \
-                    "Error while " reading_writing " " << \
-                    m_BlobKey); \
+                    "while " reading_writing " " << m_BlobKey); \
         default: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eUnknown, \
-                    "Unknown error while " reading_writing " " << \
-                    m_BlobKey); \
+                    "while " reading_writing " " << m_BlobKey); \
         } \
     }
 
@@ -99,7 +91,7 @@ void SNetStorage_NetCacheBlob::x_InitReader()
         m_NetCacheReader.reset(m_NetCacheAPI->GetPartReader(
                 m_BlobKey, 0, 0, &m_BlobSize, NULL));
     }
-    CONVERT_NETCACHEEXCEPTION("read", "reading")
+    CONVERT_NETCACHEEXCEPTION("reading")
 
     m_State = eReading;
 }
@@ -114,7 +106,7 @@ ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size,
         return g_ReadFromNetCache(m_NetCacheReader.get(),
                 reinterpret_cast<char*>(buffer), buf_size, bytes_read);
     }
-    CONVERT_NETCACHEEXCEPTION("read", "reading")
+    CONVERT_NETCACHEEXCEPTION("reading")
 }
 
 ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
@@ -131,7 +123,7 @@ void SNetStorage_NetCacheBlob::Read(string* data)
     try {
         m_NetCacheAPI.ReadData(m_BlobKey, *data);
     }
-    CONVERT_NETCACHEEXCEPTION("read", "reading")
+    CONVERT_NETCACHEEXCEPTION("reading")
 }
 
 bool SNetStorage_NetCacheBlob::Eof()
@@ -159,7 +151,7 @@ void SNetStorage_NetCacheBlob::x_InitWriter()
     try {
         m_NetCacheWriter.reset(m_NetCacheAPI.PutData(&m_BlobKey));
     }
-    CONVERT_NETCACHEEXCEPTION("write", "writing")
+    CONVERT_NETCACHEEXCEPTION("writing")
 
     m_State = eWriting;
 }
@@ -173,7 +165,7 @@ ERW_Result SNetStorage_NetCacheBlob::Write(const void* buf_pos, size_t buf_size,
     try {
         return m_NetCacheWriter->Write(buf_pos, buf_size, bytes_written);
     }
-    CONVERT_NETCACHEEXCEPTION("write", "writing")
+    CONVERT_NETCACHEEXCEPTION("writing")
 }
 
 ERW_Result SNetStorage_NetCacheBlob::Flush()
