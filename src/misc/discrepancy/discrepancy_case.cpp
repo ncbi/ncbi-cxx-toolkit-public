@@ -1188,6 +1188,28 @@ DISCREPANCY_SUMMARIZE(BAD_LOCUS_TAG_FORMAT)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+// SEGSETS_PRESENT
+DISCREPANCY_CASE(SEGSETS_PRESENT, CBioseq_set, eDisc, "Segsets present")
+{
+    if( GET_FIELD_OR_DEFAULT(obj, Class, CBioseq_set::eClass_not_set) !=
+        CBioseq_set::eClass_segset )
+    {
+        return;
+    }
+
+    m_Objs["[n] segset[s] [is] present"].Add(
+        *new CDiscrepancyObject(
+            context.GetCurrentBioseq_set(), context.GetScope(),
+            context.GetFile(), context.GetKeepRef()),
+        false);
+}
+
+DISCREPANCY_SUMMARIZE(SEGSETS_PRESENT)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 // QUALITY_SCORES
 
 DISCREPANCY_CASE(QUALITY_SCORES, CSeq_annot, eDisc, "Check for quality scores")

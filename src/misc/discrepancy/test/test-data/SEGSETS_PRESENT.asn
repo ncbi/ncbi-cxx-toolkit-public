@@ -1,0 +1,68 @@
+Seq-entry ::= set {
+    class segset,
+    seq-set {
+        set {
+            class nuc-prot,
+            seq-set {
+                seq {
+                    id { local str "Seq1" },
+                    inst {
+                        repr virtual,
+                        mol na,
+                        length 101
+                    }
+                },
+                set {
+                    class segset,
+                    seq-set {
+                        seq {
+                            id { local str "Seq3" },
+                            inst {
+                                repr virtual,
+                                mol na,
+                                length 101
+                            }
+                        }
+                    }
+                },
+                seq {
+                    id { local str "Seq2" },
+                    inst {
+                        repr virtual,
+                        mol na,
+                        length 101
+                    }
+                }
+            }
+        },
+        seq {
+            id { local str "Seq4" },
+            inst {
+                repr virtual,
+                mol na,
+                length 101
+            }
+        },
+        seq {
+            id { local str "Seq5" },
+            inst {
+                repr virtual,
+                mol na,
+                length 1001
+            }
+        },
+        set {
+            class segset,
+            seq-set {
+                seq {
+                    id { local str "Seq6" },
+                    inst {
+                        repr virtual,
+                        mol na,
+                        length 1101
+                    }
+                }
+            }
+        }
+    }
+}
