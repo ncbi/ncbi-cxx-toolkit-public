@@ -77,24 +77,6 @@ string SNetStorage_NetCacheBlob::GetLoc()
         } \
     }
 
-#define CONVERT_NETSERVICEEXCEPTION(reading_writing) \
-    catch (CNetServiceException& e) { \
-        switch (e.GetErrCode()) { \
-        case CNetServiceException::eTimeout: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eTimeout, \
-                    "Timeout while " reading_writing " NetCache blob " << \
-                    m_BlobKey); \
-        case CNetServiceException::eCommunicationError: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eIOError, \
-                    "I/O error while " reading_writing " NetCache blob " << \
-                    m_BlobKey); \
-        default: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eServerError, \
-                    "NetCache server error while " reading_writing " " << \
-                    m_BlobKey); \
-        } \
-    }
-
 void SNetStorage_NetCacheBlob::x_InitReader()
 {
     if (m_State == eWriting) {
@@ -107,7 +89,6 @@ void SNetStorage_NetCacheBlob::x_InitReader()
                 m_BlobKey, 0, 0, &m_BlobSize, NULL));
     }
     CONVERT_NETCACHEEXCEPTION("read", "reading")
-    CONVERT_NETSERVICEEXCEPTION("reading")
 
     m_State = eReading;
 }
@@ -122,7 +103,7 @@ ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size,
         return g_ReadFromNetCache(m_NetCacheReader.get(),
                 reinterpret_cast<char*>(buffer), buf_size, bytes_read);
     }
-    CONVERT_NETSERVICEEXCEPTION("reading");
+    CONVERT_NETCACHEEXCEPTION("read", "reading")
 }
 
 ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
@@ -139,7 +120,7 @@ void SNetStorage_NetCacheBlob::Read(string* data)
     try {
         m_NetCacheAPI.ReadData(m_BlobKey, *data);
     }
-    CONVERT_NETSERVICEEXCEPTION("reading");
+    CONVERT_NETCACHEEXCEPTION("read", "reading")
 }
 
 bool SNetStorage_NetCacheBlob::Eof()
@@ -168,7 +149,6 @@ void SNetStorage_NetCacheBlob::x_InitWriter()
         m_NetCacheWriter.reset(m_NetCacheAPI.PutData(&m_BlobKey));
     }
     CONVERT_NETCACHEEXCEPTION("write", "writing")
-    CONVERT_NETSERVICEEXCEPTION("writing")
 
     m_State = eWriting;
 }
@@ -182,7 +162,7 @@ ERW_Result SNetStorage_NetCacheBlob::Write(const void* buf_pos, size_t buf_size,
     try {
         return m_NetCacheWriter->Write(buf_pos, buf_size, bytes_written);
     }
-    CONVERT_NETSERVICEEXCEPTION("writing");
+    CONVERT_NETCACHEEXCEPTION("write", "writing")
 }
 
 ERW_Result SNetStorage_NetCacheBlob::Flush()

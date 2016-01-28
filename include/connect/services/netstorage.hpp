@@ -38,6 +38,7 @@
 
 #include "json_over_uttp.hpp"
 #include "srv_connections.hpp"
+#include "netservice_api_expt.hpp"
 
 #include <corelib/ncbitime.hpp>
 
@@ -60,7 +61,7 @@ class  CNetStorageObjectLoc;            ///< @internal
 /// Exception class for use by CNetStorage, CNetStorageByKey,
 /// and CNetStorageObject
 ///
-class NCBI_XCONNECT_EXPORT CNetStorageException : public CException
+class NCBI_XCONNECT_EXPORT CNetStorageException : public CNetServiceException
 {
 public:
     enum EErrCode {
@@ -74,7 +75,7 @@ public:
         eNotSupported   ///< Feature is not supported
     };
     virtual const char* GetErrCodeString() const;
-    NCBI_EXCEPTION_DEFAULT(CNetStorageException, CException);
+    NCBI_EXCEPTION_DEFAULT(CNetStorageException, CNetServiceException);
 };
 
 /// Enumeration that indicates the current location of the object.
