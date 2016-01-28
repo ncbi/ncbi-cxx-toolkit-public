@@ -417,8 +417,6 @@ BOOST_AUTO_TEST_CASE(Test_CytochromeOxidase)
     s.SetIs_all_punct(false);
     s.SetIgnore_weasel(false);
     
-    //NcbiCout << MSerial_AsnText << s;
-
     BOOST_CHECK_EQUAL(s.Match("cytochrome oxidase subunit I"), true);
     BOOST_CHECK_EQUAL(s.Match("cytochrome oxydase subunit I"), true);
     BOOST_CHECK_EQUAL(s.Match("cytochrome oxydase subunit I gene"), true);
@@ -607,4 +605,55 @@ BOOST_AUTO_TEST_CASE(Test_FirstCaps)
     BOOST_CHECK_EQUAL(s.Match("12 Ribosomal RNA"), true);
     BOOST_CHECK_EQUAL(s.Match("12R Ribosomal RNA"), false); //!!
     BOOST_CHECK_EQUAL(s.Match("12r Ribosomal RNA"), false); //!!
+}
+
+BOOST_AUTO_TEST_CASE(Test_Matching_OptionalString)
+{
+    CString_constraint s;
+    s.SetMatch_text("16S ribosomal RNA gene");
+    s.SetMatch_location(eString_location_equals);
+    s.SetCase_sensitive(false);
+    s.SetIgnore_space(true);
+    s.SetIgnore_punct(true);
+
+    CRef<CWord_substitution> subst1(new CWord_substitution());
+    subst1->SetWord("");
+    subst1->SetSynonyms().push_back("partial sequence");
+    subst1->SetSynonyms().push_back("complete sequence");
+    subst1->SetSynonyms().push_back("partial");
+    subst1->SetSynonyms().push_back("complete");
+    subst1->SetSynonyms().push_back("gene");
+    subst1->SetSynonyms().push_back("region");
+
+    subst1->SetCase_sensitive(false);
+    subst1->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst1);
+
+    CRef<CWord_substitution> subst2(new CWord_substitution());
+    subst2->SetWord("16S");
+    subst2->SetSynonyms().push_back("5.8S");
+    subst2->SetSynonyms().push_back("12S");
+    subst2->SetSynonyms().push_back("18S");
+    subst2->SetSynonyms().push_back("23S");
+    subst2->SetSynonyms().push_back("28S");
+
+    subst2->SetCase_sensitive(false);
+    subst2->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst2);
+
+    CRef<CWord_substitution> subst3(new CWord_substitution());
+    subst3->SetWord("gene");
+    subst3->SetCase_sensitive(false);
+    subst3->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst3);
+
+    s.SetWhole_word(false);
+    s.SetNot_present(false);
+    s.SetIs_all_caps(false);
+    s.SetIs_all_lower(false);
+    s.SetIs_all_punct(false);
+    s.SetIgnore_weasel(false);
+
+    BOOST_CHECK_EQUAL(s.Match("18S ribosomal RNA gene"), true);
+    BOOST_CHECK_EQUAL(s.Match("18S ribosomal RNA gene, partial sequence"), true);
 }
