@@ -323,12 +323,16 @@ bool CRWNotFound::EofImpl()
 
 ERW_Result CRONetCache::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 {
-    size_t bytes_read_local = 0;
-    ERW_Result rw_res = m_Reader->Read(buf, count, &bytes_read_local);
-    m_BytesRead += bytes_read_local;
-    if (bytes_read != NULL)
-        *bytes_read = bytes_read_local;
-    return rw_res;
+    try {
+        size_t bytes_read_local = 0;
+        ERW_Result rw_res = m_Reader->Read(buf, count, &bytes_read_local);
+        m_BytesRead += bytes_read_local;
+        if (bytes_read != NULL)
+            *bytes_read = bytes_read_local;
+        return rw_res;
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + LocatorToStr())
+    return eRW_Error; // Not reached
 }
 
 
@@ -340,20 +344,30 @@ bool CRONetCache::EofImpl()
 
 void CRONetCache::CloseImpl()
 {
-    m_Reader.reset();
+    try {
+        m_Reader.reset();
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("after reading " + LocatorToStr())
 }
 
 
 ERW_Result CWONetCache::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
 {
-    return m_Writer->Write(buf, count, bytes_written);
+    try {
+        return m_Writer->Write(buf, count, bytes_written);
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + LocatorToStr())
+    return eRW_Error; // Not reached
 }
 
 
 void CWONetCache::CloseImpl()
 {
-    m_Writer->Close();
-    m_Writer.reset();
+    try {
+        m_Writer->Close();
+        m_Writer.reset();
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("after writing " + LocatorToStr())
 }
 
 
@@ -496,19 +510,24 @@ IState* CNetCache::StartRead(void* buf, size_t count,
 {
     _ASSERT(result);
 
-    size_t blob_size;
     TObjLoc& object_loc(Locator());
-    CRONetCache::TReaderPtr reader(m_Client.GetReadStream(
-                object_loc.GetShortUniqueKey(), 0, kEmptyStr, &blob_size,
-                (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
-                nc_cache_name = object_loc.GetAppDomain())));
 
-    if (!reader.get()) {
-        return NULL;
+    try {
+        size_t blob_size;
+        CRONetCache::TReaderPtr reader(m_Client.GetReadStream(
+                    object_loc.GetShortUniqueKey(), 0, kEmptyStr, &blob_size,
+                    (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                    nc_cache_name = object_loc.GetAppDomain())));
+
+        if (!reader.get()) {
+            return NULL;
+        }
+
+        m_Read.Set(reader, blob_size);
+        *result =  m_Read.ReadImpl(buf, count, bytes_read);
     }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + object_loc.GetLocator())
 
-    m_Read.Set(reader, blob_size);
-    *result =  m_Read.ReadImpl(buf, count, bytes_read);
     return &m_Read;
 }
 
@@ -519,16 +538,21 @@ IState* CNetCache::StartWrite(const void* buf, size_t count,
     _ASSERT(result);
 
     TObjLoc& object_loc(Locator());
-    CWONetCache::TWriterPtr writer(m_Client.GetNetCacheWriter(
-                object_loc.GetShortUniqueKey(), 0, kEmptyStr,
-                nc_cache_name = object_loc.GetAppDomain()));
 
-    if (!writer.get()) {
-        return NULL;
+    try {
+        CWONetCache::TWriterPtr writer(m_Client.GetNetCacheWriter(
+                    object_loc.GetShortUniqueKey(), 0, kEmptyStr,
+                    nc_cache_name = object_loc.GetAppDomain()));
+
+        if (!writer.get()) {
+            return NULL;
+        }
+
+        m_Write.Set(writer);
+        *result = m_Write.WriteImpl(buf, count, bytes_written);
     }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + object_loc.GetLocator())
 
-    m_Write.Set(writer);
-    *result = m_Write.WriteImpl(buf, count, bytes_written);
     SetLocator();
     return &m_Write;
 }
@@ -536,28 +560,20 @@ IState* CNetCache::StartWrite(const void* buf, size_t count,
 
 Uint8 CNetCache::GetSizeImpl()
 {
-    // TODO:
-    // Consider using CONVERT_NETCACHEEXCEPTION for all CNetCache methods
+    TObjLoc& object_loc(Locator());
+
     try {
-        TObjLoc& object_loc(Locator());
         return m_Client.GetBlobSize(
                 object_loc.GetShortUniqueKey(), 0, kEmptyStr,
                 nc_cache_name = object_loc.GetAppDomain());
     }
-    catch (CNetCacheException& e) {
-        if (e.GetErrCode() == CNetCacheException::eBlobNotFound) {
-            NCBI_RETHROW_FMT(e, CNetStorageException, eNotExists, e.GetMsg());
-        }
-        throw;
-    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + object_loc.GetLocator())
+    return 0; // Not reached
 }
 
 
 CNetStorageObjectInfo CNetCache::GetInfoImpl()
 {
-    // TODO:
-    // Check why CNetCacheException is not rethrown for any error code
-    // except eBlobNotFound
     CJsonNode blob_info = CJsonNode::NewObjectNode();
     TObjLoc& object_loc(Locator());
 
@@ -572,11 +588,7 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
             if (NStr::SplitInTwo(line, ": ", key, val, NStr::fSplit_ByPattern))
                 blob_info.SetByKey(key, CJsonNode::GuessType(val));
     }
-    catch (CNetCacheException& e) {
-        if (e.GetErrCode() == CNetCacheException::eBlobNotFound) {
-            NCBI_RETHROW_FMT(e, CNetStorageException, eNotExists, e.GetMsg());
-        }
-    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
 
     CJsonNode size_node(blob_info.GetByKeyOrNull("Size"));
 
@@ -603,8 +615,12 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
 bool CNetCache::ExistsImpl()
 {
     TObjLoc& object_loc(Locator());
-    LOG_POST(Trace << "Checking existence in NetCache " << object_loc.GetLocator());
-    NC_EXISTS_IMPL(object_loc);
+
+    try {
+        NC_EXISTS_IMPL(object_loc);
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
+
     return true;
 }
 
@@ -612,13 +628,16 @@ bool CNetCache::ExistsImpl()
 ENetStorageRemoveResult CNetCache::RemoveImpl()
 {
     TObjLoc& object_loc(Locator());
-    LOG_POST(Trace << "Trying to remove from NetCache " << object_loc.GetLocator());
 
-    // NetCache returns OK on removing already-removed/non-existent blobs,
-    // so have to check for existence first and throw if not
-    NC_EXISTS_IMPL(object_loc);
-    m_Client.RemoveBlob(object_loc.GetShortUniqueKey(), 0, kEmptyStr,
-            nc_cache_name = object_loc.GetAppDomain());
+    try {
+        // NetCache returns OK on removing already-removed/non-existent blobs,
+        // so have to check for existence first and throw if not
+        NC_EXISTS_IMPL(object_loc);
+        m_Client.RemoveBlob(object_loc.GetShortUniqueKey(), 0, kEmptyStr,
+                nc_cache_name = object_loc.GetAppDomain());
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on removing " + LocatorToStr())
+
     return eNSTRR_Removed;
 }
 
@@ -626,8 +645,12 @@ ENetStorageRemoveResult CNetCache::RemoveImpl()
 void CNetCache::SetExpirationImpl(const CTimeout& ttl)
 {
     TObjLoc& object_loc(Locator());
-    NC_EXISTS_IMPL(object_loc);
-    m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), ttl);
+
+    try {
+        NC_EXISTS_IMPL(object_loc);
+        m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), ttl);
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
 }
 
 
@@ -722,7 +745,6 @@ CNetStorageObjectInfo CFileTrack::GetInfoImpl()
 bool CFileTrack::ExistsImpl()
 {
     TObjLoc& object_loc(Locator());
-    LOG_POST(Trace << "Checking existence in FileTrack " << object_loc.GetLocator());
     FT_EXISTS_IMPL(object_loc);
     return true;
 }
@@ -731,7 +753,6 @@ bool CFileTrack::ExistsImpl()
 ENetStorageRemoveResult CFileTrack::RemoveImpl()
 {
     TObjLoc& object_loc(Locator());
-    LOG_POST(Trace << "Trying to remove from FileTrack " << object_loc.GetLocator());
     m_Context->filetrack_api.Remove(object_loc);
     return eNSTRR_Removed;
 }
