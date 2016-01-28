@@ -91,7 +91,6 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "FLYBASE", CDbtag::eDbtagType_FLYBASE },
     { "GABI", CDbtag::eDbtagType_GABI },
     { "GDB", CDbtag::eDbtagType_GDB },
-    { "GI", CDbtag::eDbtagType_GI },
     { "GO", CDbtag::eDbtagType_GO },
     { "GOA", CDbtag::eDbtagType_GOA },
     { "GRIN", CDbtag::eDbtagType_GRIN },
