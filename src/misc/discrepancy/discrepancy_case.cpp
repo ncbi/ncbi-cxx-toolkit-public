@@ -1247,5 +1247,25 @@ DISCREPANCY_SUMMARIZE(QUALITY_SCORES)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, CSeqFeatData, eOncaller,
+                 "Bacterial sequences should not have mRNA features")
+{
+    if( ! context.IsBacterial() ||
+        obj.GetSubtype() != CSeqFeatData::eSubtype_mRNA )
+    {
+        return;
+    }
+
+    m_Objs["[n] bacterial sequence[s] [has] mRNA features"].Add(
+        *new CDiscrepancyObject(
+            context.GetCurrentBioseq(), context.GetScope(), context.GetFile(),
+            context.GetKeepRef()));
+}
+
+DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_MRNA)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

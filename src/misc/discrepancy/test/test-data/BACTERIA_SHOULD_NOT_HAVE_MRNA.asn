@@ -1,0 +1,151 @@
+Seq-entry ::= set {
+    seq-set {
+        seq {
+            id { local str "this_is_bacterial_but_has_no_mRNA" },
+            descr {
+                source {
+                    genome genomic,
+                    org {
+                        taxname "escherichia coli",
+                        orgname {
+                            lineage "Bacteria; Proteobacteria;
+Gammaproteobacteria; Enterobacteriales; Enterobacteriaceae; Escherichia"
+                        }
+                    }
+                }
+            },
+            inst {
+                repr raw,
+                mol na,
+                length 8,
+                seq-data iupacna "ACGTACGT"
+            },
+            annot {
+                {
+                    data ftable {
+                        {
+                            data rna {
+                                type tRNA
+                            },
+                            location whole
+                                local str "this_is_bacterial_but_has_no_mRNA"
+                        }
+                    }
+                }
+            }
+        },
+        seq {
+            id { local str "this_is_bacterial_and_has_mRNA" },
+            descr {
+                source {
+                    genome genomic,
+                    org {
+                        taxname "escherichia coli",
+                        orgname {
+                            lineage "Bacteria; Proteobacteria;
+Gammaproteobacteria; Enterobacteriales; Enterobacteriaceae; Escherichia"
+                        }
+                    }
+                }
+            },
+            inst {
+                repr raw,
+                mol na,
+                length 8,
+                seq-data iupacna "ACGTACGT"
+            },
+            annot {
+                {
+                    data ftable {
+                        {
+                            data rna {
+                                type mRNA
+                            },
+                            location whole
+                                local str "this_is_bacterial_and_has_mRNA"
+                        },
+                        {
+                            data rna {
+                                type mRNA
+                            },
+                            location whole
+                                local str "this_is_bacterial_and_has_mRNA"
+                        }
+                    }
+                }
+            }
+        },
+        seq {
+            id { local str "this_is_not_bacterial_and_has_no_mRNA_either" },
+            descr {
+                source {
+                    genome genomic,
+                    org {
+                        taxname "ia io",
+                        orgname {
+                            lineage "Eukaryota; Metazoa; Chordata; Craniata;
+Vertebrata; Euteleostomi; Mammalia; Eutheria; Laurasiatheria; Chiroptera;
+Microchiroptera; Vespertilionidae; Ia"
+                        }
+                    }
+                }
+            },
+            inst {
+                repr raw,
+                mol na,
+                length 8,
+                seq-data iupacna "ACGTACGT"
+            },
+            annot {
+                {
+                    data ftable {
+                        {
+                            data rna {
+                                type tRNA
+                            },
+                            location whole
+                                local str
+                                    "this_is_not_bacterial_and_has_no_mRNA_either"
+                        }
+                    }
+                }
+            }
+        },
+        seq {
+            id { local str "this_is_not_bacterial_but_has_mRNA" },
+            descr {
+                source {
+                    genome genomic,
+                    org {
+                        taxname "ia io",
+                        orgname {
+                            lineage "Eukaryota; Metazoa; Chordata; Craniata;
+Vertebrata; Euteleostomi; Mammalia; Eutheria; Laurasiatheria; Chiroptera;
+Microchiroptera; Vespertilionidae; Ia"
+                        }
+                    }
+                }
+            },
+            inst {
+                repr raw,
+                mol na,
+                length 8,
+                seq-data iupacna "ACGTACGT"
+            },
+            annot {
+                {
+                    data ftable {
+                        {
+                            data rna {
+                                type mRNA
+                            },
+                            location whole
+                                local str
+                                    "this_is_not_bacterial_but_has_mRNA"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
