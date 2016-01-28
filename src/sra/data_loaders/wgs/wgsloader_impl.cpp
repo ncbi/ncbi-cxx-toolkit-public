@@ -774,18 +774,19 @@ TSeqPos CWGSDataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
 }
 
 
-int CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
+pair<int, bool> CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
 {
+    pair<int, bool> ret;
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
         switch ( info.seq_type ) {
-        case 'S':
+        case 'S': // scaffold
             /*
             if ( CWGSScaffoldIterator it = info.GetScaffoldIterator() ) {
                 return it.GetSeqHash();
             }
             */
             break;
-        case 'P':
+        case 'P': // protein
             /*
             if ( CWGSProteinIterator it = info.GetProteinIterator() ) {
                 return it.GetSeqHash();
@@ -794,12 +795,15 @@ int CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
             break;
         default:
             if ( CWGSSeqIterator it = info.GetContigIterator() ) {
-                return it.GetSeqHash();
+                if ( it.HasSeqHash() ) {
+                    ret.first = it.GetSeqHash();
+                    ret.second = true;
+                }
             }
             break;
         }
     }
-    return 0;
+    return ret;
 }
 
 

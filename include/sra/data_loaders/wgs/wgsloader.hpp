@@ -104,7 +104,7 @@ public:
     virtual TGi GetGi(const CSeq_id_Handle& idh);
     virtual int GetTaxId(const CSeq_id_Handle& idh);
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
-    virtual int GetSequenceHash(const CSeq_id_Handle& idh);
+    virtual pair<int, bool> GetSequenceHash2(const CSeq_id_Handle& idh);
     virtual CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
 
     bool GetAddWGSMasterDescr(void) const;
