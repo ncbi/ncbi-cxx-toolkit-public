@@ -365,27 +365,27 @@ void CScope::RemoveSeq_annot(const CSeq_annot_Handle& annot)
 }
 
 
-CScope::TIds CScope::GetIds(const CSeq_id& id)
+CScope::TIds CScope::GetIds(const CSeq_id& id, TGetFlags flags)
 {
-    return GetIds(CSeq_id_Handle::GetHandle(id));
+    return GetIds(CSeq_id_Handle::GetHandle(id), flags);
 }
 
 
-CScope::TIds CScope::GetIds(const CSeq_id_Handle& idh)
+CScope::TIds CScope::GetIds(const CSeq_id_Handle& idh, TGetFlags flags)
 {
-    return m_Impl->GetIds(idh);
+    return m_Impl->GetIds(idh, flags);
 }
 
 
-CSeq_id_Handle CScope::GetAccVer(const CSeq_id_Handle& idh)
+CSeq_id_Handle CScope::GetAccVer(const CSeq_id_Handle& idh, TGetFlags flags)
 {
-    return m_Impl->GetAccVer(idh, false);
+    return m_Impl->GetAccVer(idh, flags);
 }
 
 
-TGi CScope::GetGi(const CSeq_id_Handle& idh)
+TGi CScope::GetGi(const CSeq_id_Handle& idh, TGetFlags flags)
 {
-    return m_Impl->GetGi(idh, false);
+    return m_Impl->GetGi(idh, flags);
 }
 
 
@@ -416,27 +416,27 @@ TGi CScope::x_GetGi(const TIds& ids)
 }
 
 
-string CScope::GetLabel(const CSeq_id& id, EForceLabelLoad force_load)
+string CScope::GetLabel(const CSeq_id& id, TGetFlags flags)
 {
-    return GetLabel(CSeq_id_Handle::GetHandle(id), force_load);
+    return GetLabel(CSeq_id_Handle::GetHandle(id), flags);
 }
 
 
-string CScope::GetLabel(const CSeq_id_Handle& idh, EForceLabelLoad force_load)
+string CScope::GetLabel(const CSeq_id_Handle& idh, TGetFlags flags)
 {
-    return m_Impl->GetLabel(idh, force_load == eForceLabelLoad);
+    return m_Impl->GetLabel(idh, flags);
 }
 
 
-int CScope::GetTaxId(const CSeq_id& id, EForceLoad force_load)
+int CScope::GetTaxId(const CSeq_id& id, TGetFlags flags)
 {
-    return GetTaxId(CSeq_id_Handle::GetHandle(id), force_load);
+    return GetTaxId(CSeq_id_Handle::GetHandle(id), flags);
 }
 
 
-int CScope::GetTaxId(const CSeq_id_Handle& idh, EForceLoad force_load)
+int CScope::GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags)
 {
-    return m_Impl->GetTaxId(idh, force_load == eForceLoad);
+    return m_Impl->GetTaxId(idh, flags);
 }
 
 
@@ -612,223 +612,227 @@ void CScope::UpdateAnnotIndex(void)
 
 /// Bulk retrieval methods
 CScope::TSeq_id_Handles CScope::GetAccVers(const TSeq_id_Handles& idhs,
-                                           EForceLoad force_load)
+                                           TGetFlags flags)
 {
     TSeq_id_Handles results;
-    GetAccVers(&results, idhs, force_load);
+    GetAccVers(&results, idhs, flags);
     return results;
 }
 
 
 void CScope::GetAccVers(TSeq_id_Handles* results,
                         const TSeq_id_Handles& idhs,
-                        EForceLoad force_load)
+                        TGetFlags flags)
 {
     if ( !results ) {
         NCBI_THROW(CCoreException, eNullPtr,
                    "CScope::GetAccVers: null results pointer");
     }
-    return m_Impl->GetAccVers(*results, idhs, force_load == eForceLoad);
+    return m_Impl->GetAccVers(*results, idhs, flags);
 }
 
 
 CScope::TGIs CScope::GetGis(const TSeq_id_Handles& idhs,
-                            EForceLoad force_load)
+                            TGetFlags flags)
 {
     TGIs results;
-    GetGis(&results, idhs, force_load);
+    GetGis(&results, idhs, flags);
     return results;
 }
 
 
 void CScope::GetGis(TGIs* results,
                     const TSeq_id_Handles& idhs,
-                    EForceLoad force_load)
+                    TGetFlags flags)
 {
     if ( !results ) {
         NCBI_THROW(CCoreException, eNullPtr,
                    "CScope::GetGis: null results pointer");
     }
-    return m_Impl->GetGis(*results, idhs, force_load == eForceLoad);
+    return m_Impl->GetGis(*results, idhs, flags);
 }
 
 
 CScope::TLabels CScope::GetLabels(const TSeq_id_Handles& idhs,
-                                  EForceLoad force_load)
+                                  TGetFlags flags)
 {
     TLabels results;
-    GetLabels(&results, idhs, force_load);
+    GetLabels(&results, idhs, flags);
     return results;
 }
 
 
 void CScope::GetLabels(TLabels* results,
                        const TSeq_id_Handles& idhs,
-                       EForceLoad force_load)
+                       TGetFlags flags)
 {
     if ( !results ) {
         NCBI_THROW(CCoreException, eNullPtr,
                    "CScope::GetLabels: null results pointer");
     }
-    return m_Impl->GetLabels(*results, idhs, force_load == eForceLoad);
+    return m_Impl->GetLabels(*results, idhs, flags);
 }
 
 
 CScope::TTaxIds CScope::GetTaxIds(const TSeq_id_Handles& idhs,
-                                  EForceLoad force_load)
+                                  TGetFlags flags)
 {
     TTaxIds results;
-    GetTaxIds(&results, idhs, force_load);
+    GetTaxIds(&results, idhs, flags);
     return results;
 }
 
 
 void CScope::GetTaxIds(TTaxIds* results,
                        const TSeq_id_Handles& idhs,
-                       EForceLoad force_load)
+                       TGetFlags flags)
 {
     if ( !results ) {
         NCBI_THROW(CCoreException, eNullPtr,
                    "CScope::GetTaxIds: null results pointer");
     }
-    return m_Impl->GetTaxIds(*results, idhs, force_load == eForceLoad);
+    return m_Impl->GetTaxIds(*results, idhs, flags);
 }
 
 
 TSeqPos CScope::GetSequenceLength(const CSeq_id& id,
-                                  EForceLoad force_load)
+                                  TGetFlags flags)
 {
-    return GetSequenceLength(CSeq_id_Handle::GetHandle(id), force_load);
+    return GetSequenceLength(CSeq_id_Handle::GetHandle(id), flags);
 }
 
 
 TSeqPos CScope::GetSequenceLength(const CSeq_id_Handle& id,
-                                  EForceLoad force_load)
+                                  TGetFlags flags)
 {
-    return m_Impl->GetSequenceLength(id, force_load == eForceLoad);
+    return m_Impl->GetSequenceLength(id, flags);
 }
 
 
 void CScope::GetSequenceLengths(TSequenceLengths* results,
                                 const TSeq_id_Handles& ids,
-                                EForceLoad force_load)
+                                TGetFlags flags)
 {
     if ( !results ) {
         NCBI_THROW(CCoreException, eNullPtr,
                    "CScope::GetSequenceLengths: null results pointer");
     }
-    return m_Impl->GetSequenceLengths(*results, ids, force_load == eForceLoad);
+    return m_Impl->GetSequenceLengths(*results, ids, flags);
 }
 
 
 CScope::TSequenceLengths CScope::GetSequenceLengths(const TSeq_id_Handles& ids,
-                                                    EForceLoad force_load)
+                                                    TGetFlags flags)
 {
     TSequenceLengths results;
-    GetSequenceLengths(&results, ids, force_load);
+    GetSequenceLengths(&results, ids, flags);
     return results;
 }
 
 
 CSeq_inst::TMol CScope::GetSequenceType(const CSeq_id& id,
-                                        EForceLoad force_load)
+                                        TGetFlags flags)
 {
-    return GetSequenceType(CSeq_id_Handle::GetHandle(id), force_load);
+    return GetSequenceType(CSeq_id_Handle::GetHandle(id), flags);
 }
 
 
 CSeq_inst::TMol CScope::GetSequenceType(const CSeq_id_Handle& id,
-                                        EForceLoad force_load)
+                                        TGetFlags flags)
 {
-    return m_Impl->GetSequenceType(id, force_load == eForceLoad);
+    return m_Impl->GetSequenceType(id, flags);
 }
 
 
 void CScope::GetSequenceTypes(TSequenceTypes* results,
                               const TSeq_id_Handles& ids,
-                              EForceLoad force_load)
+                              TGetFlags flags)
 {
     if ( !results ) {
         NCBI_THROW(CCoreException, eNullPtr,
                    "CScope::GetSequenceTypes: null results pointer");
     }
-    return m_Impl->GetSequenceTypes(*results, ids, force_load == eForceLoad);
+    return m_Impl->GetSequenceTypes(*results, ids, flags);
 }
 
 
 CScope::TSequenceTypes CScope::GetSequenceTypes(const TSeq_id_Handles& ids,
-                                                EForceLoad force_load)
+                                                TGetFlags flags)
 {
     TSequenceTypes results;
-    GetSequenceTypes(&results, ids, force_load);
+    GetSequenceTypes(&results, ids, flags);
     return results;
 }
 
 
 CBioseq_Handle::TBioseqStateFlags
 CScope::GetSequenceState(const CSeq_id& id,
-                         EForceLoad force_load)
+                         TGetFlags flags)
 {
-    return GetSequenceState(CSeq_id_Handle::GetHandle(id), force_load);
+    return GetSequenceState(CSeq_id_Handle::GetHandle(id), flags);
 }
 
 
 CBioseq_Handle::TBioseqStateFlags
 CScope::GetSequenceState(const CSeq_id_Handle& id,
-                         EForceLoad force_load)
+                         TGetFlags flags)
 {
-    return m_Impl->GetSequenceState(id, force_load == eForceLoad);
+    return m_Impl->GetSequenceState(id, flags);
 }
 
 
 void CScope::GetSequenceStates(TSequenceStates* results,
                                const TSeq_id_Handles& ids,
-                               EForceLoad force_load)
+                               TGetFlags flags)
 {
     if ( !results ) {
         NCBI_THROW(CCoreException, eNullPtr,
                    "CScope::GetSequenceStates: null results pointer");
     }
-    return m_Impl->GetSequenceStates(*results, ids, force_load == eForceLoad);
+    return m_Impl->GetSequenceStates(*results, ids, flags);
 }
 
 
 CScope::TSequenceStates CScope::GetSequenceStates(const TSeq_id_Handles& ids,
-                                                  EForceLoad force_load)
+                                                  TGetFlags flags)
 {
     TSequenceStates results;
-    GetSequenceStates(&results, ids, force_load);
+    GetSequenceStates(&results, ids, flags);
     return results;
 }
 
 
-CScope::TSequenceHash CScope::GetSequenceHash(const CSeq_id& id)
+CScope::TSequenceHash CScope::GetSequenceHash(const CSeq_id& id,
+                                              TGetFlags flags)
 {
-    return GetSequenceHash(CSeq_id_Handle::GetHandle(id));
+    return GetSequenceHash(CSeq_id_Handle::GetHandle(id), flags);
 }
 
 
-CScope::TSequenceHash CScope::GetSequenceHash(const CSeq_id_Handle& id)
+CScope::TSequenceHash CScope::GetSequenceHash(const CSeq_id_Handle& id,
+                                              TGetFlags flags)
 {
-    return m_Impl->GetSequenceHash(id);
+    return m_Impl->GetSequenceHash(id, flags);
 }
 
 
 void CScope::GetSequenceHashes(TSequenceHashes* results,
-                               const TSeq_id_Handles& ids)
+                               const TSeq_id_Handles& ids,
+                               TGetFlags flags)
 {
     if ( !results ) {
         NCBI_THROW(CCoreException, eNullPtr,
                    "CScope::GetSequenceHashes: null results pointer");
     }
-    return m_Impl->GetSequenceHashes(*results, ids);
+    return m_Impl->GetSequenceHashes(*results, ids, flags);
 }
 
 
-CScope::TSequenceHashes CScope::GetSequenceHashes(const TSeq_id_Handles& ids)
+CScope::TSequenceHashes CScope::GetSequenceHashes(const TSeq_id_Handles& ids,
+                                                  TGetFlags flags)
 {
     TSequenceHashes results;
-    GetSequenceHashes(&results, ids);
+    GetSequenceHashes(&results, ids, flags);
     return results;
 }
 

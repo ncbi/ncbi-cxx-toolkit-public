@@ -237,7 +237,7 @@ public:
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
     int GetSequenceState(const CSeq_id_Handle& idh);
-    int GetSequenceHash(const CSeq_id_Handle& idh);
+    pair<int, bool> GetSequenceHash(const CSeq_id_Handle& idh);
 
     // bulk interface
     typedef vector<bool> TLoaded;

@@ -378,109 +378,119 @@ public:
     /// not found in the scope.
     void RemoveSeq_annot(const CSeq_annot_Handle& annot);
 
-    /// Get "native" bioseq ids without filtering and matching.
-    TIds GetIds(const CSeq_id&        id );
-    TIds GetIds(const CSeq_id_Handle& idh);
+    /// EForceLoad flag instruct scope to ignore already loaded information
+    /// and alway request data loader for data.
+    enum EForceLoad {
+        eNoForceLoad,
+        eForceLoad
+    };
+    /// Flags to control behavior of various meta-data getters
+    ///   fForceLoad instructs scope to ignore already loaded information
+    ///     and alway request data loader for data
+    ///   fThrowOnMissing instructs to throw an exeption if the requested data
+    ///     is missing - either sequence id cannot be found in any data loader
+    ///     or the sequence doesn't have the requested meta-data
+    ///     without the flag getter will return special value
+    enum EGetFlags {
+        fForceLoad      = (1 << 0), // == eForceLoad,
+        fThrowOnMissing = (1 << 1), // throw exception if no requested data
+        fTryHarder      = (1 << 2)  // recalculate requested data if necessary
+    };
+    typedef int TGetFlags;
 
-    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
-    TGi GetGi(const CSeq_id_Handle& idh);
+    /// Get "native" bioseq ids without filtering and matching.
+    TIds GetIds(const CSeq_id&        id , TGetFlags flags = 0);
+    TIds GetIds(const CSeq_id_Handle& idh, TGetFlags flags = 0);
+
+    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh, TGetFlags flags = 0);
+    TGi GetGi(const CSeq_id_Handle& idh, TGetFlags flags = 0);
     
     static CSeq_id_Handle x_GetAccVer(const TIds& ids);
     static TGi x_GetGi(const TIds& ids);
 
     /// Get short description of bioseq, usually "accession.version"
     enum EForceLabelLoad {
-        eNoForceLabelLoad,
-        eForceLabelLoad
+        eNoForceLabelLoad = eNoForceLoad,
+        eForceLabelLoad   = eForceLoad
     };
-    string GetLabel(const CSeq_id& id,
-                    EForceLabelLoad force_load = eNoForceLabelLoad);
-    string GetLabel(const CSeq_id_Handle& idh,
-                    EForceLabelLoad force_load = eNoForceLabelLoad);
+    string GetLabel(const CSeq_id& id, TGetFlags flags = 0);
+    string GetLabel(const CSeq_id_Handle& idh, TGetFlags flags = 0);
 
     /// Get taxonomy id of bioseq
     /// -1 means failure to determine the taxonomy id
     /// 0 means absence of the taxonomy id for the sequence
-    enum EForceLoad {
-        eNoForceLoad,
-        eForceLoad
-    };
-    int GetTaxId(const CSeq_id& id,
-                 EForceLoad force_load = eNoForceLoad);
-    int GetTaxId(const CSeq_id_Handle& idh,
-                 EForceLoad force_load = eNoForceLoad);
+    int GetTaxId(const CSeq_id& id, TGetFlags flags = 0);
+    int GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags = 0);
 
     // returns kInvalidSeqPos if sequence is not known
-    TSeqPos GetSequenceLength(const CSeq_id& id,
-                              EForceLoad force_load = eNoForceLoad);
-    TSeqPos GetSequenceLength(const CSeq_id_Handle& id,
-                              EForceLoad force_load = eNoForceLoad);
+    TSeqPos GetSequenceLength(const CSeq_id& id, TGetFlags flags = 0);
+    TSeqPos GetSequenceLength(const CSeq_id_Handle& id, TGetFlags flags = 0);
 
     // returns CSeq_inst::eMol_not_set if sequence is not known
     CSeq_inst::TMol GetSequenceType(const CSeq_id& id,
-                                    EForceLoad force_load = eNoForceLoad);
+                                    TGetFlags flags = 0);
     CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id,
-                                    EForceLoad force_load = eNoForceLoad);
+                                    TGetFlags flags = 0);
 
     // returns (fState_not_found|fState_no_data) if sequence is not known
-    CBioseq_Handle::TBioseqStateFlags GetSequenceState(const CSeq_id& id,
-                                                       EForceLoad force_load = eNoForceLoad);
-    CBioseq_Handle::TBioseqStateFlags GetSequenceState(const CSeq_id_Handle& id,
-                                                       EForceLoad force_load = eNoForceLoad);
+    CBioseq_Handle::TBioseqStateFlags GetSequenceState(const CSeq_id& id, TGetFlags flags = 0);
+    CBioseq_Handle::TBioseqStateFlags GetSequenceState(const CSeq_id_Handle& id, TGetFlags flags = 0);
 
     // returns 0 if sequence or its hash is not known
     typedef int TSequenceHash;
-    TSequenceHash GetSequenceHash(const CSeq_id& id);
-    TSequenceHash GetSequenceHash(const CSeq_id_Handle& id);
+    TSequenceHash GetSequenceHash(const CSeq_id& id, TGetFlags flags = 0);
+    TSequenceHash GetSequenceHash(const CSeq_id_Handle& id, TGetFlags flags = 0);
 
     /// Bulk retrieval methods
     typedef vector<CSeq_id_Handle> TSeq_id_Handles;
     TSeq_id_Handles GetAccVers(const TSeq_id_Handles& idhs,
-                               EForceLoad force_load = eNoForceLoad);
+                                TGetFlags flags = 0);
     void GetAccVers(TSeq_id_Handles* results,
                     const TSeq_id_Handles& idhs,
-                    EForceLoad force_load = eNoForceLoad);
+                    TGetFlags flags = 0);
     typedef vector<TGi> TGIs;
     TGIs GetGis(const TSeq_id_Handles& idhs,
-                EForceLoad force_load = eNoForceLoad);
+                TGetFlags flags = 0);
     void GetGis(TGIs* results,
                 const TSeq_id_Handles& idhs,
-                EForceLoad force_load = eNoForceLoad);
+                TGetFlags flags = 0);
     typedef vector<string> TLabels;
     TLabels GetLabels(const TSeq_id_Handles& idhs,
-                      EForceLoad force_load = eNoForceLoad);
+                      TGetFlags flags = 0);
     void GetLabels(TLabels* results,
                    const TSeq_id_Handles& idhs,
-                   EForceLoad force_load = eNoForceLoad);
+                   TGetFlags flags = 0);
     typedef vector<int> TTaxIds;
     TTaxIds GetTaxIds(const TSeq_id_Handles& idhs,
-                      EForceLoad force_load = eNoForceLoad);
+                      TGetFlags flags = 0);
     void GetTaxIds(TTaxIds* results,
                    const TSeq_id_Handles& idhs,
-                   EForceLoad force_load = eNoForceLoad);
+                   TGetFlags flags = 0);
 
     typedef vector<TSeqPos> TSequenceLengths;
     TSequenceLengths GetSequenceLengths(const TSeq_id_Handles& idhs,
-                                        EForceLoad force_load = eNoForceLoad);
+                                        TGetFlags flags = 0);
     void GetSequenceLengths(TSequenceLengths* results,
                             const TSeq_id_Handles& idhs,
-                            EForceLoad force_load = eNoForceLoad);
+                            TGetFlags flags = 0);
     typedef vector<CSeq_inst::TMol> TSequenceTypes;
     TSequenceTypes GetSequenceTypes(const TSeq_id_Handles& idhs,
-                                    EForceLoad force_load = eNoForceLoad);
+                                    TGetFlags flags = 0);
     void GetSequenceTypes(TSequenceTypes* results,
                           const TSeq_id_Handles& idhs,
-                          EForceLoad force_load = eNoForceLoad);
+                          TGetFlags flags = 0);
     typedef vector<CBioseq_Handle::TBioseqStateFlags> TSequenceStates;
     TSequenceStates GetSequenceStates(const TSeq_id_Handles& idhs,
-                                      EForceLoad force_load = eNoForceLoad);
+                                      TGetFlags flags = 0);
     void GetSequenceStates(TSequenceStates* results,
                            const TSeq_id_Handles& idhs,
-                           EForceLoad force_load = eNoForceLoad);
+                           TGetFlags flags = 0);
     typedef vector<TSequenceHash> TSequenceHashes;
-    TSequenceHashes GetSequenceHashes(const TSeq_id_Handles& idhs);
+    TSequenceHashes GetSequenceHashes(const TSeq_id_Handles& idhs,
+                                      TGetFlags flags = 0);
     void GetSequenceHashes(TSequenceHashes* results,
-                           const TSeq_id_Handles& idhs);
+                           const TSeq_id_Handles& idhs,
+                           TGetFlags flags = 0);
 
     /// Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id&        id);

@@ -1495,9 +1495,13 @@ void CDataSource::GetSequenceStates(const TIds& ids, TLoaded& loaded,
 }
 
 
-int CDataSource::GetSequenceHash(const CSeq_id_Handle& idh)
+pair<int, bool> CDataSource::GetSequenceHash(const CSeq_id_Handle& idh)
 {
-    return m_Loader? m_Loader->GetSequenceHash(idh): 0;
+    pair<int, bool> ret;
+    if ( m_Loader ) {
+        ret = m_Loader->GetSequenceHash2(idh);
+    }
+    return ret;
 }
 
 

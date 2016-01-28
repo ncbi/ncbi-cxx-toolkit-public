@@ -289,6 +289,9 @@ public:
     /// Request for a sequence hash.
     /// Returns 0 if the sequence or hash is not known.
     virtual int GetSequenceHash(const CSeq_id_Handle& idh);
+    /// Request for a sequence hash.
+    /// result.second == false if sequence or hash is not known
+    virtual pair<int, bool> GetSequenceHash2(const CSeq_id_Handle& idh);
 
     /// Bulk loading interface for a small pieces of information per id.
     /// The 'loaded' bit set (in/out) marks ids that already processed.
@@ -398,7 +401,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 3, 4, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 4, 0, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

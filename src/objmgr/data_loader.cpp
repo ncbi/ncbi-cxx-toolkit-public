@@ -323,6 +323,13 @@ int CDataLoader::GetSequenceHash(const CSeq_id_Handle& idh)
 }
 
 
+pair<int, bool> CDataLoader::GetSequenceHash2(const CSeq_id_Handle& idh)
+{
+    int hash = GetSequenceHash(idh);
+    return pair<int, bool>(hash, hash != 0);
+}
+
+
 void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     size_t count = ids.size();

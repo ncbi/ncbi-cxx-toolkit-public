@@ -324,12 +324,14 @@ public:
 
     CScope& GetScope(void);
 
+    typedef int TGetFlags;
+
     // Get "native" bioseq ids without filtering and matching.
-    TIds GetIds(const CSeq_id_Handle& idh);
-    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh, bool force_load);
-    TGi GetGi(const CSeq_id_Handle& idh, bool force_load);
-    string GetLabel(const CSeq_id_Handle& idh, bool force_load);
-    int GetTaxId(const CSeq_id_Handle& idh, bool force_load);
+    TIds GetIds(const CSeq_id_Handle& idh, TGetFlags flags = 0);
+    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh, TGetFlags flags);
+    TGi GetGi(const CSeq_id_Handle& idh, TGetFlags flags);
+    string GetLabel(const CSeq_id_Handle& idh, TGetFlags flags);
+    int GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags);
 
     /// Bulk retrieval methods
 
@@ -338,19 +340,19 @@ public:
     TBioseqHandles GetBioseqHandles(const TIds& ids);
 
     // Get a set of accession/version pairs
-    void GetAccVers(TIds& ret, const TIds& idhs, bool force_load);
+    void GetAccVers(TIds& ret, const TIds& idhs, TGetFlags flags);
 
     // Get a set of gis
     typedef vector<TGi> TGIs;
-    void GetGis(TGIs& ret, const TIds& idhs, bool force_load);
+    void GetGis(TGIs& ret, const TIds& idhs, TGetFlags flags);
 
     // Get a set of label strings
     typedef vector<string> TLabels;
-    void GetLabels(TLabels& ret, const TIds& idhs, bool force_load);
+    void GetLabels(TLabels& ret, const TIds& idhs, TGetFlags flags);
 
     // Get a set of taxids
     typedef vector<int> TTaxIds;
-    void GetTaxIds(TTaxIds& ret, const TIds& idhs, bool force_load);
+    void GetTaxIds(TTaxIds& ret, const TIds& idhs, TGetFlags flags);
 
     // Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id,
@@ -365,27 +367,27 @@ public:
    
     bool IsTransactionActive() const;
 
-    TSeqPos GetSequenceLength(const CSeq_id_Handle& id, bool force_load);
-    CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id, bool force_load);
-    int GetSequenceState(const CSeq_id_Handle& id, bool force_load);
-    int GetSequenceHash(const CSeq_id_Handle& id);
+    TSeqPos GetSequenceLength(const CSeq_id_Handle& id, TGetFlags flags);
+    CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id, TGetFlags flags);
+    int GetSequenceState(const CSeq_id_Handle& id, TGetFlags flags);
+    int GetSequenceHash(const CSeq_id_Handle& id, TGetFlags flags);
 
     // Get a set of bioseq lengths
     typedef vector<TSeqPos> TSequenceLengths;
     void GetSequenceLengths(TSequenceLengths& ret,
-                            const TIds& idhs, bool force_load);
+                            const TIds& idhs, TGetFlags flags);
     // Get a set of bioseq types
     typedef vector<CSeq_inst::TMol> TSequenceTypes;
     void GetSequenceTypes(TSequenceTypes& ret,
-                          const TIds& idhs, bool force_load);
+                          const TIds& idhs, TGetFlags flags);
     // Get a set of bioseq states
     typedef vector<int> TSequenceStates;
     void GetSequenceStates(TSequenceStates& ret,
-                           const TIds& idhs, bool force_load);
+                           const TIds& idhs, TGetFlags flags);
     // Get a set of sequence hashes
     typedef vector<int> TSequenceHashes;
     void GetSequenceHashes(TSequenceHashes& ret,
-                           const TIds& idhs);
+                           const TIds& idhs, TGetFlags flags);
 
 
 private:

@@ -2511,7 +2511,8 @@ void CScope_Impl::x_PopulateBioseq_HandleSet(const CSeq_entry_Handle& seh,
 }
 
 
-CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
+CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh,
+                                      TGetFlags flags)
 {
     TIds ret;
     if (!idh) return ret;
@@ -2534,15 +2535,19 @@ CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
             }
         }
     }
+    if ( ret.empty() && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetIds(): sequence not found");
+    }
     return ret;
 }
 
 
 CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh,
-                                      bool force_load)
+                                      TGetFlags flags)
 {
     CSeq_id_Handle ret;
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         CConstRef<CSeq_id> id = idh.GetSeqId();
         const CTextseq_id* text_id = id->GetTextseq_Id();
         if ( text_id &&
@@ -2554,7 +2559,7 @@ CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh,
     }
     TConfReadLockGuard rguard(m_ConfLock);
 
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         SSeqMatch_Scope match;
         CRef<CBioseq_ScopeInfo> info =
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
@@ -2574,17 +2579,21 @@ CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh,
             break;
         }
     }
+    if ( !ret && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetAccVer(): sequence not found");
+    }
     return ret;
 }
 
 
 TGi CScope_Impl::GetGi(const CSeq_id_Handle& idh,
-                       bool force_load)
+                       TGetFlags flags)
 {
     TGi ret = ZERO_GI;
     TConfReadLockGuard rguard(m_ConfLock);
 
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         SSeqMatch_Scope match;
         CRef<CBioseq_ScopeInfo> info =
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
@@ -2604,14 +2613,18 @@ TGi CScope_Impl::GetGi(const CSeq_id_Handle& idh,
             break;
         }
     }
+    if ( ret == ZERO_GI && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetGi(): sequence not found");
+    }
     return ret;
 }
 
 
-string CScope_Impl::GetLabel(const CSeq_id_Handle& idh, bool force_load)
+string CScope_Impl::GetLabel(const CSeq_id_Handle& idh, TGetFlags flags)
 {
     string ret;
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         ret = GetDirectLabel(idh);
         if ( !ret.empty() ) {
             return ret;
@@ -2619,7 +2632,7 @@ string CScope_Impl::GetLabel(const CSeq_id_Handle& idh, bool force_load)
     }
 
     TConfReadLockGuard rguard(m_ConfLock);
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         SSeqMatch_Scope match;
         CRef<CBioseq_ScopeInfo> info =
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
@@ -2638,13 +2651,17 @@ string CScope_Impl::GetLabel(const CSeq_id_Handle& idh, bool force_load)
             break;
         }
     }
+    if ( ret.empty() && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetAccVer(): sequence not found");
+    }
     return ret;
 }
 
 
-int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, bool force_load)
+int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags)
 {
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         if ( idh.Which() == CSeq_id::e_General ) {
             CConstRef<CSeq_id> id = idh.GetSeqId();
             const CDbtag& dbtag = id->GetGeneral();
@@ -2657,7 +2674,7 @@ int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, bool force_load)
 
     int ret = -1;
     TConfReadLockGuard rguard(m_ConfLock);
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         SSeqMatch_Scope match;
         CRef<CBioseq_ScopeInfo> info =
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
@@ -2677,6 +2694,15 @@ int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, bool force_load)
                 break;
             }
         }
+    }
+
+    if ( ret == -1 && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetTaxId(): sequence not found");
+    }
+    if ( ret == 0 && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetTaxId(): TaxID not found");
     }
     return ret;
 }
@@ -2901,12 +2927,12 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
 
 void CScope_Impl::GetAccVers(TIds& ret,
                              const TIds& ids,
-                             bool force_load)
+                             TGetFlags flags)
 {
     size_t count = ids.size(), remaining = count;
     ret.assign(count, CSeq_id_Handle());
     vector<bool> loaded(count);
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         for ( size_t i = 0; i < count; ++i ) {
             CConstRef<CSeq_id> id = ids[i].GetSeqId();
             const CTextseq_id* text_id = id->GetTextseq_Id();
@@ -2922,7 +2948,7 @@ void CScope_Impl::GetAccVers(TIds& ret,
     if ( remaining ) {
         TConfReadLockGuard rguard(m_ConfLock);
         
-        if ( !force_load ) {
+        if ( !(flags & CScope::fForceLoad) ) {
             for ( size_t i = 0; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
@@ -2952,17 +2978,21 @@ void CScope_Impl::GetAccVers(TIds& ret,
             remaining = sx_CountFalse(loaded);
         }
     }
+    if ( remaining && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetAccVers(): some sequences not found");
+    }
 }
 
 
 void CScope_Impl::GetGis(TGIs& ret,
                          const TIds& ids,
-                         bool force_load)
+                         TGetFlags flags)
 {
     size_t count = ids.size(), remaining = count;
     ret.assign(count, ZERO_GI);
     vector<bool> loaded(count);
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         for ( size_t i = 0; i < count; ++i ) {
             if ( ids[i].IsGi() ) {
                 ret[i] = ids[i].GetGi();
@@ -2974,7 +3004,7 @@ void CScope_Impl::GetGis(TGIs& ret,
     if ( remaining ) {
         TConfReadLockGuard rguard(m_ConfLock);
         
-        if ( !force_load ) {
+        if ( !(flags & CScope::fForceLoad) ) {
             for ( size_t i = 0; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
@@ -3004,17 +3034,21 @@ void CScope_Impl::GetGis(TGIs& ret,
             remaining = sx_CountFalse(loaded);
         }
     }
+    if ( remaining && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetGis(): some sequences not found");
+    }
 }
 
 
 void CScope_Impl::GetLabels(TLabels& ret,
                             const TIds& ids,
-                            bool force_load)
+                            TGetFlags flags)
 {
     size_t count = ids.size(), remaining = count;
     ret.assign(count, string());
     vector<bool> loaded(count);
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         for ( size_t i = 0; i < count; ++i ) {
             ret[i] = GetDirectLabel(ids[i]);
             if ( !ret[i].empty() ) {
@@ -3026,7 +3060,7 @@ void CScope_Impl::GetLabels(TLabels& ret,
     if ( remaining ) {
         TConfReadLockGuard rguard(m_ConfLock);
         
-        if ( !force_load ) {
+        if ( !(flags & CScope::fForceLoad) ) {
             for ( size_t i = 0; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
@@ -3056,17 +3090,21 @@ void CScope_Impl::GetLabels(TLabels& ret,
             remaining = sx_CountFalse(loaded);
         }
     }
+    if ( remaining && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetLabels(): some sequences not found");
+    }
 }
 
 
 void CScope_Impl::GetTaxIds(TTaxIds& ret,
                             const TIds& ids,
-                            bool force_load)
+                            TGetFlags flags)
 {
     size_t count = ids.size(), remaining = count;
     ret.assign(count, -1);
     vector<bool> loaded(count);
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         for ( size_t i = 0; i < count; ++i ) {
             if ( ids[i].Which() == CSeq_id::e_General ) {
                 CConstRef<CSeq_id> id = ids[i].GetSeqId();
@@ -3083,7 +3121,7 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
     if ( remaining ) {
         TConfReadLockGuard rguard(m_ConfLock);
         
-        if ( !force_load ) {
+        if ( !(flags & CScope::fForceLoad) ) {
             for ( size_t i = 0; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
@@ -3114,15 +3152,19 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
             remaining = sx_CountFalse(loaded);
         }
     }
+    if ( remaining && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetTaxIds(): some sequences not found");
+    }
 }
 
 
 TSeqPos CScope_Impl::GetSequenceLength(const CSeq_id_Handle& idh,
-                                       bool force_load)
+                                       TGetFlags flags)
 {
     TConfReadLockGuard rguard(m_ConfLock);
 
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         SSeqMatch_Scope match;
         CRef<CBioseq_ScopeInfo> info =
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
@@ -3143,16 +3185,20 @@ TSeqPos CScope_Impl::GetSequenceLength(const CSeq_id_Handle& idh,
             return length;
         }
     }
+    if ( (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetSequenceLength(): sequence not found");
+    }
     return kInvalidSeqPos;
 }
                                   
 
 CSeq_inst::TMol CScope_Impl::GetSequenceType(const CSeq_id_Handle& idh,
-                                             bool force_load)
+                                             TGetFlags flags)
 {
     TConfReadLockGuard rguard(m_ConfLock);
 
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         SSeqMatch_Scope match;
         CRef<CBioseq_ScopeInfo> info =
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
@@ -3173,19 +3219,23 @@ CSeq_inst::TMol CScope_Impl::GetSequenceType(const CSeq_id_Handle& idh,
             return type;
         }
     }
+    if ( (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetSequenceType(): sequence not found");
+    }
     return CSeq_inst::eMol_not_set;
 }
 
 
 int CScope_Impl::GetSequenceState(const CSeq_id_Handle& idh,
-                                  bool force_load)
+                                  TGetFlags flags)
 {
     const int kNotFound = (CBioseq_Handle::fState_not_found |
                            CBioseq_Handle::fState_no_data);
 
     TConfReadLockGuard rguard(m_ConfLock);
 
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         SSeqMatch_Scope match;
         CRef<CBioseq_ScopeInfo> info =
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
@@ -3206,13 +3256,17 @@ int CScope_Impl::GetSequenceState(const CSeq_id_Handle& idh,
             return state;
         }
     }
+    if ( (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetSequenceState(): sequence not found");
+    }
     return kNotFound;
 }
 
 
 void CScope_Impl::GetSequenceLengths(TSequenceLengths& ret,
                                      const TIds& ids,
-                                     bool force_load)
+                                     TGetFlags flags)
 {
     size_t count = ids.size(), remaining = count;
     ret.assign(count, kInvalidSeqPos);
@@ -3220,7 +3274,7 @@ void CScope_Impl::GetSequenceLengths(TSequenceLengths& ret,
     
     TConfReadLockGuard rguard(m_ConfLock);
     
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         for ( size_t i = 0; i < count; ++i ) {
             if ( loaded[i] ) {
                 continue;
@@ -3250,12 +3304,16 @@ void CScope_Impl::GetSequenceLengths(TSequenceLengths& ret,
         it->GetDataSource().GetSequenceLengths(ids, loaded, ret);
         remaining = sx_CountFalse(loaded);
     }
+    if ( remaining && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetSequenceLengths(): some sequences not found");
+    }
 }
 
 
 void CScope_Impl::GetSequenceTypes(TSequenceTypes& ret,
                                    const TIds& ids,
-                                   bool force_load)
+                                   TGetFlags flags)
 {
     size_t count = ids.size(), remaining = count;
     ret.assign(count, CSeq_inst::eMol_not_set);
@@ -3263,7 +3321,7 @@ void CScope_Impl::GetSequenceTypes(TSequenceTypes& ret,
     
     TConfReadLockGuard rguard(m_ConfLock);
     
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         for ( size_t i = 0; i < count; ++i ) {
             if ( loaded[i] ) {
                 continue;
@@ -3293,12 +3351,16 @@ void CScope_Impl::GetSequenceTypes(TSequenceTypes& ret,
         it->GetDataSource().GetSequenceTypes(ids, loaded, ret);
         remaining = sx_CountFalse(loaded);
     }
+    if ( remaining && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetSequenceTypes(): some sequences not found");
+    }
 }
 
 
 void CScope_Impl::GetSequenceStates(TSequenceStates& ret,
                                     const TIds& ids,
-                                    bool force_load)
+                                    TGetFlags flags)
 {
     const int kNotFound = (CBioseq_Handle::fState_not_found |
                            CBioseq_Handle::fState_no_data);
@@ -3309,7 +3371,7 @@ void CScope_Impl::GetSequenceStates(TSequenceStates& ret,
     
     TConfReadLockGuard rguard(m_ConfLock);
     
-    if ( !force_load ) {
+    if ( !(flags & CScope::fForceLoad) ) {
         for ( size_t i = 0; i < count; ++i ) {
             if ( loaded[i] ) {
                 continue;
@@ -3339,26 +3401,35 @@ void CScope_Impl::GetSequenceStates(TSequenceStates& ret,
         it->GetDataSource().GetSequenceStates(ids, loaded, ret);
         remaining = sx_CountFalse(loaded);
     }
+    if ( remaining && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetSequenceStates(): some sequences not found");
+    }
 }
 
 
-int CScope_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
+int CScope_Impl::GetSequenceHash(const CSeq_id_Handle& idh, TGetFlags flags)
 {
     TConfReadLockGuard rguard(m_ConfLock);
     // Unknown bioseq, try to find in data sources
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         CPrefetchManager::IsActive();
-        int hash = it->GetDataSource().GetSequenceHash(idh);
-        if ( hash != 0 ) {
-            return hash;
+        pair<int, bool> hash = it->GetDataSource().GetSequenceHash(idh);
+        if ( hash.second ) {
+            return hash.first;
         }
+    }
+    if ( (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetSequenceHash(): sequence not found");
     }
     return 0;
 }
 
 
 void CScope_Impl::GetSequenceHashes(TSequenceStates& ret,
-                                    const TIds& ids)
+                                    const TIds& ids,
+                                    TGetFlags flags)
 {
     size_t count = ids.size(), remaining = count;
     ret.assign(count, 0);
@@ -3373,6 +3444,10 @@ void CScope_Impl::GetSequenceHashes(TSequenceStates& ret,
         CPrefetchManager::IsActive();
         it->GetDataSource().GetSequenceHashes(ids, loaded, ret);
         remaining = sx_CountFalse(loaded);
+    }
+    if ( remaining && (flags & CScope::fThrowOnMissing) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetSequenceHashes(): some sequences not found");
     }
 }
 
