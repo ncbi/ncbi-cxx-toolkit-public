@@ -1982,11 +1982,6 @@ void CValidError_feat::ValidateIntron (
         strand = eNa_strand_plus;
     }
 
-    EDiagSev sev = eDiag_Warning;
-    if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
-        sev = eDiag_Info;
-    }
-
     bool donor_in_gap = false;
     bool acceptor_in_gap = false;
 
@@ -2080,7 +2075,7 @@ void CValidError_feat::ValidateIntron (
                             feat);
                 }
                 else {
-                    PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                    PostErr(x_SeverityForConsensusSplice(), eErr_SEQ_FEAT_NotSpliceConsensusDonor,
                              "Splice donor consensus (GT) not found at start of intron, position "
                               + NStr::IntToString (end5 + 1) + " of " + label,
                               feat);
@@ -2109,7 +2104,7 @@ void CValidError_feat::ValidateIntron (
                               feat);
                 }
                 else {
-                     PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                    PostErr(x_SeverityForConsensusSplice(), eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
                              "Splice acceptor consensus (AG) not found at end of intron, position "
                               + NStr::IntToString (end3 + 1) + " of " + label,
                               feat);
@@ -2122,7 +2117,7 @@ void CValidError_feat::ValidateIntron (
 
 EDiagSev CValidError_feat::x_SeverityForConsensusSplice(void)
 {
-    EDiagSev sev = eDiag_Error;
+    EDiagSev sev = eDiag_Warning;
     if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
         sev = eDiag_Info;
     } else if ((m_Imp.IsGPS() || m_Imp.IsRefSeq()) && !m_Imp.ReportSpliceAsError()) {
@@ -2450,7 +2445,7 @@ bool CValidError_feat::ReadAcceptorSpliceSite
             if (bad_seq) {
                 has_errors = true;
                 if (report_errors) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                    PostErr(x_SeverityForConsensusSplice(), eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
                                 "Bad sequence at splice acceptor before exon starting at position "
                                 + NStr::IntToString (start + 1) + " of " + label,
                                 feat);
@@ -2481,7 +2476,7 @@ bool CValidError_feat::ReadAcceptorSpliceSite
             if (bad_seq) {
                 has_errors = true;
                 if (report_errors) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                    PostErr(x_SeverityForConsensusSplice(), eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
                              "Bad sequence at splice acceptor before exon starting at position "
                              + NStr::IntToString (start + 1) + " of " + label,
                              feat);
