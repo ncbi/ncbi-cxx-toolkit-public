@@ -72,7 +72,8 @@ public:
         eServerError,   ///< NetStorage server error
         eTimeout,       ///< Timeout encountered while performing an op
         eExpired,       ///< Object has expired on server
-        eNotSupported   ///< Feature is not supported
+        eNotSupported,  ///< Feature is not supported
+        eUnknown        ///< Unknown error
     };
     virtual const char* GetErrCodeString() const;
     NCBI_EXCEPTION_DEFAULT(CNetStorageException, CNetServiceException);

@@ -64,15 +64,26 @@ string SNetStorage_NetCacheBlob::GetLoc()
                     "NetCache blob " << m_BlobKey << \
                     " does not exist"); \
         case CNetCacheException::eKeyFormatError: \
-        case CNetCacheException::eUnknownCommand: \
-        case CNetCacheException::eNotImplemented: \
-        case CNetCacheException::eInvalidServerResponse: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eInvalidArg, \
                     "Cannot " read_write " NetCache blob " << \
                     m_BlobKey); \
-        default: \
+        case CNetCacheException::eNotImplemented: \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eNotSupported, \
+                    "Cannot " read_write " NetCache blob " << \
+                    m_BlobKey); \
+        case CNetCacheException::eServerError: \
+        case CNetCacheException::eUnknownCommand: \
+        case CNetCacheException::eInvalidServerResponse: \
             NCBI_RETHROW_FMT(e, CNetStorageException, eServerError, \
                     "NetCache server error while " reading_writing " " << \
+                    m_BlobKey); \
+        case CNetCacheException::eBlobClipped: \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eIOError, \
+                    "Error while " reading_writing " " << \
+                    m_BlobKey); \
+        default: \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eUnknown, \
+                    "Unknown error while " reading_writing " " << \
                     m_BlobKey); \
         } \
     }
