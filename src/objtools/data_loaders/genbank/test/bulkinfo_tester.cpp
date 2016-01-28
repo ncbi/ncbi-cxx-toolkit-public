@@ -45,7 +45,7 @@ BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
 
 IBulkTester::IBulkTester(void)
-    : force_load(CScope::eNoForceLoad),
+    : get_flags(0),
       report_all_errors(false)
 {
 }
@@ -56,10 +56,10 @@ IBulkTester::~IBulkTester(void)
 }
 
 
-void IBulkTester::SetParams(const TIds& ids, CScope::EForceLoad force_load)
+void IBulkTester::SetParams(const TIds& ids, CScope::TGetFlags get_flags)
 {
     this->ids = ids;
-    this->force_load = force_load;
+    this->get_flags = get_flags;
 }
 
 
@@ -111,13 +111,13 @@ public:
         }
     void LoadBulk(CScope& scope)
         {
-            data = scope.GetGis(ids, force_load);
+            data = scope.GetGis(ids, get_flags);
         }
     void LoadSingle(CScope& scope)
         {
             data.resize(ids.size());
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                data[i] = scope.GetGi(ids[i]);
+                data[i] = scope.GetGi(ids[i], get_flags);
             }
         }
     void LoadVerify(CScope& scope)
@@ -162,13 +162,13 @@ public:
         }
     void LoadBulk(CScope& scope)
         {
-            data = scope.GetAccVers(ids, force_load);
+            data = scope.GetAccVers(ids, get_flags);
         }
     void LoadSingle(CScope& scope)
         {
             data.resize(ids.size());
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                data[i] = scope.GetAccVer(ids[i]);
+                data[i] = scope.GetAccVer(ids[i], get_flags);
             }
         }
     void LoadVerify(CScope& scope)
@@ -237,16 +237,13 @@ public:
         }
     void LoadBulk(CScope& scope)
         {
-            data = scope.GetLabels(ids, force_load);
+            data = scope.GetLabels(ids, get_flags);
         }
     void LoadSingle(CScope& scope)
         {
             data.resize(ids.size());
-            CScope::EForceLabelLoad force =
-                force_load == CScope::eForceLoad?
-                CScope::eForceLabelLoad: CScope::eNoForceLabelLoad;
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                data[i] = scope.GetLabel(ids[i], force);
+                data[i] = scope.GetLabel(ids[i], get_flags);
             }
         }
     void LoadVerify(CScope& scope)
@@ -299,13 +296,13 @@ public:
         }
     void LoadBulk(CScope& scope)
         {
-            data = scope.GetTaxIds(ids, force_load);
+            data = scope.GetTaxIds(ids, get_flags);
         }
     void LoadSingle(CScope& scope)
         {
             data.resize(ids.size());
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                data[i] = scope.GetTaxId(ids[i], force_load);
+                data[i] = scope.GetTaxId(ids[i], get_flags);
             }
         }
     void LoadVerify(CScope& scope)
@@ -347,13 +344,13 @@ public:
         }
     void LoadBulk(CScope& scope)
         {
-            data = scope.GetSequenceHashes(ids);
+            data = scope.GetSequenceHashes(ids, get_flags);
         }
     void LoadSingle(CScope& scope)
         {
             data.resize(ids.size());
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                data[i] = scope.GetSequenceHash(ids[i]);
+                data[i] = scope.GetSequenceHash(ids[i], get_flags);
             }
         }
     void LoadVerify(CScope& scope)
@@ -400,13 +397,13 @@ public:
         }
     void LoadBulk(CScope& scope)
         {
-            data = scope.GetSequenceLengths(ids, force_load);
+            data = scope.GetSequenceLengths(ids, get_flags);
         }
     void LoadSingle(CScope& scope)
         {
             data.resize(ids.size());
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                data[i] = scope.GetSequenceLength(ids[i], force_load);
+                data[i] = scope.GetSequenceLength(ids[i], get_flags);
             }
         }
     void LoadVerify(CScope& scope)
@@ -448,13 +445,13 @@ public:
         }
     void LoadBulk(CScope& scope)
         {
-            data = scope.GetSequenceTypes(ids, force_load);
+            data = scope.GetSequenceTypes(ids, get_flags);
         }
     void LoadSingle(CScope& scope)
         {
             data.resize(ids.size());
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                data[i] = scope.GetSequenceType(ids[i], force_load);
+                data[i] = scope.GetSequenceType(ids[i], get_flags);
             }
         }
     void LoadVerify(CScope& scope)
@@ -496,13 +493,13 @@ public:
         }
     void LoadBulk(CScope& scope)
         {
-            data = scope.GetSequenceStates(ids, force_load);
+            data = scope.GetSequenceStates(ids, get_flags);
         }
     void LoadSingle(CScope& scope)
         {
             data.resize(ids.size());
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                data[i] = scope.GetSequenceState(ids[i], force_load);
+                data[i] = scope.GetSequenceState(ids[i], get_flags);
             }
         }
     void LoadVerify(CScope& scope)

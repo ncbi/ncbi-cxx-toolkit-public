@@ -48,7 +48,7 @@ public:
 
     typedef vector<CSeq_id_Handle> TIds;
     TIds ids;
-    CScope::EForceLoad force_load;
+    CScope::TGetFlags get_flags;
     bool report_all_errors;
 
     enum EBulkType {
@@ -66,7 +66,7 @@ public:
     IBulkTester(void);
     virtual ~IBulkTester(void);
 
-    void SetParams(const TIds& ids, CScope::EForceLoad force_load);
+    void SetParams(const TIds& ids, CScope::TGetFlags get_flags);
 
     virtual const char* GetType(void) const = 0;
     virtual void LoadBulk(CScope& scope) = 0;

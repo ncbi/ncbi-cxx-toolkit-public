@@ -79,7 +79,7 @@ public:
     bool m_Verbose;
     bool m_Single;
     bool m_Verify;
-    CScope::EForceLoad m_ForceLoad;
+    CScope::TGetFlags m_GetFlags;
 };
 
 
@@ -124,6 +124,8 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
                          "gi", "acc", "label", "taxid", "hash",
                          "length", "type", "state"));
     args.AddFlag("no-force", "Do not force info loading");
+    args.AddFlag("throw-on-missing", "Throw exception for missing data");
+    args.AddFlag("try-harder", "Try harder to get missing data");
     args.AddFlag("verbose", "Verbose results");
     args.AddFlag("single", "Use single id queries (non-bulk)");
     args.AddFlag("verify", "Run extra test to verify returned values");
@@ -223,7 +225,16 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
     else if ( args["type"].AsString() == "state" ) {
         m_Type = IBulkTester::eBulk_state;
     }
-    m_ForceLoad = args["no-force"]? CScope::eNoForceLoad: CScope::eForceLoad;
+    m_GetFlags = 0;
+    if ( !args["no-force"] ) {
+        m_GetFlags |= CScope::fForceLoad;
+    }
+    if ( args["throw-on-missing"] ) {
+        m_GetFlags |= CScope::fThrowOnMissing;
+    }
+    if ( args["try-harder"] ) {
+        m_GetFlags |= CScope::fTryHarder;
+    }
     m_Verbose = args["verbose"];
     m_Single = args["single"];
     m_Verify = args["verify"];
@@ -251,7 +262,7 @@ CRef<CScope> s_MakeScope(void)
 bool CTestApplication::RunPass(void)
 {
     AutoPtr<IBulkTester> data(IBulkTester::CreateTester(m_Type));
-    data->SetParams(m_Ids, m_ForceLoad);
+    data->SetParams(m_Ids, m_GetFlags);
     {{
         CRef<CScope> scope = s_MakeScope();
         if ( m_Single ) {
