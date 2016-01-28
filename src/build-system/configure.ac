@@ -5047,6 +5047,7 @@ if test "$with_python" != "no" ; then
    NCBI_CHECK_PYTHON(2.5)
    NCBI_CHECK_PYTHON(2.6)
    NCBI_CHECK_PYTHON(2.7)
+   NCBI_CHECK_PYTHON(3)
    if test "$ncbi_cv_lib_python" = "no"; then
       if test "$ncbi_cv_lib_python27" = "yes"; then
          PYTHON_INCLUDE=$PYTHON27_INCLUDE

@@ -765,6 +765,9 @@ PYTHON26_LIBS
 PYTHON27
 PYTHON27_INCLUDE
 PYTHON27_LIBS
+PYTHON3
+PYTHON3_INCLUDE
+PYTHON3_LIBS
 PERL
 _ACJNI_JAVAC
 XMKMF
@@ -32752,6 +32755,181 @@ _ACEOF
 
 
 
+   # Extract the first word of "python3", so it can be a program name with args.
+set dummy python3; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PYTHON3+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PYTHON3 in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PYTHON3="$PYTHON3" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="${PYTHON_PATH+$PYTHON_PATH/bin:}$PATH:/usr/local/python-3/bin"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PYTHON3="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PYTHON3=$ac_cv_path_PYTHON3
+if test -n "$PYTHON3"; then
+  { echo "$as_me:$LINENO: result: $PYTHON3" >&5
+echo "${ECHO_T}$PYTHON3" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+ if test -x "$PYTHON3"; then
+    PYTHON3_VERSION=`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+ else
+    PYTHON3_VERSION=
+    ncbi_cv_lib_python3=no
+ fi
+ if test -n "$PYTHON3_VERSION"; then
+    PYTHON3_INCLUDE=`$PYTHON3 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print("-I%s -I%s" % (f(), f(True)))'`
+    PYTHON3_LIBPATH=`$PYTHON3 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL")))'`
+    PYTHON3_DEPS=`$PYTHON3 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS")))'`
+    PYTHON3_LDVERSION=`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LDVERSION") or sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PYTHON3_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PYTHON3_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON3_LDVERSION $PYTHON3_DEPS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PYTHON3_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PYTHON3_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON3_LDVERSION $PYTHON3_DEPS"
+ fi
+    CPPFLAGS="$PYTHON3_INCLUDE $orig_CPPFLAGS"
+    LIBS="$PYTHON3_LIBS $orig_LIBS"
+    { echo "$as_me:$LINENO: checking for usable Python $PYTHON3_VERSION libraries" >&5
+echo $ECHO_N "checking for usable Python $PYTHON3_VERSION libraries... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_python3+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#include <Python.h>
+int
+main ()
+{
+Py_Initialize(); Py_Finalize();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_python3=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_python3=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_python3" >&5
+echo "${ECHO_T}$ncbi_cv_lib_python3" >&6; }
+ else
+    ncbi_cv_lib_python3=no
+ fi
+ if test "$ncbi_cv_lib_python3" = "no"; then
+    PYTHON3_INCLUDE=
+    PYTHON3_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}PYTHON3"; WithPackagesSep=" "
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PYTHON3 1
+_ACEOF
+
+ fi
+
+
+
    if test "$ncbi_cv_lib_python" = "no"; then
       if test "$ncbi_cv_lib_python27" = "yes"; then
          PYTHON_INCLUDE=$PYTHON27_INCLUDE
@@ -45510,7 +45688,7 @@ for x in Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPS
           ;;
       esac
    done
-  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK; do
+  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -46761,6 +46939,9 @@ PYTHON26_LIBS!$PYTHON26_LIBS$ac_delim
 PYTHON27!$PYTHON27$ac_delim
 PYTHON27_INCLUDE!$PYTHON27_INCLUDE$ac_delim
 PYTHON27_LIBS!$PYTHON27_LIBS$ac_delim
+PYTHON3!$PYTHON3$ac_delim
+PYTHON3_INCLUDE!$PYTHON3_INCLUDE$ac_delim
+PYTHON3_LIBS!$PYTHON3_LIBS$ac_delim
 PERL!$PERL$ac_delim
 _ACJNI_JAVAC!$_ACJNI_JAVAC$ac_delim
 XMKMF!$XMKMF$ac_delim
@@ -46795,9 +46976,6 @@ JPEG_LIBS!$JPEG_LIBS$ac_delim
 PNG_INCLUDE!$PNG_INCLUDE$ac_delim
 PNG_LIBS!$PNG_LIBS$ac_delim
 TIFF_INCLUDE!$TIFF_INCLUDE$ac_delim
-TIFF_LIBS!$TIFF_LIBS$ac_delim
-UNGIF_INCLUDE!$UNGIF_INCLUDE$ac_delim
-UNGIF_LIBS!$UNGIF_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -46839,6 +47017,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+TIFF_LIBS!$TIFF_LIBS$ac_delim
+UNGIF_INCLUDE!$UNGIF_INCLUDE$ac_delim
+UNGIF_LIBS!$UNGIF_LIBS$ac_delim
 GIF_INCLUDE!$GIF_INCLUDE$ac_delim
 GIF_LIBS!$GIF_LIBS$ac_delim
 XPM_INCLUDE!$XPM_INCLUDE$ac_delim
@@ -46933,9 +47114,6 @@ loadable_ext!$loadable_ext$ac_delim
 lib_l_ext!$lib_l_ext$ac_delim
 exe_ext!$exe_ext$ac_delim
 f_compile!$f_compile$ac_delim
-f_outobj!$f_outobj$ac_delim
-f_outlib!$f_outlib$ac_delim
-f_libpath!$f_libpath$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -46977,6 +47155,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+f_outobj!$f_outobj$ac_delim
+f_outlib!$f_outlib$ac_delim
+f_libpath!$f_libpath$ac_delim
 f_runpath!$f_runpath$ac_delim
 f_outexe!$f_outexe$ac_delim
 BDB_LIB!$BDB_LIB$ac_delim
@@ -47071,9 +47252,6 @@ FASTCGI_LIBS!$FASTCGI_LIBS$ac_delim
 FASTCGI_OBJS!$FASTCGI_OBJS$ac_delim
 NCBI_SSS_INCLUDE!$NCBI_SSS_INCLUDE$ac_delim
 NCBI_SSS_LIBPATH!$NCBI_SSS_LIBPATH$ac_delim
-LIBSSSUTILS!$LIBSSSUTILS$ac_delim
-LIBSSSDB!$LIBSSSDB$ac_delim
-sssutils!$sssutils$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -47115,6 +47293,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+LIBSSSUTILS!$LIBSSSUTILS$ac_delim
+LIBSSSDB!$LIBSSSDB$ac_delim
+sssutils!$sssutils$ac_delim
 VDB_INCLUDE!$VDB_INCLUDE$ac_delim
 VDB_LIB!$VDB_LIB$ac_delim
 VDB_LIBS!$VDB_LIBS$ac_delim
@@ -47192,7 +47373,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 75; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 78; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
