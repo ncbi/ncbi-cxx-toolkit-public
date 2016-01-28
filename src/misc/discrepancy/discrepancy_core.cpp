@@ -200,12 +200,11 @@ bool CDiscrepancyContext::AddTest(const string& name)
     if (str.empty()) {
         return false; // no such test
     }
-    if (m_Names.find(str)!=m_Names.end()) {
+    if (m_Tests.find(str) != m_Tests.end()) {
         return false;  // already there
     }
     CRef<CDiscrepancyCase> test = CDiscrepancyConstructor::GetDiscrepancyConstructor(str)->Create();
-    m_Names.insert(str);
-    m_Tests.push_back(test);
+    m_Tests[str] = test;
 
 #define REGISTER_DISCREPANCY_TYPE(type) \
     if (dynamic_cast<CDiscrepancyVisitor<type>* >(test.GetPointer())) {                         \
@@ -223,6 +222,19 @@ bool CDiscrepancyContext::AddTest(const string& name)
     REGISTER_DISCREPANCY_TYPE(CSeq_annot)
     REGISTER_DISCREPANCY_TYPE(CBioseq_set)
     return false;
+}
+
+
+bool CDiscrepancyContext::SetAutofixHook(const string& name, TAutofixHook func)
+{
+    string str = GetDiscrepancyCaseName(name);
+    if (str.empty()) {
+        return false; // no such test
+    }
+    if (m_Tests.find(str) == m_Tests.end()) {
+        return false;
+    }
+    return ((CDiscrepancyCore*)m_Tests[str].GetPointer())->SetHook(func);
 }
 
 
@@ -325,8 +337,8 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 
 void CDiscrepancyContext::Summarize()
 {
-    NON_CONST_ITERATE (vector<CRef<CDiscrepancyCase> >, it, m_Tests) {
-        static_cast<CDiscrepancyCore&>(**it).Summarize(*this);
+    NON_CONST_ITERATE(TDiscrepancyCaseMap, it, m_Tests) {
+        static_cast<CDiscrepancyCore&>(*it->second).Summarize(*this);
     }
 }
 

@@ -207,6 +207,7 @@ public:
     virtual void Summarize(CDiscrepancyContext& context){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
     virtual CRef<CAutofixReport> Autofix(const CDiscrepancyItem* item, CScope& scope) { return CRef<CAutofixReport>(0); }
+    virtual bool SetHook(TAutofixHook func) { return false;}
 protected:
     CReportNode m_Objs;
     TReportItemList m_ReportItems;
@@ -269,9 +270,10 @@ public:
             INIT_DISCREPANCY_TYPE(CBioseq_set)
         {}
     bool AddTest(const string& name);
+    bool SetAutofixHook(const string& name, TAutofixHook func);
     void Parse(const objects::CSeq_entry_Handle& handle);
     void Summarize(void);
-    const vector<CRef<CDiscrepancyCase> >& GetTests(void){ return m_Tests;}
+    const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
 
     template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this);}
 
@@ -305,8 +307,7 @@ public:
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);
     CRef<objects::CScope> m_Scope;
-    set<string> m_Names;
-    vector<CRef<CDiscrepancyCase> > m_Tests;
+    TDiscrepancyCaseMap m_Tests;
     vector<CConstRef<CBioseq_set> > m_Bioseq_set_Stack;
     CConstRef<CBioseq> m_Current_Bioseq;
     CConstRef<CSeq_feat> m_Current_Seq_feat;
@@ -380,7 +381,10 @@ protected:
     class CDiscrepancyCaseA_##name : public CDiscrepancyCase_##name                                                 \
     {                                                                                                               \
     public:                                                                                                         \
+        CDiscrepancyCaseA_##name() : m_Hook(0) {}                                                                   \
         CRef<CAutofixReport> Autofix(const CDiscrepancyItem* item, CScope& scope);                                  \
+        bool SetHook(TAutofixHook func) { m_Hook = func; return true; }                                             \
+        TAutofixHook m_Hook;                                                                                        \
     };                                                                                                              \
     class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                      \
     {                                                                                                               \

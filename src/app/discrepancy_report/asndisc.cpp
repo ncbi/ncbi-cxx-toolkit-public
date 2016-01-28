@@ -58,9 +58,9 @@ protected:
     void x_ParseDirectory(const string& name, bool recursive);
     void x_ProcessFile(const string& filename);
     void x_ProcessAll(const string& outname);
-    void x_Output(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests);
+    void x_Output(const string& filename, const TDiscrepancyCaseMap& tests);
     void x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& list);
-    void x_OutputMacro(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests);
+    void x_OutputMacro(const string& filename, const TDiscrepancyCaseMap& tests);
 
     CScope m_Scope;
     string m_SuspectRules;
@@ -335,7 +335,7 @@ void CDiscRepApp::x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& l
 }
 
 
-void CDiscRepApp::x_Output(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests)
+void CDiscRepApp::x_Output(const string& filename, const TDiscrepancyCaseMap& tests)
 {
     bool summary = GetArgs()["S"].AsBoolean();
 
@@ -343,8 +343,8 @@ void CDiscRepApp::x_Output(const string& filename, const vector<CRef<CDiscrepanc
     out << "Discrepancy Report Results\n\n";
 
     out << "Summary\n";
-    ITERATE (vector<CRef<CDiscrepancyCase> >, tst, tests) {
-        TReportItemList rep = (*tst)->GetReport();
+    ITERATE (TDiscrepancyCaseMap, tst, tests) {
+        TReportItemList rep = tst->second->GetReport();
         ITERATE (TReportItemList, it, rep) {
             out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
         }
@@ -352,21 +352,21 @@ void CDiscRepApp::x_Output(const string& filename, const vector<CRef<CDiscrepanc
     if (summary) return;
 
     out << "\nDetailed Report\n\n";
-    ITERATE (vector<CRef<CDiscrepancyCase> >, tst, tests) {
-        TReportItemList rep = (*tst)->GetReport();
+    ITERATE (TDiscrepancyCaseMap, tst, tests) {
+        TReportItemList rep = tst->second->GetReport();
         x_RecursiveOutput(out, rep);
     }
 }
 
 
-void CDiscRepApp::x_OutputMacro(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests)
+void CDiscRepApp::x_OutputMacro(const string& filename, const TDiscrepancyCaseMap& tests)
 {
     if (tests.empty()) {
         return;
     }
     set<string> Fixes;
-    ITERATE (vector<CRef<CDiscrepancyCase> >, tst, tests) {
-        const TReportItemList& list = (*tst)->GetReport();
+    ITERATE (TDiscrepancyCaseMap, tst, tests) {
+        const TReportItemList& list = tst->second->GetReport();
         ITERATE (TReportItemList, it, list) {
             if ((*it)->CanAutofix()) {
                 Fixes.insert((*it)->GetTitle());

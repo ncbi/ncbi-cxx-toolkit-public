@@ -62,6 +62,7 @@ protected:
     string S;
     unsigned int N;
 };
+typedef string(*TAutofixHook)(void*);
 
 
 class NCBI_DISCREPANCY_EXPORT CReportItem : public CObject
@@ -87,7 +88,7 @@ public:
     virtual string GetType(void) const = 0;
     virtual TReportItemList GetReport(void) const = 0;
 };
-
+typedef map<string, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
 
 class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
 {
@@ -95,9 +96,10 @@ public:
     CDiscrepancySet(void) : m_KeepRef(false) {}
     virtual ~CDiscrepancySet(void){}
     virtual bool AddTest(const string& name) = 0;
+    virtual bool SetAutofixHook(const string& name, TAutofixHook func) = 0;
     virtual void Parse(const objects::CSeq_entry_Handle& handle) = 0;
     virtual void Summarize(void) = 0;
-    virtual const vector<CRef<CDiscrepancyCase> >& GetTests(void) = 0;
+    virtual const TDiscrepancyCaseMap& GetTests(void) = 0;
 
     const string& GetFile(void) const { return m_File;}
     const string& GetLineage(void) const { return m_Lineage;}

@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(NON_EXISTENT)
     CScope scope(*CObjectManager::GetInstance());
     CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
     Set->AddTest("NON-EXISTENT");
-    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 0);
 };
 
@@ -120,9 +120,9 @@ BOOST_AUTO_TEST_CASE(COUNT_NUCLEOTIDES)
     Set->AddTest("COUNT_NUCLEOTIDES");
     Set->Parse(seh);
     Set->Summarize();
-    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("COUNT_NUCLEOTIDES")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "1 nucleotide Bioseq is present");
 }
@@ -139,9 +139,9 @@ BOOST_AUTO_TEST_CASE(COUNT_PROTEINS)
     Set->AddTest("COUNT_PROTEINS");
     Set->Parse(seh);
     Set->Summarize();
-    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("COUNT_PROTEINS")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "0 protein sequences are present");
 }
@@ -159,8 +159,8 @@ BOOST_AUTO_TEST_CASE(SHORT_SEQUENCES)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
-    TReportItemList rep = tst[0]->GetReport();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
+    TReportItemList rep = tst.at("SHORT_SEQUENCES")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 sequences are shorter than 50 nt");
 }
@@ -179,8 +179,8 @@ BOOST_AUTO_TEST_CASE(EC_NUMBER_NOTE)
     set->Parse(seh);
     set->Summarize();
 
-    const vector<CRef<CDiscrepancyCase> >&tst = set->GetTests();
-    TReportItemList rep = tst[0]->GetReport();
+    const TDiscrepancyCaseMap&tst = set->GetTests();
+    TReportItemList rep = tst.at("EC_NUMBER_NOTE")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 features have EC numbers in notes or products");
 }
@@ -198,8 +198,8 @@ BOOST_AUTO_TEST_CASE(PERCENT_N_INCLUDE_GAPS_IN_LENGTH)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
-    TReportItemList rep = tst[0]->GetReport();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
+    TReportItemList rep = tst.at("PERCENT_N")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     /* 
      * There will be 2 seqs if "seq_3_again" is handled incorrectly,
@@ -222,8 +222,8 @@ BOOST_AUTO_TEST_CASE(PERCENT_N)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
-    TReportItemList rep = tst[0]->GetReport();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
+    TReportItemList rep = tst.at("PERCENT_N")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 sequence has more than 5% Ns");
 }
@@ -316,9 +316,9 @@ BOOST_AUTO_TEST_CASE(COUNT_TRNAS)
     Set->AddTest("COUNT_TRNAS");
     Set->Parse(seh);
     Set->Summarize();
-    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("COUNT_TRNAS")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 21);
     BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "sequence my_id has 2 tRNA features");
     BOOST_REQUIRE_EQUAL(rep[1]->GetMsg(), "sequence my_id has 2 trna-Phe features");
@@ -408,9 +408,9 @@ BOOST_AUTO_TEST_CASE(COUNT_RRNAS)
     Set->AddTest("COUNT_RRNAS");
     Set->Parse(seh);
     Set->Summarize();
-    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("COUNT_RRNAS")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 2);
     BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "sequence nuc_1 has 2 rRNA features");
     BOOST_REQUIRE_EQUAL(rep[1]->GetMsg(), "2 rRNA features on nuc_1 have the same name (16S ribosomal RNA)");
@@ -446,8 +446,8 @@ BOOST_AUTO_TEST_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
-    TReportItemList rep = tst[0]->GetReport();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
+    TReportItemList rep = tst.at("PARTIAL_CDS_COMPLETE_SEQUENCE")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "4 partial CDSs in complete sequences");
 }
@@ -548,9 +548,9 @@ BOOST_AUTO_TEST_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA)
     Set->AddTest("INTERNAL_TRANSCRIBED_SPACER_RRNA");
     Set->Parse(seh);
     Set->Summarize();
-    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("INTERNAL_TRANSCRIBED_SPACER_RRNA")->GetReport();
     BOOST_CHECK(rep.size() == 1);
     BOOST_CHECK(NStr::StartsWith(rep[0]->GetMsg(), "3 rRNA feature products contain"));
    
@@ -811,9 +811,9 @@ A3AA9EC14782E93FA5EBBB904EE248F9E1D5244ADD32923AC90414353C3004E20483AFFA524712\
     Set->AddTest("DIVISION_CODE_CONFLICTS");
     Set->Parse(seh);
     Set->Summarize();
-    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("DIVISION_CODE_CONFLICTS")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "Division code conflicts found");
 }
@@ -831,9 +831,9 @@ BOOST_AUTO_TEST_CASE(ZERO_BASECOUNT)
     set->Parse(seh);
     set->Summarize();
 
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("ZERO_BASECOUNT")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
 
     const CReportItem & rep_item = **rep.begin();
@@ -858,9 +858,9 @@ BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("NO_ANNOTATION")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 bioseq has no features");
     }}
@@ -878,9 +878,9 @@ BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("NO_ANNOTATION")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 bioseqs have no features");
     }}
@@ -900,9 +900,9 @@ BOOST_AUTO_TEST_CASE(CDS_TRNA_OVERLAP)
     set->Parse(seh);
     set->Summarize();
 
-    const vector<CRef<CDiscrepancyCase> >& tests = set->GetTests();
+    const TDiscrepancyCaseMap& tests = set->GetTests();
     BOOST_REQUIRE_EQUAL(tests.size(), 1);
-    TReportItemList report = tests[0]->GetReport();
+    TReportItemList report = tests.at("CDS_TRNA_OVERLAP")->GetReport();
     BOOST_REQUIRE_EQUAL(report.size(), 2);
     BOOST_CHECK_EQUAL(report[0]->GetMsg(), 
         "tRNA at 1501..1550 overlaps with at least one CDS");
@@ -926,9 +926,9 @@ BOOST_AUTO_TEST_CASE(LONG_NO_ANNOTATION)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("LONG_NO_ANNOTATION")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 bioseq is longer than 5000nt and has no features");
     }}
@@ -946,9 +946,9 @@ BOOST_AUTO_TEST_CASE(LONG_NO_ANNOTATION)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("LONG_NO_ANNOTATION")->GetReport();
     BOOST_CHECK_EQUAL(rep.size(), 0);  // No report expected
     }}
 }
@@ -967,9 +967,9 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
         Set->AddTest("POSSIBLE_LINKER");
         Set->Parse(seh);
         Set->Summarize();
-        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
-        TReportItemList rep = tst[0]->GetReport();
+        TReportItemList rep = tst.at("POSSIBLE_LINKER")->GetReport();
         BOOST_CHECK_EQUAL(rep.size(), 0);  // No report expected
      }}
 
@@ -984,9 +984,9 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
         Set->AddTest("POSSIBLE_LINKER");
         Set->Parse(seh);
         Set->Summarize();
-        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
-        TReportItemList rep = tst[0]->GetReport();
+        TReportItemList rep = tst.at("POSSIBLE_LINKER")->GetReport();
         BOOST_CHECK_EQUAL(rep.size(), 0);  // No report expected
      }}
 
@@ -1001,9 +1001,9 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
         Set->AddTest("POSSIBLE_LINKER");
         Set->Parse(seh);
         Set->Summarize();
-        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
-        TReportItemList rep = tst[0]->GetReport();
+        TReportItemList rep = tst.at("POSSIBLE_LINKER")->GetReport();
         BOOST_CHECK_EQUAL(rep.size(), 1);
         BOOST_CHECK_EQUAL(rep[0]->GetMsg(),
                           "1 bioseq may have linker sequence after the poly-A tail");
@@ -1020,9 +1020,9 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
         Set->AddTest("POSSIBLE_LINKER");
         Set->Parse(seh);
         Set->Summarize();
-        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
-        TReportItemList rep = tst[0]->GetReport();
+        TReportItemList rep = tst.at("POSSIBLE_LINKER")->GetReport();
         BOOST_CHECK_EQUAL(rep.size(), 0); // No report expected
      }}
 
@@ -1038,9 +1038,9 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
         Set->AddTest("POSSIBLE_LINKER");
         Set->Parse(seh);
         Set->Summarize();
-        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
-        TReportItemList rep = tst[0]->GetReport();
+        TReportItemList rep = tst.at("POSSIBLE_LINKER")->GetReport();
         BOOST_CHECK_EQUAL(rep.size(), 1);
         BOOST_CHECK_EQUAL(rep[0]->GetMsg(),
                           "2 bioseqs may have linker sequence after the poly-A tail");
@@ -1063,9 +1063,9 @@ BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("MISSING_LOCUS_TAGS")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 genes have no locus tags.");
     }}
@@ -1087,9 +1087,9 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("INCONSISTENT_LOCUS_TAG_PREFIX")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 5);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 feature has locus tag prefix AB1.");
     BOOST_CHECK_EQUAL(rep[1]->GetMsg(), "1 feature has locus tag prefix AB2.");
@@ -1111,9 +1111,9 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("INCONSISTENT_LOCUS_TAG_PREFIX")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 3);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 features have locus tag prefix AB1.");
     BOOST_CHECK_EQUAL(rep[1]->GetMsg(), "2 features have locus tag prefix AB3.");
@@ -1133,9 +1133,9 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("INCONSISTENT_LOCUS_TAG_PREFIX")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 2);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "4 features have locus tag prefix AB1.");
     BOOST_CHECK_EQUAL(rep[1]->GetMsg(), "1 feature has locus tag prefix AB3.");
@@ -1154,9 +1154,9 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("INCONSISTENT_LOCUS_TAG_PREFIX")->GetReport();
     BOOST_CHECK_EQUAL(rep.size(), 0);  // No report expected because locus tag prefixes are all consistent
     }}
 }
@@ -1177,9 +1177,9 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_MOLTYPES)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("INCONSISTENT_MOLTYPES")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "10 sequences have inconsistent moltypes");
     }}
@@ -1201,9 +1201,9 @@ BOOST_AUTO_TEST_CASE(BAD_LOCUS_TAG_FORMAT)
     set->Parse(seh);
     set->Summarize();
     
-    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    const TDiscrepancyCaseMap& tst = set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("BAD_LOCUS_TAG_FORMAT")->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "4 locus tags are incorrectly formatted.");
     }}
@@ -1224,9 +1224,9 @@ BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
         Set->AddTest("QUALITY_SCORES");
         Set->Parse(seh);
         Set->Summarize();
-        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
-        TReportItemList rep = tst[0]->GetReport();
+        TReportItemList rep = tst.at("QUALITY_SCORES")->GetReport();
         BOOST_REQUIRE_EQUAL(rep.size(), 1);
         BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "Quality scores are present on all sequences");
 
@@ -1244,9 +1244,9 @@ BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
         Set->AddTest("QUALITY_SCORES");
         Set->Parse(seh);
         Set->Summarize();
-        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
-        TReportItemList rep = tst[0]->GetReport();
+        TReportItemList rep = tst.at("QUALITY_SCORES")->GetReport();
         BOOST_REQUIRE_EQUAL(rep.size(), 1);
         BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "Quality scores are missing on some(3) sequences");
     }}
@@ -1263,9 +1263,9 @@ BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
         Set->AddTest("QUALITY_SCORES");
         Set->Parse(seh);
         Set->Summarize();
-        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
-        TReportItemList rep = tst[0]->GetReport();
+        TReportItemList rep = tst.at("QUALITY_SCORES")->GetReport();
         BOOST_REQUIRE_EQUAL(rep.size(), 1);
         BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "Quality scores are missing on all sequences");
 
@@ -1283,9 +1283,9 @@ BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
         Set->AddTest("QUALITY_SCORES");
         Set->Parse(seh);
         Set->Summarize();
-        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
-        TReportItemList rep = tst[0]->GetReport();
+        TReportItemList rep = tst.at("QUALITY_SCORES")->GetReport();
         BOOST_REQUIRE_EQUAL(rep.size(), 1);
         BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "Quality scores are missing on some(2) sequences");
 
@@ -1305,9 +1305,9 @@ BOOST_AUTO_TEST_CASE(ORDERED_LOCATION_Autofix)
     Set->Parse(seh);
     Set->Summarize();
 
-    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
-    TReportItemList rep = tst[0]->GetReport();
+    TReportItemList rep = tst.at("ORDERED_LOCATION")->GetReport();
     BOOST_CHECK( ! rep.empty() );
 
     NON_CONST_ITERATE( TReportItemList, rep_it, rep ) {
