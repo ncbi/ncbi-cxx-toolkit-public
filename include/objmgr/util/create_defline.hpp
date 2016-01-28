@@ -86,7 +86,8 @@ public:
         /// Refrain from anything that could add substantial overhead.
         fNoExpensiveOps    = fLocalAnnotsOnly,
         fGpipeMode         = 0x8, ///< Use GPipe defaults.
-        fOmitTaxonomicName = 0x10 ///< Do not add organism suffix to proteins.
+        fOmitTaxonomicName = 0x10, ///< Do not add organism suffix to proteins.
+        fDevMode           = 0x20 ///< Development mode for testing new features.
     };
     typedef int TUserFlags; ///< Binary "OR" of EUserFlags
 
@@ -137,6 +138,7 @@ private:
     );
 
     void x_SetTitleFromBioSrc (void);
+    void x_SetTitleFromBioSrcComplete (void);
     void x_SetTitleFromNC (void);
     void x_SetTitleFromNM (
         const CBioseq_Handle& bsh
@@ -161,7 +163,8 @@ private:
     );
     void x_SetSuffix (
         string& suffix,
-        const CBioseq_Handle& bsh
+        const CBioseq_Handle& bsh,
+        bool appendComplete
     );
 
     void x_AdjustProteinTitleSuffix (
@@ -181,6 +184,7 @@ private:
     bool m_LocalAnnotsOnly;
     bool m_GpipeMode;
     bool m_OmitTaxonomicName;
+    bool m_DevMode;
 
     /// seq-inst fields
     bool m_IsNA;

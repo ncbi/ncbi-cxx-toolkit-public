@@ -365,6 +365,7 @@ void CDeflineGenerator::x_SetFlags (
     m_LocalAnnotsOnly = (flags & fLocalAnnotsOnly) != 0;
     m_GpipeMode = (flags & fGpipeMode) != 0;
     m_OmitTaxonomicName = (flags & fOmitTaxonomicName) != 0;
+    m_DevMode = (flags & fDevMode) != 0;
 
     // reset member variables to cleared state
     m_IsNA = false;
@@ -1041,6 +1042,65 @@ static bool x_EndsWithStrain (
     return false;
 }
 
+void CDeflineGenerator::x_SetTitleFromBioSrcComplete (void)
+
+{
+    string clnbuf;
+    vector<CTempString> clnvec;
+    CTextJoiner<12, CTempString> joiner;
+
+    joiner.Add(m_Taxname);
+
+    if (! m_Strain.empty()) {
+        CTempString add(m_Strain, 0, m_Strain.find(';'));
+        if (! x_EndsWithStrain (m_Taxname, add)) {
+            joiner.Add(" strain ").Add(add);
+        }
+    }
+    if (! m_Breed.empty()) {
+        joiner.Add(" breed ").Add(m_Breed.substr (0, m_Breed.find(';')));
+    }
+    if (! m_Cultivar.empty()) {
+        joiner.Add(" cultivar ").Add(m_Cultivar.substr (0, m_Cultivar.find(';')));
+    }
+    if (! m_Isolate.empty()) {
+        joiner.Add(" isolate ").Add(m_Isolate);
+    }
+    if (! m_Chromosome.empty()) {
+        joiner.Add(" chromosome ").Add(m_Chromosome);
+    }
+    if (m_has_clone) {
+        x_DescribeClones (clnvec, clnbuf);
+        ITERATE (vector<CTempString>, it, clnvec) {
+            joiner.Add(*it);
+        }
+    }
+    if (! m_Map.empty()) {
+        joiner.Add(" map ").Add(m_Map);
+    }
+
+    if (! m_Organelle.empty()) {
+        if (NStr::FindNoCase(m_Organelle, "chromosome") == NPOS) {
+            if (m_Chromosome.empty()) {
+                joiner.Add(" ").Add(m_Organelle);
+            }
+        } else if (NStr::FindNoCase(m_Organelle, "plasmid") == NPOS) {
+            if (m_Chromosome.empty() && m_Chromosome.empty()) {
+                joiner.Add(" ").Add(m_Organelle);
+            }
+        } else {
+            joiner.Add(" ").Add(m_Organelle);
+        }
+    }
+
+    if (! m_Plasmid.empty()) {
+        joiner.Add(" plasmid ").Add(m_Plasmid);
+    }
+
+    joiner.Join(&m_MainTitle);
+    NStr::TruncateSpacesInPlace(m_MainTitle);
+}
+
 void CDeflineGenerator::x_SetTitleFromBioSrc (void)
 
 {
@@ -1056,9 +1116,6 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
             joiner.Add(" strain ").Add(add);
         }
     }
-    if (! m_Chromosome.empty()) {
-        joiner.Add(" chromosome ").Add(m_Chromosome);
-    }
     /*
     if (! m_Breed.empty()) {
         joiner.Add(" breed ").Add(m_Breed.substr (0, m_Breed.find(';')));
@@ -1070,6 +1127,9 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
         joiner.Add(" isolate ").Add(m_Isolate);
     }
     */
+    if (! m_Chromosome.empty()) {
+        joiner.Add(" chromosome ").Add(m_Chromosome);
+    }
     if (m_has_clone) {
         x_DescribeClones (clnvec, clnbuf);
         ITERATE (vector<CTempString>, it, clnvec) {
@@ -2087,7 +2147,8 @@ void CDeflineGenerator::x_SetPrefix (
 // generate suffix if not already present
 void CDeflineGenerator::x_SetSuffix (
     string& suffix,
-    const CBioseq_Handle& bsh
+    const CBioseq_Handle& bsh,
+    bool appendComplete
 )
 
 {
@@ -2203,6 +2264,20 @@ void CDeflineGenerator::x_SetSuffix (
             break;
         default:
             break;
+    }
+
+    if (appendComplete && m_MainTitle.find ("complete") == NPOS && m_MainTitle.find ("partial") == NPOS) {
+        if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
+            if (m_IsChromosome || m_IsPlasmid) {
+                comp = ", complete sequence";
+            } else {
+                if (! m_Organelle.empty()  &&  m_MainTitle.find(m_Organelle) == NPOS) {
+                    comp += " ";
+                    comp += m_Organelle;
+                }
+                comp += ", complete genome";
+            }
+        }
     }
 
     if (m_Unordered && m_IsDelta) {
@@ -2452,6 +2527,7 @@ string CDeflineGenerator::GenerateDefline (
 
 {
     bool capitalize = true;
+    bool appendComplete = false;
 
     string prefix; // from a small set of compile-time constants
     string suffix;
@@ -2512,6 +2588,14 @@ string CDeflineGenerator::GenerateDefline (
             x_SetTitleFromGPipe ();
         }
 
+        if (m_DevMode && m_MainTitle.empty() && m_MICompleteness == NCBI_COMPLETENESS(complete)) {
+            // title for complete sequence using source fields
+            x_SetTitleFromBioSrcComplete ();
+            if (! m_MainTitle.empty()) {
+                appendComplete = true;
+            }
+        }
+
         if (m_MainTitle.empty()) {
             // default title using source fields
             x_SetTitleFromBioSrc ();
@@ -2547,7 +2631,7 @@ string CDeflineGenerator::GenerateDefline (
     x_SetPrefix(prefix);
 
     // calculate suffix
-    x_SetSuffix (suffix, bsh);
+    x_SetSuffix (suffix, bsh, appendComplete);
 
     // produce final result
     string penult = prefix + decoded + suffix;
