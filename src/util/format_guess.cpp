@@ -133,8 +133,8 @@ static void init_symbol_type_table(void)
             c = tolower(c);
             symbol_type_table[c] |= fProtein_Alphabet;
         }
-        symbol_type_table['-'] |= fDNA_Main_Alphabet | fProtein_Alphabet;
-        symbol_type_table['*'] |= fProtein_Alphabet;
+        symbol_type_table[(int)'-'] |= fDNA_Main_Alphabet | fProtein_Alphabet;
+        symbol_type_table[(int)'*'] |= fProtein_Alphabet;
         for ( const char* s = "\r\n"; *s; ++s ) {
             int c = *s;
             symbol_type_table[c] |= fLineEnd;
