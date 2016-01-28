@@ -155,6 +155,36 @@ struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
             TNetStorageFlags flags = 0) = 0;
 };
 
+#define NETSTORAGE_CONVERT_NETCACHEEXCEPTION(reading_writing) \
+    catch (CNetCacheException& e) { \
+        switch (e.GetErrCode()) { \
+        case CNetCacheException::eAuthenticationError: \
+        case CNetCacheException::eAccessDenied: \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eAuthError, \
+                    "while " reading_writing " " << m_BlobKey); \
+        case CNetCacheException::eBlobNotFound: \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eNotExists, \
+                    "while " reading_writing " " << m_BlobKey); \
+        case CNetCacheException::eKeyFormatError: \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eInvalidArg, \
+                    "while " reading_writing " " << m_BlobKey); \
+        case CNetCacheException::eNotImplemented: \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eNotSupported, \
+                    "while " reading_writing " " << m_BlobKey); \
+        case CNetCacheException::eServerError: \
+        case CNetCacheException::eUnknownCommand: \
+        case CNetCacheException::eInvalidServerResponse: \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eServerError, \
+                    "while " reading_writing " " << m_BlobKey); \
+        case CNetCacheException::eBlobClipped: \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eIOError, \
+                    "while " reading_writing " " << m_BlobKey); \
+        default: \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eUnknown, \
+                    "while " reading_writing " " << m_BlobKey); \
+        } \
+    }
+
 NCBI_XCONNECT_EXPORT
 CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
         ENetStorageObjectLocation location,
