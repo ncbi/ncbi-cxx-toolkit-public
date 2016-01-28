@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 
 /// NetCache internal exception
 ///
-class CNetCacheException : public CNetServiceException
+class NCBI_XCONNECT_EXPORT CNetCacheException : public CNetServiceException
 {
 public:
     typedef CNetServiceException TParent;
@@ -97,7 +97,7 @@ public:
 /// Exception thrown when the requested blob is
 /// older than the requested age.
 ///
-class CNetCacheBlobTooOldException : public CNetCacheException
+class NCBI_XCONNECT_EXPORT CNetCacheBlobTooOldException : public CNetCacheException
 {
 public:
     typedef CNetCacheException TParent;
