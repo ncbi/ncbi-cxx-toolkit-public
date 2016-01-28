@@ -248,25 +248,23 @@ bool CValidError_bioseqset::IsMrnaProductInGPS(const CBioseq& seq)
 
 bool CValidError_bioseqset::IsCDSProductInGPS(const CBioseq& seq, const CBioseq_set& gps)
 {
-	if (gps.IsSetSeq_set() && gps.GetSeq_set().size() > 0
-		&& gps.GetSeq_set().front()->IsSeq()) {
-		FOR_EACH_SEQANNOT_ON_SEQENTRY (annot_it, *(gps.GetSeq_set().front())) {
-			FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, **annot_it) {
-				if ((*feat_it)->IsSetData()
-					&& (*feat_it)->GetData().IsCdregion()
-					&& (*feat_it)->IsSetProduct()) {
-					const CSeq_id *id = (*feat_it)->GetProduct().GetId();
-					if (id) {
-						FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-							if ((*id_it)->Compare(*id) == CSeq_id::e_YES) {
-								return true;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+    // there should be a coding region on the contig whose product is seq
+    if (gps.IsSetSeq_set() && gps.GetSeq_set().size() > 0
+        && gps.GetSeq_set().front()->IsSeq()) {
+        CBioseq_Handle contig = m_Scope->GetBioseqHandle(gps.GetSeq_set().front()->GetSeq());
+        CBioseq_Handle prot = m_Scope->GetBioseqHandle(seq);
+        SAnnotSelector sel;
+        sel.SetByProduct(true);
+        CFeat_CI cds(prot, sel);
+        while (cds) {
+            CBioseq_Handle cds_seq = m_Scope->GetBioseqHandle(cds->GetLocation());
+            if (cds_seq == contig) {
+                return true;
+            }
+            ++cds;
+        }
+    }
+
     return false;
 }
 
