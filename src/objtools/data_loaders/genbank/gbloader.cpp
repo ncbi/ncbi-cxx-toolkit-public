@@ -1076,17 +1076,22 @@ void CGBDataLoader::GetSequenceStates(const TIds& ids, TLoaded& loaded,
 }
 
 
-int CGBDataLoader::GetSequenceHash(const CSeq_id_Handle& sih)
+pair<int, bool> CGBDataLoader::GetSequenceHash2(const CSeq_id_Handle& sih)
 {
+    pair<int, bool> ret;
     if ( CReadDispatcher::CannotProcess(sih) ) {
-        return 0;
+        return ret;
     }
     CGBReaderRequestResult result(this, sih);
     CLoadLockHash lock(result, sih);
     if ( !lock.IsLoadedHash() ) {
         m_Dispatcher->LoadSequenceHash(result, sih);
     }
-    return lock.IsLoaded()? lock.GetHash(): 0;
+    if ( lock.IsLoaded() ) {
+        ret.first = lock.GetHash();
+        ret.second = true;
+    }
+    return ret;
 }
 
 

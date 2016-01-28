@@ -191,7 +191,7 @@ public:
     virtual string GetLabel(const CSeq_id_Handle& idh);
     virtual int GetTaxId(const CSeq_id_Handle& idh);
     virtual int GetSequenceState(const CSeq_id_Handle& idh);
-    virtual int GetSequenceHash(const CSeq_id_Handle& idh);
+    virtual pair<int, bool> GetSequenceHash2(const CSeq_id_Handle& idh);
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& sih);
     virtual CSeq_inst::EMol GetSequenceType(const CSeq_id_Handle& sih);
 
