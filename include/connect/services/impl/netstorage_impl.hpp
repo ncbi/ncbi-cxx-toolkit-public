@@ -155,33 +155,26 @@ struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
             TNetStorageFlags flags = 0) = 0;
 };
 
-#define NETSTORAGE_CONVERT_NETCACHEEXCEPTION(reading_writing) \
+#define NETSTORAGE_CONVERT_NETCACHEEXCEPTION(message) \
     catch (CNetCacheException& e) { \
         switch (e.GetErrCode()) { \
         case CNetCacheException::eAuthenticationError: \
         case CNetCacheException::eAccessDenied: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eAuthError, \
-                    "while " reading_writing " " << m_BlobKey); \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eAuthError, message); \
         case CNetCacheException::eBlobNotFound: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eNotExists, \
-                    "while " reading_writing " " << m_BlobKey); \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eNotExists, message); \
         case CNetCacheException::eKeyFormatError: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eInvalidArg, \
-                    "while " reading_writing " " << m_BlobKey); \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eInvalidArg, message); \
         case CNetCacheException::eNotImplemented: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eNotSupported, \
-                    "while " reading_writing " " << m_BlobKey); \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eNotSupported, message); \
         case CNetCacheException::eServerError: \
         case CNetCacheException::eUnknownCommand: \
         case CNetCacheException::eInvalidServerResponse: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eServerError, \
-                    "while " reading_writing " " << m_BlobKey); \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eServerError, message); \
         case CNetCacheException::eBlobClipped: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eIOError, \
-                    "while " reading_writing " " << m_BlobKey); \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eIOError, message); \
         default: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eUnknown, \
-                    "while " reading_writing " " << m_BlobKey); \
+            NCBI_RETHROW_FMT(e, CNetStorageException, eUnknown, message); \
         } \
     }
 

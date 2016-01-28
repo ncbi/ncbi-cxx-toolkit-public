@@ -667,7 +667,10 @@ string SNetStorageRPC::Relocate(const string& object_loc,
 bool SNetStorageRPC::Exists(const string& object_loc)
 {
     if (x_NetCacheMode(object_loc))
-        return m_NetCacheAPI.HasBlob(object_loc);
+        try {
+            return m_NetCacheAPI.HasBlob(object_loc);
+        }
+        NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + object_loc)
 
     CJsonNode request(MkObjectRequest("EXISTS", object_loc));
 
@@ -678,10 +681,13 @@ bool SNetStorageRPC::Exists(const string& object_loc)
 ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
 {
     if (x_NetCacheMode(object_loc)) {
-        if (m_NetCacheAPI.HasBlob(object_loc)) {
-            m_NetCacheAPI.Remove(object_loc);
-            return eNSTRR_Removed;
+        try {
+            if (m_NetCacheAPI.HasBlob(object_loc)) {
+                m_NetCacheAPI.Remove(object_loc);
+                return eNSTRR_Removed;
+            }
         }
+        NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on removing " + object_loc)
 
         return eNSTRR_NotFound;
     }

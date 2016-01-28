@@ -61,7 +61,7 @@ void SNetStorage_NetCacheBlob::x_InitReader()
         m_NetCacheReader.reset(m_NetCacheAPI->GetPartReader(
                 m_BlobKey, 0, 0, &m_BlobSize, NULL));
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("reading")
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + m_BlobKey)
 
     m_State = eReading;
 }
@@ -76,7 +76,8 @@ ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size,
         return g_ReadFromNetCache(m_NetCacheReader.get(),
                 reinterpret_cast<char*>(buffer), buf_size, bytes_read);
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("reading")
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + m_BlobKey)
+    return eRW_Error; // Not reached
 }
 
 ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
@@ -93,7 +94,7 @@ void SNetStorage_NetCacheBlob::Read(string* data)
     try {
         m_NetCacheAPI.ReadData(m_BlobKey, *data);
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("reading")
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + m_BlobKey)
 }
 
 bool SNetStorage_NetCacheBlob::Eof()
@@ -121,7 +122,7 @@ void SNetStorage_NetCacheBlob::x_InitWriter()
     try {
         m_NetCacheWriter.reset(m_NetCacheAPI.PutData(&m_BlobKey));
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("writing")
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + m_BlobKey)
 
     m_State = eWriting;
 }
@@ -135,7 +136,8 @@ ERW_Result SNetStorage_NetCacheBlob::Write(const void* buf_pos, size_t buf_size,
     try {
         return m_NetCacheWriter->Write(buf_pos, buf_size, bytes_written);
     }
-    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("writing")
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + m_BlobKey)
+    return eRW_Error; // Not reached
 }
 
 ERW_Result SNetStorage_NetCacheBlob::Flush()
@@ -145,10 +147,14 @@ ERW_Result SNetStorage_NetCacheBlob::Flush()
 
 Uint8 SNetStorage_NetCacheBlob::GetSize()
 {
-    if (m_State != eReading)
-        return m_NetCacheAPI.GetBlobSize(m_BlobKey);
-    else
-        return m_NetCacheReader->GetBlobSize();
+    try {
+        if (m_State != eReading)
+            return m_NetCacheAPI.GetBlobSize(m_BlobKey);
+        else
+            return m_NetCacheReader->GetBlobSize();
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + m_BlobKey)
+    return 0; // Not reached
 }
 
 list<string> SNetStorage_NetCacheBlob::GetAttributeList() const
@@ -173,30 +179,33 @@ void SNetStorage_NetCacheBlob::SetAttribute(const string& /*attr_name*/,
 CNetStorageObjectInfo SNetStorage_NetCacheBlob::GetInfo()
 {
     try {
-        CNetServerMultilineCmdOutput output(
-                m_NetCacheAPI.GetBlobInfo(m_BlobKey));
+        try {
+            CNetServerMultilineCmdOutput output(
+                    m_NetCacheAPI.GetBlobInfo(m_BlobKey));
 
-        CJsonNode blob_info = CJsonNode::NewObjectNode();
-        string line, key, val;
+            CJsonNode blob_info = CJsonNode::NewObjectNode();
+            string line, key, val;
 
-        while (output.ReadLine(line))
-            if (NStr::SplitInTwo(line, ": ",
-                    key, val, NStr::fSplit_ByPattern))
-                blob_info.SetByKey(key, CJsonNode::GuessType(val));
+            while (output.ReadLine(line))
+                if (NStr::SplitInTwo(line, ": ",
+                        key, val, NStr::fSplit_ByPattern))
+                    blob_info.SetByKey(key, CJsonNode::GuessType(val));
 
-        CJsonNode size_node(blob_info.GetByKeyOrNull("Size"));
+            CJsonNode size_node(blob_info.GetByKeyOrNull("Size"));
 
-        Uint8 blob_size = size_node && size_node.IsInteger() ?
-                (Uint8) size_node.AsInteger() :
-                m_NetCacheAPI.GetBlobSize(m_BlobKey);
+            Uint8 blob_size = size_node && size_node.IsInteger() ?
+                    (Uint8) size_node.AsInteger() :
+                    m_NetCacheAPI.GetBlobSize(m_BlobKey);
 
-        if (m_NetCacheAPI.HasBlob(m_BlobKey)) {
-            return g_CreateNetStorageObjectInfo(m_BlobKey,
-                    eNFL_NetCache, NULL, blob_size, blob_info);
+            if (m_NetCacheAPI.HasBlob(m_BlobKey)) {
+                return g_CreateNetStorageObjectInfo(m_BlobKey,
+                        eNFL_NetCache, NULL, blob_size, blob_info);
+            }
         }
+        NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + m_BlobKey)
     }
-    catch (CNetCacheException& e) {
-        if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
+    catch (CNetStorageException& e) {
+        if (e.GetErrCode() != CNetStorageException::eNotExists)
             throw;
     }
 
