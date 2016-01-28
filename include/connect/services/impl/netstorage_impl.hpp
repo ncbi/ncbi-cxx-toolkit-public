@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbi_url.hpp>
+#include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/netstorage.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -157,26 +158,11 @@ struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
 
 #define NETSTORAGE_CONVERT_NETCACHEEXCEPTION(message) \
     catch (CNetCacheException& e) { \
-        switch (e.GetErrCode()) { \
-        case CNetCacheException::eAuthenticationError: \
-        case CNetCacheException::eAccessDenied: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eAuthError, message); \
-        case CNetCacheException::eBlobNotFound: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eNotExists, message); \
-        case CNetCacheException::eKeyFormatError: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eInvalidArg, message); \
-        case CNetCacheException::eNotImplemented: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eNotSupported, message); \
-        case CNetCacheException::eServerError: \
-        case CNetCacheException::eUnknownCommand: \
-        case CNetCacheException::eInvalidServerResponse: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eServerError, message); \
-        case CNetCacheException::eBlobClipped: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eIOError, message); \
-        default: \
-            NCBI_RETHROW_FMT(e, CNetStorageException, eUnknown, message); \
-        } \
+        g_ThrowNetStorageException(DIAG_COMPILE_INFO, e, FORMAT(message)); \
     }
+NCBI_XCONNECT_EXPORT
+void g_ThrowNetStorageException(const CDiagCompileInfo& compile_info,
+        const CNetCacheException& prev_exception, const string& message);
 
 NCBI_XCONNECT_EXPORT
 CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,

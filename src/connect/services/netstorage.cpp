@@ -209,4 +209,41 @@ void g_AllowXSiteConnections(CNetStorage& netstorage)
 }
 #endif
 
+inline 
+CNetStorageException::EErrCode ConvertErrCode(CNetCacheException::TErrCode code)
+{
+    switch (code) {
+    case CNetCacheException::eAuthenticationError:
+    case CNetCacheException::eAccessDenied:
+        return CNetStorageException::eAuthError;
+
+    case CNetCacheException::eBlobNotFound:
+        return CNetStorageException::eNotExists;
+
+    case CNetCacheException::eKeyFormatError:
+        return CNetStorageException::eInvalidArg;
+
+    case CNetCacheException::eNotImplemented:
+        return CNetStorageException::eNotSupported;
+
+    case CNetCacheException::eServerError:
+    case CNetCacheException::eUnknownCommand:
+    case CNetCacheException::eInvalidServerResponse:
+        return CNetStorageException::eServerError;
+
+    case CNetCacheException::eBlobClipped:
+        return CNetStorageException::eIOError;
+    }
+
+    return CNetStorageException::eUnknown;
+}
+
+void g_ThrowNetStorageException(const CDiagCompileInfo& compile_info,
+        const CNetCacheException& prev_exception, const string& message)
+{
+    CNetStorageException::EErrCode err_code =
+        ConvertErrCode(prev_exception.GetErrCode());
+    throw CNetStorageException(compile_info, &prev_exception, err_code, message);
+}
+
 END_NCBI_SCOPE
