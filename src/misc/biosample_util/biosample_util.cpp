@@ -667,10 +667,10 @@ static bool s_IsCitSub (const CSeqdesc& desc)
 }
 
 
-const string kSequenceID = "Sequence ID";
-const string kAffilInst = "Institution";
-const string kAffilDept = "Department";
-const string kBioProject = "BioProject";
+static const char* kSequenceID = "Sequence ID";
+static const char* kAffilInst  = "Institution";
+static const char* kAffilDept  = "Department";
+static const char* kBioProject = "BioProject";
 
 // This function is for generating a table of biosample values for a bioseq
 // that does not currently have a biosample ID
@@ -1045,8 +1045,8 @@ void AddBioSourceToAttributes(node& organism, node& sample_attrs, const CBioSour
 }
 
 
-static const string kStructuredCommentPrefix = "StructuredCommentPrefix";
-static const string kStructuredCommentSuffix = "StructuredCommentSuffix";
+static const char* kStructuredCommentPrefix = "StructuredCommentPrefix";
+static const char* kStructuredCommentSuffix = "StructuredCommentSuffix";
 
 void AddStructuredCommentToAttributes(node& sample_attrs, const CUser_object& usr)
 {
