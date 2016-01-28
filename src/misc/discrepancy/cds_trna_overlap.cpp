@@ -39,8 +39,8 @@ DISCREPANCY_MODULE(cds_trna_overlap);
 
 // CDS_TRNA_OVERLAP
 
-CSeq_loc trnaTotal;
-CSeq_loc cdsTotal;
+static CSafeStatic<CSeq_loc> trnaTotal;
+static CSafeStatic<CSeq_loc> cdsTotal;
 
 //  ----------------------------------------------------------------------------
 string sFeatureToString(
@@ -62,7 +62,7 @@ DISCREPANCY_CASE(CDS_TRNA_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS tRNA Overlap
     CSeqFeatData::ESubtype subtype = obj.GetData().GetSubtype();
     if (subtype == CSeqFeatData::eSubtype_tRNA) {
         const CSeq_loc& trnaLocation = obj.GetLocation();
-        CRef<CSeq_loc> cdsIntersect = cdsTotal.Intersect(trnaLocation, 0, 0);
+        CRef<CSeq_loc> cdsIntersect = cdsTotal->Intersect(trnaLocation, 0, 0);
         if (!cdsIntersect->IsNull()) {
             string msg(sFeatureToString(subtype, trnaLocation) +
                 " overlaps with at least one CDS");
@@ -74,11 +74,11 @@ DISCREPANCY_CASE(CDS_TRNA_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS tRNA Overlap
                 context.GetKeepRef()),
                 false);
         }
-        trnaTotal.Add(trnaLocation);
+        trnaTotal->Add(trnaLocation);
     }  
     if (subtype == CSeqFeatData::eSubtype_cdregion) {
         const CSeq_loc& cdsLocation = obj.GetLocation();
-        CRef<CSeq_loc> trnaIntersect = trnaTotal.Intersect(cdsLocation, 0, 0);
+        CRef<CSeq_loc> trnaIntersect = trnaTotal->Intersect(cdsLocation, 0, 0);
         if (!trnaIntersect->IsNull()) {
             string msg(sFeatureToString(subtype, cdsLocation) +
                 " overlaps with at least one tRNA");
@@ -90,7 +90,7 @@ DISCREPANCY_CASE(CDS_TRNA_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS tRNA Overlap
                     context.GetKeepRef()), 
                     false);
         }
-        cdsTotal.Add(cdsLocation);
+        cdsTotal->Add(cdsLocation);
     }
     //cerr << "Discrepancy case CDS_TRNA_OVERLAP" << endl;
 }

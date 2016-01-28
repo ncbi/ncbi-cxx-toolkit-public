@@ -42,7 +42,7 @@ USING_SCOPE(objects);
 DISCREPANCY_MODULE(spell_check);
 
 
-static string Words[] = { "hypothetical", "protein", "hemoglobin", "Colleen", "Bollin" };
+static char*  Words[] = { "hypothetical", "protein", "hemoglobin", "Colleen", "Bollin" };
 static size_t WordCount = sizeof(Words) / sizeof(Words[0]);
 
 class CScrumble
@@ -78,23 +78,23 @@ public:
 protected:
     const string& S;
     size_t X;
-    size_t Y;
+    unsigned char Y;
 };
 
-static map<string, string> Dictionary;
-static map<string, vector<string> > Scrumbled;
+static CSafeStatic< map<string, string> > Dictionary;
+static CSafeStatic< map<string, vector<string> > > Scrumbled;
 
 static void InitSpellChecker()
 {
-    if (!Dictionary.empty()) {
+    if (!Dictionary->empty()) {
         return;
     }
     for (size_t i = 0; i < WordCount; i++) {
         string s = Words[i];
         string u = s;
         NStr::ToUpper(u);
-        Dictionary[u] = s;
-        Scrumbled[u].push_back(s);
+        (*Dictionary)[u] = s;
+        (*Scrumbled)[u].push_back(s);
     }
     for (size_t i = 0; i < WordCount; i++) {
         string s = Words[i];
@@ -102,10 +102,10 @@ static void InitSpellChecker()
         NStr::ToUpper(u);
         for (CScrumble Scr(u); Scr.valid(); Scr.next()) {
             string t = Scr.str();
-            if (Dictionary.find(t) != Dictionary.end()) {
+            if (Dictionary->find(t) != Dictionary->end()) {
                 continue;
             }
-            vector<string>& v = Scrumbled[t];
+            vector<string>& v = (*Scrumbled)[t];
             size_t n;
             for (n = 0; n < v.size(); n++) {
                 if (v[n] == s) {
@@ -154,17 +154,17 @@ DISCREPANCY_CASE(SPELL_CHECK, CSeqFeatData, 0, "Spell check")
     NStr::Tokenize(str, " ", words);
     for (size_t i = 0; i < words.size(); i++) {
         string s = NStr::ToUpper(words[i]);
-        if (Dictionary.find(s) != Dictionary.end()) {
+        if (Dictionary->find(s) != Dictionary->end()) {
             continue;
         }
         vector<string> w;
-        if (Scrumbled.find(s) != Scrumbled.end()) {
-            insert_unique(w, Scrumbled[s]);
+        if (Scrumbled->find(s) != Scrumbled->end()) {
+            insert_unique(w, (*Scrumbled)[s]);
         }
         for (CScrumble Scr(NStr::ToUpper(s)); Scr.valid(); Scr.next()) {
             string t = Scr.str();
-            if (Scrumbled.find(t) != Scrumbled.end()) {
-                insert_unique(w, Scrumbled[t]);
+            if (Scrumbled->find(t) != Scrumbled->end()) {
+                insert_unique(w, (*Scrumbled)[t]);
             }
         }
         if (w.size()) {

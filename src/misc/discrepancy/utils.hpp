@@ -38,9 +38,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
-extern const string alpha_str;
-extern const string digit_str;
-
 bool IsWholeWord(const string& str, const string& phrase);
 bool IsAllCaps(const string& str);
 bool IsAllLowerCase(const string& str);

@@ -148,8 +148,8 @@ DISCREPANCY_ALIAS(COUNT_RRNAS, FIND_DUP_RRNAS);
 
 struct DesiredAAData
 {
-    char short_symbol;
-    string long_symbol;
+    char   short_symbol;
+    char*  long_symbol;
     size_t num_expected;
 };
 
@@ -213,11 +213,10 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
     if (m_Objs.empty()) {
         return;
     }
-
-    static map<string, int> DesiredCount;
-    if (DesiredCount.empty()) {
+    static CSafeStatic< map<const char*, size_t> > DesiredCount;
+    if (DesiredCount->empty()) {
         for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
-            DesiredCount[desired_aaList[i].long_symbol] = desired_aaList[i].num_expected;
+            (*DesiredCount)[desired_aaList[i].long_symbol] = desired_aaList[i].num_expected;
         }
     }
 
@@ -250,7 +249,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[desired_aaList[i].long_symbol].GetObjects(), false);
     }
     NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
-        if (NStr::IsBlank(it->first) || DesiredCount.find(it->first) != DesiredCount.end()) {
+        if (NStr::IsBlank(it->first) || DesiredCount->find(it->first.c_str()) != DesiredCount->end()) {
             continue;
         }
         CNcbiOstrstream ss;

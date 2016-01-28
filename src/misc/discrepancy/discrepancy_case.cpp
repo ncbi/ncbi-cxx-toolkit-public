@@ -143,7 +143,7 @@ DISCREPANCY_CASE(INCONSISTENT_PROTEIN_ID, CSeq_inst, eDisc,
     // multiple forms.  Here, the canonical form is the way it appears
     // the first time.
     CReportNode& canonical_forms_node = m_Objs["canonical forms"][protein_id_prefix_lowercase];
-    CTempString canonical_protein_id_prefix;
+    string canonical_protein_id_prefix;
     if( canonical_forms_node.empty() ) {
         // haven't seen this protein_id_prefix_lowercase before so we have
         // to set the canonical form.
@@ -370,13 +370,11 @@ static string GetProductName(const CSeq_feat& cds, CScope& scope)
 }
 
 
-static const string kSimilarProductWords[] = { "transposase", "integrase" };
+static const char* kSimilarProductWords[] = { "transposase", "integrase" };
+static const int   kNumSimilarProductWords = sizeof (kSimilarProductWords) / sizeof (string);
 
-static const int kNumSimilarProductWords = sizeof (kSimilarProductWords) / sizeof (string);
-
-static const string kIgnoreSimilarProductWords[] = { "hypothetical protein", "phage", "predicted protein" };
-
-static const int kNumIgnoreSimilarProductWords = sizeof (kIgnoreSimilarProductWords) / sizeof (string);
+static const char* kIgnoreSimilarProductWords[] = { "hypothetical protein", "phage", "predicted protein" };
+static const int   kNumIgnoreSimilarProductWords = sizeof (kIgnoreSimilarProductWords) / sizeof (string);
 
 
 static bool ProductNamesAreSimilar(const string& product1, const string& product2)

@@ -43,7 +43,7 @@ DISCREPANCY_MODULE(gene_names);
 // BAD_GENE_NAME
 static bool HasBadWord(const string& s)
 {
-    static const string BadWords[] = { "putative", "fragment", "gene", "orf", "like" };
+    static const char* BadWords[] = { "putative", "fragment", "gene", "orf", "like" };
     for (size_t i = 0; i < ArraySize(BadWords); i++) {
         if (NStr::FindNoCase(s, BadWords[i]) != string::npos) {
             return true;

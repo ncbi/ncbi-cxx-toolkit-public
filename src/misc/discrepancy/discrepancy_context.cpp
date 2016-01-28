@@ -259,13 +259,13 @@ static void CountNucleotides(const CSeq_data& seq_data, CSeqSummary& ret)
 
 const CSeqSummary& CDiscrepancyContext::GetNucleotideCount()
 {
-    static CSeqSummary ret;
+    static CSafeStatic<CSeqSummary> ret;
     static size_t count = 0;
     if (count == m_Count_Bioseq) {
-        return ret;
+        return ret.Get();
     }
     count = m_Count_Bioseq;
-    ret.clear();
+    ret->clear();
 
     // Make a Seq Map so that we can explicitly look at the gaps vs. the unknowns.
     const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(*GetCurrentBioseq());
@@ -275,17 +275,17 @@ const CSeqSummary& CDiscrepancyContext::GetNucleotideCount()
     for (; seq_iter; ++seq_iter) {
         switch (seq_iter.GetType()) {
             case CSeqMap::eSeqData:
-                ret.Len += seq_iter.GetLength();
-                CountNucleotides(seq_iter.GetData(), ret);
+                ret->Len += seq_iter.GetLength();
+                CountNucleotides(seq_iter.GetData(), ret.Get());
                 break;
             case CSeqMap::eSeqGap:
-                ret.Len += seq_iter.GetLength();
+                ret->Len += seq_iter.GetLength();
                 break;
             default:
                 break;
         }
     }
-    return ret;
+    return ret.Get();
 }
 
 
@@ -294,7 +294,7 @@ string CDiscrepancyContext::GetGenomeName(int n)
     static vector<string> G;
     if (G.empty()) {
         G.resize(eSource_location_chromatophore + 1);
-        for (size_t i = eSource_location_unknown; i <= eSource_location_chromatophore; i++) {
+        for (int i = eSource_location_unknown; i <= eSource_location_chromatophore; i++) {
             string str = ENUM_METHOD_NAME(ESource_location)()->FindName(i, true);
             G[i] = (str == "unknown") ? kEmptyStr : ((str == "extrachrom") ? "extrachromosomal" : str);
         }

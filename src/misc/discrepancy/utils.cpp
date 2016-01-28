@@ -38,8 +38,8 @@ BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-const string alpha_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const string digit_str = "0123456789";
+static const char* alpha_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+static const char* digit_str = "0123456789";
 
 
 bool IsAllCaps(const string& str)

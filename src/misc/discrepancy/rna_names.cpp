@@ -42,7 +42,7 @@ DISCREPANCY_MODULE(rna_names);
 
 // RRNA_NAME_CONFLICTS
 
-static const string rrna_standard_name[] = {
+static const char* rrna_standard_name[] = {
     "4.5S ribosomal RNA",
     "5S ribosomal RNA",
     "5.8S ribosomal RNA",
@@ -57,6 +57,8 @@ static const string rrna_standard_name[] = {
     "small subunit ribosomal RNA"
 };
 
+SAFE_CONST_STATIC_STRING(rrna_name_conflicts_complain,
+                         "[n] rRNA product name[s] [is] not standard. Correct the names to the standard format, eg \"16S ribosomal RNA\"");
 
 DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc, "rRNA name conflicts")
 {
@@ -64,18 +66,19 @@ DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc, "rRNA name conflicts"
         return;
     }
     const string& name = obj.GetRna().GetExt().GetName();
-    static const string complain = "[n] rRNA product name[s] [is] not standard. Correct the names to the standard format, eg \"16S ribosomal RNA\"";
     for (size_t i = 0; i < ArraySize(rrna_standard_name); i++) {
+        // ??? do you really need this?
+        // It is the same as NStr::EqualNocase() below.
         if (name == rrna_standard_name[i]) {
             return;
         }
         else if (NStr::EqualNocase(name, rrna_standard_name[i])) {
-            CReportNode& node = m_Objs[complain];
+            CReportNode& node = m_Objs[rrna_name_conflicts_complain.Get()];
             node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true)).Fatal();
             return;
         }
     }
-    CReportNode& node = m_Objs[complain];
+    CReportNode& node = m_Objs[rrna_name_conflicts_complain.Get()];
     node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), false)).Fatal();
 }
 

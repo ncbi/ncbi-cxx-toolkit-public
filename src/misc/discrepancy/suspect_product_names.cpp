@@ -115,7 +115,10 @@ USING_SCOPE(objects);
 
 DISCREPANCY_MODULE(suspect_product_names);
 
-static const string skip_bracket_paren[] = {
+static const char* alpha_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+static const char* digit_str = "0123456789";
+
+static const char* skip_bracket_paren[] = {
     "(NAD(P)H)",
     "(NAD(P))",
     "(I)",
@@ -129,7 +132,7 @@ static const string skip_bracket_paren[] = {
     "[acyl-carrier-protein]",
     "(acyl carrier protein)"
 };
-static const string ok_num_prefix[] = {
+static const char* ok_num_prefix[] = {
     "DUF",
     "UPF",
     "IS",
@@ -138,27 +141,31 @@ static const string ok_num_prefix[] = {
     "PUF",
     "CHP"
 };
-static const string months[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-static const string dblink_names[] = { "Trace Assembly Archive", "BioSample", "ProbeDB", "Sequence Read Archive", "BioProject,Assembly" };
+static const char* months[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+static const char* dblink_names[] = { "Trace Assembly Archive", "BioSample", "ProbeDB", "Sequence Read Archive", "BioProject,Assembly" };
 
-static map<ESource_qual, COrgMod::ESubtype> srcqual_orgmod;
-static map<ESource_qual, CSubSource::ESubtype> srcqual_subsrc;
-static map<ESource_qual, string> srcqual_names;
-static map<int, string> genome_names;
-static map<ESequence_constraint_rnamol, CMolInfo::EBiomol> scrna_mirna;
-static map<EMacro_feature_type, CSeqFeatData::ESubtype> feattype_featdef;
-static map<string, string> pub_class_quals;
-static map<EMolecule_type, CMolInfo::EBiomol> moltp_biomol;
-static map<ETechnique_type, CMolInfo::ETech> techtp_mitech;
-static map<EFeat_qual_legal, string> featquallegal_name;
-static map<EFeat_qual_legal, unsigned> featquallegal_subfield;
-static map<CRna_feat_type::E_Choice, CRNA_ref::EType> rnafeattp_rnareftp;
-static map<ERna_field, EFeat_qual_legal> rnafield_featquallegal;
-static map<CSeq_inst::EMol, string> mol_molname;
-static map<CSeq_inst::EStrand, string> strand_strname;
+static CSafeStatic< map<ESource_qual, COrgMod::ESubtype> > srcqual_orgmod;
+static CSafeStatic< map<ESource_qual, CSubSource::ESubtype> > srcqual_subsrc;
+static CSafeStatic< map<ESource_qual, string> > srcqual_names;
+static CSafeStatic< map<int, string> > genome_names;
+static CSafeStatic< map<ESequence_constraint_rnamol, CMolInfo::EBiomol> > scrna_mirna;
+static CSafeStatic< map<EMacro_feature_type, CSeqFeatData::ESubtype> > feattype_featdef;
+static CSafeStatic< map<string, string> > pub_class_quals;
+static CSafeStatic< map<EMolecule_type, CMolInfo::EBiomol> > moltp_biomol;
+static CSafeStatic< map<ETechnique_type, CMolInfo::ETech> > techtp_mitech;
+static CSafeStatic< map<EFeat_qual_legal, string> > featquallegal_name;
+static CSafeStatic< map<EFeat_qual_legal, unsigned> > featquallegal_subfield;
+static CSafeStatic< map<CRna_feat_type::E_Choice, CRNA_ref::EType> > rnafeattp_rnareftp;
+static CSafeStatic< map<ERna_field, EFeat_qual_legal> > rnafield_featquallegal;
+static CSafeStatic< map<CSeq_inst::EMol, string> > mol_molname;
+static CSafeStatic< map<CSeq_inst::EStrand, string> > strand_strname;
+
 
 static void InitMaps()
 {
+// ????????????????
+// NOT MT SAFE
+
     static bool ready = false;
     if (ready) {
         return;
@@ -210,7 +217,7 @@ static void InitMaps()
             else if (strtmp == "all-primers") {
                 strtmp = "All Primers";
             }
-            srcqual_names[(ESource_qual)i] = strtmp;
+            (*srcqual_names)[(ESource_qual)i] = strtmp;
         }
     }
 
@@ -225,19 +232,19 @@ static void InitMaps()
     typedef map <string, ESource_qual> maptp;
     ITERATE (maptp, it, srcnm_qual) {
         if (orgmodnm_subtp.find(it->first) != orgmodnm_subtp.end()) {
-            srcqual_orgmod[it->second] = orgmodnm_subtp[it->first];
+            (*srcqual_orgmod)[it->second] = orgmodnm_subtp[it->first];
         }
         else if (it->first == "bio-material-INST" || it->first == "bio-material-COLL" || it->first == "bio-material-SpecID") {
-            srcqual_orgmod[it->second] = orgmodnm_subtp["bio-material"];
+            (*srcqual_orgmod)[it->second] = orgmodnm_subtp["bio-material"];
         }
         else if (it->first == "culture-collection-INST" || it->first == "culture-collection-COLL" || it->first == "culture-collection-SpecID") {
-            srcqual_orgmod[it->second] = orgmodnm_subtp["culture-collection"];
+            (*srcqual_orgmod)[it->second] = orgmodnm_subtp["culture-collection"];
         }
         else if (subsrcnm_subtp.find(it->first) != subsrcnm_subtp.end()) {
-            srcqual_subsrc[it->second] = subsrcnm_subtp[it->first];
+            (*srcqual_subsrc)[it->second] = subsrcnm_subtp[it->first];
         }
         else if (it->first == "subsource-note") {
-            srcqual_subsrc[it->second] = CSubSource::eSubtype_other;
+            (*srcqual_subsrc)[it->second] = CSubSource::eSubtype_other;
         }
     } 
 
@@ -246,7 +253,7 @@ static void InitMaps()
         string strtmp = ENUM_METHOD_NAME(ESource_location)()->FindName(i, true);
         strtmp = (strtmp == "unknown") ? kEmptyStr : ((strtmp == "extrachrom") ? "extrachromosomal" : strtmp);
         //srcloc_names[(ESource_location)i] = strtmp;
-        genome_names[i] = strtmp;
+        (*genome_names)[i] = strtmp;
     }
 
     // ini of scrna_mirna
@@ -254,7 +261,7 @@ static void InitMaps()
         string strtmp = ENUM_METHOD_NAME(ESequence_constraint_rnamol)()->FindName(i, true);
         if (!strtmp.empty()) {
             strtmp = (strtmp == "precursor-RNA") ? "pre-RNA" : ((strtmp == "transfer-messenger-RNA") ? "tmRNA" : strtmp);
-            scrna_mirna[(ESequence_constraint_rnamol)i] = (CMolInfo::EBiomol)CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindValue(strtmp);
+            (*scrna_mirna)[(ESequence_constraint_rnamol)i] = (CMolInfo::EBiomol)CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindValue(strtmp);
         }
     }
 
@@ -329,7 +336,7 @@ static void InitMaps()
             strtmp = strtmp[1] + strtmp.substr(2);
             tmp = strtmp[1] + (string)"'" + strtmp.substr(2);
         }
-        feattype_featdef[(EMacro_feature_type)i] = CSeqFeatData::SubtypeNameToValue(strtmp);
+        (*feattype_featdef)[(EMacro_feature_type)i] = CSeqFeatData::SubtypeNameToValue(strtmp);
         //vector<string> arr = NStr::Tokenize(tmp, "_", arr);
         //if (!arr.empty()) tmp = NStr::Join(arr, "-");
         //feattype_name[(EMacro_feature_type)i] = tmp;
@@ -338,37 +345,37 @@ static void InitMaps()
     // ini of pub_class_quals
     ostringstream output;
     output << CPub::e_Gen << ePub_type_unpublished << 0;
-    pub_class_quals[output.str()] = "unpublished";
+    (*pub_class_quals)[output.str()] = "unpublished";
     output.clear(); output << CPub::e_Sub << ePub_type_in_press << 0;
-    pub_class_quals[output.str()] = "in-press submission";
+    (*pub_class_quals)[output.str()] = "in-press submission";
     output.clear(); output << CPub::e_Sub << ePub_type_published << 0;
-    pub_class_quals[output.str()] = "submission";
+    (*pub_class_quals)[output.str()] = "submission";
     output.clear(); output << CPub::e_Article << ePub_type_in_press << 1;
-    pub_class_quals[output.str()] = "in-press journal";
+    (*pub_class_quals)[output.str()] = "in-press journal";
     output.clear(); output << CPub::e_Article << ePub_type_published << 1;
-    pub_class_quals[output.str()] = "journal";
+    (*pub_class_quals)[output.str()] = "journal";
     output.clear(); output << CPub::e_Article << ePub_type_in_press << 2;
-    pub_class_quals[output.str()] = "in-press book chapter";
+    (*pub_class_quals)[output.str()] = "in-press book chapter";
     output.clear(); output << CPub::e_Article << ePub_type_published << 2;
-    pub_class_quals[output.str()] = "book chapter";
+    (*pub_class_quals)[output.str()] = "book chapter";
     output.clear(); output << CPub::e_Article << ePub_type_in_press << 3;
-    pub_class_quals[output.str()] = "in-press proceedings chapter";
+    (*pub_class_quals)[output.str()] = "in-press proceedings chapter";
     output.clear(); output << CPub::e_Article << ePub_type_published << 3;
-    pub_class_quals[output.str()] = "proceedings chapter";
+    (*pub_class_quals)[output.str()] = "proceedings chapter";
     output.clear(); output << CPub::e_Book << ePub_type_in_press << 0;
-    pub_class_quals[output.str()] = "in-press book";
+    (*pub_class_quals)[output.str()] = "in-press book";
     output.clear(); output << CPub::e_Book << ePub_type_published << 0;
-    pub_class_quals[output.str()] = "book";
+    (*pub_class_quals)[output.str()] = "book";
     output.clear(); output << CPub::e_Man << ePub_type_in_press << 0;
-    pub_class_quals[output.str()] = "in-press thesis";
+    (*pub_class_quals)[output.str()] = "in-press thesis";
     output.clear(); output << CPub::e_Man << ePub_type_published << 0;
-    pub_class_quals[output.str()] = "thesis";
+    (*pub_class_quals)[output.str()] = "thesis";
     output.clear(); output << CPub::e_Proc << ePub_type_in_press << 0;
-    pub_class_quals[output.str()] = "in-press proceedings";
+    (*pub_class_quals)[output.str()] = "in-press proceedings";
     output.clear(); output << CPub::e_Proc << ePub_type_published << 0;
-    pub_class_quals[output.str()] = "proceedings";
+    (*pub_class_quals)[output.str()] = "proceedings";
     output.clear(); output << CPub::e_Patent << ePub_type_any << 0;
-    pub_class_quals[output.str()] = "patent";
+    (*pub_class_quals)[output.str()] = "patent";
 
     // ini of moltp_biomol: BiomolFromMoleculeType(), and moltp_name
     for (size_t i = eMolecule_type_unknown; i <= eMolecule_type_macro_other; i++) {
@@ -376,7 +383,7 @@ static void InitMaps()
         if (!strtmp.empty()) {
             //string tmp = strtmp; 
             strtmp = (strtmp == "precursor-RNA") ? "pre-RNA" : ((strtmp == "transfer-messenger-RNA") ? "tmRNA" : ((strtmp == "macro-other") ? "other": strtmp));
-            moltp_biomol[(EMolecule_type)i] = (CMolInfo::EBiomol)CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindValue(strtmp);
+            (*moltp_biomol)[(EMolecule_type)i] = (CMolInfo::EBiomol)CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindValue(strtmp);
             //if (tmp == "macro-other") tmp = "other-genetic";
             //else if (tmp == "transfer_messenger_RNA") tmp = strtmp;
             //else if (tmp.find("-") != string::npos) tmp = NStr::Replace (tmp, "-", " ");
@@ -390,7 +397,7 @@ static void InitMaps()
         if (!strtmp.empty()) {
             string tmp = strtmp;
             strtmp = (strtmp == "genetic-map") ? "genemap" : ((strtmp == "physical-map")? "physmap" : ((strtmp == "fli-cDNA") ? "fli-cdna" : strtmp));
-            techtp_mitech[(ETechnique_type)i] = (CMolInfo::ETech)CMolInfo::ENUM_METHOD_NAME(ETech)()->FindValue(strtmp);
+            (*techtp_mitech)[(ETechnique_type)i] = (CMolInfo::ETech)CMolInfo::ENUM_METHOD_NAME(ETech)()->FindValue(strtmp);
             //if (tmp == "ets" || tmp == "sts" || tmp == "htgs-1" || tmp == "htgs-2" || tmp == "htgs-3" || tmp == "htgs-0" || tmp == "htc" || tmp == "WGS" || tmp == "barcode" || tmp == "tsa") tmp = NStr::ToUpper(tmp);
             //else if (tmp == "composite-wgs-htgs") tmp = "composite-wgs-htgs";
             //techtp_name[(ETechnique_type)i] = tmp;
@@ -423,19 +430,19 @@ static void InitMaps()
             strtmp = "pseudogene";
         }
         if (!strtmp.empty()) {
-            featquallegal_name[(EFeat_qual_legal)i] = strtmp;
+            (*featquallegal_name)[(EFeat_qual_legal)i] = strtmp;
         }
         if (subfield) {
-            featquallegal_subfield[(EFeat_qual_legal)i] = subfield;
+            (*featquallegal_subfield)[(EFeat_qual_legal)i] = subfield;
         }
     }
 
     // ini. of rnafeattp_rnareftp
     for (size_t i = CRna_feat_type::e_PreRNA; i <= CRna_feat_type::e_RRNA; i++) {
-        rnafeattp_rnareftp[(CRna_feat_type::E_Choice)i] = (CRNA_ref::EType)(i-1);
+        (*rnafeattp_rnareftp)[(CRna_feat_type::E_Choice)i] = (CRNA_ref::EType)(i-1);
     }
     for (size_t i = CRna_feat_type::e_NcRNA; i <= CRna_feat_type::e_MiscRNA; i++) {
-        rnafeattp_rnareftp[(CRna_feat_type::E_Choice)i] = (CRNA_ref::EType)(i+2);
+        (*rnafeattp_rnareftp)[(CRna_feat_type::E_Choice)i] = (CRNA_ref::EType)(i+2);
     }
 
     // ini of rnafield_featquallegal & rnafield_names
@@ -459,7 +466,7 @@ static void InitMaps()
         else if (rnafield_val == "gene-synonym") {
             rnafield_val = "synonym";
         }
-        rnafield_featquallegal[(ERna_field)i] = (EFeat_qual_legal)(ENUM_METHOD_NAME(EFeat_qual_legal)()->FindValue(rnafield_val));
+        (*rnafield_featquallegal)[(ERna_field)i] = (EFeat_qual_legal)(ENUM_METHOD_NAME(EFeat_qual_legal)()->FindValue(rnafield_val));
         //vector<string> arr;
         //if (strtmp.find("-") != string::npos) arr = NStr::Tokenize(strtmp, "-", arr);
         //else arr.push_back(strtmp);
@@ -469,39 +476,39 @@ static void InitMaps()
     }
 
     // ini of mol_molname
-    mol_molname[CSeq_inst::eMol_not_set] = kEmptyStr;
-    mol_molname[CSeq_inst::eMol_dna] = "DNA";
-    mol_molname[CSeq_inst::eMol_rna] = "RNA";
-    mol_molname[CSeq_inst::eMol_aa] = "protein";
-    mol_molname[CSeq_inst::eMol_na] = "nucleotide";
-    mol_molname[CSeq_inst::eMol_other] = "other";
+    (*mol_molname)[CSeq_inst::eMol_not_set] = kEmptyStr;
+    (*mol_molname)[CSeq_inst::eMol_dna] = "DNA";
+    (*mol_molname)[CSeq_inst::eMol_rna] = "RNA";
+    (*mol_molname)[CSeq_inst::eMol_aa] = "protein";
+    (*mol_molname)[CSeq_inst::eMol_na] = "nucleotide";
+    (*mol_molname)[CSeq_inst::eMol_other] = "other";
 
     // ini of strand_strname
-    strand_strname[CSeq_inst::eStrand_not_set] = kEmptyStr;
-    strand_strname[CSeq_inst::eStrand_ss] = "single";
-    strand_strname[CSeq_inst::eStrand_ds] = "double";
-    strand_strname[CSeq_inst::eStrand_mixed] = "mixed";
-    strand_strname[CSeq_inst::eStrand_other] = "other";
+    (*strand_strname)[CSeq_inst::eStrand_not_set] = kEmptyStr;
+    (*strand_strname)[CSeq_inst::eStrand_ss] = "single";
+    (*strand_strname)[CSeq_inst::eStrand_ds] = "double";
+    (*strand_strname)[CSeq_inst::eStrand_mixed] = "mixed";
+    (*strand_strname)[CSeq_inst::eStrand_other] = "other";
 
     ready = true;
 }
 
 
-static map<ESource_qual, string>& Get_srcqual_names()                           { InitMaps(); return srcqual_names; }
-static map<int, string> Get_genome_names()                                      { InitMaps(); return genome_names; }
-static map<ESource_qual, COrgMod::ESubtype> Get_srcqual_orgmod()                { InitMaps(); return srcqual_orgmod; }
-static map<ESource_qual, CSubSource::ESubtype> Get_srcqual_subsrc()             { InitMaps(); return srcqual_subsrc; }
-static map<ESequence_constraint_rnamol, CMolInfo::EBiomol> Get_scrna_mirna()    { InitMaps(); return scrna_mirna; }
-static map<EMacro_feature_type, CSeqFeatData::ESubtype> Get_feattype_featdef()  { InitMaps(); return feattype_featdef; }
-static map<string, string> Get_pub_class_quals()                                { InitMaps(); return pub_class_quals; }
-static map<EMolecule_type, CMolInfo::EBiomol> Get_moltp_biomol()                { InitMaps(); return moltp_biomol; }
-static map<ETechnique_type, CMolInfo::ETech> Get_techtp_mitech()                { InitMaps(); return techtp_mitech; }
-static map<EFeat_qual_legal, string> Get_featquallegal_name()                   { InitMaps(); return featquallegal_name; }
-static map<EFeat_qual_legal, unsigned> Get_featquallegal_subfield()             { InitMaps(); return featquallegal_subfield; }
-static map<CRna_feat_type::E_Choice, CRNA_ref::EType> Get_rnafeattp_rnareftp()  { InitMaps(); return rnafeattp_rnareftp; }
-static map<ERna_field, EFeat_qual_legal> Get_rnafield_featquallegal()           { InitMaps(); return rnafield_featquallegal; }
-static map<CSeq_inst::EMol, string> Get_mol_molname()                           { InitMaps(); return mol_molname; }
-static map<CSeq_inst::EStrand, string> Get_strand_strname()                     { InitMaps(); return strand_strname; }
+static map<ESource_qual, string>& Get_srcqual_names()                           { InitMaps(); return *srcqual_names; }
+static map<int, string> Get_genome_names()                                      { InitMaps(); return *genome_names; }
+static map<ESource_qual, COrgMod::ESubtype> Get_srcqual_orgmod()                { InitMaps(); return *srcqual_orgmod; }
+static map<ESource_qual, CSubSource::ESubtype> Get_srcqual_subsrc()             { InitMaps(); return *srcqual_subsrc; }
+static map<ESequence_constraint_rnamol, CMolInfo::EBiomol> Get_scrna_mirna()    { InitMaps(); return *scrna_mirna; }
+static map<EMacro_feature_type, CSeqFeatData::ESubtype> Get_feattype_featdef()  { InitMaps(); return *feattype_featdef; }
+static map<string, string> Get_pub_class_quals()                                { InitMaps(); return *pub_class_quals; }
+static map<EMolecule_type, CMolInfo::EBiomol> Get_moltp_biomol()                { InitMaps(); return *moltp_biomol; }
+static map<ETechnique_type, CMolInfo::ETech> Get_techtp_mitech()                { InitMaps(); return *techtp_mitech; }
+static map<EFeat_qual_legal, string> Get_featquallegal_name()                   { InitMaps(); return *featquallegal_name; }
+static map<EFeat_qual_legal, unsigned> Get_featquallegal_subfield()             { InitMaps(); return *featquallegal_subfield; }
+static map<CRna_feat_type::E_Choice, CRNA_ref::EType> Get_rnafeattp_rnareftp()  { InitMaps(); return *rnafeattp_rnareftp; }
+static map<ERna_field, EFeat_qual_legal> Get_rnafield_featquallegal()           { InitMaps(); return *rnafield_featquallegal; }
+static map<CSeq_inst::EMol, string> Get_mol_molname()                           { InitMaps(); return *mol_molname; }
+static map<CSeq_inst::EStrand, string> Get_strand_strname()                     { InitMaps(); return *strand_strname; }
 
 void GetSeqFeatLabel(const CSeq_feat&, string&);
 typedef map<string, string> Str2Str;
@@ -524,15 +531,15 @@ static bool IsStringConstraintEmpty(const CString_constraint* constraint)
 
 static const string SkipWeasel(const string& str)
 {
-    static vector<string> weasels;
-    if (weasels.empty()) {
-        NStr::Tokenize("candidate,hypothetical,novel,possible,potential,predicted,probable,putative,uncharacterized,unique", ",", weasels);
+    static CSafeStatic< vector<string> > weasels;
+    if (weasels->empty()) {
+        NStr::Tokenize("candidate,hypothetical,novel,possible,potential,predicted,probable,putative,uncharacterized,unique", ",", *weasels);
     }
 
     if (str.empty()) {
         return kEmptyStr;
     }
-    string ret_str(kEmptyStr);
+    string ret_str;
     vector <string> arr;
     arr = NStr::Tokenize(str, " ", arr);
     if (arr.size() == 1) {
@@ -544,7 +551,7 @@ static const string SkipWeasel(const string& str)
     for (i=0; i< (int)(arr.size() - 1); i++) {
         len = arr[i].size();
         find_w = false;
-        ITERATE (vector <string>, it, weasels) {
+        ITERATE (vector <string>, it, *weasels) {
             len_w = (*it).size(); 
             if (len != len_w || !NStr::EqualNocase(arr[i], 0, len, *it)) {
                 continue;
@@ -1296,13 +1303,10 @@ static bool ContainsNorMoreSetsOfBracketsOrParentheses(const string& search, con
 }
 
 
-static bool PrecededByOkPrefix (const string& start_str)
+static bool PrecededByOkPrefix(const string& start_str)
 {
-    unsigned len_str = start_str.size();
-    unsigned len_it;
-    for (unsigned i=0; i< ArraySize(ok_num_prefix); i++) {
-        len_it = ok_num_prefix[i].size();
-        if (len_str >= len_it && (CTempString(start_str).substr(len_str-len_it) == ok_num_prefix[i])) {
+    for (int i=0; i< ArraySize(ok_num_prefix); i++) {
+        if (NStr::StartsWith(start_str, ok_num_prefix[i])) {
             return true;
         }
     }
@@ -1452,7 +1456,7 @@ static bool StringContainsUnbalancedParentheses(const string& search)
 {
     size_t pos = 0;
     char ch_src;
-    string strtmp = kEmptyStr, sch_src(search);
+    string strtmp, sch_src(search);
     while (!sch_src.empty()) {
         pos = sch_src.find_first_of("()[]");
         if (pos == string::npos) {
@@ -1489,7 +1493,7 @@ static bool StringContainsUnbalancedParentheses(const string& search)
             sch_src = sch_src.substr(pos+1);
         }
         else {
-            sch_src = kEmptyStr;
+            sch_src.clear();
         }
     }
   
@@ -1583,7 +1587,7 @@ static bool DoesObjectMatchStringConstraint(const CDiscrepancyContext& context, 
         }
     }
     if (!rval) {
-        string str(kEmptyStr);
+        string str;
         switch (seq_feat.GetData().Which()) {
             case CSeqFeatData::e_Cdregion: 
                 if (seq_feat.CanGetProduct()) {
@@ -1837,9 +1841,9 @@ static bool DoesFeatureMatchLocationConstraint(const CDiscrepancyContext& contex
 
 static string GetDbxrefString (const vector<CRef<CDbtag> >& dbxref, const CString_constraint* str_cons)
 {
-    string str(kEmptyStr), label;
+    string str, label;
     ITERATE (vector<CRef<CDbtag> >, it, dbxref) {
-        label = kEmptyStr;
+        label.clear();
         (*it)->GetLabel(&label);
         if (DoesStringMatchConstraint(label, str_cons)) {
             str += label + ";";
@@ -1877,9 +1881,10 @@ const CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id :: E_Choice choi
 
 
 static const char* strandsymbol[] = {"", "", "c","b", "r"};
+
 static string PrintSeqInt(const CSeq_interval& seq_int, CScope* scope, bool range_only)
 {
-    string location(kEmptyStr);
+    string location;
     if (!scope) {
         return kEmptyStr;
     }
@@ -1907,7 +1912,7 @@ static string PrintSeqInt(const CSeq_interval& seq_int, CScope* scope, bool rang
     ENa_strand this_strand = (seq_int.CanGetStrand()) ? seq_int.GetStrand(): eNa_strand_unknown;
     location += strandsymbol[(int)this_strand];
     int from, to;
-    string lab_from(kEmptyStr), lab_to(kEmptyStr);
+    string lab_from, lab_to;
     if (eNa_strand_minus == this_strand || eNa_strand_both_rev ==  this_strand) {
             to = seq_int.GetFrom();
             from = seq_int.GetTo();
@@ -1954,7 +1959,7 @@ static string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, CScope* scope, bool 
     }
 
     string locs, strtmp;
-    string location(kEmptyStr);
+    string location;
     if (seq_loc.IsInt()) {
         location = PrintSeqInt(seq_loc.GetInt(), scope, range_only);
     } 
@@ -2006,13 +2011,13 @@ static string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, CScope* scope, bool 
 
 static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, const string& qual_name, unsigned subfield = 0, const CString_constraint* str_cons = 0)
 {
-    string str(kEmptyStr);
+    string str;
     ITERATE (vector <CRef <CGb_qual> >, it, quals) {
         if (NStr::EqualNocase( (*it)->GetQual(), qual_name)) {
             str = (*it)->GetVal();
             str = GetTwoFieldSubfield(str, subfield);
             if ( str.empty() || (str_cons && !str_cons->Empty() && !(str_cons->Match(str))) ) {
-                str = kEmptyStr;
+                str.clear();
             }
             else break;
         }
@@ -2046,7 +2051,7 @@ static string GetFirstStringMatch(const vector<string>& strs, const CString_cons
 static string GetRNAProductString(const CSeq_feat& seq_feat)
 {
     const CRNA_ref& rna = seq_feat.GetData().GetRna();
-    string rna_str(kEmptyStr);
+    string rna_str;
     if (!rna.CanGetExt()) {
         rna_str = seq_feat.GetNamedQual("product");
     }
@@ -2127,7 +2132,7 @@ static bool IsSubsrcQual(ESource_qual src_qual)
 
 static string GetNotTextqualSrcQualValue(const CBioSource& biosrc, const CSource_qual_choice& src_qual, const CString_constraint* str_cons)
 {
-    string str(kEmptyStr);
+    string str;
 
     switch (src_qual.Which()) {
         case CSource_qual_choice:: e_Location:
@@ -2139,13 +2144,13 @@ static string GetNotTextqualSrcQualValue(const CBioSource& biosrc, const CSource
                 str = "extrachromosomal";
             }
             if (str_cons && !DoesStringMatchConstraint(str, str_cons)) {
-                str = kEmptyStr;
+                str.clear();
             }
             break;
         case CSource_qual_choice::e_Origin:
             str = CBioSource::ENUM_METHOD_NAME(EOrigin)()->FindName((CBioSource::EOrigin)biosrc.GetOrigin(), false);
             if (str_cons && !DoesStringMatchConstraint(str, str_cons)) {
-                str = kEmptyStr;
+                str.clear();
             }
             break;
         case CSource_qual_choice::e_Gcode:
@@ -2234,7 +2239,7 @@ static string Get1OrgModValue(const CBioSource& biosrc, const string& type_name)
 static string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, bool is_subsrc, const CString_constraint* str_cons)
 {
     string strtmp;
-    string ret_str(kEmptyStr);
+    string ret_str;
     if (is_subsrc) {
         ret_str = Get1SubSrcValue(biosrc, qual_name);
     }
@@ -2330,7 +2335,7 @@ static string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name,
         ret_str = Get1OrgModValue(biosrc, qual_name);
     }
     if (str_cons && !DoesStringMatchConstraint(ret_str, str_cons)) {
-        ret_str = kEmptyStr;
+        ret_str.clear();
     }
     return ret_str;
 }
@@ -2338,7 +2343,7 @@ static string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name,
 
 static string GetSrcQualValue4FieldType(const CBioSource& biosrc, const CSource_qual_choice& src_qual, const CString_constraint* str_cons = 0)
 {
-    string str(kEmptyStr);
+    string str;
     switch (src_qual.Which()) {
         case CSource_qual_choice::e_Textqual:
             {
@@ -2615,7 +2620,7 @@ static bool DoesFeatureCountMatchQuantityConstraint(const CDiscrepancyContext& c
 
 static string CopyListWithoutBankIt(const string& orig)
 {
-    string cpy(orig), pre_seq(kEmptyStr);
+    string cpy(orig), pre_seq;
     size_t pos;
     while (cpy.size() > 6 && cpy != pre_seq) {
         pos = NStr::FindNoCase(orig, "Bankit");
@@ -3000,7 +3005,7 @@ static string GetAuthNameList(const CAuthor& auth, bool use_initials)
     const CPerson_id& pid = auth.GetName();
     switch (pid.Which()) {
         case CPerson_id::e_Dbtag:
-            str = kEmptyStr;
+            str.clear();
             pid.GetDbtag().GetLabel(&str);
             break;
         case CPerson_id::e_Name:
@@ -3033,7 +3038,7 @@ static string GetAuthNameList(const CAuthor& auth, bool use_initials)
 
 static string GetAuthorListString(const CAuth_list& auth_ls, const CString_constraint* str_cons, bool use_initials = 0)
 {
-    string str(kEmptyStr);
+    string str;
     const CAuth_list::C_Names& names = auth_ls.GetNames();
     switch (names.Which()) {
         case CAuth_list::C_Names::e_Std:
@@ -3069,7 +3074,7 @@ static string GetAuthorListString(const CAuth_list& auth_ls, const CString_const
 
 static string GetPubFieldFromAffil(const CAffil& affil, EPublication_field field, const CString_constraint* str_cons)
 {
-    string str(kEmptyStr);
+    string str;
 
     if (!affil.IsStd()) {
         str = affil.GetStr();
@@ -3155,13 +3160,14 @@ static string Get1stStringMatchFromTitle(const CTitle& title, const CString_cons
 
 static string PrintPartialOrCompleteDate(const CDate& date)
 {
-    string str(kEmptyStr);
+    string str;
     if (date.IsStr()) {
         return date.GetStr();
     }
     else {  // CDate_std
         if (date.GetStd().CanGetMonth()) {
-            str = months[date.GetStd().GetMonth()] + " ";
+            str = months[date.GetStd().GetMonth()];
+            str += " ";
         }
         str += date.GetStd().GetYear();
         return str;
@@ -3171,7 +3177,7 @@ static string PrintPartialOrCompleteDate(const CDate& date)
 
 static string GetPubFieldFromImprint(const CImprint& imprint, EPublication_field field, const CString_constraint* str_cons)
 {
-    string str(kEmptyStr);
+    string str;
     switch (field) {
         case ePublication_field_volume:
             if (imprint.CanGetVolume()) {
@@ -3194,7 +3200,7 @@ static string GetPubFieldFromImprint(const CImprint& imprint, EPublication_field
         default: break;
     }
     if (str.empty() || !DoesStringMatchConstraint(str, str_cons)) {
-        str = kEmptyStr;
+        str.clear();
     }
     return str;
 }
@@ -3256,7 +3262,7 @@ static string GetPubFieldFromPub(const CPub& the_pub, EPublication_field field, 
         return GetPubclassFromPub(the_pub);
     }
   
-    string str(kEmptyStr);
+    string str;
     switch (the_pub.Which()) {
         case CPub::e_Gen :
             {
@@ -3453,7 +3459,7 @@ static string GetPubFieldFromPub(const CPub& the_pub, EPublication_field field, 
         default: break;
     }
     if (str.empty() || !DoesStringMatchConstraint(str, str_cons)) {
-        str = kEmptyStr;
+        str.clear();
     }
     return str;
 }
@@ -3625,7 +3631,7 @@ static bool DoesObjectMatchMolinfoFieldConstraint(const CDiscrepancyContext& con
 static string GetCodeBreakString(const CSeq_feat& seq_feat)
 {
     NCBI_USER_THROW("This cannot be because it never can be!");
-    string str(kEmptyStr);
+    string str;
 /*
     if (context.GetCurrentBioseq()) {
         CFlatFileConfig cfg(CFlatFileConfig::eFormat_GenBank, CFlatFileConfig::eMode_Release );
@@ -3650,7 +3656,7 @@ static string GetCodeBreakString(const CSeq_feat& seq_feat)
 
 static string GettRNACodonsRecognized(const CTrna_ext& trna, const CString_constraint* str_cons)
 {
-    string str(kEmptyStr);
+    string str;
     if (trna.CanGetCodon()) {
         ITERATE (list <int>, it, trna.GetCodon()) {  // should have only 6
             if ((*it) < 64) {
@@ -3685,7 +3691,7 @@ static string GetAnticodonLocString(const CTrna_ext& trna)
     if (!trna.CanGetAnticodon()) {
         return kEmptyStr;
     }
-    string str(kEmptyStr);
+    string str;
     if (trna.GetAnticodon().IsInt()) {
         return(GetIntervalString(trna.GetAnticodon().GetInt()));
     }
@@ -3706,7 +3712,7 @@ static string GetAnticodonLocString(const CTrna_ext& trna)
 
 static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const CFeat_qual_choice& feat_qual, const CString_constraint* str_cons)
 {
-    string str(kEmptyStr);
+    string str;
     bool is_legal_qual = feat_qual.IsLegal_qual();
     bool is_illegal_qual = feat_qual.IsIllegal_qual();
     EFeat_qual_legal legal_qual = feat_qual.IsLegal_qual() ? feat_qual.GetLegal_qual() : eFeat_qual_legal_allele;
@@ -3781,7 +3787,7 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
         /* citation */ // ####?????
     //    str = GetCitationTextFromFeature (sfp, str_cons, batch_extra == NULL ? NULL : batch_extra->cit_list);
         if (seq_feat.CanGetCit()) {
-            str = kEmptyStr;
+            str.clear();
             seq_feat.GetCit().GetLabel(&str);
         }
     }
@@ -3931,7 +3937,7 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
                                     break;
                                 }
                                 else {
-                                    str = kEmptyStr;
+                                    str.clear();
                                 }
                             }
                         }
@@ -3977,7 +3983,7 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
                                 return str;
                             }
                             else {
-                                str = kEmptyStr;
+                                str.clear();
                             }
                         }
                     }
@@ -3987,7 +3993,7 @@ static string GetQualFromFeatureAnyType(const CDiscrepancyContext& context, cons
     }
 
     if (!str.empty() && !DoesStringMatchConstraint(str, str_cons)) {
-        str = kEmptyStr;
+        str.clear();
     }
     return str;
 }
@@ -3997,7 +4003,7 @@ static string GetQualFromFeature(const CDiscrepancyContext& context, const CSeq_
 {
     EMacro_feature_type feat_field_type = feat_field.GetType();
     if (eMacro_feature_type_any != feat_field_type && seq_feat.GetData().GetSubtype() != Get_feattype_featdef()[feat_field_type]) {
-        return (kEmptyStr);
+        return kEmptyStr;
     }
     return GetQualFromFeatureAnyType(context, seq_feat, feat_field.GetField(), str_cons);
 }
@@ -4140,7 +4146,7 @@ static CRef<CFeature_field> FeatureFieldFromCDSGeneProtField(ECDSGeneProt_field 
 static string GetSequenceQualFromBioseq(const CDiscrepancyContext& context, const CMolinfo_field& mol_field)
 {
     const CMolInfo* molinfo = sequence::GetMolInfo(*context.GetCurrentBioseq());
-    string str(kEmptyStr);
+    string str;
     switch (mol_field.Which()) {
         case CMolinfo_field::e_Molecule:
             str = CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindName(molinfo->GetBiomol(), true);
@@ -4169,7 +4175,7 @@ static string GetSequenceQualFromBioseq(const CDiscrepancyContext& context, cons
         default: break;
     }
     if (str == "unknown" || str == "not_set") {
-        str = kEmptyStr;
+        str.clear();
     }
     return str;
 }
@@ -4177,10 +4183,10 @@ static string GetSequenceQualFromBioseq(const CDiscrepancyContext& context, cons
 
 static string GetDBLinkFieldFromUserObject(const CUser_object& user_obj, EDBLink_field_type dblink_tp, const CString_constraint& str_cons)
 {
-    string str(kEmptyStr);
+    string str;
     bool is_str_cons_empty = IsStringConstraintEmpty(&str_cons);
     if (user_obj.GetType().IsStr() && user_obj.GetType().GetStr() == "DBLink") {
-        string field_name = dblink_names[dblink_tp];
+        CTempString field_name = dblink_names[dblink_tp];
         ITERATE (vector <CRef <CUser_field> >, it, user_obj.GetData()) {
             if ((*it)->GetLabel().IsStr() && ((*it)->GetLabel().GetStr() == field_name)) {
                 if ((*it)->GetData().IsStrs()) {
@@ -4190,7 +4196,7 @@ static string GetDBLinkFieldFromUserObject(const CUser_object& user_obj, EDBLink
                             break;
                         }
                         else {
-                            str = kEmptyStr;
+                            str.clear();
                         }
                     }
                 }
@@ -4201,7 +4207,7 @@ static string GetDBLinkFieldFromUserObject(const CUser_object& user_obj, EDBLink
                             break;
                         }
                         else {
-                            str = kEmptyStr;
+                            str.clear();
                         }
                     }
                 }
@@ -4217,7 +4223,7 @@ static string GetDBLinkFieldFromUserObject(const CUser_object& user_obj, EDBLink
 
 static string GetFieldValueForObjectEx(const CDiscrepancyContext& context, const CField_type& field_type, const CString_constraint& str_cons)
 {
-    string str(kEmptyStr);
+    string str;
     bool is_empty_str_cons = IsStringConstraintEmpty (&str_cons);
     switch (field_type.Which()) {
         case CField_type::e_Source_qual :
@@ -4259,7 +4265,7 @@ static string GetFieldValueForObjectEx(const CDiscrepancyContext& context, const
                                         break;
                                     }
                                     else {
-                                        str = kEmptyStr;
+                                        str.clear();
                                     }
                                 }
                             }
@@ -4274,7 +4280,7 @@ static string GetFieldValueForObjectEx(const CDiscrepancyContext& context, const
                         }
                         str = (*it)->GetComment();
                         if (!DoesStringMatchConstraint (str, &str_cons)) {
-                            str = kEmptyStr;
+                            str.clear();
                         }
                     }
                     break;
@@ -4286,7 +4292,7 @@ static string GetFieldValueForObjectEx(const CDiscrepancyContext& context, const
                         }
                         str = (*it)->GetTitle();
                         if (!DoesStringMatchConstraint (str, &str_cons)) {
-                            str = kEmptyStr;
+                            str.clear();
                         }
                     }
                     break;
@@ -4312,7 +4318,7 @@ static string GetFieldValueForObjectEx(const CDiscrepancyContext& context, const
 
 static string GetConstraintFieldFromObject(const CDiscrepancyContext& context, const CSeq_feat& seq_feat, const CField_type& field, const CString_constraint* str_cons = 0)
 {
-    string str(kEmptyStr);
+    string str;
     switch (field.Which()) {
         case CField_type::e_Source_qual:
             {
@@ -4337,7 +4343,7 @@ static string GetConstraintFieldFromObject(const CDiscrepancyContext& context, c
             if (context.GetCurrentBioseq()) {
                 str = GetSequenceQualFromBioseq(context, field.GetMolinfo_field());
                 if (!str.empty() && str_cons && !DoesStringMatchConstraint (str, str_cons)) {
-                    str = kEmptyStr;
+                    str.clear();
                 }
             }
             break;
@@ -4354,7 +4360,7 @@ static string GetConstraintFieldFromObject(const CDiscrepancyContext& context, c
 
 static bool DoesCodingRegionMatchTranslationConstraint(const CDiscrepancyContext& context, const CSeq_feat& feat, const CTranslation_constraint& trans_cons)
 {
-    string actual(kEmptyStr), translation(kEmptyStr);
+    string actual, translation;
     EMatch_type_constraint int_stops = trans_cons.GetInternal_stops();
     bool has_num_mismatches = trans_cons.CanGetNum_mismatches();
     if (has_num_mismatches) {
@@ -4502,7 +4508,7 @@ static bool DoesObjectMatchFieldConstraint(const CDiscrepancyContext& context, c
     }
 
     bool rval = false;
-    string str(kEmptyStr);
+    string str;
     const CField_type& field_type = field_cons.GetField();
     switch (field_type.Which()) {
         case CField_type::e_Source_qual:
@@ -4813,7 +4819,7 @@ static void GetProtFromCodingRegion(const CDiscrepancyContext& context, CRef<CCG
 
 static string GetFieldValueFromCGPSet(const CDiscrepancyContext& context, const CCGPSetData& c, ECDSGeneProt_field field, const CString_constraint* str_cons = 0)
 {
-    string str(kEmptyStr);
+    string str;
     if (c.cds) {
         switch (field) {
             case eCDSGeneProt_field_cds_comment:
@@ -4982,7 +4988,7 @@ static string GetFieldValueFromCGPSet(const CDiscrepancyContext& context, const 
         }
     }
     if (str.empty() || !DoesStringMatchConstraint(str, str_cons)) {
-        str = kEmptyStr;
+        str.clear();
     }
     return str;
 }
@@ -5082,7 +5088,7 @@ static bool DoesCGPSetMatchQualConstraint(const CDiscrepancyContext& context, co
     const CString_constraint* str_cons = cgp_cons.CanGetConstraint() ? &(cgp_cons.GetConstraint()) : 0; 
     bool has_field1 = cgp_cons.CanGetField1() && cgp_cons.GetField1().IsField();
     bool has_field2 = cgp_cons.CanGetField2() && cgp_cons.GetField2().IsField();
-    string str(kEmptyStr), str1, str2;
+    string str, str1, str2;
     bool rval = false;
     if (!str_cons || IsStringConstraintEmpty (str_cons)) {
         // looking for qual present
