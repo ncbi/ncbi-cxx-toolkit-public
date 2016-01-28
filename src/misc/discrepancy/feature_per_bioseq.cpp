@@ -213,7 +213,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
     if (m_Objs.empty()) {
         return;
     }
-    static CSafeStatic< map<const char*, size_t> > DesiredCount;
+    static CSafeStatic<map<string, size_t> > DesiredCount;
     if (DesiredCount->empty()) {
         for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
             (*DesiredCount)[desired_aaList[i].long_symbol] = desired_aaList[i].num_expected;
