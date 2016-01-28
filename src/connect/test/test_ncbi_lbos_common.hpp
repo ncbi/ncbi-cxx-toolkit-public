@@ -2489,25 +2489,25 @@ void FakeErrorInput__ShouldNotCrash()
                << std::setfill('0') << std::setw(3) << i + 2 << "." 
                << std::setfill('0') << std::setw(3) << i + 3 << "." 
                << std::setfill('0') << std::setw(3) << i + 4;
-            if (
-                    i < 100 
 #ifndef NCBI_OS_DARWIN /* MacOS does not understand octals in IP, 
                           so 8 and 9 work fine */
+            if (
+                    i < 100 
                     && 
                     (
                         ss.str().find('8') != string::npos 
                         ||
                         ss.str().find('9') != string::npos
                     )
-#endif /* NCBI_OS_DARWIN */
                 ) 
             {
                 WRITE_LOG(ss.str() << "Has 8 or 9, skipping", 
                           kSingleThreadNumber);
                 continue;
             }
+#endif /* NCBI_OS_DARWIN */
             ss << ":" << (i + 1) * 215;
-            WRITE_LOG("Expecting IP:port" << ss.str(), kSingleThreadNumber);
+            WRITE_LOG("Expecting IP:port " << ss.str(), kSingleThreadNumber);
             SOCK_StringToHostPort(ss.str().c_str(), &temp_ip, &temp_port);
             NCBITEST_CHECK_EQUAL_MT_SAFE(hostports[j]->host, temp_ip);
             NCBITEST_CHECK_EQUAL_MT_SAFE(hostports[j]->port, temp_port);
