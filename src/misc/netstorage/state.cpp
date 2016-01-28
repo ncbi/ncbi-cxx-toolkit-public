@@ -43,34 +43,71 @@ namespace
 using namespace NDirectNetStorageImpl;
 
 
-class CROState : public IState
+// The purpose of LocatorHolding templates is to provide object locator
+// for any interface/class that needs it (e.g. for exception/log purposes).
+
+template <class TBase>
+class ILocatorHolding : public TBase
 {
 public:
-    ERW_Result WriteImpl(const void*, size_t, size_t*);
+    virtual TObjLoc& Locator() = 0;
+
+    // Convenience method
+    string LocatorToStr() { return Locator().GetLocator(); }
 };
 
 
-class CWOState : public IState
-{
-public:
-    ERW_Result ReadImpl(void*, size_t, size_t*);
-    bool EofImpl();
-};
+// This is used for CLocatorHolding constructor overloading
+enum EBaseCtorExpectsLocator { eBaseCtorExpectsLocator };
 
 
-class CRWNotFound : public IState
+template <class TBase>
+class CLocatorHolding : public TBase
 {
 public:
-    CRWNotFound(TObjLoc& object_loc)
+    CLocatorHolding(TObjLoc& object_loc)
         : m_ObjectLoc(object_loc)
     {}
 
+    CLocatorHolding(TObjLoc& object_loc, EBaseCtorExpectsLocator)
+        : TBase(object_loc),
+          m_ObjectLoc(object_loc)
+    {}
+
+    template <class TParam>
+    CLocatorHolding(TObjLoc& object_loc, TParam param)
+        : TBase(object_loc, param),
+          m_ObjectLoc(object_loc)
+    {}
+
+private:
+    virtual TObjLoc& Locator() { return m_ObjectLoc; }
+
+    TObjLoc& m_ObjectLoc;
+};
+
+
+class CROState : public ILocatorHolding<IState>
+{
+public:
+    ERW_Result WriteImpl(const void*, size_t, size_t*);
+};
+
+
+class CWOState : public ILocatorHolding<IState>
+{
+public:
+    ERW_Result ReadImpl(void*, size_t, size_t*);
+    bool EofImpl();
+};
+
+
+class CRWNotFound : public ILocatorHolding<IState>
+{
+public:
     ERW_Result ReadImpl(void*, size_t, size_t*);
     ERW_Result WriteImpl(const void*, size_t, size_t*);
     bool EofImpl();
-
-private:
-    TObjLoc& m_ObjectLoc;
 };
 
 
@@ -153,18 +190,11 @@ private:
 };
 
 
-class CLocation : public ILocation
+class CLocation : public ILocatorHolding<ILocation>
 {
 public:
-    CLocation(TObjLoc& object_loc)
-        : m_ObjectLoc(object_loc)
-    {}
-
     virtual bool Init() { return true; }
     virtual void SetLocator() = 0;
-
-protected:
-    TObjLoc& m_ObjectLoc;
 };
 
 
@@ -172,8 +202,7 @@ class CNotFound : public CLocation
 {
 public:
     CNotFound(TObjLoc& object_loc)
-        : CLocation(object_loc),
-          m_RW(object_loc)
+        : m_RW(object_loc)
     {}
 
     void SetLocator();
@@ -187,7 +216,7 @@ public:
     void SetExpirationImpl(const CTimeout&);
 
 private:
-    CRWNotFound m_RW;
+    CLocatorHolding<CRWNotFound> m_RW;
 };
 
 
@@ -195,8 +224,9 @@ class CNetCache : public CLocation
 {
 public:
     CNetCache(TObjLoc& object_loc, SContext* context)
-        : CLocation(object_loc),
-          m_Context(context)
+        : m_Context(context),
+          m_Read(object_loc),
+          m_Write(object_loc)
     {}
 
     bool Init();
@@ -213,8 +243,8 @@ public:
 private:
     CRef<SContext> m_Context;
     CNetICacheClientExt m_Client;
-    CRONetCache m_Read;
-    CWONetCache m_Write;
+    CLocatorHolding<CRONetCache> m_Read;
+    CLocatorHolding<CWONetCache> m_Write;
 };
 
 
@@ -222,8 +252,9 @@ class CFileTrack : public CLocation
 {
 public:
     CFileTrack(TObjLoc& object_loc, SContext* context)
-        : CLocation(object_loc),
-          m_Context(context)
+        : m_Context(context),
+          m_Read(object_loc),
+          m_Write(object_loc)
     {}
 
     void SetLocator();
@@ -238,15 +269,15 @@ public:
 
 private:
     CRef<SContext> m_Context;
-    CROFileTrack m_Read;
-    CWOFileTrack m_Write;
+    CLocatorHolding<CROFileTrack> m_Read;
+    CLocatorHolding<CWOFileTrack> m_Write;
 };
 
 
 ERW_Result CROState::WriteImpl(const void*, size_t, size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "Invalid file status: cannot write while reading.");
+            "Cannot write \"" << LocatorToStr() << "\" while reading.");
     return eRW_Error; // Not reached
 }
 
@@ -254,7 +285,7 @@ ERW_Result CROState::WriteImpl(const void*, size_t, size_t*)
 ERW_Result CWOState::ReadImpl(void*, size_t, size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "Invalid file status: cannot read while writing.");
+            "Cannot read \"" << LocatorToStr() << "\" while writing.");
     return eRW_Error; // Not reached
 }
 
@@ -262,7 +293,8 @@ ERW_Result CWOState::ReadImpl(void*, size_t, size_t*)
 bool CWOState::EofImpl()
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "Invalid file status: cannot check EOF status while writing.");
+            "Cannot check EOF status of \"" << LocatorToStr() <<
+            "\" while writing.");
     return true; // Not reached
 }
 
@@ -270,7 +302,7 @@ bool CWOState::EofImpl()
 ERW_Result CRWNotFound::ReadImpl(void*, size_t, size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Cannot open \"" << m_ObjectLoc.GetLocator() << "\" for reading.");
+            "Cannot open \"" << LocatorToStr() << "\" for reading.");
     return eRW_Error; // Not reached
 }
 
@@ -278,7 +310,7 @@ ERW_Result CRWNotFound::ReadImpl(void*, size_t, size_t*)
 ERW_Result CRWNotFound::WriteImpl(const void*, size_t, size_t*)
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Cannot open \"" << m_ObjectLoc.GetLocator() << "\" for writing.");
+            "Cannot open \"" << LocatorToStr() << "\" for writing.");
     return eRW_Error; // Not reached
 }
 
@@ -368,7 +400,7 @@ void CWOFileTrack::CloseImpl()
 void CNotFound::SetLocator()
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Cannot open \"" << m_ObjectLoc.GetLocator() << "\" for writing.");
+            "Cannot open \"" << LocatorToStr() << "\" for writing.");
 }
 
 
@@ -393,7 +425,7 @@ IState* CNotFound::StartWrite(const void* buf, size_t count,
 Uint8 CNotFound::GetSizeImpl()
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<
+            "NetStorageObject \"" << LocatorToStr() <<
             "\" could not be found in any of the designated locations.");
     return 0; // Not reached
 }
@@ -401,8 +433,9 @@ Uint8 CNotFound::GetSizeImpl()
 
 CNetStorageObjectInfo CNotFound::GetInfoImpl()
 {
-    return g_CreateNetStorageObjectInfo(m_ObjectLoc.GetLocator(),
-            eNFL_NotFound, &m_ObjectLoc, 0, NULL);
+    TObjLoc& object_loc(Locator());
+    return g_CreateNetStorageObjectInfo(object_loc.GetLocator(),
+            eNFL_NotFound, &object_loc, 0, NULL);
 }
 
 
@@ -421,7 +454,7 @@ ENetStorageRemoveResult CNotFound::RemoveImpl()
 void CNotFound::SetExpirationImpl(const CTimeout&)
 {
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<
+            "NetStorageObject \"" << LocatorToStr() <<
             "\" could not be found in any of the designated locations.");
 }
 
@@ -429,11 +462,12 @@ void CNotFound::SetExpirationImpl(const CTimeout&)
 bool CNetCache::Init()
 {
     if (!m_Client) {
-        if (m_ObjectLoc.GetLocation() == eNFL_NetCache) {
-            m_Client = CNetICacheClient(m_ObjectLoc.GetNCServiceName(),
-                    m_ObjectLoc.GetAppDomain(), kEmptyStr);
+        TObjLoc& object_loc(Locator());
+        if (object_loc.GetLocation() == eNFL_NetCache) {
+            m_Client = CNetICacheClient(object_loc.GetNCServiceName(),
+                    object_loc.GetAppDomain(), kEmptyStr);
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-            if (m_ObjectLoc.IsXSiteProxyAllowed())
+            if (object_loc.IsXSiteProxyAllowed())
                 m_Client.GetService().AllowXSiteConnections();
 #endif
         } else if (m_Context->icache_client)
@@ -448,7 +482,7 @@ bool CNetCache::Init()
 void CNetCache::SetLocator()
 {
     CNetService service(m_Client.GetService());
-    m_ObjectLoc.SetLocation_NetCache(
+    Locator().SetLocation_NetCache(
             service.GetServiceName(),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
             service.IsUsingXSiteProxy() ? true :
@@ -463,10 +497,11 @@ IState* CNetCache::StartRead(void* buf, size_t count,
     _ASSERT(result);
 
     size_t blob_size;
+    TObjLoc& object_loc(Locator());
     CRONetCache::TReaderPtr reader(m_Client.GetReadStream(
-                m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr, &blob_size,
+                object_loc.GetShortUniqueKey(), 0, kEmptyStr, &blob_size,
                 (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
-                nc_cache_name = m_ObjectLoc.GetAppDomain())));
+                nc_cache_name = object_loc.GetAppDomain())));
 
     if (!reader.get()) {
         return NULL;
@@ -483,9 +518,10 @@ IState* CNetCache::StartWrite(const void* buf, size_t count,
 {
     _ASSERT(result);
 
+    TObjLoc& object_loc(Locator());
     CWONetCache::TWriterPtr writer(m_Client.GetNetCacheWriter(
-                m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
-                nc_cache_name = m_ObjectLoc.GetAppDomain()));
+                object_loc.GetShortUniqueKey(), 0, kEmptyStr,
+                nc_cache_name = object_loc.GetAppDomain()));
 
     if (!writer.get()) {
         return NULL;
@@ -503,9 +539,10 @@ Uint8 CNetCache::GetSizeImpl()
     // TODO:
     // Consider using CONVERT_NETCACHEEXCEPTION for all CNetCache methods
     try {
+        TObjLoc& object_loc(Locator());
         return m_Client.GetBlobSize(
-                m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
-                nc_cache_name = m_ObjectLoc.GetAppDomain());
+                object_loc.GetShortUniqueKey(), 0, kEmptyStr,
+                nc_cache_name = object_loc.GetAppDomain());
     }
     catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound) {
@@ -522,11 +559,12 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
     // Check why CNetCacheException is not rethrown for any error code
     // except eBlobNotFound
     CJsonNode blob_info = CJsonNode::NewObjectNode();
+    TObjLoc& object_loc(Locator());
 
     try {
         CNetServerMultilineCmdOutput output = m_Client.GetBlobInfo(
-                m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
-                nc_cache_name = m_ObjectLoc.GetAppDomain());
+                object_loc.GetShortUniqueKey(), 0, kEmptyStr,
+                nc_cache_name = object_loc.GetAppDomain());
 
         string line, key, val;
 
@@ -545,54 +583,57 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
     Uint8 blob_size = size_node && size_node.IsInteger() ?
             (Uint8) size_node.AsInteger() : GetSizeImpl();
 
-    return g_CreateNetStorageObjectInfo(m_ObjectLoc.GetLocator(), eNFL_NetCache,
-            &m_ObjectLoc, blob_size, blob_info);
+    return g_CreateNetStorageObjectInfo(object_loc.GetLocator(), eNFL_NetCache,
+            &object_loc, blob_size, blob_info);
 }
 
 
 // Cannot use ExistsImpl() directly from other methods,
 // as otherwise it would get into thrown exception instead of those methods
-#define NC_EXISTS_IMPL                                                      \
-    if (!m_Client.HasBlob(m_ObjectLoc.GetShortUniqueKey(),                       \
-                kEmptyStr, nc_cache_name = m_ObjectLoc.GetAppDomain())) {   \
+#define NC_EXISTS_IMPL(object_loc)                                          \
+    if (!m_Client.HasBlob(object_loc.GetShortUniqueKey(),                   \
+                kEmptyStr, nc_cache_name = object_loc.GetAppDomain())) {    \
         /* Have to throw to let other locations try */                      \
         NCBI_THROW_FMT(CNetStorageException, eNotExists,                    \
-            "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<            \
+            "NetStorageObject \"" << object_loc.GetLocator() <<             \
             "\" does not exist in NetCache.");                              \
     }
 
 
 bool CNetCache::ExistsImpl()
 {
-    LOG_POST(Trace << "Checking existence in NetCache " << m_ObjectLoc.GetLocator());
-    NC_EXISTS_IMPL;
+    TObjLoc& object_loc(Locator());
+    LOG_POST(Trace << "Checking existence in NetCache " << object_loc.GetLocator());
+    NC_EXISTS_IMPL(object_loc);
     return true;
 }
 
 
 ENetStorageRemoveResult CNetCache::RemoveImpl()
 {
-    LOG_POST(Trace << "Trying to remove from NetCache " << m_ObjectLoc.GetLocator());
+    TObjLoc& object_loc(Locator());
+    LOG_POST(Trace << "Trying to remove from NetCache " << object_loc.GetLocator());
 
     // NetCache returns OK on removing already-removed/non-existent blobs,
     // so have to check for existence first and throw if not
-    NC_EXISTS_IMPL;
-    m_Client.RemoveBlob(m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
-            nc_cache_name = m_ObjectLoc.GetAppDomain());
+    NC_EXISTS_IMPL(object_loc);
+    m_Client.RemoveBlob(object_loc.GetShortUniqueKey(), 0, kEmptyStr,
+            nc_cache_name = object_loc.GetAppDomain());
     return eNSTRR_Removed;
 }
 
 
 void CNetCache::SetExpirationImpl(const CTimeout& ttl)
 {
-    NC_EXISTS_IMPL;
-    m_Client.ProlongBlobLifetime(m_ObjectLoc.GetShortUniqueKey(), ttl);
+    TObjLoc& object_loc(Locator());
+    NC_EXISTS_IMPL(object_loc);
+    m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), ttl);
 }
 
 
 void CFileTrack::SetLocator()
 {
-    m_ObjectLoc.SetLocation_FileTrack(m_Context->filetrack_api.config.site);
+    Locator().SetLocation_FileTrack(m_Context->filetrack_api.config.site);
 }
 
 
@@ -601,7 +642,7 @@ IState* CFileTrack::StartRead(void* buf, size_t count,
 {
     _ASSERT(result);
 
-    CROFileTrack::TRequest request = m_Context->filetrack_api.StartDownload(m_ObjectLoc);
+    CROFileTrack::TRequest request = m_Context->filetrack_api.StartDownload(Locator());
 
     try {
         m_Read.Set(request);
@@ -633,7 +674,7 @@ IState* CFileTrack::StartWrite(const void* buf, size_t count,
     try { exists = ExistsImpl(); } catch (...) { }
     if (exists) RemoveImpl();
 
-    CWOFileTrack::TRequest request = m_Context->filetrack_api.StartUpload(m_ObjectLoc);
+    CWOFileTrack::TRequest request = m_Context->filetrack_api.StartUpload(Locator());
     m_Write.Set(request);
     *result = m_Write.WriteImpl(buf, count, bytes_written);
     SetLocator();
@@ -644,14 +685,15 @@ IState* CFileTrack::StartWrite(const void* buf, size_t count,
 Uint8 CFileTrack::GetSizeImpl()
 {
     return (Uint8) m_Context->filetrack_api.GetFileInfo(
-            m_ObjectLoc).GetInteger("size");
+            Locator()).GetInteger("size");
 }
 
 
 CNetStorageObjectInfo CFileTrack::GetInfoImpl()
 {
+    TObjLoc& object_loc(Locator());
     CJsonNode file_info_node =
-            m_Context->filetrack_api.GetFileInfo(m_ObjectLoc);
+            m_Context->filetrack_api.GetFileInfo(object_loc);
 
     Uint8 file_size = 0;
 
@@ -660,44 +702,47 @@ CNetStorageObjectInfo CFileTrack::GetInfoImpl()
     if (size_node)
         file_size = (Uint8) size_node.AsInteger();
 
-    return g_CreateNetStorageObjectInfo(m_ObjectLoc.GetLocator(),
-            eNFL_FileTrack, &m_ObjectLoc, file_size, file_info_node);
+    return g_CreateNetStorageObjectInfo(object_loc.GetLocator(),
+            eNFL_FileTrack, &object_loc, file_size, file_info_node);
 }
 
 
 // Cannot use ExistsImpl() directly from other methods,
 // as otherwise it would get into thrown exception instead of those methods
-#define FT_EXISTS_IMPL                                              \
-    if (m_Context->filetrack_api.GetFileInfo(m_ObjectLoc).          \
+#define FT_EXISTS_IMPL(object_loc)                                  \
+    if (m_Context->filetrack_api.GetFileInfo(object_loc).           \
             GetBoolean("deleted")) {                                \
         /* Have to throw to let other locations try */              \
         NCBI_THROW_FMT(CNetStorageException, eNotExists,            \
-            "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<    \
+            "NetStorageObject \"" << object_loc.GetLocator() <<     \
             "\" does not exist in FileTrack.");                     \
     }
 
 
 bool CFileTrack::ExistsImpl()
 {
-    LOG_POST(Trace << "Checking existence in FileTrack " << m_ObjectLoc.GetLocator());
-    FT_EXISTS_IMPL;
+    TObjLoc& object_loc(Locator());
+    LOG_POST(Trace << "Checking existence in FileTrack " << object_loc.GetLocator());
+    FT_EXISTS_IMPL(object_loc);
     return true;
 }
 
 
 ENetStorageRemoveResult CFileTrack::RemoveImpl()
 {
-    LOG_POST(Trace << "Trying to remove from FileTrack " << m_ObjectLoc.GetLocator());
-    m_Context->filetrack_api.Remove(m_ObjectLoc);
+    TObjLoc& object_loc(Locator());
+    LOG_POST(Trace << "Trying to remove from FileTrack " << object_loc.GetLocator());
+    m_Context->filetrack_api.Remove(object_loc);
     return eNSTRR_Removed;
 }
 
 
 void CFileTrack::SetExpirationImpl(const CTimeout&)
 {
+    TObjLoc& object_loc(Locator());
     // By default objects in FileTrack do not have expiration,
     // so checking only object existence
-    FT_EXISTS_IMPL;
+    FT_EXISTS_IMPL(object_loc);
     NCBI_THROW_FMT(CNetStorageException, eNotSupported,
             "SetExpiration() is not supported for FileTrack");
 }
@@ -721,9 +766,9 @@ private:
 
     TObjLoc m_ObjectLoc;
     CRef<SContext> m_Context;
-    CNotFound m_NotFound;
-    CNetCache m_NetCache;
-    CFileTrack m_FileTrack;
+    CLocatorHolding<CNotFound> m_NotFound;
+    CLocatorHolding<CNetCache> m_NetCache;
+    CLocatorHolding<CFileTrack> m_FileTrack;
     stack<CLocation*> m_Locations;
 };
 
@@ -731,7 +776,7 @@ private:
 CSelector::CSelector(const TObjLoc& loc, SContext* context)
     : m_ObjectLoc(loc),
         m_Context(context),
-        m_NotFound(m_ObjectLoc),
+        m_NotFound(m_ObjectLoc, eBaseCtorExpectsLocator),
         m_NetCache(m_ObjectLoc, m_Context),
         m_FileTrack(m_ObjectLoc, m_Context)
 {
@@ -741,7 +786,7 @@ CSelector::CSelector(const TObjLoc& loc, SContext* context)
 CSelector::CSelector(const TObjLoc& loc, SContext* context, TNetStorageFlags flags)
     : m_ObjectLoc(loc),
         m_Context(context),
-        m_NotFound(m_ObjectLoc),
+        m_NotFound(m_ObjectLoc, eBaseCtorExpectsLocator),
         m_NetCache(m_ObjectLoc, m_Context),
         m_FileTrack(m_ObjectLoc, m_Context)
 {
