@@ -79,7 +79,7 @@
 #define DEFAULT_DB_PASSWORD "allowed"
 #define DEFAULT_DB_DRIVER   "ftds;ctlib"
 #define DEFAULT_NUM_CONN    2
-#define MAX_MT_CONN         5
+#define MAX_MT_CONN         256
 #define DEFAULT_EXCL_WGS_MASTER false
 #define DEFAULT_TIMEOUT      40
 #define DEFAULT_OPEN_TIMEOUT 20
