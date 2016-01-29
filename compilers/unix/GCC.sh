@@ -24,7 +24,10 @@ case "$1" in
   [1-9].*)
      # Look for the specified version in various reasonable places
      # (tuned for NCBI's installations).
-     if /usr/local/gcc-$1/bin/$CXX -dumpversion >/dev/null 2>&1; then
+     if /opt/ncbi/gcc/$1/bin/$CXX -dumpversion >/dev/null 2>&1; then
+       CXX=/opt/ncbi/gcc/$1/bin/$CXX
+       CC=/opt/ncbi/gcc/$1/bin/$CC
+     elif /usr/local/gcc-$1/bin/$CXX -dumpversion >/dev/null 2>&1; then
        CXX=/usr/local/gcc-$1/bin/$CXX
        CC=/usr/local/gcc-$1/bin/$CC
      elif /usr/local/gcc/$1/bin/$CXX -dumpversion >/dev/null 2>&1; then
