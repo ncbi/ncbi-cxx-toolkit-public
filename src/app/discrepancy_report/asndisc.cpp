@@ -475,3 +475,22 @@ int main(int argc, const char* argv[])
 {
     return CDiscRepApp().AppMain(argc, argv);
 }
+
+// some functions for use when in a debugger
+using namespace ncbi;
+using namespace objects;
+
+void PS(const CSerialObject *obj, CNcbiOstream *out_strm = &cout)
+{
+    CNcbiOstream & real_strm = ( out_strm ? *out_strm : cout );
+    if( obj ) {
+        real_strm << noskipws << MSerial_AsnText << *obj << endl;
+    } else {
+        real_strm << "NULL" << endl;
+    }
+}
+
+CTempString *TMP_MK(const char *a_str)
+{
+    return new CTempString(a_str);
+}
