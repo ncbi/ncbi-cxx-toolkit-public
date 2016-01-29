@@ -7279,6 +7279,7 @@ extern void Abort(void)
     // Check environment variable for silent exit
     const TXChar* value = NcbiSys_getenv(_TX("DIAG_SILENT_ABORT"));
     if (value  &&  (*value == _TX('Y')  ||  *value == _TX('y')  ||  *value == _TX('1'))) {
+        ::fflush(0);
         ::_exit(255);
     }
     else if (value  &&  (*value == _TX('N')  ||  *value == _TX('n') || *value == _TX('0'))) {
@@ -7286,6 +7287,7 @@ extern void Abort(void)
     }
     else {
 #if defined(NDEBUG)
+        ::fflush(0);
         ::_exit(255);
 #else
         ::abort();

@@ -374,6 +374,7 @@ extern void LOG_WriteInternal
     /* unconditional exit/abort on fatal error */
     if (call_data->level == eLOG_Fatal) {
 #ifdef NDEBUG
+        fflush(0);
         _exit(255);
 #else
         abort();
