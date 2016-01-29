@@ -33,6 +33,7 @@
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/general/User_object.hpp>
@@ -83,46 +84,49 @@ bool CUCSCRegionWriter::WriteAnnot(
     
     if (annot.IsSetData() && annot.GetData().IsFtable())
     {
-        size_t line_number=0;
+        //size_t line_number=0;
         ITERATE(CSeq_annot::C_Data::TFtable,it, annot.GetData().GetFtable())
         {
             const CSeq_feat& feat = **it;
-            if (!feat.IsSetData()) continue;
+            //if (!feat.IsSetData()) continue;
             if (!feat.IsSetLocation()) continue;
-            if (!feat.IsSetTitle()) continue;
-            if (!feat.GetData().IsRegion()) continue;
+            //if (!feat.IsSetTitle()) continue;
+            //if (!feat.GetData().IsRegion()) continue;
+            
+            CSeq_loc PackedLoc;
+            PackedLoc.Assign(feat.GetLocation());
+            PackedLoc.ChangeToPackedInt();
+            
+            ITERATE(CPacked_seqint::Tdata, lociter, PackedLoc.GetPacked_int().Get()) {
+                const CSeq_interval& CurrInt = **lociter;
 
-            int from_loc = -1;
-            int to_loc = -1;
-            if (feat.GetLocation().IsInt())
-            {
-                if (feat.GetLocation().GetInt().IsSetFrom())
-                    from_loc = feat.GetLocation().GetInt().GetFrom();
-                if (feat.GetLocation().GetInt().IsSetTo())
-                    to_loc = feat.GetLocation().GetInt().GetTo();
+                int from_loc = -1;
+                int to_loc = -1;
+                if (CurrInt.IsSetFrom())
+                    from_loc = CurrInt.GetFrom();
+                if (CurrInt.IsSetTo())
+                    to_loc = CurrInt.GetTo();
+
+                //const string& region = feat.GetData().GetRegion();
+                string strand;
+                if ((m_uFlags & fSkipStrand) == 0 &&
+                   CurrInt.IsSetStrand())
+                {
+                    if (CurrInt.GetStrand() == eNa_strand_plus)
+                        strand = "+";
+                    if (CurrInt.GetStrand() == eNa_strand_minus)
+                        strand = "-";
+                }
+                string label;
+                feat.GetLocation().GetId()->GetLabel(&label, CSeq_id::eContent);
+
+                m_Os << label << separator[0] 
+                     << from_loc + 1 << separator[1]
+                     << to_loc + 1;
+                if (!strand.empty())
+                    m_Os << separator[2] << strand;
+                m_Os << endl;
             }
-            else
-                continue;
-
-            const string& region = feat.GetData().GetRegion();
-            string strand;
-            if ((m_uFlags & fSkipStrand) == 0 &&
-               feat.GetLocation().IsSetStrand())
-            {
-                if (feat.GetLocation().GetStrand() == eNa_strand_plus)
-                    strand = "+";
-                if (feat.GetLocation().GetStrand() == eNa_strand_minus)
-                    strand = "-";
-            }
-            string label;
-            feat.GetLocation().GetId()->GetLabel(&label, CSeq_id::eContent);
-
-            m_Os << label << separator[0] 
-                 << from_loc + 1 << separator[1]
-                 << to_loc + 1;
-            if (!strand.empty())
-                m_Os << separator[2] << strand;
-            m_Os << endl;
         }
 
     return true;
