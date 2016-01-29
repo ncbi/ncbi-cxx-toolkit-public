@@ -2561,6 +2561,42 @@ bool CValidError_bioseq::GetTSANStretchErrors(const CBioseq& seq)
 }
 
 
+// check to see if sequence is all Ns
+bool CValidError_bioseq::IsAllNs(CBioseq_Handle bsh)
+{
+    bool rval = true;
+    try {
+        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        for (CSeqVector_CI sv_iter(vec); (sv_iter) && rval; ++sv_iter) {
+            if (*sv_iter != 'N') {
+                rval = false;
+            }
+        }
+    } catch (CException& e) {
+
+    }
+    return rval;
+}
+
+int CValidError_bioseq::PctNs(CBioseq_Handle bsh)
+{
+    int pct_n = 0;
+    try {
+        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        TSeqPos num_ns = 0;
+        for (size_t i = 0; i < vec.size(); i++) {
+            if (vec[i] == 'N' && !vec.IsInGap(i)) {
+                num_ns++;
+            }
+        }
+        pct_n = (num_ns * 100) / bsh.GetBioseqLength();
+    } catch (CException& e) {
+
+    }
+    return pct_n;
+}
+
+
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 {
     if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
@@ -2574,7 +2610,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
     CSeq_inst::TRepr repr = seq.GetInst().GetRepr();
 
     // only check for raw or for delta sequences that are delta lit only
-    if ( repr != CSeq_inst::eRepr_raw  && (repr != CSeq_inst::eRepr_delta  ||  !x_IsDeltaLitOnly(seq.GetInst()))) {
+    if (repr == CSeq_inst::eRepr_virtual || repr == CSeq_inst::eRepr_map) {
         return;
     }
 
@@ -2584,18 +2620,9 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         return;
     }    
 
-    try {            
-        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    try { 
 
-        // check to see if sequence is all Ns
-        bool all_ns = true;
-        for ( CSeqVector_CI sv_iter(vec); (sv_iter) && all_ns ; ++sv_iter ) {
-            if (*sv_iter != 'N') {
-                all_ns = false;
-            }
-        }
-
-        if (all_ns) {
+        if (IsAllNs(bsh)) {
             PostErr(eDiag_Error, eErr_SEQ_INST_AllNs, "Sequence is all Ns", seq);
             return;
         }
@@ -2682,13 +2709,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             }
         } else {
             // not TSA, just check for really high N percent
-            TSeqPos num_ns = 0;
-            for (size_t i = 0; i < vec.size(); i++) {
-                if (vec[i] == 'N' && !vec.IsInGap(i)) {
-                    num_ns++;
-                }
-            }
-            int pct_n = (num_ns * 100) / seq.GetLength();
+            int pct_n = PctNs(bsh);
             if (pct_n > 50) {
                 PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent, 
                             "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);

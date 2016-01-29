@@ -1378,6 +1378,8 @@ public:
     static CConstRef <CSeq_feat> GetGeneForFeature (
         const CSeq_feat& f1, CScope *scope);
     static bool IsSelfReferential(const CBioseq& seq);
+    static bool IsAllNs(CBioseq_Handle bsh);
+    static int PctNs(CBioseq_Handle bsh);
 
     // DBLink user object counters
     int m_dblink_count;

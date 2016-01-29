@@ -1197,6 +1197,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidAlphabet)
 
     entry->SetSeq().SetInst().SetSeq_data().SetIupacaa();
     expected_errors[0]->SetErrMsg("Using a protein alphabet on a nucleic acid");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "AllNs", "Sequence is all Ns"));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3643,6 +3645,7 @@ BOOST_AUTO_TEST_CASE(Test_DeltaComponentIsGi0)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "DeltaComponentIsGi0", "Delta component is gi|0"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "AllNs", "Sequence is all Ns"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3680,6 +3683,7 @@ BOOST_AUTO_TEST_CASE(Test_SelfReferentialSequence)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "SelfReferentialSequence", "Self-referential delta sequence"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "AllNs", "Sequence is all Ns"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
