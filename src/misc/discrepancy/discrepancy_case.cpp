@@ -23,7 +23,7 @@
  *
  * =========================================================================
  *
- * Authors: Sema
+ * Authors: Sema Kachalo
  *
  */
 
@@ -38,7 +38,7 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/macro/String_constraint.hpp>
-#include <objects/misc/sequence_util_macros.hpp>
+#include <objects/misc/sequence_macros.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -1261,6 +1261,62 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, CSeqFeatData, eOncaller,
 }
 
 DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_MRNA)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc, "Bad BGPIPE qualifiers")
+{
+    if( context.IsRefseq() || ! context.IsBGPipe() ) {
+        return;
+    }
+
+    static const string kDiscMessage(
+        // Note the "(s)" instead of "[s]" at the end so the submitter
+        // will see that part as-is.
+        "[n] feature[s] contain[S] invalid BGPIPE qualifiers");
+    if( STRING_FIELD_NOT_EMPTY(obj, Except_text) ) {
+        m_Objs[kDiscMessage].Add(
+            *new CDiscrepancyObject(
+                context.GetCurrentSeq_feat(), context.GetScope(),
+                context.GetFile(), context.GetKeepRef()),
+            false);
+        return;
+    } else if ( FIELD_IS_SET_AND_IS(obj, Data, Cdregion) ) {
+        const CCdregion & cdregion = obj.GetData().GetCdregion();
+        if( RAW_FIELD_IS_EMPTY_OR_UNSET(cdregion, Code_break) ) {
+            return;
+        }
+        if(GET_STRING_FLD_OR_BLANK(obj, Comment) != "ambiguity in stop codon")
+        {
+            m_Objs[kDiscMessage].Add(
+                *new CDiscrepancyObject(
+                    context.GetCurrentSeq_feat(), context.GetScope(),
+                    context.GetFile(), context.GetKeepRef()),
+                false);
+            return;
+        }
+
+        // check if any code break is a stop codon
+        FOR_EACH_CODEBREAK_ON_CDREGION(code_break_it, cdregion) {
+            const CCode_break & code_break = **code_break_it;
+            if( FIELD_IS_SET_AND_IS(code_break, Aa, Ncbieaa) &&
+                // '*' means "stop codon"
+                code_break.GetAa().GetNcbieaa() == static_cast<int>('*'))
+            {
+                return;
+            }
+        }
+        m_Objs[kDiscMessage].Add(
+            *new CDiscrepancyObject(
+                context.GetCurrentSeq_feat(), context.GetScope(),
+                context.GetFile(), context.GetKeepRef()),
+            false);
+        return;
+    }
+}
+
+DISCREPANCY_SUMMARIZE(BAD_BGPIPE_QUALS)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
