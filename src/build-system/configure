@@ -4569,17 +4569,28 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 #### Point ICC at a suitable GCC version ASAP.
 case "/$CXX" in
    */icpc )
-      if test -d /usr/local/gcc; then
+      if test -d /opt/ncbi/gcc -o -d /usr/local/gcc; then
          case "`$CXX -dumpversion`:$host_cpu" in
             *:i?86)           v=4.4.5 ;;
             ?.* | 1[01].* ) v=4.0.1 ;;
-            *)                v=4.4.2 ;;
+            1[23].*)        v=4.4.2 ;;
+            *)                v=4.9.3 ;;
          esac
-         gcc=/usr/local/gcc/$v/bin/gcc
-         if test -x $gcc; then
-            CC="$CC -gcc-name=$gcc"
-            CXX="$CXX -gcc-name=$gcc"
-         fi
+         for gcc in /opt/ncbi/gcc/$v/bin/gcc /usr/local/gcc/$v/bin/gcc; do
+            if test -x $gcc; then
+               CC="$CC -gcc-name=$gcc"
+               CXX="$CXX -gcc-name=$gcc"
+               case $gcc in
+                  /opt/* )
+                     LDFLAGS="-Wl,-rpath,/opt/ncbi/gcc/$v/lib64 $LDFLAGS"
+                     ;;
+                  /usr/* )
+                     LDFLAGS="-Wl,-rpath,/usr/lib64/gcc-$v $LDFLAGS"
+                     ;;
+               esac
+               break
+            fi
+         done
       fi
       ;;
 esac
