@@ -264,6 +264,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
     CType<CBioseq>::AddTo(i);
     CType<CBioseq_set>::AddTo(i);
     CType<CSeq_feat>::AddTo(i);
+    CType<CSeq_annot>::AddTo(i);
 #define ENABLE_DISCREPANCY_TYPE(type) if (m_Enable_##type) CType<type>::AddTo(i);
     ENABLE_DISCREPANCY_TYPE(CSeq_inst)
     // ENABLE_DISCREPANCY_TYPE(CSeq_feat) - don't need!
@@ -272,7 +273,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
     ENABLE_DISCREPANCY_TYPE(CBioSource)
     ENABLE_DISCREPANCY_TYPE(COrgName)
     ENABLE_DISCREPANCY_TYPE(CRNA_ref)
-    ENABLE_DISCREPANCY_TYPE(CSeq_annot)
+    // Don't ENABLE_DISCREPANCY_TYPE(CSeq_annot), it is handled separately!
     // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
     
     for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
@@ -307,6 +308,24 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
                     Call(**it, obj);
                 }
             }
+        } else if(CType<CSeq_annot>::Match(i)) {
+            // Seq-annots are special because they are the only part of a
+            // Bioseq-set that could appear _after_ its descendents are
+            // traversed.
+            const CSeq_annot & obj = *CType<CSeq_annot>::Get(i);
+            const CSeq_annot_Handle annot_h = m_Scope->GetSeq_annotHandle(obj);
+            if( ! annot_h.GetParentEntry().IsSeq() ) {
+                m_Current_Bioseq.Reset();
+                // if this annot is not on a Bioseq, then we need to check
+                // that the bioseq-set stack is correct in case
+                // we've left any bioseq-sets
+                Update_Bioseq_set_Stack(i);
+            }
+            if (m_Enable_CSeq_annot) {
+                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSeq_annot>* >, it, m_All_CSeq_annot) {
+                    Call(**it, obj);
+                }
+            }
         }
         else if (CType<CSeq_feat>::Match(i)) {
             m_Current_Seq_feat.Reset(m_Scope->GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
@@ -330,7 +349,6 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         HANDLE_DISCREPANCY_TYPE(CBioSource)
         HANDLE_DISCREPANCY_TYPE(COrgName)
         HANDLE_DISCREPANCY_TYPE(CRNA_ref)
-        HANDLE_DISCREPANCY_TYPE(CSeq_annot)
     }
 }
 
