@@ -303,6 +303,8 @@ public:
     static string GetGenomeName(int n);
     bool IsBadLocusTagFormat(const string& locus_tag);
     const CSeq_id * GetProteinId(void);
+    bool IsRefseq(void);
+    bool IsBGPipe(void);
 
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);

@@ -23,7 +23,7 @@
  *
  * =========================================================================
  *
- * Authors: Sema
+ * Authors: Sema Kachalo
  *
  */
 
@@ -32,12 +32,16 @@
 #include "utils.hpp"
 #include <sstream>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 #include <objects/macro/Source_location.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/seq_macros.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <util/xregexp/regexp.hpp>
@@ -134,7 +138,6 @@ static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, cons
 {
     return NStr::FindNoCase(def_lineage, type) != string::npos || def_lineage.empty() && biosrc.IsSetLineage() && NStr::FindNoCase(biosrc.GetLineage(), type) != string::npos;
 }
-
 
 bool CDiscrepancyContext::IsEukaryotic()
 {
@@ -339,6 +342,85 @@ CDiscrepancyContext::GetProteinId(void)
     return protein_id;
 }
 
+bool CDiscrepancyContext::IsRefseq(void)
+{
+    static bool is_refseq = false;
+    static size_t count = 0;
+    if (count == m_Count_Bioseq) {
+        return is_refseq;
+    }
+    count = m_Count_Bioseq;
+
+    is_refseq = false;
+    if( ! GetCurrentBioseq()->IsSetId() ) {
+        // false
+        return is_refseq;
+    }
+    const CBioseq::TId& bioseq_ids = GetCurrentBioseq()->GetId();
+    ITERATE(CBioseq::TId, id_it, bioseq_ids) {
+        const CSeq_id & seq_id = **id_it;
+        if( seq_id.IsOther() ) {
+            // for historical reasons, "other" means "refseq"
+            is_refseq = true;
+            break;
+        }
+    }
+
+    return is_refseq;
+}
+
+bool CDiscrepancyContext::IsBGPipe(void)
+{
+    static bool is_bgpipe = false;
+    static size_t count = 0;
+    if (count == m_Count_Bioseq) {
+        return is_bgpipe;
+    }
+    count = m_Count_Bioseq;
+    is_bgpipe = false;
+
+    CSeqdesc_CI user_desc_ci(
+        m_Scope->GetBioseqHandle(*GetCurrentBioseq()), CSeqdesc::e_User);
+    for( ; ! is_bgpipe && user_desc_ci; ++user_desc_ci) {
+        const CUser_object & user_desc  = user_desc_ci->GetUser();
+        // only look at structured comments
+        if( ! FIELD_IS_SET_AND_IS(user_desc, Type, Str) ||
+            ! NStr::EqualNocase(
+                user_desc.GetType().GetStr(), "StructuredComment") )
+        {
+            continue;
+        }
+
+        CConstRef<CUser_field> struccmt_prefix_field =
+            user_desc.GetFieldRef(
+                "StructuredCommentPrefix", ".", NStr::eNocase);
+        if( ! struccmt_prefix_field ||
+            ! FIELD_IS_SET_AND_IS(*struccmt_prefix_field, Data, Str) ||
+            ! NStr::EqualNocase(
+                struccmt_prefix_field->GetData().GetStr(),
+                "##Genome-Annotation-Data-START##") )
+        {
+            continue;
+        }
+
+        CConstRef<CUser_field> annot_pipeline_field =
+            user_desc.GetFieldRef(
+                "Annotation Pipeline", ".", NStr::eNocase);
+        if( ! annot_pipeline_field ||
+            ! FIELD_IS_SET_AND_IS(*annot_pipeline_field, Data, Str) ||
+            ! NStr::EqualNocase(
+                annot_pipeline_field->GetData().GetStr(),
+                "NCBI Prokaryotic Genome Annotation Pipeline") )
+        {
+            continue;
+        }
+
+        is_bgpipe = true;
+        return is_bgpipe;
+    }
+
+    return is_bgpipe;
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
