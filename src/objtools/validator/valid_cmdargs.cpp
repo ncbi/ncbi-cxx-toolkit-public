@@ -77,6 +77,7 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
     }
     if (args["Z"]) {
         options |= CValidator::eVal_far_fetch_cds_products;
+        options |= CValidator::eVal_far_fetch_mrna_products;
     }
     if (args["X"]) {
         options |= CValidator::eVal_val_exons;
