@@ -3323,7 +3323,7 @@ CDiagContext& GetDiagContext(void)
 EDiagSev       CDiagBuffer::sm_PostSeverity       = eDiag_Error;
 #else
 EDiagSev       CDiagBuffer::sm_PostSeverity       = eDiag_Warning;
-#endif /* else!NDEBUG */
+#endif
 
 EDiagSevChange CDiagBuffer::sm_PostSeverityChange = eDiagSC_Unknown;
                                                   // to be set on first request
@@ -7257,7 +7257,7 @@ extern void SetDoubleDiagHandler(void)
 
 
 //////////////////////////////////////////////////////
-//  abort handler
+//  Abort handler
 
 
 static FAbortHandler s_UserAbortHandler = 0;
@@ -7270,25 +7270,25 @@ extern void SetAbortHandler(FAbortHandler func)
 
 extern void Abort(void)
 {
-    // If defined user abort handler then call it 
+    // If there is a user abort handler then call it 
     if ( s_UserAbortHandler )
         s_UserAbortHandler();
-    
-    // If don't defined handler or application doesn't still terminated
+
+    // If there's no handler or application is still running
 
     // Check environment variable for silent exit
     const TXChar* value = NcbiSys_getenv(_TX("DIAG_SILENT_ABORT"));
     if (value  &&  (*value == _TX('Y')  ||  *value == _TX('y')  ||  *value == _TX('1'))) {
-        ::exit(255);
+        ::_exit(255);
     }
     else if (value  &&  (*value == _TX('N')  ||  *value == _TX('n') || *value == _TX('0'))) {
         ::abort();
     }
     else {
-#if defined(_DEBUG)
-        ::abort();
+#if defined(NDEBUG)
+        ::_exit(255);
 #else
-        ::exit(255);
+        ::abort();
 #endif
     }
 }
