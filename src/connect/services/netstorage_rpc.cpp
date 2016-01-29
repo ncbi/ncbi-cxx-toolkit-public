@@ -693,11 +693,10 @@ ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
     }
 
     CJsonNode request(MkObjectRequest("DELETE", object_loc));
+    CJsonNode response(Exchange(GetServiceFromLocator(object_loc), request));
+    CJsonNode not_found(response.GetByKeyOrNull("NotFound"));
 
-    Exchange(GetServiceFromLocator(object_loc), request);
-
-    // TODO: Check result after it is implemented (CXX-7727)
-    return eNSTRR_Removed;
+    return not_found && not_found.AsBoolean() ? eNSTRR_NotFound : eNSTRR_Removed;
 }
 
 class CJsonOverUTTPExecHandler : public INetServerExecHandler
