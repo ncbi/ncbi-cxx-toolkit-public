@@ -46,6 +46,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/prefetch_manager.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -70,6 +71,7 @@
 
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/error_codes.hpp>
+#include <util/checksum.hpp>
 #include <math.h>
 #include <algorithm>
 
@@ -3408,6 +3410,20 @@ void CScope_Impl::GetSequenceStates(TSequenceStates& ret,
 }
 
 
+static
+int sx_CalcHash(const CBioseq_Handle& bh)
+{
+    CChecksum sum(CChecksum::eCRC32INSD);
+    CSeqVector sv(bh, bh.eCoding_Iupac);
+    for ( CSeqVector_CI it(sv); it; ) {
+        TSeqPos size = it.GetBufferSize();
+        sum.AddChars(it.GetBufferPtr(), size);
+        it += size;
+    }
+    return sum.GetChecksum();
+}
+
+
 int CScope_Impl::GetSequenceHash(const CSeq_id_Handle& idh, TGetFlags flags)
 {
     TConfReadLockGuard rguard(m_ConfLock);
@@ -3417,6 +3433,11 @@ int CScope_Impl::GetSequenceHash(const CSeq_id_Handle& idh, TGetFlags flags)
         pair<int, bool> hash = it->GetDataSource().GetSequenceHash(idh);
         if ( hash.second ) {
             return hash.first;
+        }
+    }
+    if ( (flags & CScope::fTryHarder) ) {
+        if ( CBioseq_Handle bh = GetBioseqHandle(idh, CScope::eGetBioseq_All) ) {
+            return sx_CalcHash(bh);
         }
     }
     if ( (flags & CScope::fThrowOnMissing) ) {
@@ -3444,6 +3465,18 @@ void CScope_Impl::GetSequenceHashes(TSequenceStates& ret,
         CPrefetchManager::IsActive();
         it->GetDataSource().GetSequenceHashes(ids, loaded, ret);
         remaining = sx_CountFalse(loaded);
+    }
+    if ( remaining && (flags & CScope::fTryHarder) ) {
+        for ( size_t i = 0; i < count; ++i ) {
+            if ( loaded[i] ) {
+                continue;
+            }
+            if ( CBioseq_Handle bh = GetBioseqHandle(ids[i], CScope::eGetBioseq_All) ) {
+                ret[i] = sx_CalcHash(bh);
+                loaded[i] = true;
+                --remaining;
+            }
+        }
     }
     if ( remaining && (flags & CScope::fThrowOnMissing) ) {
         NCBI_THROW(CObjMgrException, eFindFailed,
