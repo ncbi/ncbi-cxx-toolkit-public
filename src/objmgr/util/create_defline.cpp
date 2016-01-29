@@ -1042,7 +1042,7 @@ static bool x_EndsWithStrain (
     return false;
 }
 
-void CDeflineGenerator::x_SetTitleFromBioSrcComplete (void)
+void CDeflineGenerator::x_SetTitleFromBioSrc (void)
 
 {
     string clnbuf;
@@ -1080,12 +1080,14 @@ void CDeflineGenerator::x_SetTitleFromBioSrcComplete (void)
     }
 
     if (! m_Organelle.empty()) {
-        if (NStr::FindNoCase(m_Organelle, "chromosome") == NPOS) {
+        if (NStr::FindNoCase(m_Organelle, "chromosome") != NPOS) {
+            /*
             if (m_Chromosome.empty()) {
                 joiner.Add(" ").Add(m_Organelle);
             }
-        } else if (NStr::FindNoCase(m_Organelle, "plasmid") == NPOS) {
-            if (m_Chromosome.empty() && m_Chromosome.empty()) {
+            */
+        } else if (NStr::FindNoCase(m_Organelle, "plasmid") != NPOS) {
+            if (m_Plasmid.empty() && m_Chromosome.empty()) {
                 joiner.Add(" ").Add(m_Organelle);
             }
         } else {
@@ -1094,52 +1096,7 @@ void CDeflineGenerator::x_SetTitleFromBioSrcComplete (void)
     }
 
     if (! m_Plasmid.empty()) {
-        joiner.Add(" plasmid ").Add(m_Plasmid);
-    }
-
-    joiner.Join(&m_MainTitle);
-    NStr::TruncateSpacesInPlace(m_MainTitle);
-}
-
-void CDeflineGenerator::x_SetTitleFromBioSrc (void)
-
-{
-    string clnbuf;
-    vector<CTempString> clnvec;
-    CTextJoiner<12, CTempString> joiner;
-
-    joiner.Add(m_Taxname);
-
-    if (! m_Strain.empty()) {
-        CTempString add(m_Strain, 0, m_Strain.find(';'));
-        if (! x_EndsWithStrain (m_Taxname, add)) {
-            joiner.Add(" strain ").Add(add);
-        }
-    }
-    /*
-    if (! m_Breed.empty()) {
-        joiner.Add(" breed ").Add(m_Breed.substr (0, m_Breed.find(';')));
-    }
-    if (! m_Cultivar.empty()) {
-        joiner.Add(" cultivar ").Add(m_Cultivar.substr (0, m_Cultivar.find(';')));
-    }
-    if (! m_Isolate.empty()) {
-        joiner.Add(" isolate ").Add(m_Isolate);
-    }
-    */
-    if (! m_Chromosome.empty()) {
-        joiner.Add(" chromosome ").Add(m_Chromosome);
-    }
-    if (m_has_clone) {
-        x_DescribeClones (clnvec, clnbuf);
-        ITERATE (vector<CTempString>, it, clnvec) {
-            joiner.Add(*it);
-        }
-    }
-    if (! m_Map.empty()) {
-        joiner.Add(" map ").Add(m_Map);
-    }
-    if (m_IsWGS  &&  ! m_Plasmid.empty()) {
+        if (NStr::FindNoCase(m_Organelle, "plasmid") != NPOS)
         joiner.Add(" plasmid ").Add(m_Plasmid);
     }
 
@@ -2588,10 +2545,10 @@ string CDeflineGenerator::GenerateDefline (
             x_SetTitleFromGPipe ();
         }
 
-        if (m_DevMode && m_MainTitle.empty() && m_MICompleteness == NCBI_COMPLETENESS(complete)) {
+        if (m_MainTitle.empty()) {
             // title for complete sequence using source fields
-            x_SetTitleFromBioSrcComplete ();
-            if (! m_MainTitle.empty()) {
+            x_SetTitleFromBioSrc ();
+            if (m_DevMode && m_MICompleteness == NCBI_COMPLETENESS(complete) && ! m_MainTitle.empty()) {
                 appendComplete = true;
             }
         }

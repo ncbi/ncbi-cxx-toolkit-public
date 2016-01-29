@@ -138,7 +138,6 @@ private:
     );
 
     void x_SetTitleFromBioSrc (void);
-    void x_SetTitleFromBioSrcComplete (void);
     void x_SetTitleFromNC (void);
     void x_SetTitleFromNM (
         const CBioseq_Handle& bsh
