@@ -439,18 +439,12 @@ public:
     //!@name Constructors and destructor.
     //@{
 
+//NCBI: allocator_ is not initialized intentionally
+// Rapidjson uses in-place constructors in many places (eg, SetNull() method)
+// We want to preserve allocator_ value in such cases
+
     //! Default constructor creates a null value.
-//NCBI: require allocator in ctor
-#if 0
     GenericValue() RAPIDJSON_NOEXCEPT : data_(), flags_(kNullFlag) {}
-#else
-protected:
-    GenericValue() RAPIDJSON_NOEXCEPT : data_(), flags_(kNullFlag) {
-    }
-public:
-    GenericValue(Allocator* allocator) : data_(), flags_(kNullFlag), allocator_(allocator) {
-    }
-#endif
 
 #if RAPIDJSON_HAS_CXX11_RVALUE_REFS
     //! Move constructor in C++11
@@ -1680,7 +1674,7 @@ private:
             data_.a.elements = NULL;
         data_.a.size = data_.a.capacity = count;
 //NCBI: assign allocator
-allocator_ = &allocator;
+SetValueAllocator(&allocator);
     }
 
     //! Initialize this value as object with initial data, without calling destructor.
@@ -1694,7 +1688,7 @@ allocator_ = &allocator;
             data_.o.members = NULL;
         data_.o.size = data_.o.capacity = count;
 //NCBI: assign allocator
-allocator_ = &allocator;
+SetValueAllocator(&allocator);
     }
 
     //! Initialize this value as constant string, without calling destructor.
@@ -1720,7 +1714,7 @@ allocator_ = &allocator;
         std::memcpy(str, s, s.length * sizeof(Ch));
         str[s.length] = '\0';
 //NCBI: assign allocator
-allocator_ = &allocator;
+SetValueAllocator(&allocator);
     }
 
     //! Assignment without calling destructor
@@ -1729,7 +1723,7 @@ allocator_ = &allocator;
         flags_ = rhs.flags_;
         rhs.flags_ = kNullFlag;
 //NCBI: assign allocator
-allocator_ = rhs.allocator_;
+SetValueAllocator(rhs.GetValueAllocator());
     }
 
     template <typename SourceAllocator>
@@ -1748,19 +1742,21 @@ allocator_ = rhs.allocator_;
         return (std::memcmp(str1, str2, sizeof(Ch) * len1) == 0);
     }
 
+protected:
+//NCBI: added allocator
+    Allocator* allocator_;
     Data data_;
     unsigned flags_;
 //NCBI: added allocator
 #if 1
-protected:
-    Allocator* allocator_;
+//protected:
+//    Allocator* allocator_;
 public:
     ValueType& SetValueAllocator(Allocator* allocator) {
         allocator_ = allocator;
         return *this;
     }
     Allocator* GetValueAllocator(void) const {
-        RAPIDJSON_ASSERT(allocator_);
         return allocator_;
     }
 #endif
@@ -1823,7 +1819,7 @@ public:
           parseResult_(rhs.parseResult_)
     {
 // NCBI: moved allocator_into GenericValue
-ValueType::SetValueAllocator(rhs.allocator_);
+ValueType::SetValueAllocator(rhs.GetValueAllocator());
 //        rhs.allocator_ = 0;
 rhs.ValueType::SetValueAllocator(0);
 
@@ -1849,13 +1845,15 @@ rhs.ValueType::SetValueAllocator(0);
 
 // NCBI: moved allocator_into GenericValue
 //        allocator_ = rhs.allocator_;
-        ValueType::allocator_ = rhs.ValueType::allocator_;
+SetValueAllocator(rhs.GetValueAllocator());
 
         ownAllocator_ = rhs.ownAllocator_;
         stack_ = std::move(rhs.stack_);
         parseResult_ = rhs.parseResult_;
 
-        rhs.ValueType::allocator_ = 0;
+// NCBI: moved allocator_into GenericValue
+rhs.SetValueAllocator(0);
+
         rhs.ownAllocator_ = 0;
         rhs.parseResult_ = ParseResult();
 
