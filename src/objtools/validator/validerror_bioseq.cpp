@@ -944,45 +944,35 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
     bool is_wgs = false;
     bool is_grc = false;
 
-    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
-        const CSeqdesc& desc = **it;
-        switch ( desc.Which() ) {
-            case CSeqdesc::e_User:
-                if (desc.GetUser().IsSetType()) {
-                    const CUser_object& usr = desc.GetUser();
-                    const CObject_id& oi = usr.GetType();
-                    if (oi.IsStr() && NStr::CompareNocase(oi.GetStr(), "DBLink") == 0) {
-                        FOR_EACH_USERFIELD_ON_USEROBJECT (ufd_it, usr) {
-                            const CUser_field& fld = **ufd_it;
-                            if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
-                                const string &label_str = GET_FIELD(fld.GetLabel(), Str);
-                                if (NStr::EqualNocase(label_str, "BioProject")) {
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                }
-                break;
-            case CSeqdesc::e_Molinfo:
-                if (desc.GetMolinfo().IsSetTech()) {
-                    if (desc.GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
-                        is_wgs = true;
-                    }
-                }
-                break;
-            case CSeqdesc::e_Title:
-                {
-                    string title = desc.GetTitle();
-                    if (NStr::StartsWith(title, "GRC")) {
-                        is_grc = true;
-                    }
-                }
-                break;
-            default:
-                break;
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    CSeqdesc_CI user(bsh, CSeqdesc::e_User);
+    while (user) {
+        if (user->GetUser().GetObjectType() == CUser_object::eObjectType_DBLink &&
+            user->GetUser().HasField("BioProject", ".", NStr::eNocase)) {
+            // bioproject field found
+            return false;
         }
+        ++user;
     }
+
+    CSeqdesc_CI title(bsh, CSeqdesc::e_Title);
+    while (title) {
+        if (NStr::StartsWith(title->GetTitle(), "GRC")) {
+            is_grc = true;
+            break;
+        }
+        ++title;
+    }
+
+    CSeqdesc_CI molinfo(bsh, CSeqdesc::e_Molinfo);
+    while (molinfo) {
+        if (molinfo->GetMolinfo().IsSetTech() && molinfo->GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
+            is_wgs = true;
+            break;
+        }
+        ++molinfo;
+    }
+
 
     bool is_gb = false, /* is_eb_db = false, */ is_refseq = false, is_ng = false;
 
@@ -1023,9 +1013,9 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
     const CSeq_inst & inst = seq.GetInst();
     CSeq_inst::TRepr repr = inst.GetRepr();
 
-    if ( repr == CSeq_inst::eRepr_delta ) {
+    if (repr == CSeq_inst::eRepr_delta) {
         if (x_IsDeltaLitOnly(inst)) return false;
-    } else {
+    } else if (repr != CSeq_inst::eRepr_map) {
         return false;
     }
 
