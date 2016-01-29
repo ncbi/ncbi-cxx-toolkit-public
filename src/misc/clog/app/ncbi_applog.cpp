@@ -68,7 +68,7 @@
     ncbi_applog extra         <token> [-param PAIRS]  [-timestamp TIME]
     ncbi_applog perf          <token> -status STATUS -time TIMESPAN [-param PAIRS] [-timestamp TIME]
     ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-hostrole] [-hostloc]
-                                      [-logsite] [-pid] [-rid] [-sid] [-srvport]
+                                      [-logsite] [-pid] [-sid] [-phid] [-rid] [-srvport]
                                       [-app_start_time] [-req_start_time]
 
   Special commands (must be used without <token> parameter):
@@ -465,8 +465,9 @@ void CNcbiApplogApp::Init(void)
         arg->AddFlag("hostloc", "Host location.");
         arg->AddFlag("logsite", "Value for logsite parameter.");
         arg->AddFlag("pid",     "Process ID of the application.");
-        arg->AddFlag("rid",     "Request ID.");
         arg->AddFlag("sid",     "Session ID (application-wide or request, depending on the type of token).");
+        arg->AddFlag("phid",    "Hit ID (application-wide value).");
+        arg->AddFlag("rid",     "Request ID.");
         arg->AddFlag("srvport", "Server port.");
         arg->AddFlag("app_start_time", "Application start time (time_t value).");
         arg->AddFlag("req_start_time", "Request start time (for request-type tokens only, time_t value).");
@@ -822,12 +823,12 @@ int CNcbiApplogApp::PrintTokenInformation(ETokenType type)
             cout << m_Info.logsite;
         } else if (arg == "-pid") {
             cout << m_Info.pid;
-        } else if (arg == "-rid") {
-            if (m_Info.rid) cout << m_Info.rid;
         } else if (arg == "-sid") {
             cout << (type == eRequest ? m_Info.sid_req : m_Info.sid_app);
         } else if (arg == "-phid") {
             cout << m_Info.phid_app;
+        } else if (arg == "-rid") {
+            if (m_Info.rid) cout << m_Info.rid;
         } else if (arg == "-srvport") {
             if (m_Info.server_port) cout << m_Info.server_port;
         } else if (arg == "-app_start_time") {
