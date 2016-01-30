@@ -912,6 +912,7 @@ pepXML needs xser
 phytree_format needs taxon1
 phytree_format needs xalgophytree
 pn_ctl needs $(GPIPE_GENCOLL_LIBS)
+pn_ctl needs gpipe_jira
 pn_ctl needs gpipe_prok_clean_prot_names
 pn_ctl needs hmm_file
 pn_ctl needs hmm_hit_handle
@@ -1171,9 +1172,7 @@ vibrantOGL includes3party vibrant
 vibrantOGL needs3party $(OPENGL_LIBS)
 vibrantOGL needs3party ncbiobj
 w_aln_crossaln needs w_hit_matrix
-w_aln_multi needs w_aln_score
-w_aln_multi needs w_data
-w_aln_multi needs w_gl
+w_aln_multi needs w_seq_graphic
 w_aln_score needs w_wx
 w_aln_table needs w_wx
 w_data needs w_wx
@@ -1522,8 +1521,9 @@ xstruct_util needs xstruct_dp
 xsvcgi needs $(DBAPI_CTLIB)
 xsvcgi needs $(OBJMGR_LIBS)
 xsvcgi needs $(ncbi_xreader_pubseqos2)
-xsvcgi needs gui_objutils
+xsvcgi needs gui_objects
 xsvcgi needs ncbi_xcache_netcache
+xsvcgi needs ncbi_xloader_bam
 xsvcgi needs ncbi_xloader_csra
 xsvcgi needs ncbi_xloader_vdbgraph
 xsvcgi needs ncbi_xloader_wgs
