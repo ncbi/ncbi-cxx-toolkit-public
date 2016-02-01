@@ -1045,6 +1045,14 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 
     CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
 
+#ifdef NCBI_OS_DARWIN
+    if (strspn(hostname, ".0123456789") == strlen(hostname)
+        &&  !SOCK_isip(hostname)) {
+        host = 0;
+        goto out;
+    }
+#endif /*NCBI_OS_DARWIN*/
+
     if ((host = inet_addr(hostname)) == htonl(INADDR_NONE)) {
         int error;
 #if defined(HAVE_GETADDRINFO)  &&  !defined(__GLIBC__)
@@ -1144,6 +1152,7 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 #endif /*HAVE_GETADDRINFO && !__GLIBC__*/
     }
 
+out:
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     if (!SOCK_isipEx(hostname, 1)  ||  !host) {
         char addr[40];
