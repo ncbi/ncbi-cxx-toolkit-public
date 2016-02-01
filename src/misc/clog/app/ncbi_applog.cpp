@@ -699,7 +699,7 @@ string CNcbiApplogApp::GenerateToken(ETokenType type) const
                        + NStr::ULongToString(m_Info.app_start_time.ns);
 
     // Request specific pairs
-    if (type ==  eRequest) {
+    if (type == eRequest) {
         token += "&rid=" + NStr::UInt8ToString(m_Info.rid);
         if (!m_Info.sid_req.empty()) {
             token += "&rsid=" + m_Info.sid_req;
@@ -940,10 +940,16 @@ void CNcbiApplogApp::UpdateInfo()
         // Save it if it should be inherited only.
         m_Info.phid_app = g_info->phid;
     }
-    if (!m_Info.host.empty()  &&  g_info->host[0]) {
+    if (m_Info.host.empty()  &&  g_info->host[0]) {
         m_Info.host = g_info->host;
     }
-    if (!m_Info.client.empty()  &&  g_ctx->client[0]) {
+    if (m_Info.sid_app.empty()  &&  g_info->session[0]) {
+        m_Info.sid_app = g_info->session;
+    }
+    if (m_Info.sid_req.empty()  &&  g_ctx->session[0]) {
+        m_Info.sid_req = g_ctx->session;
+    }
+    if (m_Info.client.empty()  &&  g_ctx->client[0]) {
         m_Info.client = g_ctx->client;
     }
 }
