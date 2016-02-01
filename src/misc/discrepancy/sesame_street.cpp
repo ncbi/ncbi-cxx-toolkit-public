@@ -84,13 +84,31 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal t
 }
 
 
+class CSourseQualsAutofixData : public CObject
+{
+public:
+    string m_Qualifier;
+    mutable string m_Value;
+    vector<string> m_Choice;
+    mutable bool m_Ask;
+    void* m_User;
+    CSourseQualsAutofixData() : m_Ask(0), m_User(0) {}
+};
+typedef map<const CReportObj*, CRef<CReportObj> > TReportObjPtrMap;
+
+
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
     CReportNode report;
-    CReportNode::TNodeMap& map = m_Objs.GetMap();
+    CReportNode::TNodeMap& the_map = m_Objs.GetMap();
     TReportObjectList& all = m_Objs["all"].GetObjects();
     size_t total = all.size();
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+    TReportObjPtrMap all_missing;
+    ITERATE (TReportObjectList, it, all) {
+        all_missing[it->GetPointer()] = *it;
+    }
+
+    NON_CONST_ITERATE(CReportNode::TNodeMap, it, the_map) {
         if (it->first == "all") {
             continue;
         }
@@ -98,14 +116,18 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         size_t bins = 0;
         size_t uniq = 0;
         size_t num = 0;
+        TReportObjPtrMap missing = all_missing;
         CReportNode::TNodeMap& sub = it->second->GetMap();
         NON_CONST_ITERATE (CReportNode::TNodeMap, jj, sub) {
             TReportObjectList& obj = jj->second->GetObjects();
             bins++;
             num += obj.size();
             uniq += obj.size() == 1 ? 1 : 0;
+            ITERATE (TReportObjectList, o, obj) {
+                missing.erase(o->GetPointer());
+            }
         }
-        size_t missing = total - num;
+        cout << ":):):) " << qual << " " << missing.size() << endl;
         string diagnosis = it->first;
         diagnosis += " (";
         diagnosis += num == total ? "all present" : "some missing";
@@ -113,11 +135,41 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += bins == 1 ? "all same" : uniq == num ? "all unique" : "some duplicates";
         diagnosis += ")";
         report[diagnosis];
-        if (num < total && bins == 1) {
-
+        if (num < total && bins == 1) { // some missing all same
+            if (num / (float)total >= context.GetSesameStreetCutoff()) { // autofixable
+                CSourseQualsAutofixData* fix = new CSourseQualsAutofixData;
+                CRef<CObject> more(fix);
+                fix->m_Qualifier = it->first;
+                fix->m_Value = sub.begin()->first;
+                fix->m_User = context.GetUserData();
+                ITERATE(TReportObjPtrMap, o, missing) {
+                    string mq = "Missing qualifier " + it->first + " (" + sub.begin()->first + ")";
+                    CConstRef<CBioseq> bs((const CBioseq*)o->second->GetObject().GetPointer());
+                    report[diagnosis][mq].Add(*new CDiscrepancyObject(bs, context.GetScope(), context.GetFile(), context.GetKeepRef(), true, more));
+                }
+            }
         }
     }
     m_ReportItems = report.Export(*this)->GetSubitems();
+}
+
+
+DISCREPANCY_AUTOFIX(SOURCE_QUALS)
+{
+    TReportObjectList list = item->GetDetails();
+    const CSourseQualsAutofixData* fix = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+        if (!fix) {
+            fix = dynamic_cast<const CSourseQualsAutofixData*>(obj.GetMoreInfo().GetPointer());
+            CAutofixHookRegularArguments arg;
+            arg.m_User = fix->m_User;
+            if (m_Hook) {
+                m_Hook(&arg);
+            }
+        }
+    }
+    return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + fix->m_Qualifier + " (" + fix->m_Value + ") added", list.size()));
 }
 
 

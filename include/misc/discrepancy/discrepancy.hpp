@@ -93,7 +93,7 @@ typedef map<string, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
 class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
 {
 public:
-    CDiscrepancySet(void) : m_KeepRef(false) {}
+    CDiscrepancySet(void) : m_KeepRef(false), m_SesameStreetCutoff(0.75), m_UserData(0) {}
     virtual ~CDiscrepancySet(void){}
     virtual bool AddTest(const string& name) = 0;
     virtual bool SetAutofixHook(const string& name, TAutofixHook func) = 0;
@@ -102,19 +102,25 @@ public:
     virtual const TDiscrepancyCaseMap& GetTests(void) = 0;
 
     const string& GetFile(void) const { return m_File;}
-    const string& GetLineage(void) const { return m_Lineage;}
-    bool GetKeepRef(void) const { return m_KeepRef;}
-    void SetFile(const string& s){ m_File = s;}
-    void SetLineage(const string& s){ m_Lineage = s;}
+    const string& GetLineage(void) const { return m_Lineage; }
+    float GetSesameStreetCutoff(void) const { return m_SesameStreetCutoff; }
+    bool GetKeepRef(void) const { return m_KeepRef; }
+    void* GetUserData(void) const { return m_UserData; }
+    void SetFile(const string& s){ m_File = s; }
+    void SetLineage(const string& s){ m_Lineage = s; }
+    void SetSesameStreetCutoff(float f){ m_SesameStreetCutoff = f; }
     virtual void SetSuspectRules(const string&) = 0;
-    void SetKeepRef(bool b){ m_KeepRef = b;}
+    void SetKeepRef(bool b){ m_KeepRef = b; }
+    void SetUserData(void* p){ m_UserData = p; }
     static CRef<CDiscrepancySet> New(objects::CScope& scope);
     static string Format(const string& str, unsigned int count);
 
 protected:
     string m_File;
     string m_Lineage;
+    float m_SesameStreetCutoff;
     bool m_KeepRef;     // set true to allow autofix
+    void* m_UserData;
 };
 
 
@@ -124,6 +130,15 @@ enum EGroup {
     eOncaller = 2
 };
 typedef unsigned short TGroup;
+
+
+struct CAutofixHookRegularArguments // (*TAutofixHook)(void*) can accept any other input if needed
+{
+    void* m_User;
+    string m_Title;
+    string m_Message;
+    vector<string> m_List;
+};
 
 
 NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string&);
