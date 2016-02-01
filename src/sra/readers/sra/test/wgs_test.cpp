@@ -44,6 +44,7 @@
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqres/seqres__.hpp>
+#include <objects/seqsplit/ID2S_Split_Info.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -112,6 +113,7 @@ void CWGSTestApp::Init(void)
 
     arg_desc->AddFlag("print_seq", "Print loaded Bioseq objects");
     arg_desc->AddFlag("print_entry", "Print loaded Seq-entry objects");
+    arg_desc->AddFlag("print_split", "Print loaded Split info object");
 
     arg_desc->AddOptionalKey("contig_row", "ContigRow",
                              "contig row to fetch",
@@ -765,6 +767,7 @@ int CWGSTestApp::Run(void)
     bool verbose = args["verbose"];
     bool print_seq = args["print_seq"];
     bool print_entry = args["print_entry"];
+    bool print_split = args["print_split"];
     size_t limit_count = 100;
     if ( args["limit_count"] ) {
         limit_count = size_t(args["limit_count"].AsInteger());
@@ -898,6 +901,9 @@ int CWGSTestApp::Run(void)
             }
             if ( print_entry ) {
                 out << MSerial_AsnText << *it.GetSeq_entry();
+            }
+            if ( print_split ) {
+                out << MSerial_AsnText << *it.GetSplitInfo();
             }
             string data1 = sx_GetSeqData(*seq1);
             string data2 = sx_GetSeqData(*seq2);
