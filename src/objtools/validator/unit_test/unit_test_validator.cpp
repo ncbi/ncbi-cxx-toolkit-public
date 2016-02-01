@@ -11996,7 +11996,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     legal_strings.push_back ("WormBase");
     legal_strings.push_back ("Xenbase");
     legal_strings.push_back ("ZFIN");
-    legal_strings.push_back ("GI");
     vector<string> src_strings;
     src_strings.push_back ("AFTOL");
     src_strings.push_back ("AntWeb");
@@ -13764,7 +13763,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
     delta_seq2->SetLoc().SetInt().SetTo(485);
     entry->SetSeq().SetInst().SetLength(486);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(delta_seq2);
-    expected_errors[0]->SetErrMsg("Seq-loc extent (486) greater than length of gb|AY123456 (485)");
+    expected_errors[0]->SetErrMsg("Seq-loc extent (486) greater than length of gb|AY123456| (485)");
     expected_errors[0]->SetSeverity(eDiag_Critical);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
