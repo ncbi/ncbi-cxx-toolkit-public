@@ -1107,7 +1107,6 @@ if test -x "$x_CXX" ; then
   echo "adjusted C++ compiler: $CXX"
 fi
 CXX_PATH="`dirname $x_CXX`"
-x_CXX=
 
 if test "$with_static_exe" = "yes"; then
    C_LINK='$(top_srcdir)/scripts/common/impl/favor-static $(CC)'
@@ -1119,7 +1118,8 @@ fi
 
 ### Which of these is better?
 #compiler_root=`dirname CXX_PATH`
-compiler_root=`echo $CXX | sed -ne 's:\(.*\)[/\\]bin[/\\].*:\1:p'`
+compiler_root=`echo $x_CXX | sed -ne 's:\(.*\)[/\\]bin[/\\].*:\1:p'`
+x_CXX=
 
 changequote([, ])dnl
 
@@ -2018,6 +2018,12 @@ case "$compiler:$compiler_version:$with_bin_release" in
     LINK="$LINK -Kc++"
     ;;
   ICC:1???:* )
+    case "$host_cpu" in
+       i?86   ) intel_cpu_name=ia32      ;;
+       x86_64 ) intel_cpu_name=intel64   ;;
+       *      ) intel_cpu_name=$host_cpu ;;
+    esac
+    LDFLAGS="$CONF_f_runpath$compiler_root/lib/$intel_cpu_name $LDFLAGS"
     # Suppress "warning #10237: -lcilkrts linked in dynamically, static
     # library not available" which is not a problem in practice due to
     # as-needed linkage.
