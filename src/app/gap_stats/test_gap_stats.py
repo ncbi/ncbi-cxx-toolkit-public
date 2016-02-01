@@ -131,4 +131,7 @@ class TestGapStats(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    # make sure we get warnings even in Release mode
+    os.environ['DIAG_POST_LEVEL'] = 'Warning'
+
     unittest.main()
