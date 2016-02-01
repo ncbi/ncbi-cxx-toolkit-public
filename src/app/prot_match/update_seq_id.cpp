@@ -4,8 +4,8 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/SeqFeatSupport.hpp>
-#include <objects/seqfeat/InferenceSupport.hpp>
+//#include <objects/seqfeat/SeqFeatSupport.hpp>
+//#include <objects/seqfeat/InferenceSupport.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/general/Object_id.hpp>
@@ -27,6 +27,7 @@
 #include <serial/objostr.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/annot_ci.hpp>
+#include <util/line_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -40,18 +41,23 @@ public:
     int Run(void);
 
 private:
+
+    typedef map<CRef<CSeq_id>, CRef<CSeq_id> > TIdMap;
+
+
+    void x_UpdateSeqId(const TIdMap& id_map,
+                       CSeq_id& id);
+    
     void x_UpdateSeqId(const CSeq_id& old_id, 
                        const CSeq_id& new_id,
                        CSeq_id& id);
 
-    void x_UpdateSeqLoc(const CSeq_id& old_id,
-                       const CSeq_id& new_id,
-                       CSeq_loc& seq_loc);
+    void x_UpdateSeqLoc(const TIdMap& id_map,
+                        CSeq_loc& seq_loc);
 
-    void x_UpdateSeqFeat(const CSeq_id& old_id,
-                         const CSeq_id& new_id, 
+    void x_UpdateSeqFeat(const TIdMap& id_map,
                          CSeq_feat& seq_feat);
-
+/*
     void x_UpdateSeqFeatSupport(const CSeq_id& old_id,
                                 const CSeq_id& new_id,
                                 CSeqFeatSupport& sf_support);
@@ -59,34 +65,30 @@ private:
     void x_UpdateInferenceSupport(const CSeq_id& old_id,
                                   const CSeq_id& new_id,
                                   CInferenceSupport& inf_support);
-
-    void x_UpdateSeqAnnot(const CSeq_id& old_id,
-                          const CSeq_id& new_id,
+*/
+    void x_UpdateSeqAnnot(const TIdMap& id_map,
                           CSeq_annot& seq_annot);
 
-    void x_UpdateBioseq(const CSeq_id& old_id,
-                        const CSeq_id& new_id,
+    void x_UpdateBioseq(const TIdMap& id_map,
                         CBioseq& bioseq);
 
-    void x_UpdateSeqHist(const CSeq_id& old_id,
-                         const CSeq_id& new_id,
+    void x_UpdateSeqHist(const TIdMap& id_map,
                          CSeq_hist& hist);
-
-    void x_UpdateSeqExt(const CSeq_id& old_id,
-                        const CSeq_id& new_id,
+/*
+    void x_UpdateSeqExt(const TIdMap& id_map,
                         CSeq_ext& ext);
-
-    void x_UpdateSeqAlign(const CSeq_id& old_id,
-                          const CSeq_id& new_id,
+*/
+    void x_UpdateSeqAlign(const TIdMap& id_map,
                           CSeq_align& align);
 
-    void x_UpdateSeqEntry(const CSeq_id& old_id, 
-                          const CSeq_id& new_id,
+    void x_UpdateSeqEntry(const TIdMap& id_map,
                           CSeq_entry_Handle& seh);
 
-    CObjectIStream* x_InitInputStream(
+    CObjectIStream* x_InitInputEntryStream(
             const CArgs& args);
 
+    bool x_ProcessInputTable(CNcbiIstream& istr, 
+                             TIdMap& id_map);
 };
 
 
@@ -96,11 +98,16 @@ void CSeqIdUpdateApp::Init(void)
 
     arg_desc->AddKey("i",
             "InputFile",
-            "Path to ASN.1 input file",
+            "Path to Seq-entry input file",
             CArgDescriptions::eInputFile);
 
-    arg_desc->AddKey("o", "OutputFile",
-            "Path to ASN.1 output file",
+    arg_desc->AddKey("t",
+            "Table",
+            "Path to file containing protein match table",
+            CArgDescriptions::eInputFile);
+
+    arg_desc->AddOptionalKey("o", "OutputFile",
+            "Path to Seq-entry output file. Defaults to stdout",
             CArgDescriptions::eOutputFile);
 
     SetupArgDescriptions(arg_desc.release());
@@ -121,7 +128,7 @@ int CSeqIdUpdateApp::Run(void)
 
     // Set up object input stream
     auto_ptr<CObjectIStream> istr;
-    istr.reset(x_InitInputStream(args));
+    istr.reset(x_InitInputEntryStream(args));
 
     // Attempt to read Seq-entry from input file 
     CSeq_entry seq_entry;
@@ -132,7 +139,13 @@ int CSeqIdUpdateApp::Run(void)
         // Throw an exception
     }
 
-    CNcbiOstream& ostr = args["o"].AsOutputFile();
+    CNcbiIstream& table_str = args["t"].AsInputFile();
+    map<CRef<CSeq_id>, CRef<CSeq_id> > id_map;
+    x_ProcessInputTable(table_str, id_map);
+
+    CNcbiOstream& ostr = (args["o"]) ? 
+        args["o"].AsOutputFile() :
+        cout;
 
     auto_ptr<MSerial_Format> pOutFormat;
     pOutFormat.reset(new MSerial_Format_AsnText());
@@ -146,27 +159,16 @@ int CSeqIdUpdateApp::Run(void)
         // Throw an exception
     }
 
-    CRef<CSeq_id> old_id = Ref(new CSeq_id());
-    CRef<CSeq_id> new_id = Ref(new CSeq_id());
-
-    old_id->SetGenbank();
-    old_id->SetGenbank().Set("AFM73573", "", 2);
-
-    new_id->SetLocal();
-    new_id->SetLocal().SetStr("AFM73573.2");
-    
-
-    x_UpdateSeqEntry(*old_id, *new_id, seh);
+    x_UpdateSeqEntry(id_map, seh);
 
     scope->RemoveEntry(seq_entry);
 
     ostr << MSerial_Format_AsnText() << seq_entry;
-
     return 0;
 }
 
 
-CObjectIStream* CSeqIdUpdateApp::x_InitInputStream(
+CObjectIStream* CSeqIdUpdateApp::x_InitInputEntryStream(
         const CArgs& args) 
 {
     ESerialDataFormat serial = eSerial_AsnText;
@@ -185,6 +187,51 @@ CObjectIStream* CSeqIdUpdateApp::x_InitInputStream(
 }
 
 
+bool CSeqIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map) 
+{
+    CStreamLineReader lr(istr);
+
+    while ( !lr.AtEOF() ) {
+        char c = lr.PeekChar();
+        if (c == '#') {
+            ++lr;
+        } else {
+            string line = *++lr;
+    
+            if (line.empty()) {
+                continue;
+            }
+
+            vector<string> entries;
+            string delim = "\t";
+            NStr::Split(line, delim, entries);
+            if (entries.size() >= 2 &&
+                entries[0] == "LocalID" &&
+                entries[1] == "AccVer") {
+                continue;
+            } 
+            else 
+            if (entries.size() < 2) {
+                continue;
+            }
+
+            CRef<CSeq_id> gb_id = Ref(new CSeq_id());
+            gb_id->SetGenbank().Set(entries[1]);
+
+            CRef<CSeq_id> local = Ref(new CSeq_id());
+
+            local->SetLocal().SetStr(entries[0]);
+
+            id_map[local] = gb_id;
+        } 
+    }
+
+    return true;
+}
+
+
+
+
 void CSeqIdUpdateApp::x_UpdateSeqId(const CSeq_id& old_id,
                                     const CSeq_id& new_id,
                                     CSeq_id& id) 
@@ -193,6 +240,7 @@ void CSeqIdUpdateApp::x_UpdateSeqId(const CSeq_id& old_id,
         return;
     }
 
+    // Generalize this function to handle different IDs
 
     if (new_id.IsLocal()) {
         if (new_id.GetLocal().IsStr()) {
@@ -204,7 +252,6 @@ void CSeqIdUpdateApp::x_UpdateSeqId(const CSeq_id& old_id,
         }
         return;
     }
-
 
     if (new_id.IsGenbank()) {
         if (new_id.GetGenbank().IsSetName()) {
@@ -225,19 +272,35 @@ void CSeqIdUpdateApp::x_UpdateSeqId(const CSeq_id& old_id,
         return;
     }
 
-    // Need to handle accession
     return;
 }
 
-void CSeqIdUpdateApp::x_UpdateSeqLoc(const CSeq_id& old_id,
-                                     const CSeq_id& new_id,
+
+
+void CSeqIdUpdateApp::x_UpdateSeqId(const TIdMap& id_map,
+                                    CSeq_id& id)
+{
+    TIdMap::const_iterator cit;
+
+    for (cit = id_map.begin(); cit != id_map.end(); ++cit) {
+        const CSeq_id& old_id = *cit->first;
+        const CSeq_id& new_id = *cit->second;
+
+        x_UpdateSeqId(old_id, new_id, id);
+    }
+
+    return;
+}
+
+
+void CSeqIdUpdateApp::x_UpdateSeqLoc(const TIdMap& id_map,
                                      CSeq_loc& seq_loc) 
 {
 
     CRef<CSeq_id> seq_id = Ref(new CSeq_id());
     seq_id->Assign(*(seq_loc.GetId()));
 
-    x_UpdateSeqId(old_id, new_id, *seq_id);
+    x_UpdateSeqId(id_map, *seq_id);
 
     seq_loc.SetId(*seq_id);
 
@@ -245,75 +308,69 @@ void CSeqIdUpdateApp::x_UpdateSeqLoc(const CSeq_id& old_id,
 }
 
 
-void CSeqIdUpdateApp::x_UpdateBioseq(const CSeq_id& old_id,
-                                     const CSeq_id& new_id,
+void CSeqIdUpdateApp::x_UpdateBioseq(const TIdMap& id_map,
                                      CBioseq& bioseq)
 {
 
     NON_CONST_ITERATE(CBioseq::TId, it, bioseq.SetId()) 
     {
-        x_UpdateSeqId(old_id, new_id, **it); 
+        x_UpdateSeqId(id_map, **it); 
     }
      
 
     EDIT_EACH_SEQANNOT_ON_BIOSEQ(it, bioseq) 
     {
-        x_UpdateSeqAnnot(old_id, new_id, **it);
+        x_UpdateSeqAnnot(id_map, **it);
     }
-
-    return;
 
     if (bioseq.IsSetInst() &&
         bioseq.GetInst().IsSetHist()) {
-        x_UpdateSeqHist(old_id, new_id, bioseq.SetInst().SetHist());
+        x_UpdateSeqHist(id_map, bioseq.SetInst().SetHist());
     }
 
+/*
     if (bioseq.IsSetInst() &&
         bioseq.GetInst().IsSetExt()) {
         x_UpdateSeqExt(old_id, new_id, bioseq.SetInst().SetExt());
     }
-
+*/
     return;
 }
 
 
-void CSeqIdUpdateApp::x_UpdateSeqHist(const CSeq_id& old_id, 
-                                      const CSeq_id& new_id,
+void CSeqIdUpdateApp::x_UpdateSeqHist(const TIdMap& id_map, 
                                       CSeq_hist& hist) 
 {
-
     if (hist.IsSetAssembly()) {
         NON_CONST_ITERATE(CSeq_hist::TAssembly, it, hist.SetAssembly()) {
-            x_UpdateSeqAlign(old_id, new_id, **it);
+            x_UpdateSeqAlign(id_map, **it);
         }
     }
 
     if (hist.IsSetReplaces() &&
         hist.GetReplaces().IsSetIds()) {
         NON_CONST_ITERATE(CSeq_hist_rec::TIds, it, hist.SetReplaces().SetIds()) {
-            x_UpdateSeqId(old_id, new_id, **it);
+            x_UpdateSeqId(id_map, **it);
         }
     }
 
     if (hist.IsSetReplaced_by() && 
         hist.GetReplaced_by().IsSetIds()) {
         NON_CONST_ITERATE(CSeq_hist_rec::TIds, it, hist.SetReplaced_by().SetIds()) {
-            x_UpdateSeqId(old_id, new_id, **it);
+            x_UpdateSeqId(id_map, **it);
         }
     }
-
     return;
 }
 
 
 
-void CSeqIdUpdateApp::x_UpdateSeqAlign(const CSeq_id& old_id, 
-                                       const CSeq_id& new_id,
+void CSeqIdUpdateApp::x_UpdateSeqAlign(const TIdMap& id_map,
                                        CSeq_align& align)
 {
     EDIT_EACH_RECURSIVE_SEQALIGN_ON_SEQALIGN(ait, align) 
     {
-        x_UpdateSeqAlign(old_id, new_id, align);
+        x_UpdateSeqAlign(id_map, align);
     }
 
     if (!align.IsSetSegs()) {
@@ -325,7 +382,7 @@ void CSeqIdUpdateApp::x_UpdateSeqAlign(const CSeq_id& old_id,
         {
             EDIT_EACH_SEQID_ON_DENDIAG(it, **dit) 
             {
-                x_UpdateSeqId(old_id, new_id, **it);       
+                x_UpdateSeqId(id_map, **it);       
             }
         }
         return;
@@ -335,7 +392,7 @@ void CSeqIdUpdateApp::x_UpdateSeqAlign(const CSeq_id& old_id,
     if (align.GetSegs().IsDenseg()) {
         EDIT_EACH_SEQID_ON_DENSEG(it, align.SetSegs().SetDenseg()) 
         {
-            x_UpdateSeqId(old_id, new_id, **it);
+            x_UpdateSeqId(id_map, **it);
         }
         return;
     }
@@ -346,24 +403,24 @@ void CSeqIdUpdateApp::x_UpdateSeqAlign(const CSeq_id& old_id,
 
             if ((*sit)->IsSetIds()) {
                 NON_CONST_ITERATE(CStd_seg::TIds, it, (*sit)->SetIds()) {
-                    x_UpdateSeqId(old_id, new_id, **it);
+                    x_UpdateSeqId(id_map, **it);
                 }
             }
 
             if ((*sit)->IsSetLoc()) {
                 NON_CONST_ITERATE(CStd_seg::TLoc, it, (*sit)->SetLoc()) {
-                    x_UpdateSeqLoc(old_id, new_id, **it);
+                    x_UpdateSeqLoc(id_map, **it);
                 }
             }
         }
     }
+
     return;
 }
 
 
-
-void CSeqIdUpdateApp::x_UpdateSeqExt(const CSeq_id& old_id, 
-                                     const CSeq_id& new_id,
+/*
+void CSeqIdUpdateApp::x_UpdateSeqExt(const TIdMap& id_map,
                                      CSeq_ext& ext) 
 {
     if (ext.IsSeg() &&
@@ -396,36 +453,33 @@ void CSeqIdUpdateApp::x_UpdateSeqExt(const CSeq_id& old_id,
         }
         return;
     }
-
     return;
 }
+*/
 
 
-void CSeqIdUpdateApp::x_UpdateSeqAnnot(const CSeq_id& old_id, 
-                                       const CSeq_id& new_id,
+void CSeqIdUpdateApp::x_UpdateSeqAnnot(const TIdMap& id_map,
                                        CSeq_annot& annot) 
 {
     EDIT_EACH_SEQFEAT_ON_SEQANNOT(it, annot)
     {
-        x_UpdateSeqFeat(old_id, new_id, **it);
+        x_UpdateSeqFeat(id_map, **it);
     }
-
 
     EDIT_EACH_SEQALIGN_ON_SEQANNOT(it, annot)
     {
-        x_UpdateSeqAlign(old_id, new_id, **it);
+        x_UpdateSeqAlign(id_map, **it);
     }
     return;
-
 
     EDIT_EACH_ANNOTDESC_ON_SEQANNOT(it, annot) 
     {
         if ((*it)->IsSrc()) {
-            x_UpdateSeqId(old_id, new_id, (*it)->SetSrc());
+            x_UpdateSeqId(id_map, (*it)->SetSrc());
         } 
         else 
         if ((*it)->IsRegion()) {
-            x_UpdateSeqLoc(old_id, new_id, (*it)->SetRegion());
+            x_UpdateSeqLoc(id_map, (*it)->SetRegion());
         }
     }
 
@@ -439,7 +493,7 @@ void CSeqIdUpdateApp::x_UpdateSeqAnnot(const CSeq_id& old_id,
     if (data.IsIds()) {
         NON_CONST_ITERATE(CSeq_annot::C_Data::TIds, it, data.SetIds()) 
         {
-            x_UpdateSeqId(old_id, new_id, **it);
+            x_UpdateSeqId(id_map, **it);
         }
         return;
     }
@@ -447,11 +501,11 @@ void CSeqIdUpdateApp::x_UpdateSeqAnnot(const CSeq_id& old_id,
 
     if (data.IsLocs()) {
         NON_CONST_ITERATE(CSeq_annot::C_Data::TLocs, it, data.SetLocs()) {
-            x_UpdateSeqLoc(old_id, new_id, **it);
+            x_UpdateSeqLoc(id_map, **it);
         }
         return;
     }
-
+/*
     if (data.IsSeq_table() &&
         data.GetSeq_table().IsSetColumns()) {
 
@@ -499,24 +553,24 @@ void CSeqIdUpdateApp::x_UpdateSeqAnnot(const CSeq_id& old_id,
             } 
         }
     }
-
+*/
     return;
 }
 
 
-void CSeqIdUpdateApp::x_UpdateSeqFeat(const CSeq_id& old_id,
-                                      const CSeq_id& new_id,
+void CSeqIdUpdateApp::x_UpdateSeqFeat(const TIdMap& id_map,
                                       CSeq_feat& seq_feat) 
 {
 
     if (seq_feat.IsSetLocation()) {
-        x_UpdateSeqLoc(old_id, new_id, seq_feat.SetLocation());
+        x_UpdateSeqLoc(id_map, seq_feat.SetLocation());
     }
 
     if (seq_feat.IsSetProduct()) {
-        x_UpdateSeqLoc(old_id, new_id, seq_feat.SetProduct());
+        x_UpdateSeqLoc(id_map, seq_feat.SetProduct());
     }
 
+/*
 
     if (seq_feat.IsSetData() &&
         seq_feat.GetData().IsRna() &&
@@ -559,69 +613,7 @@ void CSeqIdUpdateApp::x_UpdateSeqFeat(const CSeq_id& old_id,
         }
     }
 
-
-    if (seq_feat.IsSetData() &&
-        seq_feat.GetData().IsVariation()) 
-    {
-        // x_UpdateVariation(old_id, new_id, (*cb)->SetSeq());
-    }
-
-
-    if (seq_feat.IsSetSupport())
-    {
-        x_UpdateSeqFeatSupport(old_id, 
-                               new_id,
-                               seq_feat.SetSupport());
-
-    }
-    return;
-}
-
-
-
-void CSeqIdUpdateApp::x_UpdateSeqFeatSupport(const CSeq_id& old_id,
-                                             const CSeq_id& new_id,
-                                             CSeqFeatSupport& sf_support)
-{
-    if (sf_support.IsSetInference())
-    {
-        NON_CONST_ITERATE(CSeqFeatSupport::TInference, it, sf_support.SetInference()) 
-        {
-            CInferenceSupport& inf_support = **it; 
-
-            if (inf_support.IsSetBasis() &&
-                inf_support.GetBasis().IsSetAccessions()) {
-                NON_CONST_ITERATE(CEvidenceBasis::TAccessions, id_it, inf_support.SetBasis().SetAccessions()) 
-                {
-                    x_UpdateSeqId(old_id, new_id, **id_it);
-                }
-            }
-        }
-    }
-
-
-
-    if (sf_support.IsSetModel_evidence())
-    {
-        NON_CONST_ITERATE(CSeqFeatSupport::TModel_evidence, it,  sf_support.SetModel_evidence())
-        {
-            if ((*it)->IsSetIdentification()) {
-                x_UpdateSeqId(old_id, new_id, (*it)->SetIdentification());
-            }
-/*
-            if ((*it)->IsSetMrna()) {
-            }
-*/
-        }
-    }
-}
-
-
-void CSeqIdUpdateApp::x_UpdateInferenceSupport(const CSeq_id& old_id,
-                                               const CSeq_id& new_id,
-                                               CInferenceSupport& inf_sup)
-{
-    // Do we need this for protein matching?
+    */
 
     return;
 }
@@ -629,12 +621,11 @@ void CSeqIdUpdateApp::x_UpdateInferenceSupport(const CSeq_id& old_id,
 
 
 
-void CSeqIdUpdateApp::x_UpdateSeqEntry(const CSeq_id& old_id,
-                                       const CSeq_id& new_id,
-                                       CSeq_entry_Handle& seh) 
+void CSeqIdUpdateApp::x_UpdateSeqEntry(const TIdMap& id_map,
+                                       CSeq_entry_Handle& tlseh) 
 {
 
-    for (CSeq_entry_CI it(seh, CSeq_entry_CI::fRecursive); it; ++it) {
+    for (CSeq_entry_CI it(tlseh, CSeq_entry_CI::fRecursive); it; ++it) {
        CSeq_entry_Handle seh = *it;
 
        CRef<CSeq_entry> new_entry(new CSeq_entry());
@@ -643,7 +634,7 @@ void CSeqIdUpdateApp::x_UpdateSeqEntry(const CSeq_id& old_id,
            CRef<CBioseq> new_seq(new CBioseq());
            new_seq->Assign(*seh.GetSeq().GetBioseqCore());
 
-           x_UpdateBioseq(old_id, new_id, *new_seq);
+           x_UpdateBioseq(id_map, *new_seq);
 
            new_entry->SetSeq(*new_seq);
 
@@ -658,7 +649,7 @@ void CSeqIdUpdateApp::x_UpdateSeqEntry(const CSeq_id& old_id,
            {
                CRef<CSeq_annot> new_annot(new CSeq_annot());
                new_annot->Assign(*annot_ci->GetSeq_annotCore());
-               x_UpdateSeqAnnot(old_id, new_id, *new_annot);
+               x_UpdateSeqAnnot(id_map, *new_annot);
 
                CSeq_annot_Handle sah(*annot_ci);
                CSeq_annot_Handle new_sah = sah.GetScope().AddSeq_annot(*new_annot); // Add the new annot to the scope
