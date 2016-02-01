@@ -439,6 +439,18 @@ void CVDBMgr::x_Init(void)
     KLogInit();
     KLogLevelSet(klogDebug);
     KLogLibHandlerSet(VDBLogWriter, 0);
+
+    if ( app && app->GetConfig().GetBool("CONN", "FIREWALL", false) ) {
+        string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
+        int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
+        if ( !host.empty() && port != 0 ) {
+            if ( rc_t rc = KNSManagerSetHTTPProxyPath(kns_mgr, "%s:%d", host.c_str(), port) ) {
+                NCBI_THROW2(CSraException, eInitFailed,
+                            "Cannot set KNSManager proxy parameters", rc);
+            }
+            KNSManagerSetHTTPProxyEnabled(kns_mgr, true);
+        }
+    }
 }
 
 
