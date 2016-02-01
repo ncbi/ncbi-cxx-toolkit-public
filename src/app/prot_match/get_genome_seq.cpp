@@ -12,13 +12,13 @@
 #include <serial/objostr.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <corelib/ncbiexpt.hpp>
+#include "prot_match_exception.hpp"
 
 
 BEGIN_NCBI_SCOPE
+/*
 
-
-class CGenomeSeqException : public CException {
+class CProteinMatchException : public CException {
         
 public:
     enum EErrCode {
@@ -44,9 +44,9 @@ public:
         }
     };
 
-    NCBI_EXCEPTION_DEFAULT(CGenomeSeqException, CException);
+    NCBI_EXCEPTION_DEFAULT(CProteinMatchException, CException);
 };
-
+*/
 
 USING_SCOPE(objects);
 
@@ -104,7 +104,7 @@ int CGenomeSeqApp::Run(void)
         istr->Read(ObjectInfo(seq_entry));
     }
     catch (CException&) {
-        NCBI_THROW(CGenomeSeqException, 
+        NCBI_THROW(CProteinMatchException, 
                    eInputError, 
                    "Failed to read Seq-entry");
     }
@@ -120,7 +120,7 @@ int CGenomeSeqApp::Run(void)
         seh = scope->AddTopLevelSeqEntry( seq_entry );
     } 
     catch (CException&) {
-        NCBI_THROW(CGenomeSeqException, 
+        NCBI_THROW(CProteinMatchException, 
                    eBadInput, 
                    "Could not obtain valid seq-entry handle");
     }
@@ -148,7 +148,7 @@ CObjectIStream* CGenomeSeqApp::x_InitInputStream(
             serial, *pInputStream, eTakeOwnership);
 
     if (!pI) {
-        NCBI_THROW(CGenomeSeqException, 
+        NCBI_THROW(CProteinMatchException, 
                    eInputError, 
                    "Failed to create input stream");
     }
@@ -157,7 +157,7 @@ CObjectIStream* CGenomeSeqApp::x_InitInputStream(
 
 
 CRef<CSeq_entry> CGenomeSeqApp::x_GetGenomeSeq(CSeq_entry_Handle& seh)
-{ // Refactor this to avoid repitition below
+{ // Refactor this to avoid repetition below
     CRef<CSeq_entry> genome_seq_entry(new CSeq_entry());
 
     if (seh.IsSeq()) {
