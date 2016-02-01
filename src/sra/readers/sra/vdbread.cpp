@@ -440,7 +440,7 @@ void CVDBMgr::x_Init(void)
     KLogLevelSet(klogDebug);
     KLogLibHandlerSet(VDBLogWriter, 0);
 
-    if ( app && app->GetConfig().GetBool("CONN", "FIREWALL", false) ) {
+    if ( app ) {
         string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
         int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
         if ( !host.empty() && port != 0 ) {
