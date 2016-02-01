@@ -796,13 +796,18 @@ static EIO_Status s_Init(void)
     s_Initialized = 1/*inited*/;
 #ifndef NCBI_OS_MSWIN
     {{
-        static int/*bool*/ s_AtExitSet = 0;
-        if (!s_AtExitSet) {
+        static void*/*bool*/ s_AtExitSet = 0;
+#ifdef NCBI_CXX_TOOLKIT
+        if (!NCBI_SwapPointers(&s_AtExitSet, (void*) 1))
             atexit((void (*)(void)) SOCK_ShutdownAPI);
-            s_AtExitSet = 1;
+#else
+        if (!s_AtExitSet) {
+            s_AtExitSet = (void*) 1;
+            atexit((void (*)(void)) SOCK_ShutdownAPI);
         }
+#endif /*NCBI_CXX_TOOLKIT*/
     }}
-#endif
+#endif /*NCBI_OS_MSWIN*/
 
     CORE_UNLOCK;
     CORE_TRACE("[SOCK::InitializeAPI]  End");
