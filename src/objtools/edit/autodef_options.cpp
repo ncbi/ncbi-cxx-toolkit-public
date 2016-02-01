@@ -67,6 +67,7 @@ CRef<CUser_object> CAutoDefOptions::MakeUserObject() const
     user->SetData().push_back(x_MakeHIVRule());
     if (!GetSpecifyNuclearProduct()) {
         user->SetData().push_back(x_MakeProductFlag());
+        user->SetData().push_back(x_MakeNuclearCopyFlag());
     }
     x_MakeSuppressedFeatures(*user);
     x_MakeModifierList(*user);

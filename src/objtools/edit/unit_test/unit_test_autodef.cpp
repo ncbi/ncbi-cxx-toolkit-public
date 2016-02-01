@@ -1875,5 +1875,16 @@ BOOST_AUTO_TEST_CASE(GB_5537)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_AutodefOptionsSpecifyNuclearCopyFlag)
+{
+    CAutoDefOptions opts;
+
+    opts.SetNuclearCopyFlag(CBioSource::eGenome_mitochondrion);
+    CRef<CUser_object> user = opts.MakeUserObject();
+    BOOST_CHECK_EQUAL(HasStringField(*user, "NuclearCopyFlag", "mitochondrion"), 1);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
