@@ -36,10 +36,12 @@
 #include <sra/readers/sra/vdbread.hpp>
 
 #include <klib/rc.h>
+#include <klib/log.h>
 #include <kfg/config.h>
 #include <kdb/manager.h>
 #include <kdb/kdb-priv.h>
 #include <kns/manager.h>
+#include <kns/http.h>
 
 #include <vfs/manager-priv.h>
 #include <vfs/manager.h>
@@ -73,7 +75,7 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   VDBReader
-NCBI_DEFINE_ERR_SUBCODE_X(1);
+NCBI_DEFINE_ERR_SUBCODE_X(2);
 
 BEGIN_SCOPE(objects)
 
@@ -388,6 +390,17 @@ DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
 #endif
 
 
+static
+rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
+{
+    CTempString msg(buffer, size);
+    NStr::TruncateSpacesInPlace(msg);
+    LOG_POST_X(2, "VDB: "<<msg);
+    *written = size;
+    return 0;
+}
+
+
 void CVDBMgr::x_Init(void)
 {
     if ( rc_t rc = VDBManagerMakeRead(x_InitPtr(), 0) ) {
@@ -421,6 +434,11 @@ void CVDBMgr::x_Init(void)
     KNSManagerSetUserAgent(kns_mgr, "%s; SRA Toolkit %V",
                            prefix.c_str(),
                            sdk_ver);
+
+    // redirect VDB log to C++ Toolkit
+    KLogInit();
+    KLogLevelSet(klogDebug);
+    KLogLibHandlerSet(VDBLogWriter, 0);
 }
 
 
