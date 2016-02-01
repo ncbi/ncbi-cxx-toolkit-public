@@ -243,8 +243,6 @@ AC_ARG_WITH(vdb2,
    [ --without-vdb           do not use the NCBI SRA/VDB Toolkit])
 AC_ARG_WITH(downloaded-vdb,
    [ --with-downloaded-vdb   download and build SRA/VDB from GitHub])
-AC_ARG_WITH(included-vdb,
-   [ --with-included-vdb     use the DEPRECATED bundled SRA/VDB Toolkit copy])
 
 ## Third-party and system packages
 AC_ARG_WITH(z,
@@ -540,7 +538,7 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo vdb downloaded-vdb included-vdb \
+geo included-geo vdb downloaded-vdb \
 z bz2 lzo pcre gmp gcrypt nettle gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
@@ -704,20 +702,12 @@ if test "$with_openmp" = yes; then
    : ${with_mt=yes} 
 fi
 
-case "$with_downloaded_vdb:$with_included_vdb:$with_vdb" in
-   yes:yes:* )
-      AC_MSG_ERROR([incompatible options: --with-downloaded-vdb and
-                    --with-included-vdb])
-      ;;
-   yes:*:no )
+case "$with_downloaded_vdb:$with_vdb" in
+   yes:no )
       AC_MSG_ERROR([incompatible options: --without-vdb but
                     --with-downloaded-vdb])
       ;;
-   *:yes:no )
-      AC_MSG_ERROR([incompatible options: --without-vdb but
-                    --with-included-vdb])
-      ;;
-   yes:*: | *:yes: )
+   yes: )
       with_vdb=yes
       ;;
 esac
@@ -6772,7 +6762,7 @@ if test "$with_vdb" != "no" ; then
          *     ) AC_MSG_WARN([$message])  ;;
       esac
    fi
-   if test "$with_included_vdb" != "yes"; then
+   # if test "$with_included_vdb" != "yes"; then
       if test -z "$VDB_PATH"; then
          in_path=
       else
@@ -6848,33 +6838,8 @@ if test "$with_vdb" != "no" ; then
          VDB_LIBS=
          VDB_STATIC_LIBS=
       fi
-   elif test -d "$real_srcdir/src/sra/sdk/interfaces"; then
-      case "$host_os" in
-         darwin* | linux* | solaris* )
-            AC_MSG_NOTICE([Using local NCBI SRA/VDB copy in src/sra/sdk])
-            NCBI_PACKAGE(VDB)
-            NCBI_PACKAGE(LocalVDB)
-            VDB_INCLUDE='-I$(includedir)/../src/sra/sdk/interfaces'
-            VDB_INCLUDE="$VDB_INCLUDE -I\$(includedir)/../src/sra/sdk/interfaces/C++Toolkit"
-            VDB_INCLUDE="$VDB_INCLUDE -I\$(top_srcdir)/src/sra/sdk/interfaces"
-            VDB_INCLUDE="$VDB_INCLUDE -I\$(top_srcdir)/src/sra/sdk/interfaces/C++Toolkit"
-            if test "$DEBUG_SFX" = Debug; then
-               VDB_INCLUDE="$VDB_INCLUDE -D_DEBUGGING"
-            fi
-            VDB_LIB=ncbi-vdb-read
-            VDB_LIBS=$vdb_deps
-            VDB_STATIC_LIBS=$VDB_LIBS
-            VDB_REQ=LocalVDB
-            ;;
-         * )
-            AC_MSG_ERROR([--with-included-vdb explicitly specified,
-                          but not supported on this platform.])
-            ;;
-      esac
-   else
-      AC_MSG_ERROR([--with-included-vdb explicitly specified,
-                    but no local copy exists.])
-   fi
+   # else ...
+   # fi
    if test -z "$VDB_LIBS"; then
       NCBI_MISSING_PACKAGE(vdb)
    fi

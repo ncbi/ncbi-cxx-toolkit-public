@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = sdk readers data_loaders app
+SUB_PROJ = readers data_loaders app
 
 WATCHERS = vasilche ucko
 

@@ -1593,7 +1593,7 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo vdb downloaded-vdb included-vdb \
+geo included-geo vdb downloaded-vdb \
 z bz2 lzo pcre gmp gcrypt nettle gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
@@ -1862,7 +1862,6 @@ Optional Packages:
  --with-vdb=DIR          use NCBI SRA/VDB Toolkit installation in DIR
  --without-vdb           do not use the NCBI SRA/VDB Toolkit
  --with-downloaded-vdb   download and build SRA/VDB from GitHub
- --with-included-vdb     use the DEPRECATED bundled SRA/VDB Toolkit copy
  --with-z=DIR            use zlib installation in DIR
  --without-z             use internal copy of zlib
  --with-bz2=DIR          use bzlib installation in DIR
@@ -3275,12 +3274,6 @@ if test "${with_downloaded_vdb+set}" = set; then
 fi
 
 
-# Check whether --with-included-vdb was given.
-if test "${with_included_vdb+set}" = set; then
-  withval=$with_included_vdb;
-fi
-
-
 ## Third-party and system packages
 
 # Check whether --with-z was given.
@@ -4227,29 +4220,15 @@ echo "$as_me: error: incompatible options: --without-mt but --with-openmp" >&2;}
    : ${with_mt=yes}
 fi
 
-case "$with_downloaded_vdb:$with_included_vdb:$with_vdb" in
-   yes:yes:* )
-      { { echo "$as_me:$LINENO: error: incompatible options: --with-downloaded-vdb and
-                    --with-included-vdb" >&5
-echo "$as_me: error: incompatible options: --with-downloaded-vdb and
-                    --with-included-vdb" >&2;}
-   { (exit 1); exit 1; }; }
-      ;;
-   yes:*:no )
+case "$with_downloaded_vdb:$with_vdb" in
+   yes:no )
       { { echo "$as_me:$LINENO: error: incompatible options: --without-vdb but
                     --with-downloaded-vdb" >&5
 echo "$as_me: error: incompatible options: --without-vdb but
                     --with-downloaded-vdb" >&2;}
    { (exit 1); exit 1; }; }
       ;;
-   *:yes:no )
-      { { echo "$as_me:$LINENO: error: incompatible options: --without-vdb but
-                    --with-included-vdb" >&5
-echo "$as_me: error: incompatible options: --without-vdb but
-                    --with-included-vdb" >&2;}
-   { (exit 1); exit 1; }; }
-      ;;
-   yes:*: | *:yes: )
+   yes: )
       with_vdb=yes
       ;;
 esac
@@ -40848,7 +40827,7 @@ See \`config.log' for more details." >&2;}
 echo "$as_me: WARNING: $message" >&2;}  ;;
       esac
    fi
-   if test "$with_included_vdb" != "yes"; then
+   # if test "$with_included_vdb" != "yes"; then
       if test -z "$VDB_PATH"; then
          in_path=
       else
@@ -41033,40 +41012,8 @@ echo "${ECHO_T}$ncbi_cv_lib_ncbi_vdb" >&6; }
          VDB_LIBS=
          VDB_STATIC_LIBS=
       fi
-   elif test -d "$real_srcdir/src/sra/sdk/interfaces"; then
-      case "$host_os" in
-         darwin* | linux* | solaris* )
-            { echo "$as_me:$LINENO: Using local NCBI SRA/VDB copy in src/sra/sdk" >&5
-echo "$as_me: Using local NCBI SRA/VDB copy in src/sra/sdk" >&6;}
-                      WithPackages="$WithPackages${WithPackagesSep}VDB"; WithPackagesSep=" "
-                      WithPackages="$WithPackages${WithPackagesSep}LocalVDB"; WithPackagesSep=" "
-            VDB_INCLUDE='-I$(includedir)/../src/sra/sdk/interfaces'
-            VDB_INCLUDE="$VDB_INCLUDE -I\$(includedir)/../src/sra/sdk/interfaces/C++Toolkit"
-            VDB_INCLUDE="$VDB_INCLUDE -I\$(top_srcdir)/src/sra/sdk/interfaces"
-            VDB_INCLUDE="$VDB_INCLUDE -I\$(top_srcdir)/src/sra/sdk/interfaces/C++Toolkit"
-            if test "$DEBUG_SFX" = Debug; then
-               VDB_INCLUDE="$VDB_INCLUDE -D_DEBUGGING"
-            fi
-            VDB_LIB=ncbi-vdb-read
-            VDB_LIBS=$vdb_deps
-            VDB_STATIC_LIBS=$VDB_LIBS
-            VDB_REQ=LocalVDB
-            ;;
-         * )
-            { { echo "$as_me:$LINENO: error: --with-included-vdb explicitly specified,
-                          but not supported on this platform." >&5
-echo "$as_me: error: --with-included-vdb explicitly specified,
-                          but not supported on this platform." >&2;}
-   { (exit 1); exit 1; }; }
-            ;;
-      esac
-   else
-      { { echo "$as_me:$LINENO: error: --with-included-vdb explicitly specified,
-                    but no local copy exists." >&5
-echo "$as_me: error: --with-included-vdb explicitly specified,
-                    but no local copy exists." >&2;}
-   { (exit 1); exit 1; }; }
-   fi
+   # else ...
+   # fi
    if test -z "$VDB_LIBS"; then
       if test "${with_vdb:=no}" != no; then
        { { echo "$as_me:$LINENO: error: --with-vdb explicitly specified, but no usable version found." >&5
@@ -45705,7 +45652,7 @@ for x in Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPS
           ;;
       esac
    done
-  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK; do
+  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
