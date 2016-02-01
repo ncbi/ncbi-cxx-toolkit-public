@@ -1213,6 +1213,7 @@ public:
 
         // Special case for CGI -- a lone positional argument
         if (GetArgsType() == eCgiArgs  &&  argc == 2) {
+            x_CheckAutoHelp(argv[1]);
             return args.release();
         }
 
