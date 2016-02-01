@@ -28,6 +28,7 @@
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/annot_ci.hpp>
 #include <util/line_reader.hpp>
+#include "prot_match_exception.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -136,7 +137,9 @@ int CSeqIdUpdateApp::Run(void)
         istr->Read(ObjectInfo(seq_entry));
     }
     catch (CException&) {
-        // Throw an exception
+        NCBI_THROW(CProteinMatchException,
+                   eInputError,
+                   "Failed to read Seq-entry");
     }
 
     CNcbiIstream& table_str = args["t"].AsInputFile();
@@ -156,7 +159,9 @@ int CSeqIdUpdateApp::Run(void)
         seh = scope->AddTopLevelSeqEntry( seq_entry );
     } 
     catch (CException&) {
-        // Throw an exception
+        NCBI_THROW(CProteinMatchException, 
+                   eBadInput, 
+                   "Could not obtain Seq-entry handle");
     }
 
     x_UpdateSeqEntry(id_map, seh);
@@ -181,7 +186,9 @@ CObjectIStream* CSeqIdUpdateApp::x_InitInputEntryStream(
             serial, *pInputStream, eTakeOwnership);
 
     if (!pI) {
-        // Throw an exception
+        NCBI_THROW(CProteinMatchException, 
+                   eInputError,
+                   "Failed to create input stream");
     }
     return pI;
 }
