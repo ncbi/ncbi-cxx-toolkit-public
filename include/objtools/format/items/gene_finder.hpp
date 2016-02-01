@@ -49,7 +49,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CGeneFinder {
+class NCBI_XOBJUTIL_EXPORT CGeneFinder {
 public:
 
     /// Find the gene associated with the given feature.

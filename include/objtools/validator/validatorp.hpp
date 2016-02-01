@@ -1076,6 +1076,7 @@ private:
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
     void ValidateGeneXRef(const CSeq_feat& feat);
     bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);
+    bool FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh);
     bool x_ShouldReportSuspiciousGeneXref(const CSeq_feat& feat, CBioseq_Handle bsh, bool good_loc_bad_strand);
     void ValidateOperon(const CSeq_feat& feat);
 

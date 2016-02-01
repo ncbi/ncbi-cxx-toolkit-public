@@ -35,6 +35,7 @@
 #include <corelib/ncbistr.hpp>
 #include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
+#include <objtools/format/items/gene_finder.hpp>
 
 #include <serial/serialbase.hpp>
 
@@ -7657,11 +7658,17 @@ bool CValidError_feat::x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const stri
                 if (id != NULL) {
                     CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
                     if (nbsh) {
+#if 1
+                        CRef<CGene_ref> g(new CGene_ref());
+                        g->SetLocus_tag(key);
+                        found = FindGeneToMatchGeneXref(*g, nbsh.GetSeq_entry_Handle());
+#else
                         CCacheImpl::SFeatStrKey label_key(CCacheImpl::eFeatKeyStr_Label, nbsh, key);
                         const CCacheImpl::TFeatValue & feats = GetCache().GetFeatStrKeyToFeats(label_key, m_Imp.GetTSE_Handle());
                         if (!feats.empty()) {
                             found = true;
                         }
+#endif
                     }
                 }
             }
@@ -7670,6 +7677,16 @@ bool CValidError_feat::x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const stri
     return found;
 }
 
+
+bool CValidError_feat::FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh)
+{
+    CSeq_feat_Handle feat = CGeneFinder::ResolveGeneXref(&xref, seh);
+    if (feat) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 bool CValidError_feat::x_ShouldReportSuspiciousGeneXref(const CSeq_feat& feat, CBioseq_Handle bsh, bool good_loc_bad_strand)
 {
@@ -7737,7 +7754,12 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     /*
     CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
     */
-    CFeat_CI gene_it(bsh, SAnnotSelector (CSeqFeatData::e_Gene));
+
+    //CFeat_CI gene_it(*m_Scope, feat.GetLocation(), SAnnotSelector (CSeqFeatData::e_Gene));
+    CFeat_CI gene_it(bsh, 
+                     CRange<TSeqPos>(feat.GetLocation().GetStart(eExtreme_Positional),
+                                     feat.GetLocation().GetStop(eExtreme_Positional)),
+                     SAnnotSelector(CSeqFeatData::e_Gene));
     CFeat_CI prev_gene;
     string label = "?";
     bool xref_match_same_as_overlap = false;
@@ -7899,21 +7921,22 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             }
         }
 
-
-        // find gene on bioseq to match genexref
-        if (gene_xref->IsSetLocus() &&
-            !NStr::IsBlank (gene_xref->GetLocus()) &&
-            num_match_by_locus == 0 &&
-            !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus())) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
-                "Feature has gene locus cross-reference but no equivalent gene feature exists", feat);
-        }
-        if (gene_xref->IsSetLocus_tag() 
-            && !NStr::IsBlank (gene_xref->GetLocus_tag()) &&
-            num_match_by_locus_tag == 0 &&
-            !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus_tag())) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
-                        "Feature has gene locus_tag cross-reference but no equivalent gene feature exists", feat);
+        if (num_match_by_locus == 0 && num_match_by_locus_tag == 0) {
+            // find gene on bioseq to match genexref
+            if (gene_xref->IsSetLocus() &&
+                !NStr::IsBlank(gene_xref->GetLocus()) &&
+                !FindGeneToMatchGeneXref(*gene_xref, bsh.GetSeq_entry_Handle()) &&
+                !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus())) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
+                    "Feature has gene locus cross-reference but no equivalent gene feature exists", feat);
+            }
+            if (gene_xref->IsSetLocus_tag() &&
+                !NStr::IsBlank(gene_xref->GetLocus_tag()) &&
+                !FindGeneToMatchGeneXref(*gene_xref, bsh.GetSeq_entry_Handle()) &&
+                !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus_tag())) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
+                    "Feature has gene locus_tag cross-reference but no equivalent gene feature exists", feat);
+            }
         }
     }
 
