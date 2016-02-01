@@ -706,6 +706,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
 
     // No longer supported.
     NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.1")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GI", "12345")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GI", 12345)));
 
     BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("EMBL", "AL123456.7")));
     BOOST_CHECK(id->IsEmbl());
@@ -723,17 +725,15 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
     BOOST_CHECK(id->IsDdbj());
     BOOST_CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
 
-#if 0
-    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GI", "12345X")));
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GI", "12345", true)));
+    BOOST_CHECK(id->IsGeneral());
+    BOOST_CHECK(id->GetGeneral().GetTag().IsStr());
+    BOOST_CHECK_EQUAL(id->GetGeneral().GetTag().GetStr(), "12345");
 
-    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GI", "12345")));
-    BOOST_CHECK(id->IsGi());
-    BOOST_CHECK_EQUAL(id->GetGi(), 12345);
-
-    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GI", 12345)));
-    BOOST_CHECK(id->IsGi());
-    BOOST_CHECK_EQUAL(id->GetGi(), 12345);
-#endif
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GI", 12345, true)));
+    BOOST_CHECK(id->IsGeneral());
+    BOOST_CHECK(id->GetGeneral().GetTag().IsId());
+    BOOST_CHECK_EQUAL(id->GetGeneral().GetTag().GetId(), 12345);
 
     NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("taxon", 9606)));
     BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("taxon", 9606, true)));
