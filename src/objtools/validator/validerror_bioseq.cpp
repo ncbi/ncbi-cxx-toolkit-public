@@ -3325,8 +3325,7 @@ void CValidError_bioseq::ValidateDeltaLoc
                 if (bsh) {
                     TSeqPos seq_len = bsh.GetBioseqLength(); 
                     if (seq_len <= stop) {
-                        string id_label;
-                        id->GetLabel(&id_label);
+                        string id_label = id->AsFastaString();
                         PostErr (eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
                                  "Seq-loc extent (" + NStr::IntToString (stop + 1) 
                                  + ") greater than length of " + id_label
