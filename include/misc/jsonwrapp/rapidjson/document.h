@@ -1845,14 +1845,14 @@ rhs.ValueType::SetValueAllocator(0);
 
 // NCBI: moved allocator_into GenericValue
 //        allocator_ = rhs.allocator_;
-SetValueAllocator(rhs.GetValueAllocator());
+ValueType::SetValueAllocator(rhs.ValueType::GetValueAllocator());
 
         ownAllocator_ = rhs.ownAllocator_;
         stack_ = std::move(rhs.stack_);
         parseResult_ = rhs.parseResult_;
 
 // NCBI: moved allocator_into GenericValue
-rhs.SetValueAllocator(0);
+rhs.ValueType::SetValueAllocator(0);
 
         rhs.ownAllocator_ = 0;
         rhs.parseResult_ = ParseResult();
@@ -1880,6 +1880,8 @@ rhs.SetValueAllocator(0);
         if (parseResult_) {
             RAPIDJSON_ASSERT(stack_.GetSize() == sizeof(ValueType)); // Got one and only one root object
             this->RawAssign(*stack_.template Pop<ValueType>(1));    // Add this-> to prevent issue 13.
+//NCBI added allocator
+            ValueType::SetValueAllocator(ownAllocator_);
         }
         return *this;
     }
@@ -1981,6 +1983,7 @@ rhs.SetValueAllocator(0);
     Allocator& GetAllocator() { return *allocator_; }
 #else
     Allocator& GetAllocator() const { return *ValueType::GetValueAllocator(); }
+    Allocator* GetOwnAllocator() const { return ownAllocator_; }
 #endif
 
     //! Get the capacity of stack in bytes.
@@ -2052,7 +2055,9 @@ private:
     }
 
     void Destroy() {
-        RAPIDJSON_DELETE(ownAllocator_);
+        if (ownAllocator_) {
+            RAPIDJSON_DELETE(ownAllocator_);
+        }
     }
 
     static const size_t kDefaultStackCapacity = 1024;

@@ -2144,14 +2144,17 @@ inline CJson_Document::CJson_Document( CJson_Value::EJsonType type) {
     case CJson_Node::eString: m_DocImpl.SetString(kEmptyCStr,0);  break;
     }
     m_Impl = &m_DocImpl;
+    m_Impl->SetValueAllocator(m_DocImpl.GetOwnAllocator());
 }
 inline CJson_Document::CJson_Document(const CJson_ConstNode::TStringType& v) {
     m_DocImpl.Parse<rapidjson::kParseStopWhenDoneFlag, rapidjson::UTF8<> >(v.c_str());
     m_Impl = &m_DocImpl;
+    m_Impl->SetValueAllocator(m_DocImpl.GetOwnAllocator());
 }
 inline CJson_Document::CJson_Document(const CJson_Document& v) {
     m_DocImpl.CopyFrom(*v.m_Impl, m_DocImpl.GetAllocator());
     m_Impl = &m_DocImpl;
+    m_Impl->SetValueAllocator(m_DocImpl.GetOwnAllocator());
 }
 inline CJson_Document& CJson_Document::operator=(const CJson_Document& v) {
     m_DocImpl.CopyFrom(*v.m_Impl, m_DocImpl.GetAllocator());
@@ -2160,20 +2163,27 @@ inline CJson_Document& CJson_Document::operator=(const CJson_Document& v) {
 inline CJson_Document::CJson_Document(const CJson_ConstNode& v) {
     m_DocImpl.CopyFrom(*v.m_Impl, m_DocImpl.GetAllocator());
     m_Impl = &m_DocImpl;
+    m_Impl->SetValueAllocator(m_DocImpl.GetOwnAllocator());
 }
 inline CJson_Document& CJson_Document::operator=(const CJson_ConstNode& v) {
     m_DocImpl.CopyFrom(*v.m_Impl, m_DocImpl.GetAllocator());
+    m_Impl = &m_DocImpl;
+    m_Impl->SetValueAllocator(m_DocImpl.GetOwnAllocator());
     return *this;
 }
 
 inline bool CJson_Document::ParseString(const CJson_ConstNode::TStringType& v) {
     m_DocImpl.Parse<rapidjson::kParseStopWhenDoneFlag, rapidjson::UTF8<> >(v.c_str());
+    m_Impl = &m_DocImpl;
+    m_Impl->SetValueAllocator(m_DocImpl.GetOwnAllocator());
     return  !m_DocImpl.HasParseError();
 }
 
 inline bool CJson_Document::Read(std::istream& in) {
     rapidjson::CppIStream ifs(in);
     m_DocImpl.ParseStream<rapidjson::kParseStopWhenDoneFlag>(ifs);
+    m_Impl = &m_DocImpl;
+    m_Impl->SetValueAllocator(m_DocImpl.GetOwnAllocator());
     return  !m_DocImpl.HasParseError();
 }
 
