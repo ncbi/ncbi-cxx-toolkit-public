@@ -1202,7 +1202,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     size_t user_dtab_length;
     char* new_dtab = NULL;
     char* user_dtab_end;
-    char* token = NULL, *saveptr = NULL, *str = NULL;
+    char* token = NULL, *saveptr = NULL, *str = NULL, *opt_param = NULL;
 #ifdef _DEBUG
     char hostport[kHostportStringLength]; //just for debug
 #endif
@@ -1303,6 +1303,9 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         if (token == NULL) {
             break;
         }
+        if ((opt_param = strstr(token, " | ")) != NULL) {
+            *opt_param = 0;
+        }
         info = SERV_ReadInfoEx(token, serviceName, 0);
         /* Occasionally, the info returned by LBOS can be invalid. */
         if (info == NULL) {
@@ -1330,7 +1333,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         SOCK_HostPortToString(info->host, info->port, hostport,
                 kHostportStringLength);
         /*Copy IP from stream to the result char array*/
-        CORE_LOGF(eLOG_Note, ("Resolved to: [%s]", hostport));
+        CORE_LOGF(eLOG_Note, ("Resolved [%s] to [%s]", serviceName, hostport));
 #endif
     }
     free(lbos_answer);
@@ -2311,7 +2314,9 @@ unsigned short s_LBOS_Announce(const char*             service,
         goto clear_and_exit;
     }
     /* If announced server has broken healthcheck */
-    if (last_code == kLBOSNotFound || last_code == kLBOSBadRequest) {
+    if (last_code == kLBOSNotFound || last_code == kLBOSBadRequest  
+        || last_code == kLBOSServerError) 
+    {
         CORE_LOGF(eLOG_Warning, ("Announce failed. "
                                  "LBOS returned error code %d.", last_code));
         goto clear_and_exit;

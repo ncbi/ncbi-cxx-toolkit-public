@@ -443,6 +443,8 @@ CLBOSException::EErrCode
         return e_LBOSMemAllocError;
     case kLBOSCorruptOutput:
         return e_LBOSCorruptOutput;
+    case kLBOSServerError:
+        return e_LBOSServerError;
     default:
         return e_LBOSUnknown;
     }
@@ -457,29 +459,32 @@ unsigned short CLBOSException::GetStatusCode(void) const {
 const char* CLBOSException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-        /* 400 */
+    /* 400 */
     case e_LBOSBadRequest:
         return "";
-        /* 404 */
+    /* 404 */
     case e_LBOSNotFound:
         return "";
-        /* 450 */
+    /* 500 */
+    case e_LBOSServerError:
+        return "";
+    /* 450 */
     case e_LBOSNoLBOS:
         return "LBOS was not found";
-        /* 451 */
+    /* 451 */
     case e_LBOSDNSResolveError:
         return "DNS error. Possibly, cannot get IP of current machine or "
                "resolve provided hostname for the server";
-        /* 452 */
+    /* 452 */
     case e_LBOSInvalidArgs:
         return "Invalid arguments were provided. No request to LBOS was sent";
-        /* 453 */
+    /* 453 */
     case e_LBOSMemAllocError:
         return "Memory allocation error happened while performing request";
-        /* 454 */
+    /* 454 */
     case e_LBOSCorruptOutput:
         return "Failed to parse LBOS output.";
-        /* 550 */
+    /* 550 */
     case e_LBOSOff:
         return "LBOS functionality is turned OFF. Check config file.";
     default:

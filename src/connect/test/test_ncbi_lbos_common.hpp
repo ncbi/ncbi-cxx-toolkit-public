@@ -124,12 +124,9 @@
 /* Boost checks are not thread-safe, so they need to be handled appropriately */
 #define MT_SAFE(E)                                                            \
     {{                                                                        \
-        /*WRITE_LOG("Waiting for Boost test mutex...", kSingleThreadNumber);*/\
         CFastMutexGuard spawn_guard(s_BoostTestLock);                         \
-        /*WRITE_LOG("Lock acquired!", kSingleThreadNumber);*/                 \
         E;                                                                    \
-    }}                                                                        \
-    //WRITE_LOG("Lock released!", kSingleThreadNumber);
+    }}                                                                        
 #define NCBITEST_CHECK_MESSAGE_MT_SAFE(P,M)                       \
             MT_SAFE(NCBITEST_CHECK_MESSAGE(P, M))
 #define NCBITEST_REQUIRE_MESSAGE_MT_SAFE(P,M)                     \
@@ -142,8 +139,36 @@
             MT_SAFE(NCBITEST_REQUIRE_NE(S, E))
 
 
+#define CHECK_LBOS_VERSION()                                                  \
+do {                                                                          \
+    string func_name = __FUNCTION__;                                          \
+    size_t first_colon = func_name.find(':') + 2;                             \
+    size_t last_colon = func_name.find_last_of(':') - 1;                      \
+    func_name = func_name.substr(first_colon, last_colon - first_colon);      \
+    CCObjHolder<char> versions_cstr(g_LBOS_RegGet("TESTVERSIONS",             \
+                                                  func_name.c_str(),          \
+                                                  NULL));                     \
+    if (*versions_cstr != NULL) {                                             \
+        string versions_str = *versions_cstr;                                 \
+        vector<SLBOSVersion> versions_arr =                                   \
+            s_ParseVersionsString(versions_str);                              \
+        bool active = s_CheckTestVersion(versions_arr);                       \
+        if (!active) {                                                        \
+            WRITE_LOG("Test " << func_name << " is not active because "       \
+                      "LBOS has version \"" <<                                \
+                      s_LBOSVersion.major << "." <<                           \
+                      s_LBOSVersion.minor << "." << s_LBOSVersion.patch <<    \
+                      "\" and test has version string \""                     \
+                      << versions_str << "\"",                                \
+                      kSingleThreadNumber);                                   \
+            return;                                                           \
+        }                                                                     \
+    }                                                                         \
+} while (false)
+
+
 /* LBOS returns 500 on announcement unexpectedly */
-//#define QUICK_AND_DIRTY
+//#define QUICK_AND_DIRTY // define if announcements are repeated until success
 
 /* We might want to clear ZooKeeper from nodes before running tests.
 * This is generally not good, because if this test application runs
@@ -151,12 +176,47 @@
 * tests will fail.
 */
 #define DEANNOUNCE_ALL_BEFORE_TEST
-
 /*test*/
 #include "test_assert.h"
 
 
 USING_NCBI_SCOPE;
+
+
+/* Version of LBOS or this test */
+struct SLBOSVersion
+{
+    unsigned short major;
+    unsigned short minor;
+    unsigned short patch;
+
+    bool operator<(const SLBOSVersion& rhs) 
+    {
+        if (major != rhs.major)
+            return major < rhs.major;
+        if (minor != rhs.minor)
+            return minor < rhs.minor;
+        if (patch != rhs.patch)
+            return patch < rhs.patch;
+        return false;
+    }
+    bool operator==(const SLBOSVersion& rhs) 
+    {
+        return major == rhs.major && minor == rhs.minor && patch == rhs.patch;
+    }
+    bool operator>(const SLBOSVersion& rhs)
+    {
+        return !( *this < rhs  ||  *this == rhs );
+    }
+    bool operator>=(const SLBOSVersion& rhs)
+    {
+        return (*this > rhs || *this == rhs);
+    }
+    bool operator<=(const SLBOSVersion& rhs)
+    {
+        return (*this < rhs || *this == rhs);
+    }
+};
 
 
 /* First let's declare some functions that will be
@@ -169,7 +229,7 @@ static void            s_TestFindMethod             (ELBOSFindMethod);
 static string          s_PrintThreadNum             (int);
 static void            s_PrintAnnouncedServers      (int);
 
-/** Return a priori known LBOS address */
+/** Return a priori known LBOS address (not real) */
 template <unsigned int lines>
 static char*           s_FakeComposeLBOSAddress (void);
 #ifdef NCBI_OS_MSWIN
@@ -185,7 +245,6 @@ static double          s_TimeDiff               (const struct   timeval*,
                                                  const struct   timeval*);
 static string          s_GenerateNodeName       (void);
 static unsigned short  s_GeneratePort           (int            thread_num);
-static const int       kThreadsNum              = 34;
 static bool            s_CheckIfAnnounced       (string         service,
                                                  string         version,
                                                  unsigned short server_port,
@@ -194,21 +253,29 @@ static bool            s_CheckIfAnnounced       (string         service,
                                                  bool          expectedAnnounced
                                                                          = true,
                                                  string         host = "");
+static string          s_ReadLBOSVersion        (void);
+static bool            s_CheckTestVersion       (vector<SLBOSVersion>
+                                                                versions_arr);
+static 
+vector<SLBOSVersion>   s_ParseVersionsString    (string versions);
 
-
+const int              kThreadsNum                  = 34;
+/** When the test is run in single-threaded mode, we set the number of the 
+ * main thread to -1 to distinguish between MT and ST    */
+const int              kSingleThreadNumber          = -1;
+/* Seconds to try to find server. We wait maximum of 60 seconds. */
+const int              kDiscoveryDelaySec           = 60; 
+/* for tests where port is not necessary (they fail before announcement) */
+const unsigned short   kDefaultPort                 = 5000; 
 /** Static variables that are used in mock functions.
  * This is not thread-safe! */
 static int             s_CallCounter                = 0;
 /** It is yet impossible on TeamCity, but useful for local tests, where 
    local LBOS can be easily run                                              */
 static string          s_LastHeader;
-/** When the test is run in single-threaded mode, we set the number of the 
- * main thread to -1 to distinguish between MT and ST    */
-const int              kSingleThreadNumber          = -1;
-/* Seconds to try to find server. We wait maximum of 60 seconds. */
-const int              kDiscoveryDelaySec = 60; 
-const unsigned short   kDefaultPort                 = 5000; /* for tests where
-                        port is not necessary (they fail before announcement) */
+static SLBOSVersion    s_LBOSVersion                = {0,0,0};
+
+
 /* Mutex for thread-unsafe Boost checks */
 DEFINE_STATIC_FAST_MUTEX(s_BoostTestLock);
 
@@ -642,22 +709,56 @@ static bool s_CheckServiceKnown(string service)
     return exists;
 }
 
+/** Special service name for /configure endpoint tests. Telle that it is 
+ * safe to delete it and is unique for each host that create them */
 static string s_GetUnknownService() {
     static string charset = "abcdefghijklmnopqrstuvwxyz"
                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                             "1234567890";
     const int length = 10;
-
+    unsigned int i;
     for (;;) {
-        string result = "/";
-        result.resize(length);
-        for (int i = 1; i < length; i++)
+        string result = string("/deleteme") + NStr::Replace(s_GetMyIP(),".", "");
+        i = result.length();
+        result.resize(result.length() + length);
+        for ( ; i < result.length(); i++) {
             result[i] = charset[rand() % charset.length()];
+        }
         if (!s_CheckServiceKnown(result)) {
             return result;
         }
     }
     return ""; /* never reachable */
+}
+
+static void s_CleanDTabs(int thread_num) {
+    vector<string> nodes_to_delete;
+    CConnNetInfo net_info;
+    size_t start = 0, end = 0;
+    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
+    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
+        UrlReadAll(*net_info, (string("http://") + lbos_addr +
+        "/admin/dtab").c_str(), NULL, NULL));
+    if (*lbos_output_orig == NULL)
+        lbos_output_orig = strdup("");
+    string lbos_output = *lbos_output_orig;
+    WRITE_LOG("admin/dtab output: \n" << lbos_output, thread_num);
+    string to_find = string("/deleteme") + NStr::Replace(s_GetMyIP(),".", "");    
+    while (start != string::npos) {
+        start = lbos_output.find(to_find, start);
+        if (start == string::npos)
+            break;
+        // We already know service name since we searched for it.
+        end = lbos_output.find("=>", start); //skip service name
+        nodes_to_delete.push_back(lbos_output.substr(start, end-start));
+        start = end+7; //skip "=>/zk#/" 
+    }
+    
+    vector<string>::iterator it;
+    for (it = nodes_to_delete.begin();  it != nodes_to_delete.end();  it++ ) {
+        LBOS::ServiceVersionDelete(*it);
+    }
 }
 
 class CHealthcheckThread
@@ -698,24 +799,25 @@ public:
         CSocketAPI::Poll(m_ListeningSockets, &rw_timeout, &n_ready);
         for (it = m_ListeningSockets.begin(); it != m_ListeningSockets.end(); it++) {
             if (it->m_REvent != eIO_Open && it->m_REvent != eIO_Close) {
-                CSocket* sock = new CSocket;
+                AutoPtr<CSocket> sock = new CSocket;
                 if (static_cast<CListeningSocket*>(it->m_Pollable)->
                     Accept(*sock, &accept_timeout) != eIO_Success) {
                     WRITE_LOG("Healthcheck vacant ",
-                        kSingleThreadNumber);
+                              kSingleThreadNumber);
                     m_Busy = false;
                     sock->Close();
-                    delete sock;
                     return;
                 }
+                CSocket* my_sock;
+                m_SocketPool.push_back(CSocketAPI::SPoll(my_sock = sock.release(), eIO_ReadWrite));
                 iters_passed++;
                 m_Busy = true;
                 char buf[4096];
                 size_t n_read = 0;
                 size_t n_written = 0;
-                sock->SetTimeout(eIO_ReadWrite, &rw_timeout);
-                sock->SetTimeout(eIO_Close, &c_timeout);
-                sock->Read(buf, sizeof(buf), &n_read);
+                my_sock->SetTimeout(eIO_ReadWrite, &rw_timeout);
+                my_sock->SetTimeout(eIO_Close, &c_timeout);
+                my_sock->Read(buf, sizeof(buf), &n_read);
                 buf[n_read] = '\0';
                 string request = buf;
                 if (request.length() > 10) {
@@ -734,9 +836,8 @@ public:
                     "Content-Type: text/plain;charset=UTF-8\r\n"
                     "\r\n"
                     "OK\r\n";
-                sock->Write(healthy_answer, sizeof(healthy_answer) - 1,
+                my_sock->Write(healthy_answer, sizeof(healthy_answer) - 1,
                     &n_written);
-                m_SocketPool.push_back(CSocketAPI::SPoll(sock, eIO_ReadWrite));
 
                 if (iters_passed == iters_btw_grbg_cllct) {
                     iters_passed = 0;
@@ -859,12 +960,13 @@ int s_CountServersWithExpectation(string            service,
                 if (info != NULL && info->port == port)
                     servers++;
             } while (info != NULL);
-        WRITE_LOG("Found " << servers << " servers of service " << service <<
-                  ", port " << port << " after " << time_elapsed <<
-                  " seconds via service discovery.", thread_num);
+            MEASURE_TIME_FINISH
+            WRITE_LOG("Found " << servers << " servers of service " 
+                        << service << ", port " << port << " after " 
+                        << time_elapsed << " seconds via service discovery.", 
+                      thread_num);
             retries++;
         }
-    MEASURE_TIME_FINISH
     return servers;
 }
 
@@ -1290,10 +1392,76 @@ void TryMultiThread(); /* namespace MultiThreading */
 ///////////////////////////////////////////////////////////////////////////////
 //////////////               DEFINITIONS             //////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
+namespace ExtraResolveData
+{
+static void s_FakeInputTest(int servers_num)
+{
+    CLBOSStatus lbos_status(true, true);
+    string service = "/service/doesnotexist";    
+    unsigned int temp_ip;
+    unsigned short temp_port;
+    CCounterResetter resetter(s_CallCounter);
+    CConnNetInfo net_info;
+    /*
+     * We know that iter is LBOS's.
+     */
+    CCObjArrayHolder<SSERV_Info> hostports(
+                     g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(
+                            "lbosdevacvancbinlmnih.gov", "/lbos", *net_info));
+    int i = 0;
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(*hostports != NULL,
+                           "Problem with fake massive input, "
+                           "no servers found. ");
+    ostringstream temp_host;
+    if (*hostports) {
+        for (i = 0;  hostports[i] != NULL;  i++) {
+            temp_host.str("");
+            temp_host << i+1 << "." <<  i+2 << "." <<  i+3 << "." << i+4
+                      << ":" << (i+1)*215;
+            SOCK_StringToHostPort(temp_host.str().c_str(), 
+                                  &temp_ip, 
+                                  &temp_port);
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->host == temp_ip,
+                                   "Problem with recognizing IP"
+                                   " in massive input");
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->port == temp_port,
+                                   "Problem with recognizing IP "
+                                   "in massive input");
+        }
+        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == servers_num, "Mapper should find 200 hosts, but "
+                               "did not.");
+    }
+}
+void ExtraData__DoesNotCrash()
+{
+    CMockFunction<FLBOS_ConnReadMethod*> mock(
+        g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
+        s_FakeReadDiscoveryExtra<200>);
+    s_FakeInputTest(200);
+}
+
+void EmptyExtra__DoesNotCrash()
+{
+    CMockFunction<FLBOS_ConnReadMethod*> mock(
+        g_LBOS_UnitTesting_GetLBOSFuncs()->Read, 
+        s_FakeReadDiscoveryEmptyExtra<200>);
+    s_FakeInputTest(200);
+}
+
+void EmptyServInfoPart__Skip()
+{
+    CMockFunction<FLBOS_ConnReadMethod*> mock(
+        g_LBOS_UnitTesting_GetLBOSFuncs()->Read, 
+        s_FakeReadDiscoveryEmptyServInfoPart<200>);
+    s_FakeInputTest(0);
+}
+} /* namespace ExtraResolveData */
+
 namespace ExceptionCodes
 {
 void CheckCodes()
-{
+{    
     CLBOSException::EErrCode code;
     code = CLBOSException::s_HTTPCodeToEnum(400);
     NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSBadRequest);
@@ -1309,14 +1477,16 @@ void CheckCodes()
     NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSMemAllocError);
     code = CLBOSException::s_HTTPCodeToEnum(454);
     NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSCorruptOutput);
+    code = CLBOSException::s_HTTPCodeToEnum(500);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSServerError);
     code = CLBOSException::s_HTTPCodeToEnum(550);
     NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSOff);
     /* Some unknown */
     code = CLBOSException::s_HTTPCodeToEnum(200);
     NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSUnknown);
-    code = CLBOSException::s_HTTPCodeToEnum(401);
+    code = CLBOSException::s_HTTPCodeToEnum(204);
     NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSUnknown);
-    code = CLBOSException::s_HTTPCodeToEnum(500);
+    code = CLBOSException::s_HTTPCodeToEnum(401);
     NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSUnknown);
     code = CLBOSException::s_HTTPCodeToEnum(503);
     NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSUnknown);
@@ -1324,7 +1494,7 @@ void CheckCodes()
 
 
 /** Error codes - only for internal errors (that are not returned by 
- * LBOS itself) */
+ *  LBOS itself) */
 void CheckErrorCodeStrings()
 {
     string error_string;
@@ -1340,6 +1510,12 @@ void CheckErrorCodeStrings()
                                   CLBOSException::e_LBOSNotFound, "",
                                   kLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
+    
+    /* 500 */
+    error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+                                  CLBOSException::e_LBOSServerError, "",
+                                  kLBOSServerError).GetErrCodeString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 450 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
@@ -1354,7 +1530,6 @@ void CheckErrorCodeStrings()
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "DNS error. Possibly, cannot get IP " 
                                        "of current machine or resolve provided "
                                        "hostname for the server");
-
     /* 452 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::e_LBOSInvalidArgs, "",
@@ -2451,8 +2626,6 @@ void FakeMassiveInput__ShouldProcess()
         NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 200, "Mapper should find 200 hosts, but "
                                "did not.");
     }
-    /* Return everything back*/
-    //g_LBOS_UnitTesting_GetLBOSFuncs()->Read = temp_func_pointer;
 }
 
 
@@ -2471,51 +2644,41 @@ void FakeErrorInput__ShouldNotCrash()
                                     g_LBOS_UnitTesting_GetLBOSFuncs()->Read, 
                                     s_FakeReadDiscoveryCorrupt<200>);
     CCObjArrayHolder<SSERV_Info> hostports(
-        g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(
-                                                 "lbosdevacvancbinlmnih.gov", 
-                                                 "/lbos", 
-                                                 *net_info));
+                        g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(
+                            "lbosdevacvancbinlmnih.gov", "/lbos", *net_info));
     int i=0, /* iterate test numbers*/
         j=0; /*iterate hostports from ResolveIPPort */
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*hostports != NULL,
                            "Problem with fake error input, no servers found. "
                            "Most likely, problem with test.");
     if (*hostports) {
-        for (i = 0;  hostports[i] != NULL;  i++) {
+        for (i = 0;  hostports[j] != NULL;  i++) {
             /* We need to check which combination is supposed to be failure*/
 
             stringstream ss;
-            ss << std::setfill('0') << std::setw(3) << i + 1 << "." 
-               << std::setfill('0') << std::setw(3) << i + 2 << "." 
-               << std::setfill('0') << std::setw(3) << i + 3 << "." 
-               << std::setfill('0') << std::setw(3) << i + 4;
-#ifndef NCBI_OS_DARWIN /* MacOS does not understand octals in IP, 
-                          so 8 and 9 work fine */
+            ss << 0 << i + 1 << "." 
+               << 0 << i + 2 << "." 
+               << 0 << i + 3 << "." 
+               << 0 << i + 4;
             if (
-                    i < 100 
-                    && 
-                    (
                         ss.str().find('8') != string::npos 
                         ||
                         ss.str().find('9') != string::npos
-                    )
                 ) 
             {
-                WRITE_LOG(ss.str() << "Has 8 or 9, skipping", 
+                WRITE_LOG(ss.str() << " Has 8 or 9, skipping", 
                           kSingleThreadNumber);
                 continue;
             }
-#endif /* NCBI_OS_DARWIN */
+
             ss << ":" << (i + 1) * 215;
-            WRITE_LOG("Expecting IP:port " << ss.str(), kSingleThreadNumber);
-            SOCK_StringToHostPort(ss.str().c_str(), &temp_ip, &temp_port);
+            SOCK_StringToHostPort(ss.str().c_str(), &temp_ip, &temp_port);            
             NCBITEST_CHECK_EQUAL_MT_SAFE(hostports[j]->host, temp_ip);
             NCBITEST_CHECK_EQUAL_MT_SAFE(hostports[j]->port, temp_port);
             j++;
         }
-        NCBITEST_CHECK_EQUAL_MT_SAFE(i, 80);
+        NCBITEST_CHECK_EQUAL_MT_SAFE(j, 80);
    }
-   /* g_LBOS_UnitTesting_GetLBOSFuncs()->Read = temp_func_pointer;*/
 }
 } /* namespace ResolveViaLBOS */
 
@@ -2593,6 +2756,7 @@ void NoConditions__AddressDefOrder()
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(addresses[1] ==  NULL,
                              "LBOS address list was not closed after the "
                              "first item");
+
 #ifdef NCBI_OS_LINUX
     /* II. Registry has no entries - check that LBOS is read from
      *     /etc/ncbi/lbosresolver */
@@ -2618,7 +2782,6 @@ void NoConditions__AddressDefOrder()
     /* Cleanup */
     registry.Set("CONN", "lbos", lbos);
 #endif /* #ifdef NCBI_OS_LINUX */
-
 }
 } /* namespace GetLBOSAddress */
 
@@ -3344,17 +3507,15 @@ void AllOK__LBOSAnswerProvided(int thread_num = -1)
     s_SelectPort(count_before, node_name, port, thread_num);
     /* Announce */
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                  string("http://lbos.dev.be-md.ncbi.nlm.nih.gov:" 
-                  PORT_STR(PORT) "/health").c_str(),
+                  (string("http://") + s_GetMyHost() + ":" PORT_STR(PORT) "/health").c_str(),
                   &lbos_answer.Get(), &lbos_status_message.Get(), thread_num);
 
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Announcement function did not return "
                            "LBOS answer as expected");
     /* Cleanup */
-    s_DeannounceC(node_name.c_str(), "1.0.0", 
-                  "lbos.dev.be-md.ncbi.nlm.nih.gov", port, NULL, NULL, 
-                  thread_num);
+    s_DeannounceC(node_name.c_str(), "1.0.0", NULL, port, 
+                  NULL, NULL, thread_num);
     lbos_answer = NULL;
     lbos_status_message = NULL;
 
@@ -7705,6 +7866,110 @@ static void s_PrintAnnouncedServers(int thread_num) {
     }
     WRITE_LOG("Announced servers list: \n" << ss.str(), thread_num);
     CORE_UNLOCK;
+}
+
+
+/** Get string like "x.x.x" and convert it to SLBOSVersion */
+static SLBOSVersion s_ParseVersionString(string version) 
+{
+    SLBOSVersion version_struct;
+    /* Now we parse version into major.minor.patch */
+    size_t start, end;
+    start = 0;
+    end = version.find(".", start);
+    if (start == string::npos)
+        return {0,0,0};
+    version_struct.major = NStr::StringToInt(version.substr(start, end - start));
+    start = end + 1; // skip "."
+    end = version.find(".", start);
+    version_struct.minor = NStr::StringToInt(version.substr(start, end - start));
+    start = end + 1; // skip "."
+    end = version.find(".", start);
+    version_struct.patch = NStr::StringToInt(version.substr(start, end - start));
+    return version_struct;
+}
+
+/** Get string like "x.x.x, x.x.x, x.x.x,..." and convert it to 
+ * vector<SLBOSVersion> */
+static vector<SLBOSVersion> s_ParseVersionsString(string versions)
+{
+    vector<SLBOSVersion> versions_arr;
+    /* Now we parse version into major.minor.patch */
+    size_t start = 0, end = 0;
+    // if there is something to parse
+    for( ; versions.substr(start).length() > 0  &&  end != string::npos; ) {
+        end = versions.find(",", start);
+        string version_str = versions.substr(start, end-start);
+        versions_arr.push_back(s_ParseVersionString(version_str));
+        start = end + 2; //skip ", "
+    }
+    return versions_arr;
+}
+
+/**  Read version of LBOS. 
+ *  @note 
+ *   Should be run only once during runtime. Multiple runs can cause undefined
+ *   memory leaks 
+ */
+static string s_ReadLBOSVersion(int thread_num)
+{
+    CConnNetInfo net_info;
+    size_t version_start = 0, version_end = 0;
+    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
+    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
+        UrlReadAll(*net_info, (string("http://") + lbos_addr +
+        "/admin/server_info").c_str(), NULL, NULL));
+    if (*lbos_output_orig == NULL) // for string constructor not to throw
+        lbos_output_orig = strdup("");
+    string lbos_output = *lbos_output_orig;
+    WRITE_LOG("/admin/server_info output: \r\n" << lbos_output, thread_num);
+
+    /* In the output of LBOS we search for "\"version\" : \""  */
+    string version_tag = "\"version\" : \"";
+    version_start = lbos_output.find(version_tag) + version_tag.length();
+    if (version_start == string::npos)
+        return "";
+    version_end = lbos_output.find("\"", version_start);
+    string version = lbos_output.substr(version_start, 
+                                        version_end - version_start);
+    s_LBOSVersion = s_ParseVersionString(version);
+    return version;
+}
+
+
+/** Check if LBOS has version compatible with current test. 
+ * @param[in] versions_arr 
+ *  Array of versions that goes "from, till, from, till, ...". If array ends 
+ *  with "from" element, it means that there is no maximum LBOS version for 
+ *  the test. Details: if LBOS version equals one of "from" versions, 
+ *  test is enabled, if LBOS version equals one of "till" versions - test is 
+ *  disabled. If versions_arr has no elements, test is enabled. Elements MUST 
+ *  be ascending, e.g. "1.0.0, 1.0.2, 0.0.1, 0.0.2" is invalid input
+ */
+bool s_CheckTestVersion(vector<SLBOSVersion> versions_arr)
+{
+    if (versions_arr.size() == 0)
+        return true;
+    bool active = false;
+    bool from_till = false; /* false - from version, true - till version */
+    for (size_t i = 0; i < versions_arr.size(); i++) {
+        if (from_till) { /* till version */
+            if (versions_arr[i] <= s_LBOSVersion) {
+                active = false;
+            } else {
+                break;
+            }
+        } else { /* from version */
+            if (versions_arr[i] <= s_LBOSVersion) {
+                active = true;
+            } else {
+                break;
+            }
+        }
+        from_till = !from_till;
+    }
+    return active;
 }
 
 #endif /* CONNECT___TEST_NCBI_LBOS__HPP*/

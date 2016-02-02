@@ -60,6 +60,7 @@ static const int kLBOSDNSResolveError = 451;
 static const int kLBOSInvalidArgs     = 452;
 static const int kLBOSMemAllocError   = 453;
 static const int kLBOSCorruptOutput   = 454;
+static const int kLBOSServerError     = 500;
 static const int kLBOSOff             = 550;
 
 

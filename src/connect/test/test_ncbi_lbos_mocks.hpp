@@ -428,7 +428,7 @@ EIO_Status s_FakeReadAnnouncement(CONN           conn,
     int localscope_lines = lines; /* static analysis and compiler react 
                                 strangely to template parameter in equations */
     if (s_CallCounter++ < localscope_lines) {
-        char* buf = "1.2.3.4:5";
+        const char* buf = "1.2.3.4:5";
         strncat(static_cast<char*>(line), buf, size-1);
         *n_read = strlen(buf);
         return eIO_Success;
@@ -817,7 +817,6 @@ EIO_Status s_FakeReadDiscoveryCorrupt(CONN              conn,
 }
 
 
-
 /* Emulate a lot of records to be sure that algorithm can take so much */
 template <unsigned int lines>
 static
@@ -834,11 +833,131 @@ EIO_Status s_FakeReadDiscovery(CONN            conn,
         stringstream oss;
         unsigned int localscope_lines = lines;
         for (unsigned int i = 0; i < localscope_lines; i++) {
-            oss << "STANDALONE " << i + 1 << "." <<
-                i + 2 << "." <<
-                i + 3 << "." <<
-                i + 4 << ":" << (i + 1) * 215 <<
-                " Regular R=1000.0 L=yes T=30\n";
+            oss << "STANDALONE " << i + 1 << "." << i + 2 << "." <<
+                                    i + 3 << "." << i + 4 << ":" <<
+                                    (i + 1) * 215 <<
+                                    " Regular R=1000.0 L=yes T=30\n";
+        }
+        buf = oss.str();
+    }
+    unsigned int len = buf.length();
+    if (bytesSent < len) {
+        static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
+            ->http_response_code = 200;
+        int length_before = strlen(static_cast<char*>(line));
+        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size-1);
+        int length_after = strlen(static_cast<char*>(line));
+        *n_read = length_after - length_before + 1;
+        bytesSent += *n_read-1;
+        return eIO_Success;
+    } else {
+        bytesSent = 0;
+        *n_read = 0;
+        return eIO_Closed;
+    }
+}
+
+
+/* Emulate a lot of records to be sure that algorithm can take so much */
+template <unsigned int lines>
+static
+EIO_Status s_FakeReadDiscoveryEmptyExtra(CONN            conn,
+                                         void*           line,
+                                         size_t          size,
+                                         size_t*         n_read,
+                                         EIO_ReadMethod  how)
+{
+    static unsigned int bytesSent = 0;
+    /* Generate string */
+    static string buf = "";
+    if (buf == "") {
+        stringstream oss;
+        unsigned int localscope_lines = lines;
+        for (unsigned int i = 0; i < localscope_lines; i++) {
+            oss << "STANDALONE " << i + 1 << "." << i + 2 << "." <<
+                                    i + 3 << "." << i + 4 << ":" <<
+                                    (i + 1) * 215 <<
+                                    " Regular R=1000.0 L=yes T=30 | \n";
+        }
+        buf = oss.str();
+    }
+    unsigned int len = buf.length();
+    if (bytesSent < len) {
+        static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
+            ->http_response_code = 200;
+        int length_before = strlen(static_cast<char*>(line));
+        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size-1);
+        int length_after = strlen(static_cast<char*>(line));
+        *n_read = length_after - length_before + 1;
+        bytesSent += *n_read-1;
+        return eIO_Success;
+    } else {
+        bytesSent = 0;
+        *n_read = 0;
+        return eIO_Closed;
+    }
+}
+
+
+/* Emulate a lot of records to be sure that algorithm can take so much */
+template <unsigned int lines>
+static
+EIO_Status s_FakeReadDiscoveryExtra(CONN            conn,
+                                    void*           line,
+                                    size_t          size,
+                                    size_t*         n_read,
+                                    EIO_ReadMethod  how)
+{
+    static unsigned int bytesSent = 0;
+    /* Generate string */
+    static string buf = "";
+    if (buf == "") {
+        stringstream oss;
+        unsigned int localscope_lines = lines;
+        for (unsigned int i = 0; i < localscope_lines; i++) {
+            oss << "STANDALONE " << i + 1 << "." << i + 2 << "." <<
+                                    i + 3 << "." << i + 4 << ":" <<
+                                    (i + 1) * 215 <<
+                                    " Regular R=1000.0 L=yes T=30"
+                                    " | a=5 http://a.b.com/health/?p=5 alive\n";
+        }
+        buf = oss.str();
+    }
+    unsigned int len = buf.length();
+    if (bytesSent < len) {
+        static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
+            ->http_response_code = 200;
+        int length_before = strlen(static_cast<char*>(line));
+        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size-1);
+        int length_after = strlen(static_cast<char*>(line));
+        *n_read = length_after - length_before + 1;
+        bytesSent += *n_read-1;
+        return eIO_Success;
+    } else {
+        bytesSent = 0;
+        *n_read = 0;
+        return eIO_Closed;
+    }
+}
+
+
+/* Emulate a lot of records to be sure that algorithm can take so much */
+template <unsigned int lines>
+static
+EIO_Status s_FakeReadDiscoveryEmptyServInfoPart(CONN            conn,
+                                                void*           line,
+                                                size_t          size,
+                                                size_t*         n_read,
+                                                EIO_ReadMethod  how)
+{
+    static unsigned int bytesSent = 0;
+    /* Generate string */
+    static string buf = "";
+    if (buf == "") {
+        stringstream oss;
+        unsigned int localscope_lines = lines;
+        for (unsigned int i = 0; i < localscope_lines; i++) {
+            oss << " | a=5 http://a.b.com/health/?p=5 alive\n";
         }
         buf = oss.str();
     }

@@ -198,20 +198,23 @@ class NCBI_XNCBI_EXPORT CLBOSException : public CException
 public:
     typedef int TErrCode;
     enum EErrCode {
-        e_LBOSNoLBOS = 0,           /**< lbos was not found                   */
-        e_LBOSDNSResolveError = 1,  /**< Local address not resolved           */
-        e_LBOSInvalidArgs = 2,      /**< Arguments not valid                  */
+        e_LBOSNoLBOS = 0,           /**< lbos was not found                  */
+        e_LBOSDNSResolveError = 1,  /**< Local address not resolved          */
+        e_LBOSInvalidArgs = 2,      /**< Arguments not valid                 */
         e_LBOSNotFound = 3,         /**< For de-announcement only. Did not
-                                         find such server to deannounce       */
+                                         find such server to deannounce      */
         e_LBOSOff = 4,              /**< LBOS mapper is off for any of two
-                                         reasons: either it is not enabled in
-                                         registry, or no LBOS was found at
-                                         initialization                       */
-        e_LBOSMemAllocError = 5,    /**< A memory allocation error encountered*/
-        e_LBOSCorruptOutput = 6,    /**< LBOS returned unexpected output      */
-        e_LBOSBadRequest = 7,       /**< LBOS returned "400 Bad Request"      */
-        e_LBOSUnknown = 8           /**< No information about this error
-                                     code meaning                             */
+                                         reasons: either it is not enabled
+                                         in registry, or no LBOS was found
+                                         at initialization                   */
+        e_LBOSMemAllocError = 5,    /**< A memory allocation error 
+                                         encountered                         */
+        e_LBOSCorruptOutput = 6,    /**< LBOS returned unexpected output     */
+        e_LBOSBadRequest = 7,       /**< LBOS returned "400 Bad Request"     */
+        e_LBOSUnknown = 8,          /**< No information about this error
+                                         code meaning                        */
+        e_LBOSServerError = 9       /**< LBOS returned "500 Internal Server 
+                                         Error"                              */
     };
 
     CLBOSException(const CDiagCompileInfo& info,
