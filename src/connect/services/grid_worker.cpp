@@ -1092,6 +1092,12 @@ string CGridWorkerNode::GetBuildDate() const
     return m_Impl->m_JobProcessorFactory->GetAppBuildDate();
 }
 
+string CGridWorkerNode::GetBuildTag() const
+{
+    CFastMutexGuard guard(m_Impl->m_JobProcessorMutex);
+    return m_Impl->m_JobProcessorFactory->GetAppBuildTag();
+}
+
 CNetCacheAPI CGridWorkerNode::GetNetCacheAPI() const
 {
     return m_Impl->m_NetCacheAPI;

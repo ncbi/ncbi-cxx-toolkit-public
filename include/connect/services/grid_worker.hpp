@@ -428,6 +428,15 @@ public:
 
     virtual string GetAppBuildDate() const {return __DATE__;}
 
+    virtual string GetAppBuildTag() const
+    {
+#ifdef NCBI_BUILD_TAG
+        return NCBI_AS_STRING(NCBI_BUILD_TAG);
+#else
+        return kEmptyStr;
+#endif
+    }
+
     /// Get the Idle task
     ///
     virtual IWorkerNodeIdleTask* GetIdleTask() { return NULL; }
@@ -620,6 +629,7 @@ class NCBI_XCONNECT_EXPORT CGridWorkerNode
     string GetAppName() const;
     string GetAppVersion() const;
     string GetBuildDate() const;
+    string GetBuildTag() const;
 
     const string& GetServiceName() const;
 

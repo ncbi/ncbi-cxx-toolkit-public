@@ -63,7 +63,9 @@ public:
         os << "OK:version=" << NStr::URLEncode(
                 control_server->GetWorkerNode().GetAppVersion()) <<
                 "&build_date=" << NStr::URLEncode(
-                control_server->GetWorkerNode().GetBuildDate()) << "\n";
+                control_server->GetWorkerNode().GetBuildDate()) <<
+                "&build_tag=" << NStr::URLEncode(
+                control_server->GetWorkerNode().GetBuildTag()) << "\n";
     }
 };
 
@@ -167,7 +169,8 @@ public:
 
         os << "OK:Application: " << node.GetAppName() <<
                 "\nVersion: " << node.GetAppVersion() <<
-                "\nBuild date: " << node.GetBuildDate() << "\n";
+                "\nBuild date: " << node.GetBuildDate() <<
+                "\nBuild tag: " << node.GetBuildTag() << "\n";
 
         {{
             CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
