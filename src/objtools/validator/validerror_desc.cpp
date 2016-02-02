@@ -428,6 +428,10 @@ bool CValidError_desc::ValidateStructuredComment
         }
         is_valid = false;
     }
+    if (report && !is_valid && !NStr::IsBlank(prefix)) {
+        PostErr(eDiag_Info, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue,
+            "Structured Comment invalid", *m_Ctx, desc);
+    }
     return is_valid;
 }
 
