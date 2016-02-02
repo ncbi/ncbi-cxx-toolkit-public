@@ -8160,8 +8160,8 @@ void CValidError_bioseq::ValidateMolInfoContext
                 // !!!
                 // Ok, there are some STS sequences derived from 
                 // cDNAs, so do not report these
-            } else if (minfo.IsSetBiomol()  
-                       && minfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+            } else if (!minfo.IsSetBiomol()  
+                       || minfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingBiomolTech,
                     "HTGS/STS/GSS/WGS sequence should be genomic", seq);
             } else if (seq.GetInst().GetMol() != CSeq_inst::eMol_dna  &&
