@@ -74,8 +74,9 @@
   Special commands (must be used without <token> parameter):
     ncbi_applog raw           -file <applog_formatted_logs.txt> [-logsite SITE]
     ncbi_applog raw           -file - [-logsite SITE]
+    ncbi_applog generate      -phid
 
-  Note, that ncbi_applog will skip any line in non-applog format.
+  Note, that for "raw" command ncbi_applog will skip any line in non-applog format.
 
   Environment/registry settings:
      1) Logging CGI (used if /log is not accessible on current machine)
@@ -112,10 +113,6 @@ USING_NCBI_SCOPE;
 /// Default CGI used by default if /log directory is not writable on current machine.
 /// Can be redefined in the configuration file.
 const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
-//#if DEBUG
-//const char* kDefaultCGI = "http://intrawebdev2.be-md/staff/ivanov/ncbi_applog.cgi";
-//#endif
-
 
 /// Regular expression to check lines of raw logs (checks all fields up to appname).
 /// NOTE: we need subpattern for application name only!
@@ -126,11 +123,9 @@ const char* kApplogRegexp =
     ".{15} .{15} [^ ]{1,} +"                                 // <host> <client> <session>
     "([^ ]{1,}) ";                                           // <application> (see note above)
 
-
 /// Regular expression to check perf message and get position of performance parameters
 ///    perf <exit_code> <timespan> [<performance_parameters>]
 const char* kPerfRegexp = "^\\d+ (\\d+\\.\\d+)";
-
 
 /// Minimum raw line length:
 ///    5+3+4+2+16+4+4+23+15+15+24 (min for fields) + (11 delimiters) + (1 char for appname)
@@ -142,11 +137,11 @@ const unsigned int kParamsOffset = 15;
 
 
 /// Declare the parameter for logging CGI
-NCBI_PARAM_DECL(string, NCBI, NcbiApplogCGI); 
+NCBI_PARAM_DECL(string,   NCBI, NcbiApplogCGI); 
 NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogCGI, kDefaultCGI, eParam_NoThread, NCBI_CONFIG__NCBIAPPLOG_CGI);
 
 /// Declare the parameter for logging output destination
-NCBI_PARAM_DECL(string, NCBI, NcbiApplogDestination); 
+NCBI_PARAM_DECL(string,   NCBI, NcbiApplogDestination); 
 NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogDestination, kEmptyStr, eParam_NoThread, NCBI_CONFIG__NCBIAPPLOG_DESTINATION);
 
 
@@ -272,15 +267,15 @@ void CNcbiApplogApp::Init(void)
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
+        arg->AddDefaultKey
+            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.",
+            CArgDescriptions::eString, kEmptyStr);
         // --- hidden arguments ---
         arg->AddDefaultKey
             ("hostrole", "ROLE", "Host role (will be used automatically for 'redirect' mode)",
             CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         arg->AddDefaultKey
             ("hostloc", "LOCATION", "Host location (will be used automatically for 'redirect' mode)",
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
-        arg->AddDefaultKey
-            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.",
             CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         arg->AddDefaultKey
             ("srvport", "PORT", "Server port (will be used automatically for 'redirect' mode)",
@@ -487,14 +482,25 @@ void CNcbiApplogApp::Init(void)
         arg->AddKey
             ("file", "filename", "Name of the file with log lines. Use '-' to read from the standard input.",
             CArgDescriptions::eString);
+        arg->AddDefaultKey
+            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.",
+            CArgDescriptions::eString, kEmptyStr);
         // --- hidden arguments
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
-        arg->AddDefaultKey
-            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.", 
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("raw", arg.release());
+    }}
+
+    // generate
+    {{
+        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        arg->SetUsageContext(kEmptyStr, "Generate and return IDs. This doesn't affect current logging (if any).", false, kUsageWidth);
+//        arg->SetDetailedDescription();
+        arg->AddFlag
+            ("phid",
+            "Generate and return Hit ID (PHID) to use in the user script.");
+        cmd->AddCommand("generate", arg.release());
     }}
 
     SetupArgDescriptions(cmd.release());
@@ -624,7 +630,7 @@ int CNcbiApplogApp::Redirect()
 
     // Send request to another machine via CGI
 
-    CConn_HttpStream cgi(url);
+    CConn_HttpStream cgi(url, fHTTP_NoAutomagicSID);
     if ( m_IsRaw ) {
         if ( m_Info.logsite.empty() ) {
             cgi << "RAW" << endl;
@@ -957,7 +963,6 @@ void CNcbiApplogApp::UpdateInfo()
 
 int CNcbiApplogApp::Run(void)
 {
-    string     s;  
     bool       is_api_init = false;         ///< C Logging API is initialized
     ETokenType token_gen_type = eUndefined; ///< Token type to generate (app, request)
     ETokenType token_par_type = eUndefined; ///< Parsed token type (app, request)
@@ -1024,6 +1029,17 @@ int CNcbiApplogApp::Run(void)
         }
         m_Info.appname = m_Raw_line.substr(apos[0], apos[1] - apos[0]);
     
+    } else
+    if (cmd == "generate") {
+        // Generate PHID
+        if ( args["phid"] ) {
+            char phid_buf[NCBILOG_HITID_MAX + 1];
+            if (NcbiLogP_GenerateHitID(phid_buf, NCBILOG_HITID_MAX + 1)) {
+                cout << phid_buf;
+            }
+        }
+        return 0;
+
     } else {
         // Initialize session from existing token
         m_Token = args["token"].AsString();

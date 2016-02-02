@@ -517,7 +517,7 @@ static const char* s_ConcatPath(
 
 
 /** Get host name.
- *  The order is: cached host name, uname or COMPUTERNAME, empty string.
+ *  The order is: cached host name, uname() or COMPUTERNAME, empty string.
  */
 const char* NcbiLog_GetHostName(void)
 {
@@ -530,7 +530,6 @@ const char* NcbiLog_GetHostName(void)
     if ( host ) {
         return host;
     }
- 
 #if defined(NCBI_OS_UNIX)
     if (uname(&buf) == 0) {
         host = s_StrDup(buf.nodename);
@@ -853,7 +852,7 @@ extern const char* NcbiLogP_GetSessionID_Env(void)
 
 
 /** This routine is called during start up and again in NcbiLog_ReqStart(). 
-    The received environment value wil be cached for whole process. 
+    The received environment value will be cached for whole process. 
  */
 extern const char* NcbiLogP_GetHitID_Env(void)
 {
@@ -873,7 +872,6 @@ extern const char* NcbiLogP_GetHitID_Env(void)
     }
     return NULL;
 }
-
 
 
 /* The URL-encoding table
@@ -1703,22 +1701,27 @@ static char* s_GenerateSID_Str(char* dst)
 }
 
 
-static char* s_GenerateHitID_Str(char* dst)
+static char* s_GenerateHitID_Str(char* dst, int /*bool*/ use_logging_api)
 {
-    TNcbiLog_UInt8 hi, tid, rid, us, lo;
-    unsigned int b0, b1, b2, b3;
-    time_t time_sec;
-    unsigned long time_ns;
+    TNcbiLog_UInt8 tid, rid, us, hi, lo;
+    unsigned int   b0, b1, b2, b3;
+    time_t         time_sec;
+    unsigned long  time_ns;
     int n;
 
-    if ( !sx_Info->guid ) {
-        sx_Info->guid = s_CreateUID();
+    if (use_logging_api) {
+        if (!sx_Info->guid) {
+            sx_Info->guid = s_CreateUID();
+        }
+        hi = sx_Info->guid;
+        rid = (TNcbiLog_UInt8)(sx_Info->rid & 0xFFFFFF) << 16;
+    } else {
+        hi = s_CreateUID();
+        rid = 0;
     }
-    hi  = sx_Info->guid;
     b3  = (unsigned int)((hi >> 32) & 0xFFFFFFFF);
     b2  = (unsigned int)(hi & 0xFFFFFFFF);
     tid = (s_GetTID() & 0xFFFFFF) << 40;
-    rid = (TNcbiLog_UInt8)(sx_Info->rid & 0xFFFFFF) << 16;
     if (!s_GetTimeT(&time_sec, &time_ns)) {
         us = 0;
     } else {
@@ -1733,6 +1736,20 @@ static char* s_GenerateHitID_Str(char* dst)
     }
     dst[n] = '\0';
     return dst;
+}
+
+
+/** Generate new Hit ID string.
+ */
+extern const char* NcbiLogP_GenerateHitID(char* buf, size_t n)
+{
+    if (n <= NCBILOG_HITID_MAX) {
+        return NULL;
+    }
+    if (!s_GenerateHitID_Str(buf, 0)) {
+        return NULL;
+    }
+    return buf;
 }
 
 
@@ -2822,7 +2839,7 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
         } else {
             /* Auto-generate new PHID (not-inherited by requests) */
             char phid_str[NCBILOG_HITID_MAX + 1];
-            s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(phid_str));
+            s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(phid_str, 1));
         }
     }
 
@@ -3108,7 +3125,7 @@ extern void NcbiLog_ReqRun(void)
             return;
         }
         /* Generate and set new request-specific PHID */
-        s_SetHitID(ctx->phid, s_GenerateHitID_Str(phid_str));
+        s_SetHitID(ctx->phid, s_GenerateHitID_Str(phid_str, 1));
     }
     s_LogHitID(ctx, ctx->phid);
 

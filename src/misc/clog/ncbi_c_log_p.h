@@ -288,6 +288,12 @@ extern const char* NcbiLogP_GetSessionID_Env(void);
 extern const char* NcbiLogP_GetHitID_Env(void);
 
 
+/** Generate new Hit ID string.
+ *  Return NULL on error.
+ */
+extern const char* NcbiLogP_GenerateHitID(char* buf, size_t n);
+
+
 
 #ifdef __cplusplus
 }  /* extern "C" */
