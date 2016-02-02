@@ -18942,7 +18942,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1470)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MultipleComments",
-                              "Multiple structured comments with prefix Genome-Assembly-Data"));
+                              "Multiple structured comments with prefix ##Genome-Assembly-Data-START##"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

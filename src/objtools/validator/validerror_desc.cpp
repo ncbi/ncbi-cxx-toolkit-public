@@ -381,8 +381,9 @@ bool CValidError_desc::ValidateStructuredComment
         return true;
     }
     if (report && !s_IsAllowedPrefix(prefix)) {
+        string report_prefix = CComment_rule::GetStructuredCommentPrefix(usr, false);
         PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
-                 prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
+                 report_prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
     }
 
     // find prefix

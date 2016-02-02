@@ -95,7 +95,7 @@ bool CComment_rule::IsStructuredComment (const CUser_object& user)
 }
 
 
-string CComment_rule::GetStructuredCommentPrefix (const CUser_object& user)
+string CComment_rule::GetStructuredCommentPrefix (const CUser_object& user, bool normalize)
 {
     if (!IsStructuredComment(user) || !user.IsSetData()) {
         return "";
@@ -110,7 +110,9 @@ string CComment_rule::GetStructuredCommentPrefix (const CUser_object& user)
             break;
         }
     }
-    CComment_rule::NormalizePrefix(prefix);
+    if (normalize) {
+        CComment_rule::NormalizePrefix(prefix);
+    }
     return prefix;
 }
 

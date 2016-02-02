@@ -7336,7 +7336,7 @@ void CValidError_bioseq::CheckForMultipleStructuredComments(const CBioseq& seq)
     while (di) {
         const CUser_object& obj = di->GetUser();
         if (CComment_rule::IsStructuredComment(obj)) {
-            string prefix = CComment_rule::GetStructuredCommentPrefix(obj);
+            string prefix = CComment_rule::GetStructuredCommentPrefix(obj, false);
             if (!NStr::IsBlank(prefix)) {
                 sc_prefixes.push_back(prefix);
             }
@@ -7353,7 +7353,7 @@ void CValidError_bioseq::CheckForMultipleStructuredComments(const CBioseq& seq)
         } else {
             if (num_seen > 1) {
                 PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleComments, 
-                        "Multiple structured comments with prefix " + previous,
+                    "Multiple structured comments with prefix " + previous,
                         seq);
             }
             previous = *it;
@@ -7362,7 +7362,7 @@ void CValidError_bioseq::CheckForMultipleStructuredComments(const CBioseq& seq)
     }
     if (num_seen > 1) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleComments, 
-                "Multiple structured comments with prefix " + previous,
+            "Multiple structured comments with prefix " + previous,
                 seq);
     } 
 

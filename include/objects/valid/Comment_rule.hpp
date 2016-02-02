@@ -64,7 +64,7 @@ public:
     CConstRef<CField_rule> FindFieldRuleRef (const string& field_name) const;
     static void NormalizePrefix(string& prefix);
     static bool IsStructuredComment (const CUser_object& user);
-    static string GetStructuredCommentPrefix (const CUser_object& user);
+    static string GetStructuredCommentPrefix (const CUser_object& user, bool normalize = true);
     static string MakePrefixFromRoot(const string& root);
     static string MakeSuffixFromRoot(const string& root);
     static string KeywordForPrefix(const string& prefix);
