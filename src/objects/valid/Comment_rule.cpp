@@ -48,6 +48,7 @@
 #include <objects/valid/Dependent_field_rule.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/valid/Phrase_list.hpp>
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -241,6 +242,13 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
                         sev = eSeverity_level_error;
                     }
                     errors.push_back(TError(sev, value + " is not a valid value for " + label));
+                }
+                if (IsSetForbidden_phrases()) {                    
+                    ITERATE(CComment_rule::TForbidden_phrases::Tdata, it, GetForbidden_phrases().Get()) {
+                        if (NStr::FindNoCase(value, *it) != string::npos) {
+                            errors.push_back(TError(eSeverity_level_error, "'" + value + "' is inappropriate for a GenBank submisison"));
+                        }
+                    }
                 }
                 ++field;
                 ++field_rule;
