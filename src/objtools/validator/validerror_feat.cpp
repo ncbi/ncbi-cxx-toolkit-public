@@ -7682,7 +7682,14 @@ bool CValidError_feat::FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry
 {
     CSeq_feat_Handle feat = CGeneFinder::ResolveGeneXref(&xref, seh);
     if (feat) {
-        return true;
+        if (xref.IsSetLocus_tag() && !xref.IsSetLocus() &&
+            (!feat.GetData().GetGene().IsSetLocus_tag() ||
+             !NStr::Equal(feat.GetData().GetGene().GetLocus_tag(), xref.GetLocus_tag()))) {
+            //disallow locus-tag to locus matches, reverse is allowed
+            return false;
+        } else {
+            return true;
+        }
     } else {
         return false;
     }
