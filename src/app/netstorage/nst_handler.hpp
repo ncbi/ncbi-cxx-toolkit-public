@@ -192,7 +192,6 @@ private:
     bool                    m_WriteCreateNeedMetaDBUpdate;
 
     CNSTTiming              m_Timing;
-    bool x_PrintTimingIsOn(void) const;
 
     typedef void (CNetStorageHandler::*FProcessor)(
                                 const CJsonNode &,
@@ -282,6 +281,7 @@ private:
                                                bool            db_exception,
                                                CJsonNode &     reply);
     void x_CreateClient(void);
+    void x_FillObjectInfo(CJsonNode &  reply, const string &  val);
 }; // CNetStorageHandler
 
 

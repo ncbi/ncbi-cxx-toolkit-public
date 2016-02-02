@@ -54,7 +54,6 @@ class CNSTTiming
                     const CNSTPreciseTime &  how_long);
 
         // Also cleans the collected data to avoid double printing
-        string Serialize(void);
         string Serialize(CDiagContext_Extra  extra);
 
         bool  Empty(void) const;

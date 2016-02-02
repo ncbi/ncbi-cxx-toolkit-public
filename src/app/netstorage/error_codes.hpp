@@ -37,7 +37,9 @@
 BEGIN_NCBI_SCOPE
 
 
-NCBI_DEFINE_ERRCODE_X(NetStorage_ErrorCode, 3000, 0);
+NCBI_DEFINE_ERRCODE_X(NetStorageServer_ErrorCode,    3000, 0);
+NCBI_DEFINE_ERRCODE_X(NetServiceException_ErrorCode, 3010, 0);
+NCBI_DEFINE_ERRCODE_X(NetStorageException_ErrorCode, 3020, 0);
 
 
 END_NCBI_SCOPE

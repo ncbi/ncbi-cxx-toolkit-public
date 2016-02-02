@@ -32,9 +32,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <connect/services/netservice_api_expt.hpp>
 
 #include "nst_protocol_utils.hpp"
 #include "nst_exception.hpp"
+#include "error_codes.hpp"
 
 
 
@@ -237,6 +239,55 @@ CreateIssue(Int8  error_code,
 
     return issue_node;
 }
+
+
+bool GetReplyMessageProperties(const exception &  ex,
+                               string *           error_scope,
+                               Int8 *             error_code,
+                               unsigned int *     error_sub_code)
+{
+    const CNetStorageException *    p =
+                dynamic_cast<const CNetStorageException *>(&ex);
+    if (p != NULL) {
+        *error_scope = p->GetType();
+        *error_code = NCBI_ERRCODE_X_NAME(NetStorageException_ErrorCode);
+        *error_sub_code = p->GetErrCode();
+        return true;
+    }
+
+    const CNetServiceException *    p1 = 
+                dynamic_cast<const CNetServiceException *>(&ex);
+    if (p1 != NULL) {
+        *error_scope = p1->GetType();
+        *error_code = NCBI_ERRCODE_X_NAME(NetServiceException_ErrorCode);
+        *error_sub_code = p1->GetErrCode();
+        return true;
+    }
+
+    const CNetStorageServerException *  p2 =
+                dynamic_cast<const CNetStorageServerException *>(&ex);
+    if (p2 != NULL) {
+        *error_scope = p2->GetType();
+        *error_code = NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode);
+        *error_sub_code = p2->GetErrCode();
+        return true;
+    }
+
+    const CException *  p3 =
+                dynamic_cast<const CException *>(&ex);
+    if (p3 != NULL) {
+        *error_scope = p3->GetType();
+        *error_code = NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode);
+        *error_sub_code = 0;
+        return false;
+    }
+
+    *error_scope = kScopeStdException;
+    *error_code = NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode);
+    *error_sub_code = 0;
+    return false;
+}
+
 
 END_NCBI_SCOPE
 

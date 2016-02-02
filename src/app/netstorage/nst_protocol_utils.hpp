@@ -131,6 +131,14 @@ CreateIssue(Int8  error_code,
             Int8  sub_code);
 
 
+// true => all the values are filled
+// false => error_sub_code has not been filled
+bool GetReplyMessageProperties(const exception &  ex,
+                               string *           error_scope,
+                               Int8 *             error_code,
+                               unsigned int *     error_sub_code);
+
+
 END_NCBI_SCOPE
 
 #endif
