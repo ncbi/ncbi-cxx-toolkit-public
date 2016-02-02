@@ -53,3 +53,17 @@ Most probably the test suite should be restricted:
 $ ./test_netstorage -t 'TestNetStorage*'
 
 
+
+
+
+Tip: how to time a query in MS SQL Server Management Studio
+
+DECLARE @StartTime datetime,@EndTime datetime   
+SELECT @StartTime=GETDATE() 
+
+-- Your query comes here, e.g. call the GetStatInfo stored procedure
+EXEC GetStatInfo
+
+SELECT @EndTime=GETDATE()   
+SELECT DATEDIFF(ms,@StartTime,@EndTime) AS [Duration in milliseconds]  
+
