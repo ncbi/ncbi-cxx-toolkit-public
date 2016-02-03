@@ -101,9 +101,16 @@ bool x_ApplyCreateDate(CSeq_entry& entry)
         return true; // need update_date
 }
 
-void x_ApplySourceQualifiers(CBioseq& bioseq, CSourceModParser& smp)
+void x_ApplySourceQualifiers(CBioseq& bioseq, CSourceModParser* smp)
 {
-    CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
+    if (smp == 0)
+        return;
+
+    smp->SetAllUnused();
+
+    smp->ApplyAllMods(bioseq);
+
+    CSourceModParser::TMods unused_mods = smp->GetMods(CSourceModParser::fUnusedMods);
     NON_CONST_ITERATE(CSourceModParser::TMods, mod, unused_mods)
     {
         if (NStr::CompareNocase(mod->key, "bioproject")==0)
@@ -111,21 +118,6 @@ void x_ApplySourceQualifiers(CBioseq& bioseq, CSourceModParser& smp)
         else
         if (NStr::CompareNocase(mod->key, "biosample")==0)
             edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink"), mod->value);
-    }
-}
-
-void x_ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifiers)
-{
-    if (src_qualifiers.empty())
-        return;
-
-    CSourceModParser smp;
-    if (true)
-    {
-        smp.ParseTitle(src_qualifiers, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
-        smp.ApplyAllMods(bioseq);
-
-        x_ApplySourceQualifiers(bioseq, smp);
     }
 }
 
@@ -181,20 +173,20 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     SetUserObject(SD, type).SetData().push_back(uf);
 }
 
-void CTable2AsnContext::ApplySourceQualifiers(objects::CSeq_entry_EditHandle& obj, const string& src_qualifiers) const
+void CTable2AsnContext::ApplySourceQualifiers(objects::CSeq_entry_EditHandle& obj) const
 {
-    if (src_qualifiers.empty())
+    if (m_source_mods.get() == 0)
         return;
 
     for (CBioseq_CI it(obj); *it; ++it)
     {
-        x_ApplySourceQualifiers(*(CBioseq*)it->GetEditHandle().GetCompleteBioseq().GetPointer(), src_qualifiers);
+        x_ApplySourceQualifiers(*(CBioseq*)it->GetEditHandle().GetCompleteBioseq().GetPointer(), m_source_mods.get());
     }
 }
 
-void CTable2AsnContext::ApplySourceQualifiers(CSerialObject& obj, const string& src_qualifiers) const
+void CTable2AsnContext::ApplySourceQualifiers(CSerialObject& obj) const
 {
-    if (src_qualifiers.empty())
+    if (m_source_mods.get() == 0)
         return;
 
     CSeq_entry* entry = 0;
@@ -206,7 +198,7 @@ void CTable2AsnContext::ApplySourceQualifiers(CSerialObject& obj, const string& 
         CSeq_submit* submit = (CSeq_submit*)(&obj);
         NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, submit->SetData().SetEntrys())
         {
-            ApplySourceQualifiers(**it, src_qualifiers);
+            ApplySourceQualifiers(**it);
         }
     }
 
@@ -214,12 +206,12 @@ void CTable2AsnContext::ApplySourceQualifiers(CSerialObject& obj, const string& 
         switch(entry->Which())
         {
         case CSeq_entry::e_Seq:
-            x_ApplySourceQualifiers(entry->SetSeq(), m_source_qualifiers);
+            x_ApplySourceQualifiers(entry->SetSeq(), m_source_mods.get());
             break;
         case CSeq_entry::e_Set:
             NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry->SetSet().SetSeq_set())
             {
-                ApplySourceQualifiers(**it, m_source_qualifiers);
+                ApplySourceQualifiers(**it);
             }
             break;
         default:
@@ -689,6 +681,23 @@ bool CTable2AsnContext::ApplyCreateUpdateDates(objects::CSeq_entry& entry) const
         break;
     }
     return need_update;
+}
+
+void CTable2AsnContext::ParseSourceModifiers(const string& src_modifiers)
+{
+    m_source_mods.reset(new CSourceModParser);
+    m_source_mods->ParseTitle(src_modifiers, CConstRef<CSeq_id>());
+    CSourceModParser::TModsRange mods[2];
+    mods[0] = m_source_mods->FindAllMods("note");
+    mods[1] = m_source_mods->FindAllMods("notes");
+    for (size_t i = 0; i < 2; i++)
+    {
+        for (CSourceModParser::TModsCI it = mods[i].first; it != mods[i].second; it++)
+        {
+            NStr::ReplaceInPlace((string&)it->value, "<", "[");
+            NStr::ReplaceInPlace((string&)it->value, ">", "]");
+        }
+    }
 }
 
 void CTable2AsnContext::ApplyFileTracks(objects::CSeq_entry& entry) const

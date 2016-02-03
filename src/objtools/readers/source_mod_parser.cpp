@@ -754,11 +754,18 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }
 
     // note[s]
-    if ((mod = FindMod("note", "notes")) != NULL) {
-        CRef< CSubSource > new_subsource( new CSubSource );
-        new_subsource->SetSubtype( CSubSource::eSubtype_other );
-        new_subsource->SetName( mod->value );
-        bsrc->SetSubtype().push_back( new_subsource );
+    TModsRange mods[2];
+    mods[0] = FindAllMods("note");
+    mods[1] = FindAllMods("notes");
+    for (size_t i = 0; i < 2; i++)
+    {
+        for (TModsCI it = mods[i].first; it != mods[i].second; it++)
+        {
+            CRef< CSubSource > new_subsource(new CSubSource);
+            new_subsource->SetSubtype(CSubSource::eSubtype_other);
+            new_subsource->SetName(it->value);
+            bsrc->SetSubtype().push_back(new_subsource);
+        }
     }
 
     // focus
@@ -1341,6 +1348,15 @@ void CSourceModParser::ApplyMods(CGB_block& gbb)
 {
     CAutoInitDesc<CGB_block> ref(gbb);
     x_ApplyMods(ref);
+}
+
+void CSourceModParser::SetAllUnused()
+{
+    NON_CONST_ITERATE(TMods, it, m_Mods)
+    {
+        const_cast<SMod&>(*it).used = false;
+    }
+
 }
 
 END_SCOPE(objects)

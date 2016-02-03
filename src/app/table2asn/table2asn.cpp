@@ -71,10 +71,12 @@
 #include <common/ncbi_source_ver.h>
 
 #include "table2asn_validator.hpp"
+
 #include <objtools/readers/fasta_exception.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <sra/data_loaders/wgs/wgsloader.hpp>
+
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -477,7 +479,9 @@ int CTbl2AsnApp::Run(void)
     if (args["A"])
         m_context.m_accession = args["A"].AsString();
     if (args["j"])
-        m_context.m_source_qualifiers = args["j"].AsString();
+    {       
+        m_context.ParseSourceModifiers(args["j"].AsString());
+    }
     if (args["src-file"])
         m_context.m_single_source_qual_file = args["src-file"].AsString();
 
@@ -833,7 +837,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     m_reader->ApplyAdditionalProperties(*entry);
 
-    m_context.ApplySourceQualifiers(*entry, m_context.m_source_qualifiers);
+    m_context.ApplySourceQualifiers(*entry);
 
     ProcessSecretFiles(*entry);
 

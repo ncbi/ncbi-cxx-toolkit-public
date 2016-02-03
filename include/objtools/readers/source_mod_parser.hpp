@@ -184,6 +184,9 @@ public:
     /// Allows user to get the list of bad mods found by this
     const TMods & GetBadMods(void) const { return m_BadMods; }
 
+    /// Set all mods to unused 
+    void SetAllUnused();
+
     class CModFilter : public CObject {
     public:
         virtual ~CModFilter(void) { }
