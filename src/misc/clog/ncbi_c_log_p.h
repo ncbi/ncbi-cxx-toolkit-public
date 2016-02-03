@@ -65,6 +65,12 @@ extern "C" {
 #define NCBILOG_APPNAME_MAX   1024
 #define NCBILOG_PORT_MAX     65535
 
+/* Minimum raw line length:
+    5+3+4+2+16+4+4+23+15+15+24 (min for fields) + (11 delimiters) + (1 char for appname)
+    http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_core/#ch_core.The_New_Post_Format
+*/
+#define NCBILOG_LINELEN_MIN    127
+
 
 /******************************************************************************
  *  Internal types and definitions

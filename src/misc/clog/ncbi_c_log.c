@@ -3377,7 +3377,7 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
 
     assert(line);
     assert(line[len] == '\0');
-    assert(len > 127);  /* minimal applog line length (?) */
+    assert(len > NCBILOG_LINELEN_MIN);
 
     MT_LOCK_API;
     if (sx_Info->destination == eNcbiLog_Disable) {
@@ -3393,7 +3393,13 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
         case eNcbiLog_Cwd:
             /* Try to get type of the line to redirect output into correct log file */
             {
-                const char* ptr = line + 127 + strlen((char*)sx_Info->appname);
+                const char* start = line + NCBILOG_LINELEN_MIN;
+                const char* ptr = strstr(start, (char*)sx_Info->appname);
+
+                if (!ptr || (ptr - start > NCBILOG_APPNAME_MAX)) {
+                    break;
+                }
+                ptr += strlen((char*)sx_Info->appname) + 1;
                 assert(len > (size_t)(ptr - line));
 
                 if (strncmp(ptr, "perf", 4) == 0) {

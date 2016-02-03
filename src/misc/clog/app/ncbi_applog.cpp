@@ -127,11 +127,6 @@ const char* kApplogRegexp =
 ///    perf <exit_code> <timespan> [<performance_parameters>]
 const char* kPerfRegexp = "^\\d+ (\\d+\\.\\d+)";
 
-/// Minimum raw line length:
-///    5+3+4+2+16+4+4+23+15+15+24 (min for fields) + (11 delimiters) + (1 char for appname)
-///    http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_core/#ch_core.The_New_Post_Format
-const unsigned int kMinLineLen   = 127;
-
 /// Parameters offset after the end of the application name
 const unsigned int kParamsOffset = 15;
 
@@ -639,7 +634,6 @@ int CNcbiApplogApp::Redirect()
         }
         // We already have first line in m_Raw_line,
         // process it and all remaining lines.
-
         CRegexp re(kApplogRegexp);
         do {
             if (re.IsMatch(m_Raw_line)) {
@@ -1019,7 +1013,7 @@ int CNcbiApplogApp::Run(void)
                 break;
             }
         }
-        if ( !found ||  m_Raw_line.length() < kMinLineLen ) {
+        if ( !found ||  m_Raw_line.length() < NCBILOG_LINELEN_MIN ) {
             throw "Error processing input raw log, cannot find any line in applog format";
         }
         // Get application name
@@ -1457,5 +1451,5 @@ int CNcbiApplogApp::Run(void)
 int main(int argc, const char* argv[]) 
 {
     CNcbiApplogApp app;
-    return app.AppMain(argc, argv, 0, eDS_User /* do not redefine */);
+    return app.AppMain(argc, argv, 0, eDS_Disable /* do not redefine */);
 }
