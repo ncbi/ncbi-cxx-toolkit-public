@@ -122,7 +122,7 @@ DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
         }
     }
     CNcbiOstrstream ss;
-    ss << " sequence " << short_name << " has " << total << " rRNA feature" << (total == 1 ? kEmptyStr : "s");
+    ss << " [n] sequence[s] [has] " << total << " rRNA feature" << (total == 1 ? kEmptyStr : "s");
     m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
     // duplicated rRNA names
     NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
@@ -131,7 +131,6 @@ DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
         }
         CNcbiOstrstream ss;
         ss << it->second->GetObjects().size() << " rRNA features on " << short_name << " have the same name (" << it->first << ")";
-        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[it->first].GetObjects(), false);
     }
     TReportItemList tmpList = m_Objs[kEmptyStr].Export(*this, false)->GetSubitems();
@@ -234,7 +233,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
     }
 
     CNcbiOstrstream ss;
-    ss << " sequence " << short_name << " has " << total << " tRNA feature" << (total == 1 ? kEmptyStr : "s");
+    ss << " [n] sequence[s] [has] " << total << " tRNA feature" << (total == 1 ? kEmptyStr : "s");
     m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
 
     // extra tRNAs
@@ -244,7 +243,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
             continue;
         }
         CNcbiOstrstream ss;
-        ss << "sequence " << short_name << " has " << n << " trna-" << desired_aaList[i].long_symbol << " feature" << (n == 1 ? kEmptyStr : "s");
+        ss << "Sequence " << short_name << " has " << n << " trna-" << desired_aaList[i].long_symbol << " feature" << (n == 1 ? kEmptyStr : "s");
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[desired_aaList[i].long_symbol].GetObjects(), false);
     }
@@ -253,7 +252,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
             continue;
         }
         CNcbiOstrstream ss;
-        ss << "sequence " << short_name << " has " << it->second->GetObjects().size() << " trna-" << it->first << " feature" << (it->second->GetObjects().size() == 1 ? kEmptyStr : "s");
+        ss << "Sequence " << short_name << " has " << it->second->GetObjects().size() << " trna-" << it->first << " feature" << (it->second->GetObjects().size() == 1 ? kEmptyStr : "s");
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[it->first].GetObjects(), false);
     }
@@ -268,7 +267,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
             continue;
         }
         CNcbiOstrstream ss;
-        ss << "sequence " << short_name << " is missing trna-" << desired_aaList[i].long_symbol;
+        ss << "Sequence " << short_name << " is missing trna-" << desired_aaList[i].long_symbol;
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
     }
 

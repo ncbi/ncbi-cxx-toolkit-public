@@ -73,6 +73,7 @@ my $out_c = "$test.c.txt";
 my $out_cpp = "$test.cpp.txt";
 my $gold = File::Spec->catfile($path, 'test-data', $tests{$test}{gold}) if $tests{$test}{gold} ne '';
 my $data = $tests{$test}{data};
+my $rx = join('|', split(',', $arg.','.$arg0));
 
 my $cmd = "$exe_cpp -e $arg -i $input -o $out_cpp";
 $cmd .= " -X ALL" if $tests{$test}{ext};
@@ -126,7 +127,7 @@ sub read_output
     next unless $state;
     if ($state == 1)
     { my $msg = $line;
-      $msg = $1 if $line=~/(?:$arg|$arg0):\s*(.*)/;
+      $msg = $1 if $line=~/(?:$rx):\s*(.*)/;
       $msg = normalize($msg);
       $msg = "$arg: $msg";
       $obj{summary}{$msg}++;
@@ -134,7 +135,7 @@ sub read_output
     }
     if ($state == 2)
     { my $msg = $line;
-      if ($line=~/(?:$arg|$arg0)::?\s*(.*)/)
+      if ($line=~/(?:$rx)::?\s*(.*)/)
       { $msg = normalize($1);
         $msg = "$arg: $msg";
         $current = $msg;

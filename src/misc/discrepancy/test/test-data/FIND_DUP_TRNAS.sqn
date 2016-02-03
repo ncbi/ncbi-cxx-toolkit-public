@@ -1,0 +1,124 @@
+Seq-entry ::= seq {
+  id {
+    local str "LocusCollidesWithLocusTag"
+  },
+  descr {
+    source {
+      genome plastid,
+      org {
+        taxname "Sebaea microphylla",
+        db {
+          {
+            db "taxon",
+            tag id 592768
+          }
+        },
+        orgname {
+          lineage "some lineage"
+        }
+      },
+      subtype {
+        {
+          subtype chromosome,
+          name "1"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 24,
+    seq-data iupacna "AATTGGCCAANNAATTGGCCAANN"
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data gene {
+            locus "foo",
+            locus-tag "foo"
+          },
+          location int {
+            from 0,
+            to 4,
+            strand plus,
+            id local str "LocusCollidesWithLocusTag"
+          }
+        },
+        {
+          data gene {
+            locus "bar",
+            locus-tag "foo"
+          },
+          location int {
+            from 5,
+            to 9,
+            strand plus,
+            id local str "LocusCollidesWithLocusTag"
+          }
+        },
+        {
+          data gene {
+            locus "bar",
+            locus-tag "baz"
+          },
+          location int {
+            from 10,
+            to 14,
+            strand plus,
+            id local str "LocusCollidesWithLocusTag"
+          }
+        },
+        {
+          data gene {
+            locus "quux",
+            locus-tag "baz"
+          },
+          location int {
+            from 15,
+            to 19,
+            strand plus,
+            id local str "LocusCollidesWithLocusTag"
+          }
+        },
+        {
+          data rna {
+            type tRNA,
+            ext tRNA {
+              aa iupacaa 70,
+              anticodon int {
+                from 8,
+                to 10,
+                id local str "LocusCollidesWithLocusTag"
+              }
+            }
+          },
+          location int {
+            from 0,
+            to 10,
+            id local str "LocusCollidesWithLocusTag"
+          }
+        },
+        {
+          data rna {
+            type tRNA,
+            ext tRNA {
+              aa iupacaa 70,
+              anticodon int {
+                from 8,
+                to 10,
+                id local str "LocusCollidesWithLocusTag"
+              }
+            }
+          },
+          location int {
+            from 0,
+            to 10,
+            id local str "LocusCollidesWithLocusTag"
+          }
+        }
+      }
+    }
+  }
+}
