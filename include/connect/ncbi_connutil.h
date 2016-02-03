@@ -238,9 +238,6 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define REG_CONN_HTTP_PUSH_AUTH   "HTTP_PUSH_AUTH"
 #define DEF_CONN_HTTP_PUSH_AUTH   ""
 
-#define REG_CONN_PROXY_HOST       "PROXY_HOST"
-#define DEF_CONN_PROXY_HOST       ""
-
 #define REG_CONN_TIMEOUT          "TIMEOUT"
 #define DEF_CONN_TIMEOUT          30.0
 
