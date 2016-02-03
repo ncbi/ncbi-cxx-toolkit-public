@@ -1385,6 +1385,13 @@ public:
     static bool IsAllNs(CBioseq_Handle bsh);
     static int PctNs(CBioseq_Handle bsh);
 
+    static bool IsMaster(const CBioseq& seq);
+    static bool IsWGSMaster(const CBioseq& seq, CScope& scope);
+    static bool IsWp(CBioseq_Handle bsh);
+    static bool IsEmblOrDdbj(const CBioseq& seq);
+    static bool IsPdb(const CBioseq& seq);
+    static bool IsPartial(const CBioseq& seq, CScope& scope);
+
     // DBLink user object counters
     int m_dblink_count;
     int m_taa_count;
