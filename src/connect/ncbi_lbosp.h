@@ -425,16 +425,21 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSaddress(SERV_ITER  iter,
 
 /**  Set custom files to load role and domain from, respectively.
  *  @param roleFile[in] 
- *   To change role file, pass it here. To use current role file, pass NULL.
- *  @param domainFile[in]  
- *   To change domain file, pass it here. To use current domain file, 
+ *   To change role file path, pass it here. To use current role file path, 
  *   pass NULL.
+ *  @param domainFile[in]  
+ *   To change domain file path, pass it here. To use current domain file path, 
+ *   pass NULL.
+ *  @param lbosresolverFile[in]
+ *   To change lbosresolver file path, pass it here. To use current 
+ *   lbosresolver file path, pass NULL.
  *  @return             
  *   false - something went wrong, values not changed;
  *   true  - success.                                                        */
-NCBI_XCONNECT_EXPORT
-int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(const char*  roleFile,
-                                                       const char* domainFile);
+NCBI_XCONNECT_EXPORT int/*bool*/
+g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(const char* roleFile,
+                                                 const char* domainFile,
+                                                 const char* lbosresolverFile);
 
 
 /**  Checks iterator, fact that iterator belongs to this mapper, iterator data.
@@ -447,51 +452,54 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(const char*  roleFile,
  *  ELBOSIteratorCheckType
  * @return
  *  true  - iterator is valid;
- *  false - iterator is invalid.                                             */
- NCBI_XCONNECT_EXPORT
- int/*bool*/  g_LBOS_CheckIterator(SERV_ITER               iter,
-                                   ELBOSIteratorCheckType  should_have_data);
+ *  false - iterator is invalid.                                            
+ */
+NCBI_XCONNECT_EXPORT
+int/*bool*/  g_LBOS_CheckIterator(SERV_ITER               iter,
+                                  ELBOSIteratorCheckType  should_have_data);
 
- /** Find server among announced and return its position. If not found, 
-  * return -1.                                                               */
- NCBI_XCONNECT_EXPORT
- int  g_LBOS_UnitTesting_FindAnnouncedServer(const char*          service,
+/** Find server among announced and return its position. If not found, 
+ * return -1.                                                               
+ */
+NCBI_XCONNECT_EXPORT
+int  g_LBOS_UnitTesting_FindAnnouncedServer(const char*          service,
                                              const char*          version,
                                              unsigned short       port,
                                              const char*          host);
 
- /** Get LBOS-specific announcement variable from registry                   */
- NCBI_XCONNECT_EXPORT
- char*   g_LBOS_RegGet(const char* section,
-                      const char* name,
-                      const char* def_value);
+/** Get LBOS-specific announcement variable from registry                   
+ */
+NCBI_XCONNECT_EXPORT char* g_LBOS_RegGet(const char* section,
+                                          const char* name,
+                                          const char* def_value);
 
 
- /** This service can be used to remove service from configuration. Current
+
+/** This service can be used to remove service from configuration. Current
  * version will be empty. Previous version shows deleted version.
  */
 NCBI_XCONNECT_EXPORT
-unsigned short LBOS_ServiceVersionDelete(const char*  service,
-                                         char**       lbos_answer,
-                                         char**       http_status_message);
+unsigned short LBOS_ServiceVersionDelete(const char*   service,
+                                               char**  lbos_answer,
+                                               char**  http_status_message);
 
 
 /** This request can be used to set new version for a service. Current and
-* previous versions show currently set and previously used service versions.
-* @param[in] service
-*  Name of service for which the version is going to be changed
-* @param new_version[out]
-*  Version that will be used by default for specefied service
-* @param lbos_answer[out]
-*  Variable to be assigned pointer to C-string with LBOS answer
-* @param http_status_message[out]
-*  Variable to be assigned pointer to C-string with status message from LBOS
-*/
+ * previous versions show currently set and previously used service versions.
+ * @param[in] service
+ *  Name of service for which the version is going to be changed
+ * @param new_version[out]
+ *  Version that will be used by default for specefied service
+ * @param lbos_answer[out]
+ *  Variable to be assigned pointer to C-string with LBOS answer
+ * @param http_status_message[out]
+ *  Variable to be assigned pointer to C-string with status message from LBOS
+ */
 NCBI_XCONNECT_EXPORT
-unsigned short LBOS_ServiceVersionSet(const char*  service,
-                                         const char*  new_version,
-                                         char**       lbos_answer,
-                                         char**       http_status_message);
+unsigned short LBOS_ServiceVersionSet(const char*   service,
+                                      const char*   new_version,
+                                            char**  lbos_answer,
+                                            char**  http_status_message);
 
 
 /** This request will show currently used version for a requested service.
@@ -506,9 +514,9 @@ unsigned short LBOS_ServiceVersionSet(const char*  service,
 *  Status code returned by LBOS
 */
 NCBI_XCONNECT_EXPORT
-unsigned short LBOS_ServiceVersionGet(const char* service,
-                                             char**      lbos_answer,
-                                             char**      http_status_message);
+unsigned short LBOS_ServiceVersionGet(const char*  service,
+                                            char** lbos_answer,
+                                            char** http_status_message);
 
 ///////////////////////////////////////////////////////////////////////////////
 //                      GLOBAL VARIABLES FOR UNIT TESTS                      //
@@ -576,6 +584,14 @@ char** g_LBOS_UnitTesting_CurrentDomain(void);
  *  @see                                                                     */
 NCBI_XCONNECT_EXPORT
 char** g_LBOS_UnitTesting_CurrentRole(void);
+
+
+/**  Pointer to s_LBOS_Lbosresolver
+ *  @return
+ *   address of static variable s_LBOS_Lbosresolver.
+ *  @see                                                                     */
+NCBI_XCONNECT_EXPORT
+char** g_LBOS_UnitTesting_Lbosresolver(void);
 
 
 #ifdef __cplusplus

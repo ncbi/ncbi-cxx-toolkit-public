@@ -57,7 +57,12 @@ static const size_t kLBOSAddresses           = 7; /**< Max addresses of
                                                        plus one for NULL.    */
 static const char* kRoleFile                  = "/etc/ncbi/role";
 static const char* kDomainFile                = "/etc/ncbi/domain";
+#ifdef NCBI_OS_MSWIN
+static const char* 
+    kLbosresolverFile = "C:\\Apps\\Admin_Installs\\etc\ncbi\\lbosresolver";
+#else 
 static const char* kLbosresolverFile          = "/etc/ncbi/lbosresolver";
+#endif
 static const char* kLBOSQuery                 = "/lbos/text/mlresolve?name=";
 
 
@@ -73,11 +78,11 @@ static const char* kLBOSHealthcheckUrlVariable = "HEALTHCHECK";
 static const char* kLBOSDomainVariable         = "lbos_domain";
 
 
-static SConnNetInfo* s_EmptyNetInfo       =   NULL; /* Do..                  */
-static       char* s_LBOS_CurrentDomain   =   NULL; /*  ..not..              */
-static       char* s_LBOS_Lbosresolver    =   NULL; /*      ..change..       */
-static       char* s_LBOS_CurrentRole     =   NULL; /*          ..after init */
-static const int   kInitialCandidatesCount =  1; /**< For initial memory
+static SConnNetInfo* s_EmptyNetInfo         = NULL; /* Do..                  */
+static       char*   s_LBOS_CurrentDomain   = NULL; /*  ..not..              */
+static       char*   s_LBOS_Lbosresolver    = NULL; /*      ..change..       */
+static       char*   s_LBOS_CurrentRole     = NULL; /*          ..after init */
+static const int     kInitialCandidatesCount = 1;   /**< For initial memory
                                                       allocation             */
 static       int   s_LBOS_TurnedOn   =        1; /* If LBOS cannot resolve
                                                     even itself,
@@ -759,7 +764,7 @@ char** g_LBOS_GetLBOSAddressesEx (ELBOSFindMethod priority_find_method,
 #endif /* 0 */
             break;
         case eLBOSFindMethod_Lbosresolve :
-#ifdef NCBI_OS_LINUX
+#if defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN
             lbosaddress = s_LBOS_ReadLbosresolver();
             if (g_LBOS_StringIsNullOrEmpty(lbosaddress)) {
                 CORE_LOG_X(1, eLOG_Warning, "Trying to find LBOS using "
@@ -1365,7 +1370,11 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
 
     /* We suppose that number of addresses is constant (and so
        is position of NULL), so no mutex is necessary */
-    while (s_LBOS_InstancesList[++addresses_count] != NULL) continue;
+    while (s_LBOS_InstancesList[addresses_count++] != NULL) continue;
+    addresses_count -= 1; /* because last ++ was when item was NULL */
+    if (addresses_count == 0) {
+        return;
+    }
     lbos_addresses = (char**)calloc(addresses_count + 1, sizeof(char*));
     if (lbos_addresses == NULL) {
         CORE_LOG(eLOG_Critical, "s_LBOS_FillCandidates: No RAM. "
@@ -1772,6 +1781,16 @@ char** g_LBOS_UnitTesting_CurrentRole(void)
 }
 
 
+/**  Pointer to s_LBOS_CurrentRole
+ *  @return
+ *   address of static variable s_LBOS_CurrentRole.
+ *  @see                                                                     */
+char** g_LBOS_UnitTesting_Lbosresolver(void)
+{
+    return &s_LBOS_Lbosresolver;
+}
+
+
 int/*bool*/ g_LBOS_UnitTesting_SetLBOSFindMethod (SERV_ITER       iter,
                                                   ELBOSFindMethod method)
 {
@@ -1783,14 +1802,19 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSFindMethod (SERV_ITER       iter,
 }
 
 
-int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles (const char* roleFile,
-                                                        const char* domainFile)
+int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile
+                                                 (const char* roleFile,
+                                                  const char* domainFile,
+                                                  const char* lbosresolverfile)
 {
     if (roleFile != NULL) {
         kRoleFile = roleFile;
     }
     if (domainFile != NULL) {
         kDomainFile = domainFile;
+    }
+    if (lbosresolverfile != NULL) {
+        kLbosresolverFile = lbosresolverfile;
     }
     return 1;
 }
@@ -2790,9 +2814,9 @@ unsigned short LBOS_ServiceVersionGet(const char*  service,
  *  Variable to be assigned pointer to C-string with status message from LBOS
  */
 unsigned short LBOS_ServiceVersionSet(const char*  service,
-                                         const char*  new_version,
-                                         char**       lbos_answer,
-                                         char**       http_status_message)
+                                      const char*  new_version,
+                                      char**       lbos_answer,
+                                      char**       http_status_message)
 {
     char*          service_encoded;
     const char*    query_format;

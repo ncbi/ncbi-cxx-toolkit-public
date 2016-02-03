@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_SUITE( SelfTest ) /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(TESTVERSIONCHECK)
 {
-    CMockFunction<SLBOSVersion> lbos_mock(s_LBOSVersion, SLBOSVersion{1, 0, 2});
+    CMockFunction<SLBOSVersion> lbos_mock(s_LBOSVersion, SLBOSVersion{ 1, 0, 2 });
     string versions;
     bool active = false;
     ///No elements - ON by default
@@ -562,15 +562,25 @@ BOOST_AUTO_TEST_SUITE( ComposeLBOSAddress )////////////////////////////////////
  */
 
 
-/* Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
+/** Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
  * Should try only one current zone and return it  */
 BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos)
- {
-     CHECK_LBOS_VERSION();
+{
+    CHECK_LBOS_VERSION();
     ComposeLBOSAddress::LBOSExists__ShouldReturnLbos();
 }
+ 
 
-/* Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
+/** No available LBOS addresses - should turn OFF and NOT crash on launch
+ */
+BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__NoLBOSAddress__DoesNotCrash)
+{
+    CHECK_LBOS_VERSION();
+    ComposeLBOSAddress::NoLBOSAddress__DoesNotCrash();
+}
+
+
+/** Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
  * Should return NULL if fail on ZONE  */
 BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__RoleFail__ShouldReturnNULL)
 {
@@ -578,7 +588,7 @@ BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__RoleFail__ShouldReturnNULL)
     ComposeLBOSAddress::RoleFail__ShouldReturnNULL();
 }
 
-/* Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
+/** Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
  * Should return NULL if fail on DOMAIN  */
 BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__DomainFail__ShouldReturnNULL)
 {

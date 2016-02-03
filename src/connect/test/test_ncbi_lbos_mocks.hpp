@@ -235,6 +235,32 @@ private:
     bool m_OriginalPowerStatus;
 };
 
+/** Set LBOS status to needed values, then revert */
+class CLBOSDisableInstancesMock
+{
+public:
+    CLBOSDisableInstancesMock()
+    {
+        CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
+        m_LBOSReg = config.Get("CONN", "LBOS");
+        m_InstancesOrig = *g_LBOS_UnitTesting_InstancesList();
+        config.Unset("CONN", "LBOS");
+        *g_LBOS_UnitTesting_InstancesList() = NULL;
+    }
+    ~CLBOSDisableInstancesMock() {
+#ifdef NCBI_OS_MSWIN
+        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(NULL, NULL, "C:\\Apps\\Admin_Installs\\etc\ncbi\\lbosresolver");
+#else
+        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(NULL, NULL, "/etc/ncbi/lbosresolver");
+#endif
+        CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
+        config.Set("CONN", "LBOS", m_LBOSReg);
+        *g_LBOS_UnitTesting_InstancesList() = m_InstancesOrig;
+    }
+private:
+    string m_LBOSReg;
+    char** m_InstancesOrig;
+};
 
 /** Hold a non-const C-object (malloc, free). 
  *  Assignment free()'s current object */
@@ -325,45 +351,73 @@ private:
 
 
 /** Hold non-const C-string. Assignment free()'s current C-string */
-class CLBOSRoleDomain
+class CLBOSRoleDomainResolver
 {
 public:
-    CLBOSRoleDomain()
+    CLBOSRoleDomainResolver()
         : m_Role(*g_LBOS_UnitTesting_CurrentRole()),
           m_Domain(*g_LBOS_UnitTesting_CurrentDomain()),
+          m_Lbosresolver(*g_LBOS_UnitTesting_CurrentDomain()),
           m_MockRoleFile(NULL),
-          m_MockDomainFile(NULL)
+          m_MockDomainFile(NULL),
+          m_MockLbosresolver(NULL)
     {    }
-    ~CLBOSRoleDomain()
+    ~CLBOSRoleDomainResolver()
     {    
         free(*g_LBOS_UnitTesting_CurrentRole());
         free(*g_LBOS_UnitTesting_CurrentDomain());
+        free(*g_LBOS_UnitTesting_Lbosresolver());
         free(m_MockRoleFile);
         free(m_MockDomainFile);
+        free(m_MockLbosresolver);
         *g_LBOS_UnitTesting_CurrentRole()   = NULL;
         *g_LBOS_UnitTesting_CurrentDomain() = NULL;
-        g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles("/etc/ncbi/role",
-                                                     "/etc/ncbi/domain");
+        *g_LBOS_UnitTesting_Lbosresolver() = NULL;
+#ifdef NCBI_OS_MSWIN
+        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile("/etc/ncbi/role",
+                                                         "/etc/ncbi/domain",
+                           "C:\\Apps\\Admin_Installs\\etc\ncbi\\lbosresolver");
+#else
+        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile("/etc/ncbi/role",
+                                                         "/etc/ncbi/domain",
+                                                     "/etc/ncbi/lbosresolver");
+#endif
     }
-    void setRole(string roleFile) {
+    void setRole(string roleFile) 
+    {
         free(*g_LBOS_UnitTesting_CurrentRole());
         *g_LBOS_UnitTesting_CurrentRole() = NULL;
         free(m_MockRoleFile);
         m_MockRoleFile = strdup(roleFile.c_str());
-        g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(m_MockRoleFile, NULL);
+        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(m_MockRoleFile, NULL, 
+                                                         NULL);
     }
-    void setDomain(string domainFile) {
+    void setDomain(string domainFile) 
+    {
         free(*g_LBOS_UnitTesting_CurrentDomain());
         *g_LBOS_UnitTesting_CurrentDomain() = NULL;
         free(m_MockDomainFile);
         m_MockDomainFile = strdup(domainFile.c_str());
-        g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(NULL, m_MockDomainFile);
+        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(NULL,
+                                                         m_MockDomainFile, 
+                                                         NULL);
+    }
+    void setLbosresolver(string lbosresolver) 
+    {
+        free(*g_LBOS_UnitTesting_Lbosresolver());
+        *g_LBOS_UnitTesting_Lbosresolver() = NULL;
+        free(m_MockLbosresolver);
+        m_MockLbosresolver = strdup(lbosresolver.c_str());
+        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(NULL, NULL, 
+                                                         m_MockLbosresolver);
     }
 private:
-    char* m_Role;            /* pointer to static variable       */
-    char* m_Domain;          /* pointer to static variable       */
-    char* m_MockRoleFile;    /* current value of static variable */
-    char* m_MockDomainFile;  /* current value of static variable */
+    char* m_Role;              /* pointer to static variable       */
+    char* m_Domain;            /* pointer to static variable       */
+    char* m_Lbosresolver;      /* pointer to static variable       */
+    char* m_MockRoleFile;      /* current value of static variable */
+    char* m_MockDomainFile;    /* current value of static variable */
+    char* m_MockLbosresolver;  /* current value of static variable */
 };
 
 

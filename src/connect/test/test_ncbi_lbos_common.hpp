@@ -786,6 +786,13 @@ public:
     }
 
     void AnswerHealthcheck() {
+        struct timeval      time_stop;    
+        double              time_elapsed = 0.0; 
+
+                 
+        if (s_GetTimeOfDay(&time_stop) != 0) 
+            memset(&time_stop, 0, sizeof(time_stop));  
+
         STimeout rw_timeout = {1, 20000};
         STimeout accept_timeout = {0, 20000};
         /* We collect garbage every 5 seconds */
@@ -800,14 +807,35 @@ public:
         for (it = m_ListeningSockets.begin(); it != m_ListeningSockets.end(); it++) {
             if (it->m_REvent != eIO_Open && it->m_REvent != eIO_Close) {
                 AutoPtr<CSocket> sock = new CSocket;
+                struct timeval      accept_time_start;
+                struct timeval      accept_time_stop;
+                if (s_GetTimeOfDay(&accept_time_start) != 0) {
+                    memset(&accept_time_start, 0, sizeof(accept_time_start));
+                }
+                double accept_time_elapsed = 0.0;
+                double last_accept_time_elapsed = 0.0;
                 if (static_cast<CListeningSocket*>(it->m_Pollable)->
                     Accept(*sock, &accept_timeout) != eIO_Success) {
-                    WRITE_LOG("Healthcheck vacant ",
+                    if (s_GetTimeOfDay(&accept_time_stop) != 0)
+                        memset(&accept_time_stop, 0, sizeof(accept_time_stop));
+                    accept_time_elapsed = s_TimeDiff(&accept_time_stop, &accept_time_start);
+                    last_accept_time_elapsed = s_TimeDiff(&accept_time_stop, &m_LastSuccAcceptTime);
+                    WRITE_LOG("healthcheck vacant after trying accept for " <<
+                              accept_time_elapsed << "s, last successful accept was "
+                              << last_accept_time_elapsed << "s ago",
                               kSingleThreadNumber);
                     m_Busy = false;
                     sock->Close();
                     return;
                 }
+
+                if (s_GetTimeOfDay(&accept_time_stop) != 0)
+                    memset(&accept_time_stop, 0, sizeof(accept_time_stop));
+                accept_time_elapsed = s_TimeDiff(&accept_time_stop, &accept_time_start);
+                last_accept_time_elapsed = s_TimeDiff(&accept_time_stop, &m_LastSuccAcceptTime);
+                if (s_GetTimeOfDay(&m_LastSuccAcceptTime) != 0)
+                    memset(&m_LastSuccAcceptTime, 0, sizeof(m_LastSuccAcceptTime));
+
                 CSocket* my_sock;
                 m_SocketPool.push_back(CSocketAPI::SPoll(my_sock = sock.release(), eIO_ReadWrite));
                 iters_passed++;
@@ -823,12 +851,18 @@ public:
                 if (request.length() > 10) {
                     request = request.substr(4, NPOS);
                     request = request.erase(request.find("HTTP"), NPOS);
-                    WRITE_LOG("Answered healthcheck for " << request,
-                        kSingleThreadNumber);
+                    WRITE_LOG("Answered healthcheck for " << request << 
+                              " after trying accept for " 
+                              << accept_time_elapsed << "s, last successful accept was "
+                              << last_accept_time_elapsed << "s ago",
+                              kSingleThreadNumber);
                 }
                 if (request == "/health" || request == "") {
-                    WRITE_LOG("Answered healthcheck for " << request,
-                        kSingleThreadNumber);
+                    WRITE_LOG("Answered healthcheck for " << request << 
+                              " after trying accept for " 
+                              << accept_time_elapsed << "s, last successful accept was "
+                              << last_accept_time_elapsed << "s ago",
+                              kSingleThreadNumber);
                 }
                 const char healthy_answer[] =
                     "HTTP/1.1 200 OK\r\n"
@@ -886,6 +920,9 @@ private:
     }
     
     void* Main(void) {
+        if (s_GetTimeOfDay(&m_LastSuccAcceptTime) != 0) {
+            memset(&m_LastSuccAcceptTime, 0, sizeof(m_LastSuccAcceptTime));
+        }
         while (m_RunHealthCheck) {
             AnswerHealthcheck();
         }
@@ -893,6 +930,7 @@ private:
     }
     vector<CSocketAPI::SPoll> m_ListeningSockets;
     vector<CSocketAPI::SPoll> m_SocketPool;
+    struct timeval            m_LastSuccAcceptTime;
     bool m_RunHealthCheck;
     bool m_Busy;
     map<unsigned short, short> m_ListenPorts;
@@ -1864,6 +1902,40 @@ void LBOSExists__ShouldReturnLbos()
 #endif /* #ifdef NCBI_OS_LINUX */
 }
 
+
+void NoLBOSAddress__DoesNotCrash()
+{
+    WRITE_LOG("Test: if no LBOS address was found, turn LBOS off and "
+              "not crash", kSingleThreadNumber);
+    CLBOSStatus lbos_status(false, false);
+    CLBOSRoleDomainResolver rdr;
+    rdr.setLbosresolver("/some/trash/path");
+    CLBOSDisableInstancesMock inst_disable_mock;
+
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(*g_LBOS_UnitTesting_InstancesList() == NULL, 
+                                   "LBOS has working instances when it "
+                                   "should not. Probably test design error.");
+
+    string service = "/lbos";
+    CConnNetInfo net_info;
+    CServIter iter((SERV_ITER)NULL);
+    BOOST_CHECK_NO_THROW(
+         iter = SERV_OpenP(service.c_str(), fSERV_All,
+                           SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                           *net_info, 0/*skip*/, 0/*n_skip*/,
+                           0/*external*/, 0/*arg*/, 0/*val*/));
+    
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(**g_LBOS_UnitTesting_InstancesList() == NULL, 
+                                   "LBOS has working instances when it "
+                                   "should not. Probably test design error.");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(*g_LBOS_UnitTesting_PowerStatus() == 0, 
+                                   "LBOS is not OFF when no LBOS address "
+                                   "available");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL, 
+                                   "Something was found when LBOS is OFF");
+}
+
+
 /* Thread-unsafe because of g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles().
  * Excluded from multithreaded testing.
  */
@@ -1877,7 +1949,7 @@ void RoleFail__ShouldReturnNULL()
     string corruptRoleString = path + string("/ncbi_lbos_role");
     const char* corruptRole = corruptRoleString.c_str();
     ofstream roleFile;
-    CLBOSRoleDomain role_domain;
+    CLBOSRoleDomainResolver role_domain;
     role_domain.setRole(corruptRole);
 
     /* 1. Empty role */
@@ -1933,7 +2005,7 @@ void DomainFail__ShouldReturnNULL()
     ofstream domainFile (corruptDomain);
     domainFile << "";
     domainFile.close();
-    CLBOSRoleDomain role_domain;
+    CLBOSRoleDomainResolver role_domain;
 
     /* 1. Empty domain file */
     role_domain.setDomain(corruptDomain);
