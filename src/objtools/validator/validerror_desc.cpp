@@ -286,6 +286,8 @@ EErrType s_GetErrTypeFromString(const string& msg)
         et = eErr_SEQ_DESCR_BadStrucCommInvalidFieldName;
     } else if (NStr::StartsWith(msg, "Multiple values")) {
         et = eErr_SEQ_DESCR_BadStrucCommMultipleFields;
+    } else if (NStr::StartsWith(msg, "Structured comment field")) {
+        et = eErr_SEQ_DESCR_BadStrucCommInvalidFieldName;
     }
 
     return et;
