@@ -1102,6 +1102,24 @@ public:
     void GarbageCollect(void);
 
     /// Set number of threads
+    ///
+    /// Set number of threads which will share this object.  This
+    /// permits use of an internal mmap for the threads.
+    /// If the second parameter is 'false' (the default),
+    /// the internal mmap is not used if num_threads == 1.
+    /// For certain applications where there are multiple CSeqDB
+    /// objects, each one accessed by only a single thread,
+    /// setting num_threads to 1 (thread per CSeqDB) results in
+    /// a performance hit by not using the mmap.
+    /// In this case, force_mt ("force multithreading") should
+    /// be set to 'true' to allow use of the mmap when num_threads
+    /// == 1.  For num_threads > 1, force_mt has no effect.
+    ///
+    /// @param num_threads The number of threads which will share
+    ///                    access to this CSeqDB object. [in]
+    /// @param force_mt Defaults to false, setting to true when
+    ///                 num_threads == 1 forces multithread
+    ///                 internal mmap. [in]
     void SetNumberOfThreads(int num_threads, bool force_mt = false);
 
     /// Retrieve the slice size used in internal mmap
