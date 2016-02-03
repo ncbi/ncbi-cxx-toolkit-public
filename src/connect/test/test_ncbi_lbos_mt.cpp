@@ -74,123 +74,20 @@ bool CTestLBOSApp::Thread_Init(int idx)
 }
 
 
-void CTestLBOSApp::SwapAddressesTest(int idx)
-{
-    /* Save current function pointer. It will be changed inside
-     * test functions */
-    CMockFunction<FLBOS_ResolveIPPortMethod*> mock(
-                        g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort,
-                        g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort);
-    /* Pseudo random order */
-    int i = 0;
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<1, 1, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<2, 2, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<3, 3, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<1, 4, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<7, 5, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<2, 6, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<4, 7, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<-1, 8, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<2, 9, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<3, 10, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<1, 11, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<-1, 12, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<2, 13, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<4, 14, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<2, 15, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<-1, 16, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<3, 17, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<-1, 18, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<2, 19, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<1, 20, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<6, 21, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<4, 22, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<2, 23, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<6, 24, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<3, 25, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<5, 26, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<2, 27, true>(mock);
-    TestApp_GlobalSyncPoint();
-    Initialization::SwapAddressesTest<1, 28, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<6, 92, true>(mock);
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<4, 30, true>(mock);
-    TestApp_GlobalSyncPoint();
-}
-
-
-#define RUN_TEST(test)                                                         \
-    test;                                                                      \
-    TestApp_IntraGroupSyncPoint();                                             \
-    if (idx == 1) {                                                            \
-        s_ClearZooKeeper(idx);                                                 \
-    } else {                                                                   \
-        SleepMilliSec(500);                                                    \
-    }                                                                          \
+#define RUN_TEST(test)                                                        \
+    test;                                                                     \
+    TestApp_IntraGroupSyncPoint();                                            \
+    if (idx == 1) {                                                           \
+        s_ClearZooKeeper(idx);                                                \
+    } else {                                                                  \
+        SleepMilliSec(500);                                                   \
+    }                                                                         \
     TestApp_IntraGroupSyncPoint();
 
 
 
 bool CTestLBOSApp::Thread_Run(int idx)
 {    
-    //SwapAddressesTest(idx);
     if (idx < 10) { /* because too much nodes are created (3 per thread) and
                        this test application cannot handle healthchecks */
         RUN_TEST(CloseIterator::FullCycle__ShouldWork());
@@ -222,6 +119,9 @@ bool CTestLBOSApp::Thread_Run(int idx)
     RUN_TEST(Deannouncement::Deannounced__AnnouncedServerRemoved(idx));
     RUN_TEST(Deannouncement::LBOSExistsDeannounce400__Return400(idx));
     RUN_TEST(Deannouncement::RealLife__InvisibleAfterDeannounce(idx));
+
+    TestApp_GlobalSyncPoint();
+
     RUN_TEST(Stability::GetNext_Reset__ShouldNotCrash(idx));
     RUN_TEST(Stability::FullCycle__ShouldNotCrash(idx));
     RUN_TEST(Performance::FullCycle__ShouldNotCrash(idx));
