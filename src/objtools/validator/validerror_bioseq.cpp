@@ -7369,6 +7369,77 @@ void CValidError_bioseq::CheckForMultipleStructuredComments(const CBioseq& seq)
 }
 
 
+bool s_IsGenbankMasterAccession(const string& acc)
+{
+    bool rval = false;
+    switch (acc.length()) {
+        case 12:
+            if (NStr::EndsWith(acc, "000000")) {
+                rval = true;
+            }
+            break;
+        case 13:
+            if (NStr::EndsWith(acc, "0000000")) {
+                rval = true;
+            }
+            break;
+        case 14:
+            if (NStr::EndsWith(acc, "00000000")) {
+                rval = true;
+            }
+            break;
+        default:
+            break;
+    }
+    return rval;
+}
+
+bool s_IsMasterAccession(const CSeq_id& id)
+{
+    bool rval = false;
+    switch (id.Which()) {
+        case CSeq_id::e_Other:
+            if (id.GetOther().IsSetAccession()) {
+                const string& acc = id.GetOther().GetAccession();
+                switch (acc.length()) {
+                    case 15:
+                        if (NStr::EndsWith(acc, "000000")) {
+                            rval = true;
+                        }
+                        break;
+                    case 16:
+                    case 17:
+                        if (NStr::EndsWith(acc, "0000000")) {
+                            rval = true;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            break;
+        case CSeq_id::e_Genbank:
+            if (id.GetGenbank().IsSetAccession()) {
+                rval = s_IsGenbankMasterAccession(id.GetGenbank().GetAccession());
+            }
+            break;
+        case CSeq_id::e_Ddbj:
+            if (id.GetDdbj().IsSetAccession()) {
+                rval = s_IsGenbankMasterAccession(id.GetDdbj().GetAccession());
+            }
+            break;
+        case CSeq_id::e_Embl:
+            if (id.GetEmbl().IsSetAccession()) {
+                rval = s_IsGenbankMasterAccession(id.GetEmbl().GetAccession());
+            }
+            break;
+        default:
+            break;
+    }
+
+    return rval;
+}
+
 // Validate CSeqdesc within the context of a bioseq. 
 // See: CValidError_desc for validation of standalone CSeqdesc,
 // and CValidError_descr for validation of descriptors in the context
@@ -7406,14 +7477,14 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     bool is_assembly = false;
     bool is_finished_status = false;
 
-    bool wgs_master = false;
-    bool tsa_master = false;
+    bool is_master = false;
     bool is_WP = false;
     EDiagSev sev =  eDiag_Error;
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     if ( bsh ) {
         FOR_EACH_SEQID_ON_BIOSEQ_HANDLE (sid_itr, bsh) {
             CSeq_id_Handle sid = *sid_itr;
+            is_master |= s_IsMasterAccession(*(sid.GetSeqId()));
             switch (sid.Which()) {
                 case NCBI_SEQID(Embl):
                 case NCBI_SEQID(Ddbj):
@@ -7429,19 +7500,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     if (tsid.IsSetAccession()) {
                         const string& acc = tsid.GetAccession ();
                         TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
-                        TACCN_CHOICE div = (TACCN_CHOICE) (type & NCBI_ACCN(division_mask));
-                        if ( div == NCBI_ACCN(wgs) ) 
-                        {
-                            if( (type & CSeq_id::fAcc_master) != 0 ) {
-                                wgs_master = true;
-                            }
-                        }
-                        if ( div == NCBI_ACCN(tsa) )
-                        {
-                            if( (type & CSeq_id::fAcc_master) != 0 ) {
-                                tsa_master = true;
-                            }
-                        }
+
                         if (type == NCBI_ACCN(refseq_unique_prot)) {
                             is_WP = true;
                         }
@@ -7876,11 +7935,13 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         PostErr (eDiag_Warning, eErr_SEQ_DESCR_FinishedStatusForWGS, "WGS record " + buf + " should not have Finished status", seq);
     }
 
-    if (wgs_master && ! is_genome_assembly) {
-       PostErr (sev, eErr_SEQ_INST_WGSMasterLacksStrucComm, "WGS master without Genome Assembly Data user object", seq);
-    }
-    if (tsa_master && ! is_assembly) {
-       PostErr (sev, eErr_SEQ_INST_TSAMasterLacksStrucComm, "TSA master without Assembly Data user object", seq);
+    if (is_master && seq.GetInst().IsSetRepr() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_virtual) {
+        if (tech == CMolInfo::eTech_wgs && !is_genome_assembly) {
+            PostErr(sev, eErr_SEQ_INST_WGSMasterLacksStrucComm, "WGS master without Genome Assembly Data user object", seq);
+        }
+        if (tech == CMolInfo::eTech_tsa && !is_assembly) {
+            PostErr(sev, eErr_SEQ_INST_TSAMasterLacksStrucComm, "TSA master without Assembly Data user object", seq);
+        }
     }
 
     if ( num_gb > 1 ) {

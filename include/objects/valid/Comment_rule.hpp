@@ -75,6 +75,11 @@ public:
     typedef pair<CField_rule::TSeverity, string> TError;
     typedef vector<TError> TErrorList;
     TErrorList IsValid(const CUser_object& user) const;
+    void CheckFieldValue(CConstRef<CField_rule> field_rule, const string& value, TErrorList& errors) const;
+    static void CheckGeneralFieldValue(const string& value, TErrorList& errors);
+    static void CheckGeneralFieldName(const string& label, TErrorList& errors);
+    static void CheckGeneralField(const CUser_field& field, TErrorList& errors);
+    static TErrorList CheckGeneralStructuredComment(const CUser_object& user);
     bool ReorderFields(CUser_object& user) const;
 
 private:

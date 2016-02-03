@@ -50,6 +50,7 @@
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/valid/Comment_set.hpp>
+#include <objects/valid/Comment_rule.hpp>
 
 #include <objtools/validator/validator.hpp>
 
@@ -1269,6 +1270,8 @@ private:
 
     void ValidateComment(const string& comment, const CSeqdesc& desc);
     bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, const CComment_rule& rule, bool report);
+    bool ValidateStructuredCommentGeneric(const CUser_object& usr, const CSeqdesc& desc, bool report);
+    void x_ReportStructuredCommentErrors(const CSeqdesc& desc, const CComment_rule::TErrorList& errors);
     void ValidateUser(const CUser_object& usr, const CSeqdesc& desc);
     void ValidateMolInfo(const CMolInfo& minfo, const CSeqdesc& desc);
 

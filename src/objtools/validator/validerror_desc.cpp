@@ -304,11 +304,32 @@ bool CValidError_desc::ValidateStructuredComment
     if (errors.size() > 0) {
         is_valid = false;
         if (report) {
-            ITERATE(CComment_rule::TErrorList, it, errors) {
-                PostErr(s_ErrorLevelFromFieldRuleSev(it->first),
-                        s_GetErrTypeFromString(it->second), 
-                        it->second, *m_Ctx, desc);
-            }
+            x_ReportStructuredCommentErrors(desc, errors);
+        }
+    }
+    return is_valid;
+}
+
+
+void CValidError_desc::x_ReportStructuredCommentErrors(const CSeqdesc& desc, const CComment_rule::TErrorList& errors)
+{
+    ITERATE(CComment_rule::TErrorList, it, errors) {
+        PostErr(s_ErrorLevelFromFieldRuleSev(it->first),
+            s_GetErrTypeFromString(it->second),
+            it->second, *m_Ctx, desc);
+    }
+}
+
+
+bool CValidError_desc::ValidateStructuredCommentGeneric(const CUser_object& usr, const CSeqdesc& desc, bool report)
+{
+    bool is_valid = true;
+
+    CComment_rule::TErrorList errors = CComment_rule::CheckGeneralStructuredComment(usr);
+    if (errors.size() > 0) {
+        is_valid = false;
+        if (report) {
+            x_ReportStructuredCommentErrors(desc, errors);
         }
     }
     return is_valid;
@@ -377,6 +398,7 @@ bool CValidError_desc::ValidateStructuredComment
         if (report) {
             PostErr (eDiag_Info, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
                     "Structured Comment lacks prefix", *m_Ctx, desc);
+            ValidateStructuredCommentGeneric(usr, desc, true);
         }
         return true;
     }
@@ -403,7 +425,8 @@ bool CValidError_desc::ValidateStructuredComment
                     is_valid = ValidateStructuredComment (tmp, desc, rule, report);
                 }
             } catch (CException ) {
-                // no rule for this prefix, no error
+                // no rule for this prefix
+                ValidateStructuredCommentGeneric(usr, desc, true);
             }
         }   
         try {
@@ -411,11 +434,12 @@ bool CValidError_desc::ValidateStructuredComment
             if (!suffix.IsSetData() || !suffix.GetData().IsStr()) {
                 return true;
             }
-            string sfx = suffix.GetData().GetStr();
+            string report_sfx = suffix.GetData().GetStr();
+            string sfx = report_sfx;
             CComment_rule::NormalizePrefix(sfx);
             if (report && ! s_IsAllowedPrefix (sfx)) {
                 PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
-                        sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);   
+                    report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
             }
         } catch (CException ) {
             // we don't care about missing suffixes
@@ -426,6 +450,7 @@ bool CValidError_desc::ValidateStructuredComment
         if (report) {
             PostErr (eDiag_Warning, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
                     "Structured Comment lacks prefix", *m_Ctx, desc);
+            ValidateStructuredCommentGeneric(usr, desc, true);
         }
         is_valid = false;
     }

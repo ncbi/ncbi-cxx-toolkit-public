@@ -200,6 +200,77 @@ CConstRef<CField_rule> CComment_rule::FindFieldRuleRef (const string& field_name
 }
 
 
+void CComment_rule::CheckGeneralFieldName(const string& label, TErrorList& errors)
+{
+    if (NStr::IsBlank(label)) {
+        errors.push_back(TError(eSeverity_level_error,
+            "Structured Comment contains field without label"));
+    }
+
+    if (NStr::Find(label, "::") != string::npos) {
+        errors.push_back(TError(eSeverity_level_reject, "Structured comment field '" + label + "' contains double colons"));
+    }
+}
+
+
+void CComment_rule::CheckGeneralFieldValue(const string& value, TErrorList& errors)
+{
+    if (NStr::Find(value, "::") != string::npos) {
+        errors.push_back(TError(eSeverity_level_reject, "Structured comment value '" + value + "' contains double colons"));
+    }
+}
+
+
+void CComment_rule::CheckGeneralField(const CUser_field& field, TErrorList& errors)
+{
+    string label = "";
+
+    if (field.IsSetLabel()) {
+        if (field.GetLabel().IsStr()) {
+            label = field.GetLabel().GetStr();
+        } else {
+            label = NStr::IntToString(field.GetLabel().GetId());
+        }
+    }
+    CheckGeneralFieldName(label, errors);
+
+    string value = "";
+    if (field.GetData().IsStr()) {
+        value = (field.GetData().GetStr());
+    } else if (field.GetData().IsInt()) {
+        value = NStr::IntToString(field.GetData().GetInt());
+    }
+    CheckGeneralFieldValue(value, errors);
+}
+
+
+void CComment_rule::CheckFieldValue(CConstRef<CField_rule> field_rule, const string& value, TErrorList& errors) const
+{
+    if (field_rule) {
+        if (!field_rule->DoesStringMatchRuleExpression(value)) {
+            // post error about not matching format
+            CField_rule::TSeverity sev = field_rule->GetSeverity();
+            if (NStr::EqualNocase(field_rule->GetField_name(), "Finishing Goal")
+                && NStr::EqualNocase(GetPrefix(), "##Genome-Assembly-Data-START##")) {
+                sev = eSeverity_level_error;
+            } else if (NStr::EqualNocase(field_rule->GetField_name(), "Current Finishing Status")
+                && NStr::EqualNocase(GetPrefix(), "##Genome-Assembly-Data-START##")) {
+                sev = eSeverity_level_error;
+            }
+            errors.push_back(TError(sev, value + " is not a valid value for " + field_rule->GetField_name()));
+        }
+    }
+    if (IsSetForbidden_phrases()) {
+        ITERATE(CComment_rule::TForbidden_phrases::Tdata, it, GetForbidden_phrases().Get()) {
+            if (NStr::FindNoCase(value, *it) != string::npos) {
+                errors.push_back(TError(eSeverity_level_error, "'" + value + "' is inappropriate for a GenBank submisison"));
+            }
+        }
+    }
+    CheckGeneralFieldValue(value, errors);
+}
+
+
 CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
 {
     TErrorList errors;
@@ -233,25 +304,7 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
                 } else if ((*field)->GetData().IsInt()) {
                     value = NStr::IntToString((*field)->GetData().GetInt());
                 }
-                if (!(*field_rule)->DoesStringMatchRuleExpression(value)) {
-                    // post error about not matching format
-                    sev = (*field_rule)->GetSeverity();
-                    if (NStr::EqualNocase (label, "Finishing Goal")
-                        && NStr::EqualNocase(GetPrefix(), "##Genome-Assembly-Data-START##")) {
-                        sev = eSeverity_level_error;
-                    } else if (NStr::EqualNocase (label, "Current Finishing Status")
-                               && NStr::EqualNocase(GetPrefix(), "##Genome-Assembly-Data-START##")) {
-                        sev = eSeverity_level_error;
-                    }
-                    errors.push_back(TError(sev, value + " is not a valid value for " + label));
-                }
-                if (IsSetForbidden_phrases()) {                    
-                    ITERATE(CComment_rule::TForbidden_phrases::Tdata, it, GetForbidden_phrases().Get()) {
-                        if (NStr::FindNoCase(value, *it) != string::npos) {
-                            errors.push_back(TError(eSeverity_level_error, "'" + value + "' is inappropriate for a GenBank submisison"));
-                        }
-                    }
-                }
+                CheckFieldValue(*field_rule, value, errors);
                 ++field;
                 ++field_rule;
             } else {
@@ -276,19 +329,13 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
                     } else if (other_field.GetData().IsInt()) {
                         value = NStr::IntToString(other_field.GetData().GetInt());
                     }
-                    if (!(*field_rule)->DoesStringMatchRuleExpression(value)) {
-                        // post error about not matching format
-                        errors.push_back(TError((*field_rule)->GetSeverity(),
-                                                value + " is not a valid value for " + expected_field));
-                    }
+                    CheckFieldValue(*field_rule, value, errors);
                 }
 
                 ++field_rule;
             }
         } else {
-            // post error about field without label
-            errors.push_back(TError(eSeverity_level_error,
-                     "Structured Comment contains field without label"));
+            CheckGeneralField(**field, errors);
             ++field;
         }
     }
@@ -332,11 +379,10 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
                     errors.push_back(TError(eSeverity_level_error,
                                             label + " is not a valid field name"));
                 }
+                CheckGeneralField(**field, errors);
             }
         } else {
-            // post error about field without label
-            errors.push_back(TError(eSeverity_level_warning,
-                         "Structured Comment contains field without label"));
+            CheckGeneralField(**field, errors);
         }
         ++field;
     }
@@ -482,6 +528,21 @@ bool CComment_rule::ReorderFields(CUser_object& user) const
         ++field_rule;
     }
     return any_change;
+}
+
+
+CComment_rule::TErrorList CComment_rule::CheckGeneralStructuredComment(const CUser_object& user)
+{
+    TErrorList errors;
+
+    if (!user.IsSetData()) {
+        return errors;
+    }
+
+    ITERATE(CUser_object::TData, it, user.GetData()) {
+        CheckGeneralField(**it, errors);
+    }
+    return errors;
 }
 
 
