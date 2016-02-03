@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
+#include <math.h>
 
 #include "nst_timing.hpp"
 
@@ -51,7 +52,11 @@ string CNSTTiming::Serialize(CDiagContext_Extra  extra)
     for ( vector< pair< string, CNSTPreciseTime > >::const_iterator
             k = data.begin(); k != data.end(); ++k ) {
         if (NStr::StartsWith(k->first, "MS SQL")) {
-            extra.Print(NStr::Replace(k->first, " ", "_"), k->second);
+
+            // It was decided to log MS SQL timing as an integer in
+            // milliseconds: CXX-7802
+            unsigned long   msec = round((double)(k->second) * kMSecsPerSecond);
+            extra.Print(NStr::Replace(k->first, " ", "_"), msec);
             continue;
         }
         if (!retval.empty())
