@@ -109,6 +109,9 @@ CBlastOptionsBuilder::ComputeProgram(const string & program,
             p = "psitblastn";
             found = true;
         }
+        if ((s == "sra") || (s == "wgs")) {
+        	found = true;
+        }
     } else if (p == "tblastx") {
         found = true;
     } else if (p == "blastx") {
