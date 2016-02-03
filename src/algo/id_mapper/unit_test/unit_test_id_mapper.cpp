@@ -203,6 +203,32 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
 
     // Check that Map results meet expectations
     BOOST_CHECK(Result->Equals(*Expected));
+    
+    // chr6_random     65878   67001   chr6_random:67103       12330   + 
+    OrigLoc.Reset(new CSeq_loc());
+    OrigLoc->SetInt().SetId().SetLocal().SetStr("chr6_random");
+    OrigLoc->SetInt().SetFrom(65878);
+    OrigLoc->SetInt().SetTo(67000);
+    OrigLoc->SetInt().SetStrand(eNa_strand_plus);
+   
+    CGencollIdMapper::SIdSpec GuessSpec;
+    Mapper.Guess(*OrigLoc, GuessSpec);
+    
+    Result = Mapper.Map(*OrigLoc, MapSpec);
+    
+    Expected.Reset(new CSeq_loc());
+    Expected->SetInt().SetId().Set("NT_113898.1");
+    Expected->SetInt().SetFrom(65878);
+    Expected->SetInt().SetTo(67000);
+    Expected->SetInt().SetStrand(eNa_strand_plus);
+
+    BOOST_CHECK(Result->Equals(*Expected));
+
+    // round trip
+
+    Result = Mapper.Map(*Result, GuessSpec);
+
+    BOOST_CHECK(OrigLoc->Equals(*Result));
 }
 
 
