@@ -174,6 +174,9 @@ public:
         m_Original = mock;
         return *this;
     }
+    T& operator*() {
+        return m_Original;
+    }
 private:
     T  m_OriginalValue;
     T& m_Original;

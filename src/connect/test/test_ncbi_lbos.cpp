@@ -125,76 +125,108 @@ BOOST_AUTO_TEST_CASE(TESTVERSIONCHECK)
     ///One element
     versions = "1.0.0";
     //1
-    lbos_mock = { 0, 0, 2 };
+    (*lbos_mock).major = 0;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 2;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //2
-    lbos_mock = { 1, 0, 0 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 0;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //3
-    lbos_mock = { 1, 0, 1 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 1;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
 
     ///Two elements
     versions = "1.0.0, 1.0.2";
     //1
-    lbos_mock = { 0, 0, 2 };
+    (*lbos_mock).major = 0;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 2;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //2
-    lbos_mock = { 1, 0, 0 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 0;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //3
-    lbos_mock = { 1, 0, 1 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 1;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //4
-    lbos_mock = { 1, 0, 2 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 2;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //5
-    lbos_mock = { 1, 0, 3};
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 3;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
 
     /// Three elements
     versions = "1.0.0, 1.0.2, 1.0.4";
     //1
-    lbos_mock = { 0, 0, 2 };
+    (*lbos_mock).major = 0;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 2;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //2
-    lbos_mock = { 1, 0, 0 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 0;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //3
-    lbos_mock = {1, 0, 1};
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 1;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //4
-    lbos_mock = { 1, 0, 2 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 2;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //5
-    lbos_mock = { 1, 0, 3 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 3;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //6
-    lbos_mock = { 1, 0, 4 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 4;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //6
-    lbos_mock = { 1, 0, 5 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 5;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
 
     /// Four elements
     versions = "1.0.0, 1.0.2, 1.0.4, 1.0.6";
     //1
-    lbos_mock = { 0, 0, 2 };
+    (*lbos_mock).major = 0;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 2;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //2
@@ -202,31 +234,45 @@ BOOST_AUTO_TEST_CASE(TESTVERSIONCHECK)
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //3
-    lbos_mock = { 1, 0, 1 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 0;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //4
-    lbos_mock = { 1, 0, 2 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 2;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //5
-    lbos_mock = { 1, 0, 3 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 3;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //6
-    lbos_mock = { 1, 0, 4 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 4;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //6
-    lbos_mock = { 1, 0, 5 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 5;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //7
-    lbos_mock = { 1, 0, 6 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 6;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //8
-    lbos_mock = { 1, 0, 7 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 7;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
 }
