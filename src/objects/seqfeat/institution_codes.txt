@@ -6716,7 +6716,7 @@ WDNE	s	Bureau of Land Management, Winnemucca District
 WECO	s	Wesleyan University, Biology Department
 WEIC	s	Wau Ecology Institute
 WELC	s	Wellesley College, Biological Sciences Department
-WELT	s	Museum of New Zealand, Botany Department
+WELT	s	Museum of New Zealand Te Papa Tongarewa
 WELTU	s	Victoria University of Wellington
 WERN	s	Werneth Park Study Centre and Natural History Museum
 WET	s	Wartburg College, Biology Department
