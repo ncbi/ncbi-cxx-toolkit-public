@@ -201,7 +201,8 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAt
  * at position "pos"), in chunks.  Pass "cbdata" as an opaque parameter to the
  * "callback".  Processing stops when all buffer bytes (but no more than
  * "size" bytes) have been visited by the "callback", or when the "callback"
- * returns a value less than its passed "size" argument.
+ * returns a value less than its passed "size" argument (the "callback" may
+ * _not_ return a value greater than its "size" argument!).
  * Return the # of processed bytes (can be less than "size").
  * Return zero and do nothing if "buf" is NULL or "pos" >= BUF_Size(buf).
  * Do nothing and return min(BUF_Size(buf)-pos, size) if "callback" is NULL.

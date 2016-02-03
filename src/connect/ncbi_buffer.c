@@ -350,7 +350,7 @@ extern size_t BUF_PeekAtCB(BUF      buf,
     /* skip "pos" bytes */
     for (chunk = buf->list;  chunk;  chunk = chunk->next) {
         size_t avail = chunk->size - chunk->skip;
-        assert(chunk->size > chunk->skip);
+        assert(chunk->size > chunk->skip /*i.e. chunk->size > 0*/);
         if (avail > pos)
             break;
         pos -= avail;
@@ -360,13 +360,12 @@ extern size_t BUF_PeekAtCB(BUF      buf,
     for (todo = size;  todo  &&  chunk;  chunk = chunk->next, pos = 0) {
         size_t skip = chunk->skip + pos;
         size_t copy = chunk->size - skip;
-        assert(chunk->size > skip);
+        assert(chunk->size > skip /*i.e. chunk->size > 0*/);
         if (copy > todo)
             copy = todo;
 
         skip  = callback(cbdata, (const char*) chunk->data + skip, copy);
-        if (skip > copy)
-            skip = copy;
+        assert(skip <= copy);
         todo -= skip;
         if (skip < copy)
             break;
