@@ -391,16 +391,16 @@ bool CValidError_desc::ValidateStructuredComment
             PostErr (eDiag_Warning, eErr_SEQ_DESCR_UserObjectProblem, 
                      "Structured Comment user object descriptor is empty", *m_Ctx, desc);
         }
-        return false;
+        is_valid = false;
     }
     string prefix = CComment_rule::GetStructuredCommentPrefix(usr);
     if (NStr::IsBlank(prefix)) {
         if (report) {
             PostErr (eDiag_Info, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
                     "Structured Comment lacks prefix", *m_Ctx, desc);
-            ValidateStructuredCommentGeneric(usr, desc, true);
+            is_valid &= ValidateStructuredCommentGeneric(usr, desc, true);
         }
-        return true;
+        return is_valid;
     }
     if (report && !s_IsAllowedPrefix(prefix)) {
         string report_prefix = CComment_rule::GetStructuredCommentPrefix(usr, false);
@@ -662,7 +662,6 @@ void CValidError_desc::ValidateUser
         if (! NStr::EqualNocase(oi.GetStr(), "NcbiAutofix") && ! NStr::EqualNocase(oi.GetStr(), "Unverified")) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectProblem,
                     "User object with no data", *m_Ctx, desc);
-            return;
         }
     }
     if ( oi.IsStr() && NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
