@@ -28,8 +28,13 @@ RAPIDJSON_DIAG_OFF(4127) // conditional expression is constant
 #elif defined(__GNUC__)
 RAPIDJSON_DIAG_PUSH
 RAPIDJSON_DIAG_OFF(effc++)
+// NCBI
+#define RAPIDJSON_NCBI_NOOPTIMIZE  __attribute__((optimize("O0")))
 #endif
 
+#ifndef RAPIDJSON_NCBI_NOOPTIMIZE
+#define RAPIDJSON_NCBI_NOOPTIMIZE
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 // RAPIDJSON_HAS_STDSTRING
 
@@ -1743,16 +1748,14 @@ SetValueAllocator(rhs.GetValueAllocator());
     }
 
 protected:
-//NCBI: added allocator
-    Allocator* allocator_;
     Data data_;
     unsigned flags_;
 //NCBI: added allocator
 #if 1
-//protected:
-//    Allocator* allocator_;
+protected:
+    Allocator* allocator_;
 public:
-    ValueType& SetValueAllocator(Allocator* allocator) {
+    ValueType& RAPIDJSON_NCBI_NOOPTIMIZE SetValueAllocator(Allocator* allocator) {
         allocator_ = allocator;
         return *this;
     }
@@ -2005,13 +2008,14 @@ private:
     template <typename, typename> friend class GenericValue; // for deep copying
 
     // Implementation of Handler
-    bool Null() { new (stack_.template Push<ValueType>()) ValueType(); return true; }
-    bool Bool(bool b) { new (stack_.template Push<ValueType>()) ValueType(b); return true; }
-    bool Int(int i) { new (stack_.template Push<ValueType>()) ValueType(i); return true; }
-    bool Uint(unsigned i) { new (stack_.template Push<ValueType>()) ValueType(i); return true; }
-    bool Int64(int64_t i) { new (stack_.template Push<ValueType>()) ValueType(i); return true; }
-    bool Uint64(uint64_t i) { new (stack_.template Push<ValueType>()) ValueType(i); return true; }
-    bool Double(double d) { new (stack_.template Push<ValueType>()) ValueType(d); return true; }
+//NCBI: added allocator
+    bool Null()             { (new (stack_.template Push<ValueType>()) ValueType( ))->SetValueAllocator(&GetAllocator()); return true; }
+    bool Bool(bool b)       { (new (stack_.template Push<ValueType>()) ValueType(b))->SetValueAllocator(&GetAllocator()); return true; }
+    bool Int(int i)         { (new (stack_.template Push<ValueType>()) ValueType(i))->SetValueAllocator(&GetAllocator()); return true; }
+    bool Uint(unsigned i)   { (new (stack_.template Push<ValueType>()) ValueType(i))->SetValueAllocator(&GetAllocator()); return true; }
+    bool Int64(int64_t i)   { (new (stack_.template Push<ValueType>()) ValueType(i))->SetValueAllocator(&GetAllocator()); return true; }
+    bool Uint64(uint64_t i) { (new (stack_.template Push<ValueType>()) ValueType(i))->SetValueAllocator(&GetAllocator()); return true; }
+    bool Double(double d)   { (new (stack_.template Push<ValueType>()) ValueType(d))->SetValueAllocator(&GetAllocator()); return true; }
 
     bool String(const Ch* str, SizeType length, bool copy) { 
         if (copy) 
@@ -2021,7 +2025,7 @@ private:
         return true;
     }
 
-    bool StartObject() { new (stack_.template Push<ValueType>()) ValueType(kObjectType); return true; }
+    bool StartObject() { (new (stack_.template Push<ValueType>()) ValueType(kObjectType))->SetValueAllocator(&GetAllocator()); return true; }
     
     bool Key(const Ch* str, SizeType length, bool copy) { return String(str, length, copy); }
 
@@ -2031,7 +2035,7 @@ private:
         return true;
     }
 
-    bool StartArray() { new (stack_.template Push<ValueType>()) ValueType(kArrayType); return true; }
+    bool StartArray() { (new (stack_.template Push<ValueType>()) ValueType(kArrayType))->SetValueAllocator(&GetAllocator()); return true; }
     
     bool EndArray(SizeType elementCount) {
         ValueType* elements = stack_.template Pop<ValueType>(elementCount);
