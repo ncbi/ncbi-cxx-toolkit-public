@@ -271,6 +271,18 @@ void CComment_rule::CheckFieldValue(CConstRef<CField_rule> field_rule, const str
 }
 
 
+void CComment_rule::CheckFieldValue(CConstRef< CField_rule> rule, const CUser_field& field, TErrorList& errors) const
+{
+    string value = "";
+    if (field.GetData().IsStr()) {
+        value = (field.GetData().GetStr());
+    } else if (field.GetData().IsInt()) {
+        value = NStr::IntToString(field.GetData().GetInt());
+    }
+    CheckFieldValue(rule, value, errors);
+}
+
+
 CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
 {
     TErrorList errors;
@@ -281,62 +293,61 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
     CUser_object::TData::const_iterator field = user.GetData().begin();
     while (field_rule != GetFields().Get().end()
            && field != user.GetData().end()) {
+        string encountered_field = kEmptyStr;
         if ((*field)->IsSetLabel()) {
-            string label = "";
             if ((*field)->GetLabel().IsStr()) {
-                label = (*field)->GetLabel().GetStr();
+                encountered_field = (*field)->GetLabel().GetStr();
             } else {
-                label = NStr::IntToString((*field)->GetLabel().GetId());
+                encountered_field = NStr::IntToString((*field)->GetLabel().GetId());
             }
+        }
             // skip suffix and prefix
-            if (NStr::Equal(label, "StructuredCommentPrefix")
-                || NStr::Equal(label, "StructuredCommentSuffix")) {
-                ++field;
-                continue;
-            }
-            const string & expected_field = (*field_rule)->GetField_name();
-            if (NStr::Equal(expected_field, label)) {
-                // field in correct order
-                // is value correct?
-                string value = "";
-                if ((*field)->GetData().IsStr()) {
-                    value = ((*field)->GetData().GetStr());
-                } else if ((*field)->GetData().IsInt()) {
-                    value = NStr::IntToString((*field)->GetData().GetInt());
-                }
-                CheckFieldValue(*field_rule, value, errors);
-                ++field;
-                ++field_rule;
-            } else {
-                // find rule for this field
-                // find field for this rule and validate it
-                CConstRef<CUser_field> p_other_field = user.GetFieldRef(expected_field);
-                if( ! p_other_field ) {
-                    if ((*field_rule)->IsSetRequired() && (*field_rule)->GetRequired()) {
-                        errors.push_back(TError((*field_rule)->GetSeverity(),
-                                                "Required field " + (*field_rule)->GetField_name() + " is missing"));
-                    }
-                } else {
-
-                    const CUser_field& other_field = *p_other_field;
-                    if (GetRequire_order()) {
-                        errors.push_back(TError((*field_rule)->GetSeverity(),
-                                                expected_field + " field is out of order"));
-                    }
-                    string value = "";
-                    if (other_field.GetData().IsStr()) {
-                        value = (other_field.GetData().GetStr());
-                    } else if (other_field.GetData().IsInt()) {
-                        value = NStr::IntToString(other_field.GetData().GetInt());
-                    }
-                    CheckFieldValue(*field_rule, value, errors);
-                }
-
-                ++field_rule;
-            }
-        } else {
+        if (NStr::Equal(encountered_field, "StructuredCommentPrefix")
+            || NStr::Equal(encountered_field, "StructuredCommentSuffix")) {
+            ++field;
+            continue;
+        } else if (NStr::IsBlank(encountered_field)) {
             CheckGeneralField(**field, errors);
             ++field;
+        }
+
+        const string & expected_field = (*field_rule)->GetField_name();
+        if (NStr::Equal(expected_field, encountered_field)) {
+            // field in correct order
+            // is value correct?
+            CheckFieldValue(*field_rule, **field, errors);
+            ++field;
+            ++field_rule;
+        } else {
+            // find field for this rule and validate it
+            CConstRef<CUser_field> p_other_field = user.GetFieldRef(expected_field);
+            if( ! p_other_field ) {
+                if ((*field_rule)->IsSetRequired() && (*field_rule)->GetRequired()) {
+                    errors.push_back(TError((*field_rule)->GetSeverity(),
+                                            "Required field " + (*field_rule)->GetField_name() + " is missing"));
+                }
+            } else {
+                const CUser_field& other_field = *p_other_field;
+                if (GetRequire_order()) {
+                    errors.push_back(TError((*field_rule)->GetSeverity(),
+                                            expected_field + " field is out of order"));
+                }
+                CheckFieldValue(*field_rule, other_field, errors);
+
+            }
+            ++field_rule;
+
+            // find rule for this field
+            CConstRef<CField_rule> real_field_rule = FindFieldRuleRef(encountered_field);
+            if (!real_field_rule) {
+                if (!IsSetAllow_unlisted()) {
+                    // field not found, not legitimate field name
+                    errors.push_back(TError(eSeverity_level_error,
+                        encountered_field + " is not a valid field name"));
+                }
+                CheckGeneralField(**field, errors);
+                ++field;
+            }
         }
     }
 

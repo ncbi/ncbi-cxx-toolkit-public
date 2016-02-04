@@ -76,6 +76,7 @@ public:
     typedef vector<TError> TErrorList;
     TErrorList IsValid(const CUser_object& user) const;
     void CheckFieldValue(CConstRef<CField_rule> field_rule, const string& value, TErrorList& errors) const;
+    void CheckFieldValue(CConstRef< CField_rule> rule, const CUser_field& field, TErrorList& errors) const;
     static void CheckGeneralFieldValue(const string& value, TErrorList& errors);
     static void CheckGeneralFieldName(const string& label, TErrorList& errors);
     static void CheckGeneralField(const CUser_field& field, TErrorList& errors);

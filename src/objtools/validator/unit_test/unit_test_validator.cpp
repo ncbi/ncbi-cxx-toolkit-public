@@ -8064,22 +8064,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     desc->SetUser().SetType().SetStr("StructuredComment");
     entry->SetSeq().SetDescr().Set().push_back(desc);
 
-    /*
-    CRef<CUser_field> fld(new CUser_field());
-    fld->SetLabel().SetStr("Label");
-    fld->SetData().SetStr("Data");
-    desc->SetUser().SetData().push_back(fld);
-    */
-
     STANDARD_SETUP
 
     // no prefix only empty errors
-    /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UserObjectProblem",
                                                  "Structured Comment user object descriptor is empty"));
-    */
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UserObjectProblem",
                                                  "User object with no data"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "StructuredCommentPrefixOrSuffixMissing",
+                                                 "Structured Comment lacks prefix"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
