@@ -359,7 +359,8 @@ static string s_OfficialPrefixList[] = {
     "MIMS-Data",
     "MIMS:3.0-Data",
     "MIMS:4.0-Data",
-    "RefSeq-Attributes"
+    "RefSeq-Attributes",
+    "Taxonomic-Update-Statistics"
 };
 
 static bool s_IsAllowedPrefix (
