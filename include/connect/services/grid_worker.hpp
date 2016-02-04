@@ -514,8 +514,7 @@ private:
     auto_ptr<TWorkerNodeIdleTask> m_IdleTask;
 };
 
-#define NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version, Ex)   \
-typedef CSimpleJobFactory##Ex<TWorkerNodeJob> TWorkerNodeJob##Factory##Ex;  \
+#define NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version)       \
 template <>                                                                 \
 const char* const CSimpleJobFactory<TWorkerNodeJob>::m_JobVersion =         \
     #TWorkerNodeJob " version " NCBI_AS_STRING(Version);                    \
@@ -527,10 +526,14 @@ const char* const CSimpleJobFactory<TWorkerNodeJob>::m_AppVersion =         \
     NCBI_AS_STRING(Version);
 
 #define NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version)            \
-    NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version, )
+typedef CSimpleJobFactory<TWorkerNodeJob> TWorkerNodeJob##Factory;          \
+    NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version)
 
-#define NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob, Version)         \
-    NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version, Ex)
+#define NCBI_DECLARE_WORKERNODE_FACTORY_EX(                                 \
+        TWorkerNodeJob, TWorkerNodeIdleTask, Version)                       \
+typedef CSimpleJobFactoryEx<TWorkerNodeJob, TWorkerNodeIdleTask>            \
+        TWorkerNodeJob##FactoryEx;                                          \
+    NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version)
 
 /// Jobs watcher interface
 class NCBI_XCONNECT_EXPORT IWorkerNodeJobWatcher
