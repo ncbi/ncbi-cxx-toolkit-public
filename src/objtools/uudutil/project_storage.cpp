@@ -88,6 +88,7 @@ CProjectStorage::CProjectStorage(const string& client, const string& nc_service,
     m_CmprsFmt(eNC_Uncompressed),
     m_DataFmt(eSerial_None),
     m_Password(password),
+    m_ServiceName(nc_service),
     m_HasNetStorage(false),
     m_NS(eVoid)
 {
@@ -155,6 +156,9 @@ string CProjectStorage::SaveProject(const IGBProject& project,
     if (nso) {
         //        nso.SetAttribute("type", prj_ver2->GetTypeInfo()->GetName());
         nso.Close();
+        if (time_to_live > 0)
+            nso.SetExpiration(CTimeout((double)time_to_live));
+
     }
 
     return nc_key;
@@ -178,10 +182,11 @@ string CProjectStorage::SaveObject(const CSerialObject& obj,
     ostr->Close();
     ostr.reset(0);
     if (nso) {
-        nso.SetAttribute("type", obj.GetThisTypeInfo()->GetName());
         nso.Close();
+        nso.SetAttribute("type", obj.GetThisTypeInfo()->GetName());
+        if (time_to_live > 0)
+            nso.SetExpiration(CTimeout((double)time_to_live));
     }
-    
 
     return nc_key;
 }
@@ -202,8 +207,11 @@ string CProjectStorage::SaveString(const string& str,
     auto_ptr<CNcbiOstream> ostr = x_GetOutputStream(nc_key, time_to_live, default_flags, nso);
     *ostr << str;
     ostr.reset(0);
-    if (nso) 
+    if (nso) {
         nso.Close();
+        if (time_to_live > 0)
+            nso.SetExpiration(CTimeout((double)time_to_live));
+    }
     return nc_key;
 }
 
@@ -224,9 +232,11 @@ string CProjectStorage::SaveStream(CNcbiIstream& istream,
     auto_ptr<CNcbiOstream> ostr = x_GetOutputStream(nc_key, time_to_live, default_flags, nso);
     NcbiStreamCopy(*ostr, istream);
     ostr.reset(0);
-    if (nso) 
+    if (nso) {
         nso.Close();
-
+        if (time_to_live > 0)
+            nso.SetExpiration(CTimeout((double)time_to_live));
+    }
     return nc_key;
 }
 
@@ -243,7 +253,7 @@ CObjectOStream* CProjectStorage::AsObjectOStream(TDataFormat data_fmt,
 
 
 CObjectOStream* CProjectStorage::x_GetObjectOStream(TDataFormat data_fmt,
-                                                    CNetStorageObject nso,
+                                                    CNetStorageObject& nso,
                                                     string& key,
                                                     TCompressionFormat compression_fmt,
                                                     unsigned int time_to_live,
@@ -280,10 +290,37 @@ string CProjectStorage::SaveRawData(const void* buf,
         CNetStorageObject nso = Exists(key) ? m_NS.Open(key) : m_NS.Create(default_flags);
         nso.Write(buf, size);
         nso.Close();
+        if (time_to_live > 0)
+            nso.SetExpiration(CTimeout((double)time_to_live));
         return nso.GetLoc();
         
     }
 }
+
+
+string CProjectStorage::SaveRawData(CNcbiIstream& is,
+                                    const string& key,
+                                    unsigned int time_to_live,
+                                    TNetStorageFlags default_flags)
+{
+
+    string new_key = key;
+    if (m_NC) {
+        AutoPtr<CNcbiOstream> os = m_NC->CreateOStream(new_key, (nc_blob_ttl=time_to_live,nc_blob_password=m_Password));
+        NcbiStreamCopyThrow(*os, is);
+    } else {
+        CNetStorageObject nso = Exists(key) ? m_NS.Open(new_key) : m_NS.Create(default_flags);
+        CWStream os(&nso.GetWriter());
+        NcbiStreamCopyThrow(os, is);
+        nso.Close();
+        if (time_to_live > 0)
+            nso.SetExpiration(CTimeout((double)time_to_live));
+        new_key = nso.GetLoc();
+        
+    }
+    return new_key;
+}
+
 
 
 string CProjectStorage::Clone(const string& key, unsigned int time_to_live, TNetStorageFlags default_flags)
@@ -303,6 +340,9 @@ string CProjectStorage::Clone(const string& key, unsigned int time_to_live, TNet
             CWStream os(&nso_clone.GetWriter());
             NcbiStreamCopyThrow(os, is);
             nso_clone.Close();
+            if (time_to_live > 0)
+                nso.SetExpiration(CTimeout((double)time_to_live));
+
             new_key = nso_clone.GetLoc();
         }
         return new_key;
@@ -433,7 +473,7 @@ auto_ptr<CNcbiIstream> CProjectStorage::GetIstream(const string& key, bool raw)
     auto_ptr<CNcbiIstream> strm;
     CNetStorageObject nso;
     if (m_HasNetStorage) {
-         nso = m_NS.Open(key);
+          nso = m_NS.Open(key);
         strm.reset(nso.GetRWStream());
     } else {
         strm.reset(m_NC->GetIStream(key, NULL, nc_blob_password=m_Password));
@@ -567,7 +607,7 @@ bool CProjectStorage::Exists(const string& key)
 }
 
 
-auto_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigned int time_to_live, TNetStorageFlags default_flags, CNetStorageObject nso)
+auto_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigned int time_to_live, TNetStorageFlags default_flags, CNetStorageObject& nso)
 {
 #if !defined(HAVE_LIBLZO)
     if (m_CmprsFmt == eNC_LzoCompressed) {

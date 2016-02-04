@@ -113,6 +113,8 @@ public:
                     const string& password = "",
                     TNetStorageFlags default_flags = 0);
 
+    const string& GetServiceName() const; 
+
     /// Set netservice communication time out.
     /// If not set, whatever default timeout set inside CNetCacheAPI
     //  will be used.
@@ -194,6 +196,12 @@ public:
                        unsigned int time_to_live = 0,
                        TNetStorageFlags default_flags = 0);
 
+    // another flavour of SaveRawData with istream input
+    string SaveRawData(CNcbiIstream& is,
+                       const string& key = "", 
+                       unsigned int time_to_live = 0,
+                       TNetStorageFlags default_flags = 0);
+
     /// Duplicate an existing data Blob.
     /// @return a new key
     string Clone(const string& key,
@@ -261,7 +269,7 @@ private:
     auto_ptr<CNcbiOstream> x_GetOutputStream(string& key,
                                              unsigned int time_to_live, 
                                              TNetStorageFlags default_flags,
-                                             CNetStorageObject nso);
+                                             CNetStorageObject& nso);
 
     /// Get a object ostream to allow save data to NetCache.
     /// @param format the asn serialization format is required
@@ -273,7 +281,7 @@ private:
     ///        Thrown if the compression format is not supported,
     ///        or data format is not supported.
     CObjectOStream* x_GetObjectOStream(TDataFormat data_fmt,
-                                       CNetStorageObject nso,
+                                       CNetStorageObject& nso,
                                        string& key,
                                        TCompressionFormat compression_fmt = eNC_ZlibCompressed,
                                        unsigned int time_to_live = 0,
@@ -313,10 +321,21 @@ private:
     ///  eSerial_Json         = 4
     TDataFormat        m_DataFmt;
     string             m_Password;      ///< For password-protected Blobs
+    
+    string m_ServiceName; // Storage Service name
     AutoPtr<CNetCacheAPI> m_NC;
+
     bool m_HasNetStorage;
     CNetStorage m_NS;
 };
+
+
+
+inline
+const string& CProjectStorage::GetServiceName() const
+{
+    return m_ServiceName;
+}
 
 
 END_NCBI_SCOPE
