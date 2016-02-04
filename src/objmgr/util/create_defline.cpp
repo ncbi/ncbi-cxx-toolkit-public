@@ -1096,8 +1096,11 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
     }
 
     if (! m_Plasmid.empty()) {
-        if (NStr::FindNoCase(m_Organelle, "plasmid") != NPOS)
-        joiner.Add(" plasmid ").Add(m_Plasmid);
+        if (NStr::FindNoCase(m_Organelle, "plasmid") != NPOS) {
+            joiner.Add(" plasmid ").Add(m_Plasmid);
+        } else {
+            joiner.Add(" ").Add(m_Plasmid);
+        }
     }
 
     joiner.Join(&m_MainTitle);
@@ -2225,14 +2228,20 @@ void CDeflineGenerator::x_SetSuffix (
 
     if (appendComplete && m_MainTitle.find ("complete") == NPOS && m_MainTitle.find ("partial") == NPOS) {
         if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
-            if (m_IsChromosome || m_IsPlasmid) {
+            if (m_IsPlasmid) {
                 comp = ", complete sequence";
-            } else {
-                if (! m_Organelle.empty()  &&  m_MainTitle.find(m_Organelle) == NPOS) {
-                    comp += " ";
-                    comp += m_Organelle;
+            } else if (m_Genome == NCBI_GENOME(mitochondrion) ||
+                       m_Genome == NCBI_GENOME(chloroplast) ||
+                       m_Genome == NCBI_GENOME(kinetoplast) ||
+                       m_Genome == NCBI_GENOME(plastid) ||
+                       m_Genome == NCBI_GENOME(apicoplast)) {
+                comp = ", complete genome";
+            } else if (m_IsChromosome) {
+                if (! m_Chromosome.empty()) {
+                    comp = ", complete sequence";
+                } else {
+                    comp = ", complete genome";
                 }
-                comp += ", complete genome";
             }
         }
     }
@@ -2546,21 +2555,16 @@ string CDeflineGenerator::GenerateDefline (
         }
 
         if (m_MainTitle.empty()) {
-            // title for complete sequence using source fields
+            // default title using source fields
             x_SetTitleFromBioSrc ();
-            if (m_DevMode && m_MICompleteness == NCBI_COMPLETENESS(complete) && ! m_MainTitle.empty()) {
+            if (m_MICompleteness == NCBI_COMPLETENESS(complete) && ! m_MainTitle.empty()) {
                 appendComplete = true;
             }
         }
 
         if (m_MainTitle.empty()) {
-            // default title using source fields
-            x_SetTitleFromBioSrc ();
-        }
-
-        if (m_MainTitle.empty()) {
             // last resort title created here
-            //m_MainTitle = "No definition line found";
+            m_MainTitle = "No definition line found";
         }
     }
 
