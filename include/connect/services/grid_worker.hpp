@@ -455,73 +455,57 @@ public:
         return new TWorkerNodeJob(*m_WorkerNodeInitContext);
     }
 
-private:
+    virtual string GetJobVersion() const { return m_JobVersion; }
+    virtual string GetAppName()    const { return m_AppName; }
+    virtual string GetAppVersion() const { return m_AppVersion; }
+
+protected:
     const IWorkerNodeInitContext* m_WorkerNodeInitContext;
+
+private:
+    static const char* const m_JobVersion;
+    static const char* const m_AppName;
+    static const char* const m_AppVersion;
 };
 
-#define NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version)         \
-class TWorkerNodeJob##Factory : public CSimpleJobFactory<TWorkerNodeJob> \
-{                                                                        \
-public:                                                                  \
-    virtual string GetJobVersion() const                                 \
-    {                                                                    \
-        return #TWorkerNodeJob " version " NCBI_AS_STRING(Version);      \
-    }                                                                    \
-    virtual string GetAppName() const                                    \
-    {                                                                    \
-        return #TWorkerNodeJob;                                          \
-    }                                                                    \
-    virtual string GetAppVersion() const                                 \
-    {                                                                    \
-        return NCBI_AS_STRING(Version);                                  \
-    }                                                                    \
-}
-
 template <typename TWorkerNodeJob, typename TWorkerNodeIdleTask>
-class CSimpleJobFactoryEx : public IWorkerNodeJobFactory
+class CSimpleJobFactoryEx : public CSimpleJobFactory<TWorkerNodeJob>
 {
 public:
     virtual void Init(const IWorkerNodeInitContext& context)
     {
-        m_WorkerNodeInitContext = &context;
+        this->m_WorkerNodeInitContext = &context;
         try {
-            m_IdleTask.reset(new TWorkerNodeIdleTask(*m_WorkerNodeInitContext));
+            m_IdleTask.reset(new TWorkerNodeIdleTask(context));
         } catch (exception& ex) {
             LOG_POST_XX(ConnServ_WorkerNode, 16,
                         "Error during Idle task construction: " << ex.what());
             throw;
         }
     }
-    virtual IWorkerNodeJob* CreateInstance(void)
-    {
-        return new TWorkerNodeJob(*m_WorkerNodeInitContext);
-    }
     virtual IWorkerNodeIdleTask* GetIdleTask() { return m_IdleTask.get(); }
 
 private:
-    const IWorkerNodeInitContext* m_WorkerNodeInitContext;
     auto_ptr<TWorkerNodeIdleTask> m_IdleTask;
 };
 
-#define NCBI_DECLARE_WORKERNODE_FACTORY_EX(                              \
-        TWorkerNodeJob,TWorkerNodeIdleTask, Version)                     \
-class TWorkerNodeJob##FactoryEx                                          \
-    : public CSimpleJobFactoryEx<TWorkerNodeJob, TWorkerNodeIdleTask>    \
-{                                                                        \
-public:                                                                  \
-    virtual string GetJobVersion() const                                 \
-    {                                                                    \
-        return #TWorkerNodeJob " version " NCBI_AS_STRING(Version);      \
-    }                                                                    \
-    virtual string GetAppName() const                                    \
-    {                                                                    \
-        return #TWorkerNodeJob;                                          \
-    }                                                                    \
-    virtual string GetAppVersion() const                                 \
-    {                                                                    \
-        return NCBI_AS_STRING(Version);                                  \
-    }                                                                    \
-}
+#define NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version, Ex)   \
+typedef CSimpleJobFactory##Ex<TWorkerNodeJob> TWorkerNodeJob##Factory##Ex;  \
+template <>                                                                 \
+const char* const CSimpleJobFactory<TWorkerNodeJob>::m_JobVersion =         \
+    #TWorkerNodeJob " version " NCBI_AS_STRING(Version);                    \
+template <>                                                                 \
+const char* const CSimpleJobFactory<TWorkerNodeJob>::m_AppName =            \
+    #TWorkerNodeJob;                                                        \
+template <>                                                                 \
+const char* const CSimpleJobFactory<TWorkerNodeJob>::m_AppVersion =         \
+    NCBI_AS_STRING(Version);
+
+#define NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version)            \
+    NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version, )
+
+#define NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob, Version)         \
+    NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version, Ex)
 
 /// Jobs watcher interface
 class NCBI_XCONNECT_EXPORT IWorkerNodeJobWatcher
