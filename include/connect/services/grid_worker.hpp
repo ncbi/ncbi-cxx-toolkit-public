@@ -523,27 +523,6 @@ public:                                                                  \
     }                                                                    \
 }
 
-#define NCBI_DECLARE_WORKERNODE_FACTORY_PKG_VER_EX(                      \
-        TWorkerNodeJob, TWorkerNodeIdleTask)                             \
-class TWorkerNodeJob##FactoryEx                                          \
-    : public CSimpleJobFactoryEx<TWorkerNodeJob, TWorkerNodeIdleTask>    \
-{                                                                        \
-public:                                                                  \
-    virtual string GetJobVersion() const                                 \
-    {                                                                    \
-        return GRID_APP_VERSION_INFO;                                    \
-    }                                                                    \
-    virtual string GetAppName() const                                    \
-    {                                                                    \
-        return GRID_APP_NAME;                                            \
-    }                                                                    \
-    virtual string GetAppVersion() const                                 \
-    {                                                                    \
-        return GRID_APP_VERSION;                                         \
-    }                                                                    \
-}
-
-
 /// Jobs watcher interface
 class NCBI_XCONNECT_EXPORT IWorkerNodeJobWatcher
 {
