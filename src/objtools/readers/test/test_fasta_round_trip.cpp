@@ -89,6 +89,7 @@ auto_ptr<CFastaOstream> s_GetFastaOstream(CNcbiOstream& os, const CArgs& args)
 int CFastaRoundTripTestApp::Run(void)
 {
     const CArgs&          args = GetArgs();
+    CFastaReader::TFlags  inflags = args["inflags"].AsInteger();
     auto_ptr<CMemoryFile> mf(new CMemoryFile(args["in"].AsString()));
     CRef<CSeq_entry>      se, se2;
     CRef<CSeq_loc>        mask;
@@ -97,7 +98,7 @@ int CFastaRoundTripTestApp::Run(void)
 
     {{
         CMemoryLineReader    lr(mf.get());
-        CFastaReader         reader(lr, args["inflags"].AsInteger());
+        CFastaReader         reader(lr, inflags);
         CFastaReader::TMasks masks;
         reader.SaveMasks(&masks);
         se = reader.ReadSet();
@@ -135,9 +136,26 @@ int CFastaRoundTripTestApp::Run(void)
 
     {{
         CMemoryLineReader    lr(str.data(), str.size());
-        CFastaReader         reader(lr, args["inflags"].AsInteger());
+        CFastaReader         reader(lr, inflags);
         se2 = reader.ReadSet();
     }}
+
+    if ((inflags & CFastaReader::fDLOptional) != 0) {
+        for (CTypeIterator<CBioseq> it(*se2);  it;  ++it) {
+            if (it->IsSetDescr()) {
+                CSeq_descr& descr = it->SetDescr();
+                ERASE_ITERATE (CSeq_descr::Tdata, desc, descr.Set()) {
+                    if ((*desc)->IsTitle()  &&
+                        (*desc)->GetTitle() == "No definition line found") {
+                        descr.Set().erase(desc);
+                    }
+                }
+                if (descr.Get().empty()) {
+                    it->ResetDescr();
+                }
+            }
+        }
+    }
 
     if (!se2->Equals(*se)) {
         ERR_POST("Seq-entry discrepancy: got first\n"
