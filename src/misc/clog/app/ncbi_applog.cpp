@@ -33,27 +33,27 @@
  *     (on other machine). CGI can be specified in the .ini file.
  *     If not specified, use  default at
  *     http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi
- *  2) Utility does not implement any checks for correct commands order,
- *     because it unable save context between calls. Please control this
- *     yourself. But some arguments checks can be done inside the C Logging
- *     API, in this case ncbi_applog terminates with non-zero error code
- *     and error message printed to stdout.
- *  3) No MT support. This utility assume that it can be called from 
+ *  2) In case of an error ncbi_applog terminates with non-zero error code
+ *     and print error message to stderr.
+ *  3) Utility does not implement any checks for correct commands order,
+ *     because it unable to save context between calls. Please control this
+ *     yourself. But some arguments checks can be done inside the C Logging API.
+ *  4) No MT support. This utility assume that it can be called from 
  *     single-thread scripts or application only. Please add MT-guards yourself.
- *  4) Utility returns tokens for 'start_app', 'start_request' and
+ *  5) Utility returns tokens for 'start_app', 'start_request' and
  *     'stop_request' commands, that should be used as parameter for any
  *     subsequent calls. You can use token from any previous 'start_request'
  *     command for new requests as well, but between requests only token
  *     from 'start_app' should be used.
- *  5) The -timestamp parameter allow to post messages happened in the past.
-       But be aware, if you start to use -timestamp parameter, use it for all
-       subsequent calls to ncbi_applog as well, at least with the same timestamp
-       value. Because, if you forget to specify it, current system time will
-       be used for posting, that can be unacceptable.
-       Allowed time formats:
-           1) YYYY-MM-DDThh:mm:ss
-           2) MM/DD/YY hh:mm:ss
-           3) time_t value (numbers of seconds since the Epoch)
+ *  6) The -timestamp parameter allow to post messages happened in the past.
+ *     But be aware, if you start to use -timestamp parameter, use it for all
+ *     subsequent calls to ncbi_applog as well, at least with the same timestamp
+ *     value. Because, if you forget to specify it, current system time will
+ *     be used for posting, that can be unacceptable.
+ *     Allowed time formats:
+ *         1) YYYY-MM-DDThh:mm:ss
+ *         2) MM/DD/YY hh:mm:ss
+ *         3) time_t value (numbers of seconds since the Epoch)
  */
 
  /*
@@ -109,6 +109,9 @@
 
 USING_NCBI_SCOPE;
 
+
+/// Prefix for ncbi_applog error messages. ALl error messages going to stderr.
+const char* kErrorMessagePrefix = "NCBI_APPLOG: error: ";
 
 /// Default CGI used by default if /log directory is not writable on current machine.
 /// Can be redefined in the configuration file.
@@ -207,6 +210,8 @@ public:
     void SetInfo();
     /// Update information in the m_Info from C Logging API.
     void UpdateInfo();
+    /// Print error message.
+    void Error(const string& msg);
 
 private:
     bool           m_IsRemoteLogging;  ///< TRUE if mode == "cgi"
@@ -655,14 +660,17 @@ int CNcbiApplogApp::Redirect()
     if (!cgi.eof()) {
         throw "Failed to read CGI output";
     }
-    // Printout CGI's output
-    if (!output.empty()) {
-        cout << output;
+    if (output.empty()) {
+        return 0;
     }
-    // Check on errors
-    if (output.find("Error:") != NPOS) {
+    // Check output on errors. CGI prints all errors to stderr.
+    if (output.find("error:") != NPOS) {
+        cerr << output;
         return 2;
     }
+    // Printout CGI's output
+    cout << output;
+
     return 0;
 }
 
@@ -836,7 +844,8 @@ int CNcbiApplogApp::PrintTokenInformation(ETokenType type)
         } else if (arg == "-req_start_time") {
             if (m_Info.req_start_time.sec) cout << m_Info.req_start_time.sec;
         } else {
-            ERR_POST(Fatal << "Unknown command line argument: " << arg);
+            Error("Unknown command line argument: " + arg);
+            return 1;
         }
         if (need_eol) {
             cout << endl;
@@ -951,6 +960,18 @@ void CNcbiApplogApp::UpdateInfo()
     }
     if (m_Info.client.empty()  &&  g_ctx->client[0]) {
         m_Info.client = g_ctx->client;
+    }
+}
+
+
+void CNcbiApplogApp::Error(const string& msg)
+{
+    // For CGI redirect all errors to stdout, the calling ncbi_applog
+    // process reprint it to stderr on a local host.
+    if (m_IsRemoteLogging) {
+        cout << kErrorMessagePrefix << msg << endl;
+    } else {
+        cerr << kErrorMessagePrefix << msg << endl;
     }
 }
 
@@ -1079,7 +1100,8 @@ int CNcbiApplogApp::Run(void)
     if (mode == "cgi") {
         m_IsRemoteLogging = true;
         // For CGI redirect all diagnostics to stdout to allow the calling
-        // application see it. By default it goes to stderr for eDS_User.
+        // application see it. Diagnostics should be disabled by eDS_Disable,
+        // so this is just for safety.
         SetDiagStream(&NcbiCout);
         // Set server port to 80 if not specified otherwise
         if ( !m_Info.server_port ) {
@@ -1427,16 +1449,16 @@ int CNcbiApplogApp::Run(void)
     // Cleanup (on error)
     }
     catch (char* e) {
-        ERR_POST(e);
+        Error(e);
     }
     catch (const char* e) {
-        ERR_POST(e);
+        Error(e);
     }
     catch (string e) {
-        ERR_POST(e);
+        Error(e);
     }
     catch (exception& e) {
-        ERR_POST(e.what());
+        Error(e.what());
     }
     if (is_api_init) {
         NcbiLog_Destroy();
