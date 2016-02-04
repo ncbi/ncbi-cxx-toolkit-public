@@ -210,13 +210,42 @@ private:
 };
 
 
+/// @internal
+/// This class allows to add build info (date and tag) to application version.
+/// The class is not meant to be used directly,
+/// instead it is used implicitly whenever app version is set.
+/// This means CNcbiApplication derived class (or whatever using CVersion)
+/// requires recompilation to make this data up-to-date.
+/// This is the most that can be done without imposing much burden on clients.
+
+#define NCBI_BUILD_DATE_VALUE __DATE__ " " __TIME__
+#ifdef NCBI_BUILD_TAG
+#   define NCBI_BUILD_TAG_VALUE NCBI_AS_STRING(NCBI_BUILD_TAG)
+#else
+#   define NCBI_BUILD_TAG_VALUE kEmptyStr
+#endif
+struct NCBI_XNCBI_EXPORT SBuildInfo
+{
+    string date;
+    string tag;
+
+    SBuildInfo(const string& d = NCBI_BUILD_DATE_VALUE,
+            const string& t = NCBI_BUILD_TAG_VALUE) :
+        date(d), tag(t)
+    {}
+};
+#undef NCBI_BUILD_TAG_VALUE
+#undef NCBI_BUILD_DATE_VALUE
+
+
 class NCBI_XNCBI_EXPORT CVersion : public CObject
 {
 public:
 
-    CVersion(void);
+    CVersion(const SBuildInfo& build_info = SBuildInfo());
     
-    CVersion(const CVersionInfo& version);
+    CVersion(const CVersionInfo& version,
+            const SBuildInfo& build_info = SBuildInfo());
 
     /// Copy constructor.
     CVersion(const CVersion& version);
@@ -229,10 +258,12 @@ public:
     void SetVersionInfo( int  ver_major,
                          int  ver_minor,
                          int  patch_level = 0,
-                         const string& ver_name = kEmptyStr);
+                         const string& ver_name = kEmptyStr,
+                         const SBuildInfo& build_info = SBuildInfo());
     /// Set version information
     /// @note Takes the ownership over the passed VersionInfo object 
-    void SetVersionInfo( CVersionInfo* version);
+    void SetVersionInfo(CVersionInfo* version,
+            const SBuildInfo& build_info = SBuildInfo());
     /// Get version information
     const CVersionInfo& GetVersionInfo( ) const;
 
@@ -249,7 +280,7 @@ public:
     static string GetPackageName(void);
     static CVersionInfo GetPackageVersion(void);
     static string GetPackageConfig(void);
-    static string GetBuildTag(void);
+    static string GetPackageBuildTag(void);
 
     enum EPrintFlags {
         fVersionInfo    = 0x01,  ///< Print version info
@@ -268,6 +299,7 @@ public:
 private:
     AutoPtr< CVersionInfo > m_VersionInfo;
     vector< AutoPtr< CComponentVersionInfo> > m_Components;
+    SBuildInfo m_BuildInfo;
 };
 
 

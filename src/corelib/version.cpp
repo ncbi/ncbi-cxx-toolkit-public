@@ -452,32 +452,40 @@ string CComponentVersionInfo::Print(void) const
 /////////////////////////////////////////////////////////////////////////////
 //  CVersion
 
-CVersion::CVersion(void)
-    : m_VersionInfo( new CVersionInfo(0,0))
+CVersion::CVersion(const SBuildInfo& build_info)
+    : m_VersionInfo(new CVersionInfo(0,0)),
+      m_BuildInfo(build_info)
+
 {
 }
 
-CVersion::CVersion(const CVersionInfo& version)
-    : m_VersionInfo( new CVersionInfo(version) )
+CVersion::CVersion(const CVersionInfo& version, const SBuildInfo& build_info)
+    : m_VersionInfo(new CVersionInfo(version)),
+      m_BuildInfo(build_info)
 {
 }
 
 CVersion::CVersion(const CVersion& version)
     : m_VersionInfo( version.m_VersionInfo), 
-      m_Components ( version.m_Components)
+      m_Components(version.m_Components),
+      m_BuildInfo(version.m_BuildInfo)
 {
 }
 
 void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,
-                               int  patch_level, const string& ver_name)
+                               int  patch_level, const string& ver_name,
+                               const SBuildInfo& build_info)
 {
     m_VersionInfo.reset( new CVersionInfo(
         ver_major, ver_minor, patch_level, ver_name) );
+    m_BuildInfo = build_info;
 }
 
-void CVersion::SetVersionInfo( CVersionInfo* version)
+void CVersion::SetVersionInfo(CVersionInfo* version,
+        const SBuildInfo& build_info)
 {
     m_VersionInfo.reset( version );
+    m_BuildInfo = build_info;
 }
 
 const CVersionInfo& CVersion::GetVersionInfo(void) const
@@ -517,13 +525,9 @@ string CVersion::GetPackageConfig(void)
 }
 
 
-string CVersion::GetBuildTag(void)
+string CVersion::GetPackageBuildTag(void)
 {
-#ifdef NCBI_BUILD_TAG
-    return NCBI_AS_STRING(NCBI_BUILD_TAG);
-#else
-    return kEmptyStr;
-#endif
+    return SBuildInfo().tag;
 }
 
 
@@ -545,7 +549,7 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
     if (flags & ( fPackageShort | fPackageFull )) {
         os << " Package: " << GetPackageName() << ' '
            << GetPackageVersion().Print() << ", build "
-           << __DATE__ << ' ' << __TIME__
+           << m_BuildInfo.date
            << endl;
     }
     if (flags & fPackageFull) {
@@ -559,12 +563,10 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
     }
 #endif
 
-#ifdef NCBI_BUILD_TAG
     if (flags & fBuildTag) {
-        os << " Build-Tag: " << ' ' << NCBI_AS_STRING(NCBI_BUILD_TAG)
+        os << " Build-Tag: " << ' ' << m_BuildInfo.tag
            << endl;
     }
-#endif
 
     return CNcbiOstrstreamToString(os);
 }

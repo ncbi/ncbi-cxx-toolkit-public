@@ -444,7 +444,7 @@ public:
 
     virtual string GetAppBuildTag() const
     {
-        return m_BuildTag.empty() ? CVersion::GetBuildTag() : m_BuildTag;
+        return m_BuildTag.empty() ? CVersion::GetPackageBuildTag() : m_BuildTag;
     }
 
     /// Get the Idle task
