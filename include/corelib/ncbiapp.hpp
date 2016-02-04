@@ -144,7 +144,7 @@ public:
     /// Register the application instance, and reset important
     /// application-specific settings to empty values that will
     /// be set later.
-    CNcbiApplication(void);
+    CNcbiApplication(const SBuildInfo& build_info = SBuildInfo());
 
     /// Destructor.
     ///
@@ -429,7 +429,8 @@ protected:
     ///   derived class, otherwise command-like arguments "-version" and 
     ///   "-version-full" will not work as expected.
     /// @sa GetVersion
-    void SetVersion(const CVersionInfo& version);
+    void SetVersion(const CVersionInfo& version,
+            const SBuildInfo& build_info = SBuildInfo());
 
     /// Set version data for the program.
     ///

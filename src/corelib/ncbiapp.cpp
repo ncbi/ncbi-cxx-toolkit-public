@@ -99,7 +99,7 @@ CNcbiApplication* CNcbiApplication::Instance(void)
 }
 
 
-CNcbiApplication::CNcbiApplication(void)
+CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
     : m_ConfigLoaded(false),
       m_LogFile(0)
 {
@@ -122,7 +122,7 @@ CNcbiApplication::CNcbiApplication(void)
     m_Instance = this;
 
     // Create empty version info
-    m_Version.Reset(new CVersion());
+    m_Version.Reset(new CVersion(build_info));
 
     // Create empty application arguments & name
     m_Arguments.reset(new CNcbiArguments(0,0));
@@ -746,13 +746,14 @@ void CNcbiApplication::SetEnvironment(const string& name, const string& value)
 }
 
 
-void CNcbiApplication::SetVersion(const CVersionInfo& version)
+void CNcbiApplication::SetVersion(const CVersionInfo& version,
+        const SBuildInfo& build_info)
 {
     if ( s_IsApplicationStarted ) {
         ERR_POST_X(19, "SetVersion() should be used from constructor of " \
                        "CNcbiApplication derived class, see description");
     }
-    m_Version->SetVersionInfo( new CVersionInfo(version) );
+    m_Version->SetVersionInfo(new CVersionInfo(version), build_info);
 }
 
 void CNcbiApplication::SetFullVersion( CRef<CVersion> version)
