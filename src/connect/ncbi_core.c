@@ -34,6 +34,10 @@
 #include "ncbi_priv.h"
 #include <stdlib.h>
 
+#ifdef NCBI_OS_UNIX
+#  include <unistd.h>
+#endif /*NCBI_OS_UNIX*/
+
 #if defined(NCBI_CXX_TOOLKIT)  &&  defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
 #  if defined(NCBI_OS_MSWIN)
 #    define WIN32_LEAN_AND_MEAN
