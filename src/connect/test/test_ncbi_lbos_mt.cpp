@@ -120,8 +120,6 @@ bool CTestLBOSApp::Thread_Run(int idx)
     RUN_TEST(Deannouncement::LBOSExistsDeannounce400__Return400(idx));
     RUN_TEST(Deannouncement::RealLife__InvisibleAfterDeannounce(idx));
 
-    TestApp_GlobalSyncPoint();
-
     RUN_TEST(Stability::GetNext_Reset__ShouldNotCrash(idx));
     RUN_TEST(Stability::FullCycle__ShouldNotCrash(idx));
     RUN_TEST(Performance::FullCycle__ShouldNotCrash(idx));
