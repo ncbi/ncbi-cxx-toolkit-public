@@ -3194,7 +3194,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                             break;
                         }
                     }
-                    ERR_POST_X(3, Info << "Failed to set log file to " +
+                    _TRACE_X(3, "Failed to set log file to " +
                         CFile::NormalizePath(log_name));
                 }
                 // Have we skipped cmd_logfile above?
@@ -3215,8 +3215,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         to_applog = true;
                         break;
                     }
-                    ERR_POST_X_ONCE(4, Info <<
-                        "Failed to set log file to " <<
+                    _TRACE_X(4, "Failed to set log file to " <<
                         CFile::NormalizePath(kDefaultFallback));
                 }
                 const char* log_name = TTeeToStderr::GetDefault() ?

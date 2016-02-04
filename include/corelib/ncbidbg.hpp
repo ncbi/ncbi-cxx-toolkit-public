@@ -68,7 +68,7 @@ BEGIN_NCBI_SCOPE
       << message << NCBI_NS_NCBI::Endm )
 
 #define _ALWAYS_TRACE_EX(err_code, err_subcode, message)    \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO             \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,            \
       NCBI_NS_NCBI::eDiag_Trace).GetRef()                   \
       << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
       << message << NCBI_NS_NCBI::Endm )
