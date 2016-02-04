@@ -180,19 +180,12 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
 #endif
 
 
-// To allow use the NCBI_WORKERNODE_XXX convenience macros with
-// a class derived from CGridWorkerApp
-#if !defined(NCBI_WORKERNODE_CLASS)
-#  define NCBI_WORKERNODE_CLASS  CGridWorkerApp
-#endif
-
-
 #define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version)                       \
     NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version);               \
     int main(int argc, const char* argv[])                                  \
     {                                                                       \
         GetDiagContext().SetOldPostFormat(false);                           \
-        NCBI_WORKERNODE_CLASS app(new TWorkerNodeJob##Factory,                     \
+        CGridWorkerApp app(new TWorkerNodeJob##Factory,                     \
             CVersionInfo(#Version));                                        \
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog,                  \
                 NcbiEmptyCStr, GRID_WORKER_APP_NAME);                       \
@@ -204,7 +197,7 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
     int main(int argc, const char* argv[])                                  \
     {                                                                       \
         GetDiagContext().SetOldPostFormat(false);                           \
-        NCBI_WORKERNODE_CLASS app(new TWorkerNodeJob##Factory,              \
+        CGridWorkerApp app(new TWorkerNodeJob##Factory,                     \
             CVersionInfo(#Version));                                        \
         app.SetListener(new ListenerClass);                                 \
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog,                  \
@@ -218,7 +211,7 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
     int main(int argc, const char* argv[])                                  \
     {                                                                       \
         GetDiagContext().SetOldPostFormat(false);                           \
-        NCBI_WORKERNODE_CLASS app(new TWorkerNodeJob##FactoryEx,            \
+        CGridWorkerApp app(new TWorkerNodeJob##FactoryEx,                   \
             CVersionInfo(#Version));                                        \
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog,                  \
                 NcbiEmptyCStr, GRID_WORKER_APP_NAME);                       \
@@ -230,7 +223,7 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
     {                                                                       \
         GRID_APP_CHECK_VERSION_ARGS();                                      \
         GetDiagContext().SetOldPostFormat(false);                           \
-        NCBI_WORKERNODE_CLASS app(new TWorkerNodeJobFactoryClass);          \
+        CGridWorkerApp app(new TWorkerNodeJobFactoryClass);                 \
         app.SetListener(new ListenerClass);                                 \
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog,                  \
                 NcbiEmptyCStr, GRID_WORKER_APP_NAME);                       \
