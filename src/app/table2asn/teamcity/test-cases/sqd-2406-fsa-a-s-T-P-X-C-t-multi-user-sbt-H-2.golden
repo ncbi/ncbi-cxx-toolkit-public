@@ -239,7 +239,7 @@ Seq-submit ::= {
                   mod {
                     {
                       subtype isolate,
-                      subname "A"
+                      subname "B"
                     }
                   },
                   lineage "Bacteria; environmental samples",

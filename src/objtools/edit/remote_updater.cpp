@@ -164,13 +164,18 @@ public:
 
     CRef<CT3Reply> GetOrgReply(const COrg_ref& in_org)
     {
-        string id;
 
+#if 0
+        string id;
         NStr::IntToString(id, in_org.GetTaxId());
         if (in_org.IsSetTaxname())
             id += in_org.GetTaxname();
-
         CRef<CT3Reply>& reply = (*m_cache)[id];
+#else
+        CNcbiStrstream os;
+        os << MSerial_AsnText << in_org;
+        CRef<CT3Reply>& reply = (*m_cache)[os.str()];
+#endif
         if (reply.Empty())
         {
             CTaxon3_request request;
@@ -183,11 +188,16 @@ public:
             request.SetRequest().push_back(rq);
             CRef<CTaxon3_reply> result = m_taxon->SendRequest (request);
             reply = *result->SetReply().begin();
+            if (reply->IsData() && reply->SetData().IsSetOrg())
+            {
+                reply->SetData().SetOrg().ResetSyn();
+            }
+
         }
         else
         {
 #ifdef _DEBUG
-            //cerr << "Using cache for:" << id << endl;
+            //cerr << "Using cache for:" << os.str() << endl;
 #endif
         }
         return reply;
@@ -242,9 +252,6 @@ void CRemoteUpdater::xUpdateOrgTaxname(objects::ILineErrorListener* logger, COrg
     CRef<COrg_ref> new_org = m_taxClient->GetOrg(org, logger);
     if (new_org.NotEmpty())
     {
-        if (new_org->IsSetSyn())
-            new_org->ResetSyn();
-
         org.Assign(*new_org);
     }
 }
@@ -438,7 +445,7 @@ CRef<CAuthor> StdAuthorFromMl(const string& val)
 {
     CRef<CAuthor> new_auth(new CAuthor());
     vector<string> tokens;
-    NStr::Tokenize(val, " ", tokens);
+    NStr::Split(val, " ", tokens);
     string suffix = "";
     string init = s_GetInitials(tokens);
     if (NStr::IsBlank(init) && tokens.size() > 1) {
@@ -454,7 +461,7 @@ CRef<CAuthor> StdAuthorFromMl(const string& val)
     if (!NStr::IsBlank(init)) {                
         new_auth->SetName().SetName().SetFirst(init.substr(0, 1));
         vector<string> letters;
-        NStr::Tokenize(init, "", letters);
+        NStr::Split(init, "", letters);
         string initials = NStr::Join(letters, ".");
         new_auth->SetName().SetName().SetInitials(initials);
     }
