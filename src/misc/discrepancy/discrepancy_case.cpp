@@ -644,7 +644,7 @@ DISCREPANCY_CASE(RNA_NO_PRODUCT, CSeq_feat, eOncaller, "Find RNAs without Produc
     const CRNA_ref & rna_ref = obj.GetData().GetRna();
 
     if( ! rna_ref.IsSetExt() ) {
-        // there is no product, so we have to record this discrepancy
+        // will try other ways farther below
     } else {
         const CRNA_ref::TExt & rna_ext = rna_ref.GetExt();
         switch(rna_ext.Which()) {
@@ -656,10 +656,6 @@ DISCREPANCY_CASE(RNA_NO_PRODUCT, CSeq_feat, eOncaller, "Find RNAs without Produc
                 ! NStr::EqualNocase(ext_name, "misc_RNA") )
             {
                 // ext.name can considered a product
-                return;
-            }
-            if( ! obj.GetNamedQual("product").empty() ) {
-                // gb-qual can be considered a product
                 return;
             }
             break;
@@ -677,6 +673,13 @@ DISCREPANCY_CASE(RNA_NO_PRODUCT, CSeq_feat, eOncaller, "Find RNAs without Produc
         }
     }
 
+    // try to get it from a "product" qual
+    if( ! obj.GetNamedQual("product").empty() ) {
+        // gb-qual can be considered a product
+        return;
+    }
+
+    // could not find a product
     m_Objs["[n] RNA feature[s] [has] no product and [is] not pseudo"].Add(
         *new CDiscrepancyObject(
             context.GetCurrentSeq_feat(),
