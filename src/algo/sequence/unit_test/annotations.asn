@@ -10013,6 +10013,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
+        locus "No definition line found"
       },
       partial TRUE,
       location int {
