@@ -992,6 +992,64 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
         field-name "coordinatePrecision" ,
         required FALSE } } ,
     require-order FALSE ,
-    allow-unlisted TRUE }
+    allow-unlisted TRUE } ,
+  {
+    prefix "##Taxonomic-Update-Statistics-START##" ,
+    fields {
+      {
+        field-name "This Genome (query)" ,
+        required TRUE } ,
+      { 
+        field-name "Current Name" ,
+        required TRUE } ,
+      {
+        field-name "Previous Name" ,
+        required TRUE } ,
+      {
+        field-name "Date Updated" ,
+        required TRUE } ,
+      {
+        field-name "Analysis Type" ,
+        required TRUE } ,
+      {
+        field-name "Analysis 1 (A1)" ,
+        required TRUE } ,
+      {
+        field-name "A1 Genome (subject)" ,
+        required TRUE } ,
+      {
+        field-name "A1 Name" ,
+        required TRUE } ,
+      {
+        field-name "A1 ANI" ,
+        required TRUE } ,
+      {
+        field-name "A1 Query Coverage" ,
+        required TRUE } ,
+      {
+        field-name "A1 Subject Coverage" ,
+        required TRUE } ,
+      {
+        field-name "Analysis 2 (A2)" ,
+        required TRUE } ,
+      {
+        field-name "A2 Genome (subject)" ,
+        required TRUE } ,
+      {
+        field-name "A2 Name" ,
+        required TRUE } ,
+      {
+        field-name "A2 ANI" ,
+        required TRUE } ,
+      {
+        field-name "A2 Query Coverage" ,
+        required TRUE } ,
+      {
+        field-name "A2 Subject Coverage" ,
+        required TRUE }
+    } ,
+    require-order TRUE ,
+    allow-unlisted FALSE 
+  }
 }
 
