@@ -118,7 +118,9 @@ BOOST_AUTO_TEST_CASE(TESTVERSIONCHECK)
     ///No elements - ON by default
     versions = "";
     //1
-    lbos_mock = { 1, 0, 2 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 2;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
 
@@ -230,7 +232,9 @@ BOOST_AUTO_TEST_CASE(TESTVERSIONCHECK)
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //2
-    lbos_mock = { 1, 0, 0 };
+    (*lbos_mock).major = 1;
+    (*lbos_mock).minor = 0;
+    (*lbos_mock).patch = 0;
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //3
