@@ -516,7 +516,8 @@ int SGridWorkerNodeImpl::Run(
     const string kServerSec("server");
 
     LOG_POST_X(50, Info << m_JobProcessorFactory->GetJobVersion() <<
-            " build " WN_BUILD_DATE);
+            " build " << m_JobProcessorFactory->GetAppBuildDate() <<
+            " tag " << m_JobProcessorFactory->GetAppBuildTag());
 
     const IRegistry& reg = m_App.GetConfig();
 
@@ -789,7 +790,9 @@ int SGridWorkerNodeImpl::Run(
     LOG_POST_X(54, Info << "\n=================== NEW RUN : " <<
         CGridGlobals::GetInstance().GetStartTime().AsString() <<
             " ===================\n" <<
-        m_JobProcessorFactory->GetJobVersion() << " build " WN_BUILD_DATE <<
+        m_JobProcessorFactory->GetJobVersion() << " build " <<
+        m_JobProcessorFactory->GetAppBuildDate() << " tag " <<
+        m_JobProcessorFactory->GetAppBuildTag() <<
         " is started.\n"
         "Waiting for control commands on " << CSocketAPI::gethostname() <<
             ":" << control_thread->GetControlPort() << "\n"

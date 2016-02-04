@@ -673,6 +673,4 @@ public:
 
 END_NCBI_SCOPE
 
-#define WN_BUILD_DATE __DATE__ " " __TIME__
-
 #endif //CONNECT_SERVICES__GRID_WOKER_HPP
