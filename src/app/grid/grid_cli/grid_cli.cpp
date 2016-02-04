@@ -1666,20 +1666,9 @@ int CGridCommandLineInterfaceApp::Run()
                 cmd_def->name_variants, e.GetMsg().c_str());
         return 2;
     }
-    catch (CNetSrvConnException& e) {
-        fprintf(stderr, GRID_APP_NAME ": %s\n", e.GetMsg().c_str());
-        return 3;
-    }
-    catch (CNetServiceException& e) {
-        fprintf(stderr, GRID_APP_NAME ": %s\n", e.GetMsg().c_str());
-        return 3;
-    }
-    catch (CNetStorageException& e) {
-        fprintf(stderr, GRID_APP_NAME ": %s\n", e.GetMsg().c_str());
-        return 3;
-    }
     catch (CException& e) {
-        fprintf(stderr, "%s\n", e.what());
+        fprintf(stderr, GRID_APP_NAME ": %s\n",
+                e.ReportThis(eDPF_ErrorID).c_str());
         return 3;
     }
     catch (string& s) {
