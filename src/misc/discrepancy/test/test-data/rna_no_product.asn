@@ -657,7 +657,7 @@ C2D590626415F09F2F94D3C2FA91DC2F8796B8405A282BAA386D034D3957CE3FA9C446E710E843
                 data
                   rna {
                     type ncRNA,
-                    ext tRNA { aa iupacaa 200 }
+                    ext tRNA { aa iupacaa 66 }
                   },
                 location
                   int {
