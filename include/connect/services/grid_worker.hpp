@@ -402,6 +402,12 @@ public:
     virtual void Run(CWorkerNodeIdleTaskContext&) = 0;
 };
 
+#ifdef NCBI_BUILD_TAG
+#   define NCBI_WORKERNODE_BUILD_TAG NCBI_AS_STRING(NCBI_BUILD_TAG)
+#else
+#   define NCBI_WORKERNODE_BUILD_TAG kEmptyStr
+#endif
+
 /// Worker Node Job Factory interface
 ///
 /// @sa IWorkerNodeJob
@@ -409,6 +415,14 @@ public:
 class IWorkerNodeJobFactory
 {
 public:
+    // This is done to set build date and tag as late as possible,
+    // preferably in client code, not in the toolkit lib itself.
+    IWorkerNodeJobFactory(const string& build_date = __DATE__,
+            const string& build_tag = NCBI_WORKERNODE_BUILD_TAG)
+        : m_BuildDate(build_date),
+          m_BuildTag(build_tag)
+    {}
+
     virtual ~IWorkerNodeJobFactory() {}
     /// Create a job
     ///
@@ -426,26 +440,32 @@ public:
 
     virtual string GetAppVersion() const {return GetJobVersion();}
 
-    virtual string GetAppBuildDate() const {return __DATE__;}
+    virtual string GetAppBuildDate() const {return m_BuildDate;}
 
     virtual string GetAppBuildTag() const
     {
-#ifdef NCBI_BUILD_TAG
-        return NCBI_AS_STRING(NCBI_BUILD_TAG);
-#else
-        return kEmptyStr;
-#endif
+        return m_BuildTag.empty() ? CVersion::GetBuildTag() : m_BuildTag;
     }
 
     /// Get the Idle task
     ///
     virtual IWorkerNodeIdleTask* GetIdleTask() { return NULL; }
+
+private:
+    const string m_BuildDate;
+    const string m_BuildTag;
 };
 
 template <typename TWorkerNodeJob>
 class CSimpleJobFactory : public IWorkerNodeJobFactory
 {
 public:
+    // See comment for IWorkerNodeJobFactory::IWorkerNodeJobFactory
+    CSimpleJobFactory(const string& build_date = __DATE__,
+            const string& build_tag = NCBI_WORKERNODE_BUILD_TAG)
+        : IWorkerNodeJobFactory(build_date, build_tag)
+    {}
+
     virtual void Init(const IWorkerNodeInitContext& context)
     {
         m_WorkerNodeInitContext = &context;
@@ -472,6 +492,11 @@ template <typename TWorkerNodeJob, typename TWorkerNodeIdleTask>
 class CSimpleJobFactoryEx : public CSimpleJobFactory<TWorkerNodeJob>
 {
 public:
+    // No need for a ctor to define build date and tag as late as possible here
+    // (see comment for IWorkerNodeJobFactory::IWorkerNodeJobFactory),
+    // as the base class is a template itself
+    // (will be instantiated when this class will be instatiated).
+
     virtual void Init(const IWorkerNodeInitContext& context)
     {
         this->m_WorkerNodeInitContext = &context;

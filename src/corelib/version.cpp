@@ -517,6 +517,16 @@ string CVersion::GetPackageConfig(void)
 }
 
 
+string CVersion::GetBuildTag(void)
+{
+#ifdef NCBI_BUILD_TAG
+    return NCBI_AS_STRING(NCBI_BUILD_TAG);
+#else
+    return kEmptyStr;
+#endif
+}
+
+
 string CVersion::Print(const string& appname, TPrintFlags flags) const
 {
     CNcbiOstrstream os;
