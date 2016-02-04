@@ -409,6 +409,7 @@ bool CValidError_desc::ValidateStructuredComment
         string report_prefix = CComment_rule::GetStructuredCommentPrefix(usr, false);
         PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
                  report_prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
+        is_valid = false;
     }
 
     // find prefix

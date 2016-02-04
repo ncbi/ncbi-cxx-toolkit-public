@@ -8086,6 +8086,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadStrucCommInvalidFieldValue",
                                     "Unknown prefix is not a valid value for StructuredCommentPrefix"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid"));
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
