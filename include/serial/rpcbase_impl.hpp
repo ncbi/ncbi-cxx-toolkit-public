@@ -35,7 +35,6 @@
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <connect/ncbi_util.h>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
