@@ -562,9 +562,9 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
     }
 #endif
 
-    if (flags & fBuildTag) {
-        os << " Build-Tag: " << ' ' << m_BuildInfo.tag
-           << endl;
+    if (flags & fBuildInfo) {
+        os << " Build-Date:  " << m_BuildInfo.date << endl;
+        os << " Build-Tag:  " << m_BuildInfo.tag << endl;
     }
 
     return CNcbiOstrstreamToString(os);

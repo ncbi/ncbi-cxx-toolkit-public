@@ -289,7 +289,7 @@ public:
         fComponents     = 0x02,  ///< Print components version info
         fPackageShort   = 0x04,  ///< Print package info, if available
         fPackageFull    = 0x08,  ///< Print package info, if available
-        fBuildTag       = 0x10,  ///< Print build tag info, if available
+        fBuildInfo      = 0x10,  ///< Print build info (date and tag)
         fBuildSignature = 0x20,  ///< Print build signature, if available
         fPrintAll       = 0xFF   ///< Print all version data
     };
