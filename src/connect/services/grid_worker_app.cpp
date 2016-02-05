@@ -100,17 +100,20 @@ void CGridWorkerApp::Construct(IWorkerNodeJobFactory* job_factory)
 #endif
 }
 
-CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory)
+CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
+                               const SBuildInfo& build_info) :
+    CNcbiApplication(build_info)
 {
     Construct(job_factory);
 }
 
 CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
-                               const CVersionInfo& version_info)
+                               const CVersionInfo& version_info,
+                               const SBuildInfo& build_info)
 {
     Construct(job_factory);
 
-    SetVersion(version_info);
+    SetVersion(version_info, build_info);
 }
 
 void CGridWorkerApp::Init(void)

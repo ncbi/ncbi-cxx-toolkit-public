@@ -283,7 +283,6 @@ public:
     static string GetPackageName(void);
     static CVersionInfo GetPackageVersion(void);
     static string GetPackageConfig(void);
-    static string GetPackageBuildTag(void);
 
     enum EPrintFlags {
         fVersionInfo    = 0x01,  ///< Print version info

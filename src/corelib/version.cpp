@@ -530,12 +530,6 @@ string CVersion::GetPackageConfig(void)
 }
 
 
-string CVersion::GetPackageBuildTag(void)
-{
-    return SBuildInfo().tag;
-}
-
-
 string CVersion::Print(const string& appname, TPrintFlags flags) const
 {
     CNcbiOstrstream os;

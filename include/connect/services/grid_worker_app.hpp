@@ -119,10 +119,12 @@ class CGridWorkerNodeApp_Listener : public IGridWorkerNodeApp_Listener
 class NCBI_XCONNECT_EXPORT CGridWorkerApp : public CNcbiApplication
 {
 public:
-    CGridWorkerApp(IWorkerNodeJobFactory* job_factory);
+    CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
+                   const SBuildInfo& build_info = SBuildInfo());
 
     CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
-                   const CVersionInfo& version_info);
+                   const CVersionInfo& version_info,
+                   const SBuildInfo& build_info = SBuildInfo());
 
     /// Register a listener of events of this class.
     ///

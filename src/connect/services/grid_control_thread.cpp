@@ -60,12 +60,13 @@ public:
                          CNcbiOstream& os,
                          CWorkerNodeControlServer* control_server)
     {
-        os << "OK:version=" << NStr::URLEncode(
-                control_server->GetWorkerNode().GetAppVersion()) <<
-                "&build_date=" << NStr::URLEncode(
-                control_server->GetWorkerNode().GetBuildDate()) <<
-                "&build_tag=" << NStr::URLEncode(
-                control_server->GetWorkerNode().GetBuildTag()) << "\n";
+        const CVersion& version(control_server->GetWorkerNode().GetAppVersion());
+        const CVersionInfo& version_info(version.GetVersionInfo());
+        const SBuildInfo& build_info(version.GetBuildInfo());
+
+        os << "OK:version=" << NStr::URLEncode(version_info.Print()) <<
+                "&build_date=" << NStr::URLEncode(build_info.date) <<
+                "&build_tag=" << NStr::URLEncode(build_info.tag) << "\n";
     }
 };
 
@@ -166,11 +167,14 @@ public:
                          CWorkerNodeControlServer* control_server)
     {
         CGridWorkerNode node(control_server->GetWorkerNode());
+        const CVersion& version(control_server->GetWorkerNode().GetAppVersion());
+        const CVersionInfo& version_info(version.GetVersionInfo());
+        const SBuildInfo& build_info(version.GetBuildInfo());
 
         os << "OK:Application: " << node.GetAppName() <<
-                "\nVersion: " << node.GetAppVersion() <<
-                "\nBuild date: " << node.GetBuildDate() <<
-                "\nBuild tag: " << node.GetBuildTag() << "\n";
+                "\nVersion: " << version_info.Print() <<
+                "\nBuild date: " << build_info.date <<
+                "\nBuild tag: " << build_info.tag << "\n";
 
         {{
             CMutexGuard guard(CNcbiApplication::GetInstanceMutex());

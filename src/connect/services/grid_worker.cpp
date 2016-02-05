@@ -515,9 +515,10 @@ int SGridWorkerNodeImpl::Run(
 
     const string kServerSec("server");
 
+    const SBuildInfo& build_info(m_App.GetFullVersion().GetBuildInfo());
+
     LOG_POST_X(50, Info << m_JobProcessorFactory->GetJobVersion() <<
-            " build " << m_JobProcessorFactory->GetAppBuildDate() <<
-            " tag " << m_JobProcessorFactory->GetAppBuildTag());
+            " build " << build_info.date << " tag " << build_info.tag);
 
     const IRegistry& reg = m_App.GetConfig();
 
@@ -791,8 +792,7 @@ int SGridWorkerNodeImpl::Run(
         CGridGlobals::GetInstance().GetStartTime().AsString() <<
             " ===================\n" <<
         m_JobProcessorFactory->GetJobVersion() << " build " <<
-        m_JobProcessorFactory->GetAppBuildDate() << " tag " <<
-        m_JobProcessorFactory->GetAppBuildTag() <<
+        build_info.date << " tag " << build_info.tag <<
         " is started.\n"
         "Waiting for control commands on " << CSocketAPI::gethostname() <<
             ":" << control_thread->GetControlPort() << "\n"
@@ -1083,22 +1083,9 @@ string CGridWorkerNode::GetAppName() const
     return m_Impl->m_JobProcessorFactory->GetAppName();
 }
 
-string CGridWorkerNode::GetAppVersion() const
+const CVersion& CGridWorkerNode::GetAppVersion() const
 {
-    CFastMutexGuard guard(m_Impl->m_JobProcessorMutex);
-    return m_Impl->m_JobProcessorFactory->GetAppVersion();
-}
-
-string CGridWorkerNode::GetBuildDate() const
-{
-    CFastMutexGuard guard(m_Impl->m_JobProcessorMutex);
-    return m_Impl->m_JobProcessorFactory->GetAppBuildDate();
-}
-
-string CGridWorkerNode::GetBuildTag() const
-{
-    CFastMutexGuard guard(m_Impl->m_JobProcessorMutex);
-    return m_Impl->m_JobProcessorFactory->GetAppBuildTag();
+    return m_Impl->m_App.GetFullVersion();
 }
 
 CNetCacheAPI CGridWorkerNode::GetNetCacheAPI() const
