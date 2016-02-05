@@ -4415,18 +4415,23 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "NoPubFound",
                               "No publications refer to this Bioseq."));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "MissingPubInfo",
+                              "Expected submission citation is missing for this Bioseq"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
 
-    // intermediate wgs should suppress
+    // intermediate wgs should suppress NoPubFound
     scope.RemoveTopLevelSeqEntry(seh);
     id_suppress->SetOther().SetAccession("NC_123456");
     entry->SetSet().SetSeq_set().front()->SetSeq().SetId().push_back(id_suppress);
     SetTech (entry->SetSet().SetSeq_set().front(), CMolInfo::eTech_wgs);
     seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "MissingPubInfo",
+        "Expected submission citation is missing for this Bioseq"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

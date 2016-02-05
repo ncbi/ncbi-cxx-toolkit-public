@@ -562,6 +562,7 @@ public:
     // flags calculated by examining data in record
     inline bool IsStandaloneAnnot(void) const { return m_IsStandaloneAnnot; }
     inline bool IsNoPubs(void) const { return m_NoPubs; }
+    inline bool IsNoCitSubPubs(void) const { return m_NoCitSubPubs; }
     inline bool IsNoBioSource(void) const { return m_NoBioSource; }
     inline bool IsGPS(void) const { return m_IsGPS; }
     inline bool IsGED(void) const { return m_IsGED; }
@@ -1514,6 +1515,8 @@ private:
     bool x_IsMicroRNA(const CBioseq& seq) const;
     bool x_IsDeltaLitOnly(const CSeq_inst& inst) const;
     bool x_ShowBioProjectWarning(const CBioseq& seq);
+    bool x_AllowOrphanedProtein(const CBioseq& seq) const;
+    bool x_HasCitCub(CBioseq_Handle bsh) const;
 
     void ValidatemRNAGene (const CBioseq& seq);
 
