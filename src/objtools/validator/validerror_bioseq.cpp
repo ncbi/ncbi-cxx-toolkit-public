@@ -1259,7 +1259,7 @@ void CValidError_bioseq::ValidateBioseqContext(
     }
 
     if (!m_Imp.IsNoCitSubPubs() && !x_HasCitCub(bsh)) {
-        PostErr(m_Imp.IsGenomeSubmission() ? eDiag_Info : eDiag_Error, eErr_GENERIC_MissingPubInfo, 
+        PostErr(m_Imp.IsGenomeSubmission() ? eDiag_Error : eDiag_Info, eErr_GENERIC_MissingPubInfo,
                 "Expected submission citation is missing for this Bioseq", seq);
     }
 

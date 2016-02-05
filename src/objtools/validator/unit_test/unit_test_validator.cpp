@@ -4415,7 +4415,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "NoPubFound",
                               "No publications refer to this Bioseq."));
-    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "MissingPubInfo",
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Info, "MissingPubInfo",
                               "Expected submission citation is missing for this Bioseq"));
 
     eval = validator.Validate(seh, options);
@@ -4430,7 +4430,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     SetTech (entry->SetSet().SetSeq_set().front(), CMolInfo::eTech_wgs);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "MissingPubInfo",
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Info, "MissingPubInfo",
         "Expected submission citation is missing for this Bioseq"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
