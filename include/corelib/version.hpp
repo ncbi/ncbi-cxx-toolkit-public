@@ -277,6 +277,9 @@ public:
     /// @note Takes the ownership over the passed VersionInfo object 
     void AddComponentVersion( CComponentVersionInfo* component);
 
+    /// Get build info (date and tag, if set)
+    const SBuildInfo& GetBuildInfo() const;
+
     static string GetPackageName(void);
     static CVersionInfo GetPackageVersion(void);
     static string GetPackageConfig(void);

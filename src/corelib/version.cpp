@@ -507,6 +507,11 @@ void CVersion::AddComponentVersion( CComponentVersionInfo* component)
     m_Components.push_back( AutoPtr<CComponentVersionInfo>( component ));
 }
 
+const SBuildInfo& CVersion::GetBuildInfo() const
+{
+    return m_BuildInfo;
+}
+
 string CVersion::GetPackageName(void)
 {
     return NCBI_PACKAGE_NAME;
@@ -549,7 +554,7 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
     if (flags & ( fPackageShort | fPackageFull )) {
         os << " Package: " << GetPackageName() << ' '
            << GetPackageVersion().Print() << ", build "
-           << m_BuildInfo.date
+           << SBuildInfo().date
            << endl;
     }
     if (flags & fPackageFull) {
