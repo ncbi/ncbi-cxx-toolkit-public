@@ -140,6 +140,7 @@ void CAutoDefOptions::x_Reset()
     m_FeatureListType = eListAllFeatures;
     m_MiscFeatRule = eNoncodingProductFeat;
     m_ProductFlag = CBioSource::eGenome_unknown;
+    m_NuclearCopyFlag = CBioSource::eGenome_unknown;
     m_HIVRule = eWantBoth;
     m_MaxMods = -99;
 
