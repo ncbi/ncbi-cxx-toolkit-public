@@ -3153,7 +3153,7 @@ void CValidError_feat::ValidateProt(
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameHasPMID, 
                     "Protein name has internal PMID", feat);
         }
-        if (prot.IsSetEc()
+        if (prot.IsSetEc() && !prot.IsSetProcessed()
             && (NStr::EqualCase (*it, "Hypothetical protein")
                 || NStr::EqualCase (*it, "hypothetical protein")
                 || NStr::EqualCase (*it, "Unknown protein")
