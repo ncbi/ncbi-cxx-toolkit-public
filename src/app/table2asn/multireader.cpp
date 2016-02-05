@@ -1117,6 +1117,15 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& obj, CNcbiIstream& in)
             }
 
             CBioseq_Handle bioseq_h = scope.GetBioseqHandle(id);
+            if (!bioseq_h && annot_id.IsLocal() && annot_id.GetLocal().IsStr())
+            {
+                CBioseq::TId ids;
+                CSeq_id::ParseIDs(ids, annot_id.GetLocal().GetStr());
+                if (ids.size() == 1)
+                {
+                    bioseq_h = scope.GetBioseqHandle(*ids.front());
+                }
+            }
             if (bioseq_h)
             {
                 CBioseq_EditHandle edit_handle = bioseq_h.GetEditHandle();
