@@ -7059,7 +7059,7 @@ void CValidError_feat::x_CheckTranslationMismatches
             prot_res = prot_vec[mismatches.front()];
             transl_res = Residue(transl_prot[mismatches.front()]);
             msg = 
-                NStr::SizetToString(mismatches.size()) + " mismatches found. " +
+                NStr::SizetToString(mismatches.size()) + " mismatches found.  " +
                 "First mismatch at " + NStr::IntToString(mismatches.front() + 1) +
                 ", residue in protein [" + prot_res + "]" +
                 " != translation [" + transl_res + "]";
@@ -7070,7 +7070,7 @@ void CValidError_feat::x_CheckTranslationMismatches
             prot_res = prot_vec[mismatches.back()];
             transl_res = Residue(transl_prot[mismatches.back()]);
             msg += 
-                ". Last mismatch at " + NStr::IntToString(mismatches.back() + 1) +
+                ".  Last mismatch at " + NStr::IntToString(mismatches.back() + 1) +
                 ", residue in protein [" + prot_res + "]" +
                 " != translation [" + transl_res + "]";
             if (!nuclocstr.empty()) {

@@ -11404,7 +11404,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_MisMatchAA)
     }
 
 
-    expected_errors[0]->SetErrMsg("11 mismatches found. First mismatch at 1, residue in protein [A] != translation [M] at lcl|nuc:1-3. Last mismatch at 11, residue in protein [A] != translation [M] at lcl|nuc:31-33. Genetic code [0]");
+    expected_errors[0]->SetErrMsg("11 mismatches found.  First mismatch at 1, residue in protein [A] != translation [M] at lcl|nuc:1-3.  Last mismatch at 11, residue in protein [A] != translation [M] at lcl|nuc:31-33. Genetic code [0]");
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
