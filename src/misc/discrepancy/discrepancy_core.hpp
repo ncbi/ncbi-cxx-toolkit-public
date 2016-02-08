@@ -128,8 +128,12 @@ public:
             DropReference();
         }
     }
+    CDiscrepancyObject(const CDiscrepancyObject& other) : CReportObject(other), m_Autofix(other.m_Autofix), m_Case(other.m_Case), m_More(other.m_More) {}
+
     bool CanAutofix(void) const { return m_Autofix; }
     CConstRef<CObject> GetMoreInfo() { return m_More; }
+    CReportObj* Clone(bool autofixable, CConstRef<CObject> data) const;
+
 protected:
     bool m_Autofix;
     CRef<CDiscrepancyCase> m_Case;

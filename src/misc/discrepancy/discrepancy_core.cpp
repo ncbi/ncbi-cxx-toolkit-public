@@ -165,6 +165,15 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
 }
 
 
+CReportObj* CDiscrepancyObject::Clone(bool autofixable, CConstRef<CObject> data) const
+{
+    CDiscrepancyObject* obj = new CDiscrepancyObject(*this);
+    obj->m_Autofix = autofixable;
+    obj->m_More = data;
+    return obj;
+}
+
+
 template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepancyContext& context)
 {
     try {

@@ -48,6 +48,17 @@ public:
     CReportObject(CConstRef<CSeq_feat> obj, CScope& scope) : m_Seq_feat(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CSeqdesc> obj, CScope& scope) : m_Seqdesc(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CBioseq_set> obj, CScope& scope) : m_Bioseq_set(obj), m_Scope(scope) {}
+    CReportObject(const CReportObject& other) :
+        m_Text(other.m_Text),
+        m_ShortName(other.m_ShortName),
+        m_FeatureTable(other.m_FeatureTable),
+        m_XML(other.m_XML),
+        m_Bioseq(other.m_Bioseq),
+        m_Seq_feat(other.m_Seq_feat),
+        m_Seqdesc(other.m_Seqdesc),
+        m_Bioseq_set(other.m_Bioseq_set),
+        m_Filename(other.m_Filename),
+        m_Scope(other.m_Scope) {}
     ~CReportObject() {}
 
     const string& GetText() const { return m_Text; }

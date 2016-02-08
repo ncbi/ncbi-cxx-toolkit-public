@@ -45,6 +45,8 @@
 //#include <objmgr/util/feature.hpp>
 //#include <objmgr/util/sequence.hpp>
 //#include <sstream>
+#include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(NDiscrepancy)
@@ -95,6 +97,8 @@ public:
     CSourseQualsAutofixData() : m_Ask(0), m_User(0) {}
 };
 typedef map<const CReportObj*, CRef<CReportObj> > TReportObjPtrMap;
+typedef map<string, vector<CRef<CReportObj> > > TStringObjVectorMap;
+typedef map<string, TStringObjVectorMap > TStringStringObjVectorMap;
 
 
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
@@ -118,16 +122,19 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         size_t num = 0;
         TReportObjPtrMap missing = all_missing;
         CReportNode::TNodeMap& sub = it->second->GetMap();
+        TStringStringObjVectorMap capital;
         NON_CONST_ITERATE (CReportNode::TNodeMap, jj, sub) {
             TReportObjectList& obj = jj->second->GetObjects();
             bins++;
             num += obj.size();
             uniq += obj.size() == 1 ? 1 : 0;
-            ITERATE (TReportObjectList, o, obj) {
+            string upper = jj->first;
+            upper = NStr::ToUpper(upper);
+            ITERATE(TReportObjectList, o, obj) {
                 missing.erase(o->GetPointer());
+                capital[upper][jj->first].push_back(*o);
             }
         }
-        cout << ":):):) " << qual << " " << missing.size() << endl;
         string diagnosis = it->first;
         diagnosis += " (";
         diagnosis += num == total ? "all present" : "some missing";
@@ -135,17 +142,49 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += bins == 1 ? "all same" : uniq == num ? "all unique" : "some duplicates";
         diagnosis += ")";
         report[diagnosis];
-        if (num < total && bins == 1) { // some missing all same
-            if (num / (float)total >= context.GetSesameStreetCutoff()) { // autofixable
-                CSourseQualsAutofixData* fix = new CSourseQualsAutofixData;
-                CRef<CObject> more(fix);
-                fix->m_Qualifier = it->first;
-                fix->m_Value = sub.begin()->first;
-                fix->m_User = context.GetUserData();
-                ITERATE(TReportObjPtrMap, o, missing) {
-                    string mq = "Missing qualifier " + it->first + " (" + sub.begin()->first + ")";
-                    CConstRef<CBioseq> bs((const CBioseq*)o->second->GetObject().GetPointer());
-                    report[diagnosis][mq].Add(*new CDiscrepancyObject(bs, context.GetScope(), context.GetFile(), context.GetKeepRef(), true, more));
+        if ((num != total || bins != 1) && (it->first == "collection_date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain")) {
+            report[diagnosis].Fatal();
+        }
+        if ((bins > capital.size() || (num < total && capital.size() == 1))
+            && (true || it->first == "country" || it->first == "collection_date" || it->first == "isolation_source")) { // autofixable
+            CRef<CSourseQualsAutofixData> fix;
+            if (bins > capital.size()) { // capitalization
+                ITERATE (TStringStringObjVectorMap, cap, capital) {
+                    if (cap->second.size() < 2) {
+                        continue;
+                    }
+                    const TStringObjVectorMap& mmm = cap->second;
+                    size_t best_count = 0;
+                    string best_str;
+                    fix.Reset(new CSourseQualsAutofixData);
+                    fix->m_Qualifier = it->first;
+                    fix->m_User = context.GetUserData();
+                    ITERATE (TStringObjVectorMap, x, mmm) {
+                        fix->m_Choice.push_back(x->first);
+                        if (best_count < x->second.size()) {
+                            best_count = x->second.size();
+                            fix->m_Value = best_str;
+                        }
+                    }
+                    ITERATE (TStringObjVectorMap, x, mmm) {
+                        const vector<CRef<CReportObj> >& v = x->second;
+                        ITERATE (vector<CRef<CReportObj> >, o, v) {
+                            report[diagnosis]["[n] biosource[s] may have inconsistent capitalization: " + it->first + " (" + x->first + ")"].Add(*((const CDiscrepancyObject&)**o).Clone(true, CRef<CObject>(fix.GetNCPointer())));
+                        }
+                    }
+                }
+            }
+            if (num < total && capital.size() == 1) { // some missing all same
+                if (num / (float)total >= context.GetSesameStreetCutoff()) { // autofixable
+                    if (fix.IsNull()) {
+                        fix.Reset(new CSourseQualsAutofixData);
+                        fix->m_Qualifier = it->first;
+                        fix->m_Value = sub.begin()->first;
+                        fix->m_User = context.GetUserData();
+                    }
+                    ITERATE (TReportObjPtrMap, o, missing) {
+                        report[diagnosis]["[n] biosource[s] may have missing qualifier: " + it->first + " (" + sub.begin()->first + ")"].Add(*((const CDiscrepancyObject&)*o->second).Clone(true, CRef<CObject>(fix.GetNCPointer())));
+                    }
                 }
             }
         }
@@ -158,8 +197,21 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
 {
     TReportObjectList list = item->GetDetails();
     const CSourseQualsAutofixData* fix = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+        const CBioseq* bs = dynamic_cast<const CBioseq*>(obj.GetObject().GetPointer());
+        const CBioSource* biosrc = sequence::GetBioSource(*bs);
+        //if (biosrc) {
+        //GetSrcQualValue4FieldType(*biosrc, field_type.GetSource_qual(), &str_cons);
+        //}
+
+        //CRef<CBioSource> new_bs(new CBioSource());
+        //new_bs->Assign(*biosrc);
+        //new_feat->SetData().SetRna().SetExt().SetName(rrna_standard_name[i]);
+        //CBioSource_EditHandle eh(scope.GetBioSourceHandle(*biosrc));
+        //bseh.Replace(*new_bs);
+
+
         if (!fix) {
             fix = dynamic_cast<const CSourseQualsAutofixData*>(obj.GetMoreInfo().GetPointer());
             CAutofixHookRegularArguments arg;
@@ -167,6 +219,11 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
             if (m_Hook) {
                 m_Hook(&arg);
             }
+        }
+
+
+        if (fix->m_Qualifier == "host") {
+
         }
     }
     return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + fix->m_Qualifier + " (" + fix->m_Value + ") added", list.size()));
