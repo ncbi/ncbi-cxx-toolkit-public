@@ -452,7 +452,7 @@ Uint8 CEutilsClient::Count(const string& db,
     }
 
     Uint8 count = 0;
-    LOG_POST(Info << " executing: db=" << db << "  query=" << term);
+    LOG_POST(Trace << " executing: db=" << db << "  query=" << term);
     bool success = false;
     m_Url.clear();
     m_Time.clear();
@@ -609,7 +609,7 @@ Uint8 CEutilsClient::x_Search(const string& db,
 
     Uint8 count = 0;
 
-    LOG_POST(Info << " executing: db=" << db << "  query=" << term);
+    LOG_POST(Trace << " executing: db=" << db << "  query=" << term);
     bool success = false;
     m_Url.clear();
     m_Time.clear();
@@ -1054,7 +1054,7 @@ void CEutilsClient::x_Summary(const string& db,
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
             string path = "/entrez/eutils/esummary.fcgi?";
-            LOG_POST(Info << "query: " << m_HostName + path + params );
+            LOG_POST(Trace << "query: " << m_HostName + path + params );
             string hostname = x_GetHostName();
             CConn_HttpStream istr(hostname,
                                   path);
