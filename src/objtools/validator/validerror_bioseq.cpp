@@ -4908,6 +4908,97 @@ void CValidError_bioseq::ValidateCDSAndProtPartials (const CMappedFeat& feat)
     }
 }
 
+
+void CValidError_bioseq::x_ReportImproperPartial(const CSeq_feat& feat)
+{
+    if (m_Imp.x_IsFarFetchFailure(feat.GetLocation())) {
+        m_Imp.SetFarFetchFailure();
+    } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion
+        && feat.IsSetExcept()
+        && NStr::Find(feat.GetExcept_text(), "rearrangement required for product") != string::npos) {
+        // suppress
+    } else {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+            "PartialLocation: Improper use of partial (greater than or less than)", feat);
+    }
+}
+
+
+void CValidError_bioseq::x_ReportInternalPartial(const CSeq_feat& feat)
+{
+    if (m_Imp.x_IsFarFetchFailure(feat.GetLocation())) {
+        m_Imp.SetFarFetchFailure();
+    } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion
+        && feat.IsSetExcept()
+        && NStr::Find(feat.GetExcept_text(), "rearrangement required for product") != string::npos) {
+        // suppress
+    } else if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
+        // ignore start/stop not at end in genomic gpipe sequence
+    } else {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+            "PartialLocation: Internal partial intervals do not include first/last residue of sequence", feat);
+    }
+}
+
+
+bool StrandsMatch(ENa_strand s1, ENa_strand s2)
+{
+    if (s1 == eNa_strand_minus) {
+        if (s2 == eNa_strand_minus) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        if (s2 == eNa_strand_minus) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+}
+
+
+bool CValidError_bioseq::x_PartialAdjacentToIntron(const CSeq_loc& loc)
+{
+    bool partial_start = loc.IsPartialStart(eExtreme_Positional);
+    bool partial_stop = loc.IsPartialStop(eExtreme_Positional);
+    if (!partial_start && !partial_stop) {
+        return false;
+    }
+    TSeqPos start = loc.GetStart(eExtreme_Positional);
+    TSeqPos stop = loc.GetStop(eExtreme_Positional);
+    ENa_strand feat_strand = loc.GetStrand();
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(loc);
+    if (!bsh) {
+        return false;
+    }
+
+    CFeat_CI intron(bsh, CSeqFeatData::eSubtype_intron);
+    while (intron) {
+        ENa_strand intron_strand = intron->GetLocation().GetStrand();
+        if (StrandsMatch(feat_strand, intron_strand)) {            
+            TSeqPos intron_start = intron->GetLocation().GetStart(eExtreme_Positional);
+            if (intron_start == stop + 1 && partial_stop) {
+                return true;
+            } 
+            if (intron_start > stop + 1) {
+                return false;
+            }
+            if (start > 0 && partial_start) {
+                TSeqPos intron_stop = intron->GetLocation().GetStop(eExtreme_Positional);
+                if (intron_stop == start - 1) {
+                    return true;
+                }
+            }
+        }
+        ++intron;
+    }
+    return false;
+}
+
+
 void CValidError_bioseq::ValidateFeatPartialInContext (
     const CMappedFeat& feat)
 {
@@ -5005,34 +5096,10 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
             bool bad_seq = false;
             bool is_gap = false;
 
-            if (feat.GetLocation().GetStop(eExtreme_Biological) == 2647) {
-                is_gap = false;
-            }
-
             if (j == 3) {
-                if (m_Imp.x_IsFarFetchFailure(feat.GetLocation())) {
-                    m_Imp.SetFarFetchFailure();                       
-                } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion
-                       && feat.IsSetExcept()
-                       && NStr::Find(except_text, "rearrangement required for product") != string::npos) {
-                    // suppress
-                } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                        "PartialLocation: Improper use of partial (greater than or less than)", *(feat.GetSeq_feat()));
-                }
+                x_ReportImproperPartial(*(feat.GetSeq_feat()));
             } else if (j == 2) {
-                if (m_Imp.x_IsFarFetchFailure(feat.GetLocation())) {
-                    m_Imp.SetFarFetchFailure();                       
-                } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion
-                       && feat.IsSetExcept()
-                       && NStr::Find(except_text, "rearrangement required for product") != string::npos) {
-                    // suppress
-                } else if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
-                    // ignore start/stop not at end in genomic gpipe sequence
-                } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                        "PartialLocation: Internal partial intervals do not include first/last residue of sequence", *(feat.GetSeq_feat()));
-                }
+                x_ReportInternalPartial(*(feat.GetSeq_feat()));
             } else {
                 if ( s_IsCDDFeat(feat) ) {
                     // supress warning
@@ -5108,11 +5175,14 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                                 *(feat.GetSeq_feat()));
                         }
                     }
-                } else if ( (feat.GetData().Which() == CSeqFeatData::e_Gene  ||
+                } else if ((feat.GetData().Which() == CSeqFeatData::e_Gene ||
                     feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) &&
-                     x_IsSameAsCDS(feat) ) {
+                    x_IsSameAsCDS(feat)) {
                     PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                         parterr[i] + ": " + parterrs[j], *(feat.GetSeq_feat()));
+                } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA && 
+                    j == 0 && x_PartialAdjacentToIntron(feat.GetLocation())) {
+                    // suppress tRNAs adjacent to introns
                 } else if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                     // ignore start/stop not at end in genomic gpipe sequence
                 } else {
