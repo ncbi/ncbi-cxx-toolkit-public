@@ -461,7 +461,7 @@ bool CGff2Reader::x_ParseBrowserLineGff(
         return false;
     }
     vector< string > columns;
-    NStr::Tokenize( strRawInput, " \t", columns, NStr::eMergeDelims );
+    NStr::Split( strRawInput, " \t", columns, NStr::eMergeDelims );
 
     if ( columns.size() <= 1 || 1 != ( columns.size() % 2 ) ) {
         // don't know how to unwrap this
@@ -501,7 +501,7 @@ bool CGff2Reader::x_ParseTrackLineGff(
         }
     }
     vector< string > columns;
-    NStr::Tokenize( strCookedInput, " \t", columns, NStr::eMergeDelims );
+    NStr::Split( strCookedInput, " \t", columns, NStr::eMergeDelims );
 
     if ( columns.size() <= 1 ) {
         pAnnotDesc.Reset();
@@ -638,7 +638,7 @@ bool CGff2Reader::xAlignmentSetSegment(
     if (!gff.GetAttribute("Target", targetInfo)) {
         return false;
     }
-    NStr::Tokenize(targetInfo, " ", targetParts);
+    NStr::Split(targetInfo, " ", targetParts);
     if (targetParts.size() != 4) {
         return false;
     }
@@ -646,7 +646,7 @@ bool CGff2Reader::xAlignmentSetSegment(
     string gapInfo;
     vector<string> gapParts;
     if (gff.GetAttribute("Gap", gapInfo)) {
-        NStr::Tokenize(gapInfo, " ", gapParts);
+        NStr::Split(gapInfo, " ", gapParts);
     }
     else {
         gapParts.push_back(string("M") + NStr::NumericToString(gff.SeqStop()-gff.SeqStart()+1));

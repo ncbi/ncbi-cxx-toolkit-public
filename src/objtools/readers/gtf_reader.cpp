@@ -1176,7 +1176,7 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
         0 == NStr::CompareNocase( it->first, "db_xref" ) ) 
     {
         vector< string > tags;
-        NStr::Tokenize( it->second, ";", tags );
+        NStr::Split( it->second, ";", tags );
         for ( vector<string>::iterator it = tags.begin(); 
             it != tags.end(); ++it ) {
             pFeature->SetDbxref().push_back( x_ParseDbtag( *it ) );
