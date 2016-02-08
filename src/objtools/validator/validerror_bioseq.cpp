@@ -4590,10 +4590,12 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
     bool result = false;
 
     try {
-        if (tag == eSeqlocPartial_Nostop && stop < len - 1 && vec.IsInGap(stop + 1)) {
+        if (tag == eSeqlocPartial_Nostop && 
+            ((stop < len - 1 && vec.IsInGap(stop + 1)) || (stop < len - 2 && vec.IsInGap(stop + 2)))) {
             is_gap = true;
             return true;
-        } else if (tag == eSeqlocPartial_Nostart && start > 0  && start < len && vec.IsInGap(start - 1)) {
+        } else if (tag == eSeqlocPartial_Nostart && start > 0  && 
+            ((start > 0 && vec.IsInGap(start - 1)) || (start > 1 && vec.IsInGap(start - 2)))) {
             is_gap = true;
             return true;
         }
