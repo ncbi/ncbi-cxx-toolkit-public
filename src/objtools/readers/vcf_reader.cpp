@@ -306,7 +306,7 @@ CVcfReader::xProcessMetaLineInfo(
         string key, id, numcount, type, description;
         string info = line.substr( 
             prefix.length(), line.length() - prefix.length() - postfix.length() );
-        NStr::Tokenize( info, ",", fields );
+        NStr::Split( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
         if ( key != "ID" ) {
             AutoPtr<CObjReaderLineException> pErr(
@@ -375,7 +375,7 @@ CVcfReader::xProcessMetaLineFilter(
         string key, id, description;
         string info = line.substr( 
             prefix.length(), line.length() - prefix.length() - postfix.length() );
-        NStr::Tokenize( info, ",", fields );
+        NStr::Split( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
         if ( key != "ID" ) {
             AutoPtr<CObjReaderLineException> pErr(
@@ -424,7 +424,7 @@ CVcfReader::xProcessMetaLineFormat(
         string key, id, numcount, type, description;
         string info = line.substr( 
             prefix.length(), line.length() - prefix.length() - postfix.length() );
-        NStr::Tokenize( info, ",", fields );
+        NStr::Split( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
         if ( key != "ID" ) {
             AutoPtr<CObjReaderLineException> pErr(
@@ -496,7 +496,7 @@ CVcfReader::xProcessHeaderLine(
     //  After that come the various headers for the genotype information, and these
     //  need to be preserved:
     //
-    NStr::Tokenize(line, " \t", m_GenotypeHeaders, NStr::eMergeDelims);
+    NStr::Split(line, " \t", m_GenotypeHeaders, NStr::eMergeDelims);
     vector<string>::iterator pos_format = find(
         m_GenotypeHeaders.begin(), m_GenotypeHeaders.end(), "FORMAT");
     if ( pos_format == m_GenotypeHeaders.end() ) {
@@ -818,7 +818,7 @@ CVcfReader::xParseData(
 //  ----------------------------------------------------------------------------
 {
     vector<string> columns;
-    NStr::Tokenize( line, "\t", columns, NStr::eMergeDelims );
+    NStr::Split( line, "\t", columns, NStr::eMergeDelims );
     if ( columns.size() < 8 ) {
         return false;
     }
@@ -827,12 +827,12 @@ CVcfReader::xParseData(
 
         data.m_strChrom = columns[0];
         data.m_iPos = NStr::StringToInt( columns[1] );
-        NStr::Tokenize( columns[2], ";", data.m_Ids, NStr::eNoMergeDelims );
+        NStr::Split( columns[2], ";", data.m_Ids, NStr::eNoMergeDelims );
         if ( (data.m_Ids.size() == 1)  &&  (data.m_Ids[0] == ".") ) {
             data.m_Ids.clear();
         }
         data.m_strRef = columns[3];
-        NStr::Tokenize( columns[4], ",", data.m_Alt, NStr::eNoMergeDelims );
+        NStr::Split( columns[4], ",", data.m_Alt, NStr::eNoMergeDelims );
         if ( columns[5] != "." ) {
             data.m_pdQual = new double( NStr::StringToDouble( columns[5] ) );
         }
@@ -840,22 +840,22 @@ CVcfReader::xParseData(
 
         vector<string> infos;
         if ( columns[7] != "." ) {
-            NStr::Tokenize( columns[7], ";", infos, NStr::eMergeDelims );
+            NStr::Split( columns[7], ";", infos, NStr::eMergeDelims );
             for ( vector<string>::iterator it = infos.begin(); 
                 it != infos.end(); ++it ) 
             {
                 string key, value;
                 NStr::SplitInTwo( *it, "=", key, value );
                 data.m_Info[key] = vector<string>();
-                NStr::Tokenize( value, ",", data.m_Info[key] );
+                NStr::Split( value, ",", data.m_Info[key] );
             }
         }
         if ( columns.size() > 8 ) {
-            NStr::Tokenize( columns[8], ":", data.m_FormatKeys, NStr::eMergeDelims );
+            NStr::Split( columns[8], ":", data.m_FormatKeys, NStr::eMergeDelims );
 
             for ( size_t u=9; u < columns.size(); ++u ) {
                 vector<string> values;
-                NStr::Tokenize( columns[u], ":", values, NStr::eMergeDelims );
+                NStr::Split( columns[u], ":", values, NStr::eMergeDelims );
                 data.m_GenotypeData[ m_GenotypeHeaders[u-9] ] = values;
             }
         }
