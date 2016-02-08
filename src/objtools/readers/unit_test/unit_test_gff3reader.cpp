@@ -98,7 +98,7 @@ public:
         // extract info from the file name
         const string sFileName = file.GetName();
         vector<CTempString> vecFileNamePieces;
-        NStr::Tokenize( sFileName, ".", vecFileNamePieces );
+        NStr::Split( sFileName, ".", vecFileNamePieces );
         BOOST_REQUIRE(vecFileNamePieces.size() == 2);
 
         CTempString tsTestName = vecFileNamePieces[0];
