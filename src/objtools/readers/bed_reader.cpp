@@ -177,7 +177,7 @@ CBedReader::ReadSeqAnnot(
 
         //  parse
         vector<string> fields;
-        NStr::Tokenize( record_copy, " \t", fields, NStr::eMergeDelims );
+        NStr::Split( record_copy, " \t", fields, NStr::eMergeDelims );
         try {
             xCleanColumnValues(fields);
         }
@@ -605,7 +605,7 @@ void CBedReader::xSetFeatureLocationBlock(
     {{
         blockSizes.reserve(blockCount);
         vector<string> vals; 
-        NStr::Tokenize(fields[10], ",", vals);
+        NStr::Split(fields[10], ",", vals);
         if (vals.back() == "") {
             vals.erase(vals.end()-1);
         }
@@ -635,7 +635,7 @@ void CBedReader::xSetFeatureLocationBlock(
         blockStarts.reserve(blockCount);
         vector<string> vals; 
         size_t baseStart = NStr::StringToUInt(fields[1]);
-        NStr::Tokenize(fields[11], ",", vals);
+        NStr::Split(fields[11], ",", vals);
         if (vals.back() == "") {
             vals.erase(vals.end()-1);
         }
@@ -851,7 +851,7 @@ void CBedReader::xSetFeatureBedData(
         srgb.push_back("0");
     }
     else {
-        NStr::Tokenize(fields[8], ",", srgb);
+        NStr::Split(fields[8], ",", srgb);
     }
     if (srgb.size() != 3)
     {
@@ -1056,7 +1056,7 @@ CBedReader::xReadBedRecordRaw(
 	NStr::TruncateSpacesInPlace(linecopy);
 
     //  parse
-    NStr::Tokenize( linecopy, " \t", columns, NStr::eMergeDelims );
+    NStr::Split( linecopy, " \t", columns, NStr::eMergeDelims );
     try {
         xCleanColumnValues(columns);
     }

@@ -71,10 +71,10 @@ void CReadUtil::Tokenize(
         }
     }
     if (temp.empty()) {
-        NStr::Tokenize(str, delim, parts, NStr::eMergeDelims);
+        NStr::Split(str, delim, parts, NStr::eMergeDelims);
         return;
     }
-    NStr::Tokenize(temp, delim, parts, NStr::eMergeDelims);
+    NStr::Split(temp, delim, parts, NStr::eMergeDelims);
     for (size_t j=0; j < parts.size(); ++j) {
         for (size_t i=0; i < parts[j].size(); ++i) {
             if (parts[j][i] == joiner) {
