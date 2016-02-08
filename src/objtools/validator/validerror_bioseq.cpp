@@ -4565,9 +4565,7 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
         return false;
     }
 
-    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(
-        m_Scope,
-        *temp.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle() );
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandleFromTSE(*(temp.GetRangeAsSeq_loc()->GetId()), m_Imp.GetTSE_Handle() );
     if (!bsh) {
         return false;
     }
@@ -4579,7 +4577,10 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
 
     CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
         temp.GetStrand());
-    TSeqPos len = vec.size();
+    TSeqPos len = bsh.GetBioseqLength();
+    if (start >= len || stop >= len) {
+        return false;
+    }
 
     if ( temp.GetStrand() == eNa_strand_minus ) {
         swap(acceptor, donor);
