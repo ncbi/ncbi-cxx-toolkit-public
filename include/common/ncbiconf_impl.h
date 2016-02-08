@@ -143,6 +143,8 @@
        /* Exclude ICC 13.x and below, which don't support using "enum class"
         * in conjunction with switch. */
 #      define HAVE_ENUM_CLASS 1
+#    else
+#      define override
 #    endif
 #  endif
 #endif
