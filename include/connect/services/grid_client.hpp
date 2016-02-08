@@ -202,9 +202,6 @@ public:
 
     /// Get a job interim message
     ///
-    /// @param data_key
-    ///     Blob key
-    ///
     string GetProgressMessage();
 
     /// Set a job's input This string will be sent to
@@ -272,13 +269,6 @@ public:
     ///
     void CancelJob(const string& job_key);
 
-    /// Remove a data blob from the storage
-    ///
-    /// @param data_key
-    ///     Blob key
-    ///
-    void RemoveDataBlob(const string& data_key);
-
     CNetScheduleSubmitter GetNetScheduleSubmitter()
     {
         return m_NetScheduleSubmitter;
@@ -289,6 +279,7 @@ public:
 
 private:
     void Init(ECleanUp cleanup, EProgressMsg progress_msg);
+    void RemoveDataBlob(const string&);
 
     CNetScheduleSubmitter m_NetScheduleSubmitter;
     CNetCacheAPI m_NetCacheAPI;
