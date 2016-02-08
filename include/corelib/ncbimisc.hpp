@@ -760,12 +760,33 @@ public:
     }
 
     /// Get nullable value.
-    /// If NULL, then call FNullToValue and use the value return by the latter.
+    /// If NULL, then call TNullToValue and use the value return by the latter.
     /// @attention  The default implementation of TNullToValue (g_ThrowOnNull)
     ///             throws an exception! 
     operator TValue(void) const
     {
         return m_IsNull ? TNullToValue()() : m_Value;
+    }
+
+    /// Get a const reference to the current value. If NULL, the reference is
+    /// a copy of the default value or throw (depending on TNullToValue
+    /// implementation). In any case the IsNull state is unchanged.
+    const TValue& GetValue(void) const
+    {
+        if ( m_IsNull ) {
+            const_cast<TValue&>(m_Value) = TNullToValue()();
+        }
+        return m_Value;
+    }
+
+    /// Get a non-const reference to the value. If NULL, try to initialize this
+    /// instance with the default value or throw.
+    TValue& SetValue(void)
+    {
+        if ( m_IsNull ) {
+            *this = TNullToValue()();
+        }
+        return m_Value;
     }
 
     /// Assign a value to the nullable.
