@@ -160,7 +160,7 @@ CMicroArrayReader::ReadSeqAnnot(
 
         //  parse
         vector<string> fields;
-        NStr::Tokenize( record_copy, " \t", fields, NStr::eMergeDelims );
+        NStr::Split( record_copy, " \t", fields, NStr::eMergeDelims );
         try {
             xCleanColumnValues(fields);
         }
