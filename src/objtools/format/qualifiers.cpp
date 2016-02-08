@@ -1164,7 +1164,7 @@ void CFlatSubSourcePrimer::Format(
         if ( NStr::StartsWith( m_fwd_name, "(" ) && NStr::EndsWith( m_fwd_name, ")" ) ) {
             fwd_name = m_fwd_name.substr( 1, m_fwd_name.size() - 2 );
         }
-        NStr::Tokenize( fwd_name, ",", fwd_names );
+        NStr::Split( fwd_name, ",", fwd_names );
     }
     
     vector< string > rev_names;
@@ -1173,14 +1173,14 @@ void CFlatSubSourcePrimer::Format(
         if ( NStr::StartsWith( m_rev_name, "(" ) && NStr::EndsWith( m_rev_name, ")" ) ) {
             rev_name = m_rev_name.substr( 1, m_rev_name.size() - 2 );
         }
-        NStr::Tokenize( rev_name, ",", rev_names );
+        NStr::Split( rev_name, ",", rev_names );
     }
 
     vector< string > fwd_seqs;
     if ( ! m_fwd_seq.empty() ) {
         string fwd_seq = NStr::Replace( m_fwd_seq, "(", "" );
         NStr::ReplaceInPlace( fwd_seq, ")", "" );
-        NStr::Tokenize( fwd_seq, ",", fwd_seqs );
+        NStr::Split( fwd_seq, ",", fwd_seqs );
     }
     if ( fwd_seqs.empty() ) {
         return;
@@ -1190,7 +1190,7 @@ void CFlatSubSourcePrimer::Format(
     if ( ! m_rev_seq.empty() ) {
         string rev_seq = NStr::Replace( m_rev_seq, "(", "" );
         NStr::ReplaceInPlace( rev_seq, ")", "" );
-        NStr::Tokenize( rev_seq, ",", rev_seqs );
+        NStr::Split( rev_seq, ",", rev_seqs );
     }
 
     for ( size_t i=0; i < fwd_seqs.size(); ++i ) {
