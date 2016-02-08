@@ -6,9 +6,6 @@ Seq-annot ::= {
     {
       id local str "gene|4",
       data gene {
-        syn {
-          "AT1G01010"
-        }
       },
       location int {
         from 3630,
@@ -17,10 +14,6 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01010"
-        }
       }
     },
     {
@@ -68,14 +61,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01010"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01010.1"
-        }
       },
       xref {
         {
@@ -126,14 +111,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01010"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01010.1"
-        }
       },
       xref {
         {
@@ -147,9 +124,6 @@ Seq-annot ::= {
     {
       id local str "gene|7",
       data gene {
-        syn {
-          "AT1G01020"
-        }
       },
       location int {
         from 5927,
@@ -158,90 +132,10 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01020"
-        }
       }
     },
     {
-      id local str "cds|8",
-      data cdregion {
-      },
-      location mix {
-        int {
-          from 8570,
-          to 8665,
-          strand minus,
-          id local str "Chr1"
-        },
-        int {
-          from 8416,
-          to 8463,
-          strand minus,
-          id local str "Chr1"
-        },
-        int {
-          from 8235,
-          to 8324,
-          strand minus,
-          id local str "Chr1"
-        },
-        int {
-          from 7941,
-          to 7986,
-          strand minus,
-          id local str "Chr1"
-        },
-        int {
-          from 7761,
-          to 7834,
-          strand minus,
-          id local str "Chr1"
-        },
-        int {
-          from 7563,
-          to 7648,
-          strand minus,
-          id local str "Chr1"
-        },
-        int {
-          from 7383,
-          to 7449,
-          strand minus,
-          id local str "Chr1"
-        },
-        int {
-          from 7156,
-          to 7231,
-          strand minus,
-          id local str "Chr1"
-        },
-        int {
-          from 6914,
-          to 7068,
-          strand minus,
-          id local str "Chr1"
-        }
-      },
-      qual {
-        {
-          qual "gene_id",
-          val "AT1G01020"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01020.1"
-        }
-      },
-      xref {
-        {
-          id local str "gene|7"
-        }
-      }
-    },
-    {
-      id local str "mrna|9",
+      id local str "mrna|8",
       data rna {
         type mRNA
       },
@@ -309,14 +203,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01020"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01020.1"
-        }
       },
       xref {
         {
@@ -325,7 +211,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "cds|10",
+      id local str "cds|9",
       data cdregion {
       },
       location mix {
@@ -366,30 +252,37 @@ Seq-annot ::= {
           id local str "Chr1"
         },
         int {
-          from 7314,
+          from 7383,
           to 7449,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7156,
+          to 7231,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 6914,
+          to 7068,
           strand minus,
           id local str "Chr1"
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01020"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01020.2"
-        }
       },
       xref {
         {
           id local str "gene|7"
+        },
+        {
+          id local str "mrna|8"
         }
       }
     },
     {
-      id local str "mrna|11",
+      id local str "mrna|10",
       data rna {
         type mRNA
       },
@@ -445,14 +338,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01020"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01020.2"
-        }
       },
       xref {
         {
@@ -461,11 +346,67 @@ Seq-annot ::= {
       }
     },
     {
+      id local str "cds|11",
+      data cdregion {
+      },
+      location mix {
+        int {
+          from 8570,
+          to 8665,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 8416,
+          to 8463,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 8235,
+          to 8324,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7941,
+          to 7986,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7761,
+          to 7834,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7563,
+          to 7648,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7314,
+          to 7449,
+          strand minus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+      },
+      xref {
+        {
+          id local str "gene|7"
+        },
+        {
+          id local str "mrna|10"
+        }
+      }
+    },
+    {
       id local str "gene|12",
       data gene {
-        syn {
-          "AT1G01030"
-        }
       },
       location int {
         from 11648,
@@ -474,10 +415,6 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01030"
-        }
       }
     },
     {
@@ -501,14 +438,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01030"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01030.1"
-        }
       },
       xref {
         {
@@ -526,16 +455,6 @@ Seq-annot ::= {
         strand minus,
         id local str "Chr1"
       },
-      qual {
-        {
-          qual "gene_id",
-          val "AT1G01030"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01030.1"
-        }
-      },
       xref {
         {
           id local str "gene|12"
@@ -548,9 +467,6 @@ Seq-annot ::= {
     {
       id local str "gene|15",
       data gene {
-        syn {
-          "AT1G01040"
-        }
       },
       location int {
         from 23145,
@@ -559,10 +475,6 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01040"
-        }
       }
     },
     {
@@ -694,14 +606,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01040"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01040.1"
-        }
       },
       xref {
         {
@@ -836,14 +740,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01040"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01040.1"
-        }
       },
       xref {
         {
@@ -941,14 +837,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01040"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01040.2"
-        }
       },
       xref {
         {
@@ -1041,14 +929,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "AT1G01040"
-        },
-        {
-          qual "transcript_id",
-          val "AT1G01040.2"
-        }
       },
       xref {
         {

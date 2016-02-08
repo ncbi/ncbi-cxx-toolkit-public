@@ -393,7 +393,6 @@ bool CGff2Reader::x_ParseFeatureGff(
         }
         annots.insert(annots.begin(), pAnnot );      
     }
-
     return true; 
 };
 
@@ -841,6 +840,10 @@ bool CGff2Reader::x_FeatureTrimQualifiers(
             continue;
         }
         if (qualKey == "locus_tag") {
+            it++;
+            continue;
+        }
+        if (qualKey == "old_locus_tag") {
             it++;
             continue;
         }

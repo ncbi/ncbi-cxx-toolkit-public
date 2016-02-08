@@ -199,6 +199,10 @@ protected:
         const CGff2Record&,
         CRef< CSeq_feat >& );
 
+    bool x_FeatureSetQualifiers(
+        const CGff2Record&,
+        CRef< CSeq_feat >);
+
     virtual bool x_ProcessQualifierSpecialCase(
         CGff2Record::TAttrCit,
         CRef< CSeq_feat > );

@@ -339,6 +339,11 @@ bool CGtfReader::x_UpdateAnnotFeature(
             return false;
         }
     }
+    if (strType == "mRNA") {
+        if ( ! x_CreateParentMrna(gff, pAnnot) ) {
+            return false;
+        }
+    }
     return x_UpdateAnnotMiscFeature( gff, pAnnot );
 }
 
@@ -710,7 +715,15 @@ bool CGtfReader::x_CreateFeatureLocation(
     CSeq_interval& location = pFeature->SetLocation().SetInt();
     location.SetId( *pId );
     location.SetFrom( record.SeqStart() );
-    location.SetTo( record.SeqStop() );
+    if (record.Type() != "mRNA") {
+        location.SetTo(record.SeqStop());
+    }
+    else {
+        // place holder
+        //  actual location will be computed from the exons and CDSs living on 
+        //  this feature.
+        location.SetTo(record.SeqStart());
+    }
     if ( record.IsSetStrand() ) {
         location.SetStrand( record.Strand() );
     }
@@ -778,9 +791,6 @@ bool CGtfReader::x_MergeFeatureLocationSingleInterval(
     }
     if ( gene_int.GetTo() < record.SeqStop() - 1 ) {
         pFeature->SetLocation().SetInt().SetTo( record.SeqStop() );
-    }
-    if (record.Type() == "exon"  &&  pFeature->GetData().IsGene()) {
-        return x_FeatureTrimQualifiers(record, pFeature);
     }
     if (record.Type() == "CDS"  &&  pFeature->GetData().IsCdregion()) {
         return x_FeatureTrimQualifiers(record, pFeature);
@@ -986,9 +996,10 @@ bool CGtfReader::x_FeatureSetDataGene(
     if ( record.GetAttribute( "gene_synonym", strValue ) ) {
         gene.SetSyn().push_back( strValue );
     }
-    if ( record.GetAttribute( "gene_id", strValue ) ) {
-        gene.SetSyn().push_front( strValue );
-    }
+    //  mss-399: do -not- use gene_id for /gene_syn or /gene:
+    //if ( record.GetAttribute( "gene_id", strValue ) ) {
+    //    gene.SetSyn().push_front( strValue );
+    //}
     return true;
 }
 
@@ -1049,6 +1060,24 @@ bool CGtfReader::x_FeatureSetDataCDS(
         cdr.SetCode().Set().push_back( pGc );
     }
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::x_FeatureSetQualifiers(
+    const CGff2Record& record,
+    CRef< CSeq_feat > pFeature)
+//  ----------------------------------------------------------------------------
+{
+    if (this->m_iFlags & fGenbankMode) {
+        // mss-399: Strip gene_id and transcript_id qualifiers in their 
+        //  entirety.
+        return CGff2Reader::x_FeatureSetQualifiers(record, pFeature);
+    }
+    else {
+        // mss-399: Keep gene_id and transcript_id as qualifiers without any 
+        //  further processing
+        return CGff2Reader::x_FeatureSetQualifiers(record, pFeature);
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -1139,10 +1168,6 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
     if (0 == NStr::CompareNocase(it->first, "exon_number")) {
         return true;
     }
-    if (0 == NStr::CompareNocase(it->first, "transcript_id")  &&  
-            pFeature->GetData().IsGene()) {
-        return true;
-    }
     if ( 0 == NStr::CompareNocase( it->first, "note" ) ) {
         pFeature->SetComment( it->second );
         return true;
@@ -1167,6 +1192,36 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
         pFeature->SetPartial( true );
         return true;
     }
+    if (0 == NStr::CompareNocase(it->first, "gene_id")) {
+        if (m_iFlags | fGenbankMode) {
+            // mss-399:
+            //  in genbank mode, drop gene_id altogether
+            return true;
+        }
+        else {
+            // mss-399:
+            //  in regular mode, retain gene_id as a qualifier but do nothing
+            //  else with it.
+            return false;
+        }
+    }
+    if (0 == NStr::CompareNocase(it->first, "transcript_id")) {
+        if (m_iFlags | fGenbankMode) {
+            // mss-399:
+            //  in genbank mode, drop transcript_id altogether
+            return true;
+        }
+        else {
+            // mss-399:
+            //  in regular mode, retain transcript_id as a qualifier but do 
+            //  nothing else with it.
+            return false;
+        }
+    }
+    //if (0 == NStr::CompareNocase(it->first, "transcript_id") &&
+    //    pFeature->GetData().IsGene()) {
+    //    return true;
+    //}
 
     return false;
 }  
