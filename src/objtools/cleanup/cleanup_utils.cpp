@@ -125,7 +125,7 @@ void s_SplitMLAuthorName(string name, string& last, string& initials, string& su
     }
 
     vector<string> parts;
-    NStr::Tokenize( name, " ", parts, NStr::eMergeDelims );
+    NStr::Split( name, " ", parts, NStr::eMergeDelims );
     if ( parts.empty() ) {
         return;
     }
