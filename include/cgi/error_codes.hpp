@@ -42,8 +42,8 @@ BEGIN_NCBI_SCOPE
 
 
 NCBI_DEFINE_ERRCODE_X(Cgi_API,         501, 10);
-NCBI_DEFINE_ERRCODE_X(Cgi_Application, 502, 14);
-NCBI_DEFINE_ERRCODE_X(Cgi_Response,    503,  5);
+NCBI_DEFINE_ERRCODE_X(Cgi_Application, 502, 16);
+NCBI_DEFINE_ERRCODE_X(Cgi_Response,    503,  7);
 NCBI_DEFINE_ERRCODE_X(Cgi_Resourse,    504,  1);
 NCBI_DEFINE_ERRCODE_X(Cgi_Fast,        505,  9);
 

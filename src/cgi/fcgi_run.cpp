@@ -620,17 +620,24 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 bool caching_needed = IsCachingNeeded(m_Context->GetRequest());
                 if (m_Cache.get() && caching_needed) {
                     skip_process_request = GetResultFromCache(m_Context->GetRequest(),
-                                                           m_Context->GetResponse().out());
+                        m_Context->GetResponse().out());
                 }
                 if (!skip_process_request) {
                     if( m_Cache.get() ) {
-                        list<CNcbiOstream*> slist;
-                        orig_stream = m_Context->GetResponse().GetOutput();
-                        slist.push_back(orig_stream);
-                        slist.push_back(&result_copy);
-                        new_stream.reset(new CWStream(new CMultiWriter(slist), 0,0,
-                                                      CRWStreambuf::fOwnWriter));
-                        m_Context->GetResponse().SetOutput(new_stream.get());
+                        CCgiStreamWrapper* wrapper =
+                            dynamic_cast<CCgiStreamWrapper*>(m_Context->GetResponse().GetOutput());
+                        if ( wrapper ) {
+                            wrapper->SetCacheStream(result_copy);
+                        }
+                        else {
+                            list<CNcbiOstream*> slist;
+                            orig_stream = m_Context->GetResponse().GetOutput();
+                            slist.push_back(orig_stream);
+                            slist.push_back(&result_copy);
+                            new_stream.reset(new CWStream(new CMultiWriter(slist), 1, 0,
+                                                          CRWStreambuf::fOwnWriter));
+                            m_Context->GetResponse().SetOutput(new_stream.get());
+                        }
                     }
                     GetDiagContext().SetAppState(eDiagAppState_Request);
                     x_result = CCgiContext::ProcessCORSRequest(

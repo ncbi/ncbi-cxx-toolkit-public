@@ -142,38 +142,301 @@ ERW_Result CCGIStreamReader::Read(void*   buf,
 }
 
 
-class CCGIStreamWriter : public IWriter
+///////////////////////////////////////////////////////
+// CCgiStreamWrapper, CCgiStreamWrapperWriter
+//
+
+NCBI_PARAM_DECL(bool, CGI, Count_Transfered);
+NCBI_PARAM_DEF_EX(bool, CGI, Count_Transfered, true, eParam_NoThread,
+                  CGI_COUNT_TRANSFERED);
+typedef NCBI_PARAM_TYPE(CGI, Count_Transfered) TCGI_Count_Transfered;
+
+
+// Helper writer used to:
+// - count bytes read/written to the stream;
+// - disable output stream during HEAD requests after sending headers
+//   so that the application can not output more data or clear 'bad' bit;
+// - send chunked data to the client;
+// - copy data to cache stream when necessary.
+class CCgiStreamWrapperWriter : public IWriter
 {
 public:
-    CCGIStreamWriter(ostream& os) : m_OStr(os) { }
+    CCgiStreamWrapperWriter(CNcbiOstream& out);
+    virtual ~CCgiStreamWrapperWriter(void);
 
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
                              size_t*     bytes_written = 0);
 
-    virtual ERW_Result Flush(void)
-    { return m_OStr.flush() ? eRW_Success : eRW_Error; }
+    virtual ERW_Result Flush(void);
 
-protected:
-    ostream& m_OStr;
+    CCgiStreamWrapper::EStreamMode GetMode(void) const { return m_Mode; }
+
+    void SetMode(CCgiStreamWrapper::EStreamMode mode);
+    void SetCacheStream(CNcbiOstream& stream);
+
+    void FinishChunkedTransfer(const CCgiStreamWrapper::TTrailer* trailer);
+    void AbortChunkedTransfer(void);
+
+private:
+    void x_SetChunkSize(size_t sz);
+    void x_WriteChunk(const char* buf, size_t count);
+
+    CCgiStreamWrapper::EStreamMode m_Mode;
+    CNcbiOstream* m_Out;
+    // block mode
+    bool m_ErrorReported;
+    // chunked mode
+    size_t m_ChunkSize;
+    char* m_Chunk;
+    size_t m_Count;
+    bool m_UsedChunkedTransfer; // remember if chunked transfer was enabled.
 };
 
 
-ERW_Result CCGIStreamWriter::Write(const void* buf,
-                                   size_t      count,
-                                   size_t*     bytes_written)
+CCgiStreamWrapperWriter::CCgiStreamWrapperWriter(CNcbiOstream& out)
+    : m_Mode(CCgiStreamWrapper::eNormal),
+      m_ErrorReported(false),
+      m_Out(&out),
+      m_ChunkSize(0),
+      m_Chunk(0),
+      m_Count(0),
+      m_UsedChunkedTransfer(false)
 {
-    ERW_Result result;
-    if (!m_OStr.write((char*)buf, count)) {
-        result = eRW_Error;
+}
+
+
+CCgiStreamWrapperWriter::~CCgiStreamWrapperWriter(void)
+{
+    if (m_Mode == CCgiStreamWrapper::eChunkedWrites) {
+        x_SetChunkSize(0); // cleanup
     }
-    else {
-        result = eRW_Success;
+}
+
+
+void CCgiStreamWrapperWriter::x_WriteChunk(const char* buf, size_t count)
+{
+    if (!buf || count == 0) return;
+    *m_Out << NStr::NumericToString(count, 0, 16) << HTTP_EOL;
+    m_Out->write(buf, count);
+    *m_Out << HTTP_EOL;
+}
+
+
+ERW_Result CCgiStreamWrapperWriter::Write(const void* buf,
+                                          size_t      count,
+                                          size_t*     bytes_written)
+{
+    ERW_Result result = eRW_Success;
+    size_t written = 0;
+
+    switch (m_Mode) {
+    case CCgiStreamWrapper::eNormal:
+        {
+            if (!m_Out->write((char*)buf, count)) {
+                result = eRW_Error;
+            }
+            else {
+                result = eRW_Success;
+                written = count;
+            }
+            break;
+        }
+    case CCgiStreamWrapper::eBlockWrites:
+        {
+            if ( !m_ErrorReported ) {
+                if ( m_UsedChunkedTransfer ) {
+                    ERR_POST_X(16, "CCgiStreamWrapperWriter::Write() -- attempt to "
+                        "write data after finishing chunked transfer.");
+                }
+                else {
+                    ERR_POST_X(15, "CCgiStreamWrapperWriter::Write() -- attempt to "
+                        "write data after sending headers on HEAD request.");
+                }
+                m_ErrorReported = true;
+            }
+            // Pretend the operation was successfull so that applications
+            // which check I/O result do not fail.
+            written = count;
+            break;
+        }
+    case CCgiStreamWrapper::eChunkedWrites:
+        {
+            const char* cbuf = static_cast<const char*>(buf);
+            if (m_Chunk  &&  m_ChunkSize > 0) {
+                // Copy data to own buffer
+                while (count && result == eRW_Success) {
+                    size_t chunk_count = min(count, m_ChunkSize - m_Count);
+                    memcpy(m_Chunk + m_Count, cbuf, chunk_count);
+                    cbuf += chunk_count;
+                    m_Count += chunk_count;
+                    count -= chunk_count;
+                    written += chunk_count;
+                    if (m_Count >= m_ChunkSize) {
+                        x_WriteChunk(m_Chunk, m_Count);
+                        if (!m_Out->good()) {
+                            result = eRW_Error;
+                            written -= chunk_count;
+                        }
+                        m_Count = 0;
+                    }
+                }
+            }
+            else {
+                // If chunk size is zero, use the whole original buffer.
+                x_WriteChunk(cbuf, count);
+                if (m_Out->good()) {
+                    written = count;
+                }
+                else {
+                    result = eRW_Error;
+                }
+            }
+            break;
+        }
     }
+
     if (bytes_written) {
-        *bytes_written = result == eRW_Success ? count : 0;
+        *bytes_written = written;
     }
     return result;
+}
+
+
+ERW_Result CCgiStreamWrapperWriter::Flush(void)
+{
+    switch (m_Mode) {
+    case CCgiStreamWrapper::eNormal:
+        break;
+    case CCgiStreamWrapper::eBlockWrites:
+        // Report success
+        return eRW_Success;
+    case CCgiStreamWrapper::eChunkedWrites:
+        if (m_Count) {
+            x_WriteChunk(m_Chunk, m_Count);
+            m_Count = 0;
+        }
+        break;
+    }
+    return m_Out->flush() ? eRW_Success : eRW_Error;
+}
+
+
+void CCgiStreamWrapperWriter::SetMode(CCgiStreamWrapper::EStreamMode mode)
+{
+    switch (mode) {
+    case CCgiStreamWrapper::eNormal:
+        break;
+    case CCgiStreamWrapper::eBlockWrites:
+        _ASSERT(m_Mode == CCgiStreamWrapper::eNormal);
+        m_Out->flush();
+        // Prevent output from writing anything, disable exceptions -
+        // an attemp to write will be reported by the wrapper.
+        m_Out->exceptions(ios_base::goodbit);
+        m_Out->setstate(ios_base::badbit);
+        break;
+    case CCgiStreamWrapper::eChunkedWrites:
+        _ASSERT(m_Mode == CCgiStreamWrapper::eNormal);
+        // Use default chunk size.
+        x_SetChunkSize(CCgiResponse::GetChunkSize());
+        m_UsedChunkedTransfer = true;
+        break;
+    }
+    m_Mode = mode;
+}
+
+
+void CCgiStreamWrapperWriter::SetCacheStream(CNcbiOstream& stream)
+{
+    list<CNcbiOstream*> slist;
+    slist.push_back(m_Out);
+    slist.push_back(&stream);
+    m_Out = new CWStream(new CMultiWriter(slist), 1, 0,
+        CRWStreambuf::fOwnWriter);
+}
+
+
+void CCgiStreamWrapperWriter::FinishChunkedTransfer(
+    const CCgiStreamWrapper::TTrailer* trailer)
+{
+    if (m_Mode == CCgiStreamWrapper::eChunkedWrites) {
+        Flush();
+        // Zero chunk indicates end of chunked data.
+        *m_Out << "0" << HTTP_EOL;
+        x_SetChunkSize(0);
+        // Allow to write trailers after the last chunk.
+        SetMode(CCgiStreamWrapper::eNormal);
+        if ( trailer ) {
+            ITERATE(CCgiStreamWrapper::TTrailer, it, *trailer) {
+                *m_Out << it->first << ": " << it->second << HTTP_EOL;
+            }
+        }
+        // Finish chunked data/trailer.
+        *m_Out << HTTP_EOL;
+    }
+}
+
+
+void CCgiStreamWrapperWriter::AbortChunkedTransfer(void)
+{
+    if (m_Mode == CCgiStreamWrapper::eChunkedWrites) {
+        x_SetChunkSize(0);
+    }
+    // Disable any writes.
+    SetMode(CCgiStreamWrapper::eBlockWrites);
+}
+
+
+void CCgiStreamWrapperWriter::x_SetChunkSize(size_t sz)
+{
+    if (m_Chunk) {
+        x_WriteChunk(m_Chunk, m_Count);
+        delete[](m_Chunk);
+        m_Chunk = 0;
+    }
+    m_Count = 0;
+    m_ChunkSize = sz;
+    if (m_ChunkSize) {
+        m_Chunk = new char[m_ChunkSize];
+    }
+}
+
+
+CCgiStreamWrapper::CCgiStreamWrapper(CNcbiOstream& out)
+    : CWStream(m_Writer = new CCgiStreamWrapperWriter(out),
+    1, 0, CRWStreambuf::fOwnWriter) // '1, 0' disables buffering by the wrapper
+{
+}
+
+
+CCgiStreamWrapper::EStreamMode CCgiStreamWrapper::GetWriterMode(void)
+{
+    return m_Writer->GetMode();
+}
+
+
+void CCgiStreamWrapper::SetWriterMode(CCgiStreamWrapper::EStreamMode mode)
+{
+    flush();
+    m_Writer->SetMode(mode);
+}
+
+
+void CCgiStreamWrapper::SetCacheStream(CNcbiOstream& stream)
+{
+    m_Writer->SetCacheStream(stream);
+}
+
+
+void CCgiStreamWrapper::FinishChunkedTransfer(const TTrailer* trailer)
+{
+    m_Writer->FinishChunkedTransfer(trailer);
+}
+
+
+void CCgiStreamWrapper::AbortChunkedTransfer(void)
+{
+    m_Writer->AbortChunkedTransfer();
 }
 
 
@@ -273,13 +536,20 @@ int CCgiApplication::Run(void)
             }
             if (!skip_process_request) {
                 if( m_Cache.get() ) {
-                    list<CNcbiOstream*> slist;
-                    orig_stream = m_Context->GetResponse().GetOutput();
-                    slist.push_back(orig_stream);
-                    slist.push_back(&result_copy);
-                    new_stream.reset(new CWStream(new CMultiWriter(slist), 0,0,
-                                                  CRWStreambuf::fOwnWriter));
-                    m_Context->GetResponse().SetOutput(new_stream.get());
+                    CCgiStreamWrapper* wrapper = dynamic_cast<CCgiStreamWrapper*>(
+                        m_Context->GetResponse().GetOutput());
+                    if ( wrapper ) {
+                        wrapper->SetCacheStream(result_copy);
+                    }
+                    else {
+                        list<CNcbiOstream*> slist;
+                        orig_stream = m_Context->GetResponse().GetOutput();
+                        slist.push_back(orig_stream);
+                        slist.push_back(&result_copy);
+                        new_stream.reset(new CWStream(new CMultiWriter(slist), 1, 0,
+                                                      CRWStreambuf::fOwnWriter));
+                        m_Context->GetResponse().SetOutput(new_stream.get());
+                    }
                 }
                 GetDiagContext().SetAppState(eDiagAppState_Request);
                 result = CCgiContext::ProcessCORSRequest(
@@ -290,7 +560,9 @@ int CCgiApplication::Run(void)
                 if (result != 0) {
                     SetHTTPStatus(500);
                     m_ErrorStatus = true;
+                    m_Context->GetResponse().AbortChunkedTransfer();
                 } else {
+                    m_Context->GetResponse().FinishChunkedTransfer();
                     if (m_Cache.get()) {
                         m_Context->GetResponse().Flush();
                         if (m_IsResultReady) {
@@ -318,6 +590,7 @@ int CCgiApplication::Run(void)
                      e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
                     throw;
                 }
+                m_Context->GetResponse().FinishChunkedTransfer();
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
                 // If for some reason exception with status 2xx was thrown,
                 // set the result to 0, update HTTP status and continue.
@@ -343,6 +616,9 @@ int CCgiApplication::Run(void)
         x_OnEvent(eExit, result);
     }
     catch (exception& e) {
+        if ( m_Context.get() ) {
+            m_Context->GetResponse().AbortChunkedTransfer();
+        }
         GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
         if ( x_DoneHeadRequest() ) {
             // Ignore errors after HEAD request has been finished.
@@ -535,12 +811,6 @@ CCgiServerContext* CCgiApplication::LoadServerContext(CCgiContext& /*context*/)
 }
 
 
-NCBI_PARAM_DECL(bool, CGI, Count_Transfered);
-NCBI_PARAM_DEF_EX(bool, CGI, Count_Transfered, true, eParam_NoThread,
-                  CGI_COUNT_TRANSFERED);
-typedef NCBI_PARAM_TYPE(CGI, Count_Transfered) TCGI_Count_Transfered;
-
-
 CCgiContext* CCgiApplication::CreateContext
 (CNcbiArguments*   args,
  CNcbiEnvironment* env,
@@ -568,6 +838,13 @@ CCgiContext* CCgiApplication::CreateContextWithFlags
         GetConfig().GetInt("CGI", "RequestErrBufSize", 256, 0,
                            CNcbiRegistry::eReturn);
 
+    bool need_output_wrapper =
+        TCGI_Count_Transfered::GetDefault()  ||
+        (env && CCgiResponse::x_ClientSupportsChunkedTransfer(*env))  ||
+        (env &&
+        NStr::EqualNocase("HEAD",
+        env->Get(CCgiRequest::GetPropertyName(eCgi_RequestMethod))));
+
     if ( TCGI_Count_Transfered::GetDefault() ) {
         if ( !inp ) {
             if ( !m_InputStream.get() ) {
@@ -578,11 +855,11 @@ CCgiContext* CCgiApplication::CreateContextWithFlags
             inp = m_InputStream.get();
             ifd = 0;
         }
+    }
+    if ( need_output_wrapper ) {
         if ( !out ) {
             if ( !m_OutputStream.get() ) {
-                m_OutputStream.reset(
-                    new CWStream(new CCGIStreamWriter(std::cout), 0, 0,
-                                CRWStreambuf::fOwnWriter));
+                m_OutputStream.reset(new CCgiStreamWrapper(std::cout));
             }
             out = m_OutputStream.get();
             ofd = 1;
@@ -590,6 +867,10 @@ CCgiContext* CCgiApplication::CreateContextWithFlags
                 // If both streams are created by the application, tie them.
                 inp->tie(out);
             }
+        }
+        else {
+            m_OutputStream.reset(new CCgiStreamWrapper(*out));
+            out = m_OutputStream.get();
         }
     }
     return

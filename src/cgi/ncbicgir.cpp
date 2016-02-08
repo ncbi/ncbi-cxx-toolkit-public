@@ -75,79 +75,6 @@ NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ThrowOnBadOutput, true, CCgiResponse);
 NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ExceptionAfterHEAD, false, CCgiResponse);
 
 
-// Helper writer and stream used to disable real output stream during
-// HEAD requests after sending headers so that the application can not
-// output more data or clear 'bad' bit.
-class CCgiStreamWrapperWriter : public IWriter
-{
-public:
-    CCgiStreamWrapperWriter(void)
-        : m_ErrorReported(false) {}
-
-    virtual ERW_Result Write(const void* buf,
-                             size_t      count,
-                             size_t*     bytes_written = 0)
-    {
-        if ( !m_ErrorReported ) {
-            ERR_POST_X(4, "CCgiStreamWrapperWriter::Write() -- attempt to "
-                "write data after sending headers on HEAD request.");
-            m_ErrorReported = true;
-        }
-        // Pretend the operation was successfull so that applications
-        // which check I/O result do not fail.
-        if ( bytes_written ) {
-            *bytes_written = count;
-        }
-        return eRW_Success;
-    }
-
-    virtual ERW_Result Flush(void)
-    {
-        return eRW_Success;
-    }
-
-private:
-    bool m_ErrorReported;
-};
-
-
-class CCgiStreamWrapper : public CWStream
-{
-public:
-    CCgiStreamWrapper(CNcbiOstream* out)
-        : CWStream(new CCgiStreamWrapperWriter, 1, 0, CRWStreambuf::fOwnWriter),
-          m_Output(out),
-          m_OldBuf(0),
-          m_NewBuf(rdbuf())
-    {
-        if ( m_Output ) {
-            // Prevent output from writing anything, disable exceptions -
-            // an attemp to write will be reported by the wrapper.
-            m_Output->exceptions(ios_base::goodbit);
-            m_Output->setstate(ios_base::badbit);
-            // Replace rdbuf with the customized one, which does not
-            // write anything, but reports an error (once).
-            m_Output->flush();
-            m_OldBuf = m_Output->rdbuf();
-            m_Output->rdbuf(m_NewBuf);
-        }
-    }
-
-    virtual ~CCgiStreamWrapper(void)
-    {
-        // Restore the original rdbuf so that it can be safely destroyed.
-        if (m_Output  &&  m_Output->rdbuf() == m_NewBuf) {
-            m_Output->rdbuf(m_OldBuf);
-        }
-    }
-
-private:
-    CNcbiOstream*           m_Output;
-    CNcbiStreambuf*         m_OldBuf;
-    CNcbiStreambuf*         m_NewBuf;
-};
-
-
 inline bool s_ZeroTime(const tm& date)
 {
     static const tm kZeroTime = { 0 };
@@ -165,7 +92,9 @@ CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
       m_RequireWriteHeader(true),
       m_RequestMethod(CCgiRequest::eMethod_Other),
       m_Session(NULL),
-      m_DisableTrackingCookie(false)
+      m_DisableTrackingCookie(false),
+      m_Request(0),
+      m_ChunkedTransfer(false)
 {
     SetOutput(os ? os  : &NcbiCout,
               os ? ofd : STDOUT_FILENO  // "os" on this line is NOT a typo
@@ -228,7 +157,7 @@ void CCgiResponse::SetHeaderValue(const string& name, const string& value)
             m_HeaderValues[name] = value;
         }
         else {
-            NCBI_THROW(CCgiResponseException, eDoubleHeader,
+            NCBI_THROW(CCgiResponseException, eBadHeaderValue,
                        "CCgiResponse::SetHeaderValue() -- "
                        "invalid header name or value: " +
                        name + "=" + value);
@@ -453,6 +382,22 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         }
         os << i->first << ": " << i->second << HTTP_EOL;
     }
+    bool chunked_transfer = GetChunkedTransferEnabled();
+    if ( chunked_transfer ) {
+        // Chunked encoding must be the last one.
+        os << "Transfer-Encoding: chunked" << HTTP_EOL;
+        // Add Trailer if necessary.
+        if ( !m_TrailerValues.empty() ) {
+            string trailer;
+            ITERATE(TMap, it, m_TrailerValues) {
+                if ( !trailer.empty() ) {
+                    trailer.append(", ");
+                }
+                trailer.append(it->first);
+            }
+            os << "Trailer: " << trailer << HTTP_EOL;
+        }
+    }
 
     if (m_IsMultipart != eMultipart_none) { // proceed with first part
         os << HTTP_EOL << "--" << m_Boundary << HTTP_EOL;
@@ -476,19 +421,30 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         os << m_JQuery_Callback << '(';
     }
 
-    if (m_RequestMethod == CCgiRequest::eMethod_HEAD  &&  &os == m_Output
-        &&  !m_OutputWrapper.get()) {
-        try {
-            m_OutputWrapper.reset(new CCgiStreamWrapper(m_Output));
+    CCgiStreamWrapper* wrapper = dynamic_cast<CCgiStreamWrapper*>(m_Output);
+    if ( wrapper ) {
+        if (m_RequestMethod == CCgiRequest::eMethod_HEAD  &&  &os == m_Output) {
+            try {
+                wrapper->SetWriterMode(CCgiStreamWrapper::eBlockWrites);
+            }
+            catch (ios_base::failure&) {
+            }
+            if ( m_ExceptionAfterHEAD.Get() ) {
+                // Optionally stop processing request immediately. The exception
+                // should not be handles by ProcessRequest, but must go up to
+                // the Run() to work correctly.
+                NCBI_CGI_THROW_WITH_STATUS(CCgiHeadException, eHeaderSent,
+                    "HEAD response sent.", CCgiException::e200_Ok);
+            }
         }
-        catch (ios_base::failure&) {
-        }
-        if ( m_ExceptionAfterHEAD.Get() ) {
-            // Optionally stop processing request immediately. The exception
-            // should not be handles by ProcessRequest, but must go up to
-            // the Run() to work correctly.
-            NCBI_CGI_THROW_WITH_STATUS(CCgiHeadException, eHeaderSent,
-                "HEAD response sent.", CCgiException::e200_Ok);
+        else if ( chunked_transfer ) {
+            // Chunked encoding is enabled either through the environment,
+            // or due to a header set by the user.
+            try {
+                wrapper->SetWriterMode(CCgiStreamWrapper::eChunkedWrites);
+            }
+            catch (ios_base::failure&) {
+            }
         }
     }
 
@@ -643,6 +599,158 @@ void CCgiResponse::SetRetryContext(const CRetryContext& ctx)
     ctx.GetValues(values);
     ITERATE(CRetryContext::TValues, it, values) {
         SetHeaderValue(it->first, it->second);
+    }
+}
+
+
+enum ECgiChunkedTransfer {
+    eChunked_Default,   // Use the hardcoded settings.
+    eChunked_Disable,   // Don't use chunked encoding.
+    eChunked_Enable     // Enable chunked encoding for HTTP/1.1.
+};
+
+NCBI_PARAM_ENUM_ARRAY(ECgiChunkedTransfer, CGI, ChunkedTransfer)
+{
+    {"Disable", eChunked_Disable},
+    {"Enable", eChunked_Enable},
+};
+
+NCBI_PARAM_ENUM_DECL(ECgiChunkedTransfer, CGI, ChunkedTransfer);
+NCBI_PARAM_ENUM_DEF_EX(ECgiChunkedTransfer, CGI, ChunkedTransfer, eChunked_Default,
+    eParam_NoThread, CGI_CHUNKED_TRANSFER);
+typedef NCBI_PARAM_TYPE(CGI, ChunkedTransfer) TCGI_ChunkedTransfer;
+
+NCBI_PARAM_DECL(size_t, CGI, ChunkSize);
+NCBI_PARAM_DEF_EX(size_t, CGI, ChunkSize, 4096,
+    eParam_NoThread, CGI_CHUNK_SIZE);
+typedef NCBI_PARAM_TYPE(CGI, ChunkSize) TCGI_ChunkSize;
+
+
+size_t CCgiResponse::GetChunkSize(void)
+{
+    return TCGI_ChunkSize::GetDefault();
+}
+
+
+bool CCgiResponse::x_ClientSupportsChunkedTransfer(const CNcbiEnvironment& env)
+{
+    // Auto-enable chunked output for HTTP/1.1.
+    const string& protocol = env.Get("SERVER_PROTOCOL");
+    return !protocol.empty()  &&  !NStr::StartsWith(protocol, "HTTP/1.0", NStr::eNocase);
+}
+
+
+bool CCgiResponse::GetChunkedTransferEnabled(void) const
+{
+    switch ( TCGI_ChunkedTransfer::GetDefault() ) {
+    case eChunked_Default:
+        if ( !m_ChunkedTransfer ) return false;
+        break;
+    case eChunked_Disable:
+        return false;
+    default:
+        break;
+    }
+    return m_Request  &&
+        x_ClientSupportsChunkedTransfer(m_Request->GetEnvironment());
+}
+
+
+void CCgiResponse::SetChunkedTransferEnabled(bool value)
+{
+    if ( m_HeaderWritten ) {
+        // Ignore attempts to enable chunked transfer if HTTP header
+        // have been written.
+        ERR_POST_X(6, "Attempt to enable chunked transfer after writing "
+            "HTTP header");
+        return;
+    }
+    m_ChunkedTransfer = value;
+}
+
+
+void CCgiResponse::FinishChunkedTransfer(void)
+{
+    CCgiStreamWrapper* wrapper = dynamic_cast<CCgiStreamWrapper*>(m_Output);
+    if (wrapper  &&  wrapper->GetWriterMode() == CCgiStreamWrapper::eChunkedWrites) {
+        // Reset wrapper mode to normal if it was chunked. This will write end chunk
+        // and trailer.
+        wrapper->FinishChunkedTransfer(&m_TrailerValues);
+        // Block writes.
+        wrapper->SetWriterMode(CCgiStreamWrapper::eBlockWrites);
+    }
+}
+
+
+void CCgiResponse::AbortChunkedTransfer(void)
+{
+    CCgiStreamWrapper* wrapper = dynamic_cast<CCgiStreamWrapper*>(m_Output);
+    if (wrapper  &&  wrapper->GetWriterMode() == CCgiStreamWrapper::eChunkedWrites) {
+        wrapper->AbortChunkedTransfer();
+    }
+}
+
+
+bool CCgiResponse::CanSendTrailer(void) const
+{
+    if (m_HeaderWritten  ||  !GetChunkedTransferEnabled()) return false;
+    if ( !m_TrailerEnabled.get() ) {
+        m_TrailerEnabled.reset(new bool(false));
+        const string& te = m_Request->GetRandomProperty("TE");
+        list<string> parts;
+        NStr::Split(te, " ,", parts);
+        ITERATE(list<string>, it, parts) {
+            if (NStr::EqualNocase(*it, "trailers")) {
+                *m_TrailerEnabled = true;
+                break;
+            }
+        }
+    }
+    return *m_TrailerEnabled;
+}
+
+
+void CCgiResponse::AddTrailer(const string& name)
+{
+    if ( !CanSendTrailer() ) return;
+    m_TrailerValues[name] = "";
+}
+
+
+void CCgiResponse::RemoveTrailer(const string& name)
+{
+    m_TrailerValues.erase(name);
+}
+
+
+bool CCgiResponse::HaveTrailer(const string& name) const
+{
+    return m_TrailerValues.find(name) != m_TrailerValues.end();
+}
+
+
+string CCgiResponse::GetTrailerValue(const string &name) const
+{
+    TMap::const_iterator ptr = m_TrailerValues.find(name);
+    return (ptr == m_TrailerValues.end()) ? kEmptyStr : ptr->second;
+}
+
+
+void CCgiResponse::SetTrailerValue(const string& name, const string& value)
+{
+    if ( !HaveTrailer(name) ) {
+        ERR_POST_X(7, "Can not set trailer not announced in HTTP header: "
+            << name);
+        return;
+    }
+    if ( x_ValidateHeader(name, value) ) {
+        m_TrailerValues[name] = value;
+    }
+    else {
+        NCBI_THROW(CCgiResponseException, eBadHeaderValue,
+                    "CCgiResponse::SetTrailerValue() -- "
+                    "invalid trailer name or value: " +
+                    name + "=" + value);
     }
 }
 

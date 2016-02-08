@@ -122,6 +122,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
       m_StatusCode(CCgiException::eStatusNotSet)
 {
     m_Response.SetRequestMethod(m_Request->GetRequestMethod());
+    m_Response.SetCgiRequest(*m_Request);
 
     if (flags & CCgiRequest::fDisableTrackingCookie) {
         m_Response.DisableTrackingCookie();

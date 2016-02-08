@@ -208,6 +208,42 @@ public:
     /// Set retry headers from the context.
     void SetRetryContext(const CRetryContext& ctx);
 
+    void SetCgiRequest(const CCgiRequest& request);
+
+    /// Check/change chunked transfer encoding status. This flag is used only
+    /// if CGI_CHUNKED_TRANSFER is not set.
+    bool GetChunkedTransferEnabled(void) const;
+    void SetChunkedTransferEnabled(bool value);
+
+    static size_t GetChunkSize(void);
+
+    /// Finish chunked transfer, append zero chunk and trailers, if any.
+    /// All trailers must be set before calling this method.
+    void FinishChunkedTransfer(void);
+    /// Abort chunked transfer, block any writes to the output stream.
+    void AbortChunkedTransfer(void);
+
+    // Check if trailer can be sent: chunked transfer must be enabled
+    // and the request's TE header must include 'trailers'.
+    // All trailer getters/setters are no-op if this condition is false.
+    // This will always return false after FinishChunkedTransfer() has been
+    // called.
+    bool CanSendTrailer(void) const;
+    // Prepare to send trailer. This must be called before WriteHeader()
+    // to allow the trailer value to be set later.
+    // Some fields are not allowed to be sent as trailers - see RFC7230:
+    // https://tools.ietf.org/html/rfc7230#section-4.1.2
+    void AddTrailer(const string& name);
+    // Remove trailer. Must be called before WriteHeader().
+    void RemoveTrailer(const string& name);
+    // Check if trailer has been added and its value can be set.
+    bool   HaveTrailer(const string& name) const;
+    // Get current trailer value.
+    string GetTrailerValue(const string& name) const;
+    // Set trailer value. The trailer should have been added using
+    // AddTrailer().
+    void SetTrailerValue(const string& name, const string& value);
+
 public:
     void x_SetSession(const CCgiSession& session);
 
@@ -235,6 +271,7 @@ protected:
     bool           m_BetweenParts;      // Did we already print the boundary?
     string         m_Boundary;          // Multipart boundary
     TMap           m_HeaderValues;      // Header lines in alphabetical order
+    TMap           m_TrailerValues;     // Trailer lines (for chunked transfers)
     CCgiCookies    m_Cookies;           // Cookies
     CNcbiOstream*  m_Output;            // Default output stream
     int            m_OutputFD;          // Output file descriptor, if available
@@ -251,6 +288,8 @@ private:
     void x_RestoreOutputExceptions(void);
     bool x_ValidateHeader(const string& name, const string& value) const;
 
+    static bool x_ClientSupportsChunkedTransfer(const CNcbiEnvironment& env);
+
     const CCgiSession*   m_Session;
     auto_ptr<CCgiCookie> m_TrackingCookie;
     bool                 m_DisableTrackingCookie;
@@ -263,11 +302,14 @@ private:
     typedef NCBI_PARAM_TYPE(CGI, ExceptionAfterHEAD) TCGI_ExceptionAfterHEAD;
     TCGI_ExceptionAfterHEAD m_ExceptionAfterHEAD;
 
+    const CCgiRequest* m_Request;
+    bool m_ChunkedTransfer;
+    mutable auto_ptr<bool> m_TrailerEnabled;
+
     friend class CCgiContext; // to set m_JQuery_Callback
+    friend class CCgiApplication; // need x_ClientSupportsChunkedTransfer()
 
     string m_JQuery_Callback;
-
-    mutable auto_ptr<CCgiStreamWrapper> m_OutputWrapper;
 };
 
 
@@ -364,6 +406,11 @@ inline void CCgiResponse::RequireWriteHeader(bool require)
 inline bool CCgiResponse::IsHeaderWritten(void) const
 {
     return m_HeaderWritten;
+}
+
+inline void CCgiResponse::SetCgiRequest(const CCgiRequest& request)
+{
+    m_Request = &request;
 }
 
 inline void CCgiResponse::x_SetSession(const CCgiSession& session)

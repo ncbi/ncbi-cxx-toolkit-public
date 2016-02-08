@@ -143,8 +143,6 @@ public:
     ///  Optional parameters
     virtual ICgiSessionStorage* GetSessionStorage(CCgiSessionParameters& params) const;
 
-
-
 private:
     virtual ICache* GetCacheStorage() const;
     virtual bool IsCachingNeeded(const CCgiRequest& request) const;
@@ -397,6 +395,38 @@ protected:
     string           m_ErrMsg;     // Error message
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCgiStreamWrapper::
+//
+//    CGI stream with special processing.
+//
+
+class CCgiStreamWrapperWriter;
+
+class CCgiStreamWrapper : public CWStream
+{
+public:
+    enum EStreamMode {
+        eNormal,         // normal output - write all data as-is
+        eBlockWrites,    // block all writes after HEAD request
+        eChunkedWrites,  // chunked output mode
+    };
+
+    CCgiStreamWrapper(CNcbiOstream& out);
+
+    typedef map<string, string, PNocase> TTrailer;
+
+    // Access to writer's methods.
+    EStreamMode GetWriterMode(void);
+    void SetWriterMode(EStreamMode mode);
+    void SetCacheStream(CNcbiOstream& stream);
+    void FinishChunkedTransfer(const TTrailer* trailer);
+    void AbortChunkedTransfer(void);
+
+private:
+    CCgiStreamWrapperWriter* m_Writer;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
