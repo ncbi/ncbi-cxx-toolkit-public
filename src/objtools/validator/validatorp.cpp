@@ -1061,14 +1061,21 @@ void CValidError_imp::ValidateMultipleTaxIds(const CSeq_entry_Handle& seh)
             ++desc_ci) {
             if (desc_ci->GetSource().IsSetOrg()) {
                 const COrg_ref& org = desc_ci->GetSource().GetOrg();
-                int this_id = org.GetTaxId();
-                if (this_id > 0) {
-                    if (s_IsPhage(org)) {
-                        phage_id = this_id;
-                    } else if (first_id == 0) {
-                        first_id = this_id;
-                    } else if (first_id != this_id) {
-                        has_mult = true;
+                if (org.IsSetDb()) {
+                    ITERATE(COrg_ref::TDb, it, org.GetDb()) {
+                        if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "taxon") &&
+                            (*it)->IsSetTag() && (*it)->GetTag().IsId()) {
+                            int this_id = (*it)->GetTag().GetId();
+                            if (this_id > 0) {
+                                if (s_IsPhage(org)) {
+                                    phage_id = this_id;
+                                } else if (first_id == 0) {
+                                    first_id = this_id;
+                                } else if (first_id != this_id) {
+                                    has_mult = true;
+                                }
+                            }
+                        }
                     }
                 }
             }

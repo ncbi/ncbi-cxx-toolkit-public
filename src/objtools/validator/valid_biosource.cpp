@@ -2711,7 +2711,13 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     }
 
     if (org_rq_list.size() > 0) {
+#if 1
+        CTaxon3 taxon3;
+        taxon3.Init();
+        CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
+#else
         CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
+#endif
 
         if (!reply || !reply->IsSetReply()) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
@@ -2748,40 +2754,15 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                             if (NStr::Equal(taxname_rep, "unidentified")) {
                                 is_unidentified = true;
                             }
-                            if (orp_rep.IsSetDb() && orp_req.IsSetDb()) {
-                                int taxid_req = 0;
-                                int taxid_rep = 0;
-                                bool found_should_be_id = false;
-                                bool found_is_id = false;
-                                FOR_EACH_DBXREF_ON_ORGREF(q_itr, orp_req)
-                                {
-                                    const CDbtag& dbt = **q_itr;
-                                    if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "taxon") && dbt.IsSetTag()) {
-                                        const CObject_id& id = dbt.GetTag();
-                                        if (id.IsId()) {
-                                            taxid_req = id.GetId();
-                                            found_is_id = true;
-                                        }
-                                    }
-                                }
-                                FOR_EACH_DBXREF_ON_ORGREF(p_itr, orp_rep)
-                                {
-                                    const CDbtag& dbt = **p_itr;
-                                    if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "taxon") && dbt.IsSetTag()) {
-                                        const CObject_id& id = dbt.GetTag();
-                                        if (id.IsId()) {
-                                            taxid_rep = id.GetId();
-                                            found_should_be_id = true;
-                                        }
-                                    }
-                                }
-                                if (found_is_id && found_should_be_id && taxid_req != taxid_rep) {
-                                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem,
-                                        "Organism name is '" + taxname_req
-                                        + "', taxonomy ID should be '" + NStr::IntToString(taxid_rep)
-                                        + "' but is '" + NStr::IntToString(taxid_req) + "'",
-                                        **desc_it, *ctx_it);
-                                }
+                            int taxid_request = orp_req.GetTaxId();
+                            int taxid_reply = orp_rep.GetTaxId();
+
+                            if (taxid_request != 0 && taxid_reply != 0 && taxid_request != taxid_reply) {
+                                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem,
+                                    "Organism name is '" + taxname_req
+                                    + "', taxonomy ID should be '" + NStr::IntToString(taxid_reply)
+                                    + "' but is '" + NStr::IntToString(taxid_request) + "'",
+                                    **desc_it, *ctx_it);
                             }
                         }
                     }
