@@ -971,6 +971,18 @@ public:
         return x_Put(x);
     }
 
+    template<class X> inline
+    const CNcbiDiag& Put(const exception*, const X& x) const {
+        const CException* xp = dynamic_cast<const CException*>(&x);
+        if ( xp ) {
+            return x_Put(*xp);
+        }
+        else {
+            string s = x.what();
+            return Put(&s, s);
+        }
+    }
+
     /// Helper method to post stack trace to diagnostic stream using
     /// standard stack trace formatting.
     ///
