@@ -357,13 +357,14 @@ public:
         {
             data_verify.resize(ids.size());
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                CBioseq_Handle h = scope.GetBioseqHandle(ids[i]);
-                if ( h ) {
-                    string seq;
-                    h.GetSeqVector(h.eCoding_Iupac)
-                        .GetSeqData(0, kInvalidSeqPos, seq);
+                if ( CBioseq_Handle h = scope.GetBioseqHandle(ids[i]) ) {
                     CChecksum sum(CChecksum::eCRC32INSD);
-                    sum.AddChars(seq.data(), seq.size());
+                    CSeqVector sv(h, h.eCoding_Iupac);
+                    for ( CSeqVector_CI it(sv); it; ) {
+                        TSeqPos size = it.GetBufferSize();
+                        sum.AddChars(it.GetBufferPtr(), size);
+                        it += size;
+                    }
                     data_verify[i] = sum.GetChecksum();
                     scope.RemoveFromHistory(h);
                 }
