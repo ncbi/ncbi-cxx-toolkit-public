@@ -475,12 +475,14 @@ private:
 };
 
 #define NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version)       \
+BEGIN_NCBI_SCOPE                                                            \
 template <>                                                                 \
 const char* const CSimpleJobFactory<TWorkerNodeJob>::m_JobVersion =         \
     #TWorkerNodeJob " version " NCBI_AS_STRING(Version);                    \
 template <>                                                                 \
 const char* const CSimpleJobFactory<TWorkerNodeJob>::m_AppName =            \
     #TWorkerNodeJob;                                                        \
+END_NCBI_SCOPE
 
 #define NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version)            \
 typedef CSimpleJobFactory<TWorkerNodeJob> TWorkerNodeJob##Factory;          \
