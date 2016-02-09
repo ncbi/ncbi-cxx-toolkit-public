@@ -59,7 +59,11 @@ DISCREPANCY_MODULE(sesame_street);
 
 DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal than others...")
 {
-    CRef<CDiscrepancyObject> disc_obj(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
+    if (desc.IsNull()) {
+        return;
+    }
+    CRef<CDiscrepancyObject> disc_obj(new CDiscrepancyObject(desc, context.GetScope(), context.GetFile(), context.GetKeepRef()));
     m_Objs["all"].Add(*disc_obj);
     if (obj.CanGetGenome()) {
         m_Objs["location"][context.GetGenomeName(obj.GetGenome())].Add(*disc_obj);
@@ -199,8 +203,8 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
     const CSourseQualsAutofixData* fix = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
-        const CBioseq* bs = dynamic_cast<const CBioseq*>(obj.GetObject().GetPointer());
-        const CBioSource* biosrc = sequence::GetBioSource(*bs);
+        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(obj.GetObject().GetPointer());
+        //const CBioSource* biosrc = sequence::GetBioSource(*bs);
         //if (biosrc) {
         //GetSrcQualValue4FieldType(*biosrc, field_type.GetSource_qual(), &str_cons);
         //}

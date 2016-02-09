@@ -222,6 +222,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
         return true;                                                                            \
     }
     REGISTER_DISCREPANCY_TYPE(CSeq_inst)
+    REGISTER_DISCREPANCY_TYPE(CSeqdesc)
     REGISTER_DISCREPANCY_TYPE(CSeq_feat)
     REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
     REGISTER_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
@@ -272,10 +273,12 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
     CTypesConstIterator i;
     CType<CBioseq>::AddTo(i);
     CType<CBioseq_set>::AddTo(i);
+    CType<CSeqdesc>::AddTo(i);
     CType<CSeq_feat>::AddTo(i);
     CType<CSeq_annot>::AddTo(i);
 #define ENABLE_DISCREPANCY_TYPE(type) if (m_Enable_##type) CType<type>::AddTo(i);
     ENABLE_DISCREPANCY_TYPE(CSeq_inst)
+    // ENABLE_DISCREPANCY_TYPE(CSeqdesc) - don't need!
     // ENABLE_DISCREPANCY_TYPE(CSeq_feat) - don't need!
     ENABLE_DISCREPANCY_TYPE(CSeqFeatData)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ), it is handled separately!
@@ -336,12 +339,26 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
                 }
             }
         }
+        else if (CType<CSeqdesc>::Match(i)) {
+            //cout << "CSeqdesc !!!" << endl;
+            m_Current_Seq_feat.Reset();
+            m_Current_Seqdesc.Reset(CType<CSeqdesc>::Get(i));
+            m_Count_Seqdesc++;
+            if (m_Enable_CSeqdesc) {
+                const CSeqdesc& obj = *CType<CSeqdesc>::Get(i);
+                NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeqdesc>* >, it, m_All_CSeqdesc) {
+                    Call(**it, obj);
+                }
+            }
+        }
         else if (CType<CSeq_feat>::Match(i)) {
-            m_Current_Seq_feat.Reset(m_Scope->GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
+            //m_Current_Seq_feat.Reset(m_Scope->GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
+            m_Current_Seq_feat.Reset(CType<CSeq_feat>::Get(i));
+            m_Current_Seqdesc.Reset();
             m_Count_Seq_feat++;
             if (m_Enable_CSeq_feat) {
                 const CSeq_feat& obj = *CType<CSeq_feat>::Get(i);
-                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSeq_feat>* >, it, m_All_CSeq_feat) {
+                NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeq_feat>* >, it, m_All_CSeq_feat) {
                     Call(**it, obj);
                 }
             }

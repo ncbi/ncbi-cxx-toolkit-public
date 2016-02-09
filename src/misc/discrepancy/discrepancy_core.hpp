@@ -112,11 +112,19 @@ public:
             DropReference();
         }
     }
+    CDiscrepancyObject(CConstRef<CSeqdesc> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
+    {
+        SetFilename(filename);
+        SetText(scope);
+        if (!keep_ref) {
+            DropReference();
+        }
+    }
     CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
     {
         SetFilename(filename);
         SetText(scope);
-        if(!keep_ref) {
+        if (!keep_ref) {
             DropReference();
         }
     }
@@ -264,6 +272,7 @@ public:
             m_Count_Seq_feat(0),
 #define INIT_DISCREPANCY_TYPE(type) m_Enable_##type(false)
             INIT_DISCREPANCY_TYPE(CSeq_inst),
+            INIT_DISCREPANCY_TYPE(CSeqdesc),
             INIT_DISCREPANCY_TYPE(CSeq_feat),
             INIT_DISCREPANCY_TYPE(CSeqFeatData),
             INIT_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ),
@@ -284,8 +293,9 @@ public:
     CConstRef<CBioseq> GetCurrentBioseq(void) const;
     CConstRef<CBioseq_set> GetCurrentBioseq_set(void) const { return m_Bioseq_set_Stack.empty() ? CConstRef<CBioseq_set>(0) : m_Bioseq_set_Stack.back(); }
     const vector<CConstRef<CBioseq_set> > &Get_Bioseq_set_Stack(void) const { return m_Bioseq_set_Stack; }
+    CConstRef<CSeqdesc> GetCurrentSeqdesc(void) const { return m_Current_Seqdesc; }
     CConstRef<CSeq_feat> GetCurrentSeq_feat(void) const { return m_Current_Seq_feat; }
-    size_t GetCountBioseq(void) const { return m_Count_Bioseq;}
+    size_t GetCountBioseq(void) const { return m_Count_Bioseq; }
     size_t GetCountSeq_feat(void) const { return m_Count_Seq_feat;}
     objects::CScope& GetScope(void) const { return const_cast<objects::CScope&>(*m_Scope);}
 
@@ -316,17 +326,20 @@ protected:
     TDiscrepancyCaseMap m_Tests;
     vector<CConstRef<CBioseq_set> > m_Bioseq_set_Stack;
     CConstRef<CBioseq> m_Current_Bioseq;
+    CConstRef<CSeqdesc> m_Current_Seqdesc;
     CConstRef<CSeq_feat> m_Current_Seq_feat;
     CConstRef<CSuspect_rule_set> m_ProductRules;
     CConstRef<CSuspect_rule_set> m_OrganelleProductRules;
     string m_SuspectRules;
     size_t m_Count_Bioseq;
+    size_t m_Count_Seqdesc;
     size_t m_Count_Seq_feat;
     bool m_Feat_CI;
     TReportObjectList m_NaSeqs;
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)
+    ADD_DISCREPANCY_TYPE(CSeqdesc)
     ADD_DISCREPANCY_TYPE(CSeq_feat)
     ADD_DISCREPANCY_TYPE(CSeqFeatData)
     ADD_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
