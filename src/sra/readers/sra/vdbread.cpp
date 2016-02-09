@@ -82,6 +82,18 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 
+NCBI_PARAM_DECL(int, VDB, DIAG_HANDLER);
+NCBI_PARAM_DEF(int, VDB, DIAG_HANDLER, 1);
+
+
+static int s_GetDiagHandler(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(VDB, DIAG_HANDLER)> s_Value;
+    return s_Value->Get();
+}
+
+
+
 DEFINE_SRA_REF_TRAITS(VDBManager, const);
 DEFINE_SRA_REF_TRAITS(VDatabase, const);
 DEFINE_SRA_REF_TRAITS(VTable, const);
@@ -436,9 +448,11 @@ void CVDBMgr::x_Init(void)
                            sdk_ver);
 
     // redirect VDB log to C++ Toolkit
-    KLogInit();
-    KLogLevelSet(klogDebug);
-    KLogLibHandlerSet(VDBLogWriter, 0);
+    if ( s_GetDiagHandler() ) {
+        KLogInit();
+        KLogLevelSet(klogDebug);
+        KLogLibHandlerSet(VDBLogWriter, 0);
+    }
 
     if ( app ) {
         string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
