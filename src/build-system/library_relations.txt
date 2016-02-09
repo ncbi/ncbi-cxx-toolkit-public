@@ -1071,7 +1071,7 @@ sybtcl64 needs3party sybunic64
 sybunic64 needs3party $(ORIG_LIBS)
 tables needs3party $(ORIG_LIBS)
 tax_assignment_region needs gpipe_objutil
-tax_xml needs gpipe_objutil
+tax_xml needs $(GPIPE_GENCOLL_LIBS)
 taxon needs xser
 taxon1 needs $(SEQ_LIBS)
 taxon1 needs pub
