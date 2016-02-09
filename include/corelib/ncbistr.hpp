@@ -2609,10 +2609,17 @@ public:
                                 TSplitFlags          flags = 0,
                                 vector<SIZE_TYPE>*   token_pos = NULL);
 
-    static vector<CTempStringEx>& SplitByPattern(
+    static list<CTempString>& SplitByPattern(
                                 const CTempString    str,
                                 const CTempString    delim,
-                                vector<CTempStringEx>& arr,
+                                list<CTempString>&   arr,
+                                TSplitFlags          flags = 0,
+                                vector<SIZE_TYPE>*   token_pos = NULL);
+
+    static vector<CTempString>& SplitByPattern(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                vector<CTempString>& arr,
                                 TSplitFlags          flags = 0,
                                 vector<SIZE_TYPE>*   token_pos = NULL);
 
@@ -2620,6 +2627,13 @@ public:
                                 const CTempString    str,
                                 const CTempString    delim,
                                 list<CTempStringEx>& arr,
+                                TSplitFlags          flags = 0,
+                                vector<SIZE_TYPE>*   token_pos = NULL);
+
+    static vector<CTempStringEx>& SplitByPattern(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                vector<CTempStringEx>& arr,
                                 TSplitFlags          flags = 0,
                                 vector<SIZE_TYPE>*   token_pos = NULL);
 

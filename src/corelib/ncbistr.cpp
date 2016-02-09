@@ -3397,26 +3397,34 @@ vector<string>& NStr::SplitByPattern(const CTempString str, const CTempString de
     return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos);
 }
 
-vector<CTempStringEx>& NStr::SplitByPattern(const CTempString str, const CTempString delim,
-                                          vector<CTempStringEx>& arr, TSplitFlags flags,
+list<CTempString>& NStr::SplitByPattern(const CTempString str, const CTempString delim,
+                                        list<CTempString>& arr, TSplitFlags flags,
+                                        vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos);
+}
+
+vector<CTempString>& NStr::SplitByPattern(const CTempString str, const CTempString delim,
+                                          vector<CTempString>& arr, TSplitFlags flags,
                                           vector<SIZE_TYPE>* token_pos)
 {
-    vector<CTempStringEx> arr2;
-    s_Split(str, delim, arr2, fSplit_ByPattern | flags, token_pos);
-    arr.reserve(arr.size() + arr2.size());
-    ITERATE (vector<CTempStringEx>, it, arr2) {
-        arr.push_back(*it);
-    }
-    return arr;
+    return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos);
 }
 
 list<CTempStringEx>& NStr::SplitByPattern(const CTempString str, const CTempString delim,
                                         list<CTempStringEx>& arr, TSplitFlags flags,
                                         vector<SIZE_TYPE>* token_pos)
 {
-    s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos);
-    return arr;
+    return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos);
 }
+
+vector<CTempStringEx>& NStr::SplitByPattern(const CTempString str, const CTempString delim,
+                                          vector<CTempStringEx>& arr, TSplitFlags flags,
+                                          vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos);
+}
+
 
 
 /// @deprecated
