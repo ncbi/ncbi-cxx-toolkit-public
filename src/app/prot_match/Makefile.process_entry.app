@@ -3,11 +3,11 @@
 # Author:  Justin Foley
 #################################
 
-# Build application "get_genome_seq"
+# Build application "process_entry"
 #################################
 
-APP = get_genome_seq
-SRC = get_genome_seq
+APP = process_entry
+SRC = process_entry
 LIB = xobjwrite variation_utils $(OBJREAD_LIBS) xalnmgr xobjutil \
       gbseq entrez2cli entrez2 tables $(OBJMGR_LIBS)
 

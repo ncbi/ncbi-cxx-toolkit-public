@@ -32,37 +32,38 @@ public:
     void Init();
     int Run();
 
+    typedef list<CRef<CSeq_annot> > TMatches;
+
 private:
-    bool xGenerateMatchTable(const list<CRef<CSeq_annot> >& matches);
-    bool xTryProcessInputFile(const CArgs& args, list<CRef<CSeq_annot> >& matches);
-    CObjectIStream* xInitInputStream(const CArgs& args) const;
-    bool xIsCdsComparison(const CSeq_annot& seq_annot) const;
-    bool xIsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot) const;
-    bool xIsGoodGloballyReciprocalBest(const CUser_object& user_obj) const;
-    bool xIsProteinMatch(const CSeq_annot& seq_annot) const;
-    CAnnotdesc::TName xGetComparisonClass(const CSeq_annot& seq_annot) const;
-    bool xGetGGRBThreshold(const CSeq_annot& annot, double& threshold) const;
-    bool xGetGGRBThreshold(const CUser_object& user_object, double& threshold) const;
-    string xGetAccessionVersion(const CSeq_feat& seq_feat) const;
-    string xGetAccessionVersion(const CUser_object& obj) const;
-    string xGetAccessionVersion(const CSeq_annot& seq_annot) const;
+    bool x_GenerateMatchTable(const TMatches& matches);
+    bool x_TryProcessInputFile(const CArgs& args, TMatches& matches);
+    CObjectIStream* x_InitInputStream(const CArgs& args) const;
+    bool x_IsCdsComparison(const CSeq_annot& seq_annot) const;
+    bool x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot) const;
+    bool x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const;
+    bool x_IsProteinMatch(const CSeq_annot& seq_annot) const;
+    CAnnotdesc::TName x_GetComparisonClass(const CSeq_annot& seq_annot) const;
+    bool x_GetGGRBThreshold(const CSeq_annot& annot, double& threshold) const;
+    bool x_GetGGRBThreshold(const CUser_object& user_object, double& threshold) const;
+    string x_GetAccessionVersion(const CSeq_feat& seq_feat) const;
+    string x_GetAccessionVersion(const CUser_object& obj) const;
+    string x_GetAccessionVersion(const CSeq_annot& seq_annot) const;
 
-    string xGetLocalID(const CUser_object& obj) const;
-    string xGetLocalID(const CSeq_feat& seq_feat) const;
-    string xGetLocalID(const CSeq_annot& seq_annot) const;
+    string x_GetLocalID(const CUser_object& obj) const;
+    string x_GetLocalID(const CSeq_feat& seq_feat) const;
+    string x_GetLocalID(const CSeq_annot& seq_annot) const;
 
-    string xGetProductGI(const CSeq_annot& seq_annot) const;
-    string xGetProductGI(const CSeq_feat& seq_feat) const;
+    string x_GetProductGI(const CSeq_annot& seq_annot) const;
+    string x_GetProductGI(const CSeq_feat& seq_feat) const;
 
-    void xAddColumn(const string& colName); 
+    void x_AddColumn(const string& colName); 
 
-    void xAppendColumnValue(const string& colName,
+    void x_AppendColumnValue(const string& colName,
                             const string& colVal);
 
+    void x_WriteTable(CNcbiOstream& out);
 
-    void xFormatTabDelimited(CNcbiOstream& out);
-
-    CNcbiOstream* xInitOutputStream(const CArgs& args);
+    CNcbiOstream* x_InitOutputStream(const CArgs& args);
 
 
     CRef<CSeq_table> mMatchTable;
@@ -72,7 +73,7 @@ private:
 
 
 
-bool CProteinMatchApp::xIsCdsComparison(const CSeq_annot& seq_annot) const
+bool CProteinMatchApp::x_IsCdsComparison(const CSeq_annot& seq_annot) const
 {
     if (!seq_annot.IsFtable() ||
         seq_annot.GetData().GetFtable().size() != 2) {
@@ -93,7 +94,7 @@ bool CProteinMatchApp::xIsCdsComparison(const CSeq_annot& seq_annot) const
 }
 
 
-bool CProteinMatchApp::xIsGoodGloballyReciprocalBest(const CUser_object& user_obj) const
+bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const
 {
    if (!user_obj.IsSetType() ||
        !user_obj.IsSetData() ||
@@ -123,14 +124,10 @@ bool CProteinMatchApp::xIsGoodGloballyReciprocalBest(const CUser_object& user_ob
 
 
 
-bool CProteinMatchApp::xIsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot) const 
+bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot) const 
 {
 
     if (seq_annot.IsSetDesc()) {
-        // Iterate over annot descriptors. 
-        // Find one that is user object
-        // Find data label with "good_globally_reciprocal_best" 
-        // and data == TRUE
         ITERATE(CAnnot_descr::Tdata, desc_it, seq_annot.GetDesc().Get()) {
             if (!(*desc_it)->IsUser()) {
                 continue;
@@ -143,7 +140,7 @@ bool CProteinMatchApp::xIsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot
                 continue;
             }
 
-            if (xIsGoodGloballyReciprocalBest(user)) {
+            if (x_IsGoodGloballyReciprocalBest(user)) {
                 return true;
             }
         }
@@ -153,7 +150,7 @@ bool CProteinMatchApp::xIsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot
 }
 
 
-bool CProteinMatchApp::xGetGGRBThreshold(const CSeq_annot& seq_annot, double& threshold) const 
+bool CProteinMatchApp::x_GetGGRBThreshold(const CSeq_annot& seq_annot, double& threshold) const 
 {
     if (seq_annot.IsSetDesc()) {
 
@@ -169,7 +166,7 @@ bool CProteinMatchApp::xGetGGRBThreshold(const CSeq_annot& seq_annot, double& th
                 continue;
             }
 
-            if (xGetGGRBThreshold(user, threshold)) {
+            if (x_GetGGRBThreshold(user, threshold)) {
                 return true;
             }
         }
@@ -180,7 +177,7 @@ bool CProteinMatchApp::xGetGGRBThreshold(const CSeq_annot& seq_annot, double& th
 
 
 
-bool CProteinMatchApp::xGetGGRBThreshold(const CUser_object& user_obj, double& threshold) const
+bool CProteinMatchApp::x_GetGGRBThreshold(const CUser_object& user_obj, double& threshold) const
 {
    if (!user_obj.IsSetType() ||
        !user_obj.IsSetData() ||
@@ -209,7 +206,7 @@ bool CProteinMatchApp::xGetGGRBThreshold(const CUser_object& user_obj, double& t
 }
 
 
-CAnnotdesc::TName CProteinMatchApp::xGetComparisonClass(const CSeq_annot& seq_annot) const 
+CAnnotdesc::TName CProteinMatchApp::x_GetComparisonClass(const CSeq_annot& seq_annot) const 
 {
     if (seq_annot.IsSetDesc() &&
         seq_annot.GetDesc().IsSet() &&
@@ -221,23 +218,23 @@ CAnnotdesc::TName CProteinMatchApp::xGetComparisonClass(const CSeq_annot& seq_an
 }
 
 
-bool CProteinMatchApp::xIsProteinMatch(const CSeq_annot& seq_annot) const
+bool CProteinMatchApp::x_IsProteinMatch(const CSeq_annot& seq_annot) const
 {
-    return xIsCdsComparison(seq_annot) && xIsGoodGloballyReciprocalBest(seq_annot);
+    return x_IsCdsComparison(seq_annot) && x_IsGoodGloballyReciprocalBest(seq_annot);
 }
 
 
-string CProteinMatchApp::xGetAccessionVersion(const CSeq_annot& seq_annot) const 
+string CProteinMatchApp::x_GetAccessionVersion(const CSeq_annot& seq_annot) const 
 {
     string result = "";
 
     const CRef<CSeq_feat>& first = seq_annot.GetData().GetFtable().front();
     const CRef<CSeq_feat>& second = seq_annot.GetData().GetFtable().back();
 
-    result = xGetAccessionVersion(*first);
+    result = x_GetAccessionVersion(*first);
 
     if (result.empty()) {
-        result = xGetAccessionVersion(*second);
+        result = x_GetAccessionVersion(*second);
     }
 
     return result;
@@ -245,13 +242,13 @@ string CProteinMatchApp::xGetAccessionVersion(const CSeq_annot& seq_annot) const
 
 
 
-string CProteinMatchApp::xGetAccessionVersion(const CSeq_feat& seq_feat) const 
+string CProteinMatchApp::x_GetAccessionVersion(const CSeq_feat& seq_feat) const 
 {
     if (seq_feat.IsSetExts()) {
         ITERATE(CSeq_feat::TExts, it, seq_feat.GetExts()) {
             const CUser_object& usr_obj = **it;
 
-                string acc_ver = xGetAccessionVersion(usr_obj);
+                string acc_ver = x_GetAccessionVersion(usr_obj);
                 if (!acc_ver.empty()) {
                     return acc_ver;
                 }
@@ -261,23 +258,23 @@ string CProteinMatchApp::xGetAccessionVersion(const CSeq_feat& seq_feat) const
     return "";
 }
 
-string CProteinMatchApp::xGetProductGI(const CSeq_annot& seq_annot) const
+string CProteinMatchApp::x_GetProductGI(const CSeq_annot& seq_annot) const
 {
     string result = "";
 
     const CRef<CSeq_feat>& first = seq_annot.GetData().GetFtable().front();
     const CRef<CSeq_feat>& second = seq_annot.GetData().GetFtable().back();
 
-    result = xGetProductGI(*first);
+    result = x_GetProductGI(*first);
 
     if (result.empty()) {
-        result = xGetProductGI(*second);
+        result = x_GetProductGI(*second);
     }
 
     return result;
 }
 
-string CProteinMatchApp::xGetProductGI(const CSeq_feat& seq_feat) const 
+string CProteinMatchApp::x_GetProductGI(const CSeq_feat& seq_feat) const 
 {
     string result = "";
 
@@ -297,24 +294,24 @@ string CProteinMatchApp::xGetProductGI(const CSeq_feat& seq_feat) const
 }
 
 
-string CProteinMatchApp::xGetLocalID(const CSeq_annot& seq_annot) const 
+string CProteinMatchApp::x_GetLocalID(const CSeq_annot& seq_annot) const 
 {
     string result = "";
 
     const CRef<CSeq_feat>& first = seq_annot.GetData().GetFtable().front();
     const CRef<CSeq_feat>& second = seq_annot.GetData().GetFtable().back();
 
-    result = xGetLocalID(*first);
+    result = x_GetLocalID(*first);
 
     if (result.empty()) {
-        result = xGetLocalID(*second);
+        result = x_GetLocalID(*second);
     }
 
     return result;
 }
 
 
-string CProteinMatchApp::xGetLocalID(const CSeq_feat& seq_feat) const 
+string CProteinMatchApp::x_GetLocalID(const CSeq_feat& seq_feat) const 
 {
     string result = "";
     
@@ -333,8 +330,8 @@ string CProteinMatchApp::xGetLocalID(const CSeq_feat& seq_feat) const
 }
 
 
-// revisit xGetLocalID
-string CProteinMatchApp::xGetAccessionVersion(const CUser_object& user_obj) const 
+// revisit x_GetLocalID
+string CProteinMatchApp::x_GetAccessionVersion(const CUser_object& user_obj) const 
 {
    if (!user_obj.IsSetType() ||
        !user_obj.IsSetData() ||
@@ -364,7 +361,7 @@ string CProteinMatchApp::xGetAccessionVersion(const CUser_object& user_obj) cons
 }
 
 
-string CProteinMatchApp::xGetLocalID(const CUser_object& user_obj) const 
+string CProteinMatchApp::x_GetLocalID(const CUser_object& user_obj) const 
 {
     if (!user_obj.IsSetType() ||
         !user_obj.IsSetData() ||
@@ -426,29 +423,25 @@ int CProteinMatchApp::Run()
 {
     const CArgs& args = GetArgs();
 
-    list<CRef<CSeq_annot> > matches;
-    xTryProcessInputFile(args, matches);
+    TMatches matches;
+    x_TryProcessInputFile(args, matches);
+    x_GenerateMatchTable(matches);
 
-    xGenerateMatchTable(matches);
+    CNcbiOstream* pOs = x_InitOutputStream(args);
 
-
-    CNcbiOstream* pOs = xInitOutputStream(args);
-
-    xFormatTabDelimited(*pOs);
+    x_WriteTable(*pOs);
 
     return 0;    
 }
 
 
 
-
-
-bool CProteinMatchApp::xTryProcessInputFile(
+bool CProteinMatchApp::x_TryProcessInputFile(
         const CArgs& args,
-        list<CRef<CSeq_annot> >& matches) 
+        TMatches& matches) 
 {
     auto_ptr<CObjectIStream> pObjIstream;
-    pObjIstream.reset(xInitInputStream(args));
+    pObjIstream.reset(x_InitInputStream(args));
 
     while (!pObjIstream->EndOfData()) {
         CRef<CSeq_annot> pSeqAnnot(new CSeq_annot());
@@ -458,7 +451,7 @@ bool CProteinMatchApp::xTryProcessInputFile(
         catch (CException&) {
             return false;
         }
-        if (xIsProteinMatch(*pSeqAnnot)) {
+        if (x_IsProteinMatch(*pSeqAnnot)) {
             matches.push_back(pSeqAnnot);
         }
     }
@@ -468,7 +461,7 @@ bool CProteinMatchApp::xTryProcessInputFile(
 
 
 
-void CProteinMatchApp::xAddColumn(const string& colName)
+void CProteinMatchApp::x_AddColumn(const string& colName)
 {
     CRef<CSeqTable_column> pColumn(new CSeqTable_column());
     pColumn->SetHeader().SetField_name(colName);
@@ -480,7 +473,7 @@ void CProteinMatchApp::xAddColumn(const string& colName)
 
 
 
-void CProteinMatchApp::xAppendColumnValue(
+void CProteinMatchApp::x_AppendColumnValue(
         const string& colName,
         const string& colVal)
 {
@@ -491,27 +484,27 @@ void CProteinMatchApp::xAppendColumnValue(
 
 
 
-bool CProteinMatchApp::xGenerateMatchTable(
-        const list<CRef<CSeq_annot> >& matches) 
+bool CProteinMatchApp::x_GenerateMatchTable(
+        const TMatches& matches) 
 {
-    xAddColumn("LocalID");
-    xAddColumn("AccVer");
-    xAddColumn("GI");
-    xAddColumn("CompClass");
+    x_AddColumn("LocalID");
+    x_AddColumn("AccVer");
+    x_AddColumn("GI");
+    x_AddColumn("CompClass");
 
     // Iterate over match Seq-annots
-    list<CRef<CSeq_annot> >::const_iterator cit;
+    TMatches::const_iterator cit;
 
     for (cit=matches.begin(); cit != matches.end(); ++cit) {
-        string localID = xGetLocalID(**cit);
-        string gi = xGetProductGI(**cit);
-        string accver = xGetAccessionVersion(**cit);
-        string compClass = xGetComparisonClass(**cit);
+        string localID = x_GetLocalID(**cit);
+        string gi = x_GetProductGI(**cit);
+        string accver = x_GetAccessionVersion(**cit);
+        string compClass = x_GetComparisonClass(**cit);
 
-        xAppendColumnValue("LocalID", localID);
-        xAppendColumnValue("AccVer", accver);
-        xAppendColumnValue("GI", gi);
-        xAppendColumnValue("CompClass", compClass);
+        x_AppendColumnValue("LocalID", localID);
+        x_AppendColumnValue("AccVer", accver);
+        x_AppendColumnValue("GI", gi);
+        x_AppendColumnValue("CompClass", compClass);
 
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
@@ -520,7 +513,7 @@ bool CProteinMatchApp::xGenerateMatchTable(
 }
 
 
-void CProteinMatchApp::xFormatTabDelimited(
+void CProteinMatchApp::x_WriteTable(
         CNcbiOstream& out)
 {
 
@@ -575,7 +568,7 @@ void CProteinMatchApp::xFormatTabDelimited(
 }
 
 
-CObjectIStream* CProteinMatchApp::xInitInputStream(const CArgs& args) const
+CObjectIStream* CProteinMatchApp::x_InitInputStream(const CArgs& args) const
 {
     ESerialDataFormat serial = eSerial_AsnBinary;
     if (args["text-input"]) {
@@ -608,7 +601,7 @@ CObjectIStream* CProteinMatchApp::xInitInputStream(const CArgs& args) const
 }
 
 
-CNcbiOstream* CProteinMatchApp::xInitOutputStream(const CArgs& args)
+CNcbiOstream* CProteinMatchApp::x_InitOutputStream(const CArgs& args)
 {
     if (!args["o"]) {
         return &cout;

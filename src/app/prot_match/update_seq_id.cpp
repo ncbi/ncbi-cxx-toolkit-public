@@ -627,7 +627,6 @@ void CSeqIdUpdateApp::x_UpdateSeqFeat(const TIdMap& id_map,
 
 
 
-
 void CSeqIdUpdateApp::x_UpdateSeqEntry(const TIdMap& id_map,
                                        CSeq_entry_Handle& tlseh) 
 {
