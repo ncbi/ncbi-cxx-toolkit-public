@@ -100,7 +100,8 @@ void CHttpSessionApp::Init()
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "HTTP session sample application");
-        
+
+    arg_desc->AddFlag("http-11", "Use HTTP/1.1 protocol", true);
     arg_desc->AddFlag("print-headers", "Print HTTP response headers", true);
     arg_desc->AddFlag("print-cookies", "Print HTTP cookies", true);
     arg_desc->AddFlag("print-body", "Print HTTP response body", true);
@@ -143,11 +144,15 @@ int CHttpSessionApp::Run(void)
     m_PrintHeaders = args["print-headers"];
     m_PrintCookies = args["print-cookies"];
     m_PrintBody = args["print-body"];
+    bool http11 = args["http-11"];
 
     // Setup secure connections.
     SOCK_SetupSSL(NcbiSetupGnuTls);
 
     CHttpSession session;
+    if ( http11 ) {
+        session.SetProtocol(CHttpSession::eHTTP_11);
+    }
 
     bool skip_defaults = false;
     if ( args["head"] ) {

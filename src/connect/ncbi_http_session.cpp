@@ -619,6 +619,9 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
             "An attempt to execute HTTP request already being executed");
     }
     SConnNetInfo* connnetinfo = ConnNetInfo_Create(0);
+    if (m_Session->GetProtocol() == CHttpSession::eHTTP_11) {
+        connnetinfo->version = 1;
+    }
     connnetinfo->req_method = m_Method;
 
     // Save headers set automatically (e.g. from CONN_HTTP_USER_HEADER).
@@ -774,7 +777,8 @@ CHttpRequest& CHttpRequest::SetTimeout(unsigned int sec,
 
 
 CHttpSession::CHttpSession(void)
-    : m_HttpFlags(0)
+    : m_Protocol(eHTTP_10),
+      m_HttpFlags(0)
 {
 }
 

@@ -537,7 +537,7 @@ public:
         eHead = eReqMethod_Head,
         eGet  = eReqMethod_Get,
         ePost = eReqMethod_Post,
-        ePut = eReqMethod_Put
+        ePut  = eReqMethod_Put
     };
 
     /// Initialize request. This does not open connection to the server.
@@ -591,6 +591,16 @@ public:
     /// Get all stored cookies, non-const.
     CHttpCookies& Cookies(void) { return m_Cookies; }
 
+    /// HTTP protocol version.
+    enum EProtocol {
+        eHTTP_10, ///< HTTP/1.0
+        eHTTP_11  ///< HTTP/1.1
+    };
+
+    /// Get protocol version.
+    EProtocol GetProtocol(void) const { return m_Protocol; }
+    void SetProtocol(EProtocol protocol) { m_Protocol = protocol; }
+
     /// Get flags passed to CConn_HttpStream.
     /// @sa SetHttpFlags
     THTTP_Flags GetHttpFlags(void) const { return m_HttpFlags; }
@@ -612,6 +622,7 @@ private:
     // Get a single 'Cookie' header line for the url.
     string x_GetCookies(const CUrl& url) const;
 
+    EProtocol    m_Protocol;
     THTTP_Flags  m_HttpFlags;
     CHttpCookies m_Cookies;
 };
