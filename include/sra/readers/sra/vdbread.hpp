@@ -460,6 +460,15 @@ public:
         eMissing_Allow
     };
 
+    enum {
+        kInvalidIndex = TVDBColumnIdx(~0)
+    };
+
+    CVDBColumn(void)
+        : m_Name(0),
+          m_Index(kInvalidIndex)
+        {
+        }
     CVDBColumn(const CVDBCursor& cursor,
                const char* name,
                EMissing missing)
@@ -487,9 +496,6 @@ public:
             return m_Name;
         }
     
-    enum {
-        kInvalidIndex = TVDBColumnIdx(~0)
-    };
     DECLARE_OPERATOR_BOOL(m_Index != kInvalidIndex);
 
     TVDBColumnIdx GetIndex(void) const
@@ -520,6 +526,9 @@ template<size_t ElementBitSize>
 class CVDBColumnBits : public CVDBColumn
 {
 public:
+    CVDBColumnBits(void)
+        {
+        }
     CVDBColumnBits(const CVDBCursor& cursor,
                    const char* name,
                    const char* backup_name = NULL,
