@@ -1084,6 +1084,7 @@ private:
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat, bool &nonsense_intron);
+    void x_ReportUnnecessaryAlternativeStartCodonException(const CSeq_feat& feat);
     void CheckForThreeBaseNonsense (const CSeq_feat& feat, const CSeq_id& id, const CCdregion& cdr, TSeqPos start, TSeqPos stop, ENa_strand strand, bool &nonsense_intron);
     void TranslateTripletIntrons (const CSeq_feat& feat, const CCdregion& cdr, bool &nonsense_intron);
     bool ValidateCdRegionTranslation (const CSeq_feat& feat, const string& transl_prot, bool report_errors, bool unclassified_except, bool& has_errors, bool& other_than_mismatch, bool& reported_bad_start_codon, bool& prot_ok, bool &nonsense_intron);
