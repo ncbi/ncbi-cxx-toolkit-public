@@ -1137,13 +1137,13 @@ CSeq_inst::TMol CID2WGSProcessor_Impl::GetType(SWGSSeqInfo& seq)
         return CSeq_inst::eMol_not_set;
     }
     if ( seq.IsContig() ) {
-        return CSeq_inst::eMol_na;
+        return GetWGSDb(seq)->GetContigMolType();
     }
     if ( seq.IsScaffold() ) {
-        return CSeq_inst::eMol_na;
+        return GetWGSDb(seq)->GetScaffoldMolType();
     }
     if ( seq.IsProtein() ) {
-        return CSeq_inst::eMol_aa;
+        return GetWGSDb(seq)->GetProteinMolType();
     }
     return CSeq_inst::eMol_not_set;
 }

@@ -788,7 +788,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq9)
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
     CBioseq_Handle bh = scope.GetBioseqHandle(idh);
     BOOST_REQUIRE(bh);
-    BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    //BOOST_CHECK_EQUAL(bh.GetState(), bh.fState_dead);
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
@@ -809,7 +809,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq9_2)
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
     CBioseq_Handle bh = scope.GetBioseqHandle(idh);
     BOOST_REQUIRE(bh);
-    BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    //BOOST_CHECK_EQUAL(bh.GetState(), bh.fState_dead);
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
@@ -1003,6 +1003,36 @@ BOOST_AUTO_TEST_CASE(FetchSeq20)
     scope->AddDefaults();
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("GAAA01000001");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK(sx_EqualToGB(bsh));
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq21)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("JELW01000003");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK(sx_EqualToGB(bsh));
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq22)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("JXBK01000001");
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);

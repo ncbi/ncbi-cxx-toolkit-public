@@ -809,8 +809,18 @@ pair<int, bool> CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
 
 CSeq_inst::TMol CWGSDataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
 {
-    if ( GetBlobId(idh) ) {
-        return CSeq_inst::eMol_na;
+    if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        switch ( info.seq_type ) {
+        case 'S':
+            info.file->GetDb()->GetScaffoldMolType();
+            break;
+        case 'P':
+            info.file->GetDb()->GetProteinMolType();
+            break;
+        default:
+            info.file->GetDb()->GetContigMolType();
+            break;
+        }
     }
     return CSeq_inst::eMol_not_set;
 }
