@@ -450,6 +450,17 @@ string CComponentVersionInfo::Print(void) const
 }
 
 /////////////////////////////////////////////////////////////////////////////
+//  SBuildInfo
+
+SBuildInfo::SBuildInfo()
+    : date(__DATE__ " " __TIME__)
+#ifdef NCBI_BUILD_TAG
+    , tag(NCBI_AS_STRING(NCBI_BUILD_TAG))
+#endif
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
 //  CVersion
 
 CVersion::CVersion(const SBuildInfo& build_info)
@@ -563,8 +574,13 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
 #endif
 
     if (flags & fBuildInfo) {
-        os << " Build-Date:  " << m_BuildInfo.date << endl;
-        os << " Build-Tag:  " << m_BuildInfo.tag << endl;
+        if (!m_BuildInfo.date.empty()) {
+            os << " Build-Date:  " << m_BuildInfo.date << endl;
+        }
+
+        if (!m_BuildInfo.tag.empty()) {
+            os << " Build-Tag:  " << m_BuildInfo.tag << endl;
+        }
     }
 
     return CNcbiOstrstreamToString(os);

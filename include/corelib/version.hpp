@@ -210,32 +210,23 @@ private:
 };
 
 
-/// @internal
 /// This class allows to add build info (date and tag) to application version.
-/// The class is not meant to be used directly,
-/// instead it is used implicitly whenever app version is set.
-/// This means CNcbiApplication derived class (or whatever using CVersion)
-/// requires recompilation to make this data up-to-date.
-/// This is the most that can be done without imposing much burden on clients.
+///
+/// This can be done by providing explicitly created SBuildInfo instance
+/// (e.g. SBuildInfo(__DATE__ " " __TIME__, "RC1"))
+/// instead of implicit SBuildInfo(), where SBuildInfo instance is accepted.
+///
+/// If clients do not explicitly set their own build info,
+/// C++ Toolkit build info will be used in the reporting instead.
 
-#define NCBI_BUILD_DATE_VALUE __DATE__ " " __TIME__
-#ifdef NCBI_BUILD_TAG
-#   define NCBI_BUILD_TAG_VALUE NCBI_AS_STRING(NCBI_BUILD_TAG)
-#else
-#   define NCBI_BUILD_TAG_VALUE kEmptyStr
-#endif
 struct NCBI_XNCBI_EXPORT SBuildInfo
 {
     string date;
     string tag;
 
-    SBuildInfo(const string& d = NCBI_BUILD_DATE_VALUE,
-            const string& t = NCBI_BUILD_TAG_VALUE) :
-        date(d), tag(t)
-    {}
+    SBuildInfo();
+    SBuildInfo(const string& d, const string& t = kEmptyStr) : date(d), tag(t) {}
 };
-#undef NCBI_BUILD_TAG_VALUE
-#undef NCBI_BUILD_DATE_VALUE
 
 
 class NCBI_XNCBI_EXPORT CVersion : public CObject
