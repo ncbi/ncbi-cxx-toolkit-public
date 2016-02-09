@@ -7132,9 +7132,7 @@ void CValidError_feat::x_CheckTranslationMismatches
             size_t transl_terminal_x = 0;
             size_t i = transl_prot.length() - 1;
             while (i > 0) {
-                if (i == transl_prot.length() - 1 && transl_prot[i] == '*') {
-                    // skip stop
-                } else if (transl_prot[i] == 'X') {
+                if (transl_prot[i] == 'X') {
                     transl_terminal_x++;
                 } else {
                     break;

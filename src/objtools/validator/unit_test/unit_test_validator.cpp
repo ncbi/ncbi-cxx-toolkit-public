@@ -2309,23 +2309,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_TrailingX)
 
     CLEAR_ERRORS
 
-    // if stop codon present, do not report trailing X in protein
-    scope.RemoveTopLevelSeqEntry(seh);
-    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATANNNTAA");
-    prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIX");
-    prot->SetSeq().SetInst().SetLength(8);
-    unit_test_util::SetCompleteness (prot, CMolInfo::eCompleteness_complete);
-    prot_feat->SetLocation().SetInt().SetTo(7);
-    prot_feat->SetLocation().SetPartialStop(false, eExtreme_Biological);
-    prot_feat->SetLocation().InvalidateTotalRangeCache();
-    prot_feat->SetPartial(false);
-    cds_feat->SetLocation().SetPartialStop(false, eExtreme_Biological);
-    cds_feat->SetPartial(false);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
 }
 
 
