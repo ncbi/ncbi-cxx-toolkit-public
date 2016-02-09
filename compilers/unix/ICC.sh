@@ -70,9 +70,9 @@ if test "$status" -ne 0 ; then
 
 HINT:  if you are at NCBI, try to run the following command:
    sh, bash:
-      . $intel_root/Compiler/13.5.192/bin/iccvars.sh $arch
+      . $intel_root/Compiler/15.0/bin/iccvars.sh $arch
    tcsh:
-      source $intel_root/Compiler/13.5.192/bin/iccvars.csh $arch
+      source $intel_root/Compiler/15.0/bin/iccvars.csh $arch
 
 EOF
     exit 1
