@@ -1259,6 +1259,9 @@ bool CGff2Record::xInitFeatureData(
                 default:
                     rnaref.SetType(CRNA_ref::eType_unknown);
                     return true;
+               case CSeqFeatData::eSubtype_tmRNA:
+                    rnaref.SetType(CRNA_ref::eType_tmRNA);
+                    return true;
                case CSeqFeatData::eSubtype_mRNA:
                     rnaref.SetType(CRNA_ref::eType_mRNA);
                     return true;
