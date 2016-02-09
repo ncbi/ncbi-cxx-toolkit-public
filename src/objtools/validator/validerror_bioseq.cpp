@@ -3813,7 +3813,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 if (pos > 0) {
                     if (sv.IsInGap (pos)) {
                         CSeqVector::TResidue res = sv [pos - 1];
-                        if (res == 'N') {
+                        if (res == 'N' && !sv.IsInGap(pos - 1)) {
                             PostErr (eDiag_Error, eErr_SEQ_INST_InternalNsAdjacentToGap,
                                      "Ambiguous residue N is adjacent to a gap around position " + NStr::SizetToString (pos + 1),
                                      seq);
@@ -3823,7 +3823,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 if (delta_len > 0 && pos + delta_len < len) {
                     if (sv.IsInGap(pos + delta_len - 1)) {
                         CSeqVector::TResidue res = sv[pos + delta_len];
-                        if (res == 'N') {
+                        if (res == 'N' && !sv.IsInGap(pos + delta_len)) {
                             PostErr(eDiag_Error, eErr_SEQ_INST_InternalNsAdjacentToGap,
                                 "Ambiguous residue N is adjacent to a gap around position " + NStr::SizetToString(pos + delta_len + 1),
                                 seq);
