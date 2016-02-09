@@ -7076,7 +7076,7 @@ void CValidError_feat::x_CheckTranslationMismatches
             if (!nuclocstr.empty()) {
                 msg += " at " + nuclocstr;
             }
-            msg += ". Genetic code [" + gccode + "]";
+            msg += ".  Genetic code [" + gccode + "]";
             if (report_errors  &&  !mismatch_except) {
                 PostErr(m_Imp.IsGeneious() ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
             }
