@@ -195,6 +195,10 @@ public:
     CRef<CSeq_id> GetScaffoldSeq_id(TVDBRowId row_id) const;
     CRef<CSeq_id> GetProteinSeq_id(TVDBRowId row_id) const;
 
+    CSeq_inst::TMol GetContigMolType(void) const;
+    CSeq_inst::TMol GetScaffoldMolType(void) const;
+    CSeq_inst::TMol GetProteinMolType(void) const;
+
     CRef<CSeq_entry> GetMasterSeq_entry(void) const;
 
     typedef list< CRef<CSeqdesc> > TMasterDescr;
@@ -733,6 +737,19 @@ public:
         TSeqPos GetFrom(void) const { return *gaps_start; }
         TSeqPos GetToOpen(void) const { return GetFrom()+GetLength(); }
         TSeqPos GetTo(void) const { return GetToOpen()-1; }
+
+        // prepare iteration starting with pos
+        void SetPos(TSeqPos pos);
+        // check if pos is in current gap, ++ after use
+        bool IsInGap(TSeqPos pos) const { return *this && pos >= GetFrom(); }
+        // return intersecting length of current gap
+        TSeqPos GetGapLength(TSeqPos pos, TSeqPos len) const {
+            return min(len, GetToOpen()-pos);
+        }
+        // return intersecting length of data before current gap
+        TSeqPos GetDataLength(TSeqPos pos, TSeqPos len) const {
+            return !*this? len: min(len, GetFrom()-pos);
+        }
     } TWGSContigGapInfo;
 
     bool HasGapInfo(void) const;
@@ -858,10 +875,18 @@ protected:
                            TSeqPos len = kInvalidSeqPos) const;
 
     const Uint1* x_GetUnpacked4na(TSeqPos pos, TSeqPos len) const;
-    TSeqPos x_GetGapLength(TSeqPos pos, TSeqPos len) const;
+
+    // methods to be used if no gap information exist
+    TSeqPos x_GetGapLengthExact(TSeqPos pos, TSeqPos len) const;
+    TSeqPos x_Get2naLengthExact(TSeqPos pos, TSeqPos len) const;
+    TSeqPos x_Get4naLengthExact(TSeqPos pos, TSeqPos len,
+                                TSeqPos stop_2na_len,
+                                TSeqPos stop_gap_len) const;
+
+    // methods to be used with gap information
+    bool x_AmbiguousBlock(TSeqPos block_index) const;
     TSeqPos x_Get2naLength(TSeqPos pos, TSeqPos len) const;
-    TSeqPos x_Get4naLength(TSeqPos pos, TSeqPos len,
-                           TSeqPos stop_2na_len, TSeqPos stop_gap_len) const;
+    TSeqPos x_Get4naLength(TSeqPos pos, TSeqPos len) const;
 
     struct SSegment {
         COpenRange<TSeqPos> range;
@@ -869,13 +894,10 @@ protected:
         CRef<CSeq_literal> literal;
     };
     enum EInstSegmentFlags {
-        fInst_MakeData  = 1<<0,
-        fInst_MakeGaps  = 1<<1,
-        fInst_SplitInfo = 1<<2,
-        fInst_WholeData = 1<<3,
-        fInst_MakeDelta = fInst_MakeData|fInst_MakeGaps,
-        fInst_MakeSplit = fInst_MakeGaps|fInst_SplitInfo,
-        fInst_MakeChunk = fInst_MakeData|fInst_WholeData
+        fInst_MakeData  = 1<<0, // generate Seq-data in data segments
+        fInst_MakeGaps  = 1<<1, // generate gap segments
+        fInst_Split     = 1<<2, // split data by chunk boundaries
+        fInst_Minimal   = 1<<3  // minimize number of data segments
     };
     typedef int TInstSegmentFlags;
     typedef vector<SSegment> TSegments;

@@ -80,14 +80,16 @@ static bool s_GetClipByQuality(void)
     return s_Value->Get();
 }
 
-
+// fixed WGS VDB parameters
 static const char kSeq_descrFirstByte = 49; // first byte of Seq-descr ASN.1
+static const TSeqPos kAmbiguityBlockSize = 1024; // defined by WGS VDB schema
 
-// split parameters
+// split parameters, turn on/off splitting of different pieces of information
 static bool kEnableSplitQual = true;
 static bool kEnableSplitData = true;
-static bool kEnableSplitProd = false;
+static bool kEnableSplitProd = true;
 
+// split info fixed parameters
 static int kMainEntryId = 1;
 enum EChunkType {
     eChunk_prod,
@@ -96,10 +98,12 @@ enum EChunkType {
     eChunk_qual,
     kChunkIdStep = 4
 };
-static const size_t kProdPerChunk = 64;
-static const TSeqPos kDataChunkSize = 256<<10; // 64KiB in 2na encoding
-static const TSeqPos kQualChunkSize = 64<<10; // 64KiB
 
+// split configurable parameters
+static const size_t kProdPerChunk = 64;
+static const TSeqPos kQualChunkSize = 64<<10; // 64KiB
+static const TSeqPos kDataChunkSize = 256<<10; // 64KiB in 2na encoding
+static const TSeqPos kMinDataSplitSize = 128<<10;
 
 #ifdef COLLECT_PROFILE
 struct SProfiler
@@ -168,11 +172,17 @@ static SProfiler sw____Get4naLen;
 static SProfiler sw____GetGapLen;
 static SProfiler sw____GetRaw2na;
 static SProfiler sw____GetRaw4na;
+static SProfiler sw____GetUnp4na;
 static SProfiler sw___GetContigInst;
 static SProfiler sw___GetContigDescr;
 static SProfiler sw___GetContigIds;
 static SProfiler sw__GetContigBioseq;
 static SProfiler sw_GetContigEntry;
+static SProfiler sw_FeatIterator;
+static SProfiler sw_ProtIterator;
+static SProfiler sw_ScafIterator;
+static SProfiler sw_SeqIterator;
+static SProfiler sw_WGSOpen;
 
 # define PROFILE(var) SProfilerGuard guard(var, #var)
 #else
@@ -374,13 +384,27 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
     typedef pair<TVDBRowId, TVDBRowId> row_range_t;
     DECLARE_VDB_COLUMN_AS(row_range_t, CONTIG_NAME_ROW_RANGE);
-    DECLARE_VDB_COLUMN_AS(INSDC_4na_bin, READ); // unpacked 4na
+    DECLARE_VDB_COLUMN_AS(Uint1, AMBIGUITY_MASK);
     CVDBColumnBits<2> m_READ_2na;
+    CVDBColumnBits<4> m_READ_4na;
+    DECLARE_VDB_COLUMN_AS(INSDC_4na_bin, READ); // unpacked 4na
 
     mutable TVDBRowId m_4naCacheRow;
     mutable COpenRange<TSeqPos> m_4naCacheRange;
     mutable CSimpleBufferT<Uint1> m_4naCache;
+
     const Uint1* GetUnpacked4na(TVDBRowId row, TSeqPos pos, TSeqPos len) const;
+
+    mutable TVDBRowId m_AmbiguityRow;
+    mutable CSimpleBufferT<Uint1> m_AmbiguityMask;
+    mutable CSimpleBufferT<Uint1> m_AmbiguityMaskDone;
+
+    void GetAmbiguity(TVDBRowId row) const;
+
+    mutable TVDBRowId m_GapInfoRow;
+    mutable CWGSSeqIterator::TWGSContigGapInfo m_GapInfo;
+
+    const CWGSSeqIterator::TWGSContigGapInfo& GetGapInfo(TVDBRowId row) const;
 };
 
 
@@ -412,10 +436,18 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID),
       INIT_OPTIONAL_VDB_COLUMN(CONTIG_NAME_ROW_RANGE),
-      INIT_VDB_COLUMN_AS(READ, INSDC:4na:bin), // unpacked 4na
+      INIT_OPTIONAL_VDB_COLUMN(AMBIGUITY_MASK),
       m_READ_2na(m_Cursor, "(INSDC:2na:packed)READ",
-                 NULL, CVDBColumn::eMissing_Allow) // packed 2na
+                 NULL, CVDBColumn::eMissing_Allow), // packed 2na
+      m_READ_4na(m_Cursor, "(INSDC:4na:packed)READ",
+                 NULL, CVDBColumn::eMissing_Allow), // packed 4na
+      INIT_VDB_COLUMN_AS(READ, INSDC:4na:bin), // unpacked 4na
+      m_4naCacheRow(0),
+      m_AmbiguityRow(0)
 {
+    // uncomment lines to test algorithm on data without these columns
+    //m_AMBIGUITY_MASK = CVDBColumnBits<8>();
+    //m_GAP_START = CVDBColumnBits<32>();
 }
 
 
@@ -570,8 +602,6 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
                          CTempString vol_path)
     : m_Mgr(mgr),
       m_WGSPath(NormalizePathOrAccession(path_or_acc, vol_path)),
-      m_Db(mgr, m_WGSPath),
-      m_SeqTable(m_Db, "SEQUENCE"), // SEQUENCE table must exist
       m_IdVersion(0),
       m_ScfTableIsOpened(false),
       m_ProtTableIsOpened(false),
@@ -583,6 +613,9 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_ProteinNameIndexIsOpened(0),
       m_IsSetMasterDescr(false)
 {
+    PROFILE(sw_WGSOpen);
+    m_Db = CVDB(mgr, m_WGSPath);
+    m_SeqTable = CVDBTable(m_Db, "SEQUENCE"); // SEQUENCE table must exist
     x_InitIdParams();
 }
 
@@ -718,7 +751,7 @@ void CWGSDb_Impl::x_InitIdParams(void)
 string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
                                              CTempString vol_path)
 {
-    if ( 1 ) {
+    if ( 0 ) {
         static bool kTryTestFiles =
             getenv("HOME") && strcmp(getenv("HOME"), "/home/vasilche") == 0;
         if ( kTryTestFiles ) {
@@ -1124,6 +1157,24 @@ CRef<CSeq_id> CWGSDb_Impl::GetProteinSeq_id(TVDBRowId row_id) const
 }
 
 
+CSeq_inst::TMol CWGSDb_Impl::GetContigMolType(void) const
+{
+    return IsTSA()? CSeq_inst::eMol_rna: CSeq_inst::eMol_dna;
+}
+
+
+CSeq_inst::TMol CWGSDb_Impl::GetScaffoldMolType(void) const
+{
+    return CSeq_inst::eMol_dna;
+}
+
+
+CSeq_inst::TMol CWGSDb_Impl::GetProteinMolType(void) const
+{
+    return CSeq_inst::eMol_aa;
+}
+
+
 void CWGSDb_Impl::ResetMasterDescr(void)
 {
     m_MasterDescr.clear();
@@ -1156,7 +1207,7 @@ size_t CWGSDb_Impl::GetMasterDescrBytes(TMasterDescrBytes& buffer)
     if ( !size ) {
         return 0;
     }
-    buffer.resize(size);
+    buffer.resize_mem(size);
     node.GetData(buffer.data(), size);
     return size;
 }
@@ -1563,16 +1614,21 @@ TVDBRowId CWGSDb_Impl::Lookup(const string& name,
 
 TVDBRowId CWGSDb_Impl::GetContigNameRowId(const string& name)
 {
-    if ( 0 ) {
-        SSeqTableCursor::row_range_t range;
+    if ( 1 ) {
         CRef<SSeqTableCursor> seq = Seq();
         if ( seq->m_CONTIG_NAME_ROW_RANGE ) {
             seq->m_Cursor.SetParam("CONTIG_NAME_QUERY", name);
-            range = *seq->CONTIG_NAME_ROW_RANGE(1);
-            LOG_POST("range("<<name<<"): "<<range.first<<"-"<<range.second);
+            SSeqTableCursor::row_range_t range;
+            CVDBValueFor<SSeqTableCursor::row_range_t> value =
+                seq->CONTIG_NAME_ROW_RANGE(0, CVDBValue::eMissing_Allow);
+            if ( !value.empty() ) {
+                range = *value;
+                LOG_POST("contig name range("<<name<<"): "<<range.first<<"-"<<range.second);
+            }
+            Put(seq);
+            return range.first;
         }
         Put(seq);
-        return 0;
     }
     const CVDBTableIndex& index = ContigNameIndex();
     return Lookup(name, index, m_ContigNameIndexIsOpened == 1);
@@ -1619,13 +1675,89 @@ CWGSDb_Impl::SSeqTableCursor::GetUnpacked4na(TVDBRowId row,
         }
     }
     {
-        PROFILE(sw____GetRaw4na);
+        PROFILE(sw____GetUnp4na);
         m_4naCacheRow = row;
         m_4naCacheRange = range;
-        m_4naCache.resize(len);
+        m_4naCache.resize_mem(len);
         m_Cursor.ReadElements(row, m_READ, 8, pos, len, m_4naCache.data());
     }
     return m_4naCache.data();
+}
+
+
+void CWGSSeqIterator::TWGSContigGapInfo::SetPos(TSeqPos pos)
+{
+    // skip gaps starting before the requested position
+    while ( *this && GetToOpen() <= pos ) {
+        ++*this;
+    }
+}
+
+
+void CWGSDb_Impl::SSeqTableCursor::GetAmbiguity(TVDBRowId row) const
+{
+    if ( m_AmbiguityRow == row ) {
+        return;
+    }
+    
+    m_AmbiguityRow = 0;
+    if ( m_AMBIGUITY_MASK ) {
+        // use precalculated 4na ambiguity bit mask
+        uint32_t len = m_Cursor.GetElementCount(row, m_AMBIGUITY_MASK, 8);
+        m_AmbiguityMask.resize_mem(len);
+        m_Cursor.ReadElements(row, m_AMBIGUITY_MASK, 8, 0, len,
+                              m_AmbiguityMask.data());
+        // mark all done
+        m_AmbiguityMaskDone.clear();
+    }
+    else {
+        // init ambiguity bit mask cache
+        TSeqPos seq_len = *READ_LEN(row);
+        TSeqPos kByteBlockSize = kAmbiguityBlockSize*8;
+        uint32_t len = (seq_len+kByteBlockSize-1)/kByteBlockSize;
+        // mark none done
+        m_AmbiguityMask.resize_mem(len);
+        m_AmbiguityMaskDone.resize_mem(len);
+        fill(m_AmbiguityMask.begin(), m_AmbiguityMask.end(), 0);
+        fill(m_AmbiguityMaskDone.begin(), m_AmbiguityMaskDone.end(), 0);
+    }
+    m_AmbiguityRow = row;
+}
+
+
+const CWGSSeqIterator::TWGSContigGapInfo&
+CWGSDb_Impl::SSeqTableCursor::GetGapInfo(TVDBRowId row) const
+{
+    if ( m_GapInfoRow == row ) {
+        return m_GapInfo;
+    }
+    
+    m_GapInfoRow = 0;
+    CWGSSeqIterator::TWGSContigGapInfo gap_info;
+    CVDBValueFor<INSDC_coord_zero> start = GAP_START(row);
+    gap_info.gaps_start = start.data();
+    size_t gaps_count = gap_info.gaps_count = start.size();
+    if ( !start.empty() ) {
+        CVDBValueFor<INSDC_coord_len> len = GAP_LEN(row);
+        CVDBValueFor<NCBI_WGS_component_props> props = GAP_PROPS(row);
+        if ( len.size() != gaps_count || props.size() != gaps_count ) {
+            NCBI_THROW(CSraException, eDataError,
+                       "CWGSSeqIterator: inconsistent gap info");
+        }
+        gap_info.gaps_len = len.data();
+        gap_info.gaps_props = props.data();
+        if ( m_GAP_LINKAGE ) {
+            CVDBValueFor<NCBI_WGS_gap_linkage> linkage = GAP_LINKAGE(row);
+            if ( linkage.size() != gaps_count ) {
+                NCBI_THROW(CSraException, eDataError,
+                           "CWGSSeqIterator: inconsistent gap info");
+            }
+            gap_info.gaps_linkage = linkage.data();
+        }
+    }
+    m_GapInfo = gap_info;
+    m_GapInfoRow = row;
+    return m_GapInfo;
 }
 
 
@@ -1794,6 +1926,7 @@ void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
                              EClipType clip_type,
                              TVDBRowId get_row)
 {
+    PROFILE(sw_SeqIterator);
     m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
     if ( !wgs_db ) {
         return;
@@ -2319,33 +2452,11 @@ void CWGSSeqIterator::GetGapInfo(TWGSContigGapInfo& gap_info) const
 {
     x_CheckValid("CWGSSeqIterator::GetGapInfo");
 
-    if ( !HasGapInfo() ) {
-        gap_info = TWGSContigGapInfo();
-        return;
+    if ( HasGapInfo() ) {
+        gap_info = m_Cur->GetGapInfo(m_CurrId);
     }
-
-    CVDBValueFor<INSDC_coord_zero> start = m_Cur->GAP_START(m_CurrId);
-    gap_info.gaps_start = start.data();
-    size_t gaps_count = gap_info.gaps_count = start.size();
-    if ( !start.empty() ) {
-        CVDBValueFor<INSDC_coord_len> len = m_Cur->GAP_LEN(m_CurrId);
-        CVDBValueFor<NCBI_WGS_component_props> props =
-            m_Cur->GAP_PROPS(m_CurrId);
-        if ( len.size() != gaps_count || props.size() != gaps_count ) {
-            NCBI_THROW(CSraException, eDataError,
-                       "CWGSSeqIterator: inconsistent gap info");
-        }
-        gap_info.gaps_len = len.data();
-        gap_info.gaps_props = props.data();
-        if ( m_Cur->m_GAP_LINKAGE ) {
-            CVDBValueFor<NCBI_WGS_gap_linkage> linkage =
-                m_Cur->GAP_LINKAGE(m_CurrId);
-            if ( linkage.size() != gaps_count ) {
-                NCBI_THROW(CSraException, eDataError,
-                           "CWGSSeqIterator: inconsistent gap info");
-            }
-            gap_info.gaps_linkage = linkage.data();
-        }
+    else {
+        gap_info = TWGSContigGapInfo();
     }
 }
 
@@ -2439,6 +2550,18 @@ bool sx_Is2na(Uint1 b)
 
 
 static inline
+const Uint1* sx_FindAmbiguity(const Uint1* ptr, const Uint1* end)
+{
+    for ( ; ptr != end; ++ptr ) {
+        if ( !sx_Is2na(*ptr) ) {
+            return ptr;
+        }
+    }
+    return ptr;
+}
+
+
+static inline
 Uint1 sx_To2na(Uint1 b)
 {
     static const char s_4na_to_2na_table[16] = {
@@ -2474,23 +2597,18 @@ const Uint1* CWGSSeqIterator::x_GetUnpacked4na(TSeqPos pos, TSeqPos len) const
 }
 
 
-TSeqPos CWGSSeqIterator::x_Get2naLength(TSeqPos pos, TSeqPos len) const
+TSeqPos CWGSSeqIterator::x_Get2naLengthExact(TSeqPos pos, TSeqPos len) const
 {
     PROFILE(sw____Get2naLen);
     const Uint1* ptr = x_GetUnpacked4na(pos, len);
-    TSeqPos rem_len = len;
-    for ( ; rem_len; --rem_len, ++ptr ) {
-        if ( !sx_Is2na(*ptr) ) {
-            return len-rem_len;
-        }
-    }
-    return len;
+    return sx_FindAmbiguity(ptr, ptr+len) - ptr;
 }
 
 
-TSeqPos CWGSSeqIterator::x_Get4naLength(TSeqPos pos, TSeqPos len,
-                                        TSeqPos stop_2na_len,
-                                        TSeqPos stop_gap_len) const
+// Calculate 4na length with gap recovering
+TSeqPos CWGSSeqIterator::x_Get4naLengthExact(TSeqPos pos, TSeqPos len,
+                                             TSeqPos stop_2na_len,
+                                             TSeqPos stop_gap_len) const
 {
     PROFILE(sw____Get4naLen);
     if ( len < stop_2na_len ) {
@@ -2531,7 +2649,7 @@ TSeqPos CWGSSeqIterator::x_Get4naLength(TSeqPos pos, TSeqPos len,
 }
 
 
-TSeqPos CWGSSeqIterator::x_GetGapLength(TSeqPos pos, TSeqPos len) const
+TSeqPos CWGSSeqIterator::x_GetGapLengthExact(TSeqPos pos, TSeqPos len) const
 {
     PROFILE(sw____GetGapLen);
     const Uint1* ptr = x_GetUnpacked4na(pos, len);
@@ -2543,6 +2661,88 @@ TSeqPos CWGSSeqIterator::x_GetGapLength(TSeqPos pos, TSeqPos len) const
         }
     }
     return len;
+}
+
+
+bool CWGSSeqIterator::x_AmbiguousBlock(TSeqPos block_index) const
+{
+    m_Cur->GetAmbiguity(m_CurrId);
+
+    TSeqPos byte_index = block_index/8;
+    Uint1 byte_bit = 1<<block_index%8;
+
+    if ( byte_index >= m_Cur->m_AmbiguityMaskDone.size() ||
+         (m_Cur->m_AmbiguityMaskDone[byte_index] & byte_bit) ) {
+        // already calculated
+        return byte_index < m_Cur->m_AmbiguityMask.size() &&
+            (m_Cur->m_AmbiguityMask[byte_index] & byte_bit);
+    }
+
+    // recalculate
+    TSeqPos pos = block_index*kAmbiguityBlockSize;
+    TSeqPos end = min(pos+kAmbiguityBlockSize, GetRawSeqLength());
+    TSeqPos len = end-pos;
+    const Uint1* ptr = x_GetUnpacked4na(pos, len);
+    bool ambiguous = false;
+
+    TWGSContigGapInfo gap_info = m_Cur->GetGapInfo(m_CurrId);
+    gap_info.SetPos(pos);
+
+    while ( len > 0 ) {
+        if ( gap_info.IsInGap(pos) ) {
+            TSeqPos gap_len = gap_info.GetGapLength(pos, len);
+            ++gap_info;
+            pos += gap_len;
+            ptr += gap_len;
+            len -= gap_len;
+            continue;
+        }
+        TSeqPos data_len = gap_info.GetDataLength(pos, len);
+        if ( sx_FindAmbiguity(ptr, ptr+data_len) != ptr+data_len ) {
+            ambiguous = true;
+            break;
+        }
+        pos += data_len;
+        ptr += data_len;
+        len -= data_len;
+    }
+    if ( ambiguous ) {
+        m_Cur->m_AmbiguityMask[byte_index] |= byte_bit;
+    }
+    m_Cur->m_AmbiguityMaskDone[byte_index] |= byte_bit;
+    return ambiguous;
+}
+
+
+TSeqPos CWGSSeqIterator::x_Get2naLength(TSeqPos pos, TSeqPos len) const
+{
+    TSeqPos pos0 = pos;
+    TSeqPos end = pos+len;
+    while ( pos != end ) {
+        TSeqPos block_index = pos/kAmbiguityBlockSize;
+        if ( x_AmbiguousBlock(block_index) ) {
+            // 4na
+            break;
+        }
+        pos = min(end, (block_index+1)*kAmbiguityBlockSize);
+    }
+    return pos-pos0;
+}
+
+
+TSeqPos CWGSSeqIterator::x_Get4naLength(TSeqPos pos, TSeqPos len) const
+{
+    TSeqPos pos0 = pos;
+    TSeqPos end = pos+len;
+    while ( pos != end ) {
+        TSeqPos block_index = pos/kAmbiguityBlockSize;
+        if ( !x_AmbiguousBlock(block_index) ) {
+            // 2na
+            break;
+        }
+        pos = min(end, (block_index+1)*kAmbiguityBlockSize);
+    }
+    return pos-pos0;
 }
 
 
@@ -2600,6 +2800,19 @@ CRef<CSeq_data> CWGSSeqIterator::Get2na(TSeqPos pos, TSeqPos len) const
 // return 4na Seq-data for specified range
 CRef<CSeq_data> CWGSSeqIterator::Get4na(TSeqPos pos, TSeqPos len) const
 {
+    if ( m_Cur->m_READ_4na ) {
+        PROFILE(sw____GetRaw4na);
+        CRef<CSeq_data> ret(new CSeq_data);
+        vector<char>& data = ret->SetNcbi4na().Set();
+        size_t bytes = (len+1)/2;
+        // allocate 8-byte aligned memory to allow multi-byte operations at end
+        data.reserve((bytes+7)/8*8);
+        data.resize(bytes);
+        m_Cur->m_Cursor.ReadElements(m_CurrId, m_Cur->m_READ_4na, 4, pos, len,
+                                     data.data());
+        return ret;
+    }
+
     PROFILE(sw____Get4na);
     _ASSERT(len);
     CRef<CSeq_data> ret(new CSeq_data);
@@ -2638,7 +2851,10 @@ CRef<CSeq_data> CWGSSeqIterator::Get4na(TSeqPos pos, TSeqPos len) const
 // 1408 bases on most 64-bit platforms.
 // We'll use slightly bigger threshold to take into account
 // possible CPU overhead for 2na operations.
-static const TSeqPos kMin2naSize = 2048;
+// static const TSeqPos kMin2naSize = 2048;
+// Actually use kAmbiguityBlockSize (=1024), it's optimal enough
+// and allows to use precomputed ambiguity info directly
+static const TSeqPos kMin2naSize = kAmbiguityBlockSize;
 
 // size of chinks if the segment is split
 static const TSeqPos kChunk4naSize = 1<<16; // 64Ki bases or 32KiB
@@ -2696,138 +2912,102 @@ void CWGSSeqIterator::x_GetSegments(TSegments& segments,
     TSeqPos pos = range.GetFrom() + raw_offset;
     TSeqPos len = range.GetLength();
 
-    // skip gaps starting befor requested range
-    while ( gap_info && gap_info.GetFrom() < pos ) {
-        TSeqPos gap_end = gap_info.GetToOpen();
-        if ( gap_end > pos ) {
-            TSeqPos skip = gap_end - pos;
-            if ( flags & fInst_MakeGaps ) {
-                x_AddGap(segments, pos - raw_offset, skip, gap_info);
-            }
-            pos = gap_end;
-            // adjust range to exclude gap covering start of the range
-            if ( skip >= len ) {
-                // requested range is completely in the gap
-                len = 0;
-            }
-            else {
-                len -= skip;
-            }
-        }
-        ++gap_info;
-    }
+    gap_info.SetPos(pos);
 
     for ( ; len > 0; ) {
-        TSeqPos gap_start = kInvalidSeqPos;
-        TSeqPos rem_len = len;
-        if ( gap_info ) {
+        if ( gap_info.IsInGap(pos) ) {
             // add gap
-            gap_start = *gap_info.gaps_start;
-            if ( pos == gap_start ) {
-                TSeqPos gap_len = *gap_info.gaps_len;
-                if ( gap_len > len ) {
-                    if ( flags & fInst_MakeGaps) {
-                        x_AddGap(segments, pos - raw_offset, len, gap_info);
-                    }
-                    // no more sequence
-                    break;
-                }
-                if ( flags & fInst_MakeGaps ) {
-                    x_AddGap(segments, pos - raw_offset, gap_len, gap_info);
-                }
-                ++gap_info;
-                len -= gap_len;
-                pos += gap_len;
-                continue;
+            TSeqPos gap_len = gap_info.GetGapLength(pos, len);
+            _ASSERT(gap_len <= len);
+            if ( flags & fInst_MakeGaps) {
+                x_AddGap(segments, pos - raw_offset, gap_len, gap_info);
             }
-            rem_len = min(rem_len, gap_start-pos);
+            ++gap_info;
+            len -= gap_len;
+            pos += gap_len;
+            _ASSERT(!gap_info || pos <= gap_info.GetFrom());
+            continue;
         }
-
-        if ( flags & fInst_SplitInfo ) {
-            // prepare empty literals for split Seq-data
+        
+        // data segment
+        TSeqPos rem_len = gap_info.GetDataLength(pos, len);
+        _ASSERT(rem_len <= len);
+        
+        if ( flags & fInst_Split ) {
+            // break data at the next chunk boundary
             TSeqPos chunk_start =
                 (pos-raw_offset)/kDataChunkSize*kDataChunkSize;
             TSeqPos chunk_end = chunk_start + kDataChunkSize;
-            TSeqPos seg_len = min(rem_len, chunk_end - pos);
-            SSegment seg;
-            seg.range.SetFrom(pos - raw_offset);
-            seg.range.SetLength(seg_len);
-            seg.is_gap = false;
-            segments.push_back(seg);
-            len -= seg_len;
-            pos += seg_len;
-            continue;
+            rem_len = min(rem_len, chunk_end - pos);
         }
 
-        if ( (flags & fInst_MakeData) && (flags & fInst_WholeData) ) {
-            // add fixed number of Seq-data for chunks
-            SSegment seg;
-            seg.range.SetFrom(pos - raw_offset);
-            seg.is_gap = false;
-            seg.literal = new CSeq_literal;
-            TSeqPos seg_len = x_Get2naLength(pos, rem_len);
+        bool is_2na;
+        TSeqPos seg_len;
+        if ( flags & fInst_Minimal ) {
+            // whole region is either 2na or 4na
+            seg_len = x_Get2naLength(pos, rem_len);
             if ( seg_len == rem_len ) {
                 // 2na
-                seg.literal->SetSeq_data(*Get2na(pos, seg_len));
-
-                _ASSERT(seg.literal->GetSeq_data().GetNcbi2na().Get().size() == (seg_len+3)/4);
+                is_2na = true;
             }
             else {
-                seg_len = rem_len;
                 // 4na
-                seg.literal->SetSeq_data(*Get4na(pos, seg_len));
-                _ASSERT(seg.literal->GetSeq_data().GetNcbi4na().Get().size() == (seg_len+1)/2);
+                seg_len = rem_len;
+                is_2na = false;
             }
-            seg.range.SetLength(seg_len);
-            seg.literal->SetLength(seg_len);
-            segments.push_back(seg);
-            pos += seg_len;
-            len -= seg_len;
-            continue;
         }
-
-        if ( flags & fInst_MakeData ) {
-            // add optimal sequence piece for regular delta
-            SSegment seg;
-            seg.range.SetFrom(pos - raw_offset);
-            seg.is_gap = false;
-            seg.literal = new CSeq_literal;
-            TSeqPos seg_len = x_Get2naLength(pos, min(rem_len, kSplit2naSize));
-            if ( seg_len >= kMin2naSize || seg_len == len ) {
+        else {
+            // determine optimal sequence piece for regular delta
+            seg_len = x_Get2naLength(pos, min(rem_len, kSplit2naSize));
+            if ( seg_len >= kMin2naSize || seg_len == rem_len ) {
                 if ( seg_len > kSplit2naSize ) {
                     seg_len = kChunk2naSize;
                 }
                 // 2na
-                seg.literal->SetSeq_data(*Get2na(pos, seg_len));
-
-                _ASSERT(seg.literal->GetSeq_data().GetNcbi2na().Get().size() == (seg_len+3)/4);
+                is_2na = true;
             }
             else {
+                _ASSERT(seg_len < kSplit4naSize && seg_len < rem_len);
                 TSeqPos seg_len_2na = seg_len;
                 seg_len += x_Get4naLength(pos+seg_len,
-                                          min(rem_len, kSplit4naSize)-seg_len,
-                                          kMin2naSize, kInvalidSeqPos);
+                                          min(rem_len, kSplit4naSize)-seg_len);
                 if ( seg_len == seg_len_2na ) {
-                    // 2na
-                    seg.literal->SetSeq_data(*Get2na(pos, seg_len));
-                    _ASSERT(seg.literal->GetSeq_data().GetNcbi2na().Get().size() == (seg_len+3)/4);
+                    // no 4na added, so encode 2na, even if it's small
+                    _ASSERT(seg_len > 0);
+                    is_2na = true;
                 }
                 else {
+                    // 4na
+                    // limit too long 4na segments
                     if ( seg_len >= kSplit4naSize ) {
                         seg_len = kChunk4naSize;
                     }
-                    // 4na
-                    seg.literal->SetSeq_data(*Get4na(pos, seg_len));
-                    _ASSERT(seg.literal->GetSeq_data().GetNcbi4na().Get().size() == (seg_len+1)/2);
+                    is_2na = false;
                 }
             }
-            seg.range.SetLength(seg_len);
-            seg.literal->SetLength(seg_len);
-            segments.push_back(seg);
-            pos += seg_len;
-            len -= seg_len;
-            continue;
         }
+        
+        SSegment seg;
+        seg.is_gap = false;
+        seg.range.SetFrom(pos - raw_offset);
+        seg.range.SetLength(seg_len);
+        if ( flags & fInst_MakeData ) {
+            // actually generate Seq-data
+            seg.literal = new CSeq_literal;
+            seg.literal->SetLength(seg_len);
+            if ( is_2na ) {
+                // 2na
+                seg.literal->SetSeq_data(*Get2na(pos, seg_len));
+                _ASSERT(seg.literal->GetSeq_data().GetNcbi2na().Get().size() == (seg_len+3)/4);
+            }
+            else {
+                seg.literal->SetSeq_data(*Get4na(pos, seg_len));
+                _ASSERT(seg.literal->GetSeq_data().GetNcbi4na().Get().size() == (seg_len+1)/2);
+            }
+        }
+        segments.push_back(seg);
+        pos += seg_len;
+        len -= seg_len;
     }
 }
 
@@ -2843,7 +3023,6 @@ void CWGSSeqIterator::x_GetSegments(TSegments& segments,
 
     // max size of gap segment
     const TSeqPos kMinGapSize = 20;
-    const TSeqPos kMaxGapSize = 200;
     // size of gap segment if its actual size is unknown
     const TSeqPos kUnknownGapSize = 100;
     
@@ -2854,7 +3033,7 @@ void CWGSSeqIterator::x_GetSegments(TSegments& segments,
         seg.literal = new CSeq_literal;
 
         TSeqPos rem_len = len;
-        TSeqPos seg_len = x_Get2naLength(pos, min(rem_len, kSplit2naSize));
+        TSeqPos seg_len = x_Get2naLengthExact(pos, min(rem_len, kSplit2naSize));
         if ( seg_len >= kMin2naSize || seg_len == len ) {
             if ( seg_len > kSplit2naSize ) {
                 seg_len = kChunk2naSize;
@@ -2864,14 +3043,14 @@ void CWGSSeqIterator::x_GetSegments(TSegments& segments,
         }
         else {
             TSeqPos seg_len_2na = seg_len;
-            seg_len += x_Get4naLength(pos+seg_len,
-                                      min(rem_len, kSplit4naSize)-seg_len,
-                                      kMin2naSize, kMinGapSize);
+            seg_len += x_Get4naLengthExact(pos+seg_len,
+                                           min(rem_len, kSplit4naSize)-seg_len,
+                                           kMin2naSize, kMinGapSize);
             if ( kRecoverGaps && seg_len == 0 ) {
-                seg_len = x_GetGapLength(pos, min(rem_len, kMaxGapSize));
+                seg_len = x_GetGapLengthExact(pos, rem_len);
                 _ASSERT(seg_len > 0);
+                seg.is_gap = true;
                 if ( seg_len == kUnknownGapSize ) {
-                    seg.is_gap = true;
                     seg.literal->SetFuzz().SetLim(CInt_fuzz::eLim_unk);
                 }
             }
@@ -2944,7 +3123,7 @@ CRef<CSeq_inst> CWGSSeqIterator::x_GetSeq_inst(SWGSCreateInfo& info) const
     PROFILE(sw___GetContigInst);
     x_CheckValid("CWGSSeqIterator::GetSeq_inst");
     CRef<CSeq_inst> inst(new CSeq_inst);
-    inst->SetMol(GetDb().IsTSA()? CSeq_inst::eMol_rna: CSeq_inst::eMol_dna);
+    inst->SetMol(GetDb().GetContigMolType());
     if ( IsCircular() ) {
         inst->SetTopology(CSeq_inst::eTopology_circular);
     }
@@ -2966,13 +3145,15 @@ CRef<CSeq_inst> CWGSSeqIterator::x_GetSeq_inst(SWGSCreateInfo& info) const
         GetGapInfo(gap_info);
         if ( !info.split_data ) {
             TSegments segments;
-            x_GetSegments(segments, whole, gap_info, fInst_MakeDelta);
+            TInstSegmentFlags inst_flags = fInst_MakeGaps|fInst_MakeData;
+            x_GetSegments(segments, whole, gap_info, inst_flags);
             x_SetDeltaOrData(*inst, segments);
         }
         else {
             // split
             TSegments segments;
-            x_GetSegments(segments, whole, gap_info, fInst_MakeSplit);
+            TInstSegmentFlags inst_flags = fInst_MakeGaps|fInst_Split;
+            x_GetSegments(segments, whole, gap_info, inst_flags);
             x_SetDelta(*inst, segments);
 
             CRef<CID2S_Chunk_Info> chunk;
@@ -3348,7 +3529,7 @@ bool CWGSSeqIterator::x_InitSplit(SWGSCreateInfo& info) const
     if ( kEnableSplitData && (info.flags & fSplitSeqData) &&
          ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
          HasGapInfo() && // we have explicit gap info
-         GetSeqLength() > kDataChunkSize // data is big enough
+         GetSeqLength() >= kMinDataSplitSize // data is big enough
         ) {
         info.split_data = true;
     }
@@ -3410,7 +3591,8 @@ void CWGSSeqIterator::x_CreateChunk(SWGSCreateInfo& info,
         TWGSContigGapInfo gap_info;
         GetGapInfo(gap_info);
         TSegments segments;
-        x_GetSegments(segments, range, gap_info, fInst_MakeChunk);
+        TInstSegmentFlags inst_flags = fInst_MakeData;
+        x_GetSegments(segments, range, gap_info, inst_flags);
         ITERATE ( TSegments, it, segments ) {
             _ASSERT(!it->is_gap);
             _ASSERT(it->literal && it->literal->IsSetSeq_data());
@@ -3595,6 +3777,7 @@ CWGSScaffoldIterator::~CWGSScaffoldIterator(void)
 
 void CWGSScaffoldIterator::x_Init(const CWGSDb& wgs_db)
 {
+    PROFILE(sw_ScafIterator);
     m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
     if ( !wgs_db ) {
         return;
@@ -3809,7 +3992,7 @@ CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(TFlags flags) const
 
     CRef<CSeq_inst> inst(new CSeq_inst);
     TSeqPos length = 0;
-    inst->SetMol(CSeq_inst::eMol_dna);
+    inst->SetMol(GetDb().GetScaffoldMolType());
     if ( IsCircular() ) {
         inst->SetTopology(CSeq_inst::eTopology_circular);
     }
@@ -4166,6 +4349,7 @@ CWGSProteinIterator::~CWGSProteinIterator(void)
 
 void CWGSProteinIterator::x_Init(const CWGSDb& wgs_db)
 {
+    PROFILE(sw_ProtIterator);
     m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
     if ( !wgs_db ) {
         return;
@@ -4496,7 +4680,7 @@ CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(TFlags flags) const
 
     CRef<CSeq_inst> inst(new CSeq_inst);
     TSeqPos length = GetSeqLength();
-    inst->SetMol(CSeq_inst::eMol_aa);
+    inst->SetMol(GetDb().GetProteinMolType());
     inst->SetLength(length);
     CTempString ref_acc;
     if ( HasRefAcc() ) {
@@ -4702,6 +4886,7 @@ CWGSFeatureIterator::SelectRowRange(TVDBRowIdRange row_range)
 
 void CWGSFeatureIterator::x_Init(const CWGSDb& wgs)
 {
+    PROFILE(sw_FeatIterator);
     m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
     if ( !wgs ) {
         return;
