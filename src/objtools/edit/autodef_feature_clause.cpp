@@ -96,6 +96,9 @@ CAutoDefFeatureClause::~CAutoDefFeatureClause()
 
 CSeqFeatData::ESubtype CAutoDefFeatureClause::GetMainFeatureSubtype() const
 {
+    if (IsLTR(m_MainFeat)) {
+        return CSeqFeatData::eSubtype_LTR;
+    }
     return m_MainFeat.GetData().GetSubtype();
 }
 
@@ -182,7 +185,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
     if (subtype == CSeqFeatData::eSubtype_3UTR
         || subtype == CSeqFeatData::eSubtype_5UTR
-        || subtype == CSeqFeatData::eSubtype_LTR
+        || IsLTR(m_MainFeat)
         || subtype == CSeqFeatData::eSubtype_cdregion
         || subtype == CSeqFeatData::eSubtype_gene
         || subtype == CSeqFeatData::eSubtype_mRNA
@@ -238,6 +241,11 @@ bool CAutoDefFeatureClause::x_IsPseudo()
 bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
 {
     string qual, comment;
+
+    if (IsLTR(m_MainFeat)) {
+        typeword = "LTR";
+        return true;
+    }
   
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
     switch (subtype) {
@@ -251,10 +259,6 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
             break;
         case CSeqFeatData::eSubtype_D_loop:
             typeword = "D-loop";
-            return true;
-            break;
-        case CSeqFeatData::eSubtype_LTR:
-            typeword = "LTR";
             return true;
             break;
         case CSeqFeatData::eSubtype_3UTR:
@@ -758,7 +762,7 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
                || subtype == CSeqFeatData::eSubtype_3UTR
                || subtype == CSeqFeatData::eSubtype_5UTR) {
         return false;
-    } else if (subtype == CSeqFeatData::eSubtype_LTR) {
+    } else if (IsLTR(m_MainFeat)) {
         if (m_MainFeat.CanGetComment()) {
             string comment = m_MainFeat.GetComment();
             if (NStr::StartsWith(comment, "LTR ")) {
@@ -819,6 +823,12 @@ bool CAutoDefFeatureClause::IsPromoter()
 }
 
 
+bool CAutoDefFeatureClause::IsLTR()
+{
+    return IsLTR(m_MainFeat);
+}
+
+
 bool CAutoDefFeatureClause::IsPromoter(const CSeq_feat& feat)
 {
     if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_promoter) {
@@ -829,6 +839,25 @@ bool CAutoDefFeatureClause::IsPromoter(const CSeq_feat& feat)
     } else {
         return false;
     }
+}
+
+
+bool CAutoDefFeatureClause::IsLTR(const CSeq_feat& feat)
+{
+    if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_LTR) {
+        return true;
+    } else if (feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region ||
+        !feat.IsSetQual()) {
+        return false;
+    }
+    ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
+        if ((*it)->IsSetQual() && (*it)->IsSetVal() &&
+            NStr::EqualNocase((*it)->GetQual(), "rpt_type") &&
+            NStr::FindNoCase((*it)->GetVal(), "long_terminal_repeat") != string::npos) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -848,7 +877,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval, bool suppres
         return false;
     }
     
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    CSeqFeatData::ESubtype subtype = GetMainFeatureSubtype();
     if (subtype == CSeqFeatData::eSubtype_exon && m_IsAltSpliced) {
         interval = "alternatively spliced";
         return true;
@@ -1190,7 +1219,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *par
         }
     } else if (subtype == CSeqFeatData::eSubtype_3UTR 
                || subtype == CSeqFeatData::eSubtype_5UTR
-               || subtype == CSeqFeatData::eSubtype_LTR) {
+               || IsLTR(m_MainFeat)) {
         if (parent_subtype == CSeqFeatData::eSubtype_cdregion
             || parent_subtype == CSeqFeatData::eSubtype_mRNA
             || parent_subtype == CSeqFeatData::eSubtype_gene

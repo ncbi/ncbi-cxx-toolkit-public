@@ -65,10 +65,12 @@ public:
     virtual bool IsNoncodingProductFeat();
     virtual bool IsSatelliteClause();
     virtual bool IsPromoter();
+    virtual bool IsLTR();
     static bool IsSatellite(const CSeq_feat& feat);
     static bool IsPromoter(const CSeq_feat& feat);
     static bool IsGeneCluster (const CSeq_feat& feat);
     static bool IsControlRegion (const CSeq_feat& feat);
+    static bool IsLTR(const CSeq_feat& feat);
 
     
     // functions for comparing locations
