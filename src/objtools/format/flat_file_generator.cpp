@@ -254,6 +254,7 @@ void CFlatFileGenerator::Generate
                           case CSeqFeatData::eSubtype_centromere:
                           case CSeqFeatData::eSubtype_telomere:
                           case CSeqFeatData::eSubtype_rep_origin:
+                          case CSeqFeatData::eSubtype_region:
                               break;
                           default:
                               hasLocalFeat = true;
