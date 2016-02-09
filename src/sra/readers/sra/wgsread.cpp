@@ -1718,8 +1718,8 @@ void CWGSDb_Impl::SSeqTableCursor::GetAmbiguity(TVDBRowId row) const
         // mark none done
         m_AmbiguityMask.resize_mem(len);
         m_AmbiguityMaskDone.resize_mem(len);
-        fill(m_AmbiguityMask.begin(), m_AmbiguityMask.end(), 0);
-        fill(m_AmbiguityMaskDone.begin(), m_AmbiguityMaskDone.end(), 0);
+        fill_n(m_AmbiguityMask.data(), len, 0);
+        fill_n(m_AmbiguityMaskDone.data(), len, 0);
     }
     m_AmbiguityRow = row;
 }
@@ -2601,7 +2601,7 @@ TSeqPos CWGSSeqIterator::x_Get2naLengthExact(TSeqPos pos, TSeqPos len) const
 {
     PROFILE(sw____Get2naLen);
     const Uint1* ptr = x_GetUnpacked4na(pos, len);
-    return sx_FindAmbiguity(ptr, ptr+len) - ptr;
+    return TSeqPos(sx_FindAmbiguity(ptr, ptr+len) - ptr);
 }
 
 
@@ -3566,7 +3566,7 @@ void CWGSSeqIterator::x_CreateChunk(SWGSCreateInfo& info,
     PROFILE(sw_GetChunk);
     info.main_id = GetId(info.flags);
     EChunkType type = EChunkType(chunk_id%kChunkIdStep);
-    size_t index = chunk_id/kChunkIdStep;
+    unsigned index = chunk_id/kChunkIdStep;
     if ( type == eChunk_qual ) {
         CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
         sx_SetSplitId(data->SetId(), *info.main_id);
