@@ -223,25 +223,25 @@ public:
     /// Abort chunked transfer, block any writes to the output stream.
     void AbortChunkedTransfer(void);
 
-    // Check if trailer can be sent: chunked transfer must be enabled
-    // and the request's TE header must include 'trailers'.
-    // All trailer getters/setters are no-op if this condition is false.
-    // This will always return false after FinishChunkedTransfer() has been
-    // called.
+    /// Check if trailer can be sent: chunked transfer must be enabled
+    /// and the request's TE header must include 'trailers'.
+    /// All trailer getters/setters are no-op if this condition is false.
+    /// This will always return false after FinishChunkedTransfer() has been
+    /// called.
     bool CanSendTrailer(void) const;
-    // Prepare to send trailer. This must be called before WriteHeader()
-    // to allow the trailer value to be set later.
-    // Some fields are not allowed to be sent as trailers - see RFC7230:
-    // https://tools.ietf.org/html/rfc7230#section-4.1.2
+    /// Prepare to send trailer. This must be called before WriteHeader()
+    /// to allow the trailer value to be set later.
+    /// Some fields are not allowed to be sent as trailers - see RFC7230:
+    /// https://tools.ietf.org/html/rfc7230#section-4.1.2
     void AddTrailer(const string& name);
-    // Remove trailer. Must be called before WriteHeader().
+    /// Remove trailer. Must be called before WriteHeader().
     void RemoveTrailer(const string& name);
-    // Check if trailer has been added and its value can be set.
+    /// Check if trailer has been added and its value can be set.
     bool   HaveTrailer(const string& name) const;
-    // Get current trailer value.
+    /// Get current trailer value.
     string GetTrailerValue(const string& name) const;
-    // Set trailer value. The trailer should have been added using
-    // AddTrailer().
+    /// Set trailer value. The trailer should have been added using
+    /// AddTrailer().
     void SetTrailerValue(const string& name, const string& value);
 
 public:
