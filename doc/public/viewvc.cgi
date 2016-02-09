@@ -1,4 +1,4 @@
-#!/opt/python-2.5.1/bin/python
+#!/usr/bin/env python
 import cgi
 import os
 import subprocess
@@ -34,9 +34,8 @@ base += '/c++'
 # no svn executable.  Other servers will also fall back on this table
 # in the absence of /usr/bin/svn, but shouldn't need to in practice.
 path_map = (
-    ('include/gui', 'gbench/branches/c++-toolkit-2.9.2/include/gui'),
-    ('src/gui',     'gbench/branches/c++-toolkit-2.9.2/src/gui'),
-    ('src/sra/sdk', 'misc_projects/production/components/sra_sdk/2.4.0')
+    ('include/gui', 'gbench/branches/2.10.0-RC2/include/gui'),
+    ('src/gui',     'gbench/branches/2.10.0-RC2/src/gui')
     )
 
 def resolve_via_map(base, path):
