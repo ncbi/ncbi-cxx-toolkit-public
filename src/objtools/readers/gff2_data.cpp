@@ -592,6 +592,13 @@ bool CGff2Record::UpdateFeature(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
+    // mss-582:
+    //  if the parent feature is a gene then don't mess with the gene's location
+    //
+    CSeqFeatData::ESubtype subtype = pFeature->GetData().GetSubtype();
+    if (subtype == CSeqFeatData::eSubtype_gene) {
+        return true;
+    }
     const CSeq_loc& target = pFeature->GetLocation();
     CRef<CSeq_loc> pAddLoc = GetSeqLoc(flags);
 
