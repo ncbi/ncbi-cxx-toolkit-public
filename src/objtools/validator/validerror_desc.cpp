@@ -600,14 +600,21 @@ bool CValidError_desc::ValidateDblink
         if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
             const string &label_str = GET_FIELD(fld.GetLabel(), Str);
             if (NStr::EqualNocase(label_str, "BioSample")) {
-                if (fld.IsSetData() && fld.GetData().IsStrs()) {
-                    const CUser_field::C_Data::TStrs& strs = fld.GetData().GetStrs();
-                    ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
-                        const string& str = *st_itr;
-                        if (x_IsBadBioSampleFormat (str) && x_IsBadAltBioSampleFormat (str)) {
-                            PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
-                                "Bad BioSample format - " + str, *m_Ctx, desc);
+                if (fld.IsSetData()) {
+                    if (fld.GetData().IsStrs()) {
+                        const CUser_field::C_Data::TStrs& strs = fld.GetData().GetStrs();
+                        ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
+                            const string& str = *st_itr;
+                            if (x_IsBadBioSampleFormat(str) && x_IsBadAltBioSampleFormat(str)) {
+                                PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+                                    "Bad BioSample format - " + str, *m_Ctx, desc);
+                            }
                         }
+                    } else if (fld.GetData().IsStr() && 
+                               x_IsBadBioSampleFormat(fld.GetData().GetStr()) &&
+                               x_IsBadAltBioSampleFormat(fld.GetData().GetStr())) {
+                        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+                            "Bad BioSample format - " + fld.GetData().GetStr(), *m_Ctx, desc);
                     }
                 }
             } else if (NStr::EqualNocase(label_str, "Sequence Read Archive")) {
