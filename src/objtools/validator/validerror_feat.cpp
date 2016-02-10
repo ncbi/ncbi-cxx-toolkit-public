@@ -6698,6 +6698,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
         other_than_mismatch = true;
         if (got_dash || got_x) {
             string codon_desc = got_dash ? "Illegal" : "Ambiguous";
+            string p_word = got_dash ? "Probably" : "Possibly";
             if (report_errors  ||  unclassified_except) {
                 EDiagSev sev = eDiag_Error;
                 if (unclassified_except) {
@@ -6706,7 +6707,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
                     PostErr(sev, eErr_SEQ_FEAT_StartCodon,
                         codon_desc + " start codon (and " + 
                         NStr::SizetToString(internal_stop_count) +
-                        " internal stops). Possibly wrong genetic code [" +
+                        " internal stops). " + p_word + " wrong genetic code [" +
                         gccode + "]", feat);
                     reported_bad_start_codon = true;
                 }

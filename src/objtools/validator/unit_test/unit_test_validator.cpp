@@ -1473,7 +1473,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     cds->ResetExcept_text();
 
     expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "StartCodon", "Illegal start codon (and 3 internal stops). Possibly wrong genetic code [0]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "StartCodon", "Illegal start codon (and 3 internal stops). Probably wrong genetic code [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
 
     eval = validator.Validate(seh, options);
@@ -11249,7 +11249,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "StartCodon",
-                              "Illegal start codon (and 1 internal stops). Possibly wrong genetic code [0]"));
+                              "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "InternalStop",
                               "1 internal stops (and illegal start codon). Genetic code [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
@@ -11314,7 +11314,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "StartCodon",
-                              "Illegal start codon (and 1 internal stops). Possibly wrong genetic code [0]"));
+                              "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "InternalStop",
                               "1 internal stops (and illegal start codon). Genetic code [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
