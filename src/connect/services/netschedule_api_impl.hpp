@@ -53,8 +53,8 @@ BEGIN_NCBI_SCOPE
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
 
 void g_AppendHitID(string& cmd);
-void g_AppendClientIPAndSessionID(string& cmd,
-        const string* default_session = NULL);
+bool g_AppendClientIPAndSessionID(string& cmd);
+
 bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response);
 
 inline string g_MakeBaseCmd(const string& cmd_name, const string& job_key)

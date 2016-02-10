@@ -54,7 +54,7 @@
 
 BEGIN_NCBI_SCOPE
 
-void g_AppendClientIPAndSessionID(string& cmd, const string* default_session)
+bool g_AppendClientIPAndSessionID(string& cmd)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
 
@@ -68,11 +68,10 @@ void g_AppendClientIPAndSessionID(string& cmd, const string* default_session)
         cmd += " sid=\"";
         cmd += NStr::PrintableString(req.GetSessionID());
         cmd += '"';
-    } else if (default_session != NULL) {
-        cmd += " sid=\"";
-        cmd += NStr::PrintableString(*default_session);
-        cmd += '"';
+        return true;
     }
+
+    return false;
 }
 
 void g_AppendHitID(string& cmd)
@@ -86,9 +85,9 @@ void g_AppendHitID(string& cmd)
     }
 }
 
-void g_AppendClientIPSessionIDHitID(string& cmd, const string* default_session)
+void g_AppendClientIPSessionIDHitID(string& cmd)
 {
-    g_AppendClientIPAndSessionID(cmd, default_session);
+    g_AppendClientIPAndSessionID(cmd);
     g_AppendHitID(cmd);
 }
 
@@ -605,8 +604,15 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
     // like the "queue not found" error.
     if (m_Mode & fNonWnCompatible) {
         auth += "\r\nVERSION";
-        g_AppendClientIPSessionIDHitID(auth,
-                impl->m_ClientSession.empty() ? NULL : &impl->m_ClientSession);
+
+        if (!g_AppendClientIPAndSessionID(auth) &&
+                !impl->m_ClientSession.empty()) {
+            auth += " sid=\"";
+            auth += NStr::PrintableString(impl->m_ClientSession);
+            auth += '"';
+        }
+
+        g_AppendHitID(auth);
     }
 
     m_Auth = auth;
