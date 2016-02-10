@@ -6611,6 +6611,35 @@ void CValidError_feat::TranslateTripletIntrons (
     }
 }
 
+int GetGcodeForName(const string& code_name)
+{
+    const CGenetic_code_table& tbl = CGen_code_table::GetCodeTable();
+    ITERATE(CGenetic_code_table::Tdata, it, tbl.Get()) {
+        if (NStr::EqualNocase((*it)->GetName(), code_name)) {
+            return (*it)->GetId();
+        }
+    }
+    return 255;
+}
+
+
+int GetGcodeForInternalStopErrors(const CCdregion& cdr)
+{
+    int gc = 0;
+    if (cdr.IsSetCode()) {
+        ITERATE(CCdregion::TCode::Tdata, it, cdr.GetCode().Get()) {
+            if ((*it)->IsId()) {
+                gc = (*it)->GetId();
+            } else if ((*it)->IsName()) {
+                gc = GetGcodeForName((*it)->GetName());
+            } 
+            if (gc != 0) break;
+        }
+    }
+    return gc;
+}
+
+
 bool CValidError_feat::ValidateCdRegionTranslation 
 (const CSeq_feat& feat,
  const string& transl_prot,
@@ -6632,11 +6661,8 @@ bool CValidError_feat::ValidateCdRegionTranslation
 
     TranslateTripletIntrons (feat, feat.GetData().GetCdregion(), nonsense_intron);
 
-    int gc = 0;
-    if ( feat.GetData().GetCdregion().IsSetCode() ) {
-        // We assume that the id is set for all Genetic_code
-        gc = feat.GetData().GetCdregion().GetCode().GetId();
-    }
+    int gc = GetGcodeForInternalStopErrors(feat.GetData().GetCdregion());
+
     string gccode = NStr::IntToString(gc);
 
     // count internal stops and Xs
