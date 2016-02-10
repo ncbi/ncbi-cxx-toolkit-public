@@ -31,7 +31,9 @@ FreeBSD64         : plain          : Clang.sh         --without-debug --with-mt 
 
 Linux64-Centos    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 Linux64-Centos    : GCC-nomt       : GCC.sh           --without-debug --without-mt --without-runpath --with-flat-makefile
-Linux64-Centos    : plain-ICC      : ICC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux64-Centos    : ICC-13      : ICC.sh 13.0      --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux64-Centos    : ICC-15      : ICC.sh 15.0      --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux64-Centos    : plain-ICC      : ICC.sh      --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 Linux64-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 Linux32-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
