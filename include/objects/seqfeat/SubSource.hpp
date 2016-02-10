@@ -103,6 +103,14 @@ public:
     static CRef<CDate> DateFromCollectionDate (const string& str) THROWS((CException));
 
     static void IsCorrectDateFormat(const string& date_string, bool& bad_format, bool& in_future);
+    typedef enum {
+        eDateFormatFlag_ok = 0,
+        eDateFormatFlag_bad_format = 1,
+        eDateFormatFlag_in_future = 2,
+        eDateFormatFlag_out_of_order = 4
+    } EDateFormatFlag;
+    static size_t CheckDateFormat(const string& date_string);
+
     static string GetCollectionDateProblem (const string& date_string);
     static bool IsCollectionDateAfterTime(const string& collection_date, time_t t, bool& bad_format);
     static bool IsCollectionDateAfterTime(const CDate& collection_date, time_t t);

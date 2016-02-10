@@ -446,6 +446,62 @@ void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format
     }
 }
 
+size_t CSubSource::CheckDateFormat(const string& date_string)
+{
+    size_t rval = eDateFormatFlag_ok;
+    vector<string> pieces;
+    NStr::Tokenize(date_string, "/", pieces);
+    if (pieces.size() > 2) {
+        rval |= eDateFormatFlag_bad_format;
+    } else if (pieces.size() == 2) {
+        bool first_bad = false;
+        bool first_future = false;
+        bool second_bad = false;
+        bool second_future = false;
+        rval |= CheckDateFormat(pieces[0]);
+        rval |= CheckDateFormat(pieces[1]);
+        if (rval == eDateFormatFlag_ok) {
+            try {
+                CRef<CDate> d1 = CSubSource::DateFromCollectionDate(pieces[0]);
+                CRef<CDate> d2 = CSubSource::DateFromCollectionDate(pieces[1]);
+                if (d2->Compare(*d1) == CDate::eCompare_before) {
+                    rval |= eDateFormatFlag_out_of_order;
+                }
+            } catch (CException) {
+                rval |= eDateFormatFlag_bad_format;
+            }
+        }
+        return rval;
+    }
+
+    try {
+        CRef<CDate> coll_date = CSubSource::DateFromCollectionDate(date_string);
+
+        if (!IsISOFormatDate(date_string)) {
+            // if there are two dashes, then the first token needs to be the day, and the
+            // day has to have two numbers, a leading zero if the day is less than 10
+            size_t pos = NStr::Find(date_string, "-");
+            if (pos != NPOS) {
+                size_t pos2 = NStr::Find(date_string, "-", pos + 1);
+                if (pos2 != NPOS  &&  pos != 2) {
+                    rval |= eDateFormatFlag_bad_format;
+                }
+            }
+        }
+
+        if (rval == eDateFormatFlag_ok) {
+            time_t t;
+
+            time(&t);
+            if (IsCollectionDateAfterTime(*coll_date, t)) {
+                rval |= eDateFormatFlag_in_future;
+            }
+        }
+    } catch (CException) {
+        rval |= eDateFormatFlag_bad_format;
+    }
+    return rval;
+}
 
 string CSubSource::GetCollectionDateProblem (const string& date_string)
 {
@@ -453,11 +509,13 @@ string CSubSource::GetCollectionDateProblem (const string& date_string)
     bool bad_format = false;
     bool in_future = false;
 
-    IsCorrectDateFormat(date_string, bad_format, in_future);
-    if (bad_format) {
+    size_t rval = CheckDateFormat(date_string);
+    if (rval & eDateFormatFlag_bad_format) {
         problem = "Collection_date format is not in DD-Mmm-YYYY format";
-    } else if (in_future) {
+    } else if (rval & eDateFormatFlag_in_future) {
         problem = "Collection_date is in the future";
+    } else if (rval & eDateFormatFlag_out_of_order) {
+        problem = "Collection_dates are out of order";
     }
     return problem;
 }
