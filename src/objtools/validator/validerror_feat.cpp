@@ -6680,7 +6680,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
                     PostErr(sev, eErr_SEQ_FEAT_StartCodon,
                         codon_desc + " start codon (and " + 
                         NStr::SizetToString(internal_stop_count) +
-                        " internal stops). Probably wrong genetic code [" +
+                        " internal stops). Possibly wrong genetic code [" +
                         gccode + "]", feat);
                     reported_bad_start_codon = true;
                 }
@@ -6824,6 +6824,34 @@ void CValidError_feat::x_CheckCDSFrame
 }
 
 
+void FixGeneticCode(CCdregion& cdr)
+{
+    if (!cdr.IsSetCode()) {
+        return;
+    }
+    CGenetic_code::C_E::TId genCode = 0;
+    if (cdr.IsSetCode()) {
+        ITERATE(CCdregion::TCode::Tdata, it, cdr.GetCode().Get()) {
+            if ((*it)->IsId()) {
+                genCode = (*it)->GetId();
+            }
+        }
+    } 
+
+    if (genCode == 7) {
+        genCode = 4;
+    } else if (genCode == 8) {
+        genCode = 1;
+    } else if (genCode == 0) {
+        genCode = 1;
+    }
+    cdr.ResetCode();
+    CRef<CGenetic_code::C_E> new_code(new CGenetic_code::C_E());
+    new_code->SetId(genCode);
+    cdr.SetCode().Set().push_back(new_code);
+}
+
+
 void CValidError_feat::x_FindTranslationStops
 (const CSeq_feat& feat,
  bool& got_stop,
@@ -6833,12 +6861,15 @@ void CValidError_feat::x_FindTranslationStops
  string& transl_prot
 )
 {
-    const CCdregion& cdregion = feat.GetData().GetCdregion();
+    CRef<CSeq_feat> tmp_cds(new CSeq_feat());
+    tmp_cds->Assign(feat);
+    FixGeneticCode(tmp_cds->SetData().SetCdregion());
+    const CCdregion& cdregion = tmp_cds->GetData().GetCdregion();
     try {
         if (m_Scope) {
-            CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
+            CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, tmp_cds->GetLocation(), m_Imp.GetTSE_Handle());
             if (bsh) {
-                if (feat.GetLocation().IsWhole()) {
+                if (tmp_cds->GetLocation().IsWhole()) {
                     size_t start = 0;
                     if (cdregion.IsSetFrame()) {
                         if (cdregion.GetFrame() == 2) {
@@ -6852,7 +6883,7 @@ void CValidError_feat::x_FindTranslationStops
                         genetic_code = &(cdregion.GetCode());
                     }
                     CRef<CSeq_id> id(new CSeq_id());
-                    id->Assign(feat.GetLocation().GetWhole());
+                    id->Assign(tmp_cds->GetLocation().GetWhole());
                     CRef<CSeq_loc> tmp(new CSeq_loc(*id, start, bsh.GetInst_Length() - 1));
                     CSeqTranslator::Translate(*tmp, bsh.GetScope(), transl_prot, genetic_code, true, false, &alt_start);
                     unable_to_translate = false;
@@ -6863,7 +6894,7 @@ void CValidError_feat::x_FindTranslationStops
                         show_stop = true;
                     }
                 } else {
-                    CSeqTranslator::Translate(feat, *m_Scope, transl_prot,
+                    CSeqTranslator::Translate(*tmp_cds, *m_Scope, transl_prot,
                                                 true,   // include stop codons
                                                 false,  // do not remove trailing X/B/Z
                                                 &alt_start);
@@ -6877,7 +6908,7 @@ void CValidError_feat::x_FindTranslationStops
                 }
             }
         }
-    } catch (CException&) {
+    } catch (CException& e) {
     }
 }
 
