@@ -5327,12 +5327,19 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     }
 
                     const CCdregion& cdregion = feat.GetData().GetCdregion();
-                    if ( cdregion.CanGetCode() ) {
-                        int cdsgencode = cdregion.GetCode().GetId();
-                        if (firstcdsgencode == 0) {
-                            firstcdsgencode = cdsgencode;
-                        } else if (firstcdsgencode != cdsgencode) {
-                            mixedcdsgencodes = true;
+                    if (cdregion.IsSetCode()) {
+                        int cdsgencode = 0;
+                        ITERATE(CCdregion::TCode::Tdata, it, cdregion.GetCode().Get()) {
+                            if ((*it)->IsId()) {
+                                cdsgencode = (*it)->GetId();
+                            }
+                        }
+                        if (cdsgencode != 0) {
+                            if (firstcdsgencode == 0) {
+                                firstcdsgencode = cdsgencode;
+                            } else if (firstcdsgencode != cdsgencode) {
+                                mixedcdsgencodes = true;
+                            }
                         }
                     }
                 } else if (fi->GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {
