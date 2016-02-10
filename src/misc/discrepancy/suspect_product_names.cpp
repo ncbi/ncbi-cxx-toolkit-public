@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbi_autoinit.hpp>
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
 #include <objects/biblio/Affil.hpp>
@@ -83,6 +84,7 @@
 #include <objects/macro/Translation_constraint.hpp>
 #include <objects/macro/Word_substitution.hpp>
 #include <objects/macro/Word_substitution_set.hpp>
+#include <objects/misc/sequence_util_macros.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub_set.hpp>
@@ -107,6 +109,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <serial/objistrasn.hpp>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE;
@@ -163,11 +166,10 @@ static CSafeStatic< map<CSeq_inst::EStrand, string> > strand_strname;
 
 static void InitMaps()
 {
-// ????????????????
-// NOT MT SAFE
-
-    static bool ready = false;
-    if (ready) {
+    DEFINE_STATIC_FAST_MUTEX(sx_MapMutex);
+    CFastMutexGuard guard(sx_MapMutex);
+    static bool maps_ready = false;
+    if (maps_ready) {
         return;
     }
 
@@ -490,7 +492,7 @@ static void InitMaps()
     (*strand_strname)[CSeq_inst::eStrand_mixed] = "mixed";
     (*strand_strname)[CSeq_inst::eStrand_other] = "other";
 
-    ready = true;
+    maps_ready = true;
 }
 
 
@@ -532,8 +534,12 @@ static bool IsStringConstraintEmpty(const CString_constraint* constraint)
 static const string SkipWeasel(const string& str)
 {
     static CSafeStatic< vector<string> > weasels;
-    if (weasels->empty()) {
-        NStr::Tokenize("candidate,hypothetical,novel,possible,potential,predicted,probable,putative,uncharacterized,unique", ",", *weasels);
+    DEFINE_STATIC_FAST_MUTEX(sx_WeaselVecMutex);
+    {
+        CFastMutexGuard guard(sx_WeaselVecMutex);
+        if (weasels->empty()) {
+            NStr::Tokenize("candidate,hypothetical,novel,possible,potential,predicted,probable,putative,uncharacterized,unique", ",", *weasels);
+        }
     }
 
     if (str.empty()) {
@@ -1305,7 +1311,7 @@ static bool ContainsNorMoreSetsOfBracketsOrParentheses(const string& search, con
 
 static bool PrecededByOkPrefix(const string& start_str)
 {
-    for (int i=0; i< ArraySize(ok_num_prefix); i++) {
+    for (size_t i=0; i< ArraySize(ok_num_prefix); i++) {
         if (NStr::StartsWith(start_str, ok_num_prefix[i])) {
             return true;
         }
@@ -5502,6 +5508,155 @@ DISCREPANCY_AUTOFIX(TEST_ORGANELLE_PRODUCTS)
 {
     unsigned int n = AutofixProductNames(item, scope);
     return CRef<CAutofixReport>(n ? new CAutofixReport("TEST_ORGANELLE_PRODUCTS: [n] organelle product name[s] fixed", n) : 0);
+}
+
+
+static CConstRef<CSuspect_rule_set> s_GetrRNAProductsSuspectRuleSet(void)
+{
+    DEFINE_STATIC_FAST_MUTEX(sx_RuleMutex);
+    CFastMutexGuard guard(sx_RuleMutex);
+    
+    static CAutoInitRef<CSuspect_rule_set> rrna_products_suspect_rule_set;
+    if( rrna_products_suspect_rule_set.IsInitialized() ) {
+        // already built
+        return ConstRef(&*rrna_products_suspect_rule_set);
+    }
+    
+    CTempString rrna_products_suspect_rule_set_asn_text =
+        "Suspect-rule-set ::= {\n"
+        "        { find string-constraint { match-text \"domain\", whole-word FALSE } },\n"
+        "        { find string-constraint { match-text \"partial\", whole-word FALSE } },\n"
+        "        { find string-constraint { match-text \"5s_rRNA\", whole-word FALSE } },\n"
+        "        { find string-constraint { match-text \"16s_rRNA\", whole-word FALSE } },\n"
+        "        { find string-constraint { match-text \"23s_rRNA\", whole-word FALSE } },\n"
+        "        {\n"
+        "            find string-constraint { match-text \"8S\", whole-word TRUE },\n"
+        "            except string-constraint { match-text \"5.8S\", whole-word TRUE } } }";
+
+    CObjectIStreamAsn asn_istrm(rrna_products_suspect_rule_set_asn_text.data(), rrna_products_suspect_rule_set_asn_text.length());
+    asn_istrm.Read(&*rrna_products_suspect_rule_set, rrna_products_suspect_rule_set->GetThisTypeInfo());
+
+    return ConstRef(&*rrna_products_suspect_rule_set);
+}
+
+// gives a text description explaining what the string constraint matches.
+// (e.g. "contains '5.8S' (whole word)")
+//
+// only bare minimum implementation and raises an exception if it the
+// input goes beyond its capability
+static void s_SummarizeStringConstraint(
+    ostream & out_strm, const CString_constraint & string_constraint )
+{
+    if( string_constraint.IsSetMatch_location() ||
+        string_constraint.IsSetCase_sensitive() ||
+        string_constraint.IsSetIgnore_space() ||
+        string_constraint.IsSetIgnore_punct() ||
+        string_constraint.IsSetIgnore_words() ||
+        string_constraint.IsSetNot_present() ||
+        string_constraint.IsSetIs_all_caps() ||
+        string_constraint.IsSetIs_all_lower() ||
+        string_constraint.IsSetIs_all_punct() ||
+        string_constraint.IsSetIgnore_weasel() ||
+        string_constraint.IsSetIs_first_cap() ||
+        string_constraint.IsSetIs_first_each_cap() )
+    {
+        NCBI_USER_THROW(
+            "s_SummarizeStringConstraint input too complex.  "
+            "Please expand the function or find/create a better one.");
+    }
+
+    out_strm << "contains '" << string_constraint.GetMatch_text() << "'";
+    if( GET_FIELD_OR_DEFAULT(string_constraint, Whole_word, false) ) {
+        out_strm << " (whole word)";
+    }
+}
+
+// Gives a text description of what the given search_func matches.
+//
+// only bare minimum implementation and raises an exception if it the
+// input goes beyond its capability
+static void s_SummarizeSearchFunc(
+    ostream & out_strm, const CSearch_func & search_func)
+{
+    if( ! search_func.IsString_constraint() ) {
+        NCBI_USER_THROW(
+            "s_SummarizeSearchFunc input too complex.  "
+            "Please expand the function or find/create a better one.");
+    }
+
+    s_SummarizeStringConstraint(out_strm, search_func.GetString_constraint());
+}
+
+// Gives a text description of a suspect rule.
+//
+// examples:
+//
+// - "contains 'partial'"
+// - "contains '8S' (whole word) but not contains '5.8S' (whole word)"
+//
+// only implements the barest subset of this and will surely need more
+// complexity and to be moved later on.
+//
+// Raises an exception if the input is beyond its ability to handle.
+//
+static void s_SummarizeSuspectRule(
+    ostream & out_strm, const CSuspect_rule & rule)
+{
+    if( rule.IsSetFeat_constraint() ||
+        rule.IsSetRule_type() ||
+        rule.IsSetReplace() ||
+        rule.IsSetDescription() ||
+        rule.IsSetFatal() )
+    {
+        NCBI_USER_THROW(
+            "s_SummarizeSuspectRule input too complex.  "
+            "Please expand the function or find/create a better one.");
+    }
+
+    _ASSERT(rule.IsSetFind());
+    s_SummarizeSearchFunc(out_strm, rule.GetFind());
+    if( rule.IsSetExcept() ) {
+        out_strm << " but not ";
+        s_SummarizeSearchFunc(out_strm, rule.GetExcept());
+    }
+}
+
+DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, CSeq_feat, eDisc, "rRNA product names should not contain 'partial' or 'domain'")
+{
+    if( ! obj.IsSetData() ||
+        obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA )
+    {
+        return;
+    }
+
+    static const string kMsg =
+        "[n] rRNA product name[s] contain[S] suspect phrase";
+
+    // build the product rules
+    const string product = GetRNAProductString(obj);
+    CConstRef<CSuspect_rule_set> suspect_rule_set =
+        s_GetrRNAProductsSuspectRuleSet();
+    ITERATE(CSuspect_rule_set::Tdata, rule_it, suspect_rule_set->Get()) {
+        const CSuspect_rule & suspect_rule = **rule_it;
+        if( suspect_rule.StringMatchesSuspectProductRule(product) ) {
+            // build message for detaild report
+            CNcbiOstrstream detailed_msg;
+            detailed_msg << "[n] rRNA product name[s] ";
+            s_SummarizeSuspectRule(detailed_msg, suspect_rule);
+
+            m_Objs[kMsg][(string)CNcbiOstrstreamToString(detailed_msg)]
+                .Ext().Add(
+                    *new CDiscrepancyObject(
+                        context.GetCurrentSeq_feat(), context.GetScope(),
+                        context.GetFile(), context.GetKeepRef()),
+                    false);
+        }
+    }
+}
+
+DISCREPANCY_SUMMARIZE(SUSPECT_RRNA_PRODUCTS)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

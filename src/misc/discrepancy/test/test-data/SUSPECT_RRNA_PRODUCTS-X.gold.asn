@@ -1,0 +1,22 @@
+Discrepancy Report Results
+
+Summary
+SUSPECT_RRNA_PRODUCTS: 7 rRNA product names contain suspect phrase
+
+Detailed Report
+
+SUSPECT_RRNA_PRODUCTS: 7 rRNA product names contain suspect phrase
+SUSPECT_RRNA_PRODUCTS: 1 rRNA product name contains '8S' (whole word) but not contains '5.8S' (whole word)
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	8S	gb|U54469.1|DMU54469:1-184
+
+SUSPECT_RRNA_PRODUCTS: 4 rRNA product names contains 'domain'
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	domain	gb|U54469.1|DMU54469:1-199
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	partial domain	gb|U54469.1|DMU54469:1-193
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	partial domain	gb|U54469.1|DMU54469:1-190
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	domain	gb|U54469.1|DMU54469:1-187
+
+SUSPECT_RRNA_PRODUCTS: 4 rRNA product names contains 'partial'
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	partial	gb|U54469.1|DMU54469:1-196
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	partial domain	gb|U54469.1|DMU54469:1-193
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	partial domain	gb|U54469.1|DMU54469:1-190
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	partially	gb|U54469.1|DMU54469:1-178

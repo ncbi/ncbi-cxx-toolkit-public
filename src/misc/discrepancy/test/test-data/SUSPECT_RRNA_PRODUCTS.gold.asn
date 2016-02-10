@@ -1,0 +1,15 @@
+Discrepancy Report Results
+
+Summary
+SUSPECT_RRNA_PRODUCTS:7 rRNA product names contain suspect phrase
+
+Detailed Report
+
+SUSPECT_RRNA_PRODUCTS::7 rRNA product names contain suspect phrase
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	8S	gb|U54469.1|DMU54469:1-184
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	domain	gb|U54469.1|DMU54469:1-199
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	partial domain	gb|U54469.1|DMU54469:1-193
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	partial domain	gb|U54469.1|DMU54469:1-190
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	domain	gb|U54469.1|DMU54469:1-187
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	partial	gb|U54469.1|DMU54469:1-196
+test-data/SUSPECT_RRNA_PRODUCTS.asn:rRNA	partially	gb|U54469.1|DMU54469:1-178

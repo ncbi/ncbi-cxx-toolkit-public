@@ -93,7 +93,7 @@ typedef map<string, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
 class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
 {
 public:
-    CDiscrepancySet(void) : m_KeepRef(false), m_SesameStreetCutoff(0.75), m_UserData(0) {}
+    CDiscrepancySet(void) : m_SesameStreetCutoff(0.75), m_KeepRef(false), m_UserData(0) {}
     virtual ~CDiscrepancySet(void){}
     virtual bool AddTest(const string& name) = 0;
     virtual bool SetAutofixHook(const string& name, TAutofixHook func) = 0;
