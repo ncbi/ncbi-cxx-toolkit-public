@@ -115,9 +115,13 @@ BOOST_AUTO_TEST_CASE(TestSummaryHistory)
     const xml::node& root = doc.get_root_node();
 
     xml::node_set items = root.run_xpath_query("./WebEnv/text()");
+    BOOST_CHECK ( items.size() != 0 );
+
     string web_env = items.begin()->get_content();
 
     items  = root.run_xpath_query("./QueryKey/text()");
+    BOOST_CHECK ( items.size() != 0 );
+
     int query_key = NStr::StringToNumeric<int>(items.begin()->get_content());
 
     stringstream summary;
@@ -139,15 +143,22 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
     stringstream content;
    
     cli.SetMaxReturn(101); 
+    
     BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
+    
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
+    
     const xml::node& root = doc.get_root_node();
 
     xml::node_set items = root.run_xpath_query("./WebEnv/text()");
+    BOOST_CHECK ( items.size() != 0 );
+
     string web_env = items.begin()->get_content();
 
     items  = root.run_xpath_query("./QueryKey/text()");
+    BOOST_CHECK ( items.size() != 0 );
+
     int query_key = NStr::StringToNumeric<int>(items.begin()->get_content());
 
     stringstream history;
@@ -174,17 +185,19 @@ BOOST_AUTO_TEST_CASE(TestLinkHistory)
 
     cli.SetMaxReturn(101); 
     BOOST_REQUIRE_NO_THROW(cli.Link("protein", "gene", uids, content, "neighbor_history"));
+ 
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
+    
     const xml::node& root = doc.get_root_node();
 
-    xml::node_set items = root.run_xpath_query("//WebEnv/text()");
-    string web_env = items.begin()->get_content();
-
+    xml::node_set items = root.run_xpath_query(".//WebEnv/text()");
     BOOST_CHECK ( 1 == items.size() ) ;
 
-    items  = root.run_xpath_query("//QueryKey/text()");
-    int query_key = NStr::StringToNumeric<int>(items.begin()->get_content());
+    string web_env = items.begin()->get_content();
 
-    BOOST_CHECK ( 1 == items.size() );
+    items  = root.run_xpath_query(".//QueryKey/text()");
+    BOOST_CHECK( 1 == items.size() );
+
+    int query_key = NStr::StringToNumeric<int>(items.begin()->get_content());
 }
