@@ -3227,9 +3227,9 @@ string GetTargetedLocusNameConsensus(const string& tls1, const string& tls2)
     }
 
     vector<string> tokens1;
-    NStr::Tokenize(tls1, " ,-", tokens1);
+    NStr::Tokenize(tls1, " ", tokens1);
     vector<string> tokens2;
-    NStr::Tokenize(tls2, " ,-", tokens2);
+    NStr::Tokenize(tls2, " ", tokens2);
 
     size_t t1_pos = 0;
     size_t t1_match_start = string::npos;

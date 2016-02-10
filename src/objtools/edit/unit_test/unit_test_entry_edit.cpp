@@ -1463,6 +1463,8 @@ BOOST_AUTO_TEST_CASE(Test_GetTargetedLocusNameConsensus)
     BOOST_CHECK_EQUAL(edit::GetTargetedLocusNameConsensus("16S ribosomal RNA", "abc 16S ribosomal RNA 456"), "16S ribosomal RNA");
     BOOST_CHECK_EQUAL(edit::GetTargetedLocusNameConsensus("something 16S ribosomal RNA else", "abc 16S ribosomal RNA 456"), "16S ribosomal RNA");
     BOOST_CHECK_EQUAL(edit::GetTargetedLocusNameConsensus("this is not a match", "something else entirely"), kEmptyStr);
+    BOOST_CHECK_EQUAL(edit::GetTargetedLocusNameConsensus("ultra-conserved element locus SR-01", "ultra-conserved element locus SR-02"), "ultra-conserved element locus");
+
 }
 
 
