@@ -54,8 +54,9 @@ BEGIN_NCBI_SCOPE
 
 void g_AppendClientIPSessionIDHitID(string& cmd)
 {
-    g_AppendClientIPAndSessionID(cmd);
-    g_AppendHitID(cmd);
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    g_AppendClientIPAndSessionID(cmd, req);
+    g_AppendHitID(cmd, req.GetCurrentSubHitID());
 }
 
 SNetScheduleNotificationThread::SNetScheduleNotificationThread(

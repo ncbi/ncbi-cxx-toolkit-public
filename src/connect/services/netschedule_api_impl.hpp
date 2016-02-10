@@ -55,22 +55,18 @@ BEGIN_NCBI_SCOPE
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
 
 inline
-void g_AppendHitID(string& cmd)
+void g_AppendHitID(string& cmd, const string& sub_hit_id =
+        CDiagContext::GetRequestContext().GetCurrentSubHitID())
 {
-    CRequestContext& req = CDiagContext::GetRequestContext();
-
-    if (req.IsSetHitID()) {
-        cmd += " ncbi_phid=\"";
-        cmd += req.GetHitID();
-        cmd += '"';
-    }
+    cmd += " ncbi_phid=\"";
+    cmd += sub_hit_id;
+    cmd += '"';
 }
 
 inline
-bool g_AppendClientIPAndSessionID(string& cmd)
+bool g_AppendClientIPAndSessionID(string& cmd,
+    const CRequestContext& req = CDiagContext::GetRequestContext())
 {
-    CRequestContext& req = CDiagContext::GetRequestContext();
-
     if (req.IsSetClientIP()) {
         cmd += " ip=\"";
         cmd += req.GetClientIP();
