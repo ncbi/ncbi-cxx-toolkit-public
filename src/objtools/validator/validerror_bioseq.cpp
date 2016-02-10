@@ -447,7 +447,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
              }
            break;
         case CSeq_id::e_Local:
-            if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > 64) {
+            if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > 50) {
                 EDiagSev sev = eDiag_Error;
                 if (! m_Imp.IsINSDInSep()) {
                     sev = eDiag_Critical;
