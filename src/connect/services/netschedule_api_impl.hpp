@@ -36,6 +36,8 @@
 #include "netservice_api_impl.hpp"
 #include "netschedule_api_getjob.hpp"
 
+#include <corelib/request_ctx.hpp>
+
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/error_codes.hpp>
 
@@ -52,8 +54,39 @@ BEGIN_NCBI_SCOPE
 
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
 
-void g_AppendHitID(string& cmd);
-bool g_AppendClientIPAndSessionID(string& cmd);
+inline
+void g_AppendHitID(string& cmd)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+
+    if (req.IsSetHitID()) {
+        cmd += " ncbi_phid=\"";
+        cmd += req.GetHitID();
+        cmd += '"';
+    }
+}
+
+inline
+bool g_AppendClientIPAndSessionID(string& cmd)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+
+    if (req.IsSetClientIP()) {
+        cmd += " ip=\"";
+        cmd += req.GetClientIP();
+        cmd += '"';
+    }
+
+    if (req.IsSetSessionID()) {
+        cmd += " sid=\"";
+        cmd += NStr::PrintableString(req.GetSessionID());
+        cmd += '"';
+        return true;
+    }
+
+    return false;
+}
+
 
 bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response);
 

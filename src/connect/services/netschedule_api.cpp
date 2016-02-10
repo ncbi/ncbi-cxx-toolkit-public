@@ -40,8 +40,6 @@
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/plugin_manager_impl.hpp>
-#include <corelib/request_control.hpp>
-#include <corelib/request_ctx.hpp>
 
 #include <util/ncbi_url.hpp>
 
@@ -53,37 +51,6 @@
 
 
 BEGIN_NCBI_SCOPE
-
-bool g_AppendClientIPAndSessionID(string& cmd)
-{
-    CRequestContext& req = CDiagContext::GetRequestContext();
-
-    if (req.IsSetClientIP()) {
-        cmd += " ip=\"";
-        cmd += req.GetClientIP();
-        cmd += '"';
-    }
-
-    if (req.IsSetSessionID()) {
-        cmd += " sid=\"";
-        cmd += NStr::PrintableString(req.GetSessionID());
-        cmd += '"';
-        return true;
-    }
-
-    return false;
-}
-
-void g_AppendHitID(string& cmd)
-{
-    CRequestContext& req = CDiagContext::GetRequestContext();
-
-    if (req.IsSetHitID()) {
-        cmd += " ncbi_phid=\"";
-        cmd += req.GetHitID();
-        cmd += '"';
-    }
-}
 
 void g_AppendClientIPSessionIDHitID(string& cmd)
 {
