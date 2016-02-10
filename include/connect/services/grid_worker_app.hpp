@@ -181,43 +181,38 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
 #endif
 #endif
 
+#ifdef NCBI_BUILD_TAG
+#   define GRID_WORKER_APP_BUILD_TAG NCBI_AS_STRING(NCBI_BUILD_TAG)
+#else
+#   define GRID_WORKER_APP_BUILD_TAG kEmptyStr
+#endif
 
-#define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version)                       \
-    NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version);               \
+#define NCBI_WORKERNODE_MAIN_IMPL(TFactory, Version, SetListener)           \
     int main(int argc, const char* argv[])                                  \
     {                                                                       \
         GetDiagContext().SetOldPostFormat(false);                           \
-        CGridWorkerApp app(new TWorkerNodeJob##Factory,                     \
-            CVersionInfo(#Version));                                        \
+        CGridWorkerApp app(new TFactory, CVersionInfo(#Version),            \
+            SBuildInfo(__DATE__ " " __TIME__,  GRID_WORKER_APP_BUILD_TAG)); \
+        SetListener;                                                        \
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog,                  \
                 NcbiEmptyCStr, GRID_WORKER_APP_NAME);                       \
     }
+
+#define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version)                       \
+    NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version);               \
+    NCBI_WORKERNODE_MAIN_IMPL(TWorkerNodeJob##Factory, Version, )
 
 #define NCBI_WORKERNODE_MAIN_WITH_LISTENER(TWorkerNodeJob, Version,         \
                                            ListenerClass)                   \
     NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version);               \
-    int main(int argc, const char* argv[])                                  \
-    {                                                                       \
-        GetDiagContext().SetOldPostFormat(false);                           \
-        CGridWorkerApp app(new TWorkerNodeJob##Factory,                     \
-            CVersionInfo(#Version));                                        \
-        app.SetListener(new ListenerClass);                                 \
-        return app.AppMain(argc, argv, NULL, eDS_ToStdlog,                  \
-                NcbiEmptyCStr, GRID_WORKER_APP_NAME);                       \
-    }
+    NCBI_WORKERNODE_MAIN_IMPL(TWorkerNodeJob##Factory, Version,             \
+            app.SetListener(new ListenerClass))
 
 #define NCBI_WORKERNODE_MAIN_EX(TWorkerNodeJob,                             \
         TWorkerNodeIdleTask, Version)                                       \
     NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob,                      \
             TWorkerNodeIdleTask, Version);                                  \
-    int main(int argc, const char* argv[])                                  \
-    {                                                                       \
-        GetDiagContext().SetOldPostFormat(false);                           \
-        CGridWorkerApp app(new TWorkerNodeJob##FactoryEx,                   \
-            CVersionInfo(#Version));                                        \
-        return app.AppMain(argc, argv, NULL, eDS_ToStdlog,                  \
-                NcbiEmptyCStr, GRID_WORKER_APP_NAME);                       \
-    }
+    NCBI_WORKERNODE_MAIN_IMPL(TWorkerNodeJob##FactoryEx, Version, )
 
 #define NCBI_GRID_PKG_WORKER_NODE_MAIN(TWorkerNodeJob,                      \
         TWorkerNodeJobFactoryClass, ListenerClass)                          \
