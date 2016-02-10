@@ -34,17 +34,6 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
-//#include <objects/seqfeat/Imp_feat.hpp>
-//#include <objects/seqfeat/SeqFeatXref.hpp>
-//#include <objects/macro/String_constraint.hpp>
-//#include <objects/misc/sequence_util_macros.hpp>
-//#include <objects/seq/seqport_util.hpp>
-//#include <objmgr/bioseq_ci.hpp>
-//#include <objmgr/feat_ci.hpp>
-//#include <objmgr/seq_vector.hpp>
-//#include <objmgr/util/feature.hpp>
-//#include <objmgr/util/sequence.hpp>
-//#include <sstream>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -76,14 +65,14 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal t
         m_Objs["taxid"][NStr::IntToString(org_ref.GetTaxId())].Add(*disc_obj);
     }
     if (obj.CanGetSubtype()) {
-        ITERATE(list<CRef<CSubSource> >, it, obj.GetSubtype()) {
+        ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
             if ((*it)->CanGetName()) {
                 m_Objs[(*it)->GetSubtypeName((*it)->GetSubtype(), CSubSource::eVocabulary_insdc)][(*it)->GetName()].Add(*disc_obj);
             }
         }
     }
     if (obj.IsSetOrgMod()) {
-        ITERATE(list<CRef<COrgMod> >, it, obj.GetOrgname().GetMod()) {
+        ITERATE (list<CRef<COrgMod> >, it, obj.GetOrgname().GetMod()) {
             m_Objs[(*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc)][(*it)->GetSubname()].Add(*disc_obj);
         }
     }
@@ -116,7 +105,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         all_missing[it->GetPointer()] = *it;
     }
 
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, the_map) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, the_map) {
         if (it->first == "all") {
             continue;
         }
@@ -134,7 +123,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
             uniq += obj.size() == 1 ? 1 : 0;
             string upper = jj->first;
             upper = NStr::ToUpper(upper);
-            ITERATE(TReportObjectList, o, obj) {
+            ITERATE (TReportObjectList, o, obj) {
                 missing.erase(o->GetPointer());
                 capital[upper][jj->first].push_back(*o);
             }
@@ -150,7 +139,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
             report[diagnosis].Fatal();
         }
         if ((bins > capital.size() || (num < total && capital.size() == 1))
-            && (true || it->first == "country" || it->first == "collection_date" || it->first == "isolation_source")) { // autofixable
+            && (it->first == "country" || it->first == "collection_date" || it->first == "isolation_source")) { // autofixable
             CRef<CSourseQualsAutofixData> fix;
             if (bins > capital.size()) { // capitalization
                 ITERATE (TStringStringObjVectorMap, cap, capital) {
@@ -159,7 +148,6 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                     }
                     const TStringObjVectorMap& mmm = cap->second;
                     size_t best_count = 0;
-                    string best_str;
                     fix.Reset(new CSourseQualsAutofixData);
                     fix->m_Qualifier = it->first;
                     fix->m_User = context.GetUserData();
@@ -167,7 +155,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                         fix->m_Choice.push_back(x->first);
                         if (best_count < x->second.size()) {
                             best_count = x->second.size();
-                            fix->m_Value = best_str;
+                            fix->m_Value = x->first;
                         }
                     }
                     ITERATE (TStringObjVectorMap, x, mmm) {
@@ -197,40 +185,81 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 }
 
 
+static void SetSubsource(CRef<CBioSource> bs, CSubSource::ESubtype st, const string& s, size_t& added, size_t& changed)
+{
+    ITERATE (CBioSource::TSubtype, it, bs->GetSubtype()) {
+        if ((*it)->GetSubtype() == st) {
+            CRef<CSubSource> ss(*it);
+            if (ss->GetName() != s) {
+                ss->SetName(s);
+                changed++;
+            }
+            return;
+        }
+    }
+    bs->SetSubtype().push_back(CRef<CSubSource>(new CSubSource(st, s)));
+    added++;
+}
+
+
+static void SetOrgMod(CRef<CBioSource> bs, COrgMod::ESubtype st, const string& s, size_t& added, size_t& changed)
+{
+    ITERATE (COrgName::TMod, it, bs->GetOrgname().GetMod()) {
+        if ((*it)->GetSubtype() == st) {
+            CRef<COrgMod> ss(*it);
+            if (ss->GetSubname() != s) {
+                ss->SetSubname(s);
+                changed++;
+            }
+            return;
+        }
+    }
+    bs->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(st, s)));
+    added++;
+}
+
+
 DISCREPANCY_AUTOFIX(SOURCE_QUALS)
 {
     TReportObjectList list = item->GetDetails();
     const CSourseQualsAutofixData* fix = 0;
+    size_t added = 0;
+    size_t changed = 0;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
-        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(obj.GetObject().GetPointer());
-        //const CBioSource* biosrc = sequence::GetBioSource(*bs);
-        //if (biosrc) {
-        //GetSrcQualValue4FieldType(*biosrc, field_type.GetSource_qual(), &str_cons);
-        //}
-
-        //CRef<CBioSource> new_bs(new CBioSource());
-        //new_bs->Assign(*biosrc);
-        //new_feat->SetData().SetRna().SetExt().SetName(rrna_standard_name[i]);
-        //CBioSource_EditHandle eh(scope.GetBioSourceHandle(*biosrc));
-        //bseh.Replace(*new_bs);
-
-
+        CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(obj.GetObject().GetPointer()));
+        CRef<CBioSource> bs(&desc->SetSource());
         if (!fix) {
             fix = dynamic_cast<const CSourseQualsAutofixData*>(obj.GetMoreInfo().GetPointer());
             CAutofixHookRegularArguments arg;
             arg.m_User = fix->m_User;
-            if (m_Hook) {
-                m_Hook(&arg);
-            }
+            //if (m_Hook) {
+            //    m_Hook(&arg);
+            //}
         }
-
-
+        
         if (fix->m_Qualifier == "host") {
-
+            SetOrgMod(bs, COrgMod::eSubtype_nat_host, fix->m_Value, added, changed);
+        }
+        else if (fix->m_Qualifier == "strain") {
+            SetOrgMod(bs, COrgMod::eSubtype_strain, fix->m_Value, added, changed);
+        }
+        else if (fix->m_Qualifier == "country") {
+            SetSubsource(bs, CSubSource::eSubtype_country, fix->m_Value, added, changed);
+        }
+        else if (fix->m_Qualifier == "isolation_source") {
+            SetSubsource(bs, CSubSource::eSubtype_isolation_source, fix->m_Value, added, changed);
+        }
+        else if (fix->m_Qualifier == "collection_date") {
+            SetSubsource(bs, CSubSource::eSubtype_collection_date, fix->m_Value, added, changed);
         }
     }
-    return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + fix->m_Qualifier + " (" + fix->m_Value + ") added", list.size()));
+    if (changed) {
+        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] qualifier[s] " + fix->m_Qualifier + " (" + fix->m_Value + ") fixed", added + changed));
+    }
+    else {
+        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + fix->m_Qualifier + " (" + fix->m_Value + ") added", added));
+    }
 }
 
 
