@@ -7004,12 +7004,12 @@ const CSeq_id* CValidError_feat::x_GetCDSProduct
 }
 
 
-size_t CValidError_feat::x_CountTerminalXs(const string& transl_prot)
+size_t CValidError_feat::x_CountTerminalXs(const string& transl_prot, bool skip_stop)
 {
     // look for discrepancy in number of terminal Xs between product and translation
     size_t transl_terminal_x = 0;
     size_t i = transl_prot.length() - 1;
-    if (i > 0 && transl_prot[i] == '*') {
+    if (i > 0 && transl_prot[i] == '*' && skip_stop) {
         i--;
     }
     while (i > 0) {
@@ -7231,7 +7231,7 @@ void CValidError_feat::x_CheckTranslationMismatches
 
         if (!transl_prot.empty()) {
             // look for discrepancy in number of terminal Xs between product and translation
-            size_t transl_terminal_x = x_CountTerminalXs(transl_prot);
+            size_t transl_terminal_x = x_CountTerminalXs(transl_prot, (got_stop && (transl_prot.length() == prot_vec.size() + 1)));
             size_t prod_terminal_x = x_CountTerminalXs(prot_vec);
 
             if (transl_terminal_x != prod_terminal_x) {

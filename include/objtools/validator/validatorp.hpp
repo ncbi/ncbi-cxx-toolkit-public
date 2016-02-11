@@ -1118,7 +1118,7 @@ private:
          bool& has_errors,
          bool& other_than_mismatch);
 
-    size_t x_CountTerminalXs(const string& transl_prot);
+    size_t x_CountTerminalXs(const string& transl_prot, bool skip_stop);
     size_t x_CountTerminalXs(const CSeqVector& prot_vec);
 
     void x_CheckTranslationMismatches
