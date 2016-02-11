@@ -807,7 +807,7 @@ s_ConvertValue(const CVariant& from_var, string& to_val)
 }
 
 static const char kDefaultDriverName[] = "ftds";
-static const char *s_DriverName = NULL;
+static AutoPtr<char, CDeleter<char> > s_DriverName;
 
 class CDataSourceInitializer : protected CConnIniter
 {
@@ -819,12 +819,28 @@ public:
         DBAPI_RegisterDriver_FTDS64();
         DBAPI_RegisterDriver_FTDS95();
 
-        if (s_DriverName == NULL) {
-            s_DriverName = kDefaultDriverName;
+        if (s_DriverName.get() == NULL) {
+            s_DriverName.reset(strdup(kDefaultDriverName));
         }
+
+        {{
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            if (app != NULL) {
+                string driver_name
+                    = app->GetConfig().GetString("sdbapi", "use_driver",
+                                                 s_DriverName.get());
+                if (driver_name == kDefaultDriverName
+                    ||  driver_name == "ftds64"  ||  driver_name == "ftds95") {
+                    s_DriverName.reset(strdup(driver_name.c_str()));
+                } else {
+                    ERR_POST_X(15, "Unsupported driver name " << driver_name
+                               << "; sticking with " << s_DriverName.get());
+                }
+            }
+        }}
         
         CDBConnParamsBase params;
-        params.SetDriverName(s_DriverName);
+        params.SetDriverName(s_DriverName.get());
         params.SetEncoding(eEncoding_UTF8);
         IDataSource* ds
             = CDriverManager::GetInstance().MakeDs(params, ".sdbapi");
@@ -841,7 +857,8 @@ inline
 static IDataSource* s_GetDataSource(void)
 {
     ds_init.Get();
-    return CDriverManager::GetInstance().CreateDs(s_DriverName, ".sdbapi");
+    return CDriverManager::GetInstance().CreateDs
+        (s_DriverName.get(), ".sdbapi");
 }
 
 inline
@@ -1216,13 +1233,13 @@ string CSDBAPI::GetApplicationName(void)
 
 void CSDBAPI::UseDriver(EDriver driver)
 {
-    if (s_DriverName != NULL) {
+    if (s_DriverName.get() != NULL) {
         NCBI_THROW(CSDB_Exception, eInconsistent,
                    "CSDBAPI::UseDriver called with SDBAPI already in use.");
     }
     switch (driver) {
-    case eDriver_FTDS64: s_DriverName = "ftds64"; break;
-    case eDriver_FTDS95: s_DriverName = "ftds95"; break;
+    case eDriver_FTDS64: s_DriverName.reset(strdup("ftds64")); break;
+    case eDriver_FTDS95: s_DriverName.reset(strdup("ftds95")); break;
     }
 }
 
