@@ -260,11 +260,14 @@ namespace
         }
     }
 
-    void AssignLocalIdIfEmpty(CSeq_feat& feature, int& id)
+    bool AssignLocalIdIfEmpty(CSeq_feat& feature, int& id)
     {
-        if (!feature.IsSetId())
+        if (feature.IsSetId())
+            return true;
+        else
         {
            feature.SetId().SetLocal().SetId(id++);
+           return false;
         }
     }
 
@@ -349,7 +352,7 @@ namespace
         return GetNewProteinId(seh, id_base);
     }
 
-    string NewProteinName(const CSeq_feat& feature, CTempString locustag)
+    string NewProteinName(const CSeq_feat& feature)
     {
         string protein_name;
         GetProteinName(protein_name, feature);
@@ -360,13 +363,6 @@ namespace
             protein_name = "hypothetical protein";
         }
 
-        if (protein_name == "hypothetical protein" &&
-                !locustag.empty())
-        {
-            // find locus
-            protein_name += " ";
-            protein_name += locustag;
-        }
         return protein_name;
     }
 
@@ -559,6 +555,8 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
         protein->Assign(replacement->GetSeq());
     }
 
+    AssignLocalIdIfEmpty(cd_feature, m_local_id_counter);
+
     CRef<CSeq_entry> protein_entry(new CSeq_entry);
     protein_entry->SetSeq(*protein);
 
@@ -576,8 +574,15 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     {
         locustag = gene->GetData().GetGene().GetLocus_tag();
     }
-    string protein_name = NewProteinName(cd_feature, locustag);
+    string protein_name = NewProteinName(cd_feature);
     string title = protein_name;
+    if (protein_name == "hypothetical protein" && !locustag.empty())
+    {
+        // find locus
+        title += " ";
+        title += locustag;
+    }
+
     if (org_name.length() > 0)
     {
         title += " [";
@@ -640,31 +645,39 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
         protein->SetId().push_back(newid);
     }
 
-    CBioseq_Handle protein_handle = scope.AddBioseq(*protein);
-    
     CSeq_feat& prot_feat = CreateOrSetFTable(*protein);
 
     CProt_ref& prot_ref = prot_feat.SetData().SetProt();
 
     AssignLocalIdIfEmpty(prot_feat, m_local_id_counter);
+    if (!prot_ref.IsSetName() || prot_ref.GetName().empty())
+    {
+        prot_ref.SetName().push_back(protein_name);
+    }
     prot_feat.SetLocation().SetInt().SetFrom(0);
     prot_feat.SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
     prot_feat.SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
 
-    cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
+    //cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
+
+    CBioseq_Handle protein_handle = scope.AddBioseq(*protein);
 
     if (m_feature_links_kind != 0)
     {
-        CConstRef<CSeq_feat> mrna(sequence::GetmRNAForProduct(protein_handle));
-        if (!mrna.Empty() && mrna->IsSetId())
+        CRef<CSeq_feat> mrna((CSeq_feat*)sequence::GetmRNAForProduct(protein_handle));
+        if (!mrna.Empty())
         {
-            CSeq_feat& mrna_feature = *(CSeq_feat*)mrna.GetPointerOrNull();
+            AssignLocalIdIfEmpty(*mrna, m_local_id_counter);
+
+            CSeq_feat& mrna_feature = *mrna;
             CRef<CSeqFeatXref> xref(new CSeqFeatXref);
             xref->SetId().Assign(mrna->GetId());
+            cd_feature.SetXref().clear();
             cd_feature.SetXref().push_back(xref);
 
             xref.Reset(new CSeqFeatXref);
             xref->SetId().Assign(cd_feature.GetId());
+            mrna_feature.SetXref().clear();
             mrna_feature.SetXref().push_back(xref);
             mrna_feature.ResetProduct();
         }
@@ -1457,7 +1470,7 @@ bool CFeatureTableReader::AddProteinToSeqEntry(const CSeq_entry* protein, CSeq_e
     string org_name;
     GetOrgName(org_name, *seh.GetCompleteObject());
 
-    string protein_name = NewProteinName(*protein_feat, "");
+    string protein_name = NewProteinName(*protein_feat);
     string title = protein_name;
     if (org_name.length() > 0)
     {
@@ -1640,8 +1653,6 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
 
     }
 }
-
-
 
 END_NCBI_SCOPE
 

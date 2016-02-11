@@ -407,6 +407,13 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
         }
     }
     else
+#if 1
+    if (entry.IsSeq())
+    {
+        MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), false);
+        MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), true);
+    }
+#else
     if (entry.IsSeq())
     {
         MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), false);
@@ -416,6 +423,7 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
     {
         MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), true);
     }
+#endif
 
 }
 

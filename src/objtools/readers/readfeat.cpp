@@ -2378,7 +2378,14 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         {
                             x_AddGBQualToFeature (sfp, qual, val); // need to store all ids
                         }
-                        sfp->SetProduct().SetWhole(*ids.front());
+                        CRef<CSeq_id> best;
+                        NON_CONST_ITERATE(CBioseq::TId, it, ids)
+                        {
+                            if ((**it).IsGenbank() || best.Empty())
+                                best = *it;
+                        }                       
+                        if (!best.Empty())
+                           sfp->SetProduct().SetWhole(*best);
                         return true;
                     } catch( CSeqIdException & ) {
                         return false;

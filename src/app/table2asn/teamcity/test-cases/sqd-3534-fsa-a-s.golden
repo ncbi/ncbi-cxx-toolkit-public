@@ -724,7 +724,7 @@ FFFFFFFF8188118411241181222818128281811144112241844121422142842144881844841418
             {
               data ftable {
                 {
-                  id local id 1,
+                  id local id 2,
                   data prot {
                     name {
                       "favorite 1"
@@ -775,7 +775,7 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
             {
               data ftable {
                 {
-                  id local id 2,
+                  id local id 4,
                   data prot {
                     name {
                       "favorite 2"
@@ -801,6 +801,7 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
         {
           data ftable {
             {
+              id local id 1,
               data cdregion {
                 frame three,
                 code {
@@ -821,6 +822,7 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
               }
             },
             {
+              id local id 3,
               data cdregion {
                 frame one,
                 code {

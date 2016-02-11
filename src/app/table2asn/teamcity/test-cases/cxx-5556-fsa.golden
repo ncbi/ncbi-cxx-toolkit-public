@@ -75,7 +75,7 @@ GFIVVPLSKSLYDFHEGYDLYNLGFTAG"
         {
           data ftable {
             {
-              id local id 1,
+              id local id 2,
               data prot {
                 name {
                   "SDE3P"
@@ -96,6 +96,7 @@ GFIVVPLSKSLYDFHEGYDLYNLGFTAG"
     {
       data ftable {
         {
+          id local id 1,
           data cdregion {
             frame one,
             code {

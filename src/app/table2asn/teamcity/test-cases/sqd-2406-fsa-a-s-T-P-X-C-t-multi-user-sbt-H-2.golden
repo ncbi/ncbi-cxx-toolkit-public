@@ -75,46 +75,6 @@ Seq-submit ::= {
   data entrys {
     set {
       class genbank,
-      descr {
-        pub {
-          pub {
-            article {
-              title {
-                name "Testing backend submit2genbank script"
-              },
-              authors {
-                names std {
-                  {
-                    name name {
-                      last "Gobu",
-                      first "Vasuki",
-                      initials "V."
-                    }
-                  },
-                  {
-                    name name {
-                      last "Sinyakov",
-                      first "Denis",
-                      initials "D."
-                    }
-                  }
-                }
-              },
-              from journal {
-                title {
-                  jta "SMART scripts"
-                },
-                imp {
-                  date std {
-                    year 2014
-                  },
-                  prepub in-press
-                }
-              }
-            }
-          }
-        }
-      },
       seq-set {
         seq {
           id {
@@ -166,6 +126,44 @@ Seq-submit ::= {
             },
             molinfo {
               biomol genomic
+            },
+            pub {
+              pub {
+                article {
+                  title {
+                    name "Testing backend submit2genbank script"
+                  },
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Gobu",
+                          first "Vasuki",
+                          initials "V."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Sinyakov",
+                          first "Denis",
+                          initials "D."
+                        }
+                      }
+                    }
+                  },
+                  from journal {
+                    title {
+                      jta "SMART scripts"
+                    },
+                    imp {
+                      date std {
+                        year 2014
+                      },
+                      prepub in-press
+                    }
+                  }
+                }
+              }
             },
             user {
               type str "Submission",
@@ -260,6 +258,44 @@ Seq-submit ::= {
             },
             molinfo {
               biomol genomic
+            },
+            pub {
+              pub {
+                article {
+                  title {
+                    name "Testing backend submit2genbank script"
+                  },
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Gobu",
+                          first "Vasuki",
+                          initials "V."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Sinyakov",
+                          first "Denis",
+                          initials "D."
+                        }
+                      }
+                    }
+                  },
+                  from journal {
+                    title {
+                      jta "SMART scripts"
+                    },
+                    imp {
+                      date std {
+                        year 2014
+                      },
+                      prepub in-press
+                    }
+                  }
+                }
+              }
             },
             user {
               type str "Submission",

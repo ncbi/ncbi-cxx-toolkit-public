@@ -2324,9 +2324,8 @@ Seq-entry ::= set {
                   partial TRUE,
                   comment "Slime mold (D.discoideum) transposon DIRS-1,
  complete, clone SB41",
-                  product whole general {
-                    db "WGS:AAFI",
-                    tag str "DDB0216437"
+                  product whole genbank {
+                    accession "EAL73826"
                   },
                   location int {
                     from 1789,
@@ -2381,9 +2380,8 @@ Seq-entry ::= set {
                   partial TRUE,
                   comment "Slime mold (D.discoideum) transposon DIRS-1,
  complete, clone SB41",
-                  product whole general {
-                    db "WGS:AAFI",
-                    tag str "DDB0216438"
+                  product whole genbank {
+                    accession "EAL73827"
                   },
                   location int {
                     from 3747,
@@ -2438,7 +2436,7 @@ MASLLLSNNVLFHVVKKMIVGNQMIL"
             {
               data ftable {
                 {
-                  id local id 1,
+                  id local id 2,
                   data prot {
                     name {
                       "hypothetical protein"
@@ -2488,7 +2486,7 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
             {
               data ftable {
                 {
-                  id local id 2,
+                  id local id 4,
                   data prot {
                     name {
                       "hypothetical protein"
@@ -2511,6 +2509,7 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
         {
           data ftable {
             {
+              id local id 1,
               data cdregion {
                 frame one,
                 code {
@@ -2536,6 +2535,7 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
               }
             },
             {
+              id local id 3,
               data cdregion {
                 frame one,
                 code {
