@@ -280,9 +280,8 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(SNetServerInPool* server,
 {
 }
 
-void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
+void s_AppendClientIPSessionID(string* cmd, const CRequestContext& req)
 {
-    CRequestContext& req = CDiagContext::GetRequestContext();
     cmd->append(" ip=\"");
     cmd->append(req.GetClientIP());
     cmd->append("\" sid=\"");
@@ -290,10 +289,16 @@ void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
     cmd->append(1, '\"');
 }
 
+void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
+{
+    s_AppendClientIPSessionID(cmd, CDiagContext::GetRequestContext());
+}
+
 void SNetCacheAPIImpl::AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
         const CNetCacheAPIParameters* parameters)
 {
-    AppendClientIPSessionID(cmd);
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    s_AppendClientIPSessionID(cmd, req);
 
     string password(parameters->GetPassword());
     if (!password.empty()) {
@@ -309,7 +314,8 @@ void SNetCacheAPIImpl::AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
     }
 
     cmd->append(" ncbi_phid=\"");
-    cmd->append(CDiagContext::GetRequestContext().GetNextSubHitID());
+    cmd->append(m_UseNextSubHitID ?
+            req.GetNextSubHitID() : req.GetCurrentSubHitID());
     cmd->append(1, '\"');
 }
 
@@ -521,6 +527,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
         cmd.append(stripped_blob_id);
     }
 
+    m_UseNextSubHitID.ProperCommand();
     AppendClientIPSessionIDPasswordAgeHitID(&cmd, parameters);
 
     CNetServer::SExecResult exec_result;
@@ -697,6 +704,7 @@ void CNetCacheAPI::Remove(const string& blob_id,
     CNetCacheKey key(blob_id, m_Impl->m_CompoundIDPool);
 
     try {
+        m_Impl->m_UseNextSubHitID.ProperCommand();
         m_Impl->ExecMirrorAware(key,
                 m_Impl->MakeCmd("RMV2 ", key, &parameters),
                 false,
