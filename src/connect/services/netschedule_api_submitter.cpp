@@ -97,7 +97,8 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
 
     s_SerializeJob(cmd, job, udp_port, wait_time);
 
-    g_AppendClientIPAndSessionID(cmd);
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    g_AppendClientIPAndSessionID(cmd, req);
 
     if (!job.group.empty()) {
         SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job.group);
@@ -105,7 +106,8 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
         cmd.append(job.group);
     }
 
-    g_AppendHitID(cmd);
+    g_AppendHitID(cmd, m_UseNextSubHitID ?
+            req.GetNextSubHitID() : req.GetCurrentSubHitID());
 
     CNetServer::SExecResult exec_result(
             m_API->m_Service.FindServerAndExec(cmd, false));
@@ -135,7 +137,8 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
     // Batch submit command.
     string cmd = "BSUB";
 
-    g_AppendClientIPAndSessionID(cmd);
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    g_AppendClientIPAndSessionID(cmd, req);
 
     if (!job_group.empty()) {
         SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
@@ -143,7 +146,8 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
         cmd.append(job_group);
     }
 
-    g_AppendHitID(cmd);
+    g_AppendHitID(cmd, m_Impl->m_UseNextSubHitID ?
+            req.GetNextSubHitID() : req.GetCurrentSubHitID());
 
     CNetServer::SExecResult exec_result(
         m_Impl->m_API->m_Service.FindServerAndExec(cmd, false));
@@ -579,9 +583,13 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
 
 void CNetScheduleSubmitter::CancelJob(const string& job_key)
 {
-    CNetScheduleJob job;
-    job.job_id = job_key;
-    m_Impl->m_API->x_ExecOnce("CANCEL", job);
+    string cmd(g_MakeBaseCmd("CANCEL", job_key));
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    g_AppendClientIPAndSessionID(cmd, req);
+    g_AppendHitID(cmd, req.GetNextSubHitID());
+
+    CNetServer::SExecResult exec_result;
+    m_Impl->m_API->GetServer(job_key)->ConnectAndExec(cmd, false, exec_result);
 }
 
 void CNetScheduleSubmitter::CancelJobGroup(const string& job_group,
@@ -593,7 +601,9 @@ void CNetScheduleSubmitter::CancelJobGroup(const string& job_group,
         cmd.append(" status=");
         cmd.append(job_statuses);
     }
-    g_AppendClientIPSessionIDHitID(cmd);
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    g_AppendClientIPAndSessionID(cmd, req);
+    g_AppendHitID(cmd, req.GetNextSubHitID());
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 

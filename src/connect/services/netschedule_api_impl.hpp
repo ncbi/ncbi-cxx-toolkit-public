@@ -411,6 +411,23 @@ struct SNetScheduleSubmitterImpl : public CObject
             unsigned wait_time, time_t* job_exptime = NULL);
 
     CNetScheduleAPI m_API;
+
+    struct SUseNextSubHitID
+    {
+        void DoNot() { m_Allowed = false; }
+
+        operator bool()
+        {
+            const bool result = m_Allowed;
+            m_Allowed = true;
+            return result;
+        }
+
+    private:
+        bool m_Allowed = true;
+    };
+
+    SUseNextSubHitID m_UseNextSubHitID;
 };
 
 inline SNetScheduleSubmitterImpl::SNetScheduleSubmitterImpl(
