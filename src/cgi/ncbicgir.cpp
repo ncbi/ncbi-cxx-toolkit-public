@@ -698,7 +698,7 @@ bool CCgiResponse::CanSendTrailer(void) const
         m_TrailerEnabled.reset(new bool(false));
         const string& te = m_Request->GetRandomProperty("TE");
         list<string> parts;
-        NStr::Split(te, " ,", parts);
+        NStr::Split(te, " ,", parts, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         ITERATE(list<string>, it, parts) {
             if (NStr::EqualNocase(*it, "trailers")) {
                 *m_TrailerEnabled = true;

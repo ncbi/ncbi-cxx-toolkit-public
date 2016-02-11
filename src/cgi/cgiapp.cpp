@@ -196,8 +196,8 @@ private:
 
 CCgiStreamWrapperWriter::CCgiStreamWrapperWriter(CNcbiOstream& out)
     : m_Mode(CCgiStreamWrapper::eNormal),
-      m_ErrorReported(false),
       m_Out(&out),
+      m_ErrorReported(false),
       m_ChunkSize(0),
       m_Chunk(0),
       m_Count(0),
