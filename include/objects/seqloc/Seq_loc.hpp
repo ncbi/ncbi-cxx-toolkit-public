@@ -113,7 +113,7 @@ public:
     // destructor
     virtual ~CSeq_loc(void);
 
-    /// See related functions in util/sequence.hpp:
+    /// See related functions in objmgr/util/seq_loc_util.hpp:
     ///
     ///   TSeqPos GetLength(const CSeq_loc&, CScope*)
     ///   bool IsOneBioseq(const CSeq_loc&, CScope*)
@@ -127,7 +127,7 @@ public:
 
     TRange GetTotalRange(void) const;
     void InvalidateTotalRangeCache(void) const;
- 
+
     /// Check if strand is set for any/all part(s) of the seq-loc
     /// depending on the flag.
     bool IsSetStrand(EIsSetStrand flag = eIsSetStrand_Any) const;
@@ -252,7 +252,7 @@ public:
     /// Minus strand locations' order is reversed.
     /// Seq-ids are not checked in this method, unless you set
     /// filter, which will allow the user to pick which parts to skip.
-    int CompareSubLoc(const CSeq_loc& loc, ENa_strand strand, 
+    int CompareSubLoc(const CSeq_loc& loc, ENa_strand strand,
         const ISubLocFilter *filter = NULL) const;
 
     /// Simple adding of seq-locs.
@@ -523,7 +523,7 @@ public:
     /// or GetEmbeddingSeq_loc instead.
     NCBI_DEPRECATED const CSeq_loc& GetSeq_loc(void) const;
 
-    // Return null if non-fuzzy 
+    // Return null if non-fuzzy
     const CInt_fuzz* GetFuzzFrom(void) const;
     const CInt_fuzz* GetFuzzTo  (void) const;
 
@@ -758,7 +758,7 @@ public:
         /// C. the insertion point is in the middle of existing part
         /// then the existing part will be split at the insertion point
         /// and new element will be added to the second part after splitting.
-        /// 
+        ///
         /// The mode will switch to eEquiv_append after the insertion.
         eEquiv_new_part,
 
@@ -861,14 +861,14 @@ void CSeq_loc::InvalidateTotalRangeCache(void) const
 }
 
 
-inline 
+inline
 void CSeq_loc::InvalidateIdCache(void) const
 {
     m_IdCache = NULL;
 }
 
 
-inline 
+inline
 void CSeq_loc::InvalidateCache(void) const
 {
     InvalidateTotalRangeCache();
@@ -969,7 +969,7 @@ DEFINE_NCBI_SEQ_LOC_SETTERS(Feat)
 inline
 bool CSeq_loc::IsReverseStrand(void) const
 {
-    return IsReverse(GetStrand());    
+    return IsReverse(GetStrand());
 }
 
 
