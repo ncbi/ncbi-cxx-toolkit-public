@@ -1196,7 +1196,7 @@ inline
 CException::TErrCode CSDB_Exception::GetDBErrCode(void) const
 {
     const CDB_Exception* dbex = GetDBException();
-    return dbex ? dbex->GetErrCode() : eInvalid;
+    return dbex ? dbex->Type() : eInvalid;
 }
 
 inline
