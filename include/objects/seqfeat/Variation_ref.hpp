@@ -68,6 +68,16 @@ public:
     /// PostRead() hooks to establish correct, non-deprecated data layout
     void PostRead();
 
+
+    void SetSNV(const CSeq_data& nucleotide, 
+                CRef<CDelta_item> offset);
+
+    void SetMNP(const CSeq_data& nucleotide, 
+                TSeqPos length,
+                CRef<CDelta_item> offset);
+
+    void SetMissense(const CSeq_data& amino_acid);
+
     /// Set a standard single nucleotide variant.  The replaces set can include
     /// empty strings and/or '-' as a character to indicate a deletion.
     void SetSNV(const vector<string>& replaces,
