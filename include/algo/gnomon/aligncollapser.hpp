@@ -121,16 +121,20 @@ struct SCorrectionData {
 
 class CAlignCollapser {
 public:
-    CAlignCollapser(string contig = "", CScope* scope = 0);
+    CAlignCollapser(string contig = "", CScope* scope = 0, bool nofilteringcollapsing = false);
     void AddAlignment(const CAlignModel& align);
     void FilterAlignments();
     void GetCollapsedAlgnments(TAlignModelClusterSet& clsset);
+    void GetOnlyOtherAlignments(TAlignModelClusterSet& clsset);
+    typedef map<int,int> TIntMap;
+    TIntMap GetContigGaps() const { return m_genomic_gaps_len; }
 
     //for compatibilty with 'pre-correction' worker node
     NCBI_DEPRECATED
     TInDels GetGenomicGaps() const { return m_correction_data.m_correction_indels; };
 
     SCorrectionData GetGenomicCorrections() const { return m_correction_data; }
+    void SetGenomicCorrections(const SCorrectionData& correction_data) { m_correction_data = correction_data; }
 
     static void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
@@ -143,6 +147,18 @@ public:
         bool m_selfsp_support;
     };
     typedef map<SIntron,SIntronData> TAlignIntrons;
+
+
+    struct GenomicGapsOrder {
+        bool operator()(const CInDelInfo& a, const CInDelInfo& b) const
+        {
+            if(a != b)
+                return a < b;
+            else
+                return a.GetSource().m_acc < b.GetSource().m_acc;
+        }
+    };
+
 
 private:
     void CollapsIdentical();
@@ -177,7 +193,6 @@ private:
     bool m_fillgenomicgaps;
 
     CScope* m_scope;
-    typedef map<int,int> TIntMap;
     TIntMap m_genomic_gaps_len;
     string m_contig;
     string m_contig_name;

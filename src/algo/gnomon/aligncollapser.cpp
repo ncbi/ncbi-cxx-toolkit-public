@@ -240,14 +240,24 @@ void CAlignCollapser::SetupArgDescriptions(CArgDescriptions* arg_desc) {
     arg_desc->SetCurrentGroup("");
 }
 
-CAlignCollapser::CAlignCollapser(string contig, CScope* scope) : m_count(0), m_scope(scope) {
+CAlignCollapser::CAlignCollapser(string contig, CScope* scope, bool nofilteringcollapsing) : m_count(0), m_scope(scope) {
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-    m_filtersr = args["filtersr"];
-    m_filterest = args["filterest"];
-    m_filtermrna = args["filtermrna"];
-    m_filterprots = args["filterprots"];
-    m_collapsest = args["collapsest"];
-    m_collapssr = args["collapssr"];
+    
+    if(nofilteringcollapsing) {
+        m_filtersr = false;
+        m_filterest = false;
+        m_filtermrna = false;
+        m_filterprots = false;
+        m_collapsest = false;
+        m_collapssr = false;
+    } else {
+        m_filtersr = args["filtersr"];
+        m_filterest = args["filterest"];
+        m_filtermrna = args["filtermrna"];
+        m_filterprots = args["filterprots"];
+        m_collapsest = args["collapsest"];
+        m_collapssr = args["collapssr"];
+    }
     m_fillgenomicgaps = args["fillgenomicgaps"];
 
     if(m_scope != 0 && contig != "") {
@@ -629,16 +639,6 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
 
     return good_alignment;
 }
-
-struct GenomicGapsOrder {
-    bool operator()(const CInDelInfo& a, const CInDelInfo& b) const
-    {
-        if(a != b)
-            return a < b;
-        else
-            return a.GetSource().m_acc < b.GetSource().m_acc;
-    }
-};
 
 #define MISM_PENALTY 10
 #define INDEL_PENALTY 20
@@ -1385,6 +1385,8 @@ void CAlignCollapser::FilterAlignments() {
 
     //modify contig near correction indels which will ensure their clipping near self species cDNA edges (as mismatches)
     ITERATE(TInDels, indl, m_correction_data.m_correction_indels) {
+        if(indl->GetStatus() != CInDelInfo::eGenomeNotCorrect)
+            continue;
         if(indl->IsDeletion()) {
             m_contig[indl->Loc()] = tolower(m_contig[indl->Loc()]);
             m_contig[indl->Loc()-1] = tolower(m_contig[indl->Loc()]-1);
@@ -1870,6 +1872,22 @@ struct MultiExonsCompare
     }
 };
 
+void CAlignCollapser::GetOnlyOtherAlignments(TAlignModelClusterSet& clsset) {
+    if(m_count == 0)
+        return;
+
+    FilterAlignments();
+
+    NON_CONST_ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
+        if(i->Type() == CGeneModel::emRNA) {
+            CBioseq_Handle bh (m_scope->GetBioseqHandle(*i->GetTargetId()));
+            const CMolInfo* molinfo = GetMolInfo(bh);
+            if(molinfo && molinfo->IsSetTech() && molinfo->GetTech() == CMolInfo::eTech_tsa)
+                i->Status() |= CGeneModel::eTSA;   // used to exclude from CDS projection
+        }
+        CheckAndInsert(*i, clsset);
+    }
+}
 
 void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
 
@@ -2090,6 +2108,9 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
     editedmodel.ClearExons();  // empty alignment with all atributes
     vector<TSignedSeqRange> transcript_exons;
 
+    string acc = align.TargetAccession();
+    bool chainer_tsa = (acc.find("ChainerTSA") != string::npos);
+
     string left_seq, right_seq;
     CInDelInfo::SSource left_src;
     CInDelInfo::SSource right_src;
@@ -2116,7 +2137,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
         swap(left_src, right_src);
     }
 
-    if(!left_seq.empty() && (fill&efill_left) != 0) {
+    if(!left_seq.empty() && (fill&efill_left) != 0 && !chainer_tsa) {
         TIntMap::iterator ig = m_genomic_gaps_len.lower_bound(align.Limits().GetFrom());
         if(ig != m_genomic_gaps_len.begin() && (--ig)->first > align.Limits().GetFrom()-MAX_DIST_TO_FLANK_GAP) {  // there is gap on left
             transcript_exons.push_back(left_texon);
@@ -2164,7 +2185,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
         }
     }
 
-    if(!right_seq.empty() && (fill&efill_right) != 0) {
+    if(!right_seq.empty() && (fill&efill_right) != 0 && !chainer_tsa) {
         TIntMap::iterator ig = m_genomic_gaps_len.upper_bound(align.Limits().GetTo());
         if(ig != m_genomic_gaps_len.end() && ig->first < align.Limits().GetTo()+MAX_DIST_TO_FLANK_GAP) {  // there is gap on right
             transcript_exons.push_back(right_texon);
