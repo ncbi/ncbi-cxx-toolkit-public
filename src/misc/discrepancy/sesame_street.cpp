@@ -62,7 +62,9 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal t
         if (org_ref.CanGetTaxname()) {
             m_Objs["taxname"][org_ref.GetTaxname()].Add(*disc_obj);
         }
-        m_Objs["taxid"][NStr::IntToString(org_ref.GetTaxId())].Add(*disc_obj);
+        if (org_ref.GetTaxId()) {
+            m_Objs["taxid"][NStr::IntToString(org_ref.GetTaxId())].Add(*disc_obj);
+        }
     }
     if (obj.CanGetSubtype()) {
         ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
