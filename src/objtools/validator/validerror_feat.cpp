@@ -7071,8 +7071,36 @@ void CValidError_feat::x_CheckTranslationMismatches
                 CSeqVectorTypes::TResidue t_res = transl_prot[i];
 
                 if (t_res != p_res) {
+                    if (i == 0) {
+                        if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
+                            if (report_errors) {
+                                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                                    "Start of location should probably be partial",
+                                    feat);
+                            }
+                            other_than_mismatch = true;
+                        } else if (t_res == '-') {
+                            if (report_errors && !reported_bad_start_codon && !unclassified_except) {
+                                PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
+                                    "Illegal start codon used. Wrong genetic code [" +
+                                    gccode + "] or protein should be partial", feat);
+                            }
+                            other_than_mismatch = true;
+                        } else {
+                            if (t_res == 'X') {
+                                if (report_errors && !reported_bad_start_codon && !unclassified_except) {
+                                    PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
+                                        "Ambiguous start codon used. Wrong genetic code [" +
+                                        gccode + "] or protein should be partial", feat);
+                                }
+                                other_than_mismatch = true;
+                            }
+                            mismatches.push_back(i);
+                        }
+                    } else {
+                        mismatches.push_back(i);
+                    }
                     has_errors = true;
-                    mismatches.push_back(i);
                     prot_ok = false;
                 }
             }
@@ -7087,26 +7115,6 @@ void CValidError_feat::x_CheckTranslationMismatches
             }
         }
         
-        // Mismatch on first residue
-        string msg;
-        if (!mismatches.empty()  &&  mismatches.front() == 0) {
-            if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
-                if (report_errors) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem, 
-                        "Start of location should probably be partial",
-                        feat);
-                }
-            } else if (transl_prot[mismatches.front()] == '-' ||
-                       (transl_prot[mismatches.front()] == 'X' && !no_beg)) {
-                if (report_errors && !reported_bad_start_codon && !unclassified_except) {
-                    string codon_desc = transl_prot[mismatches.front()] == '-' ? "Illegal" : "Ambiguous";
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                        codon_desc + " start codon used. Wrong genetic code [" +
-                        gccode + "] or protein should be partial", feat);
-                }
-            }
-        }
-
         char prot_res, transl_res;
         string nuclocstr;
         num_mismatches = mismatches.size();
@@ -7116,7 +7124,7 @@ void CValidError_feat::x_CheckTranslationMismatches
             nuclocstr = MapToNTCoords(feat, feat.GetProduct(), mismatches.front());
             prot_res = prot_vec[mismatches.front()];
             transl_res = Residue(transl_prot[mismatches.front()]);
-            msg = 
+            string msg = 
                 NStr::SizetToString(mismatches.size()) + " mismatches found.  " +
                 "First mismatch at " + NStr::IntToString(mismatches.front() + 1) +
                 ", residue in protein [" + prot_res + "]" +
@@ -7152,7 +7160,7 @@ void CValidError_feat::x_CheckTranslationMismatches
                     if (prot_res == 'X' && (transl_res == 'B' || transl_res == 'Z' || transl_res == 'J')) {
                         sev = eDiag_Warning;
                     }
-                    msg = farstr + "Residue " + NStr::IntToString(mismatches[i] + 1) +
+                    string msg = farstr + "Residue " + NStr::IntToString(mismatches[i] + 1) +
                         " in protein [" + prot_res + "]" +
                         " != translation [" + transl_res + "]";
                     if (!nuclocstr.empty()) {

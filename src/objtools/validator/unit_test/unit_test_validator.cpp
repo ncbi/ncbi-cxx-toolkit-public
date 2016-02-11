@@ -6266,6 +6266,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     entry->SetSeq().SetDescr().Set().push_back(biosample);
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BioSourceInconsistency",
                               "Bacteria should have strain or isolate or environmental sample"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "DBLinkProblem",
+                              "Bad BioSample format - PRJNA12345"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -6275,6 +6277,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     scope.RemoveTopLevelSeqEntry(seh);
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "bar");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "DBLinkProblem",
+        "Bad BioSample format - PRJNA12345"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -10935,8 +10939,9 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
         "Inconsistent: Product= complete, Location= complete, Feature.partial= TRUE"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
         "Start of location should probably be partial"));
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "MisMatchAA",
-        "Residue 1 in protein [K] != translation [M] at lcl|nuc:1-3"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+        "This SeqFeat should not be partial"));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11209,7 +11214,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_SeqLocOrder)
                                                  "Seq-loc.int has identical from and to values, should be Seq-loc.pt"));
     */
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqLocOrder",
-                                                 "Location: Intervals out of order in SeqLoc [[lcl|good:10-11, 1-1]]"));
+                                                 "Location: Intervals out of order in SeqLoc [(lcl|good:10-11, 1-1)]"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

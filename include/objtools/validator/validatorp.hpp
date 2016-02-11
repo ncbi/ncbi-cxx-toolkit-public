@@ -740,11 +740,8 @@ private:
                           CConstRef<CSeq_interval>& int_prv,
                           const CSerialObject& obj);
     bool x_CheckSeqInt(CConstRef<CSeq_id>& id_cur,
-                       const CSeq_id * id_prv,
                        const CSeq_interval * int_cur,
-                       const CSeq_interval * int_prv,
                        ENa_strand& strand_cur,
-                       ENa_strand strand_prv,
                        const CSerialObject& obj);
     void x_ReportInvalidFuzz(const CPacked_seqint& packed_int, const CSerialObject& obj);
     void x_ReportInvalidFuzz(const CSeq_interval& interval, const CSerialObject& obj);
