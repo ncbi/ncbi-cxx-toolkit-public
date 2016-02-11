@@ -2507,6 +2507,19 @@ void CValidError_imp::ValidateSpecificHost(const CSeq_entry& se)
     ValidateSpecificHost(src_descs, desc_ctxs, src_feats);
 }
 
+
+bool IsOrgNotFound(const CT3Error& error)
+{
+    const string err_str = error.IsSetMessage() ? error.GetMessage() : "?";
+
+    if (NStr::Equal(err_str, "Organism not found")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
 {
     vector<CConstRef<CSeqdesc> > src_descs;
@@ -2557,19 +2570,25 @@ void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
     // process descriptor responses
     desc_it = src_descs.begin();
     ctx_it = desc_ctxs.begin();
+    size_t pos = 0;
 
     while (reply_it != reply->GetReply().end()
         && desc_it != src_descs.end()
         && ctx_it != desc_ctxs.end()) {
         if ((*reply_it)->IsError()) {
-            
-            x_HandleTaxonomyError((*reply_it)->GetError(), 
-                eErr_SEQ_DESCR_BadTentativeName, **desc_it, *ctx_it);
-
+            if (IsOrgNotFound((*reply_it)->GetError())) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadTentativeName,
+                    "Taxonomy lookup failed for Tentative Name '" + org_rq_list[pos]->GetTaxname() + "'",
+                    **desc_it, *ctx_it);
+            } else {
+                x_HandleTaxonomyError((*reply_it)->GetError(),
+                    eErr_SEQ_DESCR_BadTentativeName, **desc_it, *ctx_it);
+            }
         }
         ++reply_it;
         ++desc_it;
         ++ctx_it;
+        ++pos;
     }
 
     // process feat responses
@@ -2577,13 +2596,18 @@ void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
     while (reply_it != reply->GetReply().end()
         && feat_it != src_feats.end()) {
         if ((*reply_it)->IsError()) {
-
-            x_HandleTaxonomyError((*reply_it)->GetError(),
-                eErr_SEQ_DESCR_BadTentativeName, **feat_it);
-
+            if (IsOrgNotFound((*reply_it)->GetError())) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadTentativeName,
+                    "Taxonomy lookup failed for Tentative Name '" + org_rq_list[pos]->GetTaxname() + "'",
+                    **feat_it);
+            } else {
+                x_HandleTaxonomyError((*reply_it)->GetError(),
+                    eErr_SEQ_DESCR_BadTentativeName, **feat_it);
+            }
         }
         ++reply_it;
         ++feat_it;
+        ++pos;
     }
 }
 
