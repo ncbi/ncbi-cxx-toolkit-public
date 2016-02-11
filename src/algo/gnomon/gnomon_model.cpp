@@ -1532,7 +1532,7 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
     }
 
     vector<string> v;
-    NStr::Tokenize(line, "\t", v, NStr::eNoMergeDelims);
+    NStr::Split(line, "\t", v, NStr::eNoMergeDelims);
     if (v.size()!=9)
         return InputError(is);
     SGFFrec rec;
@@ -1554,7 +1554,7 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
     }
     bool model_id_present = false;
     vector<string> attributes;
-    NStr::Tokenize(v[8], ";", attributes, NStr::eMergeDelims);
+    NStr::Split(v[8], ";", attributes, NStr::eMergeDelims);
     for (size_t i = 0; i < attributes.size(); ++i) {
         string key, value;
         if (NStr::SplitInTwo(attributes[i], "=", key, value) && !value.empty()) {
@@ -1563,7 +1563,7 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
                 model_id_present = true;
             } else if(key == "Target") {
                 vector<string> tt;
-                NStr::Tokenize(value, " \t", tt);
+                NStr::Split(value, " \t", tt, NStr::eMergeDelims);
                 rec.tstart = NStr::StringToNumeric<int>(tt[1])-1;
                 rec.tend = NStr::StringToNumeric<int>(tt[2])-1;
                 if(tt.size() > 3 && tt[3] == "-")
@@ -1630,7 +1630,7 @@ void readGFF3Gap(const string& gap, int start, int end, TInDels& indels)
     if (gap.empty())
         return;
     vector<string> operations;
-    NStr::Tokenize(gap, " ", operations);
+    NStr::Split(gap, " ", operations, NStr::eMergeDelims);
     TSignedSeqPos loc = start;
     NON_CONST_ITERATE(vector<string>, o, operations) {
         CInDelInfo::EStatus status = CInDelInfo::eUnknown;
@@ -1834,7 +1834,7 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     bool tcoords = false;
     
     vector<string> flags;
-    NStr::Tokenize(attributes["flags"], ",", flags);
+    NStr::Split(attributes["flags"], ",", flags, NStr::eMergeDelims);
     ITERATE(vector<string>, f, flags) {
         if (*f == "Wall")       a.SetType(a.Type()|  CGeneModel::eWall);
         else if (*f == "Nested")     a.SetType(a.Type()|  CGeneModel::eNested);
@@ -1888,7 +1888,7 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
 
     if((a.Type() & CGeneModel::eGnomon) != 0 || (a.Type() & CGeneModel::eChain) != 0) { // handles legacy files
         vector<string> support;
-        NStr::Tokenize(attributes["support"], ",", support);
+        NStr::Split(attributes["support"], ",", support, NStr::eMergeDelims);
         ITERATE(vector<string>, s, support) {
             bool core = (*s)[0] == '*';
             Int8 id = NStr::StringToNumeric<Int8>(core ? s->substr(1) : *s);
@@ -1897,13 +1897,13 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     }
     
     vector<string> trustedmrna;
-    NStr::Tokenize(attributes["TrustedmRNA"], ",", trustedmrna);
+    NStr::Split(attributes["TrustedmRNA"], ",", trustedmrna, NStr::eMergeDelims);
     ITERATE(vector<string>, s, trustedmrna) {
         a.InsertTrustedmRNA(CIdHandler::ToSeq_id(*s));
     }
 
     vector<string> trustedprot;
-    NStr::Tokenize(attributes["TrustedProt"], ",", trustedprot);
+    NStr::Split(attributes["TrustedProt"], ",", trustedprot, NStr::eMergeDelims);
     ITERATE(vector<string>, s, trustedprot) {
         a.InsertTrustedProt(CIdHandler::ToSeq_id(*s));
     }
@@ -1960,10 +1960,10 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         
         if(!attributes["pstop"].empty()) {
             vector<string> stops;
-            NStr::Tokenize(attributes["pstop"], ",", stops);
+            NStr::Split(attributes["pstop"], ",", stops, NStr::eMergeDelims);
             ITERATE(vector<string>, s, stops) {
                 vector<string> parts;
-                NStr::Tokenize(*s, " ", parts);
+                NStr::Split(*s, " ", parts, NStr::eMergeDelims);
                 TSignedSeqRange pstop = StringToRange(parts[0]+" "+parts[1]);
                 if(!tcoords)
                     pstop = a.GetAlignMap().MapRangeOrigToEdited(pstop, false);
@@ -2294,7 +2294,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
                 CInDelInfo::SSource src;
                 if(!r->attributes["Source"].empty()) {
                     vector<string> v;
-                    NStr::Tokenize(r->attributes["Source"], ":", v);
+                    NStr::Split(r->attributes["Source"], ":", v, NStr::eMergeDelims);
                     _ASSERT((int)v.size() == 4);
                     src.m_acc = v[0];
                     src.m_range.SetFrom(NStr::StringToNumeric<TSignedSeqPos>(v[1])-1);

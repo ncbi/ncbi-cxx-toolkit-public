@@ -6971,7 +6971,7 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
         SAnnotSelector sel;
         {
             list<string> arr;
-            NStr::Split(mask_annots, " ", arr);
+            NStr::Split(mask_annots, " ", arr, NStr::fSplit_MergeDelimiters|NStr::fSplit_Truncate);
             ITERATE(list<string>, annot, arr) {
                 sel.AddNamedAnnots(*annot);
             }
