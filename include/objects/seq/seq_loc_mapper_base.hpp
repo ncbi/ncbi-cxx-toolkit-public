@@ -538,6 +538,9 @@ protected:
     // rows become mapping source.
     void x_InitializeAlign(const CSeq_align& map_align,
                            const CSeq_id&    to_id);
+    // Recursive version of the above.
+    void x_InitializeAlign(const CSeq_align& map_align,
+                           const TSynonyms&  to_ids);
     // Initialize the mapper from an alignment, map to the specified row.
     void x_InitializeAlign(const CSeq_align& map_align,
                            size_t            to_row);
@@ -686,7 +689,7 @@ private:
     void x_InitAlign(const CStd_seg& sseg, size_t to_row);
     void x_InitAlign(const CPacked_seg& pseg, size_t to_row);
     void x_InitSpliced(const CSpliced_seg& spliced,
-                       const CSeq_id&      to_id);
+                       const TSynonyms&    to_ids);
     void x_InitSpliced(const CSpliced_seg& spliced, ESplicedRow to_row);
     void x_InitSparse(const CSparse_seg& sparse, int to_row);
 
@@ -809,6 +812,9 @@ private:
     // Get main seq-id for a synonym. If no mapping exists, returns the
     // original id.
     const CSeq_id_Handle& x_GetPrimaryId(const CSeq_id_Handle& synonym) const;
+
+    // Check if the id is in the list of synonyms.
+    bool x_IsSynonym(const CSeq_id& id, const TSynonyms& synonyms) const;
 
     typedef map<CSeq_id_Handle, CSeq_id_Handle> TSynonymMap;
     typedef map<CSeq_id_Handle, TSeqPos> TLengthMap;

@@ -1199,8 +1199,28 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
 }
 
 
+bool CSeq_loc_Mapper_Base::x_IsSynonym(const CSeq_id& id,
+                                       const TSynonyms& synonyms) const
+{
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+    ITERATE(TSynonyms, it, synonyms) {
+        if (idh == *it) return true;
+    }
+    return false;
+}
+
+
 void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                                              const CSeq_id&    to_id)
+{
+    IMapper_Sequence_Info::TSynonyms to_syn;
+    CSeq_id_Handle to_idh = CSeq_id_Handle::GetHandle(to_id);
+    CollectSynonyms(to_idh, to_syn);
+    x_InitializeAlign(map_align, to_syn);
+}
+
+void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
+                                             const TSynonyms&  to_ids)
 {
     // When finding the destination row, the first row with required seq-id
     // is used. Do not check if there are multiple rows with the same id.
@@ -1211,7 +1231,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
             ITERATE(TDendiag, diag_it, diags) {
                 size_t to_row = size_t(-1);
                 for (size_t i = 0; i < (*diag_it)->GetIds().size(); ++i) {
-                    if ( (*diag_it)->GetIds()[i]->Equals(to_id) ) {
+                    if ( x_IsSynonym(*(*diag_it)->GetIds()[i], to_ids) ) {
                         to_row = i;
                         break;
                     }
@@ -1231,7 +1251,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
             const CDense_seg& dseg = map_align.GetSegs().GetDenseg();
             size_t to_row = size_t(-1);
             for (size_t i = 0; i < dseg.GetIds().size(); ++i) {
-                if (dseg.GetIds()[i]->Equals(to_id)) {
+                if ( x_IsSynonym(*dseg.GetIds()[i], to_ids) ) {
                     to_row = i;
                     break;
                 }
@@ -1250,7 +1270,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                 size_t to_row = size_t(-1);
                 if ((*std_seg)->IsSetIds()  &&  !(*std_seg)->GetIds().empty()) {
                     for (size_t i = 0; i < (*std_seg)->GetIds().size(); ++i) {
-                        if ((*std_seg)->GetIds()[i]->Equals(to_id)) {
+                        if ( x_IsSynonym(*(*std_seg)->GetIds()[i], to_ids) ) {
                             to_row = i;
                             break;
                         }
@@ -1261,7 +1281,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                     // Try to parse seq-locs.
                     for (size_t i = 0; i < (*std_seg)->GetLoc().size(); ++i) {
                         const CSeq_id* row_id = (*std_seg)->GetLoc()[i]->GetId();
-                        if (row_id  &&  row_id->Equals(to_id)) {
+                        if (row_id  &&  x_IsSynonym(*row_id, to_ids)) {
                             to_row = i;
                             break;
                         }
@@ -1282,7 +1302,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
             const CPacked_seg& pseg = map_align.GetSegs().GetPacked();
             size_t to_row = size_t(-1);
             for (size_t i = 0; i < pseg.GetIds().size(); ++i) {
-                if (pseg.GetIds()[i]->Equals(to_id)) {
+                if ( x_IsSynonym(*pseg.GetIds()[i], to_ids) ) {
                     to_row = i;
                     break;
                 }
@@ -1301,13 +1321,13 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                 // Each sub-alignment forms a separate group.
                 // See SetMergeBySeg().
                 m_CurrentGroup++;
-                x_InitializeAlign(**aln, to_id);
+                x_InitializeAlign(**aln, to_ids);
             }
             break;
         }
     case CSeq_align::C_Segs::e_Spliced:
         {
-            x_InitSpliced(map_align.GetSegs().GetSpliced(), to_id);
+            x_InitSpliced(map_align.GetSegs().GetSpliced(), to_ids);
             break;
         }
     case CSeq_align::C_Segs::e_Sparse:
@@ -1317,11 +1337,11 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
             ITERATE(CSparse_seg::TRows, it, sparse.GetRows()) {
                 // Prefer to map from the second subrow to the first one
                 // if their ids are the same.
-                if ((*it)->GetFirst_id().Equals(to_id)) {
+                if ( x_IsSynonym((*it)->GetFirst_id(), to_ids) ) {
                     m_MapOptions &= ~fAlign_Sparse_ToSecond;
                     m_MapOptions |= fAlign_Sparse_ToFirst;
                 }
-                else if ((*it)->GetSecond_id().Equals(to_id)) {
+                else if ( x_IsSynonym((*it)->GetSecond_id(), to_ids) ) {
                     m_MapOptions &= ~fAlign_Sparse_ToFirst;
                     m_MapOptions |= fAlign_Sparse_ToSecond;
                 }
@@ -1691,15 +1711,15 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
 
 
 void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
-                                         const CSeq_id&      to_id)
+                                         const TSynonyms&    to_ids)
 {
     // Assume the same seq-id can not be used in both genomic and product rows,
     // try find the correct row.
-    if (spliced.IsSetGenomic_id()  &&  spliced.GetGenomic_id().Equals(to_id)) {
+    if (spliced.IsSetGenomic_id()  &&  x_IsSynonym(spliced.GetGenomic_id(), to_ids)) {
         x_InitSpliced(spliced, eSplicedRow_Gen);
         return;
     }
-    if (spliced.IsSetProduct_id()  &&  spliced.GetProduct_id().Equals(to_id)) {
+    if (spliced.IsSetProduct_id()  &&  x_IsSynonym(spliced.GetProduct_id(), to_ids)) {
         x_InitSpliced(spliced, eSplicedRow_Prod);
         return;
     }
@@ -1710,11 +1730,11 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
     // than only those exons, which contain the requested id.
     ITERATE(CSpliced_seg::TExons, it, spliced.GetExons()) {
         const CSpliced_exon& ex = **it;
-        if (ex.IsSetGenomic_id()  &&  ex.GetGenomic_id().Equals(to_id)) {
+        if (ex.IsSetGenomic_id()  &&  x_IsSynonym(ex.GetGenomic_id(), to_ids)) {
             x_InitSpliced(spliced, eSplicedRow_Gen);
             return;
         }
-        if (ex.IsSetProduct_id()  &&  ex.GetProduct_id().Equals(to_id)) {
+        if (ex.IsSetProduct_id()  &&  x_IsSynonym(ex.GetProduct_id(), to_ids)) {
             x_InitSpliced(spliced, eSplicedRow_Prod);
             return;
         }
