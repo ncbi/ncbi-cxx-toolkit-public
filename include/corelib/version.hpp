@@ -249,12 +249,16 @@ public:
     void SetVersionInfo( int  ver_major,
                          int  ver_minor,
                          int  patch_level = 0,
-                         const string& ver_name = kEmptyStr,
-                         const SBuildInfo& build_info = SBuildInfo());
+                         const string& ver_name = kEmptyStr);
+    void SetVersionInfo( int  ver_major,
+                         int  ver_minor,
+                         int  patch_level,
+                         const string& ver_name,
+                         const SBuildInfo& build_info);
     /// Set version information
     /// @note Takes the ownership over the passed VersionInfo object 
-    void SetVersionInfo(CVersionInfo* version,
-            const SBuildInfo& build_info = SBuildInfo());
+    void SetVersionInfo(CVersionInfo* version);
+    void SetVersionInfo(CVersionInfo* version, const SBuildInfo& build_info);
     /// Get version information
     const CVersionInfo& GetVersionInfo( ) const;
 

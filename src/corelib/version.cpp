@@ -484,12 +484,24 @@ CVersion::CVersion(const CVersion& version)
 }
 
 void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,
+                               int  patch_level, const string& ver_name)
+{
+    m_VersionInfo.reset( new CVersionInfo(
+        ver_major, ver_minor, patch_level, ver_name) );
+}
+
+void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,
                                int  patch_level, const string& ver_name,
                                const SBuildInfo& build_info)
 {
     m_VersionInfo.reset( new CVersionInfo(
         ver_major, ver_minor, patch_level, ver_name) );
     m_BuildInfo = build_info;
+}
+
+void CVersion::SetVersionInfo(CVersionInfo* version)
+{
+    m_VersionInfo.reset( version );
 }
 
 void CVersion::SetVersionInfo(CVersionInfo* version,

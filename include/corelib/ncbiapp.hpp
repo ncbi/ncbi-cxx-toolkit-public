@@ -429,8 +429,8 @@ protected:
     ///   derived class, otherwise command-like arguments "-version" and 
     ///   "-version-full" will not work as expected.
     /// @sa GetVersion
-    void SetVersion(const CVersionInfo& version,
-            const SBuildInfo& build_info = SBuildInfo());
+    void SetVersion(const CVersionInfo& version);
+    void SetVersion(const CVersionInfo& version, const SBuildInfo& build_info);
 
     /// Set version data for the program.
     ///

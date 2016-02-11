@@ -746,6 +746,15 @@ void CNcbiApplication::SetEnvironment(const string& name, const string& value)
 }
 
 
+void CNcbiApplication::SetVersion(const CVersionInfo& version)
+{
+    if ( s_IsApplicationStarted ) {
+        ERR_POST_X(19, "SetVersion() should be used from constructor of " \
+                       "CNcbiApplication derived class, see description");
+    }
+    m_Version->SetVersionInfo(new CVersionInfo(version));
+}
+
 void CNcbiApplication::SetVersion(const CVersionInfo& version,
         const SBuildInfo& build_info)
 {
