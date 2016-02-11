@@ -112,9 +112,8 @@ public:
 
     CInDelInfo(TSignedSeqPos l, int len, EType type, const string& v = kEmptyStr, const SSource& s = SSource()) { Init(l, len, type, v, s); }
 
-    TSignedSeqPos Loc() const { return m_loc; 
-    }
-int Len() const { return m_len; }
+    TSignedSeqPos Loc() const { return m_loc; }
+    int Len() const { return m_len; }
     int InDelEnd() const { return ((IsInsertion() || IsMismatch()) ? Loc()+Len() : Loc()); }  // first base "after" correction
     bool IsInsertion() const { return m_type == eIns; }
     bool IsDeletion() const { return m_type == eDel; }
@@ -407,6 +406,7 @@ public:
         m_cds_info = CCDSInfo();
         m_edge_reading_frames.clear();
     }
+    void SetSplices(int i, const string& f_sig, const string& s_sig) { m_exons[i].m_fsplice_sig = f_sig; m_exons[i].m_ssplice_sig = s_sig; }
 
     void ReverseComplementModel();
 
