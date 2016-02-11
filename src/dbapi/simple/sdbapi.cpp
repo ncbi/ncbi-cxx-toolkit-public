@@ -806,6 +806,8 @@ s_ConvertValue(const CVariant& from_var, string& to_val)
     }
 }
 
+static const char kDefaultDriverName[] = "ftds";
+static const char *s_DriverName = NULL;
 
 class CDataSourceInitializer : protected CConnIniter
 {
@@ -814,9 +816,15 @@ public:
     {
         DBLB_INSTALL_DEFAULT();
         DBAPI_RegisterDriver_FTDS();
+        DBAPI_RegisterDriver_FTDS64();
+        DBAPI_RegisterDriver_FTDS95();
 
+        if (s_DriverName == NULL) {
+            s_DriverName = kDefaultDriverName;
+        }
+        
         CDBConnParamsBase params;
-        params.SetDriverName("ftds");
+        params.SetDriverName(s_DriverName);
         params.SetEncoding(eEncoding_UTF8);
         IDataSource* ds
             = CDriverManager::GetInstance().MakeDs(params, ".sdbapi");
@@ -833,7 +841,7 @@ inline
 static IDataSource* s_GetDataSource(void)
 {
     ds_init.Get();
-    return CDriverManager::GetInstance().CreateDs("ftds", ".sdbapi");
+    return CDriverManager::GetInstance().CreateDs(s_DriverName, ".sdbapi");
 }
 
 inline
@@ -1203,6 +1211,19 @@ void CSDBAPI::SetApplicationName(const CTempString& name)
 string CSDBAPI::GetApplicationName(void)
 {
     return s_GetDBContext()->GetApplicationName();
+}
+
+
+void CSDBAPI::UseDriver(EDriver driver)
+{
+    if (s_DriverName != NULL) {
+        NCBI_THROW(CSDB_Exception, eInconsistent,
+                   "CSDBAPI::UseDriver called with SDBAPI already in use.");
+    }
+    switch (driver) {
+    case eDriver_FTDS64: s_DriverName = "ftds64"; break;
+    case eDriver_FTDS95: s_DriverName = "ftds95"; break;
+    }
 }
 
 

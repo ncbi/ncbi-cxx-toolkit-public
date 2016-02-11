@@ -1136,6 +1136,18 @@ public:
     /// @sa SetApplicationName()
     static string GetApplicationName(void);
 
+    /// @sa UseDriver
+    enum EDriver {
+        eDriver_FTDS64,
+        eDriver_FTDS95
+    };
+    /// Use the specified driver for all connections.
+    ///
+    /// Any call to this method must be the application's very first
+    /// use of SDBAPI; calling it later is an error, and will result
+    /// in throwing an exception.
+    static void UseDriver(EDriver driver);
+    
     /// @sa UpdateMirror
     enum EMirrorStatus {
         eMirror_Steady,      ///< Mirror is working on the same server as before
