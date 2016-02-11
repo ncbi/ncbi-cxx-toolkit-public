@@ -70,11 +70,11 @@ public:
 
 
     void SetSNV(const CSeq_data& nucleotide, 
-                CRef<CDelta_item> offset);
+                CRef<CDelta_item> offset=null);
 
     void SetMNP(const CSeq_data& nucleotide, 
                 TSeqPos length,
-                CRef<CDelta_item> offset);
+                CRef<CDelta_item> offset=null);
 
     void SetMissense(const CSeq_data& amino_acid);
 
