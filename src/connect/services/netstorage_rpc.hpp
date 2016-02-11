@@ -92,6 +92,22 @@ struct SNetStorageRPC : public SNetStorageImpl
 
     CNetCacheAPI m_NetCacheAPI;
 
+    struct SUseNextSubHitID
+    {
+        void ProperCommand() { m_ProperCommand = true; }
+
+        operator bool() const
+        {
+            const bool result = m_ProperCommand;
+            m_ProperCommand = false;
+            return result;
+        }
+
+    private:
+        mutable bool m_ProperCommand = false;
+    };
+
+    SUseNextSubHitID m_UseNextSubHitID;
 private:
     map<string, CNetService> m_ServiceMap;
 

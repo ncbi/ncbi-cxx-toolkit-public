@@ -620,6 +620,7 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
                 "Object creation is disabled.");
     }
 
+    m_UseNextSubHitID.ProperCommand();
     CJsonNode request(MkStdRequest("CREATE"));
 
     x_SetStorageFlags(request, flags);
@@ -652,6 +653,7 @@ string SNetStorageRPC::Relocate(const string& object_loc,
         NCBI_THROW_FMT(CNetStorageException, eNotSupported, object_loc <<
                 ": Relocate for NetCache blobs is not implemented");
 
+    m_UseNextSubHitID.ProperCommand();
     CJsonNode request(MkObjectRequest("RELOCATE", object_loc));
 
     CJsonNode new_location(CJsonNode::NewObjectNode());
@@ -692,6 +694,7 @@ ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
         return eNSTRR_NotFound;
     }
 
+    m_UseNextSubHitID.ProperCommand();
     CJsonNode request(MkObjectRequest("DELETE", object_loc));
     CJsonNode response(Exchange(GetServiceFromLocator(object_loc), request));
     CJsonNode not_found(response.GetByKeyOrNull("NotFound"));
@@ -802,7 +805,8 @@ CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type) const
     }
 
     if (req.IsSetHitID()) {
-        new_request.SetString("ncbi_phid", req.GetHitID());
+        new_request.SetString("ncbi_phid", m_UseNextSubHitID ?
+                req.GetNextSubHitID() : req.GetCurrentSubHitID());
     }
 
     return new_request;
@@ -1065,6 +1069,7 @@ ERW_Result SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size,
     }
 
     if (m_State == eReady) {
+        m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
         m_OriginalRequest = x_MkRequest("WRITE");
 
         m_Locator = ExchangeUsingOwnService(m_OriginalRequest,
@@ -1300,6 +1305,7 @@ CNetStorageObject SNetStorageByKeyRPC::Open(const string& unique_key,
 string SNetStorageByKeyRPC::Relocate(const string& unique_key,
         TNetStorageFlags flags, TNetStorageFlags old_flags)
 {
+    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
     CJsonNode request(m_NetStorageRPC->MkObjectRequest(
             "RELOCATE", unique_key, old_flags));
 
@@ -1324,6 +1330,7 @@ bool SNetStorageByKeyRPC::Exists(const string& key, TNetStorageFlags flags)
 ENetStorageRemoveResult SNetStorageByKeyRPC::Remove(const string& key,
         TNetStorageFlags flags)
 {
+    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
     CJsonNode request(m_NetStorageRPC->MkObjectRequest("DELETE", key, flags));
 
     m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service, request);
