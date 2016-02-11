@@ -7004,6 +7004,42 @@ const CSeq_id* CValidError_feat::x_GetCDSProduct
 }
 
 
+size_t CValidError_feat::x_CountTerminalXs(const string& transl_prot)
+{
+    // look for discrepancy in number of terminal Xs between product and translation
+    size_t transl_terminal_x = 0;
+    size_t i = transl_prot.length() - 1;
+    if (i > 0 && transl_prot[i] == '*') {
+        i--;
+    }
+    while (i > 0) {
+        if (transl_prot[i] == 'X') {
+            transl_terminal_x++;
+        } else {
+            break;
+        }
+        i--;
+    }
+    if (i == 0 && transl_prot[0] == 'X') {
+        transl_terminal_x++;
+    }
+    return transl_terminal_x;
+}
+
+size_t CValidError_feat::x_CountTerminalXs(const CSeqVector& prot_vec)
+{
+    size_t prod_terminal_x = 0;
+    size_t prod_len = prot_vec.size() - 1;
+    while (prod_len > 0 && prot_vec[prod_len] == 'X') {
+        prod_terminal_x++;
+        prod_len--;
+    }
+    if (prod_len == 0 && prot_vec[prod_len] == 'X') {
+        prod_terminal_x++;
+    }
+    return prod_terminal_x;
+}
+
 void CValidError_feat::x_CheckTranslationMismatches
 (const CSeq_feat& feat,
  CBioseq_Handle prot_handle,
@@ -7195,28 +7231,9 @@ void CValidError_feat::x_CheckTranslationMismatches
 
         if (!transl_prot.empty()) {
             // look for discrepancy in number of terminal Xs between product and translation
-            size_t transl_terminal_x = 0;
-            size_t i = transl_prot.length() - 1;
-            while (i > 0) {
-                if (transl_prot[i] == 'X') {
-                    transl_terminal_x++;
-                } else {
-                    break;
-                }
-                i--;
-            }
-            if (i == 0 && transl_prot[0] == 'X') {
-                transl_terminal_x++;
-            }
-            size_t prod_terminal_x = 0;
-            size_t prod_len = prot_vec.size() - 1;
-            while (prod_len > 0 && prot_vec[prod_len] == 'X') {
-                prod_terminal_x++;
-                prod_len--;
-            }
-            if (prod_len == 0 && prot_vec[prod_len] == 'X') {
-                prod_terminal_x++;
-            }
+            size_t transl_terminal_x = x_CountTerminalXs(transl_prot);
+            size_t prod_terminal_x = x_CountTerminalXs(prot_vec);
+
             if (transl_terminal_x != prod_terminal_x) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_TerminalXDiscrepancy,
                          "Terminal X count for CDS translation (" + NStr::SizetToString (transl_terminal_x)
