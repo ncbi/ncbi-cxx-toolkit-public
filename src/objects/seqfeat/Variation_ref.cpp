@@ -645,57 +645,6 @@ CVariation_ref::TPub& CVariation_ref::SetPub(void)
 }
 
 
-void CVariation_ref::SetSNV(const CSeq_data& nucleotide,
-                            const CRef<CDelta_item> offset) 
-{
-    auto& inst = SetData().SetInstance();
-    inst.SetType(CVariation_inst::eType_snv);
-    inst.SetDelta().clear();
-
-    if (offset.NotNull()) {
-        inst.SetDelta().push_back(offset);
-    }
-
-    auto delta_item = Ref(new CDelta_item());
-    auto& seq_literal = delta_item->SetSeq().SetLiteral();
-    seq_literal.SetSeq_data().Assign(nucleotide);
-    seq_literal.SetLength(1);
-    inst.SetDelta().push_back(delta_item);
-}
-
-
-void CVariation_ref::SetMNP(const CSeq_data& nucleotide,
-                            const TSeqPos length,
-                            const CRef<CDelta_item> offset)
-{
-    auto& inst = SetData().SetInstance();
-    inst.SetType(CVariation_inst::eType_mnp);
-    inst.SetDelta().clear();
-
-    if (offset.NotNull()) {
-        inst.SetDelta().push_back(offset);
-     }
-            
-     auto delta_item = Ref(new CDelta_item());
-     auto& seq_literal = delta_item->SetSeq().SetLiteral();
-     seq_literal.SetSeq_data().Assign(nucleotide);
-     seq_literal.SetLength(length);
-     inst.SetDelta().push_back(delta_item);
-}
-
-
-void CVariation_ref::SetMissense(const CSeq_data& amino_acid) 
-{
-    auto& inst = SetData().SetInstance();
-    inst.SetType(CVariation_inst::eType_prot_missense);
-    inst.SetDelta().clear();
-    auto delta_item = Ref(new CDelta_item());
-    delta_item->SetSeq().SetLiteral().SetSeq_data().Assign(amino_acid);
-    delta_item->SetSeq().SetLiteral().SetLength() = 1;
-    inst.SetDelta().push_back(delta_item);
-}
-
-
 //////////////////////////////////////////////////////////////////////////////
 
 bool CVariation_ref::IsSetLocation(void) const
@@ -934,8 +883,6 @@ void CVariation_ref::SetMNP(const vector<string>& replaces,
     s_SetReplaces(*this, replaces, seq_type,
                   CVariation_inst::eType_mnp);
 }
-
-
 
 bool CVariation_ref::IsMNP() const
 {
