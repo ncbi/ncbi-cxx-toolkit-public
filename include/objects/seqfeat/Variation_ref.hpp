@@ -40,6 +40,8 @@
 #define OBJECTS_SEQFEAT_VARIATION_REF_HPP
 
 
+#include <objects/seq/Seq_data.hpp>
+
 // generated includes
 #include <objects/seqfeat/Variation_ref_.hpp>
 
