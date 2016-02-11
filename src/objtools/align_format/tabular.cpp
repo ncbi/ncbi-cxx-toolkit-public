@@ -65,7 +65,7 @@ void
 CBlastTabularInfo::x_AddDefaultFieldsToShow()
 {
     vector<string> format_tokens;
-    NStr::Tokenize(kDfltArgTabularOutputFmt, " ", format_tokens);
+    NStr::Split(kDfltArgTabularOutputFmt, " ", format_tokens);
     ITERATE (vector<string>, iter, format_tokens) {
         _ASSERT(m_FieldMap.count(*iter) > 0);
         x_AddFieldToShow(m_FieldMap[*iter]);
