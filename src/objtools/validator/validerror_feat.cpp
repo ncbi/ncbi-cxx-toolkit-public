@@ -1218,6 +1218,7 @@ static int s_GetStrictGenCode(const CBioSource& src)
             switch ( genome ) {
                 case CBioSource::eGenome_kinetoplast:
                 case CBioSource::eGenome_mitochondrion:
+                case CBioSource::eGenome_hydrogenosome:
                     // bacteria and plant organelle code
                     if (orn.IsSetMgcode()) {
                         gencode = orn.GetMgcode();
@@ -5803,11 +5804,6 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
 
     const CSeq_loc& loc = feat.GetLocation();
     bool found_short = false;
-
-    if (! m_Imp.IsIndexerVersion()) {
-        CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, loc, m_Imp.GetTSE_Handle());
-        if (!bsh || m_Imp.IsOrganelle(bsh)) return found_short;
-    }
 
     CSeq_loc_CI li(loc);
     const CSeq_loc& start_loc = li.GetEmbeddingSeq_loc();
