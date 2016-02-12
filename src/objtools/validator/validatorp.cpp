@@ -2030,7 +2030,7 @@ void CValidError_imp::ValidateSeqLoc
         }
         if (mixed_strand) {
             if (IsSmallGenomeSet()) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
                     prefix + ": Mixed strands in SeqLoc ["
                     + loc_lbl + "] in small genome set - set trans-splicing exception if appropriate", obj);
             } else {
