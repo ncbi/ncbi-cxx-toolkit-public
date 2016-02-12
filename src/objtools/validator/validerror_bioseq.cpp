@@ -740,31 +740,29 @@ bool CValidError_bioseq::IsHistAssemblyMissing(const CBioseq& seq)
     CSeq_inst::TRepr repr = inst.CanGetRepr() ?
         inst.GetRepr() : CSeq_inst::eRepr_not_set;
 
-    if ( !inst.CanGetHist()  ||  !inst.GetHist().CanGetAssembly() ) {
-        if ( seq.IsNa()  &&  repr != CSeq_inst::eRepr_seg ) {
-            rval = true;
-            // look for keyword
-            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-            CSeqdesc_CI genbank_i(bsh, CSeqdesc::e_Genbank);
-            if (genbank_i && genbank_i->GetGenbank().IsSetKeywords()) {
-                CGB_block::TKeywords::const_iterator keyword = genbank_i->GetGenbank().GetKeywords().begin();
-                while (keyword != genbank_i->GetGenbank().GetKeywords().end() && rval) {
+    if ( seq.IsNa()  &&  repr != CSeq_inst::eRepr_seg ) {
+        rval = true;
+        // look for keyword
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        CSeqdesc_CI genbank_i(bsh, CSeqdesc::e_Genbank);
+        if (genbank_i && genbank_i->GetGenbank().IsSetKeywords()) {
+            CGB_block::TKeywords::const_iterator keyword = genbank_i->GetGenbank().GetKeywords().begin();
+            while (keyword != genbank_i->GetGenbank().GetKeywords().end() && rval) {
+                if (NStr::EqualNocase(*keyword, "TPA:reassembly")) {
+                    rval = false;
+                }
+                ++keyword;
+            }
+        }
+        if (rval) {
+            CSeqdesc_CI embl_i(bsh, CSeqdesc::e_Embl);
+            if (embl_i && embl_i->GetEmbl().IsSetKeywords()) {
+                CEMBL_block::TKeywords::const_iterator keyword = embl_i->GetEmbl().GetKeywords().begin();
+                while (keyword != embl_i->GetEmbl().GetKeywords().end() && rval) {
                     if (NStr::EqualNocase(*keyword, "TPA:reassembly")) {
                         rval = false;
                     }
                     ++keyword;
-                }
-            }
-            if (rval) {
-                CSeqdesc_CI embl_i(bsh, CSeqdesc::e_Embl);
-                if (embl_i && embl_i->GetEmbl().IsSetKeywords()) {
-                    CEMBL_block::TKeywords::const_iterator keyword = embl_i->GetEmbl().GetKeywords().begin();
-                    while (keyword != embl_i->GetEmbl().GetKeywords().end() && rval) {
-                        if (NStr::EqualNocase(*keyword, "TPA:reassembly")) {
-                            rval = false;
-                        }
-                        ++keyword;
-                    }
                 }
             }
         }
