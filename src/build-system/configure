@@ -909,6 +909,9 @@ BDB_CACHE_LIB
 DBAPI_DRIVER
 DBAPI_CTLIB
 DBAPI_DBLIB
+DBAPI_FTDS
+DBAPI_FTDS64
+DBAPI_FTDS95
 DBAPI_MYSQL
 DBAPI_ODBC
 THREAD_LIBS
@@ -45428,6 +45431,9 @@ fi
 DBAPI_DRIVER=
 DBAPI_CTLIB=
 DBAPI_DBLIB=
+DBAPI_FTDS=
+DBAPI_FTDS64=
+DBAPI_FTDS95=
 DBAPI_MYSQL=
 DBAPI_ODBC=
 if test "$with_dbapi" = "no" ; then
@@ -45436,6 +45442,9 @@ else
              WithProjects="$WithProjects${WithProjectsSep}dbapi"; WithProjectsSep=" "
    dbapi="dbapi"
    DBAPI_DRIVER=dbapi_driver
+   DBAPI_FTDS=ncbi_xdbapi_ftds
+   DBAPI_FTDS64=ncbi_xdbapi_ftds64
+   DBAPI_FTDS95=ncbi_xdbapi_ftds95
    test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
    test -n "$SYBASE_DBLIBS"  &&  DBAPI_DBLIB=ncbi_xdbapi_dblib
    test -n "$MYSQL_LIBS"     &&  DBAPI_MYSQL=ncbi_xdbapi_mysql
@@ -45760,6 +45769,9 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
+
 
 
 
@@ -47129,6 +47141,9 @@ BDB_CACHE_LIB!$BDB_CACHE_LIB$ac_delim
 DBAPI_DRIVER!$DBAPI_DRIVER$ac_delim
 DBAPI_CTLIB!$DBAPI_CTLIB$ac_delim
 DBAPI_DBLIB!$DBAPI_DBLIB$ac_delim
+DBAPI_FTDS!$DBAPI_FTDS$ac_delim
+DBAPI_FTDS64!$DBAPI_FTDS64$ac_delim
+DBAPI_FTDS95!$DBAPI_FTDS95$ac_delim
 DBAPI_MYSQL!$DBAPI_MYSQL$ac_delim
 DBAPI_ODBC!$DBAPI_ODBC$ac_delim
 THREAD_LIBS!$THREAD_LIBS$ac_delim
@@ -47213,9 +47228,6 @@ WXWIDGETS_GL_STATIC_LIBS!$WXWIDGETS_GL_STATIC_LIBS$ac_delim
 WXWIDGETS_POST_LINK!$WXWIDGETS_POST_LINK$ac_delim
 FASTCGI_INCLUDE!$FASTCGI_INCLUDE$ac_delim
 FASTCGI_LIBS!$FASTCGI_LIBS$ac_delim
-FASTCGI_OBJS!$FASTCGI_OBJS$ac_delim
-NCBI_SSS_INCLUDE!$NCBI_SSS_INCLUDE$ac_delim
-NCBI_SSS_LIBPATH!$NCBI_SSS_LIBPATH$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -47257,6 +47269,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+FASTCGI_OBJS!$FASTCGI_OBJS$ac_delim
+NCBI_SSS_INCLUDE!$NCBI_SSS_INCLUDE$ac_delim
+NCBI_SSS_LIBPATH!$NCBI_SSS_LIBPATH$ac_delim
 LIBSSSUTILS!$LIBSSSUTILS$ac_delim
 LIBSSSDB!$LIBSSSDB$ac_delim
 sssutils!$sssutils$ac_delim
@@ -47337,7 +47352,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 78; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 81; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
