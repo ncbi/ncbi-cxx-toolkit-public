@@ -7022,7 +7022,12 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
         severity = eDiag_Warning;
     }
 
-    if (same_annot) {
+    if (same_label) {
+        if (s_GeneXrefsDiffer(curr, prev, m_Scope)) {
+            severity = eDiag_Warning;
+        }
+    } else {
+        //same annot
         // lower severity for some pairs of partial features or pseudo features
         if (curr.IsSetPartial() && curr.GetPartial()
             && prev.IsSetPartial() && prev.GetPartial()) {
@@ -7040,22 +7045,7 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
             severity = eDiag_Warning;
         } else if (curr_subtype == CSeqFeatData::eSubtype_cdregion && is_htgs) {
             severity = eDiag_Warning;
-        }
-        
-        if (same_label) {
-            if (s_GeneXrefsDiffer(curr, prev, m_Scope)) {
-                severity = eDiag_Warning;
-            }
-        }
-    } else {
-        /* not same annot */
-        if (same_label) {
-            if (s_GeneXrefsDiffer(curr, prev, m_Scope)) {
-                severity = eDiag_Warning;
-            }
-        } else {
-            severity = eDiag_Warning;
-        }
+        }        
     }
 
     return severity;
@@ -7084,7 +7074,7 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
                     CValidError_bioseq::GetGeneForFeature (feat1, m_Scope);
                 CConstRef <CSeq_feat> g2 =
                     CValidError_bioseq::GetGeneForFeature (feat2, m_Scope);
-                if (g1 && g2 && g1 != g2) {
+                if (g1 && g2 && g1.GetPointer() != g2.GetPointer()) {
                     severity = eDiag_Warning;
                 }
                 PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
