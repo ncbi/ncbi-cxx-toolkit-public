@@ -323,7 +323,7 @@ string GetSybaseClientVersion(void)
     string sybase_version;
 
 #if defined(NCBI_OS_MSWIN)
-    sybase_version = "12.5";
+    sybase_version = "15.5";
 #else
     impl::CDriverContext::ResetEnvSybase();
 
