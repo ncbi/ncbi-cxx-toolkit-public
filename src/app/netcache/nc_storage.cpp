@@ -1254,6 +1254,7 @@ void CNCBlobStorage::WriteEnvInfo(CSrvSocketTask& task)
 void CNCBlobStorage::WriteBlobStat(CSrvSocketTask& task)
 {
     int expire = 0;
+    Uint8 size = 0;
     Uint8 cache_count = 0, timetable_count = 0;
     map<Uint4, Uint8> blob_per_file;
 
@@ -1263,9 +1264,11 @@ void CNCBlobStorage::WriteBlobStat(CSrvSocketTask& task)
         ITERATE(TKeyMap, it, cache->key_map) {
             ++cache_count;
 #if __NC_CACHEDATA_INTR_SET
+            size += it->size;
             expire = max( expire, it->dead_time); 
             ++blob_per_file[it->coord.file_id];
 #else
+            size += (*it)->size;
             expire = max( expire, (*it)->dead_time); 
             ++blob_per_file[(*it)->coord.file_id];
 #endif
@@ -1282,6 +1285,7 @@ void CNCBlobStorage::WriteBlobStat(CSrvSocketTask& task)
     string is("\": "),iss("\": \""), eol(",\n\""), str("_str"), eos("\"");
     task.WriteText(eol).WriteText("CurBlobsCnt").WriteText( is).WriteNumber( s_CurBlobsCnt);
     task.WriteText(eol).WriteText("CurKeysCnt").WriteText( is).WriteNumber( s_CurKeysCnt);
+    task.WriteText(eol).WriteText("Size").WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(size)).WriteText(eos);
     task.WriteText(eol).WriteText("InCache_count").WriteText( is).WriteNumber( cache_count);
     task.WriteText(eol).WriteText("TimeTable_count").WriteText( is).WriteNumber( timetable_count);
 
@@ -3430,6 +3434,7 @@ CExpiredCleaner::x_DeleteNextData(void)
     cache_data->lock.Lock();
     {
         CSrvDiagMsg diag_msg;
+        GetDiagCtx()->SetRequestID();
         diag_msg.StartRequest().PrintParam("_type", "expiration");
         CNCBlobKeyLight key(cache_data->key);
         if (key.IsICacheKey()) {

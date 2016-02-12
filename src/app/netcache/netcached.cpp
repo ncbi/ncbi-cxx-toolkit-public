@@ -887,8 +887,9 @@ void CNCServer::WriteEnvInfo(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("pidfile"     ).WriteText(iss).WriteText(   s_PidFile).WriteText(eos);
     task.WriteText(eol).WriteText("conffile"    ).WriteText(iss).WriteText(   GetConfName()).WriteText(eos);
     task.WriteText(eol).WriteText("logfile"     ).WriteText(iss).WriteText(   GetLogFileName()).WriteText(eos);
+    Int8 len = CFile(GetLogFileName()).GetLength();
     task.WriteText(eol).WriteText("logfile_size").WriteText(iss).WriteText(
-        NStr::UInt8ToString_DataSize(CFile(GetLogFileName()).GetLength())).WriteText(eos);
+        NStr::UInt8ToString_DataSize(len > 0 ? len : 0)).WriteText(eos);
 }
 
 bool

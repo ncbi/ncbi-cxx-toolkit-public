@@ -521,11 +521,13 @@ static void
 s_CreateDiagRequest(CSrvSocketTask* task, Uint2 port, Uint4 phost, Uint2 pport)
 {
     task->CreateNewDiagCtx();
-    task->GetDiagCtx()->SetClientIP(CTaskServer::IPToString(phost));
+    string peer(CTaskServer::IPToString(phost));
+    task->GetDiagCtx()->SetClientIP(peer);
     task->m_ConnReqId = NStr::UInt8ToString(task->GetDiagCtx()->GetRequestID());
 
     CSrvDiagMsg().StartRequest(task->GetDiagCtx())
                  .PrintParam("_type", "conn")
+                 .PrintParam("phost", peer)
                  .PrintParam("pport", pport)
                  .PrintParam("port", port)
                  .PrintParam("conn", task->m_ConnReqId);
