@@ -33,7 +33,8 @@ SOURCES      = @UNIX_SRC@ $(SRC)
 XAPP = $(APP)@exe_ext@
 XOBJ = $(SOURCES:=@obj_ext@)
 XOBJ2 = $(OBJ:=@obj_ext@)
-XAPP_LIB = @APP_LIB_SETTING@
+XAPP_LIB_ = @APP_LIB_SETTING@
+XAPP_LIB = $(XAPP_LIB_:%$(STATIC)$(STATIC)=%$(STATIC))
 XAPP_LIBS = @APP_LIBS_SETTING@
 XLIB_FLAGS = $(runpath) @f_libpath@$(libdir)
 XLIB    = $(XLIB_FLAGS) $(XAPP_LIB:%=@lib_l_pre@%@lib_l_ext@)
