@@ -83,7 +83,7 @@ private:
 
     void FilterOutChimeras(TGeneModelList& clust);
 
-    TGeneModelList MakeChains(TGeneModelList& models);
+    TGeneModelList MakeChains(TGeneModelList& models, bool coding_estimates_only);
     void FilterOutBadScoreChainsHavingBetterCompatibles(TGeneModelList& chains);
     void CombineCompatibleChains(TChainList& chains);
     void SetFlagsForChains(TChainList& chains);
@@ -183,9 +183,9 @@ CChainer::CChainerImpl::CChainerImpl(CRef<CHMMParameters>& hmm_params, auto_ptr<
 {
 }
 
-TGeneModelList CChainer::MakeChains(TGeneModelList& models)
+TGeneModelList CChainer::MakeChains(TGeneModelList& models, bool coding_estimates_only)
 {
-    return m_data->MakeChains(models);
+    return m_data->MakeChains(models, coding_estimates_only);
 }
 
 enum {
@@ -247,7 +247,7 @@ struct SChainMember
 class CChain : public CGeneModel
 {
 public:
-    CChain(SChainMember& mbr, CGeneModel* gapped_helper = 0);
+    CChain(SChainMember& mbr, CGeneModel* gapped_helper = 0, bool keep_all_evidence = false);
 
     void RestoreTrimmedEnds(int trim);
     void RemoveFshiftsFromUTRs();
@@ -256,7 +256,7 @@ public:
     void ClipToCompleteAlignment(EStatus determinant); // determinant - cap or polya
     void ClipLowCoverageUTR(double utr_clip_threshold);
     void CalculateDropLimits();
-    void CalculateSupportAndWeightFromMembers();
+    void CalculateSupportAndWeightFromMembers(bool keep_all_evidence = false);
     void ClipChain(TSignedSeqRange limits);
 
     void SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, const SMinScor& minscor);
@@ -735,7 +735,7 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
             return eNotCompatible;
         }
     }
-    
+
     if(gene_good_enough_to_be_annotation && algn_good_enough_to_be_annotation) {
         if(gene.front()->Strand() != algn.Strand() && allow_opposite_strand && 
            ((algn.Status()&CGeneModel::eBestPlacement) || (algn.Exons().size() > 1 && gene.front()->Exons().size() > 1)))
@@ -747,7 +747,7 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
             return eOtherGene;
         }
     }
-    
+        
     return eNotCompatible;
 }
 
@@ -2705,7 +2705,7 @@ struct GModelOrder
 };
 
 
-TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
+TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool coding_estimates_only)
 {
     if(clust.empty()) return TGeneModelList();
 
@@ -2800,6 +2800,8 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     LeftRight(coding_pointers);
     RightLeft(coding_pointers);
 
+    TChainList tmp_chains;
+
     NON_CONST_ITERATE(TContained, i, coding_pointers) {
         SChainMember& mi = **i;
         mi.m_cds = mi.m_left_cds+mi.m_right_cds-mi.m_cds;
@@ -2812,35 +2814,76 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
         if(mi.m_included) continue;
 
-        CChain chain(mi);
+        CChain chain(mi, 0, coding_estimates_only);
         TSignedSeqRange i_rf = chain.ReadingFrame();
 
-        m_gnomon->GetScore(chain);
+        m_gnomon->GetScore(chain, coding_estimates_only);
         mi.MarkIncludedForChain();
-
-        if(chain.Score() == BadScore() || chain.PStop(false))
+        if(chain.Score() == BadScore())
             continue;
 
-        int cdslen = chain.FShiftedLen(chain.GetCdsInfo().Cds(),true);
-        if(chain.GetCdsInfo().ProtReadingFrame().Empty() && 
-           (cdslen < minscor.m_minlen || (chain.Score() < 2*minscor.m_min && cdslen <  2*minscor.m_cds_len)))
-            continue;
+        if(coding_estimates_only) {
+            if(chain.GetCdsInfo().ProtReadingFrame().NotEmpty() || chain.Score() > 30 || chain.FShiftedLen(chain.GetCdsInfo().Cds()) >= 300) {
+                chain.SetID(m_idnext);
+                chain.SetGeneID(m_idnext);
+                m_idnext += m_idinc;        
+                tmp_chains.push_back(chain);
+            }
 
-        TSignedSeqRange n_rf = chain.ReadingFrame();
-        if(!i_rf.IntersectingWith(n_rf))
             continue;
-        int a,b;
-        if(n_rf.GetFrom() <= i_rf.GetFrom()) {
-            a = n_rf.GetFrom();
-            b = i_rf.GetTo();
         } else {
-            a = i_rf.GetFrom();
-            b = n_rf.GetTo();
-        }
-        if(chain.FShiftedLen(a,b,true)%3 != 0)
-            continue;
+            if(chain.Score() == BadScore() || chain.PStop(false))
+                continue;
 
-        mi.MarkUnwantedCopiesForChain(chain.RealCdsLimits());
+            int cdslen = chain.FShiftedLen(chain.GetCdsInfo().Cds(),true);
+            if(chain.GetCdsInfo().ProtReadingFrame().Empty() && 
+               (cdslen < minscor.m_minlen || (chain.Score() < 2*minscor.m_min && cdslen <  2*minscor.m_cds_len)))
+                continue;
+
+            TSignedSeqRange n_rf = chain.ReadingFrame();
+            if(!i_rf.IntersectingWith(n_rf))
+                continue;
+            int a,b;
+            if(n_rf.GetFrom() <= i_rf.GetFrom()) {
+                a = n_rf.GetFrom();
+                b = i_rf.GetTo();
+            } else {
+                a = i_rf.GetFrom();
+                b = n_rf.GetTo();
+            }
+            if(chain.FShiftedLen(a,b,true)%3 != 0)
+                continue;
+
+            mi.MarkUnwantedCopiesForChain(chain.RealCdsLimits());
+        }
+    }
+
+    if(coding_estimates_only) {
+        TGeneModelList chains;
+        ITERATE(TChainList, it, tmp_chains) {
+            chains.push_back(*it);
+            CGeneModel& chain = chains.back();
+            int introns = 0;
+            int weight = 0;
+            for(int i = 1; i < (int)chain.Exons().size(); ++i) {
+                if(chain.Exons()[i-1].m_ssplice && chain.Exons()[i].m_fsplice) {
+                    TSignedSeqRange intron(chain.Exons()[i-1].Limits().GetTo(),chain.Exons()[i].Limits().GetFrom());
+                    weight += rnaseq_count[intron];
+                    ++introns;
+                }
+            }
+            for(int i = 1; i < (int)chain.Exons().size(); ++i) {
+                if(chain.Exons()[i-1].m_ssplice && chain.Exons()[i].m_fsplice) {
+                    TSignedSeqRange intron(chain.Exons()[i-1].Limits().GetTo(),chain.Exons()[i].Limits().GetFrom());
+                    if(rnaseq_count[intron] < weight/introns/5) {
+                        chain.SetSplices(i-1, chain.Exons()[i-1].m_fsplice_sig, "WL"); // set weak link
+                        chain.SetSplices(i, "WL", chain.Exons()[i].m_ssplice_sig);     // set weak link
+                    }
+                }
+            }
+        }
+                
+        return chains;
     }
    
     pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsMarkedForDeletion),pointers.end());  // wrong orientaition/UTR/frames are removed
@@ -2856,8 +2899,6 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     }
 
     sort(pointers.begin(),pointers.end(),CdsNumOrder());
-
-    TChainList tmp_chains;
 
     NON_CONST_ITERATE(TContained, i, pointers) {
         SChainMember& mi = **i;
@@ -2953,19 +2994,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         CombineCompatibleChains(tmp_chains);
         SetFlagsForChains(tmp_chains);
     }
-    /*
-    NON_CONST_ITERATE(TChainList, it, tmp_chains) {
-        if(it->Score() != BadScore()) {
-            bool wasopen = it->OpenCds();
-            m_gnomon->GetScore(*it,!no5pextension,false); // this will return CDS to best/longest depending on no5pextension
-            CCDSInfo cds = it->GetCdsInfo();
-            if(wasopen != it->OpenCds() && (wasopen == false || cds.HasStart())) {
-                cds.SetScore(cds.Score(),wasopen);
-                it->SetCdsInfo(cds);
-            }
-        }
-    }
-    */
+
     if(genes.size() > 1)
         FindGenes(tmp_chains);                      // redo genes after trim    
     
@@ -3650,7 +3679,7 @@ void CChainer::CChainerImpl::RemovePoorCds(CGeneModel& algn, double minscor)
 
 #define SCAN_WINDOW 49            // odd number!!!
 
-CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_left(-1), m_coverage_drop_right(-1), m_coverage_bump_left(-1), m_coverage_bump_right(-1), m_core_coverage(0), m_splice_weight(0)
+CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper, bool keep_all_evidence) : m_coverage_drop_left(-1), m_coverage_drop_right(-1), m_coverage_bump_left(-1), m_coverage_bump_right(-1), m_core_coverage(0), m_splice_weight(0)
 {
     m_members = mbr.CollectContainedForChain();
     _ASSERT(m_members.size()>0);
@@ -3693,7 +3722,7 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_l
             e->m_ssplice_sig.clear();
     }
 
-    CalculateSupportAndWeightFromMembers();
+    CalculateSupportAndWeightFromMembers(keep_all_evidence);
 
     m_polya_cap_left_hard_limit = Limits().GetTo()+1;
     m_polya_cap_right_hard_limit = Limits().GetFrom()-1;
@@ -3792,7 +3821,7 @@ struct RangeOrder {
 };
 typedef set<TSignedSeqRange,RangeOrder> TRangePrecedeSet;
 
-void CChain::CalculateSupportAndWeightFromMembers() {
+void CChain::CalculateSupportAndWeightFromMembers(bool keep_all_evidence) {
 
     TLinkers linkers;
     ITERATE(TContained, i, m_members) {
@@ -3993,15 +4022,17 @@ void CChain::CalculateSupportAndWeightFromMembers() {
         sp_core.insert(m_gapped_helper_align.ID());
 
     set<Int8> sp_not_wanted;
-    for(int i = 0; i < (int)linkers.size(); ++i) {
-        SLinker& sli = linkers[i];
-        if(sli.m_member && sli.m_not_wanted) {
-            if(!sp_core.count(sli.m_member->m_align->ID()))
-                sp_not_wanted.insert(sli.m_member->m_align->ID());
-            else
-                Status() |= CGeneModel::eChangedByFilter;
-        }
-    }    
+    if(!keep_all_evidence) {
+        for(int i = 0; i < (int)linkers.size(); ++i) {
+            SLinker& sli = linkers[i];
+            if(sli.m_member && sli.m_not_wanted) {
+                if(!sp_core.count(sli.m_member->m_align->ID()))
+                    sp_not_wanted.insert(sli.m_member->m_align->ID());
+                else
+                    Status() |= CGeneModel::eChangedByFilter;
+            }
+        }    
+    }
 
     double weight = 0;
     m_splice_weight = 0;
@@ -6943,8 +6974,8 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
                 continue;
 
             CConstRef<CSeq_literal> gsl = sv.GetGapSeq_literal(i);
-            if(gsl && gsl->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
-                if(current_gap == m_notbridgeable_gaps_len.end())
+            if(gsl && gsl->IsBridgeable() == CSeq_literal::e_NotBridgeable) {               
+                if(current_gap == m_notbridgeable_gaps_len.end())                    
                     current_gap = m_notbridgeable_gaps_len.insert(TIntMap::value_type(i,1)).first;
                 else
                     ++current_gap->second;

@@ -192,7 +192,7 @@ public:
     void ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust);
     void FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust);
     void CutParts(TGeneModelList& models);
-    TGeneModelList MakeChains(TGeneModelList& models);
+    TGeneModelList MakeChains(TGeneModelList& models, bool coding_estimates_only = false);
 
     // dummy functions for compatibilty with 'pre-correction' worker node
     NCBI_DEPRECATED
