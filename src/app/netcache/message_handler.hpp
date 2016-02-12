@@ -353,6 +353,7 @@ private:
     Uint8                     m_LatestSrvId;
     SNCBlobSummary*           m_LatestBlobSum;
     TServersList              m_CheckSrvs;
+    TServersList              m_MirrorsDone;
     CNCActiveClientHub*       m_ActiveHub;
     string                    m_LastPeerError;
     string                    m_StatType;

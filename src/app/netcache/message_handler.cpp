@@ -1744,6 +1744,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
     m_BlobTTL = 0;
     m_StartPos = 0;
     m_Size = Uint8(-1);
+    m_Slot = 0;
     m_OrigRecNo = 0;
     m_OrigSrvId = 0;
     m_OrigTime = 0;
@@ -2190,7 +2191,9 @@ CNCMessageHandler::x_StartCommand(void)
     }
 
     m_BlobSize = 0;
-    diag_msg.PrintParam("slot", m_BlobSlot);
+    if (m_Slot == 0) {
+        diag_msg.PrintParam("slot", m_BlobSlot);
+    }
 
     if ((!CNCDistributionConf::IsServedLocally(m_BlobSlot)
             ||  !CNCServer::IsCachingComplete())
@@ -2822,11 +2825,10 @@ CNCMessageHandler::x_FinishReadingBlob(void)
         return &CNCMessageHandler::x_FinishCommand;
     }
 
+    m_MirrorsDone.clear();
     if (!x_IsFlagSet(fCopyLogEvent)) {
         if (m_BlobAccess->GetNewBlobSize() <= CNCDistributionConf::GetMaxBlobSizeSync()) {
             m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
-            CNCPeerControl::MirrorWrite(m_NCBlobKey, m_BlobSlot,
-                                        m_OrigRecNo, m_BlobAccess->GetNewBlobSize());
             // If fCopyLogEvent is not set then this blob comes from client and
             // thus we need to check quorum value before answering to client.
             // If fCopyLogEvent is set then this write comes from other server
@@ -2840,6 +2842,8 @@ CNCMessageHandler::x_FinishReadingBlob(void)
 //                if (!m_ThisServerIsMain  ||  !m_AppSetup->fast_on_main)
                     return &CNCMessageHandler::x_PutToNextPeer;
             }
+            CNCPeerControl::MirrorWrite(m_NCBlobKey, m_BlobSlot,
+                                        m_OrigRecNo, m_BlobAccess->GetNewBlobSize(), m_MirrorsDone);
         } else {
             if (CNCDistributionConf::GetWarnBlobSizeSync()) {
                 SRV_LOG(Warning, "Received blob is too big and will not be mirrored:"
@@ -3452,6 +3456,7 @@ CNCMessageHandler::x_SendPutToPeerCmd(void)
         return NULL;
     if (status == eNCHubError || status == eNCHubSuccess ||
         !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
+        m_MirrorsDone.push_back(m_CheckSrvs[m_SrvsIndex-1]);
         m_LastPeerError = m_ActiveHub->GetErrMsg();
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
@@ -3482,8 +3487,15 @@ CNCMessageHandler::x_ReadPutResults(void)
         SRV_FATAL("Unexpected client status: " << status);
     }
 
-    if (m_Quorum == 1)
+    m_MirrorsDone.push_back(m_CheckSrvs[m_SrvsIndex-1]);
+    if (m_Quorum == 1) {
+        if (m_BlobAccess->GetNewBlobSize() <= CNCDistributionConf::GetMaxBlobSizeSync()) {
+            CNCPeerControl::MirrorWrite(m_NCBlobKey, m_BlobSlot,
+                                        m_OrigRecNo, m_BlobAccess->GetNewBlobSize(), 
+                                        m_MirrorsDone);
+        }
         return &CNCMessageHandler::x_FinishCommand;
+    }
     if (m_Quorum != 0)
         --m_Quorum;
 

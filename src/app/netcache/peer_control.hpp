@@ -121,7 +121,8 @@ public:
     static void MirrorWrite(const CNCBlobKey& key,
                             Uint2 slot,
                             Uint8 orig_rec_no,
-                            Uint8 size);
+                            Uint8 size,
+                            const TServersList& mirrors_done);
     static void MirrorProlong(const CNCBlobKey& key,
                               Uint2 slot,
                               Uint8 orig_rec_no,

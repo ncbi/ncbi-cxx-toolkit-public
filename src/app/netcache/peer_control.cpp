@@ -752,15 +752,18 @@ void
 CNCPeerControl::MirrorWrite(const CNCBlobKey& key,
                           Uint2 slot,
                           Uint8 orig_rec_no,
-                          Uint8 size)
+                          Uint8 size, const TServersList& mirrors_done)
 {
+    set<Uint8> done(mirrors_done.begin(), mirrors_done.end());
     const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
-        CNCPeerControl* peer = Peer(srv_id);
-        if (peer->AcceptsBlobKey(key)) {
-            SNCMirrorEvent* event = new SNCMirrorEvent(eSyncWrite, slot, key, orig_rec_no);
-            peer->x_AddMirrorEvent(event, size);
+        if (done.find(srv_id) == done.end()) {
+            CNCPeerControl* peer = Peer(srv_id);
+            if (peer->AcceptsBlobKey(key)) {
+                SNCMirrorEvent* event = new SNCMirrorEvent(eSyncWrite, slot, key, orig_rec_no);
+                peer->x_AddMirrorEvent(event, size);
+            }
         }
     }
 }
