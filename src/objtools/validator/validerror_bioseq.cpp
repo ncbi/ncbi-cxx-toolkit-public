@@ -2906,9 +2906,9 @@ void CValidError_bioseq::ValidateRawConst(
                             } else if (seq.IsNa() && res == 'U') {
                                 msg += " nucleotide";
                             }
-                            msg += " residue '";
-                            msg += res;
-                            msg += "' at position [" + NStr::UIntToString(pos) + "]";
+                            msg += " residue [";
+                            msg += NStr::UIntToString(res);
+                            msg += "] at position [" + NStr::UIntToString(pos) + "]";
 
                             PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
                                 msg, seq);
