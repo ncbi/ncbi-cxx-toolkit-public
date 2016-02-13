@@ -28,6 +28,8 @@ GLU needs3party $(ORIG_LIBS)
 GLU needs3party X11
 GLU needs3party Xext
 GMA needs $(SDBAPI_LIB)
+GMA needs ncbi_xdbapi_ftds64
+GMA needs ncbi_xdbapi_ftds95
 GMA needs xconnect
 GMA needs xutil
 GMC needs geomyncbi
@@ -70,6 +72,8 @@ aligndb_client needs $(SEQ_LIBS)
 aligndb_client needs pub
 aligndb_reader needs $(COMPRESS_LIBS)
 aligndb_reader needs $(SDBAPI_LIB)
+aligndb_reader needs ncbi_xdbapi_ftds64
+aligndb_reader needs ncbi_xdbapi_ftds95
 aligndb_reader needs taxon1
 aligndb_reader needs xobjutil
 alndb_asnclient needs alndb_query
@@ -77,6 +81,7 @@ alndb_query needs $(SEQ_LIBS)
 alndb_query needs pub
 alndbaccess needs alndb_query
 alndbaccess needs generic_db_core
+an_core needs $(GPIPE_COMMON_LIBS)
 an_core needs 16S_common
 an_core needs gc_util_sdbapi
 an_core needs gpinit_bag_util
@@ -116,6 +121,8 @@ auxcomm_g needs tea_crypt
 auxcommcpp_g needs muxex_g
 auxnet_g needs generic_db_utils
 backendcommon needs $(SDBAPI_LIB)
+backendcommon needs ncbi_xdbapi_ftds64
+backendcommon needs ncbi_xdbapi_ftds95
 backendcommon needs txxmldoc
 backendcommon needs xconnect
 bacterial_pipeline_proc needs gencoll_client
@@ -136,6 +143,8 @@ bdbasncli needs bdb2ez
 bdbasncli needs xconnect
 biblio needs general
 biosample needs $(SDBAPI_LIB)
+biosample needs ncbi_xdbapi_ftds64
+biosample needs ncbi_xdbapi_ftds95
 biosample needs xconnect
 biosample needs xmlwrapp
 biosample needs xregexp
@@ -365,6 +374,8 @@ gensvc_g needs xser
 geoauth needs GMA
 geobrowse needs xser
 geocgi needs $(SDBAPI_LIB)
+geocgi needs ncbi_xdbapi_ftds64
+geocgi needs ncbi_xdbapi_ftds95
 geocgi needs xcgi
 geocgi needs xconnect
 geocgi needs xmlwrapp
@@ -397,6 +408,8 @@ gnutls needs3party $(ORIG_LIBS)
 gnutls needs3party $(Z_LIBS)
 gpcgi needs $(SDBAPI_LIB)
 gpcgi needs gpipe_xmlutil
+gpcgi needs ncbi_xdbapi_ftds64
+gpcgi needs ncbi_xdbapi_ftds95
 gpcgi needs xcgi
 gpcgi needs xconnect
 gpcgi needs xregexp
@@ -441,9 +454,13 @@ gpipe_best_placement needs xalgoalignutil
 gpipe_blast needs $(BLAST_INPUT_LIBS)
 gpipe_blast needs gpipe_alnutil
 gpipe_clean_prot_names needs $(SDBAPI_LIB)
+gpipe_clean_prot_names needs ncbi_xdbapi_ftds64
+gpipe_clean_prot_names needs ncbi_xdbapi_ftds95
 gpipe_clean_prot_names needs xdiscrepancy_report
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs eutils_client
+gpipe_common needs ncbi_xdbapi_ftds64
+gpipe_common needs ncbi_xdbapi_ftds95
 gpipe_common needs xcgi
 gpipe_common needs xregexp
 gpipe_dateutil needs xregexp
@@ -493,6 +510,8 @@ gpipe_sadb needs taxon1
 gpipe_sadb needs xmlwrapp
 gpipe_sqlite needs $(SDBAPI_LIB)
 gpipe_sqlite needs $(SEQ_LIBS)
+gpipe_sqlite needs ncbi_xdbapi_ftds64
+gpipe_sqlite needs ncbi_xdbapi_ftds95
 gpipe_sqlite needs pub
 gpipe_sqlite needs sqlitewrapp
 gpipe_sqlite needs xconnect
@@ -610,6 +629,8 @@ ideochr needs3party vibrant
 ideocli needs ideo
 ideocoord needs $(SDBAPI_LIB)
 ideocoord needs ideocli
+ideocoord needs ncbi_xdbapi_ftds64
+ideocoord needs ncbi_xdbapi_ftds95
 idgen needs dbassist
 idload needs3party ctutils
 idload_utils needs gpipe_common
@@ -888,6 +909,8 @@ omssa needs pub
 osutils needs3party $(RT_LIBS)
 osutils needs3party ctutils
 pathogen_cluster_loader needs $(SDBAPI_LIB)
+pathogen_cluster_loader needs ncbi_xdbapi_ftds64
+pathogen_cluster_loader needs ncbi_xdbapi_ftds95
 pathogen_cluster_loader needs xasmcompare
 pathogen_cluster_loader needs xconnect
 pathogen_cluster_loader needs xutil
@@ -957,6 +980,8 @@ scoremat needs seqset
 sdbapi needs $(XCONNEXT)
 sdbapi needs dbapi
 sdbapi needs ncbi_xdbapi_ftds
+sdbapi needs ncbi_xdbapi_ftds64
+sdbapi needs ncbi_xdbapi_ftds95
 sdbapi needs xconnect
 sdbapi needs xutil
 sdncbiauth needs auxcomm_g
@@ -975,6 +1000,8 @@ seqedit needs seqset
 seqentry_comparator needs $(XFORMAT_LIBS)
 seqentry_comparator needs xobjwrite
 seqgapscan needs $(SDBAPI_LIB)
+seqgapscan needs ncbi_xdbapi_ftds64
+seqgapscan needs ncbi_xdbapi_ftds95
 seqgapscan needs xconnect
 seqgapscan needs xobjutil
 seqmasks_io needs $(OBJREAD_LIBS)
@@ -993,6 +1020,8 @@ snphgvs needs $(GPIPE_LOADER_LIBS)
 snphgvs needs $(SDBAPI_LIB)
 snphgvs needs hgvs
 snphgvs needs ncbi_xcache_netcache
+snphgvs needs ncbi_xdbapi_ftds64
+snphgvs needs ncbi_xdbapi_ftds95
 snphgvs needs refseq_aln_source
 snphgvs needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
 snputil needs $(SOBJMGR_LIBS)
