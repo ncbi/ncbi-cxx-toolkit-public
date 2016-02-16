@@ -1839,6 +1839,7 @@ void CValidError_imp::ValidateSeqLoc
 {
     bool chk = true,
         unmarked_strand = false, mixed_strand = false;
+    bool has_other = false, has_not_other = false;
     const CSeq_id* id_cur = 0, *id_prv = 0;
     const CSeq_interval *int_cur = 0, *int_prv = 0;
     ENa_strand strand_cur = eNa_strand_unknown,
@@ -1917,7 +1918,13 @@ void CValidError_imp::ValidateSeqLoc
                             }
                         }
                     }
-                }                
+                }
+                if (strand_cur == eNa_strand_other) {
+                    has_other = true;
+                } else if (strand_cur == eNa_strand_minus || strand_cur == eNa_strand_plus) {
+                    has_not_other = true;
+                }
+
                 strand_prv = strand_cur;
                 id_prv = id_cur;
             }
@@ -1932,6 +1939,11 @@ void CValidError_imp::ValidateSeqLoc
             int_prv = 0;
         }
         
+    }
+    if (has_other && has_not_other) {
+        string label = GetValidatorLocationLabel(loc, *m_Scope);
+        PostErr(IsSmallGenomeSet() ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
+            prefix + ": Inconsistent use of other strand SeqLoc [" + label + "]", obj);        
     }
 
     x_ReportInvalidFuzz(loc, obj);
