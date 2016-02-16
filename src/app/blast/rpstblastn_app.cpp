@@ -206,6 +206,6 @@ int CRPSTBlastnApp::Run(void)
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    return CRPSTBlastnApp().AppMain(argc, argv, 0, eDS_Default, "");
+    return CRPSTBlastnApp().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */

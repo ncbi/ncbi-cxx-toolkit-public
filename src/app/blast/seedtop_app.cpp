@@ -241,6 +241,6 @@ int CSeedTopApp::Run(void)
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    return CSeedTopApp().AppMain(argc, argv, 0, eDS_Default, "");
+    return CSeedTopApp().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */

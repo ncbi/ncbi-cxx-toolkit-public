@@ -1515,6 +1515,6 @@ void CBlastDbCheckApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CBlastDbCheckApplication().AppMain(argc, argv, 0, eDS_Default, "");
+    return CBlastDbCheckApplication().AppMain(argc, argv);
 #endif /* SKIP_DOXYGEN_PROCESSING */
 }

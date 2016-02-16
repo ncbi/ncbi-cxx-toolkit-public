@@ -239,7 +239,7 @@ int main(int argc, const char* argv[])
 
     openlog("hitmtrix", LOG_PID, LOG_LOCAL7);
 
-    int result = CBlastHitMatrixCGIApplication().AppMain(argc, argv, 0, eDS_Default, "");    
+    int result = CBlastHitMatrixCGIApplication().AppMain(argc, argv);    
     _TRACE("back to normal diags");
     return result;
 }

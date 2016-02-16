@@ -208,6 +208,6 @@ void CBlastInputDemoApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CBlastInputDemoApplication().AppMain(argc, argv, 0, eDS_Default, "");
+    return CBlastInputDemoApplication().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */

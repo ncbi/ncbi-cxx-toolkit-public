@@ -425,6 +425,6 @@ int CBlastDBAliasApp::Run(void)
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    return CBlastDBAliasApp().AppMain(argc, argv, 0, eDS_Default, "");
+    return CBlastDBAliasApp().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */

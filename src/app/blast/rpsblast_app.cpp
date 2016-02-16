@@ -209,7 +209,7 @@ int CRPSBlastApp::Run(void)
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-	int status = CRPSBlastApp().AppMain(argc, argv, 0, eDS_Default, "");
+	int status = CRPSBlastApp().AppMain(argc, argv);
 
 	return status;
 }

@@ -38,5 +38,5 @@ USING_NCBI_SCOPE;
 
 int main( int argc, char * argv[] )
 {
-    return CDustMaskApplication().AppMain(argc, argv, 0, eDS_Default, "");
+    return CDustMaskApplication().AppMain(argc, argv);
 }

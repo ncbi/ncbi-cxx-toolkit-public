@@ -577,7 +577,7 @@ CDeltaBlastApp::ComputePssmForNextPsiBlastIteration(const CBioseq& bioseq,
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    return CDeltaBlastApp().AppMain(argc, argv, 0, eDS_Default, "");
+    return CDeltaBlastApp().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */
 

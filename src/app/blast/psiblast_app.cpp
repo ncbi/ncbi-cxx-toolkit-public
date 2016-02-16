@@ -551,6 +551,6 @@ int CPsiBlastApp::Run(void)
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    return CPsiBlastApp().AppMain(argc, argv, 0, eDS_Default, "");
+    return CPsiBlastApp().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */
