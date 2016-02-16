@@ -846,7 +846,7 @@ void CValidError_bioseq::x_ValidateBarcode(const CBioseq& seq)
                  *ctx, *di);
     }
     if (has_barcode_keyword && HasUnverified(bsh)) {
-        PostErr(eDiag_Info, eErr_SEQ_DESCR_BadKeyword,
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadKeyword,
             "Sequence has both BARCODE and UNVERIFIED keywords",
             seq);
     }
@@ -9335,14 +9335,14 @@ void CValidError_bioseq::ValidateGraphValues
 
         while (seq_iter != seq_end && score_pos < graph.GetNumval()) {
             CSeqVector::TResidue res = *seq_iter;
-            int val;
-            if (val_iter == val_end) {
-                val = 0;
-            } else {
-                val = *val_iter;
-                ++val_iter;
-            }
             if (IsResidue(res)) {
+                short val;
+                if (val_iter == val_end) {
+                    val = 0;
+                } else {
+                    val = (short)(*val_iter);
+                    ++val_iter;
+                }
                 // counting total number of bases, to look for percentage of bases with score of zero
                 num_bases++;
 
