@@ -69,24 +69,30 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_D_loop ) ]       = SofaType( 297, "D_loop" );
     m_Map[ GT( e_Imp, eSubtype_D_segment ) ]    = SofaType( 458, "D_gene_segment" );
     m_Map[ GT( e_Imp, eSubtype_exon ) ]         = SofaType( 147, "exon" );
-    m_Map[ GT( e_Imp, eSubtype_GC_signal ) ]    = SofaType( 173, "GC_rich_region" );
+    m_Map[ GT( e_Imp, eSubtype_GC_signal ) ]    = SofaType( 173, "GC_rich_promoter" );
     m_Map[ GT( e_Imp, eSubtype_J_segment ) ]    = SofaType( 470, "J_gene_segment" );
     m_Map[ GT( e_Imp, eSubtype_LTR ) ]          = SofaType( 286, "long_terminal_repeat" );
+    m_Map[ GT( e_Imp, eSubtype_N_region ) ]     = SofaType( 1835, "N_region" );
     m_Map[ GT( e_Imp, eSubtype_RBS ) ]          = SofaType( 139, "ribosome_entry_site" );
     m_Map[ GT( e_Imp, eSubtype_STS ) ]          = SofaType( 331, "STS" );
+    m_Map[ GT( e_Imp, eSubtype_S_region ) ]     = SofaType( 1836, "S_region" );
     m_Map[ GT( e_Imp, eSubtype_TATA_signal ) ]  = SofaType( 174, "TATA_box" );
-    m_Map[ GT( e_Imp, eSubtype_attenuator ) ]   = SofaType( 140, "attenuator" );
-    m_Map[ GT( e_Imp, eSubtype_enhancer ) ]     = SofaType( 165, "enhancer" );
-    m_Map[ GT( e_Imp, eSubtype_gap ) ]          = SofaType( 730, "gap" );
+    m_Map[ GT( e_Imp, eSubtype_V_region ) ]     = SofaType( 1833, "V_region");
+    m_Map[ GT( e_Imp, eSubtype_attenuator)]     = SofaType(140, "attenuator");
+    m_Map[ GT( e_Imp, eSubtype_centromere)]       = SofaType( 577, "centromere");
+    m_Map[ GT( e_Imp, eSubtype_conflict)]       = SofaType( 1085, "sequence_conflict");
+    m_Map[ GT( e_Imp, eSubtype_enhancer)]        = SofaType( 165, "enhancer");
+    m_Map[ GT( e_Imp, eSubtype_assembly_gap ) ] = SofaType( 730, "gap" );
     m_Map[ GT( e_Imp, eSubtype_iDNA ) ]         = SofaType( 723, "iDNA" );
     m_Map[ GT( e_Imp, eSubtype_intron ) ]       = SofaType( 188, "intron" );
     m_Map[ GT( e_Imp, eSubtype_mat_peptide ) ]  = SofaType( 419, "mature_peptide" );
     m_Map[ GT( e_Imp, eSubtype_misc_binding ) ] = SofaType( 409, "binding_site" );
     m_Map[ GT( e_Imp, eSubtype_misc_difference) ] = SofaType( 413, "sequence_difference" );
-    m_Map[ GT( e_Imp, eSubtype_misc_feature ) ] = SofaType( 1, "region" );
+    m_Map[ GT( e_Imp, eSubtype_misc_feature ) ] = SofaType( 110, "sequence_feature" );
     m_Map[ GT( e_Imp, eSubtype_misc_recomb ) ]  = SofaType( 298, "recombination_feature" );
     m_Map[ GT( e_Imp, eSubtype_misc_signal ) ]  = SofaType( 5836, "regulatory_region" );
     m_Map[ GT( e_Imp, eSubtype_misc_structure ) ] = SofaType( 2, "sequence_secondary_structure" );
+    m_Map[ GT( e_Imp, eSubtype_mobile_element ) ]= SofaType( 1037, "mobile_genetic_element" );
     m_Map[ GT( e_Imp, eSubtype_modified_base ) ]= SofaType( 305, "modified_base_site" );
     m_Map[ GT( e_Imp, eSubtype_operon ) ]       = SofaType( 178, "operon" );
     m_Map[ GT( e_Imp, eSubtype_oriT ) ]         = SofaType( 724, "oriT" );
@@ -97,16 +103,37 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_primer_bind ) ]  = SofaType( 5850, "primer_binding_site" );
     m_Map[ GT( e_Imp, eSubtype_promoter ) ]     = SofaType( 167, "promoter" );
     m_Map[ GT( e_Imp, eSubtype_protein_bind ) ] = SofaType( 410, "protein_binding_site" );
+    m_Map[ GT( e_Imp, eSubtype_rep_origin ) ] = SofaType( 296, "origin_of_replication" );
     m_Map[ GT( e_Imp, eSubtype_repeat_region ) ] = SofaType( 657, "repeat_region" );
     m_Map[ GT( e_Imp, eSubtype_repeat_unit ) ]  = SofaType( 726, "repeat_unit" );
     m_Map[ GT( e_Imp, eSubtype_satellite ) ]    = SofaType( 5, "satellite_DNA" );
     m_Map[ GT( e_Imp, eSubtype_sig_peptide ) ]  = SofaType( 418, "signal_peptide" );
+    m_Map[ GT( e_Imp, eSubtype_site_ref ) ]       = SofaType( 408, "site" );
     m_Map[ GT( e_Imp, eSubtype_source ) ]       = SofaType( 2000061, "databank_entry" );
     m_Map[ GT( e_Imp, eSubtype_stem_loop ) ]    = SofaType( 313, "stem_loop" );
+    m_Map[ GT( e_Imp, eSubtype_telomere ) ]   = SofaType( 624, "telomere" );
     m_Map[ GT( e_Imp, eSubtype_terminator ) ]   = SofaType( 141, "terminator" );
     m_Map[ GT( e_Imp, eSubtype_transit_peptide ) ] = SofaType( 725, "transit_peptide" );
+    m_Map[ GT( e_Imp, eSubtype_unsure ) ] = SofaType( 1086, "sequence_uncertainty" );
     m_Map[ GT( e_Imp, eSubtype_V_segment ) ]    = SofaType( 466, "V_gene_segment" );
     m_Map[ GT( e_Imp, eSubtype_variation ) ]    = SofaType( 109, "sequence_variant" );
+    m_Map[ GT( e_Imp, eSubtype_virion ) ]    = SofaType( 1041, "viral_sequence" );
+
+    m_Map[ GT( e_Comment, eSubtype_comment ) ]  = SofaType( 700, "remark" );
+
+    m_Map[ GT( e_Prot, eSubtype_mat_peptide_aa ) ]  = SofaType( 419, "mature_protein_region" );
+    m_Map[ GT( e_Prot, eSubtype_preprotein ) ]  = SofaType( 1063, "immature_peptide_region" );
+    m_Map[ GT( e_Prot, eSubtype_prot ) ]  = SofaType( 358, "polypeptide" );
+    m_Map[ GT( e_Prot, eSubtype_sig_peptide_aa ) ]  = SofaType( 418, "signal_peptide" );
+    m_Map[ GT( e_Prot, eSubtype_transit_peptide_aa ) ]  = SofaType( 725, "transit_peptide" );
+
+    m_Map[ GT( e_Psec_str, eSubtype_psec_str ) ]  = SofaType( 2, "sequence_secondary_structure" );
+
+    m_Map[ GT( e_Rsite, eSubtype_rsite ) ]  = SofaType( 168, "restriction_enzyme_cut_site" );
+
+    //m_Map[ GT( e_Variation, eSubtype_variation_ref ) ]  = SofaType( 1060, "sequence_variant" );
+
+    //m_Map[ GT( e_Site, eSubtype_site ) ]  = SofaType( 408, "site" );
 };
 
 #undef GT
