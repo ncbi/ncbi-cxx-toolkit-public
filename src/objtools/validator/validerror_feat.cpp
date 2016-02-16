@@ -7140,10 +7140,14 @@ void CValidError_feat::x_CheckTranslationMismatches
             has_errors = true;
             other_than_mismatch = true;
             if (report_errors || (rna_editing && (prot_len < len - 1 || prot_len > len))) {
-                PostErr(rna_editing ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_TransLen,
-                    "Given protein length [" + NStr::SizetToString(prot_len) + 
-                    "] does not match " + farstr + "translation length [" + 
-                    NStr::SizetToString(len) + "]", feat);
+                string msg = "Given protein length [" + NStr::SizetToString(prot_len) +
+                    "] does not match " + farstr + "translation length [" +
+                    NStr::SizetToString(len) + "]";
+                if (rna_editing) {
+                    msg += " (RNA editing present)";
+                }
+                PostErr(rna_editing ? eDiag_Warning : eDiag_Error, 
+                        eErr_SEQ_FEAT_TransLen, msg, feat);
             }
         }
         
