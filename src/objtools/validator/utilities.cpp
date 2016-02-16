@@ -1389,46 +1389,41 @@ bool s_IsSameSeqAnnot(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2, bo
 
 bool s_AreGBQualsIdentical(const CSeq_feat_Handle& feat1, const CSeq_feat_Handle& feat2, bool case_sensitive)
 {
+    if (!feat1.IsSetQual() || !feat2.IsSetQual()) {
+        return true;
+    }
+
     bool rval = true;
 
-    if (!feat1.IsSetQual()) {
-        if (!feat2.IsSetQual()) {
-            return true;
-        } else {
-            return false;
-        }
-    } else if (!feat2.IsSetQual()) {
-        return false;
-    } else {
-        CSeq_feat::TQual::const_iterator gb1 = feat1.GetQual().begin();
-        CSeq_feat::TQual::const_iterator gb1_end = feat1.GetQual().end();
-        CSeq_feat::TQual::const_iterator gb2 = feat2.GetQual().begin();
-        CSeq_feat::TQual::const_iterator gb2_end = feat2.GetQual().end();
+    CSeq_feat::TQual::const_iterator gb1 = feat1.GetQual().begin();
+    CSeq_feat::TQual::const_iterator gb1_end = feat1.GetQual().end();
+    CSeq_feat::TQual::const_iterator gb2 = feat2.GetQual().begin();
+    CSeq_feat::TQual::const_iterator gb2_end = feat2.GetQual().end();
 
-        while ((gb1 != gb1_end) && (gb2 != gb2_end) && rval) {
-            if (!(*gb1)->IsSetQual()) {
-                if ((*gb2)->IsSetQual()) {
-                    rval = false;
-                }
-            } else if (!(*gb2)->IsSetQual()) {
-                rval = false;
-            } else if (!NStr::Equal ((*gb1)->GetQual(), (*gb2)->GetQual())) {
+    while ((gb1 != gb1_end) && (gb2 != gb2_end) && rval) {
+        if (!(*gb1)->IsSetQual()) {
+            if ((*gb2)->IsSetQual()) {
                 rval = false;
             }
-            if (rval) {
-                string v1 = (*gb1)->IsSetVal() ? (*gb1)->GetVal() : "";
-                string v2 = (*gb2)->IsSetVal() ? (*gb2)->GetVal() : "";
-                NStr::TruncateSpacesInPlace(v1);
-                NStr::TruncateSpacesInPlace(v2);
-                rval = NStr::Equal(v1, v2, case_sensitive ? NStr::eCase : NStr::eNocase);
-            }
-            ++gb1;
-            ++gb2;
-        }
-        if (gb1 != gb1_end || gb2 != gb2_end) {
+        } else if (!(*gb2)->IsSetQual()) {
+            rval = false;
+        } else if (!NStr::Equal ((*gb1)->GetQual(), (*gb2)->GetQual())) {
             rval = false;
         }
+        if (rval) {
+            string v1 = (*gb1)->IsSetVal() ? (*gb1)->GetVal() : "";
+            string v2 = (*gb2)->IsSetVal() ? (*gb2)->GetVal() : "";
+            NStr::TruncateSpacesInPlace(v1);
+            NStr::TruncateSpacesInPlace(v2);
+            rval = NStr::Equal(v1, v2, case_sensitive ? NStr::eCase : NStr::eNocase);
+        }
+        ++gb1;
+        ++gb2;
     }
+    if (gb1 != gb1_end || gb2 != gb2_end) {
+        rval = false;
+    }
+
     return rval;
 }
 
