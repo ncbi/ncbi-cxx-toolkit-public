@@ -220,6 +220,23 @@ public:
     ///     Reconstructed tree (caller is responsible for deletion)
     static TParamTree* ConvertRegToTree(const IRegistry&  reg);
 
+    /// Overloading of getters for generic programming
+    string Get(const string& d, const string& p, EErrAction e, const string& v,
+            const list<string>* s = NULL)
+    { return GetString(d, p, e, v, s); }
+
+    int Get(const string& d, const string& p, EErrAction e, int v,
+            const list<string>* s = NULL)
+    { return GetInt(d, p, e, v, s); }
+
+    bool Get(const string& d, const string& p, EErrAction e, bool v,
+            const list<string>* s = NULL)
+    { return GetBool(d, p, e, v, s); }
+
+    double Get(const string& d, const string& p, EErrAction e, double v,
+            const list<string>* s = NULL)
+    { return GetDouble(d, p, e, v, s); }
+
 private:
     CConfig(const CConfig&);
     CConfig& operator=(const CConfig&);

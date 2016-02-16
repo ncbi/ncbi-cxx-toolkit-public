@@ -613,6 +613,56 @@ CRef<INetServerProperties> CNetScheduleServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetScheduleServerProperties);
 }
 
+// This class makes parameter reading to be performed only once
+template <typename TDestType, typename TSrcType = TDestType>
+struct SCfgReader
+{
+    SCfgReader(TDestType& dest,
+            CConfig*& config,
+            const string& section,
+            const string& param,
+            const TSrcType& def_value = TSrcType(),
+            const list<string>* synonyms = 0,
+            bool already_read = false) :
+        m_Dest(dest),
+        m_Config(config),
+        m_Section(section),
+        m_Param(param),
+        m_DefValue(def_value),
+        m_AlreadyRead(already_read),
+        m_Synonyms(synonyms)
+    {
+        m_Dest = m_DefValue;
+    }
+
+    bool ReadOnce()
+    {
+        _ASSERT(m_Config);
+
+        // Already read
+        if (m_AlreadyRead) return false;
+
+        try {
+            m_Dest = m_Config->Get(m_Section, m_Param,
+                    CConfig::eErr_Throw, m_DefValue, m_Synonyms);
+        }
+        catch (CConfigException& ex) {
+            return false;
+        }
+
+        return m_AlreadyRead = true;
+    }
+
+private:
+    TDestType& m_Dest;
+    CConfig*& m_Config;
+    const string& m_Section;
+    const string m_Param;
+    const TSrcType m_DefValue;
+    bool m_AlreadyRead;
+    const list<string>* m_Synonyms;
+};
+
 void CNetScheduleServerListener::OnInit(
     CObject* api_impl, CConfig* config, const string& section)
 {
@@ -630,47 +680,58 @@ void CNetScheduleServerListener::OnInit(
     auto_ptr<CConfig> config_holder;
     CNetScheduleOwnConfigLoader loader;
 
+    string module = section;
+
+    string& queue_ref = ns_impl->m_Queue;
+
+    if (!queue_ref.empty()) {
+        SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_ref);
+    }
+
+    ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
+
+    const list<string> embedded_synonyms{"use_embedded_input"};
+    bool use_affinities_value;
+
+    SCfgReader<string> queue(queue_ref,
+            config, module, "queue_name", kEmptyStr, 0, !queue_ref.empty());
+
+    SCfgReader<bool> embedded(ns_impl->m_UseEmbeddedStorage,
+            config, module, "use_embedded_storage", true, &embedded_synonyms);
+
+    SCfgReader<bool> use_affinities(use_affinities_value,
+            config, module, "use_affinities");
+
+    SCfgReader<string> job_group(ns_impl->m_JobGroup,
+            config, module, "job_group");
+
+    SCfgReader<unsigned, int> job_ttl(ns_impl->m_JobTtl,
+            config, module, "job_ttl");
+
+    SCfgReader<string> client_node(ns_impl->m_ClientNode,
+            config, module, "client_node", ns_impl->m_ClientNode);
+
     // There are two phases of OnInit in case we need to load config from server
     // 1) Setup as much as possible and try to get config from server
     // 2) Setup everything using received config from server
     for (int phase = 0; phase < 2; ++phase) {
-        string config_section = section;
-
-        if (!ns_impl->m_Queue.empty())
-            SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
-        else if (config != NULL) {
-            ns_impl->m_Queue = config->GetString(config_section,
-                "queue_name", CConfig::eErr_NoThrow, kEmptyStr);
-            if (!ns_impl->m_Queue.empty())
-                SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
-        }
-
-        if (config == NULL) {
-            ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
-            ns_impl->m_UseEmbeddedStorage = true;
-        } else {
-            try {
-                ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
-                    "use_embedded_storage", CConfig::eErr_Throw, true);
-            }
-            catch (CConfigException&) {
-                ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
-                    "use_embedded_input", CConfig::eErr_NoThrow, true);
+        if (config) {
+            if (queue.ReadOnce()) {
+                SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_ref);
             }
 
-            if (!config->GetBool(config_section, "use_affinities",
-                    CConfig::eErr_NoThrow, false))
-                ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
-            else {
-                ns_impl->m_AffinityPreference = config->GetBool(config_section,
+            embedded.ReadOnce();
+
+            if (use_affinities.ReadOnce() && use_affinities_value) {
+                ns_impl->m_AffinityPreference = config->GetBool(module,
                         "claim_new_affinities", CConfig::eErr_NoThrow, false) ?
                     CNetScheduleExecutor::eClaimNewPreferredAffs :
-                    config->GetBool(config_section,
+                    config->GetBool(module,
                         "process_any_job", CConfig::eErr_NoThrow, false) ?
                             CNetScheduleExecutor::ePreferredAffsOrAnyJob :
                             CNetScheduleExecutor::ePreferredAffinities;
 
-                string affinity_list = config->GetString(config_section,
+                string affinity_list = config->GetString(module,
                         "affinity_list", CConfig::eErr_NoThrow, kEmptyStr);
 
                 if (!affinity_list.empty()) {
@@ -681,7 +742,7 @@ void CNetScheduleServerListener::OnInit(
                     }
                 }
 
-                string affinity_ladder = config->GetString(config_section,
+                string affinity_ladder = config->GetString(module,
                         "affinity_ladder", CConfig::eErr_NoThrow, kEmptyStr);
                 list<CTempString> affinities;
                 NStr::Split(affinity_ladder, ", ", affinities,
@@ -701,14 +762,9 @@ void CNetScheduleServerListener::OnInit(
                 }
             }
 
-            ns_impl->m_JobGroup = config->GetString(config_section,
-                    "job_group", CConfig::eErr_NoThrow, kEmptyStr);
-
-            ns_impl->m_JobTtl = config->GetInt(config_section,
-                    "job_ttl", CConfig::eErr_NoThrow, 0);
-
-            ns_impl->m_ClientNode = config->GetString(config_section,
-                "client_node", CConfig::eErr_NoThrow, ns_impl->m_ClientNode);
+            job_group.ReadOnce();
+            job_ttl.ReadOnce();
+            client_node.ReadOnce();
         }
 
         if (!ns_impl->m_ClientNode.empty()) {
@@ -723,7 +779,7 @@ void CNetScheduleServerListener::OnInit(
         // If we should load config from NetSchedule server
         // and have not done it already and not working in WN compatible mode
         if (!phase && (m_Mode & fConfigLoading)) {
-            if (CConfig* alt = loader.Get(ns_impl, config, config_section)) {
+            if (CConfig* alt = loader.Get(ns_impl, config, module)) {
                 config_holder.reset(alt);
                 config = alt;
                 continue;
