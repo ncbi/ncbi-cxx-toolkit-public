@@ -451,6 +451,55 @@ CRef<CUser_object> CStructuredCommentField::MakeUserObject(const string& prefix)
 }
 
 
+bool s_UserFieldCompare(const CRef<CUser_field>& f1, const CRef<CUser_field>& f2)
+{
+    if (!f1->IsSetLabel()) return true;
+    if (!f2->IsSetLabel()) return false;
+    return f1->GetLabel().Compare(f2->GetLabel()) < 0;
+}
+
+
+bool CStructuredCommentField::IsValid(const CUser_object& obj, const string& desired_prefix)
+{
+    string prefix = CComment_rule::GetStructuredCommentPrefix(obj);
+    if (!NStr::Equal(prefix, desired_prefix)) {
+        return false;
+    }
+
+    CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
+    if (!comment_rules) {
+        return false;
+    }
+
+    try {
+        const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
+
+        if (rule.GetRequire_order()) {
+            CComment_rule::TErrorList errors = rule.IsValid(obj);
+            if (errors.size() == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            CUser_object tmp;
+            tmp.Assign(obj);
+            CUser_object::TData& fields = tmp.SetData();
+            stable_sort(fields.begin(), fields.end(), s_UserFieldCompare);
+            CComment_rule::TErrorList errors = rule.IsValid(obj);
+            if (errors.size() == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    } catch (CException) {
+        // no rule for this prefix
+        return false;
+    }
+}
+
+
 const string kGenomeAssemblyData = "Genome-Assembly-Data";
 const string kAssemblyMethod = "Assembly Method";
 const string kGenomeCoverage = "Genome Coverage";
@@ -705,52 +754,86 @@ CRef<CUser_object> CGenomeAssemblyComment::MakeUserObject()
 }
 
 
-bool s_UserFieldCompare (const CRef<CUser_field>& f1, const CRef<CUser_field>& f2)
+bool CGenomeAssemblyComment::IsValid(const CUser_object& obj)
 {
-    if (!f1->IsSetLabel()) return true;
-    if (!f2->IsSetLabel()) return false;
-    return f1->GetLabel().Compare(f2->GetLabel()) < 0;
+    return CStructuredCommentField::IsValid(obj, kGenomeAssemblyData);
 }
 
 
-bool CGenomeAssemblyComment::IsValid(const CUser_object& obj)
+const string kANI = "Taxonomic-Update-Statistics";
+const string kANIThisGenome = "This Genome(query)";
+const string kANICurrentName = "Current Name";
+const string kANIPreviousName = "Previous Name";
+const string kANIDateUpdated = "Date Updated";
+const string kANIAnalysisType = "Analysis Type";
+const string kANIAnalysis1 = "Analysis 1 (A1)";
+const string kANIA1Genome = "A1 Genome(subject)";
+const string kANIA1Name = "A1 Name";
+const string kANIA1ANI = "A1 ANI";
+const string kANIA1QueryCoverage = "A1 Query Coverage";
+const string kANIA1SubjectCoverage = "A1 Subject Coverage";
+const string kANIAnalysis2 = "Analysis 2 (A2)";
+const string kANIA2Genome = "A2 Genome(subject)";
+const string kANIA2Name = "A2 Name";
+const string kANIA2ANI = "A2 ANI";
+const string kANIA2QueryCoverage = "A2 Query Coverage";
+const string kANIA2SubjectCoverage = "A2 Subject Coverage";
+
+
+CRef<CUser_object> CANIComment::MakeEmptyUserObject()
 {
-    string prefix = CComment_rule::GetStructuredCommentPrefix(obj);
-    if (!NStr::Equal(prefix, kGenomeAssemblyData)) {
-        return false;
-    }
+    CRef<CUser_object> obj = CStructuredCommentField::MakeUserObject(kANI);
+    return obj;
+}
 
-    CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
-    if (!comment_rules) {
-        return false;
-    }
+#define ANI_STRING_FIELD_IMPLEMENTATION(Fieldname) \
+void CANIComment::Set##Fieldname(CUser_object& obj, string val, EExistingText existing_text) \
+{ \
+    CStructuredCommentField field(kANI, kANI##Fieldname); \
+    field.SetVal(obj, val, existing_text); \
+} \
+string CANIComment::Get##Fieldname(const CUser_object& obj) \
+{ \
+    CStructuredCommentField field(kANI, kANI##Fieldname); \
+    return field.GetVal(obj); \
+} \
+CANIComment& CANIComment::Set##Fieldname(string val, EExistingText existing_text) \
+{ \
+    Set##Fieldname(*m_User, val, existing_text); \
+    return *this; \
+}
 
-    try {
-        const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
+ANI_STRING_FIELD_IMPLEMENTATION(ThisGenome)
+ANI_STRING_FIELD_IMPLEMENTATION(CurrentName)
+ANI_STRING_FIELD_IMPLEMENTATION(PreviousName)
+ANI_STRING_FIELD_IMPLEMENTATION(DateUpdated)
+ANI_STRING_FIELD_IMPLEMENTATION(AnalysisType)
+ANI_STRING_FIELD_IMPLEMENTATION(Analysis1)
+ANI_STRING_FIELD_IMPLEMENTATION(A1Genome)
+ANI_STRING_FIELD_IMPLEMENTATION(A1Name)
+ANI_STRING_FIELD_IMPLEMENTATION(A1ANI)
+ANI_STRING_FIELD_IMPLEMENTATION(A1QueryCoverage)
+ANI_STRING_FIELD_IMPLEMENTATION(A1SubjectCoverage)
+ANI_STRING_FIELD_IMPLEMENTATION(Analysis2)
+ANI_STRING_FIELD_IMPLEMENTATION(A2Genome)
+ANI_STRING_FIELD_IMPLEMENTATION(A2Name)
+ANI_STRING_FIELD_IMPLEMENTATION(A2ANI)
+ANI_STRING_FIELD_IMPLEMENTATION(A2QueryCoverage)
+ANI_STRING_FIELD_IMPLEMENTATION(A2SubjectCoverage)
 
-        if (rule.GetRequire_order()) {
-            CComment_rule::TErrorList errors = rule.IsValid(obj);
-            if (errors.size() == 0) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            CUser_object tmp;
-            tmp.Assign(obj);
-            CUser_object::TData& fields = tmp.SetData();
-            stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
-            CComment_rule::TErrorList errors = rule.IsValid(obj);
-            if (errors.size() == 0) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-    } catch (CException ) {
-        // no rule for this prefix
-        return false;
-    }
+
+CRef<CUser_object> CANIComment::MakeUserObject()
+{
+    CRef<CUser_object> obj(new CUser_object());
+    obj->Assign(*m_User);
+
+    return obj;
+}
+
+
+bool CANIComment::IsValid(const CUser_object& obj)
+{
+    return CStructuredCommentField::IsValid(obj, kANI);
 }
 
 

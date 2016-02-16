@@ -82,6 +82,7 @@ public:
     virtual string GetLabel() const { return m_Prefix + " " + m_FieldName; };
     bool IsStructuredCommentForThisField (const CUser_object& user) const;
     static CRef<CUser_object> MakeUserObject(const string& prefix);
+    static bool IsValid(const CUser_object& obj, const string& desired_prefix);
 
 protected:
     string m_Prefix;
@@ -137,6 +138,45 @@ protected:
     static string x_GetAssemblyMethodFromProgramAndVersion(const string& program, const string& version);
 };
 
+
+class NCBI_XOBJEDIT_EXPORT CANIComment
+{
+public:
+    CANIComment();
+    CANIComment(CUser_object& user);
+    ~CANIComment() {};
+    static CRef<CUser_object> MakeEmptyUserObject();
+
+#define ANI_STRING_FIELD(Fieldname) \
+    static void Set##Fieldname(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old); \
+    static string Get##Fieldname(const CUser_object& obj); \
+    CANIComment& Set##Fieldname(string val, EExistingText existing_text = eExistingText_replace_old);
+
+    ANI_STRING_FIELD(ThisGenome)
+    ANI_STRING_FIELD(CurrentName)
+    ANI_STRING_FIELD(PreviousName)
+    ANI_STRING_FIELD(DateUpdated)
+    ANI_STRING_FIELD(AnalysisType)
+    ANI_STRING_FIELD(Analysis1)
+    ANI_STRING_FIELD(A1Genome)
+    ANI_STRING_FIELD(A1Name)
+    ANI_STRING_FIELD(A1ANI)
+    ANI_STRING_FIELD(A1QueryCoverage)
+    ANI_STRING_FIELD(A1SubjectCoverage)
+    ANI_STRING_FIELD(Analysis2)
+    ANI_STRING_FIELD(A2Genome)
+    ANI_STRING_FIELD(A2Name)
+    ANI_STRING_FIELD(A2ANI)
+    ANI_STRING_FIELD(A2QueryCoverage)
+    ANI_STRING_FIELD(A2SubjectCoverage)
+
+    CRef<CUser_object> MakeUserObject();
+
+    static bool IsValid(const CUser_object& obj);
+
+protected:
+    CRef<CUser_object> m_User;
+};
 
 
 END_SCOPE(edit)
