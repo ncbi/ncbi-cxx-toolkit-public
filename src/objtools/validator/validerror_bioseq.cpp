@@ -802,6 +802,17 @@ void CValidError_bioseq::ValidateSecondaryAccConflict
 }
 
 
+bool HasUnverified(CBioseq_Handle bsh)
+{
+    for (CSeqdesc_CI it(bsh, CSeqdesc::e_User); it; ++it) {
+        if (it->GetUser().GetObjectType() == CUser_object::eObjectType_Unverified) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CValidError_bioseq::x_ValidateBarcode(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
@@ -833,6 +844,11 @@ void CValidError_bioseq::x_ValidateBarcode(const CBioseq& seq)
         PostErr (eDiag_Info, eErr_SEQ_DESCR_BadKeyword,
                  "Molinfo.tech barcode without BARCODE keyword",
                  *ctx, *di);
+    }
+    if (has_barcode_keyword && HasUnverified(bsh)) {
+        PostErr(eDiag_Info, eErr_SEQ_DESCR_BadKeyword,
+            "Sequence has both BARCODE and UNVERIFIED keywords",
+            seq);
     }
 }
 
@@ -7596,6 +7612,25 @@ bool CValidError_bioseq::IsEmblOrDdbj(const CBioseq& seq)
 }
 
 
+void CValidError_bioseq::x_CheckForMultipleComments(CBioseq_Handle bsh)
+{
+    CSeqdesc_CI di(bsh, CSeqdesc::e_Comment);
+    while (di) {
+        CSeqdesc_CI di2 = di;
+        ++di2;
+        while (di2) {
+            if (NStr::EqualNocase(di->GetComment(), di2->GetComment())) {
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleComments,
+                    "Undesired multiple comment descriptors, identical text",
+                    *(bsh.GetParentEntry().GetCompleteSeq_entry()), *di2);
+            }
+            ++di2;
+        }
+        ++di;
+    }
+}
+
+
 // Validate CSeqdesc within the context of a bioseq. 
 // See: CValidError_desc for validation of standalone CSeqdesc,
 // and CValidError_descr for validation of descriptors in the context
@@ -8007,16 +8042,6 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             }
             break;
 
-        case CSeqdesc::e_Comment:
-            if (NStr::IsBlank(comment_str)) {
-                comment_str = desc.GetComment();
-            } else if (NStr::EqualNocase(comment_str, desc.GetComment())) {
-                PostErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleComments, 
-                        "Undesired multiple comment descriptors, identical text",
-                        ctx, desc);
-            }
-            break;
-
         case CSeqdesc::e_Method:
             if (!seq.IsAa()) {
                 PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
@@ -8099,6 +8124,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     ValidateMoltypeDescriptors (seq);
 
     CheckForMultipleStructuredComments(seq);
+    x_CheckForMultipleComments(bsh);
 }
 
 
