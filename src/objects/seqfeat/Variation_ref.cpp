@@ -696,6 +696,52 @@ void CVariation_ref::SetMissense(const CSeq_data& amino_acid)
 }
 
 
+
+void CVariation_ref::SetDuplication(const CRef<CDelta_item> start_offset,
+                                    const CRef<CDelta_item> stop_offset) 
+{
+    auto& inst = SetData().SetInstance();
+    inst.SetType(CVariation_inst::eType_ins);
+    inst.SetDelta().clear();
+    if (start_offset.NotNull()) {
+        inst.SetDelta().push_back(start_offset);
+    }
+    
+    auto delta_item = Ref(new CDelta_item());
+    delta_item->SetDuplication();
+    inst.SetDelta().push_back(delta_item);
+    if (stop_offset.NotNull()) {
+        inst.SetDelta().push_back(stop_offset);
+    }
+}
+
+
+
+void CVariation_ref::SetIdentity(CRef<CSeq_literal> seq_literal,
+                                 const CRef<CDelta_item> start_offset,
+                                 const CRef<CDelta_item> stop_offset)  
+{
+    auto& inst = SetData().SetInstance();
+    inst.SetType(CVariation_inst::eType_identity);
+    if (seq_literal->IsSetSeq_data()) {
+        inst.SetObservation(CVariation_inst::eObservation_asserted);
+    }
+    inst.SetDelta().clear();
+    
+    if (start_offset.NotNull()) {
+        inst.SetDelta().push_back(start_offset);
+    }
+    
+    auto delta_item = Ref(new CDelta_item());
+    delta_item->SetSeq().SetLiteral(*seq_literal);
+    inst.SetDelta().push_back(delta_item);
+    
+    if (stop_offset.NotNull()) {
+        inst.SetDelta().push_back(stop_offset);
+    }
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 bool CVariation_ref::IsSetLocation(void) const

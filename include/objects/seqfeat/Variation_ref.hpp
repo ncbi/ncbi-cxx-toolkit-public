@@ -81,6 +81,13 @@ public:
 
     void SetMissense(const CSeq_data& amino_acid);
 
+    void SetDuplication(CRef<CDelta_item> start_offset=null,
+                        CRef<CDelta_item> stop_offset=null);
+
+    void SetIdentity(CRef<CSeq_literal> seq_literal,
+                     CRef<CDelta_item> start_offset=null,
+                     CRef<CDelta_item> stop_offset=null);
+
     /// Set a standard single nucleotide variant.  The replaces set can include
     /// empty strings and/or '-' as a character to indicate a deletion.
     void SetSNV(const vector<string>& replaces,
