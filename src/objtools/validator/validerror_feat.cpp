@@ -178,6 +178,20 @@ static bool s_IsValidECNumberFormat (const string& str)
     return false;
 }
 
+bool s_HasNamedQual(const CSeq_feat& f, const string& qual_name)
+{
+    if (!f.IsSetQual()) {
+        return false;
+    }
+    ITERATE(CSeq_feat::TQual, it, f.GetQual()) {
+        if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), qual_name)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 const string kInferenceMessage[] = {
   "unknown error",
   "empty inference string",
@@ -335,6 +349,14 @@ void CValidError_feat::ValidateSeqFeat(
 
         if (feat.IsSetExt()) {
             ValidateExtUserObject (feat.GetExt(), feat);
+        }
+
+        if (feat.IsSetExp_ev() && feat.GetExp_ev() > 0 &&
+            !s_HasNamedQual(feat, "inference") &&
+            !s_HasNamedQual(feat, "experiment") &&
+            !m_Imp.DoesAnyFeatLocHaveGI()) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
+                "Inference or experiment qualifier missing but obsolete experimental evidence qualifier set", feat);
         }
     }
     catch (const exception& e) {
