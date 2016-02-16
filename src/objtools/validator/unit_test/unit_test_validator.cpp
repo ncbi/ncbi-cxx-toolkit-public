@@ -18127,6 +18127,48 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphNScoreMany)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+#if 0
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CSeq_literal& first_part = entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral();
+    first_part.SetSeq_data().SetIupacna().Set("AAAAAAAAAAAAAAAAAAAANNNNNNNNNNNNNNNNNNNNTTTTTTTTTTTTTTTTTTTT");
+    first_part.SetLength(60);
+    entry->SetSeq().SetInst().SetLength(82);
+    entry->SetSeq().ResetAnnot();
+    CRef<CSeq_graph> bad_graph = BuildGoodByteGraph(entry, 0, 79);
+    CSeq_graph_Base::C_Graph::TByte& bytes = bad_graph->SetGraph().SetByte();
+    bytes.ResetValues();
+    for (size_t pos = 0; pos < 20; pos++) {
+        bytes.SetValues().push_back(0);
+    }
+    for (size_t pos = 20; pos < 40; pos++) {
+        bytes.SetValues().push_back(114);
+    }
+    for (size_t pos = 40; pos < 70; pos++) {
+        bytes.SetValues().push_back(21);
+    }
+    bytes.SetMax(-1);
+    bytes.SetMin(0);
+    bytes.SetAxis(5);
+    CRef<CSeq_annot> annot2(new CSeq_annot());
+    annot2->SetData().SetGraph().push_back(bad_graph);
+    entry->SetSeq().SetAnnot().push_back(annot2);
+
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphBioseqLen", "SeqGraph(79) and Bioseq(72) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphMax", "Graph max(-1) out of range"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphByteLen", "SeqGraph(79) and ByteStore(70) length mismatch"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphACGTScoreMany", "23 ACGT bases(29.11%) have zero score value - first one at position 1"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphNScoreMany", "20 N bases(25.32%) have positive score value - first one at position 21"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphGapScore", "10 gap bases have positive score value"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphAbove", "79 quality scores have values above the reported maximum or 100"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+#endif
 }
 
 
