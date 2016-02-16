@@ -1975,7 +1975,8 @@ void CValidError_feat::ValidateIntron (
     }
 
     TSeqPos seq_len = bsh.GetBioseqLength();
-    string label = GetBioseqIdLabel(*(bsh.GetCompleteBioseq()));
+    string label;
+    bsh.GetId().front().GetSeqId()->GetLabel(&label);
     CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
 
     ENa_strand strand = loc.GetStrand();
