@@ -39,6 +39,9 @@
 #ifndef OBJECTS_SEQFEAT_VARIATION_REF_HPP
 #define OBJECTS_SEQFEAT_VARIATION_REF_HPP
 
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seqfeat/Delta_item.hpp>
+#include <objects/seq/Seq_data.hpp>
 
 // generated includes
 #include <objects/seqfeat/Variation_ref_.hpp>
@@ -67,6 +70,16 @@ public:
 
     /// PostRead() hooks to establish correct, non-deprecated data layout
     void PostRead();
+
+
+    void SetSNV(const CSeq_data& nucleotide, 
+                CRef<CDelta_item> offset=null);
+
+    void SetMNP(const CSeq_data& nucleotide, 
+                TSeqPos length,
+                CRef<CDelta_item> offset=null);
+
+    void SetMissense(const CSeq_data& amino_acid);
 
     /// Set a standard single nucleotide variant.  The replaces set can include
     /// empty strings and/or '-' as a character to indicate a deletion.
