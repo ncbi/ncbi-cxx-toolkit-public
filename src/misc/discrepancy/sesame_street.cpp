@@ -75,8 +75,18 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal t
     }
     if (obj.IsSetOrgMod()) {
         ITERATE (list<CRef<COrgMod> >, it, obj.GetOrgname().GetMod()) {
-            m_Objs[(*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc)][(*it)->GetSubname()].Add(*disc_obj);
+            const COrgMod::TSubtype& subtype = (*it)->GetSubtype();
+            if (subtype != COrgMod::eSubtype_old_name &&
+                subtype != COrgMod::eSubtype_old_lineage &&
+                subtype != COrgMod::eSubtype_gb_acronym &&
+                subtype != COrgMod::eSubtype_gb_anamorph &&
+                subtype != COrgMod::eSubtype_gb_synonym) {
+                m_Objs[(*it)->GetSubtypeName(subtype, COrgMod::eVocabulary_insdc)][(*it)->GetSubname()].Add(*disc_obj);
+            }
         }
+    }
+    if (obj.CanGetPcr_primers()) {
+        //cout << "PRIMER!\n";
     }
 }
 
