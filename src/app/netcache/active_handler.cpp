@@ -2297,7 +2297,7 @@ CNCActiveHandler::CheckCommandTimeout(void)
 #ifdef _DEBUG
 CNCAlerts::Register(CNCAlerts::eDebugSyncAborted2, "CheckCommandTimeout");
 #endif
-        SRV_LOG(Error, "Command aborted by timeout");
+        SRV_LOG(Warning, "Command aborted by timeout");
         proxy->m_NeedToClose = true;
         proxy->SetRunnable();
     }

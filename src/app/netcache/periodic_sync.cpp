@@ -694,7 +694,7 @@ CNCActiveSyncControl::x_CheckSlotTheirSync(void)
             if (slot_srv->is_passive && slot_srv->started_cmds == 0 && 
                 CSrvTime::CurSecs() - slot_srv->last_active_time
                         > (CNCDistributionConf::GetPeriodicSyncTimeout() / kUSecsPerSecond)) {
-                SRV_LOG(Error, "Periodic sync canceled by timeout");
+                SRV_LOG(Warning, "Periodic sync canceled by timeout");
                 s_CancelSync(m_SlotData, slot_srv, 0, eSynAborted, NC_SYNC_HINT);
                 slot_srv->lock.Unlock();
                 m_SlotData->lock.Unlock();
