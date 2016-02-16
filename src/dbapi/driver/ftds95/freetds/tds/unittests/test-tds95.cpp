@@ -65,6 +65,11 @@ void CRunTestApplication::Init(void)
         ("-syb-ver", "TDSVersion",
          "Explicit TDS protocol version to use for Sybase servers",
          CArgDescriptions::eString);
+    arg_desc->AddOptionalKey
+        ("-set-env", "Setting",
+         "Set a custom environment variable; format: NAME=value; "
+         "may be repeated",
+         CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
     arg_desc->AddFlag
         ("-no-auto",
          "Skip in automated runs due to use of non-temporary objects.");
@@ -95,6 +100,15 @@ int CRunTestApplication::Run(void)
     if (sybase_dir.Exists()  ||  env.Get("SYBASE").empty()) {
         env.Set("SYBASE", sybase_dir.GetPath());
     }
+    if (args["-set-env"]) {
+        CArgValue::TStringArray custom_env = args["-set-env"].GetStringList();
+        string name, value;
+        ITERATE (CArgValue::TStringArray, it, custom_env) {
+            NStr::SplitInTwo(*it, "=", name, value);
+            env.Set(name, value);
+        }
+    }
+
     string cmd     = args["test-command"].AsString(),
            cmdline = env.Get("CHECK_EXEC");
     if ( !cmdline.empty() ) {

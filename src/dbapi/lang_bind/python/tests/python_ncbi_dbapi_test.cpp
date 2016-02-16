@@ -134,6 +134,9 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                             "Name of the database to connect",
                             CArgDescriptions::eString,
                             "DBAPI_Sample");
+    arg_desc->AddOptionalKey("V", "version"
+                             "TDS protocol version",
+                             CArgDescriptions::eString);
 }
 
 NCBITEST_INIT_VARIABLES(parser)
@@ -190,6 +193,9 @@ NCBITEST_AUTO_INIT()
     env.Set("PYTHONPATH", lib_dir);
     env.Set("LD_LIBRARY_PATH", lib_dir + ":" + env.Get("LD_LIBRARY_PATH"));
 #endif
+    if (args["V"].HasValue()) {
+        env.Set("TDSVER", args["V"].AsString);
+    }
 
     s_Engine = new pythonpp::CEngine;
 

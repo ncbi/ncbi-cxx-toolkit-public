@@ -493,6 +493,16 @@ CTestArguments::CTestArguments(void)
     if (args["dr"].HasValue()) {
         m_ParamBase.SetDriverName(args["dr"].AsString());
         m_ParamBase2.SetDriverName(args["dr"].AsString());
+        if (args["dr"].AsString() == ctlib_driver) {
+            // Force the traditional C locale when using Sybase ctlib
+            // to avoid error #4847 from Sybase ASE 15.5 (reporting
+            // that character set mismatches block bulk insertion).
+            CNcbiEnvironment& env
+                = CNcbiApplication::Instance()->SetEnvironment();
+            env.Unset("LANG");
+            env.Unset("LC_ALL");
+            env.Unset("LC_CTYPE");
+        }
     }
 
     if (args["D"].HasValue()) {

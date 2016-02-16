@@ -34,10 +34,7 @@ CHECK_CMD = dbapi_unit_test -dr ftds64     -S DBAPI_MS2014_TEST
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S DBAPI_MS2014_TEST
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S DBAPI_MS2014_TEST -V 73
 CHECK_CMD = dbapi_unit_test -dr odbc       -S DBAPI_MS2014_TEST
-# Force the traditional C locale when using Sybase ctlib to avoid
-# error #4847 from Sybase ASE 15.5 (reporting that character set
-# mismatches block bulk insertion).
-CHECK_CMD = env LC_ALL=C dbapi_unit_test -dr ctlib -S Sybase
+CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr dblib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds64     -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S Sybase
