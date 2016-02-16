@@ -504,7 +504,7 @@ string CGb_qual::CleanupAndRepairInference( const string &orig_inference )
         old_inf = inference;
         NStr::ReplaceInPlace(inference,"  ", " ");
         NStr::ReplaceInPlace(inference," :", ":");
-        NStr::ReplaceInPlace(inference,"::", ":");
+        // NStr::ReplaceInPlace(inference,"::", ":");
         NStr::ReplaceInPlace(inference,":  ", ": ");
     }
 
