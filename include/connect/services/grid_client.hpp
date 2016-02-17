@@ -211,7 +211,7 @@ public:
     /// To send a large data use GetOStream method. Don't call this
     /// method after GetOStream method is called.
     ///
-    void SetJobInput(const string& input) {m_Job.input = input;}
+    void SetJobInput(const string& input);
 
     /// Get a stream where a client can write an input
     /// data for the remote job
@@ -278,8 +278,11 @@ public:
     size_t GetMaxServerInputSize();
 
 private:
+    friend class CGridJobBatchSubmitter;
+
     void Init(ECleanUp cleanup, EProgressMsg progress_msg);
     void RemoveDataBlob(const string&);
+    void UseNextSubHitID();
 
     CNetScheduleSubmitter m_NetScheduleSubmitter;
     CNetCacheAPI m_NetCacheAPI;
