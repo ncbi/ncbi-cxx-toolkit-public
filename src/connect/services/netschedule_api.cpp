@@ -646,7 +646,7 @@ struct SCfgReader
             m_Dest = m_Config->Get(m_Section, m_Param,
                     CConfig::eErr_Throw, m_DefValue, m_Synonyms);
         }
-        catch (CConfigException& ex) {
+        catch (CConfigException&) {
             return false;
         }
 
