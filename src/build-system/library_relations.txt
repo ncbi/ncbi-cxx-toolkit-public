@@ -320,6 +320,7 @@ ftgl needs3party $(ORIG_LIBS)
 gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
+gc_common needs xncbi
 gc_load_utils needs $(GPIPE_COMMON_LIBS)
 gc_load_utils needs gc_organism
 gc_load_utils needs gc_utils
