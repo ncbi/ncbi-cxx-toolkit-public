@@ -500,6 +500,25 @@ bool CStructuredCommentField::IsValid(const CUser_object& obj, const string& des
 }
 
 
+void CStructuredCommentField::ReorderFields(CUser_object& obj)
+{
+    string prefix = CComment_rule::GetStructuredCommentPrefix(obj);
+
+    CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
+    if (!comment_rules) {
+        return;
+    }
+
+    try {
+        const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
+        rule.ReorderFields(obj);
+    } catch (CException) {
+        // no rule for this prefix
+    }
+}
+
+
+
 const string kGenomeAssemblyData = "Genome-Assembly-Data";
 const string kAssemblyMethod = "Assembly Method";
 const string kGenomeCoverage = "Genome Coverage";
@@ -761,23 +780,35 @@ bool CGenomeAssemblyComment::IsValid(const CUser_object& obj)
 
 
 const string kANI = "Taxonomic-Update-Statistics";
-const string kANIThisGenome = "This Genome(query)";
+const string kANIThisGenome = "This Genome (query)";
 const string kANICurrentName = "Current Name";
 const string kANIPreviousName = "Previous Name";
 const string kANIDateUpdated = "Date Updated";
 const string kANIAnalysisType = "Analysis Type";
 const string kANIAnalysis1 = "Analysis 1 (A1)";
-const string kANIA1Genome = "A1 Genome(subject)";
+const string kANIA1Genome = "A1 Genome (subject)";
 const string kANIA1Name = "A1 Name";
 const string kANIA1ANI = "A1 ANI";
 const string kANIA1QueryCoverage = "A1 Query Coverage";
 const string kANIA1SubjectCoverage = "A1 Subject Coverage";
 const string kANIAnalysis2 = "Analysis 2 (A2)";
-const string kANIA2Genome = "A2 Genome(subject)";
+const string kANIA2Genome = "A2 Genome (subject)";
 const string kANIA2Name = "A2 Name";
 const string kANIA2ANI = "A2 ANI";
 const string kANIA2QueryCoverage = "A2 Query Coverage";
 const string kANIA2SubjectCoverage = "A2 Subject Coverage";
+
+CANIComment::CANIComment()
+{
+    m_User = MakeEmptyUserObject();
+}
+
+
+CANIComment::CANIComment(CUser_object& user)
+{
+    m_User.Reset(new CUser_object());
+    m_User->Assign(user);
+}
 
 
 CRef<CUser_object> CANIComment::MakeEmptyUserObject()
@@ -826,6 +857,7 @@ CRef<CUser_object> CANIComment::MakeUserObject()
 {
     CRef<CUser_object> obj(new CUser_object());
     obj->Assign(*m_User);
+    CStructuredCommentField::ReorderFields(*obj);
 
     return obj;
 }

@@ -258,6 +258,59 @@ BOOST_AUTO_TEST_CASE(Test_GenomeAssemblyData)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_ANIComment)
+{
+    edit::CANIComment ani_cmt;
+    ani_cmt.SetThisGenome("this_genome");
+
+    CRef<CUser_object> obj = ani_cmt.MakeUserObject();
+    BOOST_CHECK_EQUAL(edit::CANIComment::IsValid(*obj), false);
+
+    ani_cmt.SetCurrentName("current_name");
+    ani_cmt.SetA1ANI("A1_ANI");
+    ani_cmt.SetPreviousName("previous_name");
+    ani_cmt.SetDateUpdated("date_updated");
+    ani_cmt.SetAnalysisType("a");
+    ani_cmt.SetAnalysis1("a");
+    ani_cmt.SetA1Genome("a");
+    ani_cmt.SetA1Name("a");
+    ani_cmt.SetA1QueryCoverage("a");
+    ani_cmt.SetA1SubjectCoverage("a");
+    ani_cmt.SetAnalysis2("a");
+    ani_cmt.SetA2Genome("a");
+    ani_cmt.SetA2Name("a");
+    ani_cmt.SetA2ANI("a");
+    ani_cmt.SetA2QueryCoverage("a");
+    ani_cmt.SetA2SubjectCoverage("a");
+
+    obj = ani_cmt.MakeUserObject();
+    BOOST_CHECK_EQUAL(edit::CANIComment::IsValid(*obj), true);
+    BOOST_CHECK_EQUAL(obj->GetData()[0]->GetLabel().GetStr(), "StructuredCommentPrefix");
+    BOOST_CHECK_EQUAL(obj->GetData()[1]->GetLabel().GetStr(), "This Genome (query)");
+    BOOST_CHECK_EQUAL(obj->GetData()[2]->GetLabel().GetStr(), "Current Name");
+    BOOST_CHECK_EQUAL(obj->GetData()[3]->GetLabel().GetStr(), "Previous Name");
+    BOOST_CHECK_EQUAL(obj->GetData()[4]->GetLabel().GetStr(), "Date Updated");
+    BOOST_CHECK_EQUAL(obj->GetData()[5]->GetLabel().GetStr(), "Analysis Type");
+    BOOST_CHECK_EQUAL(obj->GetData()[6]->GetLabel().GetStr(), "Analysis 1 (A1)");
+    BOOST_CHECK_EQUAL(obj->GetData()[7]->GetLabel().GetStr(), "A1 Genome (subject)");
+    BOOST_CHECK_EQUAL(obj->GetData()[8]->GetLabel().GetStr(), "A1 Name");
+    BOOST_CHECK_EQUAL(obj->GetData()[9]->GetLabel().GetStr(), "A1 ANI");
+    BOOST_CHECK_EQUAL(obj->GetData()[10]->GetLabel().GetStr(), "A1 Query Coverage");
+    BOOST_CHECK_EQUAL(obj->GetData()[11]->GetLabel().GetStr(), "A1 Subject Coverage");
+    BOOST_CHECK_EQUAL(obj->GetData()[12]->GetLabel().GetStr(), "Analysis 2 (A2)");
+    BOOST_CHECK_EQUAL(obj->GetData()[13]->GetLabel().GetStr(), "A2 Genome (subject)");
+    BOOST_CHECK_EQUAL(obj->GetData()[14]->GetLabel().GetStr(), "A2 Name");
+    BOOST_CHECK_EQUAL(obj->GetData()[15]->GetLabel().GetStr(), "A2 ANI");
+    BOOST_CHECK_EQUAL(obj->GetData()[16]->GetLabel().GetStr(), "A2 Query Coverage");
+    BOOST_CHECK_EQUAL(obj->GetData()[17]->GetLabel().GetStr(), "A2 Subject Coverage");
+    BOOST_CHECK_EQUAL(obj->GetData()[18]->GetLabel().GetStr(), "StructuredCommentSuffix");
+
+
+    edit::CANIComment ani_cmt2(*obj);
+    BOOST_CHECK_EQUAL(ani_cmt2.GetThisGenome(), "this_genome");
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_DBLink)
 {
     CRef<CUser_object> user = edit::CDBLink::MakeEmptyUserObject();

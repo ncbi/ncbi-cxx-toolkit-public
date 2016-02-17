@@ -83,6 +83,7 @@ public:
     bool IsStructuredCommentForThisField (const CUser_object& user) const;
     static CRef<CUser_object> MakeUserObject(const string& prefix);
     static bool IsValid(const CUser_object& obj, const string& desired_prefix);
+    static void ReorderFields(CUser_object& obj);
 
 protected:
     string m_Prefix;
@@ -150,7 +151,8 @@ public:
 #define ANI_STRING_FIELD(Fieldname) \
     static void Set##Fieldname(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old); \
     static string Get##Fieldname(const CUser_object& obj); \
-    CANIComment& Set##Fieldname(string val, EExistingText existing_text = eExistingText_replace_old);
+    CANIComment& Set##Fieldname(string val, EExistingText existing_text = eExistingText_replace_old); \
+    string Get##Fieldname() { return Get##Fieldname(*m_User); }
 
     ANI_STRING_FIELD(ThisGenome)
     ANI_STRING_FIELD(CurrentName)
