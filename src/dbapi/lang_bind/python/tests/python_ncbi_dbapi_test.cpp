@@ -134,7 +134,7 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                             "Name of the database to connect",
                             CArgDescriptions::eString,
                             "DBAPI_Sample");
-    arg_desc->AddOptionalKey("V", "version"
+    arg_desc->AddOptionalKey("V", "version",
                              "TDS protocol version",
                              CArgDescriptions::eString);
 }
@@ -193,9 +193,6 @@ NCBITEST_AUTO_INIT()
     env.Set("PYTHONPATH", lib_dir);
     env.Set("LD_LIBRARY_PATH", lib_dir + ":" + env.Get("LD_LIBRARY_PATH"));
 #endif
-    if (args["V"].HasValue()) {
-        env.Set("TDSVER", args["V"].AsString);
-    }
 
     s_Engine = new pythonpp::CEngine;
 
@@ -1310,7 +1307,7 @@ BOOST_AUTO_TEST_CASE(TestScenario_2)
 ///////////////////////////////////////////////////////////////////////////////
 CTestArguments::CTestArguments(void)
 {
-    const CNcbiApplication* app = CNcbiApplication::Instance();
+    CNcbiApplication* app = CNcbiApplication::Instance();
     if (!app) {
         return;
     }
@@ -1322,6 +1319,10 @@ CTestArguments::CTestArguments(void)
     m_UserName      = args["U"].AsString();
     m_UserPassword  = args["P"].AsString();
     m_DatabaseName  = args["D"].AsString();
+
+    if (args["V"].HasValue()) {
+        app->SetEnvironment("TDSVER", args["V"].AsString());
+    }
 
     SetDatabaseParameters();
 }
