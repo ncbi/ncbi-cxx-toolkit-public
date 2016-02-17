@@ -632,14 +632,13 @@ struct SCfgReader
         m_AlreadyRead(already_read),
         m_Synonyms(synonyms)
     {
-        m_Dest = m_DefValue;
+        if (!m_AlreadyRead) m_Dest = m_DefValue;
     }
 
     bool ReadOnce()
     {
         _ASSERT(m_Config);
 
-        // Already read
         if (m_AlreadyRead) return false;
 
         try {
