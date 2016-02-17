@@ -385,6 +385,28 @@ struct SNetServiceMap {
             SNetServiceImpl* prototype);
 };
 
+struct SUseNextSubHitID
+{
+    void ProperCommand() { m_ProperCommand = true; }
+    void DoNot() { m_Allowed = false; }
+
+    operator bool()
+    {
+        if (!m_ProperCommand) return false;
+
+        m_ProperCommand = false;
+
+        if (m_Allowed) return true;
+
+        m_Allowed = true;
+        return false;
+    }
+
+private:
+    bool m_ProperCommand = false;
+    bool m_Allowed = true;
+};
+
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES___NETSERVICE_API_IMPL__HPP */

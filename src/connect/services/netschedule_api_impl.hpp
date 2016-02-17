@@ -412,21 +412,6 @@ struct SNetScheduleSubmitterImpl : public CObject
 
     CNetScheduleAPI m_API;
 
-    struct SUseNextSubHitID
-    {
-        void DoNot() { m_Allowed = false; }
-
-        operator bool()
-        {
-            const bool result = m_Allowed;
-            m_Allowed = true;
-            return result;
-        }
-
-    private:
-        bool m_Allowed = true;
-    };
-
     SUseNextSubHitID m_UseNextSubHitID;
 };
 

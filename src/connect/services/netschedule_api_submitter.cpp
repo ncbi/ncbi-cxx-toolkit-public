@@ -106,6 +106,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
         cmd.append(job.group);
     }
 
+    m_UseNextSubHitID.ProperCommand();
     g_AppendHitID(cmd, m_UseNextSubHitID ?
             req.GetNextSubHitID() : req.GetCurrentSubHitID());
 
@@ -146,6 +147,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
         cmd.append(job_group);
     }
 
+    m_Impl->m_UseNextSubHitID.ProperCommand();
     g_AppendHitID(cmd, m_Impl->m_UseNextSubHitID ?
             req.GetNextSubHitID() : req.GetCurrentSubHitID());
 

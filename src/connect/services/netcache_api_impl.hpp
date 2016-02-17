@@ -32,6 +32,7 @@
  */
 
 #include "netcache_rw.hpp"
+#include "netservice_api_impl.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -137,24 +138,6 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     CNetCacheAPIParameters m_DefaultParameters;
 
     CCompoundIDPool m_CompoundIDPool;
-
-    struct SUseNextSubHitID
-    {
-        void ProperCommand() { m_ProperCommand = true; }
-        void DoNot() { m_Allowed = false; }
-
-        operator bool()
-        {
-            const bool result = m_ProperCommand && m_Allowed;
-            m_ProperCommand = false;
-            m_Allowed = true;
-            return result;
-        }
-
-    private:
-        bool m_ProperCommand = false;
-        bool m_Allowed = true;
-    };
 
     SUseNextSubHitID m_UseNextSubHitID;
 };
