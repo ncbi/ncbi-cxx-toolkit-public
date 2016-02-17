@@ -120,7 +120,7 @@ CReportNode& CReportNode::operator[](const string& name)
 void CReportNode::Add(TReportObjectList& list, CReportObj& obj, bool unique)
 {
     if (unique) {
-        ITERATE(TReportObjectList, it, list) {
+        ITERATE (TReportObjectList, it, list) {
             if (static_cast<CDiscrepancyObject&>(obj).Equal(**it)) {
                 return;
             }
@@ -151,7 +151,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
             Add(objs, **ob, unique);
         }
     }
-    NON_CONST_ITERATE(TReportObjectList, ob, objs) {
+    NON_CONST_ITERATE (TReportObjectList, ob, objs) {
         if ((*ob)->CanAutofix()) {
             autofix = true;
         }
@@ -252,7 +252,7 @@ void CDiscrepancyContext::Update_Bioseq_set_Stack(CTypesConstIterator& it)
 {
     size_t n = 0;
     CTypesConstIterator::TIteratorContext ctx = it.GetContextData();
-    ITERATE(CTypesConstIterator::TIteratorContext, p, ctx) {
+    ITERATE (CTypesConstIterator::TIteratorContext, p, ctx) {
         if (p->first.GetName() == "Bioseq-set") {
             n++;
         }
@@ -268,7 +268,13 @@ void CDiscrepancyContext::Update_Bioseq_set_Stack(CTypesConstIterator& it)
 }
 
 
-void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
+void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)   // remove after propagation
+{
+    Parse(CRef<CSerialObject>(const_cast<CSeq_entry*>(handle.GetCompleteSeq_entry().GetPointer())));
+}
+
+
+void CDiscrepancyContext::Parse(CRef<CSerialObject> obj)
 {
     CTypesConstIterator i;
     CType<CBioseq>::AddTo(i);
@@ -287,8 +293,8 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
     ENABLE_DISCREPANCY_TYPE(CRNA_ref)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_annot), it is handled separately!
     // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
-    
-    for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
+
+    for (i = CBeginInfo(*obj); i; ++i) {
         CTypesConstIterator::TIteratorContext ctx = i.GetContextData();
         if (CType<CBioseq>::Match(i)) {
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i));
@@ -304,7 +310,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
             if (m_Enable_CSeq_feat_BY_BIOSEQ) {
                 for (; feat_ci; ++feat_ci) {
                     const CSeq_feat_BY_BIOSEQ& obj = (const CSeq_feat_BY_BIOSEQ&)*feat_ci->GetSeq_feat();
-                    NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeq_feat_BY_BIOSEQ>* >, it, m_All_CSeq_feat_BY_BIOSEQ) {
+                    NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSeq_feat_BY_BIOSEQ>* >, it, m_All_CSeq_feat_BY_BIOSEQ) {
                         Call(**it, obj);
                     }
                 }
@@ -313,20 +319,21 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         else if (CType<CBioseq_set>::Match(i)) {
             m_Current_Bioseq.Reset();
             Update_Bioseq_set_Stack(i);
-            if( m_Enable_CBioseq_set ) {
+            if (m_Enable_CBioseq_set) {
                 const CBioseq_set & obj = *CType<CBioseq_set>::Get(i);
                 NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CBioseq_set>* >, it, m_All_CBioseq_set)
                 {
                     Call(**it, obj);
                 }
             }
-        } else if(CType<CSeq_annot>::Match(i)) {
+        }
+        else if (CType<CSeq_annot>::Match(i)) {
             // Seq-annots are special because they are the only part of a
             // Bioseq-set that could appear _after_ its descendents are
             // traversed.
             const CSeq_annot & obj = *CType<CSeq_annot>::Get(i);
             const CSeq_annot_Handle annot_h = m_Scope->GetSeq_annotHandle(obj);
-            if( ! annot_h.GetParentEntry().IsSeq() ) {
+            if (!annot_h.GetParentEntry().IsSeq()) {
                 m_Current_Bioseq.Reset();
                 // if this annot is not on a Bioseq, then we need to check
                 // that the bioseq-set stack is correct in case
@@ -346,7 +353,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
             m_Count_Seqdesc++;
             if (m_Enable_CSeqdesc) {
                 const CSeqdesc& obj = *CType<CSeqdesc>::Get(i);
-                NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeqdesc>* >, it, m_All_CSeqdesc) {
+                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSeqdesc>* >, it, m_All_CSeqdesc) {
                     Call(**it, obj);
                 }
             }
@@ -358,7 +365,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
             m_Count_Seq_feat++;
             if (m_Enable_CSeq_feat) {
                 const CSeq_feat& obj = *CType<CSeq_feat>::Get(i);
-                NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeq_feat>* >, it, m_All_CSeq_feat) {
+                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSeq_feat>* >, it, m_All_CSeq_feat) {
                     Call(**it, obj);
                 }
             }
@@ -381,7 +388,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 
 void CDiscrepancyContext::Summarize()
 {
-    NON_CONST_ITERATE(TDiscrepancyCaseMap, it, m_Tests) {
+    NON_CONST_ITERATE (TDiscrepancyCaseMap, it, m_Tests) {
         static_cast<CDiscrepancyCore&>(*it->second).Summarize(*this);
     }
 }

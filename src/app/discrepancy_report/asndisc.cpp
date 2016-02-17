@@ -54,7 +54,7 @@ public:
 protected:
     string x_ConstructOutputName(const string& input);
     string x_ConstructMacroName(const string& input);
-    vector<CSeq_entry_Handle> x_ReadFile(const string& filename);
+    CRef<CSerialObject> x_ReadFile(const string& filename);
     void x_ParseDirectory(const string& name, bool recursive);
     void x_ProcessFile(const string& filename);
     void x_ProcessAll(const string& outname);
@@ -203,9 +203,8 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname) // JIRA: CX
 }
 
 
-vector<CSeq_entry_Handle> CDiscRepApp::x_ReadFile(const string& fname)
+CRef<CSerialObject> CDiscRepApp::x_ReadFile(const string& fname)
 {
-    vector<CSeq_entry_Handle> seh;
     auto_ptr<CObjectIStream> in = OpenUncompressedStream(fname);
     string header = in->ReadFileHeader();
     if (header.empty() && GetArgs()["a"]) {
@@ -220,30 +219,31 @@ vector<CSeq_entry_Handle> CDiscRepApp::x_ReadFile(const string& fname)
         in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
         if (ss->IsSetData() && ss->GetData().IsEntrys()) {
             ITERATE (CSeq_submit::TData::TEntrys, it, ss->GetData().GetEntrys()) {
-                seh.push_back(m_Scope.AddTopLevelSeqEntry(**it));
+                m_Scope.AddTopLevelSeqEntry(**it);
             }
         }
+        return CRef<CSerialObject>(ss);
     } else if (header == "Seq-entry") {
         CRef<CSeq_entry> se(new CSeq_entry);
         in->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
-        seh.push_back(m_Scope.AddTopLevelSeqEntry(*se));
+        m_Scope.AddTopLevelSeqEntry(*se);
+        return CRef<CSerialObject>(se);
     } else if (header == "Bioseq-set" ) {
         CRef<CBioseq_set> set(new CBioseq_set);
         in->Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
         CRef<CSeq_entry> se(new CSeq_entry());
         se->SetSet().Assign(*set);
-        seh.push_back(m_Scope.AddTopLevelSeqEntry(*se));
+        return CRef<CSerialObject>(se);
     } else if (header == "Bioseq" ) {
         CRef<CBioseq> seq(new CBioseq);
         in->Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
         CRef<CSeq_entry> se(new CSeq_entry());
         se->SetSeq().Assign(*seq);
-        seh.push_back(m_Scope.AddTopLevelSeqEntry(*se));
+        return CRef<CSerialObject>(se);
     } else {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
-
-    return seh;
+    return CRef<CSerialObject>();
 }
 
 
@@ -271,11 +271,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
     Tests->SetSuspectRules(m_SuspectRules);
     Tests->SetLineage(m_Lineage);
 
-    vector<CSeq_entry_Handle> seh = x_ReadFile(fname);
-    ITERATE (vector<CSeq_entry_Handle>, sh, seh) {
-        Tests->Parse(*sh);
-        m_Scope.RemoveTopLevelSeqEntry(*sh);
-    }
+    Tests->Parse(x_ReadFile(fname));
     Tests->Summarize();
     if (m_Macro) {
         x_OutputMacro(x_ConstructMacroName(fname), Tests->GetTests());
@@ -295,12 +291,9 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
     Tests->SetLineage(m_Lineage);
 
     ITERATE (vector<string>, fname, m_Files) {
-        vector<CSeq_entry_Handle> seh = x_ReadFile(*fname);
-        ITERATE (vector<CSeq_entry_Handle>, sh, seh) {
-            Tests->SetFile(*fname);
-            Tests->Parse(*sh);
-            m_Scope.RemoveTopLevelSeqEntry(*sh);
-        }
+        Tests->SetFile(*fname);
+        //m_Scope.RemoveTopLevelSeqEntry(*sh);
+        Tests->Parse(x_ReadFile(*fname));
     }
     Tests->Summarize();
     if (m_Macro) {
