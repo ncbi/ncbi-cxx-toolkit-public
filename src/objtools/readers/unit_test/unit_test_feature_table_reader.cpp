@@ -444,10 +444,11 @@ BOOST_AUTO_TEST_CASE(Test_FlybaseFeatureTableWithMultiIntervalTranslExcept)
     // check protein_ids
     CSeq_annot::TData::TFtable::const_iterator ftable_it = ftable.begin();
     NCBITEST_CHECK( ! (*ftable_it++)->IsSetProduct() );
-    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().GetGeneral().GetTag().GetStr(), "CG30334-PA" );
-    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().GetGeneral().GetTag().GetStr(), "CG30334-PA" );
-    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().GetGeneral().GetTag().GetStr(), "CG30334-PB" );
-    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().GetGeneral().GetTag().GetStr(), "CG30334-PB" );
+
+    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().AsFastaString(), "gb|AAM68686|" );
+    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().AsFastaString(), "gb|AAM68686|" );
+    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().AsFastaString(), "gnl|FlyBase|CG30334-PB" );
+    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().AsFastaString(), "gnl|FlyBase|CG30334-PB" );
 }
 
 

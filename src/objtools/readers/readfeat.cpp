@@ -110,6 +110,54 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 namespace {
     static const char * const kCdsFeatName = "CDS";
+    // priorities, inherited from C toolkit
+    static Uint1 std_order[CSeq_id::e_MaxChoice] = {
+        83,  /* 0 = not set */
+        80,  /* 1 = local Object-id */
+        70,  /* 2 = gibbsq */
+        70,  /* 3 = gibbmt */
+        70,  /* 4 = giim Giimport-id */
+        60,  /* 5 = genbank */
+        60,  /* 6 = embl */
+        60,  /* 7 = pir */
+        60,  /* 8 = swissprot */
+        81,  /* 9 = patent */
+        65,  /* 10 = other TextSeqId */
+        80,  /* 11 = general Dbtag */
+        82,  /* 12 = gi */
+        60,  /* 13 = ddbj */
+        60,  /* 14 = prf */
+        60,  /* 15 = pdb */
+        60,  /* 16 = tpg */
+        60,  /* 17 = tpe */
+        60,  /* 18 = tpd */
+        68,  /* 19 = gpp */
+        69   /* 20 = nat */
+    };
+
+CRef<CSeq_id> GetBestId(const CBioseq::TId& ids)
+{
+    if (ids.size() == 1)
+        return ids.front();
+
+    CRef<CSeq_id> id;
+    if (!ids.empty())
+    {
+        Uint1 best_weight = UINT_MAX;
+        ITERATE(CBioseq::TId, it, ids)
+        {
+            Uint1 new_weight = std_order[(*it)->Which()];
+            if (new_weight < best_weight)
+            {
+                id = *it;
+                best_weight = new_weight;
+            }
+        };
+    }
+
+    return id;
+}
+
 }
 
 class /* NCBI_XOBJREAD_EXPORT */ CFeature_table_reader_imp
@@ -2378,12 +2426,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         {
                             x_AddGBQualToFeature (sfp, qual, val); // need to store all ids
                         }
-                        CRef<CSeq_id> best;
-                        NON_CONST_ITERATE(CBioseq::TId, it, ids)
-                        {
-                            if ((**it).IsGenbank() || best.Empty())
-                                best = *it;
-                        }                       
+                        CRef<CSeq_id> best = GetBestId(ids);
                         if (!best.Empty())
                            sfp->SetProduct().SetWhole(*best);
                         return true;
@@ -3330,7 +3373,7 @@ void CFeature_table_reader::AddFeatQual (
     const string& val,
     const CFeature_table_reader::TFlags flags,
     ILineErrorListener* pMessageListener,
-    int line, 	
+    int line, 	 
     const string &seq_id 
 )
 
