@@ -108,6 +108,14 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 , m_ActiveCmd(NULL)
 , m_Handle(cntx, *this)
 , m_TextPtrProcsLoaded(false)
+#ifdef FTDS_IN_USE
+#  if NCBI_FTDS_VERSION >= 95
+, m_OrigIntHandler(NULL)
+#  endif
+, m_OrigTimeout(0)
+, m_AsyncCancelCounter(0)
+, m_AsyncCancelRequested(false)
+#endif
 {
 #ifdef FTDS_IN_USE
     int tds_version = 0;
@@ -324,6 +332,14 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 
 #ifdef FTDS_IN_USE
     SetServerType(GetTDSServerType(m_Handle.GetNativeHandle()));
+
+#  if NCBI_FTDS_VERSION < 95
+    TDSSOCKET* tds = x_GetSybaseConn()->tds_socket;
+    m_OrigTimeoutFunc  = tds->query_timeout_func;
+    m_OrigTimeoutParam = tds->query_timeout_param;
+    tds->query_timeout_func  = &x_TimeoutFunc;
+    tds->query_timeout_param = this;
+#  endif
 #endif
 }
 
@@ -1178,6 +1194,11 @@ bool CTL_Connection::Close(void)
                                     (CS_INT) sizeof(link),
                                     NULL)
                                     );
+#if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION < 95
+            TDSSOCKET* tds = x_GetSybaseConn()->tds_socket;
+            tds->query_timeout_func  = m_OrigTimeoutFunc;
+            tds->query_timeout_param = m_OrigTimeoutParam;
+#endif
         }
 
         // Finalyze connection ...
@@ -1232,6 +1253,67 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 
     return false;
 }
+
+#if FTDS_IN_USE
+bool CTL_Connection::AsyncCancel(CTL_CmdBase& cmd)
+{
+    CFastMutexGuard LOCK(m_AsyncCancelMutex);
+    if (m_AsyncCancelCounter != 0  &&  &cmd == m_ActiveCmd) {
+        m_AsyncCancelRequested = true;
+#if NCBI_FTDS_VERSION < 95
+        SetTimeout(1);
+#endif
+        return true;
+    } else {
+        return false;
+    }
+}
+
+#  if NCBI_FTDS_VERSION >= 95
+int CTL_Connection::x_IntHandler(void* param)
+{
+    CS_CONNECTION*  con = static_cast<CS_CONNECTION*>(param);
+    CS_INT          outlen;
+    CTL_Connection* ctl_conn = NULL;
+    if (con != NULL
+        &&  ct_con_props(con, CS_GET, CS_USERDATA, (void*) &ctl_conn,
+                         (CS_INT) sizeof(ctl_conn), &outlen) == CS_SUCCEED
+        &&  ctl_conn != NULL) {
+        CFastMutexGuard LOCK(ctl_conn->m_AsyncCancelMutex);
+        if (ctl_conn->m_AsyncCancelRequested) {
+            ctl_conn->m_AsyncCancelCounter = 0;
+            LOCK.Release();
+            ctl_conn->m_ActiveCmd->Cancel();
+            return TDS_INT_CANCEL;
+        } else if (ctl_conn->m_OrigIntHandler != NULL) {
+            LOCK.Release();
+            return (*ctl_conn->m_OrigIntHandler)(param);
+        } else {
+            return TDS_INT_CONTINUE;
+        }
+    } else {
+        return TDS_INT_CONTINUE;
+    }
+}
+#  else
+int CTL_Connection::x_TimeoutFunc(void* param, unsigned int total_timeout)
+{
+    CTL_Connection* ctl_conn = static_cast<CTL_Connection*>(param);
+    CFastMutexGuard LOCK(ctl_conn->m_AsyncCancelMutex);
+    if (ctl_conn->m_AsyncCancelRequested) {
+        return TDS_INT_CANCEL;
+    } else if (ctl_conn->m_OrigTimeoutFunc != NULL  &&
+               ctl_conn->m_AsyncCancelCounter++ == ctl_conn->m_OrigTimeout) {
+        ctl_conn->m_AsyncCancelCounter = 1;
+        LOCK.Release();
+        return (*ctl_conn->m_OrigTimeoutFunc)(ctl_conn->m_OrigTimeoutParam,
+                                              total_timeout);
+    } else {
+        return TDS_INT_CONTINUE;
+    }
+}
+#  endif
+#endif
 
 
 #undef NCBI_DATABASE_THROW

@@ -149,6 +149,7 @@ public:
     void SetSql(CTempString sql);
     void Execute(const CTimeout& timeout);
     void ExecuteSP(CTempString sp, const CTimeout& timeout);
+    void Cancel(void);
     bool HasMoreResultSets(void);
     void PurgeResults(void);
     void BeginNewRS(void);

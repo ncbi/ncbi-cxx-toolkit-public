@@ -2512,6 +2512,14 @@ CQueryImpl::ExecuteSP(CTempString sp, const CTimeout& timeout)
 }
 
 inline void
+CQueryImpl::Cancel(void)
+{
+    x_CheckCanWork();
+    IStatement* stmt = m_CallStmt ? m_CallStmt : m_Stmt;
+    stmt->Cancel();
+}
+
+inline void
 CQueryImpl::SetIgnoreBounds(bool is_ignore)
 {
     x_CheckCanWork();
@@ -3427,6 +3435,12 @@ void
 CQuery::ExecuteSP(CTempString sp, const CTimeout& timeout)
 {
     m_Impl->ExecuteSP(sp, timeout);
+}
+
+void
+CQuery::Cancel(void)
+{
+    m_Impl->Cancel();
 }
 
 CQuery&

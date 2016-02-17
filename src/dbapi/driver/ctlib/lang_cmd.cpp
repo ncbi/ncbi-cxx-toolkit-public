@@ -578,11 +578,28 @@ CTL_LRCmd::MakeResultInternal(void)
         return NULL;
     }
 
+#ifdef FTDS_IN_USE
+    auto_ptr<CTL_Connection::CAsyncCancelGuard> GUARD
+        (new CTL_Connection::CAsyncCancelGuard(GetConnection()));
+#endif
+
     for (;;) {
         CS_INT res_type;
         CS_RETCODE rc = 0;
 
+#ifdef FTDS_IN_USE
+        try {
+            rc = Check(ct_results(x_GetSybaseCmd(), &res_type));
+        } catch (CDB_TimeoutEx&) {
+            if (GetConnection().m_AsyncCancelRequested) {
+                rc = CS_CANCELED;
+            } else {
+                throw;
+            }
+        }
+#else
         rc = Check(ct_results(x_GetSybaseCmd(), &res_type));
+#endif
 
         /* This code causes problems with Test_DropConnection.
         try {
@@ -613,6 +630,12 @@ CTL_LRCmd::MakeResultInternal(void)
             SetWasSent(false);
             DATABASE_DRIVER_ERROR( "ct_result failed." + GetDbgInfo(), 120013 );
         case CS_CANCELED:
+#ifdef FTDS_IN_USE
+            if (GetConnection().m_AsyncCancelRequested) {
+                GUARD.reset();
+                Cancel();
+            }
+#endif
             SetWasSent(false);
             DATABASE_DRIVER_ERROR( "Your command has been canceled." + GetDbgInfo(), 120011 );
 #ifdef CS_BUSY
@@ -675,6 +698,12 @@ bool
 CTL_LRCmd::Cancel(void)
 {
     if (WasSent()) {
+#ifdef FTDS_IN_USE
+        if (GetConnection().AsyncCancel(*this)) {
+            return true;
+        }
+#endif
+
         DeleteResultInternal();
 
         if (!IsDead()  &&  GetConnection().IsAlive()) {

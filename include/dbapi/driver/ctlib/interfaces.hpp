@@ -350,6 +350,11 @@ private:
     void x_Close(bool delete_conn = true);
     bool x_SafeToFinalize(void) const;
 
+#if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION >= 95
+    typedef int (*FIntHandler)(void*);
+    FIntHandler m_OrigIntHandler;
+#endif
+
     friend class CTLibContextRegistry;
 };
 
@@ -494,6 +499,35 @@ private:
     CTL_CmdBase*        m_ActiveCmd;
     ctlib::Connection   m_Handle;
     bool                m_TextPtrProcsLoaded;
+
+#ifdef FTDS_IN_USE
+    class CAsyncCancelGuard
+    {
+    public:
+        CAsyncCancelGuard(CTL_Connection& conn);
+        ~CAsyncCancelGuard(void);
+    private:
+        CTL_Connection &m_Conn;
+    };
+    friend class CAsyncCancelGuard;
+
+    bool AsyncCancel(CTL_CmdBase& cmd);
+
+#  if NCBI_FTDS_VERSION >= 95
+    static int x_IntHandler(void* param);
+    typedef int (*FIntHandler)(void*);
+    FIntHandler m_OrigIntHandler;
+#  else
+    static int x_TimeoutFunc(void* param, unsigned int total_timeout);
+    int (*m_OrigTimeoutFunc)(void*, unsigned int);
+    void *m_OrigTimeoutParam;
+#  endif
+
+    CFastMutex m_AsyncCancelMutex;
+    size_t     m_OrigTimeout;
+    size_t     m_AsyncCancelCounter;
+    bool       m_AsyncCancelRequested;
+#endif
 };
 
 
@@ -1242,6 +1276,30 @@ const CDBParams* CTL_Connection::GetLastParams(void) const {
     return m_ActiveCmd ? m_ActiveCmd->GetLastParams() : NULL;
 }
 
+#ifdef FTDS_IN_USE
+inline
+CTL_Connection::CAsyncCancelGuard::CAsyncCancelGuard(CTL_Connection& conn)
+    : m_Conn(conn)
+{
+    CFastMutexGuard LOCK(conn.m_AsyncCancelMutex);
+    conn.m_OrigTimeout          = conn.GetTimeout();
+    conn.m_AsyncCancelCounter   = 1;
+    conn.m_AsyncCancelRequested = false;
+#  if NCBI_FTDS_VERSION < 95
+    if (conn.m_OrigTimeout == 0) {
+        conn.SetTimeout(kMax_Int / 1000);
+    }
+#  endif
+}
+
+inline
+CTL_Connection::CAsyncCancelGuard::~CAsyncCancelGuard(void)
+{
+    CFastMutexGuard LOCK(m_Conn.m_AsyncCancelMutex);
+    m_Conn.SetTimeout(m_Conn.m_OrigTimeout);
+    m_Conn.m_AsyncCancelCounter = 0;
+}
+#endif
 
 #ifdef USE_STRUCT_CS_VARCHAR
 inline

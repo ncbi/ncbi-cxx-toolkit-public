@@ -544,6 +544,10 @@ public:
     void ExecuteSP(CTempString sp,
                    const CTimeout& timeout = CTimeout(CTimeout::eDefault));
 
+    /// Cancel the current statement or procedure call.  May be called
+    /// asynchronously to force a "timeout" within one second.
+    void Cancel(void);
+
     /// Get number of rows read after statement execution.
     /// This number is available only when all result sets are read or purged
     /// by call to PurgeResults().  At all other times, the method throws an

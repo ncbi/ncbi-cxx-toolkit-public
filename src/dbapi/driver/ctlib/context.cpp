@@ -660,6 +660,12 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
             DATABASE_DRIVER_ERROR( "Cannot install the server message callback", 100004 );
         }
         // PushCntxMsgHandler();
+
+#if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION >= 95
+        FIntHandler& int_handler = m_Context->tds_ctx->int_handler;
+        m_OrigIntHandler = int_handler;
+        int_handler = &CTL_Connection::x_IntHandler;
+#endif
     }
 
     if ( p_pot ) {
@@ -857,7 +863,11 @@ CTLibContext::MakeIConnection(const CDBConnParams& params)
 {
     CMutexGuard mg(s_CTLCtxMtx);
 
-    return new CTL_Connection(*this, params);
+    CTL_Connection* ctl_conn = new CTL_Connection(*this, params);
+#if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION >= 95
+    ctl_conn->m_OrigIntHandler = m_OrigIntHandler;
+#endif
+    return ctl_conn;
 }
 
 
@@ -963,6 +973,10 @@ CTLibContext::x_Close(bool delete_conn)
 
                         delete p_pot;
                     }
+
+#if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION >= 95
+                    m_Context->tds_ctx->int_handler = m_OrigIntHandler;
+#endif
 
                     Check(cs_ctx_drop(CTLIB_GetContext()));
                 }
