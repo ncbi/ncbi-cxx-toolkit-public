@@ -90,6 +90,8 @@ public:
 
     /// Returns any underlying DBAPI error code, or else CException::eInvalid.
     CDB_Exception::TErrCode GetDBErrCode(void) const;
+    /// Returns any underlying DBAPI error code string, or else "eInvalid".
+    const char* GetDBErrCodeString(void) const;
 
     const string& GetServerName(void) const;
     const string& GetUserName(void) const;
@@ -1209,6 +1211,13 @@ CException::TErrCode CSDB_Exception::GetDBErrCode(void) const
 {
     const CDB_Exception* dbex = GetDBException();
     return dbex ? static_cast<CException::TErrCode>(dbex->Type()) : eInvalid;
+}
+
+inline
+const char* CSDB_Exception::GetDBErrCodeString(void) const
+{
+    const CDB_Exception* dbex = GetDBException();
+    return dbex ? dbex->GetErrCodeString() : "eInvalid";
 }
 
 inline
