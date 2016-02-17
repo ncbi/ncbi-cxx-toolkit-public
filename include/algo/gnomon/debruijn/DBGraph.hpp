@@ -4,12 +4,11 @@
 #include <iostream>
 #include "Integer.hpp"
 #include <bitset>
-/*
-#include <algo/gnomon/emphf/common.hpp>
-#include <algo/gnomon/emphf/mphf.hpp>
-#include <algo/gnomon/emphf/base_hash.hpp>
-*/
+#include <unordered_map>
+#include <algo/gnomon/gnomon_model.hpp>
 
+USING_NCBI_SCOPE;
+USING_SCOPE(gnomon);
 USING_SCOPE(boost);
 USING_SCOPE(std);
 
@@ -56,6 +55,10 @@ namespace DeBruijn {
             uniq = CKmerCountTemplate(m_kmer_len); // init
             Sort();
             apply_visitor(extract_uniq(min_count), m_container, uniq.m_container);
+        }
+        void SortAndUniq(int min_count) {
+            Sort();
+            apply_visitor(uniq(min_count), m_container);
         }
         void MergeTwoSorted(const CKmerCountTemplate& other) {
             if(m_kmer_len != other.KmerLen()) {
@@ -153,6 +156,23 @@ namespace DeBruijn {
             template <typename T> void operator() (T& a, T& b) const { a.swap(b); }
             template <typename T, typename U> void operator() (T& a, U& b)  const { cerr << "Can't swap different type containers" << endl; exit(1); } 
         };
+        struct uniq : public static_visitor<> {
+            uniq(int mc) : min_count(mc) {}
+            template <typename T> void operator() (T& v) const {
+                typedef typename T::iterator iter_t;
+                iter_t nextp = v.begin();
+                for(iter_t ip = v.begin(); ip != v.end(); ) {
+                    iter_t workp = ip;
+                    while(++ip != v.end() && workp->first == ip->first)
+                        workp->second += ip->second;   // accumulate all 8 bytes; we assume that count will not spill into higher half
+                    if((uint32_t)workp->second >= min_count)
+                        *nextp++ = *workp;
+                }
+                v.erase(nextp, v.end());
+            }
+
+            int min_count;
+        };
         struct extract_uniq : public static_visitor<> {
             extract_uniq(int mc) : min_count(mc) {}
             template <typename T> void operator() (T& a, T& b) const {
@@ -212,6 +232,80 @@ namespace DeBruijn {
         int m_kmer_len;
     };
     typedef CKmerCountTemplate <INTEGER_TYPES> TKmerCount;
+
+    template <typename T1, typename T2, typename T3, typename T4> class CKmerMapTemplate {
+    public:
+        struct kmer_hash {
+            template<typename T> 
+            size_t operator() (const T& kmer) const { return kmer.oahash(); }
+        };
+        typedef variant<unordered_map<T1,size_t,kmer_hash>, unordered_map<T2,size_t,kmer_hash>, unordered_map<T3,size_t,kmer_hash>, unordered_map<T4,size_t,kmer_hash>> Type;
+        CKmerMapTemplate(int kmer_len = 0) : m_kmer_len(kmer_len) {
+            if(m_kmer_len > 0) {
+                init_conainer();
+            }
+        }
+
+        size_t Size() const {
+            return apply_visitor(container_size(), m_container);
+        }
+
+        size_t& operator[] (const TKmer& kmer) { 
+            return apply_visitor(mapper(kmer), m_container);
+        }
+
+        void DumpKmers(TKmerCount& kmer_count, int mincount) {
+            kmer_count = TKmerCount(m_kmer_len);
+            apply_visitor(dump_kmers(kmer_count,mincount), m_container);
+        }
+
+    private:
+        void init_conainer() {
+            switch ((m_kmer_len+31)/32) {            
+            case PREC_1: m_container = unordered_map<T1,size_t,kmer_hash>(); break;
+            case PREC_2: m_container = unordered_map<T2,size_t,kmer_hash>(); break;
+            case PREC_3: m_container = unordered_map<T3,size_t,kmer_hash>(); break;
+            case PREC_4: m_container = unordered_map<T4,size_t,kmer_hash>(); break;                
+            default: throw runtime_error("Not supported kmer length");
+            }
+        }
+
+        struct container_size : public static_visitor<size_t> { template <typename T> size_t operator()(const T& v) const { return v.size();} };
+
+        struct mapper : public static_visitor<size_t&> { 
+            mapper(const TKmer& k) : kmer(k) {}
+            template <typename T> size_t& operator()(T& v) const { 
+                typedef typename  T::key_type large_t;
+                return v[kmer.get<large_t>()];
+            } 
+            const TKmer& kmer;
+        };
+
+        struct dump_kmers : public static_visitor<> { 
+            dump_kmers(TKmerCount& kc, int mc) : kmer_count(kc), mincount(mc) {}
+            template <typename T> void operator()(T& v) const { 
+                size_t num = 0;
+                for(auto& e : v) {
+                    if(int(e.second) >= mincount)  // ignore 'upper' count
+                        ++num;
+                }
+                kmer_count.Reserve(num);
+                for(auto& e : v) {
+                    if(int(e.second) >= mincount)
+                        kmer_count.PushBack(TKmer(e.first), e.second); 
+                }
+            }
+
+            TKmerCount& kmer_count;
+            int mincount;
+        };
+
+
+        Type m_container;
+        int m_kmer_len;
+    };
+    typedef CKmerMapTemplate <INTEGER_TYPES> TKmerMap;
+
 
     class CDBGraph {
     public:
@@ -319,6 +413,233 @@ namespace DeBruijn {
         TKmerCount m_graph_kmers;     // only the minimal kmers are stored  
         TKmer m_max_kmer;             // contains 1 in all kmer_len bit positions    
     };
+
+class CDBGraphDigger {
+public:
+    CDBGraphDigger(CDBGraph& graph, double fraction, int jump) : m_graph(graph), m_fraction(fraction), m_jump(jump) {}
+
+    //assembles the contig; changes the state of all used nodes to 'visited'
+    pair<string, double> GetContigForKmer(const CDBGraph::Node& initial_node) {
+        TBases contigr = ExtendToRight(initial_node);
+        TBases contigl = ExtendToRight(CDBGraph::ReverseComplement(initial_node));
+
+        double abundance = 0;
+        string contig;
+        for(auto& base : contigl) {
+            CDBGraph::Node rv = CDBGraph::ReverseComplement(base.m_node);
+            abundance += m_graph.Abundance(rv);
+            contig.push_back(base.m_nt);
+        }
+        ReverseComplement(contig.begin(), contig.end());
+        abundance += m_graph.Abundance(initial_node);
+        string kmer = m_graph.GetNodeSeq(initial_node);
+        kmer = NStr::ToLower(kmer);
+        contig += kmer;
+        for(auto& base : contigr) {
+            abundance += m_graph.Abundance(base.m_node);
+            contig.push_back(base.m_nt);
+        }
+
+        return make_pair(contig, abundance);
+    }
+
+private:
+    void FilterNeighbors(vector<CDBGraph::Successor>& successors, const CDBGraph::Node& previous) {
+        if(m_graph.PlusFraction(previous) < 0.75 && successors.size() > 1) {
+            bool has_minus = false;
+            for(int j = 0; !has_minus && j < (int)successors.size(); ++j)
+                has_minus = (m_graph.PlusFraction(successors[j].m_node) < 0.75);
+            if(has_minus) {
+                for(int j = 0; j < (int)successors.size(); ) {
+                    double plusf = m_graph.PlusFraction(successors[j].m_node);
+                    double minusf = 1.- plusf;
+                    if(minusf < m_fraction*plusf)
+                        successors.erase(successors.begin()+j);
+                    else
+                        ++j;
+                }
+            }
+        }
+    
+        if(successors.size() > 1) {
+            int abundance = 0;
+            for(auto& suc : successors) {
+                abundance += m_graph.Abundance(suc.m_node);
+            }
+            sort(successors.begin(), successors.end(), [&](const CDBGraph::Successor& a, const CDBGraph::Successor& b) {return m_graph.Abundance(a.m_node) > m_graph.Abundance(b.m_node);});
+            for(int j = successors.size()-1; j > 0 && m_graph.Abundance(successors.back().m_node) <= m_fraction*abundance; --j)
+                successors.pop_back();
+        }
+    }
+
+    typedef deque<CDBGraph::Successor> TBases;
+    typedef tuple<TBases,size_t> TSequence;
+    typedef list<TSequence> TSeqList;
+    typedef unordered_map<CDBGraph::Node, TSeqList::iterator> TBranch;  // all 'leaves' will have the same length
+
+    bool OneStepBranchExtend(TBranch& branch, TSeqList& sequences) {
+        TBranch new_branch;
+        for(auto& leaf : branch) {
+            vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(leaf.first);
+            FilterNeighbors(successors, leaf.first);
+            if(successors.empty()) {
+                sequences.erase(leaf.second);
+                continue;
+            }
+            for(int i = successors.size()-1; i >= 0; --i) {
+                TSeqList::iterator is = leaf.second;
+                if(i > 0) {  // copy sequence if it is a fork           
+                    sequences.push_front(*is);
+                    is = sequences.begin();
+                }
+                TBases& bases = get<0>(*is);
+                size_t& abundance = get<1>(*is);
+                bases.push_back(successors[i]);
+                CDBGraph::Node& node = successors[i].m_node;
+                abundance += m_graph.Abundance(node);
+
+                pair<TBranch::iterator, bool> rslt = new_branch.insert(make_pair(node, is));
+                if(!rslt.second) {  // we alredy have this kmer - select larger abundance or fail (!!!!!! maybe more stringent criteria are needed)     
+                    TSeqList::iterator& js = rslt.first->second;    // existing one 
+                    if(abundance > get<1>(*js)) {                   // new is better    
+                        sequences.erase(js);
+                        js = is;
+                    } else if(abundance < get<1>(*js)) {            // existing is better   
+                        sequences.erase(is);                                        
+                    } else {                                        // equal    
+                        branch.clear();
+                        return false;
+                    }
+                }
+            }
+        }
+
+        swap(branch, new_branch);
+        return true;
+    }
+
+    TBases JumpOver(vector<CDBGraph::Successor>& successors, int max_extent, int min_extent) {
+        if(max_extent < m_graph.KmerLen())
+            return TBases();
+
+        TBranch extensions;
+        TSeqList sequences; // storage
+        for(auto& suc : successors) {
+            sequences.push_front(TSequence(TBases(1,suc), m_graph.Abundance(suc.m_node)));
+            extensions[suc.m_node] = sequences.begin();         
+        }
+
+#define MAX_BRANCH 200
+        while(!extensions.empty() && extensions.size() < MAX_BRANCH) {
+            int len = get<0>(*extensions.begin()->second).size();
+            if(len == max_extent)
+                break;
+
+            if(!OneStepBranchExtend(extensions, sequences) || extensions.empty())  // ambiguos buble in a or can't extend
+                return TBases();
+
+            if(extensions.size() == 1 && len+1 >= min_extent)
+                break;
+        }
+
+        if(extensions.size() == 1)
+            return get<0>(*extensions.begin()->second);
+        else
+            return TBases();
+    }
+
+    TBases ExtendToRight(const CDBGraph::Node& initial_node) {
+        CDBGraph::Node node = initial_node;
+        TBases extension;
+        int kmer_len = m_graph.KmerLen();
+        int max_extent = kmer_len-1+m_jump;
+        m_graph.SetVisited(node);
+        while(true) {
+            vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(node);
+            FilterNeighbors(successors, node);
+            if(successors.empty())                     // no extensions
+                return extension; 
+
+            TBases step;
+            if(successors.size() > 1) {                // test for bubble   
+                step = JumpOver(successors, max_extent, 0);
+            } else {                                   // simple extension  
+                step.push_back(successors.front());
+            }
+            if(step.empty())                     // multiple extensions
+                return extension;
+
+            int step_size = step.size();
+        
+            CDBGraph::Node rev_node = CDBGraph::ReverseComplement(step.back().m_node);
+            vector<CDBGraph::Successor> predecessors = m_graph.GetNodeSuccessors(rev_node);
+            FilterNeighbors(predecessors, rev_node);
+            if(predecessors.empty())                     // no extensions
+                return extension; 
+
+            TBases step_back;
+            if(predecessors.size() > 1 || step_size > 1)
+                step_back = JumpOver(predecessors, max_extent, step_size);
+            else
+                step_back.push_back(predecessors.front());
+
+            int step_back_size = step_back.size();
+            if(step_back_size < step_size)
+                return extension;
+
+            for(int i = 0; i <= step_size-2; ++i) {
+                if(CDBGraph::ReverseComplement(step_back[i].m_node) != step[step_size-2-i].m_node)
+                    return extension;
+            }
+            int extension_size = extension.size();
+        
+            for(int i = step_size-1; i < min(step_back_size, extension_size-1+step_size); ++i) {
+                if(CDBGraph::ReverseComplement(step_back[i].m_node) != extension[extension_size-1+step_size-1-i].m_node)
+                    return extension;
+            }
+        
+            int overshoot = step_back_size-step_size-extension_size;
+            if(overshoot >= 0 && CDBGraph::ReverseComplement(step_back[step_back_size-1-overshoot].m_node) != initial_node) 
+                return extension;
+
+            if(overshoot > 0) { // overshoot
+                CDBGraph::Node over_node = CDBGraph::ReverseComplement(step_back.back().m_node);
+                vector<CDBGraph::Successor> oversuc = m_graph.GetNodeSuccessors(over_node);
+                FilterNeighbors(oversuc, over_node);
+                if(oversuc.empty())
+                    return extension;
+                TBases step_over;
+                if(oversuc.size() > 1 || overshoot > 1)
+                    step_over = JumpOver(oversuc, max_extent, overshoot);
+                else
+                    step_over.push_back(oversuc.front());
+
+                if((int)step_over.size() < overshoot)
+                    return extension;
+                for(int i = 0; i < overshoot; ++i) {
+                    if(CDBGraph::ReverseComplement(step_over[i].m_node) != step_back[step_back_size-2-i].m_node)
+                        return extension;
+                }
+            }
+
+            node = step.back().m_node;
+            if(m_graph.IsVisited(node)) {   // repeat 
+                return extension;
+            } 
+
+            for(auto& s : step) {
+                m_graph.SetVisited(s.m_node);
+                extension.push_back(s);
+            }
+        }
+    }
+
+    
+
+    CDBGraph& m_graph;
+    double m_fraction;
+    int m_jump;
+};
 
     class CReadHolder {
     public:
