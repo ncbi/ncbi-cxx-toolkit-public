@@ -61,6 +61,7 @@ USING_SCOPE(objects);
 
 // Retrieve a list of interval-by-interval accounting within an alignment
 //
+bool s_IsOverlapping(CAlignCompare::SAlignment const* lhs, CAlignCompare::SAlignment const* rhs, CAlignCompare::ERowComparison row);
 
 static void s_UpdateSpans(const TSeqRange &query_range,
                           const TSeqRange &subject_range,
@@ -356,7 +357,7 @@ static void s_PopulateScoreSet(const CSeq_align &align,
     }
     ITERATE (CSeq_align::TScore, score_it, align.GetScore()) {
         if ((*score_it)->GetId().IsStr() &&
-                (score_set_as_blacklist ? 0 : 1) ==
+                (score_set_as_blacklist ? 0: 1) ==
                 score_set.count((*score_it)->GetId().GetStr()))
         {
             if ((*score_it)->GetValue().IsInt()) {
@@ -738,20 +739,52 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
         {
             set1_aligns.insert(&**it);
         }
+
         TAlignPtrSet set2_aligns;
         NON_CONST_ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet2Group)
         {
             set2_aligns.insert(&**it);
         }
 
+        set<SAlignment const*> red_color; // alignments from set2 that have equivalent mate 
+                                    // from opposite set.
         vector<TComp> comparisons;
+
         ITERATE (TAlignPtrSet, set1_it, set1_aligns) {
+            SAlignment const* lhs = *set1_it;
+
             ITERATE (TAlignPtrSet, set2_it, set2_aligns) {
-                comparisons.push_back(TComp(TPtrPair(*set1_it, *set2_it),
-                                            SComparison(**set1_it, **set2_it,
+                SAlignment const* rhs = *set2_it;
+                // Check for equivalent alignment.
+                // In strict mode we do not combine overlapping and equiv. alignments.
+                if ( m_Strict && red_color.count(rhs) > 0 ) {
+                    continue;
+                }
+
+                if ( false == s_IsOverlapping(lhs, rhs, m_Row) ) {
+                    continue;
+                }            
+                // Check for overlap.
+                comparisons.push_back(TComp(TPtrPair(const_cast<SAlignment*>(lhs), const_cast<SAlignment*>(rhs)),
+                                            SComparison(*lhs, *rhs,
                                                         m_RealScoreTolerance)));
+
+                // Post-processing:
+                //  - if two alignments are equivalent
+                //  -- color both alignments in red,
+                //  -- break out of the loop.
+                TComp const& record = comparisons.back();
+                SComparison const& comp = record.second;
+                if ( comp.is_equivalent ) {
+                    red_color.insert(rhs);  // set2's alignment.
+                    // In strict mode we do not combine overlapping and equiv. alignments.
+                    if ( m_Strict ) {
+                        break;
+                    }
+                } 
             }
         }
+
         std::sort(comparisons.begin(), comparisons.end(), SComp_Less(m_Strict));
 
         typedef pair<TAlignPtrSet, EMatchLevel> TAlignGroup;
@@ -894,5 +927,32 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
 
     return group;
 }
+
+bool s_IsOverlapping(CAlignCompare::SAlignment const* lhs, CAlignCompare::SAlignment const* rhs, CAlignCompare::ERowComparison row)
+{
+    bool overlap;
+
+    switch ( row ) {
+        case CAlignCompare::e_Query:
+            overlap = lhs->query_range.IntersectingWith(rhs->query_range);
+            break;
+
+        case CAlignCompare::e_Subject:
+            overlap = lhs->subject_range.IntersectingWith(rhs->subject_range);
+            break;  
+
+        default: //CAlignCompare::e_Both:
+            if ( false == lhs->subject_range.IntersectingWith(rhs->subject_range) &&
+                    false == lhs->query_range.IntersectingWith(rhs->query_range) ) 
+            {
+                overlap = false;
+            }
+            else {
+                overlap = true;
+            }
+            break;
+    }
+    return overlap;
+} 
 
 END_NCBI_SCOPE
