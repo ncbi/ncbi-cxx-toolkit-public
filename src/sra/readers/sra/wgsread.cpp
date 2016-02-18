@@ -443,7 +443,8 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
                  NULL, CVDBColumn::eMissing_Allow), // packed 4na
       INIT_VDB_COLUMN_AS(READ, INSDC:4na:bin), // unpacked 4na
       m_4naCacheRow(0),
-      m_AmbiguityRow(0)
+      m_AmbiguityRow(0),
+      m_GapInfoRow(0)
 {
     // uncomment lines to test algorithm on data without these columns
     //m_AMBIGUITY_MASK = CVDBColumnBits<8>();
