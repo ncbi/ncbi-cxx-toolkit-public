@@ -75,6 +75,7 @@
 #include <objects/seqfeat/RNA_ref.hpp>
 
 #include "feature_table_reader.hpp"
+#include <objtools/cleanup/cleanup.hpp>
 
 #include "table2asn_context.hpp"
 
@@ -322,19 +323,19 @@ namespace
         return false;
     }
 
-    CRef<CSeq_id> GetNewProteinId(CSeq_entry_Handle seh, const string& id_base)
+    CRef<CSeq_id> GetNewProteinId(CScope& scope, const string& id_base)
     {
-        static int offset = 1;
-        string id_label = id_base + "_" + NStr::NumericToString(offset);
+        int offset = 1;
+        string id_label;
         CRef<CSeq_id> id(new CSeq_id());
-        id->SetLocal().SetStr(id_label);
-        CBioseq_Handle b_found = seh.GetBioseqHandle(*id);
-        while (b_found) {
+        CBioseq_Handle b_found;
+        do
+        {
             id_label = id_base + "_" + NStr::NumericToString(offset);
             id->SetLocal().SetStr(id_label);
-            b_found = seh.GetBioseqHandle(*id);
-        }
-        offset++;
+            b_found = scope.GetBioseqHandle(*id);
+            offset++;
+        } while (b_found);
         return id;
     }
 
@@ -349,7 +350,7 @@ namespace
             }
         }
 
-        return GetNewProteinId(seh, id_base);
+        return GetNewProteinId(seh.GetScope(), id_base);
     }
 
     string NewProteinName(const CSeq_feat& feature)
@@ -539,7 +540,7 @@ CFeatureTableReader::CFeatureTableReader(ILineErrorListener* logger) : m_logger(
 {
 }
 
-CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, CSeq_feat& cd_feature)
+CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CBioseq& bioseq, CSeq_feat& cd_feature)
 {
     CConstRef<CSeq_entry> replacement = LocateProtein(m_replacement_protein, cd_feature);
     CRef<CBioseq> protein;
@@ -554,8 +555,6 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
         protein.Reset(new CBioseq());
         protein->Assign(replacement->GetSeq());
     }
-
-    AssignLocalIdIfEmpty(cd_feature, m_local_id_counter);
 
     CRef<CSeq_entry> protein_entry(new CSeq_entry);
     protein_entry->SetSeq(*protein);
@@ -639,9 +638,15 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
         MergeSeqIds(*protein, new_ids);
     }
 
+    CRef<CSeq_id> newid;
     if (protein->GetId().empty())
     {
-        CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
+        if (base_name.empty() && !bioseq.GetId().empty())
+        {
+            bioseq.GetId().front()->GetLabel(&base_name, CSeq_id::eContent);
+        }
+
+        newid = GetNewProteinId(scope, base_name);
         protein->SetId().push_back(newid);
     }
 
@@ -649,7 +654,6 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
 
     CProt_ref& prot_ref = prot_feat.SetData().SetProt();
 
-    AssignLocalIdIfEmpty(prot_feat, m_local_id_counter);
     if (!prot_ref.IsSetName() || prot_ref.GetName().empty())
     {
         prot_ref.SetName().push_back(protein_name);
@@ -658,16 +662,22 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     prot_feat.SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
     prot_feat.SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
 
-    //cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
+    if (!cd_feature.IsSetProduct())
+       cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
 
     CBioseq_Handle protein_handle = scope.AddBioseq(*protein);
 
-    if (m_feature_links_kind != 0)
+    CCleanup::ExtendToStopIfShortAndNotPartial(cd_feature, protein_handle);
+
+    cd_feature.ResetXref();
+    //if (m_feature_links_kind != 0)
     {
         CRef<CSeq_feat> mrna((CSeq_feat*)sequence::GetmRNAForProduct(protein_handle));
         if (!mrna.Empty())
         {
+            AssignLocalIdIfEmpty(cd_feature, m_local_id_counter);
             AssignLocalIdIfEmpty(*mrna, m_local_id_counter);
+            AssignLocalIdIfEmpty(prot_feat, m_local_id_counter);
 
             CSeq_feat& mrna_feature = *mrna;
             CRef<CSeqFeatXref> xref(new CSeqFeatXref);
@@ -922,7 +932,7 @@ void CFeatureTableReader::MoveCdRegions(CSeq_entry_Handle entry_h, const CBioseq
             {
                 data.SetCdregion().SetFrame(CSeqTranslator::FindBestFrame(*feature, scope));
             }
-            CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature);
+            CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, bioseq, *feature);
             if (protein.NotEmpty())
             {
                 entry.SetSet().SetSeq_set().push_back(protein);
@@ -1653,6 +1663,57 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
 
     }
 }
+
+
+namespace
+{
+    CNcbiOfstream& InitOstream(auto_ptr<CNcbiOfstream>& ostr, const string& fname)
+    {
+        if (ostr.get() == 0)
+            ostr.reset(new CNcbiOfstream(fname.c_str()));
+
+        return *ostr;
+    }
+}
+void CFeatureTableReader::GenerateECNumbers(objects::CSeq_entry_Handle seh, const string& fname)
+{   
+    auto_ptr<CNcbiOfstream> ostr;
+    for (CFeat_CI feat_it(seh); feat_it; ++feat_it)
+    {
+        const CSeq_feat& feat = feat_it->GetOriginalFeature();
+        if (feat.IsSetData() && feat.GetData().IsProt())
+        {           
+            ITERATE(CProt_ref::TEc, val, feat.GetData().GetProt().GetEc())
+            {
+                string label;
+                if (feat.GetLocation().IsInt())
+                    feat.GetLocation().GetInt().GetId().GetLabel(&label, CSeq_id::eFasta);
+                else
+                    feat.GetLocation().GetLabel(&label);
+
+                switch (CProt_ref::GetECNumberStatus(*val))
+                {
+                case CProt_ref::eEC_deleted:
+                    InitOstream(ostr, fname) << label << "\tEC number deleted\t" << *val << '\t' << endl;
+                    break;
+                case CProt_ref::eEC_replaced:
+                {
+                    const string& newvalue = CProt_ref::GetECNumberReplacement(*val);
+                    InitOstream(ostr, fname) << label << "\tEC number changed\t" << *val << '\t' << newvalue << endl;
+                }
+                break;
+                case CProt_ref::eEC_unknown:
+                    InitOstream(ostr, fname) << label << "\tEC number invalid\t" << *val << '\t' << endl;
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
 
 END_NCBI_SCOPE
 

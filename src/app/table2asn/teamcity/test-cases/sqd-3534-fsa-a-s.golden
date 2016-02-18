@@ -652,21 +652,23 @@ FFFFFFFF8188118411241181222818128281811144112241844121422142842144881844841418
                   }
                 },
                 {
+                  id local id 2,
                   data rna {
                     type mRNA,
                     ext name "favorite 1"
                   },
                   partial TRUE,
-                  product whole general {
-                    db "ncbi",
-                    tag str "test_0001"
-                  },
                   location int {
                     from 0,
                     to 99,
                     strand plus,
                     id local str "scaffold1",
                     fuzz-from lim lt
+                  },
+                  xref {
+                    {
+                      id local id 1
+                    }
                   }
                 },
                 {
@@ -724,7 +726,7 @@ FFFFFFFF8188118411241181222818128281811144112241844121422142842144881844841418
             {
               data ftable {
                 {
-                  id local id 2,
+                  id local id 3,
                   data prot {
                     name {
                       "favorite 1"
@@ -775,7 +777,6 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
             {
               data ftable {
                 {
-                  id local id 4,
                   data prot {
                     name {
                       "favorite 2"
@@ -819,10 +820,14 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
                 strand plus,
                 id local str "scaffold1",
                 fuzz-from lim lt
+              },
+              xref {
+                {
+                  id local id 2
+                }
               }
             },
             {
-              id local id 3,
               data cdregion {
                 frame one,
                 code {

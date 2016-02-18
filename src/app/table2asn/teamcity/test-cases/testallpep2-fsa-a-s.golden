@@ -2317,6 +2317,7 @@ Seq-entry ::= set {
                   }
                 },
                 {
+                  id local id 2,
                   data rna {
                     type mRNA,
                     ext name "test3"
@@ -2324,9 +2325,6 @@ Seq-entry ::= set {
                   partial TRUE,
                   comment "Slime mold (D.discoideum) transposon DIRS-1,
  complete, clone SB41",
-                  product whole genbank {
-                    accession "EAL73826"
-                  },
                   location int {
                     from 1789,
                     to 3186,
@@ -2334,6 +2332,11 @@ Seq-entry ::= set {
                     id local str "DDB0232440",
                     fuzz-from lim lt,
                     fuzz-to lim gt
+                  },
+                  xref {
+                    {
+                      id local id 1
+                    }
                   },
                   dbxref {
                     {
@@ -2373,6 +2376,7 @@ Seq-entry ::= set {
                   }
                 },
                 {
+                  id local id 5,
                   data rna {
                     type mRNA,
                     ext name "hypothetical protein"
@@ -2380,9 +2384,6 @@ Seq-entry ::= set {
                   partial TRUE,
                   comment "Slime mold (D.discoideum) transposon DIRS-1,
  complete, clone SB41",
-                  product whole genbank {
-                    accession "EAL73827"
-                  },
                   location int {
                     from 3747,
                     to 4754,
@@ -2390,6 +2391,11 @@ Seq-entry ::= set {
                     id local str "DDB0232440",
                     fuzz-from lim lt,
                     fuzz-to lim gt
+                  },
+                  xref {
+                    {
+                      id local id 4
+                    }
                   },
                   dbxref {
                     {
@@ -2436,7 +2442,7 @@ MASLLLSNNVLFHVVKKMIVGNQMIL"
             {
               data ftable {
                 {
-                  id local id 2,
+                  id local id 3,
                   data prot {
                     name {
                       "hypothetical protein"
@@ -2486,7 +2492,7 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
             {
               data ftable {
                 {
-                  id local id 4,
+                  id local id 6,
                   data prot {
                     name {
                       "hypothetical protein"
@@ -2527,6 +2533,11 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
                 strand plus,
                 id local str "DDB0232440"
               },
+              xref {
+                {
+                  id local id 2
+                }
+              },
               dbxref {
                 {
                   db "dictyBase",
@@ -2535,7 +2546,7 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
               }
             },
             {
-              id local id 3,
+              id local id 4,
               data cdregion {
                 frame one,
                 code {
@@ -2552,6 +2563,11 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
                 to 4754,
                 strand plus,
                 id local str "DDB0232440"
+              },
+              xref {
+                {
+                  id local id 5
+                }
               },
               dbxref {
                 {

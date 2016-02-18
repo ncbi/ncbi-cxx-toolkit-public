@@ -46,10 +46,13 @@ public:
    CRef<objects::CDelta_seq> MakeGap(objects::CBioseq_Handle bsh, const objects::CSeq_feat& feature_gap);
    static 
    void RemoveEmptyFtable(objects::CBioseq& bioseq);
+   static
+   void GenerateECNumbers(objects::CSeq_entry_Handle seh, const string& fname);
 private:
     void MergeCDSFeatures_impl(objects::CSeq_entry& entry);
     CRef<objects::CSeq_entry> TranslateProtein(
        objects::CScope& scope, objects::CSeq_entry_Handle top_entry_h, 
+       const objects::CBioseq& bioseq,
        objects::CSeq_feat& cd_feature);
    objects::ILineErrorListener* m_logger;
    int m_local_id_counter;

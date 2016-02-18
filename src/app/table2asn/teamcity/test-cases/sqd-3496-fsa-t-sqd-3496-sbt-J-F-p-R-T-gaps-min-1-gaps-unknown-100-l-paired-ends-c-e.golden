@@ -1188,7 +1188,7 @@ BA70036C8B8B8C16377EB88C4F774EF6CFF86F80'H
                   }
                 },
                 {
-                  id local id 3,
+                  id local id 2,
                   data rna {
                     type mRNA,
                     ext name "actin, isoform 1"
@@ -1259,7 +1259,7 @@ BA70036C8B8B8C16377EB88C4F774EF6CFF86F80'H
                   }
                 },
                 {
-                  id local id 6,
+                  id local id 5,
                   data rna {
                     type mRNA
                   },
@@ -1329,7 +1329,7 @@ RCRYVIV*FSVSLIINS"
             {
               data ftable {
                 {
-                  id local id 2,
+                  id local id 3,
                   data prot {
                     name {
                       "actin, variant 1"
@@ -1373,7 +1373,7 @@ LEQINKIRQSKVSGASADEVYKPTWWLFDDMSFLSVHIAARSGESSLIVIIKILYCHLKNYYIKLQFLKSYV"
             {
               data ftable {
                 {
-                  id local id 5,
+                  id local id 6,
                   data prot {
                     name {
                       "madeup,tubulin"
@@ -1453,7 +1453,7 @@ LEQINKIRQSKVSGASADEVYKPTWWLFDDMSFLSVHIAARSGESSLIVIIKILYCHLKNYYIKLQFLKSYV"
               },
               xref {
                 {
-                  id local id 3
+                  id local id 2
                 }
               }
             },
@@ -1491,7 +1491,7 @@ LEQINKIRQSKVSGASADEVYKPTWWLFDDMSFLSVHIAARSGESSLIVIIKILYCHLKNYYIKLQFLKSYV"
               },
               xref {
                 {
-                  id local id 6
+                  id local id 5
                 }
               }
             }

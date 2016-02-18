@@ -141,7 +141,6 @@ AKPGQIAYQITKRGIETA"
         {
           data ftable {
             {
-              id local id 2,
               data prot {
                 name {
                   "DNA repair protein"
@@ -165,7 +164,6 @@ AKPGQIAYQITKRGIETA"
     {
       data ftable {
         {
-          id local id 1,
           data cdregion {
             frame one,
             code {
