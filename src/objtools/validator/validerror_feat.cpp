@@ -283,7 +283,7 @@ void CValidError_feat::ValidateSeqFeat(
                     }
                 }
                 if (NStr::EqualNocase((*it)->GetQual(), "inference")) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue, "Inference qualifier problem - empty inference string()", feat);
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue, "Inference qualifier problem - empty inference string ()", feat);
                 }
             } else if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
                 if (!s_IsValidECNumberFormat((*it)->GetVal())) {
