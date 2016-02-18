@@ -645,9 +645,9 @@ static void s_SelectPort(int&               count_before,
         count_before = s_CountServers(node_name, port);
     }
     WRITE_LOG("Random port is " << port << ". "
-        "Count of servers with this port is " <<
-        count_before << ".",
-        thread_num);
+              "Count of servers with this port is " <<
+              count_before << ".",
+              thread_num);
 }
 
 
@@ -735,8 +735,8 @@ static void s_CleanDTabs(int thread_num) {
     vector<string> nodes_to_delete;
     CConnNetInfo net_info;
     size_t start = 0, end = 0;
-    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
     CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
         UrlReadAll(*net_info, (string("http://") + lbos_addr +
         "/admin/dtab").c_str(), NULL, NULL));
@@ -786,23 +786,20 @@ public:
     }
 
     void AnswerHealthcheck() {
-        struct timeval      time_stop;    
-        double              time_elapsed = 0.0; 
-
-                 
-        if (s_GetTimeOfDay(&time_stop) != 0) 
-            memset(&time_stop, 0, sizeof(time_stop));  
-
-        STimeout rw_timeout = {1, 20000};
-        STimeout accept_timeout = {0, 20000};
+        struct timeval time_stop;
+        STimeout rw_timeout     = { 1, 20000 };
+        STimeout accept_timeout = { 0, 20000 };
+        STimeout c_timeout      = { 0, 0 };
         /* We collect garbage every 5 seconds */
         int secs_btw_grbg_cllct = 5;
         int iters_btw_grbg_cllct = secs_btw_grbg_cllct * 100000 /
-                                    (rw_timeout.sec * 100000 + rw_timeout.usec);
+                                   (rw_timeout.sec * 100000 + rw_timeout.usec);
         int iters_passed = 0;
-        STimeout c_timeout = { 0, 0 };
         vector<CSocketAPI::SPoll>::iterator it;
         size_t n_ready = 0;
+
+        if (s_GetTimeOfDay(&time_stop) != 0)
+            memset(&time_stop, 0, sizeof(time_stop));
         CSocketAPI::Poll(m_ListeningSockets, &rw_timeout, &n_ready);
         for (it = m_ListeningSockets.begin(); it != m_ListeningSockets.end(); it++) {
             if (it->m_REvent != eIO_Open && it->m_REvent != eIO_Close) {
@@ -1341,9 +1338,6 @@ namespace Initialization
     /**  s_LBOS_InstancesList MUST not be NULL at beginning of
      *   s_LBOS_FillCandidates()                                             */
     void s_LBOS_FillCandidates__s_LBOS_InstancesListNotNULL();
-    /**  s_LBOS_FillCandidates() should switch first and good LBOS addresses,
-     *   if first is not responding                                          */
-    void PrimaryLBOSInactive__SwapAddresses();
 } /* namespace LBOSMapperInit */
 
 
@@ -1502,32 +1496,32 @@ void CheckCodes()
 {    
     CLBOSException::EErrCode code;
     code = CLBOSException::s_HTTPCodeToEnum(400);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSBadRequest);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSBadRequest);
     code = CLBOSException::s_HTTPCodeToEnum(404);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSNotFound);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSNotFound);
     code = CLBOSException::s_HTTPCodeToEnum(450);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSNoLBOS);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSNoLBOS);
     code = CLBOSException::s_HTTPCodeToEnum(451);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSDNSResolveError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSDNSResolveError);
     code = CLBOSException::s_HTTPCodeToEnum(452);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSInvalidArgs);
     code = CLBOSException::s_HTTPCodeToEnum(453);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSMemAllocError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSMemAllocError);
     code = CLBOSException::s_HTTPCodeToEnum(454);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSCorruptOutput);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSCorruptOutput);
     code = CLBOSException::s_HTTPCodeToEnum(500);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSServerError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSServerError);
     code = CLBOSException::s_HTTPCodeToEnum(550);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSOff);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSOff);
     /* Some unknown */
     code = CLBOSException::s_HTTPCodeToEnum(200);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSUnknown);
     code = CLBOSException::s_HTTPCodeToEnum(204);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSUnknown);
     code = CLBOSException::s_HTTPCodeToEnum(401);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSUnknown);
     code = CLBOSException::s_HTTPCodeToEnum(503);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::e_LBOSUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSUnknown);
 }
 
 
@@ -1539,64 +1533,64 @@ void CheckErrorCodeStrings()
 
     /* 400 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::e_LBOSBadRequest, "",
+                                  CLBOSException::EErrCode::e_LBOSBadRequest, "",
                                   kLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 404 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::e_LBOSNotFound, "",
+                                  CLBOSException::EErrCode::e_LBOSNotFound, "",
                                   kLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
     
     /* 500 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::e_LBOSServerError, "",
+                                  CLBOSException::EErrCode::e_LBOSServerError, "",
                                   kLBOSServerError).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 450 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::e_LBOSNoLBOS, "",
+                                  CLBOSException::EErrCode::e_LBOSNoLBOS, "",
                                   kLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "LBOS was not found");
 
     /* 451 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::e_LBOSDNSResolveError, "",
+                                  CLBOSException::EErrCode::e_LBOSDNSResolveError, "",
                                   kLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "DNS error. Possibly, cannot get IP " 
                                        "of current machine or resolve provided "
                                        "hostname for the server");
     /* 452 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::e_LBOSInvalidArgs, "",
+                                  CLBOSException::EErrCode::e_LBOSInvalidArgs, "",
                                   kLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Invalid arguments were provided. No "
                                        "request to LBOS was sent");
 
     /* 453 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::e_LBOSMemAllocError, "",
+                                  CLBOSException::EErrCode::e_LBOSMemAllocError, "",
                                   kLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Memory allocation error happened "
                                                "while performing request");
 
     /* 454 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::e_LBOSCorruptOutput, "",
+                                  CLBOSException::EErrCode::e_LBOSCorruptOutput, "",
                                   kLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Failed to parse LBOS output.");
 
     /* 550 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::e_LBOSOff, "",
+                                  CLBOSException::EErrCode::e_LBOSOff, "",
                                   kLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "LBOS functionality is turned OFF. "
                                        "Check config file.");
     /* unknown */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::e_LBOSUnknown, "",
+                                  CLBOSException::EErrCode::e_LBOSUnknown, "",
                                   kLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Unknown LBOS error code");
 }
@@ -1745,7 +1739,7 @@ void ResolveIP__TryFindReturnsIP()
 
 void ResolveEmpty__Error()
 {
-    ExceptionComparator<CLBOSException::e_LBOSBadRequest, 400> comparator
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSBadRequest, 400> comparator
                                                       ("400 Bad Request\n");
     BOOST_CHECK_EXCEPTION(s_LBOSIPCacheTest("", s_GetMyIP()), CLBOSException, comparator);
 }
@@ -1912,7 +1906,7 @@ void NoLBOSAddress__DoesNotCrash()
     rdr.setLbosresolver("/some/trash/path");
     CLBOSDisableInstancesMock inst_disable_mock;
 
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(*g_LBOS_UnitTesting_InstancesList() == NULL, 
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(*g_LBOS_UnitTesting_Instance() == NULL, 
                                    "LBOS has working instances when it "
                                    "should not. Probably test design error.");
 
@@ -1925,7 +1919,7 @@ void NoLBOSAddress__DoesNotCrash()
                            *net_info, 0/*skip*/, 0/*n_skip*/,
                            0/*external*/, 0/*arg*/, 0/*val*/));
     
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(**g_LBOS_UnitTesting_InstancesList() == NULL, 
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(*g_LBOS_UnitTesting_Instance() == NULL, 
                                    "LBOS has working instances when it "
                                    "should not. Probably test design error.");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*g_LBOS_UnitTesting_PowerStatus() == 0, 
@@ -2590,8 +2584,8 @@ void ServiceExists__ReturnHostIP()
 {
     string service = "/lbos";
     CConnNetInfo net_info;
-    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
     /*
      * We know that iter is LBOS's.
      */
@@ -2621,8 +2615,8 @@ void ServiceDoesNotExist__ReturnNULL()
     CLBOSStatus lbos_status(true, true);
     string service = "/service/doesnotexist";
     CConnNetInfo net_info;
-    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
     /*
      * We know that iter is LBOS's.
      */
@@ -2767,19 +2761,19 @@ void SpecificMethod__FirstInResult()
 {
     CLBOSStatus lbos_status(true, true);
     string custom_lbos = "lbos.custom.host";
-    CCObjArrayHolder<char> addresses(
-                           g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_CustomHost,
+    CCObjHolder<char> addresses(
+                           g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_CustomHost,
                                                      custom_lbos.c_str()));
     /* I. Custom address */
     WRITE_LOG("Part 1. Testing custom LBOS address", kSingleThreadNumber);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[0]), custom_lbos);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), custom_lbos);
 
     /* II. Registry address */
     string registry_lbos =
             CNcbiApplication::Instance()->GetConfig().Get("CONN", "LBOS");
     WRITE_LOG("Part 2. Testing registry LBOS address", kSingleThreadNumber);
-    addresses = g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_Registry, NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[0]), registry_lbos);
+    addresses = g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_Registry, NULL);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), registry_lbos);
 
 #ifdef NCBI_OS_LINUX
     /* We have to fake last method, because its result is dependent on
@@ -2796,8 +2790,8 @@ void SpecificMethod__FirstInResult()
     buffer.get()[size] = '\0';
     string lbosresolver(buffer.get() + 7);
     lbosresolver = lbosresolver.erase(lbosresolver.length()-6);
-    addresses = g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_Lbosresolve, NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[0]), lbosresolver);
+    addresses = g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_Lbosresolve, NULL);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), lbosresolver);
     
 #endif /* #ifdef NCBI_OS_LINUX */
 }
@@ -2805,11 +2799,13 @@ void SpecificMethod__FirstInResult()
 void CustomHostNotProvided__SkipCustomHost()
 {
     CLBOSStatus lbos_status(true, true);
-    CCObjArrayHolder<char> addresses(
-                           g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_CustomHost,
+    CCObjHolder<char> addresses(
+                           g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_CustomHost,
                                                      NULL));
     /* We check the count of LBOS addresses */
-    NCBITEST_CHECK_EQUAL_MT_SAFE(addresses.count(),  1U);
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(addresses.Get() !=  NULL, 
+                                   "Custom host was not processed in "
+                                   "g_LBOS_GetLBOSAddressEx");
 }
 
 void NoConditions__AddressDefOrder()
@@ -2821,13 +2817,10 @@ void NoConditions__AddressDefOrder()
     CNcbiRegistry& registry = CNcbiApplication::Instance()->GetConfig();
     string lbos = registry.Get("CONN", "lbos");
     /* I. Registry has entry (we suppose that it has by default) */
-    CCObjArrayHolder<char> addresses(g_LBOS_GetLBOSAddresses());
+    CCObjHolder<char> addresses(g_LBOS_GetLBOSAddress());
     WRITE_LOG("1. Checking LBOS address when registry LBOS is provided",
               kSingleThreadNumber);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[0]), lbos);
-    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(addresses[1] ==  NULL,
-                             "LBOS address list was not closed after the "
-                             "first item");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), lbos);
 
 #ifdef NCBI_OS_LINUX
     /* II. Registry has no entries - check that LBOS is read from
@@ -2845,11 +2838,8 @@ void NoConditions__AddressDefOrder()
     string lbosresolver(buffer.get() + 7);
     lbosresolver = lbosresolver.erase(lbosresolver.length()-6);
     registry.Unset("CONN", "lbos");
-    addresses = g_LBOS_GetLBOSAddresses();
-    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses[0]), lbosresolver);
-    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(addresses[1] ==  NULL,
-                             "LBOS address list was not closed after the "
-                             "first item");
+    addresses = g_LBOS_GetLBOSAddress();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), lbosresolver);
 
     /* Cleanup */
     registry.Set("CONN", "lbos", lbos);
@@ -2868,8 +2858,8 @@ void LBOSNoResponse__ErrorNoLBOS()
     string service = "/lbos";
     CCounterResetter resetter(s_CallCounter);
     CConnNetInfo net_info;
-    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
     CMockFunction<FLBOS_ResolveIPPortMethod*> mock(
                             g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort,
                             s_FakeResolveIPPort);
@@ -2887,8 +2877,8 @@ void LBOSResponds__Finish()
     CCounterResetter resetter(s_CallCounter);
     string service = "/lbos";    
     CConnNetInfo net_info;
-    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
     s_CallCounter = 2;
     CMockFunction<FLBOS_ResolveIPPortMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort, 
@@ -2924,8 +2914,8 @@ void NetInfoProvided__UseNetInfo()
     string service = "/lbos";
     CCounterResetter resetter(s_CallCounter);
     CConnNetInfo net_info;
-    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
     ConnNetInfo_SetUserHeader(*net_info, "My header fq34facsadf");
     
     s_CallCounter = 2; // to get desired behavior from s_FakeResolveIPPort
@@ -3467,7 +3457,6 @@ void LbosExist__ShouldWork()
 {
     CLBOSStatus lbos_status(true, true);
     ELBOSFindMethod find_methods_arr[] = {
-                                          eLBOSFindMethod_EtcNcbiDomain,
                                           eLBOSFindMethod_Registry,
                                           eLBOSFindMethod_CustomHost
     };
@@ -5386,7 +5375,7 @@ void NoLBOS__ThrowNoLBOSAndNotFind(int thread_num = -1)
                 "\", status code \"" << 450 << 
                 "\", message \"" << "450\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_LBOSNoLBOS, 450> comparator("450\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSNoLBOS, 450> comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -5417,7 +5406,7 @@ void LBOSError__ThrowServerError(int thread_num = -1)
                 "\", message \"" << 
                 "507 LBOS STATUS Those lbos errors are scaaary\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_LBOSUnknown, 507> comparator(
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSUnknown, 507> comparator(
         "507 LBOS STATUS Those lbos errors are scaaary\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -5459,7 +5448,7 @@ void LBOSError__LBOSAnswerProvided(int thread_num = -1)
     catch(const CLBOSException& ex) {
         /* Checking that message in exception is exactly what LBOS sent*/
         NCBITEST_CHECK_MESSAGE_MT_SAFE(
-            ex.GetErrCode() == CLBOSException::e_LBOSUnknown,
+            ex.GetErrCode() == CLBOSException::EErrCode::e_LBOSUnknown,
             "LBOS exception contains wrong error type");
         const char* ex_message =
             strstr(ex.what(), "Error: ") + strlen("Error: ");
@@ -5533,43 +5522,13 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
 }
 
 
-/* 12. Trying to announce in another domain - do nothing                     */
-/* Test is NOT thread-safe. */
-void ForeignDomain__NoAnnounce(int thread_num = -1)
-{
-#if 0 /* deprecated */
-    /* Test is not run in TeamCity*/
-    if (!getenv("TEAMCITY_VERSION")) {
-        ExceptionComparator<CLBOSException::e_LBOSNoLBOS, 450> comparator("450\n");
-        CLBOSStatus lbos_status(true, true);
-        unsigned short port = kDefaultPort;
-        string node_name = s_GenerateNodeName();
-        WRITE_LOG("Testing behavior of LBOS mapper when no LBOS "
-                  "is available in the current region (should "
-                  "return error code kLBOSNoLBOS", thread_num);
-        WRITE_LOG("Mocking region with \"or-wa\"", thread_num);
-        CMockString mock(*g_LBOS_UnitTesting_CurrentDomain(), "or-wa");
-        WRITE_LOG("Expected exception with error code \"" << "e_LBOSNoLBOS" <<
-            "\", status code \"" << 450 <<
-                    "\", message \"" << "450\\n" << "\".",
-                  thread_num);
-        BOOST_CHECK_EXCEPTION(
-                s_AnnounceCPP(node_name, "1.0.0", "", port,
-                              "http://0.0.0.0:" PORT_STR(PORT) "/health", 
-                              thread_num),
-                              CLBOSException, comparator);
-    }
-#endif
-}
-
-
 /* 13. Was passed incorrect healthcheck URL (empty, not starting with
  *     "http(s)://") : do not announce and return INVALID_ARGS               */
 /* Test is thread-safe. */
 void IncorrectURL__ThrowInvalidArgs(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
-                                                                ("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                           comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -5612,8 +5571,8 @@ void IncorrectPort__ThrowInvalidArgs(int thread_num = -1)
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
-                                                                ("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                           comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -5642,8 +5601,8 @@ void IncorrectVersion__ThrowInvalidArgs(int thread_num = -1)
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
-                                                                ("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                           comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -5668,8 +5627,8 @@ void IncorrectVersion__ThrowInvalidArgs(int thread_num = -1)
 /* Test is thread-safe. */
 void IncorrectServiceName__ThrowInvalidArgs(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
-                                                                ("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                           comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -5727,8 +5686,8 @@ void RealLife__VisibleAfterAnnounce(int thread_num = -1)
 /* Test is NOT thread-safe. */
 void IP0000__ReplaceWithIP(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_LBOSDNSResolveError, 451> comparator
-                                                                ("451\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSDNSResolveError, 451> 
+                                                           comparator ("451\n");
     CLBOSStatus lbos_status(true, true);
     /* Here we mock SOCK_gethostbyaddrEx to specify IP address that we want to
      * expect in place of "0.0.0.0"                                           */
@@ -5776,8 +5735,8 @@ void IP0000__ReplaceWithIP(int thread_num = -1)
 /* Test is NOT thread-safe. */
 void ResolveLocalIPError__ReturnDNSError(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_LBOSDNSResolveError, 451> comparator
-                                                                ("451\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSDNSResolveError, 451>
+                                                            comparator("451\n");
     CLBOSStatus lbos_status(true, true);
     WRITE_LOG("If healthcheck has 0.0.0.0 specified as host, "
               "and running SOCK_gethostbyaddr returns error: "
@@ -5804,7 +5763,8 @@ void ResolveLocalIPError__ReturnDNSError(int thread_num = -1)
 /* Test is NOT thread-safe. */
 void LBOSOff__ThrowKLBOSOff(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_LBOSOff, 550> comparator("550\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSOff, 550> 
+                                                            comparator("550\n");
     CLBOSStatus lbos_status(true, false);
     WRITE_LOG("LBOS mapper is OFF (maybe it is not turned ON in registry " 
               "or it could not initialize at start) - return kLBOSOff", 
@@ -5824,8 +5784,8 @@ void LBOSOff__ThrowKLBOSOff(int thread_num = -1)
       return 454 and exact answer of LBOS                                    */
 void LBOSAnnounceCorruptOutput__ThrowServerError(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_LBOSCorruptOutput, 454> comparator
-                                                      ("454 Corrupt output\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSCorruptOutput, 454>
+                                            comparator ("454 Corrupt output\n");
     WRITE_LOG("Announced successfully, but LBOS returns corrupted answer.",
               thread_num);
     WRITE_LOG("Expected exception with error code \"" << 
@@ -5872,15 +5832,17 @@ void HealthcheckDead__ThrowE_NotFound(int thread_num = -1)
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_LBOSBadRequest, 400> comparator
-                                                      ("400 Bad Request\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSBadRequest, 400> 
+                                                comparator("400 Bad Request\n");
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPP(node_name, "1.0.0", "", port, "http://badhealth.gov",
                       thread_num), CLBOSException, comparator);
-    int count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec,
+    int count_after = s_CountServersWithExpectation(node_name, port, 0, 
+                                                    kDiscoveryDelaySec,
                                                     thread_num);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
-    count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec,
+    count_after = s_CountServersWithExpectation(node_name, port, 0, 
+                                                kDiscoveryDelaySec,
                                                 thread_num);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
 
@@ -5890,8 +5852,6 @@ void HealthcheckDead__ThrowE_NotFound(int thread_num = -1)
      WRITE_LOG("Part II. Healthcheck is \"http:/0.0.0.0:4097/healt\" - "
                 "should work fine",thread_num);
     s_SelectPort(count_before, node_name, port, thread_num);
-//  ExceptionComparator<CLBOSException::e_LBOSNotFound, 404> comparator2
-//                                                       ("404 Not Found\n");
     BOOST_CHECK_NO_THROW(                    //  missing 'h'
         s_AnnounceCPPSafe(node_name, "1.0.0", "", port,// v
                           "http://0.0.0.0:" PORT_STR(PORT)
@@ -5995,7 +5955,8 @@ void ParamsGood__ReturnSuccess()
 /*  2.  Custom section has nothing in config - return kLBOSInvalidArgs       */
 void CustomSectionNoVars__ThrowInvalidArgs() 
 {
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                            comparator("452\n");
     WRITE_LOG("Testing custom section that has nothing in config", 
               kSingleThreadNumber);
     WRITE_LOG("Expected exception with error code \"" << 
@@ -6027,8 +5988,8 @@ void CustomSectionEmptyOrNullAndSectionIsOk__AllOK()
 
 void TestNullOrEmptyField(const char* field_tested)
 {
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
-                                                                ("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                            comparator("452\n");
     CLBOSStatus lbos_status(true, true);
     string null_section = "SECTION_WITHOUT_";
     string empty_section = "SECTION_WITH_EMPTY_";
@@ -6090,8 +6051,8 @@ void PortOutOfRange__ThrowInvalidArgs()
 {
     WRITE_LOG("Port is out of range - return kLBOSInvalidArgs", 
               kSingleThreadNumber);
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
-                                                                ("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                            comparator("452\n");
     /*
      * I. port = 0 
      */
@@ -6139,7 +6100,8 @@ void PortContainsLetters__ThrowInvalidArgs()
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               kSingleThreadNumber);
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                            comparator("452\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPPFromRegistry("SECTION_WITH_CORRUPTED_PORT"),
@@ -6163,8 +6125,8 @@ void HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs()
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               kSingleThreadNumber);
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
-                                                                ("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                            comparator("452\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPPFromRegistry("SECTION_WITH_CORRUPTED_HEALTHCHECK"),
@@ -6190,8 +6152,8 @@ void HealthcheckDead__ThrowE_NotFound()
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".",
               kSingleThreadNumber);
-    ExceptionComparator<CLBOSException::e_LBOSBadRequest, 400> comparator
-                                                          ("400 Bad Request\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSBadRequest, 400> 
+                                                comparator("400 Bad Request\n");
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPPFromRegistry("SECTION_WITH_HEALTHCHECK_DNS_ERROR"),
                                    CLBOSException, comparator);
@@ -6358,7 +6320,8 @@ void NoLBOS__Return0(int thread_num = -1)
                 "\", status code \"" << 450 <<
                 "\", message \"" << "450\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_LBOSNoLBOS, 450> comparator("450\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSNoLBOS, 450> 
+                                                            comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -6382,8 +6345,8 @@ void LBOSExistsDeannounceError__Return0(int thread_num = -1)
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_LBOSBadRequest, 400> comparator
-                                                       ("400 Bad Request\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSBadRequest, 400> 
+                                                comparator("400 Bad Request\n");
     CLBOSStatus lbos_status(true, true);
     /* Currently LBOS does not return any errors */
     /* Here we can try to deannounce something non-existent */
@@ -6418,36 +6381,6 @@ void RealLife__InvisibleAfterDeannounce(int thread_num = -1)
     int count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec,
                                                     thread_num);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
-}
-
-
-/* 6. If trying to deannounce in another domain - do not deannounce */
-/* We fake our domain so no address looks like our own domain */
-/* Test is NOT thread-safe. */
-void ForeignDomain__DoNothing(int thread_num = -1)
-{
-#if 0 /* deprecated */
-    /* Test is not run in TeamCity*/
-    if (!getenv("TEAMCITY_VERSION")) {
-        WRITE_LOG("Deannounce in foreign domain", thread_num);
-        ExceptionComparator<CLBOSException::e_LBOSNoLBOS, 450> comparator("450\n");
-        WRITE_LOG("Expected exception with error code \"" << 
-                    "e_LBOSNoLBOS" <<
-                    "\", status code \"" << 450 <<
-                    "\", message \"" << "450\\n" << "\".",
-                  thread_num);
-        CLBOSStatus lbos_status(true, true);
-        string node_name = s_GenerateNodeName();
-        unsigned short port = kDefaultPort;
-        WRITE_LOG("Mocking region with \"or-wa\"", thread_num);
-        CMockString mock(*g_LBOS_UnitTesting_CurrentDomain(), "or-wa");
-        BOOST_CHECK_EXCEPTION(
-            s_DeannounceCPP(node_name, "1.0.0", "", port, thread_num),
-                            CLBOSException, comparator);
-        /* Cleanup*/
-        WRITE_LOG("Reverting mock of region with \"or-wa\"", thread_num);
-    }
-#endif
 }
 
 
@@ -6500,7 +6433,8 @@ void LBOSOff__ThrowKLBOSOff(int thread_num = -1)
                 "\", status code \"" << 550 <<
                 "\", message \"" << "550\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_LBOSOff, 550> comparator("550\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSOff, 550> 
+                                                            comparator("550\n");
     CLBOSStatus lbos_status(true, false);
     BOOST_CHECK_EXCEPTION(
         s_DeannounceCPP("lbostest", "1.0.0", "", 8080, thread_num), 
@@ -6519,8 +6453,8 @@ void NotExists__ThrowE_NotFound(int thread_num = -1)
                 "\", status code \"" << 404 <<
                 "\", message \"" << "404 Not Found\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_LBOSNotFound, 404> comparator
-                                                        ("404 Not Found\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSNotFound, 404> 
+                                                  comparator("404 Not Found\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
         s_DeannounceCPP("notexists", "1.0.0", "", 8080, thread_num),
@@ -6723,164 +6657,7 @@ namespace Initialization
     }
 
 
-    /** Template parameter instance_num
-     *   LBOS instance with which number (in original order as from
-     *   g_LBOS_GetLBOSAddresses()) is emulated to be working
-     *   Note: it is 1-based. So first instance is 1, second is 2, etc.
-     *   Note: -1 used for all instances OFF.
-     *  Template parameter testnum
-     *   Number of test. Used for debug output in multithread tests
-     *  Template parameter predictable_leader
-     *   If test is run in mode which allows to predict first address. It is
-     *   either single threaded mode or test_mt with synchronization points
-     *   between different tests                                             */
-    template<int instance_num, int testnum, bool predictable_first>
-    void SwapAddressesTest(CMockFunction<FLBOS_ResolveIPPortMethod*>& mock)
-    {
-        CCounterResetter resetter(s_CallCounter);
-        string service = "/lbos";
-        CConnNetInfo net_info;
-        CORE_LOCK_READ;
-        CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-        unsigned int addresses_count = lbos_addresses.count();
-        CORE_UNLOCK;
-        vector<string> addresses_control_list;
-        map<string, int> before_test, 
-                         after_test; /*to compare address lists*/
-        /* We test that not all instances OFF and sanity test (number of 
-         * requested instance is less than total amount of instances )*/
-        if (instance_num != -1
-                         && static_cast<int>(addresses_count) >= instance_num)
-        {
-            for (unsigned int i = 0;  i < addresses_count;  i++) {
-                addresses_control_list.push_back(string(lbos_addresses[i]));
-                before_test[string(addresses_control_list[i])]++;
-            }
-            mock = s_FakeResolveIPPortSwapAddresses < instance_num > ;
-        } else {
-            for (unsigned int i = 0; 
-                    (*g_LBOS_UnitTesting_InstancesList())[i] != NULL;  i++) {
-                addresses_control_list.push_back(string(
-                                     (*g_LBOS_UnitTesting_InstancesList())[i]));
-                before_test[string(addresses_control_list[i])]++;
-            }
-            mock = s_FakeResolveIPPortSwapAddresses <-1> ;
-        }
-
-        s_CallCounter = 0;
-
-        /* We will check results after open */
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-            
-            SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-            *net_info, 0/*skip*/, 0/*n_skip*/,
-            0/*external*/, 0/*arg*/, 0/*val*/));
-
-        /* We launch */
-        CORE_LOCK_READ;
-        {
-            for (unsigned int i = 0;  i < addresses_count;  i++) {
-                lbos_addresses.set(i, 
-                             strdup((*g_LBOS_UnitTesting_InstancesList())[i]));
-            }
-        }
-        CORE_UNLOCK;
-
-        if (predictable_first) {
-            if (instance_num != -1
-                          && static_cast<int>(addresses_count) >= instance_num)
-            {
-                CORE_LOGF(eLOG_Trace, (
-                    "Test %d. Expecting `%s', reality '%s'",
-                    testnum,
-                    addresses_control_list[instance_num - 1].c_str(),
-                    lbos_addresses[0]));
-                NCBITEST_CHECK_MESSAGE_MT_SAFE(
-                    string(lbos_addresses[0]) ==
-                                      addresses_control_list[instance_num - 1],
-                    "priority LBOS instance error");
-            } else {
-                CORE_LOGF(eLOG_Trace, (
-                    "Test %d. Expecting `%s', reality '%s'",
-                    testnum, addresses_control_list[0].c_str(),
-                    lbos_addresses[0]));
-                NCBITEST_CHECK_MESSAGE_MT_SAFE(
-                    string(lbos_addresses[0]) == addresses_control_list[0],
-                    "priority LBOS instance error");
-            }
-        }
-        /* Actually, there can be duplicates. 
-           The problem with this test is that there can be duplicates even 
-           in etc/ncbi/{role, domain} and registry. So we count every address*/
-        
-        for (unsigned int i = 0;  i < addresses_count;  i++) {
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(lbos_addresses[i] != NULL,
-                                    "NULL encountered after"
-                                    " swapping algorithm");
-            after_test[string(lbos_addresses[i])]++;
-        }
-        map<string, int>::iterator it;
-        for (it = before_test.begin();  it != before_test.end();  ++it) {
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(it->second == after_test[it->first],
-                                    "Duplicate after swapping algorithm");
-        }
-    }
-    /** @brief
-     * s_LBOS_FillCandidates() should switch first and good LBOS addresses,
-     * if first is not responding
-     *
-     *  Our fake fill candidates designed that way that we can tell when to
-     *  tell nothing and when to tell good through template parameter. Of
-     *  course, we have to hardcode every value, but there are 7 max possible,
-     *  not that much       */
-    void PrimaryLBOSInactive__SwapAddresses()
-    {
-        CLBOSStatus lbos_status(true, true);
-        // We need to first initialize mapper
-        string service = "/lbos";
-        /* Initialize LBOS mapper */
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,            
-                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                       NULL/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                       0/*external*/, 0/*arg*/, 0/*val*/));
-        /* Save current function pointer. It will be changed inside 
-         * test functions */
-        CMockFunction<FLBOS_ResolveIPPortMethod*> mock(
-                            g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort, 
-                            g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort);
-
-        /* Pseudo random order */
-        SwapAddressesTest<1, 1, false>(mock);
-        SwapAddressesTest<2, 2, false>(mock);
-        SwapAddressesTest<3, 3, false>(mock);
-        SwapAddressesTest<1, 4, false>(mock);
-        SwapAddressesTest<7, 5, false>(mock);
-        SwapAddressesTest<2, 6, false>(mock);
-        SwapAddressesTest<4, 7, false>(mock);
-        SwapAddressesTest<1, 8, false>(mock);
-        SwapAddressesTest<2, 9, false>(mock);
-        SwapAddressesTest<3, 10, false>(mock);
-        SwapAddressesTest<1, 11, false>(mock);
-        SwapAddressesTest<7, 12, false>(mock);
-        SwapAddressesTest<2, 13, false>(mock);
-        SwapAddressesTest<4, 14, false>(mock);
-        SwapAddressesTest<2, 15, false>(mock);
-        SwapAddressesTest<6, 16, false>(mock);
-        SwapAddressesTest<3, 17, false>(mock);
-        SwapAddressesTest<5, 18, false>(mock);
-        SwapAddressesTest<2, 19, false>(mock);
-        SwapAddressesTest<1, 20, false>(mock);
-        SwapAddressesTest<6, 21, false>(mock);
-        SwapAddressesTest<4, 22, false>(mock);
-        SwapAddressesTest<2, 23, false>(mock);
-        SwapAddressesTest<6, 24, false>(mock);
-        SwapAddressesTest<3, 25, false>(mock);
-        SwapAddressesTest<5, 26, false>(mock);
-        SwapAddressesTest<2, 27, false>(mock);
-        SwapAddressesTest<1, 28, false>(mock);
-        SwapAddressesTest<6, 29, false>(mock);
-        SwapAddressesTest<4, 30, false>(mock);
-    }
+    
 } /* namespace Initialization */
 
 // /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
@@ -6938,7 +6715,8 @@ void DeleteThenCheck__SetExistsFalse()
     bool exists;
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
-    ExceptionComparator<CLBOSException::e_LBOSNotFound, 404> comp("404\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSNotFound, 404> 
+                                                                  comp("404\n");
 
     /* Set version */
     LBOS::ServiceVersionSet(node_name, "1.0.0", &exists);
@@ -7044,7 +6822,8 @@ void AnnounceThenDeleteVersion__DiscoverFindsNothing()
 void SetNoService__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comp("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                                  comp("452\n");
 
     /* Set version */
     BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionSet("", "1.0.0"), 
@@ -7056,7 +6835,8 @@ void SetNoService__InvalidArgs()
 void GetNoService__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comp("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                                  comp("452\n");
 
     /* Set version */
     BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionGet(""), 
@@ -7068,7 +6848,8 @@ void GetNoService__InvalidArgs()
 void DeleteNoService__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comp("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                                  comp("452\n");
 
     /* Set version */
     BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionDelete(""), 
@@ -7081,7 +6862,8 @@ void SetEmptyVersion__OK()
 {
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comp("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                                  comp("452\n");
 
     /* Set version */
     BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionSet(node_name, ""),
@@ -7099,7 +6881,8 @@ void SetEmptyVersion__OK()
 void SetNoServiceEmptyVersion__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comp("452\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+                                                                  comp("452\n");
 
     /* Set version */
     BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionSet("", ""), 
@@ -7696,8 +7479,8 @@ void s_TestFindMethod(ELBOSFindMethod find_method)
     const SSERV_Info* info = NULL;
     struct timeval start;
     int n_found = 0;
-    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
     CConnNetInfo net_info;
     
     if (s_GetTimeOfDay(&start) != 0) {
@@ -7767,8 +7550,8 @@ static vector<SAnnouncedServer> s_ParseService(int thread_num)
     vector<SAnnouncedServer> nodes;
     CConnNetInfo net_info;
     size_t start = 0, end = 0;
-    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
     /*
     * Deannounce all lbostest servers (they are left if previous
     * launch of test crashed)
@@ -7987,8 +7770,8 @@ static string s_ReadLBOSVersion(int thread_num)
 {
     CConnNetInfo net_info;
     size_t version_start = 0, version_end = 0;
-    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-    string lbos_addr(lbos_addresses[0]);
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
     CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
         UrlReadAll(*net_info, (string("http://") + lbos_addr +
         "/admin/server_info").c_str(), NULL, NULL));

@@ -31,7 +31,7 @@
  *   This header was made only because of unit testing application. Please, 
  *   include only ncbi_lbos.h.
  *   This file contains only those elements that are absolutely unneeded
- *   if you do not want to dive into internal lbos mapper implementation.
+ *   if you do not want to dive into internal LBOS mapper implementation.
 */
 #include "ncbi_servicep.h"
 #include <connect/ncbi_http_connector.h>
@@ -67,14 +67,14 @@ static const int kLBOSOff             = 550;
 ///////////////////////////////////////////////////////////////////////////////
 //                             DATA TYPES                                    //
 ///////////////////////////////////////////////////////////////////////////////
-/** @brief Possible values to set primary address where to search for lbos.
+/** @brief Possible values to set primary address where to search for LBOS.
  *
- * lbos can be located in different places, such as:
+ * LBOS can be located in different places, such as:
  *   - localhost,
- *   - home zone server (i.e. lbos.dev.be-md.ncbi.nlm.nih.gov, if you
+ *   - home zone server (i.e. LBOS.dev.be-md.ncbi.nlm.nih.gov, if you
  *     are be-md domain on dev machine),
- *   - somewhere else (set in registry with [CONN]lbos)
- * You can set priority for the first place to try. If lbos is not found in
+ *   - somewhere else (set in registry with [CONN]LBOS)
+ * You can set priority for the first place to try. If LBOS is not found in
  * this primary location, then it will be searched for in other places
  * following default algorithm of going through places (maybe even through
  * the same place again).                                                    */
@@ -85,8 +85,6 @@ typedef enum {
                                          s_SetLBOSaddress()                  */
     eLBOSFindMethod_Registry,       /**< Use value from registry (default)   */
     eLBOSFindMethod_Lbosresolve,    /**< Use value from /etc/ncbi/lbosresolve*/
-    eLBOSFindMethod_EtcNcbiDomain,  /**< Use value from /etc/ncbi/domain     */
-    eLBOSFindMethod_127001          /**< Use 127.0.0.1 from /etc/ncbi/domain */
 } ELBOSFindMethod;
 
 
@@ -97,18 +95,18 @@ typedef struct {
 } SLBOS_Candidate;
 
 
-/** All the data required to store state of one request to lbos between 
+/** All the data required to store state of one request to LBOS between 
  * calls to SERV_GetNextInfo.                                                */
 typedef struct {
     SConnNetInfo*       net_info;    /**< Connection point                   */
-    const char*         lbos_addr;   /**< lbos host:port or IP:port. Used if
+    const char*         lbos_addr;   /**< LBOS host:port or IP:port. Used if
                                           find_method == 
                                           eLBOSFindMethod_CustomHost        */
     SLBOS_Candidate*    cand;        /**< Array of found server to iterate   */
     size_t              pos_cand;    /**< Current candidate                  */
     size_t              n_cand;      /**< Used space for candidates          */
     size_t              a_cand;      /**< Allocated space for candidates     */
-    ELBOSFindMethod     find_method; /**< How we find lbos. Mainly for
+    ELBOSFindMethod     find_method; /**< How we find LBOS. Mainly for
                                           testing                            */
 } SLBOS_Data;
 
@@ -119,10 +117,16 @@ typedef struct {
     int http_response_code;
     char* http_status_mesage;
     const char* header;
-    size_t content_length; /* -1 (max value) as no limit */
+    size_t content_length; /* Value of "Content-length" HTTP header tag. 
+                              -1 (max value) as no limit */
 } SLBOS_UserData;
 
 
+/** Used for internal storage, so that DeannounceAll() could deannounce 
+ *  everything that was announced earlier.
+ * @see 
+ *  DeannounceAll()
+ */
 struct SLBOS_AnnounceHandle_Tag
 {
     char*            service;       /**< service name of announced server    */
@@ -132,9 +136,10 @@ struct SLBOS_AnnounceHandle_Tag
 };
 
 
-/** Possible values of parameter for g_LBOS_CheckIterator().
-*  @see
-*   g_LBOS_CheckIterator()                                                   */
+/** Possible values of parameter for g_LBOS_CheckIterator(), 
+ *  this enum is used only in assertions
+ * @see
+ *  g_LBOS_CheckIterator()                                                   */
 typedef enum {
     ELBOSIteratorCheckType_MustHaveData,   /**< Iterator MUST have 'data'
                                                 filled or error will be
@@ -148,7 +153,7 @@ typedef enum {
 ///////////////////////////////////////////////////////////////////////////////
 //                        MOCK FUNCTION TYPEDEFS                             //
 ///////////////////////////////////////////////////////////////////////////////
-/** Send REST API request to lbos, read answer and return filled array of 
+/** Send REST API request to LBOS, read answer and return filled array of 
  * SSERV_INFO, containing info about all found servers.
  * @param lbos_address[in]  
  *  IP:port or host:port where to send request.
@@ -158,7 +163,7 @@ typedef enum {
  *  Connection point.
  * @return             
  *  Array of pointers to SSERV_Info structs, containing all found servers. 
- * @                     */
+ */
 typedef
 SSERV_Info** FLBOS_ResolveIPPortMethod(const char*     lbos_address,
                                        const char*     serviceName,
@@ -186,7 +191,7 @@ EIO_Status FLBOS_ConnReadMethod(CONN           conn,
                                 EIO_ReadMethod how);
 
 
-/**  Compose lbos address from /etc/ncbi/{role, domain}.
+/**  Compose LBOS address from /etc/ncbi/{role, domain}.
  *  @return             
  *   Constructed host:port or IP:port. Must be free()'d by the caller.       */
 typedef
@@ -219,7 +224,7 @@ void FLBOS_DestroyDataMethod(SLBOS_Data* data);
 
 
 /** Called under the hood of SERV_GetNextInfo and is responsible for 
- *  lbos mapper.
+ *  LBOS mapper.
  *  @param iter[in]
  *   Iterator used to iterate through servers.
  *  @param host_info[out]  
@@ -232,8 +237,8 @@ SSERV_Info* FLBOS_GetNextInfoMethod(SERV_ITER  iter,
                                     HOST_INFO* host_info);
 
 
-/** For announcement we search for a lbos which can handle our request. 
- * Search starts with default order of lbos.
+/** For announcement we search for a LBOS which can handle our request. 
+ * Search starts with default order of LBOS.
  * @param service[in]    
  *  Name of service as it will appear in ZK. For services this means that 
  *  name should start with '/'.
@@ -250,27 +255,27 @@ SSERV_Info* FLBOS_GetNextInfoMethod(SERV_ITER  iter,
  *  hostname or IP and port, if necessary.
  * @param LBOS_answer[out]
  *  This variable will be assigned a pointer to char* with exact answer of
- *  lbos, or NULL. If it is not NULL, must be free()'d by the caller. If
- *  eLBOS_Success is returned, lbos answer contains "host:port"
- *  of lbos that was used for announce. If something else is returned, lbos
+ *  LBOS, or NULL. If it is not NULL, must be free()'d by the caller. If
+ *  eLBOS_Success is returned, LBOS answer contains "host:port"
+ *  of LBOS that was used for announce. If something else is returned, LBOS
  *  answer contains human-readable error message.
  * @return
  *  Code of success or some error.
  * @see
  *  ELBOS_Result                                                             */
 typedef
-unsigned short FLBOS_AnnounceMethod(const char*    service,
-                                  const char*      version,
-                                  const char*      host,
-                                  unsigned short   port,
-                                  const char*      healthcheck_url,
-                                  char**           LBOS_answer,
-                                  char**           http_status_message);
+unsigned short FLBOS_AnnounceMethod(const char*     service,
+                                    const char*     version,
+                                    const char*     host,
+                                    unsigned short  port,
+                                    const char*     healthcheck_url,
+                                    char**          LBOS_answer,
+                                    char**          http_status_message);
 
 
 /** Deannounce previously announced service.
  * @param lbos_hostport[in]    
- *  Address of the same lbos that was used for announcement of the service 
+ *  Address of the same LBOS that was used for announcement of the service 
  *  now being de-announced.
  * @param service[in]    
  *  Name of service to be de-announced.
@@ -283,7 +288,6 @@ unsigned short FLBOS_AnnounceMethod(const char*    service,
  * @return               
  *  false - any error, no deannounce was made;
  *  true - success, deannounce was made.                                     */
-
 typedef
 int/*bool*/ FLBOS_DeannounceMethod(const char*       lbos_hostport,
                                    const char*       service,
@@ -296,7 +300,7 @@ int/*bool*/ FLBOS_DeannounceMethod(const char*       lbos_hostport,
 
 
 /** This function test existence of the application that should always be 
- * found - lbos itself. If it is not found, we turn mapper off.              */
+ * found - LBOS itself. If it is not found, we turn mapper off.              */
 typedef 
 void FLBOS_InitializeMethod(void);
 
@@ -338,28 +342,30 @@ typedef struct {
 ///////////////////////////////////////////////////////////////////////////////
 //                             GLOBAL FUNCTIONS                              //
 ///////////////////////////////////////////////////////////////////////////////
-/** Get all possible lbos addresses for this platform.
+/** Get the best possible LBOS address for this platform.
  * @return
- *  Array of lbos addresses that needs to be free()'d by the caller.
+ *  LBOS address that needs to be free()'d by the caller.
  * @see
- *  g_LBOS_GetLBOSAddressesEx()                                              */
+ *  g_LBOS_GetLBOSAddressEx()                                              */
 NCBI_XCONNECT_EXPORT
-char** g_LBOS_GetLBOSAddresses(void);
+char* g_LBOS_GetLBOSAddress(void);
 
 
-/** Get all possible lbos addresses for this platform, extended version.
+/** Get the best possible LBOS addresses for this platform, extended version - 
+ * first tries the method of caller's choice.
  * @param[in]   priority_find_method
  *  First method to try.
- * @param[in]   lbos
- *  If primary method is set to eLBOSFindMethod_CustomHost, lbos IP:port or
- *  host:port should be provided.
+ * @param[in]   lbos_addr
+ *  String with "%hostname%:%port%" or "%IP%:%port%". If priority_find_method
+ *  is set to eLBOSFindMethod_CustomHost, lbos_addr should be non-NULL
+ *  (or else the method will be ignored)
  * @return
- *  Array of lbos addresses that needs to be free()'d by the caller.
+ *  LBOS address that needs to be free()'d by the caller.
  * @see
- *  g_LBOS_GetLBOSAddresses()                                                */
+ *  g_LBOS_GetLBOSAddress()                                                */
 NCBI_XCONNECT_EXPORT
-char** g_LBOS_GetLBOSAddressesEx(ELBOSFindMethod priority_find_method,
-                                 const char*     lbos);
+char* g_LBOS_GetLBOSAddressEx(ELBOSFindMethod priority_find_method,
+                              const char*     lbos_addr);
 
 /** Creates iterator and fills it with found servers.
  * @param[in,out] iter
@@ -389,16 +395,16 @@ NCBI_XCONNECT_EXPORT
 int/*bool*/ g_LBOS_StringIsNullOrEmpty(const char* const str);
 
 
-/** Compose lbos address from /etc/ncbi/{role, domain}.
+/** Compose LBOS address from /etc/ncbi/{role, domain}.
  *  @return
- *   lbos address. Must be free()'d by the caller.                           */
+ *   LBOS address. Must be free()'d by the caller.                           */
 NCBI_XCONNECT_EXPORT
 char* g_LBOS_ComposeLBOSAddress(void);
 
 
-/** Set primary method how to find lbos. Default is eLBOSFindMethod_Registry.
+/** Set primary method how to find LBOS. Default is eLBOSFindMethod_Registry.
  *  @param[in]  iter
- *   Iterator that represents current request to lbos.
+ *   Iterator that represents current request to LBOS.
  *  @param[in]  method
  *   One of methods.
  *  @return             f
@@ -409,14 +415,14 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSFindMethod(SERV_ITER        iter,
                                                  ELBOSFindMethod  method);
 
 
-/**  Set custom host for lbos. It will be used when method 
+/**  Set custom host for LBOS. It will be used when method 
  *  eLBOSFindMethod_CustomHost is used.
  *  @param[in]  iter
- *   Iterator that represents current request to lbos.
+ *   Iterator that represents current request to LBOS.
  *  @param[in]  address
  *   IP:port  or host:port to use.
  *  @return             
- *   false - something went wrong, lbos address was not changed.
+ *   false - something went wrong, LBOS address was not changed.
  *   true  - success.                                                        */
 NCBI_XCONNECT_EXPORT
 int/*bool*/ g_LBOS_UnitTesting_SetLBOSaddress(SERV_ITER  iter,
@@ -529,7 +535,7 @@ NCBI_XCONNECT_EXPORT
 SLBOS_Functions* g_LBOS_UnitTesting_GetLBOSFuncs(void);
 
 
-/** Check whether lbos mapper is turned ON or OFF.
+/** Check whether LBOS mapper is turned ON or OFF.
  * @return
  *  address of static variable s_LBOS_TurnedOn.
  * @see           
@@ -538,7 +544,7 @@ NCBI_XCONNECT_EXPORT
 int* g_LBOS_UnitTesting_PowerStatus(void);
 
 
-/** Check whether lbos mapper is turned ON or OFF.
+/** Check whether LBOS mapper is turned ON or OFF.
  * @return         
  *  address of static variable s_LBOS_TurnedOn.
  * @see 
@@ -547,13 +553,13 @@ NCBI_XCONNECT_EXPORT
 int* g_LBOS_UnitTesting_InitStatus(void);
 
 
-/** List of addresses of lbos that is maintained in actual state.
+/** List of addresses of LBOS that is maintained in actual state.
  * @return         
  *  address of static variable s_LBOS_InstancesList.
  * @see            
  *  SERV_LBOS_Open(), s_LBOS_FillCandidates()                                */
 NCBI_XCONNECT_EXPORT
-char*** g_LBOS_UnitTesting_InstancesList(void);
+char** g_LBOS_UnitTesting_Instance(void);
 
 
 /** List of announced servers that is stored statically

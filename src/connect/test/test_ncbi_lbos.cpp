@@ -118,9 +118,7 @@ BOOST_AUTO_TEST_CASE(TESTVERSIONCHECK)
     ///No elements - ON by default
     versions = "";
     //1
-    (*lbos_mock).major = 1;
-    (*lbos_mock).minor = 0;
-    (*lbos_mock).patch = 2;
+    lbos_mock = { 1, 0, 2 };
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
 
@@ -232,9 +230,7 @@ BOOST_AUTO_TEST_CASE(TESTVERSIONCHECK)
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, false);
     //2
-    (*lbos_mock).major = 1;
-    (*lbos_mock).minor = 0;
-    (*lbos_mock).patch = 0;
+    lbos_mock = { 1, 0, 0 };
     active = s_CheckTestVersion(s_ParseVersionsString(versions));
     NCBITEST_CHECK_EQUAL(active, true);
     //3
@@ -958,7 +954,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( Initialization )////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( InitializationTests )////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* 1. Multithread simultaneous SERV_LBOS_Open() when lbos is not yet
 *    initialized should not crash
@@ -1021,13 +1017,6 @@ BOOST_AUTO_TEST_CASE(
 {
     CHECK_LBOS_VERSION();
     Initialization::s_LBOS_FillCandidates__s_LBOS_InstancesListNotNULL();
-}
-/** s_LBOS_FillCandidates() should switch first and good lbos addresses, if
-   first is not responding                                                   */
-BOOST_AUTO_TEST_CASE(Initialization__PrimaryLBOSInactive__SwapAddresses)
-{
-    CHECK_LBOS_VERSION();
-    Initialization::PrimaryLBOSInactive__SwapAddresses();
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -1512,12 +1501,6 @@ BOOST_AUTO_TEST_CASE(
     Announcement_CXX::AlreadyAnnouncedInTheSameZone__ReplaceInStorage();
 }
 
-/* 12. Trying to announce in another domain - do nothing                     */
-BOOST_AUTO_TEST_CASE(Announcement_CXX__ForeignDomain__NoAnnounce)
-{
-    CHECK_LBOS_VERSION();
-    Announcement_CXX::ForeignDomain__NoAnnounce();
-}
 /* 13. Was passed incorrect healthcheck URL(NULL or empty not starting with
  *     "http(s)://") : do not announce and return INVALID_ARGS               */
 BOOST_AUTO_TEST_CASE(Announcement_CXX__IncorrectURL__ThrowInvalidArgs)
@@ -1758,12 +1741,6 @@ BOOST_AUTO_TEST_CASE(Deannouncement_CXX__RealLife__InvisibleAfterDeannounce)
 {
     CHECK_LBOS_VERSION();
     Deannouncement_CXX::RealLife__InvisibleAfterDeannounce();
-}
-/*6. If trying to deannounce in another domain - do not deannounce           */
-BOOST_AUTO_TEST_CASE(Deannouncement_CXX__ForeignDomain__DoNothing)
-{
-    CHECK_LBOS_VERSION();
-    Deannouncement_CXX::ForeignDomain__DoNothing();
 }
 /* 7. Deannounce without IP specified - deannounce from local host           */
 BOOST_AUTO_TEST_CASE(Deannouncement_CXX__NoHostProvided__LocalAddress)

@@ -243,9 +243,9 @@ public:
     {
         CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
         m_LBOSReg = config.Get("CONN", "LBOS");
-        m_InstancesOrig = *g_LBOS_UnitTesting_InstancesList();
+        m_InstanceOrig = *g_LBOS_UnitTesting_Instance();
         config.Unset("CONN", "LBOS");
-        *g_LBOS_UnitTesting_InstancesList() = NULL;
+        *g_LBOS_UnitTesting_Instance() = NULL;
     }
     ~CLBOSDisableInstancesMock() {
 #ifdef NCBI_OS_MSWIN
@@ -255,11 +255,11 @@ public:
 #endif
         CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
         config.Set("CONN", "LBOS", m_LBOSReg);
-        *g_LBOS_UnitTesting_InstancesList() = m_InstancesOrig;
+        *g_LBOS_UnitTesting_Instance() = m_InstanceOrig;
     }
 private:
     string m_LBOSReg;
-    char** m_InstancesOrig;
+    char* m_InstanceOrig;
 };
 
 /** Hold a non-const C-object (malloc, free). 
@@ -1088,7 +1088,7 @@ static void s_FakeFillCandidates (SLBOS_Data* data,
 static void s_FakeFillCandidatesCheckInstances(SLBOS_Data* data,
     const char* service)
 {
-    NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_InstancesList() != NULL,
+    NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_Instance() != NULL,
         "s_LBOS_InstancesList is empty at a critical place");
     s_FakeFillCandidates<2>(data, service);
 }
@@ -1098,49 +1098,6 @@ static void s_FakeFillCandidatesWithError (SLBOS_Data* data, const char* service
 {
     s_CallCounter++;
     return;
-}
-
-
-/** This version works only on specific call number to emulate working and 
- * non-working lbos instances.
- * template @param instance_number
- *  Number of "good" instance.
- *  -1 for all instances OFF                                                 */
-template<int instance_number>
-static SSERV_Info** s_FakeResolveIPPortSwapAddresses(const char*   lbos_address,
-                                              const char*   serviceName,
-                                              SConnNetInfo* net_info)
-{
-    int localscope_instance_number = instance_number; /*to debug */
-    s_CallCounter++;
-    CCObjArrayHolder<char> original_list(g_LBOS_GetLBOSAddresses());
-    NCBITEST_CHECK_MESSAGE(*original_list != NULL,
-        "Problem with g_LBOS_GetLBOSAddresses, test failed.");
-    if (*original_list == NULL || localscope_instance_number == -1) return NULL;
-    SSERV_Info** hostports = NULL;
-    if (strcmp(lbos_address, original_list[localscope_instance_number-1]) == 0) 
-    {
-        if (net_info->http_user_header) {
-            s_LastHeader = net_info->http_user_header;
-        }
-        hostports = static_cast<SSERV_Info**>(calloc(sizeof(SSERV_Info*), 2));
-        NCBITEST_CHECK_MESSAGE(hostports != NULL,
-            "Problem with memory allocation, "
-            "calloc failed. Not enough RAM?");
-        if (hostports == NULL) return NULL;
-        hostports[0] = static_cast<SSERV_Info*>(calloc(sizeof(SSERV_Info), 2));
-        NCBITEST_CHECK_MESSAGE(hostports[0] != NULL,
-                               "Problem with memory allocation, "
-                               "calloc failed. Not enough RAM?");
-        if (hostports[0] == NULL) return NULL;
-        unsigned int host = 0;
-        unsigned short int port = 0;
-        SOCK_StringToHostPort("127.0.0.1:80", &host, &port);
-        hostports[0]->host = host;
-        hostports[0]->port = port;
-        hostports[1] = NULL;
-    }
-    return hostports;
 }
 
 
@@ -1186,7 +1143,7 @@ static void s_FakeInitialize()
 static void s_FakeInitializeCheckInstances()
 {
     s_CallCounter++;
-    NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_InstancesList() != NULL,
+    NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_Instance() != NULL,
         "s_LBOS_InstancesList is empty at a critical place");
     return;
 }
