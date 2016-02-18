@@ -140,7 +140,7 @@ const string& CEnvironmentRegistry::x_Get(const string& section,
         const string* resultp  = &m_Env->Get(var_name, &found);
         if ((m_Flags & fCaseFlags) == 0  &&  !found) {
             // try capitalizing the name
-            resultp = &m_Env->Get(NStr::ToUpper(var_name));
+            resultp = &m_Env->Get(NStr::ToUpper(var_name), &found);
         }
         if (found) {
             return *resultp;
