@@ -174,6 +174,64 @@ bool CGb_qual::CleanupRptUnitRange(string& val)
 }
 
 
+const CGb_qual::TLegalRepeatTypeSet &
+CGb_qual::GetSetOfLegalRepeatTypes(void)
+{
+    static string const repeat_types[] = {
+        "centromeric_repeat",
+        "direct",
+        "dispersed",
+        "engineered_foreign_repetitive_element",
+        "flanking",
+        "inverted",
+        "long_terminal_repeat",
+        "non_LTR_retrotransposon_polymeric_tract",
+        "other",
+        "tandem",
+        "telomeric_repeat",
+        "terminal",
+        "X_element_combinatorial_repeat",
+        "Y_prime_element"
+    };
+
+
+    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(
+        TLegalRepeatTypeSet, sc_LegalRepeatTypes, repeat_types);
+
+    return sc_LegalRepeatTypes;
+}
+
+
+bool CGb_qual::IsValidRptTypeValue(const string& val)
+{
+    const TLegalRepeatTypeSet& repeat_types = GetSetOfLegalRepeatTypes();
+
+    bool error = false;
+
+    // look for list of values
+    vector<string> rpt_types;
+    NStr::Tokenize(val, ",", rpt_types);
+    ITERATE(vector<string>, it, rpt_types) {
+        string v = (*it);
+        NStr::TruncateSpacesInPlace(v);
+        if (NStr::StartsWith(v, "(")) {
+            v = v.substr(1);
+        }
+        if (NStr::EndsWith(v, ")")) {
+            v = v.substr(0, v.length() - 1);
+        }
+        NStr::TruncateSpacesInPlace(v);
+        if (repeat_types.find(v) == repeat_types.end()) {
+            error = true;
+            break;
+        }
+    }
+
+    return !error;
+}
+
+
+
 // constructor
 CInferencePrefixList::CInferencePrefixList(void)
 {

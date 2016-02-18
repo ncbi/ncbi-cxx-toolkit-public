@@ -49,6 +49,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <serial/iterator.hpp>
+#include <util/static_map.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -74,6 +76,11 @@ public:
     static bool CleanupRptUnitSeq(string& val);
     static bool CleanupReplace(string& val);
     static bool CleanupRptUnitRange(string& val);
+
+    // for rpt_type qualifiers
+    typedef CStaticArraySet<string, PNocase> TLegalRepeatTypeSet;
+    static const TLegalRepeatTypeSet &GetSetOfLegalRepeatTypes(void);
+    static bool IsValidRptTypeValue(const string& val);
     
     static bool IsLegalMobileElementValue(const string& val);
     static void GetMobileElementValueElements(const string& val, string& element_type, string& element_name);
@@ -84,6 +91,7 @@ public:
                                      string &accession, string &program, string &version, string &acc_list);
 
     static string CleanupAndRepairInference( const string &orig_inference );
+
 
 private:
     // Prohibit copy constructor and assignment operator

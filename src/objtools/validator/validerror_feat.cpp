@@ -468,24 +468,6 @@ const string s_PlastidTxt[] = {
 };
 
 
-static string s_LegalRepeatTypes[] = {
-  "centromeric_repeat",
-  "direct",
-  "dispersed",
-  "engineered_foreign_repetitive_element",
-  "flanking",
-  "inverted",
-  "long_terminal_repeat",
-  "non_LTR_retrotransposon_polymeric_tract",
-  "other",
-  "tandem",
-  "telomeric_repeat",
-  "terminal",
-  "X_element_combinatorial_repeat",
-  "Y_prime_element"
-};
-
-
 static string s_LegalConsSpliceStrings[] = {
   "(5'site:YES, 3'site:YES)",
   "(5'site:YES, 3'site:NO)",
@@ -4484,44 +4466,6 @@ static bool s_StringConsistsOf (string str, string consist)
 }
 
 
-static bool s_IsValidRpt_typeQual (string val)
-{
-    bool error = false;
-
-    if (NStr::StartsWith (val, "(") && NStr::EndsWith (val, ")")) {
-        // look for list of values
-        vector<string> rpt_types;
-        NStr::Tokenize(val.substr (1, val.length() - 2), ",", rpt_types);
-        ITERATE(vector<string>, it, rpt_types) {
-            bool found_valid = false;
-            for ( size_t i = 0; 
-                  i < sizeof(s_LegalRepeatTypes) / sizeof(string) && !found_valid; 
-                  ++i ) {
-                if (NStr::EqualNocase (*it, s_LegalRepeatTypes[i])) {
-                    found_valid = true;
-                }
-            }
-            if (!found_valid) {
-                error = true;
-            }
-        }
-    } else {
-        bool found_valid = false;
-        for ( size_t i = 0; 
-              i < sizeof(s_LegalRepeatTypes) / sizeof(string) && !found_valid; 
-              ++i ) {
-            if (NStr::EqualNocase (val, s_LegalRepeatTypes[i])) {
-                found_valid = true;
-            }
-        }
-        if (!found_valid) {
-            error = true;
-        }
-    }
-    return !error;
-}
-
-
 void CValidError_feat::ValidateRptUnitVal (const string& val, const string& key, const CSeq_feat& feat)
 {
     bool /* found = false, */ multiple_rpt_unit = false;
@@ -5076,7 +5020,7 @@ void CValidError_feat::ValidateImpGbquals
             switch ( gbqual ) {
             case CSeqFeatData::eQual_rpt_type:
                 {{
-                    error = !s_IsValidRpt_typeQual(val);
+                    error = !CGb_qual::IsValidRptTypeValue(val);
                 }}
                 break;
                 
@@ -5248,7 +5192,7 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
                 switch ( gbqual ) {
                 case CSeqFeatData::eQual_rpt_type:
                     {{
-                        if (!s_IsValidRpt_typeQual(val)) {
+                        if (!CGb_qual::IsValidRptTypeValue(val)) {
                             PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue, 
                                     val + " is not a legal value for qualifier " + qual_str, feat);
                         }
