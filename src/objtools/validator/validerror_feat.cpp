@@ -284,6 +284,8 @@ void CValidError_feat::ValidateSeqFeat(
                 }
                 if (NStr::EqualNocase((*it)->GetQual(), "inference")) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue, "Inference qualifier problem - empty inference string ()", feat);
+                } else if (NStr::EqualNocase((*it)->GetQual(), "pseudogene")) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, "/pseudogene value should be not empty", feat);
                 }
             } else if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
                 if (!s_IsValidECNumberFormat((*it)->GetVal())) {
@@ -338,10 +340,12 @@ void CValidError_feat::ValidateSeqFeat(
                              "Inference qualifier problem - " + kInferenceMessage [(int) rsult] + " ("
                              + val + ")", feat);
                 }
-            /*
             } else if (NStr::EqualNocase ((*it)->GetQual(), "pseudogene")) {
                 m_Imp.IncrementPseudogeneCount();
-            */
+                if (!CGb_qual::IsValidPseudogeneValue((*it)->GetVal())) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                        "/pseudogene value should be not '" + (*it)->GetVal() + "'", feat);
+                }
             }
             if ((*it)->IsSetVal() && ContainsSgml ((*it)->GetVal())) {
                 PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 

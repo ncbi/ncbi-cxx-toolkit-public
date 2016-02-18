@@ -177,7 +177,7 @@ bool CGb_qual::CleanupRptUnitRange(string& val)
 const CGb_qual::TLegalRepeatTypeSet &
 CGb_qual::GetSetOfLegalRepeatTypes(void)
 {
-    static string const repeat_types[] = {
+    static char * const repeat_types[] = {
         "centromeric_repeat",
         "direct",
         "dispersed",
@@ -221,7 +221,7 @@ bool CGb_qual::IsValidRptTypeValue(const string& val)
             v = v.substr(0, v.length() - 1);
         }
         NStr::TruncateSpacesInPlace(v);
-        if (repeat_types.find(v) == repeat_types.end()) {
+        if (repeat_types.find(v.c_str()) == repeat_types.end()) {
             error = true;
             break;
         }
@@ -230,6 +230,36 @@ bool CGb_qual::IsValidRptTypeValue(const string& val)
     return !error;
 }
 
+
+const CGb_qual::TLegalPseudogeneSet &
+CGb_qual::GetSetOfLegalPseudogenes(void)
+{
+    static char * const pseudogenes[] = {
+        "allelic",
+        "processed",
+        "unitary",
+        "unknown",
+        "unprocessed"
+    };
+
+
+    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(
+        TLegalPseudogeneSet, sc_LegalPseudogenes, pseudogenes);
+
+    return sc_LegalPseudogenes;
+}
+
+
+bool CGb_qual::IsValidPseudogeneValue(const string& val)
+{
+    const TLegalPseudogeneSet& pseudogenes = GetSetOfLegalPseudogenes();
+
+    if (pseudogenes.find(val.c_str()) == pseudogenes.end()) {
+        return false;
+    } else {
+        return true;
+    }
+}
 
 
 // constructor

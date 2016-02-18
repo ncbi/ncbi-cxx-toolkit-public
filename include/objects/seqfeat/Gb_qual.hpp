@@ -78,10 +78,15 @@ public:
     static bool CleanupRptUnitRange(string& val);
 
     // for rpt_type qualifiers
-    typedef CStaticArraySet<string, PNocase> TLegalRepeatTypeSet;
+    typedef CStaticArraySet<const char *, PNocase_CStr> TLegalRepeatTypeSet;
     static const TLegalRepeatTypeSet &GetSetOfLegalRepeatTypes(void);
     static bool IsValidRptTypeValue(const string& val);
-    
+
+    // for pseudogene qualifiers
+    typedef CStaticArraySet<const char *, PNocase_CStr> TLegalPseudogeneSet;
+    static const TLegalPseudogeneSet &GetSetOfLegalPseudogenes(void);
+    static bool IsValidPseudogeneValue(const string& val);
+
     static bool IsLegalMobileElementValue(const string& val);
     static void GetMobileElementValueElements(const string& val, string& element_type, string& element_name);
 
