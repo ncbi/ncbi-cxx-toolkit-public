@@ -60,6 +60,8 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_vector_ci.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/cds_fix.hpp>
 
@@ -687,6 +689,178 @@ bool CCleanup::RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
         }
     }
     return any_removed;
+}
+
+
+bool SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
+{
+    size_t loc_start = loc.GetStart(eExtreme_Positional);
+    size_t loc_stop = loc.GetStop(eExtreme_Positional);
+    bool partial_start = loc.IsPartialStart(eExtreme_Positional);
+    bool partial_stop = loc.IsPartialStop(eExtreme_Positional);
+    ENa_strand strand = loc.GetStrand();
+    CRef<CSeq_loc> new_loc(NULL);
+    bool changed = false;
+
+    if (pos < loc_start) {
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(*(loc.GetId()));
+        CRef<CSeq_loc> add(new CSeq_loc(*id, pos, loc_start - 1, strand));
+        add->SetPartialStart(partial_start, eExtreme_Positional);
+        new_loc = sequence::Seq_loc_Add(loc, *add, CSeq_loc::fSort | CSeq_loc::fMerge_AbuttingOnly, &scope);
+        changed = true;
+    } else if (pos > loc_stop) {
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(*(loc.GetId()));
+        CRef<CSeq_loc> add(new CSeq_loc(*id, loc_stop + 1, pos, strand));
+        add->SetPartialStop(partial_stop, eExtreme_Positional);
+        new_loc = sequence::Seq_loc_Add(loc, *add, CSeq_loc::fSort | CSeq_loc::fMerge_AbuttingOnly, &scope);
+        changed = true;
+    }
+    if (changed) {
+        loc.Assign(*new_loc);
+    }
+    return changed;
+}
+
+
+bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
+{
+    const CSeq_loc& loc = f.GetLocation();
+    CRef<CSeq_loc> new_loc;
+
+    const CGenetic_code* code = NULL;
+    if (f.IsSetData() && f.GetData().IsCdregion() && f.GetData().GetCdregion().IsSetCode()) {
+        code = &(f.GetData().GetCdregion().GetCode());
+    }
+
+    size_t stop = loc.GetStop(eExtreme_Biological);
+    // figure out if we have a partial codon at the end
+    size_t orig_len = sequence::GetLength(loc, &(bsh.GetScope()));
+    size_t len = orig_len;
+    if (f.IsSetData() && f.GetData().IsCdregion() && f.GetData().GetCdregion().IsSetFrame()) {
+        CCdregion::EFrame frame = f.GetData().GetCdregion().GetFrame();
+        if (frame == CCdregion::eFrame_two) {
+            len -= 1;
+        } else if (frame == CCdregion::eFrame_three) {
+            len -= 2;
+        }
+    }
+    size_t mod = len % 3;
+    CRef<CSeq_loc> vector_loc(new CSeq_loc());
+    vector_loc->SetInt().SetId().Assign(*(loc.GetId()));
+
+    if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
+        vector_loc->SetInt().SetFrom(0);
+        vector_loc->SetInt().SetTo(stop + mod - 1);
+        vector_loc->SetStrand(eNa_strand_minus);
+    } else {
+        vector_loc->SetInt().SetFrom(stop - mod + 1);
+        vector_loc->SetInt().SetTo(bsh.GetInst_Length() - 1);
+    }
+
+    CSeqVector seq(*vector_loc, bsh.GetScope(), CBioseq_Handle::eCoding_Iupac);
+    // reserve our space
+    size_t usable_size = seq.size();
+
+    if (limit > 0 && usable_size > limit) {
+        usable_size = limit;
+    }
+
+    // get appropriate translation table
+    const CTrans_table & tbl =
+        (code ? CGen_code_table::GetTransTable(*code) :
+        CGen_code_table::GetTransTable(1));
+
+    // main loop through bases
+    CSeqVector::const_iterator start = seq.begin();
+
+    size_t i;
+    size_t k;
+    size_t state = 0;
+    size_t length = usable_size / 3;
+
+    for (i = 0; i < length; ++i) {
+        // loop through one codon at a time
+        for (k = 0; k < 3; ++k, ++start) {
+            state = tbl.NextCodonState(state, *start);
+        }
+
+        if (tbl.GetCodonResidue(state) == '*') {
+            CSeq_loc_CI it(loc);
+            CSeq_loc_CI it_next = it;
+            ++it_next;
+            while (it_next) {
+                CConstRef<CSeq_loc> this_loc = it.GetRangeAsSeq_loc();
+                if (new_loc) {
+                    new_loc->Add(*this_loc);
+                } else {
+                    new_loc.Reset(new CSeq_loc());
+                    new_loc->Assign(*this_loc);
+                }
+                it = it_next;
+                ++it_next;
+            }
+            CRef<CSeq_loc> last_interval(new CSeq_loc());
+            CConstRef<CSeq_loc> this_loc = it.GetRangeAsSeq_loc();
+            size_t this_start = this_loc->GetStart(eExtreme_Positional);
+            size_t this_stop = this_loc->GetStop(eExtreme_Positional);
+            size_t extension = ((i + 1) * 3) - mod;
+            last_interval->SetInt().SetId().Assign(*(this_loc->GetId()));
+            if (this_loc->IsSetStrand() && this_loc->GetStrand() == eNa_strand_minus) {
+                last_interval->SetStrand(eNa_strand_minus);
+                last_interval->SetInt().SetFrom(this_start - extension);
+                last_interval->SetInt().SetTo(this_stop);
+            } else {
+                last_interval->SetInt().SetFrom(this_start);
+                last_interval->SetInt().SetTo(this_stop + extension);
+            }
+
+            if (new_loc) {
+                new_loc->Add(*last_interval);
+            } else {
+                new_loc.Reset(new CSeq_loc());
+                new_loc->Assign(*last_interval);
+            }
+            new_loc->SetPartialStart(loc.IsPartialStart(eExtreme_Biological), eExtreme_Biological);
+            new_loc->SetPartialStop(false, eExtreme_Biological);
+            f.SetLocation().Assign(*new_loc);
+            return true;
+        }
+    }
+
+    bool rval = false;
+    if (usable_size < 3 && limit == 0) {
+        if (loc.GetStrand() == eNa_strand_minus) {
+            rval = SeqLocExtend(f.SetLocation(), 0, bsh.GetScope());
+        } else {
+            rval = SeqLocExtend(f.SetLocation(), bsh.GetInst_Length() - 1, bsh.GetScope());
+        }
+        f.SetLocation().SetPartialStop(true, eExtreme_Biological);
+    }
+
+    return rval;
+}
+
+bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh)
+{
+    if (!f.GetData().IsCdregion()) {
+        // not coding region
+        return false;
+    }
+    if (f.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        // is 3' partial
+        return false;
+    }
+
+    string translation;
+    CSeqTranslator::Translate(f, bsh.GetScope(), translation, true);
+    if (NStr::EndsWith(translation, "*")) {
+        //already has stop codon
+        return false;
+    }
+
+    return ExtendToStopCodon(f, bsh, 3);
 }
 
 

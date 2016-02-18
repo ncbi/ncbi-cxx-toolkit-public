@@ -168,6 +168,25 @@ public:
 /// @return Boolean return value indicates whether gene-xrefs were removed
     static bool RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh);
 
+/// Extends a coding region 1-3 nt. if the coding region:
+/// 1. is not partial
+/// 2. does not end with a stop codon
+/// 3. is adjacent to a stop codon
+/// @param f Seq-feat to edit
+/// @param bsh CBioseq_Handle on which the feature is located
+/// @return Boolean return value indicates whether the feature was extended
+    static bool ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh);
+
+
+/// Extends a feature up to limit nt to a stop codon, or to the end of the sequence
+/// if limit == 0 (partial will be set if location extends to end of sequence but
+/// no stop codon is found)
+/// @param f Seq-feat to edit
+/// @param bsh CBioseq_Handle on which the feature is located
+/// @param limit maximum number of nt to extend, or 0 if unlimited
+/// @return Boolean return value indicates whether the feature was extended
+    static bool ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit);
+
 /// Sets MolInfo::tech for a sequence
 /// @param seq Bioseq to edit
 /// @param tech tech value to set
