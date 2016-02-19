@@ -172,10 +172,11 @@ public:
 /// 1. is not partial
 /// 2. does not end with a stop codon
 /// 3. is adjacent to a stop codon
+/// 4. is pseudo
 /// @param f Seq-feat to edit
 /// @param bsh CBioseq_Handle on which the feature is located
 /// @return Boolean return value indicates whether the feature was extended
-    static bool ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh);
+    static bool ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh, bool check_for_stop = true);
 
 
 /// Extends a feature up to limit nt to a stop codon, or to the end of the sequence
@@ -186,6 +187,14 @@ public:
 /// @param limit maximum number of nt to extend, or 0 if unlimited
 /// @return Boolean return value indicates whether the feature was extended
     static bool ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit);
+
+/// Checks to see if a feature is pseudo. Looks for pseudo flag set on feature,
+/// looks for pseudogene qualifier on feature, performs same checks for gene
+/// associated with feature
+/// @param feat Seq-feat to check
+/// @param scope CScope to use when looking for associated gene
+/// @return Boolean return value indicates whether any of the "pseudo" markers are found
+    static bool IsPseudo(const CSeq_feat& feat, CScope& scope);
 
 /// Sets MolInfo::tech for a sequence
 /// @param seq Bioseq to edit

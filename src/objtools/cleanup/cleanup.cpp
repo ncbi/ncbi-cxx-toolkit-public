@@ -842,7 +842,82 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
     return rval;
 }
 
-bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh)
+
+CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
+{
+    const CGene_ref* gene = feat.GetGeneXref();
+    if (gene && gene->IsSuppressed()) {
+        return (CConstRef <CSeq_feat>());
+    }
+
+    if (gene) {
+        CBioseq_Handle
+            bioseq_hl = sequence::GetBioseqFromSeqLoc(feat.GetLocation(), scope);
+        if (!bioseq_hl) {
+            return (CConstRef <CSeq_feat>());
+        }
+        CTSE_Handle tse_hl = bioseq_hl.GetTSE_Handle();
+        if (gene->CanGetLocus_tag() && !(gene->GetLocus_tag().empty())) {
+            CSeq_feat_Handle
+                seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus_tag(), true);
+            if (seq_feat_hl) {
+                return (seq_feat_hl.GetOriginalSeq_feat());
+            }
+        } else if (gene->CanGetLocus() && !(gene->GetLocus().empty())) {
+            CSeq_feat_Handle
+                seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus(), false);
+            if (seq_feat_hl) {
+                return (seq_feat_hl.GetOriginalSeq_feat());
+            }
+        } else return (CConstRef <CSeq_feat>());
+    } else {
+        return(
+            CConstRef <CSeq_feat>(sequence::GetBestOverlappingFeat(feat.GetLocation(),
+            CSeqFeatData::e_Gene,
+            sequence::eOverlap_Contained,
+            scope)));
+    }
+
+    return (CConstRef <CSeq_feat>());
+};
+
+
+bool CCleanup::IsPseudo(const CSeq_feat& feat, CScope& scope)
+{
+    if (feat.IsSetPseudo() && feat.GetPseudo()) {
+        return true;
+    }
+    if (feat.IsSetQual()) {
+        ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
+            if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "pseudogene")) {
+                return true;
+            }
+        }
+    }
+    if (feat.GetData().IsGene()) {
+        if (feat.GetData().GetGene().IsSetPseudo() && feat.GetData().GetGene().GetPseudo()) {
+            return true;
+        }
+    } else {
+        if (feat.IsSetXref()) {
+            ITERATE(CSeq_feat::TXref, it, feat.GetXref()) {
+                if ((*it)->IsSetData() && (*it)->GetData().IsGene() &&
+                    (*it)->GetData().GetGene().IsSetPseudo() &&
+                    (*it)->GetData().GetGene().GetPseudo()) {
+                    return true;
+                }
+            }
+        }
+        CConstRef<CSeq_feat> gene = GetGeneForFeature(feat, scope);
+        if (gene && IsPseudo(*gene, scope)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh, bool check_for_stop)
 {
     if (!f.GetData().IsCdregion()) {
         // not coding region
@@ -852,12 +927,17 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
         // is 3' partial
         return false;
     }
-
-    string translation;
-    CSeqTranslator::Translate(f, bsh.GetScope(), translation, true);
-    if (NStr::EndsWith(translation, "*")) {
-        //already has stop codon
+    if (IsPseudo(f, bsh.GetScope())) {
         return false;
+    }
+
+    if (check_for_stop) {
+        string translation;
+        CSeqTranslator::Translate(f, bsh.GetScope(), translation, true);
+        if (NStr::EndsWith(translation, "*")) {
+            //already has stop codon
+            return false;
+        }
     }
 
     return ExtendToStopCodon(f, bsh, 3);
