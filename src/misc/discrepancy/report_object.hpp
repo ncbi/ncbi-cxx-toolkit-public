@@ -41,6 +41,9 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(NDiscrepancy)
 
 
+struct CReportObjPtr;
+
+
 class NCBI_DISCREPANCY_EXPORT CReportObject : public CReportObj
 {
 public:
@@ -99,11 +102,6 @@ public:
     static string GetTextObjectDescription(CBioseq_Handle bsh);
     static string GetTextObjectDescription(CBioseq_set_Handle bssh);
 
-    static bool AlreadyInList(const TReportObjectList& list, const CReportObject& new_obj);
-
-    /// Do CReportObjects represent the same object?
-    bool Equal(const CReportObj& other) const;
-
     CScope& GetScope(void) const { return m_Scope; }
     CConstRef<CSerialObject> GetObject(void) const
     {
@@ -133,6 +131,7 @@ protected:
     CConstRef<CBioseq_set> m_Bioseq_set;
     string                 m_Filename;
     CScope&                m_Scope;
+friend struct CReportObjPtr;
 };
 
 

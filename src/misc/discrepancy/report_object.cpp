@@ -247,7 +247,7 @@ void UpgradeSeqLocId(CSeq_loc& loc, CScope& scope)
             }
             break;
         case CSeq_loc::e_Equiv:
-            NON_CONST_ITERATE(CSeq_loc::TEquiv::Tdata, it, loc.SetEquiv().Set()) {
+            NON_CONST_ITERATE (CSeq_loc::TEquiv::Tdata, it, loc.SetEquiv().Set()) {
                 UpgradeSeqLocId(**it, scope);
             }
             break;
@@ -256,12 +256,12 @@ void UpgradeSeqLocId(CSeq_loc& loc, CScope& scope)
             break;
 
         case CSeq_loc::e_Mix:
-            NON_CONST_ITERATE(CSeq_loc::TMix::Tdata, it, loc.SetMix().Set()) {
+            NON_CONST_ITERATE (CSeq_loc::TMix::Tdata, it, loc.SetMix().Set()) {
                 UpgradeSeqLocId(**it, scope);
             }
             break;
         case CSeq_loc::e_Packed_int:
-            NON_CONST_ITERATE(CSeq_loc::TPacked_int::Tdata, it, loc.SetPacked_int().Set()) {
+            NON_CONST_ITERATE (CSeq_loc::TPacked_int::Tdata, it, loc.SetPacked_int().Set()) {
                 UpgradeSeqLocId(**it, scope);
             }
             break;
@@ -581,51 +581,34 @@ void CReportObject::DropReference(CScope& scope)
 }
 
 
-bool CReportObject::Equal(const CReportObj& obj) const
+bool CReportObjPtr::operator<(const CReportObjPtr& other) const
 {
-    const CReportObject& other = static_cast<const CReportObject&>(obj);
-    string filename1 = GetFilename();
-    string filename2 = other.GetFilename();
-
-    if (!NStr::Equal(filename1, filename2)) {
+    if (P == other.P) {
         return false;
     }
-    
-    if (m_Bioseq || m_Seq_feat || m_Seqdesc || m_Bioseq_set || other.m_Bioseq || other.m_Seq_feat || other.m_Seqdesc || other.m_Bioseq_set ) {
-        return (m_Bioseq.GetPointer() == other.m_Bioseq.GetPointer() && m_Seq_feat.GetPointer() == other.m_Seq_feat.GetPointer() && m_Seqdesc.GetPointer() == other.m_Seqdesc.GetPointer() && m_Bioseq_set.GetPointer() == other.m_Bioseq_set.GetPointer());
-    }            
-
-    string cmp1 = GetText();
-    string cmp2 = other.GetText();
-    if (!NStr::IsBlank(cmp1) || !NStr::IsBlank(cmp2)) {
-        return NStr::Equal(cmp1, cmp2);
+    const CReportObject& A = (const CReportObject&)*P;
+    const CReportObject& B = (const CReportObject&)*other.P;
+    if (A.m_Bioseq || B.m_Bioseq) {
+        return A.m_Bioseq < B.m_Bioseq;
     }
-
-    cmp1 = GetXML();
-    cmp2 = other.GetXML();
-    if (!NStr::IsBlank(cmp1) || !NStr::IsBlank(cmp2)) {
-        return NStr::Equal(cmp1, cmp2);
+    if (A.m_Seq_feat || B.m_Seq_feat) {
+        return A.m_Seq_feat < B.m_Seq_feat;
     }
-
-    cmp1 = GetFeatureTable();
-    cmp2 = other.GetFeatureTable();
-    if (!NStr::IsBlank(cmp1) || !NStr::IsBlank(cmp2)) {
-        return NStr::Equal(cmp1, cmp2);
+    if (A.m_Seqdesc || B.m_Seqdesc) {
+        return A.m_Seqdesc < B.m_Seqdesc;
     }
-
-    return true;
-}
-
-
-bool CReportObject::AlreadyInList(const TReportObjectList& list, const CReportObject& new_obj)
-{
-    ITERATE(TReportObjectList, it, list) {
-        if (new_obj.Equal(**it)) {
-            return true;
-        }
+    if (A.m_Bioseq_set || B.m_Bioseq_set) {
+        return A.m_Bioseq_set < B.m_Bioseq_set;
+    }
+    if (A.m_Filename != B.m_Filename) {
+        return A.m_Filename < B.m_Filename;
+    }
+    if (A.m_Text != B.m_Text) {
+        return A.m_Text < B.m_Text;
     }
     return false;
 }
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

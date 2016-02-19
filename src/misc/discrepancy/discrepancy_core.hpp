@@ -176,7 +176,15 @@ friend class CReportNode;
 /// CDiscrepancyCore and CDiscrepancyVisitor - parents for CDiscrepancyCase_* classes
 
 class CDiscrepancyContext;
-//typedef map<string, vector<CRef<CReportObj> > > TReportObjectMap; // sema: dont forget to remove it!
+
+struct CReportObjPtr
+{
+    const CReportObj* P;
+    CReportObjPtr(const CReportObj* p) : P(p) {}
+    bool operator<(const CReportObjPtr&) const;
+};
+typedef set<CReportObjPtr> TReportObjectSet;
+
 
 class CReportNode : public CObject
 {
@@ -191,10 +199,10 @@ public:
     CReportNode& Autofix(bool b = true) { m_Autofix = b; return *this; }
     CReportNode& Ext(bool b = true) { m_Ext = b; return *this; }
 
-    static void Add(TReportObjectList& list, CReportObj& obj, bool unique = true);
-    CReportNode& Add(CReportObj& obj, bool unique = true) { Add(m_Objs, obj, unique);  return *this; }
-    static void Add(TReportObjectList& list, TReportObjectList& objs, bool unique = true);
-    CReportNode& Add(TReportObjectList& objs, bool unique = true) { Add(m_Objs, objs, unique);  return *this; }
+    static void Add(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj, bool unique = true);
+    CReportNode& Add(CReportObj& obj, bool unique = true) { Add(m_Objs, m_Hash, obj, unique);  return *this; }
+    static void Add(TReportObjectList& list, TReportObjectSet& hash, TReportObjectList& objs, bool unique = true);
+    CReportNode& Add(TReportObjectList& objs, bool unique = true) { Add(m_Objs, m_Hash, objs, unique);  return *this; }
     
     TReportObjectList& GetObjects() { return m_Objs; }
     TNodeMap& GetMap() { return m_Map; }
@@ -206,6 +214,7 @@ protected:
     string m_Name;
     TNodeMap m_Map;
     TReportObjectList m_Objs;
+    TReportObjectSet m_Hash;
     bool m_Fatal;
     bool m_Autofix;
     bool m_Ext;

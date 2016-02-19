@@ -117,23 +117,20 @@ CReportNode& CReportNode::operator[](const string& name)
 }
 
 
-void CReportNode::Add(TReportObjectList& list, CReportObj& obj, bool unique)
+void CReportNode::Add(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj, bool unique)
 {
-    if (unique) {
-        ITERATE (TReportObjectList, it, list) {
-            if (static_cast<CDiscrepancyObject&>(obj).Equal(**it)) {
-                return;
-            }
-        }
+    if (unique && hash.find(&obj) != hash.end()) {
+        return;
     }
     list.push_back(CRef<CReportObj>(&obj));
+    hash.insert(&obj);
 }
 
 
-void CReportNode::Add(TReportObjectList& list, TReportObjectList& objs, bool unique)
+void CReportNode::Add(TReportObjectList& list, TReportObjectSet& hash, TReportObjectList& objs, bool unique)
 {
     NON_CONST_ITERATE (TReportObjectList, it, objs) {
-        Add(list, **it, unique);
+        Add(list, hash, **it, unique);
     }
 }
 
@@ -141,6 +138,7 @@ void CReportNode::Add(TReportObjectList& list, TReportObjectList& objs, bool uni
 CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
 {
     TReportObjectList objs = m_Objs;
+    TReportObjectSet hash = m_Hash;
     TReportItemList subs;
     bool autofix = false;
     NON_CONST_ITERATE (TNodeMap, it, m_Map) {
@@ -148,7 +146,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
         subs.push_back(sub);
         TReportObjectList details = sub->GetDetails();
         NON_CONST_ITERATE (TReportObjectList, ob, details) {
-            Add(objs, **ob, unique);
+            Add(objs, hash, **ob, unique);
         }
     }
     NON_CONST_ITERATE (TReportObjectList, ob, objs) {

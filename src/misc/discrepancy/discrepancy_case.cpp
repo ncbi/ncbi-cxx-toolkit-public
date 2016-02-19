@@ -207,7 +207,7 @@ void FindNRuns(vector<CRange<TSeqPos> >& runs, const CSeq_data& seq_data, const 
     TSeqPos position = start_pos;
 
     const string& iupacna_str = as_iupacna.GetIupacna().Get();
-    ITERATE(string, base, iupacna_str) {
+    ITERATE (string, base, iupacna_str) {
         TSeqPos curr_length = this_run.GetLength();
 
         switch (*base) {
@@ -254,7 +254,7 @@ DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc, "More than 10 Ns in a row")
     CSeqMap_CI seq_iter(seq_map, &context.GetScope(), sel);
     for (; seq_iter; ++seq_iter) {
         FindNRuns(runs, seq_iter.GetData(), seq_iter.GetPosition(), 10);
-        ITERATE(vector<CRange<TSeqPos> >, run, runs) {
+        ITERATE (vector<CRange<TSeqPos> >, run, runs) {
             if (!found_any) {
                 found_any = true;
             } else {
@@ -359,7 +359,7 @@ static string GetProductName(const CSeq_feat& cds, CScope& scope)
         }
     }
     else if (cds.IsSetXref()) {
-        ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
+        ITERATE (CSeq_feat::TXref, it, cds.GetXref()) {
             if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
                 prot_nm = GetProductName((*it)->GetData().GetProt());
             }
@@ -475,12 +475,12 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eDisc, "Overlapping CDs")
     }
 
     CReportNode::TNodeMap& map = m_Objs.GetMap();
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
         if (it->first.empty() || !ProductNamesAreSimilar(it->first, product)) {
             continue;
         }
         TReportObjectList& list = it->second->GetObjects();
-        NON_CONST_ITERATE(TReportObjectList, robj, list) {
+        NON_CONST_ITERATE (TReportObjectList, robj, list) {
             CConstRef<CSeq_feat> sf((CSeq_feat*)&*(*robj)->GetObject());
             const CSeq_loc& loc = sf->GetLocation();
             if (!LocationsOverlapOnSameStrand(location, loc, &context.GetScope())) {
@@ -505,7 +505,7 @@ DISCREPANCY_SUMMARIZE(OVERLAPPING_CDS)
 DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 {
     TReportObjectList list = item->GetDetails();
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf) {
             CRef<CSeq_feat> new_feat(new CSeq_feat());
@@ -517,6 +517,7 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
         }
     }
 }
+
 
 DISCREPANCY_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE, CSeq_feat, eDisc, "Partial CDSs in Complete Sequences")
 {
@@ -548,6 +549,7 @@ DISCREPANCY_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE, CSeq_feat, eDisc, "Partial CDSs 
             context.GetFile(), context.GetKeepRef()));
 }
 
+
 DISCREPANCY_SUMMARIZE(PARTIAL_CDS_COMPLETE_SEQUENCE)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
@@ -571,34 +573,27 @@ DISCREPANCY_CASE(OVERLAPPING_RRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Overlapping rRN
     CRef<CDiscrepancyObject> this_disc_obj(new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj), context.GetScope(), context.GetFile(), true));
     const CSeq_loc& this_location = obj.GetLocation();
 
-    NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["rRNAs"].GetObjects())
+    NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["rRNAs"].GetObjects())
     {
         const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
         const CSeq_feat* other_seq_feat = dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer());
         const CSeq_loc& other_location = other_seq_feat->GetLocation();
 
         if (sequence::Compare(this_location, other_location, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
-            // We add with unique=false because it's O(num overlaps) each time to uniquify.
-            // We do it at the end instead.
-            m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."]
-                .Add(**robj, false)
-                .Add(*this_disc_obj, false);
+            m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."].Add(**robj).Add(*this_disc_obj);
         }
     }
 
     m_Objs["rRNAs"].Add(*this_disc_obj);
 }
 
+
 DISCREPANCY_SUMMARIZE(OVERLAPPING_RRNAS)
 {
     m_Objs.GetMap().erase("rRNAs");
-
-    // Make the list unique now.
-    TReportObjectList& hits = m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."].GetObjects();
-    set<CRef<CReportObj> > uniq(hits.begin(), hits.end());
-    hits.assign(uniq.begin(), uniq.end());
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
 
 DISCREPANCY_CASE(RNA_NO_PRODUCT, CSeq_feat, eOncaller, "Find RNAs without Products")
 {
@@ -688,6 +683,7 @@ DISCREPANCY_CASE(RNA_NO_PRODUCT, CSeq_feat, eOncaller, "Find RNAs without Produc
         );
 }
 
+
 DISCREPANCY_SUMMARIZE(RNA_NO_PRODUCT)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
@@ -774,7 +770,7 @@ DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eDisc, "Contained CDs")
 
     const CSeq_loc& location = context.GetCurrentSeq_feat()->GetLocation();
     TReportObjectList& list = m_Objs["tmp"].GetObjects();
-    NON_CONST_ITERATE(TReportObjectList, robj, list) {
+    NON_CONST_ITERATE (TReportObjectList, robj, list) {
         CConstRef<CSeq_feat> sf((CSeq_feat*)&*(*robj)->GetObject());
         const CSeq_loc& loc = sf->GetLocation();
         sequence::ECompare compare = sequence::Compare(loc, location, &context.GetScope(), sequence::fCompareOverlapping);
@@ -797,7 +793,7 @@ DISCREPANCY_SUMMARIZE(CONTAINED_CDS)
 DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 {
     TReportObjectList list = item->GetDetails();
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         if ((*it)->CanAutofix()) {
             const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
             if (sf) {
@@ -865,10 +861,12 @@ DISCREPANCY_CASE(NONWGS_SETS_PRESENT, CBioseq_set, eDisc,
     }
 }
 
+
 DISCREPANCY_SUMMARIZE(NONWGS_SETS_PRESENT)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
 
 DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc|eOncaller, "No annotation")
 {
@@ -939,7 +937,7 @@ DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eOncaller, "Detect linker sequence 
     size_t tail_len = 0;
     bool found_linker = false;
 
-    ITERATE(string, base_it , seq_data) {
+    ITERATE (string, base_it , seq_data) {
         char base = toupper(*base_it);
 
         if (base == 'A') {
@@ -967,6 +965,7 @@ DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
 // ORDERED_LOCATION
 DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eOncaller,
                  "Location is ordered (intervals interspersed with gaps)")
@@ -987,16 +986,18 @@ DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eOncaller,
     }
 }
 
+
 DISCREPANCY_SUMMARIZE(ORDERED_LOCATION)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
 DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
 {
     TReportObjectList list = item->GetDetails();
     size_t num_fixed = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         CDiscrepancyObject& obj =
             *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
         const CSeq_feat* orig_seq_feat =
@@ -1189,6 +1190,7 @@ DISCREPANCY_SUMMARIZE(BAD_LOCUS_TAG_FORMAT)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
 // SEGSETS_PRESENT
 DISCREPANCY_CASE(SEGSETS_PRESENT, CBioseq_set, eDisc, "Segsets present")
 {
@@ -1205,6 +1207,7 @@ DISCREPANCY_CASE(SEGSETS_PRESENT, CBioseq_set, eDisc, "Segsets present")
         false);
 }
 
+
 DISCREPANCY_SUMMARIZE(SEGSETS_PRESENT)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
@@ -1212,7 +1215,6 @@ DISCREPANCY_SUMMARIZE(SEGSETS_PRESENT)
 
 
 // QUALITY_SCORES
-
 DISCREPANCY_CASE(QUALITY_SCORES, CSeq_annot, eDisc, "Check for quality scores")
 {
     if (!context.GetCurrentBioseq()->IsSetInst() || context.GetCurrentBioseq()->IsAa()) {
@@ -1248,12 +1250,11 @@ DISCREPANCY_SUMMARIZE(QUALITY_SCORES)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
 DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, CSeqFeatData, eOncaller,
                  "Bacterial sequences should not have mRNA features")
 {
-    if( ! context.IsBacterial() ||
-        obj.GetSubtype() != CSeqFeatData::eSubtype_mRNA )
-    {
+    if (!context.IsBacterial() || obj.GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
         return;
     }
 
@@ -1263,14 +1264,16 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, CSeqFeatData, eOncaller,
             context.GetKeepRef()));
 }
 
+
 DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_MRNA)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
 DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc, "Bad BGPIPE qualifiers")
 {
-    if( context.IsRefseq() || ! context.IsBGPipe() ) {
+    if (context.IsRefseq() || !context.IsBGPipe()) {
         return;
     }
 
@@ -1318,6 +1321,7 @@ DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc, "Bad BGPIPE qualifiers")
         return;
     }
 }
+
 
 DISCREPANCY_SUMMARIZE(BAD_BGPIPE_QUALS)
 {
