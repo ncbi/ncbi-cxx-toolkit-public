@@ -2,6 +2,7 @@
 # Pregenerated summary of library relations, for use by project_tree_builder.
 $(ORIG_LIBS) needs3party
 16S_common needs seqset
+16S_common needs xmlwrapp
 16S_summaries needs 16S_common
 16S_summaries needs gpipe_xmlutil
 16S_summaries needs xregexp
