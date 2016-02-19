@@ -8303,8 +8303,11 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                 (!seq.GetExactComplexityLevel(CBioseq_set::eClass_parts)) &&
                 (!seq.GetExactComplexityLevel(CBioseq_set::eClass_small_genome_set))) {
                 if (bsh  &&  seq != bsh) {
+//Not reported in C Toolkit
+#if 0
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_MultipleBioseqs,
                         "Feature location refers to multiple near bioseqs.", feat);
+#endif
                 } else {
                     bsh = seq;
                 }
