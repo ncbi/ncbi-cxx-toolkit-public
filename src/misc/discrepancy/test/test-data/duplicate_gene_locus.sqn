@@ -1,0 +1,462 @@
+Seq-entry ::= set {
+  seq-set {
+    set {
+      class gen-prod-set,
+      seq-set {
+        seq {
+          id {
+            local str "good"
+          },
+          descr {
+            molinfo {
+              biomol mRNA
+            },
+            source {
+              org {
+                taxname "Sebaea microphylla",
+                db {
+                  {
+                    db "taxon",
+                    tag id 592768
+                  }
+                },
+                orgname {
+                  lineage "some lineage"
+                }
+              },
+              subtype {
+                {
+                  subtype chromosome,
+                  name "1"
+                }
+              }
+            },
+            pub {
+              pub {
+                pmid 1
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 60,
+            seq-data iupacna "ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAG
+ATAAACTAAGGG"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                  },
+                  product whole local str "prot",
+                  location int {
+                    from 0,
+                    to 26,
+                    id local str "good"
+                  }
+                },
+                {
+                  data rna {
+                    type mRNA
+                  },
+                  product whole local str "nuc",
+                  location int {
+                    from 0,
+                    to 26,
+                    id local str "good"
+                  }
+                },
+                {
+                  data gene {
+                    locus "Spy50"
+                  },
+                  location int {
+                    from 10,
+                    to 20,
+                    id local str "good"
+                  }
+                },
+                {
+                  data gene {
+                    locus "Spy10"
+                  },
+                  location int {
+                    from 25,
+                    to 35,
+                    id local str "good"
+                  }
+                },
+                {
+                  data gene {
+                    locus "Spy50"
+                  },
+                  location int {
+                    from 55,
+                    to 59,
+                    id local str "good"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              org {
+                taxname "Sebaea microphylla",
+                db {
+                  {
+                    db "taxon",
+                    tag id 592768
+                  }
+                },
+                orgname {
+                  lineage "some lineage"
+                }
+              },
+              subtype {
+                {
+                  subtype chromosome,
+                  name "1"
+                }
+              }
+            },
+            pub {
+              pub {
+                pmid 1
+              }
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "nuc"
+              },
+              descr {
+                molinfo {
+                  biomol mRNA
+                }
+              },
+              inst {
+                repr raw,
+                mol rna,
+                length 27,
+                seq-data iupacna "ATGCCCAGAAAAACAGAGATAAACTAA"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        locus "Spy50"
+                      },
+                      location int {
+                        from 10,
+                        to 20,
+                        id local str "nuc"
+                      }
+                    },
+                    {
+                      data gene {
+                        locus "Spy10"
+                      },
+                      location int {
+                        from 25,
+                        to 35,
+                        id local str "nuc"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "prot"
+              },
+              descr {
+                molinfo {
+                  biomol peptide,
+                  completeness complete
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 8,
+                seq-data iupacaa "MPRKTEIN"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "fake protein name"
+                        }
+                      },
+                      location int {
+                        from 0,
+                        to 7,
+                        id local str "prot"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                  },
+                  product whole local str "prot",
+                  location int {
+                    from 0,
+                    to 26,
+                    id local str "nuc"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class gen-prod-set,
+      seq-set {
+        seq {
+          id {
+            local str "good2"
+          },
+          descr {
+            molinfo {
+              biomol genomic
+            },
+            source {
+              org {
+                taxname "Sebaea microphylla",
+                db {
+                  {
+                    db "taxon",
+                    tag id 592768
+                  }
+                },
+                orgname {
+                  lineage "some lineage"
+                }
+              },
+              subtype {
+                {
+                  subtype chromosome,
+                  name "1"
+                }
+              }
+            },
+            pub {
+              pub {
+                pmid 1
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 60,
+            seq-data iupacna "ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAG
+ATAAACTAAGGG"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                  },
+                  product whole local str "prot",
+                  location int {
+                    from 0,
+                    to 26,
+                    id local str "good prot2"
+                  }
+                },
+                {
+                  data rna {
+                    type mRNA
+                  },
+                  product whole local str "nuc",
+                  location int {
+                    from 0,
+                    to 26,
+                    id local str "good prot2"
+                  }
+                },
+                {
+                  data gene {
+                    locus "Spy50"
+                  },
+                  location int {
+                    from 10,
+                    to 20,
+                    id local str "good2"
+                  }
+                },
+                {
+                  data gene {
+                    locus "Spy10"
+                  },
+                  location int {
+                    from 25,
+                    to 35,
+                    id local str "good2"
+                  }
+                },
+                {
+                  data gene {
+                    locus "Spy50"
+                  },
+                  location int {
+                    from 55,
+                    to 59,
+                    id local str "good2"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              org {
+                taxname "Sebaea microphylla",
+                db {
+                  {
+                    db "taxon",
+                    tag id 592768
+                  }
+                },
+                orgname {
+                  lineage "some lineage"
+                }
+              },
+              subtype {
+                {
+                  subtype chromosome,
+                  name "1"
+                }
+              }
+            },
+            pub {
+              pub {
+                pmid 1
+              }
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "good nuc2"
+              },
+              descr {
+                molinfo {
+                  biomol mRNA
+                }
+              },
+              inst {
+                repr raw,
+                mol rna,
+                length 27,
+                seq-data iupacna "ATGCCCAGAAAAACAGAGATAAACTAA"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        locus "Spy50"
+                      },
+                      location int {
+                        from 10,
+                        to 20,
+                        id local str "good nuc2"
+                      }
+                    },
+                    {
+                      data gene {
+                        locus "Spy10"
+                      },
+                      location int {
+                        from 25,
+                        to 35,
+                        id local str "good nuc2"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "good prot2"
+              },
+              descr {
+                molinfo {
+                  biomol peptide,
+                  completeness complete
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 8,
+                seq-data iupacaa "MPRKTEIN"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "fake protein name"
+                        }
+                      },
+                      location int {
+                        from 0,
+                        to 7,
+                        id local str "good prot2"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                  },
+                  product whole local str "good prot2",
+                  location int {
+                    from 0,
+                    to 26,
+                    id local str "good nuc2"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

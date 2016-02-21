@@ -1,0 +1,155 @@
+Seq-entry ::= set {
+  class genbank,
+  seq-set {
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Caenorhabditis briggsae",
+            db {
+              {
+                db "taxon",
+                tag id 6238
+              }
+            },
+            orgname {
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq1"
+          },
+          descr {
+            molinfo {
+              biomol genomic,
+              completeness partial
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq1"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 217,
+            strand ds,
+            seq-data iupacna "AAAAAACCGAAAGTAAAGCAAACAACCGTTTTAACATTCAAAAACCAT
+ACAATGGCCGGATGCTTAGTGTAGGGGCAGCTGGAAGTATTCTAGGATTTGGAGCCGGTTTATTCATCATAGATGACC
+CTATCAAAAGCGTAGCTGAAGCTGAAAGTAAAGCTTTACAAAGAAAATTAAGAGAATGGATAGGGGGAACAGCTAAAA
+CCCGACTATACTA"
+          }
+        },
+        seq {
+          id {
+            local str "Seq1_prot_1",
+            general {
+              db "TMSMART",
+              tag id 39787264
+            }
+          },
+          descr {
+            title "Putative terminase large subunit, partial [Methanobacterium
+ formicicum phage]",
+            molinfo {
+              biomol peptide,
+              completeness complete
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq1_prot_1"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 71,
+            seq-data iupacaa "KTESKANNRFNIQKPYNGRMLSVGAAGSILGFGAGLFIIDDPIKSVAE
+AESKALQRKLREWIGGTAKTRLY"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "hypothetical protein"
+                    },
+                    desc "terminase large subunit",
+                    ec {
+                      "1.2.3.5",
+                      "1.1.1.58",
+                      "4.3.21.-"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 70,
+                    id local str "Seq1_prot_1"
+                  }
+                },
+                {
+                  data prot {
+                    name {
+                      "test protein name"
+                    },
+                    ec {
+                      "1.2.3.5"
+                    }
+                  },
+                  location int {
+                    from 29,
+                    to 39,
+                    strand plus,
+                    id local str "Seq1_prot_1"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame three,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              comment "[intronless gene]",
+              product whole local str "Seq1_prot_1",
+              location int {
+                from 0,
+                to 216,
+                strand plus,
+                id local str "Seq1"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

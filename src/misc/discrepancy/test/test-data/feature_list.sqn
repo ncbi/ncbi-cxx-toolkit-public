@@ -1,0 +1,156 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        taxname "Sebaea microphylla",
+        db {
+          {
+            db "taxon",
+            tag id 592768
+          }
+        },
+        orgname {
+          lineage "some lineage"
+        }
+      },
+      subtype {
+        {
+          subtype chromosome,
+          name "1"
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 1
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "nuc"
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 60,
+        seq-data iupacna "ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAA
+ACTAAGGG"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data rna {
+                type mRNA
+              },
+              location int {
+                from 0,
+                to 26,
+                id local str "nuc"
+              }
+            },
+            {
+              data gene {
+                locus "gene locus"
+              },
+              location int {
+                from 0,
+                to 26,
+                strand unknown,
+                id local str "nuc"
+              }
+            },
+            {
+              data imp {
+                key "RBS"
+              },
+              comment "misc_feature needs a comment",
+              location int {
+                from 0,
+                to 10,
+                id local str "nuc"
+              }
+            },
+            {
+              data rna {
+                type tRNA,
+                ext tRNA {
+                  aa iupacaa 78,
+                  anticodon int {
+                    from 11,
+                    to 13,
+                    id local str "nuc"
+                  }
+                }
+              },
+              location int {
+                from 0,
+                to 10,
+                id local str "nuc"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "prot"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 8,
+        seq-data iupacaa "MPRKTEIN"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "fake protein name"
+                }
+              },
+              location int {
+                from 0,
+                to 7,
+                id local str "prot"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+          },
+          product whole local str "prot",
+          location int {
+            from 0,
+            to 26,
+            id local str "nuc"
+          }
+        }
+      }
+    }
+  }
+}
