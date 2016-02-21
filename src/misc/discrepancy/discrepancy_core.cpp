@@ -272,7 +272,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)   // remove aft
 }
 
 
-void CDiscrepancyContext::Parse(CRef<CSerialObject> obj)
+void CDiscrepancyContext::Parse(CConstRef<CSerialObject> obj)
 {
     CTypesConstIterator i;
     CType<CBioseq>::AddTo(i);
@@ -292,7 +292,7 @@ void CDiscrepancyContext::Parse(CRef<CSerialObject> obj)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_annot), it is handled separately!
     // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
 
-    for (i = CBeginInfo(*obj); i; ++i) {
+    for (i = CConstBeginInfo(*obj); i; ++i) {
         CTypesConstIterator::TIteratorContext ctx = i.GetContextData();
         if (CType<CBioseq>::Match(i)) {
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i));
