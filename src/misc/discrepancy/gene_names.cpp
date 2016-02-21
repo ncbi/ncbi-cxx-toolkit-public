@@ -41,11 +41,12 @@ DISCREPANCY_MODULE(gene_names);
 
 
 // BAD_GENE_NAME
-static bool HasBadWord(const string& s)
+static bool HasBadWord(const string& s, string& word)
 {
     static const char* BadWords[] = { "putative", "fragment", "gene", "orf", "like" };
     for (size_t i = 0; i < ArraySize(BadWords); i++) {
         if (NStr::FindNoCase(s, BadWords[i]) != string::npos) {
+            word = BadWords[i];
             return true;
         }
     }
@@ -69,8 +70,9 @@ DISCREPANCY_CASE(BAD_GENE_NAME, CSeqFeatData, eDisc, "Bad gene name")
         return;
     }
     string locus = obj.GetGene().GetLocus();
-    if (locus.size() > 10 || Has4Numbers(locus) || HasBadWord(locus)) {
-        m_Objs["[n] gene[s] contain[S] suspect phrase or characters"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true));
+    string word;
+    if (locus.size() > 10 || Has4Numbers(locus) || HasBadWord(locus, word)) {
+        m_Objs[word.empty() ? "[n] gene[s] contain[S] suspect phrase or characters" : "[n] gene[s] contain[S] " + word].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true));
     }
 }
 
