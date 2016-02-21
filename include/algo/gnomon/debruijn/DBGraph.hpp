@@ -454,17 +454,35 @@ public:
         typedef tuple<TStrList::iterator,int> TContigEnd;
         TStrList connected_contigs;
 
+        int SCAN_WINDOW = 100;  // 0 - no scan
         unordered_map<CDBGraph::Node, TContigEnd> landing_spots;
+        landing_spots.reserve(2*(SCAN_WINDOW+1)*contigs.size());
+
+        typedef list<CDBGraph::Node> TNodeList;
+        typedef pair<TStrList::iterator, TNodeList> TItL;
+        list<TItL> landing_spots_for_contig;
+
         NON_CONST_ITERATE(TStrList, ic, contigs) {
             string& contig = *ic;
-            TKmer lkmer(contig.begin(), contig.begin()+kmer_len);
-            CDBGraph::Node lnode = m_graph.GetNode(lkmer);
-            if(lnode) 
-                landing_spots[lnode] = TContigEnd(ic,0);
-            TKmer rkmer(contig.end()-kmer_len, contig.end());
-            CDBGraph::Node rnode = CDBGraph::ReverseComplement(m_graph.GetNode(rkmer));
-            if(rnode)
-                landing_spots[rnode] = TContigEnd(ic,contig.size()-1);
+            int len = contig.size();
+            landing_spots_for_contig.push_back(make_pair(ic,TNodeList()));
+            TNodeList& contig_spots = landing_spots_for_contig.back().second;
+
+            int scan_window = min(SCAN_WINDOW,(len-kmer_len)/2);
+            for(int k = 0; k <=  scan_window; ++k) {
+                TKmer lkmer(contig.begin()+k, contig.begin()+kmer_len+k);
+                CDBGraph::Node lnode = m_graph.GetNode(lkmer);
+                if(lnode) {
+                    landing_spots[lnode] = TContigEnd(ic,k+1);
+                    contig_spots.push_back(lnode);
+                }
+                TKmer rkmer(contig.end()-kmer_len-k, contig.end()-k);
+                CDBGraph::Node rnode = CDBGraph::ReverseComplement(m_graph.GetNode(rkmer));
+                if(rnode) {
+                    landing_spots[rnode] = TContigEnd(ic,-(k+1));
+                    contig_spots.push_back(rnode);
+                }
+            }
         }
 
         while(!contigs.empty()) {
@@ -473,18 +491,26 @@ public:
             string& contig = connected_contigs.back();
             list<TStrList::iterator> included;
             included.push_back(contigs.begin());
-
+            
             for(int side = 0; side < 2; ++side) {
-                CDBGraph::Node rnode = 0;
-                while(true) {
-                    TKmer rkmer(contig.end()-kmer_len, contig.end());
-                    rnode = m_graph.GetNode(rkmer);
-                    if(!rnode)               // invalid end 
-                        break;
-                    CDBGraphDigger::TBases step = Connect(rnode, landing_spots);
-                    int step_size = step.size();
+                                              
+               while(true) {
+                    int len = contig.size();
+                    int scan_window = min(SCAN_WINDOW,(len-kmer_len)/2);
+                    int shift = 0;
+                    CDBGraph::Node rnode = 0;
+                    CDBGraphDigger::TBases step;
+                    for( ; shift <= scan_window && step.empty(); ++shift) {
+                        TKmer rkmer(contig.end()-kmer_len-shift, contig.end()-shift);
+                        rnode = m_graph.GetNode(rkmer);
+                        if(!rnode)          // invalid kmer 
+                            continue;
+                        step = Connect(rnode, landing_spots);
+                        m_graph.SetVisited(rnode);
+                    }
                     if(step.empty())         // can't extend    
                         break;
+                    int step_size = step.size();
                     CDBGraph::Node last_node = step.back().m_node;
                     TContigEnd cend = landing_spots[last_node];
                     TStrList::iterator ir = get<0>(cend);
@@ -499,24 +525,39 @@ public:
                         break;
 
                     //update contig 
+                    contig = contig.substr(0,len-shift+1);
                     for(auto& suc : step)
                         contig.push_back(suc.m_nt);
                     string rcontig = *ir;
-                    if(get<1>(cend) > 0)
+                    int landing_shift = get<1>(cend);
+                    if(landing_shift < 0) {
                         ReverseComplement(rcontig.begin(), rcontig.end());
-                    contig += rcontig.substr(kmer_len);
+                        landing_shift = -landing_shift;
+                    }
+                    contig += rcontig.substr(kmer_len+landing_shift-1);
 
-                    //clean-up used components  
                     included.push_back(ir);
-                    landing_spots.erase(CDBGraph::ReverseComplement(rnode));
-                    landing_spots.erase(last_node);
                 }
-                landing_spots.erase(CDBGraph::ReverseComplement(rnode));
+
+               /*                                                                              
+                TKmer rkmer(contig.end()-kmer_len, contig.end());
+                CDBGraph::Node rnode = m_graph.GetNode(rkmer);
+                if(rnode) {                
+                    TBases contigr = ExtendToRight(rnode);
+                    for(auto& base : contigr)
+                        contig.push_back(base.m_nt);
+                }
+               */
+                               
                 ReverseComplement(contig.begin(),contig.end());
             }
             
-            //contigs clean-up
+            //clean-up
             for(TStrList::iterator ic : included) {
+                list<TItL>::iterator il = find_if(landing_spots_for_contig.begin(),landing_spots_for_contig.end(),[ic](const TItL& a){return a.first == ic;});
+                for(CDBGraph::Node ls : il->second)
+                    landing_spots.erase(ls);
+                landing_spots_for_contig.erase(il);
                 contigs.erase(ic);            
             }
         }
@@ -730,19 +771,6 @@ private:
         int max_extent = kmer_len-1+m_jump;
         int ambiguous_len = 0;
         while(!extensions.empty()) {
-            if(extensions.size() == 1)
-                ambiguous_len = 0;
-            else
-                ++ambiguous_len;
-            if(ambiguous_len == max_extent)
-                break;
-            int len = get<0>(*extensions.begin()->second).size();
-            if(len == MAX_LEN)
-                break;
-
-            if(!OneStepBranchExtend(extensions, sequences) || extensions.size() > MAX_BRANCH)  // ambiguos buble or too many branches
-                return TBases();
-
             for(auto& e : extensions) {
                 if(landing_spots.find(e.first) != landing_spots.end()) {
                     if(extensions.size() == 1) {
@@ -759,6 +787,23 @@ private:
                     }
                 }
             }
+
+            if(extensions.size() == 1) {
+                //                if(m_graph.IsVisited(extensions.begin()->first))
+                //                    break;
+                ambiguous_len = 0;
+            } else {
+                ++ambiguous_len;
+            }
+            if(ambiguous_len == max_extent)
+                break;
+            int len = get<0>(*extensions.begin()->second).size();
+            if(len == MAX_LEN)
+                break;
+
+            if(!OneStepBranchExtend(extensions, sequences) || extensions.size() > MAX_BRANCH)  // ambiguos buble or too many branches
+                break;
+
         }
         
         return TBases();
