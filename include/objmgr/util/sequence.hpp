@@ -532,6 +532,10 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
                        TBestFeatOpts opts = fBestFeat_Defaults,
                        CGetOverlappingFeaturesPlugin *plugin = NULL );
 
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope);
+
+
 /// Get the best overlapping feature for a SNP (variation) feature
 /// @param snp_feat
 ///   SNP feature object

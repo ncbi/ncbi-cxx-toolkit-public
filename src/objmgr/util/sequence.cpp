@@ -1126,6 +1126,45 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
 }
 
 
+/// GetmRNAforCDS
+/// A function to find a CSeq_feat representing the
+/// appropriate mRNA for a given CDS. 
+/// @param cds        The feature for which the mRNA to be found
+/// @param scope      The scope 
+///
+/// @return           CConstRef<CSeq_feat> for new mRNA (will be NULL if none is found)
+
+CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
+{
+    CConstRef<CSeq_feat> mrna;
+
+    bool has_xref = false;
+    if (cds.IsSetXref()) {
+        /* using FeatID from feature cross-references:
+        * if CDS refers to an mRNA by feature ID, use that feature
+        */
+        CBioseq_Handle bsh = scope.GetBioseqHandle(cds.GetLocation());
+        CTSE_Handle tse = bsh.GetTSE_Handle();
+        ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
+            if ((*it)->IsSetId() && (*it)->GetId().IsLocal() && (*it)->GetId().GetLocal().IsId()) {
+                CSeq_feat_Handle mrna_h = tse.GetFeatureWithId(CSeqFeatData::eSubtype_mRNA, (*it)->GetId().GetLocal().GetId());
+                if (mrna_h) {
+                    mrna = mrna_h.GetSeq_feat();
+                }
+                has_xref = true;
+            }
+        }
+    }
+    if (!has_xref) {
+        /* using original location to find mRNA:
+        * mRNA must include the CDS location and the internal interval boundaries need to be identical
+        */
+        mrna = GetBestOverlappingFeat(cds.GetLocation(), CSeqFeatData::eSubtype_mRNA, sequence::eOverlap_CheckIntRev, scope);
+    }
+    return mrna;
+}
+
+
 static
 CConstRef<CSeq_feat> x_GetBestOverlapForSNP(const CSeq_feat& snp_feat,
                                             CSeqFeatData::E_Choice type,
