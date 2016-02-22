@@ -309,6 +309,8 @@ static CConstRef<CProt_ref> sGetProtRefForFeature(const CSeq_feat& seq_feat, CSc
 }
 
 
+/*// removed from the list
+
 DISCREPANCY_CASE(EC_NUMBER_NOTE, CSeq_feat_BY_BIOSEQ, eDisc, "Seq-feat has EC number note")
 {
     bool discrepancy_found = false;
@@ -352,6 +354,8 @@ DISCREPANCY_SUMMARIZE(EC_NUMBER_NOTE)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+*/
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
