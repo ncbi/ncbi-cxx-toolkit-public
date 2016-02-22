@@ -624,8 +624,9 @@ DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
  * there can be maximum of 34 threads) and gives ports only from corresponding
  * piece of range. If -1 is provided as thread_num, then full range is used
  * for port generation                                                       */
-static unsigned short s_GeneratePort(int thread_num = -1)
+static unsigned short s_GeneratePort()
 {
+    int thread_num = *tls->GetValue();
     static int cur = static_cast<int>(time(0));
 
     {{
@@ -1089,7 +1090,7 @@ static void s_FakeFillCandidatesCheckInstances(SLBOS_Data* data,
     const char* service)
 {
     NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_Instance() != NULL,
-        "s_LBOS_InstancesList is empty at a critical place");
+                           "s_LBOS_InstancesList is empty at a critical place");
     s_FakeFillCandidates<2>(data, service);
 }
 
@@ -1144,7 +1145,7 @@ static void s_FakeInitializeCheckInstances()
 {
     s_CallCounter++;
     NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_Instance() != NULL,
-        "s_LBOS_InstancesList is empty at a critical place");
+                           "s_LBOS_InstancesList is empty at a critical place");
     return;
 }
 
@@ -1164,13 +1165,13 @@ static SSERV_Info** s_FakeResolveIPPort (const char*   lbos_address,
         SSERV_Info** hostports = static_cast<SSERV_Info**>(
                 calloc(sizeof(SSERV_Info*), 2));
         NCBITEST_CHECK_MESSAGE(hostports != NULL,
-            "Problem with memory allocation, "
-            "calloc failed. Not enough RAM?");
+                               "Problem with memory allocation, "
+                               "calloc failed. Not enough RAM?");
         if (hostports == NULL) return NULL;
         hostports[0] = static_cast<SSERV_Info*>(calloc(sizeof(SSERV_Info), 1));
         NCBITEST_CHECK_MESSAGE(hostports[0] != NULL,
-            "Problem with memory allocation, "
-            "calloc failed. Not enough RAM?");
+                               "Problem with memory allocation, "
+                               "calloc failed. Not enough RAM?");
         if (hostports[0] == NULL) return NULL;
         unsigned int host = 0;
         unsigned short int port = 0;
