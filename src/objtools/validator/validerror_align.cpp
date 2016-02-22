@@ -577,16 +577,6 @@ void CValidError_align::x_ValidatePacked
             align);
     }
     
-    // assert dim * numseg == Present.size()
-    size_t expected_present = 1 + dim * numseg / 8 - ((dim * numseg) % 8 ? 0 : 1);
-    if (expected_present != packed.GetPresent().size()) {
-        PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsPresentMismatch,
-                "The number of Present (" + 
-                NStr::SizetToString(packed.GetPresent().size()) +
-                ") does not match the expected size (" +
-                NStr::SizetToString(expected_present) + ")", align);
-    }
-    
     x_ValidateSegmentGap(packed, align);
     
     if ( m_Imp.IsRemoteFetch() ) {
