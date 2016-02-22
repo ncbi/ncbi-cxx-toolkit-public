@@ -46,12 +46,14 @@
 
 // The current difference in seconds between UTC and local time on this computer.
 // UTC = local time + TimeZone()
-#if defined(__CYGWIN__)
+#if defined(__CYGWIN__) ||  defined(NCBI_COMPILER_MSVC)
 #  define TimeZone() _timezone
 #  define Daylight() _daylight
+#  define TZName()   _tzname
 #else
 #  define TimeZone()  timezone
 #  define Daylight()  daylight
+#  define TZName()    tzname
 #endif
 
 // The offset in seconds of daylight saving time.
@@ -2248,7 +2250,7 @@ string CTime::TimeZoneName(void)
     }
 #endif
     if (s.empty()) {
-        s = t->tm_isdst > 0 ? tzname[1] : tzname[0];
+        s = t->tm_isdst > 0 ? TZName()[1] : TZName()[0];
     }
     return s;    
 }
