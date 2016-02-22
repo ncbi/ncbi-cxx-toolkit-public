@@ -1233,6 +1233,16 @@ size_t ArraySize(const Element (&)[Size])
     return Size;
 }
 
+#ifdef NCBI_STRICT_GI
+template <> struct hash<ncbi::CStrictGi>
+{
+    size_t operator()(const ncbi::CStrictGi & x) const
+    {
+        return hash<ncbi::TIntId>()((ncbi::TIntId)x);
+    }
+};
+#endif /* NCBI_STRICT_GI */
+
 #endif
 
 END_STD_NAMESPACE;

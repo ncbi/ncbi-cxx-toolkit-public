@@ -35,6 +35,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <algorithm>
+#include <unordered_map>
 
 #define BOOST_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
@@ -1509,6 +1510,51 @@ BOOST_AUTO_TEST_CASE(TestAutoEnv)
     }
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// CHECK std::hash SPECIALIZATION FOR CStringGi
+/////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(TestHashTGi)
+{
+    NcbiCerr << "Test unordered_map<TGi>:" << NcbiEndl;
+    unordered_map<TGi, string> my_map;
+    my_map[TGi((TIntId)566)] = "Hi!";
+    my_map[TGi((TIntId)2523432)] = "Connitchiva!";
+    my_map[TGi((TIntId)153)] = "Hallo!";
+    my_map[TGi((TIntId)1345134)] = "Hello!";
+    my_map[TGi((TIntId)13245)] = "Guten Tag!";
+    my_map[TGi((TIntId)2745)] = "Privet!";
+
+    map<string, bool> test_items;
+    test_items["Hi!"] = false;
+    test_items["Connitchiva!"] = false;
+    test_items["Hallo!"] = false;
+    test_items["Hello!"] = false;
+    test_items["Guten Tag!"] = false;
+    test_items["Privet!"] = false;
+
+    // Loop should hit every item in test_items
+    for (auto a : my_map) {
+        test_items[a.second] = true;
+    }
+    
+    // Test that all elements in test_items were hit and no additional 
+    // items were added
+    NCBITEST_CHECK_EQUAL(test_items.size(), 6);
+    NCBITEST_CHECK_EQUAL(test_items["Hi!"], true);
+    NCBITEST_CHECK_EQUAL(test_items["Connitchiva!"], true);
+    NCBITEST_CHECK_EQUAL(test_items["Hallo!"], true);
+    NCBITEST_CHECK_EQUAL(test_items["Hello!"], true);
+    NCBITEST_CHECK_EQUAL(test_items["Guten Tag!"], true);
+    NCBITEST_CHECK_EQUAL(test_items["Privet!"], true);
+
+    // Test random access
+    NCBITEST_CHECK_EQUAL(my_map[TGi((TIntId)566)], "Hi!");
+    NCBITEST_CHECK_EQUAL(my_map[TGi((TIntId)2523432)], "Connitchiva!");
+    NCBITEST_CHECK_EQUAL(my_map[TGi((TIntId)153)], "Hallo!");
+    NCBITEST_CHECK_EQUAL(my_map[TGi((TIntId)1345134)], "Hello!");
+    NCBITEST_CHECK_EQUAL(my_map[TGi((TIntId)13245)], "Guten Tag!");
+    NCBITEST_CHECK_EQUAL(my_map[TGi((TIntId)2745)], "Privet!");
+}
 
 NCBITEST_AUTO_INIT()
 {
