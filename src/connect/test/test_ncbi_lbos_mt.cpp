@@ -78,57 +78,197 @@ bool CTestLBOSApp::Thread_Init(int idx)
     test;                                                                     \
     TestApp_IntraGroupSyncPoint();                                            \
     if (idx == 1) {                                                           \
-        s_ClearZooKeeper(idx);                                                \
+        s_ClearZooKeeper();                                                   \
     } else {                                                                  \
         SleepMilliSec(500);                                                   \
     }                                                                         \
     TestApp_IntraGroupSyncPoint();
 
 
+void Announcement__AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
+{                                                
+    CHECK_LBOS_VERSION();
+    Announcement::AlreadyAnnouncedInTheSameZone__ReplaceInStorage();
+}
+
+void g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos()
+{
+    CHECK_LBOS_VERSION();
+    ComposeLBOSAddress::LBOSExists__ShouldReturnLbos();
+}
+
+void SERV_Reset__NoConditions__IterContainsZeroCandidates()
+{
+    CHECK_LBOS_VERSION();
+    ResetIterator::NoConditions__IterContainsZeroCandidates();
+}
+
+void SERV_Reset__MultipleReset__ShouldNotCrash()
+{
+    CHECK_LBOS_VERSION();
+    ResetIterator::MultipleReset__ShouldNotCrash();
+}
+void SERV_Reset__Multiple_AfterGetNextInfo__ShouldNotCrash()
+{
+    CHECK_LBOS_VERSION();
+    ResetIterator::Multiple_AfterGetNextInfo__ShouldNotCrash();
+}
+void SERV_CloseIter__AfterOpen__ShouldWork()
+{
+    CHECK_LBOS_VERSION();
+    CloseIterator::AfterOpen__ShouldWork();
+}
+void SERV_CloseIter__AfterReset__ShouldWork()
+{
+    CHECK_LBOS_VERSION();
+    CloseIterator::AfterReset__ShouldWork();
+}
+void SERV_CloseIter__AfterGetNextInfo__ShouldWork()
+{
+    CHECK_LBOS_VERSION();
+    CloseIterator::AfterGetNextInfo__ShouldWork();
+}
+void s_LBOS_ResolveIPPort__ServiceExists__ReturnHostIP()
+{
+    CHECK_LBOS_VERSION();
+    ResolveViaLBOS::ServiceExists__ReturnHostIP();
+}
+void s_LBOS_ResolveIPPort__ServiceDoesNotExist__ReturnNULL()
+{
+    CHECK_LBOS_VERSION();
+    ResolveViaLBOS::ServiceDoesNotExist__ReturnNULL();
+}
+void s_LBOS_ResolveIPPort__NoLBOS__ReturnNULL()
+{
+    CHECK_LBOS_VERSION();
+    ResolveViaLBOS::NoLBOS__ReturnNULL();
+}
+void g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost()
+{
+    CHECK_LBOS_VERSION();
+    GetLBOSAddress::CustomHostNotProvided__SkipCustomHost();
+}
+void SERV_GetNextInfoEx__WrongMapper__ReturnNull()
+{
+    CHECK_LBOS_VERSION();
+    GetNextInfo::WrongMapper__ReturnNull();
+}
+void Announcement__AllOK__ReturnSuccess()
+{
+    CHECK_LBOS_VERSION();
+    Announcement::AllOK__ReturnSuccess();
+}
+void Announcement__AllOK__LBOSAnswerProvided()
+{
+    CHECK_LBOS_VERSION();
+    Announcement::AllOK__LBOSAnswerProvided();
+}
+void Announcement__AllOK__AnnouncedServerSaved()
+{
+    CHECK_LBOS_VERSION();
+    Announcement::AllOK__AnnouncedServerSaved();
+}
+void Announcement__IncorrectURL__ReturnInvalidArgs()
+{
+    CHECK_LBOS_VERSION();
+    Announcement::IncorrectURL__ReturnInvalidArgs();
+}
+void Announcement__IncorrectPort__ReturnInvalidArgs()
+{
+    CHECK_LBOS_VERSION();
+    Announcement::IncorrectPort__ReturnInvalidArgs();
+}
+void Announcement__IncorrectVersion__ReturnInvalidArgs()
+{
+    CHECK_LBOS_VERSION();
+    Announcement::IncorrectVersion__ReturnInvalidArgs();
+}
+void Announcement__IncorrectServiceName__ReturnInvalidArgs()
+{
+    CHECK_LBOS_VERSION();
+    Announcement::IncorrectServiceName__ReturnInvalidArgs();
+}
+void Announcement__RealLife__VisibleAfterAnnounce()
+{
+    CHECK_LBOS_VERSION();
+    Announcement::RealLife__VisibleAfterAnnounce();
+}
+void Deannouncement__Deannounced__Return1()
+{
+    CHECK_LBOS_VERSION();
+    Deannouncement::Deannounced__Return1(0);
+}
+void Deannouncement__Deannounced__AnnouncedServerRemoved()
+{
+    CHECK_LBOS_VERSION();
+    Deannouncement::Deannounced__AnnouncedServerRemoved();
+}
+void Deannouncement__LBOSExistsDeannounce400__Return400()
+{
+    CHECK_LBOS_VERSION();
+    Deannouncement::LBOSExistsDeannounce400__Return400();
+}
+void Deannouncement__RealLife__InvisibleAfterDeannounce()
+{
+    CHECK_LBOS_VERSION();
+    Deannouncement::RealLife__InvisibleAfterDeannounce();
+}
 
 bool CTestLBOSApp::Thread_Run(int idx)
-{    
+{
+    tls->SetValue(new int, TlsCleanup);
+    *tls->GetValue() = idx;
+    WRITE_LOG("Thread launched");
+    if (idx == 0) {
+        LOG_POST(Error << "Cycle started");
+    }
     if (idx < 10) { /* because too much nodes are created (3 per thread) and
-                       this test application cannot handle healthchecks */
+                        this test application cannot handle healthchecks */
         RUN_TEST(CloseIterator::FullCycle__ShouldWork());
-    } else {
+    }
+    else {
         RUN_TEST(SleepMilliSec(10000));
     }
-    RUN_TEST(Announcement::AlreadyAnnouncedInTheSameZone__ReplaceInStorage(idx));
-    RUN_TEST(ComposeLBOSAddress::LBOSExists__ShouldReturnLbos());
-    RUN_TEST(ResetIterator::NoConditions__IterContainsZeroCandidates());
-    RUN_TEST(ResetIterator::MultipleReset__ShouldNotCrash());
-    RUN_TEST(ResetIterator::Multiple_AfterGetNextInfo__ShouldNotCrash());
-    RUN_TEST(CloseIterator::AfterOpen__ShouldWork());
-    RUN_TEST(CloseIterator::AfterReset__ShouldWork());
-    RUN_TEST(CloseIterator::AfterGetNextInfo__ShouldWork());
-    RUN_TEST(ResolveViaLBOS::ServiceExists__ReturnHostIP());
-    RUN_TEST(ResolveViaLBOS::ServiceDoesNotExist__ReturnNULL());
-    RUN_TEST(ResolveViaLBOS::NoLBOS__ReturnNULL());
-    RUN_TEST(GetLBOSAddress::CustomHostNotProvided__SkipCustomHost());
-    RUN_TEST(GetNextInfo::WrongMapper__ReturnNull());
-    RUN_TEST(Announcement::AllOK__ReturnSuccess(idx));
-    RUN_TEST(Announcement::AllOK__LBOSAnswerProvided(idx));
-    RUN_TEST(Announcement::AllOK__AnnouncedServerSaved(idx));
-    RUN_TEST(Announcement::IncorrectURL__ReturnInvalidArgs(idx));
-    RUN_TEST(Announcement::IncorrectPort__ReturnInvalidArgs(idx));
-    RUN_TEST(Announcement::IncorrectVersion__ReturnInvalidArgs(idx));
-    RUN_TEST(Announcement::IncorrectServiceName__ReturnInvalidArgs(idx));
-    RUN_TEST(Announcement::RealLife__VisibleAfterAnnounce(idx));
-    RUN_TEST(Deannouncement::Deannounced__Return1(0, idx));
-    RUN_TEST(Deannouncement::Deannounced__AnnouncedServerRemoved(idx));
-    RUN_TEST(Deannouncement::LBOSExistsDeannounce400__Return400(idx));
-    RUN_TEST(Deannouncement::RealLife__InvisibleAfterDeannounce(idx));
+    RUN_TEST(Announcement__AlreadyAnnouncedInTheSameZone__ReplaceInStorage());
+    RUN_TEST(g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos());
+    RUN_TEST(SERV_Reset__NoConditions__IterContainsZeroCandidates());
+    RUN_TEST(SERV_Reset__MultipleReset__ShouldNotCrash());
+    RUN_TEST(SERV_Reset__Multiple_AfterGetNextInfo__ShouldNotCrash());
+    RUN_TEST(SERV_CloseIter__AfterOpen__ShouldWork());
+    RUN_TEST(SERV_CloseIter__AfterReset__ShouldWork());
+    RUN_TEST(SERV_CloseIter__AfterGetNextInfo__ShouldWork());
+    RUN_TEST(s_LBOS_ResolveIPPort__ServiceExists__ReturnHostIP());
+    RUN_TEST(s_LBOS_ResolveIPPort__ServiceDoesNotExist__ReturnNULL());
+    RUN_TEST(s_LBOS_ResolveIPPort__NoLBOS__ReturnNULL());
+    RUN_TEST(g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost());
+    RUN_TEST(SERV_GetNextInfoEx__WrongMapper__ReturnNull());
+    RUN_TEST(Announcement__AllOK__ReturnSuccess());
+    RUN_TEST(Announcement__AllOK__LBOSAnswerProvided());
+    RUN_TEST(Announcement__AllOK__AnnouncedServerSaved());
+    RUN_TEST(Announcement__IncorrectURL__ReturnInvalidArgs());
+    RUN_TEST(Announcement__IncorrectPort__ReturnInvalidArgs());
+    RUN_TEST(Announcement__IncorrectVersion__ReturnInvalidArgs());
+    RUN_TEST(Announcement__IncorrectServiceName__ReturnInvalidArgs());
+    RUN_TEST(Announcement__RealLife__VisibleAfterAnnounce());
+    RUN_TEST(Deannouncement__Deannounced__Return1());
+    RUN_TEST(Deannouncement__Deannounced__AnnouncedServerRemoved());
+    RUN_TEST(Deannouncement__LBOSExistsDeannounce400__Return400());
+    RUN_TEST(Deannouncement__RealLife__InvisibleAfterDeannounce());
+    TestApp_GlobalSyncPoint();
 
-    RUN_TEST(Stability::GetNext_Reset__ShouldNotCrash(idx));
-    RUN_TEST(Stability::FullCycle__ShouldNotCrash(idx));
-    RUN_TEST(Performance::FullCycle__ShouldNotCrash(idx));
+
+    RUN_TEST(Stability::GetNext_Reset__ShouldNotCrash());
+    RUN_TEST(Stability::FullCycle__ShouldNotCrash());
+    RUN_TEST(Performance::FullCycle__ShouldNotCrash());
 
     return true;
 }
 
 bool CTestLBOSApp::TestApp_Init(void)
 {
+    tls->SetValue(new int, TlsCleanup);
+    *tls->GetValue() = kSingleThreadNumber;
+    WRITE_LOG("Thread launched");
     CConnNetInfo net_info;
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     CONNECT_Init(dynamic_cast<ncbi::IRWRegistry*>(&config));
@@ -146,8 +286,10 @@ bool CTestLBOSApp::TestApp_Init(void)
     s_HealthchecKThread->Run();
 #endif
 #ifdef DEANNOUNCE_ALL_BEFORE_TEST
-    s_ClearZooKeeper(kSingleThreadNumber);
+    s_ClearZooKeeper();
 #endif
+    s_CleanDTabs();
+    s_ReadLBOSVersion();
     return true;
 }
 
