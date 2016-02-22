@@ -232,7 +232,7 @@ public:
     virtual const char* what() const throw();
 
     /** Translate from the error code value to its string representation
-    *  (only for errors that were returned by this library, real LBOS
+    *  (only for internal errors; real LBOS
     *  errors will not be processed) */
     virtual const char* GetErrCodeString(void) const;
 
