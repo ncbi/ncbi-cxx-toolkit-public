@@ -269,6 +269,9 @@ string CAutoDefAvailableModifier::GetSubSourceLabel (CSubSource::ESubtype st)
         case CSubSource::eSubtype_haplotype:
             label = "haplotype";
             break;
+        case CSubSource::eSubtype_haplogroup:
+            label = "haplogroup";
+            break;
         case CSubSource::eSubtype_genotype:
             label = "genotype";
             break;
