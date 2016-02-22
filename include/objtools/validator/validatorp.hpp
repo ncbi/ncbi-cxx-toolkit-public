@@ -986,7 +986,6 @@ private:
     void x_ValidateDenseg(const TDenseg& denseg, const CSeq_align& align);
     void x_ValidateStd(const TStd& stdsegs, const CSeq_align& align);
     void x_ValidatePacked(const TPacked& packed, const CSeq_align& align);
-    size_t x_CountBits(const CPacked_seg::TPresent& present);
 
     // Check if dimension is valid
     template <typename T>
@@ -995,7 +994,6 @@ private:
     // Check if the  strand is consistent in SeqAlignment of global 
     // or partial type
     void x_ValidateStrand(const TDenseg& denseg, const CSeq_align& align);
-    void x_ValidateStrand(const TPacked& packed, const CSeq_align& align);
     void x_ValidateStrand(const TStd& std_segs, const CSeq_align& align);
 
     // Check if an alignment is FASTA-like. 

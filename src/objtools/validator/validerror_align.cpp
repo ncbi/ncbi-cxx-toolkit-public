@@ -578,58 +578,21 @@ void CValidError_align::x_ValidatePacked
     }
     
     // assert dim * numseg == Present.size()
-    if ( dim * numseg != packed.GetPresent().size() ) {
+    size_t expected_present = 1 + dim * numseg / 8 - ((dim * numseg) % 8 ? 0 : 1);
+    if (expected_present != packed.GetPresent().size()) {
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsPresentMismatch,
                 "The number of Present (" + 
                 NStr::SizetToString(packed.GetPresent().size()) +
-                ") does not match the expected size of dim * numseg (" +
-                NStr::SizetToString(dim * numseg) + ")", align);
-    } else {
-        // assert # of '1' bits in present == Starts.size()
-        size_t bits = x_CountBits(packed.GetPresent());
-        if ( bits != packed.GetStarts().size() ) {
-            PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsPresentStartsMismatch,
-                "Starts does not have the same number of elements (" +
-                NStr::SizetToString(packed.GetStarts().size()) + 
-                ") as specified by Present (" + NStr::SizetToString(bits) +
-                ")", align);
-        }
-
-        // assert # of '1' bits in present == Strands.size() (if exists)
-        if ( packed.IsSetStrands() ) {
-            if ( bits != packed.GetStarts().size() ) {
-                PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsPresentStrandsMismatch,
-                    "Strands does not have the same number of elements (" +
-                    NStr::SizetToString(packed.GetStrands().size()) +
-                    ") as specified by Present (" +
-                    NStr::SizetToString(bits) + ")", align);
-            }
-        }
+                ") does not match the expected size (" +
+                NStr::SizetToString(expected_present) + ")", align);
     }
     
-    x_ValidateStrand(packed, align);
     x_ValidateSegmentGap(packed, align);
     
     if ( m_Imp.IsRemoteFetch() ) {
         x_ValidateSeqId(align);
         x_ValidateSeqLength(packed, align);
     }
-}
-
-
-size_t CValidError_align::x_CountBits(const CPacked_seg::TPresent& present)
-{
-    size_t bits = 0;
-    ITERATE( CPacked_seg::TPresent, iter, present ) {
-        if ( *iter != 0 ) {
-            Uchar mask = 0x01;
-            for ( size_t i = 0; i < 7; ++i ) {
-                bits += (*iter & mask) ? 1 : 0;
-                mask = mask << 1;
-            }
-        }
-    }
-    return bits;
 }
 
 
@@ -844,61 +807,6 @@ void CValidError_align::x_ValidateStrand
                     NStr::SizetToString(seg + 1) + "(th) region, near sequence position "
                     + NStr::SizetToString(denseg.GetStarts()[id + (seg * dim)]), align);
                     break;
-            }
-        }
-    }
-}
-
-
-void CValidError_align::x_ValidateStrand
-(const TPacked& packed,
- const CSeq_align& align)
-{
-    if ( !packed.IsSetStrands() ) {
-        return;
-    }
-
-    size_t dim = packed.GetDim();
-    const CPacked_seg::TPresent& present = packed.GetPresent();
-    const CPacked_seg::TStrands& strands = packed.GetStrands();
-    CPacked_seg::TStrands::const_iterator strand = strands.begin();
-    
-    vector<ENa_strand> id_strands(dim, eNa_strand_unknown);
-
-    Uchar mask = 0x01;
-    size_t present_size = present.size();
-    for ( size_t i = 0; i < present_size; ++i ) {
-        if ( present[i] == 0 ) {   // no bits in this char
-            continue;
-        }
-        for ( int shift = 7; shift >= 0; --shift ) {
-            if ( present[i] & (mask << shift) ) {
-                size_t id = i * 8 + 7 - shift;
-                if ( *strand == eNa_strand_unknown  ||  
-                     *strand == eNa_strand_other ) {
-                    ++strand;
-                    continue;
-                }
-                
-                if ( id_strands[id] == eNa_strand_unknown  || 
-                     id_strands[id] == eNa_strand_other ) {
-                    id_strands[id] = *strand;
-                    ++strand;
-                    continue;
-                }
-                
-                if ( id_strands[id] != *strand ) {
-                    CPacked_seg::TIds::const_iterator id_iter =
-                        packed.GetIds().begin();
-                    for ( ; id; --id ) {
-                        ++id_iter;
-                    }
-                    
-                    PostErr(eDiag_Error, eErr_SEQ_ALIGN_StrandRev,
-                        "Strand: The strand labels for SeqId " + (*id_iter)->AsFastaString() +
-                        " are inconsistent across the alignment", align);
-                }
-                ++strand;
             }
         }
     }
