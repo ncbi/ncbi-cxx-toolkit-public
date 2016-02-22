@@ -34,12 +34,12 @@
  *   this manifest with the queue XML manifest in gpipe/objects/manifest.
  */
 
-#include <vector>
-#include <string>
-#include <iterator>
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <vector>
+#include <string>
+#include <iterator>
 
 
 BEGIN_NCBI_SCOPE
@@ -49,7 +49,7 @@ class CArgValue;
 class NCBI_XUTIL_EXPORT CFileManifest
 {
 public:
-    CFileManifest( const std::string & manifest_path );
+    CFileManifest( const string & manifest_path );
 
     /// Convenience constructor, to read a manifest from a command
     /// line argument's value. This avoids the user having to choose
@@ -62,27 +62,27 @@ public:
     /// WARNING:  This method throws an exception on failure!  Be prepared to
     /// catch it!
     /// Success is indicated by a return without an exception.
-    void    Validate() const;   /// throws CManifestException
+    void Validate() const;   /// throws CManifestException
 
     /// Returns the manifest file path, not the files referenced in the
     /// manifest.
-    std::string GetPath() const { return m_ManifestPath; }
+    string GetPath() const { return m_ManifestPath; }
 
     /// Returns all the file paths referenced by the manifest.
-    std::vector<std::string>    GetAllFilePaths() const;
+    vector<string> GetAllFilePaths() const;
 
     /// Returns the first file path in the manifest.  Throws if there are more
     /// than one file.
-    std::string GetSingleFilePath() const;
+    string GetSingleFilePath() const;
 
     /// Write a list of files to a manifest.  Will overwrite any previous data.
-    void    WriteManyFilePaths( const std::vector<std::string> & file_paths );
+    void WriteManyFilePaths( const vector<string> & file_paths );
 
 protected:
     void x_Init();
 
 private:
-    std::string m_ManifestPath;
+    string m_ManifestPath;
 };
 
 
@@ -102,13 +102,21 @@ public:
     virtual const char* GetErrCodeString() const
     {
         switch (GetErrCode()) {
-            case eEmptyManifestName: return "The manifest filename was empty.";
-            case eCantOpenManifestForRead: return "Unable to open the manifest for reading.";
-            case eCantOpenManifestForWrite: return "Unable to open the manifest for writing.";
-            case eCantOpenFileInManifest: return "Unable to open a file in the manifest.";
-            case eInvalidFileFormat: return "Invalid manifest format: must be 1 or 2 columns";
-            case eInvalidFilePath: return "Invalid file path: must not contain spaces, quotes, or escapes";
-            default:     return CException::GetErrCodeString();
+            case eEmptyManifestName: 
+                return "The manifest filename was empty.";
+            case eCantOpenManifestForRead: 
+                return "Unable to open the manifest for reading.";
+            case eCantOpenManifestForWrite: 
+                return "Unable to open the manifest for writing.";
+            case eCantOpenFileInManifest: 
+                return "Unable to open a file in the manifest.";
+            case eInvalidFileFormat: 
+                return "Invalid manifest format: must be 1 or 2 columns";
+            case eInvalidFilePath: 
+                return "Invalid file path: must not contain spaces, "
+                       "quotes, or escapes";
+            default:     
+                return CException::GetErrCodeString();
         }
     }
 
@@ -119,14 +127,14 @@ public:
 /// Iterator to walk the files in the manifest.  Ignores comment (start with #)
 /// and blank lines.  Filters out the first column in two column manifests.
 template <class TString>
-class CBasicManifest_CI :
-    public std::iterator<std::input_iterator_tag, TString, std::ptrdiff_t,
-                            const TString *, const TString &>
+class CBasicManifest_CI : public iterator<input_iterator_tag, TString, 
+                                          ptrdiff_t, const TString *, 
+                                          const TString &>
 {
 public:
     typedef typename TString::value_type        TChar;
     typedef typename TString::traits_type       TTraits;
-    typedef std::basic_istream<TChar, TTraits>  TIStream;
+    typedef basic_istream<TChar, TTraits>  TIStream;
 
     CBasicManifest_CI() : m_InputStream( NULL ) {}
     CBasicManifest_CI( TIStream & input_stream )
@@ -186,41 +194,42 @@ private:
     TString     m_Value;
     TString     m_NextValue;
 
-    std::string x_GetNextValue()
+    string x_GetNextValue()
     {
-        std::string next_value;
+        string next_value;
 
         do {
-            std::getline( *m_InputStream, next_value );
-        } while ( *m_InputStream && ( next_value.empty() || ( next_value[0] == '#' ) ) );
+            getline( *m_InputStream, next_value );
+        } while ( *m_InputStream && 
+                  ( next_value.empty() || ( next_value[0] == '#' ) ) );
 
         //  Filter out the first column of two column manifests
-        std::string::size_type  first_tab = next_value.find_first_of( '\t' );
-        std::string::size_type  last_tab = next_value.find_last_of( '\t' );
+        string::size_type  first_tab = next_value.find_first_of( '\t' );
+        string::size_type  last_tab = next_value.find_last_of( '\t' );
         if (first_tab != last_tab) {
-            std::string error_string = "More than 2 columns in: " + next_value;
+            string error_string = "More than 2 columns in: " + next_value;
             NCBI_THROW( CManifestException, eInvalidFileFormat, error_string );
         }
-        if ( last_tab != std::string::npos ) {
+        if ( last_tab != string::npos ) {
             next_value.erase( 0, last_tab + 1 );
             LOG_POST( Warning << "Two column manifest was found." );
         }
 
-        std::string::size_type  bad_char_pos = next_value.find_first_of( " '`\"\\" );
-        if ( bad_char_pos != std::string::npos ) {
-            std::string error_string = "Invalid character at position " +
-                                       NStr::NumericToString(bad_char_pos + 1) +
-                                       ": " +
-                                       next_value.substr(0, bad_char_pos) +
-                                       ">>>" + next_value[bad_char_pos] + "<<<" +
-                                       next_value.substr(bad_char_pos + 1);
+        string::size_type  bad_char_pos = next_value.find_first_of(" '`\"\\");
+        if ( bad_char_pos != string::npos ) {
+            string error_string = "Invalid character at position " +
+                                    NStr::NumericToString(bad_char_pos + 1) +
+                                    ": " +
+                                    next_value.substr(0, bad_char_pos) +
+                                    ">>>" + next_value[bad_char_pos] + "<<<" +
+                                    next_value.substr(bad_char_pos + 1);
             NCBI_THROW( CManifestException, eInvalidFilePath, error_string );
         }
         return  next_value;
     }
 };
 
-typedef CBasicManifest_CI<std::string>   CManifest_CI;
+typedef CBasicManifest_CI<string> CManifest_CI;
 
 
 

@@ -33,30 +33,25 @@
 
 #include <ncbi_pch.hpp>
 
-#include <vector>
-#include <string>
-#include <fstream>
-#include <algorithm>
-#include <iterator>
-
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbifile.hpp>
-//#include <util/xregexp/regexp.hpp>
 #include <util/file_manifest.hpp>
+#include <fstream>
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
 
 
-CFileManifest::CFileManifest( const std::string & manifest_path ) :
-        m_ManifestPath( manifest_path )
+CFileManifest::CFileManifest( const string & manifest_path ) 
+    : m_ManifestPath( manifest_path )
 {
     x_Init();
 }
 
-CFileManifest::CFileManifest( const CArgValue& manifest_path ) :
-        m_ManifestPath( manifest_path.AsString() )
+CFileManifest::CFileManifest( const CArgValue& manifest_path ) 
+    : m_ManifestPath( manifest_path.AsString() )
 {
     x_Init();
 }
@@ -68,16 +63,18 @@ void CFileManifest::x_Init()
     }
 }
 
-void    CFileManifest::Validate() const
+void CFileManifest::Validate() const
 {
-    //  Check each file whether it can be open for reading.
+    //  Check each file whether it can be opened for reading.
     CFile manifest_file( m_ManifestPath );
     if ( ! manifest_file.IsFile() ) {
-        NCBI_THROW( CManifestException, eCantOpenManifestForRead, m_ManifestPath );
+        NCBI_THROW( CManifestException, eCantOpenManifestForRead, 
+                    m_ManifestPath );
     }
     CNcbiIfstream   manifest_stream( m_ManifestPath.c_str() );
     if ( ! manifest_stream ) {
-        NCBI_THROW( CManifestException, eCantOpenManifestForRead, m_ManifestPath );
+        NCBI_THROW( CManifestException, eCantOpenManifestForRead, 
+                    m_ManifestPath );
     }
     
     CManifest_CI    manifest_line_iter( manifest_stream );
@@ -85,24 +82,26 @@ void    CFileManifest::Validate() const
     while ( manifest_line_iter != end_iter ) {
         CFile file( *manifest_line_iter );
         if ( ! file.IsFile() ) {
-            std::string error_string = "Manifest: " + m_ManifestPath;
+            string error_string = "Manifest: " + m_ManifestPath;
             error_string += " Bad file: ";
             error_string += *manifest_line_iter;
-            NCBI_THROW( CManifestException, eCantOpenFileInManifest, error_string );
+            NCBI_THROW( CManifestException, eCantOpenFileInManifest, 
+                        error_string );
         }
         CNcbiIfstream   manifest_file_stream( manifest_line_iter->c_str() );
         if ( ! manifest_file_stream ) {
-            std::string error_string = "Manifest: " + m_ManifestPath;
+            string error_string = "Manifest: " + m_ManifestPath;
             error_string += " Cannot read file: ";
             error_string += *manifest_line_iter;
-            NCBI_THROW( CManifestException, eCantOpenFileInManifest, error_string );
+            NCBI_THROW( CManifestException, eCantOpenFileInManifest, 
+                        error_string );
         }
         ++manifest_line_iter;
     }
 }
 
 
-vector<string>    CFileManifest::GetAllFilePaths() const
+vector<string> CFileManifest::GetAllFilePaths() const
 {
     CNcbiIfstream   manifest_stream( m_ManifestPath.c_str() );
     if ( ! manifest_stream ) {
@@ -112,10 +111,10 @@ vector<string>    CFileManifest::GetAllFilePaths() const
 
     CManifest_CI    manifest_line_iter( manifest_stream );
     CManifest_CI    end_iter;
+    vector<string>  file_paths;
+    string          path;
 
-    vector<string>    file_paths;
-    string path;
-    for( ; manifest_line_iter != end_iter; ++manifest_line_iter) {
+    for( ;  manifest_line_iter != end_iter;  ++manifest_line_iter) {
         path = CDirEntry::CreateAbsolutePath(*manifest_line_iter);
         path = CDirEntry::NormalizePath(path);
         file_paths.push_back(path);
@@ -125,15 +124,17 @@ vector<string>    CFileManifest::GetAllFilePaths() const
 }
 
 
-std::string CFileManifest::GetSingleFilePath() const
+string CFileManifest::GetSingleFilePath() const
 {
-    //  Read the first file path and check for a second.  Throw if a second is present.
-    //  An empty manifest is ok.  We return an empty string.
-    std::string only_file_path;
+    //  Read the first file path and check for the second.  
+    //  Throw if the second is present. An empty manifest is ok.  
+    //  We return an empty string. 
+    string only_file_path;
     
     CNcbiIfstream   manifest_stream( m_ManifestPath.c_str() );
     if ( ! manifest_stream ) {
-        NCBI_THROW( CManifestException, eCantOpenManifestForRead, m_ManifestPath );
+        NCBI_THROW( CManifestException, eCantOpenManifestForRead, 
+                    m_ManifestPath );
     }
 
     CManifest_CI    manifest_line_iter( manifest_stream );
@@ -149,15 +150,15 @@ std::string CFileManifest::GetSingleFilePath() const
 }
 
 
-void    CFileManifest::WriteManyFilePaths( const std::vector<std::string> & file_paths )
+void CFileManifest::WriteManyFilePaths( const vector<string> & file_paths )
 {
     CNcbiOfstream   manifest_stream( m_ManifestPath.c_str() );
     if ( ! manifest_stream ) {
-        NCBI_THROW( CManifestException, eCantOpenManifestForWrite, m_ManifestPath );
+        NCBI_THROW( CManifestException, eCantOpenManifestForWrite, 
+                    m_ManifestPath );
     }
-
-    std::ostream_iterator<std::string>  manifest_iterator( manifest_stream, "\n" );
-    std::copy( file_paths.begin(), file_paths.end(), manifest_iterator );
+    ostream_iterator<string>  manifest_iterator( manifest_stream, "\n" );
+    copy( file_paths.begin(), file_paths.end(), manifest_iterator );
 }
 
 
