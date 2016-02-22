@@ -813,8 +813,6 @@ CHttpResponse CHttpSession::Post(const CUrl&     url,
         content_type = kContentType_FormUrlEnc;
     }
     req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
-    req.Headers().SetValue(CHttpHeaders::eContentLength,
-        NStr::NumericToString(data.size()));
     if ( !data.empty() ) {
         req.ContentStream() << data;
     }
@@ -835,8 +833,6 @@ CHttpResponse CHttpSession::Put(const CUrl&     url,
         content_type = kContentType_FormUrlEnc;
     }
     req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
-    req.Headers().SetValue(CHttpHeaders::eContentLength,
-        NStr::NumericToString(data.size()));
     if ( !data.empty() ) {
         req.ContentStream() << data;
     }
@@ -933,8 +929,6 @@ CHttpResponse g_HttpPost(const CUrl&         url,
     else {
         req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
     }
-    req.Headers().SetValue(CHttpHeaders::eContentLength,
-        NStr::NumericToString(data.size()));
 
     if ( !data.empty() ) {
         req.ContentStream() << data;
@@ -981,8 +975,6 @@ CHttpResponse g_HttpPut(const CUrl&         url,
     else {
         req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
     }
-    req.Headers().SetValue(CHttpHeaders::eContentLength,
-        NStr::NumericToString(data.size()));
 
     if ( !data.empty() ) {
         req.ContentStream() << data;
