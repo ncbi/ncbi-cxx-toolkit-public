@@ -1318,23 +1318,12 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
     SSERV_Info** hostports_array = 0;
     /* We copy LBOS address to  */
     char* lbos_address = NULL;
+    size_t j = 0;
 
     /* We suppose that number of addresses is constant (and so
        is position of NULL), so no mutex is necessary */
     if (s_LBOS_Instance == NULL) return;
-    CORE_LOCK_READ;
-        size_t j = 0;
-        lbos_address = strdup(s_LBOS_Instance);
-        /* If strdup returned NULL */
-        if (lbos_address == NULL) {
-            CORE_UNLOCK;
-            CORE_LOG(eLOG_Critical, "s_LBOS_FillCandidates: No RAM. "
-                                    "Returning.");
-            /* free() what has been allocated */
-            free(lbos_address);
-            return;
-        }
-    CORE_UNLOCK;
+    lbos_address = s_LBOS_Instance;
     CORE_LOGF_X(1, eLOG_Trace, ("Trying to find servers of \"%s\" with "
                 "LBOS at %s", service, lbos_address));
     hostports_array = 
