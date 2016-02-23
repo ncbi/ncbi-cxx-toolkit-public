@@ -234,7 +234,8 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
             break;
 
         case CMolInfo::eTech_targeted:
-            x_AddKeyword("Targeted");
+            x_AddKeyword("TLS");
+            x_AddKeyword("Targeted Locus Study");
             break;
 
         case CMolInfo::eTech_unknown:
