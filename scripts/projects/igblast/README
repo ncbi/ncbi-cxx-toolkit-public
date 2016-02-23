@@ -50,7 +50,7 @@ show_translation -outfmt 3
 b).  To query one or more mouse T cell receptor sequences (contained in myseq) against imgt mouse 
 germline gene database:
 ./igblastn -germline_db_V imgt_tcr_db_v -germline_db_J imgt_tcr_db_j -germline_db_D imgt_tcr_db -
-organism mouse -domain_system imgt -query myseqtcr -ig_seqtype TCR -auxiliary_data 
+organism mouse -domain_system imgt -query myseq -ig_seqtype TCR -auxiliary_data 
 optional_file/mouse_gl.aux -show_translation -outfmt 3
 
 c).  To query one or human Ig sequences (contained in myseq) against custom database such as Andew 
@@ -91,3 +91,7 @@ Some examples:
 
 ./igblastp -germline_db_V mouse_gl_V -query myseq.prot -outfmt 3 -organism mouse -db nr –remote
 
+
+Other notes:
+
+The V gene domain annotation only works for IMGT annotation system for TCR sequences.
