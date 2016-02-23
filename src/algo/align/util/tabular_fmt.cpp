@@ -167,8 +167,8 @@ void CTabularFormatter_SeqId::Print(CNcbiOstream& ostr,
 
 /////////////////////////////////////////////////////////////////////////////
 
-CTabularFormatter_AlignStart::CTabularFormatter_AlignStart(int row)
-: m_Row(row)
+CTabularFormatter_AlignStart::CTabularFormatter_AlignStart(int row, bool nominus)
+: m_Row(row), m_NoMinus(nominus)
 {
 }
 
@@ -201,6 +201,11 @@ void CTabularFormatter_AlignStart::Print(CNcbiOstream& ostr,
                                          const CSeq_align& align)
 {
     // determine global flip status
+    
+    if(m_NoMinus) {
+        ostr << align.GetSeqStart(m_Row) + 1;
+        return;
+    }
 
     if (m_Row == 0) {
         TSeqRange r = align.GetSeqRange(m_Row);
@@ -226,8 +231,8 @@ void CTabularFormatter_AlignStart::Print(CNcbiOstream& ostr,
 
 /////////////////////////////////////////////////////////////////////////////
 
-CTabularFormatter_AlignEnd::CTabularFormatter_AlignEnd(int row)
-: m_Row(row)
+CTabularFormatter_AlignEnd::CTabularFormatter_AlignEnd(int row, bool nominus)
+: m_Row(row), m_NoMinus(nominus)
 {
 }
 
@@ -259,6 +264,11 @@ void CTabularFormatter_AlignEnd::PrintHeader(CNcbiOstream& ostr) const
 void CTabularFormatter_AlignEnd::Print(CNcbiOstream& ostr,
                                        const CSeq_align& align)
 {
+    if(m_NoMinus) {
+        ostr << align.GetSeqStop(m_Row) + 1;
+        return;
+    }
+
     if (m_Row == 0) {
         TSeqRange r = align.GetSeqRange(m_Row);
         ostr << max(r.GetFrom(), r.GetTo()) + 1;
@@ -526,6 +536,212 @@ void CTabularFormatter_MismatchCount::Print(CNcbiOstream& ostr,
 
 /////////////////////////////////////////////////////////////////////////////
 
+void s_AlignToSeqRanges(const CSeq_align& align, int row, list<TSeqRange>& ranges)
+{
+    // this should be added to CSeq_align as a list instead of RangeColl version of  GetAlignedBases
+    switch (align.GetSegs().Which()) {
+    case CSeq_align::TSegs::e_Denseg:
+        {{
+            const CDense_seg& ds = align.GetSegs().GetDenseg();
+            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+                bool is_gapped = false;
+                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
+                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1)
+                    {
+                        is_gapped = true;
+                        break;
+                    }
+                }
+                if (!is_gapped) {
+                    TSignedSeqPos start = ds.GetStarts()[i * ds.GetDim() + row];
+                    TSeqRange range;
+                    range.SetFrom(start);
+                    range.SetLength(ds.GetLens()[i]);
+                    ranges.push_back(range);
+                }
+            }
+        }}
+        break;
+    case CSeq_align::TSegs::e_Disc:
+        {{
+            ITERATE(CSeq_align::TSegs::TDisc::Tdata, iter, 
+                    align.GetSegs().GetDisc().Get()) {
+                s_AlignToSeqRanges(*(*iter), row, ranges);
+            }
+        }}
+        break;
+    case CSeq_align::TSegs::e_Spliced:
+        {{
+            ITERATE (CSpliced_seg::TExons, iter, align.GetSegs().GetSpliced().GetExons()) {
+                ranges.push_back((*iter)->GetRowSeq_range(row, true));
+                // should this be fixed?
+                //ranges -= (*iter)->GetRowSeq_insertions(row, align.GetSegs().GetSpliced());
+            }
+        }}
+        break;
+     default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::GetAlignedBases() currently does not handle "
+                    "this type of alignment.");
+    }
+}
+
+CTabularFormatter_MismatchPositions::CTabularFormatter_MismatchPositions(int row)
+    : m_Row(row)
+{
+}
+
+void CTabularFormatter_MismatchPositions::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "Positions of aligned mismatches, comma seperated";
+}
+void CTabularFormatter_MismatchPositions::PrintHeader(CNcbiOstream& ostr) const
+{
+    if(m_Row == 0) {
+        ostr << "qmismatchpos";
+    } else if(m_Row == 1) {
+        ostr << "smismatchpos";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+                   "only pairwise alignments are supported");
+    }
+}
+void CTabularFormatter_MismatchPositions::Print(CNcbiOstream& ostr,
+                                            const CSeq_align& align)
+{
+    ENa_strand QStrand = align.GetSeqStrand(0);
+    ENa_strand SStrand = align.GetSeqStrand(1);
+
+    TSeqRange QAlignRange, SAlignRange;
+    QAlignRange = align.GetSeqRange(0);
+    SAlignRange = align.GetSeqRange(1);
+
+    string QueryStr, SubjtStr;
+    {{
+        CBioseq_Handle QueryH, SubjtH;
+        QueryH = m_Scores->GetScope().GetBioseqHandle(align.GetSeq_id(0));
+        SubjtH = m_Scores->GetScope().GetBioseqHandle(align.GetSeq_id(1));
+
+        CSeqVector QueryVec(QueryH, CBioseq_Handle::eCoding_Iupac, QStrand);
+ 	    CSeqVector SubjtVec(SubjtH, CBioseq_Handle::eCoding_Iupac, SStrand);
+
+        if(QStrand == eNa_strand_plus)
+            QueryVec.GetSeqData(QAlignRange.GetFrom(), QAlignRange.GetTo()+1, QueryStr);
+        else if(QStrand == eNa_strand_minus) 
+            QueryVec.GetSeqData(QueryVec.size()-QAlignRange.GetTo()-1, 
+                                QueryVec.size()-QAlignRange.GetFrom(), QueryStr);
+
+        if(SStrand == eNa_strand_plus)
+            SubjtVec.GetSeqData(SAlignRange.GetFrom(), SAlignRange.GetTo()+1, SubjtStr);
+        else if(SStrand == eNa_strand_minus)
+            SubjtVec.GetSeqData(SubjtVec.size()-SAlignRange.GetTo()-1, 
+                                SubjtVec.size()-SAlignRange.GetFrom(), SubjtStr);
+
+        string QS = QueryStr.substr(0,50);
+        string SS = SubjtStr.substr(0,50);
+    }}
+
+    list<TSeqRange> QSegRanges, SSegRanges;
+    s_AlignToSeqRanges(align, 0, QSegRanges);
+    s_AlignToSeqRanges(align, 1, SSegRanges);
+    
+
+    // loop segments
+    vector<TSeqPos> mm_pos;
+    list<TSeqRange>::const_iterator SSegIter = SSegRanges.begin();
+    ITERATE(list<TSeqRange>, QSegIter, QSegRanges) {
+        TSeqRange QuerySeg = *QSegIter;
+        TSeqRange SubjtSeg = *SSegIter;
+        
+        if(QuerySeg.GetLength() != SubjtSeg.GetLength()) {
+            NCBI_THROW(CException, eUnknown, "mismatched segment sizes?");
+        }
+
+        size_t QOffset, SOffset;
+        {{
+            size_t QPOffset = QuerySeg.GetFrom()-QAlignRange.GetFrom();
+            size_t QMOffset = QAlignRange.GetTo()-QuerySeg.GetTo();
+            QOffset = (QStrand == eNa_strand_plus ? QPOffset : QMOffset);
+        
+            size_t SPOffset = SubjtSeg.GetFrom()-SAlignRange.GetFrom();
+            size_t SMOffset = SAlignRange.GetTo()-SubjtSeg.GetTo();
+            SOffset = (SStrand == eNa_strand_plus ? SPOffset : SMOffset);
+        }}
+
+        // find locations
+        for(size_t Loop = 0; Loop < QuerySeg.GetLength(); Loop++) {
+            size_t QLoop = QOffset+Loop;
+            size_t SLoop = SOffset+Loop;
+          
+            //if(Loop < 6 || Loop+6 > QuerySeg.GetLength())
+            //    cerr << "L: " << Loop << " "  << QLoop << " " << SLoop << " : " 
+            //    << QueryStr[QLoop] << " == " << SubjtStr[SLoop] << endl;
+            
+
+            if(QueryStr[QLoop] == SubjtStr[SLoop]) {
+                ; 
+            } else {
+                if(m_Row == 0)
+                    mm_pos.push_back(QuerySeg.GetFrom()+Loop);
+                else if(m_Row == 0)
+                    mm_pos.push_back(SubjtSeg.GetFrom()+Loop);
+            }
+        }
+
+        ++SSegIter;
+    }
+   
+    sort(mm_pos.begin(), mm_pos.end());
+    ITERATE(vector<TSeqPos>, it, mm_pos) {
+        if (it != mm_pos.begin()) {
+            ostr << ',';
+        }
+        ostr << *it +1; 
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+CTabularFormatter_GapRanges::CTabularFormatter_GapRanges(int row)
+    : m_Row(row)
+{
+}
+
+void CTabularFormatter_GapRanges::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "Positions of gapped, unaligned, segments, comma seperated";
+}
+void CTabularFormatter_GapRanges::PrintHeader(CNcbiOstream& ostr) const
+{
+    if(m_Row == 0) {
+        ostr << "qgapranges";
+    } else if(m_Row == 1) {
+        ostr << "sgapranges";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+                   "only pairwise alignments are supported");
+    }
+}
+void CTabularFormatter_GapRanges::Print(CNcbiOstream& ostr,
+                                        const CSeq_align& align)
+{
+    CRangeCollection<TSeqPos> AlignedRC = align.GetAlignedBases(m_Row);
+    CRangeCollection<TSeqPos> GappedRC;
+    GappedRC += align.GetSeqRange(m_Row);
+    GappedRC -= AlignedRC;
+
+    //vector<TSeqPos> mm_pos;
+    //sort(mm_pos.begin(), mm_pos.end());
+    ITERATE(CRangeCollection<TSeqPos>, it, GappedRC) {
+        if (it != GappedRC.begin()) {
+            ostr << ',';
+        }
+        ostr << it->GetFrom()+1 << "-" << it->GetTo()+1; 
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 void CTabularFormatter_GapBaseCount::PrintHelpText(CNcbiOstream& ostr) const
 {
     ostr << "Total number of gaps";
@@ -752,13 +968,22 @@ void CTabularFormatter_AnyScore::PrintHeader(CNcbiOstream& ostr) const
 void CTabularFormatter_AnyScore::Print(CNcbiOstream& ostr,
                                        const CSeq_align& align)
 {
-    double score;
+    double score_d=0.0;
+    int score_i = 0;
+    bool is_int = m_Scores->IsIntegerScore(align, m_ScoreName);
     try {
-        score = m_Scores->GetScore(align, m_ScoreName);
+        if(is_int)
+            score_i = (int)m_Scores->GetScore(align, m_ScoreName);  
+        else
+            score_d = m_Scores->GetScore(align, m_ScoreName);
     } catch (CAlgoAlignUtilException &) {
-        score = 0;
+        score_d = 0;
+        score_i = 0;
     }
-    ostr << score;
+    if(is_int)
+        ostr << score_i;
+    else
+        ostr << score_d;
 }
 
 
@@ -1953,6 +2178,9 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("qstrand", new CTabularFormatter_AlignStrand(0));
     formatter.RegisterField("qstart", new CTabularFormatter_AlignStart(0));
     formatter.RegisterField("qend", new CTabularFormatter_AlignEnd(0));
+    formatter.RegisterField("qestart", new CTabularFormatter_AlignStart(0, true));
+    formatter.RegisterField("qeend", new CTabularFormatter_AlignEnd(0, true));
+
 
     IFormatter *sseqid =
         new CTabularFormatter_SeqId(1, sequence::eGetId_Best);
@@ -1974,7 +2202,9 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("sstrand", new CTabularFormatter_AlignStrand(1));
     formatter.RegisterField("sstart", new CTabularFormatter_AlignStart(1));
     formatter.RegisterField("send", new CTabularFormatter_AlignEnd(1));
-
+    formatter.RegisterField("sestart", new CTabularFormatter_AlignStart(1, true));
+    formatter.RegisterField("seend", new CTabularFormatter_AlignEnd(1, true));
+    
     formatter.RegisterField("evalue", new CTabularFormatter_EValue);
     formatter.RegisterField("evalue_mantissa", new CTabularFormatter_EValue_Mantissa);
     formatter.RegisterField("evalue_exponent", new CTabularFormatter_EValue_Exponent);
@@ -1994,6 +2224,12 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
 
     formatter.RegisterField("nident", new CTabularFormatter_IdentityCount);
     formatter.RegisterField("mismatch", new CTabularFormatter_MismatchCount);
+    formatter.RegisterField("qmismatchpos", new CTabularFormatter_MismatchPositions(0));
+    formatter.RegisterField("smismatchpos", new CTabularFormatter_MismatchPositions(1));
+    
+    formatter.RegisterField("qgapranges", new CTabularFormatter_GapRanges(0));
+    formatter.RegisterField("sgapranges", new CTabularFormatter_GapRanges(1));
+
 
     formatter.RegisterField("qdefline",
             new CTabularFormatter_Defline(0));

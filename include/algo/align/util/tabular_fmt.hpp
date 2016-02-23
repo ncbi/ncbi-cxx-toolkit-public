@@ -138,7 +138,7 @@ private:
 class CTabularFormatter_AlignStart : public CTabularFormatter::IFormatter
 {
 public:
-    CTabularFormatter_AlignStart(int row);
+    CTabularFormatter_AlignStart(int row, bool nominus=false);
     void PrintHelpText(CNcbiOstream& ostr) const;
     void PrintHeader(CNcbiOstream& ostr) const;
     void Print(CNcbiOstream& ostr,
@@ -146,6 +146,7 @@ public:
 
 private:
     int m_Row;
+    bool m_NoMinus;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -153,7 +154,7 @@ private:
 class CTabularFormatter_AlignEnd : public CTabularFormatter::IFormatter
 {
 public:
-    CTabularFormatter_AlignEnd(int row);
+    CTabularFormatter_AlignEnd(int row, bool nominus=false);
     void PrintHelpText(CNcbiOstream& ostr) const;
     void PrintHeader(CNcbiOstream& ostr) const;
     void Print(CNcbiOstream& ostr,
@@ -161,6 +162,7 @@ public:
 
 private:
     int m_Row;
+    bool m_NoMinus;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -273,6 +275,34 @@ public:
     void PrintHeader(CNcbiOstream& ostr) const;
     void Print(CNcbiOstream& ostr,
                const objects::CSeq_align& align);
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+class CTabularFormatter_MismatchPositions : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_MismatchPositions(int row);
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+private:
+    int m_Row;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+class CTabularFormatter_GapRanges : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_GapRanges(int row);
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+private:
+    int m_Row;
 };
 
 /////////////////////////////////////////////////////////////////////////////
