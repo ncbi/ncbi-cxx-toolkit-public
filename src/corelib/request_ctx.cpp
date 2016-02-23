@@ -292,17 +292,24 @@ static bool IsValidHitID(const string& hit) {
         }
     }
     if (sep_pos == NPOS) return true;
-    // Separator found - make sure the rest of the id contains only digits and separators
-    // (XYZ.1.2.34)
-    for (pos = sep_pos; pos < hit.size(); pos++) {
+    // Separator found - make sure the rest of the id contains only separators
+    // and valid sub-hit ids: a prefix consisting of allowed chars and some
+    // digits (XYZ.1.J2.T34).
+    size_t last_digit = sep_pos;
+    for (pos = sep_pos + 1; pos < hit.size(); pos++) {
         char c = hit[pos];
         if (c == '.') {
-            // Need at least one digit between separators.
+            // Need at least one char between separators.
             if (pos == sep_pos + 1) return false;
+            // Need at least one digit before separator.
+            if (last_digit + 1 != pos) return false;
             sep_pos = pos;
             continue;
         }
-        if ( !isdigit(c) ) return false;
+        if (!isalnum(hit[pos])  &&  id_std.find(hit[pos]) == NPOS) {
+            return false;
+        }
+        if ( isdigit(c) ) last_digit = pos;
     }
     // Make sure the last char is digit.
     return pos > sep_pos + 1;
@@ -322,12 +329,12 @@ void CRequestContext::SetHitID(const string& hit)
         case eOnBadPHID_Ignore:
             return;
         case eOnBadPHID_AllowAndReport:
+            // Use Warning if bad hit id is acceptable.
+            ERR_POST_X(27, Warning << "Bad hit ID format: " << hit);
+            break;
         case eOnBadPHID_IgnoreAndReport:
             ERR_POST_X(27, "Bad hit ID format: " << hit);
-            if (action->Get() == eOnBadPHID_IgnoreAndReport) {
-                return;
-            }
-            break;
+            return;
         case eOnBadPHID_Throw:
             NCBI_THROW(CRequestContextException, eBadHit,
                 "Bad hit ID format: " + hit);

@@ -2498,8 +2498,36 @@ string CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags flag) const
         *m_DefaultHitId = CRequestContext::SelectLastHitID(
             TParamHttpHitId::GetDefault());
         if ( m_DefaultHitId->empty() ) {
-            *m_DefaultHitId = CRequestContext::SelectLastHitID(
+            string phid = CRequestContext::SelectLastHitID(
                 TParamHitId::GetDefault());
+            if ( !phid.empty() ) {
+                const char* env_job_id = getenv("JOB_ID");
+                const char* env_task_id = getenv("SGE_TASK_ID");
+                if (env_job_id  &&  env_task_id) {
+                    // FIX LATER: It's better to use J and T prefix
+                    // to indicate job/task, but currently CRequestContext
+                    // logs errors if sub-hit id contains non-digits.
+                    // Using leading 0s is a temporary solution. Later,
+                    // when most apps are recompiled with the new
+                    // CRequestContext, we can reconsider using J/T.
+                    string jid = ".000" + string(env_job_id);
+                    string tid = ".00" + string(env_task_id);
+                    size_t jid_pos = phid.find(jid);
+                    if (jid_pos == NPOS) {
+                        // No current job id in the phid.
+                        phid += jid + tid;
+                    }
+                    else {
+                        // Job id is already in the phid. Check task id.
+                        if (phid.find(tid, jid_pos + jid.size()) == NPOS) {
+                            // New task in the same job.
+                            phid += tid;
+                        }
+                        // else - task id already in the phid. Ignore.
+                    }
+                }
+            }
+            *m_DefaultHitId = phid;
         }
         if (m_DefaultHitId->empty()  &&  (flag == eHitID_Create)) {
             *m_DefaultHitId = GetNextHitID();
