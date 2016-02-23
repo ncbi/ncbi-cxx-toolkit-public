@@ -603,7 +603,6 @@ void CSeq_loc_Conversion::ConvertPacked_int(const CSeq_loc& src,
                 CRef<CSeq_loc> null_loc(new CSeq_loc);
                 null_loc->SetNull();
                 dst_mix->push_back(null_loc);
-                last_truncated = true;
             }
             else if (dst  &&  !dst->IsPartialStop(eExtreme_Biological) ) {
                 dst->SetPartialStop(true, eExtreme_Biological);
@@ -1981,7 +1980,6 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_int(const CSeq_loc& src,
             else if (!dst->IsPartialStop(eExtreme_Biological)) {
                 dst->SetPartialStop(true, eExtreme_Biological);
             }
-            last_truncated = true;
         }
         m_Partial |= !mapped;
         res |= mapped;
