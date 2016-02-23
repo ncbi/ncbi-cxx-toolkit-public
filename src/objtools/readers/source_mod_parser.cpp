@@ -800,6 +800,7 @@ static const TTechMapEntry sc_TechArray[] = {
     { "standard",           CMolInfo::eTech_standard },
     { "STS",                CMolInfo::eTech_sts },
     { "survey",             CMolInfo::eTech_survey },
+    { "targeted",           CMolInfo::eTech_targeted },
     { "tsa",                CMolInfo::eTech_tsa },
     { "wgs",                CMolInfo::eTech_wgs }
 };
