@@ -2889,13 +2889,13 @@ private:
     ///
     /// Prohibit dynamic deallocation (and allocation) because there's no
     /// good reason to allow it, and out-of-order destruction is problematic.
-    void  operator delete   (void*)   { throw runtime_error("forbidden"); }
+    void  operator delete   (void*)   { }
 
     /// Private delete[] operator.
     ///
     /// Prohibit dynamic deallocation (and allocation) because there's no
     /// good reason to allow it, and out-of-order destruction is problematic.
-    void  operator delete[] (void*)   { throw runtime_error("forbidden"); }
+    void  operator delete[] (void*)   { }
 
     string            m_PostPrefix;            ///< Message prefix
     list<string>      m_PrefixList;            ///< List of prefixes
