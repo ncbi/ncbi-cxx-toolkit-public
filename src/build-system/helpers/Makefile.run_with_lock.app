@@ -4,6 +4,7 @@ SRC = run_with_lock
 
 CC          = $(CC_FOR_BUILD)
 CC_WRAPPER  =
+CXX_WRAPPER =
 CPP         = $(CPP_FOR_BUILD)
 CFLAGS      = $(CFLAGS_FOR_BUILD)
 CPPFLAGS    = $(CPPFLAGS_FOR_BUILD)

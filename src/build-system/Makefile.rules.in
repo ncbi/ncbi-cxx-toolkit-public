@@ -36,6 +36,17 @@ ifneq "" "$(filter @%@,$(ALL_SETTINGS))"
 	$(abs_top_srcdir)/scripts/common/impl/maybe_reconfigure.sh $(builddir)
 endif
 
+# Colored messages are nice, but not enough to require reconfiguration.
+ifneq "" "$(CC_WRAPPER)$(CXX_WRAPPER)"
+  ifneq "" "$(filter-out @%@,$(COLOR_DIAGNOSTICS))"
+    STDERR_IS_TTY := $(shell if [ -t 2 ]; then echo yes; else echo no; fi)
+    ifeq "yes" "$(STDERR_IS_TTY)"
+      CPPFLAGS += $(COLOR_DIAGNOSTICS)
+      LDFLAGS  += $(COLOR_DIAGNOSTICS)
+    endif
+  endif
+endif
+
 ###  C++ compilation
 make_cpp = $(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 ###  C compilation

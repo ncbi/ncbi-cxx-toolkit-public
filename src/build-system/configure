@@ -920,6 +920,7 @@ OPENMP_FLAGS
 UNSAFE_MATH_FLAG
 SSE4_1_FLAG
 AES_FLAG
+COLOR_DIAGNOSTICS
 NETWORK_LIBS
 NETWORK_PURE_LIBS
 RESOLVER_LIBS
@@ -25606,6 +25607,79 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_cc_aes" >&5
 echo "${ECHO_T}$ncbi_cv_cc_aes" >&6; }
 
+{ echo "$as_me:$LINENO: checking whether $CC supports -fdiagnostics-color=always" >&5
+echo $ECHO_N "checking whether $CC supports -fdiagnostics-color=always... $ECHO_C" >&6; }
+if test "${ncbi_cv_cc_fdiagnostics_color_always+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CFLAGS="$orig_CFLAGS -fdiagnostics-color=always"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_cc_fdiagnostics_color_always=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_cc_fdiagnostics_color_always=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_cc_fdiagnostics_color_always" >&5
+echo "${ECHO_T}$ncbi_cv_cc_fdiagnostics_color_always" >&6; }
+if test $ncbi_cv_cc_fdiagnostics_color_always = yes; then
+   COLOR_DIAGNOSTICS=-fdiagnostics-color=always
+else
+   COLOR_DIAGNOSTICS=
+fi
+
 CFLAGS=$orig_CFLAGS
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -46041,6 +46115,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -47152,6 +47227,7 @@ OPENMP_FLAGS!$OPENMP_FLAGS$ac_delim
 UNSAFE_MATH_FLAG!$UNSAFE_MATH_FLAG$ac_delim
 SSE4_1_FLAG!$SSE4_1_FLAG$ac_delim
 AES_FLAG!$AES_FLAG$ac_delim
+COLOR_DIAGNOSTICS!$COLOR_DIAGNOSTICS$ac_delim
 NETWORK_LIBS!$NETWORK_LIBS$ac_delim
 NETWORK_PURE_LIBS!$NETWORK_PURE_LIBS$ac_delim
 RESOLVER_LIBS!$RESOLVER_LIBS$ac_delim
@@ -47227,7 +47303,6 @@ WXWIDGETS_GL_LIBS!$WXWIDGETS_GL_LIBS$ac_delim
 WXWIDGETS_GL_STATIC_LIBS!$WXWIDGETS_GL_STATIC_LIBS$ac_delim
 WXWIDGETS_POST_LINK!$WXWIDGETS_POST_LINK$ac_delim
 FASTCGI_INCLUDE!$FASTCGI_INCLUDE$ac_delim
-FASTCGI_LIBS!$FASTCGI_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -47269,6 +47344,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+FASTCGI_LIBS!$FASTCGI_LIBS$ac_delim
 FASTCGI_OBJS!$FASTCGI_OBJS$ac_delim
 NCBI_SSS_INCLUDE!$NCBI_SSS_INCLUDE$ac_delim
 NCBI_SSS_LIBPATH!$NCBI_SSS_LIBPATH$ac_delim
@@ -47352,7 +47428,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 81; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 82; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

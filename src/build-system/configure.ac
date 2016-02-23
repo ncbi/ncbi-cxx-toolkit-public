@@ -3923,6 +3923,18 @@ AC_CACHE_CHECK([whether $CC supports -maes], ncbi_cv_cc_aes,
            }], [])],
        [ncbi_cv_cc_aes=yes], [ncbi_cv_cc_aes=no])])
 
+AC_CACHE_CHECK([whether $CC supports -fdiagnostics-color=always],
+   ncbi_cv_cc_fdiagnostics_color_always,
+   [CFLAGS="$orig_CFLAGS -fdiagnostics-color=always"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])],
+       [ncbi_cv_cc_fdiagnostics_color_always=yes],
+       [ncbi_cv_cc_fdiagnostics_color_always=no])])
+if test $ncbi_cv_cc_fdiagnostics_color_always = yes; then
+   COLOR_DIAGNOSTICS=-fdiagnostics-color=always
+else
+   COLOR_DIAGNOSTICS=
+fi
+
 CFLAGS=$orig_CFLAGS
 AC_LANG_POP(C)
 
@@ -7856,6 +7868,7 @@ AC_SUBST(OPENMP_FLAGS)
 AC_SUBST(UNSAFE_MATH_FLAG)
 AC_SUBST(SSE4_1_FLAG)
 AC_SUBST(AES_FLAG)
+AC_SUBST(COLOR_DIAGNOSTICS)
 AC_SUBST(NETWORK_LIBS)
 AC_SUBST(NETWORK_PURE_LIBS)
 AC_SUBST(RESOLVER_LIBS)

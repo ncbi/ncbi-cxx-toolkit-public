@@ -238,6 +238,8 @@ UNSAFE_MATH_FLAG = @UNSAFE_MATH_FLAG@
 SSE4_1_FLAG      = @SSE4_1_FLAG@
 AES_FLAG         = @AES_FLAG@
 
+COLOR_DIAGNOSTICS = @COLOR_DIAGNOSTICS@
+
 # Refrain from optimizations that assume no aliasing.
 NO_STRICT_ALIASING = @NO_STRICT_ALIASING@
 

@@ -32,6 +32,11 @@
 * ===========================================================================
 */
 
+
+#ifndef _GNU_SOURCE
+#  define _GNU_SOURCE 1
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -40,6 +45,7 @@
 #include <string.h>
 #include <sys/select.h>
 #include <sys/wait.h>
+#include <termios.h>
 #include <unistd.h>
 
 #include <assert.h>
@@ -68,6 +74,13 @@ typedef struct {
     const char* reviewer;
     int         error_status;
 } SOptions;
+
+typedef enum {
+    eFS_off,
+    eFS_on,
+    eFS_esc,
+    eFS_csi,
+} EFilterState;
 
 
 static
@@ -159,23 +172,74 @@ void s_ParseOptions(SOptions* options, int* argc, const char* const** argv)
 
 
 static
-int s_Tee(int in, FILE* out1, FILE* out2)
+int s_Tee(int in, FILE* out1, FILE* out2, EFilterState* state)
 {
     char    buffer[1024];
     ssize_t n;
     while ((n = read(in, buffer, sizeof(buffer))) > 0) {
+        char* p = buffer;
         if (fwrite(buffer, 1, n, out1) < n) {
             fprintf(stderr, "%s: Error propagating process output: %s.\n",
                     s_AppName, strerror(errno));
         }
-        if (fwrite(buffer, 1, n, out2) < n) {
+        if (*state == eFS_esc) {
+            if (*p == '[') {
+                ++p;
+                --n;
+                *state = eFS_csi;
+            } else {
+                fputc('\033', out2);
+                *state = eFS_on;
+            }
+        } else if (*state == eFS_csi) {
+            p = memchr(buffer, 'm', n);
+            if (p == NULL) {
+                continue;
+            } else {
+                ++p;
+                n -= (p - buffer);
+                *state = eFS_on;
+            }
+        }
+        if (*state == eFS_on) {
+            const char* start   = p;
+            const char* src     = p;
+            char*       dest    = p;
+            while (src - p < n
+                   &&  (start = memchr(src, '\033', n - (src - p))) != NULL
+                   &&  (start == p + n - 1  ||  start[1] == '[')) {
+                if (src > dest  &&  start > src) {
+                    memmove(dest, src, start - src);
+                }
+                if (start == p + n - 1) {
+                    *state = eFS_esc;
+                    n = start - p;
+                    break;
+                }
+                dest += start - src;
+                const char* end = memchr(start + 2, 'm', n - 2 - (start - p));
+                if (end == NULL) {
+                    *state = eFS_csi;
+                    n = start - p;
+                    break;
+                } else {
+                    src = end + 1;
+                }
+            }
+            memmove(dest, src, n - (src - p));
+            n -= src - dest;
+        }
+        if (fwrite(p, 1, n, out2) < n) {
             fprintf(stderr, "%s: Error logging process output: %s.\n",
                     s_AppName, strerror(errno));
         }
     }
     if (n < 0  &&  errno != EAGAIN  &&  errno != EWOULDBLOCK) {
-        fprintf(stderr, "%s: Error reading from process: %s.\n",
-                s_AppName, strerror(errno));
+        if (*state == eFS_off  ||  errno != EIO) {
+            fprintf(stderr, "%s: Error reading from process: %s.\n",
+                    s_AppName, strerror(errno));
+        }
+        return 1;
     }
     return n == 0;
 }
@@ -187,21 +251,69 @@ void s_OnSIGCHLD(int n)
     s_MainChildDone = 1;
 }
 
+
+static
+int s_OpenPipeOrPty(int fd_to_mimic, const char* label, int fds[2],
+                    EFilterState* state)
+{
+    if (isatty(fd_to_mimic)) {
+        struct termios attr;
+        const char*    name;
+        *state = eFS_on;
+        if ((fds[0] = posix_openpt(O_RDONLY | O_NOCTTY)) < 0) {
+            fprintf(stderr, "%s: Error allocating pty master for %s: %s.\n",
+                    s_AppName, label, strerror(errno));
+            return -1;
+        } else if (grantpt(fds[0]) < 0  ||  unlockpt(fds[0]) < 0
+                   ||  (name = ptsname(fds[0])) == NULL
+                   ||  (fds[1] = open(name, O_WRONLY)) < 0) {
+            fprintf(stderr, "%s: Error opening pty slave for %s: %s.\n",
+                    s_AppName, label, strerror(errno));
+            close(fds[0]);
+            return -1;
+        }
+        if (tcgetattr(fds[1], &attr) < 0) {
+            fprintf(stderr,
+                    "%s: Warning: unable to get attributes for %s: %s.\n",
+                    s_AppName, label, strerror(errno));
+        } else {
+            attr.c_oflag |= ONLRET;
+#ifdef ONLCR
+            attr.c_oflag &= ~ONLCR;
+#endif
+            /* XXX -- propagate anything from fd_to_mimic? */
+            if (tcsetattr(fds[1], TCSADRAIN, &attr) < 0) {
+                fprintf(stderr,
+                    "%s: Warning: unable to set attributes for %s: %s.\n",
+                        s_AppName, label, strerror(errno));
+            }
+        }
+    } else {
+        if (pipe(fds) < 0) {
+            fprintf(stderr, "%s: Error creating pipe for %s: %s.n",
+                    s_AppName, label, strerror(errno));
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+
 static
 int s_Run(const char* const* args, FILE* log)
 {
     int   stdout_fds[2], stderr_fds[2];
     int   status = W_EXITCODE(126, 0);
     pid_t pid;
+    EFilterState stdout_state = eFS_off, stderr_state = eFS_off;
     if (log != NULL) {
-        if (pipe(stdout_fds) < 0) {
-            fprintf(stderr, "%s: Error creating pipe for stdout: %s.\n",
-                    s_AppName, strerror(errno));
+        if (s_OpenPipeOrPty(STDOUT_FILENO, "stdout", stdout_fds, &stdout_state)
+            < 0) {
             return status;
         }
-        if (pipe(stderr_fds) < 0) {
-            fprintf(stderr, "%s: Error creating pipe for stderr: %s.\n",
-                    s_AppName, strerror(errno));
+        if (s_OpenPipeOrPty(STDERR_FILENO, "stderr", stderr_fds, &stderr_state)
+            < 0) {
             close(stdout_fds[0]);
             close(stdout_fds[1]);
             return status;
@@ -209,6 +321,7 @@ int s_Run(const char* const* args, FILE* log)
         s_MainChildDone = 0;
         signal(SIGCHLD, s_OnSIGCHLD);
     }
+    
     pid = fork();
     if (pid < 0) { /* error */
         fprintf(stderr, "%s: Fork failed: %s.\n", s_AppName, strerror(errno));
@@ -264,11 +377,13 @@ int s_Run(const char* const* args, FILE* log)
                 }
                 if (FD_ISSET(stdout_fds[0], &rfds)
                     ||  FD_ISSET(stdout_fds[0], &efds)) {
-                    stdout_done = s_Tee(stdout_fds[0], stdout, log);
+                    stdout_done = s_Tee(stdout_fds[0], stdout, log,
+                                        &stdout_state);
                 }
                 if (FD_ISSET(stderr_fds[0], &rfds)
                     ||  FD_ISSET(stderr_fds[0], &efds)) {
-                    stderr_done = s_Tee(stderr_fds[0], stderr, log);
+                    stderr_done = s_Tee(stderr_fds[0], stderr, log,
+                                        &stderr_state);
                 }
                 if (s_MainChildDone  &&  ( !stdout_done  ||  !stderr_done )
                     &&  waitpid(pid, &status, WNOHANG) != 0) {
