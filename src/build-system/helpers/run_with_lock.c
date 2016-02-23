@@ -135,7 +135,7 @@ void s_ParseOptions(SOptions* options, int* argc, const char* const** argv)
             *argv += 2;
             *argc -= 2;
         } else if ((*argv)[1][0] == '-') {
-            fprintf(stderr, "%s: Unsupported option %s\n",
+            fprintf(stderr, "%s: Unsupported option %s.\n",
                     s_AppName, (*argv)[1]);
             exit(options->error_status);
         } else if (strcmp((*argv)[1], "!") == 0) {
@@ -165,16 +165,16 @@ int s_Tee(int in, FILE* out1, FILE* out2)
     ssize_t n;
     while ((n = read(in, buffer, sizeof(buffer))) > 0) {
         if (fwrite(buffer, 1, n, out1) < n) {
-            fprintf(stderr, "%s: Error propagating process output: %s\n",
+            fprintf(stderr, "%s: Error propagating process output: %s.\n",
                     s_AppName, strerror(errno));
         }
         if (fwrite(buffer, 1, n, out2) < n) {
-            fprintf(stderr, "%s: Error logging process output: %s\n",
+            fprintf(stderr, "%s: Error logging process output: %s.\n",
                     s_AppName, strerror(errno));
         }
     }
     if (n < 0  &&  errno != EAGAIN  &&  errno != EWOULDBLOCK) {
-        fprintf(stderr, "%s: Error reading from process: %s\n",
+        fprintf(stderr, "%s: Error reading from process: %s.\n",
                 s_AppName, strerror(errno));
     }
     return n == 0;
@@ -195,12 +195,12 @@ int s_Run(const char* const* args, FILE* log)
     pid_t pid;
     if (log != NULL) {
         if (pipe(stdout_fds) < 0) {
-            fprintf(stderr, "%s: Error creating pipe for stdout: %s",
+            fprintf(stderr, "%s: Error creating pipe for stdout: %s.\n",
                     s_AppName, strerror(errno));
             return status;
         }
         if (pipe(stderr_fds) < 0) {
-            fprintf(stderr, "%s: Error creating pipe for stderr: %s",
+            fprintf(stderr, "%s: Error creating pipe for stderr: %s.\n",
                     s_AppName, strerror(errno));
             close(stdout_fds[0]);
             close(stdout_fds[1]);
@@ -211,7 +211,7 @@ int s_Run(const char* const* args, FILE* log)
     }
     pid = fork();
     if (pid < 0) { /* error */
-        fprintf(stderr, "%s: Fork failed: %s\n", s_AppName, strerror(errno));
+        fprintf(stderr, "%s: Fork failed: %s.\n", s_AppName, strerror(errno));
     } else if (pid == 0) { /* child */
         int n;
         if (log != NULL) {
@@ -226,7 +226,7 @@ int s_Run(const char* const* args, FILE* log)
             }
         }
         execvp(args[0], (char* const*) args);
-        fprintf(stderr, "%s: Unable to exec %s: %s\n",
+        fprintf(stderr, "%s: Unable to exec %s: %s.\n",
                 s_AppName, args[0], strerror(errno));
         _exit(127);
     } else { /* parent */
@@ -258,7 +258,7 @@ int s_Run(const char* const* args, FILE* log)
                 if (select(nfds, &rfds, NULL, &efds, NULL) < 0
                     &&  errno != EINTR  &&  errno != EAGAIN) {
                     fprintf(stderr,
-                            "%s: Error checking for output to log: %s\n",
+                            "%s: Error checking for output to log: %s.\n",
                             s_AppName, strerror(errno));
                     break;
                 }
@@ -349,6 +349,7 @@ int main(int argc, const char* const* argv)
     sprintf(s_LockName, "%s.lock", options.base);
     for (n = 1;  n <= NSIG;  ++n) {
         if (n != SIGKILL  &&  n != SIGSTOP  &&  n != SIGTSTP  &&  n != SIGCONT
+            &&  n != SIGSEGV  &&  n != SIGBUS  &&  n != SIGILL
             &&  n != SIGCHLD  &&  n != SIGPIPE) {
             s_OrigHandlers[n] = signal(n, s_OnSignal);
         }
@@ -362,7 +363,7 @@ int main(int argc, const char* const* argv)
         sprintf(new_log, "%s.new", options.logfile);
         log = fopen(new_log, "w");
         if (log == NULL) {
-            fprintf(stderr, "%s: Couldn't open log file %s: %s",
+            fprintf(stderr, "%s: Couldn't open log file %s: %s.\n",
                     s_AppName, options.logfile, strerror(errno));
             return options.error_status;
         }
@@ -385,7 +386,7 @@ int main(int argc, const char* const* argv)
         }
         if (log_status != eNewLogBoring) {
             if (rename(new_log, options.logfile) < 0) {
-                fprintf(stderr, "%s: Unable to rename log file %s: %s\n",
+                fprintf(stderr, "%s: Unable to rename log file %s: %s.\n",
                         s_AppName, new_log, strerror(errno));
             }
         }
