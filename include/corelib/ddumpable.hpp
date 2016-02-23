@@ -155,6 +155,8 @@ public:
     // Function that does the dump - to be overloaded
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const = 0;
 
+    void DumpToConsole(void) const;
+
 private:
     static bool sm_DumpEnabled;
 };

@@ -77,6 +77,11 @@ void CDebugDumpable::DebugDumpFormat(CDebugDumpFormatter& ddf,
 }
 
 
+void CDebugDumpable::DumpToConsole(void) const
+{
+    DebugDumpText(cout, kEmptyStr, 0);
+}
+
 //---------------------------------------------------------------------------
 //  CDebugDumpContext provides client interface in the form [name=value]
 
