@@ -1,0 +1,4 @@
+set PTB_FLAGS= -cfg
+set PTB_PROJECT_REQ=scripts\projects\ncbi_gui.lst
+call "%BUILD_TREE_ROOT%\ptb.bat"
+if errorlevel 1 exit 1
