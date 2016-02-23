@@ -1333,10 +1333,12 @@ ENetStorageRemoveResult SNetStorageByKeyRPC::Remove(const string& key,
     m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
     CJsonNode request(m_NetStorageRPC->MkObjectRequest("DELETE", key, flags));
 
-    m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service, request);
+    CJsonNode response(
+            m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service, request));
 
-    // TODO: Check result after it is implemented (CXX-7727)
-    return eNSTRR_Removed;
+    CJsonNode not_found(response.GetByKeyOrNull("NotFound"));
+
+    return not_found && not_found.AsBoolean() ? eNSTRR_NotFound : eNSTRR_Removed;
 }
 
 struct SNetStorageAdminImpl : public CObject
