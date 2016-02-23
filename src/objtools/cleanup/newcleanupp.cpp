@@ -10771,7 +10771,7 @@ bool HasAuthor(const CAuth_list& auth_list)
                 continue;
             }
             const CPerson_id& pid = (*it)->GetName();
-            if (pid.IsName()  ||  pid.IsMl()  ||  pid.IsStr()) {
+            if (pid.IsName()  ||  pid.IsMl()  ||  pid.IsStr() || pid.IsConsortium()) {
                 has_name = true;
                 break;
             }
