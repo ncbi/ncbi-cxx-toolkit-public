@@ -449,12 +449,12 @@ static bool SetOverlapNote(CSeq_feat& feat)
 }
 
 
+static const char* kOverlap0 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name.";
+static const char* kOverlap1 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name, but [has] the appropriate note text.";
+static const char* kOverlap2 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name and [does] not have the appropriate note text.";
+
 DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eDisc, "Overlapping CDs")
 {
-    static const char* kOverlap0 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name.";
-    static const char* kOverlap1 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name, but [has] the appropriate note text.";
-    static const char* kOverlap2 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name and [does] not have the appropriate note text.";
-
     if (obj.Which() != CSeqFeatData::e_Cdregion) {
         return;
     }
@@ -498,6 +498,7 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eDisc, "Overlapping CDs")
 
 DISCREPANCY_SUMMARIZE(OVERLAPPING_CDS)
 {
+    m_Objs[kEmptyStr][kOverlap0].Promote();
     m_ReportItems = m_Objs[kEmptyStr].Export(*this)->GetSubitems();
 }
 
@@ -749,17 +750,18 @@ static bool ConvertCDSToMiscFeat(const CSeq_feat& feat, CScope& scope)
 }
 
 
+static const char* kContained = "[n] coding region[s] [is] completely contained in another coding region.";
+static const char* kContainedNote = "[n] coding region[s] [is] completely contained in another coding region, but have note.";
+static const char* kContainedSame = "[n] coding region[s] [is] completely contained in another coding region on the same strand.";
+static const char* kContainedOpps = "[n] coding region[s] [is] completely contained in another coding region, but on the opposite strand.";
+
+
 DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eDisc, "Contained CDs")
 {
-    static const char* kContained = "[n] coding region[s] completely contained in another coding region.";
-    static const char* kContainedNote = "[n] coding region[s] completely contained in another coding region, but have note.";
-    static const char* kContainedSame = "[n] coding region[s] completely contained in another coding region on the same strand.";
-    static const char* kContainedOpps = "[n] coding region[s] completely contained in another coding region, but on the opposite strand.";
-
     if (obj.Which() != CSeqFeatData::e_Cdregion) {
         return;
     }
-    if (!context.GetCurrentBioseq()->CanGetInst() || !context.GetCurrentBioseq()->GetInst().IsNa() || !context.IsEukaryotic()) {
+    if (!context.GetCurrentBioseq()->CanGetInst() || !context.GetCurrentBioseq()->GetInst().IsNa() || context.IsEukaryotic()) {
         return;
     }
 
@@ -786,7 +788,12 @@ DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eDisc, "Contained CDs")
 
 DISCREPANCY_SUMMARIZE(CONTAINED_CDS)
 {
-    m_ReportItems = m_Objs[kEmptyStr].Export(*this)->GetSubitems();
+    if (m_Objs[kEmptyStr][kContained].GetMap().size() == 1) {
+        m_ReportItems = m_Objs[kEmptyStr][kContained].Export(*this)->GetSubitems();
+    }
+    else {
+        m_ReportItems = m_Objs[kEmptyStr].Export(*this)->GetSubitems();
+    }
 }
 
 

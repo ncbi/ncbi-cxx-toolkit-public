@@ -207,7 +207,9 @@ public:
     TReportObjectList& GetObjects() { return m_Objs; }
     TNodeMap& GetMap() { return m_Map; }
     CRef<CReportItem> Export(CDiscrepancyCase& test, bool unique = true);
-    
+    void Copy(CRef<CReportNode> other);
+    bool Promote();
+
     bool empty() { return m_Map.empty() && m_Objs.empty(); }
     void clear() { m_Map.clear(); m_Objs.clear(); }
 protected:

@@ -135,6 +135,27 @@ void CReportNode::Add(TReportObjectList& list, TReportObjectSet& hash, TReportOb
 }
 
 
+void CReportNode::Copy(CRef<CReportNode> other)
+{
+    m_Map = other->m_Map;
+    m_Objs = other->m_Objs;
+    m_Hash = other->m_Hash;
+    m_Fatal = other->m_Fatal;
+    m_Autofix = other->m_Autofix;
+    m_Hash = other->m_Hash;
+}
+
+
+bool CReportNode::Promote()
+{
+    if (m_Map.size() == 1) {
+        Copy(m_Map.begin()->second);
+        return true;
+    }
+    return false;
+}
+
+
 CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
 {
     TReportObjectList objs = m_Objs;

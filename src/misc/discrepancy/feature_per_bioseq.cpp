@@ -42,9 +42,8 @@ USING_SCOPE(objects);
 
 DISCREPANCY_MODULE(feature_per_bioseq);
 
-
+/*// Removing from the list
 // DUPLICATE_GENE_LOCUS
-
 DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS, CSeq_feat_BY_BIOSEQ, eDisc, "Duplicate Gene Locus")
 {
     if (!obj.GetData().IsGene() || !obj.GetData().GetGene().IsSetLocus()) {
@@ -65,7 +64,7 @@ DISCREPANCY_SUMMARIZE(DUPLICATE_GENE_LOCUS)
     if (m_Objs.empty()) {
         return;
     }
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs.GetMap()) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, m_Objs.GetMap()) {
         if (!NStr::IsBlank(it->first) && it->second->GetObjects().size() > 1) {
             CReportNode tmpNode;
             tmpNode["[n] gene[s] [has] the same locus as another gene on the same Bioseq"].Add(it->second->GetObjects());
@@ -75,6 +74,7 @@ DISCREPANCY_SUMMARIZE(DUPLICATE_GENE_LOCUS)
     }
     m_Objs.clear();
 }
+*/
 
 
 // COUNT_RRNAS
@@ -116,7 +116,7 @@ DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
     size_t total = 0;
     // count rRNAs
     CReportNode::TNodeMap& map = m_Objs.GetMap();
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
         if (!NStr::IsBlank(it->first)) {
             total += it->second->GetObjects().size();
         }
@@ -125,7 +125,7 @@ DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
     ss << " [n] sequence[s] [has] " << total << " rRNA feature" << (total == 1 ? kEmptyStr : "s");
     m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
     // duplicated rRNA names
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
         if (NStr::IsBlank(it->first) || it->second->GetObjects().size() <= 1) {
             continue;
         }
@@ -226,7 +226,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
     size_t total = 0;
     // count tRNAs
     CReportNode::TNodeMap& map = m_Objs.GetMap();
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
         if (!NStr::IsBlank(it->first)) {
             total += it->second->GetObjects().size();
         }
@@ -247,7 +247,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[desired_aaList[i].long_symbol].GetObjects(), false);
     }
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
         if (NStr::IsBlank(it->first) || DesiredCount->find(it->first.c_str()) != DesiredCount->end()) {
             continue;
         }
@@ -325,7 +325,7 @@ DISCREPANCY_CASE(EC_NUMBER_NOTE, CSeq_feat_BY_BIOSEQ, eDisc, "Seq-feat has EC nu
         CConstRef<CProt_ref> prot_ref(sGetProtRefForFeature(obj, context.GetScope(), false));
         if (prot_ref.NotEmpty()) {
             if (prot_ref->IsSetName()) {
-                ITERATE(list<string>, it, prot_ref->GetName()) {
+                ITERATE (list<string>, it, prot_ref->GetName()) {
                     if (validator::HasECnumberPattern(*it)) {
                         discrepancy_found = true;
                         break;
