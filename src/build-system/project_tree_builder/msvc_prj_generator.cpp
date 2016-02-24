@@ -1316,7 +1316,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
         // File version
         CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
         project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
-        {
+        if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1400) {
             string prj_ver(GetApp().GetRegSettings().GetProjectFileFormatVersion());
             if (!prj_ver.empty()) {
                 __SET_PROPGROUP_ELEMENT(t, "_ProjectFileVersion", prj_ver);

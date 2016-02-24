@@ -576,7 +576,11 @@ string CMsvc7RegSettings::sm_MsvcPlatformName = "i386";
 
 #elif defined(NCBI_COMPILER_MSVC)
 
-#if _MSC_VER >= 1800
+#if _MSC_VER >= 1900
+CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
+CMsvc7RegSettings::eMsvc1400;
+string CMsvc7RegSettings::sm_MsvcVersionName = "1400";
+#elif _MSC_VER >= 1800
 CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
 CMsvc7RegSettings::eMsvc1200;
 string CMsvc7RegSettings::sm_MsvcVersionName = "1200";
@@ -687,6 +691,10 @@ void CMsvc7RegSettings::IdentifyPlatform()
             sm_MsvcVersion = eMsvc1200;
             sm_MsvcVersionName = "1200";
             break;
+        case 1400:
+            sm_MsvcVersion = eMsvc1400;
+            sm_MsvcVersionName = NStr::NumericToString(ide);
+            break;
         default:
             NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported IDE version");
             break;
@@ -775,6 +783,8 @@ string CMsvc7RegSettings::GetSolutionFileFormatVersion(void)
         return "12.00\n# Visual Studio 2012";
     } else if (GetMsvcVersion() == eMsvc1200) {
         return "12.00\n# Visual Studio 2013";
+    } else if (GetMsvcVersion() == eMsvc1400) {
+        return GetApp().GetRegSettings().m_Version;
     }
     return "";
 }

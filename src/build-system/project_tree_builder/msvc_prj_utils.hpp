@@ -256,6 +256,7 @@ public:
         eMsvc1000,
         eMsvc1100,      // vs2012
         eMsvc1200,      // vs2013
+        eMsvc1400,      // vs2015
         eXCode30,
         eMsvcNone
     };

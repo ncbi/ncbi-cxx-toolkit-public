@@ -405,7 +405,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(4,2,0) );
+    SetVersion( CVersionInfo(4,1,3) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -507,7 +507,7 @@ void CProjBulderApp::Init(void)
                              CArgDescriptions::eString);
 #elif defined(NCBI_COMPILER_MSVC)
     arg_desc->AddOptionalKey("ide", "msvc_version",
-                             "Target version of MS Visual Studio, for example: 1000, 1100, 1200",
+                             "Target version of MS Visual Studio, for example: 1100, 1200, 1400",
                              CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("arch", "platform",
                              "Target platform, for example: Win32, x64",
@@ -2267,8 +2267,9 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
         m_MsvcRegSettings->m_DllInfo = 
             GetConfig().Get(section, "DllInfo");
     
-        m_MsvcRegSettings->m_Version = 
-            GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "Version");
+        m_MsvcRegSettings->m_Version = NStr::Replace(
+            GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "Version"),
+            "\\n", "\n");
 
         m_MsvcRegSettings->m_CompilersSubdir  = 
             GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "msvc_prj");
