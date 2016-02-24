@@ -33,6 +33,10 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/PCRPrimer.hpp>
+#include <objects/seqfeat/PCRPrimerSet.hpp>
+#include <objects/seqfeat/PCRReaction.hpp>
+#include <objects/seqfeat/PCRReactionSet.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -68,8 +72,9 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal t
     }
     if (obj.CanGetSubtype()) {
         ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
+            const CSubSource::TSubtype& subtype = (*it)->GetSubtype();
             if ((*it)->CanGetName()) {
-                m_Objs[(*it)->GetSubtypeName((*it)->GetSubtype(), CSubSource::eVocabulary_insdc)][(*it)->GetName()].Add(*disc_obj);
+                m_Objs[subtype == CSubSource::eSubtype_other ? "note-subsrc" : (*it)->GetSubtypeName(subtype, CSubSource::eVocabulary_raw)][(*it)->GetName()].Add(*disc_obj);
             }
         }
     }
@@ -81,12 +86,33 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal t
                 subtype != COrgMod::eSubtype_gb_acronym &&
                 subtype != COrgMod::eSubtype_gb_anamorph &&
                 subtype != COrgMod::eSubtype_gb_synonym) {
-                m_Objs[(*it)->GetSubtypeName(subtype, COrgMod::eVocabulary_insdc)][(*it)->GetSubname()].Add(*disc_obj);
+                m_Objs[subtype == COrgMod::eSubtype_other ? "note-orgmod" : (*it)->GetSubtypeName(subtype, COrgMod::eVocabulary_raw)][(*it)->GetSubname()].Add(*disc_obj);
             }
         }
     }
     if (obj.CanGetPcr_primers()) {
-        //cout << "PRIMER!\n";
+        ITERATE (list<CRef<CPCRReaction> >, it, obj.GetPcr_primers().Get()) {
+            if ((*it)->CanGetForward()) {
+                ITERATE (list<CRef<CPCRPrimer> >, pr, (*it)->GetForward().Get()) {
+                    if ((*pr)->CanGetName()) {
+                        m_Objs["fwd-primer-name"][(*pr)->GetName()].Add(*disc_obj);
+                    }
+                    if ((*pr)->CanGetSeq()) {
+                        m_Objs["fwd-primer-seq"][(*pr)->GetSeq()].Add(*disc_obj);
+                    }
+                }
+            }
+            if ((*it)->CanGetReverse()) {
+                ITERATE (list<CRef<CPCRPrimer> >, pr, (*it)->GetReverse().Get()) {
+                    if ((*pr)->CanGetName()) {
+                        m_Objs["rev-primer-name"][(*pr)->GetName()].Add(*disc_obj);
+                    }
+                    if ((*pr)->CanGetSeq()) {
+                        m_Objs["rev-primer-seq"][(*pr)->GetSeq()].Add(*disc_obj);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -142,16 +168,16 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         }
         string diagnosis = it->first;
         diagnosis += " (";
-        diagnosis += num == total ? "all present" : "some missing";
+        diagnosis += num >= total ? "all present" : "some missing";
         diagnosis += ", ";
-        diagnosis += bins == 1 ? "all same" : uniq == num ? "all unique" : "some duplicates";
+        diagnosis += uniq == num ? "all unique" : bins == 1 ? "all same" : "some duplicates";
         diagnosis += ")";
         report[diagnosis];
-        if ((num != total || bins != 1) && (it->first == "collection_date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain")) {
+        if ((num != total || bins != 1) && (it->first == "collection-date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain")) {
             report[diagnosis].Fatal();
         }
         if ((bins > capital.size() || (num < total && capital.size() == 1))
-            && (it->first == "country" || it->first == "collection_date" || it->first == "isolation_source")) { // autofixable
+            && (it->first == "country" || it->first == "collection-date" || it->first == "isolation-source")) { // autofixable
             CRef<CSourseQualsAutofixData> fix;
             if (bins > capital.size()) { // capitalization
                 ITERATE (TStringStringObjVectorMap, cap, capital) {
@@ -259,10 +285,10 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
         else if (fix->m_Qualifier == "country") {
             SetSubsource(bs, CSubSource::eSubtype_country, fix->m_Value, added, changed);
         }
-        else if (fix->m_Qualifier == "isolation_source") {
+        else if (fix->m_Qualifier == "isolation-source") {
             SetSubsource(bs, CSubSource::eSubtype_isolation_source, fix->m_Value, added, changed);
         }
-        else if (fix->m_Qualifier == "collection_date") {
+        else if (fix->m_Qualifier == "collection-date") {
             SetSubsource(bs, CSubSource::eSubtype_collection_date, fix->m_Value, added, changed);
         }
     }
