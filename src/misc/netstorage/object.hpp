@@ -91,6 +91,7 @@ private:
     bool ExistsImpl();
     ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
+    string FileTrack_PathImpl();
 
     ISelector::Ptr m_Selector;
     IState* m_State;

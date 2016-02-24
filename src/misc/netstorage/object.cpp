@@ -107,8 +107,7 @@ void CObj::SetExpiration(const CTimeout& ttl)
 
 string CObj::FileTrack_Path()
 {
-    // TODO: Implement locking (CXX-7624)
-    return kEmptyStr;
+    return m_Location->FileTrack_PathImpl();
 }
 
 
@@ -312,6 +311,12 @@ struct TSetExpirationCaller
 void CObj::SetExpirationImpl(const CTimeout& ttl)
 {
     return MetaMethod(TSetExpirationCaller(ttl));
+}
+
+
+string CObj::FileTrack_PathImpl()
+{
+    return MetaMethod(TCaller<string, &ILocation::FileTrack_PathImpl>());
 }
 
 

@@ -214,6 +214,7 @@ public:
     bool ExistsImpl();
     ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
+    string FileTrack_PathImpl();
 
 private:
     CLocatorHolding<CRWNotFound> m_RW;
@@ -239,6 +240,7 @@ public:
     bool ExistsImpl();
     ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
+    string FileTrack_PathImpl();
 
 private:
     CRef<SContext> m_Context;
@@ -266,6 +268,7 @@ public:
     bool ExistsImpl();
     ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
+    string FileTrack_PathImpl();
 
 private:
     CRef<SContext> m_Context;
@@ -473,6 +476,15 @@ void CNotFound::SetExpirationImpl(const CTimeout&)
 }
 
 
+string CNotFound::FileTrack_PathImpl()
+{
+    NCBI_THROW_FMT(CNetStorageException, eNotExists,
+            "NetStorageObject \"" << LocatorToStr() <<
+            "\" could not be found in any of the designated locations.");
+    return kEmptyStr; // Not reached
+}
+
+
 bool CNetCache::Init()
 {
     if (!m_Client) {
@@ -654,6 +666,15 @@ void CNetCache::SetExpirationImpl(const CTimeout& ttl)
 }
 
 
+string CNetCache::FileTrack_PathImpl()
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+            "NetStorageObject \"" << LocatorToStr() <<
+            "\" is not a FileTrack object");
+    return kEmptyStr; // Not reached
+}
+
+
 void CFileTrack::SetLocator()
 {
     Locator().SetLocation_FileTrack(m_Context->filetrack_api.config.site);
@@ -766,6 +787,13 @@ void CFileTrack::SetExpirationImpl(const CTimeout&)
     FT_EXISTS_IMPL(object_loc);
     NCBI_THROW_FMT(CNetStorageException, eNotSupported,
             "SetExpiration() is not supported for FileTrack");
+}
+
+
+string CFileTrack::FileTrack_PathImpl()
+{
+    // TODO: Implement locking (CXX-7624)
+    return kEmptyStr;
 }
 
 

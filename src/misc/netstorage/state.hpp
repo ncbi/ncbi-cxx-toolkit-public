@@ -91,6 +91,8 @@ public:
     virtual bool ExistsImpl() = 0;
     virtual ENetStorageRemoveResult RemoveImpl() = 0;
     virtual void SetExpirationImpl(const CTimeout&) = 0;
+
+    virtual string FileTrack_PathImpl() = 0;
 };
 
 class ISelector
