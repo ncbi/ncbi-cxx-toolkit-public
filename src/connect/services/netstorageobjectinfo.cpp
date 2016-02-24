@@ -119,8 +119,6 @@ struct SNetStorageObjectInfoImpl : CObject
     CJsonNode GetStorageSpecificInfo() const { Check(); return m_Data.st_info; }
     CJsonNode GetJSON()                const { Check(); return m_Data.json; }
 
-    string GetNFSPathname() const;
-
 private:
     void Check() const { m_Data.Check(); }
 
@@ -222,21 +220,6 @@ void SLazyInitData::InitJson()
         json.SetByKey("StorageSpecificInfo", st_info);
 }
 
-string SNetStorageObjectInfoImpl::GetNFSPathname() const
-{
-    try {
-        if (CJsonNode st_info = GetStorageSpecificInfo())
-            return st_info.GetString("path");
-    }
-    catch (CJsonException& e) {
-        if (e.GetErrCode() != CJsonException::eKeyNotFound)
-            throw;
-    }
-
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "Cannot retrieve NFS path information for '" << m_Loc << '\'');
-}
-
 CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
         ENetStorageObjectLocation location,
         const CNetStorageObjectLoc* object_loc_struct,
@@ -276,11 +259,6 @@ Uint8 CNetStorageObjectInfo::GetSize() const
 CJsonNode CNetStorageObjectInfo::GetStorageSpecificInfo() const
 {
     return m_Impl->GetStorageSpecificInfo();
-}
-
-string CNetStorageObjectInfo::GetNFSPathname() const
-{
-    return m_Impl->GetNFSPathname();
 }
 
 CJsonNode CNetStorageObjectInfo::ToJSON()

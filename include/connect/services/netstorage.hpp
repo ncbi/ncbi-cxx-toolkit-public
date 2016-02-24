@@ -118,11 +118,6 @@ class NCBI_XCONNECT_EXPORT CNetStorageObjectInfo
     /// @note Valid only if GetLocation() != eNFL_NotFound.
     CJsonNode GetStorageSpecificInfo() const;
 
-    /// If the object is stored on a network file system,
-    /// return the pathname of the file. Otherwise, throw
-    /// an exception.
-    string GetNFSPathname() const;
-
     /// Pack the whole structure in a single JSON object.
     CJsonNode ToJSON();
 };

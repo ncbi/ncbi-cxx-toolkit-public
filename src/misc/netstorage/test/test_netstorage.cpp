@@ -146,7 +146,6 @@ public:
         CheckGetCreationTime();
         CheckGetSize();
         CheckGetStorageSpecificInfo();
-        CheckGetNFSPathname();
         CheckToJSON();
     }
 
@@ -196,11 +195,6 @@ private:
         }
     }
 
-    virtual void CheckGetNFSPathname()
-    {
-        BOOST_CHECK_THROW_CTX(GetNFSPathname(), CNetStorageException, m_Ctx);
-    }
-
     virtual void CheckToJSON()
     {
         if (CJsonNode node = ToJSON()) {
@@ -218,7 +212,14 @@ private:
 };
 
 template <class TLocation>
-class CGetInfo;
+class CGetInfo : public CGetInfoBase<TLocation>
+{
+public:
+    CGetInfo(const SCtx& ctx, CNetStorageObject object, Uint8 size)
+        : CGetInfoBase<TLocation>(ctx, object, size)
+    {
+    }
+};
 
 template <>
 class CGetInfo<TLocationNotFound> : public CGetInfoBase<TLocationNotFound>
@@ -247,32 +248,6 @@ public:
     CGetInfo(const SCtx& ctx, CNetStorageObject object, Uint8 = 0U)
         : CGetInfo<TLocationNotFound>(ctx, object, 0U)
     {}
-};
-
-template <>
-class CGetInfo<TLocationNetCache> : public CGetInfoBase<TLocationNetCache>
-{
-public:
-    CGetInfo(const SCtx& ctx, CNetStorageObject object, Uint8 size)
-        : TGetInfoBase(ctx, object, size)
-    {
-    }
-};
-
-template <>
-class CGetInfo<TLocationFileTrack> : public CGetInfoBase<TLocationFileTrack>
-{
-public:
-    CGetInfo(const SCtx& ctx, CNetStorageObject object, Uint8 size)
-        : TGetInfoBase(ctx, object, size)
-    {
-    }
-
-private:
-    void CheckGetNFSPathname()
-    {
-        BOOST_CHECK_CTX(GetNFSPathname().size(), m_Ctx);
-    }
 };
 
 
