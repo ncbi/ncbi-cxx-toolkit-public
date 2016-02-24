@@ -76,12 +76,6 @@ bool CTestLBOSApp::Thread_Init(int idx)
 
 #define RUN_TEST(test)                                                        \
     test;                                                                     \
-    TestApp_IntraGroupSyncPoint();                                            \
-    if (idx == 1) {                                                           \
-        s_ClearZooKeeper();                                                   \
-    } else {                                                                  \
-        SleepMilliSec(500);                                                   \
-    }                                                                         \
     TestApp_IntraGroupSyncPoint();
 
 
@@ -254,8 +248,6 @@ bool CTestLBOSApp::Thread_Run(int idx)
     RUN_TEST(Deannouncement__Deannounced__AnnouncedServerRemoved());
     RUN_TEST(Deannouncement__LBOSExistsDeannounce400__Return400());
     RUN_TEST(Deannouncement__RealLife__InvisibleAfterDeannounce());
-    TestApp_GlobalSyncPoint();
-
 
     RUN_TEST(Stability::GetNext_Reset__ShouldNotCrash());
     RUN_TEST(Stability::FullCycle__ShouldNotCrash());
