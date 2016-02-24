@@ -72,8 +72,10 @@
                                       [-app_start_time] [-req_start_time]
 
   Special commands (must be used without <token> parameter):
-    ncbi_applog raw           -file <applog_formatted_logs.txt> [-logsite SITE]
+    ncbi_applog raw           -file <applog_formatted_logs_for_a_single_app.txt> [-logsite SITE] 
+                                      [-nl NUM] [-nr NUM]
     ncbi_applog raw           -file - [-logsite SITE]
+                                      [-nl NUM] [-nr NUM] [-timeout SEC]
     ncbi_applog generate      -phid
 
   Note, that for "raw" command ncbi_applog will skip any line in non-applog format.
@@ -106,6 +108,12 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <util/xregexp/regexp.hpp>
 #include "../ncbi_c_log_p.h"
+
+#if defined(NCBI_OS_UNIX)
+#  include <errno.h>
+#  include <poll.h>
+#endif
+
 
 USING_NCBI_SCOPE;
 
@@ -182,9 +190,9 @@ struct SInfo {
 
 /// Token type.
 typedef enum {
-    eUndefined,
-    eApp,      
-    eRequest  
+    eToken_Undefined,
+    eToken_App,      
+    eToken_Request  
 } ETokenType;
 
 
@@ -198,20 +206,30 @@ public:
     virtual void Init(void);
     virtual int  Run(void);
 
-    /// Redirect logging request to to another machine via CGI
-    int Redirect();
     /// Generate token on the base of current logging information.
     string GenerateToken(ETokenType type) const;
     /// Parse m_Token and fill logging information in m_Info.
     ETokenType ParseToken();
     /// Print requested token information to stdout.
     int PrintTokenInformation(ETokenType type);
+    
     /// Set C Logging API information from m_Info.
     void SetInfo();
     /// Update information in the m_Info from C Logging API.
     void UpdateInfo();
+
     /// Print error message.
     void Error(const string& msg);
+
+    /// Redirect logging request to to another machine via CGI
+    int Redirect();
+    /// Read and check CGI response
+    int ReadCgiResponse(CConn_HttpStream& cgi);
+
+private:
+    // Get location of 1st subpattern for kApplogRegexp
+    // from the last match with additional checks.
+    const int* GetRegexpResults(CRegexp& re, bool check_appname = false);
 
 private:
     bool           m_IsRemoteLogging;  ///< TRUE if mode == "cgi"
@@ -485,7 +503,32 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.",
             CArgDescriptions::eString, kEmptyStr);
+
+        // Arguments that allow to send logs incrementally (via CGI only).
+        // By default, or for local logging, logs processes "all at once".
+        arg->AddOptionalKey
+            ("nl", "N", "Turn ON incremental logging for CGI redirects. "
+            "Send previously accumulated data after every specified number of log lines.",
+            CArgDescriptions::eInteger);
+        arg->AddOptionalKey
+            ("nr", "N", "Turn ON incremental logging for CGI redirects. "
+            "Send previously accumulated data after every specified number of requests.",
+            CArgDescriptions::eInteger);
+        arg->AddOptionalKey
+            ("timeout", "SEC", "Turn ON incremental logging for CGI redirects ('-' source only). "
+            "Send previously accumulated data after specified number of seconds of inactivity in the standard input.",
+            CArgDescriptions::eDouble);
+
+        arg->SetDependency("nl", CArgDescriptions::eExcludes, "nr");
+        arg->SetDependency("nl", CArgDescriptions::eExcludes, "timeout");
+        arg->SetDependency("nr", CArgDescriptions::eExcludes, "timeout");
+
         // --- hidden arguments
+
+        // Used for 'raw' incremental logging via CGI only
+        arg->AddDefaultKey
+            ("appname", "NAME", "Name of the application.",
+            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
@@ -507,6 +550,83 @@ void CNcbiApplogApp::Init(void)
 
     m_IsRaw = false;
     m_IsRemoteLogging = false;
+}
+
+
+/// Wait for data in stdin with a timeout.
+/// Return true if stdin have data, false otherwise.
+///
+static bool s_PeekStdin(const CTimeout& timeout)
+{
+#if defined(NCBI_OS_MSWIN)
+
+    // Timeout time slice (milliseconds)
+    const unsigned long kWaitPrecision = 200;
+
+    unsigned long timeout_msec = timeout.IsInfinite() ? 1 /*dummy, non zero*/ 
+                                                      : timeout.GetAsMilliSeconds();
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+
+    // Using a loop and periodically try PeekNamedPipe() is inefficient,
+    // but Windows doesn't have asynchronous mechanism to read from stdin.
+    // WaitForSingleObject() doesn't works here, it returns immediatly.
+
+    unsigned long x_sleep = 1;
+    DWORD bytes_avail = 0;
+
+    for (;;) {
+        BOOL res = ::PeekNamedPipe(hStdin, NULL, 0, NULL, &bytes_avail, NULL);
+        if ( !res || !timeout_msec) {
+            // Error or timeout.
+            // res == FALSE usually mean ERROR_BROKEN_PIPE -- no more data, or pipe closed
+            break;
+        }
+        if ( bytes_avail ) {
+            return true;
+        }
+        // nothing to read, stdin empty
+        if ( !timeout.IsInfinite() ) {
+            if (x_sleep > timeout_msec) {
+                x_sleep = timeout_msec;
+            }
+            timeout_msec -= x_sleep;
+        }
+        SleepMilliSec(x_sleep);
+        // Increase sleep interval by exponent, up to kWaitPrecision
+        x_sleep <<= 1;
+        if (x_sleep > kWaitPrecision) {
+            x_sleep = kWaitPrecision;
+        }
+    }
+
+#else
+    int timeout_msec = timeout.IsInfinite() ? -1 : timeout.GetAsMilliSeconds();
+
+    pollfd poll_fd[1];
+    poll_fd[0].fd = fileno(stdin);
+    poll_fd[0].events = POLLIN;
+
+    for (;;) { // Auto-resume if interrupted by a signal
+        int n = poll(poll_fd, 1, timeout_msec);
+        if (n > 0) {
+            // stdin have data or pipe closed
+            return true;
+        }
+        if (n == 0) {
+            // timeout
+            break;
+        }
+        // n < 0
+        if ((n = errno) != EINTR) {
+            // error
+            break;
+        }
+        // continue, no need to recreate either timeout or poll_fd
+    }
+#endif
+
+    // No data (timeout/error)
+    return false;
 }
 
 
@@ -620,37 +740,125 @@ int CNcbiApplogApp::Redirect()
                 s_args += string(" \"-srvport=") + NStr::UIntToString(m_Info.server_port) + "\"";
             }
         }
-    }
 
-#if 0
-    cout << url << endl;
-    cout << s_args << endl;
-    return 1;
-#endif
+        // Send request to another machine via CGI
 
-    // Send request to another machine via CGI
-
-    CConn_HttpStream cgi(url, fHTTP_NoAutomagicSID);
-    if ( m_IsRaw ) {
-        if ( m_Info.logsite.empty() ) {
-            cgi << "RAW" << endl;
-        } else {
-            cgi << "RAW -logsite=" << m_Info.logsite << endl;
-        }
-        // We already have first line in m_Raw_line,
-        // process it and all remaining lines.
-        CRegexp re(kApplogRegexp);
-        do {
-            if (re.IsMatch(m_Raw_line)) {
-                // TODO: sanitize each line (replace all not printable symbols: '\n' and etc)
-                cgi << m_Raw_line << endl;
-            }
-        } while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line));
-    } else {
+        CConn_HttpStream cgi(url, fHTTP_NoAutomagicSID);
         // TODO: sanitize (replace all not printable symbols: '\n' and etc)
         cgi << s_args << endl;
+        return ReadCgiResponse(cgi);
     }
 
+    //-------------------------------------------------------------
+    // RAW
+
+    CRegexp re(kApplogRegexp);
+
+    string header = "RAW -appname=" + m_Info.appname;
+    if (!m_Info.logsite.empty()) {
+        header += " -logsite=" + m_Info.logsite;
+    }
+
+    AutoPtr< CConn_HttpStream > cgi(new CConn_HttpStream(url, fHTTP_NoAutomagicSID));
+    *cgi << header << endl;
+
+    /// Command type for original name to logsite substitution.
+    typedef enum {
+        eRAW_AllAtOnce,
+        eRAW_NumLines,
+        eRAW_NumRequests,
+        eRAW_Timeout
+    } ECgiSplitMethod;
+
+    // Method and criterion
+    ECgiSplitMethod method = eRAW_AllAtOnce;
+    CTimeout criterion_timeout;
+    size_t   criterion_count = 1;
+
+    const CArgs& args = GetArgs();
+    if (args["nl"]) {
+        method = eRAW_NumLines;
+        criterion_count = args["nl"].AsInteger();
+    } else
+    if (args["nr"]) {
+        method = eRAW_NumRequests;
+        criterion_count = args["nr"].AsInteger();
+    } else
+    if (args["timeout"]) {
+        // This method can be used with standard in only ("-"),
+        // not applicable for file streams, where we can read until EOF.
+        if (m_Raw_is == &cin) {
+            method = eRAW_Timeout;
+            criterion_timeout.Set(args["timeout"].AsDouble());
+        }
+    }
+
+    // Counters
+    size_t n_sent_lines    = 0;
+    size_t n_sent_requests = 0;
+
+    // We already have first line in m_Raw_line,
+    // process it and all remaining lines matching format.
+    _ASSERT(m_Raw_is);
+    do {
+        if (re.IsMatch(m_Raw_line)) {
+            // TODO: sanitize each line (replace all not printable symbols: '\n' and etc)
+            *cgi << m_Raw_line << endl;
+            ++n_sent_lines;
+
+            // Check criterion to split
+            bool need_split = false;
+
+            switch (method) {
+            case eRAW_NumLines:
+                need_split = (n_sent_lines % criterion_count == 0);
+                break;
+            case eRAW_NumRequests:
+                {
+                    // Check on "stop-request"
+                    size_t namepos = GetRegexpResults(re)[0];
+                    CTempString cmdstr(CTempString(m_Raw_line), namepos + m_Info.appname.size() + 1);
+                    if (NStr::StartsWith(cmdstr, "request-stop")) {
+                        ++n_sent_requests;
+                        need_split = (n_sent_requests % criterion_count == 0);
+                    }
+                }
+                break;
+            case eRAW_Timeout:
+                // Check that we have some data in the stdin to read.
+                // We assume that input is line-buffered, if this is not a case, 
+                // that we cannot send previously accumulated data and getting
+                // next may block -- not so critical anyway.
+                need_split = !s_PeekStdin(criterion_timeout);
+                break;
+            case eRAW_AllAtOnce:
+                // Nothing to do
+                break;
+            }
+
+            // If criterion is met, send logs incrementally.
+            if ( need_split ) {
+                int res = ReadCgiResponse(*cgi);
+                if (res != 0) {
+                    return res;
+                }
+                if (method == eRAW_Timeout) {
+                    // Wait for some data in stdin before creating new HTTP connection
+                    s_PeekStdin(CTimeout(CTimeout::eInfinite));
+                }
+                cgi.reset(new CConn_HttpStream(url, fHTTP_NoAutomagicSID));
+                *cgi << header << endl;
+            }
+        }
+
+   } while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line));
+
+    return ReadCgiResponse(*cgi);
+}
+
+
+int CNcbiApplogApp::ReadCgiResponse(CConn_HttpStream& cgi)
+{
     if (!cgi.good()) {
         throw "Failed to redirect request to CGI";
     }
@@ -666,12 +874,26 @@ int CNcbiApplogApp::Redirect()
     // Check output on errors. CGI prints all errors to stderr.
     if (output.find("error:") != NPOS) {
         cerr << output;
-        return 2;
+        return 2;  // 1 for local errors, 2 for CGI
     }
     // Printout CGI's output
     cout << output;
 
     return 0;
+}
+
+
+const int* CNcbiApplogApp::GetRegexpResults(CRegexp& re, bool check_appname)
+{
+    const int* apos = re.GetResults(1);
+    if (!apos || !apos[0] || !apos[1] || (apos[0] >= apos[1])) {
+        throw "Error processing input raw log, line has wrong format";
+    }
+    if (check_appname  &&  
+        !NStr::StartsWith(CTempString(CTempString(m_Raw_line), apos[0] /*namepos*/), m_Info.appname)) {
+        throw "Error processing input raw log, line has wrong format";
+    }
+    return apos;
 }
 
 
@@ -707,7 +929,7 @@ string CNcbiApplogApp::GenerateToken(ETokenType type) const
                        + NStr::ULongToString(m_Info.app_start_time.ns);
 
     // Request specific pairs
-    if (type == eRequest) {
+    if (type == eToken_Request) {
         token += "&rid=" + NStr::UInt8ToString(m_Info.rid);
         if (!m_Info.sid_req.empty()) {
             token += "&rsid=" + m_Info.sid_req;
@@ -731,7 +953,7 @@ ETokenType CNcbiApplogApp::ParseToken()
     // for redirect mode:
     //     hostrole, hostloc
 
-    ETokenType type = eApp;
+    ETokenType type = eToken_App;
 
     list<string> pairs;
     NStr::Split(m_Token, "&", pairs, NStr::fSplit_MergeDelimiters);
@@ -771,7 +993,7 @@ ETokenType CNcbiApplogApp::ParseToken()
             m_Info.sid_app = value;
         } else if ( key == "rsid") {
             m_Info.sid_req = value;
-            type = eRequest;
+            type = eToken_Request;
         } else if ( key == "phid") {
             m_Info.phid_app = value;
         } else if ( key == "logsite") {
@@ -779,7 +1001,7 @@ ETokenType CNcbiApplogApp::ParseToken()
         } else if ( key == "rid") {
             m_Info.rid = NStr::StringToUInt8(value);
             have_rid = true;
-            type = eRequest;
+            type = eToken_Request;
         } else if ( key == "atime") {
             CTempString sec, ns;
             NStr::SplitInTwo(value, ".", sec, ns);
@@ -792,13 +1014,13 @@ ETokenType CNcbiApplogApp::ParseToken()
             m_Info.req_start_time.sec = NStr::StringToUInt8(sec);
             m_Info.req_start_time.ns  = NStr::StringToULong(ns);
             have_rtime = true;
-            type = eRequest;
+            type = eToken_Request;
         }
     }
     if (!(have_name  &&  have_pid  &&  have_guid  &&  have_atime)) {
         throw "Token string has wrong format"; 
     }
-    if (type == eRequest) {
+    if (type == eToken_Request) {
         if (!(have_rid  &&  have_rtime)) {
             throw "Token string has wrong format (request token type expected)"; 
         }
@@ -832,7 +1054,7 @@ int CNcbiApplogApp::PrintTokenInformation(ETokenType type)
         } else if (arg == "-pid") {
             cout << m_Info.pid;
         } else if (arg == "-sid") {
-            cout << (type == eRequest ? m_Info.sid_req : m_Info.sid_app);
+            cout << (type == eToken_Request ? m_Info.sid_req : m_Info.sid_app);
         } else if (arg == "-phid") {
             cout << m_Info.phid_app;
         } else if (arg == "-rid") {
@@ -978,9 +1200,9 @@ void CNcbiApplogApp::Error(const string& msg)
 
 int CNcbiApplogApp::Run(void)
 {
-    bool       is_api_init = false;         ///< C Logging API is initialized
-    ETokenType token_gen_type = eUndefined; ///< Token type to generate (app, request)
-    ETokenType token_par_type = eUndefined; ///< Parsed token type (app, request)
+    bool       is_api_init = false;               ///< C Logging API is initialized
+    ETokenType token_gen_type = eToken_Undefined; ///< Token type to generate (app, request)
+    ETokenType token_par_type = eToken_Undefined; ///< Parsed token type (app, request)
 
     try {
 
@@ -1012,8 +1234,7 @@ int CNcbiApplogApp::Run(void)
     } else
     if (cmd == "raw") {
         m_IsRaw = true;
-        // Open stream with raw data and try to get file name of the application
-        // from the first line, use it for processing all following lines in the stream.
+        // Open stream with raw data.
         string filename = args["file"].AsString();
         if (filename == "-") {
             m_Raw_is = &cin;
@@ -1025,24 +1246,28 @@ int CNcbiApplogApp::Run(void)
             m_Raw_is = &m_Raw_ifs;
         }
 
-        // Find first line in applog format and hash it for the following processing
-        CRegexp re(kApplogRegexp);
-        bool found=false;
-        while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line)) {
-            if (re.IsMatch(m_Raw_line)) {
-                found = true;
-                break;
+        // Check if an application name has passed via arguments (for CGI mode).
+        // If not, try to get it from the first line, it will be used for processing
+        // all following lines in the stream.
+
+        m_Info.appname = args["appname"].AsString();
+        if ( m_Info.appname.empty() ) {
+            // Find first line in applog format and hash it for the following processing
+            CRegexp re(kApplogRegexp);
+            bool found=false;
+            while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line)) {
+                if (re.IsMatch(m_Raw_line)) {
+                    found = true;
+                    break;
+                }
             }
+            if ( !found || (m_Raw_line.length() < NCBILOG_ENTRY_MIN) ) {
+                throw "Error processing input raw log, cannot find any line in applog format";
+            }
+            // Get application name
+            const int* apos = GetRegexpResults(re);
+            m_Info.appname = m_Raw_line.substr(apos[0], apos[1] - apos[0]);
         }
-        if ( !found ||  m_Raw_line.length() < NCBILOG_LINELEN_MIN ) {
-            throw "Error processing input raw log, cannot find any line in applog format";
-        }
-        // Get application name
-        const int* apos = re.GetResults(1);
-        if ( !apos || !apos[0] || !apos[1] || (apos[0] >= apos[1])) {
-            throw "Error processing input raw log, line has wrong format";
-        }
-        m_Info.appname = m_Raw_line.substr(apos[0], apos[1] - apos[0]);
     
     } else
     if (cmd == "generate") {
@@ -1069,11 +1294,11 @@ int CNcbiApplogApp::Run(void)
             return PrintTokenInformation(token_par_type);
         }
         // Preset assumed state for the C Logging API
-        m_Info.state = (token_par_type == eApp ? eNcbiLog_AppRun : eNcbiLog_Request);
+        m_Info.state = (token_par_type == eToken_App ? eNcbiLog_AppRun : eNcbiLog_Request);
     }
 
     // Get posting time if specified
-    if (cmd != "raw") {
+    if ( !m_IsRaw ) {
         string timestamp;
         timestamp = args["timestamp"].AsString();
         if ( !timestamp.empty() ) {
@@ -1209,7 +1434,7 @@ int CNcbiApplogApp::Run(void)
             NcbiLogP_ExtraStr(extra.c_str());
         }
         NcbiLog_AppRun();
-        token_gen_type = eApp;
+        token_gen_type = eToken_App;
     } else 
 
     // -----  stop_app  ------------------------------------------------------
@@ -1251,14 +1476,14 @@ int CNcbiApplogApp::Run(void)
             }
         }
         NcbiLog_ReqRun();
-        token_gen_type = eRequest;
+        token_gen_type = eToken_Request;
     } else 
 
     // -----  stop_request  --------------------------------------------------
     // ncbi_applog stop_request <token> -status STATUS [-input N] [-output N]
     
     if (cmd == "stop_request") {
-        if (token_par_type != eRequest) {
+        if (token_par_type != eToken_Request) {
             // All other commands don't need this check, it can work with any token type
             throw "Token string has wrong format (request token type expected)"; 
         }
@@ -1325,11 +1550,11 @@ int CNcbiApplogApp::Run(void)
     } else  
 
     // -----  raw  -----------------------------------------------------------
-    // ncbi_applog raw -file <applog_formatted_logs.txt>
-    // ncbi_applog raw -file -
+    // ncbi_applog raw -file <applog_formatted_logs.txt> [-logsite SITE]
+    // ncbi_applog raw -file -                           [-logsite SITE]
 
-    if (cmd == "raw") {
-        // We already have first line in m_Raw_line, 
+    if ( m_IsRaw ) {
+        // We already can have first line in m_Raw_line,
         // process it and all remaining lines.
         CRegexp re(kApplogRegexp);
         bool no_logsite = (m_Info.logsite.empty() || m_Info.logsite == m_Info.appname);
@@ -1338,25 +1563,16 @@ int CNcbiApplogApp::Run(void)
             orig_appname = "orig_appname=" + m_Info.appname;
         }
         do {
-            if (re.IsMatch(m_Raw_line)) {
+            if (!m_Raw_line.empty()  &&  re.IsMatch(m_Raw_line)) {
                 if ( no_logsite ) {
                     NcbiLogP_Raw2(m_Raw_line.c_str(), m_Raw_line.length());
                 } else {
-                    // Use logsite name instead of appname if necessary.
-
-                    const int* apos = re.GetResults(1);
-                    if (!apos || !apos[0] || !apos[1] || (apos[0] >= apos[1])) {
-                        throw "Error processing input raw log, line has wrong format";
-                    }
-                    size_t namepos = apos[0];
-                    if (!NStr::StartsWith(CTempString(CTempString(m_Raw_line), namepos), m_Info.appname)) {
-                        throw "Error processing input raw log, line has wrong format";
-                    }
-                    // Replace app name
+                    // Use logsite name instead of appname
+                    size_t namepos = GetRegexpResults(re, true)[0];
                     m_Raw_line = NStr::Replace(m_Raw_line, m_Info.appname, m_Info.logsite, namepos, 1);
-                    size_t parampos = apos[0] + m_Info.logsite.size() + kParamsOffset;
+                    size_t parampos = namepos + m_Info.logsite.size() + kParamsOffset;
 
-                    /// Command type for original name to logsite substitution.
+                    // Command type for original name to logsite substitution
                     typedef enum {
                         eCmdAppStart,
                         eCmdRequestStart,
@@ -1441,7 +1657,7 @@ int CNcbiApplogApp::Run(void)
     NcbiLog_Destroy();
 
     // Print token (start_app, start_request)
-    if (token_gen_type != eUndefined) {
+    if (token_gen_type != eToken_Undefined) {
         cout << GenerateToken(token_gen_type);
     }
     return 0;

@@ -118,10 +118,6 @@
  *  Configurables that could theoretically change 
  */
 
-/** Maximum length of each log entry, all text after this position will be truncated */
-#define NCBILOG_ENTRY_MAX_ALLOC 8192   /* 8Kb*/ 
-#define NCBILOG_ENTRY_MAX       8190   /* NCBILOG_ENTRY_MAX_ALLOC - 2, for ending '\n\0' */ 
-
 #define UNKNOWN_HOST         "UNK_HOST"
 #define UNKNOWN_CLIENT       "UNK_CLIENT"
 #define UNKNOWN_SESSION      "UNK_SESSION"
@@ -3377,7 +3373,7 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
 
     assert(line);
     assert(line[len] == '\0');
-    assert(len > NCBILOG_LINELEN_MIN);
+    assert(len > NCBILOG_ENTRY_MIN);
 
     MT_LOCK_API;
     if (sx_Info->destination == eNcbiLog_Disable) {
@@ -3393,7 +3389,7 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
         case eNcbiLog_Cwd:
             /* Try to get type of the line to redirect output into correct log file */
             {
-                const char* start = line + NCBILOG_LINELEN_MIN;
+                const char* start = line + NCBILOG_ENTRY_MIN;
                 const char* ptr = strstr(start, (char*)sx_Info->appname);
 
                 if (!ptr || (ptr - start > NCBILOG_APPNAME_MAX)) {
