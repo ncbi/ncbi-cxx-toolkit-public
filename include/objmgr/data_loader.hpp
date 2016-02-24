@@ -262,36 +262,96 @@ public:
     /// Request for a list of all Seq-ids of a sequence.
     /// The result container should not change if sequence with requested id
     /// is not known.
+    /// The result must be non-empty for existing sequences
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
+    /// helper function to check if sequence exists, uses GetIds()
+    bool SequenceExists(const CSeq_id_Handle& idh);
+
     /// Request for a accession.version Seq-id of a sequence.
-    /// Returns null CSeq_id_Handle if sequence with requested id is not known.
+    /// Returns null CSeq_id_Handle if sequence with requested id is not known,
+    /// or if existing sequence doesn't have an accession
+    /// @sa GetAccVerFound()
     virtual CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
+    /// Better replacement of GetAccVer(), this method should be defined in
+    /// data loaders, GetAccVer() is left for compatibility.
+    /// @sa GetAccVer()
+    struct SAccVerFound {
+        bool sequence_found; // true if the sequence is found by data loader
+        CSeq_id_Handle acc_ver; // may be null even for existing sequence
+        SAccVerFound() : sequence_found(false) {}
+    };
+    virtual SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh);
+
     /// Request for a gi of a sequence.
-    /// Returns zero gi if sequence with requested id is not known.
+    /// Returns zero gi if sequence with requested id is not known,
+    /// or if existing sequence doesn't have a gi
+    /// @sa GetGiFound()
     virtual TGi GetGi(const CSeq_id_Handle& idh);
+    /// Better replacement of GetGi(), this method should be defined in
+    /// data loaders, GetGi() is left for compatibility.
+    /// @sa GetGi()
+    struct SGiFound {
+        bool sequence_found; // true if the sequence is found by data loader
+        TGi gi; // may be 0 even for existing sequence
+        SGiFound() : sequence_found(false), gi(ZERO_GI) {}
+    };
+    virtual SGiFound GetGiFound(const CSeq_id_Handle& idh);
+
     /// Request for a label string of a sequence.
     /// Returns empty string if sequence with requested id is not known.
+    /// The result must be non-empty for existing sequences
     virtual string GetLabel(const CSeq_id_Handle& idh);
+
     /// Request for a taxonomy id of a sequence.
     /// Returns -1 if sequence with requested id is not known.
+    /// Returns 0 if existing sequence doesn't have TaxID
     virtual int GetTaxId(const CSeq_id_Handle& idh);
+
     /// Request for a length of a sequence.
     /// Returns kInvalidSeqPos if sequence with requested id is not known.
+    /// The result must not be kInvalidSeqPos for existing sequences
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
+
     /// Request for a type of a sequence
-    /// Returns CSeq_inst::eMol_not_set if sequence is not known.
+    /// Returns CSeq_inst::eMol_not_set if sequence is not known
+    /// @sa GetSequenceTypeFound()
     virtual CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
+    /// Better replacement of GetSequenceType(), this method should be
+    /// defined in data loaders, GetSequenceType() is left for compatibility.
+    /// @sa GetSequenceType()
+    struct STypeFound {
+        bool sequence_found; // true if the sequence is found by data loader
+        CSeq_inst::TMol type; // may be eMol_not_set even for existing sequence
+        STypeFound() : sequence_found(false), type(CSeq_inst::eMol_not_set) {}
+    };
+    virtual STypeFound GetSequenceTypeFound(const CSeq_id_Handle& idh);
+
     /// Request for a state of a sequence.
-    /// Returns fState_not_found|fState_no_data if sequence
+    /// Returns CBioseq_Handle::fState_not_found|fState_no_data if sequence
     /// with requested id is not known.
+    /// Result mustn't be fState_not_found|fState_no_data if sequence exists
     virtual int GetSequenceState(const CSeq_id_Handle& idh);
+
     /// Request for a sequence hash.
-    /// Returns 0 if the sequence or hash is not known.
+    /// Returns 0 if the sequence or its hash is not known.
+    /// @sa GetSequenceHashFound()
     virtual int GetSequenceHash(const CSeq_id_Handle& idh);
-    /// Request for a sequence hash.
-    /// result.second == false if sequence or hash is not known
-    virtual pair<int, bool> GetSequenceHash2(const CSeq_id_Handle& idh);
+    /// Better replacement of GetSequenceHash(), this method should be
+    /// defined in data loaders, GetSequenceHash() is left for compatibility.
+    /// @sa GetSequenceHash()
+    struct SHashFound {
+        bool sequence_found; // true if the sequence is found by data loader
+        bool hash_known; // true if sequence exists but hash value isn't known
+        int hash; // may be 0 even for existing sequence
+        SHashFound()
+            : sequence_found(false),
+              hash_known(false),
+              hash(0)
+            {
+            }
+    };
+    virtual SHashFound GetSequenceHashFound(const CSeq_id_Handle& idh);
 
     /// Bulk loading interface for a small pieces of information per id.
     /// The 'loaded' bit set (in/out) marks ids that already processed.
@@ -308,6 +368,7 @@ public:
     typedef vector<CSeq_inst::TMol> TSequenceTypes;
     typedef vector<int> TSequenceStates;
     typedef vector<int> TSequenceHashes;
+    typedef vector<bool> THashKnown;
     /// Bulk request for accession.version Seq-ids of a set of sequences.
     virtual void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     /// Bulk request for gis of a set of sequences.
@@ -327,7 +388,7 @@ public:
                                    TSequenceStates& ret);
     /// Bulk request for hashes of a set of sequences.
     virtual void GetSequenceHashes(const TIds& ids, TLoaded& loaded,
-                                   TSequenceHashes& ret);
+                                   TSequenceHashes& ret, THashKnown& known);
 
     // Load multiple seq-ids. Same as GetRecords() for multiple ids
     // with choise set to eBlob. The map should be initialized with
@@ -401,7 +462,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 4, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 4, 1, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

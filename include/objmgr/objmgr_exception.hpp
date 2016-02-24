@@ -60,6 +60,7 @@ public:
         eInvalidHandle,   ///< Attempt to use an invalid handle
         eLockedData,      ///< Attempt to remove locked data
         eTransaction,     ///< Transaction violation
+        eMissingData,     ///< The sequence doesn't have the data requested
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
@@ -131,7 +132,8 @@ public:
         eNoConnection,
         eOtherError,
         eRepeatAgain,
-        eBadConfig
+        eBadConfig,
+        eNotFound
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CLoaderException, CObjMgrException);

@@ -230,69 +230,183 @@ void CDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-CSeq_id_Handle CDataLoader::GetAccVer(const CSeq_id_Handle& idh)
+bool CDataLoader::SequenceExists(const CSeq_id_Handle& idh)
 {
+    // check if sequence exists
     TIds ids;
     GetIds(idh, ids);
-    return CScope::x_GetAccVer(ids);
+    return !ids.empty();
+}
+
+
+CSeq_id_Handle CDataLoader::GetAccVer(const CSeq_id_Handle& idh)
+{
+    // default implementation based on GetIds();
+    TIds ids;
+    GetIds(idh, ids);
+    if ( ids.empty() ) {
+        NCBI_THROW(CLoaderException, eNotFound,
+                   "CDataLoader::GetAccVer() sequence not found");
+    }
+    CSeq_id_Handle acc = CScope::x_GetAccVer(ids);
+    if ( !acc ) {
+        NCBI_THROW(CLoaderException, eNoData,
+                   "CDataLoader::GetAccVer() sequence doesn't have accession");
+    }
+    return acc;
+}
+
+
+CDataLoader::SAccVerFound
+CDataLoader::GetAccVerFound(const CSeq_id_Handle& idh)
+{
+    // default implementation based on GetAccVer() and GetIds()
+    SAccVerFound ret;
+    try {
+        ret.acc_ver = GetAccVer(idh);
+        ret.sequence_found = ret.acc_ver || SequenceExists(idh);
+    }
+    catch ( CLoaderException& exc ) {
+        if ( exc.GetErrCode() == exc.eNotFound ) {
+            // no sequence
+        }
+        else if ( exc.GetErrCode() == exc.eNoData ) {
+            // sequence is known, but there is no accession
+            ret.sequence_found = true;
+        }
+        else {
+            // problem
+            throw;
+        }
+    }
+    return ret;
 }
 
 
 TGi CDataLoader::GetGi(const CSeq_id_Handle& idh)
 {
+    // default implementation based on GetIds();
     TIds ids;
     GetIds(idh, ids);
-    return CScope::x_GetGi(ids);
+    if ( ids.empty() ) {
+        NCBI_THROW(CLoaderException, eNotFound,
+                   "CDataLoader::GetGi() sequence not found");
+    }
+    TGi gi = CScope::x_GetGi(ids);
+    if ( gi == ZERO_GI ) {
+        NCBI_THROW(CLoaderException, eNoData,
+                   "CDataLoader::GetGi() sequence doesn't have GI");
+    }
+    return gi;
+}
+
+
+CDataLoader::SGiFound CDataLoader::GetGiFound(const CSeq_id_Handle& idh)
+{
+    // default implementation based on GetGi() and GetIds()
+    SGiFound ret;
+    try {
+        ret.gi = GetGi(idh);
+        ret.sequence_found = ret.gi || SequenceExists(idh);
+    }
+    catch ( CLoaderException& exc ) {
+        if ( exc.GetErrCode() == exc.eNotFound ) {
+            // no sequence
+        }
+        else if ( exc.GetErrCode() == exc.eNoData ) {
+            // sequence is known, but there is no GI
+            ret.sequence_found = true;
+        }
+        else {
+            // problem
+            throw;
+        }
+    }
+    return ret;
 }
 
 
 string CDataLoader::GetLabel(const CSeq_id_Handle& idh)
 {
+    // default implementation based on GetIds();
     TIds ids;
     GetIds(idh, ids);
+    if ( ids.empty() ) {
+        return string();
+    }
     return objects::GetLabel(ids);
 }
 
 
 int CDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 {
-    int ret = -1;
+    // default implementation based on GetRecordsNoBlobState();
     TTSE_LockSet locks = GetRecordsNoBlobState(idh, eBioseqCore);
     ITERATE(TTSE_LockSet, it, locks) {
         CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
         if ( bs_info ) {
-            ret = bs_info->GetTaxId();
-            break;
+            return bs_info->GetTaxId();
         }
     }
-    return ret;
+    return -1;
 }
 
 
 TSeqPos CDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
 {
-    TSeqPos ret = kInvalidSeqPos;
+    // default implementation based on GetRecordsNoBlobState()
     TTSE_LockSet locks = GetRecordsNoBlobState(idh, eBioseqCore);
     ITERATE(TTSE_LockSet, it, locks) {
         CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
         if ( bs_info ) {
-            ret = bs_info->GetBioseqLength();
-            break;
+            return bs_info->GetBioseqLength();
         }
     }
-    return ret;
+    return kInvalidSeqPos;
 }
 
 
 CSeq_inst::TMol CDataLoader::GetSequenceType(const CSeq_id_Handle& idh)
 {
-    CSeq_inst::TMol ret = CSeq_inst::eMol_not_set;
+    // default implementation based on GetRecordsNoBlobState()
     TTSE_LockSet locks = GetRecordsNoBlobState(idh, eBioseqCore);
     ITERATE(TTSE_LockSet, it, locks) {
         CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
         if ( bs_info ) {
-            ret = bs_info->GetInst_Mol();
-            break;
+            CSeq_inst::TMol type = bs_info->GetInst_Mol();
+            if ( type == CSeq_inst::eMol_not_set ) {
+                NCBI_THROW(CLoaderException, eNoData,
+                           "CDataLoader::GetSequenceType() type not set");
+            }
+            return type;
+        }
+    }
+    NCBI_THROW(CLoaderException, eNotFound,
+               "CDataLoader::GetSequenceType() sequence not found");
+}
+
+
+CDataLoader::STypeFound
+CDataLoader::GetSequenceTypeFound(const CSeq_id_Handle& idh)
+{
+    // default implementation based on GetSequenceType() and GetIds()
+    STypeFound ret;
+    try {
+        ret.type = GetSequenceType(idh);
+        ret.sequence_found =
+            ret.type != CSeq_inst::eMol_not_set || SequenceExists(idh);
+    }
+    catch ( CLoaderException& exc ) {
+        if ( exc.GetErrCode() == exc.eNotFound ) {
+            // no sequence
+        }
+        else if ( exc.GetErrCode() == exc.eNoData ) {
+            // sequence is known, but there is no type
+            ret.sequence_found = true;
+        }
+        else {
+            // problem
+            throw;
         }
     }
     return ret;
@@ -319,14 +433,46 @@ int CDataLoader::GetSequenceState(const CSeq_id_Handle& idh)
 
 int CDataLoader::GetSequenceHash(const CSeq_id_Handle& idh)
 {
-    return 0;
+    if ( SequenceExists(idh) ) {
+        NCBI_THROW(CLoaderException, eNoData,
+                   "CDataLoader::GetSequenceHash() sequence hash not set");
+    }
+    NCBI_THROW(CLoaderException, eNotFound,
+               "CDataLoader::GetSequenceHash() sequence not found");
 }
 
 
-pair<int, bool> CDataLoader::GetSequenceHash2(const CSeq_id_Handle& idh)
+CDataLoader::SHashFound
+CDataLoader::GetSequenceHashFound(const CSeq_id_Handle& idh)
 {
-    int hash = GetSequenceHash(idh);
-    return pair<int, bool>(hash, hash != 0);
+    // default implementation based on GetSequenceHash() and GetIds()
+    SHashFound ret;
+    try {
+        ret.hash = GetSequenceHash(idh);
+        if ( !ret.hash ) {
+            // hash = 0, we don't know what causes it:
+            // absence of sequence, unknown hash, or the hash happens to be 0.
+            ret.sequence_found = SequenceExists(idh);
+        }
+        else {
+            ret.sequence_found = true;
+            ret.hash_known = true;
+        }
+    }
+    catch ( CLoaderException& exc ) {
+        if ( exc.GetErrCode() == exc.eNotFound ) {
+            // no sequence found
+        }
+        else if ( exc.GetErrCode() == exc.eNoData ) {
+            // sequence exists
+            ret.sequence_found = true;
+        }
+        else {
+            // problem
+            throw;
+        }
+    }
+    return ret;
 }
 
 
@@ -340,10 +486,9 @@ void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
         if ( loaded[i] ) {
             continue;
         }
-        seq_ids.clear();
-        GetIds(ids[i], seq_ids);
-        if ( !seq_ids.empty() ) {
-            ret[i] = CScope::x_GetAccVer(seq_ids);
+        SAccVerFound data = GetAccVerFound(ids[i]);
+        if ( data.sequence_found ) {
+            ret[i] = data.acc_ver;
             loaded[i] = true;
         }
     }
@@ -360,10 +505,9 @@ void CDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
         if ( loaded[i] ) {
             continue;
         }
-        seq_ids.clear();
-        GetIds(ids[i], seq_ids);
-        if ( !seq_ids.empty() ) {
-            ret[i] = CScope::x_GetGi(seq_ids);
+        SGiFound data = GetGiFound(ids[i]);
+        if ( data.sequence_found ) {
+            ret[i] = data.gi;
             loaded[i] = true;
         }
     }
@@ -375,15 +519,13 @@ void CDataLoader::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
     size_t count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    TIds seq_ids;
     for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
-        seq_ids.clear();
-        GetIds(ids[i], seq_ids);
-        if ( !seq_ids.empty() ) {
-            ret[i] = objects::GetLabel(seq_ids);
+        string label = GetLabel(ids[i]);
+        if ( !label.empty() ) {
+            ret[i] = label;
             loaded[i] = true;
         }
     }
@@ -400,15 +542,10 @@ void CDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
             continue;
         }
         
-        TTSE_LockSet locks = GetRecordsNoBlobState(ids[i], eBioseqCore);
-        ITERATE(TTSE_LockSet, it, locks) {
-            CConstRef<CBioseq_Info> bs_info =
-                (*it)->FindMatchingBioseq(ids[i]);
-            if ( bs_info ) {
-                ret[i] = bs_info->GetTaxId();
-                loaded[i] = true;
-                break;
-            }
+        int taxid = GetTaxId(ids[i]);
+        if ( taxid != -1 ) {
+            ret[i] = taxid;
+            loaded[i] = true;
         }
     }
 }
@@ -424,16 +561,11 @@ void CDataLoader::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
         if ( loaded[i] ) {
             continue;
         }
-        
-        TTSE_LockSet locks = GetRecordsNoBlobState(ids[i], eBioseqCore);
-        ITERATE(TTSE_LockSet, it, locks) {
-            CConstRef<CBioseq_Info> bs_info =
-                (*it)->FindMatchingBioseq(ids[i]);
-            if ( bs_info ) {
-                ret[i] = bs_info->GetBioseqLength();
-                loaded[i] = true;
-                break;
-            }
+
+        TSeqPos len = GetSequenceLength(ids[i]);
+        if ( len != kInvalidSeqPos ) {
+            ret[i] = len;
+            loaded[i] = true;
         }
     }
 }
@@ -449,16 +581,11 @@ void CDataLoader::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
         if ( loaded[i] ) {
             continue;
         }
-        
-        TTSE_LockSet locks = GetRecordsNoBlobState(ids[i], eBioseqCore);
-        ITERATE(TTSE_LockSet, it, locks) {
-            CConstRef<CBioseq_Info> bs_info =
-                (*it)->FindMatchingBioseq(ids[i]);
-            if ( bs_info ) {
-                ret[i] = bs_info->GetInst_Mol();
-                loaded[i] = true;
-                break;
-            }
+
+        STypeFound data = GetSequenceTypeFound(ids[i]);
+        if ( data.sequence_found ) {
+            ret[i] = data.type;
+            loaded[i] = true;
         }
     }
 }
@@ -488,8 +615,23 @@ void CDataLoader::GetSequenceStates(const TIds& ids, TLoaded& loaded,
 
 
 void CDataLoader::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
-                                    TSequenceHashes& ret)
+                                    TSequenceHashes& ret, THashKnown& known)
 {
+    size_t count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+
+        SHashFound data = GetSequenceHashFound(ids[i]);
+        if ( data.sequence_found ) {
+            ret[i] = data.hash;
+            loaded[i] = true;
+            known[i] = data.hash_known;
+        }
+    }
 }
 
 

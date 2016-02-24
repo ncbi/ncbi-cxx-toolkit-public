@@ -1212,31 +1212,33 @@ void CDataSource::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-CSeq_id_Handle CDataSource::GetAccVer(const CSeq_id_Handle& idh)
+CDataSource::SAccVerFound CDataSource::GetAccVer(const CSeq_id_Handle& idh)
 {
-    CSeq_id_Handle ret;
+    SAccVerFound ret;
     TTSE_LockSet locks;
     SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
     if ( match ) {
-        ret = CScope::x_GetAccVer(match.m_Bioseq->GetId());
+        ret.acc_ver = CScope::x_GetAccVer(match.m_Bioseq->GetId());
+        ret.sequence_found = true;
     }
     else if ( m_Loader ) {
-        ret = m_Loader->GetAccVer(idh);
+        ret = m_Loader->GetAccVerFound(idh);
     }
     return ret;
 }
 
 
-TGi CDataSource::GetGi(const CSeq_id_Handle& idh)
+CDataSource::SGiFound CDataSource::GetGi(const CSeq_id_Handle& idh)
 {
-    TGi ret = ZERO_GI;
+    SGiFound ret;
     TTSE_LockSet locks;
     SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
     if ( match ) {
-        ret = CScope::x_GetGi(match.m_Bioseq->GetId());
+        ret.gi = CScope::x_GetGi(match.m_Bioseq->GetId());
+        ret.sequence_found = true;
     }
     else if ( m_Loader ) {
-        ret = m_Loader->GetGi(idh);
+        ret = m_Loader->GetGiFound(idh);
     }
     return ret;
 }
@@ -1287,16 +1289,18 @@ TSeqPos CDataSource::GetSequenceLength(const CSeq_id_Handle& idh)
 }
 
 
-CSeq_inst::TMol CDataSource::GetSequenceType(const CSeq_id_Handle& idh)
+CDataSource::STypeFound
+CDataSource::GetSequenceType(const CSeq_id_Handle& idh)
 {
-    CSeq_inst::TMol ret = CSeq_inst::eMol_not_set;
+    STypeFound ret;
     TTSE_LockSet locks;
     SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
     if ( match ) {
-        ret = match.m_Bioseq->GetInst_Mol();
+        ret.type = match.m_Bioseq->GetInst_Mol();
+        ret.sequence_found = true;
     }
     else if ( m_Loader ) {
-        ret = m_Loader->GetSequenceType(idh);
+        ret = m_Loader->GetSequenceTypeFound(idh);
     }
     return ret;
 }
@@ -1495,21 +1499,22 @@ void CDataSource::GetSequenceStates(const TIds& ids, TLoaded& loaded,
 }
 
 
-pair<int, bool> CDataSource::GetSequenceHash(const CSeq_id_Handle& idh)
+CDataSource::SHashFound
+CDataSource::GetSequenceHash(const CSeq_id_Handle& idh)
 {
-    pair<int, bool> ret;
+    SHashFound ret;
     if ( m_Loader ) {
-        ret = m_Loader->GetSequenceHash2(idh);
+        ret = m_Loader->GetSequenceHashFound(idh);
     }
     return ret;
 }
 
 
 void CDataSource::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
-                                    TSequenceHashes& ret)
+                                    TSequenceHashes& ret, THashKnown& known)
 {
     if ( m_Loader ) {
-        m_Loader->GetSequenceHashes(ids, loaded, ret);
+        m_Loader->GetSequenceHashes(ids, loaded, ret, known);
     }
 }
 

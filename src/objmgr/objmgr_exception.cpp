@@ -51,6 +51,7 @@ const char* CObjMgrException::GetErrCodeString(void) const
     case eInvalidHandle:    return "eInvalidHandle";
     case eLockedData:       return "eLockedData";
     case eTransaction:      return "eTransaction";
+    case eMissingData:      return "eMissingData";
     case eOtherError:       return "eOtherError";
     default:                return CException::GetErrCodeString();
     }
@@ -111,6 +112,7 @@ const char* CLoaderException::GetErrCodeString(void) const
     case eOtherError:       return "eOtherError";
     case eRepeatAgain:      return "eRepeatAgain";
     case eBadConfig:        return "eBadConfig";
+    case eNotFound:         return "eNotFound";
     default:                return CException::GetErrCodeString();
     }
 }

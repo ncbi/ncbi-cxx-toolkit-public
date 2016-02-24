@@ -139,7 +139,7 @@ public:
                       const CSeq_id_Handle& id2,
                       EGetBioseqFlag get_flag);
 
-    typedef CBioseq_Handle::TId TIds;
+    typedef vector<CSeq_id_Handle> TIds;
     typedef vector<CBioseq_Handle> TBioseqHandles;
     /// Get bioseq handles for all ids. The returned vector contains
     /// bioseq handles for all requested ids in the same order.
@@ -392,74 +392,142 @@ public:
     ///     or the sequence doesn't have the requested meta-data
     ///     without the flag getter will return special value
     enum EGetFlags {
-        fForceLoad      = (1 << 0), // == eForceLoad,
-        fThrowOnMissing = (1 << 1), // throw exception if no requested data
-        fTryHarder      = (1 << 2)  // recalculate requested data if necessary
+        /// ignore already loaded information and alway request data loader
+        fForceLoad              = (1 << 0), // == eForceLoad for compatibility
+
+        /// fThrowOnMissingSequence will cause exception to be thrown
+        /// if sequence not found.
+        /// The exception type/code: CObjMgrException/eFindFailed
+        /// @sa CObjMgrException
+        fThrowOnMissingSequence = (1 << 1),
+
+        /// fThrowOnMissingData will cause exception to be thrown
+        /// if sequence is found but doesn't have the data
+        /// The exception type/code: CObjMgrException/eMissingData
+        /// @sa CObjMgrException
+        fThrowOnMissingData     = (1 << 2),
+
+        /// throw exception if sequence or requested data aren't found
+        /// @sa fThrowOnMissingSequence
+        /// @sa fThrowOnMissingData
+        /// @sa CObjMgrException
+        fThrowOnMissing         = fThrowOnMissingSequence|fThrowOnMissingData,
+
+        /// avoid time-consuming recalculation of missing data
+        fDoNotRecalculate       = (1 << 3)
     };
     typedef int TGetFlags;
-
-    /// Get "native" bioseq ids without filtering and matching.
-    TIds GetIds(const CSeq_id&        id , TGetFlags flags = 0);
-    TIds GetIds(const CSeq_id_Handle& idh, TGetFlags flags = 0);
-
-    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh, TGetFlags flags = 0);
-    TGi GetGi(const CSeq_id_Handle& idh, TGetFlags flags = 0);
-    
-    static CSeq_id_Handle x_GetAccVer(const TIds& ids);
-    static TGi x_GetGi(const TIds& ids);
-
-    /// Get short description of bioseq, usually "accession.version"
+    /// obsolete enum
+    /// @sa EGetFlags
     enum EForceLabelLoad {
         eNoForceLabelLoad = eNoForceLoad,
         eForceLabelLoad   = eForceLoad
     };
+
+    /// Get "native" bioseq ids without filtering and matching.
+    /// Returns empty ids if the sequence is not found
+    /// @sa EGetflags
+    TIds GetIds(const CSeq_id&        id , TGetFlags flags = 0);
+    TIds GetIds(const CSeq_id_Handle& idh, TGetFlags flags = 0);
+
+    /// Get accession.version Seq-id
+    /// Returns null CSeq_id_Handle if the sequence is not found
+    /// or if it doesn't have accession
+    /// @sa EGetflags
+    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh, TGetFlags flags = 0);
+
+    /// Get GI of a sequence
+    /// Returns ZERO_GI if the sequence is not found or if it doesn't have GI
+    /// @sa EGetflags
+    TGi GetGi(const CSeq_id_Handle& idh, TGetFlags flags = 0);
+
+    // helper methods to lookup for specific Seq-id types
+    static CSeq_id_Handle x_GetAccVer(const TIds& ids);
+    static TGi x_GetGi(const TIds& ids);
+
+    /// Get short description of bioseq, usually "accession.version"
+    /// Returns empty string if the sequence is not found.
+    /// @sa EGetflags
     string GetLabel(const CSeq_id& id, TGetFlags flags = 0);
     string GetLabel(const CSeq_id_Handle& idh, TGetFlags flags = 0);
 
     /// Get taxonomy id of bioseq
-    /// -1 means failure to determine the taxonomy id
-    /// 0 means absence of the taxonomy id for the sequence
+    /// Return -1 if sequence is not found
+    /// Return 0 if sequence doesn't have taxonomy id
+    /// @sa EGetflags
     int GetTaxId(const CSeq_id& id, TGetFlags flags = 0);
     int GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags = 0);
 
-    // returns kInvalidSeqPos if sequence is not known
+    /// Get sequence length
+    /// Return kInvalidSeqPos if sequence is not found
+    /// @sa EGetflags
     TSeqPos GetSequenceLength(const CSeq_id& id, TGetFlags flags = 0);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& id, TGetFlags flags = 0);
 
-    // returns CSeq_inst::eMol_not_set if sequence is not known
+    /// Get molecular type of sequence (protein/dna/rna)
+    /// Return CSeq_inst::eMol_not_set if sequence is not found
+    /// @sa EGetflags
+    /// @sa CSeq_inst::EMol
     CSeq_inst::TMol GetSequenceType(const CSeq_id& id,
                                     TGetFlags flags = 0);
     CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id,
                                     TGetFlags flags = 0);
 
-    // returns (fState_not_found|fState_no_data) if sequence is not known
+    /// Get sequence GenBank state
+    /// Return (fState_not_found|fState_no_data) if sequence is not found
+    /// @sa EGetflags
+    /// @sa CBioseq_Handle::EBioseqStateFlags
     CBioseq_Handle::TBioseqStateFlags GetSequenceState(const CSeq_id& id, TGetFlags flags = 0);
     CBioseq_Handle::TBioseqStateFlags GetSequenceState(const CSeq_id_Handle& id, TGetFlags flags = 0);
 
-    // returns 0 if sequence or its hash is not known
+    /// Get sequence data hash value
+    /// Return 0 if sequence is not found or if its hash is not known
+    /// Note: 0 can be a real hash value, use flags to distinguish these cases
+    /// @sa EGetflags
     typedef int TSequenceHash;
     TSequenceHash GetSequenceHash(const CSeq_id& id, TGetFlags flags = 0);
     TSequenceHash GetSequenceHash(const CSeq_id_Handle& id, TGetFlags flags = 0);
 
     /// Bulk retrieval methods
+
+    /// Get accession.version Seq-id
+    /// Returns null CSeq_id_Handles for sequences that aren't found
+    /// or don't have accession id.
+    /// @sa GetAccVer
+    /// @sa EGetflags
     typedef vector<CSeq_id_Handle> TSeq_id_Handles;
     TSeq_id_Handles GetAccVers(const TSeq_id_Handles& idhs,
                                 TGetFlags flags = 0);
     void GetAccVers(TSeq_id_Handles* results,
                     const TSeq_id_Handles& idhs,
                     TGetFlags flags = 0);
+
+    /// Get GI of a sequence
+    /// Returns ZERO_GI for sequence that aren't found or don't have GI
+    /// @sa GetGi
+    /// @sa EGetflags
     typedef vector<TGi> TGIs;
     TGIs GetGis(const TSeq_id_Handles& idhs,
                 TGetFlags flags = 0);
     void GetGis(TGIs* results,
                 const TSeq_id_Handles& idhs,
                 TGetFlags flags = 0);
+
+    /// Get short descriptions of sequences, usually "accession.version"
+    /// Returns empty strings for sequences that aren't found
+    /// @sa GetLabel
+    /// @sa EGetflags
     typedef vector<string> TLabels;
     TLabels GetLabels(const TSeq_id_Handles& idhs,
                       TGetFlags flags = 0);
     void GetLabels(TLabels* results,
                    const TSeq_id_Handles& idhs,
                    TGetFlags flags = 0);
+
+    /// Get taxonomy ids of sequences
+    /// Return -1 for sequences that aren't found
+    /// Return 0 for sequences that don't have taxonomy id
+    /// @sa EGetflags
     typedef vector<int> TTaxIds;
     TTaxIds GetTaxIds(const TSeq_id_Handles& idhs,
                       TGetFlags flags = 0);
@@ -467,24 +535,43 @@ public:
                    const TSeq_id_Handles& idhs,
                    TGetFlags flags = 0);
 
+    /// Get lengths of sequences
+    /// Return kInvalidSeqPos for sequences that aren't found
+    /// @sa EGetflags
     typedef vector<TSeqPos> TSequenceLengths;
     TSequenceLengths GetSequenceLengths(const TSeq_id_Handles& idhs,
                                         TGetFlags flags = 0);
     void GetSequenceLengths(TSequenceLengths* results,
                             const TSeq_id_Handles& idhs,
                             TGetFlags flags = 0);
+
+    /// Get molecular types of sequences (protein/dna/rna)
+    /// Return CSeq_inst::eMol_not_set for sequences that aren't found
+    /// @sa EGetflags
+    /// @sa CSeq_inst::EMol
     typedef vector<CSeq_inst::TMol> TSequenceTypes;
     TSequenceTypes GetSequenceTypes(const TSeq_id_Handles& idhs,
                                     TGetFlags flags = 0);
     void GetSequenceTypes(TSequenceTypes* results,
                           const TSeq_id_Handles& idhs,
                           TGetFlags flags = 0);
+
+    /// Get GenBank states of sequences
+    /// Return (fState_not_found|fState_no_data) for sequences
+    /// that aren't found
+    /// @sa EGetflags
+    /// @sa CBioseq_Handle::EBioseqStateFlags
     typedef vector<CBioseq_Handle::TBioseqStateFlags> TSequenceStates;
     TSequenceStates GetSequenceStates(const TSeq_id_Handles& idhs,
                                       TGetFlags flags = 0);
     void GetSequenceStates(TSequenceStates* results,
                            const TSeq_id_Handles& idhs,
                            TGetFlags flags = 0);
+
+    /// Get data hashes of sequences
+    /// Return 0 for sequences that aren't found or they don't have hash
+    /// Note: 0 can be a real hash value, use flags to distinguish these cases
+    /// @sa EGetflags
     typedef vector<TSequenceHash> TSequenceHashes;
     TSequenceHashes GetSequenceHashes(const TSeq_id_Handles& idhs,
                                       TGetFlags flags = 0);

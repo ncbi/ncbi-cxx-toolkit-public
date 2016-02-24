@@ -230,14 +230,25 @@ public:
 
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
-    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
-    TGi GetGi(const CSeq_id_Handle& idh);
+    // null CSeq_id_Handle if sequence doesn't have accession
+    typedef CDataLoader::SAccVerFound SAccVerFound;
+    SAccVerFound GetAccVer(const CSeq_id_Handle& idh);
+    // ZERO_GI if sequence doesn't have GI
+    typedef CDataLoader::SGiFound SGiFound;
+    SGiFound GetGi(const CSeq_id_Handle& idh);
+    // empty string if sequence not found
     string GetLabel(const CSeq_id_Handle& idh);
+    // -1 if sequence not found
+    // 0 if sequence doesn't have TaxID
     int GetTaxId(const CSeq_id_Handle& idh);
+    // kInvalidSeqPos if sequence not found
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
-    CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
+    typedef CDataLoader::STypeFound STypeFound;
+    STypeFound GetSequenceType(const CSeq_id_Handle& idh);
+    // CBioseq_Handle::fState_not_found if sequence not found
     int GetSequenceState(const CSeq_id_Handle& idh);
-    pair<int, bool> GetSequenceHash(const CSeq_id_Handle& idh);
+    typedef CDataLoader::SHashFound SHashFound;
+    SHashFound GetSequenceHash(const CSeq_id_Handle& idh);
 
     // bulk interface
     typedef vector<bool> TLoaded;
@@ -248,6 +259,7 @@ public:
     typedef vector<CSeq_inst::TMol> TSequenceTypes;
     typedef vector<int> TSequenceStates;
     typedef vector<int> TSequenceHashes;
+    typedef vector<bool> THashKnown;
     void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
     void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret);
@@ -259,7 +271,7 @@ public:
     void GetSequenceStates(const TIds& ids, TLoaded& loaded,
                            TSequenceStates& ret);
     void GetSequenceHashes(const TIds& ids, TLoaded& loaded,
-                           TSequenceHashes& ret);
+                           TSequenceHashes& ret, THashKnown& known);
 
     typedef map<CSeq_id_Handle, SSeqMatch_DS>       TSeqMatchMap;
     void GetBlobs(TSeqMatchMap& match_map);
