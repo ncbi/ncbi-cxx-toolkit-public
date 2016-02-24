@@ -8,6 +8,9 @@ PlatformToolset=v110
 [Configuration.1200]
 PlatformToolset=v120
 
+[Configuration.1400]
+PlatformToolset=v140
+
 
 [Compiler]
 PreprocessorDefinitions=
@@ -43,6 +46,9 @@ PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
 
 [Compiler.1200]
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
+
+[Compiler.1400]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
 
 
@@ -119,6 +125,9 @@ AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
 [Linker.1200]
 AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
 # Remove next line if you dont link with any prebuild 3rd party libraries built with old/unknown compiler (like Sybase)
+ImageHasSafeExceptionHandlers=false
+
+[Linker.1400]
 ImageHasSafeExceptionHandlers=false
 
 [Linker.x64]
