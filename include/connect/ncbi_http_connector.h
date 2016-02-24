@@ -114,11 +114,12 @@ enum EHTTP_Flag {
     fHTTP_UrlDecodeInput  = 0x10,      URL-decode response body
     fHTTP_UrlEncodeOutput = 0x20,      URL-encode all output data
     fHTTP_UrlCodec        = 0x30,      fHTTP_UrlDecodeInput | ...EncodeOutput*/
+    fHTTP_WriteThru       = 0x10, /**< HTTP/1.1 writes through (chunked)     */
     fHTTP_NoUpread        = 0x40, /**< Do not use SOCK_SetReadOnWrite()      */
     fHTTP_DropUnread      = 0x80, /**< Each microsession drops unread data   */
     fHTTP_NoAutoRetry     = 0x100,/**< No auto-retries allowed               */
     fHTTP_NoAutomagicSID  = 0x200,/**< Do not add NCBI SID automagically     */
-    fHTTP_InsecureRedirect= 0x400,/**< Any redirect will be honored          */
+    fHTTP_UnsafeRedirects = 0x400,/**< Any redirect will be honored          */
     fHTTP_AdjustOnRedirect= 0x800,/**< Call adjust routine for redirects, too*/
     fHTTP_SuppressMessages= 0x1000/**< Most annoying ones reduced to traces  */
 };

@@ -122,10 +122,10 @@ typedef struct {
     FHTTP_Cleanup     cleanup;        /* cleanup callback                    */
 
     TBHTTP_Flags      flags;          /* as passed to constructor            */
+    EBSwitch          unsafe_redir:2; /* if unsafe redirects are allowed     */
     EBSwitch          error_header:2; /* only err.HTTP header on SOME debug  */
     EBCanConnect      can_connect:2;  /* whether more connections permitted  */
     EBReadState       read_state:4;   /* "READ" mode state per table above   */
-    EBSwitch          bad_redir:2;    /* if insecure redirect is allowed     */
     unsigned          auth_done:1;    /* website authorization sent          */
     unsigned    proxy_auth_done:1;    /* proxy authorization sent            */
     unsigned          skip_host:1;    /* do *not* add the "Host:" header tag */
@@ -232,18 +232,18 @@ static int/*tri-state*/ x_Authenticate(SHttpConnector* uuu,
 }
 
 
-static int/*bool*/ x_InsecureRedirect(SHttpConnector* uuu)
+static int/*bool*/ x_UnsafeRedirectOK(SHttpConnector* uuu)
 {
-    if (uuu->bad_redir == eDefault) {
-        if (!(uuu->flags & fHTTP_InsecureRedirect)) {
+    if (uuu->unsafe_redir == eDefault) {
+        if (!(uuu->flags & fHTTP_UnsafeRedirects)) {
             char val[32];
-            ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT",
+            ConnNetInfo_GetValue(0, "HTTP_UNSAFE_REDIRECTS",
                                  val, sizeof(val), 0);
-            uuu->bad_redir = ConnNetInfo_Boolean(val) ? eOn : eOff;
+            uuu->unsafe_redir = ConnNetInfo_Boolean(val) ? eOn : eOff;
         } else
-            uuu->bad_redir = eOn;
+            uuu->unsafe_redir = eOn;
     }
-    return uuu->bad_redir == eOn ? 1/*true*/ : 0/*false*/;
+    return uuu->unsafe_redir == eOn ? 1/*true*/ : 0/*false*/;
 }
 
 
@@ -258,7 +258,7 @@ static int/*bool tri-state inverted*/ x_RetryAuth(SHttpConnector* uuu,
     switch (retry->mode) {
     case eRetry_Authenticate:
         if (uuu->net_info->scheme != eURL_Https
-            &&  !x_InsecureRedirect(uuu)) {
+            &&  !x_UnsafeRedirectOK(uuu)) {
             return -1/*prohibited*/;
         }
         break;
@@ -310,7 +310,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
             else if (retry->data  &&  *retry->data != '?') {
                 if (uuu->net_info->req_method != eReqMethod_Post
                     ||  retry->mode == eRetry_Redirect303
-                    ||  x_InsecureRedirect(uuu)
+                    ||  x_UnsafeRedirectOK(uuu)
                     ||  !BUF_Size(uuu->w_buf)) {
                     char           host[sizeof(uuu->net_info->host)];
                     unsigned short port =      uuu->net_info->port;
@@ -321,7 +321,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                     fail = !ConnNetInfo_ParseURL(uuu->net_info, retry->data);
                     if (!fail) {
                         if (secure  &&  uuu->net_info->scheme != eURL_Https
-                            &&  !x_InsecureRedirect(uuu)) {
+                            &&  !x_UnsafeRedirectOK(uuu)) {
                             fail = -1;
                         } else {
                             if (port !=    uuu->net_info->port  ||
@@ -629,7 +629,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 /* Direct HTTP[S] or tunneled HTTPS */
                 if (uuu->net_info->http_push_auth
                     &&  (uuu->net_info->scheme == eURL_Https
-                         ||  x_InsecureRedirect(uuu))
+                         ||  x_UnsafeRedirectOK(uuu))
                     &&  !x_Authenticate(uuu, eRetry_Authenticate)) {
                     status = eIO_Unknown;
                     break;
@@ -827,8 +827,9 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
             status = SOCK_Write(uuu->sock, 0, 0, 0, eIO_WritePlain);
             if (status == eIO_Success) {
                 uuu->read_state = eRS_ReadHeader;
-                uuu->keepalive
-                    = uuu->net_info->req_method < eReqMethod_v1 ? 0 : 1;
+                uuu->keepalive  =
+                    uuu->net_info->req_method > eReqMethod_v1  ||
+                    uuu->net_info->version;
                 uuu->expected = (TNCBI_BigCount)(-1L);
                 uuu->received = 0;
                 uuu->chunked  = 0;
@@ -1046,6 +1047,7 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
                 : 4096;
             if (!size) {
                 assert(!uuu->chunked);
+                uuu->read_state = eRS_DoneBody;
                 return eIO_Closed;
             }
             if (size > 2 * 4096)
@@ -1069,6 +1071,9 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
             if (size > uuu->expected - uuu->received)
                 size = uuu->expected - uuu->received;
             xxx = 0;
+        } else if (uuu->expected == uuu->received) {
+            uuu->read_state = eRS_DoneBody;
+            return eIO_Closed;
         } else
             xxx = 0;
         status = SOCK_Read(uuu->sock, buf, size, n_read, how);
@@ -1097,8 +1102,8 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
             size = uuu->expected;
         return s_ReadData(uuu, buf, size, n_read, how);
     }
-    uuu->read_state = eRS_DoneBody;
 
+    uuu->read_state = eRS_DoneBody;
     return x_ReadChunkTail(uuu);
 }
 
@@ -1491,6 +1496,10 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     uuu->chunked = 1;
                 uuu->expected = 0;
                 tags &= ~(eHTTP_ContentLength | eHTTP_TransferEncoding);
+                if (!uuu->version) {
+                    CORE_LOG(eLOG_Warning,
+                             "Chunked transfer encoding within HTTP/1.0");
+                }
                 continue;
             }
         }
@@ -1701,7 +1710,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
     EIO_Status status;
 
     assert(uuu->sock && size && n_read && (uuu->read_state & eRS_ReadBody));
-    assert((uuu->net_info->req_method & ~eReqMethod_v1) != eReqMethod_Connect);
+    assert(uuu->net_info->req_method != eReqMethod_Connect);
 
     if ((uuu->read_state & eRS_DoneBody) == eRS_DoneBody) {
         *n_read = 0;
@@ -1713,13 +1722,13 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
     }
     assert(uuu->received <= uuu->expected);
 
-    if ((uuu->net_info->req_method & ~eReqMethod_v1) == eReqMethod_Head
+    if (uuu->net_info->req_method == eReqMethod_Head
         ||  uuu->http_code / 100 == 1
         ||  uuu->http_code == 204
         ||  uuu->http_code == 304) {
         status = eIO_Closed;
         *n_read = 0;
-    } else if (uuu->flags & fHCC_UrlDecodeInput) {
+    } else if (!uuu->net_info->version && (uuu->flags & fHCC_UrlDecodeInput)) {
         /* read and URL-decode */
         size_t         n_peeked, n_decoded;
         TNCBI_BigCount remain    = uuu->expected - uuu->received;
@@ -1819,7 +1828,7 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
 {
     EIO_Status status = eIO_Success;
 
-    assert(!(extract & eEM_Wait));  /* i.e. here either drop or read, only */
+    assert(!(extract & eEM_Wait));  /* here it's only either drop or read */
 
     BUF_Erase(uuu->http);
     if (extract == eEM_Drop)
@@ -2004,7 +2013,8 @@ static EIO_Status s_VT_Write
     uuu->can_connect |= fCC_Once;
 
     /* accumulate all output in a memory buffer */
-    if (size  &&  (uuu->flags & fHCC_UrlEncodeOutput)) {
+    if (size  &&  !uuu->net_info->version
+        &&  (uuu->flags & fHCC_UrlEncodeOutput)) {
         /* with URL-encoding */
         size_t dst_size = 3 * size;
         void*  dst = malloc(dst_size);
@@ -2216,7 +2226,7 @@ static EIO_Status s_CreateHttpConnector
     if (!xxx)
         return eIO_Unknown;
 
-    if (xxx->req_method  &  eReqMethod_v1) {
+    if (xxx->req_method >=  eReqMethod_v1) {
         xxx->req_method &= ~eReqMethod_v1;
         xxx->version = 1;
         /*FIXME: issue an error for obsolete flags, if any used */
@@ -2275,9 +2285,9 @@ static EIO_Status s_CreateHttpConnector
         flags |= fHTTP_NoAutomagicSID;
     uuu->flags        = flags;
 
+    uuu->unsafe_redir = flags & fHTTP_UnsafeRedirects ? eOn : eOff;
     uuu->error_header = eDefault;
     uuu->can_connect  = fCC_None;         /* will be properly set at open */
-    uuu->bad_redir    = flags & fHTTP_InsecureRedirect ? eOn : eOff;
 
     uuu->sock         = 0;
     uuu->o_timeout    = kDefaultTimeout;  /* deliberately bad values here... */
@@ -2326,8 +2336,8 @@ static CONNECTOR s_CreateConnector
     uuu->cleanup      = cleanup;
 
     /* enable an override from outside */
-    if (!uuu->bad_redir)
-        uuu->bad_redir = eDefault;
+    if (!uuu->unsafe_redir)
+        uuu->unsafe_redir = eDefault;
 
     /* initialize connector structure */
     ccc->handle  = uuu;
