@@ -112,7 +112,7 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetContentLength(
     return eHTTP_HeaderComplete;
 }
 
-constexpr unsigned kDefaultHttpFlags =
+const THTTP_Flags kDefaultHttpFlags =
         fHTTP_AutoReconnect |
         fHTTP_SuppressMessages |
         fHTTP_Flushable;
