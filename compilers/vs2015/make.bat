@@ -45,7 +45,7 @@ REM ===========================================================================
 
 rem --- Configuration
 
-set compiler=vs2013
+set compiler=vs2015
 set default_cfgs=ReleaseDLL DebugDLL
 
 rem Always configure with additional Unicode configurations

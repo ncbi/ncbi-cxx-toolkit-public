@@ -43,7 +43,7 @@ error()
     exit 1
 }
 
-generate_vs2013_error_check_file()
+generate_vs2015_error_check_file()
 {
     cat <<-EOF >$1
 	/.*--* (Reb|B)uild( All | )started: Project:/ {
@@ -196,7 +196,7 @@ done
 # Generate errors check script
 
 check_awk=$build_dir/build_check.awk
-generate_vs2013_error_check_file $check_awk
+generate_vs2015_error_check_file $check_awk
 
 
 # Build
