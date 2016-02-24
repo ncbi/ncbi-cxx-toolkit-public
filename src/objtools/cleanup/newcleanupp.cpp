@@ -12170,13 +12170,6 @@ void CNewCleanup_imp::x_RemoveOrphanedProteins(CBioseq_set& set)
 
 void CNewCleanup_imp::x_SingleSeqSetToSeq(CBioseq_set& set)
 {
-    // do not collapse set if top level GenBank set
-    if (set.IsSetClass() && set.GetClass() == CBioseq_set::eClass_genbank) {
-        CBioseq_set_Handle bsh = m_Scope->GetBioseq_setHandle(set);
-        if (!bsh.GetParentBioseq_set()) {
-            return;
-        }
-    }
     if (set.IsSetSeq_set() && set.GetSeq_set().size() == 1 &&
         set.GetSeq_set().front()->IsSeq()) {
         CBioseq_set_Handle bh = m_Scope->GetBioseq_setHandle(set);

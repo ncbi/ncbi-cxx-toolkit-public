@@ -1441,6 +1441,19 @@ bool CCleanup::NormalizeDescriptorOrder(CSeq_entry_Handle seh)
     return rval;
 }
 
+
+bool CCleanup::AddGenBankWrapper(CSeq_entry_Handle seh)
+{
+    if (seh.IsSet() && seh.GetSet().IsSetClass() &&
+        seh.GetSet().GetClass() == CBioseq_set::eClass_genbank) {
+        return false;
+    }
+    CSeq_entry_EditHandle eh(seh);
+    eh.ConvertSeqToSet(CBioseq_set::eClass_genbank);
+    return true;
+}
+
+
 void s_GetAuthorsString(string *out_authors, const CAuth_list& auth_list)
 {
     string & auth_str = *out_authors;

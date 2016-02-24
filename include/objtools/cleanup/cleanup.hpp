@@ -240,9 +240,14 @@ public:
     static bool NormalizeDescriptorOrder(CSeq_descr& descr);
 
 /// Normalize Descriptor Order on a specific Seq-entry
-/// @param entry Seq-entry to edit
+/// @param seh Seq-entry-Handle to edit
 /// @return Boolean return value indicates whether object was updated
     static bool NormalizeDescriptorOrder(CSeq_entry_Handle seh);
+
+/// Add GenBank Wrapper Set
+/// @param entry Seq-entry to edit
+/// @return Boolean return value indicates whether object changed
+    static bool AddGenBankWrapper(CSeq_entry_Handle seh);
 
 
 /// For Publication Citations
