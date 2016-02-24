@@ -3275,7 +3275,14 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
     if (!seqid_prefix.empty())
     {
-        seqid.insert(0, seqid_prefix);
+        if (seqid.find('|') == string::npos)
+           seqid.insert(0, seqid_prefix);
+        else
+        if (NStr::StartsWith(seqid, "lcl|"))
+        {
+            seqid.erase(0, 4);
+            seqid.insert(0, seqid_prefix);
+        }
     }
 
     // then read features from 5-column table
