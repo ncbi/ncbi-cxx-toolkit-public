@@ -37,6 +37,7 @@
 #include <connect/services/ns_output_parser.hpp>
 
 #include <connect/ncbi_gnutls.h>
+#include <connect/ncbi_http_session.hpp>
 
 #include <util/random_gen.hpp>
 #include <util/util_exception.hpp>
@@ -111,6 +112,11 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetContentLength(
     return eHTTP_HeaderComplete;
 }
 
+constexpr unsigned kDefaultHttpFlags =
+        fHTTP_AutoReconnect |
+        fHTTP_SuppressMessages |
+        fHTTP_Flushable;
+
 SFileTrackRequest::SFileTrackRequest(
         SFileTrackAPI* storage_impl,
         const CNetStorageObjectLoc& object_loc,
@@ -120,8 +126,9 @@ SFileTrackRequest::SFileTrackRequest(
     m_FileTrackAPI(storage_impl),
     m_ObjectLoc(object_loc),
     m_URL(url),
+
     m_HTTPStream(url, NULL, user_header, parse_header, this, NULL,
-            NULL, fHTTP_AutoReconnect | fHTTP_SuppressMessages | fHTTP_Flushable,
+            NULL, kDefaultHttpFlags,
             &storage_impl->config.write_timeout),
     m_HTTPStatus(0),
     m_ContentLength((size_t) -1)
@@ -637,6 +644,61 @@ string SFileTrackAPI::MakeMutipartFormDataHeader(const string& boundary)
     header.append("\r\n", 2);
 
     return header;
+}
+
+string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
+{
+    CHttpSession session;
+    session.SetHttpFlags(kDefaultHttpFlags);
+
+    const string url(GetURL(object_loc, "/api/2.0/pins/"));
+    CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
+    req.SetTimeout(CTimeout(config.read_timeout.sec, config.read_timeout.usec));
+    req.Headers().SetValue(CHttpHeaders::eContentType, "application/json");
+    req.Headers().SetValue(CHttpHeaders::eCookie, FILETRACK_SIDCOOKIE "=" +
+            LoginAndGetSessionKey(object_loc));
+
+    req.ContentStream() << "{\"file_key\": \"" <<
+            object_loc.GetUniqueKey() << "\"}";
+
+    CHttpResponse response(req.Execute());
+
+    // If neither "200 OK" nor "201 CREATED"
+    if (response.GetStatusCode() < 200 || response.GetStatusCode() > 201) {
+        NCBI_THROW_FMT(CNetStorageException, eUnknown,
+                "Error while locking path for \"" << object_loc.GetLocator() <<
+                "\" in FileTrack: " << response.GetStatusCode() << ' ' <<
+                response.GetStatusText());
+    }
+
+// Enable this code if FileTrack starts to send "path" in response to lock
+#if 0
+    ostringstream oss;
+    oss << response.ContentStream().rdbuf();
+    CNetScheduleStructuredOutputParser parser;
+
+    try {
+        // If there is already "path" in response
+        if (CJsonNode root = parser.ParseJSON(oss.str())) {
+            if (CJsonNode path = root.GetByKeyOrNull("path")) {
+                return path.AsString();
+            }
+        }
+    }
+    catch (CStringException& e) {
+        NCBI_RETHROW_FMT(e, CNetStorageException, eUnknown,
+                "Error while locking path for \"" << object_loc.GetLocator() <<
+                "\" in FileTrack: Failed to parse response.");
+    }
+#endif
+
+    if (CJsonNode root = GetFileInfo(object_loc)) {
+        if (CJsonNode path = root.GetByKeyOrNull("path")) {
+            return path.AsString();
+        }
+    }
+
+    return string();
 }
 
 const string s_GetSection(const string& section)

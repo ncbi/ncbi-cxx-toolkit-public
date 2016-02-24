@@ -119,6 +119,7 @@ struct SFileTrackAPI
     CRef<SFileTrackRequest> StartDownload(const CNetStorageObjectLoc& object_loc);
 
     void Remove(const CNetStorageObjectLoc& object_loc);
+    string GetPath(const CNetStorageObjectLoc& object_loc);
 
     string GenerateUniqueBoundary();
     string MakeMutipartFormDataHeader(const string& boundary);

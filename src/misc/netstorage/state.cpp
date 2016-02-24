@@ -792,8 +792,7 @@ void CFileTrack::SetExpirationImpl(const CTimeout&)
 
 string CFileTrack::FileTrack_PathImpl()
 {
-    // TODO: Implement locking (CXX-7624)
-    return kEmptyStr;
+    return m_Context->filetrack_api.GetPath(Locator());
 }
 
 
