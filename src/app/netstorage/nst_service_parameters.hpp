@@ -59,9 +59,11 @@ class CNSTServiceProperties
         CNSTServiceProperties();
         CNSTServiceProperties(const TNSTDBValue<CTimeSpan> &  ttl,
                               const CTimeSpan &  prolong_on_read,
-                              const CTimeSpan &  prolong_on_write) :
+                              const CTimeSpan &  prolong_on_write,
+                              const CTimeSpan &  prolomg_on_relocate) :
             m_TTL(ttl), m_ProlongOnRead(prolong_on_read),
-            m_ProlongOnWrite(prolong_on_write)
+            m_ProlongOnWrite(prolong_on_write),
+            m_ProlongOnRelocate(prolomg_on_relocate)
         {}
 
         TNSTDBValue<CTimeSpan>  GetTTL(void) const
@@ -71,6 +73,8 @@ class CNSTServiceProperties
         { return m_ProlongOnRead; }
         CTimeSpan  GetProlongOnWrite(void) const
         { return m_ProlongOnWrite; }
+        CTimeSpan  GetProlongOnRelocate(void) const
+        { return m_ProlongOnRelocate; }
 
         void SetTTL(const TNSTDBValue<CTimeSpan> & new_val)
         { m_TTL = new_val; }
@@ -78,13 +82,16 @@ class CNSTServiceProperties
         { m_ProlongOnRead = new_val; }
         void SetProlongOnWrite(const CTimeSpan &  new_val)
         { m_ProlongOnWrite = new_val; }
+        void SetProlongOnRelocate(const CTimeSpan &  new_val)
+        { m_ProlongOnRelocate = new_val; }
 
         CJsonNode  Serialize(void) const;
 
         bool operator==(const CNSTServiceProperties &  other) const
         { return (m_TTL == other.m_TTL) &&
                  (m_ProlongOnRead == other.m_ProlongOnRead) &&
-                 (m_ProlongOnWrite == other.m_ProlongOnWrite); }
+                 (m_ProlongOnWrite == other.m_ProlongOnWrite) &&
+                 (m_ProlongOnRelocate == other.m_ProlongOnRelocate); }
         bool operator!=(const CNSTServiceProperties &  other) const
         { return !this->operator==(other); }
 
@@ -92,6 +99,7 @@ class CNSTServiceProperties
         TNSTDBValue<CTimeSpan>      m_TTL;
         CTimeSpan                   m_ProlongOnRead;
         CTimeSpan                   m_ProlongOnWrite;
+        CTimeSpan                   m_ProlongOnRelocate;
 };
 
 
@@ -111,6 +119,8 @@ class CNSTServiceRegistry
                                CTimeSpan &     prolong_on_read) const;
         bool  GetProlongOnWrite(const string &  service,
                                 CTimeSpan &     prolong_on_write) const;
+        bool  GetProlongOnRelocate(const string &  service,
+                                   CTimeSpan &  prolong_on_relocate) const;
         bool  GetServiceProperties(const string &  service,
                                    CNSTServiceProperties &  props) const;
         CNSTServiceProperties  GetDefaultProperties(void) const;

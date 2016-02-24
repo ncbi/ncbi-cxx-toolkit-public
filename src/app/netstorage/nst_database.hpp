@@ -39,6 +39,13 @@
 
 BEGIN_NCBI_SCOPE
 
+// A few common stored procedure return values
+const int   kSPStatusOK = 0;
+const int   kSPObjectNotFound = -1;
+const int   kSPObjectExpired = -4;
+
+
+
 // Forward declarations
 struct SCommonRequestArguments;
 class CJsonNode;
@@ -85,6 +92,7 @@ public:
     CJsonNode  SetParameters(const IRegistry &  reg);
 
     int  ExecSP_GetNextObjectID(Int8 &  object_id,
+                                Int8    count,
                                 CNSTTiming &  timing);
     int  ExecSP_CreateClient(const string &  client,
                              Int8 &  client_id,
@@ -93,14 +101,14 @@ public:
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
             Int8  client_id, const TNSTDBValue<CTimeSpan>  ttl,
-            CNSTTiming &  timing);
+            bool &  size_was_null, CNSTTiming &  timing);
     int  ExecSP_UpdateObjectOnWrite(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
             const TNSTDBValue<CTime> &  object_expiration,
-            CNSTTiming &  timing);
+            bool &  size_was_null, CNSTTiming &  timing);
     int  ExecSP_UpdateUserKeyObjectOnWrite(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id,
@@ -114,19 +122,30 @@ public:
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_read,
             const TNSTDBValue<CTime> &  object_expiration,
+            bool &  size_was_null,
             CNSTTiming &  timing);
     int  ExecSP_UpdateObjectOnRelocate(
             const string &  object_key,
             const string &  object_loc, Int8  client_id,
+            const TNSTDBValue<CTimeSpan> &  ttl,
+            const CTimeSpan &  prolong_on_relocate,
+            const TNSTDBValue<CTime> &  object_expiration,
             CNSTTiming &  timing);
     int  ExecSP_RemoveObject(const string &  object_key, CNSTTiming &  timing);
     int  ExecSP_SetExpiration(const string &  object_key,
                               const TNSTDBValue<CTimeSpan> &  ttl,
+                              bool  create_if_not_found,
+                              const string &  object_loc,
+                              Int8  client_id,
+                              TNSTDBValue<Int8> &  object_size,
                               CNSTTiming &  timing);
     int  ExecSP_AddAttribute(const string &  object_key,
+                             const string &  object_loc,
                              const string &  attr_name,
                              const string &  attr_value,
                              Int8  client_id,
+                             bool  create_if_not_found,
+                             const TNSTDBValue<CTimeSpan> &  ttl,
                              CNSTTiming &  timing);
     int  ExecSP_GetAttribute(const string &  object_key,
                              const string &  attr_name,
@@ -162,6 +181,14 @@ public:
                                  CNSTTiming &  timing);
     int  ExecSP_GetClients(vector<string> &  names,
                            CNSTTiming &  timing);
+    int  ExecSP_DoesObjectExist(const string &  object_key,
+                                CNSTTiming &  timing);
+    int  ExecSP_GetObjectSize(const string &  object_key,
+                              TNSTDBValue<Int8> &  object_size,
+                              CNSTTiming &  timing);
+    int  ExecSP_UpdateObjectSizeIfNULL(const string &  object_key,
+                                       TNSTDBValue<Int8> &  object_size,
+                                       CNSTTiming &  timing);
     CTimeout GetExecuteSPTimeout(void);
 
 private:

@@ -138,6 +138,7 @@ CNSTDatabase::SetParameters(const IRegistry &  reg)
 
 int
 CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
+                                     Int8  count,
                                      CNSTTiming &  timing)
 {
     const string        proc_name = "GetNextObjectID";
@@ -152,11 +153,12 @@ CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
 
             object_id = 0;
             query.SetParameter("@next_id", 0, eSDB_Int8, eSP_InOut);
+            query.SetParameter("@count", count);
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
             status = x_CheckStatus(query, proc_name);
 
-            if (status == 0)
+            if (status == kSPStatusOK)
                 object_id = query.GetParameter("@next_id").AsInt8();
             else
                 object_id = -1;
@@ -201,7 +203,7 @@ CNSTDatabase::ExecSP_CreateClient(
             query.VerifyDone();
             status = x_CheckStatus(query, proc_name);
 
-            if (status == 0)
+            if (status == kSPStatusOK)
                 client_id = query.GetParameter("@client_id").AsInt8();
             else
                 client_id = k_UndefinedClientID;
@@ -229,7 +231,7 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
             Int8  client_id, const TNSTDBValue<CTimeSpan>  ttl,
-            CNSTTiming &  timing)
+            bool &  size_was_null, CNSTTiming &  timing)
 {
     const string        proc_name = "CreateObjectWithClientID";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -238,10 +240,14 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
 
         int     status;
         try {
-            CNetStorageObjectLoc    object_loc_struct(m_Server->GetCompoundIDPool(),
-                                                      object_loc);
+            CNetStorageObjectLoc    object_loc_struct(
+                                                m_Server->GetCompoundIDPool(),
+                                                object_loc);
             CDatabase               db = m_Db->Clone();
             CQuery                  query = db.NewQuery();
+
+            // To be on the safe side
+            Int4                    db_size_was_null = 0;
 
             query.SetParameter("@object_id", object_id);
             query.SetParameter("@object_key", object_key);
@@ -250,6 +256,10 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@object_size", size);
             query.SetParameter("@client_id", client_id);
+
+            // To be on the safe side
+            query.SetParameter("@size_was_null", db_size_was_null,
+                               eSDB_Int4, eSP_InOut);
 
             if (ttl.m_IsNull)
                 query.SetNullParameter("@object_expiration", eSDB_DateTime);
@@ -262,6 +272,12 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
 
             status = x_CheckStatus(query, proc_name);
             timing.Append("MS SQL " + proc_name, start);
+
+            if (status == kSPStatusOK) {
+                size_was_null = (query.
+                                    GetParameter("@size_was_null").
+                                        AsInt4() != 0);
+            }
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -286,6 +302,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
             const TNSTDBValue<CTime> &  object_expiration,
+            bool &  size_was_null,
             CNSTTiming &  timing)
 {
     // Calculate separate expirations for two cases:
@@ -309,11 +326,18 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             CDatabase               db = m_Db->Clone();
             CQuery                  query = db.NewQuery();
 
+            // To be on the safe side
+            Int4                    db_size_was_null = 0;
+
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@object_size", size);
             query.SetParameter("@client_id", client_id);
             query.SetParameter("@current_time", current_time);
+
+            // To be on the safe side
+            query.SetParameter("@size_was_null", db_size_was_null,
+                               eSDB_Int4, eSP_InOut);
 
             if (exp_record_found.m_IsNull)
                 query.SetNullParameter("@object_exp_if_found",
@@ -333,6 +357,12 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
 
             status = x_CheckStatus(query, proc_name);
             timing.Append("MS SQL " + proc_name, start);
+
+            if (status == kSPStatusOK) {
+                size_was_null = (query.
+                                    GetParameter("@size_was_null").
+                                        AsInt4() != 0);
+            }
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -366,7 +396,8 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
     CTime                   current_time(CTime::eCurrent);
     TNSTDBValue<CTime>      exp_record_found;
     TNSTDBValue<CTime>      exp_record_not_found;
-    x_CalculateExpiration(current_time, ttl, prolong_on_write, object_expiration,
+    x_CalculateExpiration(current_time, ttl, prolong_on_write,
+                          object_expiration,
                           exp_record_found, exp_record_not_found);
 
     const string    proc_name = "UpdateUserKeyObjectOnWrite";
@@ -427,6 +458,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_read,
             const TNSTDBValue<CTime> &  object_expiration,
+            bool &  size_was_null,
             CNSTTiming &  timing)
 {
     // Calculate separate expirations for two cases:
@@ -441,6 +473,8 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
 
     const string        proc_name = "UpdateObjectOnRead";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
+
+    size_was_null = true;
     try {
         x_PreCheckConnection();
 
@@ -449,11 +483,18 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             CDatabase               db = m_Db->Clone();
             CQuery                  query = db.NewQuery();
 
+            // To be on the safe side
+            Int4                    db_size_was_null = 0;
+
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@object_size", size);
             query.SetParameter("@client_id", client_id);
             query.SetParameter("@current_time", current_time);
+
+            // To be on the safe side
+            query.SetParameter("@size_was_null", db_size_was_null,
+                               eSDB_Int4, eSP_InOut);
 
             if (exp_record_found.m_IsNull)
                 query.SetNullParameter("@object_exp_if_found",
@@ -473,6 +514,12 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
 
             status = x_CheckStatus(query, proc_name);
             timing.Append("MS SQL " + proc_name, start);
+
+            if (status == kSPStatusOK) {
+                size_was_null = (query.
+                                    GetParameter("@size_was_null").
+                                        AsInt4() != 0);
+            }
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -494,8 +541,22 @@ int
 CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
             const string &  object_key,
             const string &  object_loc, Int8  client_id,
+            const TNSTDBValue<CTimeSpan> &  ttl,
+            const CTimeSpan &  prolong_on_relocate,
+            const TNSTDBValue<CTime> &  object_expiration,
             CNSTTiming &  timing)
 {
+    // Calculate separate expirations for two cases:
+    // - record is found
+    // - record is not found
+    // It is easier to do in C++ than in MS SQL stored procedure
+    CTime                   current_time(CTime::eCurrent);
+    TNSTDBValue<CTime>      exp_record_found;
+    TNSTDBValue<CTime>      exp_record_not_found;
+    x_CalculateExpiration(current_time, ttl, prolong_on_relocate,
+                          object_expiration, exp_record_found,
+                          exp_record_not_found);
+
     const string        proc_name = "UpdateObjectOnRelocate";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
@@ -509,6 +570,20 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@client_id", client_id);
+            query.SetParameter("@current_time", current_time);
+
+            if (exp_record_found.m_IsNull)
+                query.SetNullParameter("@object_exp_if_found",
+                                       eSDB_DateTime);
+            else
+                query.SetParameter("@object_exp_if_found",
+                                   exp_record_found.m_Value);
+            if (exp_record_not_found.m_IsNull)
+                query.SetNullParameter("@object_exp_if_not_found",
+                                       eSDB_DateTime);
+            else
+                query.SetParameter("@object_exp_if_not_found",
+                                   exp_record_not_found.m_Value);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -573,6 +648,10 @@ CNSTDatabase::ExecSP_RemoveObject(const string &  object_key,
 int
 CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
                                    const TNSTDBValue<CTimeSpan> &  ttl,
+                                   bool  create_if_not_found,
+                                   const string &  object_loc,
+                                   Int8  client_id,
+                                   TNSTDBValue<Int8> &  object_size,
                                    CNSTTiming &  timing)
 {
     const string        proc_name = "SetObjectExpiration";
@@ -592,11 +671,25 @@ CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
             else
                 query.SetParameter("@expiration", CTime(CTime::eCurrent) +
                                                   ttl.m_Value);
+            query.SetParameter("@create_if_not_found", create_if_not_found);
+            query.SetParameter("@object_loc", object_loc);
+            query.SetParameter("@client_id", client_id);
+            query.SetParameter("@object_size", object_size.m_Value,
+                                               eSDB_Int8, eSP_InOut);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
+
+            if (status == kSPStatusOK) {
+                object_size.m_IsNull = query.GetParameter("@object_size").
+                                                                    IsNull();
+                if (!object_size.m_IsNull)
+                    object_size.m_Value = query.GetParameter("@object_size").
+                                                                    AsInt8();
+            }
+
             timing.Append("MS SQL " + proc_name, start);
             return status;
         } catch (const std::exception &  ex) {
@@ -617,9 +710,12 @@ CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
 
 int
 CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
+                                  const string &  object_loc,
                                   const string &  attr_name,
                                   const string &  attr_value,
                                   Int8  client_id,
+                                  bool  create_if_not_found,
+                                  const TNSTDBValue<CTimeSpan> &  ttl,
                                   CNSTTiming &  timing)
 {
     const string        proc_name = "AddAttribute";
@@ -636,6 +732,14 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
             query.SetParameter("@attr_name", attr_name);
             query.SetParameter("@attr_value", attr_value);
             query.SetParameter("@client_id", client_id);
+            query.SetParameter("@create_if_not_found", create_if_not_found);
+            query.SetParameter("@object_loc", object_loc);
+
+            if (ttl.m_IsNull)
+                query.SetNullParameter("@object_expiration", eSDB_DateTime);
+            else
+                query.SetParameter("@object_expiration",
+                                   CTime(CTime::eCurrent) + ttl.m_Value);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -675,15 +779,14 @@ CNSTDatabase::ExecSP_GetAttributeNames(const string &  object_key,
             CQuery                  query = db.NewQuery();
 
             query.SetParameter("@object_key", object_key);
-
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
 
             // NOTE: reading result recordset must be done before getting the
-            //       status code
+            //       status code. And it is safe to iterate even if a recordset
+            //       is not there
             ITERATE(CQuery, qit, query.SingleSet()) {
                 attr_names.push_back(qit["name"].AsString());
             }
-
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -731,7 +834,7 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
             query.VerifyDone();
             status = x_CheckStatus(query, proc_name);
 
-            if (status == 0)
+            if (status == kSPStatusOK)
                 value = query.GetParameter("@attr_value").AsString();
             else
                 value = "";
@@ -841,43 +944,47 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
             query.VerifyDone();
             status = x_CheckStatus(query, proc_name);
 
-            if (status == 0) {
-                expiration.m_IsNull = query.GetParameter("@expiration").IsNull();
+            if (status == kSPStatusOK) {
+                expiration.m_IsNull = query.GetParameter("@expiration").
+                                                                IsNull();
                 if (!expiration.m_IsNull)
                     expiration.m_Value = query.GetParameter("@expiration").
-                                                                    AsDateTime();
+                                                                AsDateTime();
                 creation.m_IsNull = query.GetParameter("@creation").IsNull();
                 if (!creation.m_IsNull)
                     creation.m_Value = query.GetParameter("@creation").
-                                                                    AsDateTime();
+                                                                AsDateTime();
                 obj_read.m_IsNull = query.GetParameter("@obj_read").IsNull();
                 if (!obj_read.m_IsNull)
                     obj_read.m_Value = query.GetParameter("@obj_read").
-                                                                    AsDateTime();
+                                                                AsDateTime();
                 obj_write.m_IsNull = query.GetParameter("@obj_write").IsNull();
                 if (!obj_write.m_IsNull)
                     obj_write.m_Value = query.GetParameter("@obj_write").
-                                                                    AsDateTime();
+                                                                AsDateTime();
                 attr_read.m_IsNull = query.GetParameter("@attr_read").IsNull();
                 if (!attr_read.m_IsNull)
                     attr_read.m_Value = query.GetParameter("@attr_read").
-                                                                    AsDateTime();
-                attr_write.m_IsNull = query.GetParameter("@attr_write").IsNull();
+                                                                AsDateTime();
+                attr_write.m_IsNull = query.GetParameter("@attr_write").
+                                                                IsNull();
                 if (!attr_write.m_IsNull)
                     attr_write.m_Value = query.GetParameter("@attr_write").
-                                                                    AsDateTime();
+                                                                AsDateTime();
                 read_count.m_IsNull = query.GetParameter("@read_cnt").IsNull();
                 if (!read_count.m_IsNull)
                     read_count.m_Value = query.GetParameter("@read_cnt").
-                                                                    AsInt8();
-                write_count.m_IsNull = query.GetParameter("@write_cnt").IsNull();
+                                                                AsInt8();
+                write_count.m_IsNull = query.GetParameter("@write_cnt").
+                                                                IsNull();
                 if (!write_count.m_IsNull)
                     write_count.m_Value = query.GetParameter("@write_cnt").
-                                                                    AsInt8();
-                client_name.m_IsNull = query.GetParameter("@client_name").IsNull();
+                                                                AsInt8();
+                client_name.m_IsNull = query.GetParameter("@client_name").
+                                                                IsNull();
                 if (!client_name.m_IsNull)
                     client_name.m_Value = query.GetParameter("@client_name").
-                                                                    AsString();
+                                                                AsString();
             }
             timing.Append("MS SQL " + proc_name, start);
             return status;
@@ -920,11 +1027,12 @@ CNSTDatabase::ExecSP_GetObjectExpiration(const string &        object_key,
             query.VerifyDone();
             status = x_CheckStatus(query, proc_name);
 
-            if (status == 0) {
-                expiration.m_IsNull = query.GetParameter("@expiration").IsNull();
+            if (status == kSPStatusOK) {
+                expiration.m_IsNull = query.GetParameter("@expiration").
+                                                                IsNull();
                 if (!expiration.m_IsNull)
                     expiration.m_Value = query.GetParameter("@expiration").
-                                                                    AsDateTime();
+                                                                AsDateTime();
             }
             timing.Append("MS SQL " + proc_name, start);
             return status;
@@ -1051,7 +1159,8 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
                 query.SetNullParameter("@limit", eSDB_Int8);
             else
                 query.SetParameter("@limit", limit.m_Value);
-            query.SetParameter("@total_object_cnt", total, eSDB_Int8, eSP_InOut);
+            query.SetParameter("@total_object_cnt", total,
+                               eSDB_Int8, eSP_InOut);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
 
@@ -1100,14 +1209,150 @@ CNSTDatabase::ExecSP_GetClients(vector<string> &  names,
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
 
             // NOTE: reading result recordset must be done before getting the
-            //       status code
+            //       status code. And it is safe to iterate over a recordset
+            //       even if there is no one.
             ITERATE(CQuery, qit, query.SingleSet()) {
                 names.push_back(qit["name"].AsString());
             }
-
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
+    } catch (...) {
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        throw;
+    }
+}
+
+
+int
+CNSTDatabase::ExecSP_DoesObjectExist(const string &  object_key,
+                                     CNSTTiming &  timing)
+{
+    const string        proc_name = "DoesObjectExist";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        x_PreCheckConnection();
+
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
+
+            query.SetParameter("@object_key", object_key);
+
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
+    } catch (...) {
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        throw;
+    }
+}
+
+
+int
+CNSTDatabase::ExecSP_GetObjectSize(const string &  object_key,
+                                   TNSTDBValue<Int8> &  object_size,
+                                   CNSTTiming &  timing)
+{
+    const string        proc_name = "GetObjectSize";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        x_PreCheckConnection();
+
+        int     status;
+        try {
+            CDatabase   db = m_Db->Clone();
+            CQuery      query = db.NewQuery();
+
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@object_size", object_size.m_Value,
+                                               eSDB_Int8, eSP_InOut);
+
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
+            query.VerifyDone();
+            status = x_CheckStatus(query, proc_name);
+
+            if (status == kSPStatusOK) {
+                object_size.m_IsNull = query.GetParameter("@object_size").
+                                                                    IsNull();
+                if (!object_size.m_IsNull)
+                    object_size.m_Value = query.GetParameter("@object_size").
+                                                                    AsInt8();
+            }
+
+            timing.Append("MS SQL " + proc_name, start);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
+    } catch (...) {
+        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        throw;
+    }
+}
+
+
+int
+CNSTDatabase::ExecSP_UpdateObjectSizeIfNULL(const string &  object_key,
+                                            TNSTDBValue<Int8> &  object_size,
+                                            CNSTTiming &  timing)
+{
+    const string        proc_name = "UpdateObjectSizeIfNULL";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        x_PreCheckConnection();
+
+        int     status;
+        try {
+            CDatabase   db = m_Db->Clone();
+            CQuery      query = db.NewQuery();
+
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@object_size", object_size.m_Value,
+                                               eSDB_Int8, eSP_InOut);
+
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
+            query.VerifyDone();
+            status = x_CheckStatus(query, proc_name);
+
+            if (status == kSPStatusOK) {
+                object_size.m_IsNull = query.GetParameter("@object_size").
+                                                                    IsNull();
+                if (!object_size.m_IsNull)
+                    object_size.m_Value = query.GetParameter("@object_size").
+                                                                    AsInt8();
+            }
+
             timing.Append("MS SQL " + proc_name, start);
             return status;
         } catch (const std::exception &  ex) {

@@ -66,6 +66,8 @@ CNSTServiceProperties::Serialize(void) const
                       m_ProlongOnRead.AsSmartString(kTimeSpanFlags));
     service.SetString("ProlongOnWrite",
                       m_ProlongOnWrite.AsSmartString(kTimeSpanFlags));
+    service.SetString("ProlongOnRelocate",
+                      m_ProlongOnRelocate.AsSmartString(kTimeSpanFlags));
 
     return service;
 }
@@ -185,6 +187,22 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
         diff.SetByKey("ProlongOnWrite", prolong_diff);
     }
 
+    if (m_DefaultProperties.GetProlongOnRelocate() !=
+            new_default_service_props.GetProlongOnRelocate()) {
+        CJsonNode   prolong_diff = CJsonNode::NewObjectNode();
+        prolong_diff.SetByKey("Old",
+                              CJsonNode::NewStringNode(
+                                  m_DefaultProperties.
+                                            GetProlongOnRelocate().
+                                                AsSmartString(kTimeSpanFlags)));
+        prolong_diff.SetByKey("New",
+                              CJsonNode::NewStringNode(
+                                  new_default_service_props.
+                                            GetProlongOnRelocate().
+                                                AsSmartString(kTimeSpanFlags)));
+        diff.SetByKey("ProlongOnRelocate", prolong_diff);
+    }
+
     if (!added.empty() || !deleted.empty() || !modified.empty()) {
         CJsonNode   services_diff = CJsonNode::NewObjectNode();
 
@@ -247,6 +265,20 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
                         new_service_conf[*k].GetProlongOnWrite().
                                                 AsSmartString(kTimeSpanFlags)));
                     mod_diff.SetByKey("ProlongOnWrite", val_diff);
+                }
+
+                if (m_Services[*k].GetProlongOnRelocate() !=
+                                new_service_conf[*k].GetProlongOnRelocate()){
+                    CJsonNode       val_diff = CJsonNode::NewObjectNode();
+                    val_diff.SetByKey("Old",
+                                      CJsonNode::NewStringNode(
+                        m_Services[*k].GetProlongOnRelocate().
+                                                AsSmartString(kTimeSpanFlags)));
+                    val_diff.SetByKey("New",
+                                      CJsonNode::NewStringNode(
+                        new_service_conf[*k].GetProlongOnRelocate().
+                                                AsSmartString(kTimeSpanFlags)));
+                    mod_diff.SetByKey("ProlongOnRelocate", val_diff);
                 }
 
                 serv_diff.SetByKey(*k, mod_diff);
@@ -367,6 +399,30 @@ CNSTServiceRegistry::GetProlongOnWrite(const string &  service,
 
 // true if the service is found
 bool
+CNSTServiceRegistry::GetProlongOnRelocate(
+                                const string &  service,
+                                CTimeSpan &     prolong_on_relocate) const
+{
+    CMutexGuard                         guard(m_Lock);
+    TServiceProperties::const_iterator  s = m_Services.find(service);
+
+    if (s == m_Services.end()) {
+        // It might be the LBSMD test service
+        if (NStr::EqualNocase(service, k_LBSMDNSTTestService)) {
+            prolong_on_relocate =
+                        m_LBSMDTestServiceProperties.GetProlongOnRelocate();
+            return true;
+        }
+        return false;
+    }
+
+    prolong_on_relocate = s->second.GetProlongOnRelocate();
+    return true;
+}
+
+
+// true if the service is found
+bool
 CNSTServiceRegistry::GetServiceProperties(const string &  service,
                                           CNSTServiceProperties &  props) const
 {
@@ -422,6 +478,10 @@ CNSTServiceRegistry::x_ReadServiceProperties(
     if (reg.HasEntry(section, "prolong_on_write"))
         result.SetProlongOnWrite(x_ReadProlongProperty(reg, section,
                                                        "prolong_on_write"));
+    if (reg.HasEntry(section, "prolong_on_relocate"))
+        result.SetProlongOnRelocate(x_ReadProlongProperty(reg, section,
+                                                      "prolong_on_relocate"));
+
     return result;
 }
 

@@ -60,7 +60,9 @@ CNetStorageServer::CNetStorageServer()
      m_StartTime(CNSTPreciseTime::Current()),
      m_AnybodyCanReconfigure(false),
      m_NeedDecryptCacheReset(false),
-     m_LastDecryptCacheReset(0.0)
+     m_LastDecryptCacheReset(0.0),
+     m_LastUsedObjectID(0),
+     m_LastReservedObjectID(-1)
 {
     sm_netstorage_server = this;
 }
@@ -646,5 +648,22 @@ string  CNetStorageServer::RemoveCrashFlagFile(void)
                "'StartAfterCrash' alert";
     }
     return kEmptyStr;
+}
+
+
+Int8 CNetStorageServer::GetNextObjectID(CNSTTiming &  timing)
+{
+    CFastMutexGuard     guard(m_NextObjectIDLock);
+
+    ++m_LastUsedObjectID;
+    if (m_LastUsedObjectID <= m_LastReservedObjectID)
+        return m_LastUsedObjectID;
+
+    // All reserved IDs were used, retrieve more
+
+    const Int8  batch_size = 10000;
+    GetDb().ExecSP_GetNextObjectID(m_LastUsedObjectID, batch_size, timing);
+    m_LastReservedObjectID = m_LastUsedObjectID + batch_size - 1;
+    return m_LastUsedObjectID;
 }
 

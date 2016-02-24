@@ -184,7 +184,6 @@ private:
     Int8                    m_DBObjectID;
     Int8                    m_ObjectSize;
     CNSTServiceProperties   m_WriteServiceProps;
-    TNSTDBValue<CTime>      m_WriteObjectExpiration;
 
 private:
     bool                    m_ByeReceived;
@@ -277,11 +276,22 @@ private:
                                   CNSTServiceProperties &  props) const;
     bool x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags);
     bool x_DetectMetaDBNeedOnGetObjectInfo(const CJsonNode & message) const;
-    TNSTDBValue<CTime> x_CheckObjectExpiration(const string &  object_key,
-                                               bool            db_exception,
-                                               CJsonNode &     reply);
     void x_CreateClient(void);
     void x_FillObjectInfo(CJsonNode &  reply, const string &  val);
+    void x_SetObjectInfoReply(CJsonNode &  reply, const string &  name,
+                              const TNSTDBValue<CTime> &  value);
+    void x_SetObjectInfoReply(CJsonNode &  reply, const string &  name,
+                              const TNSTDBValue<Int8> &  value);
+    void x_SetObjectInfoReply(CJsonNode &  reply, const string &  name,
+                              const TNSTDBValue<string> &  value);
+
+    Int8 x_GetNextObjectID(void);
+
+    void x_OptionalExpirationUpdate(CDirectNetStorageObject &  object,
+                                    CJsonNode &  reply,
+                                    const string &  user_message);
+    void x_CheckExistanceStatus(int  status);
+    void x_CheckExpirationStatus(int  status);
 }; // CNetStorageHandler
 
 

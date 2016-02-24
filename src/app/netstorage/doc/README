@@ -1,0 +1,5 @@
+The directory has a set of python files which are a pseudo code describing
+the logic of the NetStorage message implementation.
+The code is not for execution.
+The code is for the documentation: Codimension Python IDE generates the diagrams
+which are used in the MS Word document.

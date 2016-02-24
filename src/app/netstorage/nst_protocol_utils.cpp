@@ -210,9 +210,11 @@ AppendError(CJsonNode &     message,
             Int8            code,
             const string &  error_message,
             const string &  scope,
-            Int8            sub_code)
+            Int8            sub_code,
+            bool            update_status)
 {
-    message.SetString("Status", kStatusError);
+    if (update_status)
+        message.SetString("Status", kStatusError);
 
     CJsonNode   errors;
     if (!message.HasKey("Errors"))
