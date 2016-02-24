@@ -69,7 +69,7 @@ int SCacheInfo::GetDebugLevel(void)
 }
 
 const int    SCacheInfo::BLOB_IDS_MAGIC = 0x32fd0108;
-const char* const SCacheInfo::BLOB_IDS_SUBKEY = "blobs8";
+const char* const SCacheInfo::BLOB_IDS_SUBKEY = "Blobs8";
 
 string SCacheInfo::GetBlobKey(const CBlob_id& blob_id)
 {
@@ -153,61 +153,61 @@ void SCacheInfo::GetBlob_idsSubkey(const SAnnotSelector* sel,
 
 const char* SCacheInfo::GetGiSubkey(void)
 {
-    return "gi8";
+    return "Gi";
 }
 
 
 const char* SCacheInfo::GetAccVerSubkey(void)
 {
-    return "accver";
+    return "Accver";
 }
 
 
 const char* SCacheInfo::GetLabelSubkey(void)
 {
-    return "label";
+    return "Label";
 }
 
 
 const char* SCacheInfo::GetTaxIdSubkey(void)
 {
-    return "taxid";
+    return "Taxid";
 }
 
 
 const char* SCacheInfo::GetHashSubkey(void)
 {
-    return "hash";
+    return "Hash";
 }
 
 
 const char* SCacheInfo::GetLengthSubkey(void)
 {
-    return "length";
+    return "Length";
 }
 
 
 const char* SCacheInfo::GetTypeSubkey(void)
 {
-    return "type";
+    return "Type";
 }
 
 
 const char* SCacheInfo::GetSeq_idsSubkey(void)
 {
-    return "ids4";
+    return "Ids";
 }
 
 
 const char* SCacheInfo::GetBlobStateSubkey(void)
 {
-    return "state4";
+    return "State";
 }
 
 
 const char* SCacheInfo::GetBlobVersionSubkey(void)
 {
-    return "ver4";
+    return "Ver";
 }
 
 
@@ -380,6 +380,14 @@ namespace {
                 }
             }
 
+        Uint1 ParseUint1(void)
+            {
+                return *x_NextBytes(1);
+            }
+        bool ParseBool(void)
+            {
+                return ParseUint1();
+            }
         Uint4 ParseUint4(void)
             {
                 const char* ptr = x_NextBytes(4);
@@ -457,7 +465,7 @@ namespace {
                               bool set_expiration_time)
     {
         if ( set_expiration_time ) {
-            m_Descr.maximum_age = result.GetIdExpirationTimeout();
+            m_Descr.maximum_age = result.GetIdExpirationTimeout(GBL::eExpire_normal);
         }
         if ( get_current_version ) {
             // Decrease blob version timeout for easier debugging
@@ -490,7 +498,7 @@ namespace {
             }
             s << ", age="<<int(m_Descr.actual_age);
         }
-        m_ExpirationTime = result.GetNewIdExpirationTime();
+        m_ExpirationTime = result.GetNewIdExpirationTime(GBL::eExpire_normal);
         if ( FoundSome() ) {
             if ( m_Descr.actual_age > m_ExpirationTime ) {
                 m_ExpirationTime = TExpirationTime(-1);
@@ -675,18 +683,6 @@ bool CCacheReader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
 }
 
 
-bool CCacheReader::LoadStringSeq_ids(CReaderRequestResult& result,
-                                     const string& seq_id)
-{
-    if ( !m_IdCache ) {
-        return false;
-    }
-
-    CLoadLockSeqIds lock(result, seq_id);
-    return lock.IsLoaded() || ReadSeq_ids(result, seq_id, lock);
-}
-
-
 bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id)
 {
@@ -714,7 +710,10 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
 #endif
         if ( str.Done() ) {
             conn.Release();
-            lock.SetLoadedGi(gi, str.GetExpirationTime());
+            TSequenceGi data;
+            data.gi = gi;
+            data.sequence_found = true;
+            lock.SetLoadedGi(data, str.GetExpirationTime());
             return true;
         }
     }
@@ -748,11 +747,12 @@ bool CCacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
     if ( str.Found() ) {
         string data = str.FullString();
         conn.Release();
-        CSeq_id_Handle acch;
+        TSequenceAcc acc;
         if ( !data.empty() ) {
-            acch = CSeq_id_Handle::GetHandle(data);
+            acc.acc_ver = CSeq_id_Handle::GetHandle(data);
         }
-        lock.SetLoadedAccVer(acch, str.GetExpirationTime());
+        acc.sequence_found = true;
+        lock.SetLoadedAccVer(acc, str.GetExpirationTime());
         return true;
     }
     conn.Release();
@@ -763,6 +763,26 @@ bool CCacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
         result.SetLoadedAccFromSeqIds(seq_id, ids_lock);
         return true;
     }
+    /*
+    if ( !seq_id.IsGi() ) {
+        CLoadLockGi gi_lock(result, seq_id);
+        LoadSeq_idGi(result, seq_id);
+        if ( gi_lock.IsLoadedGi() ) {
+            TSequenceGi gi = gi_lock.GetGi();
+            if ( gi.second && gi.first ) {
+                CSeq_id_Handle gi_id =
+                    CSeq_id_Handle::GetGiHandle(gi.first);
+                CLoadLockAcc gi_acc(result, gi_id);
+                LoadSeq_idAccVer(result, gi_id);
+                if ( gi_acc.IsLoadedAccVer() ) {
+                    lock.SetLoadedAccVer(gi_acc.GetAccVer(),
+                                         gi_acc.GetExpirationTime());
+                    return true;
+                }
+            }
+        }
+    }
+    */
     return false;
 }
 
@@ -844,10 +864,31 @@ bool CCacheReader::LoadSequenceHash(CReaderRequestResult& result,
     CConn conn(result, this);
     CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetHashSubkey());
     if ( !str.Found() ) {
+        if ( !seq_id.IsGi() ) {
+            CLoadLockGi gi_lock(result, seq_id);
+            LoadSeq_idGi(result, seq_id);
+            if ( gi_lock.IsLoadedGi() ) {
+                TSequenceGi gi = gi_lock.GetGi();
+                if ( gi_lock.GetGi(gi) ) {
+                    CSeq_id_Handle gi_id =
+                        CSeq_id_Handle::GetGiHandle(gi_lock.GetGi(gi));
+                    CLoadLockHash gi_hash(result, gi_id);
+                    LoadSequenceHash(result, gi_id);
+                    if ( gi_hash.IsLoadedHash() ) {
+                        lock.SetLoadedHash(gi_hash.GetHash(),
+                                           gi_hash.GetExpirationTime());
+                        return true;
+                    }
+                }
+            }
+        }
         conn.Release();
         return false;
     }
-    int hash = str.ParseInt4();
+    TSequenceHash hash;
+    hash.hash = str.ParseInt4();
+    hash.sequence_found = str.ParseBool();
+    hash.hash_known = str.ParseBool();
     if ( !str.Done() ) {
         conn.Release();
         return false;
@@ -911,7 +952,10 @@ bool CCacheReader::LoadSequenceType(CReaderRequestResult& result,
         return false;
     }
     conn.Release();
-    lock.SetLoadedType(CSeq_inst::EMol(type), str.GetExpirationTime());
+    TSequenceType data;
+    data.type = CSeq_inst::EMol(type);
+    data.sequence_found = true;
+    lock.SetLoadedType(data, str.GetExpirationTime());
     return true;
 }
 
@@ -932,9 +976,11 @@ bool CCacheReader::LoadAccVers(CReaderRequestResult& result,
             LoadSeq_idAccVer(result, ids[i]);
         }
         if ( lock.IsLoadedAccVer() ) {
-            ret[i] = lock.GetAccVer();
-            loaded[i] = true;
-            continue;
+            TSequenceAcc data = lock.GetAccVer();
+            if ( lock.IsFound(data) ) {
+                ret[i] = lock.GetAcc(data);
+                loaded[i] = true;
+            }
         }
     }
     return false;
@@ -957,9 +1003,11 @@ bool CCacheReader::LoadGis(CReaderRequestResult& result,
             LoadSeq_idGi(result, ids[i]);
         }
         if ( lock.IsLoadedGi() ) {
-            ret[i] = lock.GetGi();
-            loaded[i] = true;
-            continue;
+            TSequenceGi data = lock.GetGi();
+            if ( lock.IsFound(data) ) {
+                ret[i] = lock.GetGi(data);
+                loaded[i] = true;
+            }
         }
     }
     return false;

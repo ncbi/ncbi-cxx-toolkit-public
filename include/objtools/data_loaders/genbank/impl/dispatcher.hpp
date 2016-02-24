@@ -83,8 +83,6 @@ public:
         return !sih || sih.Which() == CSeq_id::e_Local;
     }
 
-    void LoadStringSeq_ids(CReaderRequestResult& result,
-                           const string& seq_id);
     void LoadSeq_idBlob_ids(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             const SAnnotSelector* sel);
@@ -107,6 +105,7 @@ public:
 
     // bulk requests
     typedef vector<bool> TLoaded;
+    typedef vector<bool> TKnown;
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
@@ -115,21 +114,22 @@ public:
     typedef vector<CSeq_inst::EMol> TTypes;
     typedef vector<TBlobState> TStates;
     void LoadAccVers(CReaderRequestResult& result,
-                     const TIds ids, TLoaded& loaded, TIds& ret);
+                     const TIds& ids, TLoaded& loaded, TIds& ret);
     void LoadGis(CReaderRequestResult& result,
-                 const TIds ids, TLoaded& loaded, TGis& ret);
+                 const TIds& ids, TLoaded& loaded, TGis& ret);
     void LoadLabels(CReaderRequestResult& result,
-                    const TIds ids, TLoaded& loaded, TLabels& ret);
+                    const TIds& ids, TLoaded& loaded, TLabels& ret);
     void LoadTaxIds(CReaderRequestResult& result,
-                    const TIds ids, TLoaded& loaded, TTaxIds& ret);
+                    const TIds& ids, TLoaded& loaded, TTaxIds& ret);
     void LoadHashes(CReaderRequestResult& result,
-                    const TIds ids, TLoaded& loaded, THashes& ret);
+                    const TIds& ids, TLoaded& loaded,
+                    THashes& ret, TKnown& known);
     void LoadLengths(CReaderRequestResult& result,
-                     const TIds ids, TLoaded& loaded, TLengths& ret);
+                     const TIds& ids, TLoaded& loaded, TLengths& ret);
     void LoadTypes(CReaderRequestResult& result,
-                   const TIds ids, TLoaded& loaded, TTypes& ret);
+                   const TIds& ids, TLoaded& loaded, TTypes& ret);
     void LoadStates(CReaderRequestResult& result,
-                    const TIds ids, TLoaded& loaded, TStates& ret);
+                    const TIds& ids, TLoaded& loaded, TStates& ret);
  
     static bool SetBlobState(size_t i,
                              CReaderRequestResult& result,

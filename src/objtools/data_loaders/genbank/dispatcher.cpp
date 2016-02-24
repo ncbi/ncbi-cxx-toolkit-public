@@ -48,6 +48,18 @@ NCBI_DEFINE_ERR_SUBCODE_X(10);
 
 BEGIN_SCOPE(objects)
 
+NCBI_PARAM_DECL(bool, GENBANK, ALLOW_INCOMPLETE_COMMANDS);
+NCBI_PARAM_DEF_EX(bool, GENBANK, ALLOW_INCOMPLETE_COMMANDS, false,
+                  eParam_NoThread, GENBANK_ALLOW_INCOMPLETE_COMMANDS);
+
+static 
+bool s_AllowIncompleteCommands(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, ALLOW_INCOMPLETE_COMMANDS)> s_Value;
+    return s_Value->Get();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CReadDispatcher
 /////////////////////////////////////////////////////////////////////////////
@@ -248,45 +260,6 @@ bool CReadDispatcherCommand::MayBeSkipped(void) const
 
 
 namespace {
-    class CCommandLoadStringSeq_ids : public CReadDispatcherCommand
-    {
-    public:
-        typedef string TKey;
-        typedef CLoadLockSeqIds TLock;
-        CCommandLoadStringSeq_ids(CReaderRequestResult& result,
-                                  const TKey& key)
-            : CReadDispatcherCommand(result),
-              m_Key(key), m_Lock(result, key)
-            {
-            }
-
-        bool IsDone(void)
-            {
-                return m_Lock.IsLoaded();
-            }
-        bool Execute(CReader& reader)
-            {
-                return reader.LoadStringSeq_ids(GetResult(), m_Key);
-            }
-        string GetErrMsg(void) const
-            {
-                return "LoadStringSeq_ids("+m_Key+"): "
-                    "data not found";
-            }
-        CGBRequestStatistics::EStatType GetStatistics(void) const
-            {
-                return CGBRequestStatistics::eStat_StringSeq_ids;
-            }
-        string GetStatisticsDescription(void) const
-            {
-                return "Seq-ids(string "+m_Key+")";
-            }
-        
-    private:
-        TKey m_Key;
-        TLock m_Lock;
-    };
-
     class CCommandLoadSeq_idSeq_ids : public CReadDispatcherCommand
     {
     public:
@@ -624,13 +597,10 @@ namespace {
         }
         // check if seq-id is known as absent
         CLoadLockSeqIds seq_ids(result, seq_id, eAlreadyLoaded);
-        if ( seq_ids ) {
-            CFixedSeq_ids::TState state = seq_ids.GetState();
-            if ( state & CBioseq_Handle::fState_no_data ) {
-                // mark blob-ids as absent too
-                ids.SetNoBlob_ids(state);
-                return true;
-            }
+        if ( seq_ids && !seq_ids.GetData().IsFound() ) {
+            // mark blob-ids as absent too
+            ids.SetNoBlob_ids(seq_ids.GetState());
+            return true;
         }
         return false;
     }
@@ -678,28 +648,44 @@ namespace {
         TLock m_Lock;
     };
 
-    static
-    bool sx_BulkIsDone(const vector<CSeq_id_Handle>& ids,
+    template<class CLoadLock>
+    bool sx_IsLoaded(size_t i,
+                     CReaderRequestResult& result,
+                     const vector<CSeq_id_Handle>& ids,
+                     const vector<bool>& loaded)
+    {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            return true;
+        }
+        CLoadLock lock(result, ids[i]);
+        if ( lock.IsLoaded() && !lock.IsFound() ) {
+            return true;
+        }
+        return false;
+    }
+
+    template<class CLoadLock>
+    bool sx_BulkIsDone(CReaderRequestResult& result,
+                       const vector<CSeq_id_Handle>& ids,
                        const vector<bool>& loaded)
     {
         for ( size_t i = 0; i < ids.size(); ++i ) {
-            if ( CReadDispatcher::CannotProcess(ids[i]) ) {
+            if ( sx_IsLoaded<CLoadLock>(i, result, ids, loaded) ) {
                 continue;
             }
-            if ( !loaded[i] ) {
-                return false;
-            }
+            return false;
         }
         return true;
     }
 
-    static
-    string sx_DescribeUnloaded(const vector<CSeq_id_Handle>& ids,
-                               const vector<bool>& loaded)
+    template<class CLoadLock>
+    string sx_DescribeError(CReaderRequestResult& result,
+                            const vector<CSeq_id_Handle>& ids,
+                            const vector<bool>& loaded)
     {
         string ret;
         for ( size_t i = 0; i < ids.size(); ++i ) {
-            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            if ( sx_IsLoaded<CLoadLock>(i, result, ids, loaded) ) {
                 continue;
             }
             if ( !ret.empty() ) {
@@ -717,6 +703,7 @@ namespace {
         typedef vector<CSeq_id_Handle> TKey;
         typedef vector<bool> TLoaded;
         typedef vector<CSeq_id_Handle> TRet;
+        typedef CLoadLockAcc CLoadLock;
         CCommandLoadAccVers(CReaderRequestResult& result,
                             const TKey& key, TLoaded& loaded, TRet& ret)
             : CReadDispatcherCommand(result),
@@ -724,26 +711,29 @@ namespace {
             {
             }
 
-        bool IsDone(void)
-            {
-                return sx_BulkIsDone(m_Key, m_Loaded);
-            }
         bool Execute(CReader& reader)
             {
                 return reader.LoadAccVers(GetResult(), m_Key, m_Loaded, m_Ret);
             }
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone<CLoadLock>(GetResult(), m_Key, m_Loaded);
+            }
         string GetErrMsg(void) const
             {
-                return "LoadAccVers("+sx_DescribeUnloaded(m_Key, m_Loaded)+"): "
-                    "data not found";
+                return "LoadAccVers("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    "): data not found";
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "accs("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    ")";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_Seq_idAcc;
-            }
-        string GetStatisticsDescription(void) const
-            {
-                return "accs("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
             }
         
     private:
@@ -758,6 +748,7 @@ namespace {
         typedef vector<CSeq_id_Handle> TKey;
         typedef vector<bool> TLoaded;
         typedef vector<TGi> TRet;
+        typedef CLoadLockGi CLoadLock;
         CCommandLoadGis(CReaderRequestResult& result,
                         const TKey& key, TLoaded& loaded, TRet& ret)
             : CReadDispatcherCommand(result),
@@ -765,26 +756,29 @@ namespace {
             {
             }
 
-        bool IsDone(void)
-            {
-                return sx_BulkIsDone(m_Key, m_Loaded);
-            }
         bool Execute(CReader& reader)
             {
                 return reader.LoadGis(GetResult(), m_Key, m_Loaded, m_Ret);
             }
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone<CLoadLock>(GetResult(), m_Key, m_Loaded);
+            }
         string GetErrMsg(void) const
             {
-                return "LoadGis("+sx_DescribeUnloaded(m_Key, m_Loaded)+"): "
-                    "data not found";
+                return "LoadGis("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    "): data not found";
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "gis("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    ")";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_Seq_idGi;
-            }
-        string GetStatisticsDescription(void) const
-            {
-                return "gis("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
             }
         
     private:
@@ -799,6 +793,7 @@ namespace {
         typedef vector<CSeq_id_Handle> TKey;
         typedef vector<bool> TLoaded;
         typedef vector<string> TRet;
+        typedef CLoadLockLabel CLoadLock;
         CCommandLoadLabels(CReaderRequestResult& result,
                            const TKey& key, TLoaded& loaded, TRet& ret)
             : CReadDispatcherCommand(result),
@@ -806,26 +801,29 @@ namespace {
             {
             }
 
-        bool IsDone(void)
-            {
-                return sx_BulkIsDone(m_Key, m_Loaded);
-            }
         bool Execute(CReader& reader)
             {
                 return reader.LoadLabels(GetResult(), m_Key, m_Loaded, m_Ret);
             }
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone<CLoadLock>(GetResult(), m_Key, m_Loaded);
+            }
         string GetErrMsg(void) const
             {
-                return "LoadLabels("+sx_DescribeUnloaded(m_Key, m_Loaded)+"): "
-                    "data not found";
+                return "LoadLabels("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    "): data not found";
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "labels("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    ")";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_Seq_idLabel;
-            }
-        string GetStatisticsDescription(void) const
-            {
-                return "labels("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
             }
         
     private:
@@ -840,6 +838,7 @@ namespace {
         typedef vector<CSeq_id_Handle> TKey;
         typedef vector<bool> TLoaded;
         typedef vector<int> TRet;
+        typedef CLoadLockTaxId CLoadLock;
         CCommandLoadTaxIds(CReaderRequestResult& result,
                            const TKey& key, TLoaded& loaded, TRet& ret)
             : CReadDispatcherCommand(result),
@@ -847,10 +846,6 @@ namespace {
             {
             }
 
-        bool IsDone(void)
-            {
-                return sx_BulkIsDone(m_Key, m_Loaded);
-            }
         bool Execute(CReader& reader)
             {
                 return reader.LoadTaxIds(GetResult(), m_Key, m_Loaded, m_Ret);
@@ -859,18 +854,25 @@ namespace {
             {
                 return true;
             }
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone<CLoadLock>(GetResult(), m_Key, m_Loaded);
+            }
         string GetErrMsg(void) const
             {
-                return "LoadTaxIds("+sx_DescribeUnloaded(m_Key, m_Loaded)+"): "
-                    "data not found";
+                return "LoadTaxIds("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    "): data not found";
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "taxids("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    ")";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_Seq_idTaxId;
-            }
-        string GetStatisticsDescription(void) const
-            {
-                return "taxids("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
             }
         
     private:
@@ -884,44 +886,52 @@ namespace {
     public:
         typedef vector<CSeq_id_Handle> TKey;
         typedef vector<bool> TLoaded;
+        typedef vector<bool> TKnown;
         typedef vector<int> TRet;
+        typedef CLoadLockHash CLoadLock;
         CCommandLoadHashes(CReaderRequestResult& result,
-                           const TKey& key, TLoaded& loaded, TRet& ret)
+                           const TKey& key, TLoaded& loaded,
+                           TRet& ret, TKnown& known)
             : CReadDispatcherCommand(result),
-              m_Key(key), m_Loaded(loaded), m_Ret(ret)
+              m_Key(key), m_Loaded(loaded), m_Ret(ret), m_Known(known)
             {
             }
 
-        bool IsDone(void)
-            {
-                return sx_BulkIsDone(m_Key, m_Loaded);
-            }
         bool Execute(CReader& reader)
             {
-                return reader.LoadHashes(GetResult(), m_Key, m_Loaded, m_Ret);
+                return reader.LoadHashes(GetResult(), m_Key, m_Loaded,
+                                         m_Ret, m_Known);
             }
         bool MayBeSkipped(void) const
             {
                 return true;
             }
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone<CLoadLock>(GetResult(), m_Key, m_Loaded);
+            }
         string GetErrMsg(void) const
             {
-                return "LoadHashes("+sx_DescribeUnloaded(m_Key, m_Loaded)+"): "
-                    "data not found";
+                return "LoadHashes("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    "): data not found";
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "hashes("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    ")";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_Hash;
-            }
-        string GetStatisticsDescription(void) const
-            {
-                return "hashes("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
             }
         
     private:
         const TKey& m_Key;
         TLoaded& m_Loaded;
         TRet& m_Ret;
+        TKnown& m_Known;
     };
 
     class CCommandLoadLengths : public CReadDispatcherCommand
@@ -930,6 +940,7 @@ namespace {
         typedef vector<CSeq_id_Handle> TKey;
         typedef vector<bool> TLoaded;
         typedef vector<TSeqPos> TRet;
+        typedef CLoadLockLength CLoadLock;
         CCommandLoadLengths(CReaderRequestResult& result,
                            const TKey& key, TLoaded& loaded, TRet& ret)
             : CReadDispatcherCommand(result),
@@ -937,10 +948,6 @@ namespace {
             {
             }
 
-        bool IsDone(void)
-            {
-                return sx_BulkIsDone(m_Key, m_Loaded);
-            }
         bool Execute(CReader& reader)
             {
                 return reader.LoadLengths(GetResult(), m_Key, m_Loaded, m_Ret);
@@ -949,18 +956,25 @@ namespace {
             {
                 return true;
             }
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone<CLoadLock>(GetResult(), m_Key, m_Loaded);
+            }
         string GetErrMsg(void) const
             {
-                return "LoadLengths("+sx_DescribeUnloaded(m_Key, m_Loaded)+"): "
-                    "data not found";
+                return "LoadLengths("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    "): data not found";
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "lengths("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    ")";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_Length;
-            }
-        string GetStatisticsDescription(void) const
-            {
-                return "lengths("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
             }
         
     private:
@@ -975,6 +989,7 @@ namespace {
         typedef vector<CSeq_id_Handle> TKey;
         typedef vector<bool> TLoaded;
         typedef vector<CSeq_inst::EMol> TRet;
+        typedef CLoadLockType CLoadLock;
         CCommandLoadTypes(CReaderRequestResult& result,
                            const TKey& key, TLoaded& loaded, TRet& ret)
             : CReadDispatcherCommand(result),
@@ -982,10 +997,6 @@ namespace {
             {
             }
 
-        bool IsDone(void)
-            {
-                return sx_BulkIsDone(m_Key, m_Loaded);
-            }
         bool Execute(CReader& reader)
             {
                 return reader.LoadTypes(GetResult(), m_Key, m_Loaded, m_Ret);
@@ -994,18 +1005,25 @@ namespace {
             {
                 return true;
             }
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone<CLoadLock>(GetResult(), m_Key, m_Loaded);
+            }
         string GetErrMsg(void) const
             {
-                return "LoadTypes("+sx_DescribeUnloaded(m_Key, m_Loaded)+"): "
-                    "data not found";
+                return "LoadTypes("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    "): data not found";
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "types("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    ")";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_Type;
-            }
-        string GetStatisticsDescription(void) const
-            {
-                return "types("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
             }
         
     private:
@@ -1020,6 +1038,7 @@ namespace {
         typedef vector<CSeq_id_Handle> TKey;
         typedef vector<bool> TLoaded;
         typedef vector<int> TRet;
+        typedef CLoadLockBlobIds CLoadLock;
         CCommandLoadStates(CReaderRequestResult& result,
                            const TKey& key, TLoaded& loaded, TRet& ret)
             : CReadDispatcherCommand(result),
@@ -1027,26 +1046,29 @@ namespace {
             {
             }
 
-        bool IsDone(void)
-            {
-                return sx_BulkIsDone(m_Key, m_Loaded);
-            }
         bool Execute(CReader& reader)
             {
                 return reader.LoadStates(GetResult(), m_Key, m_Loaded, m_Ret);
             }
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone<CLoadLock>(GetResult(), m_Key, m_Loaded);
+            }
         string GetErrMsg(void) const
             {
-                return "LoadStates("+sx_DescribeUnloaded(m_Key, m_Loaded)+"): "
-                    "data not found";
+                return "LoadStates("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    "): data not found";
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "states("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    ")";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_BlobState;
-            }
-        string GetStatisticsDescription(void) const
-            {
-                return "states("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
             }
         
     private:
@@ -1576,24 +1598,16 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command,
             }
         } while ( retry_count < max_retry_count );
         if ( !command.MayBeSkipped() &&
-             !reader.MayBeSkippedOnErrors() ) {
+             !reader.MayBeSkippedOnErrors() &&
+             !s_AllowIncompleteCommands() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed, command.GetErrMsg());
         }
     }
 
-    if ( command.MayBeSkipped() ) {
-        return;
+    if ( !command.MayBeSkipped() &&
+         !s_AllowIncompleteCommands() ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed, command.GetErrMsg());
     }
-
-    NCBI_THROW(CLoaderException, eLoaderFailed, command.GetErrMsg());
-}
-
-
-void CReadDispatcher::LoadStringSeq_ids(CReaderRequestResult& result,
-                                        const string& seq_id)
-{
-    CCommandLoadStringSeq_ids command(result, seq_id);
-    Process(command);
 }
 
 
@@ -1662,7 +1676,7 @@ void CReadDispatcher::LoadSequenceType(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadAccVers(CReaderRequestResult& result,
-                                  const TIds ids, TLoaded& loaded, TIds& ret)
+                                  const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     CCommandLoadAccVers command(result, ids, loaded, ret);
     Process(command);
@@ -1670,7 +1684,7 @@ void CReadDispatcher::LoadAccVers(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadGis(CReaderRequestResult& result,
-                              const TIds ids, TLoaded& loaded, TGis& ret)
+                              const TIds& ids, TLoaded& loaded, TGis& ret)
 {
     CCommandLoadGis command(result, ids, loaded, ret);
     Process(command);
@@ -1678,7 +1692,7 @@ void CReadDispatcher::LoadGis(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadLabels(CReaderRequestResult& result,
-                                 const TIds ids, TLoaded& loaded, TLabels& ret)
+                                 const TIds& ids, TLoaded& loaded, TLabels& ret)
 {
     CCommandLoadLabels command(result, ids, loaded, ret);
     Process(command);
@@ -1686,7 +1700,7 @@ void CReadDispatcher::LoadLabels(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadTaxIds(CReaderRequestResult& result,
-                                 const TIds ids, TLoaded& loaded, TTaxIds& ret)
+                                 const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 {
     CCommandLoadTaxIds command(result, ids, loaded, ret);
     Process(command);
@@ -1694,15 +1708,16 @@ void CReadDispatcher::LoadTaxIds(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadHashes(CReaderRequestResult& result,
-                                 const TIds ids, TLoaded& loaded, THashes& ret)
+                                 const TIds& ids, TLoaded& loaded,
+                                 THashes& ret, TKnown& known)
 {
-    CCommandLoadHashes command(result, ids, loaded, ret);
+    CCommandLoadHashes command(result, ids, loaded, ret, known);
     Process(command);
 }
 
 
 void CReadDispatcher::LoadLengths(CReaderRequestResult& result,
-                                  const TIds ids, TLoaded& loaded, TLengths& ret)
+                                  const TIds& ids, TLoaded& loaded, TLengths& ret)
 {
     CCommandLoadLengths command(result, ids, loaded, ret);
     Process(command);
@@ -1710,7 +1725,7 @@ void CReadDispatcher::LoadLengths(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadTypes(CReaderRequestResult& result,
-                                const TIds ids, TLoaded& loaded, TTypes& ret)
+                                const TIds& ids, TLoaded& loaded, TTypes& ret)
 {
     CCommandLoadTypes command(result, ids, loaded, ret);
     Process(command);
@@ -1718,7 +1733,7 @@ void CReadDispatcher::LoadTypes(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadStates(CReaderRequestResult& result,
-                                 const TIds ids, TLoaded& loaded, TStates& ret)
+                                 const TIds& ids, TLoaded& loaded, TStates& ret)
 {
     CCommandLoadStates command(result, ids, loaded, ret);
     Process(command);
@@ -1821,28 +1836,32 @@ bool CReadDispatcher::SetBlobState(size_t i,
     CLoadLockBlobIds lock(result, ids[i]);
     if ( lock.IsLoaded() ) {
         CFixedBlob_ids blob_ids = lock.GetBlob_ids();
+        if ( !blob_ids.IsFound() ) {
+            ret[i] = lock.GetState();
+            return true;
+        }
         ITERATE ( CFixedBlob_ids, it, blob_ids ) {
             if ( it->Matches(fBlobHasCore, 0) ) {
                 CFixedBlob_ids::TState state = lock.GetState();
+                if ( state == CFixedBlob_ids::kUnknownState ) {
+                    CLoadLockBlobState state_lock(result, *it->GetBlob_id());
+                    if ( state_lock.IsLoadedBlobState() ) {
+                        state = state_lock.GetBlobState();
+                    }
+                }
                 if ( state != CFixedBlob_ids::kUnknownState ) {
-                    ret[i] = lock.GetState();
+                    ret[i] = state;
                     loaded[i] = true;
                     return true;
                 }
+                return false;
             }
-        }
-        if ( lock.GetState() & CBioseq_Handle::fState_no_data ) {
-            ret[i] = lock.GetState();
-            loaded[i] = true;
-            return true;
         }
     }
     else {
         CLoadLockSeqIds ids_lock(result, ids[i], eAlreadyLoaded);
-        if ( ids_lock &&
-             (ids_lock.GetState() & CBioseq_Handle::fState_no_data) ) {
+        if ( ids_lock && !ids_lock.GetData().IsFound() ) {
             ret[i] = ids_lock.GetState();
-            loaded[i] = true;
             return true;
         }
     }

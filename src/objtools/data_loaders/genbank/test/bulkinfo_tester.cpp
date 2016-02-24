@@ -81,7 +81,7 @@ void IBulkTester::Display(CNcbiOstream& out, size_t i, bool verify) const
     out << GetType() << "("<<ids[i]<<") -> ";
     DisplayData(out, i);
     if ( verify && !Correct(i) ) {
-        out << " actual: ";
+        out << " expected: ";
         DisplayDataVerify(out, i);
     }
     out << endl;
@@ -134,6 +134,25 @@ public:
                 }
             }
         }
+    void LoadVerify(const vector<string>& lines)
+        {
+            data_verify.resize(ids.size());
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                const string& line = lines[i];
+                if ( !line.empty() ) {
+                    data_verify[i] = NStr::StringToNumeric<TIntId>(line);
+                }
+            }
+        }
+    void SaveResults(CNcbiOstream& out) const
+        {
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                if ( data[i] ) {
+                    out << TIntId(data[i]);
+                }
+                out << NcbiEndl;
+            }
+        }
     bool Correct(size_t i) const
         {
             return data[i] == data_verify[i];
@@ -180,6 +199,25 @@ public:
                     data_verify[i] = GetId(h, eGetId_ForceAcc);
                     scope.RemoveFromHistory(h);
                 }
+            }
+        }
+    void LoadVerify(const vector<string>& lines)
+        {
+            data_verify.resize(ids.size());
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                const string& line = lines[i];
+                if ( !line.empty() ) {
+                    data_verify[i] = CSeq_id_Handle::GetHandle(line);
+                }
+            }
+        }
+    void SaveResults(CNcbiOstream& out) const
+        {
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                if ( data[i] ) {
+                    out << data[i];
+                }
+                out << NcbiEndl;
             }
         }
     bool Correct(size_t i) const
@@ -257,6 +295,21 @@ public:
                 }
             }
         }
+    void LoadVerify(const vector<string>& lines)
+        {
+            data_verify.resize(ids.size());
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                const string& line = lines[i];
+                data[i] = line;
+            }
+        }
+    void SaveResults(CNcbiOstream& out) const
+        {
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                out << data[i];
+                out << NcbiEndl;
+            }
+        }
     bool Correct(size_t i) const
         {
             if ( data[i] == data_verify[i] ) {
@@ -316,6 +369,25 @@ public:
                 }
             }
         }
+    void LoadVerify(const vector<string>& lines)
+        {
+            data_verify.resize(ids.size(), -1);
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                const string& line = lines[i];
+                if ( !line.empty() ) {
+                    data_verify[i] = NStr::StringToNumeric<int>(line);
+                }
+            }
+        }
+    void SaveResults(CNcbiOstream& out) const
+        {
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                if ( data[i] != -1 ) {
+                    out << data[i];
+                }
+                out << NcbiEndl;
+            }
+        }
     bool Correct(size_t i) const
         {
             return data[i] == data_verify[i];
@@ -370,6 +442,25 @@ public:
                 }
             }
         }
+    void LoadVerify(const vector<string>& lines)
+        {
+            data_verify.resize(ids.size());
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                const string& line = lines[i];
+                if ( !line.empty() ) {
+                    data_verify[i] = NStr::StringToNumeric<int>(line);
+                }
+            }
+        }
+    void SaveResults(CNcbiOstream& out) const
+        {
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                if ( data[i] ) {
+                    out << data[i];
+                }
+                out << NcbiEndl;
+            }
+        }
     bool Correct(size_t i) const
         {
             return data[i] == data_verify[i] || !data[i];
@@ -416,6 +507,25 @@ public:
                     data_verify[i] = h.GetBioseqLength();
                     scope.RemoveFromHistory(h);
                 }
+            }
+        }
+    void LoadVerify(const vector<string>& lines)
+        {
+            data_verify.resize(ids.size(), kInvalidSeqPos);
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                const string& line = lines[i];
+                if ( !line.empty() ) {
+                    data_verify[i] = NStr::StringToNumeric<TSeqPos>(line);
+                }
+            }
+        }
+    void SaveResults(CNcbiOstream& out) const
+        {
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                if ( data[i] != kInvalidSeqPos ) {
+                    out << data[i];
+                }
+                out << NcbiEndl;
             }
         }
     bool Correct(size_t i) const
@@ -466,6 +576,25 @@ public:
                 }
             }
         }
+    void LoadVerify(const vector<string>& lines)
+        {
+            data_verify.resize(ids.size(), CSeq_inst::eMol_not_set);
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                const string& line = lines[i];
+                if ( !line.empty() ) {
+                    data_verify[i] = CSeq_inst::EMol(NStr::StringToNumeric<int>(line));
+                }
+            }
+        }
+    void SaveResults(CNcbiOstream& out) const
+        {
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                if ( data[i] != CSeq_inst::eMol_not_set ) {
+                    out << data[i];
+                }
+                out << NcbiEndl;
+            }
+        }
     bool Correct(size_t i) const
         {
             return data[i] == data_verify[i];
@@ -505,13 +634,32 @@ public:
         }
     void LoadVerify(CScope& scope)
         {
-            data_verify.resize(ids.size(), CSeq_inst::eMol_not_set);
+            data_verify.resize(ids.size(), -1);
             for ( size_t i = 0; i < ids.size(); ++i ) {
                 CBioseq_Handle h = scope.GetBioseqHandle(ids[i]);
                 data_verify[i] = h.GetState();
                 if ( h ) {
                     scope.RemoveFromHistory(h);
                 }
+            }
+        }
+    void LoadVerify(const vector<string>& lines)
+        {
+            data_verify.resize(ids.size(), -1);
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                const string& line = lines[i];
+                if ( !line.empty() ) {
+                    data_verify[i] = NStr::StringToNumeric<int>(line);
+                }
+            }
+        }
+    void SaveResults(CNcbiOstream& out) const
+        {
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                if ( data[i] != -1 ) {
+                    out << data[i];
+                }
+                out << NcbiEndl;
             }
         }
     bool Correct(size_t i) const

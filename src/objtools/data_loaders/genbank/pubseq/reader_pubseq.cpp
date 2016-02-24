@@ -483,8 +483,9 @@ bool CPubseqReader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
             return false;
         }
     }
-    TGi gi = gi_lock.GetGi();
-    if (gi == ZERO_GI) {
+    TSequenceGi data = gi_lock.GetGi();
+    TGi gi = gi_lock.GetGi(data);
+    if ( !gi ) {
         // no gi -> no Seq-ids
         SetAndSaveNoSeq_idSeq_ids(result, seq_id, 0);
         return true;
@@ -592,9 +593,11 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                         CDB_VarChar accVerGot;
                         dbr->GetItem(&accVerGot);
                         try {
-                            CSeq_id_Handle id =
+                            TSequenceAcc data;
+                            data.acc_ver =
                                 CSeq_id_Handle::GetHandle(accVerGot.Value());
-                            SetAndSaveSeq_idAccVer(result, seq_id, id);
+                            data.sequence_found = true;
+                            SetAndSaveSeq_idAccVer(result, seq_id, data);
                             while ( dbr->Fetch() )
                                 ;
                             cmd->DumpResults();
@@ -735,13 +738,16 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     }
                 }
 
-                if ( gi == ZERO_GI ) {
-                    // no gi -> only one Seq-id - the one used as argument
-                    SetAndSaveSeq_idGi(result, seq_id, ZERO_GI);
+                if ( gi == ZERO_GI && !sat && !sat_key ) {
+                    // no sequence found
+                    SetAndSaveSeq_idGi(result, seq_id, TSequenceGi());
                 }
                 else {
-                    // we've got gi
-                    SetAndSaveSeq_idGi(result, seq_id, gi);
+                    // we've got gi, possibly ZERO_GI meaning no GI on sequence
+                    TSequenceGi data;
+                    data.gi = gi;
+                    data.sequence_found = true;
+                    SetAndSaveSeq_idGi(result, seq_id, data);
                 }
                 
                 if ( CProcessor::TrySNPSplit() && !IsAnnotSat(sat) ) {
@@ -844,7 +850,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
         }
 
         if ( result_count == 0 ) {
-            SetAndSaveSeq_idGi(result, seq_id, ZERO_GI);
+            SetAndSaveSeq_idGi(result, seq_id, TSequenceGi());
             SetAndSaveNoSeq_idSeq_ids(result, seq_id, 0);
             SetAndSaveNoSeq_idBlob_ids(result, seq_id, with_named_accs, 0);
         }
@@ -902,6 +908,7 @@ bool CPubseqReader::LoadGiSeq_ids(CReaderRequestResult& result,
                     if ( status == 100 ) {
                         // gi does not exist
                         not_found = true;
+                        state |= CBioseq_Handle::fState_not_found;
                     }
                 }
                 if ( not_found ) {
@@ -965,14 +972,21 @@ bool CPubseqReader::LoadSequenceHash(CReaderRequestResult& result,
             return false;
         }
     }
-    TGi gi = gi_lock.GetGi();
-    if (gi == ZERO_GI) {
-        // no gi -> no hash
-        result.SetLoadedHash(seq_id, 0);
+    TSequenceGi gi = gi_lock.GetGi();
+    if ( !gi_lock.IsFound(gi) ) {
+        // no sequence
+        result.SetLoadedHash(seq_id, TSequenceHash());
+        return true;
+    }
+    if ( !gi_lock.GetGi(gi) ) {
+        // no gi -> no hash known
+        TSequenceHash hash;
+        hash.sequence_found = true;
+        result.SetLoadedHash(seq_id, hash);
         return true;
     }
 
-    CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
+    CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi_lock.GetGi(gi));
     CLoadLockHash gi_hash(result, gi_handle);
     m_Dispatcher->LoadSequenceHash(result, gi_handle);
     if ( !gi_hash.IsLoadedHash() ) {
@@ -995,7 +1009,7 @@ bool CPubseqReader::LoadGiHash(CReaderRequestResult& result,
     _ASSERT(seq_id.Which() == CSeq_id::e_Gi);
     TGi gi = seq_id.GetGi();
     if ( gi == ZERO_GI ) {
-        result.SetLoadedHash(seq_id, 0);
+        result.SetLoadedHash(seq_id, TSequenceHash());
         return true;
     }
 
@@ -1012,7 +1026,7 @@ bool CPubseqReader::LoadGiHash(CReaderRequestResult& result,
         cmd->SetParam("@ver", &hashIn);
         cmd->Send();
 
-        int hash = 0;
+        TSequenceHash hash;
         while ( cmd->HasMoreResults() ) {
             AutoPtr<CDB_Result> dbr(cmd->Result());
             if ( !dbr.get() ) {
@@ -1023,7 +1037,9 @@ bool CPubseqReader::LoadGiHash(CReaderRequestResult& result,
                       sx_FetchNextItem(*dbr, "hash") ) {
                 CDB_Int v;
                 dbr->GetItem(&v);
-                hash = v.Value();
+                hash.hash = v.Value();
+                hash.sequence_found = true;
+                hash.hash_known = true;
             }
             while ( dbr->Fetch() )
                 ;

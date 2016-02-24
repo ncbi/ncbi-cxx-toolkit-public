@@ -76,8 +76,6 @@ public:
     ~CId2ReaderBase(void);
 
     // new interface
-    bool LoadStringSeq_ids(CReaderRequestResult& result,
-                           const string& seq_id);
     bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
                            const CSeq_id_Handle& seq_id);
     bool LoadSeq_idGi(CReaderRequestResult& result,
@@ -107,7 +105,8 @@ public:
     bool LoadTaxIds(CReaderRequestResult& result,
                     const TIds& ids, TLoaded& loaded, TTaxIds& ret);
     bool LoadHashes(CReaderRequestResult& result,
-                    const TIds& ids, TLoaded& loaded, THashes& ret);
+                    const TIds& ids, TLoaded& loaded,
+                    THashes& ret, TKnown& known);
     bool LoadLengths(CReaderRequestResult& result,
                      const TIds& ids, TLoaded& loaded, TLengths& ret);
     bool LoadTypes(CReaderRequestResult& result,
@@ -120,10 +119,6 @@ public:
     bool LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
 
-    bool LoadBlobs(CReaderRequestResult& result,
-                   const string& seq_id,
-                   TContentsMask mask,
-                   const SAnnotSelector* sel);
     bool LoadBlobs(CReaderRequestResult& result,
                    const CSeq_id_Handle& seq_id,
                    TContentsMask mask,
@@ -166,8 +161,6 @@ protected:
 
     void x_SetResolve(CID2_Request_Get_Blob_Id& get_blob_id,
                       const CSeq_id& seq_id);
-    void x_SetResolve(CID2_Request_Get_Blob_Id& get_blob_id,
-                      const string& seq_id);
     void x_SetResolve(CID2_Blob_Id& blob_id, const CBlob_id& src);
 
     void x_SetDetails(CID2_Get_Blob_Details& details,
@@ -223,11 +216,6 @@ protected:
                            SId2LoadedSet& loaded_set,
                            const CID2_Reply& main_reply,
                            const CID2_Reply_Get_Seq_id& reply);
-    void x_ProcessGetStringSeqId(CReaderRequestResult& result,
-                                 SId2LoadedSet& loaded_set,
-                                 const CID2_Reply& main_reply,
-                                 const string& seq_id,
-                                 const CID2_Reply_Get_Seq_id& reply);
     void x_ProcessGetSeqIdSeqId(CReaderRequestResult& result,
                                 SId2LoadedSet& loaded_set,
                                 const CID2_Reply& main_reply,

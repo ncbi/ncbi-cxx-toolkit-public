@@ -279,12 +279,10 @@ bool CId1Reader::LoadSeq_idGi(CReaderRequestResult& result,
     CID1server_back id1_reply;
     x_ResolveId(result, id1_reply, id1_request);
 
-    TGi gi;
+    TSequenceGi gi;
     if ( id1_reply.IsGotgi() ) {
-        gi = id1_reply.GetGotgi();
-    }
-    else {
-        gi = ZERO_GI;
+        gi.gi = id1_reply.GetGotgi();
+        gi.sequence_found = true;
     }
     SetAndSaveSeq_idGi(result, seq_id, gi);
     return true;
@@ -322,14 +320,15 @@ bool CId1Reader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
     if ( !gi_lock.IsLoaded() ) {
         m_Dispatcher->LoadSeq_idGi(result, seq_id);
     }
-    TGi gi = gi_lock.GetGi();
-    if ( gi == ZERO_GI ) {
+    TSequenceGi data = gi_lock.GetGi();
+    if ( !gi_lock.IsFound(data) ) {
         // no gi -> no Seq-ids
         SetAndSaveNoSeq_idSeq_ids(result, seq_id, gi_lock);
         return true;
     }
 
-    CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
+    CSeq_id_Handle gi_handle =
+        CSeq_id_Handle::GetGiHandle(gi_lock.GetGi(data));
     CLoadLockSeqIds gi_ids_lock(result, gi_handle);
     if ( !gi_ids_lock.IsLoaded() ) {
         m_Dispatcher->LoadSeq_idSeq_ids(result, gi_handle);
@@ -430,8 +429,9 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     if ( !gi_lock.IsLoaded() ) {
         m_Dispatcher->LoadSeq_idGi(result, seq_id);
     }
-    TGi gi = gi_lock.GetGi();
-    if ( gi == ZERO_GI ) {
+    TSequenceGi data = gi_lock.GetGi();
+    TGi gi = gi_lock.GetGi(data);
+    if ( !gi ) {
         // no gi -> no Seq-ids
         SetAndSaveNoSeq_idBlob_ids(result, seq_id, sel, gi_lock);
         return true;
@@ -625,7 +625,9 @@ CId1Reader::x_ResolveId(CReaderRequestResult& result,
             CBioseq_Handle::fState_no_data;
         break;
     case 10:
-        state = CBioseq_Handle::fState_no_data;
+        state =
+            CBioseq_Handle::fState_not_found|
+            CBioseq_Handle::fState_no_data;
         break;
     case 100:
         NCBI_THROW_FMT(CLoaderException, eConnectionFailed,

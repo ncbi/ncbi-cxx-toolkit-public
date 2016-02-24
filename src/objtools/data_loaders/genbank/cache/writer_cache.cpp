@@ -122,18 +122,6 @@ void CCacheWriter::ResetCache(void)
 }
 
 
-void CCacheWriter::SaveStringSeq_ids(CReaderRequestResult& result,
-                                     const string& seq_id)
-{
-    if ( !m_IdCache) {
-        return;
-    }
-
-    CLoadLockSeqIds ids(result, seq_id);
-    WriteSeq_ids(seq_id, ids);
-}
-
-
 void CCacheWriter::CStoreBuffer::CheckSpace(size_t add)
 {
     if ( m_Ptr + add > m_End ) {
@@ -186,22 +174,6 @@ void CCacheWriter::x_WriteId(const string& key,
 }
 
 
-void CCacheWriter::SaveStringGi(CReaderRequestResult& result,
-                                const string& seq_id)
-{
-    if( !m_IdCache) {
-        return;
-    }
-
-    CLoadLockGi lock(result, seq_id);
-    if ( lock.IsLoadedGi() ) {
-        CStoreBuffer str;
-        str.StoreInt8(lock.GetGi());
-        x_WriteId(seq_id, GetGiSubkey(), str);
-    }
-}
-
-
 void CCacheWriter::SaveSeq_idSeq_ids(CReaderRequestResult& result,
                                      const CSeq_id_Handle& seq_id)
 {
@@ -222,9 +194,11 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
     }
 
     CLoadLockGi lock(result, seq_id);
-    if ( lock.IsLoadedGi() ) {
+    if ( lock.IsLoadedGi() && lock.GetExpType() == GBL::eExpire_normal ) {
         CStoreBuffer str;
-        str.StoreInt8(lock.GetGi());
+        CReader::TSequenceGi data = lock.GetGi();
+        _ASSERT(lock.IsFound(data));
+        str.StoreInt8(lock.GetGi(data));
         x_WriteId(GetIdKey(seq_id), GetGiSubkey(), str);
     }
 }
@@ -238,10 +212,12 @@ void CCacheWriter::SaveSeq_idAccVer(CReaderRequestResult& result,
     }
 
     CLoadLockAcc lock(result, seq_id);
-    if ( lock.IsLoadedAccVer() ) {
+    if ( lock.IsLoadedAccVer() && lock.GetExpType() == GBL::eExpire_normal ) {
         string str;
-        if ( CSeq_id_Handle acc = lock.GetAccVer() ) {
-            str = acc.AsString();
+        CReader::TSequenceAcc acc = lock.GetAccVer();
+        _ASSERT(lock.IsFound(acc));
+        if ( lock.GetAcc(acc) ) {
+            str = lock.GetAcc(acc).AsString();
         }
         x_WriteId(GetIdKey(seq_id), GetAccVerSubkey(), str);
     }
@@ -256,8 +232,9 @@ void CCacheWriter::SaveSeq_idLabel(CReaderRequestResult& result,
     }
 
     CLoadLockLabel lock(result, seq_id);
-    if ( lock.IsLoadedLabel() ) {
+    if ( lock.IsLoadedLabel() && lock.GetExpType() == GBL::eExpire_normal ) {
         const string& str = lock.GetLabel();
+        _ASSERT(!str.empty());
         x_WriteId(GetIdKey(seq_id), GetLabelSubkey(), str);
     }
 }
@@ -271,8 +248,9 @@ void CCacheWriter::SaveSeq_idTaxId(CReaderRequestResult& result,
     }
 
     CLoadLockTaxId lock(result, seq_id);
-    if ( lock.IsLoadedTaxId() ) {
+    if ( lock.IsLoadedTaxId() && lock.GetExpType() == GBL::eExpire_normal ) {
         CStoreBuffer str;
+        _ASSERT(lock.GetTaxId() != -1);
         str.StoreInt4(lock.GetTaxId());
         x_WriteId(GetIdKey(seq_id), GetTaxIdSubkey(), str);
     }
@@ -287,9 +265,12 @@ void CCacheWriter::SaveSequenceHash(CReaderRequestResult& result,
     }
 
     CLoadLockHash lock(result, seq_id);
-    if ( lock.IsLoadedHash() ) {
+    if ( lock.IsLoadedHash() && lock.GetExpType() == GBL::eExpire_normal ) {
         CStoreBuffer str;
-        str.StoreInt4(lock.GetHash());
+        CReader::TSequenceHash data = lock.GetHash();
+        str.StoreInt4(data.hash);
+        str.StoreBool(data.sequence_found);
+        str.StoreBool(data.hash_known);
         x_WriteId(GetIdKey(seq_id), GetHashSubkey(), str);
     }
 }
@@ -303,8 +284,9 @@ void CCacheWriter::SaveSequenceLength(CReaderRequestResult& result,
     }
 
     CLoadLockLength lock(result, seq_id);
-    if ( lock.IsLoadedLength() ) {
+    if ( lock.IsLoadedLength() && lock.GetExpType() == GBL::eExpire_normal ) {
         CStoreBuffer str;
+        _ASSERT(lock.GetLength() != kInvalidSeqPos);
         str.StoreUint4(lock.GetLength());
         x_WriteId(GetIdKey(seq_id), GetLengthSubkey(), str);
     }
@@ -319,9 +301,9 @@ void CCacheWriter::SaveSequenceType(CReaderRequestResult& result,
     }
 
     CLoadLockType lock(result, seq_id);
-    if ( lock.IsLoadedType() ) {
+    if ( lock.IsLoadedType() && lock.GetExpType() == GBL::eExpire_normal ) {
         CStoreBuffer str;
-        str.StoreInt4(lock.GetType());
+        str.StoreInt4(lock.GetType().type);
         x_WriteId(GetIdKey(seq_id), GetTypeSubkey(), str);
     }
 }
@@ -334,7 +316,7 @@ void CCacheWriter::WriteSeq_ids(const string& key,
         return;
     }
 
-    if ( !lock.IsLoaded() ) {
+    if ( !lock.IsLoaded() || lock.GetExpType() != GBL::eExpire_normal ) {
         return;
     }
 
@@ -343,6 +325,7 @@ void CCacheWriter::WriteSeq_ids(const string& key,
             CReader::CDebugPrinter s("CCacheWriter");
             s<<key<<","<<GetSeq_idsSubkey();
         }
+        _ASSERT(!lock.GetSeq_ids().empty());
         auto_ptr<IWriter> writer
             (m_IdCache->GetWriteStream(key, 0, GetSeq_idsSubkey()));
         if ( !writer.get() ) {
@@ -380,7 +363,7 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
     }
 
     CLoadLockBlobIds ids(result, seq_id, sel);
-    if ( !ids.IsLoaded() ) {
+    if ( !ids.IsLoaded() || ids.GetExpType() != GBL::eExpire_normal ) {
         return;
     }
 

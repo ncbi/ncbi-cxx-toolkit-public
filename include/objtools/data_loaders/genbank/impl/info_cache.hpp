@@ -75,6 +75,11 @@ enum EDoNotWait {
     eDoNotWait
 };
 
+enum EExpirationType {
+    eExpire_normal,
+    eExpire_fast
+};
+
 class CLoadMutex : public CObject, public CMutex // CFastMutex
 {
 public:
@@ -154,7 +159,7 @@ protected:
         {
             return m_Requestor;
         }
-    TExpirationTime GetNewExpirationTime(void) const;
+    TExpirationTime GetNewExpirationTime(EExpirationType type) const;
     CInfoManager& GetManager(void) const;
 
     bool IsLocked(void) const
@@ -163,17 +168,18 @@ protected:
         }
 
     bool IsLoaded(void) const;
-    bool SetLoaded(TExpirationTime new_expiration_time);
-    bool SetLoaded(void);
+    bool SetLoadedFor(TExpirationTime new_expiration_time);
+    bool SetLoaded(EExpirationType type);
     TExpirationTime GetExpirationTime(void) const
         {
             return GetInfo().GetExpirationTime();
         }
 
     typedef CMutex TMainMutex; // CFastMutex
+    bool x_SetLoadedFor(TMainMutex::TWriteLockGuard& guard,
+                        TExpirationTime new_expiration_time);
     bool x_SetLoaded(TMainMutex::TWriteLockGuard& guard,
-                     TExpirationTime new_expiration_time);
-    bool x_SetLoaded(TMainMutex::TWriteLockGuard& guard);
+                     EExpirationType type);
 
     CInfoRequestor& m_Requestor;
     CRef<CInfo_Base> m_Info;
@@ -242,7 +248,7 @@ public:
 
     typedef CInfo_Base::TExpirationTime TExpirationTime;
     virtual TExpirationTime GetRequestTime(void) const = 0;
-    virtual TExpirationTime GetNewExpirationTime(void) const = 0;
+    virtual TExpirationTime GetNewExpirationTime(EExpirationType type) const = 0;
     
 protected:
     friend class CInfoManager;
@@ -304,23 +310,24 @@ bool CInfoRequestorLock::IsLoaded(void) const
 
 inline
 CInfoRequestorLock::TExpirationTime
-CInfoRequestorLock::GetNewExpirationTime(void) const
+CInfoRequestorLock::GetNewExpirationTime(EExpirationType type) const
 {
-    return GetRequestor().GetNewExpirationTime();
+    return GetRequestor().GetNewExpirationTime(type);
 }
 
 
 inline
-bool CInfoRequestorLock::SetLoaded(void)
+bool CInfoRequestorLock::SetLoaded(EExpirationType type)
 {
-    return SetLoaded(GetNewExpirationTime());
+    return SetLoadedFor(GetNewExpirationTime(type));
 }
 
 
 inline
-bool CInfoRequestorLock::x_SetLoaded(TMainMutex::TWriteLockGuard& guard)
+bool CInfoRequestorLock::x_SetLoaded(TMainMutex::TWriteLockGuard& guard,
+                                     EExpirationType type)
 {
-    return x_SetLoaded(guard, GetNewExpirationTime());
+    return x_SetLoadedFor(guard, GetNewExpirationTime(type));
 }
 
 
@@ -345,21 +352,21 @@ public:
         {
             return m_Lock->IsLoaded();
         }
-    bool SetLoaded(TExpirationTime expiration_time)
+    bool SetLoadedFor(TExpirationTime expiration_time)
         {
-            return m_Lock->SetLoaded(expiration_time);
+            return m_Lock->SetLoadedFor(expiration_time);
         }
-    bool SetLoaded(void)
+    bool SetLoaded(EExpirationType type)
         {
-            return m_Lock->SetLoaded();
+            return m_Lock->SetLoaded(type);
         }
     TExpirationTime GetExpirationTime(void) const
         {
             return m_Lock->GetExpirationTime();
         }
-    TExpirationTime GetNewExpirationTime(void) const
+    TExpirationTime GetNewExpirationTime(EExpirationType type) const
         {
-            return m_Lock->GetNewExpirationTime();
+            return m_Lock->GetNewExpirationTime(type);
         }
 
     CInfoRequestor& GetRequestor(void) const
@@ -379,14 +386,15 @@ protected:
         {
             return m_Lock->GetManager().GetMainMutex();
         }
-    bool x_SetLoaded(TDataMutex::TWriteLockGuard& guard,
-                     TExpirationTime expiration_time)
+    bool x_SetLoadedFor(TDataMutex::TWriteLockGuard& guard,
+                        TExpirationTime expiration_time)
         {
-            return m_Lock->x_SetLoaded(guard, expiration_time);
+            return m_Lock->x_SetLoadedFor(guard, expiration_time);
         }
-    bool x_SetLoaded(TDataMutex::TWriteLockGuard& guard)
+    bool x_SetLoaded(TDataMutex::TWriteLockGuard& guard,
+                     EExpirationType type)
         {
-            return m_Lock->x_SetLoaded(guard);
+            return m_Lock->x_SetLoaded(guard, type);
         }
 #else
     typedef CMutex TDataMutex; // CFastMutex
@@ -395,14 +403,15 @@ protected:
         {
             return sm_DataMutex;
         }
-    bool x_SetLoaded(TDataMutex::TWriteLockGuard& /*guard*/,
+    bool x_SetLoadedFor(TDataMutex::TWriteLockGuard& /*guard*/,
                      TExpirationTime expiration_time)
         {
-            return m_Lock->SetLoaded(expiration_time);
+            return m_Lock->SetLoadedFor(expiration_time);
         }
-    bool x_SetLoaded(TDataMutex::TWriteLockGuard& /*guard*/)
+    bool x_SetLoaded(TDataMutex::TWriteLockGuard& /*guard*/,
+                     EExpirationType type)
         {
-            return m_Lock->SetLoaded();
+            return m_Lock->SetLoaded(type);
         }
 #endif
 
@@ -528,19 +537,19 @@ public:
             TDataMutex::TReadLockGuard guard(GetDataLock());
             return GetInfo().m_Data;
         }
-    bool SetLoaded(const TData& data)
+    bool SetLoaded(const TData& data, EExpirationType type)
         {
             TDataMutex::TWriteLockGuard guard(GetDataLock());
-            bool changed = x_SetLoaded(guard);
+            bool changed = x_SetLoaded(guard, type);
             if ( changed ) {
                 GetInfo().m_Data = data;
             }
             return changed;
         }
-    bool SetLoaded(const TData& data, TExpirationTime expiration_time)
+    bool SetLoadedFor(const TData& data, TExpirationTime expiration_time)
         {
             TDataMutex::TWriteLockGuard guard(GetDataLock());
-            bool changed = x_SetLoaded(guard, expiration_time);
+            bool changed = x_SetLoadedFor(guard, expiration_time);
             if ( changed ) {
                 GetInfo().m_Data = data;
             }
@@ -633,24 +642,8 @@ public:
         }
     bool SetLoaded(CInfoRequestor& requestor,
                    const key_type& key,
-                   const data_type& value)
-        {
-            TCacheMutex::TWriteLockGuard guard(m_CacheMutex);
-            _ASSERT(x_Check());
-            CRef<CInfo>& slot = m_Index[key];
-            if ( !slot ) {
-                // new slot
-                slot = new CInfo(m_GCQueue, key);
-            }
-            TInfoLock lock;
-            x_SetInfo(lock, requestor, *slot);
-            _ASSERT(x_Check());
-            return lock.SetLoaded(value);
-        }
-    bool SetLoaded(CInfoRequestor& requestor,
-                   const key_type& key,
                    const data_type& value,
-                   TExpirationTime expiration_time)
+                   EExpirationType type)
         {
             TCacheMutex::TWriteLockGuard guard(m_CacheMutex);
             _ASSERT(x_Check());
@@ -662,7 +655,24 @@ public:
             TInfoLock lock;
             x_SetInfo(lock, requestor, *slot);
             _ASSERT(x_Check());
-            return lock.SetLoaded(value, expiration_time);
+            return lock.SetLoaded(value, type);
+        }
+    bool SetLoadedFor(CInfoRequestor& requestor,
+                      const key_type& key,
+                      const data_type& value,
+                      TExpirationTime expiration_time)
+        {
+            TCacheMutex::TWriteLockGuard guard(m_CacheMutex);
+            _ASSERT(x_Check());
+            CRef<CInfo>& slot = m_Index[key];
+            if ( !slot ) {
+                // new slot
+                slot = new CInfo(m_GCQueue, key);
+            }
+            TInfoLock lock;
+            x_SetInfo(lock, requestor, *slot);
+            _ASSERT(x_Check());
+            return lock.SetLoadedFor(value, expiration_time);
         }
     TInfoLock GetLoaded(CInfoRequestor& requestor,
                         const key_type& key)

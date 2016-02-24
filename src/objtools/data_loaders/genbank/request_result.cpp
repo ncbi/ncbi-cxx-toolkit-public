@@ -70,10 +70,18 @@ int s_GetLoadTraceLevel(void)
 // CFixedSeq_ids
 /////////////////////////////////////////////////////////////////////////////
 
-CFixedSeq_ids::CFixedSeq_ids(TState state)
-    : m_State(state | CBioseq_Handle::fState_no_data),
+CFixedSeq_ids::CFixedSeq_ids(void)
+    : m_State(kUnknownState),
       m_Ref(new TObject)
 {
+}
+
+
+CFixedSeq_ids::CFixedSeq_ids(TState state)
+    : m_State(state),
+      m_Ref(new TObject)
+{
+    SetNotFound();
 }
 
 
@@ -81,8 +89,8 @@ CFixedSeq_ids::CFixedSeq_ids(const TList& list, TState state)
     : m_State(state),
       m_Ref(new TObject(list))
 {
-    if ( list.empty() ) {
-        m_State |= CBioseq_Handle::fState_no_data;
+    if ( empty() ) {
+        SetNotFound();
     }
 }
 
@@ -99,38 +107,64 @@ CFixedSeq_ids::CFixedSeq_ids(ENcbiOwnership ownership, TList& list,
         ref->GetData() = list;
     }
     m_Ref = ref;
+    if ( empty() ) {
+        SetNotFound();
+    }
 }
 
 
-TGi CFixedSeq_ids::FindGi(void) const
+void CFixedSeq_ids::SetState(TState state)
 {
-    TGi gi = ZERO_GI;
-    ITERATE ( CFixedSeq_ids, it, *this ) {
-        if ( it->Which() == CSeq_id::e_Gi ) {
-            gi = it->GetGi();
-            break;
-        }
-    }
-    return gi;
+    m_State = state;
 }
 
 
-CSeq_id_Handle CFixedSeq_ids::FindAccVer(void) const
+void CFixedSeq_ids::SetNotFound(void)
 {
-    CSeq_id_Handle acc;
-    ITERATE ( CFixedSeq_ids, it, *this ) {
-        if ( !it->IsGi() && it->GetSeqId()->GetTextseq_Id() ) {
-            acc = *it;
-            break;
+    if ( m_State == kUnknownState ) {
+        m_State = 0;
+    }
+    m_State |=
+        CBioseq_Handle::fState_not_found |
+        CBioseq_Handle::fState_no_data;
+}
+
+
+CDataLoader::SGiFound CFixedSeq_ids::FindGi(void) const
+{
+    CDataLoader::SGiFound ret;
+    if ( IsFound() ) {
+        ret.sequence_found = true;
+        ITERATE ( CFixedSeq_ids, it, *this ) {
+            if ( it->Which() == CSeq_id::e_Gi ) {
+                ret.gi = it->GetGi();
+                break;
+            }
         }
     }
-    return acc;
+    return ret;
+}
+
+
+CDataLoader::SAccVerFound CFixedSeq_ids::FindAccVer(void) const
+{
+    CDataLoader::SAccVerFound ret;
+    if ( IsFound() ) {
+        ret.sequence_found = true;
+        ITERATE ( CFixedSeq_ids, it, *this ) {
+            if ( !it->IsGi() && it->GetSeqId()->GetTextseq_Id() ) {
+                ret.acc_ver = *it;
+                break;
+            }
+        }
+    }
+    return ret;
 }
 
 
 string CFixedSeq_ids::FindLabel(void) const
 {
-    return objects::GetLabel(*this);
+    return IsFound()? objects::GetLabel(*this): string();
 }
 
 
@@ -152,10 +186,18 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CFixedSeq_ids& ids)
 // CFixedBlob_ids
 /////////////////////////////////////////////////////////////////////////////
 
-CFixedBlob_ids::CFixedBlob_ids(TState state)
-    : m_State(state | CBioseq_Handle::fState_no_data),
+CFixedBlob_ids::CFixedBlob_ids(void)
+    : m_State(kUnknownState),
       m_Ref(new TObject)
 {
+}
+
+
+CFixedBlob_ids::CFixedBlob_ids(TState state)
+    : m_State(state),
+      m_Ref(new TObject)
+{
+    SetNotFound();
 }
 
 
@@ -165,7 +207,7 @@ CFixedBlob_ids::CFixedBlob_ids(const TList& list,
       m_Ref(new TObject(list))
 {
     if ( empty() ) {
-        m_State |= CBioseq_Handle::fState_no_data;
+        SetNotFound();
     }
 }
 
@@ -183,8 +225,25 @@ CFixedBlob_ids::CFixedBlob_ids(ENcbiOwnership ownership, TList& list,
     }
     m_Ref = ref;
     if ( empty() ) {
-        m_State |= CBioseq_Handle::fState_no_data;
+        SetNotFound();
     }
+}
+
+
+void CFixedBlob_ids::SetState(TState state)
+{
+    m_State = state;
+}
+
+
+void CFixedBlob_ids::SetNotFound(void)
+{
+    if ( m_State == kUnknownState ) {
+        m_State = 0;
+    }
+    m_State |=
+        CBioseq_Handle::fState_not_found |
+        CBioseq_Handle::fState_no_data;
 }
 
 
@@ -429,7 +488,7 @@ void CLoadLockBlob::x_ObtainTSE_LoadLock(CReaderRequestResult& result)
     m_TSE_LoadLock = result.GetTSE_LoadLockIfLoaded(m_Blob_id);
     if ( m_TSE_LoadLock ) {
         _ASSERT(m_TSE_LoadLock.IsLoaded());
-        TParent::SetLoaded(m_TSE_LoadLock);
+        TParent::SetLoaded(m_TSE_LoadLock, GBL::eExpire_normal);
         result.x_AddTSE_LoadLock(m_TSE_LoadLock);
         return;
     }
@@ -581,7 +640,7 @@ void CLoadLockSetter::SetLoaded(void)
             LOG_POST(Info<<"GBLoader:"<<SBlobId(*m_TSE_LoadLock)<<" loaded");
         }
         m_TSE_LoadLock.SetLoaded();
-        TParent::SetLoaded(m_TSE_LoadLock);
+        TParent::SetLoaded(m_TSE_LoadLock, GBL::eExpire_normal);
         CReaderRequestResult& result =
             dynamic_cast<CReaderRequestResult&>(GetRequestor());
         result.x_AddTSE_LoadLock(m_TSE_LoadLock);
@@ -623,7 +682,7 @@ void CLoadLockSetter::x_ObtainTSE_LoadLock(CReaderRequestResult& result,
     m_TSE_LoadLock = result.GetTSE_LoadLock(blob_id);
     _ASSERT(m_TSE_LoadLock);
     if ( m_TSE_LoadLock.IsLoaded() ) {
-        TParent::SetLoaded(m_TSE_LoadLock);
+        TParent::SetLoaded(m_TSE_LoadLock, GBL::eExpire_normal);
         result.x_AddTSE_LoadLock(m_TSE_LoadLock);
         return;
     }
@@ -714,16 +773,16 @@ CWriter* CReaderRequestResult::GetBlobWriter(void) const
 
 
 CReaderRequestResult::TExpirationTime
-CReaderRequestResult::GetNewIdExpirationTime(void) const
+CReaderRequestResult::GetNewIdExpirationTime(GBL::EExpirationType type) const
 {
-    return GetStartTime()+GetIdExpirationTimeout();
+    return GetStartTime()+GetIdExpirationTimeout(type);
 }
 
 
 CReaderRequestResult::TExpirationTime
-CReaderRequestResult::GetIdExpirationTimeout(void) const
+CReaderRequestResult::GetIdExpirationTimeout(GBL::EExpirationType type) const
 {
-    return 2*3600;
+    return type == GBL::eExpire_normal? 2*3600: 5;
 }
 
 
@@ -814,9 +873,9 @@ CReaderRequestResult::GetRequestTime(void) const
 
 
 CReaderRequestResult::TExpirationTime
-CReaderRequestResult::GetNewExpirationTime(void) const
+CReaderRequestResult::GetNewExpirationTime(GBL::EExpirationType type) const
 {
-    return GetNewIdExpirationTime();
+    return GetNewIdExpirationTime(type);
 }
 
 
@@ -875,8 +934,6 @@ CGBInfoManager::CGBInfoManager(size_t gc_size)
     : m_CacheAcc(GetMainMutex(), gc_size),
       m_CacheSeqIds(GetMainMutex(), gc_size),
       m_CacheGi(GetMainMutex(), gc_size),
-      m_CacheStrSeqIds(GetMainMutex(), gc_size),
-      m_CacheStrGi(GetMainMutex(), gc_size),
       m_CacheLabel(GetMainMutex(), gc_size),
       m_CacheTaxId(GetMainMutex(), gc_size),
       m_CacheHash(GetMainMutex(), gc_size),
@@ -903,21 +960,7 @@ CLoadLockSeqIds::CLoadLockSeqIds(CReaderRequestResult& result,
 
 
 CLoadLockSeqIds::CLoadLockSeqIds(CReaderRequestResult& result,
-                                 const string& id)
-    : TParent(result.GetLoadLockSeqIds(id))
-{
-}
-
-CLoadLockSeqIds::CLoadLockSeqIds(CReaderRequestResult& result,
                                  const CSeq_id_Handle& id,
-                                 EAlreadyLoaded)
-    : TParent(result.GetLoadedSeqIds(id))
-{
-}
-
-
-CLoadLockSeqIds::CLoadLockSeqIds(CReaderRequestResult& result,
-                                 const string& id,
                                  EAlreadyLoaded)
     : TParent(result.GetLoadedSeqIds(id))
 {
@@ -933,13 +976,6 @@ CLoadLockAcc::CLoadLockAcc(CReaderRequestResult& result,
 
 CLoadLockGi::CLoadLockGi(CReaderRequestResult& result,
                          const CSeq_id_Handle& id)
-    : TParent(result.GetLoadLockGi(id))
-{
-}
-
-
-CLoadLockGi::CLoadLockGi(CReaderRequestResult& result,
-                         const string& id)
     : TParent(result.GetLoadLockGi(id))
 {
 }
@@ -1068,52 +1104,10 @@ CReaderRequestResult::SetLoadedSeqIds(const CSeq_id_Handle& id,
     if ( s_GetLoadTraceLevel() > 0 ) {
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") seq_ids = "<<value);
     }
-    return GetGBInfoManager().m_CacheSeqIds.SetLoaded(*this, id, value);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// string -> Seq-ids
-
-bool
-CReaderRequestResult::IsLoadedSeqIds(const string& id)
-{
-    return GetGBInfoManager().m_CacheStrSeqIds.IsLoaded(*this, id);
-}
-
-
-bool
-CReaderRequestResult::MarkLoadingSeqIds(const string& id)
-{
-    return GetGBInfoManager().m_CacheStrSeqIds.MarkLoading(*this, id);
-}
-
-
-CReaderRequestResult::TInfoLockIds
-CReaderRequestResult::GetLoadLockSeqIds(const string& id)
-{
-    // if connection is allocated we cannot wait for another lock because
-    // of possible deadlock.
-    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
-    return GetGBInfoManager().m_CacheStrSeqIds.GetLoadLock(*this, id, do_not_wait);
-}
-
-
-CReaderRequestResult::TInfoLockIds
-CReaderRequestResult::GetLoadedSeqIds(const string& id)
-{
-    return GetGBInfoManager().m_CacheStrSeqIds.GetLoaded(*this, id);
-}
-
-
-bool
-CReaderRequestResult::SetLoadedSeqIds(const string& id,
-                                      const CFixedSeq_ids& value)
-{
-    if ( s_GetLoadTraceLevel() > 0 ) {
-        LOG_POST(Info<<"GBLoader:StrId("<<id<<") seq_ids = "<<value);
-    }
-    return GetGBInfoManager().m_CacheStrSeqIds.SetLoaded(*this, id, value);
+    GBL::EExpirationType exp_type = CLoadLockSeqIds::GetExpType(value);
+    bool changed = GetGBInfoManager().m_CacheSeqIds.
+        SetLoaded(*this, id, value, exp_type);
+    return changed && exp_type == GBL::eExpire_normal;
 }
 
 
@@ -1192,12 +1186,15 @@ CReaderRequestResult::GetLoadedAcc(const CSeq_id_Handle& id)
 
 bool
 CReaderRequestResult::SetLoadedAcc(const CSeq_id_Handle& id,
-                                   const CSeq_id_Handle& value)
+                                   const TSequenceAcc& value)
 {
     if ( s_GetLoadTraceLevel() > 0 ) {
-        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") acc = "<<value);
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") acc = "<<value.acc_ver);
     }
-    return GetGBInfoManager().m_CacheAcc.SetLoaded(*this, id, value);
+    GBL::EExpirationType exp_type = CLoadLockAcc::GetExpType(value);
+    bool changed = GetGBInfoManager().m_CacheAcc.
+        SetLoaded(*this, id, value, exp_type);
+    return changed && exp_type == GBL::eExpire_normal;
 }
 
 
@@ -1210,20 +1207,20 @@ bool CReaderRequestResult::UpdateAccFromSeqIds(TInfoLockAcc& acc_lock,
     if ( acc_lock.IsLoaded() ) {
         return false;
     }
-    return acc_lock.SetLoaded(ids_lock.GetData().FindAccVer(),
-                              ids_lock.GetExpirationTime());
+    return acc_lock.SetLoadedFor(ids_lock.GetData().FindAccVer(),
+                                 ids_lock.GetExpirationTime());
 }
 
 
 bool CReaderRequestResult::SetLoadedAccFromSeqIds(const CSeq_id_Handle& id,
                                                   const CLoadLockSeqIds& ids)
 {
-    CSeq_id_Handle acc = ids.GetSeq_ids().FindAccVer();
+    TSequenceAcc data = ids.GetSeq_ids().FindAccVer();
     if ( s_GetLoadTraceLevel() > 0 ) {
-        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") acc = "<<acc);
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") acc = "<<data.acc_ver);
     }
-    TExpirationTime exp_time = ids.GetExpirationTime();
-    return GetGBInfoManager().m_CacheAcc.SetLoaded(*this, id, acc, exp_time);
+    return GetGBInfoManager().m_CacheAcc.
+        SetLoadedFor(*this, id, data, ids.GetExpirationTime());
 }
 
 
@@ -1234,13 +1231,12 @@ bool
 CReaderRequestResult::SetLoadedSeqIdsFromZeroGi(const CSeq_id_Handle& id,
                                                 const CLoadLockGi& gi_lock)
 {
-    _ASSERT(gi_lock.IsLoadedGi() && gi_lock.GetGi() == ZERO_GI);
+    _ASSERT(gi_lock.IsLoadedGi() && !gi_lock.GetGi(gi_lock.GetGi()));
     if ( s_GetLoadTraceLevel() > 0 ) {
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") seq_ids = null");
     }
     CLoadLockSeqIds lock(*this, id);
-    TBlobState state = CBioseq_Handle::fState_no_data;
-    return lock.SetLoadedSeq_ids(CFixedSeq_ids(state),
+    return lock.SetLoadedSeq_ids(CFixedSeq_ids(0),
                                  gi_lock.GetExpirationTimeGi());
 }
 
@@ -1250,14 +1246,13 @@ CReaderRequestResult::SetLoadedBlobIdsFromZeroGi(const CSeq_id_Handle& id,
                                                  const SAnnotSelector* sel,
                                                  const CLoadLockGi& gi_lock)
 {
-    _ASSERT(gi_lock.IsLoadedGi() && gi_lock.GetGi() == ZERO_GI);
+    _ASSERT(gi_lock.IsLoadedGi() && !gi_lock.GetGi(gi_lock.GetGi()));
     if ( s_GetLoadTraceLevel() > 0 ) {
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") blob_ids = null");
     }
     CLoadLockBlobIds lock(*this, id, sel);
-    TBlobState state = CBioseq_Handle::fState_no_data;
-    return lock.SetNoBlob_ids(state,
-                              gi_lock.GetExpirationTimeGi());
+    return lock.SetLoadedBlob_ids(CFixedBlob_ids(0),
+                                  gi_lock.GetExpirationTimeGi());
 }
 
 
@@ -1267,20 +1262,20 @@ bool CReaderRequestResult::UpdateGiFromSeqIds(TInfoLockGi& gi_lock,
     if ( gi_lock.IsLoaded() ) {
         return false;
     }
-    return gi_lock.SetLoaded(ids_lock.GetData().FindGi(),
-                             ids_lock.GetExpirationTime());
+    return gi_lock.SetLoadedFor(ids_lock.GetData().FindGi(),
+                                ids_lock.GetExpirationTime());
 }
 
 
 bool CReaderRequestResult::SetLoadedGiFromSeqIds(const CSeq_id_Handle& id,
                                                  const CLoadLockSeqIds& ids)
 {
-    TGi gi = ids.GetSeq_ids().FindGi();
+    TSequenceGi data = ids.GetSeq_ids().FindGi();
     if ( s_GetLoadTraceLevel() > 0 ) {
-        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") gi = "<<gi);
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") gi = "<<data.gi);
     }
-    TExpirationTime exp_time = ids.GetExpirationTime();
-    return GetGBInfoManager().m_CacheGi.SetLoaded(*this, id, gi, exp_time);
+    return GetGBInfoManager().m_CacheGi.
+        SetLoadedFor(*this, id, data, ids.GetExpirationTime());
 }
 
 
@@ -1329,66 +1324,15 @@ CReaderRequestResult::GetLoadedGi(const CSeq_id_Handle& id)
 
 bool
 CReaderRequestResult::SetLoadedGi(const CSeq_id_Handle& id,
-                                  const TGi& value)
+                                  const TSequenceGi& value)
 {
     if ( s_GetLoadTraceLevel() > 0 ) {
-        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") gi = "<<value);
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") gi = "<<value.gi);
     }
-    return GetGBInfoManager().m_CacheGi.SetLoaded(*this, id, value);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// string -> GI
-
-bool
-CReaderRequestResult::IsLoadedGi(const string& id)
-{
-    return GetGBInfoManager().m_CacheStrGi.IsLoaded(*this, id) ||
-        IsLoadedSeqIds(id);
-}
-
-
-bool
-CReaderRequestResult::MarkLoadingGi(const string& id)
-{
-    return GetGBInfoManager().m_CacheStrGi.MarkLoading(*this, id);
-}
-
-
-CReaderRequestResult::TInfoLockGi
-CReaderRequestResult::GetLoadLockGi(const string& id)
-{
-    // if connection is allocated we cannot wait for another lock because
-    // of possible deadlock.
-    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
-    TInfoLockGi lock =
-        GetGBInfoManager().m_CacheStrGi.GetLoadLock(*this, id, do_not_wait);
-    if ( !lock.IsLoaded() ) {
-        TInfoLockIds ids_lock = GetLoadedSeqIds(id);
-        if ( ids_lock ) {
-            UpdateGiFromSeqIds(lock, ids_lock);
-        }
-    }
-    return lock;
-}
-
-
-CReaderRequestResult::TInfoLockGi
-CReaderRequestResult::GetLoadedGi(const string& id)
-{
-    return GetGBInfoManager().m_CacheStrGi.GetLoaded(*this, id);
-}
-
-
-bool
-CReaderRequestResult::SetLoadedGi(const string& id,
-                                  const TGi& value)
-{
-    if ( s_GetLoadTraceLevel() > 0 ) {
-        LOG_POST(Info<<"GBLoader:StrId("<<id<<") gi = "<<value);
-    }
-    return GetGBInfoManager().m_CacheStrGi.SetLoaded(*this, id, value);
+    GBL::EExpirationType exp_type = CLoadLockGi::GetExpType(value);
+    bool changed = GetGBInfoManager().m_CacheGi.
+        SetLoaded(*this, id, value, exp_type);
+    return changed && exp_type == GBL::eExpire_normal;
 }
 
 
@@ -1401,8 +1345,8 @@ bool CReaderRequestResult::UpdateLabelFromSeqIds(TInfoLockLabel& label_lock,
     if ( label_lock.IsLoaded() ) {
         return false;
     }
-    return label_lock.SetLoaded(ids_lock.GetData().FindLabel(),
-                                ids_lock.GetExpirationTime());
+    return label_lock.SetLoadedFor(ids_lock.GetData().FindLabel(),
+                                   ids_lock.GetExpirationTime());
 }
 
 
@@ -1413,8 +1357,8 @@ bool CReaderRequestResult::SetLoadedLabelFromSeqIds(const CSeq_id_Handle& id,
     if ( s_GetLoadTraceLevel() > 0 ) {
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") label = "<<label);
     }
-    TExpirationTime exp_time = ids.GetExpirationTime();
-    return GetGBInfoManager().m_CacheLabel.SetLoaded(*this, id, label, exp_time);
+    return GetGBInfoManager().m_CacheLabel.
+        SetLoadedFor(*this, id, label, ids.GetExpirationTime());
 }
 
 
@@ -1459,7 +1403,10 @@ CReaderRequestResult::SetLoadedLabel(const CSeq_id_Handle& id,
     if ( s_GetLoadTraceLevel() > 0 ) {
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") label = "<<value);
     }
-    return GetGBInfoManager().m_CacheLabel.SetLoaded(*this, id, value);
+    GBL::EExpirationType exp_type = CLoadLockLabel::GetExpType(value);
+    bool changed = GetGBInfoManager().m_CacheLabel.
+        SetLoaded(*this, id, value, exp_type);
+    return changed && exp_type == GBL::eExpire_normal;
 }
 
 
@@ -1504,7 +1451,10 @@ CReaderRequestResult::SetLoadedTaxId(const CSeq_id_Handle& id,
     if ( s_GetLoadTraceLevel() > 0 ) {
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") tax_id = "<<value);
     }
-    return GetGBInfoManager().m_CacheTaxId.SetLoaded(*this, id, value);
+    GBL::EExpirationType exp_type = CLoadLockTaxId::GetExpType(value);
+    bool changed = GetGBInfoManager().m_CacheTaxId.
+        SetLoaded(*this, id, value, exp_type);
+    return changed && exp_type == GBL::eExpire_normal;
 }
 
 
@@ -1547,9 +1497,12 @@ CReaderRequestResult::SetLoadedHash(const CSeq_id_Handle& id,
                                     const TSequenceHash& value)
 {
     if ( s_GetLoadTraceLevel() > 0 ) {
-        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") hash = "<<value);
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") hash = "<<value.hash);
     }
-    return GetGBInfoManager().m_CacheHash.SetLoaded(*this, id, value);
+    GBL::EExpirationType exp_type = CLoadLockHash::GetExpType(value);
+    bool changed = GetGBInfoManager().m_CacheHash.
+        SetLoaded(*this, id, value, exp_type);
+    return changed && exp_type == GBL::eExpire_normal;
 }
 
 
@@ -1594,7 +1547,10 @@ CReaderRequestResult::SetLoadedLength(const CSeq_id_Handle& id,
     if ( s_GetLoadTraceLevel() > 0 ) {
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") hash = "<<value);
     }
-    return GetGBInfoManager().m_CacheLength.SetLoaded(*this, id, value);
+    GBL::EExpirationType exp_type = CLoadLockLength::GetExpType(value);
+    bool changed = GetGBInfoManager().m_CacheLength.
+        SetLoaded(*this, id, value, exp_type);
+    return changed && exp_type == GBL::eExpire_normal;
 }
 
 
@@ -1637,9 +1593,12 @@ CReaderRequestResult::SetLoadedType(const CSeq_id_Handle& id,
                                     const TSequenceType& value)
 {
     if ( s_GetLoadTraceLevel() > 0 ) {
-        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") hash = "<<value);
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") type = "<<value.type);
     }
-    return GetGBInfoManager().m_CacheType.SetLoaded(*this, id, value);
+    GBL::EExpirationType exp_type = CLoadLockType::GetExpType(value);
+    bool changed = GetGBInfoManager().m_CacheType.
+        SetLoaded(*this, id, value, exp_type);
+    return changed && exp_type == GBL::eExpire_normal;
 }
 
 
@@ -1694,7 +1653,10 @@ CReaderRequestResult::SetLoadedBlobIds(const CSeq_id_Handle& id,
     if ( s_GetLoadTraceLevel() > 0 ) {
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") blob_ids("<<key.second<<") = "<<value);
     }
-    return GetGBInfoManager().m_CacheBlobIds.SetLoaded(*this, key, value);
+    GBL::EExpirationType exp_type = CLoadLockBlobIds::GetExpType(value);
+    bool changed = GetGBInfoManager().m_CacheBlobIds.
+        SetLoaded(*this, key, value, exp_type);
+    return changed && exp_type == GBL::eExpire_normal;
 }
 
 
@@ -1721,9 +1683,9 @@ CReaderRequestResult::s_KeyBlobIds(const CSeq_id_Handle& seq_id,
 bool CReaderRequestResult::SetLoadedBlobState(const CBlob_id& blob_id,
                                               TBlobState state)
 {
-    bool changed = GetGBInfoManager().m_CacheBlobState.SetLoaded(*this,
-                                                                 blob_id,
-                                                                 state);
+    GBL::EExpirationType exp_type = CLoadLockBlobState::GetExpType(state);
+    bool changed = GetGBInfoManager().m_CacheBlobState.
+        SetLoaded(*this, blob_id, state, exp_type);
     if ( changed ) {
         if ( s_GetLoadTraceLevel() > 0 ) {
             LOG_POST(Info<<"GBLoader:"<<blob_id<<" state = "<<state);
@@ -1734,7 +1696,7 @@ bool CReaderRequestResult::SetLoadedBlobState(const CBlob_id& blob_id,
             blob.GetTSE_LoadLock()->SetBlobState(state);
         }
     }
-    return changed;
+    return changed && exp_type == eExpire_normal;
 }
 
 
@@ -1779,9 +1741,9 @@ void CReaderRequestResult::SetAndSaveBlobState(const TKeyBlob& blob_id,
 bool CReaderRequestResult::SetLoadedBlobVersion(const CBlob_id& blob_id,
                                                 TBlobVersion version)
 {
-    bool changed = GetGBInfoManager().m_CacheBlobVersion.SetLoaded(*this,
-                                                                   blob_id,
-                                                                   version);
+    GBL::EExpirationType exp_type = CLoadLockBlobVersion::GetExpType(version);
+    bool changed = GetGBInfoManager().m_CacheBlobVersion.
+        SetLoaded(*this, blob_id, version, exp_type);
     if ( changed ) {
         if ( s_GetLoadTraceLevel() > 0 ) {
             LOG_POST(Info<<"GBLoader:"<<blob_id<<" version = "<<version);
@@ -1796,7 +1758,7 @@ bool CReaderRequestResult::SetLoadedBlobVersion(const CBlob_id& blob_id,
             _ASSERT(blob.GetKnownBlobVersion() == version);
         }
     }
-    return changed;
+    return changed && exp_type == GBL::eExpire_normal;
 }
 
 

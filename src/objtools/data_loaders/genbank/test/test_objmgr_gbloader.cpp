@@ -75,11 +75,50 @@ public:
         {
         }
 
+    virtual void Init(void);
+    virtual bool TestApp_Init(const CArgs& args);
+    virtual bool TestApp_Args(CArgDescriptions& args);
     virtual int Run( void);
 
     bool m_Verbose;
 };
 
+
+
+bool CTestApplication::TestApp_Args(CArgDescriptions& args)
+{
+    args.AddOptionalKey("other_loaders", "OtherLoaders",
+                        "Extra data loaders as plugins (comma separated)",
+                        CArgDescriptions::eString);
+
+    args.SetUsageContext(GetArguments().GetProgramBasename(),
+                         "test_objmgr_gbloader", false);
+    return true;
+}
+
+
+bool CTestApplication::TestApp_Init(const CArgs& /*args*/)
+{
+    return true;
+}
+
+
+void CTestApplication::Init(void)
+{
+    //CONNECT_Init(&GetConfig());
+    //CORE_SetLOCK(MT_LOCK_cxx2c());
+    //CORE_SetLOG(LOG_cxx2c());
+    SetDiagPostLevel(eDiag_Info);
+
+    // Prepare command line descriptions
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    // Let test application add its own arguments
+    TestApp_Args(*arg_desc);
+    SetupArgDescriptions(arg_desc.release());
+
+    if ( !TestApp_Init(GetArgs()) )
+        THROW1_TRACE(runtime_error, "Cannot init test application");
+}
 
 
 int CTestApplication::Run()

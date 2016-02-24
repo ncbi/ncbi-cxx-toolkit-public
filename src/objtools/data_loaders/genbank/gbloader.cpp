@@ -818,31 +818,42 @@ void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-CSeq_id_Handle CGBDataLoader::GetAccVer(const CSeq_id_Handle& idh)
+CDataLoader::SAccVerFound
+CGBDataLoader::GetAccVerFound(const CSeq_id_Handle& idh)
 {
+    SAccVerFound ret;
     if ( CReadDispatcher::CannotProcess(idh) ) {
-        return null;
+        // no such sequence
+        return ret;
     }
     CGBReaderRequestResult result(this, idh);
     CLoadLockAcc lock(result, idh);
     if ( !lock.IsLoadedAccVer() ) {
         m_Dispatcher->LoadSeq_idAccVer(result, idh);
     }
-    return lock.GetAccVer();
+    if ( lock.IsLoadedAccVer() ) {
+        ret = lock.GetAccVer();
+    }
+    return ret;
 }
 
 
-TGi CGBDataLoader::GetGi(const CSeq_id_Handle& idh)
+CDataLoader::SGiFound
+CGBDataLoader::GetGiFound(const CSeq_id_Handle& idh)
 {
+    SGiFound ret;
     if ( CReadDispatcher::CannotProcess(idh) ) {
-        return ZERO_GI;
+        return ret;
     }
     CGBReaderRequestResult result(this, idh);
     CLoadLockGi lock(result, idh);
     if ( !lock.IsLoadedGi() ) {
         m_Dispatcher->LoadSeq_idGi(result, idh);
     }
-    return lock.GetGi();
+    if ( lock.IsLoadedGi() ) {
+        ret = lock.GetGi();
+    }
+    return ret;
 }
 
 
@@ -886,23 +897,11 @@ int CGBDataLoader::GetSequenceState(const CSeq_id_Handle& sih)
     if ( CReadDispatcher::CannotProcess(sih) ) {
         return kNotFound;
     }
-    CGBReaderRequestResult result(this, sih);
-    CLoadLockBlobIds blobs(result, sih, 0);
-    m_Dispatcher->LoadSeq_idBlob_ids(result, sih, 0);
-    if ( blobs.GetState() & CBioseq_Handle::fState_no_data ) {
-        return blobs.GetState();
-    }
-
-    CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
-    ITERATE ( CFixedBlob_ids, it, blob_ids ) {
-        if ( it->Matches(fBlobHasCore, 0) ) {
-            CFixedBlob_ids::TState state = blob_ids.GetState();
-            if ( state != CFixedBlob_ids::kUnknownState ) {
-                return blob_ids.GetState();
-            }
-        }
-    }
-    return kNotFound;
+    TIds ids(1, sih);
+    TLoaded loaded(1);
+    TSequenceStates states(1);
+    GetSequenceStates(ids, loaded, states);
+    return loaded[0]? states[0]: kNotFound;
 }
 
 
@@ -1004,17 +1003,22 @@ void CGBDataLoader::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
 }
 
 
-CSeq_inst::EMol CGBDataLoader::GetSequenceType(const CSeq_id_Handle& sih)
+CDataLoader::STypeFound
+CGBDataLoader::GetSequenceTypeFound(const CSeq_id_Handle& sih)
 {
+    STypeFound ret;
     if ( CReadDispatcher::CannotProcess(sih) ) {
-        return CSeq_inst::eMol_not_set;
+        return ret;
     }
     CGBReaderRequestResult result(this, sih);
     CLoadLockType lock(result, sih);
     if ( !lock.IsLoadedType() ) {
         m_Dispatcher->LoadSequenceType(result, sih);
     }
-    return lock.IsLoaded()? lock.GetType(): CSeq_inst::eMol_not_set;
+    if ( lock.IsLoadedType() ) {
+        ret = lock.GetType();
+    }
+    return ret;
 }
 
 
@@ -1076,9 +1080,10 @@ void CGBDataLoader::GetSequenceStates(const TIds& ids, TLoaded& loaded,
 }
 
 
-pair<int, bool> CGBDataLoader::GetSequenceHash2(const CSeq_id_Handle& sih)
+CDataLoader::SHashFound
+CGBDataLoader::GetSequenceHashFound(const CSeq_id_Handle& sih)
 {
-    pair<int, bool> ret;
+    SHashFound ret;
     if ( CReadDispatcher::CannotProcess(sih) ) {
         return ret;
     }
@@ -1087,23 +1092,22 @@ pair<int, bool> CGBDataLoader::GetSequenceHash2(const CSeq_id_Handle& sih)
     if ( !lock.IsLoadedHash() ) {
         m_Dispatcher->LoadSequenceHash(result, sih);
     }
-    if ( lock.IsLoaded() ) {
-        ret.first = lock.GetHash();
-        ret.second = true;
+    if ( lock.IsLoadedHash() ) {
+        ret = lock.GetHash();
     }
     return ret;
 }
 
 
 void CGBDataLoader::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
-                                      TSequenceHashes& ret)
+                                      TSequenceHashes& ret, THashKnown& known)
 {
     for ( size_t i = 0; i < ids.size(); ++i ) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         CGBReaderRequestResult result(this, ids[i]);
-        m_Dispatcher->LoadHashes(result, ids, loaded, ret);
+        m_Dispatcher->LoadHashes(result, ids, loaded, ret, known);
         return;
     }
 }
@@ -1511,6 +1515,9 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
     CGBReaderRequestResult result(this, sih);
     m_Dispatcher->LoadBlobs(result, sih, mask, sel);
     CLoadLockBlobIds blobs(result, sih, sel);
+    if ( !blobs.IsLoaded() ) {
+        return locks;
+    }
     _ASSERT(blobs.IsLoaded());
 
     CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
@@ -1529,7 +1536,9 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
         const CBlob_id& blob_id = *info.GetBlob_id();
         if ( info.Matches(mask, sel) ) {
             CLoadLockBlob blob(result, blob_id);
-            _ASSERT(blob.IsLoadedBlob());
+            if ( !blob.IsLoadedBlob() ) {
+                continue;
+            }
             CTSE_LoadLock& lock = blob.GetTSE_LoadLock();
             _ASSERT(lock);
             if ( lock->GetBlobState() & CBioseq_Handle::fState_no_data ) {

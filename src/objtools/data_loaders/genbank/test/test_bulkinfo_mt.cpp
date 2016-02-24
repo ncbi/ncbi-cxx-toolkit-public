@@ -71,20 +71,24 @@ public:
 
     virtual bool Thread_Run(int idx);
     bool RunPass(void);
+    CRef<CScope> MakeScope(void) const;
 
     typedef vector<CSeq_id_Handle> TIds;
-    bool ProcessBlock(const TIds& ids) const;
+    bool ProcessBlock(const TIds& ids,
+                      const vector<string>& reference) const;
 
     CRandom::TValue m_Seed;
     size_t m_RunCount;
     size_t m_RunSize;
     TIds m_Ids;
+    vector<string> m_Reference;
     IBulkTester::EBulkType m_Type;
     bool m_Verbose;
     bool m_Sort;
     bool m_Single;
     bool m_Verify;
-    CScope::EForceLoad m_ForceLoad;
+    CScope::TGetFlags m_GetFlags;
+    vector<string> other_loaders;
     mutable CAtomicCounter m_ErrorCount;
 };
 
@@ -112,10 +116,21 @@ bool CTestApplication::TestApp_Args(CArgDescriptions& args)
                          "gi", "acc", "label", "taxid", "hash",
                          "length", "type", "state"));
     args.AddFlag("no-force", "Do not force info loading");
+    args.AddFlag("throw-on-missing-seq", "Throw exception for missing sequence");
+    args.AddFlag("throw-on-missing-data", "Throw exception for missing data");
+    args.AddFlag("no-recalc", "Avoid data recalculation");
     args.AddFlag("verbose", "Verbose results");
     args.AddFlag("sort", "Sort requests");
     args.AddFlag("single", "Use single id queries (non-bulk)");
     args.AddFlag("verify", "Run extra test to verify returned values");
+    args.AddOptionalKey
+        ("reference", "Reference",
+         "Load reference results from a file",
+         CArgDescriptions::eInputFile);
+    args.AddOptionalKey
+        ("save_reference", "SaveReference",
+         "Save results into a file",
+         CArgDescriptions::eOutputFile);
     args.AddDefaultKey
         ("count", "Count",
          "Number of iterations to run",
@@ -124,6 +139,9 @@ bool CTestApplication::TestApp_Args(CArgDescriptions& args)
         ("size", "Size",
          "Number of Seq-ids to process in a run",
          CArgDescriptions::eInteger, "200");
+    args.AddOptionalKey("other_loaders", "OtherLoaders",
+                        "Extra data loaders as plugins (comma separated)",
+                        CArgDescriptions::eString);
 
     args.SetUsageContext(GetArguments().GetProgramBasename(),
                          "test_bulkinfo", false);
@@ -225,7 +243,19 @@ bool CTestApplication::TestApp_Init(void)
     else if ( args["type"].AsString() == "state" ) {
         m_Type = IBulkTester::eBulk_state;
     }
-    m_ForceLoad = args["no-force"]? CScope::eNoForceLoad: CScope::eForceLoad;
+    m_GetFlags = 0;
+    if ( !args["no-force"] ) {
+        m_GetFlags |= CScope::fForceLoad;
+    }
+    if ( args["throw-on-missing-seq"] ) {
+        m_GetFlags |= CScope::fThrowOnMissingSequence;
+    }
+    if ( args["throw-on-missing-data"] ) {
+        m_GetFlags |= CScope::fThrowOnMissingData;
+    }
+    if ( args["no-recalc"] ) {
+        m_GetFlags |= CScope::fDoNotRecalculate;
+    }
     m_Verbose = args["verbose"];
     m_Sort = args["sort"];
     m_Single = args["single"];
@@ -233,6 +263,27 @@ bool CTestApplication::TestApp_Init(void)
     m_Seed = 0;
     m_RunCount = args["count"].AsInteger();
     m_RunSize = args["size"].AsInteger();
+    if ( args["reference"] ) {
+        CNcbiIstream& in = args["reference"].AsInputFile();
+        m_Reference.resize(m_Ids.size());
+        NON_CONST_ITERATE ( vector<string>, it, m_Reference ) {
+            getline(in, *it);
+        }
+        if ( !in ) {
+            NcbiCerr << "Failed to read reference data from "
+                     << args["reference"].AsString()
+                     << NcbiEndl;
+            return false;
+        }
+    }
+    if ( args["other_loaders"] ) {
+        list<string> names;
+        NStr::Split(args["other_loaders"].AsString(), ",", names);
+        CRef<CObjectManager> pOm = CObjectManager::GetInstance();
+        ITERATE ( list<string>, i, names ) {
+            other_loaders.push_back(pOm->RegisterDataLoader(0, *i)->GetName());
+        }
+    }
     return true;
 }
 
@@ -250,8 +301,7 @@ bool CTestApplication::TestApp_Exit(void)
 }
 
 
-static
-CRef<CScope> s_MakeScope(void)
+CRef<CScope> CTestApplication::MakeScope(void) const
 {
     CRef<CScope> ret;
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
@@ -263,6 +313,9 @@ CRef<CScope> s_MakeScope(void)
     
     ret = new CScope(*pOm);
     ret->AddDefaults();
+    ITERATE ( vector<string>, it, other_loaders ) {
+        ret->AddDataLoader(*it, 88);
+    }
     return ret;
 }
 
@@ -270,18 +323,35 @@ CRef<CScope> s_MakeScope(void)
 bool CTestApplication::Thread_Run(int thread_id)
 {
     vector<CSeq_id_Handle> ids;
+    vector<string> reference;
+    vector<pair<CSeq_id_Handle, string> > data;
     CRandom random(m_Seed+thread_id);
     for ( size_t run_i = 0; run_i < m_RunCount; ++run_i ) {
         size_t size = min(m_RunSize, m_Ids.size());
-        ids = m_Ids;
+        data.clear();
+        data.resize(m_Ids.size());
+        for ( size_t i = 0; i < m_Ids.size(); ++i ) {
+            data[i].first = m_Ids[i];
+            if ( !m_Reference.empty() ) {
+                data[i].second = m_Reference[i];
+            }
+        }
         for ( size_t i = 0; i < size; ++i ) {
-            swap(ids[i], ids[random.GetRandSize_t(i, m_Ids.size()-1)]);
+            swap(data[i], data[random.GetRandSize_t(i, data.size()-1)]);
         }
-        ids.resize(size);
+        data.resize(size);
         if ( m_Sort ) {
-            sort(ids.begin(), ids.end());
+            sort(data.begin(), data.end());
         }
-        if ( !ProcessBlock(ids) ) {
+        ids.clear();
+        reference.clear();
+        for ( size_t i = 0; i < data.size(); ++i ) {
+            ids.push_back(data[i].first);
+            if ( !m_Reference.empty() ) {
+                reference.push_back(data[i].second);
+            }
+        }
+        if ( !ProcessBlock(ids, reference) ) {
             m_ErrorCount.Add(1);
         }
     }
@@ -289,12 +359,13 @@ bool CTestApplication::Thread_Run(int thread_id)
 }
 
 
-bool CTestApplication::ProcessBlock(const vector<CSeq_id_Handle>& ids) const
+bool CTestApplication::ProcessBlock(const vector<CSeq_id_Handle>& ids,
+                                    const vector<string>& reference) const
 {
     AutoPtr<IBulkTester> data(IBulkTester::CreateTester(m_Type));
-    data->SetParams(ids, m_ForceLoad);
+    data->SetParams(ids, m_GetFlags);
     {{
-        CRef<CScope> scope = s_MakeScope();
+        CRef<CScope> scope = MakeScope();
         if ( m_Single ) {
             data->LoadSingle(*scope);
         }
@@ -302,12 +373,18 @@ bool CTestApplication::ProcessBlock(const vector<CSeq_id_Handle>& ids) const
             data->LoadBulk(*scope);
         }
         ITERATE ( TIds, it, ids ) {
-            _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded));
+            _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded) ||
+                    (m_Type == IBulkTester::eBulk_hash &&
+                     !(m_GetFlags & CScope::fDoNotRecalculate)));
         }
     }}
     vector<bool> errors;
-    if ( m_Verify ) {
-        CRef<CScope> scope = s_MakeScope();
+    if ( !reference.empty() ) {
+        data->LoadVerify(reference);
+        errors = data->GetErrors();
+    }
+    else if ( m_Verify ) {
+        CRef<CScope> scope = MakeScope();
         data->LoadVerify(*scope);
         errors = data->GetErrors();
     }

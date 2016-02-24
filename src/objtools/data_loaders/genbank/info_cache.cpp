@@ -76,7 +76,7 @@ CInfoRequestorLock::~CInfoRequestorLock(void)
 }
 
 
-bool CInfoRequestorLock::SetLoaded(TExpirationTime new_expiration_time)
+bool CInfoRequestorLock::SetLoadedFor(TExpirationTime new_expiration_time)
 {
     _ASSERT(!IsLocked() || m_Mutex->m_LoadingRequestor == &GetRequestor());
     CInfo_Base& info = GetInfo();
@@ -89,8 +89,8 @@ bool CInfoRequestorLock::SetLoaded(TExpirationTime new_expiration_time)
 }
 
 
-bool CInfoRequestorLock::x_SetLoaded(TMainMutex::TWriteLockGuard& guard,
-                                     TExpirationTime new_expiration_time)
+bool CInfoRequestorLock::x_SetLoadedFor(TMainMutex::TWriteLockGuard& guard,
+                                        TExpirationTime new_expiration_time)
 {
     _ASSERT(!IsLocked() || m_Mutex->m_LoadingRequestor == &GetRequestor());
     CInfo_Base& info = GetInfo();

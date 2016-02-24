@@ -57,13 +57,6 @@ CId1ReaderBase::~CId1ReaderBase()
 }
 
 
-bool CId1ReaderBase::LoadStringSeq_ids(CReaderRequestResult& /*result*/,
-                                       const string& /*seq_id*/)
-{
-    return false;
-}
-
-
 bool CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                               const TBlobId& blob_id)
 {

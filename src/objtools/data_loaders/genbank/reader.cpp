@@ -570,7 +570,14 @@ bool CReader::LoadSequenceHash(CReaderRequestResult& result,
                                const CSeq_id_Handle& seq_id)
 {
     if ( !result.IsLoadedHash(seq_id) ) {
-        result.SetLoadedHash(seq_id, 0);
+        TSequenceHash hash;
+        CLoadLockSeqIds ids(result, seq_id);
+        if ( !ids.IsLoaded() ) {
+            m_Dispatcher->LoadSeq_idSeq_ids(result, seq_id);
+            hash.sequence_found = ids.GetSeq_ids().IsFound();
+            // no hash information by default
+        }
+        result.SetLoadedHash(seq_id, TSequenceHash());
     }
     return true;
 }
@@ -615,7 +622,7 @@ bool CReader::LoadSequenceType(CReaderRequestResult& result,
         return true;
     }
 
-    CSeq_inst::TMol type = CSeq_inst::eMol_not_set;
+    TSequenceType type;
     m_Dispatcher->LoadBlobs(result, seq_id, fBlobHasCore, 0);
     CLoadLockBlobIds blobs(result, seq_id, static_cast<SAnnotSelector*>(0));
     _ASSERT(blobs.IsLoaded());
@@ -631,7 +638,8 @@ bool CReader::LoadSequenceType(CReaderRequestResult& result,
         CTSE_LoadLock& lock = blob.GetTSE_LoadLock();
         _ASSERT(lock);
         if ( CConstRef<CBioseq_Info> seq = lock->FindMatchingBioseq(seq_id) ) {
-            type = seq->GetInst().GetMol();
+            type.type = seq->GetInst().GetMol();
+            type.sequence_found = true;
             break;
         }
     }
@@ -653,8 +661,11 @@ bool CReader::LoadAccVers(CReaderRequestResult& result,
             m_Dispatcher->LoadSeq_idAccVer(result, ids[i]);
         }
         if ( lock.IsLoadedAccVer() ) {
-            ret[i] = lock.GetAccVer();
-            loaded[i] = true;
+            TSequenceAcc data = lock.GetAccVer();
+            if ( lock.IsFound(data) ) {
+                ret[i] = lock.GetAcc(data);
+                loaded[i] = true;
+            }
         }
     }
     return true;
@@ -674,8 +685,11 @@ bool CReader::LoadGis(CReaderRequestResult& result,
             m_Dispatcher->LoadSeq_idGi(result, ids[i]);
         }
         if ( lock.IsLoadedGi() ) {
-            ret[i] = lock.GetGi();
-            loaded[i] = true;
+            TSequenceGi data = lock.GetGi();
+            if ( lock.IsFound(data) ) {
+                ret[i] = lock.GetGi(data);
+                loaded[i] = true;
+            }
         }
     }
     return true;
@@ -694,7 +708,7 @@ bool CReader::LoadLabels(CReaderRequestResult& result,
         if ( !lock.IsLoadedLabel() ) {
             m_Dispatcher->LoadSeq_idLabel(result, ids[i]);
         }
-        if ( lock.IsLoadedLabel() ) {
+        if ( lock.IsLoadedLabel() && !lock.GetLabel().empty() ) {
             ret[i] = lock.GetLabel();
             loaded[i] = true;
         }
@@ -715,7 +729,7 @@ bool CReader::LoadTaxIds(CReaderRequestResult& result,
         if ( !lock.IsLoadedTaxId() ) {
             m_Dispatcher->LoadSeq_idTaxId(result, ids[i]);
         }
-        if ( lock.IsLoadedTaxId() ) {
+        if ( lock.IsLoadedTaxId() && lock.GetTaxId() != -1 ) {
             ret[i] = lock.GetTaxId();
             loaded[i] = true;
         }
@@ -725,7 +739,8 @@ bool CReader::LoadTaxIds(CReaderRequestResult& result,
 
 
 bool CReader::LoadHashes(CReaderRequestResult& result,
-                         const TIds& ids, TLoaded& loaded, THashes& ret)
+                         const TIds& ids, TLoaded& loaded,
+                         THashes& ret, TKnown& known)
 {
     size_t count = ids.size();
     for ( size_t i = 0; i < count; ++i ) {
@@ -737,8 +752,12 @@ bool CReader::LoadHashes(CReaderRequestResult& result,
             m_Dispatcher->LoadSequenceHash(result, ids[i]);
         }
         if ( lock.IsLoadedHash() ) {
-            ret[i] = lock.GetHash();
-            loaded[i] = true;
+            TSequenceHash hash = lock.GetHash();
+            if ( hash.sequence_found ) {
+                ret[i] = hash.hash;
+                loaded[i] = true;
+                known[i] = hash.hash_known;
+            }
         }
     }
     return true;
@@ -757,7 +776,7 @@ bool CReader::LoadLengths(CReaderRequestResult& result,
         if ( !lock.IsLoadedLength() ) {
             m_Dispatcher->LoadSequenceLength(result, ids[i]);
         }
-        if ( lock.IsLoadedLength() ) {
+        if ( lock.IsLoadedLength() && lock.GetLength() != kInvalidSeqPos ) {
             ret[i] = lock.GetLength();
             loaded[i] = true;
         }
@@ -779,8 +798,11 @@ bool CReader::LoadTypes(CReaderRequestResult& result,
             m_Dispatcher->LoadSequenceType(result, ids[i]);
         }
         if ( lock.IsLoadedType() ) {
-            ret[i] = lock.GetType();
-            loaded[i] = true;
+            TSequenceType data = lock.GetType();
+            if ( lock.IsFound(data) ) {
+                ret[i] = lock.GetType(data);
+                loaded[i] = true;
+            }
         }
     }
     return true;
@@ -812,7 +834,8 @@ bool CReader::LoadStates(CReaderRequestResult& result,
                 if ( !state_lock.IsLoaded() ) {
                     m_Dispatcher->LoadBlobState(result, *it->GetBlob_id());
                 }
-                if ( state_lock.IsLoaded() ) {
+                if ( state_lock.IsLoaded() &&
+                     !(state_lock.GetBlobState() & CBioseq_Handle::fState_not_found) ) {
                     ret[i] = state_lock.GetBlobState();
                     loaded[i] = true;
                     break;
@@ -839,28 +862,6 @@ bool CReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     }
     CLoadLockBlobIds dst_ids(result, seq_id, sel);
     dst_ids.SetLoadedBlob_ids(src_ids);
-    return true;
-}
-
-
-bool CReader::LoadBlobs(CReaderRequestResult& result,
-                        const string& seq_id,
-                        TContentsMask mask,
-                        const SAnnotSelector* sel)
-{
-    CLoadLockSeqIds ids(result, seq_id);
-    if ( !ids.IsLoaded() ) {
-        if ( !LoadStringSeq_ids(result, seq_id) && !ids.IsLoaded() ) {
-            return false;
-        }
-        if ( !ids.IsLoaded() ) {
-            return true;
-        }
-    }
-    CFixedSeq_ids seq_ids = ids.GetSeq_ids();
-    if ( !seq_ids.empty() ) {
-        m_Dispatcher->LoadBlobs(result, seq_ids.front(), mask, sel);
-    }
     return true;
 }
 
@@ -972,18 +973,10 @@ void CReader::SetAndSaveNoBlob(CReaderRequestResult& result,
                                TChunkId chunk_id,
                                TBlobState blob_state)
 {
-    blob_state |= CBioseq_Handle::fState_no_data;
-    if ( !result.SetNoBlob(blob_id, blob_state) ) {
-        return;
-    }
-    if ( CWriter* writer = result.GetBlobWriter() ) {
-        const CProcessor_St_SE* prc =
-            dynamic_cast<const CProcessor_St_SE*>
-            (&m_Dispatcher->GetProcessor(CProcessor::eType_St_Seq_entry));
-        if ( prc ) {
-            prc->SaveNoBlob(result, blob_id, chunk_id, blob_state, writer);
-        }
-    }
+    blob_state |=
+        CBioseq_Handle::fState_not_found|
+        CBioseq_Handle::fState_no_data;
+    result.SetNoBlob(blob_id, blob_state);
 }
 
 
@@ -1033,25 +1026,12 @@ void CReader::SetAndSaveBlobVersion(CReaderRequestResult& result,
 }
 
 
-void CReader::SetAndSaveStringSeq_ids(CReaderRequestResult& result,
-                                      const string& seq_id,
-                                      const CFixedSeq_ids& seq_ids) const
-{
-    if ( !result.SetLoadedSeqIds(seq_id, seq_ids) ) {
-        return;
-    }
-    if ( CWriter* writer = result.GetIdWriter() ) {
-        writer->SaveStringSeq_ids(result, seq_id);
-    }
-}
-
-
 void CReader::SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
                                       const CSeq_id_Handle& seq_id,
                                       const CFixedSeq_ids& seq_ids) const
 {
     TRACE_SET("SetAndSaveSeq_idSeq_ids("<<seq_id<<") state: "<<seq_ids.GetState());
-    if ( seq_ids.GetState() & CBioseq_Handle::fState_no_data ) {
+    if ( !seq_ids.IsFound() ) {
         SetAndSaveNoSeq_idBlob_ids(result, seq_id, 0, seq_ids.GetState());
     }
     if ( !result.SetLoadedSeqIds(seq_id, seq_ids) ) {
@@ -1145,43 +1125,22 @@ void CReader::SetAndSaveNoSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
-void CReader::SetAndSaveNoStringSeq_ids(CReaderRequestResult& result,
-                                        const string& seq_id,
-                                        TState state) const
-{
-    state |= CBioseq_Handle::fState_no_data;
-    return SetAndSaveStringSeq_ids(result, seq_id, CFixedSeq_ids(state));
-}
-
-
 void CReader::SetAndSaveNoSeq_idSeq_ids(CReaderRequestResult& result,
                                         const CSeq_id_Handle& seq_id,
                                         TState state) const
 {
-    state |= CBioseq_Handle::fState_no_data;
+    state |=
+        CBioseq_Handle::fState_not_found|
+        CBioseq_Handle::fState_no_data;
     return SetAndSaveSeq_idSeq_ids(result, seq_id, CFixedSeq_ids(state));
-}
-
-
-void CReader::SetAndSaveStringGi(CReaderRequestResult& result,
-                                 const string& seq_id,
-                                 TGi gi) const
-{
-    if ( !result.SetLoadedGi(seq_id, gi) ) {
-        return;
-    }
-    if ( CWriter* writer = result.GetIdWriter() ) {
-        writer->SaveStringGi(result, seq_id);
-    }
 }
 
 
 void CReader::SetAndSaveSeq_idGi(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
-                                 TGi gi,
-                                 ESave save) const
+                                 const TSequenceGi& gi) const
 {
-    if ( !result.SetLoadedGi(seq_id, gi) || save != eSave ) {
+    if ( !result.SetLoadedGi(seq_id, gi) ) {
         return;
     }
     if ( CWriter* writer = result.GetIdWriter() ) {
@@ -1192,7 +1151,7 @@ void CReader::SetAndSaveSeq_idGi(CReaderRequestResult& result,
 
 void CReader::SetAndSaveSeq_idAccVer(CReaderRequestResult& result,
                                      const CSeq_id_Handle& seq_id,
-                                     const CSeq_id_Handle& acc_id) const
+                                     const TSequenceAcc& acc_id) const
 {
     if ( !result.SetLoadedAcc(seq_id, acc_id) ) {
         return;
@@ -1218,10 +1177,9 @@ void CReader::SetAndSaveSeq_idLabel(CReaderRequestResult& result,
 
 void CReader::SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
                                     const CSeq_id_Handle& seq_id,
-                                    int taxid,
-                                    ESave save) const
+                                    int taxid) const
 {
-    if ( !result.SetLoadedTaxId(seq_id, taxid) || save != eSave ) {
+    if ( !result.SetLoadedTaxId(seq_id, taxid) ) {
         return;
     }
     if ( CWriter* writer = result.GetIdWriter() ) {
@@ -1232,10 +1190,9 @@ void CReader::SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
 
 void CReader::SetAndSaveSequenceHash(CReaderRequestResult& result,
                                      const CSeq_id_Handle& seq_id,
-                                     int hash,
-                                     ESave save) const
+                                     const TSequenceHash& hash) const
 {
-    if ( !result.SetLoadedHash(seq_id, hash) || save != eSave ) {
+    if ( !result.SetLoadedHash(seq_id, hash) ) {
         return;
     }
     if ( CWriter* writer = result.GetIdWriter() ) {
@@ -1246,10 +1203,9 @@ void CReader::SetAndSaveSequenceHash(CReaderRequestResult& result,
 
 void CReader::SetAndSaveSequenceLength(CReaderRequestResult& result,
                                        const CSeq_id_Handle& seq_id,
-                                       TSeqPos length,
-                                       ESave save) const
+                                       TSeqPos length) const
 {
-    if ( !result.SetLoadedLength(seq_id, length) || save != eSave ) {
+    if ( !result.SetLoadedLength(seq_id, length) ) {
         return;
     }
     if ( CWriter* writer = result.GetIdWriter() ) {
@@ -1260,10 +1216,9 @@ void CReader::SetAndSaveSequenceLength(CReaderRequestResult& result,
 
 void CReader::SetAndSaveSequenceType(CReaderRequestResult& result,
                                      const CSeq_id_Handle& seq_id,
-                                     CSeq_inst::EMol type,
-                                     ESave save) const
+                                     const TSequenceType& type) const
 {
-    if ( !result.SetLoadedType(seq_id, type) || save != eSave ) {
+    if ( !result.SetLoadedType(seq_id, type) ) {
         return;
     }
     if ( CWriter* writer = result.GetIdWriter() ) {
@@ -1312,7 +1267,9 @@ void CReader::SetAndSaveNoSeq_idBlob_ids(CReaderRequestResult& result,
                                          CLoadLockBlobIds& lock,
                                          TBlobState state) const
 {
-    state |= CBioseq_Handle::fState_no_data;
+    state |=
+        CBioseq_Handle::fState_not_found|
+        CBioseq_Handle::fState_no_data;
     TRACE_SET("SetAndSaveNoSeq_idBlob_ids("<<seq_id<<")");
     if ( !lock.SetNoBlob_ids(state) ) {
         return;

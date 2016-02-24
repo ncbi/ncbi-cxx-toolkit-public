@@ -49,10 +49,6 @@ class NCBI_XREADER_CACHE_EXPORT CCacheWriter : public CWriter,
 public:
     CCacheWriter(void);
 
-    virtual void SaveStringSeq_ids(CReaderRequestResult& result,
-                                   const string& seq_id);
-    virtual void SaveStringGi(CReaderRequestResult& result,
-                              const string& seq_id);
     virtual void SaveSeq_idSeq_ids(CReaderRequestResult& result,
                                    const CSeq_id_Handle& seq_id);
     virtual void SaveSeq_idGi(CReaderRequestResult& result,
@@ -115,6 +111,11 @@ protected:
                 return m_Ptr - m_Buffer;
             }
         void CheckSpace(size_t size);
+        void StoreBool(bool v)
+            {
+                CheckSpace(1);
+                x_StoreUint1(v);
+            }
         void StoreUint4(Uint4 v)
             {
                 CheckSpace(4);
@@ -149,6 +150,11 @@ protected:
                 m_Ptr[2] = v>>8;
                 m_Ptr[3] = v;
                 m_Ptr += 4;
+            }
+        void x_StoreUint1(Uint1 v)
+            {
+                m_Ptr[0] = v;
+                m_Ptr += 1;
             }
 
     private:

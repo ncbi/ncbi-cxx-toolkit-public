@@ -70,16 +70,19 @@ public:
 
     virtual void Init(void);
     virtual int Run(void);
-    bool RunPass(void);
+    bool RunPass(int pass);
+    CRef<CScope> MakeScope(void) const;
 
     typedef vector<CSeq_id_Handle> TIds;
 
-    vector<CSeq_id_Handle> m_Ids;
+    TIds m_Ids;
+    vector<string> m_Reference;
     IBulkTester::EBulkType m_Type;
     bool m_Verbose;
     bool m_Single;
     bool m_Verify;
     CScope::TGetFlags m_GetFlags;
+    vector<string> other_loaders;
 };
 
 
@@ -124,15 +127,27 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
                          "gi", "acc", "label", "taxid", "hash",
                          "length", "type", "state"));
     args.AddFlag("no-force", "Do not force info loading");
-    args.AddFlag("throw-on-missing", "Throw exception for missing data");
-    args.AddFlag("try-harder", "Try harder to get missing data");
+    args.AddFlag("throw-on-missing-seq", "Throw exception for missing sequence");
+    args.AddFlag("throw-on-missing-data", "Throw exception for missing data");
+    args.AddFlag("no-recalc", "Avoid data recalculation");
     args.AddFlag("verbose", "Verbose results");
     args.AddFlag("single", "Use single id queries (non-bulk)");
     args.AddFlag("verify", "Run extra test to verify returned values");
+    args.AddOptionalKey
+        ("reference", "Reference",
+         "Load reference results from a file",
+         CArgDescriptions::eInputFile);
+    args.AddOptionalKey
+        ("save_reference", "SaveReference",
+         "Save results into a file",
+         CArgDescriptions::eOutputFile);
     args.AddDefaultKey
         ("count", "Count",
          "Number of iterations to run (default: 1)",
          CArgDescriptions::eInteger, "1");
+    args.AddOptionalKey("other_loaders", "OtherLoaders",
+                        "Extra data loaders as plugins (comma separated)",
+                        CArgDescriptions::eString);
 
     args.SetUsageContext(GetArguments().GetProgramBasename(),
                          "test_bulkinfo", false);
@@ -229,21 +244,44 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
     if ( !args["no-force"] ) {
         m_GetFlags |= CScope::fForceLoad;
     }
-    if ( args["throw-on-missing"] ) {
-        m_GetFlags |= CScope::fThrowOnMissing;
+    if ( args["throw-on-missing-seq"] ) {
+        m_GetFlags |= CScope::fThrowOnMissingSequence;
     }
-    if ( args["try-harder"] ) {
-        m_GetFlags |= CScope::fTryHarder;
+    if ( args["throw-on-missing-data"] ) {
+        m_GetFlags |= CScope::fThrowOnMissingData;
+    }
+    if ( args["no-recalc"] ) {
+        m_GetFlags |= CScope::fDoNotRecalculate;
     }
     m_Verbose = args["verbose"];
     m_Single = args["single"];
     m_Verify = args["verify"];
+    if ( args["reference"] ) {
+        CNcbiIstream& in = args["reference"].AsInputFile();
+        m_Reference.resize(m_Ids.size());
+        NON_CONST_ITERATE ( vector<string>, it, m_Reference ) {
+            getline(in, *it);
+        }
+        if ( !in ) {
+            NcbiCerr << "Failed to read reference data from "
+                     << args["reference"].AsString()
+                     << NcbiEndl;
+            return false;
+        }
+    }
+    if ( args["other_loaders"] ) {
+        list<string> names;
+        NStr::Split(args["other_loaders"].AsString(), ",", names);
+        CRef<CObjectManager> pOm = CObjectManager::GetInstance();
+        ITERATE ( list<string>, i, names ) {
+            other_loaders.push_back(pOm->RegisterDataLoader(0, *i)->GetName());
+        }
+    }
     return true;
 }
 
 
-static
-CRef<CScope> s_MakeScope(void)
+CRef<CScope> CTestApplication::MakeScope(void) const
 {
     CRef<CScope> ret;
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
@@ -255,16 +293,19 @@ CRef<CScope> s_MakeScope(void)
     
     ret = new CScope(*pOm);
     ret->AddDefaults();
+    ITERATE ( vector<string>, it, other_loaders ) {
+        ret->AddDataLoader(*it, 88);
+    }
     return ret;
 }
 
 
-bool CTestApplication::RunPass(void)
+bool CTestApplication::RunPass(int pass)
 {
     AutoPtr<IBulkTester> data(IBulkTester::CreateTester(m_Type));
     data->SetParams(m_Ids, m_GetFlags);
     {{
-        CRef<CScope> scope = s_MakeScope();
+        CRef<CScope> scope = MakeScope();
         if ( m_Single ) {
             data->LoadSingle(*scope);
         }
@@ -272,12 +313,18 @@ bool CTestApplication::RunPass(void)
             data->LoadBulk(*scope);
         }
         ITERATE ( TIds, it, m_Ids ) {
-            _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded));
+            _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded) ||
+                    (m_Type == IBulkTester::eBulk_hash &&
+                     !(m_GetFlags & CScope::fDoNotRecalculate)));
         }
     }}
     vector<bool> errors;
-    if ( m_Verify ) {
-        CRef<CScope> scope = s_MakeScope();
+    if ( !m_Reference.empty() ) {
+        data->LoadVerify(m_Reference);
+        errors = data->GetErrors();
+    }
+    else if ( m_Verify ) {
+        CRef<CScope> scope = MakeScope();
         data->LoadVerify(*scope);
         errors = data->GetErrors();
     }
@@ -294,6 +341,9 @@ bool CTestApplication::RunPass(void)
             }
         }
     }
+    else if ( pass == 0 && GetArgs()["save_reference"] ) {
+        data->SaveResults(GetArgs()["save_reference"].AsOutputFile());
+    }
     return ok;
 }
 
@@ -303,7 +353,7 @@ int CTestApplication::Run(void)
     int ret = 0;
     int run_count = GetArgs()["count"].AsInteger();
     for ( int run_i = 0; run_i < run_count; ++run_i ) {
-        if ( !RunPass() ) {
+        if ( !RunPass(run_i) ) {
             ret = 1;
         }
     }

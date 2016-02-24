@@ -47,8 +47,6 @@ public:
     CId1ReaderBase(void);
     ~CId1ReaderBase(void);
 
-    bool LoadStringSeq_ids(CReaderRequestResult& result,
-                           const string& seq_id);
     /*
     bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
                            const CSeq_id_Handle& seq_id);

@@ -68,10 +68,6 @@ public:
 
     virtual ~CWriter(void);
 
-    virtual void SaveStringSeq_ids(CReaderRequestResult& result,
-                                   const string& seq_id) = 0;
-    virtual void SaveStringGi(CReaderRequestResult& result,
-                              const string& seq_id) = 0;
     virtual void SaveSeq_idSeq_ids(CReaderRequestResult& result,
                                    const CSeq_id_Handle& seq_id) = 0;
     virtual void SaveSeq_idGi(CReaderRequestResult& result,

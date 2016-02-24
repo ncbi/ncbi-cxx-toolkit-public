@@ -83,9 +83,14 @@ public:
     enum {
         kUnknownState = -256
     };
-    explicit CFixedSeq_ids(TState state = kUnknownState);
-    explicit CFixedSeq_ids(const TList& list, TState state = kUnknownState);
-    CFixedSeq_ids(ENcbiOwnership ownership, TList& list, TState state = kUnknownState);
+    CFixedSeq_ids(void);
+    explicit
+    CFixedSeq_ids(TState state);
+    explicit
+    CFixedSeq_ids(const TList& list,
+                  TState state = kUnknownState);
+    CFixedSeq_ids(ENcbiOwnership ownership, TList& list,
+                  TState state = kUnknownState);
 
     const TList& Get(void) const
         {
@@ -100,10 +105,15 @@ public:
         {
             return m_State;
         }
-    void SetState(TState state)
+
+    bool IsFound(void) const
         {
-            m_State = state;
+            return !empty() &&
+                !(GetState() & CBioseq_Handle::fState_not_found);
         }
+
+    void SetState(TState state);
+    void SetNotFound(void);
 
     bool empty(void) const
         {
@@ -126,8 +136,8 @@ public:
             return *begin();
         }
 
-    TGi FindGi(void) const;
-    CSeq_id_Handle FindAccVer(void) const;
+    CDataLoader::SGiFound FindGi(void) const;
+    CDataLoader::SAccVerFound FindAccVer(void) const;
     string FindLabel(void) const;
 
 private:
@@ -214,18 +224,28 @@ public:
     enum {
         kUnknownState = -256
     };
-    explicit CFixedBlob_ids(TState state = kUnknownState);
-    explicit CFixedBlob_ids(const TList& list, TState state = kUnknownState);
-    CFixedBlob_ids(ENcbiOwnership ownership, TList& list, TState state = kUnknownState);
+    CFixedBlob_ids(void);
+    explicit
+    CFixedBlob_ids(TState state);
+    explicit
+    CFixedBlob_ids(const TList& list,
+                   TState state = kUnknownState);
+    CFixedBlob_ids(ENcbiOwnership ownership, TList& list,
+                   TState state = kUnknownState);
 
     TState GetState(void) const
         {
             return m_State;
         }
-    void SetState(TState state)
+
+    bool IsFound(void) const
         {
-            m_State = state;
+            return !empty() &&
+                !(GetState() & CBioseq_Handle::fState_not_found);
         }
+
+    void SetState(TState state);
+    void SetNotFound(void);
 
     const TList& Get(void) const
         {
@@ -279,11 +299,11 @@ public:
     CGBInfoManager(size_t gc_size);
     ~CGBInfoManager(void);
 
-    typedef GBL::CInfoCache<CSeq_id_Handle, CSeq_id_Handle> TCacheAcc;
+    typedef CDataLoader::SAccVerFound TSequenceAcc;
+    typedef GBL::CInfoCache<CSeq_id_Handle, TSequenceAcc> TCacheAcc;
     typedef GBL::CInfoCache<CSeq_id_Handle, CFixedSeq_ids> TCacheSeqIds;
-    typedef GBL::CInfoCache<CSeq_id_Handle, TGi> TCacheGi;
-    typedef GBL::CInfoCache<string, CFixedSeq_ids> TCacheStrSeqIds;
-    typedef GBL::CInfoCache<string, TGi> TCacheStrGi;
+    typedef CDataLoader::SGiFound TSequenceGi;
+    typedef GBL::CInfoCache<CSeq_id_Handle, TSequenceGi> TCacheGi;
     typedef GBL::CInfoCache<CSeq_id_Handle, string> TCacheLabel;
     typedef int TTaxId;
     typedef GBL::CInfoCache<CSeq_id_Handle, TTaxId> TCacheTaxId;
@@ -291,11 +311,11 @@ public:
     typedef GBL::CInfoCache<TKeyBlobIds, CFixedBlob_ids> TCacheBlobIds;
     typedef int TBlobState;
     typedef GBL::CInfoCache<CBlob_id, TBlobState> TCacheBlobState;
-    typedef int TSequenceHash;
+    typedef CDataLoader::SHashFound TSequenceHash;
     typedef GBL::CInfoCache<CSeq_id_Handle, TSequenceHash> TCacheHash;
     typedef TSeqPos TSequenceLength;
     typedef GBL::CInfoCache<CSeq_id_Handle, TSequenceLength> TCacheLength;
-    typedef CSeq_inst::EMol TSequenceType;
+    typedef CDataLoader::STypeFound TSequenceType;
     typedef GBL::CInfoCache<CSeq_id_Handle, TSequenceType> TCacheType;
     typedef int TBlobVersion;
     typedef GBL::CInfoCache<CBlob_id, TBlobVersion> TCacheBlobVersion;
@@ -305,8 +325,6 @@ public:
     TCacheAcc m_CacheAcc;
     TCacheSeqIds m_CacheSeqIds;
     TCacheGi m_CacheGi;
-    TCacheStrSeqIds m_CacheStrSeqIds;
-    TCacheStrGi m_CacheStrGi;
     TCacheLabel m_CacheLabel;
     TCacheTaxId m_CacheTaxId;
     TCacheHash m_CacheHash;
@@ -328,10 +346,7 @@ public:
         {
         }
     CLoadLockSeqIds(CReaderRequestResult& result, const CSeq_id_Handle& id);
-    CLoadLockSeqIds(CReaderRequestResult& result, const string& id);
     CLoadLockSeqIds(CReaderRequestResult& result, const CSeq_id_Handle& id,
-                    EAlreadyLoaded);
-    CLoadLockSeqIds(CReaderRequestResult& result, const string& id,
                     EAlreadyLoaded);
 
     TData GetSeq_ids(void) const
@@ -342,17 +357,35 @@ public:
         {
             return GetData().GetState();
         }
+
+    static bool IsFound(const TData& data)
+        {
+            return data.IsFound();
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
+
     bool SetLoadedSeq_ids(const TData& data)
         {
-            return SetLoaded(data);
+            return SetLoaded(data, GetExpType(data));
         }
     bool SetLoadedSeq_ids(const TData& data, TExpirationTime expiration_time)
         {
-            return SetLoaded(data, expiration_time);
+            return SetLoadedFor(data, expiration_time);
         }
     bool SetLoadedSeq_ids(const CLoadLockSeqIds& ids)
         {
-            return SetLoaded(ids.GetSeq_ids(), ids.GetExpirationTime());
+            return SetLoadedFor(ids.GetSeq_ids(), ids.GetExpirationTime());
         }
 };
 
@@ -366,7 +399,27 @@ public:
         {
         }
     CLoadLockGi(CReaderRequestResult& result, const CSeq_id_Handle& id);
-    CLoadLockGi(CReaderRequestResult& result, const string& id);
+
+    static TGi GetGi(const TData& data)
+        {
+            return data.gi;
+        }
+    static bool IsFound(const TData& data)
+        {
+            return data.sequence_found;
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
 
     bool IsLoadedGi(void) const
         {
@@ -380,13 +433,13 @@ public:
         {
             return GetData();
         }
-    bool SetLoadedGi(TGi data)
+    bool SetLoadedGi(const TData& data)
         {
-            return SetLoaded(data);
+            return SetLoaded(data, GetExpType(data));
         }
     bool SetLoadedGi(const TData& data, TExpirationTime expiration_time)
         {
-            return SetLoaded(data, expiration_time);
+            return SetLoadedFor(data, expiration_time);
         }
 };
 
@@ -400,7 +453,27 @@ public:
         {
         }
     CLoadLockAcc(CReaderRequestResult& result, const CSeq_id_Handle& id);
-    CLoadLockAcc(CReaderRequestResult& result, const string& id);
+
+    static const CSeq_id_Handle& GetAcc(const TData& data)
+        {
+            return data.acc_ver;
+        }
+    static bool IsFound(const TData& data)
+        {
+            return data.sequence_found;
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
 
     bool IsLoadedAccVer(void) const
         {
@@ -414,13 +487,13 @@ public:
         {
             return GetData();
         }
-    bool SetLoadedAccVer(const CSeq_id_Handle& data)
+    bool SetLoadedAccVer(const TData& data)
         {
-            return SetLoaded(data);
+            return SetLoaded(data, GetExpType(data));
         }
     bool SetLoadedAccVer(const TData& data, TExpirationTime expiration_time)
         {
-            return SetLoaded(data, expiration_time);
+            return SetLoadedFor(data, expiration_time);
         }
 };
 
@@ -435,6 +508,23 @@ public:
         }
     CLoadLockLabel(CReaderRequestResult& result, const CSeq_id_Handle& id);
 
+    static bool IsFound(const TData& data)
+        {
+            return !data.empty();
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
+
     bool IsLoadedLabel(void) const
         {
             return IsLoaded();
@@ -445,11 +535,11 @@ public:
         }
     bool SetLoadedLabel(const TData& data)
         {
-            return SetLoaded(data);
+            return SetLoaded(data, GetExpType(data));
         }
     bool SetLoadedLabel(const TData& data, TExpirationTime expiration_time)
         {
-            return SetLoaded(data, expiration_time);
+            return SetLoadedFor(data, expiration_time);
         }
 };
 
@@ -464,6 +554,23 @@ public:
         }
     CLoadLockTaxId(CReaderRequestResult& result, const CSeq_id_Handle& id);
 
+    static bool IsFound(const TData& data)
+        {
+            return data != -1;
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
+
     bool IsLoadedTaxId(void) const
         {
             return IsLoaded();
@@ -474,11 +581,11 @@ public:
         }
     bool SetLoadedTaxId(const TData& data)
         {
-            return SetLoaded(data);
+            return SetLoaded(data, GetExpType(data));
         }
     bool SetLoadedTaxId(const TData& data, TExpirationTime expiration_time)
         {
-            return SetLoaded(data, expiration_time);
+            return SetLoadedFor(data, expiration_time);
         }
 };
 
@@ -493,6 +600,27 @@ public:
         }
     CLoadLockHash(CReaderRequestResult& result, const CSeq_id_Handle& id);
 
+    static int GetHash(const TData& data)
+        {
+            return data.hash;
+        }
+    static bool IsFound(const TData& data)
+        {
+            return data.sequence_found;
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
+
     bool IsLoadedHash(void) const
         {
             return IsLoaded();
@@ -503,11 +631,11 @@ public:
         }
     bool SetLoadedHash(const TData& data)
         {
-            return SetLoaded(data);
+            return SetLoaded(data, GetExpType(data));
         }
     bool SetLoadedHash(const TData& data, TExpirationTime expiration_time)
         {
-            return SetLoaded(data, expiration_time);
+            return SetLoadedFor(data, expiration_time);
         }
 };
 
@@ -522,6 +650,23 @@ public:
         }
     CLoadLockLength(CReaderRequestResult& result, const CSeq_id_Handle& id);
 
+    static bool IsFound(const TData& data)
+        {
+            return data != kInvalidSeqPos;
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
+
     bool IsLoadedLength(void) const
         {
             return IsLoaded();
@@ -532,11 +677,11 @@ public:
         }
     bool SetLoadedLength(const TData& data)
         {
-            return SetLoaded(data);
+            return SetLoaded(data, GetExpType(data));
         }
     bool SetLoadedLength(const TData& data, TExpirationTime expiration_time)
         {
-            return SetLoaded(data, expiration_time);
+            return SetLoadedFor(data, expiration_time);
         }
 };
 
@@ -551,6 +696,27 @@ public:
         }
     CLoadLockType(CReaderRequestResult& result, const CSeq_id_Handle& id);
 
+    static CSeq_inst::TMol GetType(const TData& data)
+        {
+            return data.type;
+        }
+    static bool IsFound(const TData& data)
+        {
+            return data.sequence_found;
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
+
     bool IsLoadedType(void) const
         {
             return IsLoaded();
@@ -561,11 +727,11 @@ public:
         }
     bool SetLoadedType(const TData& data)
         {
-            return SetLoaded(data);
+            return SetLoaded(data, GetExpType(data));
         }
     bool SetLoadedType(const TData& data, TExpirationTime expiration_time)
         {
-            return SetLoaded(data, expiration_time);
+            return SetLoadedFor(data, expiration_time);
         }
 };
 
@@ -593,18 +759,36 @@ public:
         {
             return GetData().GetState();
         }
+
+    static bool IsFound(const TData& data)
+        {
+            return data.IsFound();
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
+
     bool SetLoadedBlob_ids(const TData& data, TExpirationTime expiration_time)
         {
-            return SetLoaded(data, expiration_time);
+            return SetLoadedFor(data, expiration_time);
         }
     bool SetLoadedBlob_ids(const TData& data)
         {
-            return SetLoadedBlob_ids(data, GetNewExpirationTime());
+            return SetLoaded(data, GetExpType(data));
         }
     bool SetNoBlob_ids(const CFixedBlob_ids::TState& state,
                        TExpirationTime expiration_time)
         {
-            return SetLoadedBlob_ids(CFixedBlob_ids(state), expiration_time);
+            return SetLoadedFor(CFixedBlob_ids(state), expiration_time);
         }
     bool SetNoBlob_ids(const CFixedBlob_ids::TState& state)
         {
@@ -629,6 +813,23 @@ public:
     CLoadLockBlobState(CReaderRequestResult& result, const CBlob_id& id,
                        EAlreadyLoaded);
 
+    static bool IsFound(const TData& data)
+        {
+            return !(data & CBioseq_Handle::fState_not_found);
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
+
     TData GetBlobState(void) const
         {
             return GetData();
@@ -651,6 +852,23 @@ public:
     CLoadLockBlobVersion(CReaderRequestResult& result, const CBlob_id& id);
     CLoadLockBlobVersion(CReaderRequestResult& result, const CBlob_id& id,
                          EAlreadyLoaded);
+
+    static bool IsFound(const TData& data)
+        {
+            return data >= 0;
+        }
+    bool IsFound(void) const
+        {
+            return IsFound(GetData());
+        }
+    static GBL::EExpirationType GetExpType(const TData& data)
+        {
+            return IsFound(data)? GBL::eExpire_normal: GBL::eExpire_fast;
+        }
+    GBL::EExpirationType GetExpType(void) const
+        {
+            return GetExpType(GetData());
+        }
 
     TData GetBlobVersion(void) const
         {
@@ -795,10 +1013,12 @@ public:
     // new lock Manager support
 
     TExpirationTime GetRequestTime(void) const;
-    TExpirationTime GetNewExpirationTime(void) const;
+    TExpirationTime GetNewExpirationTime(GBL::EExpirationType type) const;
 
     typedef CGBInfoManager::TCacheSeqIds::TInfoLock TInfoLockIds;
+    typedef CGBInfoManager::TSequenceAcc TSequenceAcc;
     typedef CGBInfoManager::TCacheAcc::TInfoLock TInfoLockAcc;
+    typedef CGBInfoManager::TSequenceGi TSequenceGi;
     typedef CGBInfoManager::TCacheGi::TInfoLock TInfoLockGi;
     typedef CGBInfoManager::TCacheLabel::TInfoLock TInfoLockLabel;
     typedef CGBInfoManager::TTaxId TTaxId;
@@ -818,6 +1038,7 @@ public:
     bool MarkLoadingSeqIds(const CSeq_id_Handle& id);
     TInfoLockIds GetLoadLockSeqIds(const CSeq_id_Handle& id);
     TInfoLockIds GetLoadedSeqIds(const CSeq_id_Handle& id);
+    // returns true if information can be stored into external cache
     bool SetLoadedSeqIds(const CSeq_id_Handle& id,
                          const CFixedSeq_ids& value);
 
@@ -825,29 +1046,17 @@ public:
     bool MarkLoadingAcc(const CSeq_id_Handle& id);
     TInfoLockAcc GetLoadLockAcc(const CSeq_id_Handle& id);
     TInfoLockAcc GetLoadedAcc(const CSeq_id_Handle& id);
+    // returns true if information can be stored into external cache
     bool SetLoadedAcc(const CSeq_id_Handle& id,
-                      const CSeq_id_Handle& value);
+                      const TSequenceAcc& value);
 
     bool IsLoadedGi(const CSeq_id_Handle& id);
     bool MarkLoadingGi(const CSeq_id_Handle& id);
     TInfoLockGi GetLoadLockGi(const CSeq_id_Handle& id);
     TInfoLockGi GetLoadedGi(const CSeq_id_Handle& id);
+    // returns true if information can be stored into external cache
     bool SetLoadedGi(const CSeq_id_Handle& id,
-                     const TGi& value);
-
-    bool IsLoadedSeqIds(const string& id);
-    bool MarkLoadingSeqIds(const string& id);
-    TInfoLockIds GetLoadLockSeqIds(const string& id);
-    TInfoLockIds GetLoadedSeqIds(const string& id);
-    bool SetLoadedSeqIds(const string& id,
-                         const CFixedSeq_ids& value);
-
-    bool IsLoadedGi(const string& id);
-    bool MarkLoadingGi(const string& id);
-    TInfoLockGi GetLoadLockGi(const string& id);
-    TInfoLockGi GetLoadedGi(const string& id);
-    bool SetLoadedGi(const string& id,
-                     const TGi& value);
+                     const TSequenceGi& value);
 
     // set Acc.Ver info using Ids info
     bool UpdateAccFromSeqIds(TInfoLockAcc& acc_lock,
@@ -883,6 +1092,7 @@ public:
     bool MarkLoadingLabel(const CSeq_id_Handle& id);
     TInfoLockLabel GetLoadLockLabel(const CSeq_id_Handle& id);
     TInfoLockLabel GetLoadedLabel(const CSeq_id_Handle& id);
+    // returns true if information can be stored into external cache
     bool SetLoadedLabel(const CSeq_id_Handle& id,
                         const string& value);
 
@@ -890,6 +1100,7 @@ public:
     bool MarkLoadingTaxId(const CSeq_id_Handle& id);
     TInfoLockTaxId GetLoadLockTaxId(const CSeq_id_Handle& id);
     TInfoLockTaxId GetLoadedTaxId(const CSeq_id_Handle& id);
+    // returns true if information can be stored into external cache
     bool SetLoadedTaxId(const CSeq_id_Handle& id,
                         const TTaxId& value);
 
@@ -897,6 +1108,7 @@ public:
     bool MarkLoadingHash(const CSeq_id_Handle& id);
     TInfoLockHash GetLoadLockHash(const CSeq_id_Handle& id);
     TInfoLockHash GetLoadedHash(const CSeq_id_Handle& id);
+    // returns true if information can be stored into external cache
     bool SetLoadedHash(const CSeq_id_Handle& id,
                        const TSequenceHash& value);
 
@@ -904,6 +1116,7 @@ public:
     bool MarkLoadingLength(const CSeq_id_Handle& id);
     TInfoLockLength GetLoadLockLength(const CSeq_id_Handle& id);
     TInfoLockLength GetLoadedLength(const CSeq_id_Handle& id);
+    // returns true if information can be stored into external cache
     bool SetLoadedLength(const CSeq_id_Handle& id,
                        const TSequenceLength& value);
 
@@ -911,6 +1124,7 @@ public:
     bool MarkLoadingType(const CSeq_id_Handle& id);
     TInfoLockType GetLoadLockType(const CSeq_id_Handle& id);
     TInfoLockType GetLoadedType(const CSeq_id_Handle& id);
+    // returns true if information can be stored into external cache
     bool SetLoadedType(const CSeq_id_Handle& id,
                        const TSequenceType& value);
 
@@ -922,6 +1136,7 @@ public:
                                         const SAnnotSelector* sel);
     TInfoLockBlobIds GetLoadedBlobIds(const CSeq_id_Handle& id,
                                       const SAnnotSelector* sel);
+    // returns true if information can be stored into external cache
     bool SetLoadedBlobIds(const CSeq_id_Handle& id,
                           const SAnnotSelector* sel,
                           const CFixedBlob_ids& value);
@@ -930,17 +1145,17 @@ public:
     bool MarkLoadingBlobState(const TKeyBlob& blob_id);
     TInfoLockBlobState GetLoadLockBlobState(const TKeyBlob& blob_id);
     TInfoLockBlobState GetLoadedBlobState(const TKeyBlob& blob_id);
+    // returns true if information can be stored into external cache
     bool SetLoadedBlobState(const TKeyBlob& blob_id, TBlobState state);
-    void SetAndSaveBlobState(const TKeyBlob& blob_id,
-                             TBlobState state);
+    void SetAndSaveBlobState(const TKeyBlob& blob_id, TBlobState state);
 
     bool IsLoadedBlobVersion(const TKeyBlob& blob_id);
     bool MarkLoadingBlobVersion(const TKeyBlob& blob_id);
     TInfoLockBlobVersion GetLoadLockBlobVersion(const TKeyBlob& blob_id);
     TInfoLockBlobVersion GetLoadedBlobVersion(const TKeyBlob& blob_id);
+    // returns true if information can be stored into external cache
     bool SetLoadedBlobVersion(const TKeyBlob& blob_id, TBlobVersion version);
-    void SetAndSaveBlobVersion(const TKeyBlob& blob_id,
-                               TBlobVersion version);
+    void SetAndSaveBlobVersion(const TKeyBlob& blob_id, TBlobVersion version);
 
     /*
     void SetSeq_entry(const TKeyBlob& blob_id,
@@ -994,8 +1209,8 @@ public:
 
     // expiration support
     TExpirationTime GetStartTime(void) const { return m_StartTime; }
-    TExpirationTime GetNewIdExpirationTime(void) const;
-    virtual TExpirationTime GetIdExpirationTimeout(void) const;
+    TExpirationTime GetNewIdExpirationTime(GBL::EExpirationType type) const;
+    virtual TExpirationTime GetIdExpirationTimeout(GBL::EExpirationType type) const;
 
     virtual bool GetAddWGSMasterDescr(void) const;
 

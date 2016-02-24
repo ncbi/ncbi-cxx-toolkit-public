@@ -724,7 +724,9 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
         snp_info.SetSeq_id(*read_seq_id(stream));
     }
     else {
-        snp_info.SetGi(gi);
+        CRef<CSeq_id> gi_id(new CSeq_id);
+        gi_id->SetGi(gi);
+        snp_info.SetSeq_id(*gi_id);
     }
 
     // strings

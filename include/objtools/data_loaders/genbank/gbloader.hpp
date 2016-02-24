@@ -186,14 +186,14 @@ public:
     virtual void DropTSE(CRef<CTSE_Info> tse_info);
 
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
-    virtual CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
-    virtual TGi GetGi(const CSeq_id_Handle& idh);
+    virtual SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh);
+    virtual SGiFound GetGiFound(const CSeq_id_Handle& idh);
     virtual string GetLabel(const CSeq_id_Handle& idh);
     virtual int GetTaxId(const CSeq_id_Handle& idh);
     virtual int GetSequenceState(const CSeq_id_Handle& idh);
-    virtual pair<int, bool> GetSequenceHash2(const CSeq_id_Handle& idh);
+    virtual SHashFound GetSequenceHashFound(const CSeq_id_Handle& idh);
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& sih);
-    virtual CSeq_inst::EMol GetSequenceType(const CSeq_id_Handle& sih);
+    virtual STypeFound GetSequenceTypeFound(const CSeq_id_Handle& sih);
 
     virtual void GetAccVers(const TIds& ids, TLoaded& loader, TIds& ret);
     virtual void GetGis(const TIds& ids, TLoaded& loader, TGis& ret);
@@ -202,7 +202,7 @@ public:
     virtual void GetSequenceStates(const TIds& ids, TLoaded& loader,
                                    TSequenceStates& ret);
     virtual void GetSequenceHashes(const TIds& ids, TLoaded& loader,
-                                   TSequenceHashes& ret);
+                                   TSequenceHashes& ret, THashKnown& known);
     virtual void GetSequenceLengths(const TIds& ids, TLoaded& loader,
                                     TSequenceLengths& ret);
     virtual void GetSequenceTypes(const TIds& ids, TLoaded& loader,

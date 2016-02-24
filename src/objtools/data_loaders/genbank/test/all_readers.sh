@@ -9,11 +9,18 @@ fi
 if test "$1" = "-id2"; then
     shift
     methods="ID2"
-elif test -f "$status_dir/PubSeqOS.enabled"; then
-    methods="PUBSEQOS ID1 ID2"
 else
-    echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
-    methods="ID1 ID2"
+    if test -f "$status_dir/PubSeqOS.enabled"; then
+        methods="PUBSEQOS ID1"
+    else
+        echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
+        methods="ID1"
+    fi
+    if test "$1" = "-xid2"; then
+        shift
+    else
+        methods="$methods ID2"
+    fi
 fi
 if test ! -f "$status_dir/DLL_BUILD.enabled"; then
     # enable dll plugins for ftds and bdb
@@ -83,8 +90,11 @@ exitcode=0
 failed=''
 for method in $methods; do
     for cache in 1 2 3; do
+        GENBANK_ALLOW_INCOMPLETE_COMMANDS=1
+        export GENBANK_ALLOW_INCOMPLETE_COMMANDS
         if test "$cache" = 1; then
             m="$method"
+            unset GENBANK_ALLOW_INCOMPLETE_COMMANDS
         elif test "$cache" = 2; then
             if init_cache; then
                 :
@@ -99,7 +109,7 @@ for method in $methods; do
         echo "Checking GenBank loader $m (base: $method):"
         GENBANK_LOADER_METHOD="$m"
         export GENBANK_LOADER_METHOD
-        $CHECK_EXEC "$@"
+        $CHECK_EXEC "$@" $ALL_READERS_EXTRA_ARGUMENTS
         error=$?
         if test $error -ne 0; then
             echo "Test of GenBank loader $m failed (base: $method): $error"

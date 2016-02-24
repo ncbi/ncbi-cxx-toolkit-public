@@ -73,8 +73,6 @@ public:
     /// All LoadXxx() methods should return false if
     /// there is no requested data in the reader.
     /// This will notify dispatcher that there is no sense to retry.
-    virtual bool LoadStringSeq_ids(CReaderRequestResult& result,
-                                   const string& seq_id) = 0;
     virtual bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                     const CSeq_id_Handle& seq_id,
                                     const SAnnotSelector* sel);
@@ -103,6 +101,7 @@ public:
     typedef vector<int> TTaxIds;
     typedef vector<int> TStates;
     typedef vector<int> THashes;
+    typedef vector<bool> TKnown;
     typedef vector<TSeqPos> TLengths;
     typedef vector<CSeq_inst::EMol> TTypes;
     virtual bool LoadAccVers(CReaderRequestResult& result,
@@ -114,7 +113,8 @@ public:
     virtual bool LoadTaxIds(CReaderRequestResult& result,
                             const TIds& ids, TLoaded& loaded, TTaxIds& ret);
     virtual bool LoadHashes(CReaderRequestResult& result,
-                            const TIds& ids, TLoaded& loaded, THashes& ret);
+                            const TIds& ids, TLoaded& loaded,
+                            THashes& ret, TKnown& known);
     virtual bool LoadLengths(CReaderRequestResult& result,
                              const TIds& ids, TLoaded& loaded, TLengths& ret);
     virtual bool LoadTypes(CReaderRequestResult& result,
@@ -127,10 +127,6 @@ public:
     virtual bool LoadBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id) = 0;
 
-    virtual bool LoadBlobs(CReaderRequestResult& result,
-                           const string& seq_id,
-                           TContentsMask mask,
-                           const SAnnotSelector* sel);
     virtual bool LoadBlobs(CReaderRequestResult& result,
                            const CSeq_id_Handle& seq_id,
                            TContentsMask mask,
@@ -151,33 +147,25 @@ public:
     virtual bool LoadBlobSet(CReaderRequestResult& result,
                              const TSeqIds& seq_ids);
 
-    enum ESave {
-        eSave,
-        eDoNotSave
-    };
-    void SetAndSaveStringSeq_ids(CReaderRequestResult& result,
-                                 const string& seq_id,
-                                 const CFixedSeq_ids& seq_ids) const;
     void SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
                                  const CFixedSeq_ids& seq_ids) const;
-    void SetAndSaveNoStringSeq_ids(CReaderRequestResult& result,
-                                   const string& seq_id,
-                                   TState state) const;
     void SetAndSaveNoSeq_idSeq_ids(CReaderRequestResult& result,
                                    const CSeq_id_Handle& seq_id,
                                    TState state) const;
 
+    typedef CDataLoader::SAccVerFound TSequenceAcc;
+    typedef CDataLoader::SGiFound TSequenceGi;
+    typedef CDataLoader::STypeFound TSequenceType;
+    typedef CDataLoader::SHashFound TSequenceHash;
+
     void SetAndSaveSeq_idAccVer(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id,
-                                const CSeq_id_Handle& acc_id) const;
+                                const TSequenceAcc& acc_id) const;
 
-    void SetAndSaveStringGi(CReaderRequestResult& result,
-                            const string& seq_id,
-                            TGi gi) const;
     void SetAndSaveSeq_idGi(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
-                            TGi gi, ESave = eSave) const;
+                            const TSequenceGi& gi) const;
 
     // copy info
     void SetAndSaveSeq_idAccFromSeqIds(CReaderRequestResult& result,
@@ -204,16 +192,16 @@ public:
 
     void SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
                                const CSeq_id_Handle& seq_id,
-                               int taxid, ESave save = eSave) const;
+                               int taxid) const;
     void SetAndSaveSequenceHash(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id,
-                                int hash, ESave save = eSave) const;
+                                const TSequenceHash& hash) const;
     void SetAndSaveSequenceLength(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id,
-                                  TSeqPos length, ESave save = eSave) const;
+                                  TSeqPos length) const;
     void SetAndSaveSequenceType(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id,
-                                CSeq_inst::EMol type, ESave save = eSave) const;
+                                const TSequenceType& type) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id,
                                   const SAnnotSelector* sel,

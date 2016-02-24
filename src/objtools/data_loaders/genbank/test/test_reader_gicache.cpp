@@ -114,7 +114,7 @@ int CTestApplication::Run(void)
                 continue;
             }
             CLoadLockAcc lock(request, seq_id);
-            CSeq_id_Handle acc_ver = lock.GetAccVer();
+            CSeq_id_Handle acc_ver = lock.GetAcc(lock.GetAccVer());
             NcbiCout << acc_ver;
             NcbiCout << NcbiEndl;
         }
