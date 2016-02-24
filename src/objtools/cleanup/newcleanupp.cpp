@@ -781,6 +781,11 @@ void CNewCleanup_imp::ProtSeqBC (CBioseq& bs)
         return;
     }
 
+    if (bs.GetInst().IsSetTopology() && bs.GetInst().GetTopology() == CSeq_inst::eTopology_linear) {
+        bs.SetInst().ResetTopology();
+        ChangeMade(CCleanupChange::eChangeBioseqInst);
+    }
+
     // Bail if no GIBBSQ ID
     if (!bs.IsSetId()) {
         return;
@@ -5509,6 +5514,10 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
             initials.resize( initials.length() - 3 );
             NStr::TruncateSpacesInPlace( initials );
         }
+    }
+
+    if (!name.IsSetSuffix()) {
+        name.SetSuffix(kEmptyStr);
     }
 
     if( ! original_name->Equals(name) ) {
