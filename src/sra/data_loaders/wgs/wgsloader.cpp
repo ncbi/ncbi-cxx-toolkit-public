@@ -262,13 +262,15 @@ void CWGSDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-CSeq_id_Handle CWGSDataLoader::GetAccVer(const CSeq_id_Handle& idh)
+CDataLoader::SAccVerFound
+CWGSDataLoader::GetAccVerFound(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetAccVer(idh);
 }
 
 
-TGi CWGSDataLoader::GetGi(const CSeq_id_Handle& idh)
+CDataLoader::SGiFound
+CWGSDataLoader::GetGiFound(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetGi(idh);
 }
@@ -286,13 +288,15 @@ TSeqPos CWGSDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
 }
 
 
-pair<int, bool> CWGSDataLoader::GetSequenceHash2(const CSeq_id_Handle& idh)
+CDataLoader::SHashFound
+CWGSDataLoader::GetSequenceHashFound(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetSequenceHash(idh);
 }
 
 
-CSeq_inst::TMol CWGSDataLoader::GetSequenceType(const CSeq_id_Handle& idh)
+CDataLoader::STypeFound
+CWGSDataLoader::GetSequenceTypeFound(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetSequenceType(idh);
 }

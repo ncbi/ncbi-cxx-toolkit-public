@@ -686,9 +686,12 @@ void CWGSDataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-CSeq_id_Handle CWGSDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
+CDataLoader::SAccVerFound
+CWGSDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 {
+    CDataLoader::SAccVerFound ret;
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        ret.sequence_found = true;
         CRef<CSeq_id> acc_id;
         switch ( info.seq_type ) {
         case 'S':
@@ -708,25 +711,28 @@ CSeq_id_Handle CWGSDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
             break;
         }
         if ( acc_id ) {
-            return CSeq_id_Handle::GetHandle(*acc_id);
+            ret.acc_ver = CSeq_id_Handle::GetHandle(*acc_id);
         }
     }
-    return CSeq_id_Handle();
+    return ret;
 }
 
 
-TGi CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
+CDataLoader::SGiFound
+CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
+    CDataLoader::SGiFound ret;
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        ret.sequence_found = true;
         if ( info.IsContig() ) {
             if ( CWGSSeqIterator it = info.GetContigIterator() ) {
                 if ( it.HasGi() ) {
-                    return it.GetGi();
+                    ret.gi = it.GetGi();
                 }
             }
         }
     }
-    return ZERO_GI;
+    return ret;
 }
 
 
@@ -738,12 +744,9 @@ int CWGSDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
                 if ( it.HasTaxId() ) {
                     return it.GetTaxId();
                 }
-                return 0; // taxid is not defined
             }
         }
-        else if ( info.IsValidRowId() ) {
-            return 0; // taxid is not defined
-        }
+        return 0; // taxid is not defined
     }
     return -1; // sequence is unknown
 }
@@ -774,10 +777,12 @@ TSeqPos CWGSDataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
 }
 
 
-pair<int, bool> CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
+CDataLoader::SHashFound
+CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
 {
-    pair<int, bool> ret;
+    CDataLoader::SHashFound ret;
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        ret.sequence_found = true;
         switch ( info.seq_type ) {
         case 'S': // scaffold
             /*
@@ -796,8 +801,8 @@ pair<int, bool> CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
         default:
             if ( CWGSSeqIterator it = info.GetContigIterator() ) {
                 if ( it.HasSeqHash() ) {
-                    ret.first = it.GetSeqHash();
-                    ret.second = true;
+                    ret.hash = it.GetSeqHash();
+                    ret.hash_known = true;
                 }
             }
             break;
@@ -807,22 +812,25 @@ pair<int, bool> CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
 }
 
 
-CSeq_inst::TMol CWGSDataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
+CDataLoader::STypeFound
+CWGSDataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
 {
+    CDataLoader::STypeFound ret;
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        ret.sequence_found = true;
         switch ( info.seq_type ) {
         case 'S':
-            info.file->GetDb()->GetScaffoldMolType();
+            ret.type = info.file->GetDb()->GetScaffoldMolType();
             break;
         case 'P':
-            info.file->GetDb()->GetProteinMolType();
+            ret.type = info.file->GetDb()->GetProteinMolType();
             break;
         default:
-            info.file->GetDb()->GetContigMolType();
+            ret.type = info.file->GetDb()->GetContigMolType();
             break;
         }
     }
-    return CSeq_inst::eMol_not_set;
+    return ret;
 }
 
 
