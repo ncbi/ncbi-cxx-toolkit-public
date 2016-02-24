@@ -1192,8 +1192,9 @@ void SNetStorageObjectRPC::SetExpiration(const CTimeout& ttl)
 
 string SNetStorageObjectRPC::FileTrack_Path()
 {
-    // TODO: Implement locking (CXX-7623)
-    return kEmptyStr;
+    CJsonNode request(x_MkRequest("LOCKFTPATH"));
+
+    return ExchangeUsingOwnService(request).GetString("Path");
 }
 
 void SNetStorageObjectRPC::Close()
