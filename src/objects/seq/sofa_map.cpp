@@ -33,6 +33,8 @@
 //#include <objects/seq/genbank_type.hpp>
 #include <objects/seq/sofa_type.hpp>
 #include <objects/seq/sofa_map.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -116,7 +118,7 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_transit_peptide ) ] = SofaType( 725, "transit_peptide" );
     m_Map[ GT( e_Imp, eSubtype_unsure ) ] = SofaType( 1086, "sequence_uncertainty" );
     m_Map[ GT( e_Imp, eSubtype_V_segment ) ]    = SofaType( 466, "V_gene_segment" );
-    m_Map[ GT( e_Imp, eSubtype_variation ) ]    = SofaType( 109, "sequence_variant" );
+    m_Map[ GT( e_Imp, eSubtype_variation ) ]    = SofaType( 1059, "sequence_alteration" );
     m_Map[ GT( e_Imp, eSubtype_virion ) ]    = SofaType( 1041, "viral_sequence" );
 
     m_Map[ GT( e_Comment, eSubtype_comment ) ]  = SofaType( 700, "remark" );
@@ -131,10 +133,97 @@ void CSofaMap::x_Init()
 
     m_Map[ GT( e_Rsite, eSubtype_rsite ) ]  = SofaType( 168, "restriction_enzyme_cut_site" );
 
-    //m_Map[ GT( e_Variation, eSubtype_variation_ref ) ]  = SofaType( 1060, "sequence_variant" );
+    m_Map[ GT( e_Variation, eSubtype_variation_ref ) ]  = SofaType( 1059, "sequence_alteration" );
 
     //m_Map[ GT( e_Site, eSubtype_site ) ]  = SofaType( 408, "site" );
 };
+
+
+string
+CSofaMap::FeatureToSofaType(
+    const CSeq_feat& feat)
+{
+    const CSeqFeatData& data = feat.GetData();
+    CSeqFeatData::ESubtype subtype = data.GetSubtype();
+    if (subtype == CSeqFeatData::eSubtype_bond) {
+        switch(data.GetBond()) {
+        default:
+            return MappedName(data.Which(), subtype);
+        case CSeqFeatData::eBond_disulfide:
+            return "disulfide_bond";
+        case CSeqFeatData::eBond_xlink:
+            return "cross_link"; 
+        }
+    }
+    if (subtype == CSeqFeatData::eSubtype_regulatory) {
+        string regulatoryClass = feat.GetNamedQual("regulatory_class");
+        if (regulatoryClass.empty()) {
+             return MappedName(data.Which(), subtype);
+       }
+        if (regulatoryClass == "attenuator") {
+            return "attenuator";
+        }
+        if (regulatoryClass == "CAAT_signal") {
+            return "CAAT_signal";
+        }
+        if (regulatoryClass == "enhancer") {
+            return "enhancer";
+        }
+        if (regulatoryClass == "enhancer_blocking_element") {
+            return "insulator";
+        }
+        if (regulatoryClass == "GC_signal") {
+            return "GC_rich_promoter_region";
+        }
+        if (regulatoryClass == "insulator") {
+            return "boundary_element";
+        }
+        if (regulatoryClass == "locus_control_region") {
+            return "locus_control_region";
+        }
+        if (regulatoryClass == "minus_35_signal") {
+            return "minus_35_signal";
+        }
+        if (regulatoryClass == "minus_10_signal") {
+            return "minus_10_signal";
+        }
+        if (regulatoryClass == "polyA_signal_sequence") {
+            return "polyA_signal_sequence";
+        }
+        if (regulatoryClass == "promoter") {
+            return "promoter";
+        }
+        if (regulatoryClass == "ribosome_binding_site") {
+            return "Shine_Dalgarno_sequence";
+        }
+        if (regulatoryClass == "riboswitch") {
+            return "riboswitch";
+        }
+        if (regulatoryClass == "silencer") {
+            return "silencer";
+        }
+        if (regulatoryClass == "TATA_box") {
+            return "TATA_box";
+        }
+        if (regulatoryClass == "terminator") {
+            return "terminator";
+        }
+        return MappedName(data.Which(), subtype);
+    }
+    if (subtype == CSeqFeatData::eSubtype_ncRNA) {
+        const CSeqFeatData::TRna& rna = data.GetRna();
+        if ( !rna.IsSetExt() ) {
+            return MappedName(data.Which(), subtype);
+        }
+        const CRNA_ref::TExt& ext = rna.GetExt();
+        if ( !ext.IsGen()  ||  !ext.GetGen().IsSetClass()) {
+            return MappedName(data.Which(), subtype);
+        }
+        string ncrnaClass = ext.GetGen().GetClass();
+    }    
+    return MappedName(data.Which(), subtype);
+}
+
 
 #undef GT
         

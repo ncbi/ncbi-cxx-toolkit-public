@@ -32,6 +32,7 @@
 #ifndef OBJECTS___SOFAMAP__HPP
 #define OBJECTS___SOFAMAP__HPP
 
+#include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -62,6 +63,9 @@ public:
         }
         return m_default.m_name;
     }
+
+    string FeatureToSofaType(
+        const CSeq_feat&);
 
     const map<CFeatListItem, SofaType>& Map() const
     {

@@ -215,7 +215,7 @@ bool CGff3WriteRecordFeature::x_AssignType(
     if ( ! mf.IsSetData() ) {
         m_strType = SOFAMAP->DefaultName();
     }
-    m_strType = SOFAMAP->MappedName( mf.GetFeatType(), mf.GetFeatSubtype() );
+    m_strType = SOFAMAP->FeatureToSofaType(mf.GetOriginalFeature());
     return true;
 };
 

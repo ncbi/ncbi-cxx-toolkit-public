@@ -1281,7 +1281,7 @@ bool CGff3Writer::xAssignFeatureType(
         return true;
     }
     record.SetType(
-        SOFAMAP->MappedName(mf.GetFeatType(), mf.GetFeatSubtype()));
+        SOFAMAP->FeatureToSofaType(mf.GetOriginalFeature()));
     return true;
 }
 
