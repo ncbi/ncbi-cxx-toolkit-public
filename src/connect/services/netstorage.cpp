@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/rwstream.hpp>
 #include <connect/services/impl/netstorage_impl.hpp>
+#include <connect/services/netstorage_ft.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -244,6 +245,12 @@ void g_ThrowNetStorageException(const CDiagCompileInfo& compile_info,
     CNetStorageException::EErrCode err_code =
         ConvertErrCode(prev_exception.GetErrCode());
     throw CNetStorageException(compile_info, &prev_exception, err_code, message);
+}
+
+CNetStorageObject_FileTrack_Path::CNetStorageObject_FileTrack_Path(
+        CNetStorageObject object)
+    : m_Path(object->FileTrack_Path())
+{
 }
 
 END_NCBI_SCOPE

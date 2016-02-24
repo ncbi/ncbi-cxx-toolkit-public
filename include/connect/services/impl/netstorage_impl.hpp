@@ -70,6 +70,8 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl :
             const string& attr_value) = 0;
     virtual CNetStorageObjectInfo GetInfo() = 0;
     virtual void SetExpiration(const CTimeout&) = 0;
+
+    virtual string FileTrack_Path() = 0;
 };
 
 /// @internal

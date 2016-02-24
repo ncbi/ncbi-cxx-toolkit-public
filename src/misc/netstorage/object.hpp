@@ -67,6 +67,8 @@ public:
     CNetStorageObjectInfo GetInfo();
     void SetExpiration(const CTimeout&);
 
+    string FileTrack_Path();
+
     const TObjLoc& Locator() const;
     string Relocate(TNetStorageFlags);
     bool Exists();

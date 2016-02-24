@@ -79,6 +79,8 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     virtual CNetStorageObjectInfo GetInfo();
     virtual void SetExpiration(const CTimeout&);
 
+    string FileTrack_Path();
+
     void x_InitReader();
     void x_InitWriter();
 

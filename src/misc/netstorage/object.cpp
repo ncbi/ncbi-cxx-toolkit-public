@@ -105,6 +105,13 @@ void CObj::SetExpiration(const CTimeout& ttl)
 }
 
 
+string CObj::FileTrack_Path()
+{
+    // TODO: Implement locking (CXX-7624)
+    return kEmptyStr;
+}
+
+
 const TObjLoc& CObj::Locator() const
 {
     return m_Selector->Locator();

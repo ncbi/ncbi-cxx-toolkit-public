@@ -47,10 +47,6 @@ public:
     const CNetStorageObjectLoc& Locator();
     string FileTrack_Path();
 
-    // TODO: Remove after server switched to FileTrack_Path()
-    string FileTrack_Path_Lock() { return kEmptyStr; }
-    void FileTrack_Path_Unlock() {}
-
 private:
     CDirectNetStorageObject(SNetStorageObjectImpl* impl);
     friend class CDirectNetStorage;

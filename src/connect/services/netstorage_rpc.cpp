@@ -422,6 +422,8 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     virtual CNetStorageObjectInfo GetInfo();
     virtual void SetExpiration(const CTimeout&);
 
+    string FileTrack_Path();
+
     CJsonNode x_MkRequest(const string& request_type) const;
 
     CRef<SNetStorageRPC,
@@ -1186,6 +1188,12 @@ void SNetStorageObjectRPC::SetExpiration(const CTimeout& ttl)
     }
 
     ExchangeUsingOwnService(request);
+}
+
+string SNetStorageObjectRPC::FileTrack_Path()
+{
+    // TODO: Implement locking (CXX-7623)
+    return kEmptyStr;
 }
 
 void SNetStorageObjectRPC::Close()

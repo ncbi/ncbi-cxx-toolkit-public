@@ -223,6 +223,12 @@ void SNetStorage_NetCacheBlob::SetExpiration(const CTimeout& ttl)
     m_NetCacheAPI.ProlongBlobLifetime(m_BlobKey, (unsigned)ttl.GetAsDouble());
 }
 
+string SNetStorage_NetCacheBlob::FileTrack_Path()
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
+            ": not a FileTrack object");
+}
+
 void SNetStorage_NetCacheBlob::Close()
 {
     switch (m_State) {
