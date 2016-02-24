@@ -820,8 +820,6 @@ public:
     CHealthcheckThread()
         : m_RunHealthCheck(true)
     {
-        tls->SetValue(new int, TlsCleanup);
-        *tls->GetValue() = kHealthThreadNumber;
         m_Busy = false;
         for (unsigned short port = 8080; port < 8110; port++) {
             CListeningSocket* l_sock = new CListeningSocket(port);
@@ -966,6 +964,8 @@ private:
     }
     
     void* Main(void) {
+        tls->SetValue(new int, TlsCleanup);
+        *tls->GetValue() = kHealthThreadNumber;
         if (s_GetTimeOfDay(&m_LastSuccAcceptTime) != 0) {
             memset(&m_LastSuccAcceptTime, 0, sizeof(m_LastSuccAcceptTime));
         }
@@ -5287,10 +5287,12 @@ void AllOK__ReturnSuccess()
     node_name = s_GenerateNodeName();
     s_SelectPort(count_before, node_name, port);
     string health = string("http://") + s_GetMyIP() + ":8080/health";
-    BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port, health));
+    BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
+                                           health));
     /* Count how many servers there are */
     /* Cleanup */
-    BOOST_CHECK_NO_THROW(s_DeannounceCPP(node_name, "1.0.0", s_GetMyIP(), port));
+    BOOST_CHECK_NO_THROW(s_DeannounceCPP(node_name, "1.0.0", s_GetMyIP(),
+                                         port));
 }
 
 
@@ -7127,6 +7129,8 @@ public:
 
 private:
     void* Main(void) {
+        tls->SetValue(new int, TlsCleanup);
+        *tls->GetValue() = m_ThreadIdx;
         m_TestFunc();
         return NULL;
     }

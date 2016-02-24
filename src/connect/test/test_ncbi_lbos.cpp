@@ -64,6 +64,8 @@ NCBITEST_AUTO_FINI()
 
 NCBITEST_AUTO_INIT()
 {
+    tls->SetValue(new int, TlsCleanup);
+    *tls->GetValue() = kMainThreadNumber;
 #ifdef NCBI_OS_MSWIN
     srand(NULL);
 #else
@@ -111,7 +113,8 @@ BOOST_AUTO_TEST_SUITE( SelfTest ) /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(TESTVERSIONCHECK)
 {
-    CMockFunction<SLBOSVersion> lbos_mock(s_LBOSVersion, SLBOSVersion{ 1, 0, 2 });
+    CMockFunction<SLBOSVersion> lbos_mock(s_LBOSVersion, 
+                                          SLBOSVersion{ 1, 0, 2 });
     string versions;
     bool active = false;
     ///No elements - ON by default
