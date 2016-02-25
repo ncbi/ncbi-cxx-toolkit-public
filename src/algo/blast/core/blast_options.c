@@ -43,6 +43,7 @@ static char const rcsid[] =
 #include <algo/blast/composition_adjustment/composition_constants.h>
 #include <algo/blast/core/hspfilter_collector.h>
 #include <algo/blast/core/hspfilter_besthit.h>
+#include <algo/blast/core/blast_util.h>
 
 const double kPSSM_NoImpalaScaling = 1.0;
 
@@ -1666,7 +1667,28 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                                                score_options, blast_msg)) != 0)
        return status;
 
-   
+   /* Word sizes larger than 5 are not suported for IDENTITY scoring matrix.
+    Identity matrix is only supported for blastp and tblastn. */
+    if (program_number == eBlastTypeBlastp ||
+        program_number == eBlastTypeTblastn) {
+
+       char* matrix = BLAST_StrToUpper(score_options->matrix);
+       Boolean is_identity = strcmp(matrix, "IDENTITY") == 0;
+
+       if (matrix) {
+           free(matrix);
+       }
+       
+       if (lookup_options->word_size > 5 && is_identity) {
+
+           Blast_MessageWrite(blast_msg, eBlastSevError,
+                              kBlastMessageNoContext,
+                              "Word size larger than 5 is not supported for "
+                              "the identity scoring matrix");
+
+           return BLASTERR_OPTION_VALUE_INVALID;
+       }
+   }
 
    return status;
 }
