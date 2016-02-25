@@ -234,6 +234,7 @@ void FindNRuns(vector<CRange<TSeqPos> >& runs, const CSeq_data& seq_data, const 
     }
 }
 
+
 DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc, "More than 10 Ns in a row")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
@@ -267,9 +268,10 @@ DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc, "More than 10 Ns in a row")
     }
 
     if (found_any) {
-        m_Objs["[n] sequence[s] [has] runs of 10 or more Ns"][sub_key.str()].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs["[n] sequence[s] [has] runs of 10 or more Ns"][sub_key.str()].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef())).Fatal();
     }
 }
+
 
 DISCREPANCY_SUMMARIZE(N_RUNS)
 {
