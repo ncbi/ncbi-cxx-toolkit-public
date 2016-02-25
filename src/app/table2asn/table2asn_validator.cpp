@@ -39,7 +39,7 @@ static const string& s_GetSeverityLabel (EDiagSev sev)
 void CTable2AsnValidator::Cleanup(CSeq_entry& entry, const string& flags)
 {
     CCleanup cleanup;
-    if (flags.find('e'))
+    if (flags.find('e') != string::npos)
     {
         cleanup.ExtendedCleanup(entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
     }
