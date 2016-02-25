@@ -33,6 +33,8 @@
 
 #include "state.hpp"
 
+#include <limits>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -660,7 +662,14 @@ void CNetCache::SetExpirationImpl(const CTimeout& ttl)
 
     try {
         NC_EXISTS_IMPL(object_loc);
-        m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), ttl);
+
+        if (ttl.IsFinite()) {
+            m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), ttl);
+        } else {
+            // NetCache does not support infinite TTL, use max possible instead
+            const CTimeout max(numeric_limits<unsigned>::max(), 0);
+            m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), max);
+        }
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
 }
