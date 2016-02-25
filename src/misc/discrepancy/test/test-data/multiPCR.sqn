@@ -1,0 +1,152 @@
+Seq-entry ::= seq {
+  id {
+    ddbj {
+      accession "AB490819" ,
+      version 1 } ,
+    gi 225007349 } ,
+  descr {
+    title "Penicillium citrinum genes for ITS1, 5.8S rRNA, ITS2." ,
+    source {
+      org {
+        taxname "Penicillium citrinum" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 5077 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Penicillium" ,
+              species "citrinum" } ,
+          mod {
+            {
+              subtype nat-host ,
+              subname "Hyoscyamus muticus" } } ,
+          lineage "Eukaryota; Fungi; Dikarya; Ascomycota; Pezizomycotina;
+ Eurotiomycetes; Eurotiomycetidae; Eurotiales; Aspergillaceae; Penicillium" ,
+          gcode 1 ,
+          mgcode 4 ,
+          div "PLN" } } ,
+      subtype {
+        {
+          subtype country ,
+          name "Japan:Yamaguchi" } ,
+        {
+          subtype collected-by ,
+          name "Fatma Fakhry" } ,
+        {
+          subtype identified-by ,
+          name "Fatma Fakhry" } } ,
+      pcr-primers {
+        {
+          forward {
+            {
+              seq "tccgtaggtgaacctgcgg" ,
+              name "ITS1" } } ,
+          reverse {
+            {
+              seq "tcctccgcttattgatatgc" ,
+              name "ITS4" } } } ,
+        {
+          forward {
+            {
+              seq "gaattcggatcc" ,
+              name "ITS7" } ,
+            {
+              seq "ggatccgaattc" ,
+              name "ITS8" } } ,
+          reverse {
+            {
+              seq "gggccccccggg" ,
+              name "ITS9" } } } } } ,
+    molinfo {
+      biomol genomic } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Abdel-motaal" ,
+                      initials "F.F." } } ,
+                {
+                  name
+                    name {
+                      last "Ito" ,
+                      initials "S." } } } ,
+            affil
+              str "Contact:Fatma Fakhry Abdel-motaal Faculty of agriculture,
+ Biological and environmental sciences; Yamaguchi university, Yamaguchi,
+ Yamaguchi 753-0841, Japan" } ,
+          medium other ,
+          date
+            std {
+              year 2009 ,
+              month 3 ,
+              day 14 } } } } ,
+    pub {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Abdel-motaal" ,
+                      initials "F." } } ,
+                {
+                  name
+                    name {
+                      last "Ito" ,
+                      initials "S." } } } } ,
+          title "Endophytic Fungi" } } ,
+      reftype no-target } ,
+    create-date
+      std {
+        year 2009 ,
+        month 3 ,
+        day 17 } ,
+    update-date
+      std {
+        year 2009 ,
+        month 3 ,
+        day 17 } } ,
+  inst {
+    repr raw ,
+    mol dna ,
+    length 960 ,
+    seq-data
+      ncbi4na '848842224112281848842282442444222242422242241244222222841242848
+284144884214828414122818112411188148811112888211211244182828844882244218241841
+141124214241118424181128118484118842141188214841182182414828884112421218842422
+282844818822441444218422848224142482188428422282114222442884848488444222248222
+222422444444124442224111442142442442122424822448228241424818444428824821222428
+28148144222442244242F422112222112288818818282148841228244182148144418122242841
+288114218182118112441141188224814414122842441144182188122414842444222282444422
+211228222122248488422241112281848842282442444222242422242224124422222228411242
+848284114884214828414122818112411188148811112888211211244182828844882244218241
+841141124214241118424181128118484118842141188214841182182414828884112421218842
+422282844818822441444218422848224142482188428422282114222442884848488444222248
+222222242244444412444222411144214244244212242482244228824142481844442882482122
+242828148144222442144242214224128822112'H } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              rna {
+                type miscRNA } ,
+            comment "contains ITS1, 5.8S rRNA, ITS2" ,
+            location
+              int {
+                from 0 ,
+                to 959 ,
+                id
+                  gi 225007349 } } } } } }

@@ -58,23 +58,51 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal t
     }
     CRef<CDiscrepancyObject> disc_obj(new CDiscrepancyObject(desc, context.GetScope(), context.GetFile(), context.GetKeepRef()));
     m_Objs["all"].Add(*disc_obj);
-    if (obj.CanGetGenome()) {
-        m_Objs["location"][context.GetGenomeName(obj.GetGenome())].Add(*disc_obj);
+    if (obj.CanGetGenome() && obj.GetGenome() != CBioSource::eGenome_unknown) {
+        const string& qual = "location";
+        if (m_Objs["all"][qual].Exist(*disc_obj)) {
+            m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
+        }
+        else {
+            m_Objs["all"][qual].Add(*disc_obj, false);
+        }
+        m_Objs[qual][context.GetGenomeName(obj.GetGenome())].Add(*disc_obj);
     }
     if (obj.CanGetOrg()) {
         const COrg_ref& org_ref = obj.GetOrg();
         if (org_ref.CanGetTaxname()) {
-            m_Objs["taxname"][org_ref.GetTaxname()].Add(*disc_obj);
+            const string& qual = "taxname";
+            if (m_Objs["all"][qual].Exist(*disc_obj)) {
+                m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
+            }
+            else {
+                m_Objs["all"][qual].Add(*disc_obj, false);
+            }
+            m_Objs[qual][org_ref.GetTaxname()].Add(*disc_obj);
         }
         if (org_ref.GetTaxId()) {
-            m_Objs["taxid"][NStr::IntToString(org_ref.GetTaxId())].Add(*disc_obj);
+            const string& qual = "taxid";
+            if (m_Objs["all"][qual].Exist(*disc_obj)) {
+                m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
+            }
+            else {
+                m_Objs["all"][qual].Add(*disc_obj, false);
+            }
+            m_Objs[qual][NStr::IntToString(org_ref.GetTaxId())].Add(*disc_obj);
         }
     }
     if (obj.CanGetSubtype()) {
         ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
             const CSubSource::TSubtype& subtype = (*it)->GetSubtype();
             if ((*it)->CanGetName()) {
-                m_Objs[subtype == CSubSource::eSubtype_other ? "note-subsrc" : (*it)->GetSubtypeName(subtype, CSubSource::eVocabulary_raw)][(*it)->GetName()].Add(*disc_obj);
+                const string& qual = subtype == CSubSource::eSubtype_other ? "note-subsrc" : (*it)->GetSubtypeName(subtype, CSubSource::eVocabulary_raw);
+                if (m_Objs["all"][qual].Exist(*disc_obj)) {
+                    m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
+                }
+                else {
+                    m_Objs["all"][qual].Add(*disc_obj, false);
+                }
+                m_Objs[qual][(*it)->GetName()].Add(*disc_obj);
             }
         }
     }
@@ -86,7 +114,14 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal t
                 subtype != COrgMod::eSubtype_gb_acronym &&
                 subtype != COrgMod::eSubtype_gb_anamorph &&
                 subtype != COrgMod::eSubtype_gb_synonym) {
-                m_Objs[subtype == COrgMod::eSubtype_other ? "note-orgmod" : (*it)->GetSubtypeName(subtype, COrgMod::eVocabulary_raw)][(*it)->GetSubname()].Add(*disc_obj);
+                const string& qual = subtype == COrgMod::eSubtype_other ? "note-orgmod" : subtype == COrgMod::eSubtype_nat_host ? "host" : (*it)->GetSubtypeName(subtype, COrgMod::eVocabulary_raw);
+                if (m_Objs["all"][qual].Exist(*disc_obj)) {
+                    m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
+                }
+                else {
+                    m_Objs["all"][qual].Add(*disc_obj, false);
+                }
+                m_Objs[qual][(*it)->GetSubname()].Add(*disc_obj);
             }
         }
     }
@@ -95,20 +130,48 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal t
             if ((*it)->CanGetForward()) {
                 ITERATE (list<CRef<CPCRPrimer> >, pr, (*it)->GetForward().Get()) {
                     if ((*pr)->CanGetName()) {
-                        m_Objs["fwd-primer-name"][(*pr)->GetName()].Add(*disc_obj);
+                        const string& qual = "fwd-primer-name";
+                        if (m_Objs["all"][qual].Exist(*disc_obj)) {
+                            m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
+                        }
+                        else {
+                            m_Objs["all"][qual].Add(*disc_obj, false);
+                        }
+                        m_Objs[qual][(*pr)->GetName()].Add(*disc_obj, false);
                     }
                     if ((*pr)->CanGetSeq()) {
-                        m_Objs["fwd-primer-seq"][(*pr)->GetSeq()].Add(*disc_obj);
+                        const string& qual = "fwd-primer-seq";
+                        if (m_Objs["all"][qual].Exist(*disc_obj)) {
+                            m_Objs["all"][qual]["*"].Add(*disc_obj, false);
+                        }
+                        else {
+                            m_Objs["all"][qual].Add(*disc_obj, false);
+                        }
+                        m_Objs[qual][(*pr)->GetSeq()].Add(*disc_obj, false);
                     }
                 }
             }
             if ((*it)->CanGetReverse()) {
                 ITERATE (list<CRef<CPCRPrimer> >, pr, (*it)->GetReverse().Get()) {
                     if ((*pr)->CanGetName()) {
-                        m_Objs["rev-primer-name"][(*pr)->GetName()].Add(*disc_obj);
+                        const string& qual = "rev-primer-name";
+                        if (m_Objs["all"][qual].Exist(*disc_obj)) {
+                            m_Objs["all"][qual]["*"].Add(*disc_obj, false);
+                        }
+                        else {
+                            m_Objs["all"][qual].Add(*disc_obj, false);
+                        }
+                        m_Objs[qual][(*pr)->GetName()].Add(*disc_obj, false);
                     }
                     if ((*pr)->CanGetSeq()) {
-                        m_Objs["rev-primer-seq"][(*pr)->GetSeq()].Add(*disc_obj);
+                        const string& qual = "rev-primer-seq";
+                        if (m_Objs["all"][qual].Exist(*disc_obj)) {
+                            m_Objs["all"][qual]["*"].Add(*disc_obj, false);
+                        }
+                        else {
+                            m_Objs["all"][qual].Add(*disc_obj, false);
+                        }
+                        m_Objs[qual][(*pr)->GetSeq()].Add(*disc_obj, false);
                     }
                 }
             }
@@ -151,6 +214,8 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         size_t bins = 0;
         size_t uniq = 0;
         size_t num = 0;
+        size_t pres = m_Objs["all"][qual].GetObjects().size();
+        size_t mul = m_Objs["all"][qual]["*"].GetObjects().size();
         TReportObjPtrMap missing = all_missing;
         CReportNode::TNodeMap& sub = it->second->GetMap();
         TStringStringObjVectorMap capital;
@@ -168,10 +233,10 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         }
         string diagnosis = it->first;
         diagnosis += " (";
-        diagnosis += num >= total ? "all present" : "some missing";
+        diagnosis += pres == total ? "all present" : "some missing";
         diagnosis += ", ";
         diagnosis += uniq == num ? "all unique" : bins == 1 ? "all same" : "some duplicates";
-        diagnosis += ")";
+        diagnosis += mul ? ", some multi)" : ")";
         report[diagnosis];
         if ((num != total || bins != 1) && (it->first == "collection-date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain")) {
             report[diagnosis].Fatal();

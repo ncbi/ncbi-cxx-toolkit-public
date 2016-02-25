@@ -199,11 +199,13 @@ public:
     CReportNode& Autofix(bool b = true) { m_Autofix = b; return *this; }
     CReportNode& Ext(bool b = true) { m_Ext = b; return *this; }
 
+    static bool Exist(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
+    bool Exist(CReportObj& obj) { return Exist(m_Objs, m_Hash, obj); }
     static void Add(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj, bool unique = true);
     CReportNode& Add(CReportObj& obj, bool unique = true) { Add(m_Objs, m_Hash, obj, unique);  return *this; }
     static void Add(TReportObjectList& list, TReportObjectSet& hash, TReportObjectList& objs, bool unique = true);
     CReportNode& Add(TReportObjectList& objs, bool unique = true) { Add(m_Objs, m_Hash, objs, unique);  return *this; }
-    
+
     TReportObjectList& GetObjects() { return m_Objs; }
     TNodeMap& GetMap() { return m_Map; }
     CRef<CReportItem> Export(CDiscrepancyCase& test, bool unique = true);

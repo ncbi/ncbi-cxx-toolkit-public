@@ -1,0 +1,380 @@
+Seq-entry ::= set {
+  level 1 ,
+  class nuc-prot ,
+  descr {
+    source {
+      genome plasmid ,
+      org {
+        taxname "Erwinia pyrifoliae DSM 12163" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 644651 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Erwinia" ,
+              species "pyrifoliae" } ,
+          mod {
+            {
+              subtype strain ,
+              subname "DSM 12163" } ,
+            {
+              subtype culture-collection ,
+              subname "DSM:12163" } } ,
+          lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Enterobacteriales; Enterobacteriaceae; Erwinia" ,
+          gcode 11 ,
+          div "BCT" } } ,
+      subtype {
+        {
+          subtype plasmid-name ,
+          name "pEP2.6" } } } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Jaenicke" ,
+                      initials "S." } } } ,
+            affil
+              str "Jaenicke S., Universitaet Bielefeld, CeBiTec, 33594
+ Bielefeld, N/A, GERMANY" } ,
+          medium other ,
+          date
+            std {
+              year 2009 ,
+              month 5 ,
+              day 6 } } } } ,
+    pub {
+      pub {
+        pmid 20047678 ,
+        article {
+          title {
+            name "Complete genome sequence of the fire blight pathogen Erwinia
+ pyrifoliae DSM 12163T and comparative genomic insights into plant
+ pathogenicity." } ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Smits" ,
+                      initials "T.H." } ,
+                  affil
+                    str "Swiss National Competence Center for Fire Blight,
+ Division of Plant Protection, Agroscope Changins-Wadenswil ACW, Wadenswil,
+ Switzerland." } ,
+                {
+                  name
+                    name {
+                      last "Jaenicke" ,
+                      initials "S." } } ,
+                {
+                  name
+                    name {
+                      last "Rezzonico" ,
+                      initials "F." } } ,
+                {
+                  name
+                    name {
+                      last "Kamber" ,
+                      initials "T." } } ,
+                {
+                  name
+                    name {
+                      last "Goesmann" ,
+                      initials "A." } } ,
+                {
+                  name
+                    name {
+                      last "Frey" ,
+                      initials "J.E." } } ,
+                {
+                  name
+                    name {
+                      last "Duffy" ,
+                      initials "B." } } } } ,
+          from
+            journal {
+              title {
+                iso-jta "BMC Genomics" ,
+                ml-jta "BMC Genomics" ,
+                issn "1471-2164" ,
+                name "BMC genomics" } ,
+              imp {
+                date
+                  std {
+                    year 2010 } ,
+                volume "11" ,
+                pages "2" ,
+                language "eng" ,
+                pubstatus epublish ,
+                history {
+                  {
+                    pubstatus received ,
+                    date
+                      std {
+                        year 2009 ,
+                        month 6 ,
+                        day 2 } } ,
+                  {
+                    pubstatus accepted ,
+                    date
+                      std {
+                        year 2010 ,
+                        month 1 ,
+                        day 4 } } ,
+                  {
+                    pubstatus aheadofprint ,
+                    date
+                      std {
+                        year 2010 ,
+                        month 1 ,
+                        day 4 } } ,
+                  {
+                    pubstatus other ,
+                    date
+                      std {
+                        year 2010 ,
+                        month 1 ,
+                        day 6 ,
+                        hour 6 ,
+                        minute 0 } } ,
+                  {
+                    pubstatus pubmed ,
+                    date
+                      std {
+                        year 2010 ,
+                        month 1 ,
+                        day 6 ,
+                        hour 6 ,
+                        minute 0 } } ,
+                  {
+                    pubstatus medline ,
+                    date
+                      std {
+                        year 2010 ,
+                        month 5 ,
+                        day 4 ,
+                        hour 6 ,
+                        minute 0 } } } } } ,
+          ids {
+            pii "1471-2164-11-2" ,
+            doi "10.1186/1471-2164-11-2" ,
+            pubmed 20047678 ,
+            other {
+              db "pmc" ,
+              tag
+                str "PMC2827408" } ,
+            other {
+              db "ELocationID doi" ,
+              tag
+                str "10.1186/1471-2164-11-2" } } } } ,
+      reftype no-target } ,
+    user {
+      type
+        str "DBLink" ,
+      data {
+        {
+          label
+            str "BioProject" ,
+          num 1 ,
+          data
+            strs {
+              "PRJEA37877" } } ,
+        {
+          label
+            str "BioSample" ,
+          num 1 ,
+          data
+            strs {
+              "SAMEA2272353" } } } } ,
+    create-date
+      std {
+        year 2010 ,
+        month 1 ,
+        day 7 } ,
+    update-date
+      std {
+        year 2015 ,
+        month 2 ,
+        day 27 } } ,
+  seq-set {
+    seq {
+      id {
+        embl {
+          accession "FN392236" ,
+          version 1 } ,
+        gi 283480451 } ,
+      descr {
+        title "Erwinia pyrifoliae DSM 12163 complete plasmid pEP2.6" ,
+        molinfo {
+          biomol genomic ,
+          completeness complete } ,
+        embl {
+          div pro ,
+          creation-date
+            std {
+              year 2010 ,
+              month 1 ,
+              day 7 } ,
+          update-date
+            std {
+              year 2015 ,
+              month 2 ,
+              day 27 } ,
+          keywords {
+            "complete genome" } ,
+          xref {
+            {
+              dbname
+                name "EuropePMC" ,
+              id {
+                str "PMC2827408" ,
+                str "20047678" } } ,
+            {
+              dbname
+                name "RFAM" ,
+              id {
+                str "RF00106" ,
+                str "RNAI" } } ,
+            {
+              dbname
+                name "StrainInfo" ,
+              id {
+                str "150671" ,
+                str "1" } } } } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 2610 ,
+        topology circular ,
+        seq-data
+          ncbi4na '11888441811842111114888442811114118488424282418444118141841
+241244888848128881842242111844142818241228182148814828281881828844281841188218
+241812241211824121228211841141841821281214118842128188118111114844448182888814
+144112818841111118148111118114884811184188821884281124884181881181414811114184
+284422841148888821448411881881444411418882288282441418112144218814888144414442
+148882112814228418144182148418442844444414221814481811282882884884414284118284
+281414211888181218241411188811111121411181811128818128211142811442414284481181
+884188848848188884211824111411111118111182288888411418428848288288821441144148
+141421444888811811818484841881888888844844418884188148818424412148811848224241
+118811881888288188481818288481841411818141248818114218112142814111111118111228
+822418818181822842814882888848818882188888814181481148818181811128211818881481
+141884181424242211411844214488188181118122111111141142812888218282182841882288
+882418184222212112181214114481184484814818211184228848888881241828881418418288
+128841418228888888828842424818288884248148111211111422122284421448442888884114
+481144211822141114188882881222144811284428881484414242141812211112848228882148
+481422421482144218221288211482821411818281118221281122222148812211844284284221
+484424888888242182848122444884412821141241814881224411214424214244824442841124
+444448828842121214222142884414241128422811124411224148482144248448184141181242
+442288811214244141412122448111224214442144112144141424211414441424188212244111
+244841841828881814822848244488824221221284188841424822888888484184288482144444
+442441422818441111124448822224242228884282844828882828884222142212222842184122
+128488122881112242112422242242142882184122411241148414241184112414414424821848
+218284222841218148122444821282284142212181821242284221218411421288822841822222
+112122484124121818181888114221881812122224281484282248412844882442421424222421
+12214821F488211114224412144481848888482188122422128814842244241211112442144181
+141848488888441481224224421282214122288248214442842422224121222842211212882124
+411224418811118224882224882122488828888822411142248224282142888841812142428824
+422848824842142888821214828422428824821824141824148124824142888824142142142142
+482848222244181112882422184882144484484488822842884882184242128818822418812444
+841418824441841111248214821442188284284218112218421812144211114242284144424888
+284124118888282214411412811448888881244288124428882111444282841484248282144244
+842444211244484881844811188818288811224214282842842442418442241124488411842218
+841828424821481228841111241428881421282411121884414814411844181111418141811288
+2241111882818818111111844281888118811884821184414841184'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  gene {
+                    locus "rom" ,
+                    locus-tag "EPYR_04038" } ,
+                location
+                  int {
+                    from 2017 ,
+                    to 2220 ,
+                    strand minus ,
+                    id
+                      gi 283480451 } } } } } } ,
+    seq {
+      id {
+        embl {
+          accession "CAY76367" ,
+          version 1 } ,
+        gi 283480452 } ,
+      descr {
+        title "Regulatory protein Rop [Erwinia pyrifoliae DSM 12163]" ,
+        molinfo {
+          biomol peptide } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 67 ,
+        seq-data
+          ncbieaa "MNKQETTTLNMAKFIRGQTLLLLEKLDVLDLDDEAADCEKLHEQAEALYQKLSGRLSEK
+ETVNGNGF" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "Regulatory protein Rop" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 66 ,
+                    id
+                      gi 283480452 } } } } } } } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              cdregion {
+                frame one ,
+                code {
+                  id 11 } } ,
+            comment "putative replication regulatory protein, RNA one
+ modulator" ,
+            product
+              whole
+                gi 283480452 ,
+            location
+              int {
+                from 2017 ,
+                to 2220 ,
+                strand minus ,
+                id
+                  gi 283480451 } ,
+            dbxref {
+              {
+                db "EnsemblGenomes-Gn" ,
+                tag
+                  str "EPYR_04038" } ,
+              {
+                db "EnsemblGenomes-Tr" ,
+                tag
+                  str "CAY76367" } ,
+              {
+                db "InterPro" ,
+                tag
+                  str "IPR000769" } ,
+              {
+                db "UniProtKB/TrEMBL" ,
+                tag
+                  str "D2TE18" } } } } } } }
