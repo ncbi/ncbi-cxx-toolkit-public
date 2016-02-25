@@ -287,12 +287,6 @@ void CDiscrepancyContext::Update_Bioseq_set_Stack(CTypesConstIterator& it)
 }
 
 
-void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)   // remove after propagation
-{
-    Parse(CRef<CSerialObject>(const_cast<CSeq_entry*>(handle.GetCompleteSeq_entry().GetPointer())));
-}
-
-
 void CDiscrepancyContext::Parse(CConstRef<CSerialObject> obj)
 {
     CTypesConstIterator i;

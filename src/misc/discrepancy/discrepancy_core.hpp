@@ -297,7 +297,6 @@ public:
         {}
     bool AddTest(const string& name);
     bool SetAutofixHook(const string& name, TAutofixHook func);
-    void Parse(const objects::CSeq_entry_Handle& handle);   // remove after propagation
     void Parse(CConstRef<CSerialObject> obj);
     void Summarize(void);
     const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
