@@ -184,7 +184,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentScores(
     const CSeq_align& align)
 //  ----------------------------------------------------------------------------
 {
-    static const vector<const string> supportedScores{
+    static const vector<string> supportedScores{
         "Gap", "ambiguous_orientation", "consensus_splices",
         "pct_coverage", "pct_identity_gap", "pct_identity_ungap",
         "rank", "score"
