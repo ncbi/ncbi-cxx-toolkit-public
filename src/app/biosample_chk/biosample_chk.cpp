@@ -213,7 +213,7 @@ private:
     void ProcessAsnInput (void);
     void ProcessList (const string& fname);
     void ProcessFileList (const string& fname);
-    void ProcessOneDirectory(const string& dir_name, bool recurse);
+    int ProcessOneDirectory(const string& dir_name, const string& file_suffix, const string& file_mask, bool recurse);
     void ProcessOneFile(string fname);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
@@ -341,8 +341,8 @@ void CBiosampleChkApp::Init(void)
     CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_report_status);
     arg_desc->SetConstraint("m", constraint);
     
-	arg_desc->AddOptionalKey(
-		"P", "Prefix", "StructuredCommentPrefix", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey(
+        "P", "Prefix", "StructuredCommentPrefix", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey(
         "biosample", "BioSampleAccession", "BioSample Accession to use for sequences in record. Report error if sequences contain a reference to a different BioSample accession.", CArgDescriptions::eString);
@@ -604,7 +604,7 @@ vector<CRef<CSeqdesc> > CBiosampleChkApp::GetBiosampleDescriptors(string fname)
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
 
-	string header = m_In->ReadFileHeader();
+    string header = m_In->ReadFileHeader();
 
     vector<CRef<CSeqdesc> > descriptors;
     if (header == "Seq-submit" ) {  // Seq-submit
@@ -619,23 +619,17 @@ vector<CRef<CSeqdesc> > CBiosampleChkApp::GetBiosampleDescriptors(string fname)
 }
 
 
-void CBiosampleChkApp::ProcessOneDirectory(const string& dir_name, bool recurse)
+int CBiosampleChkApp::ProcessOneDirectory(const string& dir_name, const string& file_suffix, const string& file_mask, bool recurse)
 {
-    const CArgs& args = GetArgs();
+    int num_of_files = 0;
 
     CDir dir(dir_name);
-
-    string suffix = ".sqn";
-    if (args["x"]) {
-        suffix = args["x"].AsString();
-    }
-    string mask = "*" + suffix;
-
-    CDir::TEntries files (dir.GetEntries(mask, CDir::eFile));
+    CDir::TEntries files (dir.GetEntries(file_mask, CDir::eFile));
     ITERATE(CDir::TEntries, ii, files) {
         string fname = (*ii)->GetName();
         if ((*ii)->IsFile() &&
-            (!args["f"] || NStr::Find (fname, args["f"].AsString()) != string::npos)) {
+            (!file_suffix.empty() || NStr::Find (fname, file_suffix) != string::npos)) {
+            ++num_of_files;
             string fname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
             ProcessOneFile (fname);
         }
@@ -646,10 +640,15 @@ void CBiosampleChkApp::ProcessOneDirectory(const string& dir_name, bool recurse)
             string subdir = (*ii)->GetName();
             if ((*ii)->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
                 string subname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
-                ProcessOneDirectory (subname, recurse);
+                num_of_files += ProcessOneDirectory (subname, file_suffix, file_mask, recurse);
             }
         }
     }
+    if (!num_of_files)
+    {
+        NCBI_THROW(CException, eUnknown, "No input '" + file_mask + "' files found in directory '" + dir_name + "'");
+    }        
+    return num_of_files;
 }
 
 
@@ -672,8 +671,8 @@ int CBiosampleChkApp::Run(void)
 
     if (args["o"]) {
         if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample 
-            || m_Mode == e_take_from_biosample ||
-            (m_Handler != NULL && m_Handler->NeedsReportStream())) {
+            //|| m_Mode == e_take_from_biosample
+            || (m_Handler != NULL && m_Handler->NeedsReportStream())) {
             m_ReportStream = &(args["o"].AsOutputFile());
             if (!m_ReportStream)
             {
@@ -698,10 +697,10 @@ int CBiosampleChkApp::Run(void)
     }
             
     m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
-	m_StructuredCommentPrefix = args["P"] ? args["P"].AsString() : "";
-	if (!NStr::IsBlank(m_StructuredCommentPrefix) && !NStr::StartsWith(m_StructuredCommentPrefix, "##")) {
-		m_StructuredCommentPrefix = "##" + m_StructuredCommentPrefix;
-	}
+    m_StructuredCommentPrefix = args["P"] ? args["P"].AsString() : "";
+    if (!NStr::IsBlank(m_StructuredCommentPrefix) && !NStr::StartsWith(m_StructuredCommentPrefix, "##")) {
+        m_StructuredCommentPrefix = "##" + m_StructuredCommentPrefix;
+    }
 
     m_UseDevServer = args["d"].AsBoolean();
 
@@ -728,6 +727,11 @@ int CBiosampleChkApp::Run(void)
         m_ListType = e_none;
     }
 
+    string dir_name    = (args["p"]) ? args["p"].AsString() : "";
+    string file_suffix = (args["f"]) ? args["f"].AsString() : "";
+    string file_mask   = (args["x"]) ? args["x"].AsString() : ".sqn";
+    file_mask = "*" + file_mask;
+    bool dir_recurse   = args["u"];
     if (m_Mode == e_report_status && !NStr::IsBlank(m_BioSampleAccession)) {
         biosample_util::EStatus status = biosample_util::GetBiosampleStatus(m_BioSampleAccession, m_UseDevServer);
         if (m_ReportStream) {
@@ -746,23 +750,23 @@ int CBiosampleChkApp::Run(void)
             return 1;
         } else {
             m_Descriptors = GetBiosampleDescriptors(args["i"].AsString());
-            ProcessOneDirectory (args["p"].AsString(), args["u"]);
+            ProcessOneDirectory (dir_name, file_suffix, file_mask, dir_recurse);
         }
     } else if ( args["p"] ) {
-		ProcessOneDirectory (args["p"].AsString(), args["u"]);
+        ProcessOneDirectory (dir_name, file_suffix, file_mask, dir_recurse);
         if (m_Mode == e_take_from_biosample) {
-			if (m_Table->GetNum_rows() > 0) {
-			    PrintTable(m_Table);
-			}
-		}
+            if (m_Table && m_Table->GetNum_rows() > 0) {
+                PrintTable(m_Table);
+            }
+        }
     } else {
         if (args["i"]) {
-		    ProcessOneFile (args["i"].AsString());
+            ProcessOneFile (args["i"].AsString());
             if (m_Mode == e_take_from_biosample) {
-				if (m_Table->GetNum_rows() > 0) {
-					PrintTable(m_Table);
-				}
-			}
+                if (m_Table && m_Table->GetNum_rows() > 0) {
+                    PrintTable(m_Table);
+                }
+            }
         }
     }
     
@@ -869,20 +873,20 @@ void CBiosampleChkApp::PrintTable(CRef<CSeq_table> table)
         return;
     }
 
-	ITERATE(CSeq_table::TColumns, it, table->GetColumns()) {
-		*m_ReportStream << (*it)->GetHeader().GetTitle() << "\t";
-	}
-	*m_ReportStream << endl;
-	for (size_t row = 0; row < (size_t)table->GetNum_rows(); row++) {
-		ITERATE(CSeq_table::TColumns, it, table->GetColumns()) {
-			if (row < (*it)->GetData().GetString().size()) {
-				*m_ReportStream << (*it)->GetData().GetString()[row] << "\t";
-			} else {
-				*m_ReportStream << "\t";
-			}
-		}
-		*m_ReportStream << endl;
-	}
+    ITERATE(CSeq_table::TColumns, it, table->GetColumns()) {
+        *m_ReportStream << (*it)->GetHeader().GetTitle() << "\t";
+    }
+    *m_ReportStream << endl;
+    for (size_t row = 0; row < (size_t)table->GetNum_rows(); row++) {
+        ITERATE(CSeq_table::TColumns, it, table->GetColumns()) {
+            if (row < (*it)->GetData().GetString().size()) {
+                *m_ReportStream << (*it)->GetData().GetString()[row] << "\t";
+            } else {
+                *m_ReportStream << "\t";
+            }
+        }
+        *m_ReportStream << endl;
+    }
 }
 
 
