@@ -3539,7 +3539,6 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     prot->SetInst().SetRepr(CSeq_inst::eRepr_delta);
     prot->SetInst().SetMol(CSeq_inst::eMol_aa);
     prot->SetInst().SetLength(0);
-    prot->SetInst().SetTopology(CSeq_inst::eTopology_linear);
 
     // reserve our space
     const TSeqPos usable_size = TSeqPos(seq.size()) - frame;
