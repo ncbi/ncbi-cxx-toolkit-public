@@ -17,7 +17,7 @@ NC_005213.1	RefSeq	CDS	883	2691	.	+	0	ID=cds1;Parent=gene2;Dbxref=Genbank:NP_963
 NC_005213.1	RefSeq	gene	2668	3189	.	-	.	ID=gene3;Dbxref=GeneID:2654520;Name=NEQ002;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ002
 NC_005213.1	RefSeq	CDS	2668	3189	.	-	0	ID=cds2;Parent=gene3;Dbxref=Genbank:NP_963297.1,GeneID:2654520;Name=NP_963297.1;Note=COG1047:FKBP-type peptidyl-prolyl cis-trans isomerases 2%3B IPR000931:Adenovirus fibre protein;gbkey=CDS;product=hypothetical protein;protein_id=NP_963297.1;transl_table=11
 NC_005213.1	RefSeq	promoter	3210	3215	.	+	.	ID=id3;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
-NC_005213.1	RefSeq	region	3238	3250	.	+	.	ID=id4;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	3238	3250	.	+	.	ID=id4;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	3290	3748	.	-	.	ID=gene4;Dbxref=GeneID:2654506;Name=NEQ004;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ004
 NC_005213.1	RefSeq	CDS	3290	3748	.	-	0	ID=cds3;Parent=gene4;Dbxref=Genbank:NP_963298.1,GeneID:2654506;Name=NP_963298.1;Note=COG1371: Uncharacterized ACR%3B IPR002804: Protein of unknown function DUF101%3B IPR001472: Bipartite nuclear localization signal;gbkey=CDS;product=hypothetical protein;protein_id=NP_963298.1;transl_table=11
 NC_005213.1	RefSeq	gene	3745	4665	.	-	.	ID=gene5;Dbxref=GeneID:2654304;Name=NEQ005;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ005
@@ -95,7 +95,7 @@ NC_005213.1	RefSeq	CDS	34755	35015	.	+	0	ID=cds36;Parent=gene39;Dbxref=Genbank:N
 NC_005213.1	RefSeq	gene	34999	35199	.	-	.	ID=gene40;Dbxref=GeneID:2732559;Name=NEQ037;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ037
 NC_005213.1	RefSeq	CDS	34999	35199	.	-	0	ID=cds37;Parent=gene40;Dbxref=Genbank:NP_963332.1,GeneID:2732559;Name=NP_963332.1;Note=COG1958: Small nuclear ribonucleoprotein (snRNP) homolog%3B IPR001163: Small nuclear ribonucleoprotein (Sm protein);gbkey=CDS;product=hypothetical protein;protein_id=NP_963332.1;transl_table=11
 NC_005213.1	RefSeq	promoter	35223	35228	.	+	.	ID=id7;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
-NC_005213.1	RefSeq	region	35289	35301	.	+	.	ID=id8;Dbxref=GeneID:3362429;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	35289	35301	.	+	.	ID=id8;Dbxref=GeneID:3362429;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	35318	35389	.	-	.	ID=gene41;Dbxref=GeneID:3362466;Name=NEQ_t04;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t04
 NC_005213.1	RefSeq	tRNA	35318	35389	.	-	.	ID=rna3;Parent=gene41;Dbxref=GeneID:3362466;gbkey=tRNA;product=tRNA-Ala
 NC_005213.1	RefSeq	exon	35318	35389	.	-	.	ID=id9;Parent=rna3;Dbxref=GeneID:3362466;gbkey=tRNA;product=tRNA-Ala
@@ -277,10 +277,10 @@ NC_005213.1	RefSeq	gene	109843	110610	.	-	.	ID=gene127;Dbxref=GeneID:2654167;Nam
 NC_005213.1	RefSeq	CDS	109843	110610	.	-	0	ID=cds119;Parent=gene127;Dbxref=Genbank:NP_963414.1,GeneID:2654167;Name=NP_963414.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963414.1;transl_table=11
 NC_005213.1	RefSeq	gene	110671	111036	.	+	.	ID=gene128;Dbxref=GeneID:2654168;Name=NEQ121;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ121
 NC_005213.1	RefSeq	CDS	110671	111036	.	+	0	ID=cds120;Parent=gene128;Dbxref=Genbank:NP_963415.1,GeneID:2654168;Name=NP_963415.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963415.1;transl_table=11
-NC_005213.1	RefSeq	region	111051	111551	.	+	.	ID=id14;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
-NC_005213.1	RefSeq	region	111051	111551	.	+	.	ID=id15;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
-NC_005213.1	RefSeq	region	111051	111551	.	+	.	ID=id16;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
-NC_005213.1	RefSeq	region	111051	111551	.	+	.	ID=id17;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id14;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id15;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id16;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id17;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
 NC_005213.1	RefSeq	gene	111058	111129	.	+	.	ID=gene129;Dbxref=GeneID:3362432;Name=NEQ_t08;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t08
 NC_005213.1	RefSeq	tRNA	111058	111129	.	+	.	ID=rna8;Parent=gene129;Dbxref=GeneID:3362432;gbkey=tRNA;product=tRNA-Gly
 NC_005213.1	RefSeq	exon	111058	111129	.	+	.	ID=id18;Parent=rna8;Dbxref=GeneID:3362432;gbkey=tRNA;product=tRNA-Gly
@@ -577,7 +577,7 @@ NC_005213.1	RefSeq	tRNA	221794	221830	.	+	.	ID=rna19;Parent=gene267;Dbxref=GeneI
 NC_005213.1	RefSeq	tRNA	409246	409281	.	+	.	ID=rna19;Parent=gene267;Dbxref=GeneID:3362426;exception=trans-splicing;gbkey=tRNA;part=2/2;product=tRNA-His
 NC_005213.1	RefSeq	exon	221794	221830	.	+	.	ID=id32;Parent=rna19;Dbxref=GeneID:3362426;exception=trans-splicing;gbkey=tRNA;product=tRNA-His
 NC_005213.1	RefSeq	exon	409246	409281	.	+	.	ID=id33;Parent=rna19;Dbxref=GeneID:3362426;exception=trans-splicing;gbkey=tRNA;product=tRNA-His
-NC_005213.1	RefSeq	region	221831	221842	.	+	.	ID=id34;Dbxref=GeneID:3362426;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	221831	221842	.	+	.	ID=id34;Dbxref=GeneID:3362426;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	221873	224128	.	+	.	ID=gene268;Dbxref=GeneID:2654071;Name=valS;gbkey=Gene;gene=valS;gene_biotype=protein_coding;locus_tag=NEQ252
 NC_005213.1	RefSeq	CDS	221873	224128	.	+	0	ID=cds248;Parent=gene268;Dbxref=Genbank:NP_963543.1,GeneID:2654071;Name=NP_963543.1;Note=valine--tRNA ligase%3B ValRS%3B converts valine ATP and tRNA(Val) to AMP PPi and valyl-tRNA(Val)%3B class-I aminoacyl-tRNA synthetase type 1 subfamily%3B has a posttransfer editing process to hydrolyze mischarged Thr-tRNA(Val) which is done by the editing domain;gbkey=CDS;gene=valS;product=valyl-tRNA synthetase;protein_id=NP_963543.1;transl_table=11
 NC_005213.1	RefSeq	gene	224014	225156	.	+	.	ID=gene269;Dbxref=GeneID:2732618;Name=NEQ254;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ254
@@ -787,10 +787,10 @@ NC_005213.1	RefSeq	CDS	302044	303954	.	-	0	ID=cds339;Parent=gene366;Dbxref=Genba
 NC_005213.1	RefSeq	gene	304059	304142	.	+	.	ID=gene367;Dbxref=GeneID:3362439;Name=NEQ_t27;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t27
 NC_005213.1	RefSeq	tRNA	304059	304142	.	+	.	ID=rna27;Parent=gene367;Dbxref=GeneID:3362439;gbkey=tRNA;product=tRNA-Leu
 NC_005213.1	RefSeq	exon	304059	304142	.	+	.	ID=id43;Parent=rna27;Dbxref=GeneID:3362439;gbkey=tRNA;product=tRNA-Leu
-NC_005213.1	RefSeq	region	304107	305006	.	-	.	ID=id44;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
-NC_005213.1	RefSeq	region	304107	305006	.	-	.	ID=id45;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
-NC_005213.1	RefSeq	region	304107	305006	.	-	.	ID=id46;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
-NC_005213.1	RefSeq	region	304107	305006	.	-	.	ID=id47;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id44;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id45;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id46;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id47;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
 NC_005213.1	RefSeq	gene	304993	305229	.	-	.	ID=gene368;Dbxref=GeneID:2654094;Name=NEQ346;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ346
 NC_005213.1	RefSeq	CDS	304993	305229	.	-	0	ID=cds340;Parent=gene368;Dbxref=Genbank:NP_963634.1,GeneID:2654094;Name=NP_963634.1;Note=COG2157: Ribosomal protein L20A (L18A)%3B IPR002768: Ribosomal LX protein;gbkey=CDS;product=hypothetical protein;protein_id=NP_963634.1;transl_table=11
 NC_005213.1	RefSeq	gene	305259	306059	.	-	.	ID=gene369;Dbxref=GeneID:2654095;Name=NEQ347;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ347
@@ -813,7 +813,7 @@ NC_005213.1	RefSeq	tRNA	308963	309002	.	+	.	ID=rna29;Parent=gene375;Dbxref=GeneI
 NC_005213.1	RefSeq	tRNA	380329	380364	.	-	.	ID=rna29;Parent=gene375;Dbxref=GeneID:3362430;exception=trans-splicing;gbkey=tRNA;part=2/2;product=tRNA-Trp
 NC_005213.1	RefSeq	exon	308963	309002	.	+	.	ID=id50;Parent=rna29;Dbxref=GeneID:3362430;exception=trans-splicing;gbkey=tRNA;product=tRNA-Trp
 NC_005213.1	RefSeq	exon	380329	380364	.	-	.	ID=id51;Parent=rna29;Dbxref=GeneID:3362430;exception=trans-splicing;gbkey=tRNA;product=tRNA-Trp
-NC_005213.1	RefSeq	region	309003	309008	.	+	.	ID=id52;Dbxref=GeneID:3362430;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	309003	309008	.	+	.	ID=id52;Dbxref=GeneID:3362430;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	309033	309662	.	+	.	ID=gene376;Dbxref=GeneID:2654282;Name=NEQ352;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ352
 NC_005213.1	RefSeq	CDS	309033	309662	.	+	0	ID=cds346;Parent=gene376;Dbxref=Genbank:NP_963640.1,GeneID:2654282;Name=NP_963640.1;Note=COG1967: Predicted membrane proteins%3B IPR002749: Membrane protein of unknown function DUF63;gbkey=CDS;product=hypothetical protein;protein_id=NP_963640.1;transl_table=11
 NC_005213.1	RefSeq	gene	309680	309751	.	+	.	ID=gene377;Dbxref=GeneID:3362441;Name=NEQ_t30;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t30
@@ -886,7 +886,7 @@ NC_005213.1	RefSeq	gene	330966	331703	.	+	.	ID=gene408;Dbxref=GeneID:2654428;Nam
 NC_005213.1	RefSeq	CDS	330966	331703	.	+	0	ID=cds375;Parent=gene408;Dbxref=Genbank:NP_963668.1,GeneID:2654428;Name=NP_963668.1;Note=COG1180: Pyruvate-formate lyase-activating enzyme%3B IPR001989: Radical activating enzymes;gbkey=CDS;product=hypothetical protein;protein_id=NP_963668.1;transl_table=11
 NC_005213.1	RefSeq	gene	331703	331779	.	-	.	ID=gene409;Dbxref=GeneID:3362427;Name=NEQ_t33;exception=trans-splicing;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t33;part=1/2
 NC_005213.1	RefSeq	gene	486988	487064	.	+	.	ID=gene409;Dbxref=GeneID:3362427;Name=NEQ_t33;exception=trans-splicing;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t33;part=2/2
-NC_005213.1	RefSeq	region	331703	331716	.	-	.	ID=id57;Dbxref=GeneID:3362427;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	331703	331716	.	-	.	ID=id57;Dbxref=GeneID:3362427;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	tRNA	331719	331758	.	-	.	ID=rna33;Parent=gene409;Dbxref=GeneID:3362427;exception=trans-splicing;gbkey=tRNA;part=1/2;product=tRNA-Glu
 NC_005213.1	RefSeq	tRNA	487030	487064	.	+	.	ID=rna33;Parent=gene409;Dbxref=GeneID:3362427;exception=trans-splicing;gbkey=tRNA;part=2/2;product=tRNA-Glu
 NC_005213.1	RefSeq	exon	331719	331758	.	-	.	ID=id58;Parent=rna33;Dbxref=GeneID:3362427;exception=trans-splicing;gbkey=tRNA;product=tRNA-Glu
@@ -989,11 +989,11 @@ NC_005213.1	RefSeq	gene	378010	378465	.	-	.	ID=gene456;Dbxref=GeneID:2654065;Nam
 NC_005213.1	RefSeq	CDS	378010	378465	.	-	0	ID=cds421;Parent=gene456;Dbxref=Genbank:NP_963713.1,GeneID:2654065;Name=NP_963713.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963713.1;transl_table=11
 NC_005213.1	RefSeq	gene	378494	379786	.	+	.	ID=gene457;Dbxref=GeneID:2654066;Name=NEQ430;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ430
 NC_005213.1	RefSeq	CDS	378494	379786	.	+	0	ID=cds422;Parent=gene457;Dbxref=Genbank:NP_963714.1,GeneID:2654066;Name=NP_963714.1;Note=Part of the RFC clamp loader complex which loads the PCNA sliding clamp onto DNA;gbkey=CDS;product=replication factor C large subunit;protein_id=NP_963714.1;transl_table=11
-NC_005213.1	RefSeq	region	379770	380366	.	+	.	ID=id62;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
-NC_005213.1	RefSeq	region	379770	380366	.	+	.	ID=id63;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
-NC_005213.1	RefSeq	region	379770	380366	.	+	.	ID=id64;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
-NC_005213.1	RefSeq	region	379770	380366	.	+	.	ID=id65;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
-NC_005213.1	RefSeq	region	380379	380389	.	-	.	ID=id66;Dbxref=GeneID:3362430;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id62;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id63;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id64;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id65;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	380379	380389	.	-	.	ID=id66;Dbxref=GeneID:3362430;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	380753	381718	.	+	.	ID=gene458;Dbxref=GeneID:2654240;Name=rpl3p;gbkey=Gene;gene=rpl3p;gene_biotype=protein_coding;locus_tag=NEQ433
 NC_005213.1	RefSeq	CDS	380753	381718	.	+	0	ID=cds423;Parent=gene458;Dbxref=Genbank:NP_963716.1,GeneID:2654240;Name=NP_963716.1;Note=binds directly near the 3' end of the 23S rRNA%2C where it nucleates assembly of the 50S subunit%3B essential for peptidyltransferase activity%3B mutations in this gene confer resistance to tiamulin;gbkey=CDS;gene=rpl3p;product=50S ribosomal protein L3P;protein_id=NP_963716.1;transl_table=11
 NC_005213.1	RefSeq	gene	381715	382305	.	-	.	ID=gene459;Dbxref=GeneID:2654241;Name=NEQ432;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ432
@@ -1057,7 +1057,7 @@ NC_005213.1	RefSeq	CDS	407680	408399	.	-	0	ID=cds449;Parent=gene486;Dbxref=Genba
 NC_005213.1	RefSeq	gene	408446	409198	.	+	.	ID=gene487;Dbxref=GeneID:2654423;Name=NEQ460;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ460
 NC_005213.1	RefSeq	CDS	408446	409198	.	+	0	ID=cds450;Parent=gene487;Dbxref=Genbank:NP_963743.1,GeneID:2654423;Name=NP_963743.1;Note=COG1718: Predicted serine/threonine protein kinases%3B IPR000687: RIO1/ZK632.3/MJ0444 family%3B IPR001245: Tyrosine kinase catalytic domain%3B IPR000719: Eukaryotic protein kinase;gbkey=CDS;product=hypothetical protein;protein_id=NP_963743.1;transl_table=11
 NC_005213.1	RefSeq	promoter	409202	409207	.	+	.	ID=id69;Dbxref=GeneID:3362426;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
-NC_005213.1	RefSeq	region	409230	409241	.	+	.	ID=id70;Dbxref=GeneID:3362426;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	409230	409241	.	+	.	ID=id70;Dbxref=GeneID:3362426;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	409289	409771	.	-	.	ID=gene488;Dbxref=GeneID:2654219;Name=NEQ461;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ461
 NC_005213.1	RefSeq	CDS	409289	409771	.	-	0	ID=cds451;Parent=gene488;Dbxref=Genbank:NP_963744.1,GeneID:2654219;Name=NP_963744.1;Note=COG0221: Inorganic pyrophosphatase%3B IPR001596: Inorganic pyrophosphatase;gbkey=CDS;product=hypothetical protein;protein_id=NP_963744.1;transl_table=11
 NC_005213.1	RefSeq	gene	409864	411900	.	+	.	ID=gene489;Dbxref=GeneID:2654220;Name=NEQ462;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ462
@@ -1127,7 +1127,7 @@ NC_005213.1	RefSeq	gene	434260	435666	.	+	.	ID=gene519;Dbxref=GeneID:2654208;Nam
 NC_005213.1	RefSeq	CDS	434260	435666	.	+	0	ID=cds479;Parent=gene519;Dbxref=Genbank:NP_963771.1,GeneID:2654208;Name=NP_963771.1;Note=COG0500: SAM-dependent methyltransferases%3B IPR000051: SAM (and some other nucleotide) binding motif%3B IPR000504: RNA-binding region RNP-1  (RNA recognition motif);gbkey=CDS;product=hypothetical protein;protein_id=NP_963771.1;transl_table=11
 NC_005213.1	RefSeq	gene	435677	436618	.	+	.	ID=gene520;Dbxref=GeneID:2654209;Name=NEQ491;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ491
 NC_005213.1	RefSeq	CDS	435677	436618	.	+	0	ID=cds480;Parent=gene520;Dbxref=Genbank:NP_963772.1,GeneID:2654209;Name=NP_963772.1;Note=COG0492: Thioredoxin reductase%3B IPR000759: Adrenodoxin reductase%3B IPR000103: Pyridine nucleotide-disulphide oxidoreductase class-II%3B IPR001687: ATP/GTP-binding site motif A (P-loop)%3B IPR001100: Pyridine nucleotide-disulphide oxidoreductase%2C class I%3B IPR001327: FAD-dependent pyridine nucleotide-disulphide oxidoreductase;gbkey=CDS;product=hypothetical protein;protein_id=NP_963772.1;transl_table=11
-NC_005213.1	RefSeq	region	436618	436631	.	-	.	ID=id74;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	436618	436631	.	-	.	ID=id74;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	tRNA	436635	436673	.	-	.	ID=rna40;Parent=gene409;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;part=1/2;product=tRNA-Glu
 NC_005213.1	RefSeq	tRNA	487030	487064	.	+	.	ID=rna40;Parent=gene409;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;part=2/2;product=tRNA-Glu
 NC_005213.1	RefSeq	exon	436635	436673	.	-	.	ID=id75;Parent=rna40;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;product=tRNA-Glu
@@ -1268,5 +1268,5 @@ NC_005213.1	RefSeq	exon	486338	486422	.	+	.	ID=id83;Parent=rna45;Dbxref=GeneID:3
 NC_005213.1	RefSeq	gene	486423	486962	.	-	.	ID=gene584;Dbxref=GeneID:2732580;Name=NEQ550;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ550
 NC_005213.1	RefSeq	CDS	486423	486962	.	-	0	ID=cds539;Parent=gene584;Dbxref=Genbank:NP_963830.1,GeneID:2732580;Name=NP_963830.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963830.1;transl_table=11
 NC_005213.1	RefSeq	promoter	486983	486988	.	+	.	ID=id84;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
-NC_005213.1	RefSeq	region	487009	487022	.	+	.	ID=id85;Dbxref=GeneID:3362427;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	487009	487022	.	+	.	ID=id85;Dbxref=GeneID:3362427;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 ###

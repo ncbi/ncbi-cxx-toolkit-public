@@ -96,7 +96,7 @@ protected:
     virtual bool xWriteAlignDenseg(
         const CSeq_align&,
         const string& = "");
-    bool xWriteAlignSpliced(
+    virtual bool xWriteAlignSpliced(
         const CSeq_align&,
         const string& = "");
     virtual bool xWriteAlignDisc(
@@ -157,7 +157,7 @@ protected:
 
     bool xAssignAlignment(
         CGffFeatureRecord&);
-    bool xAssignAlignmentScores(
+    virtual bool xAssignAlignmentScores(
         CGffAlignRecord&,
         const CSeq_align&);
 
@@ -165,7 +165,7 @@ protected:
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int);
-    bool xAssignAlignmentDensegSeqId(
+    virtual bool xAssignAlignmentDensegSeqId(
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int);
@@ -181,7 +181,7 @@ protected:
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int);
-    bool xAssignAlignmentDensegTarget(
+    virtual bool xAssignAlignmentDensegTarget(
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int);
@@ -189,7 +189,7 @@ protected:
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int);
-    bool xAssignAlignmentDensegLocation(
+    virtual bool xAssignAlignmentDensegLocation(
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int);
@@ -199,7 +199,7 @@ protected:
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);
-    bool xAssignAlignmentSplicedTarget(
+    virtual bool xAssignAlignmentSplicedTarget(
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);
@@ -219,7 +219,7 @@ protected:
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);
-    bool xAssignAlignmentSplicedLocation(
+    virtual bool xAssignAlignmentSplicedLocation(
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);
@@ -231,7 +231,7 @@ protected:
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);
-    bool xAssignAlignmentSplicedSeqId(
+    virtual bool xAssignAlignmentSplicedSeqId(
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);

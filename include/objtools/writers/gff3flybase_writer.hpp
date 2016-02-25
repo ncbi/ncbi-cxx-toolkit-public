@@ -31,9 +31,12 @@
  *    Subclass of CGffAlignmentRecord supporting flybase-style output
  */
  
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
 
 //  ---------------------------------------------------------------------------- 
 class NCBI_XOBJWRITE_EXPORT CGff3FlybaseWriter 
@@ -49,12 +52,47 @@ public:
     virtual bool WriteHeader();
 
 protected:
-    virtual bool x_WriteAlignDenseg(
-        const objects::CSeq_align&);
-    virtual bool x_WriteAlignDisc(
-        const objects::CSeq_align&);
+    virtual bool xWriteAlignDisc(
+        const CSeq_align&,
+        const string& = "") override;
+
+    virtual bool xAssignAlignmentSplicedLocation(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&) override;
+
+    virtual bool xAssignAlignmentSplicedTarget(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&) override;
+
+    virtual bool xAssignAlignmentSplicedSeqId(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&) override;
+
+    virtual bool xAssignAlignmentDensegSeqId(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int) override;
+
+    virtual bool xAssignAlignmentDensegTarget(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int) override;
+
+    virtual bool xAssignAlignmentDensegLocation(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int) override;
+
+    virtual bool xAssignAlignmentScores(
+        CGffAlignRecord&,
+        const CSeq_align&) override;
+
 };
 
+END_objects_SCOPE
 END_NCBI_SCOPE
 
 #endif  // ___GFF3_FLYBASE_WRITER__HPP

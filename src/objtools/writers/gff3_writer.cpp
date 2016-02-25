@@ -321,6 +321,10 @@ bool CGff3Writer::WriteAlign(
     const string& strAssAcc )
 //  ----------------------------------------------------------------------------
 {
+    //CNcbiOfstream ostr("f:\\testing\\denseg.asn1");
+    //ostr << MSerial_Format_AsnText() << align << endl;
+    //return true;
+
     try {
         align.Validate(true);
     }
@@ -433,7 +437,7 @@ bool CGff3Writer::xWriteAlignDisc(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::xWriteAlignSpliced( 
+bool CGff3Writer::xWriteAlignSpliced(
     const CSeq_align& align,
     const string& alignId)
 //  ----------------------------------------------------------------------------
