@@ -5491,6 +5491,10 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
     CLEAN_STRING_MEMBER(name, Middle);
     CLEAN_STRING_MEMBER(name, Full);
     CLEAN_STRING_MEMBER(name, Initials);
+    if (name.IsSetSuffix() && CleanVisString(name.SetSuffix())) {
+            ChangeMade(CCleanupChange::eTrimSpaces);
+    }
+
     CLEAN_STRING_MEMBER(name, Suffix);
     CLEAN_STRING_MEMBER(name, Title);
     x_FixEtAl( name );
@@ -5514,10 +5518,6 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
             initials.resize( initials.length() - 3 );
             NStr::TruncateSpacesInPlace( initials );
         }
-    }
-
-    if (!name.IsSetSuffix()) {
-        name.SetSuffix(kEmptyStr);
     }
 
     if( ! original_name->Equals(name) ) {
