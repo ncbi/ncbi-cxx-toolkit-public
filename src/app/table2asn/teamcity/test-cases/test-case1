@@ -7,6 +7,7 @@
 -i sqd-2066.sqn -gaps-min 10 -l paired-ends
 -i tc1.fsa -a s -y "This is comment"
 -i tc1.fsa -a s -Y comment.file
+-i tc1.fsa -a s -y "SQD-3601" -j "[tech=targeted]"
 -i ABNIH1.xml -t ABNIH.sbt -ft-url "http://www.google.com"
 -i ABNIH2.xml -t ABNIH.sbt -ft-url "http://www.google.com"
 -i ABNIH3.xml -t ABNIH.sbt -ft-url "http://www.google.com"
