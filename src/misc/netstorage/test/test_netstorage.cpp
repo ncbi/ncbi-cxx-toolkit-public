@@ -1026,8 +1026,6 @@ struct SAttrApiBase
     }
 };
 
-typedef TLocationNotFound TShouldThrow;
-
 template <class TNetStorage>
 struct TAttrTesting : boost::true_type {};
 
@@ -1073,13 +1071,13 @@ struct SAttrApi<boost::true_type> : SAttrApiBase
         SAttrApiBase::Write(ctx, object);
     }
 
-    void Read(TShouldThrow, const SCtx& ctx, CNetStorageObject& object)
+    void Read(TLocationNotFound, const SCtx& ctx, CNetStorageObject& object)
     {
         BOOST_CHECK_THROW_CTX(SAttrApiBase::Read(ctx, object),
                 CNetStorageException, ctx);
     }
 
-    void Write(TShouldThrow, const SCtx& ctx, CNetStorageObject& object)
+    void Write(TLocationNotFound, const SCtx& ctx, CNetStorageObject& object)
     {
         BOOST_CHECK_THROW_CTX(SAttrApiBase::Write(ctx, object),
                 CNetStorageException, ctx);
@@ -1448,9 +1446,6 @@ string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
             !source_reader.Empty()) {
         source_reader.length = 0;
     }
-
-    attr_tester.Write(TShouldThrow(), Line(__LINE__), object1);
-    attr_tester.Write(TShouldThrow(), Line(__LINE__), object2);
 
     source_reader.Close(Line(__LINE__));
     dest_writer1.Close(Line(__LINE__));
