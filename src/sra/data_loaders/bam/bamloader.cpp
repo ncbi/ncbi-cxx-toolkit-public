@@ -302,13 +302,15 @@ void CBAMDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-CSeq_id_Handle CBAMDataLoader::GetAccVer(const CSeq_id_Handle& idh)
+CDataSource::SAccVerFound
+CBAMDataLoader::GetAccVerFound(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetAccVer(idh);
 }
 
 
-TGi CBAMDataLoader::GetGi(const CSeq_id_Handle& idh)
+CDataSource::SGiFound
+CBAMDataLoader::GetGiFound(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetGi(idh);
 }

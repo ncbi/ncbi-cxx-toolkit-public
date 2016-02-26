@@ -348,21 +348,27 @@ void CBAMDataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-CSeq_id_Handle CBAMDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
+CDataSource::SAccVerFound
+CBAMDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 {
+    CDataSource::SAccVerFound ret;
     if ( !idh.IsGi() && idh.GetSeqId()->GetTextseq_Id() && IsShortSeq(idh) ) {
-        return idh;
+        ret.sequence_found = true;
+        ret.acc_ver = idh;
     }
-    return CSeq_id_Handle();
+    return ret;
 }
 
 
-TGi CBAMDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
+CDataSource::SGiFound
+CBAMDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
+    CDataSource::SGiFound ret;
     if ( idh.IsGi() && IsShortSeq(idh) ) {
-        return idh.GetGi();
+        ret.sequence_found = true;
+        ret.gi = idh.GetGi();
     }
-    return ZERO_GI;
+    return ret;
 }
 
 
