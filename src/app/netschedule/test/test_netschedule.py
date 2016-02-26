@@ -1,4 +1,4 @@
-#!/opt/python-2.5/bin/python -u
+#!/opt/python-all/bin/python2 -u
 #
 # Authors: Sergey Satskiy
 #
