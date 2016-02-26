@@ -803,31 +803,39 @@ void CCSRADataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-CSeq_id_Handle CCSRADataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
+CDataSource::SAccVerFound
+CCSRADataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 {
+    CDataSource::SAccVerFound ret;
     // the only possible acc.ver is for reference sequence
     if ( CCSraRefSeqIterator iter = GetRefSeqIterator(idh) ) {
+        ret.sequence_found = true;
         ITERATE ( CBioseq::TId, it, iter.GetRefSeq_ids() ) {
             if ( (*it)->GetTextseq_Id() ) {
-                return CSeq_id_Handle::GetHandle(**it);
+                ret.acc_ver = CSeq_id_Handle::GetHandle(**it);
+                break;
             }
         }
     }
-    return CSeq_id_Handle();
+    return ret;
 }
 
 
-TGi CCSRADataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
+CDataSource::SGiFound
+CCSRADataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
+    CDataSource::SGiFound ret;
     // the only possible gi is for reference sequence
     if ( CCSraRefSeqIterator iter = GetRefSeqIterator(idh) ) {
+        ret.sequence_found = true;
         ITERATE ( CBioseq::TId, it, iter.GetRefSeq_ids() ) {
             if ( (*it)->IsGi() ) {
-                return (*it)->GetGi();
+                ret.gi = (*it)->GetGi();
+                break;
             }
         }
     }
-    return ZERO_GI;
+    return ret;
 }
 
 
@@ -862,12 +870,15 @@ TSeqPos CCSRADataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
 }
 
 
-CSeq_inst::TMol CCSRADataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
+CDataSource::STypeFound
+CCSRADataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
 {
+    CDataSource::STypeFound ret;
     if ( GetBlobId(idh) ) {
-        return CSeq_inst::eMol_na;
+        ret.sequence_found = true;
+        ret.type = CSeq_inst::eMol_na;
     }
-    return CSeq_inst::eMol_not_set;
+    return ret;
 }
 
 

@@ -410,13 +410,15 @@ void CCSRADataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-CSeq_id_Handle CCSRADataLoader::GetAccVer(const CSeq_id_Handle& idh)
+CDataLoader::SAccVerFound
+CCSRADataLoader::GetAccVerFound(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetAccVer(idh);
 }
 
 
-TGi CCSRADataLoader::GetGi(const CSeq_id_Handle& idh)
+CDataLoader::SGiFound
+CCSRADataLoader::GetGiFound(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetGi(idh);
 }
@@ -440,7 +442,8 @@ TSeqPos CCSRADataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
 }
 
 
-CSeq_inst::TMol CCSRADataLoader::GetSequenceType(const CSeq_id_Handle& idh)
+CDataLoader::STypeFound
+CCSRADataLoader::GetSequenceTypeFound(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetSequenceType(idh);
 }
