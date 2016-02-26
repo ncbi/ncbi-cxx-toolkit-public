@@ -28,7 +28,6 @@
  * Authors:  Eyal Mozes
  *
  * File Description:
- *    Subclass of CGffAlignmentRecord supporting flybase-style output
  */
  
 #include <objects/seqalign/Spliced_seg.hpp>
@@ -90,6 +89,16 @@ protected:
         CGffAlignRecord&,
         const CSeq_align&) override;
 
+    bool xAssignTaxid(
+        CBioseq_Handle,
+        CGffAlignRecord&);
+
+    bool xAssignDefline(
+        CBioseq_Handle,
+        CGffAlignRecord&);
+
+    map<string, string> mTaxidMap;
+    map<string, string> mDeflineMap;
 };
 
 END_objects_SCOPE

@@ -111,7 +111,6 @@ public:
 
 protected:
     string mAttrGap;
-    string mAttrTarget;
     bool mGapIsTrivial;
     unsigned int mAccumulatedMatches;
 };

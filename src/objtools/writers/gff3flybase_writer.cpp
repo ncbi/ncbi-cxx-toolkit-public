@@ -36,9 +36,17 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objmgr/util/sequence.hpp> 
+#include <objmgr/util/create_defline.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 #include <objects/seqalign/Product_pos.hpp>
-#include <objects/seqalign/Score.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
+
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 
 #include <objtools/writers/gff3flybase_record.hpp>
 #include <objtools/writers/gff3flybase_writer.hpp>
@@ -50,6 +58,82 @@ USING_SCOPE(objects);
 #define DELETION(sf, tf) ( !((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
 #define MATCH(sf, tf) ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
 
+
+//  ----------------------------------------------------------------------------
+bool CGff3FlybaseWriter::xAssignTaxid(
+    CBioseq_Handle bsh,
+    CGffAlignRecord& record)
+//  ----------------------------------------------------------------------------
+{
+    const auto& seqId = record.StrSeqId();
+    const auto& taxIdIt = mTaxidMap.find(seqId);
+    if (taxIdIt != mTaxidMap.end()) {
+        record.SetAttribute("taxid", taxIdIt->second);
+        return true;
+    }
+    if (!bsh) {
+        return false;
+    }
+
+    string taxonIdStr;
+    for (CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source); sdit; ++sdit) {
+        const CBioSource& src = sdit->GetSource();
+        if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetDb()) {
+            continue;
+        }
+        const auto& tags = src.GetOrg().GetDb();
+        for (auto cit = tags.begin(); 
+                taxonIdStr.empty()  &&  cit != tags.end(); ++cit) {
+            const auto& tag = **cit;
+            if (!tag.IsSetDb()  ||  tag.GetDb() != "taxon") {
+                continue;
+            }
+            const auto& objid = tag.GetTag();
+            switch (objid.Which()) {
+                default:
+                    break;
+                case CObject_id::e_Str:
+                    if (!objid.GetStr().empty()) {
+                        taxonIdStr = objid.GetStr();
+                    }
+                    break;
+                case CObject_id::e_Id:
+                    taxonIdStr = NStr::IntToString(objid.GetId());
+                    break;
+            }
+        }
+    }
+    if (!taxonIdStr.empty()) {
+        record.SetAttribute("taxid", taxonIdStr);
+        mTaxidMap[seqId] = taxonIdStr;
+        return true;
+    }
+    return false;
+}
+
+ 
+//  ----------------------------------------------------------------------------
+bool CGff3FlybaseWriter::xAssignDefline(
+    CBioseq_Handle bsh,
+    CGffAlignRecord& record)
+//  ----------------------------------------------------------------------------
+{
+    const auto& seqId = record.StrSeqId();
+    const auto& deflineIt = mDeflineMap.find(seqId);
+    if (deflineIt != mDeflineMap.end()) {
+        record.SetAttribute("def", deflineIt->second);
+        return true;
+    }
+    if (!bsh) {
+        return false;
+    }
+    auto defline = sequence::CDeflineGenerator().GenerateDefline(bsh);
+    record.SetAttribute("def", defline);
+    mDeflineMap[seqId] = defline;
+    return false;
+}
+
+    
 //  ----------------------------------------------------------------------------
 static CConstRef<CSeq_id> s_GetSourceId(
     const CSeq_id& id, CScope& scope )
@@ -184,6 +268,11 @@ bool CGff3FlybaseWriter::xAssignAlignmentScores(
     const CSeq_align& align)
 //  ----------------------------------------------------------------------------
 {
+    CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(record.StrSeqId());
+    CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
+    xAssignTaxid(bsh, record);
+    xAssignDefline(bsh, record);
+
     static const vector<string> supportedScores{
         "Gap", "ambiguous_orientation", "consensus_splices",
         "pct_coverage", "pct_identity_gap", "pct_identity_ungap",
