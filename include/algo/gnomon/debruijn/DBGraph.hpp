@@ -247,15 +247,17 @@ namespace DeBruijn {
                 init_conainer();
             }
         }
-
         size_t Size() const {
             return apply_visitor(container_size(), m_container);
         }
-
+        void Reserve(size_t rsrv) { apply_visitor(reserve(rsrv), m_container); }
         size_t& operator[] (const TKmer& kmer) { 
+            if(m_kmer_len == 0) {
+                cerr << "Can't insert in not initialized container" << endl;
+                exit(1);
+            }
             return apply_visitor(mapper(kmer), m_container);
         }
-
         void DumpKmers(TKmerCount& kmer_count, int mincount) {
             kmer_count = TKmerCount(m_kmer_len);
             apply_visitor(dump_kmers(kmer_count,mincount), m_container);
@@ -271,9 +273,12 @@ namespace DeBruijn {
             default: throw runtime_error("Not supported kmer length");
             }
         }
-
         struct container_size : public static_visitor<size_t> { template <typename T> size_t operator()(const T& v) const { return v.size();} };
-
+        struct reserve : public static_visitor<> { 
+            reserve(size_t r) : rsrv(r) {}
+            template <typename T> void operator() (T& v) const { v.reserve(rsrv); }
+            size_t rsrv;
+        };
         struct mapper : public static_visitor<size_t&> { 
             mapper(const TKmer& k) : kmer(k) {}
             template <typename T> size_t& operator()(T& v) const { 
@@ -282,7 +287,6 @@ namespace DeBruijn {
             } 
             const TKmer& kmer;
         };
-
         struct dump_kmers : public static_visitor<> { 
             dump_kmers(TKmerCount& kc, int mc) : kmer_count(kc), mincount(mc) {}
             template <typename T> void operator()(T& v) const { 
@@ -543,17 +547,18 @@ class CDBGraphDigger {
 public:
     typedef list<string> TStrList;
 
-    CDBGraphDigger(CDBGraph& graph, double fraction, int jump) : m_graph(graph), m_fraction(fraction), m_jump(jump) {}
+    CDBGraphDigger(CDBGraph& graph, double fraction, int jump, int max_kmer, bool allow_bubble) : m_graph(graph), m_fraction(fraction), m_jump(jump), m_max_kmer(max_kmer), m_allow_bubble(allow_bubble) {}
 
 private:
     typedef deque<CDBGraph::Successor> TBases;
     typedef tuple<TStrList::iterator,int> TContigEnd;
 public:
+
     void ImproveContigs(TStrList& contigs, bool keep_jum_free_zone) {
         int kmer_len = m_graph.KmerLen();
 
         int SCAN_WINDOW = 50;  // 0 - no scan
-        int JUMP_FREE_ZONE = PREC_4*32+SCAN_WINDOW;
+        int JUMP_FREE_ZONE = m_max_kmer+SCAN_WINDOW;
 
         size_t kmers = 0;
         size_t kmers_in_graph = 0;
@@ -746,7 +751,7 @@ private:
 
     typedef tuple<TBases,size_t> TSequence;
     typedef list<TSequence> TSeqList;
-    typedef unordered_map<CDBGraph::Node, TSeqList::iterator> TBranch;  // all 'leaves' will have the same length
+    typedef unordered_map<CDBGraph::Node, tuple<TSeqList::iterator, bool>> TBranch;  // all 'leaves' will have the same length
 
     bool OneStepBranchExtend(TBranch& branch, TSeqList& sequences) {
         TBranch new_branch;
@@ -754,11 +759,11 @@ private:
             vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(leaf.first);
             FilterNeighbors(successors, leaf.first);
             if(successors.empty()) {
-                sequences.erase(leaf.second);
+                sequences.erase(get<0>(leaf.second));
                 continue;
             }
             for(int i = successors.size()-1; i >= 0; --i) {
-                TSeqList::iterator is = leaf.second;
+                TSeqList::iterator is = get<0>(leaf.second);
                 if(i > 0) {  // copy sequence if it is a fork           
                     sequences.push_front(*is);
                     is = sequences.begin();
@@ -769,15 +774,18 @@ private:
                 CDBGraph::Node& node = successors[i].m_node;
                 abundance += m_graph.Abundance(node);
 
-                pair<TBranch::iterator, bool> rslt = new_branch.insert(make_pair(node, is));
-                if(!rslt.second) {  // we alredy have this kmer - select larger abundance or fail (!!!!!! maybe more stringent criteria are needed)     
-                    TSeqList::iterator& js = rslt.first->second;    // existing one 
+                pair<TBranch::iterator, bool> rslt = new_branch.insert(make_pair(node, make_tuple(is, false)));
+                if(!rslt.second) {  // we alredy have this kmer - select larger abundance or fail
+                    get<1>(rslt.first->second) = true;
+                    TSeqList::iterator& js = get<0>(rslt.first->second);    // existing one 
                     if(abundance > get<1>(*js)) {                   // new is better    
+                        //if(m_fraction*abundance > get<1>(*js)) {                   // new is better  
                         sequences.erase(js);
                         js = is;
                     } else if(abundance < get<1>(*js)) {            // existing is better   
+                        //} else if(abundance < m_fraction*get<1>(*js)) {            // existing is better 
                         sequences.erase(is);                                        
-                    } else {                                        // equal    
+                    } else {                                        // equal 
                         branch.clear();
                         return false;
                     }
@@ -797,12 +805,13 @@ private:
         TSeqList sequences; // storage
         for(auto& suc : successors) {
             sequences.push_front(TSequence(TBases(1,suc), m_graph.Abundance(suc.m_node)));
-            extensions[suc.m_node] = sequences.begin();         
+            extensions[suc.m_node] = make_tuple(sequences.begin(), false);         
         }
 
         size_t MAX_BRANCH = 200;
         while(!extensions.empty() && extensions.size() < MAX_BRANCH) {
-            int len = get<0>(*extensions.begin()->second).size();
+            TSeqList::iterator is = get<0>(extensions.begin()->second);
+            int len = get<0>(*is).size();
             if(len == max_extent)
                 break;
 
@@ -813,10 +822,12 @@ private:
                 break;
         }
 
-        if(extensions.size() == 1)
-            return get<0>(*extensions.begin()->second);
-        else
+        if(extensions.size() == 1 && (!get<1>(extensions.begin()->second) || m_allow_bubble)) {
+            TSeqList::iterator is = get<0>(extensions.begin()->second);
+            return get<0>(*is);
+        } else {
             return TBases();
+        }
     }
 
     template<typename T>  // T has to have fast count(elem)
@@ -915,18 +926,20 @@ private:
         }
 
         //jump free zone
-        for( ; !jumps.empty(); jumps.pop_back()) {
-            int ext = extension.size();
-            int l = jumps.back().first;
-            if(l >= ext)                          // not included
-                continue;
-            int r = min(ext-1,jumps.back().second);
-            if(ext - jump_free_zone > r) {        // allowed
-                break;
-            } else {                              // trim
-                for(int j = ext-1; j >= l; --j) {
-                    m_graph.ClearVisited(extension[j].m_node);
-                    extension.pop_back();                    
+        if(m_allow_bubble) {
+            for( ; !jumps.empty(); jumps.pop_back()) {
+                int ext = extension.size();
+                int l = jumps.back().first;
+                if(l >= ext)                          // not included
+                    continue;
+                int r = min(ext-1,jumps.back().second);
+                if(ext - jump_free_zone > r) {        // allowed
+                    break;
+                } else {                              // trim   
+                    for(int j = ext-1; j >= l; --j) {
+                        m_graph.ClearVisited(extension[j].m_node);
+                        extension.pop_back();                    
+                    }
                 }
             }
         }
@@ -963,6 +976,8 @@ private:
     CDBGraph& m_graph;
     double m_fraction;
     int m_jump;
+    int m_max_kmer;
+    bool m_allow_bubble;
 };
 
 }; // namespace
