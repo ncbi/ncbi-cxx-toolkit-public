@@ -113,7 +113,8 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 , m_OrigIntHandler(NULL)
 #  endif
 , m_OrigTimeout(0)
-, m_AsyncCancelCounter(0)
+, m_BaseTimeout(0)
+, m_AsyncCancelAllowed(false)
 , m_AsyncCancelRequested(false)
 #endif
 {
@@ -1258,7 +1259,7 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 bool CTL_Connection::AsyncCancel(CTL_CmdBase& cmd)
 {
     CFastMutexGuard LOCK(m_AsyncCancelMutex);
-    if (m_AsyncCancelCounter != 0  &&  &cmd == m_ActiveCmd) {
+    if (m_AsyncCancelAllowed  &&  &cmd == m_ActiveCmd) {
         m_AsyncCancelRequested = true;
 #if NCBI_FTDS_VERSION < 95
         SetTimeout(1);
@@ -1281,7 +1282,7 @@ int CTL_Connection::x_IntHandler(void* param)
         &&  ctl_conn != NULL) {
         CFastMutexGuard LOCK(ctl_conn->m_AsyncCancelMutex);
         if (ctl_conn->m_AsyncCancelRequested) {
-            ctl_conn->m_AsyncCancelCounter = 0;
+            ctl_conn->m_AsyncCancelAllowed = false;
             LOCK.Release();
             ctl_conn->m_ActiveCmd->Cancel();
             return TDS_INT_CANCEL;
@@ -1303,8 +1304,9 @@ int CTL_Connection::x_TimeoutFunc(void* param, unsigned int total_timeout)
     if (ctl_conn->m_AsyncCancelRequested) {
         return TDS_INT_CANCEL;
     } else if (ctl_conn->m_OrigTimeoutFunc != NULL  &&
-               ctl_conn->m_AsyncCancelCounter++ == ctl_conn->m_OrigTimeout) {
-        ctl_conn->m_AsyncCancelCounter = 1;
+               total_timeout - ctl_conn->m_BaseTimeout
+               >= ctl_conn->m_OrigTimeout) {
+        ctl_conn->m_BaseTimeout = total_timeout;
         LOCK.Release();
         return (*ctl_conn->m_OrigTimeoutFunc)(ctl_conn->m_OrigTimeoutParam,
                                               total_timeout);

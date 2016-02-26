@@ -523,10 +523,11 @@ private:
     void *m_OrigTimeoutParam;
 #  endif
 
-    CFastMutex m_AsyncCancelMutex;
-    size_t     m_OrigTimeout;
-    size_t     m_AsyncCancelCounter;
-    bool       m_AsyncCancelRequested;
+    CFastMutex   m_AsyncCancelMutex;
+    size_t       m_OrigTimeout;
+    unsigned int m_BaseTimeout;
+    bool         m_AsyncCancelAllowed;
+    bool         m_AsyncCancelRequested;
 #endif
 };
 
@@ -1283,7 +1284,8 @@ CTL_Connection::CAsyncCancelGuard::CAsyncCancelGuard(CTL_Connection& conn)
 {
     CFastMutexGuard LOCK(conn.m_AsyncCancelMutex);
     conn.m_OrigTimeout          = conn.GetTimeout();
-    conn.m_AsyncCancelCounter   = 1;
+    conn.m_BaseTimeout          = 0;
+    conn.m_AsyncCancelAllowed   = true;
     conn.m_AsyncCancelRequested = false;
 #  if NCBI_FTDS_VERSION < 95
     if (conn.m_OrigTimeout == 0) {
@@ -1297,7 +1299,7 @@ CTL_Connection::CAsyncCancelGuard::~CAsyncCancelGuard(void)
 {
     CFastMutexGuard LOCK(m_Conn.m_AsyncCancelMutex);
     m_Conn.SetTimeout(m_Conn.m_OrigTimeout);
-    m_Conn.m_AsyncCancelCounter = 0;
+    m_Conn.m_AsyncCancelAllowed = false;
 }
 #endif
 
