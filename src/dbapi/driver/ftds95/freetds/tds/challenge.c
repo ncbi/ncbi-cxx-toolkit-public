@@ -52,6 +52,8 @@
 #include <openssl/rand.h>
 #endif
 
+#include <assert.h>
+
 /**
  * \ingroup libtds
  * \defgroup auth Authentication
@@ -261,7 +263,10 @@ make_lm_v2_response(const unsigned char ntlm_v2_hash[16],
 		return NULL;
 
 	memcpy(mac + 8, challenge, 8);
-	memcpy(mac + 16, client_data, client_data_len);
+    if (client_data_len > 0) {
+        assert(client_data);
+        memcpy(mac + 16, client_data, client_data_len);
+    }
 	hmac_md5(ntlm_v2_hash, mac + 8, client_data_len + 8, mac);
 
 	return mac;

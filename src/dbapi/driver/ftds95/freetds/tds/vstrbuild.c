@@ -86,14 +86,14 @@ tds_vstrbuild(char *buffer, int buflen, int *resultlen, const char *text, int te
 	char *token;
 	const char *sep = "\377";
 	char *lasts;
-	int tokcount = 0;
+    unsigned int tokcount = 0;
 	struct string_linked_list *head = NULL;
 	struct string_linked_list *item = NULL;
 	struct string_linked_list **tail = &head;
-	int i;
+    unsigned int i;
 	int state;
 	char **string_array = NULL;
-	int pnum = 0;
+    unsigned int pnum = 0;
 	int pdigit;
 	char *paramp = NULL;
 	TDSRET rc = TDS_FAIL;

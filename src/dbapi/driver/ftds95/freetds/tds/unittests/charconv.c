@@ -58,7 +58,7 @@ convert(TDSSOCKET *tds, TDSICONV *conv, TDS_ICONV_DIRECTION direction,
 	const char *from, size_t from_len, char *dest, size_t *dest_len)
 {
 	/* copy to make valgrind test fail on memory problems */
-	char *in = malloc(from_len);
+    char *in = malloc(from_len ? from_len : 1);
 	char *out = malloc(*dest_len);
 	int res;
 	TDSSTATICINSTREAM r;

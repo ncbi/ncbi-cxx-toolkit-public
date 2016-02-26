@@ -462,7 +462,7 @@ tds_variant_get(TDSSOCKET * tds, TDSCOLUMN * curcol)
 		if (v->data)
 			TDS_ZERO_FREE(v->data);
 		v->data_len = sizeof(TDS_DATETIMEALL);
-        v->data = (TDS_CHAR *) calloc(1, sizeof(TDS_DATETIMEALL));
+        v->data = (TDS_CHAR *) calloc(sizeof(TDS_DATETIMEALL), 1);
 		curcol->column_type = type;
         curcol->column_data = (unsigned char *) v->data;
 		/* trick, call get function */

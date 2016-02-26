@@ -2,7 +2,7 @@
 
 extern unsigned int odbc_line_num;
 
-void odbc_fatal(const char *msg, ...);
+NCBI_NORETURN void odbc_fatal(const char *msg, ...);
 
 const char *odbc_get_tok(char **p);
 const char *odbc_get_str(char **p);

@@ -100,6 +100,7 @@ col_init(struct col_t *pcol, int sybtype, size_t collen)
 	
 	pcol->type = infer_col_type(sybtype);
 	pcol->len = collen;
+    pcol->s = NULL;
 
 	switch(sybtype) {
 	case 0:
@@ -519,7 +520,7 @@ make_col_name(const struct key_t *k)
 	s = names = calloc(k->nkeys, sizeof(char*));
 	
 	for(pc=k->keys; pc < k->keys + k->nkeys; pc++) {
-		*s++ = strdup(string_value(pc));
+        *s++ = string_value(pc);
 	}
 	
 	output = join(k->nkeys, names, "/");

@@ -875,7 +875,7 @@ CS_RETCODE
 ct_send(CS_COMMAND * cmd)
 {
 	TDSSOCKET *tds;
-	TDSRET ret;
+    TDSRET ret = TDS_FAIL;
 	TDSPARAMINFO *pparam_info;
 
 	tdsdump_log(TDS_DBG_FUNC, "ct_send(%p)\n", cmd);

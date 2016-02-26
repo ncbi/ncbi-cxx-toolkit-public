@@ -535,7 +535,7 @@ tds_alloc_row(TDSRESULTINFO * res_info)
 	}
 	res_info->row_size = row_size;
 
-	ptr = (unsigned char *) calloc(1, res_info->row_size);
+    ptr = (unsigned char *) calloc(1, res_info->row_size ? res_info->row_size : 1);
 	res_info->current_row = ptr;
 	if (!ptr)
 		return TDS_FAIL;
@@ -819,8 +819,10 @@ tds_init_login(TDSLOGIN *login, TDSLOCALE * locale)
 		}
 #endif
 		if (encoding) {
-			if (!tds_dstr_copy(&login->client_charset, encoding))
-				return NULL;
+            if (!tds_dstr_copy(&login->client_charset, encoding)) {
+                free(lc_all);
+                return NULL;
+            }
 		}
 	}
 	free(lc_all);
