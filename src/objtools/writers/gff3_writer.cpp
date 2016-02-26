@@ -74,8 +74,6 @@
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff3_source_data.hpp>
 #include <objtools/writers/gff3_alignment_data.hpp>
-#include <objtools/writers/gff3_denseg_record.hpp>
-#include <objtools/writers/gff3_splicedseg_record.hpp>
 #include <objects/seqalign/Score_set.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 

@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJWRITE_EXPORT CGffSplicedSegRecord
+NCBI_DEPRECATED_CLASS  NCBI_XOBJWRITE_EXPORT CGffSplicedSegRecord
 //  ----------------------------------------------------------------------------
     : public CGffAlignmentRecord
 {

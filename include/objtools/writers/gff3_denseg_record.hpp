@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJWRITE_EXPORT CGffDenseSegRecord
+NCBI_DEPRECATED_CLASS NCBI_XOBJWRITE_EXPORT CGffDenseSegRecord
 //  ----------------------------------------------------------------------------
     : public CGffAlignmentRecord
 {
@@ -62,7 +62,6 @@ public:
 
     virtual ~CGffDenseSegRecord() {};
 
-public:
     /// Initialize all GFF3 record fields using the provided information
     /// @param scope
     ///   scope object used for seq-id lookup and conversion.

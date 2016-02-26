@@ -48,7 +48,6 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 
-#include <objtools/writers/gff3flybase_record.hpp>
 #include <objtools/writers/gff3flybase_writer.hpp>
 
 BEGIN_NCBI_SCOPE

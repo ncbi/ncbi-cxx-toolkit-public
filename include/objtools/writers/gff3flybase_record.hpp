@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJWRITE_EXPORT CGff3FlybaseRecord : public CGffDenseSegRecord {
+NCBI_DEPRECATED_CLASS  NCBI_XOBJWRITE_EXPORT CGff3FlybaseRecord : public CGffDenseSegRecord {
 //  ----------------------------------------------------------------------------
 public:
     CGff3FlybaseRecord(CGffFeatureContext& fc,
