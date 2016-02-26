@@ -1760,10 +1760,36 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
 }
 
 
+bool CAnnot_Collector::x_CheckAdaptive(const CBioseq_Handle& bh) const
+{
+    int adaptive_flags = GetSelector().GetAdaptiveDepthFlags();
+    if ( !(adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy) &&
+         (adaptive_flags & (SAnnotSelector::fAdaptive_ByTriggers |
+                            SAnnotSelector::fAdaptive_BySubtypes)) ) {
+        return false;
+    }
+    return bh && bh.GetFeatureFetchPolicy() == bh.eFeatureFetchPolicy_default;
+}
+
+
+bool CAnnot_Collector::x_CheckAdaptive(const CSeq_id_Handle& id) const
+{
+    int adaptive_flags = GetSelector().GetAdaptiveDepthFlags();
+    if ( !(adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy) &&
+         (adaptive_flags & (SAnnotSelector::fAdaptive_ByTriggers |
+                            SAnnotSelector::fAdaptive_BySubtypes)) ) {
+        return false;
+    }
+    CBioseq_Handle bh = x_GetBioseqHandle(id);
+    return bh && bh.GetFeatureFetchPolicy() == bh.eFeatureFetchPolicy_default;
+}
+
+
 void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
                                       const CSeq_id_Handle& master_id,
                                       const CHandleRange& master_range)
 {
+    bool check_adaptive = x_CheckAdaptive(bh);
     if ( m_Selector->m_LimitObjectType == SAnnotSelector::eLimit_None ) {
         // any data source
         const CTSE_Handle& tse = bh.GetTSE_Handle();
@@ -1775,7 +1801,7 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
                 CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(bh);
                 ITERATE(CSynonymsSet, syn_it, *syns) {
                     x_SearchTSE(tse, syns->GetSeq_id_Handle(syn_it),
-                                master_range, 0);
+                                master_range, 0, check_adaptive);
                     if ( x_NoMoreObjects() ) {
                         break;
                     }
@@ -1787,7 +1813,7 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
                 ITERATE ( CBioseq_Handle::TId, syn_it, syns ) {
                     if ( !only_gi || syn_it->IsGi() ) {
                         x_SearchTSE(tse, *syn_it,
-                                    master_range, 0);
+                                    master_range, 0, check_adaptive);
                         if ( x_NoMoreObjects() ) {
                             break;
                         }
@@ -1807,7 +1833,7 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
                 m_FromOtherTSE = tse_it->first != bh.GetTSE_Handle();
                 tse.AddUsedTSE(tse_it->first);
                 x_SearchTSE(tse_it->first, tse_it->second,
-                            master_range, 0);
+                            master_range, 0, check_adaptive);
                 if ( x_NoMoreObjects() ) {
                     break;
                 }
@@ -1829,13 +1855,13 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
                 }
                 if ( !syns ) {
                     x_SearchTSE(tse_it->second, master_id,
-                                master_range, 0);
+                                master_range, 0, check_adaptive);
                 }
                 else {
                     ITERATE(CSynonymsSet, syn_it, *syns) {
                         x_SearchTSE(tse_it->second,
                                     syns->GetSeq_id_Handle(syn_it),
-                                    master_range, 0);
+                                    master_range, 0, check_adaptive);
                         if ( x_NoMoreObjects() ) {
                             break;
                         }
@@ -1848,7 +1874,7 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
                 ITERATE ( CBioseq_Handle::TId, syn_it, syns ) {
                     if ( !only_gi || syn_it->IsGi() ) {
                         x_SearchTSE(tse_it->second, *syn_it,
-                                    master_range, 0);
+                                    master_range, 0, check_adaptive);
                         if ( x_NoMoreObjects() ) {
                             break;
                         }
@@ -1974,13 +2000,21 @@ CScope::EGetBioseqFlag sx_GetFlag(const SAnnotSelector& selector)
 }
 
 
+CBioseq_Handle CAnnot_Collector::x_GetBioseqHandle(const CSeq_id_Handle& id,
+                                                   bool top_level) const
+{
+    CScope::EGetBioseqFlag flag =
+        top_level? CScope::eGetBioseq_All: sx_GetFlag(GetSelector());
+    return m_Scope->GetBioseqHandle(id, flag);
+}
+
+
 void CAnnot_Collector::x_CollectSegments(const CHandleRangeMap& master_loc,
                                          int level,
                                          CSeq_loc_Conversion_Set& cvt_set)
 {
     ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
-        CBioseq_Handle bh =
-            m_Scope->GetBioseqHandle(idit->first, sx_GetFlag(GetSelector()));
+        CBioseq_Handle bh = x_GetBioseqHandle(idit->first);
         if ( !bh ) {
             if (m_Selector->m_UnresolvedFlag == SAnnotSelector::eFailUnresolved) {
                 // resolve by Seq-id only
@@ -2043,8 +2077,7 @@ bool CAnnot_Collector::x_SearchSegments(const CHandleRangeMap& master_loc,
 {
     bool has_more = false;
     ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
-        CBioseq_Handle bh =
-            m_Scope->GetBioseqHandle(idit->first, sx_GetFlag(GetSelector()));
+        CBioseq_Handle bh = x_GetBioseqHandle(idit->first);
         if ( !bh ) {
             if (m_Selector->m_UnresolvedFlag == SAnnotSelector::eFailUnresolved) {
                 // resolve by Seq-id only
@@ -2440,10 +2473,11 @@ void CAnnot_Collector::x_GetTSE_Info(void)
 bool CAnnot_Collector::x_SearchTSE(const CTSE_Handle&    tseh,
                                    const CSeq_id_Handle& id,
                                    const CHandleRange&   hr,
-                                   CSeq_loc_Conversion*  cvt)
+                                   CSeq_loc_Conversion*  cvt,
+                                   bool check_adaptive)
 {
     if ( !m_Selector->m_SourceLoc ) {
-        return x_SearchTSE2(tseh, id, hr, cvt);
+        return x_SearchTSE2(tseh, id, hr, cvt, check_adaptive);
     }
     const CHandleRangeMap& src_hrm = *m_Selector->m_SourceLoc;
     CHandleRangeMap::const_iterator it = src_hrm.find(id);
@@ -2452,14 +2486,15 @@ bool CAnnot_Collector::x_SearchTSE(const CTSE_Handle&    tseh,
         return false;
     }
     CHandleRange hr2(hr, it->second.GetOverlappingRange());
-    return !hr2.Empty() && x_SearchTSE2(tseh, id, hr2, cvt);
+    return !hr2.Empty() && x_SearchTSE2(tseh, id, hr2, cvt, check_adaptive);
 }
 
 
 bool CAnnot_Collector::x_SearchTSE2(const CTSE_Handle&    tseh,
                                     const CSeq_id_Handle& id,
                                     const CHandleRange&   hr,
-                                    CSeq_loc_Conversion*  cvt)
+                                    CSeq_loc_Conversion*  cvt,
+                                    bool check_adaptive)
 {
     const CTSE_Info& tse = tseh.x_GetTSE_Info();
     bool found = false;
@@ -2476,8 +2511,9 @@ bool CAnnot_Collector::x_SearchTSE2(const CTSE_Handle&    tseh,
     //}
 
     SAnnotSelector::TAdaptiveDepthFlags adaptive_flags = 0;
-    if ( !m_Selector->GetExactDepth() ||
-         m_Selector->GetResolveDepth() == kMax_Int ) {
+    if ( check_adaptive &&
+         (!m_Selector->GetExactDepth() ||
+          m_Selector->GetResolveDepth() == kMax_Int) ) {
         adaptive_flags = m_Selector->GetAdaptiveDepthFlags();
     }
     if ( (adaptive_flags & SAnnotSelector::fAdaptive_ByTriggers) &&
@@ -2990,9 +3026,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
         if ( m_Selector->m_LimitObjectType == SAnnotSelector::eLimit_None ) {
             // any data source
             const CTSE_Handle* tse = 0;
-            CScope::EGetBioseqFlag flag =
-                top_level? CScope::eGetBioseq_All: sx_GetFlag(GetSelector());
-            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first, flag);
+            CBioseq_Handle bh = x_GetBioseqHandle(idit->first, top_level);
             if ( !bh ) {
                 if ( m_Selector->m_UnresolvedFlag ==
                     SAnnotSelector::eFailUnresolved ) {
@@ -3011,6 +3045,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     using_tse->AddUsedTSE(*tse);
                 }
             }
+            bool check_adaptive = x_CheckAdaptive(bh);
             if ( m_Selector->m_ExcludeExternal ) {
                 if ( !bh ) {
                     // no sequence tse
@@ -3025,7 +3060,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     ITERATE(CSynonymsSet, syn_it, *syns) {
                         found |= x_SearchTSE(*tse,
                                              syns->GetSeq_id_Handle(syn_it),
-                                             idit->second, cvt);
+                                             idit->second, cvt, check_adaptive);
                         if ( x_NoMoreObjects() ) {
                             break;
                         }
@@ -3037,7 +3072,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     ITERATE ( CBioseq_Handle::TId, syn_it, syns ) {
                         if ( !only_gi || syn_it->IsGi() ) {
                             found |= x_SearchTSE(*tse, *syn_it,
-                                                 idit->second, cvt);
+                                                 idit->second, cvt, check_adaptive);
                             if ( x_NoMoreObjects() ) {
                                 break;
                             }
@@ -3060,7 +3095,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     }
                     m_FromOtherTSE = !bh || tse_it->first != bh.GetTSE_Handle();
                     found |= x_SearchTSE(tse_it->first, tse_it->second,
-                                         idit->second, cvt);
+                                         idit->second, cvt, check_adaptive);
                     if ( x_NoMoreObjects() ) {
                         break;
                     }
@@ -3073,15 +3108,17 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                   m_Selector->m_LimitObject ) {
             // external annotations only
             m_FromOtherTSE = true;
+            bool check_adaptive = x_CheckAdaptive(idit->first);
             ITERATE ( TTSE_LockMap, tse_it, m_TSE_LockMap ) {
                 const CTSE_Info& tse_info = *tse_it->first;
                 tse_info.UpdateAnnotIndex();
                 found |= x_SearchTSE(tse_it->second, idit->first,
-                                     idit->second, cvt);
+                                     idit->second, cvt, check_adaptive);
             }
         }
         else {
             // Search in the limit objects
+            bool check_adaptive = x_CheckAdaptive(idit->first);
             CConstRef<CSynonymsSet> syns;
             bool syns_initialized = false;
             ITERATE ( TTSE_LockMap, tse_it, m_TSE_LockMap ) {
@@ -3095,13 +3132,13 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     }
                     if ( !syns ) {
                         found |= x_SearchTSE(tse_it->second, idit->first,
-                                             idit->second, cvt);
+                                             idit->second, cvt, check_adaptive);
                     }
                     else {
                         ITERATE(CSynonymsSet, syn_it, *syns) {
                             found |= x_SearchTSE(tse_it->second,
                                                  syns->GetSeq_id_Handle(syn_it),
-                                                 idit->second, cvt);
+                                                 idit->second, cvt, check_adaptive);
                             if ( x_NoMoreObjects() ) {
                                 break;
                             }
@@ -3115,7 +3152,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     ITERATE ( CBioseq_Handle::TId, syn_it, syns ) {
                         if ( !only_gi || syn_it->IsGi() ) {
                             found |= x_SearchTSE(tse_it->second, *syn_it,
-                                                 idit->second, cvt);
+                                                 idit->second, cvt, check_adaptive);
                             if ( x_NoMoreObjects() ) {
                                 break;
                             }

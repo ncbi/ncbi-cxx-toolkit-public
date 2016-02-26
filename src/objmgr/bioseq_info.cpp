@@ -260,6 +260,9 @@ int CBioseq_Info::GetFeatureFetchPolicy(void) const
                     if ( str == "OnlyNearFeatures" ) {
                         policy = CBioseq_Handle::eFeatureFetchPolicy_only_near;
                     }
+                    else if ( str == "AllowFarFeatures" ) {
+                        policy = CBioseq_Handle::eFeatureFetchPolicy_allow_far;
+                    }
                     else {
                         policy = CBioseq_Handle::eFeatureFetchPolicy_default;
                     }

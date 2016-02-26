@@ -287,7 +287,7 @@ private:
     const TAnnotSet& GetAnnotSet(void) const;
     CScope& GetScope(void) const;
 
-    const SAnnotSelector& GetSelector(void);
+    const SAnnotSelector& GetSelector(void) const;
     bool CanResolveId(const CSeq_id_Handle& idh, const CBioseq_Handle& bh);
 
     void x_Initialize0(const SAnnotSelector& selector);
@@ -369,13 +369,20 @@ private:
                      const CTSE_Handle*     using_tse,
                      bool top_level = false);
 
+    CBioseq_Handle x_GetBioseqHandle(const CSeq_id_Handle& id,
+                                     bool top_level = false) const;
+    // returns if adaptive depth heuristics should be checked for a segment
+    bool x_CheckAdaptive(const CSeq_id_Handle& id) const;
+    bool x_CheckAdaptive(const CBioseq_Handle& bh) const;
+
     // Search annotations within tse before filtering by source location.
     // Called by: x_SearchLoc(), x_SearchMaster()
     // Calls: x_SearchTSE2()
     bool x_SearchTSE(const CTSE_Handle&    tse,
                      const CSeq_id_Handle& id,
                      const CHandleRange&   hr,
-                     CSeq_loc_Conversion*  cvt);
+                     CSeq_loc_Conversion*  cvt,
+                     bool check_adaptive);
 
     // Search annotations within tse after filtering by source location.
     // Called by: x_SearchTSE()
@@ -383,7 +390,8 @@ private:
     bool x_SearchTSE2(const CTSE_Handle&    tse,
                       const CSeq_id_Handle& id,
                       const CHandleRange&   hr,
-                      CSeq_loc_Conversion*  cvt);
+                      CSeq_loc_Conversion*  cvt,
+                      bool check_adaptive);
 
     // Called by: x_SearchTSE2()
     // Calls: x_SearchRange()
@@ -908,7 +916,7 @@ CScope& CAnnot_Collector::GetScope(void) const
 
 
 inline
-const SAnnotSelector& CAnnot_Collector::GetSelector(void)
+const SAnnotSelector& CAnnot_Collector::GetSelector(void) const
 {
     return *m_Selector;
 }

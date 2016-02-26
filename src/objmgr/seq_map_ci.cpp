@@ -428,10 +428,14 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
                            seq_id.AsFastaString()+": unknown");
             }
         }
-        if ( (GetFlags() & CSeqMap::fByFeaturePolicy) &&
-            bh.GetFeatureFetchPolicy() == bh.eFeatureFetchPolicy_only_near ) {
-            m_FeaturePolicyWasApplied = true;
-            return false;
+        if ( (GetFlags() & CSeqMap::fByFeaturePolicy) ) {
+            CBioseq_Handle::EFeatureFetchPolicy p = bh.GetFeatureFetchPolicy();
+            if ( p != bh.eFeatureFetchPolicy_default ) {
+                m_FeaturePolicyWasApplied = true;
+            }
+            if ( p == bh.eFeatureFetchPolicy_only_near ) {
+                return false;
+            }
         }
         if ( info.m_TSE ) {
             if ( !info.m_TSE.AddUsedTSE(bh.GetTSE_Handle()) ) {

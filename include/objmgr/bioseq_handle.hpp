@@ -450,8 +450,9 @@ public:
     /// Feature fetch policy describes when to look for features on sequence
     /// segments.
     enum EFeatureFetchPolicy {
-        eFeatureFetchPolicy_default = 0,
-        eFeatureFetchPolicy_only_near = 1
+        eFeatureFetchPolicy_default = 0, // no valid feature policy found
+        eFeatureFetchPolicy_only_near = 1,
+        eFeatureFetchPolicy_allow_far = 2
     };
     EFeatureFetchPolicy GetFeatureFetchPolicy(void) const;
 
