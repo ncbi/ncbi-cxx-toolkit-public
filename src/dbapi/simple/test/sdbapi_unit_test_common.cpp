@@ -186,6 +186,20 @@ CTestArguments::CTestArguments(void)
     m_UserName = args["U"].AsString();
     m_Password = args["P"].AsString();
     m_DatabaseName = args["D"].AsString();
+    {{
+        string driver = args["dr"].AsString();
+        if (driver == "ftds64") {
+            CSDBAPI::UseDriver(CSDBAPI::eDriver_FTDS64);
+        } else if (driver == "ftds95") {
+            CSDBAPI::UseDriver(CSDBAPI::eDriver_FTDS95);
+        } else {
+            _ASSERT(driver == "ftds");
+        }
+    }}
+    if (args["V"]) {
+        CNcbiApplication::Instance()
+            ->SetEnvironment("TDSVER", args["V"].AsString());
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -219,6 +233,15 @@ NCBITEST_INIT_CMDLINE(arg_desc)
     arg_desc->AddDefaultKey("D", "database",
                             "Name of the database to connect",
                             CArgDescriptions::eString, "DBAPI_Sample");
+
+    arg_desc->AddDefaultKey("dr", "driver",
+                            "DBAPI driver to use",
+                            CArgDescriptions::eString, "ftds");
+    arg_desc->SetConstraint
+        ("dr", &(*new CArgAllow_Strings, "ftds", "ftds64", "ftds95"));
+
+    arg_desc->AddOptionalKey("V", "version", "TDS protocol version to use",
+                             CArgDescriptions::eString);
 }
 
 NCBITEST_INIT_VARIABLES(parser)
