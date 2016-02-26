@@ -110,7 +110,7 @@ public:
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
-    virtual CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
+    virtual STypeFound GetSequenceTypeFound(const CSeq_id_Handle& idh);
 
 private:
     typedef CParamLoaderMaker<CSRADataLoader, SLoaderParams> TMaker;

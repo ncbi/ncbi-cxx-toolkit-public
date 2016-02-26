@@ -436,16 +436,19 @@ TSeqPos CSRADataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
 }
 
 
-CSeq_inst::TMol CSRADataLoader::GetSequenceType(const CSeq_id_Handle& idh)
+CDataLoader::STypeFound
+CSRADataLoader::GetSequenceTypeFound(const CSeq_id_Handle& idh)
 {
+    STypeFound ret;
     TReadId read_id = sx_GetReadId(idh);
     if ( read_id.first ) {
         const CSRABlobId& sra_id = *read_id.first;
-        return m_Impl->GetSequenceType(sra_id.m_Accession,
-                                       sra_id.m_SpotId,
-                                       read_id.second);
+        ret.sequence_found = true;
+        ret.type = m_Impl->GetSequenceType(sra_id.m_Accession,
+                                           sra_id.m_SpotId,
+                                           read_id.second);
     }
-    return CSeq_inst::eMol_not_set;
+    return ret;
 }
 
 
