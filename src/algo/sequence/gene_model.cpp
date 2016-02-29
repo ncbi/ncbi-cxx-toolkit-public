@@ -1561,6 +1561,12 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                 len = len >= 3 ? len-3 : 0;
             }
 
+            // template for codon seq-locs
+            CRef<CSeq_loc> codon_on_mrna = protloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+            codon_on_mrna->SetPartialStart(false, eExtreme_Biological);
+            codon_on_mrna->SetPartialStop(false, eExtreme_Biological);
+
+
             if (ci.IsUnknownLength()) {
                 seq_inst.SetExt().SetDelta().AddLiteral(len);
                 seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
@@ -1583,7 +1589,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
             } else {
                 if (stop_codon_included && final_code_break) {
                     TSeqPos pos_on_mrna = codon_start_pos + protloc_on_mrna->GetStart(eExtreme_Positional) + (e-b)*3;
-                    CRef<CSeq_loc> stop_codon_on_mrna = protloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+                    CRef<CSeq_loc> stop_codon_on_mrna = codon_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
                     stop_codon_on_mrna->SetInt().SetFrom(pos_on_mrna);
                     stop_codon_on_mrna->SetInt().SetTo(pos_on_mrna + 2);
                     AddCodeBreak(*cds_feat_on_transcribed_mrna, *stop_codon_on_mrna, '*');
@@ -1596,7 +1602,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                         !protloc_on_mrna->IsPartialStart(eExtreme_Biological)) {
                         strprot[b] = 'M';
                         TSeqPos pos_on_mrna = codon_start_pos + protloc_on_mrna->GetStart(eExtreme_Positional);
-                        CRef<CSeq_loc> start_codon_on_mrna = protloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+                        CRef<CSeq_loc> start_codon_on_mrna = codon_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
                         start_codon_on_mrna->SetInt().SetFrom(pos_on_mrna);
                         start_codon_on_mrna->SetInt().SetTo(pos_on_mrna + 2);
                         AddCodeBreak(*cds_feat_on_transcribed_mrna, *start_codon_on_mrna, 'M');
@@ -1609,7 +1615,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                         strprot[stop_aa_pos] = 'X';
 
                         TSeqPos pos_on_mrna = codon_start_pos + protloc_on_mrna->GetStart(eExtreme_Positional) + (stop_aa_pos-b)*3;
-                        CRef<CSeq_loc> internal_stop_on_mrna = protloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+                        CRef<CSeq_loc> internal_stop_on_mrna = codon_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
                         internal_stop_on_mrna->SetInt().SetFrom(pos_on_mrna);
                         internal_stop_on_mrna->SetInt().SetTo(pos_on_mrna + 2);
                         AddCodeBreak(*cds_feat_on_transcribed_mrna, *internal_stop_on_mrna, 'X');

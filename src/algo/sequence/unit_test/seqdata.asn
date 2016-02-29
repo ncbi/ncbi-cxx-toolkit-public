@@ -14954,27 +14954,16 @@ Bioseq-set ::= {
       descr {
         molinfo {
           biomol mRNA,
-          completeness unknown
+          completeness no-ends
         }
       },
       inst {
-        repr delta,
+        repr raw,
         mol rna,
-        length 576,
-        ext delta {
-          literal {
-            length 84
-          },
-          literal {
-            length 309,
-            seq-data ncbi2na '6AEF458429F7A4284549B5627A029E7A5F6D662A6116EBAE
-4C93A129E91905F8E179964DB50A9E1106A9B993A2F6D020A9E0BD1698A1D163A50DE39EDAD3A8
-97D9E2F6266578D6606D2662A0DB80'H
-          },
-          literal {
-            length 183
-          }
-        },
+        length 309,
+        seq-data ncbi2na '6AEF458429F7A4284549B5627A029E7A5F6D662A6116EBAE4C93
+A129E91905F8E179964DB50A9E1106A9B993A2F6D020A9E0BD1698A1D163A50DE39EDAD3A897D9
+E2F6266578D6606D2662A0DB80'H,
         hist {
           assembly {
             {
@@ -15009,8 +14998,8 @@ Bioseq-set ::= {
                 product-type transcript,
                 exons {
                   {
-                    product-start nucpos 84,
-                    product-end nucpos 392,
+                    product-start nucpos 0,
+                    product-end nucpos 308,
                     genomic-start 122448,
                     genomic-end 122756,
                     parts {
@@ -15028,7 +15017,7 @@ Bioseq-set ::= {
                     partial TRUE
                   }
                 },
-                product-length 576
+                product-length 309
               },
               bounds {
                 whole gi 29143757,
@@ -15065,8 +15054,8 @@ Bioseq-set ::= {
               },
               product whole local str "PROT_27",
               location int {
-                from 84,
-                to 392,
+                from 0,
+                to 308,
                 id local str "CDNA_27",
                 fuzz-from lim lt,
                 fuzz-to lim gt
@@ -16318,8 +16307,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 9,
                       to 11,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16327,8 +16315,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 78,
                       to 80,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16336,8 +16323,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 99,
                       to 101,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16345,8 +16331,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 120,
                       to 122,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16354,8 +16339,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 153,
                       to 155,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16363,8 +16347,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 198,
                       to 200,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16372,8 +16355,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 237,
                       to 239,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16381,8 +16363,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 279,
                       to 281,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16390,8 +16371,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 393,
                       to 395,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16399,8 +16379,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 447,
                       to 449,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16408,8 +16387,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 453,
                       to 455,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16417,8 +16395,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 477,
                       to 479,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16426,8 +16403,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 498,
                       to 500,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16435,8 +16411,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 510,
                       to 512,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16444,8 +16419,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 522,
                       to 524,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16453,8 +16427,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 531,
                       to 533,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16462,8 +16435,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 540,
                       to 542,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16471,8 +16443,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 558,
                       to 560,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16480,8 +16451,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 588,
                       to 590,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16489,8 +16459,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 603,
                       to 605,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16498,8 +16467,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 606,
                       to 608,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16507,8 +16475,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 627,
                       to 629,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16516,8 +16483,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 633,
                       to 635,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16525,8 +16491,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 723,
                       to 725,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16534,8 +16499,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 768,
                       to 770,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16543,8 +16507,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 780,
                       to 782,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16552,8 +16515,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 807,
                       to 809,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16561,8 +16523,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 828,
                       to 830,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16570,8 +16531,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 852,
                       to 854,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16579,8 +16539,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 867,
                       to 869,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   },
@@ -16588,8 +16547,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                     loc int {
                       from 909,
                       to 911,
-                      id local str "CDNA_37",
-                      fuzz-to lim gt
+                      id local str "CDNA_37"
                     },
                     aa ncbieaa 88
                   }
@@ -19491,26 +19449,18 @@ Bioseq-set ::= {
       descr {
         molinfo {
           biomol mRNA,
-          completeness no-right
+          completeness no-ends
         }
       },
       inst {
-        repr delta,
+        repr raw,
         mol rna,
-        length 747,
-        ext delta {
-          literal {
-            length 51
-          },
-          literal {
-            length 696,
-            seq-data ncbi2na 'F0086FDBDDEF0C0A607EDA7C36BF03A27AC02C618F0133CD
-AFC3A05800281ED10F0EA0043DB8E33849B16F727FD3F3D68065ACF338E0F06F20893F80F049CE
-9B3A6E8E0010CE081BB2841C7108BF6CE0036FC03AFD4DD3F7402A380400B0E3CE264FFCBA2537
-7F332C8E05FDBE8F235BC98F4357DF40E3A140E0022EB96B3FC3891133FC9869226F3EE3DBD3CF
-F9342B82C2260A819CDE0790D12FC3394AE41BC8E33F13667040A0823CE0C9126F'H
-          }
-        },
+        length 696,
+        seq-data ncbi2na 'F0086FDBDDEF0C0A607EDA7C36BF03A27AC02C618F0133CDAFC3
+A05800281ED10F0EA0043DB8E33849B16F727FD3F3D68065ACF338E0F06F20893F80F049CE9B3A
+6E8E0010CE081BB2841C7108BF6CE0036FC03AFD4DD3F7402A380400B0E3CE264FFCBA25377F33
+2C8E05FDBE8F235BC98F4357DF40E3A140E0022EB96B3FC3891133FC9869226F3EE3DBD3CFF934
+2B82C2260A819CDE0790D12FC3394AE41BC8E33F13667040A0823CE0C9126F'H,
         hist {
           assembly {
             {
@@ -19523,8 +19473,8 @@ F9342B82C2260A819CDE0790D12FC3394AE41BC8E33F13667040A0823CE0C9126F'H
                 product-type transcript,
                 exons {
                   {
-                    product-start nucpos 51,
-                    product-end nucpos 746,
+                    product-start nucpos 0,
+                    product-end nucpos 695,
                     genomic-start 1055608,
                     genomic-end 1056303,
                     parts {
@@ -19535,7 +19485,7 @@ F9342B82C2260A819CDE0790D12FC3394AE41BC8E33F13667040A0823CE0C9126F'H
                     partial TRUE
                   }
                 },
-                product-length 747
+                product-length 696
               },
               ext {
                 {
@@ -19563,10 +19513,9 @@ F9342B82C2260A819CDE0790D12FC3394AE41BC8E33F13667040A0823CE0C9126F'H
                 code-break {
                   {
                     loc int {
-                      from 735,
-                      to 737,
-                      id local str "CDNA_53",
-                      fuzz-to lim gt
+                      from 684,
+                      to 686,
+                      id local str "CDNA_53"
                     },
                     aa ncbieaa 88
                   }
@@ -19574,8 +19523,8 @@ F9342B82C2260A819CDE0790D12FC3394AE41BC8E33F13667040A0823CE0C9126F'H
               },
               product whole local str "PROT_53",
               location int {
-                from 51,
-                to 746,
+                from 0,
+                to 695,
                 id local str "CDNA_53",
                 fuzz-from lim lt,
                 fuzz-to lim gt

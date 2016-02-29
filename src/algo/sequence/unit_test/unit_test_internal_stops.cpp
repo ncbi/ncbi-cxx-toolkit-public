@@ -128,6 +128,7 @@ Seq-align ::= { \
     BOOST_CHECK_EQUAL( stops.size(), 2U );
 }
 
+/*
 BOOST_AUTO_TEST_CASE(TestMRNA)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
@@ -183,6 +184,8 @@ Seq-align ::= { \
 
     BOOST_CHECK_EQUAL( stops.size(), 9U );
 }
+*/
+
 
 BOOST_AUTO_TEST_CASE(TestStartStopProteinWithPadding)
 {
@@ -509,3 +512,66 @@ Seq-align ::= { \
     }
 }
 
+BOOST_AUTO_TEST_CASE(TestReportGaps)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CScope scope(*om);
+    scope.AddDefaults();
+
+string buf = " \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id gi 487427171, \
+    genomic-id gi 357958168, \
+    genomic-strand plus, \
+    product-type protein, \
+    exons { \
+      { \
+        product-start protpos { \
+          amin 3, \
+          frame 1 \
+        }, \
+        product-end protpos { \
+          amin 96, \
+          frame 3 \
+        }, \
+        genomic-start 31, \
+        genomic-end 312, \
+        parts { \
+          diag 282 \
+        }, \
+        partial TRUE \
+      } \
+    }, \
+    product-length 97 \
+  } \
+} \
+";
+
+    CNcbiIstrstream istrs(buf.c_str());
+
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+
+    CSeq_align align;
+    *istr >> align;
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    CInternalStopFinder int_stop_finder(scope);
+
+    set<TSignedSeqRange> gaps;
+    auto starts_stops = int_stop_finder.FindStartStopRanges(align, 1100, &gaps);
+
+    BOOST_CHECK_EQUAL( gaps.size(), 3U );
+    auto it = gaps.begin();
+    BOOST_CHECK_EQUAL( it->GetFrom(), -10 );
+    BOOST_CHECK_EQUAL( it->GetTo(),   -1 );
+    ++it;
+    BOOST_CHECK_EQUAL( it->GetFrom(), 26 );
+    BOOST_CHECK_EQUAL( it->GetTo(),   28 );
+    ++it;
+    BOOST_CHECK_EQUAL( it->GetFrom(), 1405 );
+    BOOST_CHECK_EQUAL( it->GetTo(),   1414 );
+}

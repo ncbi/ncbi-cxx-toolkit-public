@@ -7695,7 +7695,6 @@ Seq-annot ::= {
         type mRNA
       },
       partial TRUE,
-      except TRUE,
       product whole local str "CDNA_27",
       location int {
         from 122448,
@@ -7704,8 +7703,7 @@ Seq-annot ::= {
         id gi 18466424,
         fuzz-from lim lt,
         fuzz-to lim gt
-      },
-      except-text "unclassified transcription discrepancy"
+      }
     },
     {
       data cdregion {
@@ -8328,8 +8326,7 @@ Seq-annot ::= {
               from 155977,
               to 155979,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8338,8 +8335,7 @@ Seq-annot ::= {
               from 155908,
               to 155910,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8348,8 +8344,7 @@ Seq-annot ::= {
               from 155887,
               to 155889,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8358,8 +8353,7 @@ Seq-annot ::= {
               from 155866,
               to 155868,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8368,8 +8362,7 @@ Seq-annot ::= {
               from 155833,
               to 155835,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8378,8 +8371,7 @@ Seq-annot ::= {
               from 155788,
               to 155790,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8388,8 +8380,7 @@ Seq-annot ::= {
               from 155749,
               to 155751,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8398,8 +8389,7 @@ Seq-annot ::= {
               from 155707,
               to 155709,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8408,8 +8398,7 @@ Seq-annot ::= {
               from 155593,
               to 155595,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8418,8 +8407,7 @@ Seq-annot ::= {
               from 155539,
               to 155541,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8428,8 +8416,7 @@ Seq-annot ::= {
               from 155533,
               to 155535,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8438,8 +8425,7 @@ Seq-annot ::= {
               from 155509,
               to 155511,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8448,8 +8434,7 @@ Seq-annot ::= {
               from 155488,
               to 155490,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8458,8 +8443,7 @@ Seq-annot ::= {
               from 155476,
               to 155478,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8468,8 +8452,7 @@ Seq-annot ::= {
               from 155464,
               to 155466,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8478,8 +8461,7 @@ Seq-annot ::= {
               from 155455,
               to 155457,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8488,8 +8470,7 @@ Seq-annot ::= {
               from 155446,
               to 155448,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8498,8 +8479,7 @@ Seq-annot ::= {
               from 155428,
               to 155430,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8508,8 +8488,7 @@ Seq-annot ::= {
               from 155398,
               to 155400,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8518,8 +8497,7 @@ Seq-annot ::= {
               from 155383,
               to 155385,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8528,8 +8506,7 @@ Seq-annot ::= {
               from 155380,
               to 155382,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8538,8 +8515,7 @@ Seq-annot ::= {
               from 155359,
               to 155361,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8548,8 +8524,7 @@ Seq-annot ::= {
               from 155353,
               to 155355,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8558,8 +8533,7 @@ Seq-annot ::= {
               from 155263,
               to 155265,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8568,8 +8542,7 @@ Seq-annot ::= {
               from 155218,
               to 155220,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8578,8 +8551,7 @@ Seq-annot ::= {
               from 155206,
               to 155208,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8588,8 +8560,7 @@ Seq-annot ::= {
               from 155179,
               to 155181,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8598,8 +8569,7 @@ Seq-annot ::= {
               from 155158,
               to 155160,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8608,8 +8578,7 @@ Seq-annot ::= {
               from 155134,
               to 155136,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8618,8 +8587,7 @@ Seq-annot ::= {
               from 155119,
               to 155121,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8628,8 +8596,7 @@ Seq-annot ::= {
               from 155077,
               to 155079,
               strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
+              id gi 346722692
             },
             aa ncbieaa 88
           }
@@ -9650,7 +9617,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "acid sensing ion channel 2, transcript variant MDEG2"
+        ext name "acid sensing ion channel subunit 2, transcript variant MDEG2"
       },
       except TRUE,
       comment "The RefSeq transcript has 140 substitutions, 1
@@ -10013,7 +9980,6 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "No definition line found"
       },
       partial TRUE,
       location int {
@@ -10141,7 +10107,6 @@ Seq-annot ::= {
         type mRNA
       },
       partial TRUE,
-      except TRUE,
       product whole local str "CDNA_53",
       location int {
         from 1055608,
@@ -10150,8 +10115,7 @@ Seq-annot ::= {
         id gi 218230750,
         fuzz-from lim lt,
         fuzz-to lim gt
-      },
-      except-text "unclassified transcription discrepancy"
+      }
     },
     {
       data cdregion {
@@ -10164,8 +10128,7 @@ Seq-annot ::= {
               from 1056292,
               to 1056294,
               strand plus,
-              id gi 218230750,
-              fuzz-to lim gt
+              id gi 218230750
             },
             aa ncbieaa 88
           }

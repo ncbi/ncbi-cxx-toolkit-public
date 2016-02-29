@@ -53,10 +53,19 @@ public:
 
     pair<set<TSeqPos>, set<TSeqPos> > FindStartsStops(const CSeq_align& align, int padding=0);
 
-    //in presence of frameshifts start and stops not always are triplets.
     //ranges are biological, i.e. inverted if minus strand or cross-origin.
     //starts returned as map to bool (true - ATG, false - alt. start).
-    pair<map<TSeqRange, bool>, set<TSeqRange> > FindStartStopRanges(const CSeq_align& align, int padding=0);
+    //
+    // Does not look inside introns or large insertions -
+    //  clean alignment with fMaximizeTranslation first if you want to.
+    //
+    // in presence of frameshifts start and stops not always are triplets.
+    //
+    // (gaps parameter if provided will be filled with runs of Ns found,
+    //  fake gaps beyond contig ends if within padding will be added too)
+    //
+    pair<map<TSeqRange, bool>, set<TSeqRange> > FindStartStopRanges(const CSeq_align& align, int padding=0,
+                                                                    set<TSignedSeqRange>* gaps = nullptr);
 
 private:
     string GetCDSNucleotideSequence(const CSeq_align& align);

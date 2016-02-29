@@ -66,10 +66,14 @@ pair<set<TSeqPos>, set<TSeqPos> > CInternalStopFinder::FindStartsStops(const CSe
     }
     return make_pair(starts, stops);
 }
-pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CSeq_align& align, int padding)
+pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CSeq_align& align, int padding,
+                                                                        set<TSignedSeqRange>* gaps)
 {
     CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
+    int genomic_length = bsh.GetBioseqLength();
+
     CConstRef<CSeq_align> clean_align;
+    pair<bool, bool> trim_by_contig(false, false);
     {{
         CConstRef<CSeq_align> padded_align(&align);
         if (padding > 0) {
@@ -78,7 +82,6 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
             int stop = loc->GetStop(eExtreme_Positional);
 
             bool is_circular = (bsh.GetInst_Topology() == CSeq_inst::eTopology_circular);
-            int genomic_length = bsh.GetBioseqLength();
 
             if (is_circular) {
                 //prevent self overlap
@@ -88,6 +91,13 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
             start -= padding;
             stop += padding;
 
+            if (start <= 2 && !is_circular) {
+                trim_by_contig.first = true;
+            }
+            if (stop >= genomic_length-3 && !is_circular) {
+                trim_by_contig.second = true;
+            }
+
             if (start < 0) {
                 start = is_circular ? start + genomic_length : 0;
             }
@@ -95,9 +105,11 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
                 stop = is_circular ? stop - genomic_length : genomic_length-1;
             }
             padded_align = generator.AdjustAlignment(align, TSeqRange(start, stop));
+            //cerr << MSerial_AsnText << *padded_align;
         }
 
         clean_align = generator.CleanAlignment(*padded_align);
+        //cerr << MSerial_AsnText << *clean_align;
     }}
 
     CSeq_loc_Mapper mapper(*clean_align, 1);
@@ -108,8 +120,15 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
 
     const bool is_protein = (spl.GetProduct_type() == CSpliced_seg::eProduct_type_protein);
 
-    const string seq = GetCDSNucleotideSequence(*clean_align);
+    if (!is_protein) {
+        NCBI_USER_THROW("CInternalStopFinder::FindStartStopRanges implementation for transcript alignments is sketchy. Will fix when real need appears.");
+    }
 
+    string seq = GetCDSNucleotideSequence(*clean_align);
+    if (seq.size()%3 != 0) {
+        _ASSERT(seq.size()%3 == 0);
+        NCBI_USER_THROW("CDSNucleotideSequence not divisible by 3");
+    }
 
     int gcode = 1;
     try {
@@ -132,27 +151,27 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
 
     ITERATE(string, s, seq) {
         state = tbl.NextCodonState(state, *s);
-        
+
         if (++k%3)
             continue;
 
         if (state == kUnknownState)
             continue;
 
-        if (tbl.IsAnyStart(state) || tbl.IsOrfStop(state)) {
+        if (tbl.IsOrfStart(state) || tbl.IsOrfStop(state)) {
             if (is_protein) {
                 query_loc->SetInt().SetFrom((k-3)/3);
                 query_loc->SetInt().SetTo((k-3)/3);
             } else {
                 query_loc->SetInt().SetFrom(k-3);
-                query_loc->SetInt().SetTo(k-3);
+                query_loc->SetInt().SetTo(k-1);
             }
             TSeqPos mapped_pos = mapper.Map(*query_loc)->GetStart(eExtreme_Biological);
             if (mapped_pos == kInvalidSeqPos)
                 continue;
             TSeqPos mapped_pos2 = mapper.Map(*query_loc)->GetStop(eExtreme_Biological);
 
-            if (tbl.IsAnyStart(state)) {
+            if (tbl.IsOrfStart(state)) {
                 starts[TSeqRange(mapped_pos, mapped_pos2)] = tbl.IsATGStart(state);
             }
             if (tbl.IsOrfStop(state)) {
@@ -160,6 +179,93 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
             }
         }
     }
+
+    if (gaps != nullptr) {
+
+        CRef<CSeq_loc> region_loc = clean_align->CreateRowSeq_loc(1);
+        if (trim_by_contig.first && region_loc->GetStart(eExtreme_Positional) < 3) {
+            region_loc = region_loc->Merge(CSeq_loc::fMerge_SingleRange, nullptr);
+            region_loc->SetInt().SetFrom(0);
+        }
+        if (trim_by_contig.second && int(region_loc->GetStop(eExtreme_Positional)) > genomic_length -3) {
+            region_loc = region_loc->Merge(CSeq_loc::fMerge_SingleRange, nullptr);
+            region_loc->SetInt().SetTo(genomic_length-1);
+        }
+//         cerr << MSerial_AsnText << *region_loc;
+
+        CSeqVector region_vec(*region_loc, scope,
+                               CBioseq_Handle::eCoding_Iupac);
+        string region_seq;
+        region_vec.GetSeqData(region_vec.begin(), region_vec.end(), region_seq);
+
+        region_seq += 'X'; // to finish last run of Ns
+
+        int gap_begin = -1;
+        int gap_end = -1;
+        int k = 0;
+
+        CRef<CSeq_id> id(new CSeq_id);
+        id->Assign(*region_loc->GetId());
+        CRef<CSeq_loc> query_loc(new CSeq_loc(*id, 0, region_vec.size()-1));
+        CSeq_loc_Mapper mapper(*query_loc, *region_loc);
+
+        for (auto s: region_seq) {
+            if (s == 'N') {
+                if (gap_end != k) {
+                    gap_begin = k;
+                }
+                gap_end = k+1;
+            } else if (gap_end == k) {
+                query_loc->SetInt().SetFrom(gap_begin);
+                query_loc->SetInt().SetTo(gap_end-1);
+                
+                auto mapped_loc = mapper.Map(*query_loc);
+                TSeqPos mapped_pos = mapped_loc->GetStart(eExtreme_Biological);
+                TSeqPos mapped_pos2 = mapped_loc->GetStop(eExtreme_Biological);
+                if (mapped_pos == kInvalidSeqPos || mapped_pos2 == kInvalidSeqPos) {
+                    NCBI_USER_THROW("Cannot map Ns run");
+                }
+                gaps->insert(TSignedSeqRange(mapped_pos, mapped_pos2));
+            }
+            ++k;
+        }
+
+        auto strand = region_loc->GetStrand();
+
+        if (trim_by_contig.first) {
+            int gap_stop = -1;
+            if (strand != eNa_strand_minus) {
+                if (!gaps->empty() && gaps->begin()->GetFrom()==0) {
+                    gap_stop = gaps->begin()->GetTo();
+                    gaps->erase(gaps->begin());
+                }
+                gaps->insert(TSignedSeqRange(gap_stop -9, gap_stop));
+            } else {
+                if (!gaps->empty() && gaps->begin()->GetTo()==0) {
+                    gap_stop = gaps->begin()->GetFrom();
+                    gaps->erase(gaps->begin());
+                }
+                gaps->insert(TSignedSeqRange(gap_stop, gap_stop -9));
+            }
+        }
+        if (trim_by_contig.second) {
+            int gap_start = genomic_length;
+            if (strand != eNa_strand_minus) {
+                if (!gaps->empty() && gaps->rbegin()->GetTo()==genomic_length-1) {
+                    gap_start = gaps->rbegin()->GetFrom();
+                    gaps->erase(prev(gaps->end()));
+                }
+                gaps->insert(TSignedSeqRange(gap_start, gap_start +9));
+            } else {
+                if (!gaps->empty() && gaps->rbegin()->GetFrom()==genomic_length-1) {
+                    gap_start = gaps->rbegin()->GetTo();
+                    gaps->erase(prev(gaps->end()));
+                }
+                gaps->insert(TSignedSeqRange(gap_start +9, gap_start));
+            }
+        }
+    }
+
     return make_pair(starts, stops);
 }
 

@@ -616,6 +616,14 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
 
     NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
         CSpliced_exon& exon = **exon_it;
+
+        if (exon_it == spliced_seg.SetExons().begin()) {
+            if (is_protein_align)
+                aa_offset = - int(exon.GetProduct_start().GetProtpos().GetAmin());
+            else
+                aa_offset = - int(exon.GetProduct_start().GetNucpos())/3;
+        }
+
         if (aa_offset) {
             if (is_protein_align)
                 exon.SetProduct_start().SetProtpos().SetAmin() += aa_offset;
@@ -703,9 +711,9 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
         }
         prev_exon_it = exon_it;
     }
-    if (aa_offset) {
-        spliced_seg.SetProduct_length() += is_protein_align ? aa_offset : aa_offset*3;
-    }
+    spliced_seg.SetProduct_length() = is_protein_align
+        ? (*prev_exon_it)->GetProduct_end().GetProtpos().GetAmin()+1
+        : (*prev_exon_it)->GetProduct_end().GetNucpos()+1;
 }
 
 CConstRef<CSeq_align> CFeatureGenerator::AdjustAlignment(const CSeq_align& align_in, TSeqRange range, EProductPositionsMode mode)
