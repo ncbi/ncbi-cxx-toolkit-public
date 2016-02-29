@@ -134,7 +134,9 @@ typedef int socklen_t;
 #endif
 
 #if defined(NCBI_COMPILER_MSVC)
-#  define snprintf _snprintf
+#  if _MSC_VER < 1900 /* Visual Studio 2015 */
+#    define snprintf _snprintf
+#  endif
 #  define TDS_I64_PREFIX "I64"
 #  define inline __inline
 #  if _MSC_VER >= 1400 /* Visual Studio 2005 (MSVC 7.0) */

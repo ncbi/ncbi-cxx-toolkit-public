@@ -121,7 +121,8 @@ typedef int socklen_t;
 #  define TDS_SQLCOLATTRIBUTE_SQLLEN 1
 #endif
 
-#if defined(NCBI_COMPILER_MSVC)
+#if defined(NCBI_COMPILER_MSVC)  &&  _MSC_VER < 1900
+/* Finally defined as of Visual Studio 2015 */
 #  define snprintf _snprintf
 #endif
 
