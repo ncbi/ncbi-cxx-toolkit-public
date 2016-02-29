@@ -43,7 +43,7 @@ Seq-annot ::= {
       data rna {
         type mRNA,
         ext name "solute carrier family 37 (glucose-6-phosphate transporter),
- member 1"
+ member 1, transcript variant 2"
       },
       partial TRUE,
       product whole gi 49619230,
@@ -9980,6 +9980,7 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
+        locus "No definition line found"
       },
       partial TRUE,
       location int {
@@ -9991,7 +9992,8 @@ Seq-annot ::= {
     },
     {
       data rna {
-        type mRNA
+        type mRNA,
+        ext name "No definition line found"
       },
       partial TRUE,
       except TRUE,
