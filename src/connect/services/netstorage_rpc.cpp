@@ -806,9 +806,22 @@ CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type) const
         new_request.SetString("SessionID", req.GetSessionID());
     }
 
+    // TODO:
+    // Remove sending this after all NetStorage servers are updated to v2.2.0
+    // (ncbi_phid is sent inside ncbi_context).
+    // GetNextSubHitID()/GetCurrentSubHitID()) must be still called though
+    // (without using returned value) to set appropriate value for ncbi_phid.
     if (req.IsSetHitID()) {
         new_request.SetString("ncbi_phid", m_UseNextSubHitID ?
                 req.GetNextSubHitID() : req.GetCurrentSubHitID());
+    }
+
+    const auto format = CRequestContext_PassThrough::eFormat_UrlEncoded;
+    const CRequestContext_PassThrough context;
+    const string ncbi_context(context.Serialize(format));
+
+    if (!ncbi_context.empty()) {
+        new_request.SetString("ncbi_context", ncbi_context);
     }
 
     return new_request;
