@@ -2594,17 +2594,19 @@ bool CValidError_bioseq::GetTSANStretchErrors(const CBioseq& seq)
 bool CValidError_bioseq::IsAllNs(CBioseq_Handle bsh)
 {
     bool rval = true;
+    bool at_least_one = false;
     try {
         CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
         for (CSeqVector_CI sv_iter(vec); (sv_iter) && rval; ++sv_iter) {
             if (*sv_iter != 'N') {
                 rval = false;
             }
+            at_least_one = true;
         }
     } catch (CException& e) {
 
     }
-    return rval;
+    return (rval && at_least_one);
 }
 
 int CValidError_bioseq::PctNs(CBioseq_Handle bsh)
