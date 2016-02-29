@@ -539,16 +539,19 @@ static bool s_CompareSeqAlignByScore(const CRef<CSeq_align> &x, const CRef<CSeq_
 };
 
 // Test if D and J annotation not compatible
-static bool s_DJNotCompatible(const CSeq_align &d, const CSeq_align &j, bool ms)
+static bool s_DJNotCompatible(const CSeq_align &d, const CSeq_align &j, bool ms, int margin)
 {
     int ds = d.GetSeqStart(0);
     int de = d.GetSeqStop(0);
     int js = j.GetSeqStart(0);
     int je = j.GetSeqStop(0);
+
+    //D gene needs to have minimal match in addition to overlap with J gene
+    //D gene needs to end before J gene ends
     if (ms) {
-        if (ds < js + 3 || de < je + 3) return true;
+        if (ds < js + 3 || de < je + margin) return true;
     } else { 
-        if (ds > js - 3 || de > je - 3) return true;
+        if (ds > js - margin || de > je + 3) return true;
     }
     return false;
 };
@@ -683,8 +686,8 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 bool keep = false;
                 int q_ds = (*it)->GetSeqStart(0);
                 int q_de = (*it)->GetSeqStop(0);
-                if (q_ms) keep = (q_de >= q_ve - max_allowed_VD_distance && q_ds <= q_ve - 3);
-                else      keep = (q_ds <= q_ve + max_allowed_VD_distance && q_de >= q_ve + 3);
+                if (q_ms) keep = (q_de >= q_ve - max_allowed_VD_distance && q_ds <= q_ve - m_IgOptions->m_Min_D_match);
+                else      keep = (q_ds <= q_ve + max_allowed_VD_distance && q_de >= q_ve + m_IgOptions->m_Min_D_match);
                 if (!keep) it = align_list.erase(it);
                 else ++it;
             }
@@ -751,7 +754,7 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
             if (keep_J) {
                 it = al_D.begin();
                 while (it != al_D.end()) {
-                    if (s_DJNotCompatible(**it, **(al_J.begin()), q_ms)) {
+                    if (s_DJNotCompatible(**it, **(al_J.begin()), q_ms, m_IgOptions->m_Min_D_match)) {
                         it = al_D.erase(it);
                     } else ++it;
                 }
@@ -759,7 +762,7 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 if (align_D.NotEmpty() && !align_D->IsEmpty()){
                     it = al_J.begin();
                     while (it != al_J.end()) {
-                        if (s_DJNotCompatible(**(al_D.begin()), **it, q_ms)) {
+                        if (s_DJNotCompatible(**(al_D.begin()), **it, q_ms, m_IgOptions->m_Min_D_match)) {
                             it = al_J.erase(it);
                         } else ++it;
                     }
@@ -767,14 +770,14 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
             } else {
                 it = al_J.begin();
                 while (it != al_J.end()) {
-                    if (s_DJNotCompatible(**(al_D.begin()), **it, q_ms)) {
+                    if (s_DJNotCompatible(**(al_D.begin()), **it, q_ms, m_IgOptions->m_Min_D_match)) {
                         it = al_J.erase(it);
                     } else ++it;
                 }
                 if (align_J.NotEmpty() && !align_J->IsEmpty()) {
                     it = al_D.begin();
                     while (it != al_D.end()) {
-                        if (s_DJNotCompatible(**it, **(al_J.begin()), q_ms)) {
+                        if (s_DJNotCompatible(**it, **(al_J.begin()), q_ms, m_IgOptions->m_Min_D_match)) {
                             it = al_D.erase(it);
                         } else ++it;
                     }
