@@ -304,6 +304,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     sdl->linkout = 0;
     sdl->is_new = false;
     sdl->was_checked = false;
+    sdl->taxid = 0;
 
     //get psiblast stuff
     
@@ -328,7 +329,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         }
     }        
     //get id (sdl->id, sdl-gi)    
-    sdl->id = CAlignFormatUtil::GetDisplayIds(handle,aln_id,use_this_gi,sdl->gi);
+    sdl->id = CAlignFormatUtil::GetDisplayIds(handle,aln_id,use_this_gi,sdl->gi,sdl->taxid);
     sdl->alnIDFasta = aln_id.AsFastaString();
 
     //get linkout
@@ -505,6 +506,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
     m_DeflineTemplates = NULL;
     m_StartIndex = 0;
     m_PositionIndex = -1;
+    m_AppLogInfo = NULL;
 }
 
 CShowBlastDefline::~CShowBlastDefline()
@@ -1542,7 +1544,15 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);        
         deflAccs = sdl->id->AsFastaString();
     }
-    
+    //Setup applog info structure
+    if(m_AppLogInfo && (m_AppLogInfo->currInd < m_AppLogInfo->topMatchesNum)) {
+        m_AppLogInfo->deflIdVec.push_back(deflId);
+        m_AppLogInfo->taxidVec.push_back(NStr::IntToString(sdl->taxid));
+        m_AppLogInfo->queryCoverageVec.push_back(NStr::IntToString(iter->percent_coverage));
+        m_AppLogInfo->percentIdentityVec.push_back(NStr::IntToString(iter->percent_identity));
+        m_AppLogInfo->currInd++;
+    }
+
     //If gi - deflFrmID and deflId are the same and equal to gi "555",deflFastaSeq will have "gi|555"
     //If gnl - deflFrmID=number, deflId=ti:number,deflFastaSeq=gnl|xxx
     //like  "268252125","ti:268252125","gnl|ti|961433.m" or "961433.m" and "GNOMON:961433.m" "gnl|GNOMON|961433.m"    

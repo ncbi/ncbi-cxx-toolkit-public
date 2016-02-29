@@ -2985,7 +2985,7 @@ string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,Int8 
 {
     string outString;
     string tmplParam = "<@" + tmplParamName + "@>";
-    NStr::Replace(inpString,tmplParam,NStr::IntToString(templParamVal),outString);
+    NStr::Replace(inpString,tmplParam,NStr::NumericToString(templParamVal),outString);
     return outString;
 }
 
@@ -3764,6 +3764,18 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
                                 TGi& gi)
                                            
 {
+    int taxid = 0;
+    CRef<CSeq_id> wid = CAlignFormatUtil::GetDisplayIds(handle, aln_id, use_this_gi, gi, taxid);    
+    return wid;
+}
+
+CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
+                                const CSeq_id& aln_id,
+                                list<TGi>& use_this_gi,
+                                TGi& gi,
+                                int& taxid)
+                                           
+{
     const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
     const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
        
@@ -3771,6 +3783,7 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
     CRef<CSeq_id> wid;    
 
     gi = ZERO_GI;
+    taxid = 0;
     if(bdl.empty()){
         wid = FindBestChoice(*ids, CSeq_id::WorstRank);        
         gi = FindGi(*ids);    
@@ -3781,6 +3794,9 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
             const CBioseq::TId* cur_id = &((*iter)->GetSeqid());
             TGi cur_gi =  FindGi(*cur_id);    
             wid = FindBestChoice(*cur_id, CSeq_id::WorstRank);
+            if ((*iter)->IsSetTaxid() && (*iter)->CanGetTaxid()){
+                taxid = (*iter)->GetTaxid();
+            }
             if (!use_this_gi.empty()) {
                 ITERATE(list<TGi>, iter_gi, use_this_gi){
                     if(cur_gi == *iter_gi){
@@ -3806,6 +3822,7 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
     }    
     return wid;
 }
+
 
 TGi CAlignFormatUtil::GetDisplayIds(const list< CRef< CBlast_def_line > > &bdl,
                                               const CSeq_id& aln_id,
