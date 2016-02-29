@@ -140,7 +140,8 @@ protected:
     bool x_NCBI34_Guess(const objects::CSeq_id& Id, SIdSpec& Spec) const;
     CConstRef<objects::CSeq_id>
     x_NCBI34_Map_IdFix(CConstRef<objects::CSeq_id> SourceId) const;
-
+    
+    void x_StripPseudoSeq(objects::CGC_Sequence& Seq);
     void x_RecursiveSeqFix(objects::CGC_Sequence& Seq);
     void x_FillGpipeTopRole(objects::CGC_Sequence& Seq);
     void x_RemoveHiddenAccessions(objects::CGC_Sequence& Seq);

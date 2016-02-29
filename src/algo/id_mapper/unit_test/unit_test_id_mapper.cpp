@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
                               0
                              )
     );
-
+    
     // Make a Spec
     CGencollIdMapper::SIdSpec MapSpec;
     MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
@@ -194,6 +194,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
     OrigLoc->SetInt().SetTo(510000);
 
     CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
+    BOOST_CHECK(Result.NotNull());
 
     CRef<CSeq_loc> Expected(new CSeq_loc());
     Expected->SetInt().SetId().Set("NT_113872.1");
@@ -215,6 +216,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
     Mapper.Guess(*OrigLoc, GuessSpec);
     
     Result = Mapper.Map(*OrigLoc, MapSpec);
+    BOOST_CHECK(Result.NotNull());
     
     Expected.Reset(new CSeq_loc());
     Expected->SetInt().SetId().Set("NT_113898.1");
@@ -223,12 +225,33 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
     Expected->SetInt().SetStrand(eNa_strand_plus);
 
     BOOST_CHECK(Result->Equals(*Expected));
-
-    // round trip
-
     Result = Mapper.Map(*Result, GuessSpec);
-
+    BOOST_CHECK(Result.NotNull());
     BOOST_CHECK(OrigLoc->Equals(*Result));
+
+    // chr5_random   113060  114326  chr5:180363135  34903   + 
+    OrigLoc.Reset(new CSeq_loc());
+    OrigLoc->SetInt().SetId().SetLocal().SetStr("chr5_random");
+    OrigLoc->SetInt().SetFrom(113060);
+    OrigLoc->SetInt().SetTo(114325);
+    OrigLoc->SetInt().SetStrand(eNa_strand_plus);
+   
+    Mapper.Guess(*OrigLoc, GuessSpec);
+
+    Result = Mapper.Map(*OrigLoc, MapSpec);
+    BOOST_CHECK(Result.NotNull());
+    
+    Expected.Reset(new CSeq_loc());
+    Expected->SetInt().SetId().Set("NT_113890.1");
+    Expected->SetInt().SetFrom(113060);
+    Expected->SetInt().SetTo(114325);
+    Expected->SetInt().SetStrand(eNa_strand_plus);
+
+    BOOST_CHECK(Result->Equals(*Expected));
+    Result = Mapper.Map(*Result, GuessSpec);
+    BOOST_CHECK(Result.NotNull());
+    BOOST_CHECK(OrigLoc->Equals(*Result));
+
 }
 
 

@@ -221,6 +221,8 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
                     if (Result.NotNull() && !Result->IsNull()) {
                         return Result;
                     }
+                    if(PrimaryLoc.NotNull() && !PrimaryLoc->IsNull()) 
+                        return PrimaryLoc;
                 }
             }
         }
@@ -332,9 +334,10 @@ CGencollIdMapper::x_Init(void)
     
     CTypeIterator<CGC_Sequence> SeqIter(*m_Assembly);
     for ( ; SeqIter; ++SeqIter) {
+        x_StripPseudoSeq(*SeqIter);
         x_RecursiveSeqFix(*SeqIter);
         x_FillGpipeTopRole(*SeqIter);
-
+        
         if(HideRefSeqAcc)
             x_RemoveHiddenAccessions(*SeqIter);
 
@@ -343,6 +346,7 @@ CGencollIdMapper::x_Init(void)
             CGC_TaggedSequences& Tagged = **ChildIter;
             CTypeIterator<CGC_Sequence> InnerIter(Tagged);
             for ( ; InnerIter; ++InnerIter) {
+                x_StripPseudoSeq(*InnerIter);
                 x_RecursiveSeqFix(*InnerIter);
                 x_FillGpipeTopRole(*InnerIter);
                 if(HideRefSeqAcc)
@@ -458,6 +462,45 @@ CGencollIdMapper::x_NCBI34_Map_IdFix(CConstRef<CSeq_id> SourceId) const
     return SourceId;
 }
 
+
+void
+CGencollIdMapper::x_StripPseudoSeq(CGC_Sequence& Seq)
+{
+    if (!(Seq.HasRole(eGC_SequenceRole_pseudo_scaffold) ||
+          Seq.HasRole(eGC_SequenceRole_submitter_pseudo_scaffold))) {
+        return;
+    }
+
+    // Get the 'random' ID we want it to have.
+    CSeq_id TopSyn;
+    if (Seq.CanGetSeq_id_synonyms()) {
+        ITERATE (CGC_Sequence::TSeq_id_synonyms, SynIter, Seq.GetSeq_id_synonyms()) {
+            CTypeConstIterator<CSeq_id> IdIter(**SynIter);
+            for ( ; IdIter; ++IdIter) {
+                if (IdIter->IsGi()) {
+                    continue;
+                }
+                TopSyn.Assign(*IdIter);
+                break;
+            }
+            if(TopSyn.Which() != CSeq_id::e_not_set)
+                break;
+        }
+    }
+
+    Seq.ResetSeq_id();
+    Seq.SetSeq_id().Assign(TopSyn);
+
+    // If this pseudo has a refseq/genbank syn, erase it
+    ERASE_ITERATE (CGC_Sequence::TSeq_id_synonyms, SynIter, Seq.SetSeq_id_synonyms()) {
+        if( (*SynIter)->IsGenbank() ||
+            (*SynIter)->IsRefseq() ) {
+            Seq.SetSeq_id_synonyms().erase(SynIter);
+        }
+    }
+}
+
+
 void
 CGencollIdMapper::x_RecursiveSeqFix(CGC_Sequence& Seq)
 {
@@ -473,6 +516,8 @@ CGencollIdMapper::x_RecursiveSeqFix(CGC_Sequence& Seq)
                 TopSyn.Assign(*IdIter);
                 break;
             }
+            if(TopSyn.Which() != CSeq_id::e_not_set)
+                break;
         }
     }
 
@@ -1067,7 +1112,6 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
     if (Spec.Primary && Seq.CanGetSeq_id()) {
         HasId = true;
     }
-    
     if (!Spec.Primary && Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
             const CGC_TypedSeqId::E_Choice syn_type = (*it)->Which();
@@ -1109,14 +1153,17 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
             }
         }
     }
-    CConstRef<CGC_Sequence> ParentSeq = Seq.GetParent();
-    if (ParentSeq.NotNull()) {
-        if (((Spec.Role != SIdSpec::e_Role_NotSet || Spec.Top) && 
-            (Spec.Role >= eGC_SequenceRole_top_level || Spec.Role <= x_GetRole(*ParentSeq)))
-           ) {
-            const int Parent = x_CanSeqMeetSpec(*ParentSeq, Spec, Level + 1);
-            if (Parent == e_Yes || Parent == e_Up) {
-                return e_Up;
+    if( !Seq.HasRole(eGC_SequenceRole_pseudo_scaffold) &&
+        !Seq.HasRole(eGC_SequenceRole_submitter_pseudo_scaffold) ) {
+        CConstRef<CGC_Sequence> ParentSeq = Seq.GetParent();
+        if (ParentSeq.NotNull()) {
+            if (((Spec.Role != SIdSpec::e_Role_NotSet || Spec.Top) && 
+                (Spec.Role >= eGC_SequenceRole_top_level || Spec.Role <= x_GetRole(*ParentSeq)))
+               ) {
+                const int Parent = x_CanSeqMeetSpec(*ParentSeq, Spec, Level + 1);
+                if ((Parent == e_Yes || Parent == e_Up)) {
+                    return e_Up;
+                }
             }
         }
     }
@@ -1341,6 +1388,9 @@ CGencollIdMapper::x_FindChromosomeSequence(const CSeq_id& Id, const SIdSpec& Spe
     }
 
     const string IdStr = Id.GetSeqIdString(true);
+    if(IdStr.find("random") != NPOS)
+        return CConstRef<CGC_Sequence>();
+
     TIdToSeqMap::const_iterator Found = m_IdToSeqMap.end();
     ITERATE (vector<string>, ChromoIter, m_Chromosomes) {
         if (NStr::Find(IdStr, *ChromoIter) != NPOS) {
@@ -1436,6 +1486,9 @@ CGencollIdMapper::x_Map_Down(const CSeq_loc& SourceLoc,
 {
     CRef<CSeq_loc> Result;
     Result = m_DownMapper_Shallow->Map(SourceLoc); 
+    if(Result.IsNull() || Result->IsNull()) {
+        Result = m_DownMapper_Deep->Map(SourceLoc);
+    }
     if(!Result.IsNull() && !Result->IsNull()) {
         if(Result->Equals(SourceLoc)) {
             Result = m_DownMapper_Deep->Map(SourceLoc);
