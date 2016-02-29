@@ -843,6 +843,23 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
 }
 
 
+bool CCleanup::SetBestFrame(CSeq_feat& cds, CScope& scope)
+{
+    bool changed = false;
+    CCdregion::TFrame frame = CCdregion::eFrame_not_set;
+    if (cds.GetData().GetCdregion().IsSetFrame()) {
+        frame = cds.GetData().GetCdregion().GetFrame();
+    }
+
+    CCdregion::TFrame new_frame = CSeqTranslator::FindBestFrame(cds, scope);
+    if (frame != new_frame) {
+        cds.SetData().SetCdregion().SetFrame(new_frame);
+        changed = true;
+    }
+    return changed;
+}
+
+
 CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
 {
     const CGene_ref* gene = feat.GetGeneXref();
@@ -941,6 +958,170 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
     }
 
     return ExtendToStopCodon(f, bsh, 3);
+}
+
+
+void CCleanup::SetProteinName(CProt_ref& prot_ref, const string& protein_name, bool append)
+{
+    if (append && prot_ref.IsSetName() &&
+        prot_ref.GetName().size() > 0 &&
+        !NStr::IsBlank(prot_ref.GetName().front())) {
+        prot_ref.SetName().front() += "; " + protein_name;
+    } else {
+        prot_ref.ResetName();
+        prot_ref.SetName().push_back(protein_name);
+    }
+
+}
+
+
+void CCleanup::SetProteinName(CSeq_feat& cds, const string& protein_name, bool append, CScope& scope)
+{
+    bool added = false;
+    if (cds.IsSetProduct()) {
+        CBioseq_Handle prot = scope.GetBioseqHandle(cds.GetProduct());
+        if (prot) {
+            // find main protein feature
+            CFeat_CI feat_ci(prot, CSeqFeatData::eSubtype_prot);
+            if (feat_ci) {
+                CRef<CSeq_feat> new_prot(new CSeq_feat());
+                new_prot->Assign(feat_ci->GetOriginalFeature());
+                SetProteinName(new_prot->SetData().SetProt(), protein_name, append);
+                CSeq_feat_EditHandle feh(feat_ci->GetSeq_feat_Handle());
+                feh.Replace(*new_prot);
+            } else {
+                // make new protein feature
+                feature::AddProteinFeature(*(prot.GetCompleteBioseq()), protein_name, cds, scope);
+            }
+            added = true;
+        }
+    }
+    if (!added) {
+        if (cds.IsSetXref()) {
+            // see if this seq-feat already has a prot xref
+            NON_CONST_ITERATE(CSeq_feat::TXref, it, cds.SetXref()) {
+                if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
+                    SetProteinName((*it)->SetData().SetProt(), protein_name, append);
+                    added = true;
+                    break;
+                }
+            }
+        }
+        if (!added) {
+            CRef<CSeqFeatXref> xref(new CSeqFeatXref());
+            xref->SetData().SetProt().SetName().push_back(protein_name);
+            cds.SetXref().push_back(xref);
+        }
+    }
+}
+
+
+const string& CCleanup::GetProteinName(const CProt_ref& prot)
+{
+    if (prot.IsSetName() && !prot.GetName().empty()) {
+        return prot.GetName().front();
+    } else {
+        return kEmptyStr;
+    }
+}
+
+
+const string& CCleanup::GetProteinName(const CSeq_feat& cds, CScope& scope)
+{
+    if (cds.IsSetProduct()) {
+        CBioseq_Handle prot = scope.GetBioseqHandle(cds.GetProduct());
+        if (prot) {
+            CFeat_CI f(prot, CSeqFeatData::eSubtype_prot);
+            if (f) {
+                return GetProteinName(f->GetData().GetProt());
+            }
+        }
+    }
+    if (cds.IsSetXref()) {
+        ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
+            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
+                return GetProteinName((*it)->GetData().GetProt());
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
+
+bool CCleanup::SetCDSPartialsByFrameAndTranslation(CSeq_feat& cds, CScope& scope)
+{
+    bool any_change = false;
+
+    if (!cds.GetLocation().IsPartialStart(eExtreme_Biological) &&
+        cds.GetData().GetCdregion().IsSetFrame() &&
+        cds.GetData().GetCdregion().GetFrame() != CCdregion::eFrame_not_set &&
+        cds.GetData().GetCdregion().GetFrame() != CCdregion::eFrame_one) {
+        cds.SetLocation().SetPartialStart(true, eExtreme_Biological);
+        any_change = true;
+    }
+
+    if (!cds.GetLocation().IsPartialStart(eExtreme_Biological) || !cds.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        // look for start and stop codon
+        string transl_prot;
+        try {
+            CSeqTranslator::Translate(cds, scope, transl_prot,
+                true,   // include stop codons
+                false);  // do not remove trailing X/B/Z
+
+        } catch (const runtime_error&) {
+        }
+        if (!NStr::IsBlank(transl_prot)) {
+            if (!cds.GetLocation().IsPartialStart(eExtreme_Biological) && !NStr::StartsWith(transl_prot, "M")) {
+                cds.SetLocation().SetPartialStart(true, eExtreme_Biological);
+                any_change = true;
+            }
+            if (!cds.GetLocation().IsPartialStop(eExtreme_Biological) && !NStr::EndsWith(transl_prot, "*")) {
+                cds.SetLocation().SetPartialStop(true, eExtreme_Biological);
+                any_change = true;
+            }
+        }
+    }
+
+    any_change |= feature::AdjustFeaturePartialFlagForLocation(cds);
+
+    return any_change;
+}
+
+
+bool CCleanup::SetGenePartialByLongestContainedFeature(CSeq_feat& gene, CScope& scope)
+{
+    CBioseq_Handle bh = scope.GetBioseqHandle(gene.GetLocation());
+    if (!bh) {
+        return false;
+    }
+    CFeat_CI under(scope, gene.GetLocation());
+    size_t longest = 0;
+    CConstRef<CSeq_feat> longest_feat(NULL);
+    
+    while (under) {
+        // ignore genes
+        if (under->GetData().IsGene()) {
+
+        } else {
+            // must be contained in gene location
+            sequence::ECompare loc_cmp = sequence::Compare(gene.GetLocation(), under->GetLocation(), &scope, sequence::fCompareOverlapping);
+            
+            if (loc_cmp == sequence::eSame || loc_cmp == sequence::eContains) {
+                size_t len = sequence::GetLength(under->GetLocation(), &scope);
+                // if longer than longest, record new length and feature
+                if (len > longest) {
+                    longest_feat.Reset(under->GetSeq_feat());
+                }
+            }
+        }
+
+        ++under;
+    }
+    bool changed = false;
+    if (longest_feat) {
+        changed = feature::CopyFeaturePartials(gene, *longest_feat);
+    }
+    return changed;
 }
 
 
@@ -1296,22 +1477,14 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
         CRef<CSeq_feat> new_cds(new CSeq_feat());
         new_cds->Assign(*(cds_it->GetSeq_feat()));
 
-        // set best frame
-        CCdregion::TFrame frame = CCdregion::eFrame_not_set;
-        if (new_cds->GetData().GetCdregion().IsSetFrame()) {
-            frame = new_cds->GetData().GetCdregion().GetFrame();
-        }
-        CCdregion::TFrame new_frame = CSeqTranslator::FindBestFrame(*new_cds, entry.GetScope());
-        if (frame != new_frame) {
-            new_cds->SetData().SetCdregion().SetFrame(new_frame);
-            change_this_cds = true;
-            frame = new_frame;
-        }
+        change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
 
-        // set partials for frames
-        if (frame != CCdregion::eFrame_not_set && frame != CCdregion::eFrame_one &&
-            !new_cds->GetLocation().IsPartialStart(eExtreme_Biological)) {
-            new_cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+        change_this_cds |= SetCDSPartialsByFrameAndTranslation(*new_cds, entry.GetScope());
+
+        string current_name = GetProteinName(*new_cds, entry.GetScope());
+        if (NStr::IsBlank(current_name)) {
+            SetProteinName(*new_cds, "hypothetical protein", false, entry.GetScope());
+            current_name = "hypothetical protein";
             change_this_cds = true;
         }
 
@@ -1335,10 +1508,30 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
             }
         }
 
+        CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*(cds_it->GetSeq_feat()), entry.GetScope());
+        if (mrna) {
+            bool change_mrna = false;
+            CRef<CSeq_feat> new_mrna(new CSeq_feat());
+            new_mrna->Assign(*mrna);
+            // Make mRNA name match coding region protein
+            string mrna_name = new_mrna->GetData().GetRna().GetRnaProductName();
+            if (!NStr::Equal(mrna_name, current_name)) {
+                string remainder;
+                new_mrna->SetData().SetRna().SetRnaProductName(current_name, remainder);
+                change_mrna = true;
+            }
+            // Adjust mRNA partials to match coding region
+            change_mrna |= feature::CopyFeaturePartials(*new_mrna, *new_cds);
+            if (change_mrna) {
+                CSeq_feat_Handle fh = entry.GetScope().GetSeq_featHandle(*mrna);
+                CSeq_feat_EditHandle feh(fh);
+                feh.Replace(*new_mrna);
+                any_changes = true;
+            }
+        }
+
         if (change_this_cds) {
             CSeq_feat_EditHandle cds_h(*cds_it);
-            CRef<CSeq_feat> new_cds(new CSeq_feat());
-            new_cds->Assign(*(cds_it->GetSeq_feat()));
             
             cds_h.Replace(*new_cds);
             any_changes = true;
@@ -1346,16 +1539,20 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
 
     }
 
-    // SSEC
-    // remove protein titles
-    // add missing prot-refs
-    // CopyCDSproductToMrna
-    // instantiate protein titles
-    // ImposeCodingRegionPartials
-    // ResynchCodingRegionPartials
-    // ResynchMessengerRNAPartials
-    // ResynchProteinPartials
-    // InstantiateProteinTitles
+    for (CFeat_CI gene_it(entry, SAnnotSelector(CSeqFeatData::e_Gene)); gene_it; ++gene_it) {
+        bool change_this_gene;
+        CRef<CSeq_feat> new_gene(new CSeq_feat());
+        new_gene->Assign(*(gene_it->GetSeq_feat()));
+
+        change_this_gene = SetGenePartialByLongestContainedFeature(*new_gene, entry.GetScope());
+
+        if (change_this_gene) {
+            CSeq_feat_EditHandle gene_h(*gene_it);
+            gene_h.Replace(*new_gene);
+            any_changes = true;
+        }
+    }
+
     NormalizeDescriptorOrder(entry);
 
     return any_changes;

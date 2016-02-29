@@ -3407,20 +3407,20 @@ bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat)
 
 
 // A function to change an existing MolInfo to match a coding region
-bool AdjustProteinFeaturePartialsToMatchCDS(CSeq_feat& new_prot, const CSeq_feat& cds)
+bool CopyFeaturePartials(CSeq_feat& dst, const CSeq_feat& src)
 {
     bool any_change = false;
-    bool partial5 = cds.GetLocation().IsPartialStart(eExtreme_Biological);
-    bool partial3 = cds.GetLocation().IsPartialStop(eExtreme_Biological);
-    bool prot_5 = new_prot.GetLocation().IsPartialStart(eExtreme_Biological);
-    bool prot_3 = new_prot.GetLocation().IsPartialStop(eExtreme_Biological);
+    bool partial5 = src.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial3 = src.GetLocation().IsPartialStop(eExtreme_Biological);
+    bool prot_5 = dst.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool prot_3 = dst.GetLocation().IsPartialStop(eExtreme_Biological);
     if ((partial5 && !prot_5) || (!partial5 && prot_5)
         || (partial3 && !prot_3) || (!partial3 && prot_3)) {
-        new_prot.SetLocation().SetPartialStart(partial5, eExtreme_Biological);
-        new_prot.SetLocation().SetPartialStop(partial3, eExtreme_Biological);
+        dst.SetLocation().SetPartialStart(partial5, eExtreme_Biological);
+        dst.SetLocation().SetPartialStop(partial3, eExtreme_Biological);
         any_change = true;
     }
-    any_change |= AdjustFeaturePartialFlagForLocation(new_prot);
+    any_change |= AdjustFeaturePartialFlagForLocation(dst);
     return any_change;
 }
 
@@ -3478,7 +3478,7 @@ bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh)
         CSeq_feat_EditHandle feh(*f);
         CRef<CSeq_feat> new_feat(new CSeq_feat());
         new_feat->Assign(*(f->GetSeq_feat()));
-        if (AdjustProteinFeaturePartialsToMatchCDS(*new_feat, cds)) {
+        if (CopyFeaturePartials(*new_feat, cds)) {
             feh.Replace(*new_feat);
             any_change = true;
         }
@@ -3551,6 +3551,47 @@ bool RetranslateCDS(const CSeq_feat& cds, CScope& scope)
     AdjustForCDSPartials(cds, peh.GetSeq_entry_Handle());
     return true;
 }
+
+
+void AddFeatureToBioseq(const CBioseq& seq, const CSeq_feat& f, CScope& scope)
+{
+    bool added = false;
+    if (seq.IsSetAnnot()) {
+        ITERATE(CBioseq::TAnnot, it, seq.GetAnnot()) {
+            if ((*it)->IsFtable()) {
+                CSeq_annot_Handle sah = scope.GetSeq_annotHandle(**it);
+                CSeq_annot_EditHandle eh(sah);
+                eh.AddFeat(f);
+                added = true;
+                break;
+            }
+        }
+    }
+    if (!added) {
+        CRef<CSeq_annot> annot(new CSeq_annot());
+        CRef<CSeq_feat> sf(new CSeq_feat());
+        sf->Assign(f);
+        annot->SetData().SetFtable().push_back(sf);
+        CBioseq_Handle bh = scope.GetBioseqHandle(seq);
+        CBioseq_EditHandle beh(bh);
+        beh.AttachAnnot(*annot);
+    }
+}
+
+
+void AddProteinFeature(const CBioseq& seq, const string& protein_name, const CSeq_feat& cds, CScope& scope)
+{
+    // make new protein feature
+    CRef<CSeq_feat> new_prot(new CSeq_feat());
+    new_prot->SetLocation().SetInt().SetId().Assign(*(cds.GetProduct().GetId()));
+    new_prot->SetLocation().SetInt().SetFrom(0);
+    new_prot->SetLocation().SetInt().SetTo(seq.GetLength() - 1);
+    new_prot->SetData().SetProt().SetName().push_back(protein_name);
+    CopyFeaturePartials(*new_prot, cds);
+
+    AddFeatureToBioseq(seq, *new_prot, scope);
+}
+
 
 
 bool sFeatureGetChildrenOfSubtype(

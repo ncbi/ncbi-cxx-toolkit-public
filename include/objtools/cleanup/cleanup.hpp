@@ -188,6 +188,32 @@ public:
 /// @return Boolean return value indicates whether the feature was extended
     static bool ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit);
 
+/// Translates coding region and selects best frame (without stops, or longest)
+/// @param cds Coding region Seq-feat to edit
+/// @param scope Scope in which to find coding region
+/// @return Boolean return value indicates whether the coding region was changed
+    static bool SetBestFrame(CSeq_feat& cds, CScope& scope);
+
+/// 1. Set the partial flags when the CDS is partial and codon_start is 2 or 3
+/// 2. Make the CDS partial at the 5' end if there is no start codon
+/// 3. Make the CDS partial at the 3' end if there is no stop codon
+/// @param cds Coding region Seq-feat to edit
+/// @param scope Scope in which to find coding region and coding region's protein
+///        product sequence
+/// @return Boolean return value indicates whether the coding region changed
+    static bool SetCDSPartialsByFrameAndTranslation(CSeq_feat& cds, CScope& scope);
+
+/// Set partialness of gene to match longest feature contained in gene
+/// @param gene  Seq-feat to edit
+/// @param scope Scope in which to find gene
+/// @return Boolean return value indicates whether the gene changed
+    static bool SetGenePartialByLongestContainedFeature(CSeq_feat& gene, CScope& scope);
+
+    static void SetProteinName(CProt_ref& prot, const string& protein_name, bool append);
+    static void SetProteinName(CSeq_feat& cds, const string& protein_name, bool append, CScope& scope);
+    static const string& GetProteinName(const CProt_ref& prot);
+    static const string& GetProteinName(const CSeq_feat& cds, CScope& scope);
+
 /// Checks to see if a feature is pseudo. Looks for pseudo flag set on feature,
 /// looks for pseudogene qualifier on feature, performs same checks for gene
 /// associated with feature

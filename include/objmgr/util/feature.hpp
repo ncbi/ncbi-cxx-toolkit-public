@@ -523,15 +523,15 @@ NCBI_XOBJUTIL_EXPORT bool PromoteCDSToNucProtSet(objects::CSeq_feat_Handle& orig
 /// @param new_feat   The feature to be adjusted (if necessary)
 ///
 /// @return           Boolean to indicate whether the feature was changed
-bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat);
+NCBI_XOBJUTIL_EXPORT bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat);
 
-/// AdjustProteinFeaturePartialsToMatchCDS
-/// A function to change an existing MolInfo to match a coding region
-/// @param new_prot  The protein feature to be adjusted (if necessary)
-/// @param cds       The CDS to match
+/// CopyFeaturePartials
+/// A function to copy the start and end partialness from one feature to another
+/// @param dst       The feature to be adjusted (if necessary)
+/// @param src       The CDS to match
 ///
-/// @return          Boolean to indicate whether the protein feature was changed
-bool AdjustProteinFeaturePartialsToMatchCDS(CSeq_feat& new_prot, const CSeq_feat& cds);
+/// @return          Boolean to indicate whether the feature was changed
+NCBI_XOBJUTIL_EXPORT bool CopyFeaturePartials(CSeq_feat& dst, const CSeq_feat& src);
 
 /// AdjustProteinMolInfoToMatchCDS
 /// A function to change an existing MolInfo to match a coding region
@@ -549,7 +549,7 @@ bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds);
 /// @param seh        The Seq-entry-handle to be adjusted (if necessary)
 ///
 /// @return           Boolean to indicate whether the Seq-entry-handle was changed
-bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);
+NCBI_XOBJUTIL_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);
 
 /// RetranslateCDS
 /// A function to replace the protein Bioseq pointed to by cds.product
@@ -558,6 +558,22 @@ bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);
 ///
 /// @return           Boolean to indicate whether the coding region was retranslated.
 bool RetranslateCDS(const CSeq_feat& cds, CScope& scope);
+
+/// AddFeatureToBioseq
+/// A function to add a feature to a Bioseq - will create a new feature table
+/// Seq-annot if necessary.
+/// @param seq        The sequence on which to add the feature
+/// @param f          The feature to add
+/// @param scope      The scope that contains the sequence
+void AddFeatureToBioseq(const CBioseq& seq, const CSeq_feat& f, CScope& scope);
+
+/// AddProteinFeature
+/// A function to create a protein feature with the specified protein name
+/// @param seq          The Bioseq on which to create the protein feature
+/// @param protein_name The protein name
+/// @param cds          The coding region for this protein feature
+/// @param scope        The scope in which the sequence can be found
+NCBI_XOBJUTIL_EXPORT void AddProteinFeature(const CBioseq& seq, const string& protein_name, const CSeq_feat& cds, CScope& scope);
 
 END_SCOPE(feature)
 END_SCOPE(objects)
