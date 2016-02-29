@@ -120,10 +120,6 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
 
     const bool is_protein = (spl.GetProduct_type() == CSpliced_seg::eProduct_type_protein);
 
-    if (!is_protein) {
-        NCBI_USER_THROW("CInternalStopFinder::FindStartStopRanges implementation for transcript alignments is sketchy. Will fix when real need appears.");
-    }
-
     string seq = GetCDSNucleotideSequence(*clean_align);
     if (seq.size()%3 != 0) {
         _ASSERT(seq.size()%3 == 0);
