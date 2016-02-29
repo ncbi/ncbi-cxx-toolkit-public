@@ -158,7 +158,7 @@ tds_vstrbuild(char *buffer, int buflen, int *resultlen, const char *text, int te
 		case CALCPARAM:
 			switch (*text) {
 			case '!':
-				if (pnum <= tokcount) {
+                if (pnum > 0  &&  pnum <= tokcount) {
 					paramp = string_array[pnum - 1];
 					state = OUTPARAM;
 				}
