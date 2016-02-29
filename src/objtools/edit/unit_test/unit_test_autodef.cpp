@@ -1894,7 +1894,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5560)
     misc->SetData().SetImp().SetKey("repeat_region");
     CRef<CGb_qual> q(new CGb_qual("rpt_type", "long_terminal_repeat"));
     misc->SetQual().push_back(q);
-    AddTitle(entry, "Sebaea microphylla LTR, complete sequence.");
+    AddTitle(entry, "Sebaea microphylla LTR repeat region.");
 
     CheckDeflineMatches(entry);
 }
