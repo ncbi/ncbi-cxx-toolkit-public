@@ -45,6 +45,7 @@
 #include <corelib/rwstream.hpp>
 #include <corelib/request_status.hpp>
 #include <corelib/resource_info.hpp>
+#include <corelib/request_ctx.hpp>
 
 #include <time.h>
 #include <sstream>
@@ -262,6 +263,13 @@ CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
     user_header.append("Cookie: " FILETRACK_SIDCOOKIE "=");
     user_header.append(session_key);
     user_header.append("\r\n", 2);
+
+    const string& my_ncbi_id(CRequestContext_PassThrough().Get("my_ncbi_id"));
+
+    if (!my_ncbi_id.empty()) {
+        user_header.append("Delegated-From-MyNCBI-ID: ");
+        user_header.append(my_ncbi_id);
+    }
 
     CRef<SFileTrackPostRequest> new_request(
             new SFileTrackPostRequest(this, object_loc,
