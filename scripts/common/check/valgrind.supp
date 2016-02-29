@@ -336,6 +336,29 @@
 }
 
 {
+   Sybase CTLIB 15.7-SP122-64bit (Case 1)
+   Memcheck:Addr1
+   fun:com_secure_memset
+   fun:ct__tds_loginover
+   fun:ct_async_exec_stack
+   fun:ct_connect
+}
+
+{
+   Sybase DBLIB 15.7-SP122-64bit (Case 2)
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:send
+   fun:sybsoc_write
+   fun:sybnet_write
+   fun:write_buffer
+   fun:sendflush
+   fun:sendeom
+   fun:bcp__endbatch
+   fun:bcp_done
+}
+
+{
    Sybase DBLIB 12.5.1.10-ESD26-64bit (case 1)
    Memcheck:Param
    write(buf)
