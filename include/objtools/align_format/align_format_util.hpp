@@ -1194,6 +1194,18 @@ public:
     ///@param aln_id: CSeq_id object for alignment seq [in]
     ///@param use_this_gi: list<int> list of gis to use [in]
     ///@param gi: gi to be used for display if exists or 0    
+    ///@param taxid: taxid to be used for display if exists or 0    
+    ///@return: CSeq_id object to be used for display
+    static CRef<objects::CSeq_id> GetDisplayIds(const objects::CBioseq_Handle& handle,
+                                                const objects::CSeq_id& aln_id,
+                                                list<TGi>& use_this_gi,
+                                                TGi& gi,
+                                                int& taxid);
+    ///Scan the the list of blast deflines and find seqID to be use in display    
+    ///@param handle: CBioseq_Handle [in]
+    ///@param aln_id: CSeq_id object for alignment seq [in]
+    ///@param use_this_gi: list<int> list of gis to use [in]
+    ///@param gi: gi to be used for display if exists or 0    
     ///@return: CSeq_id object to be used for display
     static CRef<objects::CSeq_id> GetDisplayIds(const objects::CBioseq_Handle& handle,
                                                 const objects::CSeq_id& aln_id,

@@ -108,7 +108,8 @@ public:
         string score_url;              //score url (quick jump to alignment)
         bool is_new;                   //is this sequence new (for psiblast)?
         bool was_checked;              //was this sequence checked before?
-	string fullDefline;            //defline, containing all seq defines (PIG for example)
+	    string fullDefline;            //defline, containing all seq defines (PIG for example)
+        int    taxid;
     };
 
     //Data representing templates for defline display 
@@ -123,6 +124,17 @@ public:
         bool   advancedView;
     };
 
+    //data represnting info to record in applog amd metadata
+    struct SAppLogInfo {
+        int     topMatchesNum;
+        int     currInd;
+        vector <string> deflIdVec;
+        vector <string> taxidVec;
+        vector <string> queryCoverageVec;
+        vector <string> percentIdentityVec;
+    };
+
+    
     ///options per DisplayOption
     ///@param option: input option using bit numbers defined in DisplayOption
     ///
@@ -258,6 +270,13 @@ public:
     void SetDeflineTemplates (SDeflineTemplates *deflineTemplates) {
         m_DeflineTemplates = deflineTemplates;
     }
+
+    ///Set this to record datda in applog
+    ///Param appLogInfo: struct containg applog setup info
+    ///
+    void SetApplog(SAppLogInfo *appLogInfo) {
+        m_AppLogInfo = appLogInfo;
+    }
     
     ///Sets CDD precomputed results ID
     /// @param string containing seq id used in contsructing URL to CDART
@@ -359,7 +378,7 @@ protected:
         CRange<TSeqPos> subjRange;     //subject sequence range
         bool flip;					   //indicates opposite strands in the first seq align	
     };
-
+    
     ///Seqalign 
     CConstRef<objects::CSeq_align_set> m_AlnSetRef;   
 
@@ -460,6 +479,10 @@ protected:
 
     ///result position index for multiple query case
     int m_PositionIndex;
+
+    //info to record in applog amd metadata
+    SAppLogInfo *m_AppLogInfo;
+    
 
     ///Internal function to return score info
     ///@param aln seq-align we are working with [in]
