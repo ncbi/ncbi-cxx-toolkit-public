@@ -41,7 +41,6 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
 #include <util/line_reader.hpp>
-#include <objtools/readers/source_mod_parser.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -99,7 +98,15 @@ namespace
 
 }
 
-CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user_obj, CSeq_descr& descr, const string& name, const string& value)
+CStructuredCommentsReader::CStructuredCommentsReader(ILineErrorListener* logger) : m_logger(logger)
+{
+}
+
+CStructuredCommentsReader::~CStructuredCommentsReader()
+{
+}
+
+CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user_obj, CSeq_descr& descr, const CTempString& name, const CTempString& value)
 {
     if (name.compare("StructuredCommentPrefix") == 0)
         user_obj = 0; // reset user obj so to create a new one
@@ -149,7 +156,7 @@ void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, C
         string current = reader.GetCurrentLine();
         if (reader.GetLineNumber() == 1)
         {
-            NStr::Tokenize(current, "\t", cols);
+            NStr::Split(current, "\t", cols);
             continue;
         }
 
@@ -157,7 +164,7 @@ void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, C
         {
             // Each line except first is a set of values, first collumn is a sequence id
             vector<string> values;
-            NStr::Tokenize(current, "\t", values);
+            NStr::Split(current, "\t", values);
             if (!values[0].empty())
             {
                 // try to find destination sequence
@@ -198,124 +205,6 @@ void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, C
             }
         }
     }
-}
-
-void CStructuredCommentsReader::ApplyAllQualifiers(const vector<string>& cols, const vector<string>& values, CBioseq& bioseq)
-{
-    string quals;
-    for (size_t i = 0; i < values.size() && i < cols.size(); i++)
-    {
-        if (!values[i].empty())
-        {
-            if (!ParseAndAddTracks(bioseq, cols[i], values[i]))
-                quals += " [" + cols[i] + "=" + values[i] + "]";
-        }
-    }
-    if (!quals.empty())
-    {
-        CSourceModParser mod;
-        mod.ParseTitle(quals, CConstRef<CSeq_id>(bioseq.GetFirstId()));
-
-        mod.ApplyAllMods(bioseq);
-    }
-}
-
-void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSeq_entry& entry,
-    const string& opt_map_filename)
-{
-    vector<string> cols;
-
-    CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-
-    CSeq_entry_EditHandle h_entry = scope.AddTopLevelSeqEntry(entry).GetEditHandle();
-        
-    size_t filename_id = string::npos;
-    while (!reader.AtEOF())
-    {
-        reader.ReadLine();
-        // First line is a collumn definitions
-        CTempString current = reader.GetCurrentLine();
-        if (current.empty())
-            continue;
-
-        if (cols.empty())
-        {
-            NStr::Tokenize(current, "\t", cols);
-            if (!opt_map_filename.empty())
-            {
-                ITERATE(vector<string>, it, cols)
-                {
-                    if (*it == "id" ||
-                        *it == "seqid" ||
-                        NStr::CompareNocase(*it, "Filename") == 0 ||
-                        NStr::CompareNocase(*it, "File name") == 0)
-                    {
-                        filename_id = (it - cols.begin());
-                        break;
-                    }
-                }
-            }
-            if (cols.empty())
-                NCBI_THROW(CArgException, eConstraint,
-                "source modifiers file header line is not valid");
-            continue;
-        }
-
-        if (current.empty())
-            continue;
-
-        // Each line except first is a set of values, first collumn is a sequence id
-        vector<string> values;
-        NStr::Tokenize(current, "\t", values);
-        string id;
-
-        if (opt_map_filename.empty())
-        {
-            id = values[0];
-        }
-        else
-        {
-            if (filename_id < values.size())
-                id = values[filename_id];
-        }
-
-        if (id.empty())
-        {
-            // apply for all sequences
-            for (CBioseq_CI bioseq_it(h_entry); bioseq_it; ++bioseq_it)
-            {
-                CBioseq* dest = (CBioseq*)bioseq_it->GetEditHandle().GetCompleteBioseq().GetPointerOrNull();
-                ApplyAllQualifiers(cols, values, *dest);
-            }               
-        }
-        else
-        {
-            // try to find destination sequence
-            CSeq_id seq_id(values[0], CSeq_id::fParse_AnyLocal);
-            //CBioseq* dest = FindObjectById(entry, id);
-            CBioseq_Handle b_handle = scope.GetBioseqHandle(seq_id);
-            if (b_handle && b_handle.GetEditHandle())
-            {
-                CBioseq* bioseq = (CBioseq*)b_handle.GetEditHandle().GetCompleteBioseq().GetPointerOrNull();
-                ApplyAllQualifiers(cols, values, *bioseq);
-            }
-        }
-    }
-}
-
-bool CStructuredCommentsReader::ParseAndAddTracks(CBioseq& container, const string& name, const string& value)
-{
-    if (name == "ft-url" ||
-        name == "ft-map")
-        CTable2AsnContext::AddUserTrack(container.SetDescr(), "FileTrack", "Map-FileTrackURL", value);
-    else
-    if (name == "ft-mod")
-        CTable2AsnContext::AddUserTrack(container.SetDescr(), "FileTrack", "BaseModification-FileTrackURL", value);
-    else
-        return false;
-
-    return true;
 }
 
 CStructuredComments::CStructuredComments(objects::CSeq_entry& container)

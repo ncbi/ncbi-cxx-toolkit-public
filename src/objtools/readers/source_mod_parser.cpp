@@ -1357,7 +1357,15 @@ void CSourceModParser::SetAllUnused()
     {
         const_cast<SMod&>(*it).used = false;
     }
+}
 
+void CSourceModParser::AddMods(const CTempString& name, const CTempString& value)
+{
+    SMod newmod;
+    newmod.key = name;
+    newmod.value = value;
+
+    m_Mods.insert(newmod);
 }
 
 END_SCOPE(objects)

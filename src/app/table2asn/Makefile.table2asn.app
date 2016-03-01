@@ -8,7 +8,7 @@
 
 APP = table2asn
 SRC = table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context feature_table_reader \
-      fcs_reader table2asn_validator
+      fcs_reader table2asn_validator src_quals
 
 LIB  = xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
        xcleanup xvalidate xobjreadex valerr biotree \

@@ -42,9 +42,8 @@ class CStructuredCommentsReader
 public:
    // If you need messages and error to be logged
    // supply an optional ILineErrorListener instance
-   CStructuredCommentsReader(objects::ILineErrorListener* logger): m_logger(logger)
-   {
-   }
+   CStructuredCommentsReader(objects::ILineErrorListener* logger);
+   ~CStructuredCommentsReader();
    // Read input tab delimited file and apply Structured Comments to the container
    // First row of the file is a list of Field to apply
    // First collumn of the file is an ID of the object (sequence) to apply
@@ -55,20 +54,13 @@ public:
    // Second collumn of the file is the value of the field
    void ProcessCommentsFileByRows(ILineReader& reader, objects::CSeq_entry& container);
 
-   void ProcessSourceQualifiers(ILineReader& reader, objects::CSeq_entry& container,
-       const string& opt_map_filename);
 private:
    void AddStructuredCommentToAllObjects(objects::CSeq_entry& container,
        const string& name, const string& value);
 
    objects::CUser_object* AddStructuredComment(objects::CUser_object* obj,
        objects::CSeq_descr& container,
-       const string& name, const string& value);
-
-   bool ParseAndAddTracks(objects::CBioseq& container,
-       const string& name, const string& value);
-
-   void ApplyAllQualifiers(const vector<string>& cols, const vector<string>& values, objects::CBioseq& bioseq);
+       const CTempString& name, const CTempString& value);
 
    objects::ILineErrorListener* m_logger;
 };

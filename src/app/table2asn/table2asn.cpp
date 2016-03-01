@@ -55,6 +55,7 @@
 #include "OpticalXML2ASN.hpp"
 #include "feature_table_reader.hpp"
 #include "fcs_reader.hpp"
+#include "src_quals.hpp"
 
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/submit/Seq_submit.hpp>
@@ -124,7 +125,7 @@ private:
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessSecretFiles(CSeq_entry& result);
     void ProcessTBLFile(const string& pathname, CSeq_entry& result);
-    void ProcessSRCFile(const string& pathname, CSeq_entry& result, const string& opt_map_xml);
+    void ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry& result, const string& opt_map_xml);
     void ProcessQVLFile(const string& pathname, CSeq_entry& result);
     void ProcessDSCFile(const string& pathname, CSeq_entry& result);
     void ProcessCMTFile(const string& pathname, CSeq_entry& result, bool byrows);
@@ -480,7 +481,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_accession = args["A"].AsString();
     if (args["j"])
     {       
-        m_context.ParseSourceModifiers(args["j"].AsString());
+        m_context.m_source_mods = args["j"].AsString();
     }
     if (args["src-file"])
         m_context.m_single_source_qual_file = args["src-file"].AsString();
@@ -837,8 +838,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     m_reader->ApplyAdditionalProperties(*entry);
 
-    m_context.ApplySourceQualifiers(*entry);
-
     ProcessSecretFiles(*entry);
 
     CFeatureTableReader fr(m_logger);
@@ -933,8 +932,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     {
         validator.Cleanup(*entry, m_context.m_cleanup);
     }
+    {
+        //CFeatureTableReader::GenerateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"));
+    }
 
-}
+    }
 
 string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
 {
@@ -1122,9 +1124,8 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
     else
         ProcessTBLFile(m_context.m_single_table5_file, result);
 
-    ProcessSRCFile(name + ".src", result, ext == ".xml" ? (name + ".xml") : "");
-    if (!m_context.m_single_source_qual_file.empty())
-        ProcessSRCFile(m_context.m_single_source_qual_file, result, ext == ".xml" ? (name + ".xml") : "");
+    ProcessSRCFileAndQualifiers(name + ".src", result, ext == ".xml" ? (name + ".xml") : "");
+
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
     ProcessCMTFile(name + ".cmt", result, m_context.m_flipped_struc_cmt);
@@ -1152,15 +1153,11 @@ void CTbl2AsnApp::ProcessTBLFile(const string& pathname, CSeq_entry& result)
     feature_reader.ReadFeatureTable(result, *reader, m_context.m_genome_center_id);
 }
 
-void CTbl2AsnApp::ProcessSRCFile(const string& pathname, CSeq_entry& result, const string& opt_map_xml)
-{
-    CFile file(pathname);
-    if (!file.Exists()) return;
-
-    CRef<ILineReader> reader(ILineReader::New(pathname));
-
-    CStructuredCommentsReader cmt_reader(m_logger);
-    cmt_reader.ProcessSourceQualifiers(*reader, result, opt_map_xml);
+void CTbl2AsnApp::ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry& result, const string& opt_map_xml)
+{ 
+    CSourceQualifiersReader src_reader(&m_context);
+    src_reader.LoadSourceQualifiers(pathname, opt_map_xml);
+    src_reader.ProcessSourceQualifiers(result, opt_map_xml);
 }
 
 void CTbl2AsnApp::ProcessQVLFile(const string& pathname, CSeq_entry& result)

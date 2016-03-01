@@ -108,8 +108,6 @@ public:
     static
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data);
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
-    void ApplySourceQualifiers(CSerialObject& obj) const;
-    void ApplySourceQualifiers(objects::CSeq_entry_EditHandle& obj) const;
 
     static
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const string& type);
@@ -142,7 +140,6 @@ public:
     void SmartFeatureAnnotation(objects::CSeq_entry& entry) const;
 
     void MakeGenomeCenterId(objects::CSeq_entry_EditHandle& entry);
-    void ParseSourceModifiers(const string& src_modifiers);
     static void MakeGenomeCenterId(CTable2AsnContext& context, objects::CBioseq& bioseq);
     static void RenameProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
     static void RemoveProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
@@ -153,8 +150,7 @@ public:
 
     CRef<objects::CScope>      m_scope;
     CRef<objects::CObjectManager> m_ObjMgr;
-    mutable
-    auto_ptr<objects::CSourceModParser> m_source_mods;
+    string m_source_mods;
 
 private:
     void MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_pub) const;
