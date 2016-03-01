@@ -2562,10 +2562,12 @@ string CDeflineGenerator::GenerateDefline (
             }
         }
 
+        /*
         if (m_MainTitle.empty()) {
             // last resort title created here
             m_MainTitle = "No definition line found";
         }
+        */
     }
 
     // remove TPA or TSA prefix, will rely on other data in record to set
