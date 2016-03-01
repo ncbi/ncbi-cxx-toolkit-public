@@ -1467,6 +1467,58 @@ CRef<objects::CSeq_id> GetNewProteinId(objects::CSeq_entry_Handle seh, objects::
 }
 
 
+bool CCleanup::SetGeneticCodes(CBioseq_Handle bsh)
+{
+    if (!bsh) {
+        return false;
+    }
+    if (!bsh.IsNa()) {
+        return false;
+    }
+
+    CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
+    if (!src) {
+        return false;
+    }
+
+    const CBioSource & bsrc = src->GetSource();
+    int bioseqGenCode = bsrc.GetGenCode();
+
+    if (bioseqGenCode == 0) {
+        return false;
+    }
+
+    bool any_changed = false;
+    // set Cdregion's gcode from BioSource (unless except-text)
+    SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+    CFeat_CI feat_ci(bsh, sel);
+    for (; feat_ci; ++feat_ci) {
+        const CSeq_feat& feat = feat_ci->GetOriginalFeature();
+        const CCdregion& cds = feat.GetData().GetCdregion();
+        int cdregionGenCode = (cds.IsSetCode() ?
+            cds.GetCode().GetId() :
+            0);
+        if (cdregionGenCode != bioseqGenCode)
+        {
+            // make cdregion's gencode match bioseq's gencode,
+            // if allowed
+            if (!feat.HasExceptionText("genetic code exception"))
+            {
+                CRef<CSeq_feat> new_feat(new CSeq_feat);
+                new_feat->Assign(feat);
+                CCdregion& new_cds = new_feat->SetData().SetCdregion();
+                new_cds.ResetCode();
+                new_cds.SetCode().SetId(bioseqGenCode);
+                CSeq_feat_EditHandle edit_handle(*feat_ci);
+                edit_handle.Replace(*new_feat);
+                any_changed = true;
+            }
+        }
+    }
+    return any_changed;
+}
+
+
 bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
 {
     bool any_changes = false;
@@ -1480,13 +1532,6 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
         change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
 
         change_this_cds |= SetCDSPartialsByFrameAndTranslation(*new_cds, entry.GetScope());
-
-        string current_name = GetProteinName(*new_cds, entry.GetScope());
-        if (NStr::IsBlank(current_name)) {
-            SetProteinName(*new_cds, "hypothetical protein", false, entry.GetScope());
-            current_name = "hypothetical protein";
-            change_this_cds = true;
-        }
 
         // retranslate
         if (new_cds->IsSetProduct() && entry.GetScope().GetBioseqHandle(new_cds->GetProduct())) {
@@ -1506,6 +1551,27 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
                     any_changes = true;
                 }
             }
+            any_changes |= feature::AdjustForCDSPartials(*new_cds, entry);
+        }
+        //prefer ncbieaa
+        if (new_cds->IsSetProduct()) {
+            CBioseq_Handle p = entry.GetScope().GetBioseqHandle(new_cds->GetProduct());
+            if (p.GetInst().IsSetSeq_data() && p.GetInst().GetSeq_data().IsIupacaa()) {
+                CBioseq_EditHandle peh(p);
+                string current = p.GetInst().GetSeq_data().GetIupacaa().Get();
+                CRef<CSeq_inst> new_inst(new CSeq_inst());
+                new_inst->Assign(p.GetInst());
+                new_inst->SetSeq_data().SetNcbieaa().Set(current);
+                peh.SetInst(*new_inst);
+                any_changes = true;
+            }
+        }
+
+        string current_name = GetProteinName(*new_cds, entry.GetScope());
+        if (NStr::IsBlank(current_name)) {
+            SetProteinName(*new_cds, "hypothetical protein", false, entry.GetScope());
+            current_name = "hypothetical protein";
+            change_this_cds = true;
         }
 
         CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*(cds_it->GetSeq_feat()), entry.GetScope());
@@ -1554,6 +1620,10 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
     }
 
     NormalizeDescriptorOrder(entry);
+
+    for (CBioseq_CI bi(entry, CSeq_inst::eMol_na); bi; ++bi) {
+        any_changes |= SetGeneticCodes(*bi);
+    }
 
     return any_changes;
 }

@@ -255,6 +255,12 @@ public:
 /// @return Boolean return value indicates whether object was updated
     static bool TaxonomyLookup(CSeq_entry_Handle seh);
 
+
+/// Sets genetic codes for coding regions on Bioseq-Handle
+/// @param Bioseq-Handle to examine
+/// @return Boolean indicates whether any coding regions were updated
+    static bool SetGeneticCodes(CBioseq_Handle bsh);
+
 /// Performs WGS specific cleanup
 /// @param entry Seq-entry to edit
 /// @return Boolean return value indicates whether object was updated

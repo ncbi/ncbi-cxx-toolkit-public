@@ -469,44 +469,11 @@ void CNewCleanup_imp::SetGeneticCode (
 {
     if ( ! m_SyncGenCodes ) return;
 
-    if ( ! bs.IsNa() ) return;
-
-    CConstRef<CSeqdesc> closest_biosource = bs.GetClosestDescriptor(CSeqdesc::e_Source);
-    if (! closest_biosource) return;
-
-    const CBioSource & bsrc = closest_biosource->GetSource();
-    int bioseqGenCode = bsrc.GetGenCode();
-    
-    if ( bioseqGenCode == 0 ) return;
-
-    // set Cdregion's gcode from BioSource (unless except-text)
-
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bs);
-    if ( ! bsh ) return;
-    SAnnotSelector sel( CSeqFeatData::e_Cdregion );
-    CFeat_CI feat_ci( bsh, sel );
-    for( ; feat_ci ; ++feat_ci ) {
-        const CSeq_feat& feat = feat_ci->GetOriginalFeature();
-        const CCdregion& cds = feat.GetData().GetCdregion();
-        int cdregionGenCode = ( cds.IsSetCode() ?
-            cds.GetCode().GetId() :
-            0 );
-        if( cdregionGenCode != bioseqGenCode )
-        {
-            // make cdregion's gencode match bioseq's gencode,
-            // if allowed
-            if( ! feat.HasExceptionText("genetic code exception") )
-            {
-                CRef<CSeq_feat> new_feat(new CSeq_feat);
-                new_feat->Assign(feat);
-                CCdregion& new_cds = new_feat->SetData().SetCdregion();
-                new_cds.ResetCode();
-                new_cds.SetCode().SetId(bioseqGenCode);
-                CSeq_feat_EditHandle edit_handle(*feat_ci);
-                edit_handle.Replace(*new_feat);
-                ChangeMade(CCleanupChange::eChangeGeneticCode);
-            }
-        }
+    if (!bsh) return;
+
+    if (CCleanup::SetGeneticCodes(bsh)) {
+        ChangeMade(CCleanupChange::eChangeGeneticCode);
     }
 }
 
