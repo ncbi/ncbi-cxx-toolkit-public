@@ -40,7 +40,7 @@ DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-Linux64-Centos     : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile NCBI_INT8_GI=1
+Linux64-Centos     : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI
 #Linux64-Centos     : gcc : GCC.sh            --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
 #Linux64-Centos     : gcc-debug : GCC.sh            --with-strip --with-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
 
@@ -50,7 +50,7 @@ Win32         : plain : static  32  ReleaseMT
 Win64         : plain : static  64  ReleaseMT
 
 #IntelMAC            : universal : GCC.sh   --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
-IntelMAC    : universal : Clang.sh --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
+IntelMAC    : universal : Clang.sh --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public --with-experimental=Int8GI
 #IntelMAC-Clang36    : clang     : Clang.sh --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public
 
 USE_COMPONENTS
