@@ -2381,9 +2381,7 @@ END_SCOPE(sequence)
 
 CFastaOstream::CFastaOstream(CNcbiOstream& out)
     : m_Out(out),
-      m_FeatCount{ {"cds", 0},
-                   {"gene", 0},
-                   {"prot", 0} },
+      m_FeatCount(0),
       m_Flags(fInstantiateGaps | fAssembleParts),
       m_GapMode(eGM_letters)
 {
@@ -2495,7 +2493,7 @@ string CFastaOstream::x_GetCDSIdString(const CBioseq_Handle& handle,
     }
 
     id_string += "_";
-    id_string += to_string(++m_FeatCount["cds"]);
+    id_string += to_string(++m_FeatCount);
 
     return id_string;
 }
@@ -2507,7 +2505,7 @@ string CFastaOstream::x_GetGeneIdString(const CBioseq_Handle& handle,
     const auto& src_loc = gene.GetLocation();
     
     auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
-    id_string += "_gene_" + to_string(++m_FeatCount["gene"]);
+    id_string += "_gene_" + to_string(++m_FeatCount);
 
     return id_string;
 }
@@ -2531,7 +2529,7 @@ string CFastaOstream::x_GetProtIdString(const CBioseq_Handle& handle,
             // Move on...
         }
     }
-    id_string += "_" + to_string(++m_FeatCount["prot"]);
+    id_string += "_" + to_string(++m_FeatCount);
 
     return id_string;
 }

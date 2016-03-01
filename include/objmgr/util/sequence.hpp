@@ -846,8 +846,7 @@ public:
 protected:
     CNcbiOstream&       m_Out;
     auto_ptr<sequence::CDeflineGenerator> m_Gen;
-    typedef map<string, TSeqPos> TFeatCount;
-    TFeatCount m_FeatCount; 
+    TSeqPos m_FeatCount; 
 
     virtual void x_WriteSeqIds    ( const CBioseq& bioseq,
                                     const CSeq_loc* location);
