@@ -1538,7 +1538,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
             any_changes |= feature::RetranslateCDS(*new_cds, entry.GetScope());
         } else {
             // need to set product if not set
-            if (!new_cds->IsSetProduct()) {
+            if (!new_cds->IsSetProduct() && !IsPseudo(*new_cds, entry.GetScope())) {
                 CRef<CSeq_id> new_id = GetNewProteinId(entry, entry.GetScope().GetBioseqHandle(new_cds->GetLocation()));
                 if (new_id) {
                     new_cds->SetProduct().SetWhole().Assign(*new_id);
