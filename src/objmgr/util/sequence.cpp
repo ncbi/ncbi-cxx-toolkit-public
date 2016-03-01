@@ -2763,6 +2763,11 @@ void CFastaOstream::x_WriteModifiers(const CBioseq_Handle& handle,
 }
 
 
+void CFastaOstream::ResetFeatureCount(void) 
+{
+    m_FeatCount = 0;
+}
+
 
 static string s_FastaGetOriginalID (const CBioseq& seq)
 

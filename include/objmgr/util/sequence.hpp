@@ -843,6 +843,8 @@ public:
         const CSeq_gap & seq_gap,
         SGapModText & out_gap_mod_text );
 
+    void ResetFeatureCount(void);
+
 protected:
     CNcbiOstream&       m_Out;
     auto_ptr<sequence::CDeflineGenerator> m_Gen;
