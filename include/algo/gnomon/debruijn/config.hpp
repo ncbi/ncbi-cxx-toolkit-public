@@ -19,12 +19,8 @@
 
 #define INT128_FOUND            1
 
-#define KSIZE_1  32
-#define KSIZE_2  64
-#define KSIZE_3  96   
-#define KSIZE_4  128
-
-#define PREC_1  ((KSIZE_1+31)/32)
-#define PREC_2  ((KSIZE_2+31)/32)
-#define PREC_3  ((KSIZE_3+31)/32)
-#define PREC_4  ((KSIZE_4+31)/32)
+#define PREC_1  1
+#define PREC_2  2
+#define PREC_3  4
+#define PREC_4  6
+#define PREC_5  8

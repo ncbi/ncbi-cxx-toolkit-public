@@ -56,12 +56,12 @@ namespace DeBruijn {
  *  class.
  *
  */
-template<typename T1, typename T2, typename T3, typename T4>
+template<typename T1, typename T2, typename T3, typename T4, typename T5>
 class IntegerTemplate
 {
 private:
 
-    typedef boost::variant<T1,T2,T3,T4> Type;
+    typedef boost::variant<T1,T2,T3,T4,T5> Type;
     Type v;
 
           Type& operator *()       { return v; }
@@ -72,47 +72,43 @@ public:
     IntegerTemplate() : v(T4(0)) {}
 
     IntegerTemplate(int kmer_len, uint64_t n) {
-        switch((kmer_len+31)/32) {
-        case PREC_1: v = T1(n); break;
-        case PREC_2: v = T2(n); break;
-        case PREC_3: v = T3(n); break;
-        case PREC_4: v = T4(n); break;
-        default:  
-            printf("Unsupported kmer length in Integer initialization\n");
-            exit(1);
-        }
+        int p = (kmer_len+31)/32;
+        if(p <= PREC_1)      v = T1(n);
+        else if(p <= PREC_2) v = T2(n);
+        else if(p <= PREC_3) v = T3(n);
+        else if(p <= PREC_4) v = T4(n);
+        else if(p <= PREC_5) v = T5(n);
+        else { std::cerr << "Not supported kmer length in Integer initialization"; exit(1); }
     }
 
     IntegerTemplate(const std::string& kmer) {
-        switch((kmer.size()+31)/32) {
-        case PREC_1: v = T1(kmer); break;
-        case PREC_2: v = T2(kmer); break;
-        case PREC_3: v = T3(kmer); break;
-        case PREC_4: v = T4(kmer); break;
-        default:  
-            printf("Unsupported kmer length in Integer initialization\n");
-            exit(1);
-        }
+        int p = (kmer.size()+31)/32;
+        if(p <= PREC_1)      v = T1(kmer);
+        else if(p <= PREC_2) v = T2(kmer);
+        else if(p <= PREC_3) v = T3(kmer);
+        else if(p <= PREC_4) v = T4(kmer);
+        else if(p <= PREC_5) v = T5(kmer);
+        else { std::cerr << "Not supported kmer length in Integer initialization"; exit(1); }
     }
 
     IntegerTemplate(const std::string::const_iterator& a, const std::string::const_iterator& b) {
-        switch((b-a+31)/32) {
-        case PREC_1: v = T1(a, b); break;
-        case PREC_2: v = T2(a, b); break;
-        case PREC_3: v = T3(a, b); break;
-        case PREC_4: v = T4(a, b); break;
-        default:  
-            printf("Unsupported kmer length in Integer initialization\n");
-            exit(1);
-        }
+        int p = (b-a+31)/32;
+        if(p <= PREC_1)      v = T1(a, b);
+        else if(p <= PREC_2) v = T2(a, b);
+        else if(p <= PREC_3) v = T3(a, b);
+        else if(p <= PREC_4) v = T4(a, b);
+        else if(p <= PREC_5) v = T5(a, b);
+        else { std::cerr << "Not supported kmer length in Integer initialization"; exit(1); }
     }
 
     /**Construct from a different size IntegerTemplate
        Will clip (or add) extra nucs on the LEFT of the string
      */
+    /*  !!!!!!!! has to be fixed for unused 8-byte words !!!!!!!!!!!!!!!!!!!!
     IntegerTemplate(IntegerTemplate other, int kmer_len) : IntegerTemplate(kmer_len, 0) {  // construct correct type
         boost::apply_visitor(cast_from_other(kmer_len), v, other.v);
     }
+    */
 
     /** Copy constructor. Relies on the copy constructor of boost variant
      * \param[in] t : the object to be used for initialization
@@ -427,7 +423,7 @@ private:
 
 /********************************************************************************/
 
-#define INTEGER_TYPES   LargeInt<PREC_1>,LargeInt<PREC_2>,LargeInt<PREC_3>,LargeInt<PREC_4>
+#define INTEGER_TYPES   LargeInt<PREC_1>,LargeInt<PREC_2>,LargeInt<PREC_3>,LargeInt<PREC_4>,LargeInt<PREC_5>
 
 typedef IntegerTemplate <INTEGER_TYPES> TKmer;
 

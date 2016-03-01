@@ -15,13 +15,13 @@ USING_SCOPE(std);
 
 namespace DeBruijn {
 
-    template <typename T1, typename T2, typename T3, typename T4> class CKmerCountTemplate {
+    template <typename T1, typename T2, typename T3, typename T4, typename T5> class CKmerCountTemplate {
     public:
-        typedef variant<vector<pair<T1,size_t>>, vector<pair<T2,size_t>>, vector<pair<T3,size_t>>, vector<pair<T4,size_t>> > Type;
+        typedef variant<vector<pair<T1,size_t>>, vector<pair<T2,size_t>>, vector<pair<T3,size_t>>, vector<pair<T4,size_t>>, vector<pair<T5,size_t>> > Type;
 
         CKmerCountTemplate(int kmer_len = 0) : m_kmer_len(kmer_len) {
             if(m_kmer_len > 0) {
-                init_conainer();
+                init_container();
             }
         }
         size_t Size() const {
@@ -79,19 +79,25 @@ namespace DeBruijn {
         }
         void Load(istream& in) {
             in.read(reinterpret_cast<char*>(&m_kmer_len), sizeof(m_kmer_len));
-            init_conainer();
+            init_container();
             apply_visitor(load(in), m_container);
         }
 
     private:
-        void init_conainer() {
-            switch ((m_kmer_len+31)/32) {            
-            case PREC_1: m_container = vector<pair<T1,size_t>>(); break;
-            case PREC_2: m_container = vector<pair<T2,size_t>>(); break;
-            case PREC_3: m_container = vector<pair<T3,size_t>>(); break;
-            case PREC_4: m_container = vector<pair<T4,size_t>>(); break;
-            default: throw runtime_error("Not supported kmer length");
-            }
+        void init_container() {
+            int p = (m_kmer_len+31)/32;
+            if(p <= PREC_1)
+                m_container = vector<pair<T1,size_t>>();
+            else if(p <= PREC_2)
+                m_container = vector<pair<T2,size_t>>();
+            else if(p <= PREC_3)
+                m_container = vector<pair<T3,size_t>>();
+            else if(p <= PREC_4)
+                m_container = vector<pair<T4,size_t>>();
+            else if(p <= PREC_5)
+                m_container = vector<pair<T5,size_t>>();
+            else
+                throw runtime_error("Not supported kmer length");
         }
 
         struct find_kmer : public static_visitor<size_t> { 
@@ -235,16 +241,16 @@ namespace DeBruijn {
     };
     typedef CKmerCountTemplate <INTEGER_TYPES> TKmerCount;
 
-    template <typename T1, typename T2, typename T3, typename T4> class CKmerMapTemplate {
+    template <typename T1, typename T2, typename T3, typename T4, typename T5> class CKmerMapTemplate {
     public:
         struct kmer_hash {
             template<typename T> 
             size_t operator() (const T& kmer) const { return kmer.oahash(); }
         };
-        typedef variant<unordered_map<T1,size_t,kmer_hash>, unordered_map<T2,size_t,kmer_hash>, unordered_map<T3,size_t,kmer_hash>, unordered_map<T4,size_t,kmer_hash>> Type;
+        typedef variant<unordered_map<T1,size_t,kmer_hash>, unordered_map<T2,size_t,kmer_hash>, unordered_map<T3,size_t,kmer_hash>, unordered_map<T4,size_t,kmer_hash>, unordered_map<T5,size_t,kmer_hash>> Type;
         CKmerMapTemplate(int kmer_len = 0) : m_kmer_len(kmer_len) {
             if(m_kmer_len > 0) {
-                init_conainer();
+                init_container();
             }
         }
         size_t Size() const {
@@ -264,14 +270,20 @@ namespace DeBruijn {
         }
 
     private:
-        void init_conainer() {
-            switch ((m_kmer_len+31)/32) {            
-            case PREC_1: m_container = unordered_map<T1,size_t,kmer_hash>(); break;
-            case PREC_2: m_container = unordered_map<T2,size_t,kmer_hash>(); break;
-            case PREC_3: m_container = unordered_map<T3,size_t,kmer_hash>(); break;
-            case PREC_4: m_container = unordered_map<T4,size_t,kmer_hash>(); break;                
-            default: throw runtime_error("Not supported kmer length");
-            }
+        void init_container() {
+            int p = (m_kmer_len+31)/32;
+            if(p <= PREC_1)
+                m_container = unordered_map<T1,size_t,kmer_hash>();
+            else if(p <= PREC_2)
+                m_container = unordered_map<T2,size_t,kmer_hash>();
+            else if(p <= PREC_3)
+                m_container = unordered_map<T3,size_t,kmer_hash>();
+            else if(p <= PREC_4)
+                m_container = unordered_map<T4,size_t,kmer_hash>();
+            else if(p <= PREC_5)
+                m_container = unordered_map<T5,size_t,kmer_hash>();
+            else
+                throw runtime_error("Not supported kmer length");
         }
         struct container_size : public static_visitor<size_t> { template <typename T> size_t operator()(const T& v) const { return v.size();} };
         struct reserve : public static_visitor<> { 
@@ -728,6 +740,32 @@ public:
         swap(contigs, new_contigs);        
     }
 
+    //assembles the contig; changes the state of all used nodes to 'visited'
+    pair<string, double> GetContigForKmer(const CDBGraph::Node& initial_node) {
+        unordered_map<CDBGraph::Node, TContigEnd> landing_spots;
+        TBases contigr = ExtendToRightAndConnect(initial_node, landing_spots, 0);
+        TBases contigl = ExtendToRightAndConnect(CDBGraph::ReverseComplement(initial_node), landing_spots, 0);
+
+        double abundance = 0;
+        string contig;
+        for(auto& base : contigl) {
+            CDBGraph::Node rv = CDBGraph::ReverseComplement(base.m_node);
+            abundance += m_graph.Abundance(rv);
+            contig.push_back(base.m_nt);
+        }
+        ReverseComplement(contig.begin(), contig.end());
+        abundance += m_graph.Abundance(initial_node);
+        string kmer = m_graph.GetNodeSeq(initial_node);
+        //        kmer = NStr::ToLower(kmer);
+        contig += kmer;
+        for(auto& base : contigr) {
+            abundance += m_graph.Abundance(base.m_node);
+            contig.push_back(base.m_nt);
+        }
+
+        return make_pair(contig, abundance);
+    }
+
 private:
     void FilterNeighbors(vector<CDBGraph::Successor>& successors, const CDBGraph::Node& previous) {
         if(m_graph.PlusFraction(previous) < 0.75 && successors.size() > 1) {
@@ -955,31 +993,6 @@ private:
         return extension;
     }
 
-    //assembles the contig; changes the state of all used nodes to 'visited'
-    pair<string, double> GetContigForKmer(const CDBGraph::Node& initial_node) {
-        unordered_map<CDBGraph::Node, TContigEnd> landing_spots;
-        TBases contigr = ExtendToRightAndConnect(initial_node, landing_spots, 0);
-        TBases contigl = ExtendToRightAndConnect(CDBGraph::ReverseComplement(initial_node), landing_spots, 0);
-
-        double abundance = 0;
-        string contig;
-        for(auto& base : contigl) {
-            CDBGraph::Node rv = CDBGraph::ReverseComplement(base.m_node);
-            abundance += m_graph.Abundance(rv);
-            contig.push_back(base.m_nt);
-        }
-        ReverseComplement(contig.begin(), contig.end());
-        abundance += m_graph.Abundance(initial_node);
-        string kmer = m_graph.GetNodeSeq(initial_node);
-        //        kmer = NStr::ToLower(kmer);
-        contig += kmer;
-        for(auto& base : contigr) {
-            abundance += m_graph.Abundance(base.m_node);
-            contig.push_back(base.m_nt);
-        }
-
-        return make_pair(contig, abundance);
-    }
 
     CDBGraph& m_graph;
     double m_fraction;
