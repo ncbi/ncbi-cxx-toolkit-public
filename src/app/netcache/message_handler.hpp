@@ -44,7 +44,7 @@ class CNCBlobAccessor;
 struct SNCSpecificParams;
 struct SNCBlobVerData;
 struct SNCBlobSummary;
-
+struct SNCSyncEvent;
 
 
 enum ENCCmdFlags {
@@ -296,6 +296,7 @@ private:
     Uint8                     m_CntCmds;
     /// Holder of the lock for blob
     CNCBlobAccessor*          m_BlobAccess;
+    SNCSyncEvent*             m_write_event;
     /// Length of the current blob chunk to read from socket
     Uint4                     m_ChunkLen;
 

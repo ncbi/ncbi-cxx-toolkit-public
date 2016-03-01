@@ -1531,6 +1531,7 @@ CNCMessageHandler::CNCMessageHandler(void)
       m_Parser(s_CommandMap),
       m_CmdProcessor(NULL),
       m_BlobAccess(NULL),
+      m_write_event(NULL),
       m_ChunkLen(0),
       m_SrvsIndex(0),
       m_ActiveHub(NULL)
@@ -2629,6 +2630,10 @@ CNCMessageHandler::x_CleanCmdResources(void)
     bool print_size = false;
     Uint8 written_size = 0;
     ENCAccessType access_type = eNCCopyCreate;
+    if (m_write_event) {
+        delete m_write_event;
+        m_write_event = NULL;
+    }
     if (m_BlobAccess) {
         access_type = m_BlobAccess->GetAccessType();
         if (m_BlobAccess->IsBlobExists()  &&  !x_IsFlagSet(fNoBlobAccessStats)) {
@@ -2828,7 +2833,6 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     m_MirrorsDone.clear();
     if (!x_IsFlagSet(fCopyLogEvent)) {
         if (m_BlobAccess->GetNewBlobSize() <= CNCDistributionConf::GetMaxBlobSizeSync()) {
-            m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
             // If fCopyLogEvent is not set then this blob comes from client and
             // thus we need to check quorum value before answering to client.
             // If fCopyLogEvent is set then this write comes from other server
@@ -2837,11 +2841,13 @@ CNCMessageHandler::x_FinishReadingBlob(void)
                 if (m_Quorum != 0)
                     --m_Quorum;
                 x_GetCurSlotServers();
+                m_write_event = write_event;
 // probably, this was made intentionally, but now it looks wrong
 // let us respect quorum setting always
 //                if (!m_ThisServerIsMain  ||  !m_AppSetup->fast_on_main)
                     return &CNCMessageHandler::x_PutToNextPeer;
             }
+            m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
             CNCPeerControl::MirrorWrite(m_NCBlobKey, m_BlobSlot,
                                         m_OrigRecNo, m_BlobAccess->GetNewBlobSize(), m_MirrorsDone);
         } else {
@@ -3490,6 +3496,10 @@ CNCMessageHandler::x_ReadPutResults(void)
     m_MirrorsDone.push_back(m_CheckSrvs[m_SrvsIndex-1]);
     if (m_Quorum == 1) {
         if (m_BlobAccess->GetNewBlobSize() <= CNCDistributionConf::GetMaxBlobSizeSync()) {
+            if (m_write_event) {
+                m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, m_write_event);
+                m_write_event = NULL;
+            }
             CNCPeerControl::MirrorWrite(m_NCBlobKey, m_BlobSlot,
                                         m_OrigRecNo, m_BlobAccess->GetNewBlobSize(), 
                                         m_MirrorsDone);
