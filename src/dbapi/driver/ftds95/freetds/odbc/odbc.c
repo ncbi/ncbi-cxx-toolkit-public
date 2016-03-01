@@ -3624,7 +3624,7 @@ SQLExecute(SQLHSTMT hstmt)
 static int
 odbc_process_tokens(TDS_STMT * stmt, unsigned flag)
 {
-	TDS_INT result_type;
+    TDS_INT result_type = TDS_NO_MORE_RESULTS;
 	int done_flags;
 	TDSSOCKET * tds = stmt->tds;
 
