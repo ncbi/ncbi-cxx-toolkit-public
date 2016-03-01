@@ -449,24 +449,32 @@ namespace DeBruijn {
             TKmer operator*() const {
                 TKmer kmer(m_kmer_len, 0);
                 uint64_t* guts = (uint64_t*)kmer.getPointer();
-                int precision = kmer.getSize()/64;
-                
-                size_t first_word = m_position/64;
+                unsigned precision = kmer.getSize()/64;
+
+                size_t first_word = m_position/64;               // first, maybe partial, word in deque
+                size_t end_word = (m_position+2*m_kmer_len-1)/64+1; // word after last
                 int shift = m_position%64;
-                if(shift > 0) {    // first/last words are split
-                    copy(m_readholder.m_storage.begin()+first_word+1, m_readholder.m_storage.begin()+first_word+1+precision, guts);
-                    kmer = (kmer << 64-shift);  // make space for first partial word
-                    *guts += m_readholder.m_storage[first_word] >> shift;
+                if(shift == 0) {
+                    copy(m_readholder.m_storage.begin()+first_word, m_readholder.m_storage.begin()+end_word, guts);
                 } else {
-                    copy(m_readholder.m_storage.begin()+first_word, m_readholder.m_storage.begin()+first_word+precision, guts);
+                    if(end_word-first_word <= precision) {
+                        copy(m_readholder.m_storage.begin()+first_word, m_readholder.m_storage.begin()+end_word, guts);
+                        kmer = (kmer >> shift);
+                    } else {
+                        copy(m_readholder.m_storage.begin()+first_word+1, m_readholder.m_storage.begin()+end_word, guts);
+                        kmer = (kmer << 64-shift);                // make space for first partial word
+                        *guts += m_readholder.m_storage[first_word] >> shift;
+                    }
                 }
-                
+                unsigned prc = (m_kmer_len+31)/32;                   // rounded up number of 8-byte words in kmer
                 int partial_part_bits = 2*(m_kmer_len%32);
                 if(partial_part_bits > 0) {
                     uint64_t mask = (uint64_t(1) << partial_part_bits) - 1;
-                    guts[precision-1] &= mask;
+                    guts[prc-1] &= mask;
                 }
-                
+                if(precision > prc)
+                    guts[prc] = 0;
+
                 return kmer;
             }
 
@@ -494,10 +502,10 @@ namespace DeBruijn {
                 while(m_position < 2*m_readholder.m_total_seq && m_read < m_readholder.m_read_length.size() && m_readholder.m_read_length[m_read] < m_kmer_len)
                     m_position += 2*m_readholder.m_read_length[m_read++];               
             }
-            int m_kmer_len;
+            uint32_t m_kmer_len;
             const CReadHolder& m_readholder;
             size_t m_position;      // BIT num in deque
-            int m_position_in_read; // SYMBOL in read
+            uint32_t m_position_in_read; // SYMBOL in read
             size_t m_read;          // read number
         };
         kmer_iterator kbegin(int kmer_len) const { return kmer_iterator(kmer_len, *this); }
@@ -539,7 +547,7 @@ namespace DeBruijn {
 
     private:
         deque<uint64_t> m_storage;
-        deque<uint16_t> m_read_length;
+        deque<uint32_t> m_read_length;
         size_t m_total_seq;
     };
 
