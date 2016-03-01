@@ -7583,8 +7583,6 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "Bos taurus C6orf52 non-coding RNA transcript variant 1, partial
- sequence"
       },
       partial TRUE,
       location int {
@@ -9980,7 +9978,6 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "No definition line found"
       },
       partial TRUE,
       location int {

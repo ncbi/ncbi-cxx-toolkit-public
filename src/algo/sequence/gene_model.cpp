@@ -1826,6 +1826,7 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
                 /// if we didn't find am existing gene feature, create one
                 if (!gene_feat) {
                     gene_feat.Reset(new CSeq_feat());
+                    gene_feat->SetData().SetGene();
                 }
                 if (gene_id) {
                     CRef<CObject_id> obj_id( new CObject_id() );
@@ -1876,17 +1877,6 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
                         gene_feat->SetDbxref().push_back(tag);
                 }
             }
-        }
-
-        if ( !gene_feat->SetData().SetGene().IsSetLocus() ) {
-            /// Didn't find locus in bioseq's gene feature; try to use bioseq's title instead
-            string title;
-            if (handle) {
-                title = sequence::CDeflineGenerator().GenerateDefline(handle);
-            }
-            if ( !title.empty() ) {
-                gene_feat->SetData().SetGene().SetLocus(title);
-            }    
         }
 
         if (gene_id) {
