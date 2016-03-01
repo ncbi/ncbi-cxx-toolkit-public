@@ -87,6 +87,7 @@
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/error_codes.hpp>
 #include <util/strsearch.hpp>
 
@@ -2380,6 +2381,9 @@ END_SCOPE(sequence)
 
 CFastaOstream::CFastaOstream(CNcbiOstream& out)
     : m_Out(out),
+      m_FeatCount{ {"cds", 0},
+                   {"gene", 0},
+                   {"prot", 0} },
       m_Flags(fInstantiateGaps | fAssembleParts),
       m_GapMode(eGM_letters)
 {
@@ -2420,6 +2424,346 @@ void CFastaOstream::Write(const CBioseq_Handle& handle,
     WriteTitle(handle, location, custom_title);
     WriteSequence(handle, location);
 }
+
+
+void CFastaOstream::Write(const CBioseq_Handle& handle, 
+                          const CSeq_feat& feat)
+{
+
+    if (!feat.IsSetData()) {
+        return;
+    }
+
+    if (!feat.GetData().IsCdregion() &&
+        !feat.GetData().IsProt() &&
+        !feat.GetData().IsGene()) {
+        return;
+    }
+
+
+    WriteTitle(handle, feat);
+    WriteSequence(handle, &(feat.GetLocation()));
+}
+
+
+void CFastaOstream::WriteTitle(const CBioseq_Handle& handle, 
+                               const CSeq_feat& feat)
+{
+    if (!feat.IsSetData()) {
+        return;
+    }
+
+    string id_string;
+    if (feat.GetData().IsCdregion()) {
+        id_string = x_GetCDSIdString(handle, feat);
+    } else if (feat.GetData().IsProt()) {
+        id_string = x_GetProtIdString(handle, feat);
+    } else if (feat.GetData().IsGene()) {
+        id_string = x_GetGeneIdString(handle, feat);
+    }
+
+    if (id_string.empty()) { // skip - maybe throw an exception instead
+        return;
+    }
+   
+    m_Out << ">lcl|" << id_string;
+
+    x_WriteModifiers(handle, feat);
+}
+
+
+string CFastaOstream::x_GetCDSIdString(const CBioseq_Handle& handle,
+                                       const CSeq_feat& cds)
+{
+    // Need to put a whole bunch of checks in here
+    const auto& src_loc = cds.GetLocation();
+
+    auto id_string  = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
+    id_string += "_cds";
+
+
+    if (cds.IsSetProduct()) {
+
+        const auto& product = cds.GetProduct();
+        _ASSERT(product.IsWhole());
+        try {
+            auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), handle.GetScope());
+            id_string += "_" + prod_accver;
+        } catch (...) {
+            // Move on if there's a problem getting the product accession
+        }
+    }
+
+    id_string += "_";
+    id_string += to_string(++m_FeatCount["cds"]);
+
+    return id_string;
+}
+
+
+string CFastaOstream::x_GetGeneIdString(const CBioseq_Handle& handle, 
+                                        const CSeq_feat& gene)
+{
+    const auto& src_loc = gene.GetLocation();
+    
+    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
+    id_string += "_gene_" + to_string(++m_FeatCount["gene"]);
+
+    return id_string;
+}
+
+
+string CFastaOstream::x_GetProtIdString(const CBioseq_Handle& handle,
+                                        const CSeq_feat& prot) 
+{
+    const auto& src_loc = prot.GetLocation();
+
+    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
+    id_string += "_prot";
+
+    if (prot.IsSetProduct()) {
+        const auto& product = prot.GetProduct();
+        _ASSERT(product.IsWhole());
+        try {
+            auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), handle.GetScope());
+            id_string += "_" + prod_accver;
+        } catch (...) {
+            // Move on...
+        }
+    }
+    id_string += "_" + to_string(++m_FeatCount["prot"]);
+
+    return id_string;
+}
+
+
+void CFastaOstream::x_AddGeneAttributes(const CBioseq_Handle& handle, 
+                                        const CSeq_feat& feat,
+                                        string& defline)
+{
+    if (!feat.IsSetData()) {
+        return;
+    }
+
+
+    auto gene = Ref(new CGene_ref());
+
+    if (feat.GetData().IsCdregion()) {
+        auto gene_feat = sequence::GetBestGeneForCds(feat, handle.GetScope());
+        if (gene_feat.Empty() ||
+            !gene_feat->IsSetData() ||
+            !gene_feat->GetData().IsGene()) {
+            return;
+        }
+        gene->Assign(gene_feat->GetData().GetGene());
+    } 
+    else if (feat.GetData().IsGene()) {
+        gene->Assign(feat.GetData().GetGene());
+    }
+
+    if (gene->IsSetLocus()) {
+        auto gene_locus = gene->GetLocus();
+        if (!gene_locus.empty()) {
+            defline += " [gene=" + gene_locus + "]";
+        }
+    }
+
+    if (gene->IsSetLocus_tag()) {
+        auto gene_locus_tag = gene->GetLocus_tag();
+        if (!gene_locus_tag.empty()) {
+            defline += " [locus-tag=" + gene_locus_tag + "]";
+        }
+    }
+}
+
+
+void CFastaOstream::x_AddDbxrefAttribute(const CBioseq_Handle& handle,
+                                         const CSeq_feat& feat,
+                                         string& defline)
+{
+    if (feat.IsSetDbxref()) {
+        string dbxref_string = "";
+        for (auto&& pDbtag : feat.GetDbxref()) {
+
+            const CDbtag& dbtag = *pDbtag;
+            if (dbtag.IsSetDb() && dbtag.IsSetTag()) {
+                if (!dbxref_string.empty()) {
+                    dbxref_string += ",";
+                }
+                dbxref_string += dbtag.GetDb() + ":";
+                if (dbtag.GetTag().IsId()) {
+                    dbxref_string += to_string(dbtag.GetTag().GetId());
+                } else {
+                    dbxref_string += dbtag.GetTag().GetStr();
+                }
+            }
+        }
+        if (!dbxref_string.empty()) {
+            defline += " [dbx_ref=" + dbxref_string  + "]";
+        }
+    }
+}
+
+
+void CFastaOstream::x_AddProteinNameAttribute(const CBioseq_Handle& handle, 
+                                              const CSeq_feat& feat,
+                                              string& defline)
+{
+    string protein_name;
+    if (feat.GetData().IsProt() &&
+        feat.GetData().GetProt().IsSetName() &&
+        !feat.GetData().GetProt().GetName().empty()) {
+        protein_name = feat.GetData().GetProt().GetName().front();
+    }
+    else
+    if (feat.GetData().IsCdregion()) {
+        auto pProtXref = feat.GetProtXref();
+        if (pProtXref &&
+            pProtXref->IsSetName() &&
+            !pProtXref->GetName().empty()) {
+            protein_name = pProtXref->GetName().front();
+        } 
+        else 
+        if (feat.IsSetProduct()) { // Copied from gff3_writer
+            const auto pId = feat.GetProduct().GetId();
+            if (pId) {
+                auto product_handle = handle.GetScope().GetBioseqHandle(*pId);
+                if (product_handle) {
+                    SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
+                    sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
+                    CFeat_CI it(product_handle, sel);
+                    if (it && 
+                        it->IsSetData() &&
+                        it->GetData().GetProt().IsSetName() &&
+                        !it->GetData().GetProt().GetName().empty()) {
+
+                        protein_name = it->GetData().GetProt().GetName().front();
+
+                    }
+                }
+            }
+        }
+    }
+
+    if (!protein_name.empty()) {
+       defline += " [protein=" + protein_name + "]";
+    }
+}
+
+
+void CFastaOstream::x_AddReadingFrameAttribute(const CSeq_feat& feat,
+                                               string& defline)
+{
+    if (!feat.IsSetData()) {
+        return;
+    }
+
+    if (feat.GetData().IsCdregion() &&
+        feat.GetData().GetCdregion().IsSetFrame()) {
+        auto frame = feat.GetData().GetCdregion().GetFrame();
+        if (frame > 1) {
+           defline += "\t[frame=" + to_string(frame) + "]";
+        }
+    }
+}
+
+
+void CFastaOstream::x_AddPartialAttribute(const CBioseq_Handle& handle, 
+                                          const CSeq_feat& feat,
+                                          string& defline)
+{
+    auto partial = sequence::SeqLocPartialCheck(feat.GetLocation(), &(handle.GetScope()));
+    string partial_string = "";
+    if (partial & sequence::eSeqlocPartial_Nostart) {
+        partial_string += "5\'";
+    }
+
+    if (partial & sequence::eSeqlocPartial_Nostop) {
+        if (!partial_string.empty()) {
+            partial_string += ",";
+        }
+        partial_string += "3\'";
+    }
+
+    if (!partial_string.empty()) {
+        defline += " [partial=" + partial_string + "]";
+    }
+}
+
+
+void CFastaOstream::x_AddTranslationExceptionAttribute(const CBioseq_Handle& handle,
+                                                       const CSeq_feat& feat,
+                                                       string& defline)
+{
+    return;
+}
+
+
+void CFastaOstream::x_AddExceptionAttribute(const CSeq_feat& feat, 
+                                            string& defline)
+{
+    if (feat.IsSetExcept_text()) {
+        auto except_string = feat.GetExcept_text();
+        if (!except_string.empty()) {
+            defline += " [exception=" + except_string + "]";
+        }
+    }
+}
+
+
+void CFastaOstream::x_AddProteinIdAttribute(const CBioseq_Handle& handle,
+                                            const CSeq_feat& feat,
+                                            string& defline)
+{
+    if (feat.GetData().IsCdregion() &&
+        feat.IsSetProduct() &&
+        feat.GetProduct().GetId()) {
+        string protein_id = sequence::GetAccessionForId(*(feat.GetProduct().GetId()), handle.GetScope());
+        if (!protein_id.empty()) {
+            defline += " [protein_id=" + protein_id + "]";
+        }
+    }
+}
+
+
+void CFastaOstream::x_AddLocationAttribute(const CBioseq_Handle& handle, 
+                                           const CSeq_feat& feat, 
+                                           string& defline)
+{
+    return;
+}
+
+
+void CFastaOstream::x_WriteModifiers(const CBioseq_Handle& handle, 
+                                     const CSeq_feat& feat)
+{
+
+    string defline = "";
+    if (!feat.IsSetData()) {
+        return;
+    }
+
+    x_AddGeneAttributes(handle, feat, defline);
+
+    x_AddDbxrefAttribute(handle, feat, defline);
+
+    x_AddProteinNameAttribute(handle, feat, defline);
+
+    x_AddReadingFrameAttribute(feat, defline);
+
+    x_AddPartialAttribute(handle, feat, defline);
+
+    x_AddTranslationExceptionAttribute(handle, feat, defline);
+
+    x_AddExceptionAttribute(feat, defline);
+
+    x_AddProteinIdAttribute(handle, feat, defline);
+
+    x_AddLocationAttribute(handle, feat, defline);
+
+    m_Out << defline << "\n";
+}
+
 
 
 static string s_FastaGetOriginalID (const CBioseq& seq)

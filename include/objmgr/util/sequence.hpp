@@ -763,9 +763,17 @@ public:
     virtual void Write        (const CBioseq_Handle& handle,
                                const CSeq_loc* location = 0,
                                const string& custom_title = kEmptyStr);
+
+    virtual void Write (const CBioseq_Handle& handle, 
+                        const CSeq_feat& feat);
+
+    virtual void WriteTitle (const CBioseq_Handle& handle,
+                             const CSeq_feat& feat);
+
     virtual void WriteTitle   (const CBioseq_Handle& handle,
                                const CSeq_loc* location = 0,
                                const string& custom_title = kEmptyStr);
+
     virtual void WriteSequence(const CBioseq_Handle& handle,
                                const CSeq_loc* location = 0);
 
@@ -838,13 +846,62 @@ public:
 protected:
     CNcbiOstream&       m_Out;
     auto_ptr<sequence::CDeflineGenerator> m_Gen;
+    typedef map<string, TSeqPos> TFeatCount;
+    TFeatCount m_FeatCount; 
 
     virtual void x_WriteSeqIds    ( const CBioseq& bioseq,
                                     const CSeq_loc* location);
     virtual void x_WriteModifiers ( const CBioseq_Handle & handle );
+
+    virtual void x_WriteModifiers(const CBioseq_Handle& handle,
+                                  const CSeq_feat& feat);
+
+    virtual void x_AddGeneAttributes(const CBioseq_Handle& handle, 
+                                     const CSeq_feat& feat,
+                                     string& defline);
+
+    virtual void x_AddProteinNameAttribute(const CBioseq_Handle& handle,
+                                           const CSeq_feat& feat,
+                                           string& defline);
+
+    virtual void x_AddDbxrefAttribute(const CBioseq_Handle& handle,
+                                      const CSeq_feat& feat,
+                                      string& defline);
+
+    virtual void x_AddReadingFrameAttribute(const CSeq_feat& feat, 
+                                            string& defline);
+
+    virtual void x_AddPartialAttribute(const CBioseq_Handle& handle, 
+                                       const CSeq_feat& feat, 
+                                       string& defline);
+
+    virtual void x_AddExceptionAttribute(const CSeq_feat& feat, 
+                                         string& defline);
+
+    virtual void x_AddProteinIdAttribute(const CBioseq_Handle& handle,
+                                         const CSeq_feat& feat,
+                                         string& defline);
+    
+    virtual void x_AddTranslationExceptionAttribute(const CBioseq_Handle& handle, 
+                                                    const CSeq_feat& feat,
+                                                    string& defline);
+
+    virtual void x_AddLocationAttribute(const CBioseq_Handle& handle,
+                                        const CSeq_feat& feat,
+                                        string& defline);
+
     virtual void x_WriteSeqTitle  ( const CBioseq& bioseq,
                                     CScope* scope,
                                     const string& custom_title);
+
+    virtual string x_GetCDSIdString(const CBioseq_Handle& handle,
+                                    const CSeq_feat& cds);
+
+    virtual string x_GetProtIdString(const CBioseq_Handle& handle,
+                                     const CSeq_feat& prot);
+
+    virtual string x_GetGeneIdString(const CBioseq_Handle& handle,
+                                     const CSeq_feat& gene);
 
 private:
     CConstRef<CSeq_loc> m_SoftMask;
@@ -855,6 +912,7 @@ private:
     TSeq_id_HandleSet   m_PreviousWholeIds;
     // avoid recomputing for every sequence
     typedef AutoPtr<char, ArrayDeleter<char> > TCharBuf;
+
     TCharBuf            m_Dashes, m_LC_Ns, m_LC_Xs, m_UC_Ns, m_UC_Xs;
 
     sequence::CDeflineGenerator::TUserFlags x_GetTitleFlags(void) const;
