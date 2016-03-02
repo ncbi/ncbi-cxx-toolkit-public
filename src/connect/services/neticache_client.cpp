@@ -343,19 +343,39 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
     CNetServer* server_last_used_ptr(parameters->GetServerLastUsedPtr());
 
     if (!parameters->GetTryAllServers()) {
-        if (!selected_server)
-            selected_server = m_Service.IterateByWeight(key).GetServer();
-
-        if (server_last_used_ptr == NULL)
-            return selected_server.ExecWithRetry(cmd,
-                    multiline_output, conn_listener);
-        else {
+        if (selected_server) {
             CNetServer::SExecResult exec_result(
                     selected_server.ExecWithRetry(cmd,
-                            multiline_output, conn_listener));
-            *server_last_used_ptr = selected_server;
+                        multiline_output, conn_listener));
+
+            if (server_last_used_ptr) *server_last_used_ptr = selected_server;
             return exec_result;
         }
+
+        CNetServer::SExecResult exec_result;
+        auto it = m_Service.IterateByWeight(key);
+
+        do {
+            try {
+                exec_result = (*it).ExecWithRetry(cmd,
+                        multiline_output, conn_listener);
+                selected_server = *it;
+                break;
+            }
+            catch (CNetSrvConnException& ex) {
+                // A shortcut
+                const auto kErrCode = CNetSrvConnException::eConnectionFailure;
+
+                // Not a connection failure
+                if (ex.GetErrCode() != kErrCode) throw;
+
+                // No more servers to try
+                if (!++it) throw;
+            }
+        } while (it);
+
+        if (server_last_used_ptr) *server_last_used_ptr = selected_server;
+        return exec_result;
     }
 
     CNetServer::SExecResult exec_result;
