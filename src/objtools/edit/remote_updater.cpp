@@ -369,30 +369,94 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
     }
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, objects::CSeq_entry& entry)
+namespace
 {
-    if (entry.IsSet())
+    typedef set<CRef< CSeqdesc >* > TOwnerSet;
+    typedef struct { TOwnerSet owner; CRef<COrg_ref> org_ref; } TOwner;
+    typedef map<string, TOwner > TOrgMap;
+    void _UpdateOrgFromTaxon(objects::ILineErrorListener* logger, objects::CSeq_entry& entry, TOrgMap& m)
     {
-        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        if (entry.IsSet())
         {
-            UpdateOrgFromTaxon(logger, **it);
+            NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+            {
+                _UpdateOrgFromTaxon(logger, **it, m);
+            }
+        }
+
+        if (!entry.IsSetDescr())
+            return;
+
+        NON_CONST_ITERATE(CSeq_descr::Tdata, it, entry.SetDescr().Set())
+        {
+            CRef<CSeqdesc>* owner = &*it;
+            CSeqdesc& desc = **owner;
+            CRef<COrg_ref> org_ref;
+            if (desc.IsOrg())
+            {
+                //xUpdateOrgTaxname(logger, desc.SetOrg());
+                org_ref.Reset(&desc.SetOrg());
+            }
+            else
+            if (desc.IsSource() && desc.GetSource().IsSetOrg())
+            {
+                //xUpdateOrgTaxname(logger, desc.SetSource().SetOrg());
+                org_ref.Reset(&desc.SetSource().SetOrg());
+            }
+            if (org_ref)
+            {
+                string id;
+                CNcbiStrstream os;
+                os << MSerial_AsnText << *org_ref;
+                id = os.str();
+                TOwner& v = m[id];
+                v.owner.insert(owner);
+                v.org_ref = org_ref;
+            }
         }
     }
 
-    if (!entry.IsSetDescr())
+    void xUpdate(TOwnerSet& owner, COrg_ref& org_ref)
+    {
+        NON_CONST_ITERATE(TOwnerSet, owner_it, owner)
+        {
+            if ((**owner_it)->IsOrg())
+            {
+                (**owner_it)->SetOrg(org_ref);
+            }
+            else
+                if ((**owner_it)->IsSource())
+                {
+                    (**owner_it)->SetSource().SetOrg(org_ref);
+                }
+        }
+    }
+}
+void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, objects::CSeq_entry& entry)
+{   
+    TOrgMap org_to_update;
+
+    _UpdateOrgFromTaxon(logger, entry, org_to_update); 
+    if (org_to_update.empty())
         return;
 
-    NON_CONST_ITERATE(CSeq_descr::Tdata, it, entry.SetDescr().Set())
+    CTaxon3 taxon;
+    taxon.Init();
+
+    NON_CONST_ITERATE(TOrgMap, it, org_to_update)
     {
-        CSeqdesc& desc = **it;
-        if (desc.IsOrg())
+        vector<CRef<COrg_ref> > reflist;
+        reflist.push_back(it->second.org_ref);
+        CRef<CTaxon3_reply> reply = taxon.SendOrgRefList(reflist);
+
+        CTaxon3_reply::TReply::iterator reply_it = reply->SetReply().begin();
         {
-            xUpdateOrgTaxname(logger, desc.SetOrg());
-        }
-        else
-        if (desc.IsSource() && desc.GetSource().IsSetOrg())
-        {
-            xUpdateOrgTaxname(logger, desc.SetSource().SetOrg());
+            if ((*reply_it)->IsData() && (*reply_it)->SetData().IsSetOrg())
+            {
+                (*reply_it)->SetData().SetOrg().ResetSyn();
+
+                xUpdate(it->second.owner, (*reply_it)->SetData().SetOrg());
+            }
         }
     }
 }
