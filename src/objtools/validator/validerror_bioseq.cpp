@@ -3979,7 +3979,7 @@ bool CValidError_bioseq::ValidateRepr
     switch (inst.GetRepr()) {
     case CSeq_inst::eRepr_virtual:
         if (inst.IsSetExt()) {
-            PostErr(eDiag_Error, eErr_SEQ_INST_ExtNotAllowed, err0, seq);
+            PostErr(eDiag_Critical, eErr_SEQ_INST_ExtNotAllowed, err0, seq);
             rtn = false;
         }
         if (inst.IsSetSeq_data()) {
@@ -4020,7 +4020,7 @@ bool CValidError_bioseq::ValidateRepr
     case CSeq_inst::eRepr_raw:
     case CSeq_inst::eRepr_const:
         if (inst.IsSetExt()) {
-            PostErr(eDiag_Error, eErr_SEQ_INST_ExtNotAllowed, err0, seq);
+            PostErr(eDiag_Critical, eErr_SEQ_INST_ExtNotAllowed, err0, seq);
             rtn = false;
         }
         if (!inst.IsSetSeq_data() ||
