@@ -140,6 +140,7 @@ int CFastaRoundTripTestApp::Run(void)
         se2 = reader.ReadSet();
     }}
 
+#if 0
     if ((inflags & CFastaReader::fDLOptional) != 0) {
         for (CTypeIterator<CBioseq> it(*se2);  it;  ++it) {
             if (it->IsSetDescr()) {
@@ -156,6 +157,7 @@ int CFastaRoundTripTestApp::Run(void)
             }
         }
     }
+#endif
 
     if (!se2->Equals(*se)) {
         ERR_POST("Seq-entry discrepancy: got first\n"
