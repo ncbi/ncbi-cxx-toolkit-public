@@ -41,6 +41,8 @@
 
 #include <corelib/request_ctx.hpp>
 
+#include <sstream>
+
 #define NCBI_USE_ERRCODE_X  NetStorage_RPC
 
 #define NST_PROTOCOL_VERSION "1.0.0"
@@ -250,6 +252,59 @@ CJsonNode CReadJsonFromSocket::ReadMessage(CSocket& sock)
     return m_JSONReader.GetMessage();
 }
 
+struct SIssue
+{
+    Int8 code;
+    string message;
+    string scope;
+    Int8 sub_code;
+
+    template <class TOstream>
+    friend TOstream& operator<< (TOstream& os, const SIssue& issue)
+    {
+        if (!issue.scope.empty()) os << issue.scope << "::";
+        os << issue.code;
+        if (issue.sub_code) os << '.' << issue.sub_code;
+        os << " (" << issue.message << ')';
+        return os;
+    }
+
+    struct SBuilder : private CJsonNode
+    {
+        explicit SBuilder(const CJsonNode& node) : CJsonNode(node) {}
+
+        SIssue Build() const
+        {
+            return SIssue{
+                    GetInteger("Code"),
+                    GetString("Message"),
+                    GetScope(),
+                    GetSubCode()
+                };
+        }
+
+    private:
+        string GetScope() const
+        {
+            if (CJsonNode scope = GetByKeyOrNull("Scope")) {
+                return scope.AsString();
+            } else {
+                return string();
+            }
+        }
+
+        Int8 GetSubCode() const
+        {
+            if (CJsonNode sub_code = GetByKeyOrNull("SubCode")) {
+                return sub_code.AsInteger();
+            } else {
+                return 0;
+            }
+        }
+    };
+
+};
+
 static void s_TrapErrors(const CJsonNode& request,
         const CJsonNode& reply, CSocket& sock)
 {
@@ -259,29 +314,29 @@ static void s_TrapErrors(const CJsonNode& request,
         string server_address(sock.GetPeerAddress());
 
         for (CJsonIterator it = issues.Iterate(); it; ++it) {
+            const SIssue issue(SIssue::SBuilder(*it).Build());
             LOG_POST(Warning << "NetStorage server " << server_address <<
-                    " issued warning #" << (*it).GetInteger("Code") <<
-                    " (" << (*it).GetString("Message") << ").");
+                    " issued warning " << issue);
         }
     }
 
     if (reply.GetString("Status") != "OK") {
         Int8 code = CNetStorageServerError::eUnknownError;
-        string errors;
+        Int8 sub_code = 0;
+        ostringstream errors;
 
         issues = reply.GetByKeyOrNull("Errors");
 
         if (!issues)
-            errors = reply.GetString("Status");
+            errors << reply.GetString("Status");
         else {
             const char* prefix = "error ";
 
             for (CJsonIterator it = issues.Iterate(); it; ++it) {
-                errors += prefix;
-                code = (*it).GetInteger("Code");
-                errors += NStr::NumericToString(code);
-                errors += ": ";
-                errors += (*it).GetString("Message");
+                const SIssue issue(SIssue::SBuilder(*it).Build());
+                code = issue.code;
+                sub_code = issue.sub_code;
+                errors << prefix << issue;
                 prefix = ", error ";
             }
         }
@@ -290,7 +345,24 @@ static void s_TrapErrors(const CJsonNode& request,
                         request.GetString("Type") << " "
                 "on NetStorage server " <<
                         sock.GetPeerAddress() << ". "
-                "Server returned " << errors);
+                "Server returned " << errors.str());
+
+        // Issues were reported by a NetStorage server v2.2.0 or later
+        if (sub_code) {
+            switch (code) {
+                case 3000:
+                    code = sub_code; // CNetStorageServerError
+                    break;
+                case 3010:
+                    throw CNetServiceException(DIAG_COMPILE_INFO, 0,
+                            static_cast<CNetServiceException::EErrCode>(sub_code),
+                            err_msg);
+                case 3020:
+                    throw CNetStorageException(DIAG_COMPILE_INFO, 0,
+                            static_cast<CNetStorageException::EErrCode>(sub_code),
+                            err_msg);
+            }
+        }
 
         switch (code) {
             case CNetStorageServerError::eNetStorageObjectNotFound:
