@@ -657,3 +657,23 @@ BOOST_AUTO_TEST_CASE(Test_Matching_OptionalString)
     BOOST_CHECK_EQUAL(s.Match("18S ribosomal RNA gene"), true);
     BOOST_CHECK_EQUAL(s.Match("18S ribosomal RNA gene, partial sequence"), true);
 }
+
+BOOST_AUTO_TEST_CASE(Test_Matching_COI)
+{
+    CString_constraint s;
+    s.SetMatch_text("cytochrome oxidase subunit I (COI)");
+    s.SetMatch_location(eString_location_equals);
+    s.SetCase_sensitive(false);
+    s.SetIgnore_space(true);
+    s.SetIgnore_punct(true);
+
+    CRef<CWord_substitution> subst1(new CWord_substitution());
+    subst1->SetWord("cytochrome oxidase subunit I (COI)");
+    subst1->SetSynonyms().push_back("cytochrome oxidase subunit I");
+    
+    subst1->SetCase_sensitive(false);
+    subst1->SetWhole_word(false);
+    s.SetIgnore_words().Set().push_back(subst1);
+
+    //BOOST_CHECK_EQUAL(s.Match("cytochrome oxidase subunit I (COI)"), true);// fails
+}
