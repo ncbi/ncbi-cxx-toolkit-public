@@ -305,6 +305,38 @@ struct SIssue
 
 };
 
+void s_ThrowError(Int8 code, Int8 sub_code, const string& err_msg)
+{
+    // Issues were reported by a NetStorage server v2.2.0 or later
+    if (sub_code) {
+        switch (code) {
+            case 3000:
+                code = sub_code; // CNetStorageServerError
+                break;
+            case 3010:
+                throw CNetServiceException(DIAG_COMPILE_INFO, 0,
+                        static_cast<CNetServiceException::EErrCode>(sub_code),
+                        err_msg);
+            case 3020:
+                throw CNetStorageException(DIAG_COMPILE_INFO, 0,
+                        static_cast<CNetStorageException::EErrCode>(sub_code),
+                        err_msg);
+        }
+    }
+
+    switch (code) {
+        case CNetStorageServerError::eNetStorageObjectNotFound:
+        case CNetStorageServerError::eRemoteObjectNotFound:
+            NCBI_THROW_FMT(CNetStorageException, eNotExists, err_msg);
+            break;
+        case CNetStorageServerError::eNetStorageObjectExpired:
+            NCBI_THROW_FMT(CNetStorageException, eExpired, err_msg);
+            break;
+        default:
+            NCBI_THROW_FMT(CNetStorageException, eServerError, err_msg);
+    }
+}
+
 static void s_TrapErrors(const CJsonNode& request,
         const CJsonNode& reply, CSocket& sock)
 {
@@ -347,34 +379,7 @@ static void s_TrapErrors(const CJsonNode& request,
                         sock.GetPeerAddress() << ". "
                 "Server returned " << errors.str());
 
-        // Issues were reported by a NetStorage server v2.2.0 or later
-        if (sub_code) {
-            switch (code) {
-                case 3000:
-                    code = sub_code; // CNetStorageServerError
-                    break;
-                case 3010:
-                    throw CNetServiceException(DIAG_COMPILE_INFO, 0,
-                            static_cast<CNetServiceException::EErrCode>(sub_code),
-                            err_msg);
-                case 3020:
-                    throw CNetStorageException(DIAG_COMPILE_INFO, 0,
-                            static_cast<CNetStorageException::EErrCode>(sub_code),
-                            err_msg);
-            }
-        }
-
-        switch (code) {
-            case CNetStorageServerError::eNetStorageObjectNotFound:
-            case CNetStorageServerError::eRemoteObjectNotFound:
-                NCBI_THROW_FMT(CNetStorageException, eNotExists, err_msg);
-                break;
-            case CNetStorageServerError::eNetStorageObjectExpired:
-                NCBI_THROW_FMT(CNetStorageException, eExpired, err_msg);
-                break;
-            default:
-                NCBI_THROW_FMT(CNetStorageException, eServerError, err_msg);
-        }
+        s_ThrowError(code, sub_code, err_msg);
     }
 
     if (reply.GetInteger("RE") != request.GetInteger("SN")) {
