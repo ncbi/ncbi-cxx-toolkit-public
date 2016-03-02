@@ -454,7 +454,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 } else if (! m_Imp.IsIndexerVersion()) {
                     sev = eDiag_Error;
                 }
-                PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 64 characters", ctx);
+                PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 50 characters", ctx);
             }
             break;
         default:
