@@ -912,6 +912,10 @@ void CNetStorageHandler::x_CreateConnContext(void)
     m_ConnContext->SetRequestID();
     m_ConnContext->SetClientIP(GetSocket().GetPeerAddress(eSAF_IP));
 
+    // Suppress phid for connections
+    // It makes no sense to have phid for connections
+    m_ConnContext->SetHitID("");
+
     // Set the connection request as the current one and print request start
     CDiagContext::SetRequestContext(m_ConnContext);
     GetDiagContext().PrintRequestStart()
@@ -976,6 +980,10 @@ CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
 
             // ncbi_phid has been printed by PrintRequestStart() anyway
             if (key == "ncbi_phid")
+                continue;
+            // ncbi_context is for serializing into the request context,
+            // not really for logging
+            if (key == "ncbi_context")
                 continue;
             if (key == "SessionID" || key == "ClientIP")
                 continue;

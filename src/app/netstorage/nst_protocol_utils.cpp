@@ -65,7 +65,21 @@ void SetSessionAndIPAndPHID(const CJsonNode &  message,
         CDiagContext::GetRequestContext().SetClientIP(
                                 client_ip);
 
-    if (message.HasKey("ncbi_phid")) {
+    // CXX-7893: ncbi_context has preference over ncbi_phid
+    bool        ncbi_context_deserialized = false;
+    if (message.HasKey("ncbi_context")) {
+        try {
+            string      context = message.GetString("ncbi_context");
+            CRequestContext_PassThrough().Deserialize(context,
+                            CRequestContext_PassThrough::eFormat_UrlEncoded);
+
+            ncbi_context_deserialized = true;
+        } catch (const exception &  ex) {
+            ERR_POST(ex.what());
+        }
+    }
+
+    if (ncbi_context_deserialized == false && message.HasKey("ncbi_phid")) {
         try {
             string      ncbi_phid = message.GetString("ncbi_phid");
             if (!ncbi_phid.empty())
