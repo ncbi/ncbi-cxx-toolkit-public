@@ -2247,7 +2247,11 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         const CVariantPlacement& nuc_p,
         const CSeq_feat& cds_feat)
 {
-    bool verbose = false;
+    const bool verbose = false;
+
+    if (verbose) NcbiCerr << "TranslateNAtoAA Inputs:\n" << MSerial_AsnText
+        << nuc_inst << "\n\n" << MSerial_AsnText << nuc_p
+        << "\n\n" << MSerial_AsnText << cds_feat << endl;
 
     if(!sequence::IsSameBioseq(sequence::GetId(nuc_p.GetLoc(), NULL),
                                sequence::GetId(cds_feat.GetLocation(), NULL),
@@ -2325,6 +2329,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     bool is_ok = !nuc_p.IsSetStart_offset()
               && !nuc_p.IsSetStop_offset()
               && is_within_cds
+              && !codons_loc.IsNull()
               && !codons_loc->IsNull()
               && nuc_delta.GetSeq().IsLiteral()
               && nuc_delta.GetSeq().GetLiteral().IsSetSeq_data();
