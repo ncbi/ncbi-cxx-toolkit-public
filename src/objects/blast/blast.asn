@@ -69,7 +69,8 @@ Blast4-archive ::= SEQUENCE {
     request                 Blast4-request,
 
     -- Results of search
-    results                 Blast4-get-search-results-reply
+    results                 Blast4-get-search-results-reply,
+    messages                SEQUENCE OF Blast4-error OPTIONAL 
 }
 
 Blast4-request-body ::= CHOICE {
