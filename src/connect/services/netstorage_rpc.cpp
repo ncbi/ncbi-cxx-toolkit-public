@@ -260,13 +260,12 @@ struct SIssue
     Int8 sub_code;
 
     template <class TOstream>
-    friend TOstream& operator<< (TOstream& os, const SIssue& issue)
+    TOstream& Print(TOstream& os) const
     {
-        if (!issue.scope.empty()) os << issue.scope << "::";
-        os << issue.code;
-        if (issue.sub_code) os << '.' << issue.sub_code;
-        os << " (" << issue.message << ')';
-        return os;
+        if (!scope.empty()) os << scope << "::";
+        os << code;
+        if (sub_code) os << '.' << sub_code;
+        return os << " (" << message << ')';
     }
 
     struct SBuilder : private CJsonNode
@@ -304,6 +303,17 @@ struct SIssue
     };
 
 };
+
+// Clang does not like templated operator (sees ambiguity with CNcbiDiag's one).
+const CNcbiDiag& operator<< (const CNcbiDiag& diag, const SIssue& issue)
+{
+    return issue.Print(diag);
+}
+
+ostream& operator<< (ostream& os, const SIssue& issue)
+{
+    return issue.Print(os);
+}
 
 void s_ThrowError(Int8 code, Int8 sub_code, const string& err_msg)
 {
