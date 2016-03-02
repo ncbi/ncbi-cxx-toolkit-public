@@ -37584,7 +37584,7 @@ else
     done
     WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_R_flags}"
  fi
-   WXWIDGETS_STATIC_LIBS=`"$wxconf" $wxcfflags --libs --static $wxlibs \
+   WXWIDGETS_STATIC_LIBS=`"$wxconf" $wxcfflags --libs $wxlibs --static \
       2>/dev/null | sed -e "$basesed; s/ -lm / /g;"`
    if test -n "$WXWIDGETS_STATIC_LIBS"; then
       # Allow direct use of underlying libraries with strict linkers

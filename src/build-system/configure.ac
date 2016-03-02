@@ -6016,7 +6016,7 @@ else
    fi
    NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf $wxcfflags --libs $wxlibs],
       [$libsed; s/ -lm / /g;])
-   WXWIDGETS_STATIC_LIBS=`"$wxconf" $wxcfflags --libs --static $wxlibs \
+   WXWIDGETS_STATIC_LIBS=`"$wxconf" $wxcfflags --libs $wxlibs --static \
       2>/dev/null | sed -e "$basesed; s/ -lm / /g;"`
    if test -n "$WXWIDGETS_STATIC_LIBS"; then
       # Allow direct use of underlying libraries with strict linkers
