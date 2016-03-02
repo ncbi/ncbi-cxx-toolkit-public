@@ -163,7 +163,10 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
     while (ptr < end)
     {
         if (*ptr == '\r' || *ptr == '\n')
+        {
+            ptr++;
             continue;
+        }
 
         const char* start = ptr;
 
@@ -188,10 +191,6 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
             if (quals.m_cols.empty())
             {
                 NStr::Split(newline, "\t", quals.m_cols);
-                if (quals.m_cols.empty())
-                    NCBI_THROW(CArgException, eConstraint,
-                    "source modifiers file header line is not valid");
-
                 if (!opt_map_filename.empty())
                 {
                     ITERATE(vector<CTempString>, it, quals.m_cols)
@@ -227,6 +226,9 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
         }
     }
 
+    if (quals.m_cols.empty())
+       NCBI_THROW(CArgException, eConstraint,
+       "source modifiers file header line is not valid");
 }
 
 void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const string& opt_map_filename)
