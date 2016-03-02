@@ -1182,6 +1182,7 @@ inline TNetStorage g_GetNetStorage(const char* mode)
             "&nc="     + nc_service +
             "&domain=" + nst_app_domain +
             "&client="   APP_NAME +
+            "&err_mode=ignore" +
             mode);
     return CNetStorage(init_string);
 }
@@ -1197,6 +1198,7 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>(const char* mode)
             "&nc="     + nc_service +
             "&domain=" + nst_app_domain +
             "&client="   APP_NAME +
+            "&err_mode=ignore" +
             mode);
     return CNetStorageByKey(init_string);
 }

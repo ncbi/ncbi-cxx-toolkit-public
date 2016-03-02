@@ -93,14 +93,21 @@ struct NCBI_XCONNECT_EXPORT SNetStorage::SConfig
         eNoCreate,
     };
 
+    enum EErrMode {
+        eThrow,
+        eLog,
+        eIgnore,
+    };
+
     string service;
     string nc_service;
     string app_domain;
     string client_name;
     string metadata;
     EDefaultStorage default_storage;
+    EErrMode err_mode;
 
-    SConfig() : default_storage(eUndefined) {}
+    SConfig() : default_storage(eUndefined), err_mode(eLog) {}
     void ParseArg(const string&, const string&);
     void Validate(const string&);
 
@@ -126,6 +133,7 @@ protected:
 
 private:
     static EDefaultStorage GetDefaultStorage(const string&);
+    static EErrMode GetErrMode(const string&);
 };
 
 /// @internal

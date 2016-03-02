@@ -348,13 +348,13 @@ void s_ThrowError(Int8 code, Int8 sub_code, const string& err_msg)
 }
 
 static void s_TrapErrors(const CJsonNode& request,
-        const CJsonNode& reply, CSocket& sock)
+        const CJsonNode& reply, CSocket& sock,
+        SNetStorage::SConfig::EErrMode err_mode)
 {
+    const string server_address(sock.GetPeerAddress());
     CJsonNode issues(reply.GetByKeyOrNull("Warnings"));
 
     if (issues) {
-        string server_address(sock.GetPeerAddress());
-
         for (CJsonIterator it = issues.Iterate(); it; ++it) {
             const SIssue issue(SIssue::SBuilder(*it).Build());
             LOG_POST(Warning << "NetStorage server " << server_address <<
@@ -362,34 +362,47 @@ static void s_TrapErrors(const CJsonNode& request,
         }
     }
 
-    if (reply.GetString("Status") != "OK") {
-        Int8 code = CNetStorageServerError::eUnknownError;
-        Int8 sub_code = 0;
-        ostringstream errors;
+    const string status = reply.GetString("Status");
+    const bool status_ok = status == "OK";
+    issues = reply.GetByKeyOrNull("Errors");
 
-        issues = reply.GetByKeyOrNull("Errors");
-
-        if (!issues)
-            errors << reply.GetString("Status");
-        else {
-            const char* prefix = "error ";
-
-            for (CJsonIterator it = issues.Iterate(); it; ++it) {
-                const SIssue issue(SIssue::SBuilder(*it).Build());
-                code = issue.code;
-                sub_code = issue.sub_code;
-                errors << prefix << issue;
-                prefix = ", error ";
+    // Got errors
+    if (!status_ok || issues) {
+        if (status_ok && err_mode != SNetStorage::SConfig::eThrow) {
+            if (err_mode == SNetStorage::SConfig::eLog) {
+                for (CJsonIterator it = issues.Iterate(); it; ++it) {
+                    const SIssue issue(SIssue::SBuilder(*it).Build());
+                    LOG_POST(Error << "NetStorage server " << server_address <<
+                            " issued error " << issue);
+                }
             }
+        } else {
+            Int8 code = CNetStorageServerError::eUnknownError;
+            Int8 sub_code = 0;
+            ostringstream errors;
+
+            if (!issues)
+                errors << status;
+            else {
+                const char* prefix = "error ";
+
+                for (CJsonIterator it = issues.Iterate(); it; ++it) {
+                    const SIssue issue(SIssue::SBuilder(*it).Build());
+                    code = issue.code;
+                    sub_code = issue.sub_code;
+                    errors << prefix << issue;
+                    prefix = ", error ";
+                }
+            }
+
+            string err_msg = FORMAT("Error while executing " <<
+                            request.GetString("Type") << " "
+                    "on NetStorage server " <<
+                            sock.GetPeerAddress() << ". "
+                    "Server returned " << errors.str());
+
+            s_ThrowError(code, sub_code, err_msg);
         }
-
-        string err_msg = FORMAT("Error while executing " <<
-                        request.GetString("Type") << " "
-                "on NetStorage server " <<
-                        sock.GetPeerAddress() << ". "
-                "Server returned " << errors.str());
-
-        s_ThrowError(code, sub_code, err_msg);
     }
 
     if (reply.GetInteger("RE") != request.GetInteger("SN")) {
@@ -401,37 +414,26 @@ static void s_TrapErrors(const CJsonNode& request,
     }
 }
 
-static CJsonNode s_Exchange(const CJsonNode& request, CSocket& sock)
-{
-    CSendJsonOverSocket message_sender(sock);
-
-    message_sender.SendMessage(request);
-
-    CReadJsonFromSocket message_reader;
-
-    CJsonNode reply(message_reader.ReadMessage(sock));
-
-    s_TrapErrors(request, reply, sock);
-
-    return reply;
-}
-
 class CNetStorageServerListener : public INetServerConnectionListener
 {
 public:
-    CNetStorageServerListener(const CJsonNode& hello) : m_Hello(hello) {}
+    CNetStorageServerListener(const CJsonNode& hello,
+            SNetStorage::SConfig::EErrMode err_mode) :
+        m_Hello(hello), m_ErrMode(err_mode)
+    {
+    }
 
-public:
     virtual CRef<INetServerProperties> AllocServerProperties();
 
-public:
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection& connection);
     virtual void OnError(const string& err_msg, CNetServer& server);
     virtual void OnWarning(const string& warn_msg, CNetServer& server);
-
-    CJsonNode m_Hello;
+ 
+private:
+    const CJsonNode m_Hello;
+    const SNetStorage::SConfig::EErrMode m_ErrMode;
 };
 
 CRef<INetServerProperties> CNetStorageServerListener::AllocServerProperties()
@@ -448,7 +450,17 @@ void CNetStorageServerListener::OnInit(CObject* /*api_impl*/,
 void CNetStorageServerListener::OnConnected(
         CNetServerConnection& connection)
 {
-    s_Exchange(m_Hello, connection->m_Socket);
+    CSocket& sock(connection->m_Socket);
+
+    CSendJsonOverSocket message_sender(sock);
+
+    message_sender.SendMessage(m_Hello);
+
+    CReadJsonFromSocket message_reader;
+
+    CJsonNode reply(message_reader.ReadMessage(sock));
+
+    s_TrapErrors(m_Hello, reply, sock, m_ErrMode);
 }
 
 void CNetStorageServerListener::OnError(const string& /*err_msg*/,
@@ -588,6 +600,17 @@ SNetStorage::SConfig::GetDefaultStorage(const string& value)
     }
 }
 
+SNetStorage::SConfig::EErrMode
+SNetStorage::SConfig::GetErrMode(const string& value)
+{
+    if (NStr::CompareNocase(value, "strict") == 0)
+        return eThrow;
+    else if (NStr::CompareNocase(value, "ignore") == 0)
+        return eIgnore;
+    else
+        return eLog;
+}
+
 void SNetStorage::SConfig::ParseArg(const string& name, const string& value)
 {
     if (name == "domain")
@@ -606,6 +629,8 @@ void SNetStorage::SConfig::ParseArg(const string& name, const string& value)
         app_domain = value;
     else if (name == "client")
         client_name = value;
+    else if (name == "err_mode")
+        err_mode = GetErrMode(value);
 }
 
 void SNetStorage::SConfig::Validate(const string& init_string)
@@ -686,7 +711,7 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
     hello.SetString("ProtocolVersion", NST_PROTOCOL_VERSION);
 
     m_Service = new SNetServiceImpl("NetStorageAPI", m_Config.client_name,
-            new CNetStorageServerListener(hello));
+            new CNetStorageServerListener(hello, m_Config.err_mode));
 
     m_Service->Init(this, m_Config.service,
             NULL, kEmptyStr, s_NetStorageConfigSections);
@@ -839,7 +864,7 @@ CJsonNode SNetStorageRPC::Exchange(CNetService service,
 
     CJsonNode reply(message_reader.ReadMessage(sock));
 
-    s_TrapErrors(request, reply, sock);
+    s_TrapErrors(request, reply, sock, m_Config.err_mode);
 
     return reply;
 }
@@ -1000,7 +1025,8 @@ void SNetStorageObjectRPC::ReadConfirmation()
         throw;
     }
 
-    s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock);
+    s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock,
+            m_NetStorageRPC->m_Config.err_mode);
 }
 
 ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
@@ -1044,7 +1070,8 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
             throw;
         }
 
-        s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock);
+        s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock,
+            m_NetStorageRPC->m_Config.err_mode);
 
         m_Connection = json_over_uttp_sender.GetConnection();
 
@@ -1322,7 +1349,8 @@ void SNetStorageObjectRPC::Close()
         CReadJsonFromSocket message_reader;
 
         s_TrapErrors(m_OriginalRequest,
-                message_reader.ReadMessage(sock), sock);
+                message_reader.ReadMessage(sock), sock,
+                m_NetStorageRPC->m_Config.err_mode);
     }
 }
 
