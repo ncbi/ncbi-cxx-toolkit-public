@@ -205,6 +205,7 @@ private:
     bool m_ThirdParty;
     bool m_WGSMaster;
     bool m_TSAMaster;
+    bool m_TLSMaster;
 
     string m_MainTitle;
     string m_GeneralStr;
@@ -222,6 +223,7 @@ private:
 
     bool m_HTGTech;
     bool m_HTGSUnfinished;
+    bool m_IsTLS;
     bool m_IsTSA;
     bool m_IsWGS;
     bool m_IsEST_STS_GSS;

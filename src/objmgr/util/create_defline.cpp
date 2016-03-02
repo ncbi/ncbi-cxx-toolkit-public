@@ -386,6 +386,7 @@ void CDeflineGenerator::x_SetFlags (
     m_ThirdParty = false;
     m_WGSMaster = false;
     m_TSAMaster = false;
+    m_TLSMaster = false;
 
     m_MainTitle.clear();
     m_GeneralStr.clear();
@@ -402,6 +403,7 @@ void CDeflineGenerator::x_SetFlags (
 
     m_HTGTech = false;
     m_HTGSUnfinished = false;
+    m_IsTLS = false;
     m_IsTSA = false;
     m_IsWGS = false;
     m_IsEST_STS_GSS = false;
@@ -629,6 +631,13 @@ void CDeflineGenerator::x_SetFlags (
                 case NCBI_TECH(tsa):
                     m_IsTSA = true;
                     m_UseBiosrc = true;
+                    break;
+                case NCBI_TECH(targeted):
+                    m_IsTLS = true;
+                    m_UseBiosrc = true;
+                    if (m_IsVirtual) {
+                        m_TLSMaster = true;
+                    }
                     break;
                 default:
                     break;
@@ -2089,6 +2098,8 @@ void CDeflineGenerator::x_SetPrefix (
         }
     } else if (m_IsTSA) {
         prefix = "TSA: ";
+    } else if (m_IsTLS) {
+        prefix = "TLS: ";
     } else if (m_ThirdParty) {
         if (m_TPAExp) {
             prefix = "TPA_exp: ";
@@ -2220,6 +2231,16 @@ void CDeflineGenerator::x_SetSuffix (
                             break;
                     }
                 }
+            }
+            break;
+        case NCBI_TECH(targeted):
+            if (m_TLSMaster) {
+                if (m_MainTitle.find ("targeted locus study")
+                    == NPOS){
+                    type = ", targeted locus study";
+                }
+            } else {
+                type += ", sequence";
             }
             break;
         default:
@@ -2543,7 +2564,7 @@ string CDeflineGenerator::GenerateDefline (
                 x_SetTitleFromProtein (bsh);
             } else if (m_IsSeg && (! m_IsEST_STS_GSS)) {
                 x_SetTitleFromSegSeq (bsh);
-            } else if (m_IsTSA || (m_IsWGS && (! m_WGSMaster))) {
+            } else if (m_IsTSA || (m_IsWGS && (! m_WGSMaster)) || (m_IsTLS && (! m_TLSMaster))) {
                 x_SetTitleFromWGS ();
             } else if (m_IsMap) {
                 x_SetTitleFromMap ();
