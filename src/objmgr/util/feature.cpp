@@ -696,7 +696,7 @@ void s_GetContentLabel
     }
     
     // Put Seq-feat qual into label
-    if (feat.IsSetQual()) {
+    if (feat.IsSetQual() && (0 == (flags & fFGL_NoQualifiers))) {
         string prefix("/");
         const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
         ITERATE( CSeq_feat::TQual, it, qual ) {
