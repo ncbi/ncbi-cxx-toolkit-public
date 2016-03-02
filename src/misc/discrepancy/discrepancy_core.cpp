@@ -142,6 +142,7 @@ void CReportNode::Copy(CRef<CReportNode> other)
     m_Hash = other->m_Hash;
     m_Fatal = other->m_Fatal;
     m_Autofix = other->m_Autofix;
+    m_Fatal = other->m_Fatal;
     m_Hash = other->m_Hash;
 }
 
@@ -162,7 +163,9 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     TReportObjectSet hash = m_Hash;
     TReportItemList subs;
     bool autofix = false;
-    NON_CONST_ITERATE (TNodeMap, it, m_Map) {
+    bool fatal = m_Fatal;
+    NON_CONST_ITERATE(TNodeMap, it, m_Map) {
+        fatal |= it->second->m_Fatal;
         CRef<CReportItem> sub = it->second->Export(test, unique);
         subs.push_back(sub);
         TReportObjectList details = sub->GetDetails();
@@ -177,6 +180,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     }
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, CDiscrepancySet::Format(m_Name, objs.size())));
     item->m_Autofix = autofix;
+    item->m_Fatal = fatal;
     item->m_Ext = m_Ext;
     item->m_Subs = subs;
     item->m_Objs = objs;

@@ -59,7 +59,9 @@ protected:
     void x_ProcessFile(const string& filename);
     void x_ProcessAll(const string& outname);
     void x_Output(const string& filename, const TDiscrepancyCaseMap& tests);
+    void x_OutputXml(const string& filename, const TDiscrepancyCaseMap& tests);
     void x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& list);
+    void x_RecursiveXmlOutput(CNcbiOfstream& out, const TReportItemList& list, size_t indent);
     void x_OutputMacro(const string& filename, const TDiscrepancyCaseMap& tests);
 
     CScope m_Scope;
@@ -70,10 +72,11 @@ protected:
     bool m_Ext;
     bool m_AutoFix;
     bool m_Macro;
+    bool m_Xml;
 };
 
 
-CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_Ext(false), m_AutoFix(false), m_Macro(false)
+CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_Ext(false), m_AutoFix(false), m_Macro(false), m_Xml(false)
 {
 }
 
@@ -135,6 +138,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("X", "ExpandCategories", "Expand Report Categories (comma-delimited list of test names or ALL)", CArgDescriptions::eString);
     arg_desc->AddFlag("F", "Autofix");
     arg_desc->AddFlag("R", "Generate Autofix MACRO file");
+    arg_desc->AddFlag("XML", "Generate XML output");
 
 /*
     arg_desc->AddOptionalKey("M", "MessageLevel", 
@@ -157,6 +161,9 @@ string CDiscRepApp::x_ConstructOutputName(const string& input)
     CDirEntry fname(input);
     string path = args["r"] ? args["r"].AsString() : fname.GetDir();
     string ext = args["s"] ? args["s"].AsString() : ".dr";
+    if (m_Xml) {
+        ext += ".xml";
+    }
     return CDirEntry::MakePath(path, fname.GetBase(), ext);
 }
 
@@ -276,7 +283,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
     if (m_Macro) {
         x_OutputMacro(x_ConstructMacroName(fname), Tests->GetTests());
     }
-    x_Output(x_ConstructOutputName(fname), Tests->GetTests());
+    m_Xml ? x_OutputXml(x_ConstructOutputName(fname), Tests->GetTests()) : x_Output(x_ConstructOutputName(fname), Tests->GetTests());
 }
 
 
@@ -299,7 +306,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
     if (m_Macro) {
         x_OutputMacro(x_ConstructMacroName(outname), Tests->GetTests());
     }
-    x_Output(outname, Tests->GetTests());
+    m_Xml ? x_OutputXml(outname, Tests->GetTests()) : x_Output(outname, Tests->GetTests());
 }
 
 
@@ -336,19 +343,80 @@ void CDiscRepApp::x_Output(const string& filename, const TDiscrepancyCaseMap& te
     out << "Discrepancy Report Results\n\n";
 
     out << "Summary\n";
-    ITERATE (TDiscrepancyCaseMap, tst, tests) {
+    ITERATE(TDiscrepancyCaseMap, tst, tests) {
         TReportItemList rep = tst->second->GetReport();
-        ITERATE (TReportItemList, it, rep) {
+        ITERATE(TReportItemList, it, rep) {
             out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
         }
     }
     if (summary) return;
 
     out << "\nDetailed Report\n\n";
-    ITERATE (TDiscrepancyCaseMap, tst, tests) {
+    ITERATE(TDiscrepancyCaseMap, tst, tests) {
         TReportItemList rep = tst->second->GetReport();
         x_RecursiveOutput(out, rep);
     }
+}
+
+
+static const size_t XML_INDENT = 2;
+
+
+static void Indent(CNcbiOfstream& out, size_t indent)
+{
+    for (size_t i = 0; i < indent; i++) {
+        out << ' ';
+    }
+}
+
+
+void CDiscRepApp::x_RecursiveXmlOutput(CNcbiOfstream& out, const TReportItemList& list, size_t indent)
+{
+    ITERATE(TReportItemList, it, list) {
+        if ((*it)->IsExtended() && !m_Ext) {
+            continue;
+        }
+        Indent(out, indent);
+        out << "<item";
+        if ((*it)->CanAutofix()) {
+            out << " autofix=\"true\"";
+        }
+        if ((*it)->IsFatal()) {
+            out << " fatal=\"true\"";
+        }
+        out << " message=\"" << (*it)->GetMsg() << "\">\n";
+        TReportItemList subs = (*it)->GetSubitems();
+        if (!subs.empty() && (m_Ext || !subs[0]->IsExtended())) {
+            x_RecursiveXmlOutput(out, subs, indent + XML_INDENT);
+        }
+        else {
+            TReportObjectList det = (*it)->GetDetails();
+            ITERATE(TReportObjectList, obj, det) {
+                Indent(out, indent + XML_INDENT);
+                out << "<object text=\"" << (*obj)->GetText() << "\"/>\n";
+            }
+        }
+        Indent(out, indent);
+        out << "</item>\n";
+    }
+}
+
+
+void CDiscRepApp::x_OutputXml(const string& filename, const TDiscrepancyCaseMap& tests)
+{
+    CNcbiOfstream out(filename.c_str(), ofstream::out);
+    out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    out << "<discrepancy_report>\n";
+
+    ITERATE(TDiscrepancyCaseMap, tst, tests) {
+        Indent(out, XML_INDENT);
+        out << "<test name = \"" << tst->first << "\">\n";
+        TReportItemList rep = tst->second->GetReport();
+        x_RecursiveXmlOutput(out, rep, XML_INDENT * 2);
+        Indent(out, XML_INDENT);
+        out << "</test>\n";
+    }
+    out << "</discrepancy_report>";
 }
 
 
@@ -447,6 +515,7 @@ int CDiscRepApp::Run(void)
     if (args["L"]) m_Lineage = args["L"].AsString();
     if (args["F"]) m_AutoFix = args["F"].AsBoolean();
     if (args["R"]) m_Macro = args["R"].AsBoolean();
+    if (args["XML"]) m_Xml = args["XML"].AsBoolean();
 
     // run tests
     if (args["o"]) {

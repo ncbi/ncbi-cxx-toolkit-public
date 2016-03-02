@@ -74,6 +74,7 @@ public:
     virtual TReportObjectList GetDetails(void) const = 0;
     virtual vector<CRef<CReportItem> > GetSubitems(void) const = 0;
     virtual bool CanAutofix(void) const = 0;
+    virtual bool IsFatal(void) const = 0;
     virtual bool IsExtended(void) const = 0;
     virtual CRef<CAutofixReport> Autofix(objects::CScope&) = 0;
 };

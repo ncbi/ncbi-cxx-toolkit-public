@@ -976,8 +976,7 @@ DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
 
 
 // ORDERED_LOCATION
-DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eOncaller,
-                 "Location is ordered (intervals interspersed with gaps)")
+DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eOncaller, "Location is ordered (intervals interspersed with gaps)")
 {
     if( ! obj.IsSetLocation() ) {
         return;
@@ -986,9 +985,7 @@ DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eOncaller,
     CSeq_loc_CI loc_ci(obj.GetLocation(), CSeq_loc_CI::eEmpty_Allow);
     for( ; loc_ci; ++loc_ci) {
         if( loc_ci.GetEmbeddingSeq_loc().IsNull() ) {
-            CReportNode & message_report_node =
-                m_Objs["[n] feature[s] [has] ordered location[s]"];
-            message_report_node.Autofix();
+            CReportNode & message_report_node = m_Objs["[n] feature[s] [has] ordered location[s]"];
             message_report_node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true, true), false);
             return;
         }

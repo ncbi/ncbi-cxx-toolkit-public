@@ -154,17 +154,19 @@ class CReportNode;
 class CDiscrepancyItem : public CReportItem
 {
 public:
-    CDiscrepancyItem(CDiscrepancyCase& t, const string& s) : m_Msg(s), m_Autofix(false), m_Ext(false), m_Test(&t) {}
+    CDiscrepancyItem(CDiscrepancyCase& t, const string& s) : m_Msg(s), m_Autofix(false), m_Fatal(false), m_Ext(false), m_Test(&t) {}
     string GetTitle(void) const { return m_Test->GetName();}
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
     TReportItemList GetSubitems(void) const { return m_Subs;}
     bool CanAutofix(void) const { return m_Autofix; }
+    bool IsFatal(void) const { return m_Fatal; }
     bool IsExtended(void) const { return m_Ext; }
     CRef<CAutofixReport> Autofix(CScope& scope);
 protected:
     string m_Msg;
     bool m_Autofix;
+    bool m_Fatal;
     bool m_Ext;
     TReportObjectList m_Objs;
     TReportItemList m_Subs;
@@ -196,7 +198,6 @@ public:
     CReportNode& operator[](const string& name);
     
     CReportNode& Fatal(bool b = true) { m_Fatal = b; return *this; }
-    CReportNode& Autofix(bool b = true) { m_Autofix = b; return *this; }
     CReportNode& Ext(bool b = true) { m_Ext = b; return *this; }
 
     static bool Exist(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
