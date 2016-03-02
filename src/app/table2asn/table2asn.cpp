@@ -932,11 +932,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     {
         validator.Cleanup(*entry, m_context.m_cleanup);
     }
-    {
-        //CFeatureTableReader::GenerateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"));
-    }
-
-    }
+        
+    CFeatureTableReader::GenerateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"));
+}
 
 string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
 {
