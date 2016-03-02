@@ -898,6 +898,9 @@ protected:
     virtual string x_GetCDSIdString(const CBioseq_Handle& handle,
                                     const CSeq_feat& cds);
 
+    virtual string x_GetRNAIdString(const CBioseq_Handle& handle,
+                                    const CSeq_feat& rna);
+
     virtual string x_GetProtIdString(const CBioseq_Handle& handle,
                                      const CSeq_feat& prot);
 

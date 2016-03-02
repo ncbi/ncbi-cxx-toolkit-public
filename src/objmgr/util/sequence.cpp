@@ -2499,16 +2499,30 @@ string CFastaOstream::x_GetCDSIdString(const CBioseq_Handle& handle,
 }
 
 
-string CFastaOstream::x_GetGeneIdString(const CBioseq_Handle& handle, 
-                                        const CSeq_feat& gene)
+
+string CFastaOstream::x_GetRNAIdString(const CBioseq_Handle& handle,
+                                       const CSeq_feat& feat)
 {
-    const auto& src_loc = gene.GetLocation();
-    
+    if (!feat.IsSetData() ||
+        !feat.GetData().IsRna()) {
+        return "";
+    } 
+
+
+    const auto& src_loc = feat.GetLocation();
+
     auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
-    id_string += "_gene_" + to_string(++m_FeatCount);
+
+    if (!feat.GetData().GetRna().IsSetType()) {
+        return id_string +  "_rna" + to_string(++m_FeatCount);
+    }
+
+//    auto rna_type = feat.GetData().GetRna().GetType();
+// Probably need to extend this to distinguish between RNA types
 
     return id_string;
 }
+
 
 
 string CFastaOstream::x_GetProtIdString(const CBioseq_Handle& handle,
@@ -2534,6 +2548,17 @@ string CFastaOstream::x_GetProtIdString(const CBioseq_Handle& handle,
     return id_string;
 }
 
+
+string CFastaOstream::x_GetGeneIdString(const CBioseq_Handle& handle, 
+                                        const CSeq_feat& gene)
+{
+    const auto& src_loc = gene.GetLocation();
+    
+    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
+    id_string += "_gene_" + to_string(++m_FeatCount);
+
+    return id_string;
+}
 
 void CFastaOstream::x_AddGeneAttributes(const CBioseq_Handle& handle, 
                                         const CSeq_feat& feat,
@@ -2689,10 +2714,100 @@ void CFastaOstream::x_AddPartialAttribute(const CBioseq_Handle& handle,
 }
 
 
+bool s_GetAaName(const CCode_break& cb, string& aaName)
+{
+    const char* AANames[] = {
+        "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
+        "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", "Ser", "Thr", "Val",
+        "Trp", "Other", "Tyr", "Glx", "Sec", "TERM", "Pyl"
+    };
+
+    static const char* other = "OTHER";
+    unsigned char aa(0);
+    switch (cb.GetAa().Which()) {
+        case CCode_break::C_Aa::e_Ncbieaa:
+            aa = cb.GetAa().GetNcbieaa();
+            aa = CSeqportUtil::GetMapToIndex(
+                    CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
+            break;
+        case CCode_break::C_Aa::e_Ncbi8aa:
+            aa = cb.GetAa().GetNcbi8aa();
+            break;
+        case CCode_break::C_Aa::e_Ncbistdaa:
+            aa = cb.GetAa().GetNcbistdaa();
+            break;
+        default:
+            return false;
+    }
+    aaName = ((aa < sizeof(AANames)/sizeof(*AANames)) ? AANames[aa] : other);
+    return true;
+}
+
+
+bool s_GetCodeBreakString(const CCode_break& cb, string cbString)
+{
+    string cb_str("(pos:");
+    if (cb.IsSetLoc()) {
+        const auto& loc = cb.GetLoc();
+        switch( loc.Which() ) {
+            default:
+                cb_str += NStr::IntToString(loc.GetStart(eExtreme_Positional)+1);
+                cb_str += "..";
+                cb_str += NStr::IntToString(loc.GetStop(eExtreme_Positional)+1);
+                break;
+            case CSeq_loc::e_Int:
+                const auto& intv = loc.GetInt();
+                string intv_str = NStr::IntToString(intv.GetFrom()+1);
+                intv_str += "..";
+                intv_str += NStr::IntToString(intv.GetTo()+1);
+                if ( intv.IsSetStrand() && intv.GetStrand() == eNa_strand_minus) {
+                    intv_str = "complement(" + intv_str + ")";
+                }
+                cb_str += intv_str;
+                break;    
+        }
+
+    }
+    cb_str += ",aa:";
+
+    string aaName = "";
+    if (!s_GetAaName(cb, aaName)) {
+        return false;
+    }
+
+    cb_str += aaName + ")";
+    cbString = cb_str;
+    return true;
+}
+
+
 void CFastaOstream::x_AddTranslationExceptionAttribute(const CBioseq_Handle& handle,
                                                        const CSeq_feat& feat,
                                                        string& defline)
 {
+    if (!feat.IsSetData() ||
+        !feat.GetData().IsCdregion() || 
+        !feat.GetData().GetCdregion().IsSetCode_break()){
+        return;
+    }
+
+    const auto code_breaks = feat.GetData().GetCdregion().GetCode_break();
+
+    string transl_exception = "";
+    for (auto && code_break : code_breaks) {
+        string cb_string = "";
+        if (s_GetCodeBreakString(*code_break, cb_string)) {
+            if (!transl_exception.empty()) {
+                transl_exception += ",";
+            }
+            transl_exception += cb_string;
+        }
+    }
+
+    if (!transl_exception.empty()) {
+        defline += " [transl_exception=" + transl_exception + "]";
+    }
+
     return;
 }
 
