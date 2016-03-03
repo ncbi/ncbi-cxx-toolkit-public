@@ -1153,8 +1153,8 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
     }
 
 #ifdef NCBI_OS_DARWIN
-out:
-#endif
+ out:
+#endif /*NCBI_OS_DARWIN*/
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     if (!SOCK_isipEx(hostname, 1)  ||  !host) {
         char addr[40];
@@ -2912,8 +2912,9 @@ static EIO_Status s_Read_(SOCK    sock,
                 break/*error*/;
             }
             status = sslread(sock->session, x_buf, n_todo, &x_read, &error);
-            assert(status == eIO_Success  ||  error);
             assert(status == eIO_Success  ||  !x_read);
+            assert(status == eIO_Success  ||  error);
+            assert(x_read <= n_todo);
 
             /* statistics & logging */
             if ((status != eIO_Success  &&  sock->log != eOff)  ||
@@ -3358,8 +3359,8 @@ static EIO_Status s_Send(SOCK        sock,
 
 /* Wrapper for s_Send() that slices the output buffer for some brain-dead
  * systems (e.g. old Macs) that cannot handle large data chunks in "send()".
- * Return eIO_Success if some data have been successfully sent;
- * an error code if nothing at all has been sent.
+ * Return eIO_Success only if some data have been successfully sent;
+ * otherwise, an error code if nothing at all has been sent.
  */
 #ifdef SOCK_SEND_SLICE
 #  undef s_Send
@@ -3375,17 +3376,17 @@ static EIO_Status s_Send(SOCK        sock,
     assert(!*n_written);
 
     do {
-        size_t      n_todo = size > SOCK_SEND_SLICE ? SOCK_SEND_SLICE : size;
-        const char* temp   = (const char*) data + *n_written;
-        size_t      n_done = 0;
-        status = s_Send_(sock, temp, n_todo, &n_done, flag);
-        assert(status == eIO_Success  ||  !n_done);
+        size_t n_todo = size > SOCK_SEND_SLICE ? SOCK_SEND_SLICE : size;
+        size_t n_done = 0;
+        status = s_Send_(sock, data, n_todo, &n_done, flag);
+        assert((status == eIO_Success) == (n_done > 0));
         if (status != eIO_Success)
             break;
         *n_written += n_done;
         if (n_todo != n_done)
             break;
         size       -= n_done;
+        data        = (const char*) data + n_done;
     } while (size);
 
     return *n_written ? eIO_Success : status;
@@ -3393,13 +3394,14 @@ static EIO_Status s_Send(SOCK        sock,
 #endif /*SOCK_SEND_SLICE*/
 
 
+/* Return eIO_Success iff some data have been written; error code otherwise */
 static EIO_Status s_WriteData(SOCK        sock,
                               const void* data,
                               size_t      size,
                               size_t*     n_written,
                               int/*bool*/ oob)
 {
-    assert(sock->type == eSocket  &&  !sock->pending  &&  size > 0);
+    assert(sock->type == eSocket  &&  !sock->pending  &&  size);
 
     if (sock->session) {
         int error;
@@ -3413,6 +3415,7 @@ static EIO_Status s_WriteData(SOCK        sock,
         status = sslwrite(sock->session, data, size, n_written, &error);
         assert((status == eIO_Success) == (*n_written > 0));
         assert(status == eIO_Success  ||  error);
+        assert(*n_written <= size);
 
         /* statistics & logging */
         if ((status != eIO_Success  &&  sock->log != eOff)  ||
@@ -3448,16 +3451,17 @@ static size_t x_WriteBuf(void* data, const void* buf, size_t size)
     do {
         size_t x_written;
         ctx->status = s_WriteData(ctx->sock, buf, size, &x_written, 0);
-        if (ctx->status != eIO_Success) {
-            assert(!x_written);
+        assert((ctx->status == eIO_Success) == (x_written > 0));
+        assert(x_written <= size);
+        if (ctx->status != eIO_Success)
             break;
-        }
         n_written += x_written;
         size      -= x_written;
         buf        = (const char*) buf + x_written;
     } while (size);
 
     assert(!size/*n_written == initial size*/  ||  ctx->status != eIO_Success);
+
     return n_written;
 }
 
@@ -3570,7 +3574,7 @@ static EIO_Status s_Write_(SOCK        sock,
         return size ? status : eIO_Success;
     }
 
-    assert(sock->w_len == 0);
+    assert(size  &&  sock->w_len == 0);
     return s_WriteData(sock, data, size, n_written, oob);
 }
 
@@ -7958,7 +7962,7 @@ extern int/*bool*/ SOCK_isipEx(const char* str, int/*bool*/ fullquad)
         if (!isdigit((unsigned char)(*str)))
             return 0/*false*/;
         errno = 0;
-        val = strtoul(str, &e, fullquad ? 10 : 0);
+        val = strtoul(str, &e, 0);
         if (errno  ||  str == e)
             return 0/*false*/;
         str = e;
