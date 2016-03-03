@@ -443,7 +443,6 @@ private:
     CNetScheduleExecutor m_NetScheduleExecutor;
     auto_ptr<CGridClient> m_GridClient;
     CNetStorage m_NetStorage;
-    CNetStorageByKey m_NetStorageByKey;
     CNetStorageAdmin m_NetStorageAdmin;
     CCompoundIDPool m_CompoundIDPool;
 
@@ -573,7 +572,7 @@ private:
     int PrintNetScheduleStats();
     void PrintNetScheduleStats_Generic(ENetScheduleStatTopic topic);
 
-    void SetUp_NetStorageCmd(EAPIClass api_class,
+    string SetUp_NetStorageCmd(EAPIClass api_class,
             EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
     void NetStorage_PrintServerReply(CJsonNode& server_reply);
     int PrintNetStorageServerInfo();

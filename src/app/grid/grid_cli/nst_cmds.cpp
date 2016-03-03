@@ -36,7 +36,7 @@
 
 USING_NCBI_SCOPE;
 
-void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
+string CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity /*cmd_severity*/)
 {
     m_APIClass = api_class;
@@ -62,8 +62,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     if (IsOptionExplicitlySet(eNetCache)) {
         init_string += "&nc=";
         init_string += NStr::URLEncode(m_Opts.nc_service);
-        init_string += "&cache=";
-        init_string += NStr::URLEncode(m_Opts.app_domain);
     }
 
     string auth;
@@ -85,14 +83,14 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     if (IsOptionSet(eNamespace)) {
         init_string += "&namespace=";
         init_string += NStr::URLEncode(m_Opts.app_domain);
-        m_NetStorageByKey = CCombinedNetStorageByKey(init_string,
-                m_Opts.netstorage_flags);
     }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     if (IsOptionExplicitlySet(eAllowXSiteConn))
         g_AllowXSiteConnections(m_NetStorage);
 #endif
+
+    return init_string;
 }
 
 static void s_NetStorage_RemoveStdReplyFields(CJsonNode& server_reply)
@@ -291,7 +289,7 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
 
 int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
 {
-    SetUp_NetStorageCmd(eNetStorageAPI);
+    const string init_string = SetUp_NetStorageCmd(eNetStorageAPI);
 
     CNetStorageObject netstorage_object;
 
@@ -303,9 +301,11 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
         break;
 
     case OPTION_N(1) + OPTION_N(2):
-        netstorage_object = m_NetStorageByKey.Open(m_Opts.id,
-                m_Opts.netstorage_flags);
+    {
+        CCombinedNetStorageByKey nst(init_string, m_Opts.netstorage_flags);
+        netstorage_object = nst.Open(m_Opts.id, m_Opts.netstorage_flags);
         break;
+    }
 
     case 0:
         netstorage_object = m_NetStorage.Create(m_Opts.netstorage_flags);

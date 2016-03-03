@@ -56,8 +56,7 @@ CGridCommandLineInterfaceApp::CGridCommandLineInterfaceApp(
     m_ArgV(argv),
     m_AdminMode(false),
     m_NetICacheClient(eVoid),
-    m_NetStorage(eVoid),
-    m_NetStorageByKey(eVoid)
+    m_NetStorage(eVoid)
 {
 }
 
@@ -686,19 +685,16 @@ struct SCommandDefinition {
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttr,
         "getattr", "Get a NetStorage object attribute value.",
-        MAY_REQUIRE_LOCATION_HINTING
-        ABOUT_NETSTORAGE_OPTION,
+        "",
         {eObjectLoc, eAttrName, eNetStorage,
-            eNetCache, eCache, eLoginToken, eAuth,
+            eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_SetAttr,
         "setattr", "Set a NetStorage object attribute value.",
-        MAY_REQUIRE_LOCATION_HINTING
-        ABOUT_NETSTORAGE_OPTION,
+        "",
         {eObjectLoc, eAttrName, eAttrValue, eNetStorage,
-            eNetCache, eCache, eLoginToken, eAuth,
-            eFileTrackAPIKey,
+            eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
