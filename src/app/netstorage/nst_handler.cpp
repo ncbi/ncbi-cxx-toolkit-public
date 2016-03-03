@@ -1637,16 +1637,9 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             if (key != "CreationTime")
                 reply.SetByKey(it.GetKey(), it.GetNode());
         }
-    } catch (const CNetStorageException &  ex) {
-        if (ex.GetErrCode() == CNetStorageException::eNotExists)
-            AppendWarning(reply,
-                          NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
-                          "Error while getting remote object info: " +
-                          string(ex.what()), ex.GetType(),
-                          eRemoteObjectInfoWarning);
-        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
-            m_Timing.Append("NetStorageAPI GetInfo exception", start);
     } catch (const exception &  ex) {
+        ERR_POST(ex);
+
         string          error_scope;
         Int8            error_code;
         unsigned int    error_sub_code;
@@ -1655,15 +1648,17 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                                       &error_sub_code) == false)
             error_sub_code = eRemoteObjectInfoWarning;
 
-        AppendWarning(reply, error_code,
-                      "Error while getting remote object info: " +
-                      string(ex.what()), error_scope, error_sub_code);
+        AppendError(reply, error_code,
+                    "Error while getting remote object info: " +
+                    string(ex.what()), error_scope, error_sub_code);
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI GetInfo exception", start);
     } catch (...) {
-        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
-                      "Unknown error while getting remote object info",
-                      kScopeUnknownException, eRemoteObjectInfoWarning);
+        string          msg = "Unknown error while getting remote object info";
+
+        ERR_POST(msg);
+        AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                    msg, kScopeUnknownException, eRemoteObjectInfoWarning);
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI GetInfo exception", start);
     }
