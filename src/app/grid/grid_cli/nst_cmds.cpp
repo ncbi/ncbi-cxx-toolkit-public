@@ -64,6 +64,11 @@ string CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         init_string += NStr::URLEncode(m_Opts.nc_service);
     }
 
+    if (IsOptionSet(eNamespace)) {
+        init_string += "&namespace=";
+        init_string += NStr::URLEncode(m_Opts.app_domain);
+    }
+
     string auth;
 
     if (IsOptionSet(eAuth)) {
@@ -79,11 +84,6 @@ string CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
 
     if (api_class == eNetStorageAdmin)
         m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
-
-    if (IsOptionSet(eNamespace)) {
-        init_string += "&namespace=";
-        init_string += NStr::URLEncode(m_Opts.app_domain);
-    }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     if (IsOptionExplicitlySet(eAllowXSiteConn))
