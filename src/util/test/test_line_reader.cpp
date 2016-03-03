@@ -175,7 +175,9 @@ BOOST_AUTO_TEST_CASE( RunFile )
 
     if (args["ins"]) {
         list<string> ff;
-        NStr::Split(args["ins"].AsString(), " ,", ff);
+        NStr::Split(args["ins"].AsString(), " ,", ff, 
+                    NStr::ESplitFlags::fSplit_MergeDelimiters  
+                        | NStr::ESplitFlags::fSplit_Truncate);
         ITERATE(list<string>, it, ff) {
             s_RunFile(*it);
         }
