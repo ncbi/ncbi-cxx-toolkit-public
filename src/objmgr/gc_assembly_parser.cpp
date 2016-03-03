@@ -85,6 +85,7 @@ void CGC_Assembly_Parser::x_InitSeq_entry(CRef<CSeq_entry> entry,
 {
     entry->SetSet().SetLevel(parent ? parent->GetSet().GetLevel() + 1 : 1);
     entry->SetSet().SetClass(CBioseq_set::eClass_segset);
+    entry->SetSet().SetSeq_set(); // mandatory member, must be initialized
     if (parent) {
         parent->SetSet().SetSeq_set().push_back(entry);
     }
@@ -198,6 +199,13 @@ void CGC_Assembly_Parser::x_ParseGCSequence(const CGC_Sequence& gc_seq,
                     break;
                 }
             }
+        }
+    }
+    // Same as above, but structure is missing and sequences contain just one item.
+    else if (gc_seq.IsSetSequences()  &&  gc_seq.GetSequences().size() == 1) {
+        const CGC_TaggedSequences& tagged_seq = *gc_seq.GetSequences().front();
+        if (tagged_seq.GetSeqs().size() == 1) {
+            struct_syn = CSeq_id_Handle::GetHandle(tagged_seq.GetSeqs().front()->GetSeq_id());
         }
     }
 
