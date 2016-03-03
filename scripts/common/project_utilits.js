@@ -10,7 +10,7 @@ var g_open_solution = true;
 var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
 
-// valid:   "71", "80", "80x64", "90", "90x64", "100", "100x64", "120", "120x64"
+// valid:   "71", "80", "80x64", "90", "90x64", "100", "100x64", "120", "120x64", "140", "140x64"
 var g_def_msvcver = "120";
 var g_msvcver     = "120";
 
@@ -501,6 +501,7 @@ function SetMsvcVer(oArgs, flag)
                             && msvcver != "100" && msvcver != "100x64"
                             && msvcver != "110" && msvcver != "110x64"
                             && msvcver != "120" && msvcver != "120x64"
+                            && msvcver != "140" && msvcver != "140x64"
            ) {
             WScript.Echo("ERROR: Unknown version of MSVC requested: " + msvcver);
             WScript.Quit(1);    
@@ -525,6 +526,9 @@ function GetMsvcFolder()
     }
     if (g_msvcver == "120" || g_msvcver == "120x64") {
         return "vs2013";
+    }
+    if (g_msvcver == "140" || g_msvcver == "140x64") {
+        return "vs2015";
     }
     return "msvc710_prj";
 }
@@ -608,6 +612,10 @@ function GetDefaultSuffix()
         s = "vs2013";
     } else if (g_msvcver == "110x64" || g_msvcver == "120x64") {
         s = "vs2013.64";
+    } else if (g_msvcver == "140") {
+        s = "vs2015";
+    } else if (g_msvcver == "140x64") {
+        s = "vs2015.64";
     } else {
         s = "msvc71";
     }
@@ -640,6 +648,10 @@ function GetPtbTargetSolutionArgs(oShell, ptb)
         s = " -ide 1200 -arch Win32";
     } else if (g_msvcver == "120x64") {
         s = " -ide 1200 -arch x64";
+    } else if (g_msvcver == "140") {
+        s = " -ide 1400 -arch Win32";
+    } else if (g_msvcver == "140x64") {
+        s = " -ide 1400 -arch x64";
     } else {
         s = " -ide 710 -arch Win32";
     }
@@ -649,7 +661,7 @@ function GetTargetPlatform()
 {
     if (g_msvcver == "80x64"  || g_msvcver == "90x64" ||
         g_msvcver == "100x64" || g_msvcver == "110x64" ||
-        g_msvcver == "120x64") {
+        g_msvcver == "120x64" || g_msvcver == "140x64") {
         return "x64";
     }
     return "Win32";
