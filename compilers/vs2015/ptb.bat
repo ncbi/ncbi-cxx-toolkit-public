@@ -107,7 +107,7 @@ shift
 goto :PARSE
 :endparse
 if "%REQ_GUI_CFG%"=="YES" (
-  if %PTB_VER_MAJOR% GEQ 2 (
+REM  if %PTB_VER_MAJOR% GEQ 2 (
     if exist "%PTBGUI%" (
       java -version >NUL 2>&1
       if errorlevel 1 (
@@ -118,7 +118,7 @@ if "%REQ_GUI_CFG%"=="YES" (
     ) else (
       echo WARNING: "%PTBGUI%" not found
     )
-  )
+REM  )
 )
 
 
@@ -154,14 +154,14 @@ if "%PREBUILT_PTB_EXE%"=="bootstrap" (
     exit /b 1
   )
 ) else (
-  if %PTB_VER% GEQ 180 (
+REM  if %PTB_VER% GEQ 180 (
     set DEF_PTB=%DEFPTB_LOCATION%\msvc\%DEFPTB_VERSION%\project_tree_builder.exe
-  ) else (
-    if "%PTB_PLATFORM%"=="x64" (
-      set DEF_PTB=%DEFPTB_LOCATION%\msvc9.64\%DEFPTB_VERSION%\project_tree_builder.exe
-    ) else (
-      set DEF_PTB=%DEFPTB_LOCATION%\msvc9\%DEFPTB_VERSION%\project_tree_builder.exe
-    )
+REM  ) else (
+REM    if "%PTB_PLATFORM%"=="x64" (
+REM      set DEF_PTB=%DEFPTB_LOCATION%\msvc9.64\%DEFPTB_VERSION%\project_tree_builder.exe
+REM    ) else (
+REM      set DEF_PTB=%DEFPTB_LOCATION%\msvc9\%DEFPTB_VERSION%\project_tree_builder.exe
+REM    )
   )
 )
 if exist "%DEF_PTB%" (
@@ -174,9 +174,9 @@ if exist "%DEF_PTB%" (
 REM -------------------------------------------------------------------------
 REM Misc settings
 
-if %PTB_VER% GEQ 180 (
+REM if %PTB_VER% GEQ 180 (
   set PTB_EXTRA=%PTB_EXTRA% -ide %IDE% -arch %PTB_PLATFORM%
-)
+REM )
 if not exist "%PTB_INI%" (
   echo ERROR: "%PTB_INI%" not found
   exit /b 1
