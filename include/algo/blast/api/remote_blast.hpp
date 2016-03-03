@@ -485,6 +485,8 @@ public:
     // For Psiblast
     unsigned int GetPsiNumberOfIterations(void);
 
+    bool IsErrMsgArchive(void);
+
 private:
 
     bool x_HasRetrievedSubjects() const {

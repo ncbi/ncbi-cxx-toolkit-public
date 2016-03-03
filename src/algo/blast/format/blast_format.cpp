@@ -879,8 +879,7 @@ CConstRef<objects::CBioseq> CBlastFormat::x_CreateSubjectBioseq()
 }
 
 /// Auxiliary function to print the BLAST Archive in multiple output formats
-static void s_PrintArchive(CRef<objects::CBlast4_archive> archive,
-                         CNcbiOstream& out)
+void CBlastFormat::PrintArchive(CRef<objects::CBlast4_archive> archive, CNcbiOstream& out)
 {
     if (archive.Empty()) {
         return;
@@ -899,7 +898,8 @@ void
 CBlastFormat::WriteArchive(blast::IQueryFactory& queries,
                            blast::CBlastOptionsHandle& options_handle,
                            const CSearchResultSet& results,
-                           unsigned int num_iters)
+                           unsigned int num_iters,
+                           const list<CRef<CBlast4_error> > & msg)
 {
     CRef<objects::CBlast4_archive>  archive;
     if (m_IsBl2Seq)
@@ -926,17 +926,26 @@ CBlastFormat::WriteArchive(blast::IQueryFactory& queries,
     	else
     		archive = BlastBuildArchive(queries, options_handle, results,  m_DbName);
     }
-    s_PrintArchive(archive, m_Outfile);
+
+    if(msg.size() > 0) {
+    	archive->SetMessages() = msg;
+    }
+    PrintArchive(archive, m_Outfile);
 }
 
 void
 CBlastFormat::WriteArchive(objects::CPssmWithParameters & pssm,
                            blast::CBlastOptionsHandle& options_handle,
                            const CSearchResultSet& results,
-                           unsigned int num_iters)
+                           unsigned int num_iters,
+                           const list<CRef<CBlast4_error> > & msg)
 {
     CRef<objects::CBlast4_archive> archive(BlastBuildArchive(pssm, options_handle, results,  m_DbName, num_iters));
-    s_PrintArchive(archive, m_Outfile);
+
+    if(msg.size() > 0) {
+    	archive->SetMessages() = msg;
+    }
+    PrintArchive(archive, m_Outfile);
 }
 
 

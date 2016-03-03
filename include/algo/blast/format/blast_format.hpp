@@ -53,6 +53,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
 #include <algo/blast/format/sam.hpp>
+#include <objects/blast/blast__.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -233,7 +234,8 @@ public:
     void WriteArchive(blast::IQueryFactory& queries,
                            blast::CBlastOptionsHandle& options_handle,
                            const blast::CSearchResultSet& results,
-                           unsigned int num_iters = 0);
+                           unsigned int num_iters = 0,
+                           const list<CRef<objects::CBlast4_error> >& msg = list<CRef<objects::CBlast4_error> > () );
 
     /// Writes out the pssm and results as an "archive" format
     /// @param pssm 	psiblast pssm
@@ -243,7 +245,8 @@ public:
     void WriteArchive(objects::CPssmWithParameters & pssm,
                       blast::CBlastOptionsHandle& options_handle,
                       const blast::CSearchResultSet& results,
-                      unsigned int num_iters = 0);
+                      unsigned int num_iters = 0,
+                      const list<CRef<objects::CBlast4_error> > & msg = list<CRef<objects::CBlast4_error> >());
 
     /// Print the footer of the blast report
     /// @param options Options used for performing the blast search [in]
@@ -273,6 +276,9 @@ public:
 
     /// Set Alignment Length
     void SetLineLength(size_t len) {m_LineLength = len;}
+
+    static void PrintArchive(CRef<objects::CBlast4_archive> archive,
+            					  CNcbiOstream& out);
 private:
     /// Format type
     blast::CFormattingArgs::EOutputFormat m_FormatType;

@@ -1655,8 +1655,45 @@ CRemoteBlast::LoadFromArchive()
 
       m_Archive.Reset(new CBlast4_archive);
       *m_ObjectStream >> *m_Archive;
-      x_GetRequestInfoFromFile(); // update info.
 
+      m_Errs.empty();
+      if(m_Archive->IsSetMessages()) {
+    	  const list< CRef< CBlast4_error > >  & msgs = m_Archive->GetMessages();
+    	  ITERATE(list< CRef< CBlast4_error > >, itr, msgs) {
+    		  if((*itr)->IsSetMessage()) {
+    			  string msg = (*itr)->GetMessage();
+    			  if((*itr)->IsSetCode()) {
+    				  switch ((*itr)->GetCode()) {
+    			  	  case EDiagSev::eDiag_Info :
+    			  		  LOG_POST(Info << msg);
+    			  		  break;
+    			  	  case EDiagSev::eDiag_Warning :
+    			  		  LOG_POST(Warning << msg);
+    			  		  break;
+    			  	  case EDiagSev::eDiag_Error :
+    			  		  LOG_POST(Error << msg);
+    			  		  break;
+    			  	  case EDiagSev::eDiag_Critical :
+    			  		  LOG_POST(Critical << msg);
+    			  		  break;
+    				  case EDiagSev::eDiag_Fatal :
+    			  		  LOG_POST(Fatal << msg);
+    					  break;
+    				  case EDiagSev::eDiag_Trace :
+    			  		  LOG_POST(Trace << msg);
+    					  break;
+    				  default :
+    			  		  LOG_POST(Error <<"Unknown Error Code: " << msg);
+    					  break;
+    				  }
+    			  }
+    		  }
+    	  }
+      }
+
+      if (!IsErrMsgArchive()) {
+    	  x_GetRequestInfoFromFile(); // update info.
+      }
       return true;
 }
 
@@ -2625,6 +2662,17 @@ unsigned int CRemoteBlast::x_GetPsiIterationsFromServer()
          catch (...) {}  // ignore errors and leave as unset
      }
      return retval;
+}
+
+bool CRemoteBlast::IsErrMsgArchive(void)
+{
+	if((m_Archive) != NULL && m_Archive->IsSetRequest() && m_Archive->GetRequest().CanGetBody() &&
+	   m_Archive->GetRequest().GetBody().IsGet_request_info() &&
+	   m_Archive->GetRequest().GetBody().GetGet_request_info().IsSetRequest_id() &&
+	   (m_Archive->GetRequest().GetBody().GetGet_request_info().GetRequest_id()  == "Error")) {
+		return true;
+	}
+	return false;
 }
 
 
