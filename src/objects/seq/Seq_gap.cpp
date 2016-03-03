@@ -46,6 +46,30 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+namespace
+{
+    string CanonicalizeString(const CTempString& sValue)
+    {
+        string newString;
+        newString.reserve(sValue.length());
+
+        ITERATE_0_IDX(ii, sValue.length()) {
+            const char ch = sValue[ii];
+            if (isupper(ch)) {
+                newString.push_back(tolower(ch));
+            }
+            else if (ch == ' ' || ch == '_') {
+                newString.push_back('-');
+            }
+            else {
+                newString.push_back(ch);
+            }
+        }
+
+        return newString;
+    }
+};
+
 // destructor
 CSeq_gap::~CSeq_gap(void)
 {
@@ -128,6 +152,44 @@ bool CSeq_gap::AddLinkageEvidence(CLinkage_evidence::TType evidence_type)
         SetLinkage_evidence().push_back(ev);
     }
     return found || changed;
+}
+
+const CSeq_gap::SGapTypeInfo *
+CSeq_gap::NameToGapTypeInfo(const CTempString & sName)
+{
+    const CSeq_gap::TGapTypeMap & gapTypeMap =
+        GetNameToGapTypeInfoMap();
+
+    TGapTypeMap::const_iterator find_iter =
+        gapTypeMap.find(CanonicalizeString(sName).c_str());
+    if (find_iter == gapTypeMap.end()) {
+        // not found
+        return NULL;
+    }
+    else {
+        return &find_iter->second;
+    }
+}
+
+// static
+const CSeq_gap::TGapTypeMap &
+CSeq_gap::GetNameToGapTypeInfoMap(void)
+{
+    // gap-type name to info
+    typedef SStaticPair<const char*, CSeq_gap::SGapTypeInfo> TGapTypeElem;
+    static const TGapTypeElem sc_gap_type_map[] = {
+        { "between-scaffolds", { CSeq_gap::eType_contig, eLinkEvid_Required } },
+        { "centromere", { CSeq_gap::eType_centromere, eLinkEvid_Forbidden } },
+        { "heterochromatin", { CSeq_gap::eType_heterochromatin, eLinkEvid_Forbidden } },
+        { "repeat-between-scaffolds", { CSeq_gap::eType_repeat, eLinkEvid_Forbidden } },
+        { "repeat-within-scaffold", { CSeq_gap::eType_repeat, eLinkEvid_Required } },
+        { "short-arm", { CSeq_gap::eType_short_arm, eLinkEvid_Forbidden } },
+        { "telomere", { CSeq_gap::eType_telomere, eLinkEvid_Forbidden } },
+        { "unknown", { CSeq_gap::eType_unknown, eLinkEvid_UnspecifiedOnly } },
+        { "within-scaffold", { CSeq_gap::eType_scaffold, eLinkEvid_Forbidden } },
+    };
+    DEFINE_STATIC_ARRAY_MAP(TGapTypeMap, sc_GapTypeMap, sc_gap_type_map);
+    return sc_GapTypeMap;
 }
 
 

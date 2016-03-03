@@ -1241,7 +1241,7 @@ bool CFastaReader::ParseGapLine(
     bool bConflictingGapTypes = false;
     // extract the mods, if any
     SGap::TNullableGapType pGapType;
-    ELinkEvid eLinkEvid = eLinkEvid_UnspecifiedOnly;
+    CSeq_gap::ELinkEvid eLinkEvid = CSeq_gap::eLinkEvid_UnspecifiedOnly;
     set<CLinkage_evidence::EType> setOfLinkageEvidence;
     ITERATE(TModKeyValueMultiMap, modKeyValue_it, modKeyValueMultiMap) {
         const TStr & sKey   = modKeyValue_it->first;
@@ -1250,7 +1250,7 @@ bool CFastaReader::ParseGapLine(
         string canonicalKey = CanonicalizeString(sKey);
         if(  canonicalKey == "gap-type") {
 
-            const SGapTypeInfo *pGapTypeInfo = NameToGapTypeInfo(sValue);
+            const CSeq_gap::SGapTypeInfo *pGapTypeInfo = CSeq_gap::NameToGapTypeInfo(sValue);
             if( pGapTypeInfo ) {
                  CSeq_gap::EType eGapType = pGapTypeInfo->m_eType;
 
@@ -1323,7 +1323,7 @@ bool CFastaReader::ParseGapLine(
 
     // check if linkage-evidence(s) compatible with gap-type
     switch( eLinkEvid ) {
-    case eLinkEvid_UnspecifiedOnly:
+    case CSeq_gap::eLinkEvid_UnspecifiedOnly:
         if( setOfLinkageEvidence.empty() ) {
             if( pGapType ) {
                 // silently add the required "unspecified"
@@ -1343,7 +1343,7 @@ bool CFastaReader::ParseGapLine(
             setOfLinkageEvidence.insert(CLinkage_evidence::eType_unspecified);
         }
         break;
-    case eLinkEvid_Forbidden:
+    case CSeq_gap::eLinkEvid_Forbidden:
         if( ! setOfLinkageEvidence.empty() ) {
             FASTA_WARNING(LineNumber(),
                 "FASTA-Reader: This gap-type cannot have any "
@@ -1353,7 +1353,7 @@ bool CFastaReader::ParseGapLine(
             setOfLinkageEvidence.clear();
         }
         break;
-    case eLinkEvid_Required:
+    case CSeq_gap::eLinkEvid_Required:
         if( setOfLinkageEvidence.empty() ) {
             setOfLinkageEvidence.insert(CLinkage_evidence::eType_unspecified);
         }
@@ -2113,43 +2113,6 @@ string CFastaReader::CanonicalizeString(const TStr & sValue)
 }
 
 // static
-const CFastaReader::SGapTypeInfo *
-CFastaReader::NameToGapTypeInfo(const CTempString & sName)
-{
-    const CFastaReader::TGapTypeMap & gapTypeMap =
-        GetNameToGapTypeInfoMap();
-
-    TGapTypeMap::const_iterator find_iter =
-        gapTypeMap.find( CanonicalizeString(sName).c_str() );
-    if( find_iter == gapTypeMap.end() ) {
-        // not found
-        return NULL;
-    } else {
-        return & find_iter->second;
-    }
-}
-
-// static
-const CFastaReader::TGapTypeMap & 
-CFastaReader::GetNameToGapTypeInfoMap(void)
-{
-    // gap-type name to info
-    typedef SStaticPair<const char*, SGapTypeInfo> TGapTypeElem;
-    static const TGapTypeElem sc_gap_type_map[] = {
-        {"between-scaffolds",        { CSeq_gap::eType_contig,          eLinkEvid_Required} },
-        {"centromere",               { CSeq_gap::eType_centromere,      eLinkEvid_Forbidden} },
-        {"heterochromatin",          { CSeq_gap::eType_heterochromatin, eLinkEvid_Forbidden} },
-        {"repeat-between-scaffolds", { CSeq_gap::eType_repeat,          eLinkEvid_Forbidden} },
-        {"repeat-within-scaffold",   { CSeq_gap::eType_repeat,          eLinkEvid_Required} },
-        {"short-arm",                { CSeq_gap::eType_short_arm,       eLinkEvid_Forbidden} },
-        {"telomere",                 { CSeq_gap::eType_telomere,        eLinkEvid_Forbidden} },
-        {"unknown",                  { CSeq_gap::eType_unknown,         eLinkEvid_UnspecifiedOnly} },
-        {"within-scaffold",          { CSeq_gap::eType_scaffold,        eLinkEvid_Forbidden} },
-    };
-    DEFINE_STATIC_ARRAY_MAP(TGapTypeMap, sc_GapTypeMap, sc_gap_type_map);
-    return sc_GapTypeMap;
-}
-
 CFastaReader::SGap::SGap(
     TSeqPos uPos,
     TSignedSeqPos uLen,

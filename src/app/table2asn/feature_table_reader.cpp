@@ -1528,7 +1528,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
 
     if (!sGT.empty())
     {
-        const CFastaReader::SGapTypeInfo * gap_type_info = CFastaReader::NameToGapTypeInfo(sGT);
+        const CSeq_gap::SGapTypeInfo * gap_type_info = CSeq_gap::NameToGapTypeInfo(sGT);
 
         if (gap_type_info)
         {
@@ -1561,7 +1561,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
                 switch (gap_type_info->m_eType)
                 {
                     /// only the "unspecified" linkage-evidence is allowed
-                case CFastaReader::eLinkEvid_UnspecifiedOnly:
+                case CSeq_gap::eLinkEvid_UnspecifiedOnly:
                     if (evidence != CLinkage_evidence::eType_unspecified)
                     {
                         m_logger->PutError(*auto_ptr<CLineError>(
@@ -1571,7 +1571,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
                     }
                     break;
                     /// no linkage-evidence is allowed
-                case CFastaReader::eLinkEvid_Forbidden:
+                case CSeq_gap::eLinkEvid_Forbidden:
                     if (evidence == CLinkage_evidence::eType_unspecified)
                     {
                         m_logger->PutError(*auto_ptr<CLineError>(
@@ -1581,7 +1581,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
                     }
                     break;
                     /// any linkage-evidence is allowed, and at least one is required
-                case CFastaReader::eLinkEvid_Required:
+                case CSeq_gap::eLinkEvid_Required:
                     break;
                 default:
                     break;

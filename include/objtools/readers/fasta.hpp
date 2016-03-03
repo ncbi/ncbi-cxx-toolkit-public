@@ -181,39 +181,6 @@ public:
     /// @returns currently set maximum ID length
     Uint4 GetMaxIDLength(void) const { return m_MaxIDLength; }
 
-    /// indicates which linkage-evidences a given gap-type
-    /// can accept, if any
-    enum ELinkEvid {
-        /// only the "unspecified" linkage-evidence is allowed
-        eLinkEvid_UnspecifiedOnly,
-        /// no linkage-evidence is allowed
-        eLinkEvid_Forbidden,
-        /// any linkage-evidence is allowed, and at least one is required
-        eLinkEvid_Required, 
-    };
-    /// Holds information about a given gap-type string
-    struct SGapTypeInfo {
-        /// The underlying type that the string corresponds to
-        CSeq_gap::EType m_eType;
-        /// Indicates what linkage-evidences are compatible with this
-        ELinkEvid       m_eLinkEvid;
-    };
-    /// Map a gap-type string to its information
-    /// Note that PCase_CStr, which means direct lookup is 
-    /// NOT insensitive to case, etc.
-    typedef CStaticArrayMap<const char *, SGapTypeInfo, PCase_CStr> TGapTypeMap;
-
-    /// From a gap-type string, get the SGapTypeInfo, 
-    /// insensitive to case, etc.  This is NOT quite the same as calling
-    /// find on the TGapTypeMap.
-    ///
-    /// @returns NULL if not found
-    static const SGapTypeInfo * NameToGapTypeInfo(const CTempString & sName);
-    /// This is for if the user needs to get the gap-type string
-    /// to SGapTypeInfo info directly (For example, to iterate through
-    /// all possible types).
-    static const TGapTypeMap & GetNameToGapTypeInfoMap(void);
-
     // Make case-sensitive and other kinds of insensitivity, too
     // (such as "spaces" and "underscores" becoming "hyphens"
     static string CanonicalizeString(const CTempString & sValue);
