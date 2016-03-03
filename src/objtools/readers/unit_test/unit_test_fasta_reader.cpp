@@ -809,14 +809,13 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
     }
 
     // test possible gap types
-    const CFastaReader::TGapTypeMap & gapTypeMap =
-        CFastaReader::GetNameToGapTypeInfoMap();
+    const CSeq_gap::TGapTypeMap & gapTypeMap = CSeq_gap::GetNameToGapTypeInfoMap();
 
     ITERATE_BOTH_BOOL_VALUES(bPutLinkEvidInInput) {
-        ITERATE( CFastaReader::TGapTypeMap, gap_type_text_it, gapTypeMap )
+        ITERATE( CSeq_gap::TGapTypeMap, gap_type_text_it, gapTypeMap )
         {
             const char *pchGapType = gap_type_text_it->first;
-            const CFastaReader::SGapTypeInfo & gapTypeInfo =
+            const CSeq_gap::SGapTypeInfo & gapTypeInfo =
                 gap_type_text_it->second;
 
             // build the data we're reading;
@@ -838,15 +837,15 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
             TWarnVec expectedWarningsVec;
             if( bPutLinkEvidInInput ) 
             {
-                if( gapTypeInfo.m_eLinkEvid == CFastaReader::eLinkEvid_Forbidden ) {
+                if( gapTypeInfo.m_eLinkEvid == CSeq_gap::eLinkEvid_Forbidden ) {
                     expectedWarningsVec.push_back(
                         ILineError::eProblem_ModifierFoundButNoneExpected);
-                } else if( gapTypeInfo.m_eLinkEvid == CFastaReader::eLinkEvid_UnspecifiedOnly ) {
+                } else if( gapTypeInfo.m_eLinkEvid == CSeq_gap::eLinkEvid_UnspecifiedOnly ) {
                     expectedWarningsVec.push_back(
                         ILineError::eProblem_ExtraModifierFound);
                 }
             } else {
-                if(gapTypeInfo.m_eLinkEvid == CFastaReader::eLinkEvid_Required ) 
+                if(gapTypeInfo.m_eLinkEvid == CSeq_gap::eLinkEvid_Required ) 
                 {
                     expectedWarningsVec.push_back(
                         ILineError::eProblem_ExpectedModifierMissing);
@@ -867,9 +866,9 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
                 s_RefStd(kArbGapLen),
                 s_RefStd(CInt_fuzz::eLim_unk),
                 s_RefStd(gapTypeInfo.m_eType),
-                s_RefOrNull(gapTypeInfo.m_eLinkEvid != CFastaReader::eLinkEvid_Forbidden,                 
+                s_RefOrNull(gapTypeInfo.m_eLinkEvid != CSeq_gap::eLinkEvid_Forbidden,                 
                     s_VecOfOne(
-                        gapTypeInfo.m_eLinkEvid == CFastaReader::eLinkEvid_Required &&
+                        gapTypeInfo.m_eLinkEvid == CSeq_gap::eLinkEvid_Required &&
                             bPutLinkEvidInInput ?
                         CLinkage_evidence::eType_pcr :
                         CLinkage_evidence::eType_unspecified)) );
@@ -877,10 +876,10 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
     }
 
     // test interaction with "unspecified"
-    ITERATE( CFastaReader::TGapTypeMap, gap_type_text_it, gapTypeMap )
+    ITERATE( CSeq_gap::TGapTypeMap, gap_type_text_it, gapTypeMap )
     {
         const char *pchGapType = gap_type_text_it->first;
-        const CFastaReader::SGapTypeInfo & gapTypeInfo = gap_type_text_it->second;
+        const CSeq_gap::SGapTypeInfo & gapTypeInfo = gap_type_text_it->second;
 
         // build the data we're reading;
         CNcbiOstrstream fasta_in_strm;
@@ -895,19 +894,19 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
 
         TWarnVec expectedWarningsVec;
         switch( gapTypeInfo.m_eLinkEvid ) {
-        case CFastaReader::eLinkEvid_UnspecifiedOnly:
+        case CSeq_gap::eLinkEvid_UnspecifiedOnly:
             // no problem
             break;
-        case CFastaReader::eLinkEvid_Required:
+        case CSeq_gap::eLinkEvid_Required:
             expectedWarningsVec.push_back(
                 ILineError::eProblem_ExpectedModifierMissing);
             break;
-        case CFastaReader::eLinkEvid_Forbidden:
+        case CSeq_gap::eLinkEvid_Forbidden:
             expectedWarningsVec.push_back(
                 ILineError::eProblem_ModifierFoundButNoneExpected);
             break;
         default:
-            BOOST_FAIL("Unknown CFastaReader::ELinkEvid: " 
+            BOOST_FAIL("Unknown CSeq_gap::ELinkEvid: " 
                 << static_cast<int>(gapTypeInfo.m_eLinkEvid) );
             break;
         }
@@ -927,7 +926,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
             s_RefStd(CInt_fuzz::eLim_unk),
             s_RefStd(gapTypeInfo.m_eType),
             s_RefOrNull(
-                gapTypeInfo.m_eLinkEvid != CFastaReader::eLinkEvid_Forbidden, 
+                gapTypeInfo.m_eLinkEvid != CSeq_gap::eLinkEvid_Forbidden, 
                 s_VecOfOne(CLinkage_evidence::eType_unspecified)) );
     }
 
