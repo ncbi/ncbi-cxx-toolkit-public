@@ -68,6 +68,11 @@
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 
+// for allowing remote fetching
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <sra/data_loaders/wgs/wgsloader.hpp>
+
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -688,3 +693,32 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2375)
 
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_ExtendToStop)
+{
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*objmgr);
+    CWGSDataLoader::RegisterInObjectManager(*objmgr,
+                                            CObjectManager::eDefault,
+                                            88);
+
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> fetch_id(new CSeq_id());
+    TGi gi = (TIntId)24413615;
+    fetch_id->SetGi(gi);
+
+    CBioseq_Handle bsh = scope.GetBioseqHandle(*fetch_id);
+
+    CFeat_CI cds_it(bsh, CSeqFeatData::e_Cdregion);
+    while (cds_it) {
+        CRef<CSeq_feat> replace(new CSeq_feat());
+        replace->Assign(*(cds_it->GetSeq_feat()));
+        CCleanup::ExtendToStopIfShortAndNotPartial(*replace, bsh, true);
+        ++cds_it;
+    }
+    
+}
+

@@ -45,6 +45,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <sra/data_loaders/wgs/wgsloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <dbapi/driver/drivers.hpp>
 
@@ -109,6 +110,7 @@ private:
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
+    CRef<CScope>                m_Scope;
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
 };
 
@@ -200,6 +202,7 @@ void CCleanupApp::Init(void)
 
         // remote
         arg_desc->AddFlag("gbload", "Use CGBDataLoader");
+        arg_desc->AddFlag("R", "Remote fetching");
         // show progress
         arg_desc->AddFlag("showprogress",
             "List ID for which cleanup is occuring");
@@ -324,7 +327,9 @@ int CCleanupApp::Run(void)
     if ( !m_Objmgr ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
-    if (args["gbload"]) {
+
+    m_Scope.Reset(new CScope(*m_Objmgr));
+    if (args["gbload"] || args["R"]) {
 #ifdef HAVE_PUBSEQ_OS
         // we may require PubSeqOS readers at some point, so go ahead and make
         // sure they are properly registered
@@ -334,7 +339,12 @@ int CCleanupApp::Run(void)
 #endif
 
         CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+        CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
+                                            CObjectManager::eDefault,
+                                            88);
+
     }
+    m_Scope->AddDefaults();
 
     auto_ptr<CObjectIStream> is;
     is.reset( x_OpenIStream( args ) );
@@ -362,9 +372,14 @@ int CCleanupApp::Run(void)
             //  Implies gbload; otherwise this feature would be pretty 
             //  useless...
             //
-            if ( ! args[ "gbload" ] ) {
+            if ( ! args[ "gbload" ] && !args["R"] ) {
                 CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+                CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
+                                            CObjectManager::eDefault,
+                                            88);
+                m_Scope->AddDefaults();
             }   
+
             string seqID = args["id"].AsString();
             HandleSeqID( seqID );
             
@@ -760,15 +775,9 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         return false;
     }
 
-    // create new scope
-    CRef<CScope> scope(new CScope(*m_Objmgr));
-    if ( !scope ) {
-        NCBI_THROW(CFlatException, eInternal, "Could not create scope");
-    }
-    scope->AddDefaults();
+    CSeq_entry_Handle entry = m_Scope->AddTopLevelSeqEntry(*se);
 
-    // add entry to scope   
-    CSeq_entry_Handle entry = scope->AddTopLevelSeqEntry(*se);
+
     if ( !entry ) {
         NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
     }
@@ -777,8 +786,10 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         if (entry.GetCompleteSeq_entry().GetPointer() != se.GetPointer()) {
             se->Assign(*entry.GetCompleteSeq_entry());
         }
+        m_Scope->RemoveTopLevelSeqEntry(entry);
         return true;
     } else {
+        m_Scope->RemoveTopLevelSeqEntry(entry);
         return false;
     }
 }

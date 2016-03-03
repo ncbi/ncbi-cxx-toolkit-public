@@ -77,7 +77,6 @@ public:
     
     // BASIC CLEANUP
     
-    /// Cleanup a Seq-entry. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_entry& se,  Uint4 options = 0);
     /// Cleanup a Seq-submit. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_submit& ss,  Uint4 options = 0);

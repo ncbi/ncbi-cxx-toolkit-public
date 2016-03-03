@@ -134,6 +134,9 @@ public:
     virtual ~CNewCleanup_imp ();
 
     /// Main methods
+    
+    void SetScope(CScope& scope) { m_Scope.Reset(&scope); }
+
 
     /// Basic Cleanup methods
 

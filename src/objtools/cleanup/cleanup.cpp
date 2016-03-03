@@ -103,10 +103,16 @@ CRef<CCleanupChange> makeCleanupChange(Uint4 options)
     return changes;
 }
 
+#define CLEANUP_SETUP \
+    CRef<CCleanupChange> changes(makeCleanupChange(options)); \
+    CNewCleanup_imp clean_i(changes, options); \
+    if (m_Scope) { \
+        clean_i.SetScope(*m_Scope); \
+    } 
+
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry& se, Uint4 options)
 {
-    CRef<CCleanupChange> changes(makeCleanupChange(options));
-    CNewCleanup_imp clean_i(changes, options);
+    CLEANUP_SETUP
     clean_i.BasicCleanupSeqEntry(se);
     return changes;
 }
@@ -210,7 +216,6 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 o
     clean_i.BasicCleanupSeqFeatHandle(sfh);
     return changes;
 }
-
 
 
 
@@ -949,8 +954,14 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
     }
 
     if (check_for_stop) {
+        cout << "Translate " << f.GetLocation().GetId()->AsFastaString() << endl;
         string translation;
-        CSeqTranslator::Translate(f, bsh.GetScope(), translation, true);
+        try {
+            CSeqTranslator::Translate(f, bsh.GetScope(), translation, true);
+        } catch (CSeqMapException& e) {
+            cout << e.what() << endl;
+            return false;
+        }
         if (NStr::EndsWith(translation, "*")) {
             //already has stop codon
             return false;
