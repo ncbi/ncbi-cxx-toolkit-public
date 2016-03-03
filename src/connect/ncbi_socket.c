@@ -1152,6 +1152,9 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 #endif /*HAVE_GETADDRINFO && !__GLIBC__*/
     }
 
+#ifdef NCBI_OS_DARWIN
+out:
+#endif
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     if (!SOCK_isipEx(hostname, 1)  ||  !host) {
         char addr[40];
