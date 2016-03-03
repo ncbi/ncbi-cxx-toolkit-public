@@ -6,7 +6,7 @@ SRC = unit_test_extended_cleanup
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 
-LIB = xcleanup xunittestutil $(XFORMAT_LIBS) ncbi_xloader_wgs $(SRAREAD_LIBS) xalnmgr xobjutil valid taxon3 gbseq submit xconnect \
+LIB = xcleanup xunittestutil ncbi_xloader_wgs $(SRAREAD_LIBS) xalnmgr xobjutil valid taxon3 gbseq submit xconnect \
       tables xregexp $(PCRE_LIB) test_boost $(OBJMGR_LIBS) $(OBJEDIT_LIBS)
 
 LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
