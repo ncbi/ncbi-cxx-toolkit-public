@@ -189,7 +189,7 @@ int CSampleAlnmgrApplication::Run(void)
 //  MAIN
 
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, TXChar* argv[])
 {
     // Execute main application function
     return CSampleAlnmgrApplication().AppMain(argc, argv);

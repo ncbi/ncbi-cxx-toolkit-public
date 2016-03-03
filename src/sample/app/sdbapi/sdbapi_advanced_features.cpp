@@ -381,7 +381,7 @@ void CSdbapiTest::Exit()
 }
 
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CSdbapiTest().AppMain(argc, argv);
 }

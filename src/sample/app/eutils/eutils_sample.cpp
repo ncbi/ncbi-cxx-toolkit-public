@@ -853,7 +853,7 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CEUtilsApp().AppMain(argc, argv);
 }

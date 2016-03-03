@@ -239,7 +239,7 @@ int CSampleLds2Application::Run(void)
 //  MAIN
 
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CSampleLds2Application().AppMain(argc, argv);
 }

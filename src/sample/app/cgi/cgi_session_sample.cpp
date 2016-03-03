@@ -261,7 +261,7 @@ static CNodeRef s_CreateHTMLPage(CRef<CHTML_table> table,
 //  MAIN
 //
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     int result = CCgiSessionSampleApplication().AppMain(argc, argv);
     return result;

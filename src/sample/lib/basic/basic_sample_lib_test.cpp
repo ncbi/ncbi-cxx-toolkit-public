@@ -81,7 +81,7 @@ int CSampleLibtestApplication::Run(void)
     return 1;
 }
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CSampleLibtestApplication().AppMain(argc, argv);
 }

@@ -239,7 +239,7 @@ void CSampleBasicApplication::Exit(void)
 //  MAIN
 
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     // Execute main application function; change argument list to
     // (argc, argv, 0, eDS_Default, 0) if there's no point in trying

@@ -413,7 +413,7 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
 }
 
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CSampleNetCacheClient().AppMain(argc, argv);
 }

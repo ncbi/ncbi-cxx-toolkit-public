@@ -179,7 +179,7 @@ void CBlastSampleApplication::Exit(void)
 
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     // Execute main application function
     return CBlastSampleApplication().AppMain(argc, argv);

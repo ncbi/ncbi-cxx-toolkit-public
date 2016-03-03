@@ -452,7 +452,7 @@ void CSdbapiSimpleApp::DemoSqlInjection(void)
 /////////////////////////////////////////////////////////////////////////////
 //  main
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CSdbapiSimpleApp().AppMain(argc, argv);
 }

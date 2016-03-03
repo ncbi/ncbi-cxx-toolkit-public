@@ -216,7 +216,7 @@ void CCgiSampleApplication::x_LookAtArgs()
 }
 
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CCgiSampleApplication().AppMain(argc, argv);
 }

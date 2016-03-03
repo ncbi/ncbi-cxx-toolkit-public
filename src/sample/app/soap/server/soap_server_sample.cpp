@@ -133,7 +133,7 @@ bool CSampleSoapServerApplication::DoMath(
 //  MAIN
 //
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     int result = CSampleSoapServerApplication(
 

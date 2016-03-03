@@ -763,7 +763,7 @@ void CEditBioseqSampleApp::x_RunCheck(const CSeq_id& seq_id,
 //  MAIN
 
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CEditBioseqSampleApp().AppMain(argc, argv);
 }

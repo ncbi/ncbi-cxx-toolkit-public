@@ -275,7 +275,7 @@ void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key,
 }
 
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CRemoteAppClientSampleApp().AppMain(argc, argv);
 }

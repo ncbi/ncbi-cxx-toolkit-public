@@ -261,7 +261,7 @@ int CSampleObjmgrApplication::Run(void)
 //  MAIN
 
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CSampleObjmgrApplication().AppMain(argc, argv);
 }

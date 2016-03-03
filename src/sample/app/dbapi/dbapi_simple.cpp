@@ -688,7 +688,7 @@ void CDbapiSimpleApp::RetrieveData(IStatement* stmt)
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CDbapiSimpleApp().AppMain(argc, argv);
 }

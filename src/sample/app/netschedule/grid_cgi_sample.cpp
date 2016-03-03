@@ -362,7 +362,7 @@ string CGridCgiSampleApplication::VectorToString( const vector<double>& vec)
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 //
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     int result = CGridCgiSampleApplication().AppMain(argc, argv);
     _TRACE("back to normal diagnostics");
