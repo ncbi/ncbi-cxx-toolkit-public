@@ -464,7 +464,7 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
             }
         }
     
-        ERR_POST(Info << "Blast Including ID: " << (*IdIter)->GetSeqIdString(true));
+        _TRACE("Blast Including ID: " << (*IdIter)->GetSeqIdString(true));
 
 		
         CRef<CSeq_loc> WholeLoc;

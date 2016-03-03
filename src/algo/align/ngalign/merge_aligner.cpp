@@ -74,9 +74,9 @@ TAlignResultsRef CMergeAligner::GenerateAlignments(objects::CScope& Scope,
 
         int BestRank = QueryIter->second->GetBestRank();
         if(BestRank > m_Threshold || BestRank == -1) {
-            ERR_POST(Info << "Determined ID: "
-                      << QueryIter->second->GetQueryId()->AsFastaString()
-                      << " needs Merging.");
+            _TRACE("Determined ID: "
+                   << QueryIter->second->GetQueryId()->AsFastaString()
+                   << " needs Merging.");
 
             CRef<CSeq_align_set> Results;
             Results = x_MergeAlignments(*QueryIter->second, Scope);

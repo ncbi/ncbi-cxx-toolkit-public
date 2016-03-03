@@ -66,9 +66,9 @@ TAlignResultsRef CMergeTreeAligner::GenerateAlignments(objects::CScope& Scope,
 
         int BestRank = QueryAligns.GetBestRank();
         if(BestRank > m_Threshold || BestRank == -1) {
-            ERR_POST(Info << "Determined ID: "
-                      << QueryAligns.GetQueryId()->AsFastaString()
-                      << " needs Tree Merging.");
+            _TRACE("Determined ID: "
+                   << QueryAligns.GetQueryId()->AsFastaString()
+                   << " needs Tree Merging.");
         
             
             CRef<CSeq_align_set> Results(new CSeq_align_set);;
@@ -90,10 +90,10 @@ TAlignResultsRef CMergeTreeAligner::GenerateAlignments(objects::CScope& Scope,
             }
             
             if(!Results->Get().empty()) {
-            ERR_POST(Info << " Got " << Results->Get().size() << " alignments.");
-				NewResults->Insert(CRef<CQuerySet>(new CQuerySet(*Results)));
-        	}
-		}
+                ERR_POST(Info << " Got " << Results->Get().size() << " alignments.");
+                NewResults->Insert(CRef<CQuerySet>(new CQuerySet(*Results)));
+            }
+        }
     }
 
     return NewResults;

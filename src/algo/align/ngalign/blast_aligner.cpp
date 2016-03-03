@@ -245,7 +245,7 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
         return Results;
     }
 
-    ERR_POST(Info << "Running Blast" << " Filter: " << m_Filter);
+    _TRACE("Running Blast Filter: " << m_Filter);
 
     CRef<CSearchResultSet> BlastResults;
     try {
@@ -317,9 +317,9 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
 	//ERR_POST(Info << score_msg);
 
     if(AlignCount == 0) {
-        ERR_POST(Warning << "CBlastAligner found no hits this run.");
+        _TRACE("CBlastAligner found no hits this run.");
     } else {
-        ERR_POST(Info << "CBlastAligner found " << AlignCount << " hits.");
+        _TRACE("CBlastAligner found " << AlignCount << " hits.");
     }
 
     //Results->Insert(*BlastResults);
@@ -376,7 +376,7 @@ TAlignResultsRef CRemoteBlastAligner::GenerateAlignments(CScope& Scope,
         return Results;
     }
 
-    ERR_POST(Info << "Running Remote Blast" << " Filter: " << m_Filter);
+    _TRACE("Running Remote Blast Filter: " << m_Filter);
 
     CRef<CSearchResultSet> BlastResults;
     try {

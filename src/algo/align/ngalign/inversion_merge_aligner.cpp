@@ -73,9 +73,9 @@ CInversionMergeAligner::GenerateAlignments(objects::CScope& Scope,
                       AccumResults->Get()) {
         int BestRank = QueryIter->second->GetBestRank();
         if(BestRank > m_Threshold || BestRank == -1) {
-            ERR_POST(Info << "Determined ID: "
-                          << QueryIter->second->GetQueryId()->AsFastaString()
-                          << " needs Inversion Merger.");
+            _TRACE("Determined ID: "
+                   << QueryIter->second->GetQueryId()->AsFastaString()
+                   << " needs Inversion Merger.");
             x_RunMerger(Scope, *QueryIter->second, NewResults);
         }
     }

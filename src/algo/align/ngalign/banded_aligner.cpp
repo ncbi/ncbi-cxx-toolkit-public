@@ -145,9 +145,9 @@ TAlignResultsRef CInstancedAligner::GenerateAlignments(objects::CScope& Scope,
         int BestRank = QueryIter->second->GetBestRank();
         if(BestRank > m_Threshold || BestRank == -1) {
 
-            ERR_POST(Info << "Determined ID: "
-                          << QueryIter->second->GetQueryId()->AsFastaString()
-                          << " needs Instanced MM Aligner.");
+            _TRACE("Determined ID: "
+                   << QueryIter->second->GetQueryId()->AsFastaString()
+                   << " needs Instanced MM Aligner.");
             if(!x_MinCoverageCheck(*QueryIter->second)) {
                 ERR_POST(Info << "ID: "
                           << QueryIter->second->GetQueryId()->AsFastaString()
