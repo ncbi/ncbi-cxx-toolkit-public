@@ -16,9 +16,11 @@ NCBI_CONFIG_PATH=`dirname $0`/test_sub_reg_data
 NCBI_CONFIG_OVERRIDES=$NCBI_CONFIG_PATH/indirect_env.ini
 NCBI_CONFIG_e__test=env
 NCBI_CONFIG__test__e=env
-NCBI_CONFIG__test__e_ie=env
-NCBI_CONFIG__test__ob_e=env
-NCBI_CONFIG__test__obx_e=env
+NCBI_CONFIG__test__ex=
+NCBI_CONFIG__environment_DOT_indirectenv__e_ie=env
+NCBI_CONFIG__environment_DOT_indirectenv__ex_ie=
+NCBI_CONFIG__overridesbase_DOT_environment__ob_e=env
+NCBI_CONFIG__overridesbase_DOT_environment__obx_e=env
 NCBI_CONFIG__a_DOT_b__c_DOT_d=e.f
 export NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES NCBI_CONFIG_e__test
 export NCBI_CONFIG__test__e NCBI_CONFIG__test__e_ie NCBI_CONFIG__test__ob_e
@@ -26,8 +28,22 @@ export NCBI_CONFIG__test__obx_e NCBI_CONFIG__a_DOT_b__c_DOT_d
 
 $CHECK_EXEC test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
                          -overrides "$NCBI_CONFIG_PATH/overrides.ini" \
-                         -out test_sub_reg.out
-diff $flags $NCBI_CONFIG_PATH/expected.ini test_sub_reg.out
+                         -out test_sub_reg_1strun.out.ini
+diff $flags $NCBI_CONFIG_PATH/expected.ini test_sub_reg_1strun.out.ini
+
+# Second run
+
+unset NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES NCBI_CONFIG_e__test
+unset NCBI_CONFIG__test__e NCBI_CONFIG__test__e_ie NCBI_CONFIG__test__ob_e
+unset NCBI_CONFIG__test__obx_e NCBI_CONFIG__a_DOT_b__c_DOT_d
+cp test_sub_reg_1strun.out.ini test_sub_reg.ini
+
+$CHECK_EXEC test_sub_reg -out test_sub_reg_2ndrun.out.ini
+sort test_sub_reg_1strun.out.ini -o test_sub_reg_1strun.sorted.out.ini
+sort test_sub_reg_2ndrun.out.ini -o test_sub_reg_2ndrun.sorted.out.ini
+diff $flags test_sub_reg_1strun.sorted.out.ini test_sub_reg_2ndrun.sorted.out.ini
+
+rm test_sub_reg.ini
 
 echo Test passed -- no differences encountered.
 exit 0

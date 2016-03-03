@@ -99,6 +99,8 @@ public:
         fSectionlessEntries = 0x4000,///< Allow empty section names (for test_res framework)
         fSections       = 0x8000,///< Indicates that we want sections from x_Enumerate
         fPlaintextAllowed = 0x10000,///< @sa GetEncryptedString()
+        fInSectionComments = 0x20000,/**< Indicates that we want in-section 
+                                          comments from x_Enumerate */
         fCoreLayers     = fTransient | fPersistent | fJustCore,
         fAllLayers      = fTransient | fPersistent | fNotJustCore,
         fCaseFlags      = fSectionCase | fEntryCase
@@ -253,6 +255,18 @@ public:
     const string& GetComment(const string& section = kEmptyStr,
                              const string& name    = kEmptyStr,
                              TFlags        flags   = 0) const;
+    
+    /// Enumerate in-section comments.
+    ///
+    /// Write all in-section comments to the "comments" list in
+    /// (registry priority) order. Previous contents of the list are
+    /// erased.
+    /// @param flags
+    ///   To control layers if search. Allowed values are fTransient, 
+    ///   fPersistent, fNotJustCore, fJustCore and their mix using |
+    void EnumerateInSectionComments(const string& section,
+                                    list<string>* comments,
+                                    TFlags        flags = fAllLayers) const;
 
     /// Enumerate section names.
     ///
@@ -282,6 +296,9 @@ public:
     void ReadLock (void);
     void WriteLock(void);
     void Unlock   (void);
+
+    /// Entry name for an in-section comment
+    static const char* sm_InSectionCommentName;
 
 #ifdef NCBI_COMPILER_ICC
     /// Work around a compiler bug that can cause memory leaks.
@@ -514,6 +531,7 @@ public: // WorkShop needs these exposed
               cleared(false)
             { }
         string   comment;
+        string   in_section_comment; //for comments inside section
         TEntries entries;
         bool     cleared;
     };
@@ -855,6 +873,8 @@ public:
 protected:
     void x_Clear(TFlags flags);
     IRWRegistry* x_Read(CNcbiIstream& is, TFlags flags, const string& path);
+    const string& x_GetComment(const string& section, const string& name,
+                               TFlags flags) const;
 
 private:
     void x_Init(void);

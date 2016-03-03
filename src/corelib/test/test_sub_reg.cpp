@@ -56,19 +56,22 @@ void CTestSubRegApp::Init()
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "test of proper subregistry handling");
 
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
         ("overrides", "IniFile", "source of overriding extra configuration",
-         CArgDescriptions::eInputFile, "overrides.ini");
+         CArgDescriptions::eInputFile);
 
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
         ("defaults", "IniFile", "source of non-overriding extra configuration",
-         CArgDescriptions::eInputFile, "defaults.ini");
+         CArgDescriptions::eInputFile);
 
     // For historical reasons, the registry system explicitly writes
     // out platform-specific newlines; forcing "binary" output avoids
     // doubled CRs on Windows (and consequent test failures).
     arg_desc->AddDefaultKey
         ("out", "IniDump", "destination for merged registries",
+         CArgDescriptions::eOutputFile, "-", CArgDescriptions::fBinary);
+    arg_desc->AddDefaultKey
+        ("out2", "IniDump", "destination for 2nd run output",
          CArgDescriptions::eOutputFile, "-", CArgDescriptions::fBinary);
 
     SetupArgDescriptions(arg_desc.release());
@@ -78,15 +81,32 @@ void CTestSubRegApp::Init()
 int CTestSubRegApp::Run()
 {
     const CArgs& args = GetArgs();
-
+    SetDiagTrace(eDT_Enable, eDT_Enable);
+    SetDiagPostLevel(eDiagSevMin);
     CNcbiRegistry& reg = GetConfig();
+    
+    // At the first run we read from all the different sources. At the second
+    // run we only read the file that was this test's output at the first run
+    // (this behavior is defined in the test script, not here)
+    if (args["overrides"] && args["defaults"]) {
+        LoadConfig(reg, &args["overrides"].AsString(), 0);
+        reg.Read(args["defaults"].AsInputFile(), IRegistry::fNoOverride);
+        reg.Set("Log", "my_entry", "my_value", 0,
+        "This is a comment for \"my_entry\" entry");
+        reg.SetComment("This is a hardcoded comment for \"Log\" section", 
+                       "Log");
+        reg.SetComment("This is a hardcoded comment for \"Diag\" section", 
+                        "Diag", "");
+        reg.SetComment("This is a hardcoded inner comment for \"Diag\" "
+                       "section", "Diag", IRegistry::sm_InSectionCommentName);
+        string inherits = reg.Get("NCBI", ".Inherits");
+        reg.Unset("NCBI", ".Inherits"); // For the 2nd run not to 
+                                        // read files again
+        inherits = reg.Get("NCBI", ".Inherits");
+    }
 
-    // reg.Read(args["overrides"].AsInputFile());
-    LoadConfig(reg, &args["overrides"].AsString(), 0);
-    reg.Read(args["defaults"].AsInputFile(), IRegistry::fNoOverride);
     reg.Write(args["out"].AsOutputFile(),
               IRegistry::fCoreLayers | IRegistry::fCountCleared);
-
     return 0;
 }
 

@@ -171,6 +171,11 @@ void CEnvironmentRegistry::x_Enumerate(const string& section,
                                        list<string>& entries,
                                        TFlags flags) const
 {
+    // Environment does not provide comments, so if we came for in-section 
+    // comments, we can just return doing nothing
+    if (flags & fInSectionComments) {
+        return;
+    }
     if ( !(flags & fTransient) ) {
         return;
     }

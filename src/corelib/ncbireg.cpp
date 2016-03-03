@@ -168,6 +168,8 @@ inline string s_FlatKey(const string& section, const string& name)
 //
 // IRegistry
 
+const char* IRegistry::sm_InSectionCommentName = "[]";
+
 bool IRegistry::Empty(TFlags flags) const
 {
     x_CheckFlags("IRegistry::Empty", flags, fLayerFlags);
@@ -217,7 +219,7 @@ bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
     TReadGuard LOCK(*this);
 
     // Write file comment
-    if ( !s_WriteComment(os, GetComment(kEmptyStr, kEmptyStr, flags)) )
+    if ( !s_WriteComment(os, GetComment(kEmptyStr, kEmptyStr, flags) + "\n") )
         return false;
 
     list<string> sections;
@@ -245,6 +247,15 @@ bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
             if ( !os ) {
                 return false;
             }
+        }
+        // Make a line break between section entries and next section 
+        // (or optional in-section comments)
+        os << Endl();
+        // Write in-section comment
+        list<string> in_section_comments;
+        EnumerateInSectionComments(*section, &in_section_comments, flags);
+        ITERATE(list<string>, comment, in_section_comments) {
+            s_WriteComment(os, *comment + "\n");
         }
     }
 
@@ -301,7 +312,9 @@ bool IRegistry::HasEntry(const string& section, const string& name,
         return false;
     }
     string clean_name = NStr::TruncateSpaces(name);
-    if ( !clean_name.empty()  &&  !s_IsNameEntry(clean_name, flags) ) {
+    bool is_special_name = clean_name.empty() || 
+                            clean_name == sm_InSectionCommentName;
+    if ( !is_special_name  &&  !s_IsNameEntry(clean_name, flags) ) {
         _TRACE("IRegistry::HasEntry: bad entry name \""
                << NStr::PrintableString(name) << '\"');
         return false;
@@ -452,13 +465,38 @@ const string& IRegistry::GetComment(const string& section, const string& name,
         return kEmptyStr;
     }
     string clean_name = NStr::TruncateSpaces(name);
-    if ( !clean_name.empty()  &&  !s_IsNameSection(clean_name, flags) ) {
+    bool is_special_name = clean_name.empty() || 
+                            clean_name == sm_InSectionCommentName;
+    if ( !is_special_name  &&  !s_IsNameSection(clean_name, flags) ) {
         _TRACE("IRegistry::GetComment: bad entry name \""
                << NStr::PrintableString(name) << '\"');
         return kEmptyStr;
     }
     TReadGuard LOCK(*this);
     return x_GetComment(clean_section, clean_name, flags);
+}
+
+
+void IRegistry::EnumerateInSectionComments(const string& section,
+                                           list<string>* comments, 
+                                           TFlags        flags) const
+{
+    x_CheckFlags("IRegistry::EnumerateInSectionComments", flags,
+        (TFlags)fLayerFlags);
+
+    if (!(flags & fTPFlags)) {
+        flags |= fTPFlags;
+    }
+    _ASSERT(comments);
+    comments->clear();
+    string clean_section = NStr::TruncateSpaces(section);
+    if (clean_section.empty() || !s_IsNameSection(clean_section, flags)) {
+        _TRACE("IRegistry::EnumerateInSectionComments: bad section name \""
+            << NStr::PrintableString(section) << '\"');
+        return;
+    }
+    TReadGuard LOCK(*this);
+    x_Enumerate(clean_section, *comments, flags | fInSectionComments);
 }
 
 
@@ -613,6 +651,9 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
     string    section(kEmptyStr);      // current section name
     string    comment;      // current comment
     string    in_path = path.empty() ? kEmptyStr : (" in " + path);
+    // To collect in-section comments we need a special container, because 
+    // these comments may be multiline with line breaks in the middle
+    map<string, string> in_section_comments;
 
     for (line = 1;  NcbiGetlineEOL(is, str);  ++line) {
         try {
@@ -622,9 +663,16 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
             while (beg < len  &&  isspace((unsigned char) str[beg])) {
                 ++beg;
             }
+            // If this line is empty, all comments
+            // that have just been read go to the current section.
             if (beg == len) {
-                comment += str;
-                comment += '\n';
+                if (!comment.empty() && !section.empty()) {
+                    in_section_comments[section] += comment + "\n";
+                    SetComment(NStr::TruncateSpaces(
+                               in_section_comments[section]), section, 
+                               sm_InSectionCommentName, flags | fCountCleared);
+                    comment.erase();
+                }
                 continue;
             }
 
@@ -638,6 +686,14 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
             case ';':  { // section or entry comment
                 comment += str;
                 comment += '\n';
+                // If there is end of file next, all comments
+                // that have just been read go to the current section.
+                if (is.peek() == EOF && !section.empty()) {
+                    SetComment(comment, section, sm_InSectionCommentName, 
+                               flags | fCountCleared);
+                    comment.erase();
+                    continue;
+                }
                 break;
             }
 
@@ -661,8 +717,7 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
                 }
                 // Unconditional, to ensure the section becomes known
                 // even if it has no comment or contents
-                SetComment(GetComment(section, kEmptyStr, impact) + comment,
-                           section, kEmptyStr, flags | fCountCleared);
+                SetComment(comment, section, kEmptyStr, flags | fCountCleared);
                 comment.erase();
                 break;
             }
@@ -854,7 +909,9 @@ bool IRWRegistry::SetComment(const string& comment, const string& section,
         return false;
     }
     string clean_name = NStr::TruncateSpaces(name);
-    if ( !clean_name.empty()  &&  !s_IsNameEntry(clean_name, flags) ) {
+    bool is_special_name = clean_name.empty()  || 
+                            clean_name == sm_InSectionCommentName;
+    if ( !is_special_name && !s_IsNameEntry(clean_name, flags) )  {
         _TRACE("IRWRegistry::SetComment: bad entry name \""
                << NStr::PrintableString(name) << '\"');
         return false;
@@ -874,7 +931,11 @@ bool IRWRegistry::MaybeSet(string& target, const string& value, TFlags flags)
 {
     if (target.empty()) {
         target = value;
-        return !value.empty();
+        /* "return !value.empty()" was here before, which prevented to set 
+           comments to empty values, but now empty string is 
+           considered a value, not an unset variable, so we always return 
+           true */
+        return true; 
     } else if ( !(flags & fNoOverride) ) {
         target = value;
         return true;
@@ -916,6 +977,14 @@ bool CMemoryRegistry::x_HasEntry(const string& section, const string& name,
     } else if (name.empty()) {
         return ((flags & fCountCleared) != 0) || !sit->second.cleared;
     }
+    if (name == sm_InSectionCommentName) {
+        const string& inner_comment = sit->second.in_section_comment;
+        if (!inner_comment.empty()) {
+            return true; 
+        } else {
+            return false;
+        }
+    }
     const TEntries& entries = sit->second.entries;
     TEntries::const_iterator eit = entries.find(name);
     if (eit == entries.end()) {
@@ -940,6 +1009,8 @@ const string& CMemoryRegistry::x_GetComment(const string& section,
         return kEmptyStr;
     } else if (name.empty()) {
         return sit->second.comment;
+    } else if (name == sm_InSectionCommentName) {
+        return sit->second.in_section_comment;
     }
     const TEntries& entries = sit->second.entries;
     TEntries::const_iterator eit = entries.find(name);
@@ -964,7 +1035,14 @@ void CMemoryRegistry::x_Enumerate(const string& section, list<string>& entries,
                 entries.push_back(it->first);
             }
         }
+    } else  if (flags & IRegistry::fInSectionComments) {
+        // Enumerate in-section comments
+        string comment = x_GetComment(section, "[]", flags);
+        if (!comment.empty()) {
+            entries.push_back(comment);
+        }
     } else {
+        // Enumerate entries
         TSections::const_iterator sit = m_Sections.find(section);
         if (sit != m_Sections.end()) {
             ITERATE (TEntries, it, sit->second.entries) {
@@ -1077,20 +1155,31 @@ bool CMemoryRegistry::x_SetComment(const string& comment,
         }
     }
     TEntries& entries = sit->second.entries;
+    string& inner_comment = sit->second.in_section_comment;
+    string& outer_comment = sit->second.comment;
     if (name.empty()) {
-        if (comment.empty()  &&  entries.empty()
+        if (comment.empty()  &&  entries.empty()  &&  inner_comment.empty()
             &&  (flags & fCountCleared) == 0) {
             m_Sections.erase(sit);
             return true;
         } else {
-            return MaybeSet(sit->second.comment, comment, flags);
+            return MaybeSet(outer_comment, comment, flags);
+        }
+    }
+    if (name == sm_InSectionCommentName) {
+        if (comment.empty() && entries.empty() && outer_comment.empty()
+            && (flags & fCountCleared) == 0) {
+            m_Sections.erase(sit);
+            return true;
+        } else {
+            return MaybeSet(inner_comment, comment, flags);
         }
     }
     TEntries::iterator eit = entries.find(name);
     if (eit == entries.end()) {
         return false;
     } else {
-        return MaybeSet(eit->second.comment, comment, flags);
+        return MaybeSet(outer_comment, comment, flags);
     }
 }
 
@@ -1232,7 +1321,7 @@ const string& CCompoundRegistry::x_GetComment(const string& section,
     if (section.empty()) {
         reg = m_PriorityMap.rbegin()->second;
     } else {
-        reg = FindByContents(section, name, flags);
+        reg = FindByContents(section, name, flags & ~fJustCore);
     }
     return reg ? reg->GetComment(section, name, flags & ~fJustCore)
         : kEmptyStr;
@@ -1249,8 +1338,13 @@ void CCompoundRegistry::x_Enumerate(const string& section,
         }
 
         list<string> tmp;
-        it->second->EnumerateEntries(section, &tmp, flags & ~fJustCore);
 
+        if (flags & fInSectionComments) {
+            it->second->EnumerateInSectionComments(section, &tmp, 
+                                                   flags & ~fJustCore);
+        } else {
+            it->second->EnumerateEntries(section, &tmp, flags & ~fJustCore);
+        }
         ITERATE (list<string>, it2, tmp) {
             accum.insert(*it2);
         }
@@ -1363,16 +1457,35 @@ void CTwoLayerRegistry::x_Enumerate(const string& section,
 {
     switch (flags & fTPFlags) {
     case fTransient:
-        m_Transient->EnumerateEntries(section, &entries, flags | fTPFlags);
+        if (flags & fInSectionComments) {
+            m_Transient->EnumerateInSectionComments(section, &entries, 
+                                                    flags | fTPFlags);
+        } else {
+            m_Transient->EnumerateEntries(section, &entries, 
+                                          flags | fTPFlags);
+        }
         break;
     case fPersistent:
-        m_Persistent->EnumerateEntries(section, &entries, flags | fTPFlags);
+        if (flags & fInSectionComments) {
+            m_Persistent->EnumerateInSectionComments(section, &entries, 
+                                                     flags | fTPFlags);
+        } else {
+            m_Persistent->EnumerateEntries(section, &entries, 
+                                           flags | fTPFlags);
+        }
         break;
     case fTPFlags:
     {
         list<string> tl, pl;
-        m_Transient ->EnumerateEntries(section, &tl, flags | fTPFlags);
-        m_Persistent->EnumerateEntries(section, &pl, flags | fTPFlags);
+        if (flags & fInSectionComments) {
+            m_Transient ->EnumerateInSectionComments(section, &tl, 
+                                                     flags | fTPFlags);
+            m_Persistent->EnumerateInSectionComments(section, &pl, 
+                                                     flags | fTPFlags);
+        } else {
+            m_Transient ->EnumerateEntries(section, &tl, flags | fTPFlags);
+            m_Persistent->EnumerateEntries(section, &pl, flags | fTPFlags);
+        }
         set_union(pl.begin(), pl.end(), tl.begin(), tl.end(),
                   back_inserter(entries), PNocase());
         break;
@@ -1620,6 +1733,18 @@ IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags,
 }
 
 
+const string& CNcbiRegistry::x_GetComment(const string& section,
+                                          const string& name,
+                                          TFlags        flags) const
+{
+    if (section.empty()) {      
+        return m_FileRegistry->GetComment(section, name, flags);
+    }
+
+    return CCompoundRWRegistry::x_GetComment(section, name, flags);
+}
+
+
 //////////////////////////////////////////////////////////////////////
 //
 // CCompoundRWRegistry -- general-purpose setup
@@ -1830,6 +1955,17 @@ const string& CCompoundRWRegistry::x_GetComment(const string& section,
                                                 const string& name,
                                                 TFlags flags) const
 {
+    const string* result;
+    if (section.empty() || name.empty()) {
+        result = &(m_MainRegistry->GetComment(section, name, flags));
+        if (result->empty()) {
+            auto reg = FindByName(".file");
+            if (reg != NULL)
+                result = &(reg->GetComment(section, name, flags));
+        }
+        return *result;
+    }
+
     return m_AllRegistries->GetComment(section, name, flags);
 }
 
@@ -1846,7 +1982,13 @@ void CCompoundRWRegistry::x_Enumerate(const string& section,
         }
 
         list<string> tmp;
-        it->second->EnumerateEntries(section, &tmp, flags & ~fJustCore);
+
+        if (flags & fInSectionComments) {
+            it->second->EnumerateInSectionComments(section, &tmp, 
+                                                   flags & ~fJustCore);
+        } else {
+            it->second->EnumerateEntries(section, &tmp, flags & ~fJustCore);
+        }
 
         ITERATE (list<string>, it2, tmp) {
             // avoid reporting cleared entries
