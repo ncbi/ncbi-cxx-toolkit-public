@@ -348,7 +348,7 @@ inline void CCgiResponse::SetLocation(const CUrl&        url,
                                       const IUrlEncoder* encoder)
 {
     SetHeaderValue(sm_LocationName,
-                   url.ComposeUrl(CCgiArgs::eAmp_Char, encoder));
+                   url.ComposeUrl(CUrlArgs::eAmp_Char, encoder));
 }
 
 inline void CCgiResponse::SetMultipartMode(EMultipartMode mode)
