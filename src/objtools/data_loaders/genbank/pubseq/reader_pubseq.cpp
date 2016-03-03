@@ -392,9 +392,12 @@ namespace {
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(sx_InitMutex);
+
 void CPubseqReader::x_ConnectAtSlot(TConn conn_)
 {
     if ( !m_Context ) {
+        CFastMutexGuard guard(sx_InitMutex);
         DBLB_INSTALL_DEFAULT();
         C_DriverMgr drvMgr;
         map<string,string> args;
