@@ -18,6 +18,7 @@ def SetExpTime( locator,
                 objectSizeUnknown = True
         else:
             objectSizeUnknown = True
+            # cml 1 sw
             if createIfNotFound:
                 CreateNewObjectRecord()
     except DBAccess:
@@ -27,7 +28,9 @@ def SetExpTime( locator,
 
     # Part II. Backend storage
     ret = UpdateBackendExpiration( newExpiration )
+    # cml 1 sw
     if ret == error:
+        # cml 1 sw
         if objectSizeUnknown == False:
             errors.append( ret )
     if errors:

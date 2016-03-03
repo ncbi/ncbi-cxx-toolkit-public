@@ -11,7 +11,8 @@ def Exists( locator,
             return ObjectSizeInDB
         ObjectSizeInDBIsNULL = True
 
-    if ConsultBackendIfNoDBRecord or ObjectSizeInDBIsNULL:
+    if ConsultBackendIfNoDBRecord or \
+       ObjectSizeInDBIsNULL:
         size = GetSizeFromBackend( locator )
         if ObjectSizeInDBIsNULL:
             UpdateSizeInDBIfStillNULL( locator, size )
