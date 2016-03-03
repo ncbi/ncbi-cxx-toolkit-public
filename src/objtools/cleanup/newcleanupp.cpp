@@ -313,22 +313,10 @@ void CNewCleanup_imp::BasicCleanupBioSource (
 void CNewCleanup_imp::BasicCleanupSeqEntryHandle (
     CSeq_entry_Handle& seh
 )
-{
-    // clean a copy, and then update via the edit handle
-
-    CRef<CSeq_entry> new_seq_entry( new CSeq_entry );
-    new_seq_entry->Assign( *seh.GetCompleteSeq_entry() );
-
-    CSeq_entry_EditHandle edit_handle = seh.GetEditHandle();
-
-    BasicCleanupSeqEntry( *new_seq_entry );
-
-    edit_handle.SelectNone();
-    if( new_seq_entry->IsSeq() ) {
-        edit_handle.SelectSeq( new_seq_entry->SetSeq() );
-    } else if( new_seq_entry->IsSet() ) {
-        edit_handle.SelectSet( new_seq_entry->SetSet() );
-    }
+{    
+    CConstRef<CSeq_entry> seq_entry = seh.GetCompleteSeq_entry();
+    CSeq_entry* se = const_cast<CSeq_entry*>(seq_entry.GetPointer());
+    BasicCleanupSeqEntry(*se);
 }
 
 void CNewCleanup_imp::BasicCleanupBioseqHandle (
@@ -10383,33 +10371,43 @@ void CNewCleanup_imp::x_RemoveDupPubs(CSeq_descr & descr)
 
 void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
 {
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
+    CBioseq_EditHandle beh(bsh);
     vector<string> controlled_keywords = CComment_rule::GetKeywordList();
     vector<string> original_keywords;
 
-    EDIT_EACH_SEQDESC_ON_BIOSEQ ( itr, bioseq ) {
-        CSeqdesc& desc = **itr;
-        if ( desc.Which() != CSeqdesc::e_Genbank ) continue;
-        CGB_block& gb_block = desc.SetGenbank();
-        EDIT_EACH_KEYWORD_ON_GENBANKBLOCK (k_itr, gb_block) {
-            original_keywords.push_back(*k_itr);
-            FOR_EACH_STRING_IN_VECTOR ( s_itr, controlled_keywords ) {
-                if (NStr::EqualNocase (*k_itr, *s_itr)) {
-                    ERASE_KEYWORD_ON_GENBANKBLOCK (k_itr, gb_block);
-                    break;
+    if (beh.IsSetDescr()) {
+        CBioseq::TDescr::Tdata::iterator it = beh.SetDescr().Set().begin();
+        while (it != beh.SetDescr().Set().end()) {
+            CSeqdesc& desc = **it;
+            if (desc.Which() != CSeqdesc::e_Genbank) {
+                ++it;
+                continue;
+            }
+            CGB_block& gb_block = desc.SetGenbank();
+            EDIT_EACH_KEYWORD_ON_GENBANKBLOCK(k_itr, gb_block) {
+                original_keywords.push_back(*k_itr);
+                FOR_EACH_STRING_IN_VECTOR(s_itr, controlled_keywords) {
+                    if (NStr::EqualNocase(*k_itr, *s_itr)) {
+                        ERASE_KEYWORD_ON_GENBANKBLOCK(k_itr, gb_block);
+                        break;
+                    }
                 }
             }
-        }
-        if (gb_block.IsSetKeywords() && gb_block.GetKeywords().size() == 0) {
-            gb_block.ResetKeywords();
-        }
-        if (gb_block.IsEmpty()) {
-            ERASE_SEQDESC_ON_BIOSEQ ( itr, bioseq );
+            if (gb_block.IsSetKeywords() && gb_block.GetKeywords().size() == 0) {
+                gb_block.ResetKeywords();
+            }
+            if (gb_block.IsEmpty()) {
+                it = beh.SetDescr().Set().erase(it);
+            } else {
+                ++it;
+            }
         }
     }
 
     vector<string> new_keywords;
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
     CFeat_CI f(bsh);
+
     for (CSeqdesc_CI di(bsh, CSeqdesc::e_User); di; ++di) {
         const CUser_object& usr = di->GetUser();
         if ( ! CComment_rule::IsStructuredComment (usr) ) continue;
@@ -12465,21 +12463,20 @@ void CNewCleanup_imp::ExtendedCleanupSeqAnnot (
 void CNewCleanup_imp::ExtendedCleanupSeqEntryHandle (
         CSeq_entry_Handle& seh )
 {
-    // clean a copy, and then update via the edit handle
-
-    CRef<CSeq_entry> new_seq_entry( new CSeq_entry );
-    new_seq_entry->Assign( *seh.GetCompleteSeq_entry() );
-
     CSeq_entry_EditHandle edit_handle = seh.GetEditHandle();
+    CConstRef<CSeq_entry> e = seh.GetCompleteSeq_entry();
+    CSeq_entry * en = const_cast<CSeq_entry *>(e.GetPointer());
 
-    ExtendedCleanupSeqEntry( *new_seq_entry );
-
+    ExtendedCleanupSeqEntry(*en);
+#if 0
+    // clean a copy, and then update via the edit handle
     edit_handle.SelectNone();
     if( new_seq_entry->IsSeq() ) {
         edit_handle.SelectSeq( new_seq_entry->SetSeq() );
     } else if( new_seq_entry->IsSet() ) {
         edit_handle.SelectSet( new_seq_entry->SetSet() );
     }
+#endif
 }
 
 
