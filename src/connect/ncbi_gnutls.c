@@ -418,8 +418,9 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
         size_t x_read = 0;
         status = pull(sock, buf, size, &x_read, x_IfToLog());
         if (x_read > 0  ||  status == eIO_Success/*&& x_read==0*/) {
-            x_set_errno((gnutls_session_t) sock->session, 0);
+            assert(status == eIO_Success);
             assert(x_read <= size);
+            x_set_errno((gnutls_session_t) sock->session, 0);
             return x_read;
         }
     } else
@@ -448,8 +449,9 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
             if (!x_written) {
                 assert(!size  ||  status != eIO_Success);
                 if (size  ||  status != eIO_Success)
-                    goto err;
+                    goto out;
             } else {
+                assert(status == eIO_Success);
                 assert(x_written <= size);
                 n_written += x_written;
                 size      -= x_written;
@@ -461,7 +463,7 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
     } else
         status = eIO_NotSupported;
 
- err:
+ out:
     x_error = x_StatusToError(status, sock, eIO_Write);
     if (x_error)
         x_set_errno((gnutls_session_t) sock->session, x_error);
@@ -478,6 +480,7 @@ static EIO_Status s_GnuTlsRead(void* session, void* buf, size_t n_todo,
     assert(session);
 
     x_read = gnutls_record_recv((gnutls_session_t) session, buf, n_todo);
+    assert(x_read <= n_todo);
 
     if (x_read <= 0) {
         status = x_ErrorToStatus(&x_read,
@@ -492,7 +495,7 @@ static EIO_Status s_GnuTlsRead(void* session, void* buf, size_t n_todo,
 }
 
 
-static EIO_Status s_GnuTlsWrite(void* session, const void* data, size_t n_todo,
+static EIO_Status x_GnuTlsWrite(void* session, const void* data, size_t n_todo,
                                 size_t* n_done, int* error)
 {
     EIO_Status status;
@@ -501,6 +504,7 @@ static EIO_Status s_GnuTlsWrite(void* session, const void* data, size_t n_todo,
     assert(session);
 
     x_written = gnutls_record_send((gnutls_session_t) session, data, n_todo);
+    assert(x_written <= n_todo);
 
     if (x_written <= 0) {
         status = x_ErrorToStatus(&x_written,
@@ -512,6 +516,34 @@ static EIO_Status s_GnuTlsWrite(void* session, const void* data, size_t n_todo,
 
     *n_done = x_written;
     return status;
+}
+
+
+static EIO_Status s_GnuTlsWrite(void* session, const void* data, size_t n_todo,
+                                size_t* n_done, int* error)
+{
+    size_t max_size = gnutls_record_get_max_size((gnutls_session_t) session);
+    EIO_Status status;
+
+    *n_done = 0;
+
+    do {
+        size_t x_todo = n_todo > max_size ? max_size : n_todo;
+        size_t x_done;
+        status = x_GnuTlsWrite(session, data, x_todo, &x_done, error);
+        assert((status == eIO_Success) == (x_done > 0));
+        assert(status == eIO_Success  ||  *error);
+        assert(x_done <= x_todo);
+        if (status != eIO_Success)
+            break;
+        *n_done += x_done;
+        if (x_todo != x_done)
+            break;
+        n_todo  -= x_done;
+        data     = (const char*) data + x_done;
+    } while (n_todo);
+
+    return *n_done ? eIO_Success : status;
 }
 
 
@@ -581,10 +613,10 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 #  ifdef HAVE_LIBGCRYPT
 #    if   defined(NCBI_POSIX_THREADS)
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) != 0)
-        goto errout;
+        goto out;
 #    elif defined(NCBI_THREADS)
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) != 0)
-        goto errout;
+        goto out;
 #    elif defined(_MT)
     CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
 #    endif /*NCBI_POSIX_THREADS*/
@@ -592,16 +624,16 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 
     if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
         ||  gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
-        goto errout;
+        goto out;
     }
     if (gnutls_anon_allocate_client_credentials(&acred) != 0) {
         gnutls_global_deinit();
-        goto errout;
+        goto out;
     }
     if (gnutls_certificate_allocate_credentials(&xcred) != 0) {
         gnutls_anon_free_client_credentials(acred);
         gnutls_global_deinit();
-        goto errout;
+        goto out;
     }
 
     s_GnuTlsCredAnon = acred;
@@ -611,7 +643,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 
     return eIO_Success;
 
- errout:
+ out:
     gnutls_global_set_log_level(s_GnuTlsLogLevel = 0);
     gnutls_global_set_log_function(0);
     return eIO_NotSupported;
