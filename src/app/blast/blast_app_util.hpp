@@ -302,15 +302,21 @@ UseXInclude(const blast::CFormattingArgs & f, const string & s);
 string
 GetSubjectFile(const CArgs& args);
 
+/// Class to capture message from diag handler
 class CBlastAppDiagHandler : public CDiagHandler
 {
 public:
+	/// Constructor
 	CBlastAppDiagHandler():m_handler(GetDiagHandler(true)), m_save (true) {}
+	/// Destructor
 	~CBlastAppDiagHandler();
+	/// Save and post diag message
 	virtual void Post (const SDiagMessage & mess);
+	/// Reset messgae buffer, erase all saved message
 	void ResetMessages(void);
+	/// Call to turn off saving diag message, discard all saved message
 	void DoNotSaveMessages(void);
-
+	/// Return list of saved diag messages
 	list<CRef<CBlast4_error> > & GetMessages(void) { return m_messages;}
 private :
 	CDiagHandler * m_handler;
@@ -318,6 +324,10 @@ private :
 	bool m_save;
 };
 
+/// Function to print blast archive with only error messages (search failed)
+/// to output stream
+/// @param a cmdline args [in]
+/// @param msg list of errors and warning to be added to blast4 archive for printing
 void PrintErrorArchive(const CArgs & a, const list<CRef<CBlast4_error> > & msg);
 
 END_NCBI_SCOPE
