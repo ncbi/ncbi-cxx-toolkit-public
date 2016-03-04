@@ -107,7 +107,7 @@ typedef EIO_Status (*FConnectorWait)
 /** Write to connector.
  * The passed "n_written" is always non-NULL, and "*n_written" is always zero.
  * The number of bytes actually written gets returned in "*n_written".
- * It may not return "eIO_Success" if no data at all have been written.
+ * It may not return eIO_Success if no data at all have been written.
  * @note  FConnectorWrite() is guaranteed to be called after FConnectorOpen(),
  *        and only if the latter succeeded (returned eIO_Success).
  */
