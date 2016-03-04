@@ -672,6 +672,7 @@ static EIO_Status s_CONN_Write
                    : conn->w_timeout);
         status = conn->meta.write(conn->meta.c_write, buf, size,
                                   n_written, timeout);
+        assert((status == eIO_Success) == (*n_written  ||  !size));
         assert(*n_written <= size);
 
         if (*n_written) {
@@ -866,6 +867,7 @@ static EIO_Status s_CONN_Read
                    : conn->r_timeout);
         status = conn->meta.read(conn->meta.c_read, buf, size - *n_read,
                                  &x_read, timeout);
+        assert((status == eIO_Success) == (x_read != 0));
         assert(x_read <= size - *n_read);
 
         if (x_read) {
