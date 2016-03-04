@@ -468,9 +468,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageByKey
     ///  * client     - Application name.
     ///  * nst        - NetStorage server address or LBSM service name
     ///                 pointing to a group of NetStorage servers.
-    ///  * nc         - NetCache service name or server address.
-    ///  * cache      - Synonym for "namespace".
-    ///  Example: "client=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&namespace=myapp"
+    ///  Example: "client=MyApp&nst=NST_Test&namespace=myapp"
     ///
     /// @param default_flags
     ///  Default storage preferences for objects created by this object.

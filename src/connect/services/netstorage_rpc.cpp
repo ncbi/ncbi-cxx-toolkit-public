@@ -738,7 +738,6 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
     CJsonNode request(MkStdRequest("CREATE"));
 
     x_SetStorageFlags(request, flags);
-    x_SetICacheNames(request);
 
     CNetServerConnection conn;
 
@@ -891,16 +890,6 @@ void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
     node.SetByKey("StorageFlags", storage_flags);
 }
 
-void SNetStorageRPC::x_SetICacheNames(CJsonNode& node) const
-{
-    if (!m_Config.nc_service.empty() && !m_Config.app_domain.empty()) {
-        CJsonNode icache(CJsonNode::NewObjectNode());
-        icache.SetString("ServiceName", m_Config.nc_service);
-        icache.SetString("CacheName", m_Config.app_domain);
-        node.SetByKey("ICache", icache);
-    }
-}
-
 CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type) const
 {
     CJsonNode new_request(CJsonNode::NewObjectNode());
@@ -960,8 +949,6 @@ CJsonNode SNetStorageRPC::MkObjectRequest(const string& request_type,
     new_request.SetByKey("UserKey", user_key);
 
     x_SetStorageFlags(new_request, flags);
-    x_SetICacheNames(new_request);
-
     return new_request;
 }
 
