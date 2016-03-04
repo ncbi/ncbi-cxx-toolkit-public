@@ -59,6 +59,8 @@ extern "C" {
 /** HTTP connector flags.
  *
  * @var fHTTP_Flushable
+ *
+ *    HTTP/1.0 or when fHTTP_WriteThru is not set:
  *       by default all data written to the connection are kept until read
  *       begins (even though CONN_Flush() might have been called in between the
  *       writes);  with this flag set, CONN_Flush() will result the data to be
@@ -67,11 +69,21 @@ extern "C" {
  *       assures that the connector sends at least an HTTP header on "CLOSE"
  *       and re-"CONNECT", even if no data for HTTP body have been written.
  *
+ *    HTTP/1.1 and when fHTTP_WriteThru is set:
+ *       CONN_Flush() attempts to send all pending data down to server.
+ *
  * @var fHTTP_KeepHeader
  *       Do not strip HTTP header (i.e. everything up to the first "\r\n\r\n",
  *       including the "\r\n\r\n") from the CGI script's response (including
  *       any server error, which then is made available for reading as well)
  *       *NOTE* this flag disables automatic authorization and redirection.
+ *
+ * @var fHTTP_WriteThru
+ *       Valid only with HTTP/1.1:  Connection to the server is made upon a
+ *       first CONN_Write(), or CONN_Flush() if fHTTP_Flushable is set, or
+ *       CONN_Wait(eIO_Write), and each CONN_Write() forms a chunk of HTTP
+ *       data to be sent to the server.  Reading / waiting for read from the
+ *       connector finalizes the body and, if reading, fetches the response.
  *
  * @var fHCC_UrlDecodeInput
  *       Assume the response body as single-part, URL-encoded;  perform the
@@ -93,7 +105,7 @@ extern "C" {
  *       Do not attempt any auto-retries in case of failing connections
  *       (this flag effectively means having SConnNetInfo::max_try set to 1).
 
- * @var fHTTP_InsecureRedirect
+ * @var fHTTP_UnsafeRedirects
  *       For security reasons the following redirects comprise security risk,
  *       and thus, are prohibited:  switching from https to http, and/or
  *       re-POSTing data (regardless of the transport, either http or https);
@@ -114,7 +126,8 @@ enum EHTTP_Flag {
     fHTTP_UrlDecodeInput  = 0x10,      URL-decode response body
     fHTTP_UrlEncodeOutput = 0x20,      URL-encode all output data
     fHTTP_UrlCodec        = 0x30,      fHTTP_UrlDecodeInput | ...EncodeOutput*/
-    fHTTP_WriteThru       = 0x10, /**< HTTP/1.1 writes through (chunked)     */
+    fHTTP_PushAuth        = 0x10, /**< HTTP/1.1 pushes out auth if present   */
+    fHTTP_WriteThru       = 0x20, /**< HTTP/1.1 writes through (chunked)     */
     fHTTP_NoUpread        = 0x40, /**< Do not use SOCK_SetReadOnWrite()      */
     fHTTP_DropUnread      = 0x80, /**< Each microsession drops unread data   */
     fHTTP_NoAutoRetry     = 0x100,/**< No auto-retries allowed               */
@@ -127,17 +140,17 @@ typedef unsigned int THTTP_Flags; /**< Bitwise OR of EHTTP_Flag              */
 NCBI_HTTP_CONNECTOR_DEPRECATED
 /** DEPRECATED, do not use! */
 typedef enum {
-    fHCC_AutoReconnect    = fHTTP_AutoReconnect,
-    fHCC_SureFlush        = fHTTP_Flushable,
-    fHCC_KeepHeader       = fHTTP_KeepHeader,
+    /*fHCC_AutoReconnect    = fHTTP_AutoReconnect,*/
+    /*fHCC_SureFlush        = fHTTP_Flushable,    */
+    /*fHCC_KeepHeader       = fHTTP_KeepHeader,   */
     fHCC_UrlEncodeArgs    = 0x8,  /**< NB: Error-prone semantics, do not use!*/
     fHCC_UrlDecodeInput   = 0x10, /**< Obsolete, may not work, do not use!   */
     fHCC_UrlEncodeOutput  = 0x20, /**< Obsolete, may not work, do not use!   */
-    fHCC_UrlCodec         = 0x30, /**< fHCC_UrlDecodeInput | ...EncodeOutput */
-    fHCC_DropUnread       = fHTTP_DropUnread,
-    fHCC_NoUpread         = fHTTP_NoUpread,
-    fHCC_Flushable        = fHTTP_Flushable,
-    fHCC_NoAutoRetry      = fHTTP_NoAutoRetry
+    fHCC_UrlCodec         = 0x30  /**< fHCC_UrlDecodeInput | ...EncodeOutput */
+    /*fHCC_DropUnread       = fHTTP_DropUnread,   */
+    /*fHCC_NoUpread         = fHTTP_NoUpread,     */
+    /*fHCC_Flushable        = fHTTP_Flushable,    */
+    /*fHCC_NoAutoRetry      = fHTTP_NoAutoRetry   */
 } EHCC_Flag;
 NCBI_HTTP_CONNECTOR_DEPRECATED
 typedef unsigned int THCC_Flags;  /**< bitwise OR of EHCC_Flag, deprecated   */
@@ -230,14 +243,16 @@ typedef void        (*FHTTP_Cleanup)
  * request to be used regardless of pending data, and will flag an error if any
  * data will have to be sent with a GET (per the standard).
  *
- * In order to workaround some HTTP communication features, this code does:
+ * When not using HTTP/1.1's fHTTP_WriteThru mode, in order to work around
+ * some HTTP communication features, this code does:
+ *
  *  1. Accumulate all output data in an internal memory buffer until the
  *     first CONN_Read() (including peek) or CONN_Wait(on read) is attempted
  *     (also see fHTTP_Flushable flag below).
  *  2. On the first CONN_Read() or CONN_Wait(on read), compose and send the
  *     whole HTTP request as:
  *        @verbatim
- *        {POST|GET} <net_info->path>?<net_info->args> HTTP/1.0\r\n
+ *        METHOD <net_info->path>?<net_info->args> HTTP/1.0\r\n
  *        <user_header\r\n>
  *        Content-Length: <accumulated_data_length>\r\n
  *        \r\n
@@ -266,6 +281,10 @@ typedef void        (*FHTTP_Cleanup)
  *     first see the leftovers (if any) of data stored previously, then the
  *     new data generated in response to the latest request.  The behavior can
  *     be changed by the fHTTP_DropUnread flag.
+ *
+ *  When fHTTP_WriteThru is set with HTTP/1.1, writing to the connector begins
+ *  upon any write operations, and reading from the connector causes the
+ *  request body to finalize and response to be fetched from the server.
  *
  *  @note
  *     If "fHTTP_AutoReconnect" is set in "flags", then the connector makes an
