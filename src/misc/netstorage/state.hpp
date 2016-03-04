@@ -51,6 +51,7 @@ struct SCombinedNetStorageConfig : SNetStorage::SConfig
 
     SCombinedNetStorageConfig() : mode(eDefault) {}
     void ParseArg(const string&, const string&);
+    void Validate(const string&);
 
     static SCombinedNetStorageConfig Build(const string& init_string)
     {

@@ -195,7 +195,6 @@ private:
 class CLocation : public ILocatorHolding<ILocation>
 {
 public:
-    virtual bool Init() { return true; }
     virtual void SetLocator() = 0;
 };
 
@@ -868,8 +867,10 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
     m_Locations.push(&m_NotFound);
 
     if (!primary_nc && !secondary_nc && (flags & fNST_Movable)) {
-        LOG_POST(Trace << "NetCache (movable)");
-        m_Locations.push(&m_NetCache);
+        if (m_NetCache.Init()) {
+            LOG_POST(Trace << "NetCache (movable)");
+            m_Locations.push(&m_NetCache);
+        }
     }
 
     if (!primary_ft && !secondary_ft && (flags & fNST_Movable)) {
@@ -878,8 +879,10 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
     }
 
     if (!primary_nc && secondary_nc) {
-        LOG_POST(Trace << "NetCache (flag)");
-        m_Locations.push(&m_NetCache);
+        if (m_NetCache.Init()) {
+            LOG_POST(Trace << "NetCache (flag)");
+            m_Locations.push(&m_NetCache);
+        }
     }
 
     if (!primary_ft && secondary_ft) {
@@ -888,8 +891,10 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
     }
 
     if (primary_nc) {
-        LOG_POST(Trace << "NetCache (location)");
-        m_Locations.push(&m_NetCache);
+        if (m_NetCache.Init()) {
+            LOG_POST(Trace << "NetCache (location)");
+            m_Locations.push(&m_NetCache);
+        }
     }
     
     if (primary_ft) {
@@ -928,7 +933,7 @@ CLocation* CSelector::Top()
     _ASSERT(m_Locations.size());
     CLocation* location = m_Locations.top();
     _ASSERT(location);
-    return location->Init() ? location : NULL;
+    return location;
 }
 
 
@@ -1079,6 +1084,17 @@ void SCombinedNetStorageConfig::ParseArg(const string& name,
         ft.key = NStr::URLDecode(value);
     else
         SNetStorage::SConfig::ParseArg(name, value);
+}
+
+
+void SCombinedNetStorageConfig::Validate(const string& init_string)
+{
+    if (mode == eServerless && app_domain.empty()) {
+        // TODO: Turn on nocreate/readonly mode instead? (CXX-7801)
+        app_domain = "default";
+    }
+
+    SNetStorage::SConfig::Validate(init_string);
 }
 
 
