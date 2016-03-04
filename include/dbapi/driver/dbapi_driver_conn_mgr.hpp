@@ -129,10 +129,7 @@ public:
     static CDbapiConnMgr& Instance(void);
 
     /// Set up a connection factory.
-    void SetConnectionFactory(IDBConnectionFactory* factory)
-    {
-        m_ConnectFactory.Reset(factory);
-    }
+    void SetConnectionFactory(IDBConnectionFactory* factory);
 
     /// Retrieve a connection factory.
     CRef<IDBConnectionFactory> GetConnectionFactory(void) const
@@ -153,7 +150,7 @@ private:
 
     CRef<IDBConnectionFactory> m_ConnectFactory;
 
-    CMutex m_Mutex;
+    CFastMutex m_Mutex;
     unsigned int m_NumConnect;
 
     // Friends

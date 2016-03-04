@@ -145,6 +145,12 @@ typedef NCBI_PARAM_TYPE(dbapi, max_connection) TDbapi_MaxConnection;
 NCBI_PARAM_DEF_EX(unsigned int, dbapi, max_connection, 100, eParam_NoThread, NULL);
 
 
+void CDbapiConnMgr::SetConnectionFactory(IDBConnectionFactory* factory)
+{
+    CFastMutexGuard mg(m_Mutex);
+    m_ConnectFactory.Reset(factory);
+}
+
 void CDbapiConnMgr::SetMaxConnect(unsigned int max_connect)
 {
     TDbapi_MaxConnection::SetDefault(max_connect);
@@ -157,7 +163,7 @@ unsigned int CDbapiConnMgr::GetMaxConnect(void)
 
 bool CDbapiConnMgr::AddConnect(void)
 {
-    CMutexGuard mg(m_Mutex);
+    CFastMutexGuard mg(m_Mutex);
 
     if (m_NumConnect >= GetMaxConnect())
         return false;
@@ -168,7 +174,7 @@ bool CDbapiConnMgr::AddConnect(void)
 
 void CDbapiConnMgr::DelConnect(void)
 {
-    CMutexGuard mg(m_Mutex);
+    CFastMutexGuard mg(m_Mutex);
 
     if (m_NumConnect > 0)
         --m_NumConnect;
