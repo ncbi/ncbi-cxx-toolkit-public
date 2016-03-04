@@ -1103,16 +1103,16 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
  *  [in]  eIO_WritePlain | eIO_WritePersist
  * @return
  *  In "*n_written", return the number of bytes actually written.
- *  eIO_WritePlain   --  write as many bytes as possible at once and return
+ *  eIO_WritePlain   -- write as many bytes as possible at once and return
  *                      immediately; if no bytes can be written then wait
  *                      at most WRITE timeout, try again and return.
- *  eIO_WritePersist --  write all data (doing an internal retry loop
+ *  eIO_WritePersist -- write all data (doing an internal retry loop
  *                      if necessary); if any single write attempt times out
  *                      or fails then stop writing and return (error code).
  *  Return status: eIO_Success -- some bytes were written successfully  [Plain]
- *                            -- all bytes were written successfully [Persist]
- *                other code denotes an error, but some bytes might have
- *                been sent nevertheless (always check *n_written to know).
+ *                             -- all bytes were written successfully [Persist]
+ *                 other code denotes an error, but some bytes might have
+ *                 been sent nevertheless (always check *n_written to know).
  *
  * @note  With eIO_WritePlain the call returns eIO_Success if and only if
  *        some data were actually written to the socket.  If no data could
