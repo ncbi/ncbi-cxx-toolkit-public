@@ -102,7 +102,7 @@ CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len,
     {
         CNcbiIfstream  config_file(".ncbirc");
         CNcbiRegistry config_reg(config_file);
-        string httpProt = config_reg.Get("BLASTFMTUTIL","HTT_PROTOCOL");        
+        string httpProt = config_reg.Get("BLASTFMTUTIL","PROTOCOL");        
         str << "<b><a href=\""
             << httpProt
             << blast::CReference::GetPubmedUrl(pub)
