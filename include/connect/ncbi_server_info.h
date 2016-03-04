@@ -83,9 +83,6 @@ typedef enum {
     eSERV_Blast        = 1,  /* Server is tied up to an instant host load */
     eSERV_RegularInter = 2,  /* Regular server shared between LBSM zones  */
     eSERV_BlastInter   = 3,  /* ... same for Blast-type server            */
-    /* compatibility only, deprecated */
-    fSERV_Regular      = eSERV_Regular,
-    fSERV_Blast        = eSERV_Blast
 } ESERV_Flag;
 
 
