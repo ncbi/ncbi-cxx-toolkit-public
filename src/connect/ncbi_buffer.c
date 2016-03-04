@@ -89,11 +89,13 @@ extern size_t BUF_Size(BUF buf)
 
     if (!buf)
         return 0;
+    assert(!buf->size == !(buf->list  ||  buf->last));
 
     for (size = 0, chunk = buf->list;  chunk;  chunk = chunk->next) {
         /* NB: no empty chunks allowed within the list */
         assert(chunk->size > chunk->skip);
         size += chunk->size - chunk->skip;
+        assert(chunk != buf->last  ||  !chunk->next);
     }
     assert(size == buf->size);
     return size;
@@ -336,8 +338,11 @@ extern size_t BUF_PeekAtCB(BUF      buf,
     size_t     todo;
     SBufChunk* chunk;
 
-    if (!size  ||  !buf  ||  !buf->size  ||  !buf->list)
+    assert(!buf  ||  !buf->size == !(buf->list  ||  buf->last));
+
+    if (!size  ||  !buf  ||  !buf->size)
         return 0;
+    assert(buf->list  &&  buf->last);
 
     /* special treatment for NULL callback */
     if (!callback) {
@@ -347,14 +352,20 @@ extern size_t BUF_PeekAtCB(BUF      buf,
         return todo < size ? todo : size;
     }
 
-    /* skip "pos" bytes */
-    for (chunk = buf->list;  chunk;  chunk = chunk->next) {
-        size_t avail = chunk->size - chunk->skip;
-        assert(chunk->size > chunk->skip /*i.e. chunk->size > 0*/);
-        if (avail > pos)
-            break;
-        pos -= avail;
-    }
+    /* skip "pos" bytes, first fast tracking for last chunk if possible */
+    chunk = buf->last; 
+    assert(chunk->size > chunk->skip /*i.e. chunk->size > 0*/);
+    if (pos + (todo = chunk->size - chunk->skip) < buf->size) {
+        for (chunk = buf->list;  chunk;  chunk = chunk->next) {
+            todo = chunk->size - chunk->skip;
+            assert(chunk->size > chunk->skip /*i.e. chunk->size > 0*/);
+            if (todo > pos)
+                break;
+            pos -= todo;
+        }
+        assert(chunk != buf->last);
+    } else
+        pos -= buf->size - todo;
 
     /* process the peeked data */
     for (todo = size;  todo  &&  chunk;  chunk = chunk->next, pos = 0) {
@@ -363,7 +374,7 @@ extern size_t BUF_PeekAtCB(BUF      buf,
         assert(chunk->size > skip /*i.e. chunk->size > 0*/);
         if (copy > todo)
             copy = todo;
-
+        assert(copy);
         skip  = callback(cbdata, (const char*) chunk->data + skip, copy);
         assert(skip <= copy);
         todo -= skip;
@@ -402,16 +413,19 @@ extern size_t BUF_Read(BUF buf, void* dst, size_t size)
 {
     size_t todo;
 
+    assert(!buf  ||  !buf->size == !(buf->list  ||  buf->last));
+
     /* peek to the callers data buffer, if non-NULL */
     if (dst)
         size = BUF_Peek(buf, dst, size);
-    else if (!buf  ||  !buf->size  ||  !buf->list)
+    else if (!buf  ||  !buf->size)
         return 0;
     if (!size)
         return 0;
 
     /* remove the read data from the buffer */ 
     todo = size;
+
     do {
         SBufChunk* head  = buf->list;
         size_t     avail = head->size - head->skip;
@@ -432,6 +446,7 @@ extern size_t BUF_Read(BUF buf, void* dst, size_t size)
         todo      -= avail;
     } while (todo  &&  buf->list);
 
+    assert(!buf->size == !(buf->list  ||  buf->last));
     assert(size >= todo);
     return size - todo;
 }
