@@ -317,6 +317,10 @@ CDirectNetStorage::CDirectNetStorage(
         const string& service_name,
         CCompoundIDPool::TInstance compound_id_pool)
     : CNetStorage(
+            // In general, NetStorage server cannot get app_domain from client.
+            // Instead of introducing new configuration parameter
+            // (with a value not actually affecting anything),
+            // we just use service_name value instead.
             new SDirectNetStorageImpl(service_name,
                 s_GetICClient(registry, service_name),
                 compound_id_pool, s_GetFTConfig(registry, service_name)))
