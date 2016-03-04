@@ -2393,7 +2393,9 @@ public:
         fSplit_CanEscape       = 1 << 4,  ///< Allow \... escaping
         fSplit_CanSingleQuote  = 1 << 5,  ///< Allow '...' quoting
         fSplit_CanDoubleQuote  = 1 << 6,  ///< Allow "..." quoting
-        fSplit_CanQuote        = fSplit_CanSingleQuote | fSplit_CanDoubleQuote
+        fSplit_CanQuote        = fSplit_CanSingleQuote | fSplit_CanDoubleQuote,
+        /// All delimiters are merged and trimmed, to get non-empty tokens only
+        fSplit_Tokenize        = fSplit_MergeDelimiters | fSplit_Truncate
     };
     /// Deprecated flags for Split*() methods.
     /// @deprecated
