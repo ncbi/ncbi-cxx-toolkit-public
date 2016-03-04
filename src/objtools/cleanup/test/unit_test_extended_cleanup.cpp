@@ -70,7 +70,6 @@
 
 // for allowing remote fetching
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <sra/data_loaders/wgs/wgsloader.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -699,9 +698,6 @@ BOOST_AUTO_TEST_CASE(Test_ExtendToStop)
 {
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*objmgr);
-    CWGSDataLoader::RegisterInObjectManager(*objmgr,
-                                            CObjectManager::eDefault,
-                                            88);
 
     CScope scope(*objmgr);
     scope.AddDefaults();
