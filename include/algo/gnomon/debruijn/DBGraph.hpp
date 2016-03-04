@@ -221,7 +221,8 @@ namespace DeBruijn {
             template <typename T> void operator() (T& v) const {
                 size_t num = v.size();
                 os.write(reinterpret_cast<const char*>(&num), sizeof num); 
-                os.write(reinterpret_cast<const char*>(&v[0]), num*sizeof(v[0]));
+                if(num > 0)
+                    os.write(reinterpret_cast<const char*>(&v[0]), num*sizeof(v[0]));
             }
             ostream& os;
         };
@@ -230,8 +231,10 @@ namespace DeBruijn {
             template <typename T> void operator() (T& v) const {
                 size_t num;
                 is.read(reinterpret_cast<char*>(&num), sizeof num);
-                v.resize(num);
-                is.read(reinterpret_cast<char*>(&v[0]), num*sizeof(v[0]));
+                if(num > 0) {
+                    v.resize(num);
+                    is.read(reinterpret_cast<char*>(&v[0]), num*sizeof(v[0]));
+                }
             }
             istream& is;
         };
@@ -339,6 +342,14 @@ namespace DeBruijn {
             m_graph_kmers.Load(in);
             string max_kmer(m_graph_kmers.KmerLen(), bin2NT[3]);
             m_max_kmer = TKmer(max_kmer);
+
+            int bin_num;
+            in.read(reinterpret_cast<char*>(&bin_num), sizeof bin_num);
+            for(int i = 0; i < bin_num; ++i) {
+                pair<int, size_t> bin;
+                in.read(reinterpret_cast<char*>(&bin), sizeof bin);
+                m_bins.push_back(bin);
+            }
         }
 
         // 0 for not contained kmers    
@@ -431,10 +442,67 @@ namespace DeBruijn {
         int KmerLen() const { return m_graph_kmers.KmerLen(); }
         size_t GraphSize() const { return m_graph_kmers.Size(); }
 
+        int HistogramMinimum() const { // naive algorithm for finding peak and valley
+            unsigned MIN_NUM = 100;
+            size_t gsize = 0;
+            for(auto& bin : m_bins) {
+                if(bin.second < MIN_NUM)
+                    break;
+                gsize += bin.first*bin.second;
+            }
+
+            cerr << "Gsize: " << gsize << endl;
+
+            int rlimit = 0;
+            size_t gs = 0;
+            for(auto& bin : m_bins) {
+                gs += bin.first*bin.second;
+                ++rlimit;
+                if(gs > 0.8*gsize)
+                    break;
+            }
+
+            cerr << "Rlimit: " << rlimit << endl;
+
+            int SLOPE_LEN = 5;
+            int peak = min(rlimit,(int)m_bins.size()-SLOPE_LEN-1);
+            while(peak >= SLOPE_LEN) {
+                bool maxim = true;
+                for(int i = 1; i <= SLOPE_LEN && maxim; ++i) 
+                    maxim = m_bins[peak+i].second < m_bins[peak].second;
+                for(int i = 1; i <= SLOPE_LEN && maxim; ++i) 
+                    maxim = m_bins[peak-i].second < m_bins[peak].second;
+                if(maxim)
+                    break;
+                --peak;
+            }
+            if(peak < SLOPE_LEN)
+                return 0;
+
+            int valley = 0;
+            for(int i = 1; i <= peak; ++i) {
+                if(m_bins[i].second < m_bins[valley].second)
+                    valley = i;
+            }
+            if(valley == 0 || valley == peak)
+                return 0;
+
+            for(int i = valley; i < (int)m_bins.size(); ++i) {
+                if(m_bins[i].second > m_bins[peak].second)
+                    peak = i;
+            }
+
+            if(m_bins[valley].second < 0.7*min(m_bins[0].second,m_bins[peak].second))
+                return m_bins[valley].first;
+            else            
+                return 0;
+        }
+
     private:
 
         TKmerCount m_graph_kmers;     // only the minimal kmers are stored  
-        TKmer m_max_kmer;             // contains 1 in all kmer_len bit positions    
+        TKmer m_max_kmer;             // contains 1 in all kmer_len bit positions  
+        vector<pair<int,size_t>> m_bins;
     };
 
     class CReadHolder {
@@ -567,7 +635,7 @@ class CDBGraphDigger {
 public:
     typedef list<string> TStrList;
 
-    CDBGraphDigger(CDBGraph& graph, double fraction, int jump, int max_kmer, bool allow_bubble) : m_graph(graph), m_fraction(fraction), m_jump(jump), m_max_kmer(max_kmer), m_allow_bubble(allow_bubble) {}
+    CDBGraphDigger(CDBGraph& graph, double fraction, int jump, int max_kmer, bool allow_bubble) : m_graph(graph), m_fraction(fraction), m_jump(jump), m_max_kmer(max_kmer), m_allow_bubble(allow_bubble), m_hist_min(graph.HistogramMinimum()) { cerr << "Valley: " << m_hist_min << endl; }
 
 private:
     typedef deque<CDBGraph::Successor> TBases;
@@ -597,17 +665,16 @@ public:
         }
         cerr << "Kmers in contigs: " << kmers << " Not in graph: " << kmers-kmers_in_graph << endl;
 
-        {
+        if(m_hist_min > 0 || contigs.empty()) {
             //create new seeds without jump 
             TStrList new_seeds;
             int jump = m_jump;
             m_jump = 0;
             for(size_t index = 0; index < m_graph.GraphSize(); ++index) {
-                if(!m_graph.IsVisited(2*(index+1))) {                 
-                    CDBGraph::Node node = 2*(index+1);
-                    pair<string, double> contig = GetContigForKmer(node);
-                    new_seeds.push_back(contig.first);                
-                }
+                CDBGraph::Node node = 2*(index+1);
+                pair<string, double> contig = GetContigForKmer(node);
+                if(!contig.first.empty())
+                    new_seeds.push_back(contig.first);                                                    
             }
             m_jump = jump;
 
@@ -742,6 +809,9 @@ public:
 
     //assembles the contig; changes the state of all used nodes to 'visited'
     pair<string, double> GetContigForKmer(const CDBGraph::Node& initial_node) {
+        if(m_graph.IsVisited(initial_node) || m_graph.Abundance(initial_node) < m_hist_min)
+            return make_pair(string(),0.);
+
         unordered_map<CDBGraph::Node, TContigEnd> landing_spots;
         TBases contigr = ExtendToRightAndConnect(initial_node, landing_spots, 0);
         TBases contigl = ExtendToRightAndConnect(CDBGraph::ReverseComplement(initial_node), landing_spots, 0);
@@ -766,7 +836,6 @@ public:
         return make_pair(contig, abundance);
     }
 
-private:
     void FilterNeighbors(vector<CDBGraph::Successor>& successors, const CDBGraph::Node& previous) {
         if(m_graph.PlusFraction(previous) < 0.75 && successors.size() > 1) {
             bool has_minus = false;
@@ -794,6 +863,8 @@ private:
                 successors.pop_back();
         }
     }
+
+private:
 
     typedef tuple<TBases,size_t> TSequence;
     typedef list<TSequence> TSeqList;
@@ -999,6 +1070,7 @@ private:
     int m_jump;
     int m_max_kmer;
     bool m_allow_bubble;
+    int m_hist_min;
 };
 
 }; // namespace
