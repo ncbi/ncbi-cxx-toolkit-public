@@ -480,7 +480,7 @@ static EIO_Status s_GnuTlsRead(void* session, void* buf, size_t n_todo,
     assert(session);
 
     x_read = gnutls_record_recv((gnutls_session_t) session, buf, n_todo);
-    assert(x_read <= n_todo);
+    assert(x_read < 0  ||  x_read <= n_todo);
 
     if (x_read <= 0) {
         status = x_ErrorToStatus(&x_read,
@@ -504,7 +504,7 @@ static EIO_Status x_GnuTlsWrite(void* session, const void* data, size_t n_todo,
     assert(session);
 
     x_written = gnutls_record_send((gnutls_session_t) session, data, n_todo);
-    assert(x_written <= n_todo);
+    assert(x_written < 0  ||  x_written <= n_todo);
 
     if (x_written <= 0) {
         status = x_ErrorToStatus(&x_written,
