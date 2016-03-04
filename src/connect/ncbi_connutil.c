@@ -899,7 +899,7 @@ extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
 {
     size_t len, used;
 
-    if (!arg || !*arg)
+    if (!arg  ||  !*arg)
         return 1/*success*/;
 
     used = strlen(info->args);
@@ -913,7 +913,7 @@ extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
     if (used)
         info->args[used++] = '&';
     strcpy(info->args + used, arg);
-    if (val && *val) {
+    if (val  &&  *val) {
         used += len;
         info->args[used++] = '=';
         strcpy(info->args + used, val);
