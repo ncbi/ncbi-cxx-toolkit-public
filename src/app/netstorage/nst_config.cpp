@@ -455,7 +455,7 @@ CJsonNode NSTGetBackendConfiguration(const IRegistry &  reg,
     // Start with the no service entry
     try {
         CDirectNetStorage   storage(reg, kEmptyStr,
-                                    server->GetCompoundIDPool(), kEmptyStr);
+                                    server->GetCompoundIDPool());
         configuration.SetByKey(kEmptyStr, storage.ReportConfig());
     } catch (const CException &  ex) {
         warnings.push_back(std::string("CException while retrieving "
@@ -488,7 +488,7 @@ CJsonNode NSTGetBackendConfiguration(const IRegistry &  reg,
         // Request backend configuration for each service
         try {
             CDirectNetStorage   storage(reg, service,
-                                        server->GetCompoundIDPool(), kEmptyStr);
+                                        server->GetCompoundIDPool());
             configuration.SetByKey(service, storage.ReportConfig());
         } catch (const CException &  ex) {
             warnings.push_back("CException while retrieving backend "

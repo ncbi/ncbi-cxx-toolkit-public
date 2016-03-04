@@ -985,12 +985,11 @@ SContext::SContext(const SCombinedNetStorageConfig& config, TNetStorageFlags fla
 
 
 SContext::SContext(const string& domain, CNetICacheClient::TInstance client,
-        TNetStorageFlags flags, CCompoundIDPool::TInstance id_pool,
+        CCompoundIDPool::TInstance id_pool,
         const SFileTrackConfig& ft_config)
     : icache_client(client),
       filetrack_api(ft_config),
       compound_id_pool(id_pool ? CCompoundIDPool(id_pool) : CCompoundIDPool()),
-      default_flags(flags),
       app_domain(domain)
 {
     Init();

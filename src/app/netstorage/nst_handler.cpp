@@ -3000,7 +3000,7 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message)
             CDirectNetStorage   storage(
                               app->GetConfig(),
                               m_Service,
-                              m_Server->GetCompoundIDPool(), kEmptyStr);
+                              m_Server->GetCompoundIDPool());
             m_Server->ReportNetStorageAPIDecryptSuccess();
 
             CDirectNetStorageObject object(storage.Open(object_loc));
@@ -3127,8 +3127,7 @@ CNetStorageHandler::x_CreateObjectStream(
 
         m_Server->ResetDecryptCacheIfNeed();
         CDirectNetStorage   net_storage(app->GetConfig(), m_Service,
-                                        m_Server->GetCompoundIDPool(),
-                                        icache_settings.m_CacheName);
+                                        m_Server->GetCompoundIDPool());
         m_Server->ReportNetStorageAPIDecryptSuccess();
 
         return net_storage.Create(m_Service, m_DBObjectID, flags);

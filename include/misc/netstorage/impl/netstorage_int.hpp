@@ -60,9 +60,7 @@ public:
     CDirectNetStorage(
         const IRegistry&            registry,
         const string&               service_name,
-        CCompoundIDPool::TInstance  compound_id_pool,
-        const string&               app_domain,
-        TNetStorageFlags            default_flags = 0);
+        CCompoundIDPool::TInstance  compound_id_pool);
 
     CDirectNetStorageObject Create(
         const string& service_name,
@@ -82,8 +80,7 @@ public:
         const IRegistry&            registry,
         const string&               service_name,
         CCompoundIDPool::TInstance  compound_id_pool,
-        const string&               app_domain,
-        TNetStorageFlags            default_flags = 0);
+        const string&               app_domain);
 
     CDirectNetStorageObject Open(const string& unique_key,
             TNetStorageFlags flags = 0);

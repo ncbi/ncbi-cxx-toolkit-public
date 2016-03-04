@@ -109,11 +109,10 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
     }
 
     SDirectNetStorageImpl(const string& app_domain,
-            TNetStorageFlags default_flags,
             CNetICacheClient::TInstance icache_client,
             CCompoundIDPool::TInstance compound_id_pool,
             const SFileTrackConfig& ft_config)
-        : m_Context(new SContext(app_domain, icache_client, default_flags,
+        : m_Context(new SContext(app_domain, icache_client,
                     compound_id_pool, ft_config))
     {
     }
@@ -218,11 +217,10 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
 
 
     SDirectNetStorageByKeyImpl(const string& app_domain,
-            TNetStorageFlags default_flags,
             CNetICacheClient::TInstance icache_client,
             CCompoundIDPool::TInstance compound_id_pool,
             const SFileTrackConfig& ft_config)
-        : m_Context(new SContext(app_domain, icache_client, default_flags,
+        : m_Context(new SContext(app_domain, icache_client,
                     compound_id_pool, ft_config))
     {
         if (app_domain.empty()) {
@@ -317,11 +315,9 @@ CNetICacheClient s_GetICClient(const IRegistry& registry, const string& service)
 CDirectNetStorage::CDirectNetStorage(
         const IRegistry& registry,
         const string& service_name,
-        CCompoundIDPool::TInstance compound_id_pool,
-        const string& app_domain,
-        TNetStorageFlags default_flags)
+        CCompoundIDPool::TInstance compound_id_pool)
     : CNetStorage(
-            new SDirectNetStorageImpl(app_domain, default_flags,
+            new SDirectNetStorageImpl(service_name,
                 s_GetICClient(registry, service_name),
                 compound_id_pool, s_GetFTConfig(registry, service_name)))
 {
@@ -353,10 +349,9 @@ CDirectNetStorageByKey::CDirectNetStorageByKey(
         const IRegistry& registry,
         const string& service_name,
         CCompoundIDPool::TInstance compound_id_pool,
-        const string& app_domain,
-        TNetStorageFlags default_flags)
+        const string& app_domain)
     : CNetStorageByKey(
-            new SDirectNetStorageByKeyImpl(app_domain, default_flags,
+            new SDirectNetStorageByKeyImpl(app_domain,
                 s_GetICClient(registry, service_name),
                 compound_id_pool, s_GetFTConfig(registry, service_name)))
 {

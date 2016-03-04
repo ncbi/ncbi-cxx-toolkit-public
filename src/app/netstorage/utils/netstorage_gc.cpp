@@ -190,7 +190,7 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
                                         CNetStorageGCDatabase &  db,
                                         bool  dryrun)
 {
-    CDirectNetStorage       net_storage(GetConfig(), "", NULL, kEmptyStr);
+    CDirectNetStorage       net_storage(GetConfig(), "", NULL);
     CRef<CRequestContext>   ctx;
     bool                    error;
 
