@@ -93,7 +93,7 @@ function compare_with_golden_file()
    if [ -n "$failure" ]; then
       if [ "$failure" = "diff" ]; then
          tc_failed "$test_name" "Differences seen, showing only 100 lines of $diff_folder/$test_name.diff"
-         head -n 100 $diff_folder/$test_name.diff
+         head -n 200 $diff_folder/$test_name.diff
       else
          tc_failed "$test_name" "$failure"
       fi

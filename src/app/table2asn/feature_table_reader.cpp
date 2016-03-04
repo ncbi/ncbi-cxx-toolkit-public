@@ -101,8 +101,7 @@ namespace
             switch ((**it).Which())
             {
             case CSeqdesc::e_User:
-                if ((**it).GetUser().IsSetType() && (**it).GetUser().GetType().IsStr() &&
-                    NStr::CompareNocase((**it).GetUser().GetType().GetStr(), "DBLink") == 0)
+                if (CTable2AsnContext::IsDBLink(**it))
                 {
                     dest.SetDescr().Set().push_back(*it);
                     src.SetDescr().Set().erase(it++);

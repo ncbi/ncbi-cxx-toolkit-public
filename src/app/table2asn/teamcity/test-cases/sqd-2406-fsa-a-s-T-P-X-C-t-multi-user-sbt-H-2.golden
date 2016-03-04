@@ -75,6 +75,73 @@ Seq-submit ::= {
   data entrys {
     set {
       class genbank,
+      descr {
+        pub {
+          pub {
+            article {
+              title {
+                name "Testing backend submit2genbank script"
+              },
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Gobu",
+                      first "Vasuki",
+                      initials "V."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Sinyakov",
+                      first "Denis",
+                      initials "D."
+                    }
+                  }
+                }
+              },
+              from journal {
+                title {
+                  jta "SMART scripts"
+                },
+                imp {
+                  date std {
+                    year 2014
+                  },
+                  prepub in-press
+                }
+              }
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "GAP:unknown length: introns"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "ALT EMAIL:vasuki_gobu@yahoo.com"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "Submission#: SUB175178"
+            }
+          }
+        }
+      },
       seq-set {
         seq {
           id {
@@ -122,71 +189,6 @@ Seq-submit ::= {
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                article {
-                  title {
-                    name "Testing backend submit2genbank script"
-                  },
-                  authors {
-                    names std {
-                      {
-                        name name {
-                          last "Gobu",
-                          first "Vasuki",
-                          initials "V."
-                        }
-                      },
-                      {
-                        name name {
-                          last "Sinyakov",
-                          first "Denis",
-                          initials "D."
-                        }
-                      }
-                    }
-                  },
-                  from journal {
-                    title {
-                      jta "SMART scripts"
-                    },
-                    imp {
-                      date std {
-                        year 2014
-                      },
-                      prepub in-press
-                    }
-                  }
-                }
-              }
-            },
-            user {
-              type str "Submission",
-              data {
-                {
-                  label str "AdditionalComment",
-                  data str "GAP:unknown length: introns"
-                }
-              }
-            },
-            user {
-              type str "Submission",
-              data {
-                {
-                  label str "AdditionalComment",
-                  data str "ALT EMAIL:vasuki_gobu@yahoo.com"
-                }
-              }
-            },
-            user {
-              type str "Submission",
-              data {
-                {
-                  label str "AdditionalComment",
-                  data str "Submission#: SUB175178"
-                }
-              }
             },
             create-date std {
               year 2014,
@@ -250,71 +252,6 @@ Seq-submit ::= {
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                article {
-                  title {
-                    name "Testing backend submit2genbank script"
-                  },
-                  authors {
-                    names std {
-                      {
-                        name name {
-                          last "Gobu",
-                          first "Vasuki",
-                          initials "V."
-                        }
-                      },
-                      {
-                        name name {
-                          last "Sinyakov",
-                          first "Denis",
-                          initials "D."
-                        }
-                      }
-                    }
-                  },
-                  from journal {
-                    title {
-                      jta "SMART scripts"
-                    },
-                    imp {
-                      date std {
-                        year 2014
-                      },
-                      prepub in-press
-                    }
-                  }
-                }
-              }
-            },
-            user {
-              type str "Submission",
-              data {
-                {
-                  label str "AdditionalComment",
-                  data str "GAP:unknown length: introns"
-                }
-              }
-            },
-            user {
-              type str "Submission",
-              data {
-                {
-                  label str "AdditionalComment",
-                  data str "ALT EMAIL:vasuki_gobu@yahoo.com"
-                }
-              }
-            },
-            user {
-              type str "Submission",
-              data {
-                {
-                  label str "AdditionalComment",
-                  data str "Submission#: SUB175178"
-                }
-              }
             },
             create-date std {
               year 2014,

@@ -296,28 +296,54 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
     return CRef<CSerialObject>(object);
 }
 
-void CTable2AsnContext::MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_pub) const
+bool CTable2AsnContext::IsDBLink(const CSeqdesc& desc)
+{
+    if (desc.IsUser() && desc.GetUser().IsSetType() && desc.GetUser().GetType().IsStr() &&
+        NStr::CompareNocase(desc.GetUser().GetType().GetStr().c_str(), "DBLink") == 0)
+        return true;
+    else
+        return false;
+}
+
+void CTable2AsnContext::x_MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_set) const
 {
     ITERATE(CSeq_descr::Tdata, it, src.Get())
     {
         CRef<CSeqdesc> desc;
-        if ((**it).Which() == CSeqdesc::e_Pub)
+        switch ((**it).Which())
         {
-            if (!only_pub)
-                continue;
-        }
-        else
-        {
-            if (only_pub)
-                continue;
-
-            switch ((**it).Which())
+        case CSeqdesc::e_Molinfo:
+        case CSeqdesc::e_Source:
+            if (only_set)
+               continue;
+            break;
+        case CSeqdesc::e_User:
+            if (IsDBLink(**it))
             {
-            case CSeqdesc::e_User:
-                break;
-            default:
-                desc = CAutoAddDesc::LocateDesc(dest, (**it).Which());
+               if (only_set)
+                    continue;
             }
+            else
+            if (!only_set)
+                continue;
+            break;
+        case CSeqdesc::e_Pub:
+            if (!only_set)
+                continue;
+            break;
+        default:
+            if (only_set)
+                continue;
+            break;
+        }
+
+        switch ((**it).Which())
+        {
+        case CSeqdesc::e_User:
+        case CSeqdesc::e_Pub:
+            break;
+        default:
+            desc = CAutoAddDesc::LocateDesc(dest, (**it).Which());
         }
 
         if (desc.Empty())
@@ -331,12 +357,13 @@ void CTable2AsnContext::MergeSeqDescr(objects::CSeq_descr& dest, const objects::
 
 void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
 {
-    if (m_entry_template.IsNull() ||
-        !m_entry_template->IsSetDescr())
+    if (m_entry_template.IsNull() || !m_entry_template->IsSetDescr())
         return;
 
-    if (entry.IsSet())
+    if (entry.IsSet())// && entry.GetSet().IsSetClass())
     {
+        x_MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), true);
+
         CSeq_entry_Base::TSet::TSeq_set& data = entry.SetSet().SetSeq_set();
         NON_CONST_ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
         {
@@ -344,24 +371,12 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
         }
     }
     else
-#if 1
     if (entry.IsSeq())
     {
-        MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), false);
-        MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), true);
+        if (entry.GetParentEntry() == 0)
+           x_MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), true);
+        x_MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), false);
     }
-#else
-    if (entry.IsSeq())
-    {
-        MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), false);
-    }
-
-    if (entry.GetParentEntry() == 0)
-    {
-        MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), true);
-    }
-#endif
-
 }
 
 void CTable2AsnContext::SetSeqId(CSeq_entry& entry) const

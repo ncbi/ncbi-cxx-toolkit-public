@@ -285,7 +285,8 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey("c", "String", "Cleanup (combine any of the following letters)\n\
       b Basic Cleanup\n\
-      e Extended Cleanup", CArgDescriptions::eString);
+      e Extended Cleanup\n\
+      f Fix product names", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
@@ -387,7 +388,7 @@ int CTbl2AsnApp::Run(void)
 
     if (args["c"])
     {
-        if (args["c"].AsString().find_first_not_of("be") != string::npos)
+        if (args["c"].AsString().find_first_not_of("bef") != string::npos)
         {
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized cleanup type " + args["c"].AsString());
@@ -457,6 +458,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_delay_genprodset = true;
         m_context.m_GenomicProductSet = false;
         m_context.m_HandleAsSet = true;
+        m_context.m_cleanup += 'f';
     }
 
     if (m_context.m_delay_genprodset)
@@ -815,10 +817,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         {
             m_context.SetSeqId(*entry);
         }
-        if (m_context.m_ecoset && entry->IsSet())
-        {
-            entry->SetSet().SetClass(CBioseq_set::eClass_eco_set);
-        }
 
         switch (format)
         {
@@ -855,6 +853,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
 
     fr.m_replacement_protein = m_replacement_proteins;
+    if (!m_context.m_ecoset)
     fr.MergeCDSFeatures(*entry, m_context.m_feature_links);
 
     entry->Parentize();
@@ -910,11 +909,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_context.m_RemotePubLookup)
     {
-        m_context.m_remote_updater->UpdatePubReferences(entry_edit_handle);
+        m_context.m_remote_updater->UpdatePubReferences(*entry);
     }
     if (m_context.m_postprocess_pubs)
     {
-        edit::CRemoteUpdater::PostProcessPubs(entry_edit_handle);
+        edit::CRemoteUpdater::PostProcessPubs(*entry);
     }
 
     if (avoid_submit_block)
@@ -932,7 +931,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     {
         validator.Cleanup(*entry, m_context.m_cleanup);
     }
-        
+
     CFeatureTableReader::GenerateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"));
 }
 

@@ -86,8 +86,10 @@ namespace
 {
 
     class CFastaReaderEx : public CFastaReader {
+    protected:
+        CTable2AsnContext& m_context;
     public:
-        CFastaReaderEx(ILineReader& reader, TFlags flags) : CFastaReader(reader, flags)
+        CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, TFlags flags) : CFastaReader(reader, flags), m_context(context)
         {
         };
         virtual void AssignMolType(ILineErrorListener * pMessageListener)
@@ -106,11 +108,14 @@ namespace
             if (!molinfo_desc.Set().SetMolinfo().IsSetBiomol())
                 molinfo_desc.Set().SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
 
-            CAutoAddDesc create_date_desc(SetCurrentSeq().SetDescr(), CSeqdesc::e_Create_date);
-            if (create_date_desc.IsNull())
-            {   
-                CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
-                create_date_desc.Set().SetCreate_date(*date);
+            //if (!m_context.m_HandleAsSet)
+            {
+                CAutoAddDesc create_date_desc(SetCurrentSeq().SetDescr(), CSeqdesc::e_Create_date);
+                if (create_date_desc.IsNull())
+                {
+                    CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
+                    create_date_desc.Set().SetCreate_date(*date);
+                }
             }
 
         }
@@ -250,7 +255,7 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     auto_ptr<CBaseFastaReader> pReader(new CBaseFastaReader(m_iFlags));
 //    auto_ptr<CBaseFastaReader> pReader(new CFastaReaderEx(lr, m_iFlags));
 #else
-    auto_ptr<CFastaReader> pReader(new CFastaReaderEx(lr, m_iFlags));
+    auto_ptr<CFastaReader> pReader(new CFastaReaderEx(m_context, lr, m_iFlags));
 #endif
     if (!pReader.get()) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -274,6 +279,11 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
             "File " + m_context.m_current_file + " contains multiple sequences")));
     }
+    if (m_context.m_ecoset && result->IsSet())
+    {
+        result->SetSet().SetClass(CBioseq_set::eClass_eco_set);
+    }
+
 #endif
     return result;
 

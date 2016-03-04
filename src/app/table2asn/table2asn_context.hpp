@@ -143,6 +143,7 @@ public:
     static void MakeGenomeCenterId(CTable2AsnContext& context, objects::CBioseq& bioseq);
     static void RenameProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
     static void RemoveProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
+    static bool IsDBLink(const objects::CSeqdesc& desc);
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;
@@ -153,7 +154,7 @@ public:
     string m_source_mods;
 
 private:
-    void MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_pub) const;
+    void x_MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_set) const;
 };
 
 
