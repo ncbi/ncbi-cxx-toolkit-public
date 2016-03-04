@@ -124,7 +124,9 @@ protected:
         TConfig cfg;
 
         ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
-            if (!field->name.empty()) cfg.ParseArg(field->name, field->value);
+            if (!field->name.empty() && !field->value.empty()) {
+                cfg.ParseArg(field->name, field->value);
+            }
         }
 
         cfg.Validate(init_string);
