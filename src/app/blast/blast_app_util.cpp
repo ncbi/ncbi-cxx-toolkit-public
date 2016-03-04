@@ -59,6 +59,8 @@ static char const rcsid[] =
 #include <objects/scoremat/Pssm.hpp>
 #include <serial/typeinfo.hpp>      // for CTypeInfo, needed by SerialClone
 #include <objtools/data_loaders/blastdb/bdbloader_rmt.hpp>
+#include <algo/blast/format/blast_format.hpp>
+#include <objtools/align_format/format_flags.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -901,6 +903,59 @@ GetSubjectFile(const CArgs& args)
 }
 
 
+void CBlastAppDiagHandler::Post(const SDiagMessage & mess)
+{
+	if(m_handler != NULL) {
+		m_handler->Post(mess);
+	}
+	if(m_save) {
+		CRef<CBlast4_error> d(new CBlast4_error);
+		string m;
+		mess.Write(m);
+		d->SetMessage(NStr::Sanitize(m));
+		d->SetCode((int)mess.m_Severity);
+		{
+			DEFINE_STATIC_MUTEX(mx);
+			CMutexGuard guard(mx);
+			m_messages.push_back(d);
+		}
+	}
+}
 
+void CBlastAppDiagHandler::ResetMessages()
+{
+	DEFINE_STATIC_MUTEX(mx);
+	CMutexGuard guard(mx);
+	m_messages.clear();
+}
+
+CBlastAppDiagHandler::~CBlastAppDiagHandler()
+{
+	if(m_handler) {
+		delete m_handler;
+	}
+}
+
+void CBlastAppDiagHandler::DoNotSaveMessages(void)
+{
+	m_save = false;
+	ResetMessages();
+}
+
+void PrintErrorArchive(const CArgs & a, const list<CRef<CBlast4_error> > & msg)
+{
+	try {
+		if(NStr::StringToInt(NStr::TruncateSpaces(a[align_format::kArgOutputFormat].AsString())) == CFormattingArgs::eArchiveFormat) {
+			CRef<CBlast4_archive> archive (new CBlast4_archive);
+
+			CBlast4_request & req = archive->SetRequest();
+			CBlast4_get_request_info_request & info= req.SetBody().SetGet_request_info();
+			info.SetRequest_id("Error");
+			CBlast4_get_search_results_reply & results = archive->SetResults();
+			archive->SetMessages() = msg;
+			CBlastFormat::PrintArchive(archive, a[kArgOutput].AsOutputFile());
+		}
+	} catch (...) {}
+}
 
 END_NCBI_SCOPE

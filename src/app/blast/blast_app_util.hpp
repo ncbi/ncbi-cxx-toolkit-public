@@ -302,6 +302,24 @@ UseXInclude(const blast::CFormattingArgs & f, const string & s);
 string
 GetSubjectFile(const CArgs& args);
 
+class CBlastAppDiagHandler : public CDiagHandler
+{
+public:
+	CBlastAppDiagHandler():m_handler(GetDiagHandler(true)), m_save (true) {}
+	~CBlastAppDiagHandler();
+	virtual void Post (const SDiagMessage & mess);
+	void ResetMessages(void);
+	void DoNotSaveMessages(void);
+
+	list<CRef<CBlast4_error> > & GetMessages(void) { return m_messages;}
+private :
+	CDiagHandler * m_handler;
+	list<CRef<CBlast4_error> > m_messages;
+	bool m_save;
+};
+
+void PrintErrorArchive(const CArgs & a, const list<CRef<CBlast4_error> > & msg);
+
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */
