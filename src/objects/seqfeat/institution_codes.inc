@@ -1606,7 +1606,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "EBUAP	s	Laboratorio de Herpetologia, Escuela de Biologia, Benemerita Universidad Autonoma de Puebla",
 "EBUM	s	Universidad Michoacana de San Nicolas de Hidalgo",
 "EBV	s	Laboratoire de Biologie Generale et de Botanique",
-"ECACC	c	European Collection of Cell Cultures",
+"ECACC	c	European Collection of Authenticated Cell Cultures",
 "ECENT	s	East Central University",
 "ECH	s	Elmira College",
 "ECM	s	Hubei College of Traditional Chinese Medicine, Department of Chinese Materia Medica",
