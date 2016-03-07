@@ -110,6 +110,8 @@ CBioseqContext::CBioseqContext
     m_IsWGSMaster(false),
     m_IsTSA(false),
     m_IsTSAMaster(false),
+    m_IsTLS(false),
+    m_IsTLSMaster(false),
     m_IsHup(false),
     m_Gi(ZERO_GI),
     m_ShowGBBSource(false),
@@ -168,6 +170,8 @@ CBioseqContext::CBioseqContext
     m_IsWGSMaster(false),
     m_IsTSA(false),
     m_IsTSAMaster(false),
+    m_IsTLS(false),
+    m_IsTLSMaster(false),
     m_IsHup(false),
     m_Gi(ZERO_GI),
     m_ShowGBBSource(false),
@@ -216,9 +220,9 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
 
     // NB: order of execution is important
     m_Repr = x_GetRepr();
-    x_SetId();
     m_Mol  = seq.GetInst_Mol();
     m_Molinfo.Reset(x_GetMolInfo());
+    x_SetId();
 
     if ( IsSegmented() ) {
         m_HasParts = x_HasParts();
@@ -811,6 +815,16 @@ void CBioseqContext::x_SetId(void)
                 m_TSAMasterName = tsip->CanGetName() ? tsip->GetName() : kEmptyStr;
             }
         } 
+
+        // TLS
+        m_IsTLS = m_IsTLS  ||  ( GetTech() == CMolInfo::eTech_targeted );
+
+        if ( m_IsTLS ) {
+            if ( m_Repr == CSeq_inst::eRepr_virtual) {
+                m_IsTLSMaster = true;
+            }
+        }
+
 
         // GBB source
         m_ShowGBBSource = m_ShowGBBSource  ||  (acc_info == CSeq_id::eAcc_gsdb_dirsub);

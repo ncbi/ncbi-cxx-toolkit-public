@@ -274,6 +274,7 @@ private:
 
     /// user object fields
     bool m_IsUnverified;
+    CTempString m_TargetedLocus;
 
     /// map fields
     string m_rEnzyme;

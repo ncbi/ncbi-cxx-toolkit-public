@@ -448,6 +448,7 @@ void CDeflineGenerator::x_SetFlags (
     m_Strain.clear();
 
     m_IsUnverified = false;
+    m_TargetedLocus.clear();
 
     m_rEnzyme.clear();
 
@@ -656,10 +657,21 @@ void CDeflineGenerator::x_SetFlags (
             }
 
             const CUser_object& user_obj = desc_it->GetUser();
-            if (FIELD_IS_SET_AND_IS(user_obj, Type, Str)
-                &&  user_obj.GetType().GetStr() == "Unverified" ) {
-                m_IsUnverified = true;
-                needed_desc_choices &= ~fUser;
+            if (FIELD_IS_SET_AND_IS(user_obj, Type, Str)) {
+                if (user_obj.GetType().GetStr() == "Unverified" ) {
+                    m_IsUnverified = true;
+                    needed_desc_choices &= ~fUser;
+                } else if (user_obj.GetType().GetStr() == "AutodefOptions" ) {
+                    FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, user_obj) {
+                        const CUser_field& fld = **uitr;
+                        if (! FIELD_IS_SET_AND_IS(fld, Label, Str)) continue;
+                        const string &label_str = GET_FIELD(fld.GetLabel(), Str);
+                        if (! NStr::EqualNocase(label_str, "Targeted Locus Name")) continue;
+                        if (fld.IsSetData() && fld.GetData().IsStr()) {
+                            m_TargetedLocus = fld.GetData().GetStr();
+                        }
+                    }
+                }
             }
             break;
         }
@@ -2124,6 +2136,7 @@ void CDeflineGenerator::x_SetSuffix (
 
 {
     string type;
+    string study;
     string comp;
 
     switch (m_MITech) {
@@ -2235,12 +2248,16 @@ void CDeflineGenerator::x_SetSuffix (
             break;
         case NCBI_TECH(targeted):
             if (m_TLSMaster) {
-                if (m_MainTitle.find ("targeted locus study")
-                    == NPOS){
+                if (m_MainTitle.find ("targeted locus study") == NPOS) {
                     type = ", targeted locus study";
                 }
             } else {
-                type += ", sequence";
+                if (m_MainTitle.find ("sequence") == NPOS) {
+                   type += ", sequence";
+                }
+            }
+            if (! m_TargetedLocus.empty() && m_MainTitle.find (m_TargetedLocus) == NPOS) {
+                study = m_TargetedLocus;
             }
             break;
         default:
@@ -2278,7 +2295,11 @@ void CDeflineGenerator::x_SetSuffix (
         }
     }
 
-    suffix = type + comp;
+    if (! study.empty()) {
+        suffix = study + " " + type + comp;
+    } else {
+        suffix = type + comp;
+    }
 }
 
 static inline void s_TrimMainTitle (string& str)

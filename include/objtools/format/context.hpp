@@ -152,6 +152,10 @@ public:
     const string& GetTSAMasterAccn(void) const { return m_TSAMasterAccn; }
     const string& GetTSAMasterName(void) const { return m_TSAMasterName; }
 
+    // Targeted Locus Study
+    bool IsTLS      (void) const { return m_IsTLS;       }
+    bool IsTLSMaster(void) const { return m_IsTLSMaster; }
+
     TReferences& SetReferences(void) { return m_References; }
     const TReferences& GetReferences(void) const { return m_References; }
 
@@ -338,6 +342,8 @@ private:
     bool m_IsWGSMaster;
     bool m_IsTSA;
     bool m_IsTSAMaster;
+    bool m_IsTLS;
+    bool m_IsTLSMaster;
     bool m_IsHup;
     TGi  m_Gi;
     bool m_ShowGBBSource;
