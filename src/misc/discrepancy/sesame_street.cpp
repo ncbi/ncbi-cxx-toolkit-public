@@ -50,7 +50,7 @@ DISCREPANCY_MODULE(sesame_street);
 // Some animals are more equal than others...
 
 
-DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal than others...")
+DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller, "Some animals are more equal than others...")
 {
     CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
     if (desc.IsNull()) {
@@ -367,6 +367,7 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
 
 
 DISCREPANCY_ALIAS(SOURCE_QUALS, SOURCE_QUALS_ASNDISC)
+DISCREPANCY_ALIAS(SOURCE_QUALS, SRC_QUAL_PROBLEM)
 
 
 END_SCOPE(NDiscrepancy)

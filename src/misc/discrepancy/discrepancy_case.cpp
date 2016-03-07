@@ -813,7 +813,7 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 }
 
 
-DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eDisc, "Zero Base Counts")
+DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eDisc | eOncaller, "Zero Base Counts")
 {
     static const char* kMsg = "[n] sequence[s] [has] a zero basecount for a nucleotide";
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
@@ -877,7 +877,7 @@ DISCREPANCY_SUMMARIZE(NONWGS_SETS_PRESENT)
 }
 
 
-DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc|eOncaller, "No annotation")
+DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc | eOncaller, "No annotation")
 {
     if (obj.IsAa() || context.HasFeatures()) {
         return;
@@ -976,7 +976,7 @@ DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
 
 
 // ORDERED_LOCATION
-DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eOncaller, "Location is ordered (intervals interspersed with gaps)")
+DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eDisc | eOncaller, "Location is ordered (intervals interspersed with gaps)")
 {
     if( ! obj.IsSetLocation() ) {
         return;
@@ -1257,17 +1257,12 @@ DISCREPANCY_SUMMARIZE(QUALITY_SCORES)
 }
 
 
-DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, CSeqFeatData, eOncaller,
-                 "Bacterial sequences should not have mRNA features")
+DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, CSeqFeatData, eDisc | eOncaller, "Bacterial sequences should not have mRNA features")
 {
     if (!context.IsBacterial() || obj.GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
         return;
     }
-
-    m_Objs["[n] bacterial sequence[s] [has] mRNA features"].Add(
-        *new CDiscrepancyObject(
-            context.GetCurrentBioseq(), context.GetScope(), context.GetFile(),
-            context.GetKeepRef()));
+    m_Objs["[n] bacterial sequence[s] [has] mRNA features"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
 }
 
 

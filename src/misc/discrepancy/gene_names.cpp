@@ -110,7 +110,7 @@ DISCREPANCY_AUTOFIX(BAD_GENE_NAME)
 
 
 // BAD_BACTERIAL_GENE_NAME
-DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eDisc, "Bad bacterial gene name")
+DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eDisc | eOncaller, "Bad bacterial gene name")
 {
     if (!obj.IsGene() || !obj.GetGene().CanGetLocus() || !context.IsBacterial()) {
         return;
