@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// Applog URL parser/composer.
 ///
-class NCBI_XNCBI_EXPORT CApplogUrl
+class CApplogUrl
 {
 public:
     /// Default constructor
