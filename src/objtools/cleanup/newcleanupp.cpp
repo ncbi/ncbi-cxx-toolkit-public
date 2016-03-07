@@ -9635,6 +9635,8 @@ void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqf
         if( ! feat_ci ) {
             return;
         }
+        const CSeq_annot_Handle sah = feat_ci->GetAnnot();
+        CSeq_entry_EditHandle eh = sah.GetParentEntry().GetEditHandle();
         feat_with_prot_ref_handle = CSeq_feat_EditHandle( feat_ci->GetSeq_feat_Handle() );
 
         new_feat_with_prot_ref.Reset( new CSeq_feat );

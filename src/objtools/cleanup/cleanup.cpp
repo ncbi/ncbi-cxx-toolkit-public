@@ -990,7 +990,6 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
     }
 
     if (check_for_stop) {
-        cout << "Translate " << f.GetLocation().GetId()->AsFastaString() << endl;
         string translation;
         try {
             CSeqTranslator::Translate(f, bsh.GetScope(), translation, true);
