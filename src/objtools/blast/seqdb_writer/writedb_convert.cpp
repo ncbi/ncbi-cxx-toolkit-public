@@ -161,7 +161,7 @@ public:
     /// Constructor.
     /// @param sz Size of the sequence in letters. [in]
     CAmbigDataBuilder(int sz)
-        : m_Size(sz)
+        : m_Size(sz), m_Random(sz)
     {
         for(int i = 0; i < 16; i++) {
             m_Log2[i] = -1;

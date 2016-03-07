@@ -800,7 +800,7 @@ BOOST_AUTO_TEST_CASE(GetGapOnlySequenceNCBI2NA) {
         sequence++;
     }
     
-    BOOST_REQUIRE_EQUAL(3302, hash_value);
+    BOOST_REQUIRE_EQUAL(3285, hash_value);
     BOOST_REQUIRE_EQUAL((TSeqPos) 26, seq.length); // 26 is (64000000-63999900+1)/4 + 1
 }
 
@@ -823,7 +823,7 @@ BOOST_AUTO_TEST_CASE(GetGapInSequenceNCBI2NA) {
         sequence++;
     }
     
-    BOOST_REQUIRE_EQUAL(6941565, hash_value);
+    BOOST_REQUIRE_EQUAL(6940529, hash_value);
     BOOST_REQUIRE_EQUAL((TSeqPos) 53830, seq.length); 
 }
 

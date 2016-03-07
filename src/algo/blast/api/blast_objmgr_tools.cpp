@@ -409,6 +409,65 @@ SetupSubjects(TSeqLocVector& subjects,
     SetupSubjects_OMF(subj_src, prog, seqblk_vec, max_subjlen);
 }
 
+
+static unsigned char ctable[16] = {0xFF, 0x00, 0x01, 0xFF, 0x02, 0xFF, 0xFF, 0xFF,
+		                           0x03, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+
+void s_Ncbi4naToNcbi2na(const string & ncbi4na, int base_length,
+                        unsigned char * ncbi2na)
+{
+    int inp_bytes   = base_length;
+    CRandom random(base_length);
+
+    for(int i = 0; i < inp_bytes; i++) {
+        // one input byte
+        unsigned char inp = ncbi4na[i];
+
+        // represents 2 bases
+        unsigned char b = inp & 0xF;
+
+        // compress each to 2 bits
+        unsigned char c = ctable[b];
+
+        if (c  != 0xFF) {
+            // No ambiguities, so we can do this the easy way.
+        	ncbi2na[i] = c;
+
+        } else {
+            if (b == 0 || b == 0x0F) {
+            	//gap or N
+                ncbi2na[i] = random.GetRand() & 0x3;
+            }
+            else {
+
+            	int bitcount = ((b & 1) + ((b >> 1) & 1) +
+            	               ((b >> 2) & 1) + ((b >> 3) & 1));
+
+            	// 1-bit ambiguities here, indicate an error in this class.
+            	_ASSERT(bitcount >= 2);
+            	_ASSERT(bitcount <= 3);
+
+            	int pick = random.GetRand() % bitcount;
+
+            	for(int j = 0; j < 4; j++) {
+            		// skip 0 bits in input.
+            	    if ((b & (1 << j)) == 0)
+            	    	continue;
+
+            	    // If the bitcount is zero, this is the bit we want.
+            	    if (! pick) {
+            	    	ncbi2na[i] = j;
+            	    	break;
+            	    }
+            	    // Else, decrement.
+            	    pick--;
+            	}
+            }
+        }
+    }
+
+}
+
 /// Implementation of the IBlastSeqVector interface which obtains data from a
 /// CSeq_loc and a CScope relying on the CSeqVector class
 class CBlastSeqVectorOM : public IBlastSeqVector
@@ -443,14 +502,10 @@ public:
 
     /** @inheritDoc */
     virtual SBlastSequence GetCompressedPlusStrand() {
-        CSeqVector_CI iter(m_SeqVector);
-        iter.SetRandomizeAmbiguities();
-        iter.SetCoding(CSeq_data::e_Ncbi2na);
-
         SBlastSequence retval(size());
-        for (TSeqPos i = 0; i < size(); i++) {
-            retval.data.get()[i] = *iter++;
-        }
+        string ncbi4na = kEmptyStr;
+        m_SeqVector.GetSeqData(m_SeqVector.begin(), m_SeqVector.end(), ncbi4na);
+        s_Ncbi4naToNcbi2na(ncbi4na, size(), retval.data.get());
         return retval;
     }
 

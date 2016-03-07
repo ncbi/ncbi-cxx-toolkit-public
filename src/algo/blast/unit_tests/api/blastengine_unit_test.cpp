@@ -114,10 +114,10 @@ void testLongMatchDiagnostics(BlastDiagnostics* diagnostics)
     BlastGappedStats* gapped_stats = 
         diagnostics->gapped_stat;
 
-    BOOST_REQUIRE_EQUAL(22673097, (int)ungapped_stats->lookup_hits);
-    BOOST_REQUIRE_EQUAL(296138, ungapped_stats->init_extends);
-    BOOST_REQUIRE_EQUAL(1256, ungapped_stats->good_init_extends);
-    BOOST_REQUIRE_EQUAL(1252, gapped_stats->extensions);
+    BOOST_REQUIRE_EQUAL(22670293, (int)ungapped_stats->lookup_hits);
+    BOOST_REQUIRE_EQUAL(296326, ungapped_stats->init_extends);
+    BOOST_REQUIRE_EQUAL(1258, ungapped_stats->good_init_extends);
+    BOOST_REQUIRE_EQUAL(1254, gapped_stats->extensions);
     BOOST_REQUIRE_EQUAL(23, gapped_stats->good_extensions);
 }
 

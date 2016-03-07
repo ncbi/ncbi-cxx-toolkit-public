@@ -3301,7 +3301,7 @@ BOOST_AUTO_TEST_CASE(testOneSubjectResults2CSeqAlign)
 {
     const int num_subjects = 15;
     const int results_size[num_subjects] = 
-        { 1, 1, 0, 1, 1, 1, 2, 1, 2, 0, 0, 0, 0, 2, 0 };
+        { 1, 1, 0, 1, 1, 1, 2, 1, 2, 0, 0, 0, 0, 2, 1 };
     const int query_gi = 7274302;
     const int gi_diff = 28;
     CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, query_gi));
@@ -3313,6 +3313,7 @@ BOOST_AUTO_TEST_CASE(testOneSubjectResults2CSeqAlign)
     int index;
     for (index = 0; index < num_subjects; ++index) {
         id.Reset(new CSeq_id(CSeq_id::e_Gi, (query_gi + gi_diff + index)));
+cerr << query_gi + gi_diff + index << endl;
         sl.reset(CTestObjMgr::Instance().CreateSSeqLoc(*id, 
                                                        eNa_strand_both));
         subjects.push_back(*sl);
@@ -3324,6 +3325,7 @@ BOOST_AUTO_TEST_CASE(testOneSubjectResults2CSeqAlign)
     index = 0;
     ITERATE(TSeqAlignVector, itr, seqalign_v)
     {
+cerr << index << endl;
         BOOST_REQUIRE_EQUAL(results_size[index], (int) (*itr)->Get().size());
         index++;
     }
