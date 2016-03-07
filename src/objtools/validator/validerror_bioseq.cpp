@@ -4552,6 +4552,36 @@ bool s_IsCDDFeat(const CMappedFeat& feat)
 }
 
 
+bool s_CheckPosNOrGap(TSeqPos pos, const CSeqVector& vec)
+{
+    if (vec.IsInGap(pos) || vec[pos] == 'N') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool s_AfterIsGap(TSeqPos pos, TSeqPos after, TSeqPos len,  const CSeqVector& vec)
+{
+    if (pos < len - after && s_CheckPosNOrGap(pos + after, vec)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool s_BeforeIsGap(TSeqPos pos, TSeqPos before, const CSeqVector& vec)
+{
+    if (pos >= before && s_CheckPosNOrGap(pos - before, vec)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
 (const CSeq_loc& loc,
  unsigned int tag,
@@ -4608,11 +4638,11 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
 
     try {
         if (tag == eSeqlocPartial_Nostop && 
-            ((stop < len - 1 && vec.IsInGap(stop + 1)) || (stop < len - 2 && vec.IsInGap(stop + 2)))) {
+            (s_AfterIsGap(stop, 1, len, vec) || s_AfterIsGap(stop, 2, len, vec))) {
             is_gap = true;
             return true;
         } else if (tag == eSeqlocPartial_Nostart && start > 0  && 
-            ((start > 0 && vec.IsInGap(start - 1)) || (start > 1 && vec.IsInGap(start - 2)))) {
+            (s_BeforeIsGap(start, 1, vec) || s_BeforeIsGap(start, 2, vec))) {
             is_gap = true;
             return true;
         }
