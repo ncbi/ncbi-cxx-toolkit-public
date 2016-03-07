@@ -128,8 +128,18 @@ public:
     /// Get access to the class instance.
     static CDbapiConnMgr& Instance(void);
 
+    /// What to do if a connection factory has already been
+    /// explicitly registered.
+    enum EIfSet {
+        eIfSet_Replace,      ///< Replace it anyway.
+        eIfSet_KeepSilently, ///< Silently keep it.
+        eIfSet_KeepAndWarn,  ///< Keep it, but issue a warning.
+        eIfSet_KeepAndThrow  ///< Keep it and throw an exception.
+    };
+
     /// Set up a connection factory.
-    void SetConnectionFactory(IDBConnectionFactory* factory);
+    void SetConnectionFactory(IDBConnectionFactory* factory,
+                              EIfSet if_set = eIfSet_Replace);
 
     /// Retrieve a connection factory.
     CRef<IDBConnectionFactory> GetConnectionFactory(void) const
@@ -150,8 +160,9 @@ private:
 
     CRef<IDBConnectionFactory> m_ConnectFactory;
 
-    CFastMutex m_Mutex;
+    CFastMutex   m_Mutex;
     unsigned int m_NumConnect;
+    bool         m_HasExplicitConnectionFactory;
 
     // Friends
     friend class CSafeStatic_Allocator<CDbapiConnMgr>;

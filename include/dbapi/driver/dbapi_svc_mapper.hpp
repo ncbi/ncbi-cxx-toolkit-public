@@ -284,14 +284,31 @@ MakeCDBUniversalMapper(const IRegistry* registry)
 }
 
 
-/// Easy-to-use macro to install the default DBAPI service mapper
-/// and a user-defined connection factory
-#   define DBLB_INSTALL_FACTORY(factory_name)                                  \
-        ncbi::CDbapiConnMgr::Instance().SetConnectionFactory(                  \
-            new factory_name(ncbi::MakeCDBUniversalMapper))
+/// Easy-to-use macro to install the default DBAPI service mapper and
+/// a user-defined connection factory, with control over what to do
+/// if a connection factory has already been explicitly registered.
+/// @sa DBLB_INSTALL_DEFAULT_EX, DBLB_INSTALL_FACTORY
+#define DBLB_INSTALL_FACTORY_EX(factory_name, if_set)     \
+    ncbi::CDbapiConnMgr::Instance().SetConnectionFactory( \
+        new factory_name(ncbi::MakeCDBUniversalMapper),   \
+        ncbi::CDbapiConnMgr::if_set)
 
 /// Easy-to-use macro to install the default DBAPI service mapper
-#define DBLB_INSTALL_DEFAULT() DBLB_INSTALL_FACTORY(ncbi::CDBConnectionFactory)
+/// and a user-defined connection factory.
+/// @sa DBLB_INSTALL_DEFAULT, DBLB_INSTALL_FACTORY_EX
+#define DBLB_INSTALL_FACTORY(factory_name) \
+    DBLB_INSTALL_FACTORY_EX(factory_name, eIfSet_Replace)
+
+/// Easy-to-use macro to install the default DBAPI service mapper,
+/// with control over what to do if a connection factory has already
+/// been explicitly registered.
+/// @sa DBLB_INSTALL_DEFAULT, DBLB_INSTALL_FACTORY_EX
+#define DBLB_INSTALL_DEFAULT_EX(if_set) \
+    DBLB_INSTALL_FACTORY_EX(ncbi::CDBConnectionFactory, if_set)
+
+/// Easy-to-use macro to install the default DBAPI service mapper.
+/// @sa DBLB_INSTALL_DEFAULT_EX, DBLB_INSTALL_FACTORY
+#define DBLB_INSTALL_DEFAULT() DBLB_INSTALL_DEFAULT_EX(eIfSet_Replace)
 
 
 

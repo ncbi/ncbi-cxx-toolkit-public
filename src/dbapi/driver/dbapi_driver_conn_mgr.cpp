@@ -37,6 +37,9 @@
 #include <set>
 #include <map>
 #include <dbapi/driver/public.hpp>
+#include <dbapi/error_codes.hpp>
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ConnMgr
 
 BEGIN_NCBI_SCOPE
 
@@ -122,7 +125,8 @@ IDBConnectionFactory::~IDBConnectionFactory(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-CDbapiConnMgr::CDbapiConnMgr(void) : m_NumConnect(0)
+CDbapiConnMgr::CDbapiConnMgr(void)
+    : m_NumConnect(0), m_HasExplicitConnectionFactory(false)
 {
     m_ConnectFactory.Reset( new CDefaultConnectPolicy() );
 }
@@ -145,9 +149,26 @@ typedef NCBI_PARAM_TYPE(dbapi, max_connection) TDbapi_MaxConnection;
 NCBI_PARAM_DEF_EX(unsigned int, dbapi, max_connection, 100, eParam_NoThread, NULL);
 
 
-void CDbapiConnMgr::SetConnectionFactory(IDBConnectionFactory* factory)
+void CDbapiConnMgr::SetConnectionFactory(IDBConnectionFactory* factory,
+                                         EIfSet if_set)
 {
     CFastMutexGuard mg(m_Mutex);
+    if (m_HasExplicitConnectionFactory) {
+        static const char* msg
+            = "A connection factory has already been explicitly registered.";
+        switch (if_set) {
+        case eIfSet_Replace:
+            break;
+        case eIfSet_KeepSilently:
+            return;
+        case eIfSet_KeepAndWarn:
+            ERR_POST_X(1, Warning << msg);
+            return;
+        case eIfSet_KeepAndThrow:
+            DATABASE_DRIVER_ERROR(msg, 301);
+        }
+    }
+    m_HasExplicitConnectionFactory = true;
     m_ConnectFactory.Reset(factory);
 }
 
