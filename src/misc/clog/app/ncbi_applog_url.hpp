@@ -35,7 +35,7 @@
 /// Defines classes:
 ///   CApplogUrl -- compose Applog URL.
 
-#include <corelib/ncbistr.hpp>
+#include <corelib/ncbitime.hpp>
 
 
 BEGIN_NCBI_SCOPE
