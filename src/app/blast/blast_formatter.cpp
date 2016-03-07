@@ -402,6 +402,7 @@ int CBlastFormatterApp::Run(void)
     const CArgs& args = GetArgs();
 
     try {
+        SetDiagPostLevel(eDiag_Warning);
         if (args[kArgArchive].HasValue()) {
             CNcbiIstream& istr = args[kArgArchive].AsInputFile();
             try { m_RmtBlast.Reset(new CRemoteBlast(istr)); }
@@ -414,8 +415,11 @@ int CBlastFormatterApp::Run(void)
 
 	    m_LoadFromArchive = true;
             try {
-                while (m_RmtBlast->LoadFromArchive())
-                    status = PrintFormattedOutput();
+                while (m_RmtBlast->LoadFromArchive()) {
+                	if(!m_RmtBlast->IsErrMsgArchive()) {
+                		status = PrintFormattedOutput();
+                	}
+                }
             } catch (const CSerialException& e) {
                 NCBI_RETHROW(e, CInputException, eInvalidInput,
                              "Invalid input format for BLAST Archive.");

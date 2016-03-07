@@ -86,15 +86,18 @@ void CBlastnApp::Init()
 int CBlastnApp::Run(void)
 {
     int status = BLAST_EXIT_SUCCESS;
+    CBlastAppDiagHandler bah;
 
     try {
 
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
         SetDiagPostPrefix("blastn");
+        SetDiagHandler(&bah, false);
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
+
         CRef<CBlastOptionsHandle> opts_hndl;
         if(RecoverSearchStrategy(args, m_CmdLineArgs)){
         	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
@@ -137,6 +140,10 @@ int CBlastnApp::Run(void)
         }
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
+        bool isArchiveFormat = fmt_args->ArchiveFormatRequested(args);
+        if(!isArchiveFormat) {
+        	bah.DoNotSaveMessages();
+        }
         CBlastFormat formatter(opt, *db_adapter,
                                fmt_args->GetFormattedOutputChoice(),
                                query_opts->GetParseDeflines(),
@@ -202,8 +209,9 @@ int CBlastnApp::Run(void)
                     input.SetBatchSize(mixer.GetBatchSize(lcl_blast.GetNumExtensions()));
             }
 
-            if (fmt_args->ArchiveFormatRequested(args)) {
-                formatter.WriteArchive(*queries, *opts_hndl, *results);
+            if (isArchiveFormat) {
+                formatter.WriteArchive(*queries, *opts_hndl, *results, 0, bah.GetMessages());
+                bah.ResetMessages();
             } else {
                 BlastFormatter_PreFetchSequenceData(*results, scope);
                 ITERATE(CSearchResultSet, result, *results) {
@@ -219,6 +227,11 @@ int CBlastnApp::Run(void)
         }
 
     } CATCH_ALL(status)
+
+    if(!bah.GetMessages().empty()) {
+    	const CArgs & a = GetArgs();
+    	PrintErrorArchive(a, bah.GetMessages());
+    }
     return status;
 }
 
