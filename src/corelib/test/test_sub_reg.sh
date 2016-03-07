@@ -30,10 +30,10 @@ echo "Comparing first run and expected output"
 unamestr=`uname -s`
 if [[ "$unamestr" == MINGW* ]]; then
     echo "Operating system is Windows"
-    diff $flags $NCBI_CONFIG_PATH/expected.ini test_sub_reg_1strun.out.ini
+    diff $flags $NCBI_CONFIG_PATH/expected_win.ini test_sub_reg_1strun.out.ini
 else
     echo "Operating system is not Windows"
-    diff $flags $NCBI_CONFIG_PATH/expected_win.ini test_sub_reg_1strun.out.ini
+    diff $flags $NCBI_CONFIG_PATH/expected.ini test_sub_reg_1strun.out.ini
 fi
 
 # Second run
