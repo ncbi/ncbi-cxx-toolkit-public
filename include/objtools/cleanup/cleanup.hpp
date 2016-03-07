@@ -193,6 +193,16 @@ public:
 /// @return Boolean return value indicates whether the coding region was changed
     static bool SetBestFrame(CSeq_feat& cds, CScope& scope);
 
+/// Chooses best frame based on location
+/// 1.	If the location is 5’ complete, then the frame must be one.
+/// 2.	If the location is 5' partial and 3’ complete, select a frame using the
+///      value of the location length modulo 3.
+/// @param cdregion Coding Region in which to set frame
+/// @param loc      Location to use for setting frame
+/// @param scope    Scope in which to find location sequence(s)
+/// @return Boolean return value indicates whether the frame was changed
+    static bool SetFrameFromLoc(CCdregion& cdregion, const CSeq_loc& loc, CRef<CScope> scope);
+
 /// 1. Set the partial flags when the CDS is partial and codon_start is 2 or 3
 /// 2. Make the CDS partial at the 5' end if there is no start codon
 /// 3. Make the CDS partial at the 3' end if there is no stop codon

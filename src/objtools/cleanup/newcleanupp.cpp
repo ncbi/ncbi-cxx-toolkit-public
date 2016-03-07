@@ -3041,13 +3041,15 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
             if( ! m_IsEmblOrDdbj ) {
                 CRef<CCdregion> new_cdregion( new CCdregion );
                 // get frame from location
-                if( ! FIELD_EQUALS( feat, Pseudo, true ) && FIELD_IS_SET(feat, Location) ) {
-                    x_SetFrameFromLoc( *new_cdregion, GET_FIELD(feat, Location) );
+                if( ! FIELD_EQUALS( feat, Pseudo, true ) &&
+                    feat.IsSetLocation() &&
+                    CCleanup::SetFrameFromLoc(*new_cdregion, feat.GetLocation(), m_Scope)) {
+                    ChangeMade(CCleanupChange::eChangeCdregion);
                 }
-                feat.SetData().SetCdregion( *new_cdregion );
                 ChangeMade(CCleanupChange::eChangeKeywords);
 
                 CdregionFeatBC( *new_cdregion, feat );
+                feat.SetData().SetCdregion(*new_cdregion);
                 return;
             }
         }
@@ -6807,155 +6809,6 @@ string CNewCleanup_imp::x_ExtractSatelliteFromComment( string &comment )
     return satellite_qual;
 }
 
-// like C's function GetFrameFromLoc
-static
-int s_SetFrameFromLoc_Helper( const CSeq_loc &location, CRef<CScope> scope )
-{
-    const static int kCantFindFrame = 0;
-    const static int kFrameOne      = 1;
-
-    CSeq_loc_CI loc_ci( location, CSeq_loc_CI::eEmpty_Allow, CSeq_loc_CI::eOrder_Biological );
-
-    // look at first part of the location
-    CConstRef<CSeq_loc> first_loc = loc_ci.GetRangeAsSeq_loc();
-    _ASSERT(first_loc);
-    switch ( first_loc->Which() )
-    {
-    case NCBI_SEQLOC(Int):
-        {
-            const CSeq_interval & interval = first_loc->GetInt();
-            if ( FIELD_EQUALS(interval, Strand, eNa_strand_minus) )
-            {
-                if( ! interval.IsSetFuzz_to() ) {
-                    return kFrameOne;
-                }
-            }
-            else if ( ! interval.IsSetFuzz_from() ) {
-                return kFrameOne;
-            }
-        }
-        break;
-    case NCBI_SEQLOC(Pnt):
-        {
-            const CSeq_point & pnt = first_loc->GetPnt();
-            if ( ! pnt.IsSetFuzz() ) {
-                return kFrameOne;
-            }
-        }
-        break;
-    default:
-        return kCantFindFrame;
-    }
-
-    // check the last part of the location
-    CSeq_loc_CI last_ci = loc_ci;
-    for( ; loc_ci ; ++loc_ci ) {
-        last_ci = loc_ci;
-    }
-
-    CConstRef<CSeq_loc> last_loc = last_ci.GetRangeAsSeq_loc();
-    _ASSERT(last_loc);
-    switch ( last_loc->Which() )
-    {
-    case NCBI_SEQLOC(Int):
-        {
-            const CSeq_interval & interval = last_loc->GetInt();
-            if ( FIELD_EQUALS(interval, Strand, eNa_strand_minus) )
-            {
-                if( interval.IsSetFuzz_from() ) {
-                    return kCantFindFrame;
-                }
-            }
-            else if ( interval.IsSetFuzz_to() )
-                return kCantFindFrame;
-        }
-        break;
-    case NCBI_SEQLOC(Pnt):
-        {
-            const CSeq_point & pnt = last_loc->GetPnt();
-            if ( pnt.IsSetFuzz() )
-                return kCantFindFrame;
-        }
-        break;
-    default:
-        return kCantFindFrame;
-    }
-
-    // have complete last codon, get frame 
-    // from length
-    return (1 + (sequence::GetLength(location, &*scope) % 3) );
-}
-
-void CNewCleanup_imp::x_SetFrameFromLoc( CCdregion &cdregion, const CSeq_loc &location )
-{
-    // TODO: Farther below is a simpler way to do this if we want to use
-    // C++ functions, but since we want to match C for now, we use
-    // somewhat more complex code that does what C does.
-
-    TCDSFRAME_TYPE suggested_frame = NCBI_CDSFRAME(not_set);
-    switch( s_SetFrameFromLoc_Helper(location, m_Scope) ) {
-    case 0:
-        suggested_frame = NCBI_CDSFRAME(not_set);
-        break;
-    case 1:
-        suggested_frame = NCBI_CDSFRAME(one);
-        break;
-    case 2:
-        suggested_frame = NCBI_CDSFRAME(two);
-        break;
-    case 3:
-        suggested_frame = NCBI_CDSFRAME(three);
-        break;
-    default:
-        // s_SetFrameFromLoc_Helper should only return 0, 1, 2 or 3
-        _ASSERT(false);
-        return;
-    }
-
-    if( suggested_frame == NCBI_CDSFRAME(not_set) ) {
-        if( FIELD_IS_SET(cdregion, Frame) ) {
-            RESET_FIELD(cdregion, Frame);
-            ChangeMade(CCleanupChange::eChangeCdregion);
-        }
-    } else if( ! FIELD_EQUALS(cdregion, Frame, suggested_frame) ) {
-        SET_FIELD(cdregion, Frame, suggested_frame);
-        ChangeMade(CCleanupChange::eChangeCdregion);
-    }
-
-    //
-    // potential future C++ code:
-    //
-
-    //if (! location.IsTruncatedStart(eExtreme_Biological) ) {
-    //    cdregion.SetFrame( NCBI_CDSFRAME(one) );    // complete 5' end, it's frame 1
-    //    return;
-    //}
-
-    // if( location.IsTruncatedStop(eExtreme_Biological) ) { 
-    //    cdregion.ResetFrame();
-    //    return;
-    //}
-
-    //const TSeqPos seq_len = sequence::GetLength(location, m_Scope);
-
-    //// have complete last codon, get frame 
-    //// from length
-    //switch( (seq_len % 3) + 1 ) {
-    //    case 1:
-    //        cdregion.SetFrame( NCBI_CDSFRAME(one) );
-    //        break;
-    //    case 2:
-    //        cdregion.SetFrame( NCBI_CDSFRAME(two) );
-    //        break;
-    //    case 3:
-    //        cdregion.SetFrame( NCBI_CDSFRAME(three) );
-    //        break;
-    //    default:
-    //        // mathematically impossible
-    //        _ASSERT(false);
-    //        return;
-    //}
-}
 
 void CNewCleanup_imp::x_CleanupECNumber( string &ec_num )
 {

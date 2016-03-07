@@ -900,6 +900,48 @@ bool CCleanup::SetBestFrame(CSeq_feat& cds, CScope& scope)
     return changed;
 }
 
+// like C's function GetFrameFromLoc, but better
+bool CCleanup::SetFrameFromLoc(CCdregion& cdregion, const CSeq_loc& loc, CRef<CScope> scope)
+{
+    if (!loc.IsPartialStart(eExtreme_Biological)) {
+        if (!cdregion.IsSetFrame() || cdregion.GetFrame() != CCdregion::eFrame_one) {
+            cdregion.SetFrame(CCdregion::eFrame_one);
+            return true;
+        }
+        return false;
+    }
+    if (loc.IsPartialStop(eExtreme_Biological)) {
+        // cannot make a determination if both ends are partial
+        return false;
+    }
+
+    const TSeqPos seq_len = sequence::GetLength(loc, scope);
+
+    CCdregion::EFrame desired_frame = CCdregion::eFrame_not_set;
+
+    // have complete last codon, get frame from length
+    switch( (seq_len % 3) + 1 ) {
+        case 1:
+            desired_frame = CCdregion::eFrame_one;
+            break;
+        case 2:
+            desired_frame = CCdregion::eFrame_two;
+            break;
+        case 3:
+            desired_frame = CCdregion::eFrame_three;
+            break;
+        default:
+            // mathematically impossible
+            _ASSERT(false);
+            return false;
+    }
+    if (!cdregion.IsSetFrame() || cdregion.GetFrame() != desired_frame) {
+        cdregion.SetFrame(desired_frame);
+        return true;
+    }
+    return false;
+}
+
 
 CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
 {
