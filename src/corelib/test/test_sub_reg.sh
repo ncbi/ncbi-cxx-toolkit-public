@@ -12,26 +12,29 @@ for x in `printenv | sed -ne 's/^\(NCBI_CONFIG_[^=]*\)=.*/\1/p'`; do
     unset $x
 done
 
-NCBI_CONFIG_PATH=`dirname $0`/test_sub_reg_data
-NCBI_CONFIG_OVERRIDES=$NCBI_CONFIG_PATH/indirect_env.ini
-NCBI_CONFIG_e__test=env
-NCBI_CONFIG__test__e=env
-NCBI_CONFIG__test__ex=
-NCBI_CONFIG__environment_DOT_indirectenv__e_ie=env
-NCBI_CONFIG__environment_DOT_indirectenv__ex_ie=
-NCBI_CONFIG__overridesbase_DOT_environment__ob_e=env
-NCBI_CONFIG__overridesbase_DOT_environment__obx_e=env
-NCBI_CONFIG__a_DOT_b__c_DOT_d=e.f
-export NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES NCBI_CONFIG_e__test
-export NCBI_CONFIG__test__e NCBI_CONFIG__test__ex 
-export NCBI_CONFIG__environment_DOT_indirectenv__ex_ie NCBI_CONFIG__overridesbase_DOT_environment__ob_e NCBI_CONFIG__overridesbase_DOT_environment__obx_e NCBI_CONFIG__environment_DOT_indirectenv__e_ie
-export NCBI_CONFIG__a_DOT_b__c_DOT_d
+export NCBI_CONFIG_PATH=`dirname $0`/test_sub_reg_data
+export NCBI_CONFIG_OVERRIDES=$NCBI_CONFIG_PATH/indirect_env.ini
+export NCBI_CONFIG_e__test=env
+export NCBI_CONFIG__test__e=env
+export NCBI_CONFIG__test__ex=
+export NCBI_CONFIG__environment_DOT_indirectenv__e_ie=env
+export NCBI_CONFIG__environment_DOT_indirectenv__ex_ie=
+export NCBI_CONFIG__overridesbase_DOT_environment__ob_e=env
+export NCBI_CONFIG__overridesbase_DOT_environment__obx_e=env
+export NCBI_CONFIG__a_DOT_b__c_DOT_d=e.f
 
 $CHECK_EXEC test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
                          -overrides "$NCBI_CONFIG_PATH/overrides.ini" \
                          -out test_sub_reg_1strun.out.ini
 echo "Comparing first run and expected output"
-diff $flags $NCBI_CONFIG_PATH/expected.ini test_sub_reg_1strun.out.ini
+unamestr=`uname -s`
+if [[ "$unamestr" == MINGW* ]]; then
+    echo "Operating system is Windows"
+    diff $flags $NCBI_CONFIG_PATH/expected.ini test_sub_reg_1strun.out.ini
+else
+    echo "Operating system is not Windows"
+    diff $flags $NCBI_CONFIG_PATH/expected_win.ini test_sub_reg_1strun.out.ini
+fi
 
 # Second run
 
