@@ -26,7 +26,7 @@
  * Author:  Vladimir Ivanov
  *
  * File Description:
- *      Command-line utility to log to AppLog (JIRA: CXX-2439).
+ *     Command-line utility to log to AppLog (JIRA: CXX-2439).
  * Note:
  *  1) This utility tries to log locally (to /log) by default. If it can't
  *     do that then it try to call a CGI that does the logging
@@ -70,6 +70,7 @@
     ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-hostrole] [-hostloc]
                                       [-logsite] [-pid] [-sid] [-phid] [-rid] [-srvport]
                                       [-app_start_time] [-req_start_time]
+    ncbi_applog url           <token> [-sid] [-phid] [-timestamp TIME]
 
   Special commands (must be used without <token> parameter):
     ncbi_applog raw           -file <applog_formatted_logs_for_a_single_app.txt> [-logsite SITE] 
@@ -77,6 +78,7 @@
     ncbi_applog raw           -file - [-logsite SITE]
                                       [-nl NUM] [-nr NUM] [-timeout SEC]
     ncbi_applog generate      -phid
+    
 
   Note, that for "raw" command ncbi_applog will skip any line in non-applog format.
 
@@ -107,7 +109,9 @@
 #include <corelib/ncbifile.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <util/xregexp/regexp.hpp>
+
 #include "../ncbi_c_log_p.h"
+#include "ncbi_applog_url.hpp"
 
 #if defined(NCBI_OS_UNIX)
 #  include <errno.h>
@@ -487,6 +491,31 @@ void CNcbiApplogApp::Init(void)
         cmd->AddCommand("parse_token", arg.release());
     }}
 
+    // url
+    {{
+        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        arg->SetUsageContext(kEmptyStr, "Generate an Applog query URL.", false, kUsageWidth);
+        arg->SetDetailedDescription(
+            "Generate an Applog query URL on a base of token information and print it to stdout. "
+            "Token can be obtained from <start_app> or <start_request> command. "
+            "Generated URL will include data to a whole application or request only, accordingly to "
+            "the type of specified token. Also, this command should be called after <stop_app> or <stop_request> "
+            "to get correct date/time range for the query. Or you can use -timestamp argument to specify "
+            "end of the range, starting date/time will be automatically obtained from the token. "
+            "The query automatically include application name, host, pid and additionally request ID for request. "
+            "all additional data could be added using optional flags. "
+            "This operation doesn't affect current logging (if any)."
+        );
+        arg->AddOpening
+            ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
+        arg->AddFlag("sid",  "Session ID (application-wide or request, depending on the type of token).");
+        arg->AddFlag("phid", "Hit ID (application-wide or request, depending on the type of token).");
+        arg->AddDefaultKey
+            ("timestamp", "TIME", "Ending date/time for a query range, current by default (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
+            CArgDescriptions::eString, kEmptyStr);
+        cmd->AddCommand("url", arg.release());
+    }}
+
     // raw
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
@@ -538,8 +567,10 @@ void CNcbiApplogApp::Init(void)
     // generate
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
-        arg->SetUsageContext(kEmptyStr, "Generate and return IDs. This doesn't affect current logging (if any).", false, kUsageWidth);
-//        arg->SetDetailedDescription();
+        arg->SetUsageContext(kEmptyStr, "Generate and return IDs.", false, kUsageWidth);
+        arg->SetDetailedDescription(
+            "This operation doesn't affect current logging (if any)."
+        );
         arg->AddFlag
             ("phid",
             "Generate and return Hit ID (PHID) to use in the user script.");
@@ -1315,6 +1346,36 @@ int CNcbiApplogApp::Run(void)
                 m_Info.post_time.sec = NStr::StringToUInt8(timestamp);
             }
         }
+    }
+
+    if (cmd == "url") {
+        // note, the token and posting time ()is any have parsed already
+        CApplogUrl url;
+
+        url.SetAppName(m_Info.appname);
+        url.SetLogsite(m_Info.logsite);
+        url.SetHost(m_Info.host);
+        url.SetProcessID(m_Info.pid);
+
+        if (m_Info.post_time.sec) {
+            url.SetDateTime(CTime(m_Info.post_time.sec));
+        } else {
+            url.SetDateTime(CTime(token_par_type == eToken_App ? 
+                m_Info.app_start_time.sec : m_Info.req_start_time.sec));
+        }
+        // Request ID
+        if (token_par_type == eToken_Request) {
+            url.SetRequestID(m_Info.rid);
+        }
+        // Optional values
+        if (args["sid"]) {
+            url.SetSession(token_par_type == eToken_App ? m_Info.sid_app : m_Info.sid_req);
+        }
+        if (args["phid"]) {
+            url.SetHitID(token_par_type == eToken_App ? m_Info.phid_app : m_Info.phid_req);
+        }
+        cout << url.ComposeUrl();
+        return 0;
     }
 
     // Get mode
