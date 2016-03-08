@@ -155,6 +155,8 @@ public:
     // Targeted Locus Study
     bool IsTLS      (void) const { return m_IsTLS;       }
     bool IsTLSMaster(void) const { return m_IsTLSMaster; }
+    const string& GetTLSMasterAccn(void) const { return m_TLSMasterAccn; }
+    const string& GetTLSMasterName(void) const { return m_TLSMasterName; }
 
     TReferences& SetReferences(void) { return m_References; }
     const TReferences& GetReferences(void) const { return m_References; }
@@ -296,6 +298,8 @@ private:
     string                m_WGSMasterName;
     string                m_TSAMasterAccn;
     string                m_TSAMasterName;
+    string                m_TLSMasterAccn;
+    string                m_TLSMasterName;
     string                m_FinishingStatus;
     string                m_Taxname;
     string                m_FiletrackURL;

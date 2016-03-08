@@ -134,6 +134,7 @@ public:
     static string GetStringForRefSeqGenome(const CUser_object& uo);
     static string GetStringForWGS(CBioseqContext& ctx);
     static string GetStringForTSA(CBioseqContext& ctx);
+    static string GetStringForTLS(CBioseqContext& ctx);
     static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);
     static string GetStringForHTGS(CBioseqContext& ctx);
     static string GetStringForUnordered(CBioseqContext& ctx);
