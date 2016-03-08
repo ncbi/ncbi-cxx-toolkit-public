@@ -81,8 +81,6 @@ void CTestSubRegApp::Init()
 int CTestSubRegApp::Run()
 {
     const CArgs& args = GetArgs();
-    SetDiagTrace(eDT_Enable, eDT_Enable);
-    SetDiagPostLevel(eDiagSevMin);
     CNcbiRegistry& reg = GetConfig();
     
     // At the first run we read from all the different sources. At the second
