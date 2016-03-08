@@ -338,6 +338,13 @@ namespace DeBruijn {
             char m_nt;
         };
 
+        typedef vector<pair<int,size_t>> TBins;
+        CDBGraph(const TKmerCount& kmers, const TBins& bins) : m_graph_kmers(kmers.KmerLen()), m_bins(bins) {
+            m_graph_kmers.PushBackElementsFrom(kmers);
+            string max_kmer(m_graph_kmers.KmerLen(), bin2NT[3]);
+            m_max_kmer = TKmer(max_kmer);
+        }
+
         CDBGraph(istream& in) {
             m_graph_kmers.Load(in);
             string max_kmer(m_graph_kmers.KmerLen(), bin2NT[3]);
@@ -446,12 +453,9 @@ namespace DeBruijn {
             unsigned MIN_NUM = 100;
             size_t gsize = 0;
             for(auto& bin : m_bins) {
-                if(bin.second < MIN_NUM)
-                    break;
-                gsize += bin.first*bin.second;
+                if(bin.second >= MIN_NUM)            
+                    gsize += bin.first*bin.second;
             }
-
-            cerr << "Gsize: " << gsize << endl;
 
             int rlimit = 0;
             size_t gs = 0;
@@ -461,8 +465,6 @@ namespace DeBruijn {
                 if(gs > 0.8*gsize)
                     break;
             }
-
-            cerr << "Rlimit: " << rlimit << endl;
 
             int SLOPE_LEN = 5;
             int peak = min(rlimit,(int)m_bins.size()-SLOPE_LEN-1);
@@ -502,7 +504,7 @@ namespace DeBruijn {
 
         TKmerCount m_graph_kmers;     // only the minimal kmers are stored  
         TKmer m_max_kmer;             // contains 1 in all kmer_len bit positions  
-        vector<pair<int,size_t>> m_bins;
+        TBins m_bins;
     };
 
     class CReadHolder {
@@ -519,6 +521,21 @@ namespace DeBruijn {
             m_read_length.push_back(read.size());
             m_total_seq += read.size();
         }
+        size_t MaxLength() const { 
+            if(m_read_length.empty())
+                return 0;
+            else
+                return *max_element(m_read_length.begin(), m_read_length.end()); 
+        }
+        size_t KmerNum(unsigned kmer_len) const {
+            size_t num = 0;
+            for(auto l : m_read_length) {
+                if(l >= kmer_len)
+                    num += l-kmer_len+1;
+            }
+            return num;
+        }
+        size_t ReadNum() const { return m_read_length.size(); }
 
         class kmer_iterator {
         public:
