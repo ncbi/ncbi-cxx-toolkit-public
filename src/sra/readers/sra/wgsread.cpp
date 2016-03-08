@@ -1055,6 +1055,13 @@ void sx_SetSplitInterval(CID2S_Seq_loc& split_loc, CSeq_id& id,
 }
 
 
+bool sx_IsArtificialName(CTempString name, TVDBRowId id)
+{
+    return name.empty() ||
+        (isdigit(Uint1(name[0])) && NStr::StringToNonNegativeInt(name) == id);
+}
+
+
 END_LOCAL_NAMESPACE;
 
 
@@ -2039,7 +2046,11 @@ CRef<CSeq_id> CWGSSeqIterator::GetGiSeq_id(void) const
 
 CRef<CSeq_id> CWGSSeqIterator::GetGeneralSeq_id(void) const
 {
-    return GetDb().GetGeneralSeq_id(GetContigName());
+    CTempString name = GetContigName();
+    if ( sx_IsArtificialName(name, m_CurrId) ) {
+        return null;
+    }
+    return GetDb().GetGeneralSeq_id(name);
 }
 
 
@@ -3847,7 +3858,11 @@ CRef<CSeq_id> CWGSScaffoldIterator::GetAccSeq_id(void) const
 
 CRef<CSeq_id> CWGSScaffoldIterator::GetGeneralSeq_id(void) const
 {
-    return GetDb().GetGeneralSeq_id(GetScaffoldName());
+    CTempString name = GetScaffoldName();
+    if ( sx_IsArtificialName(name, m_CurrId) ) {
+        return null;
+    }
+    return GetDb().GetGeneralSeq_id(name);
 }
 
 
@@ -4441,11 +4456,11 @@ CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 CRef<CSeq_id> CWGSProteinIterator::GetGeneralSeq_id(void) const
 {
     PROFILE(sw____GetProtGnlSeq_id);
-    CRef<CSeq_id> id;
-    if ( !id ) {
-        id = GetDb().GetGeneralSeq_id(GetProteinName());
+    CTempString name = GetProteinName();
+    if ( sx_IsArtificialName(name, m_CurrId) ) {
+        return null;
     }
-    return id;
+    return GetDb().GetGeneralSeq_id(name);
 }
 
 
