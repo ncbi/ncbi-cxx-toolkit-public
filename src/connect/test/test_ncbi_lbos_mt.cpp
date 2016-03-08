@@ -272,7 +272,7 @@ bool CTestLBOSApp::TestApp_Init(void)
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> status_message(NULL);
     LBOS_ServiceVersionSet("/lbostest", "1.0.0",
-                              &*lbos_answer, &*status_message);
+                           &*lbos_answer, &*status_message);
     s_HealthchecKThread = new CHealthcheckThread;
 #ifdef NCBI_THREADS
     s_HealthchecKThread->Run();
