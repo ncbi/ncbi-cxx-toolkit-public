@@ -819,9 +819,13 @@ void CBioseqContext::x_SetId(void)
         // TLS
         m_IsTLS = m_IsTLS  ||  ( GetTech() == CMolInfo::eTech_targeted );
 
-        if ( m_IsTLS ) {
+        if ( m_IsTLS  &&  !acc.empty() ) {
             if ( m_Repr == CSeq_inst::eRepr_virtual) {
                 m_IsTLSMaster = true;
+            }
+            if ( m_IsTLSMaster ) {
+                m_TLSMasterAccn = acc;
+                m_TLSMasterName = tsip->CanGetName() ? tsip->GetName() : kEmptyStr;
             }
         }
 

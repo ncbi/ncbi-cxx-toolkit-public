@@ -796,6 +796,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_RefSeqGenomeComments(ctx);
     x_WGSComment(ctx);
     x_TSAComment(ctx);
+    x_TLSComment(ctx);
     x_UnorderedComments(ctx);
     if ( ctx.ShowGBBSource() ) {
         x_GBBSourceComment(ctx);
@@ -1240,6 +1241,21 @@ void CFlatGatherer::x_TSAComment(CBioseqContext& ctx) const
          ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) 
     {
         string str = CCommentItem::GetStringForTSA(ctx);
+        if ( !str.empty() ) {
+            x_AddComment(new CCommentItem(str, ctx));
+        }
+    }
+}
+
+void CFlatGatherer::x_TLSComment(CBioseqContext& ctx) const
+{
+    if ( !ctx.IsTLSMaster()  ||  ctx.GetTLSMasterName().empty() ) {
+        return;
+    }
+
+    if ( ctx.GetTech() == CMolInfo::eTech_targeted ) 
+    {
+        string str = CCommentItem::GetStringForTLS(ctx);
         if ( !str.empty() ) {
             x_AddComment(new CCommentItem(str, ctx));
         }

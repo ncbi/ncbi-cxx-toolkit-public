@@ -925,6 +925,70 @@ string CCommentItem::GetStringForTSA(CBioseqContext& ctx)
     return CNcbiOstrstreamToString(text);
 }
 
+string CCommentItem::GetStringForTLS(CBioseqContext& ctx)
+{
+    static const string default_str = "?";
+
+    if (!ctx.IsTLSMaster()) {
+        return kEmptyStr;
+    }
+
+    const string& tlsaccn = ctx.GetTLSMasterAccn();
+    const string& tlsname = ctx.GetTLSMasterName();
+
+    if (NStr::IsBlank(tlsaccn)  ||  NStr::IsBlank(tlsname)) {
+        return kEmptyStr;
+    }
+
+    const string* taxname = &default_str;
+    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Source); it; ++it) {
+        const CBioSource& src = it->GetSource();
+        if (src.IsSetOrg()  &&  src.GetOrg().IsSetTaxname()  &&
+            !NStr::IsBlank(src.GetOrg().GetTaxname()) ) {
+            taxname = &(src.GetOrg().GetTaxname());
+        }
+    }
+
+    const string* first = &default_str, *last = &default_str;
+    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User); it; ++it) {
+        const CUser_object& uo = it->GetUser();
+        if (uo.IsSetType()  &&  uo.GetType().IsStr()  &&
+            ( NStr::EqualNocase(uo.GetType().GetStr(), "TLSProjects") ) ) 
+        {
+            if (uo.HasField("TLS_accession_first")) {
+                const CUser_field& uf = uo.GetField("TLS_accession_first");
+                if (uf.IsSetData()  &&  uf.GetData().IsStr()  &&
+                    !NStr::IsBlank(uf.GetData().GetStr()) ) {
+                    first = &(uf.GetData().GetStr());
+                }
+            }
+            if (uo.HasField("TLS_accession_last")) {
+                const CUser_field& uf = uo.GetField("TLS_accession_last");
+                if (uf.IsSetData()  &&  uf.GetData().IsStr()  &&
+                    !NStr::IsBlank(uf.GetData().GetStr())) {
+                    last = &(uf.GetData().GetStr());
+                }
+            }
+        }
+    }
+
+    string version = (tlsname.length() == 15) ? 
+        tlsname.substr(7, 2) : tlsname.substr(4, 2);
+
+    CNcbiOstrstream text;
+    text << "The " << *taxname 
+         << " targeted locus study (TLS) project has the project accession " 
+         << tlsaccn << ".  This version of the project (" << version 
+         << ") has the accession number " << tlsname << ",";
+    if (*first != *last) {
+        text << " and consists of sequences " << *first << "-" << *last << ".";
+    } else {
+        text << " and consists of sequence " << *first << ".";
+    }
+
+    return CNcbiOstrstreamToString(text);
+}
+
 string CCommentItem::GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx)
 {
     _ASSERT(mi.CanGetCompleteness());
