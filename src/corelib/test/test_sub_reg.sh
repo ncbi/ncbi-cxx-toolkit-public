@@ -28,7 +28,7 @@ $CHECK_EXEC test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
                          -out test_sub_reg_1strun.out.ini
 echo "Comparing first run and expected output"
 unamestr=`uname -s`
-if [[ "$unamestr" == MINGW* ]]; then
+if [[ "$unamestr" == MINGW* ]] || [[ "$unamestr" == CYGWIN* ]]; then
     echo "Operating system is Windows"
     diff $flags $NCBI_CONFIG_PATH/expected_win.ini test_sub_reg_1strun.out.ini
 else
