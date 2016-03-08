@@ -71,6 +71,8 @@ public:
 
     IntegerTemplate() : v(T4(0)) {}
 
+    static int MaxKmer() { return 32*PREC_5; }
+
     IntegerTemplate(int kmer_len, uint64_t n) {
         int p = (kmer_len+31)/32;
         if(p <= PREC_1)      v = T1(n);
