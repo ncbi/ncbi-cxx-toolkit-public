@@ -355,22 +355,47 @@ void TlsCleanup(int* p_value, void* /* data */)
 
 static void s_PrintAnnouncementDetails(const char* name,
                                        const char* version,
-                                       unsigned short port,
+                                       const char* host,
+                                       const char* port,
                                        const char* health)
 {
     WRITE_LOG("Announcing server \"" <<
                   (name ? name : "<NULL>") <<
                   "\" with version " << (version ? version : "<NULL>") <<
-                  ", port " << port << ", ip " << s_GetMyIP() << 
+                  ", port " << port << ", host " << host << 
                   ", healthcheck \"" << (health ? health : "<NULL>") << "\"");
 }
 
-static void s_PrintAnnouncedDetails(const char* lbos_ans, 
-                                    const char* lbos_mes, 
-                                    unsigned short result,
-                                    double time_elapsed)
+
+static void s_PrintAnnouncementDetails(const char*      name,
+                                       const char*      version,
+                                       const char*      host,
+                                       unsigned short   port,
+                                       const char*      health)
 {
-    WRITE_LOG("Announce returned code " << result <<
+    stringstream port_ss;
+    port_ss << port;
+    s_PrintAnnouncementDetails(name, version, host, port_ss.str().c_str(), 
+                               health);
+}
+
+
+static void s_PrintAnnouncedDetails(const char*       name,
+                                    const char*       version,
+                                    const char*       host,
+                                    const char*       port,
+                                    const char*       health,
+                                    const char*       lbos_ans, 
+                                    const char*       lbos_mes, 
+                                    unsigned short    result,
+                                    double            time_elapsed)
+{
+    WRITE_LOG("Announce of server \"" << (name ? name : "<NULL>") <<
+                "\" with version " << (version ? version : "<NULL>") <<
+                ", port " << port <<
+                ", host \"" << (host ? host : "<NULL>") <<
+                ", healthcheck \"" << (health ? health : "<NULL>") << 
+                " returned code " << result <<
                 " after " << time_elapsed << " seconds, " 
                 "LBOS status message: \"" <<
                 (lbos_mes ? lbos_mes : "<NULL>") <<
@@ -378,7 +403,27 @@ static void s_PrintAnnouncedDetails(const char* lbos_ans,
                 (lbos_ans ? lbos_ans : "<NULL>") << "\"");
 }
 
-static void s_PrintRegistryAnnounceParams(const char* registry_section)
+
+static void s_PrintAnnouncedDetails(const char*       name,
+                                    const char*       version,
+                                    const char*       host,
+                                    unsigned short    port,
+                                    const char*       health,
+                                    const char*       lbos_ans, 
+                                    const char*       lbos_mes, 
+                                    unsigned short    result,
+                                    double            time_elapsed)
+{
+    stringstream port_ss;
+    port_ss << port;
+    s_PrintAnnouncedDetails(name, version, host, port_ss.str().c_str(), health, 
+                            lbos_ans, lbos_mes, result, time_elapsed);
+}
+
+static void s_GetRegistryAnnouncementParams(const char* registry_section,
+                                            char** srvc, char** vers,
+                                            char** host, char** port,
+                                            char** hlth)
 {
     const char* kLBOSAnnouncementSection = "LBOS_ANNOUNCEMENT";
     const char* kLBOSServiceVariable = "SERVICE";
@@ -389,29 +434,56 @@ static void s_PrintRegistryAnnounceParams(const char* registry_section)
     if (g_LBOS_StringIsNullOrEmpty(registry_section)) {
         registry_section = kLBOSAnnouncementSection;
     }
-    CCObjHolder<char> srvc(g_LBOS_RegGet(registry_section,
-                                         kLBOSServiceVariable,
-                                         NULL));
-    CCObjHolder<char> vers(g_LBOS_RegGet(registry_section,
-                                         kLBOSVersionVariable,
-                                         NULL));
-    CCObjHolder<char> host(g_LBOS_RegGet(registry_section,
-                                         kLBOSHostVariable,
-                                         NULL));
-    CCObjHolder<char> port_str(g_LBOS_RegGet(registry_section,
-                                             kLBOSPortVariable,
-                                             NULL));
-    CCObjHolder<char> hlth(g_LBOS_RegGet(registry_section,
-                                         kLBOSHealthcheckUrlVariable,
-                                         NULL));
-    WRITE_LOG("Announcing server \"" <<
-        (*srvc ? *srvc : "<NULL>") << "\" from registry section " <<
-        (registry_section ? registry_section : "<NULL>") <<
-        " with version " << (*vers ? *vers : "<NULL>") <<
-        " with host " << (*host ? *host : "<NULL>") <<
-        ", port " << (*port_str ? *port_str : "<NULL>") <<
-        ", ip " << s_GetMyIP() <<
-        ", healthcheck \"" << (*hlth ? *hlth : "<NULL>") << "\"");
+    *srvc =  g_LBOS_RegGet(registry_section,
+                           kLBOSServiceVariable,
+                           NULL);
+    *vers = g_LBOS_RegGet(registry_section,
+                          kLBOSVersionVariable,
+                          NULL);
+    *host = g_LBOS_RegGet(registry_section,
+                          kLBOSHostVariable,
+                          NULL);
+    *port = g_LBOS_RegGet(registry_section,
+                              kLBOSPortVariable,
+                              NULL);
+    *hlth = g_LBOS_RegGet(registry_section,
+                          kLBOSHealthcheckUrlVariable,
+                          NULL);
+}
+
+
+static void s_PrintRegistryAnnouncementDetails(const char* registry_section)
+{
+    char* srvc_str, *vers_str, *host_str, *port_str, *hlth_str;
+    s_GetRegistryAnnouncementParams(registry_section, &srvc_str, &vers_str,  
+                                    &host_str, &port_str, &hlth_str);
+    CCObjHolder<char> srvc(srvc_str);
+    CCObjHolder<char> vers(vers_str);
+    CCObjHolder<char> host(host_str);
+    CCObjHolder<char> port(port_str);
+    CCObjHolder<char> hlth(hlth_str);
+    s_PrintAnnouncementDetails(srvc.Get(), vers.Get(), port.Get(), host.Get(),
+                               hlth.Get());
+}
+
+
+static void s_PrintRegistryAnnouncedDetails(const char*      registry_section,
+                                           const char*       lbos_ans, 
+                                           const char*       lbos_mes, 
+                                           unsigned short    result,
+                                           double            time_elapsed)
+{
+    char *srvc_str, *vers_str, *host_str, *port_str, *hlth_str;
+    s_GetRegistryAnnouncementParams(registry_section, &srvc_str, &vers_str,
+                                    &host_str, &port_str, &hlth_str);
+    CCObjHolder<char> srvc(srvc_str);
+    CCObjHolder<char> vers(vers_str);
+    CCObjHolder<char> host(host_str);
+    CCObjHolder<char> port(port_str);
+    CCObjHolder<char> hlth(hlth_str);
+    s_PrintAnnouncedDetails(srvc.Get(), vers.Get(), host.Get(), port.Get(), 
+                            hlth.Get(), lbos_ans, lbos_mes, result, 
+                            time_elapsed);
 }
 
 
@@ -435,43 +507,54 @@ static void s_PrintRegistryAnnounceParams(const char* registry_section)
     time_elapsed = s_TimeDiff(&time_stop, &time_start);    
 
 
-/** Announce using C interface. If annoucement finishes with error - return 
- * error */
+/** Announce using C interface. */
 static unsigned short s_AnnounceC(const char*       name,
                                   const char*       version,
                                   const char*       host,
                                   unsigned short    port,
                                   const char*       health,
                                   char**            lbos_ans,
-                                  char**            lbos_mes)
+                                  char**            lbos_mes,
+                                  bool              safe = false)
 {
     unsigned short result;
-    MEASURE_TIME_START
+    MEASURE_TIME_START;
+    const char * healthcheck_cstr = NULL; //NULL if health is NULL
+    string healthcheck_str; //for c_str() to retain value until end of function
     if (health != NULL) {
         stringstream healthcheck;
         healthcheck << health << "/port" << port << 
                        "/host" << (host ? host : "") <<
                        "/version" << (version ? version : "");
-        s_PrintAnnouncementDetails(name, version, port, 
-                                   healthcheck.str().c_str());
-        result = LBOS_Announce(name, version, host, port, 
-                               healthcheck.str().c_str(), lbos_ans, lbos_mes);
-    } else {
-        s_PrintAnnouncementDetails(name, version, port, 
-                                   NULL);
-        result = LBOS_Announce(name, version, host, port, 
-                               NULL, lbos_ans, lbos_mes);
+        ;
+        healthcheck_cstr = (healthcheck_str = healthcheck.str()).c_str();
     }
-    MEASURE_TIME_FINISH
-    s_PrintAnnouncedDetails(lbos_ans ? *lbos_ans : NULL,
+    
+    s_PrintAnnouncementDetails(name, version, host, port,
+                               healthcheck_cstr);
+
+    if (safe) {
+        /* If announcement finishes with error - return
+         * error */
+        result = LBOS_Announce(name, version, host, port, 
+                               healthcheck_cstr, lbos_ans, lbos_mes);
+    } else {
+        /* If announcement finishes with error - try again
+         * until success (with invalid parameters means infinite loop) */
+        result = s_LBOS_Announce(name, version, host, port, 
+                                 healthcheck_cstr, lbos_ans, lbos_mes);
+    }
+    MEASURE_TIME_FINISH;
+    s_PrintAnnouncedDetails(name, version, host, port, 
+                            healthcheck_cstr, 
+                            lbos_ans ? *lbos_ans : NULL,
                             lbos_mes ? *lbos_mes : NULL,
                             result, time_elapsed);
     return result;
 }
         
 
-/** Announce using C interface. If announcement finishes with error - try again
- * until success (with invalid parameters means infinite loop) */
+
 static unsigned short s_AnnounceCSafe(const char*      name,
                                       const char*      version,
                                       const char*      host,
@@ -481,24 +564,26 @@ static unsigned short s_AnnounceCSafe(const char*      name,
                                       char**           lbos_mes)
 {
     unsigned short result;
-    MEASURE_TIME_START
+    MEASURE_TIME_START;
+    const char * healthcheck_cstr = NULL; //NULL if health is NULL
+    string healthcheck_str; //for c_str() to retain value until end of function
     if (health != NULL) {
         stringstream healthcheck;
         healthcheck << health << "/port" << port << 
                        "/host" << (host ? host : "") <<
                        "/version" << (version ? version : "");
-        s_PrintAnnouncementDetails(name, version, port, 
-                                   healthcheck.str().c_str());
-        result = s_LBOS_Announce(name, version, host, port, 
-                                 healthcheck.str().c_str(), 
-                                 lbos_ans, lbos_mes);
-    } else {
-        s_PrintAnnouncementDetails(name, version, port, NULL);
-        result = s_LBOS_Announce(name, version, host, port, NULL, 
-                                 lbos_ans, lbos_mes);
-    }    
-    MEASURE_TIME_FINISH
-    s_PrintAnnouncedDetails(lbos_ans ? *lbos_ans : NULL,
+        ;
+        healthcheck_cstr = (healthcheck_str = healthcheck.str()).c_str();
+    }
+    
+    s_PrintAnnouncementDetails(name, version, host, port, 
+                               healthcheck_cstr);
+    result = s_LBOS_Announce(name, version, host, port, 
+                             healthcheck_cstr, lbos_ans, lbos_mes);
+    MEASURE_TIME_FINISH;
+    s_PrintAnnouncedDetails(name, version, host, port, 
+                            healthcheck_cstr, 
+                            lbos_ans ? *lbos_ans : NULL,
                             lbos_mes ? *lbos_mes : NULL,
                             result, time_elapsed);
     return result;
@@ -513,13 +598,14 @@ static unsigned short s_AnnounceCRegistry(const char*   registry_section,
                                           char**        lbos_mes)
 {
     unsigned short result;
-    s_PrintRegistryAnnounceParams(registry_section);
+    s_PrintRegistryAnnouncementDetails(registry_section);
     MEASURE_TIME_START
         result = s_LBOS_AnnounceReg(registry_section, lbos_ans, lbos_mes);
     MEASURE_TIME_FINISH
-    s_PrintAnnouncedDetails(lbos_ans ? *lbos_ans : NULL,
-                            lbos_mes ? *lbos_mes : NULL,
-                            result, time_elapsed);
+    s_PrintRegistryAnnouncedDetails(registry_section,
+                                    lbos_ans ? *lbos_ans : NULL,
+                                    lbos_mes ? *lbos_mes : NULL,
+                                    result, time_elapsed);
     return result;
 }
 
@@ -532,8 +618,8 @@ static void s_AnnounceCPP(const string& name,
                           unsigned short port,
                           const string& health)
 {
-    s_PrintAnnouncementDetails(name.c_str(), version.c_str(), port, 
-                               health.c_str());
+    s_PrintAnnouncementDetails(name.c_str(), version.c_str(), host.c_str(), 
+                               port, health.c_str());
     stringstream healthcheck;
     healthcheck << health << "/port" << port << "/host" << host <<
                    "/version" << version;
@@ -543,58 +629,66 @@ static void s_AnnounceCPP(const string& name,
     }
     catch (CLBOSException& ex) {
         MEASURE_TIME_FINISH
-        s_PrintAnnouncedDetails(ex.what(), ex.GetErrCodeString(),
-                                ex.GetErrCode(), time_elapsed);
+            s_PrintAnnouncedDetails(name.c_str(), version.c_str(), 
+                                    host.c_str(), port, health.c_str(),   
+                                    ex.what(), ex.GetErrCodeString(),  
+                                    ex.GetErrCode(), time_elapsed);
         throw; /* Move the exception down the stack */
     }
     MEASURE_TIME_FINISH
     /* Print good result */
-    s_PrintAnnouncedDetails("<C++ does not show answer from LBOS>",
+    s_PrintAnnouncedDetails(name.c_str(), version.c_str(), host.c_str(), port,
+                            health.c_str(), 
+                            "<C++ does not show answer from LBOS on success>",
                             "OK", 200, time_elapsed);
 }
 
 
 /** Announce using C++ interface. If announcement finishes with error - try 
  * again until success (with invalid parameters means infinite loop) */
-static void s_AnnounceCPPSafe(const string& name,
-                              const string& version,
-                              const string& host,
-                              unsigned short port,
-                              const string& health)
+static void s_AnnounceCPPSafe(const string&     name,
+                              const string&     version,
+                              const string&     host,
+                              unsigned short    port,
+                              const string&     health)
 {
-    s_PrintAnnouncementDetails(name.c_str(), version.c_str(), port,
-        health.c_str());
+    s_PrintAnnouncementDetails(name.c_str(), version.c_str(), host.c_str(), 
+                               port, health.c_str());
     stringstream healthcheck;
     healthcheck << health << "/port" << port << "/host" << host <<
                    "/version" << version;
     MEASURE_TIME_START
-        s_LBOS_CPP_Announce(name, version, host, port, healthcheck.str());
+    s_LBOS_CPP_Announce(name, version, host, port, healthcheck.str());
     MEASURE_TIME_FINISH
-        /* Print good result */
-        s_PrintAnnouncedDetails("<C++ does not show answer from LBOS>",
-        "OK", 200, time_elapsed);
+    /* Print good result */
+    s_PrintAnnouncedDetails(name.c_str(), version.c_str(), host.c_str(), port, 
+                            health.c_str(), 
+                            "<C++ does not show answer from LBOS on success>",
+                            "OK", 200, time_elapsed);
 }
 
 
 /** Announce using C++ interface and using values from registry. If 
  * announcement finishes with error - try again until success (with invalid 
- * parameters means infinite loop) */
+ * parameters meaning infinite loop) */
 static void s_AnnounceCPPFromRegistry(const string& registry_section)
 {
-    s_PrintRegistryAnnounceParams(registry_section.c_str());
+    s_PrintRegistryAnnouncementDetails(registry_section.c_str());
     MEASURE_TIME_START
     try {
         s_LBOS_CPP_AnnounceReg(registry_section);
     } catch (CLBOSException& ex) {
         MEASURE_TIME_FINISH
-        s_PrintAnnouncedDetails(ex.what(), ex.GetErrCodeString(),
-                                ex.GetErrCode(), time_elapsed);
+        s_PrintRegistryAnnouncedDetails(registry_section.c_str(), ex.what(), 
+                                        ex.GetErrCodeString(),
+                                        ex.GetErrCode(), time_elapsed);
         throw; /* Move the exception down the stack */
     }
     MEASURE_TIME_FINISH
     /* Print good result */
-    s_PrintAnnouncedDetails("<C++ does not show answer from LBOS>",
-                            "OK", 200, time_elapsed);
+    s_PrintRegistryAnnouncedDetails(registry_section.c_str(), 
+                                    "<C++ does not show answer from LBOS>",
+                                    "OK", 200, time_elapsed);
 }
 
 
