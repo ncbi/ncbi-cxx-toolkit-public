@@ -753,14 +753,6 @@ SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) 
 {
 }
 
-SFileTrackConfig::SFileTrackConfig(const string& s, const string& k) :
-    site(GetSite(s)),
-    key(s_GetDecryptedKey(k)),
-    read_timeout(s_GetDefaultTimeout()),
-    write_timeout(s_GetDefaultTimeout())
-{
-}
-
 CNetStorageObjectLoc::EFileTrackSite
 SFileTrackConfig::GetSite(const string& ft_site_name)
 {
