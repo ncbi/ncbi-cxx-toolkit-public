@@ -23,10 +23,9 @@
  *
  * ===========================================================================
  *
- * Authors:  Sergiy Gotvyanskyy, Justin Foley
+ * Authors:  Sergiy Gotvyanskyy
  *
- * File Description: Extend CFastaOstream to handle features. 
- *                   Write object as a hierarchy of FASTA objects
+ * File Description:  Write object as a hierarchy of FASTA objects
  *
  */
 
@@ -34,7 +33,6 @@
 #define __OBJTOOLS_WRITERS_AGP_WRITE_HPP__
 
 #include <corelib/ncbistd.hpp>
-#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -43,89 +41,20 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CBioseq;
 class CSeq_loc;
+class CFastaOstream;
 class CBioseq_Handle;
 class CSeq_entry_Handle;
-
-
-class CFastaOstreamEx : public CFastaOstream
-{
-public:
-
-    CFastaOstreamEx(CNcbiOstream& out);
-
-    virtual void WriteFeature(const CBioseq_Handle& handle, 
-                              const CSeq_feat& feat);
-
-    virtual void WriteFeatureTitle (const CBioseq_Handle& handle,
-                                    const CSeq_feat& feat);
-
-    void ResetFeatureCount(void);
-
-protected:
-
-    virtual void x_WriteModifiers(const CBioseq_Handle& handle,
-                                  const CSeq_feat& feat);
-
-    virtual void x_AddGeneAttributes(const CBioseq_Handle& handle, 
-                                     const CSeq_feat& feat,
-                                     string& defline);
-
-    virtual void x_AddProteinNameAttribute(const CBioseq_Handle& handle,
-                                           const CSeq_feat& feat,
-                                           string& defline);
-
-    virtual void x_AddDbxrefAttribute(const CBioseq_Handle& handle,
-                                      const CSeq_feat& feat,
-                                      string& defline);
-
-    virtual void x_AddReadingFrameAttribute(const CSeq_feat& feat, 
-                                            string& defline);
-
-    virtual void x_AddPartialAttribute(const CBioseq_Handle& handle, 
-                                       const CSeq_feat& feat, 
-                                       string& defline);
-
-    virtual void x_AddExceptionAttribute(const CSeq_feat& feat, 
-                                         string& defline);
-
-    virtual void x_AddProteinIdAttribute(const CBioseq_Handle& handle,
-                                         const CSeq_feat& feat,
-                                         string& defline);
-    
-    virtual void x_AddTranslationExceptionAttribute(const CBioseq_Handle& handle, 
-                                                    const CSeq_feat& feat,
-                                                    string& defline);
-
-    virtual void x_AddLocationAttribute(const CBioseq_Handle& handle,
-                                        const CSeq_feat& feat,
-                                        string& defline);
-
-    virtual string x_GetCDSIdString(const CBioseq_Handle& handle,
-                                    const CSeq_feat& cds);
-
-    virtual string x_GetRNAIdString(const CBioseq_Handle& handle,
-                                    const CSeq_feat& rna);
-
-    virtual string x_GetProtIdString(const CBioseq_Handle& handle,
-                                     const CSeq_feat& prot);
-
-    virtual string x_GetGeneIdString(const CBioseq_Handle& handle,
-                                     const CSeq_feat& gene);
-
-    TSeqPos m_FeatCount;
-};
-
 
 // this would generate CDS and genes into own files
 // up to three files created: 
 // filename_without_ext.fsa for nucleotide sequences
 // filename_without_ext_cds_from_genomic.fna for CDS's
 // filename_without_ext_rna_from_genomic.fna for RNA's
-class /*NCBI_XOBJUTIL_EXPORT*/ CFastaOstreamComp
+class /*NCBI_XOBJUTIL_EXPORT*/ CFastaOstreamEx
 {
 public:
-    CFastaOstreamComp(const string& dir, const string& filename_without_ext);
-    ~CFastaOstreamComp();
+    CFastaOstreamEx(const string& dir, const string& filename_without_ext);
+    ~CFastaOstreamEx();
 
     enum E_FileSection
     {
