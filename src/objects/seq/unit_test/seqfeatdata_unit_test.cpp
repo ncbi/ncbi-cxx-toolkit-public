@@ -1330,16 +1330,3 @@ BOOST_AUTO_TEST_CASE(Test_IsECNumberSplit)
     BOOST_CHECK_EQUAL(CProt_ref::IsECNumberSplit("1.1.1.63"), false);
     BOOST_CHECK_EQUAL(CProt_ref::IsECNumberSplit("1.1.1.128"), false);
 }
-
-
-BOOST_AUTO_TEST_CASE(Test_ParseStructuredVoucher)
-{
-    string voucher = "UC:L.Huiet 104";
-    string inst = "";
-    string coll = "";
-    string id = "";
-    COrgMod::ParseStructuredVoucher(voucher, inst, coll, id);
-    BOOST_CHECK_EQUAL(inst, "UC");
-    BOOST_CHECK_EQUAL(coll, "");
-    BOOST_CHECK_EQUAL(id, "L.Huiet 104");
-}

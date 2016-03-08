@@ -40,6 +40,10 @@
 // generated includes
 #include <objects/trackmgr/TMgr_ClientInfo.hpp>
 
+#include <vector>
+
+#include <vector>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -49,6 +53,38 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // destructor
 CTMgr_ClientInfo::~CTMgr_ClientInfo(void)
 {
+}
+
+void CTMgr_ClientInfo::SetContext(const CTMgr_ClientInfo::TContext& value)
+{
+    // parse the context, if necessary
+    typedef vector<string> TTokens;
+
+    static const string major_delim("::");
+    static const string minor_delim(":");
+
+    TContext context = value;
+
+    TTokens major_tokens;
+    NStr::Tokenize(value, major_delim, major_tokens, NStr::fSplit_ByPattern);
+    bool is_context = true;
+
+    ITERATE (TTokens, it, major_tokens) {
+        if (is_context) {
+            context = *it;
+            CTMgr_ClientInfo_Base::SetContext(context);
+            is_context = false;
+        }
+        else {
+            string key, val;
+            if (NStr::SplitInTwo(*it, minor_delim, key, val)) {
+                CRef<CTMgr_AttrSpec> attr(new CTMgr_AttrSpec());
+                attr->SetKey(key);
+                attr->SetValue(val);
+                SetContext_attrs().push_back(attr);
+            }
+        }
+    }
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
