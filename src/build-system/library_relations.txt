@@ -226,7 +226,6 @@ ctutils needs3party $(SYBASE_DLLS)
 ctutils needs3party $(SYBASE_LIBS)
 ctutils needs3party $(VDB_LIBS)
 ctutils needs3party ncbiobj
-ctutils needs3party sybunic64
 curl needs3party $(ORIG_LIBS)
 db needs3party $(ORIG_LIBS)
 dbapi needs dbapi_driver
