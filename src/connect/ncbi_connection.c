@@ -235,6 +235,7 @@ static EIO_Status x_Flush(CONN conn, const STimeout* timeout)
     if (conn->meta.flush) {
         if (timeout == kDefaultTimeout)
             timeout  = conn->meta.default_timeout;
+        assert(timeout != kDefaultTimeout);
         for (;;) {
             status = conn->meta.flush(conn->meta.c_flush, timeout);
             if (status == eIO_Success)
@@ -288,10 +289,11 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
             /* call current connector's "CLOSE" method */
             if (conn->meta.close) {
                 EIO_Status closed;
-                closed = conn->meta.close(conn->meta.c_close,
-                                          conn->c_timeout == kDefaultTimeout
-                                          ? conn->meta.default_timeout
-                                          : conn->c_timeout);
+                const STimeout* timeout = (conn->c_timeout == kDefaultTimeout
+                                           ? conn->meta.default_timeout
+                                           : conn->c_timeout);
+                assert(timeout != kDefaultTimeout);
+                closed = conn->meta.close(conn->meta.c_close, timeout);
                 if (closed != eIO_Success)
                     status  = closed;
             }
@@ -362,6 +364,7 @@ static EIO_Status s_Open(CONN conn)
             timeout = (conn->o_timeout == kDefaultTimeout
                        ? conn->meta.default_timeout
                        : conn->o_timeout);
+            assert(timeout != kDefaultTimeout);
             status = conn->meta.open(conn->meta.c_open, timeout);
             /* OnTimeout gets called only if OnOpen was there */
             if (status == eIO_Timeout  &&  !nocb) {
@@ -670,6 +673,7 @@ static EIO_Status s_CONN_Write
         timeout = (conn->w_timeout == kDefaultTimeout
                    ? conn->meta.default_timeout
                    : conn->w_timeout);
+        assert(timeout != kDefaultTimeout);
         status = conn->meta.write(conn->meta.c_write, buf, size,
                                   n_written, timeout);
         assert(status != eIO_Success  ||  *n_written  ||  !size);
@@ -810,6 +814,7 @@ extern EIO_Status CONN_Flush
             : (conn->w_timeout == kDefaultTimeout
                ? conn->meta.default_timeout
                : conn->w_timeout);
+        assert(timeout != kDefaultTimeout);
         CONN_LOG(21, Flush, eLOG_Warning, "Failed to flush");
     }
     if (conn->meta.flush)
@@ -865,6 +870,7 @@ static EIO_Status s_CONN_Read
         timeout = (conn->r_timeout == kDefaultTimeout
                    ? conn->meta.default_timeout
                    : conn->r_timeout);
+        assert(timeout != kDefaultTimeout);
         status = conn->meta.read(conn->meta.c_read, buf, size - *n_read,
                                  &x_read, timeout);
         assert(status != eIO_Success  ||  x_read  ||  !size);
