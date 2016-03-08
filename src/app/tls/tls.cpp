@@ -333,13 +333,21 @@ void CTLSApp::Init(void)
 
     arg_desc->AddKey("master", "MasterRecord", "File with master record",
         CArgDescriptions::eInputFile);
-    arg_desc->AddKey("contigs", "Contigs", "File with contigs",
-        CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("contigsindir", "ContigDirectory", 
+        "Directory that contains contig files, defaults to current directory",
+        CArgDescriptions::eDirectory);
+    arg_desc->AddOptionalKey("contigsinsuffix", "ContigFileSuffix", "Suffix for contig flags",
+        CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("contigsoutdir", "ContigsOutputDirectory",
+        "Contigs Output Directory, defaults to -p value",
+        CArgDescriptions::eDirectory);
+    arg_desc->AddOptionalKey("contigsoutsuffix", "ContigsOutputSuffix",
+        "Suffix for contig output files, defaults to .tls",
+        CArgDescriptions::eString);
+
+
     arg_desc->AddOptionalKey("masterout", "MasterRecordOutputFile",
         "Master Record Output File (defaults to [master].tls)",
-        CArgDescriptions::eOutputFile);
-    arg_desc->AddOptionalKey("contigsout", "ContigsOutputFile",
-        "Contigs Output File (defaults to [contigs].tls)",
         CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("b", "Input is in binary format");
 
@@ -360,10 +368,39 @@ int CTLSApp::Run(void)
     Setup(args);
  
     // process contigs
-    const string& contigs_file = args["contigs"].AsString();
-    m_ContigHandler.OpenInputFile(contigs_file, args["b"]);
-    m_ContigHandler.OpenOutputFile(args["contigsout"] ? args["contigsout"].AsString() : contigs_file + ".tls", args["b"]);
-    m_ContigHandler.ProcessAsnInput();    
+
+    string dir_name = ".";
+    if (args["contigsindir"]) {
+        dir_name = args["contigsindir"].AsString();
+    }
+
+    string suffix = ".bss";
+    if (args["contigsinsuffix"]) {
+        suffix = args["contigsinsuffix"].AsString();
+    }
+
+    string outdir = dir_name;
+    if (args["contigsoutdir"]) {
+        outdir = args["contigsoutdir"].AsString();
+    }
+
+    string outsuffix = ".tls";
+    if (args["contigsoutsuffix"]) {
+        outsuffix = args["contigsoutsuffix"].AsString();
+    }
+
+    CDir dir(dir_name);
+    string mask = "*" + suffix;
+
+    CDir::TEntries files(dir.GetEntries(mask, CDir::eFile));
+    ITERATE(CDir::TEntries, ii, files) {
+        string fname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
+        string oname = CDirEntry::MakePath(outdir, fname + outsuffix);
+        m_ContigHandler.OpenInputFile(fname, args["b"]);
+        m_ContigHandler.OpenOutputFile(oname, args["b"]);
+        m_ContigHandler.ProcessAsnInput();
+    }
+
     const string& consensus = m_ContigHandler.GetConsensus();
 
     // update master

@@ -39,7 +39,7 @@
 #ifndef OBJECTS_TAXON1_TAXON2_DATA_HPP
 #define OBJECTS_TAXON1_TAXON2_DATA_HPP
 
-#include <objects/general/general__.hpp>
+
 // generated includes
 #include <objects/taxon1/Taxon2_data_.hpp>
 
@@ -59,26 +59,11 @@ public:
     // destructor
     ~CTaxon2_data(void);
 
-    // Additional properties from lookup
-    void SetProperty( const string& name, const string& value );
-    void SetProperty( const string& name, int value );
-    void SetProperty( const string& name, bool value );
-
-    bool GetProperty( const string& name, string& value ) const;
-    bool GetProperty( const string& name, int& value ) const;
-    bool GetProperty( const string& name, bool& value ) const;
-
-    void ResetProperty( const string& name );
 private:
     // Prohibit copy constructor and assignment operator
     CTaxon2_data(const CTaxon2_data& value);
     CTaxon2_data& operator=(const CTaxon2_data& value);
 
-protected:
-    typedef list< CRef< CDbtag > > TOrgProperties;
-    TOrgProperties m_props;
-    TOrgProperties::iterator x_FindProperty( const string& name );
-    TOrgProperties::const_iterator x_FindPropertyConst( const string& name ) const;
 };
 
 /////////////////// CTaxon2_data inline methods

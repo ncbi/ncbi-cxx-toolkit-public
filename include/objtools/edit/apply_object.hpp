@@ -67,6 +67,7 @@ public:
     void DeleteEditable(bool do_delete = true) { m_Delete = do_delete; };
     CSeq_entry_Handle GetSEH() const { return m_SEH; };
     void ApplyChange();
+    bool Equals(const CApplyObject& obj) const; 
 
 protected:
     CSeq_entry_Handle m_SEH;

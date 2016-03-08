@@ -667,6 +667,8 @@ BOOST_AUTO_TEST_CASE(Test_Matching_COI)
     s.SetIgnore_space(true);
     s.SetIgnore_punct(true);
 
+    BOOST_CHECK_EQUAL(s.Match("cytochrome oxidase subunit I (COI)"), true);
+
     CRef<CWord_substitution> subst1(new CWord_substitution());
     subst1->SetWord("cytochrome oxidase subunit I (COI)");
     subst1->SetSynonyms().push_back("cytochrome oxidase subunit I");
@@ -675,5 +677,5 @@ BOOST_AUTO_TEST_CASE(Test_Matching_COI)
     subst1->SetWhole_word(false);
     s.SetIgnore_words().Set().push_back(subst1);
 
-    //BOOST_CHECK_EQUAL(s.Match("cytochrome oxidase subunit I (COI)"), true);// fails
+    BOOST_CHECK_EQUAL(s.Match("cytochrome oxidase subunit I (COI)"), true);// fails
 }

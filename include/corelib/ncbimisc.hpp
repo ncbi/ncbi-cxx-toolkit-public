@@ -971,7 +971,7 @@ typedef int TTaxId;
 ///
 /// Use this typedef rather than its expansion, which may change.
 
-//#define NCBI_STRICT_GI
+#define NCBI_STRICT_GI
 //#define NCBI_INT8_GI
 
 #ifdef NCBI_STRICT_GI

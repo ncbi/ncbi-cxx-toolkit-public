@@ -699,22 +699,36 @@ BOOST_AUTO_TEST_CASE(Test_ExtendToStop)
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*objmgr);
 
-    CScope scope(*objmgr);
-    scope.AddDefaults();
+    CScope scope_fetch(*objmgr);
+    scope_fetch.AddDefaults();
 
     CRef<CSeq_id> fetch_id(new CSeq_id());
     TGi gi = (TIntId)24413615;
     fetch_id->SetGi(gi);
 
-    CBioseq_Handle bsh = scope.GetBioseqHandle(*fetch_id);
+    CBioseq_Handle bsh = scope_fetch.GetBioseqHandle(*fetch_id);
+    CSeq_entry_Handle seh = bsh.GetParentEntry();
+    CConstRef<CSeq_entry> se = seh.GetCompleteSeq_entry();
+    CRef<CSeq_entry> cpy(new CSeq_entry());
+    cpy->Assign(*se);
 
-    CFeat_CI cds_it(bsh, CSeqFeatData::e_Cdregion);
-    while (cds_it) {
-        CRef<CSeq_feat> replace(new CSeq_feat());
-        replace->Assign(*(cds_it->GetSeq_feat()));
-        CCleanup::ExtendToStopIfShortAndNotPartial(*replace, bsh, true);
-        ++cds_it;
-    }
+    CScope scope_edit(*objmgr);
+    scope_edit.AddDefaults();
+    seh = scope_edit.AddTopLevelSeqEntry(*cpy);
     
+    CCleanup cleanup(&scope_edit);
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.BasicCleanup(seh, CCleanup::eClean_NoProteinTitles);
+
+    for (CBioseq_CI bi(seh, CSeq_inst::eMol_na); bi; ++bi) {
+        CFeat_CI cds_it(*bi, CSeqFeatData::e_Cdregion);
+        while (cds_it) {
+            CRef<CSeq_feat> replace(new CSeq_feat());
+            replace->Assign(*(cds_it->GetSeq_feat()));
+            CCleanup::ExtendToStopIfShortAndNotPartial(*replace, bsh, true);
+            ++cds_it;
+        }
+    }
 }
 

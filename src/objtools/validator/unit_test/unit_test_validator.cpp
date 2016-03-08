@@ -19494,6 +19494,131 @@ BOOST_AUTO_TEST_CASE(Test_IsLocationInFrame)
     BOOST_CHECK_EQUAL(feature::eLocationInFrame_NotIn, feature::IsLocationInFrame(fh, *loc));    
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_CircularCompare)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
+
+    CRef<CSeq_loc> ex1(new CSeq_loc());
+    ex1->SetInt().SetId().Assign(*(entry->GetSeq().GetFirstId()));
+    ex1->SetInt().SetFrom(50);
+    ex1->SetInt().SetTo(58);
+
+    CRef<CSeq_loc> ex2(new CSeq_loc());
+    ex2->SetInt().SetId().Assign(*(entry->GetSeq().GetFirstId()));
+    ex2->SetInt().SetFrom(1);
+    ex2->SetInt().SetTo(10);
+
+    CRef<CSeq_loc> l1(new CSeq_loc());
+    l1->SetMix().Set().push_back(ex1);
+    l1->SetMix().Set().push_back(ex2);
+
+    CRef<CSeq_loc> l2(new CSeq_loc());
+    l2->Assign(*l1);
+    l2->SetMix().Set().back()->SetInt().SetTo(11);
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    sequence::ECompare cmp = sequence::Compare(*l1, *l2, &scope);
+
+    BOOST_CHECK_EQUAL(cmp, sequence::eContained);
+}
+
+BOOST_AUTO_TEST_CASE(Test_CircularOverlap)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
+
+    CRef<CSeq_loc> ex1(new CSeq_loc());
+    ex1->SetInt().SetId().Assign(*(entry->GetSeq().GetFirstId()));
+    ex1->SetInt().SetFrom(50);
+    ex1->SetInt().SetTo(58);
+
+    CRef<CSeq_loc> ex2(new CSeq_loc());
+    ex2->SetInt().SetId().Assign(*(entry->GetSeq().GetFirstId()));
+    ex2->SetInt().SetFrom(1);
+    ex2->SetInt().SetTo(10);
+
+    CRef<CSeq_loc> l1(new CSeq_loc());
+    l1->SetMix().Set().push_back(ex1);
+    l1->SetMix().Set().push_back(ex2);
+
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetData().SetGene().SetLocus("x");
+    gene->SetLocation().Assign(*l1);
+
+    unit_test_util::AddFeat(gene, entry);
+
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+
+    CConstRef<CSeq_feat> found_gene = sequence::GetBestOverlappingFeat(*l1,
+        CSeqFeatData::e_Gene,
+        sequence::eOverlap_Contained,
+        scope);
+
+    BOOST_ASSERT(found_gene);
+}
+
+
+void s_AddInterval(CSeq_loc& l, const CBioseq& seq, TSeqPos from, TSeqPos to, ENa_strand strand)
+{
+    CRef<CSeq_loc> ex(new CSeq_loc());
+    ex->SetInt().SetId().Assign(*(seq.GetFirstId()));
+    ex->SetInt().SetFrom(from);
+    ex->SetInt().SetTo(to);
+    if (strand == eNa_strand_minus) {
+        ex->SetInt().SetStrand(eNa_strand_minus);
+    }
+    l.SetMix().Set().push_back(ex);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_ComplexOverlap)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
+
+    CRef<CSeq_loc> gene_loc(new CSeq_loc());
+    s_AddInterval(*gene_loc, entry->GetSeq(), 50, 58, eNa_strand_plus);
+    s_AddInterval(*gene_loc, entry->GetSeq(), 1, 15, eNa_strand_minus);
+
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetData().SetGene().SetLocus("x");
+    gene->SetLocation().Assign(*gene_loc);
+    unit_test_util::AddFeat(gene, entry);
+
+    CRef<CSeq_loc> feat_loc(new CSeq_loc());
+    s_AddInterval(*feat_loc, entry->GetSeq(), 50, 58, eNa_strand_plus);
+    s_AddInterval(*feat_loc, entry->GetSeq(), 10, 15, eNa_strand_minus);
+    s_AddInterval(*feat_loc, entry->GetSeq(), 1, 5, eNa_strand_minus);
+
+
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+
+    CConstRef<CSeq_feat> found_gene = sequence::GetBestOverlappingFeat(*feat_loc,
+        CSeqFeatData::e_Gene,
+        sequence::eOverlap_Contained,
+        scope);
+
+    BOOST_ASSERT(found_gene);
+
+}
+
+
 CRef<CTaxon3_reply> s_CreateReplyWithMessage(const string& message)
 {
     CRef<CTaxon3_reply> reply(new CTaxon3_reply);

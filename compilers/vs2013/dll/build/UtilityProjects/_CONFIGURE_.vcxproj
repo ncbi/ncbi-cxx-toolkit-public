@@ -1,145 +1,79 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="UTF-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="4.0">
+  <PropertyGroup Label="Globals"><ProjectGuid>{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAC9}</ProjectGuid><Keyword>Win32Proj</Keyword><ProjectName>_CONFIGURE_</ProjectName>
+  </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="DebugDLL|Win32">
-      <Configuration>DebugDLL</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="DebugDLL|x64">
       <Configuration>DebugDLL</Configuration>
       <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleaseDLL|Win32">
-      <Configuration>ReleaseDLL</Configuration>
-      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="ReleaseDLL|x64">
       <Configuration>ReleaseDLL</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <PropertyGroup Label="Globals">
-    <ProjectName>_CONFIGURE_</ProjectName>
-    <ProjectGuid>{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAC9}</ProjectGuid>
-    <RootNamespace>MasterProject</RootNamespace>
-    <Keyword>ManagedCProj</Keyword>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+  <PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;" Label="Configuration"><ConfigurationType>Generic</ConfigurationType><CharacterSet>MultiByte</CharacterSet><PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+  <PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;" Label="Configuration"><ConfigurationType>Generic</ConfigurationType><CharacterSet>MultiByte</CharacterSet><PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'" Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'" Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'" Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+  <ImportGroup Label="ExtensionSettings"></ImportGroup>
+  <ImportGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;" Label="PropertySheets">
+    <Import Condition="exists(&apos;$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props&apos;)" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Label="LocalAppDataPlatform"/>
+    <Import Project="$(ProjectDir)..\ncbi_sln.DebugDLL.user.props"/>
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <ImportGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;" Label="PropertySheets">
+    <Import Condition="exists(&apos;$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props&apos;)" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Label="LocalAppDataPlatform"/>
+    <Import Project="$(ProjectDir)..\ncbi_sln.ReleaseDLL.user.props"/>
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">$(Configuration)\$(TargetName)\</IntDir>
-<TargetName Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">_CONFIGURE_</TargetName>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">$(Configuration)\$(TargetName)\</IntDir>
-<TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">_CONFIGURE_</TargetName>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">$(Configuration)\$(TargetName)\</IntDir>
-<TargetName Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">_CONFIGURE_</TargetName>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">$(Configuration)\$(TargetName)\</IntDir>
-<TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">_CONFIGURE_</TargetName>
+  <PropertyGroup Label="UserMacros"></PropertyGroup>
+  <PropertyGroup><_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion><OutDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">..\..\lib\$(Configuration)\</OutDir><IntDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">$(Configuration)\$(TargetName)\</IntDir><TargetName
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">_CONFIGURE_</TargetName><LinkIncremental
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">false</LinkIncremental><GenerateManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">true</GenerateManifest><EmbedManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">false</EmbedManifest><OutDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">..\..\lib\$(Configuration)\</OutDir><IntDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">$(Configuration)\$(TargetName)\</IntDir><TargetName
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">_CONFIGURE_</TargetName><LinkIncremental
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">false</LinkIncremental><GenerateManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">true</GenerateManifest><EmbedManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">false</EmbedManifest>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">
+  <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
+    <ClCompile><AdditionalIncludeDirectories>..\..\inc\$(Configuration)\;..\..\..\..\..\include\</AdditionalIncludeDirectories><PrecompiledHeader>Use</PrecompiledHeader><PrecompiledHeaderFile>ncbi_pch.hpp</PrecompiledHeaderFile><PreprocessorDefinitions>_DEBUG;NCBI_DLL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link></Link>
+    <Lib></Lib>
+    <ResourceCompile></ResourceCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+  <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
+    <ClCompile><AdditionalIncludeDirectories>..\..\inc\$(Configuration)\;..\..\..\..\..\include\</AdditionalIncludeDirectories><PrecompiledHeader>Use</PrecompiledHeader><PrecompiledHeaderFile>ncbi_pch.hpp</PrecompiledHeaderFile><PreprocessorDefinitions>NDEBUG;NCBI_DLL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link></Link>
+    <Lib></Lib>
+    <ResourceCompile></ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="configure._">
-      <FileType>Document</FileType>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">set PTB_PATH=$(ProjectDir)..\..\..\static\bin\ReleaseDLL
-set TREE_ROOT=$(ProjectDir)..\..\..\..\..
-set SLN_PATH=$(ProjectDir)..\ncbi_cpp_dll.sln
-set PTB_PLATFORM=$(Platform)
-set BUILD_TREE_ROOT=$(ProjectDir)..\..\..
-copy /Y %(Filename)%(Extension) %(Filename).bat
-call %(Filename).bat
-if errorlevel 1 exit 1
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">%(FullPath).aanofile.out;$(ProjectDir)..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">Configure solution : $(SolutionName)</Message>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">set PTB_PATH=$(ProjectDir)..\..\..\static\bin\ReleaseDLL
-set TREE_ROOT=$(ProjectDir)..\..\..\..\..
-set SLN_PATH=$(ProjectDir)..\ncbi_cpp_dll.sln
-set PTB_PLATFORM=$(Platform)
-set BUILD_TREE_ROOT=$(ProjectDir)..\..\..
-copy /Y %(Filename)%(Extension) %(Filename).bat
-call %(Filename).bat
-if errorlevel 1 exit 1
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">%(FullPath).aanofile.out;$(ProjectDir)..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">Configure solution : $(SolutionName)</Message>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">set PTB_PATH=$(ProjectDir)..\..\..\static\bin\ReleaseDLL
-set TREE_ROOT=$(ProjectDir)..\..\..\..\..
-set SLN_PATH=$(ProjectDir)..\ncbi_cpp_dll.sln
-set PTB_PLATFORM=$(Platform)
-set BUILD_TREE_ROOT=$(ProjectDir)..\..\..
-copy /Y %(Filename)%(Extension) %(Filename).bat
-call %(Filename).bat
-if errorlevel 1 exit 1
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">%(FullPath).aanofile.out;$(ProjectDir)..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">Configure solution : $(SolutionName)</Message>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">set PTB_PATH=$(ProjectDir)..\..\..\static\bin\ReleaseDLL
-set TREE_ROOT=$(ProjectDir)..\..\..\..\..
-set SLN_PATH=$(ProjectDir)..\ncbi_cpp_dll.sln
-set PTB_PLATFORM=$(Platform)
-set BUILD_TREE_ROOT=$(ProjectDir)..\..\..
-copy /Y %(Filename)%(Extension) %(Filename).bat
-call %(Filename).bat
-if errorlevel 1 exit 1
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">%(FullPath).aanofile.out;$(ProjectDir)..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">Configure solution : $(SolutionName)</Message>
+    <CustomBuild Include="configure._"><FileType>Document</FileType><Message
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">Configure solution : $(SolutionName)</Message><Command
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">set PTB_PATH=$(ProjectDir)..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..&#xa;set SLN_PATH=$(ProjectDir)..\$(SolutionFileName)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..&#xa;copy /Y %(Filename)%(Extension) %(Filename).bat&#xa;call %(Filename).bat&#xa;if errorlevel 1 exit 1&#xa;</Command><AdditionalInputs
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;"/><Outputs
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">%(FullPath).aanofile.out;$(ProjectDir)..\project_tree_builder.ini.custom;$(ProjectDir)..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe</Outputs><Message
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">Configure solution : $(SolutionName)</Message><Command
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">set PTB_PATH=$(ProjectDir)..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..&#xa;set SLN_PATH=$(ProjectDir)..\$(SolutionFileName)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..&#xa;copy /Y %(Filename)%(Extension) %(Filename).bat&#xa;call %(Filename).bat&#xa;if errorlevel 1 exit 1&#xa;</Command><AdditionalInputs
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;"/><Outputs
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">%(FullPath).aanofile.out;$(ProjectDir)..\project_tree_builder.ini.custom;$(ProjectDir)..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe</Outputs>
     </CustomBuild>
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+  <ImportGroup Label="ExtensionTargets"></ImportGroup>
 </Project>

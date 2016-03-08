@@ -59,11 +59,6 @@ public:
     // destructor
     ~CTMgr_ClientInfo(void);
 
-    virtual void SetContext (const TContext& value);
-    virtual TContext& SetContext(void) {
-        return CTMgr_ClientInfo_Base::SetContext();
-    }
-    
 private:
     // Prohibit copy constructor and assignment operator
     CTMgr_ClientInfo(const CTMgr_ClientInfo& value);

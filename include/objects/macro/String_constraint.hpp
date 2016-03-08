@@ -88,6 +88,8 @@ private:
     bool x_IsAllCaps(const string& str) const;
     bool x_IsAllLowerCase(const string& str) const;
     bool x_IsAllPunctuation(const string& str) const;
+    bool x_IsSkippable(const char ch) const;
+    bool x_IsAllSkippable(const string& str) const;
     // Checks whether the first letter of the first word is capitalized
     bool x_IsFirstCap(const string& str) const;
     // Checks whether the first letter of each word is capitalized

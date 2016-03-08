@@ -90,6 +90,27 @@ bool CString_constraint :: x_IsAllPunctuation(const string& str) const
    return true;
 }
 
+bool CString_constraint::x_IsSkippable(const char ch) const
+{
+    if (ispunct(ch) && GetIgnore_punct()) {
+        return true;
+    } else if (isspace(ch) && GetIgnore_space()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool CString_constraint::x_IsAllSkippable(const string& str) const
+{
+    for (unsigned i = 0; i < str.size(); i++) {
+        if (!x_IsSkippable(Uint1(str[i]))) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool CString_constraint :: x_IsFirstCap(const string& str) const
 {
     // ignore punctuation and spaces at the beginning of the phrase
@@ -269,10 +290,15 @@ bool CString_constraint :: x_PartialCompare(const string& str, const string& pat
             }
         }
     }
+
     if (pattern.length() == 0) {
         return true;
     }
+
     if (str.length() == 0) {
+        if (x_IsAllSkippable(pattern)) {
+            return true;
+        }
         // special case: can continue if the next character is a space, might have words to ignore
         if (isspace(pattern[0])) {
             return x_PartialCompare(str, pattern.substr(1), ' ', match_len);

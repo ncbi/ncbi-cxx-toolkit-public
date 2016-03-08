@@ -259,6 +259,18 @@ CSeq_entry_Handle GetSeqEntryForSeqdesc (CRef<CScope> scope, const CSeqdesc& seq
 }
 
 
+bool CApplyObject::Equals(const CApplyObject& obj) const
+{
+    bool rval = false;
+    if (PreExists()) {
+        if (obj.PreExists()) {
+            rval = (GetOriginalObject() == obj.GetOriginalObject());
+        }
+    } else if (!obj.PreExists()) {
+        rval = (&(GetObject()) == &(obj.GetObject()));
+    }
+    return rval;
+}
 
 
 END_SCOPE(edit)
