@@ -529,6 +529,7 @@ CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
     return request.ReadJsonResponse();
 }
 
+#if 0
 string SFileTrackAPI::GetFileAttribute(const CNetStorageObjectLoc& object_loc,
         const string& attr_name)
 {
@@ -635,6 +636,7 @@ void SFileTrackAPI::SetFileAttribute(const CNetStorageObjectLoc& object_loc,
 
     request.CheckIOStatus();
 }
+#endif
 
 string SFileTrackAPI::GenerateUniqueBoundary()
 {

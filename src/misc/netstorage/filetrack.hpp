@@ -110,10 +110,12 @@ struct SFileTrackAPI
 
     CJsonNode GetFileInfo(const CNetStorageObjectLoc& object_loc);
 
+#if 0
     string GetFileAttribute(const CNetStorageObjectLoc& object_loc,
             const string& attr_name);
     void SetFileAttribute(const CNetStorageObjectLoc& object_loc,
             const string& attr_name, const string& attr_value);
+#endif
 
     CRef<SFileTrackPostRequest> StartUpload(const CNetStorageObjectLoc& object_loc);
     CRef<SFileTrackRequest> StartDownload(const CNetStorageObjectLoc& object_loc);
