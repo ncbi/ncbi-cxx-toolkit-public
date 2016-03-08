@@ -103,6 +103,8 @@ private:
     CRef<CDeltaBlastAppArgs> m_CmdLineArgs;
 
     CRef<CBlastAncillaryData> m_AncillaryData;
+
+    CBlastAppDiagHandler m_bah;
 };
 
 void CDeltaBlastApp::Init()
@@ -195,7 +197,8 @@ int CDeltaBlastApp::Run(void)
 
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
-	SetDiagPostPrefix("deltablast");
+	    SetDiagPostPrefix("deltablast");
+        SetDiagHandler(&m_bah, false);
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
@@ -351,7 +354,8 @@ int CDeltaBlastApp::Run(void)
                 }
 
                 if (fmt_args->ArchiveFormatRequested(args)) {
-                    formatter.WriteArchive(*queries, *opts_hndl, *results);
+                    formatter.WriteArchive(*queries, *opts_hndl, *results, 0, m_bah.GetMessages());
+                    m_bah.ResetMessages();
                 } else {
                     BlastFormatter_PreFetchSequenceData(*results, scope);
                     if (m_CmdLineArgs->GetShowDomainHits()) {
@@ -440,6 +444,10 @@ int CDeltaBlastApp::Run(void)
         }
 
     } CATCH_ALL(status)
+    if(!m_bah.GetMessages().empty()) {
+     	const CArgs & a = GetArgs();
+     	PrintErrorArchive(a, m_bah.GetMessages());
+    }
     return status;
 }
 
@@ -473,7 +481,8 @@ CDeltaBlastApp::DoPsiBlastIterations(CRef<CBlastOptionsHandle> opts_hndl,
     if (CFormattingArgs::eArchiveFormat ==
         m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice()) {
         formatter.WriteArchive(*query_factory, *opts_hndl, *results,
-                               itr.GetIterationNumber());
+                               itr.GetIterationNumber(), m_bah.GetMessages());
+        m_bah.ResetMessages();
     }
     else {
         ITERATE(blast::CSearchResultSet, result, *results) {

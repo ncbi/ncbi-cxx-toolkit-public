@@ -116,6 +116,8 @@ private:
     CRef<CPsiBlastAppArgs> m_CmdLineArgs;
     /// Ancillary results for the previously executed PSI-BLAST iteration
     CConstRef<CBlastAncillaryData> m_AncillaryData;
+
+    CBlastAppDiagHandler m_bah;
 };
 
 void CPsiBlastApp::Init()
@@ -259,11 +261,13 @@ CPsiBlastApp::x_RunLocalPsiBlastIterations(CRef<CBlastQueryVector> query,
                    {
                 	   if (pssm.Empty() && !query.Empty())
                 	   {
-                		   formatter.WriteArchive(*query_factory, *opts_hndl, *results, itr.GetIterationNumber());
+                		   formatter.WriteArchive(*query_factory, *opts_hndl, *results, itr.GetIterationNumber(), m_bah.GetMessages());
+                           m_bah.ResetMessages();
                 	   }
                 	   else if (!pssm.Empty())
                 	   {
-                		   formatter.WriteArchive(*pssm, *opts_hndl, *results, itr.GetIterationNumber());
+                		   formatter.WriteArchive(*pssm, *opts_hndl, *results, itr.GetIterationNumber(), m_bah.GetMessages());
+                           m_bah.ResetMessages();
                 	   }
                    }
                    else
@@ -345,11 +349,13 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
         {
             if (pssm.Empty() && !query.Empty())
             {
-                formatter.WriteArchive(*query_factory, *opts_hndl, *results );
+                formatter.WriteArchive(*query_factory, *opts_hndl, *results, 0, m_bah.GetMessages());
+                m_bah.ResetMessages();
             }
             else if (!pssm.Empty())
             {
-                formatter.WriteArchive(*pssm, *opts_hndl, *results);
+                formatter.WriteArchive(*pssm, *opts_hndl, *results, 0, m_bah.GetMessages());
+                m_bah.ResetMessages();
             }
         }
         else
@@ -403,7 +409,8 @@ int CPsiBlastApp::Run(void)
 
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
-	SetDiagPostPrefix("psiblast");
+        SetDiagPostPrefix("psiblast");
+        SetDiagHandler(&m_bah, false);
 
         const CArgs& args = GetArgs();
         const bool recovered_from_search_strategy =
@@ -458,6 +465,10 @@ int CPsiBlastApp::Run(void)
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
+        bool isArchiveFormat = fmt_args->ArchiveFormatRequested(args);
+        if(!isArchiveFormat) {
+        	m_bah.DoNotSaveMessages();
+        }
         CNcbiOstream& out_stream = m_CmdLineArgs->GetOutputStream();
         CBlastFormat formatter(opt, *db_adapter,
                                fmt_args->GetFormattedOutputChoice(),
@@ -545,6 +556,10 @@ int CPsiBlastApp::Run(void)
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
 
     } CATCH_ALL(status)
+    if(!m_bah.GetMessages().empty()) {
+    	const CArgs & a = GetArgs();
+    	PrintErrorArchive(a, m_bah.GetMessages());
+    }
     return status;
 }
 

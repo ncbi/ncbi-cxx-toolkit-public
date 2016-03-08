@@ -82,12 +82,14 @@ void CTblastnApp::Init()
 int CTblastnApp::Run(void)
 {
     int status = BLAST_EXIT_SUCCESS;
+    CBlastAppDiagHandler bah;
 
     try {
 
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
-	SetDiagPostPrefix("tblastn");
+        SetDiagPostPrefix("tblastn");
+        SetDiagHandler(&bah, false);
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
@@ -152,6 +154,10 @@ int CTblastnApp::Run(void)
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
+        bool isArchiveFormat = fmt_args->ArchiveFormatRequested(args);
+        if(!isArchiveFormat) {
+        	bah.DoNotSaveMessages();
+        }
         CBlastFormat formatter(opt, *db_adapter,
                                fmt_args->GetFormattedOutputChoice(),
                                query_opts->GetParseDeflines(),
@@ -202,7 +208,8 @@ int CTblastnApp::Run(void)
                 }
 
                 if (fmt_args->ArchiveFormatRequested(args)) {
-                    formatter.WriteArchive(*query_factory, *opts_hndl, *results);
+                    formatter.WriteArchive(*query_factory, *opts_hndl, *results, 0, bah.GetMessages());
+                    bah.ResetMessages();
                 } else {
                     BlastFormatter_PreFetchSequenceData(*results, scope);
                     ITERATE(CSearchResultSet, result, *results) {
@@ -236,7 +243,8 @@ int CTblastnApp::Run(void)
             }
 
             if (fmt_args->ArchiveFormatRequested(args)) {
-                formatter.WriteArchive(*query_factory, *opts_hndl, *results);
+                formatter.WriteArchive(*query_factory, *opts_hndl, *results, 0, bah.GetMessages());
+                bah.ResetMessages();
             } else {
                 BlastFormatter_PreFetchSequenceData(*results, scope);
                 ITERATE(CSearchResultSet, result, *results) {
@@ -251,6 +259,10 @@ int CTblastnApp::Run(void)
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
     } CATCH_ALL(status)
+    if(!bah.GetMessages().empty()) {
+    	const CArgs & a = GetArgs();
+    	PrintErrorArchive(a, bah.GetMessages());
+    }
     return status;
 }
 
