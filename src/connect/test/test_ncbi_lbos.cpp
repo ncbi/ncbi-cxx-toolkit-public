@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include "test_ncbi_lbos_common.hpp"                                                        
 #include    <corelib/test_boost.hpp>
+#include "test_assert.h"  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
