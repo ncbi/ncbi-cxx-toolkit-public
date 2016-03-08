@@ -1551,8 +1551,8 @@ extern EIO_Status URL_ConnectEx
     /* select request method and its verbal representation */
     if (x_req_meth == eReqMethod_Any)
         x_req_meth  = content_length ? eReqMethod_Post : eReqMethod_Get;
-    else if (content_length  &&  (x_req_meth == eReqMethod_Get   ||
-                                  x_req_meth == eReqMethod_Head)) {
+    else if (content_length  &&  (x_req_meth == eReqMethod_Head  ||
+                                  x_req_meth == eReqMethod_Get)) {
         CORE_LOGF_X(3, eLOG_Warning,
                     ("[URL_Connect; http%s://%s:%hu%s%s] "
                      " Content-Length (%lu) is ignored with request method %s",
