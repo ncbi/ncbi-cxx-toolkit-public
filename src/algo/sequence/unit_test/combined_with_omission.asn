@@ -3,8 +3,7 @@ Seq-annot ::= {
     {
       data gene {
         locus "SLC37A1",
-        desc "solute carrier family 37 (glucose-6-phosphate transporter),
- member 1",
+        desc "solute carrier family 37 member 1",
         syn {
           "G3PP"
         }

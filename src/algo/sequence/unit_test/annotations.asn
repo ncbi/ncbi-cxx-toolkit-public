@@ -3,8 +3,7 @@ Seq-annot ::= {
     {
       data gene {
         locus "SLC37A1",
-        desc "solute carrier family 37 (glucose-6-phosphate transporter),
- member 1",
+        desc "solute carrier family 37 member 1",
         syn {
           "G3PP"
         }
@@ -42,8 +41,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "solute carrier family 37 (glucose-6-phosphate transporter),
- member 1, transcript variant 2"
+        ext name "solute carrier family 37 member 1, transcript variant 2"
       },
       partial TRUE,
       product whole gi 49619230,
