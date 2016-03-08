@@ -51,7 +51,6 @@ struct SFileTrackRequest : public CObject
     SFileTrackRequest(SFileTrackAPI* storage_impl,
             const CNetStorageObjectLoc& object_loc,
             const string& url,
-            const string& user_header = kEmptyStr,
             FHTTP_ParseHeader parse_header = 0);
 
     CJsonNode ReadJsonResponse();
@@ -61,13 +60,28 @@ struct SFileTrackRequest : public CObject
 
     void CheckIOStatus();
 
+protected:
+    SFileTrackRequest(SFileTrackAPI* storage_impl,
+            const CNetStorageObjectLoc& object_loc,
+            const string& url,
+            const string& user_header,
+            FHTTP_ParseHeader parse_header);
+
+private:
+    SConnNetInfo* GetNetInfo() const;
+    THTTP_Flags GetUploadFlags() const;
+    void SetTimeout();
+
     SFileTrackAPI* m_FileTrackAPI;
+    AutoPtr<SConnNetInfo> m_NetInfo;
+
+public:
     const CNetStorageObjectLoc& m_ObjectLoc;
     string m_URL;
     CConn_HttpStream m_HTTPStream;
-    int m_HTTPStatus;
-    size_t m_ContentLength;
-    bool m_FirstRead;
+    int m_HTTPStatus = 0;
+    size_t m_ContentLength = (size_t) -1;
+    bool m_FirstRead = false;
 };
 
 struct SFileTrackPostRequest : public SFileTrackRequest
@@ -92,6 +106,7 @@ struct SFileTrackConfig
 {
     CNetStorageObjectLoc::EFileTrackSite site;
     string key;
+    const bool chunked_upload = false;
     const STimeout read_timeout;
     const STimeout write_timeout;
 

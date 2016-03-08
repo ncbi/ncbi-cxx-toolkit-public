@@ -118,6 +118,44 @@ const THTTP_Flags kDefaultHttpFlags =
         fHTTP_SuppressMessages |
         fHTTP_Flushable;
 
+SConnNetInfo* SFileTrackRequest::GetNetInfo() const
+{
+    if (m_FileTrackAPI->config.chunked_upload) {
+        SConnNetInfo* net_info(ConnNetInfo_Create(0));
+        net_info->version = 1;
+        return net_info;
+    }
+
+    return 0;
+}
+
+THTTP_Flags SFileTrackRequest::GetUploadFlags() const
+{
+    return m_FileTrackAPI->config.chunked_upload ? 
+        kDefaultHttpFlags | fHTTP_WriteThru : kDefaultHttpFlags;
+}
+
+void SFileTrackRequest::SetTimeout()
+{
+    m_HTTPStream.SetTimeout(eIO_Close, &m_FileTrackAPI->config.read_timeout);
+    m_HTTPStream.SetTimeout(eIO_Read, &m_FileTrackAPI->config.read_timeout);
+}
+
+SFileTrackRequest::SFileTrackRequest(
+        SFileTrackAPI* storage_impl,
+        const CNetStorageObjectLoc& object_loc,
+        const string& url,
+        FHTTP_ParseHeader parse_header) :
+    m_FileTrackAPI(storage_impl),
+    m_ObjectLoc(object_loc),
+    m_URL(url),
+    m_HTTPStream(url, NULL, kEmptyStr, parse_header, this, NULL,
+            NULL, kDefaultHttpFlags,
+            &storage_impl->config.write_timeout)
+{
+    SetTimeout();
+}
+
 SFileTrackRequest::SFileTrackRequest(
         SFileTrackAPI* storage_impl,
         const CNetStorageObjectLoc& object_loc,
@@ -125,17 +163,14 @@ SFileTrackRequest::SFileTrackRequest(
         const string& user_header,
         FHTTP_ParseHeader parse_header) :
     m_FileTrackAPI(storage_impl),
+    m_NetInfo(GetNetInfo()),
     m_ObjectLoc(object_loc),
     m_URL(url),
-
-    m_HTTPStream(url, NULL, user_header, parse_header, this, NULL,
-            NULL, kDefaultHttpFlags,
-            &storage_impl->config.write_timeout),
-    m_HTTPStatus(0),
-    m_ContentLength((size_t) -1)
+    m_HTTPStream(url, m_NetInfo.get(), user_header, parse_header, this, NULL,
+            NULL, GetUploadFlags(),
+            &storage_impl->config.write_timeout)
 {
-    m_HTTPStream.SetTimeout(eIO_Close, &storage_impl->config.read_timeout);
-    m_HTTPStream.SetTimeout(eIO_Read, &storage_impl->config.read_timeout);
+    SetTimeout();
 }
 
 SFileTrackPostRequest::SFileTrackPostRequest(
@@ -387,7 +422,7 @@ CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(
     const string url(GetURL(object_loc, "/ft/byid/", "/contents"));
 
     CRef<SFileTrackRequest> new_request(new SFileTrackRequest(this, object_loc,
-            url, kEmptyStr, s_HTTPParseHeader_GetContentLength));
+            url, s_HTTPParseHeader_GetContentLength));
 
     new_request->m_FirstRead = true;
 
@@ -399,7 +434,7 @@ void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
     const string url(GetURL(object_loc, "/ftmeta/files/", "/__delete__"));
 
     CRef<SFileTrackRequest> new_request(new SFileTrackRequest(this, object_loc,
-            url, kEmptyStr, s_HTTPParseHeader_GetContentLength));
+            url, s_HTTPParseHeader_GetContentLength));
 
     new_request->m_HTTPStream << NcbiEndl;
 
@@ -524,7 +559,7 @@ CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
     const string url(GetURL(object_loc, "/ftmeta/files/", "/"));
 
     SFileTrackRequest request(this, object_loc, url,
-            kEmptyStr, s_HTTPParseHeader_SaveStatus);
+            s_HTTPParseHeader_SaveStatus);
 
     return request.ReadJsonResponse();
 }
@@ -748,6 +783,8 @@ SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) 
     site(GetSite(reg.GetString(s_GetSection(section), "site", "prod"))),
     key(reg.GetEncryptedString(s_GetSection(section), "api_key",
                 IRegistry::fPlaintextAllowed)),
+    chunked_upload(reg.GetBool(s_GetSection(section), "chunked_upload",
+                false, 0, IRegistry::eReturn)),
     read_timeout(s_GetDefaultTimeout()),
     write_timeout(s_GetDefaultTimeout())
 {
