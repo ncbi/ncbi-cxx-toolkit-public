@@ -1,4 +1,7 @@
-/* FreeTDS - Library of routines accessing Sybase and Microsoft databases
+/* $Id$
+ * ===========================================================================
+ *
+ * FreeTDS - Library of routines accessing Sybase and Microsoft databases
  * Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004  Brian Bruns
  * Copyright (C) 2005-2015  Frediano Ziglio
  *
@@ -457,6 +460,10 @@ tds_get_homedir(void)
 	 */
 	LPITEMIDLIST pidl;
 	char path[MAX_PATH];
+	// SHGetPathFromIDListA() tries to count length of "path", so we have
+	// to make sure it has only zeros, otherwise invalid memory access 
+	// is inevitable
+	memset(path, 0, MAX_PATH);
 	HRESULT hr;
 	LPMALLOC pMalloc = NULL;
 	char * res = NULL;
