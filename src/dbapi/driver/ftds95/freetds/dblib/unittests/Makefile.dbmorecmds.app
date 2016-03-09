@@ -14,4 +14,4 @@ CHECK_COPY = dbmorecmds.sql
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko elisovdn
