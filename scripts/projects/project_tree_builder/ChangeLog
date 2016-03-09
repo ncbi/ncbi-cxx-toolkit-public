@@ -299,3 +299,6 @@ June 01, 2015
 version 4.1.2,   CXX-6005
 Added analysis and reporting of cyclic library dependencies.
 
+March 09, 2016
+version 4.1.3, CXX-7917
+Added support for VS2015
