@@ -192,32 +192,29 @@ void CNetCacheServerListener::OnConnected(CNetServerConnection& connection)
 
 void CNetCacheServerListener::OnError(const string& err_msg, CNetServer& server)
 {
-    string message = server->m_ServerInPool->m_Address.AsString();
-
-    message += ": ";
-    message += err_msg;
-
     static const char s_BlobNotFoundMsg[] = "BLOB not found";
     if (NStr::strncmp(err_msg.c_str(), s_BlobNotFoundMsg,
             sizeof(s_BlobNotFoundMsg) - 1) == 0) {
         if (strstr(err_msg.c_str(), "AGE=") != NULL) {
-            NCBI_THROW(CNetCacheBlobTooOldException, eBlobTooOld, message);
+            CONNSERV_THROW_FMT(CNetCacheBlobTooOldException, eBlobTooOld,
+                    server, err_msg);
         } else {
-            NCBI_THROW(CNetCacheException, eBlobNotFound, message);
+            CONNSERV_THROW_FMT(CNetCacheException, eBlobNotFound,
+                    server, err_msg);
         }
     }
 
     static const char s_AccessDenied[] = "Access denied";
     if (NStr::strncmp(err_msg.c_str(), s_AccessDenied,
         sizeof(s_AccessDenied) - 1) == 0)
-        NCBI_THROW(CNetCacheException, eAccessDenied, message);
+        CONNSERV_THROW_FMT(CNetCacheException, eAccessDenied, server, err_msg);
 
     static const char s_UnknownCommandMsg[] = "Unknown command";
     if (NStr::strncmp(err_msg.c_str(), s_UnknownCommandMsg,
         sizeof(s_UnknownCommandMsg) - 1) == 0)
-        NCBI_THROW(CNetCacheException, eUnknownCommand, message);
+        CONNSERV_THROW_FMT(CNetCacheException, eUnknownCommand, server, err_msg);
 
-    NCBI_THROW(CNetCacheException, eServerError, message);
+    CONNSERV_THROW_FMT(CNetCacheException, eServerError, server, err_msg);
 }
 
 void CNetCacheServerListener::OnWarning(const string& warn_msg,
@@ -333,7 +330,8 @@ unsigned SNetCacheAPIImpl::x_ExtractBlobAge(
     string::size_type pos = exec_result.response.find("AGE=");
 
     if (pos == string::npos) {
-        NCBI_THROW_FMT(CNetCacheException, eInvalidServerResponse,
+        CONNSERV_THROW_FMT(CNetCacheException, eInvalidServerResponse,
+                exec_result.conn->m_Server,
                        "No AGE field in " << cmd_name <<
                        " output: \"" << exec_result.response << "\"");
     }
@@ -558,22 +556,24 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
     if (NStr::FindCase(exec_result.response, "ID:") != 0) {
         // Answer is not in the "ID:....." format
         exec_result.conn->Abort();
-        string msg = "Unexpected server response: ";
-        msg += exec_result.response;
-        NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+        CONNSERV_THROW_FMT(CNetServiceException, eCommunicationError,
+            exec_result.conn->m_Server,
+            "Unexpected server response: " << exec_result.response);
     }
     exec_result.response.erase(0, 3);
 
     if (exec_result.response.empty()) {
         exec_result.conn->Abort();
-        NCBI_THROW(CNetServiceException, eCommunicationError,
+        CONNSERV_THROW_FMT(CNetServiceException, eCommunicationError,
+            exec_result.conn->m_Server,
             "Invalid server response. Empty key.");
     }
 
     if (write_existing_blob) {
         if (exec_result.response != stripped_blob_id) {
             exec_result.conn->Abort();
-            NCBI_THROW_FMT(CNetCacheException, eInvalidServerResponse,
+            CONNSERV_THROW_FMT(CNetCacheException, eInvalidServerResponse,
+                exec_result.conn->m_Server,
                 "Server created " << exec_result.response <<
                 " in response to PUT3 \"" << stripped_blob_id << "\"");
         }

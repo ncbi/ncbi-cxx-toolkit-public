@@ -80,7 +80,8 @@ CNetCacheReader::CNetCacheReader(SNetCacheAPIImpl* impl,
 
     if (pos == string::npos) {
         exec_result.conn->Abort();
-        NCBI_THROW(CNetCacheException, eInvalidServerResponse,
+        CONNSERV_THROW_FMT(CNetCacheException, eInvalidServerResponse,
+            m_Connection->m_Server,
             "No SIZE field in reply to the blob reading command");
     }
 
@@ -225,26 +226,26 @@ void CNetCacheReader::SocketRead(void* buf, size_t count, size_t* bytes_read)
     switch (status) {
     case eIO_Success:
         break;
-
     case eIO_Timeout:
-        NCBI_THROW(CNetServiceException, eTimeout,
+        CONNSERV_THROW_FMT(CNetServiceException, eTimeout,
+            m_Connection->m_Server,
             "Timeout while reading blob contents");
 
     case eIO_Closed:
         if (count > *bytes_read) {
             Uint8 remaining_bytes = m_BlobBytesToRead;
             m_BlobBytesToRead = 0;
-            NCBI_THROW_FMT(CNetCacheException, eBlobClipped,
+            CONNSERV_THROW_FMT(CNetCacheException, eBlobClipped,
+                m_Connection->m_Server,
                 "Unexpected EOF while reading " << m_BlobID <<
-                " from " <<
-                m_Connection->m_Server->m_ServerInPool->m_Address.AsString() <<
                 " (blob size: " << m_BlobSize <<
                 ", unread bytes: " << remaining_bytes << ")");
         }
         break;
 
     default:
-        NCBI_THROW_FMT(CNetServiceException, eCommunicationError,
+        CONNSERV_THROW_FMT(CNetServiceException, eCommunicationError,
+            m_Connection->m_Server,
             "Error while reading blob: " << IO_StatusStr(status));
     }
 }
@@ -346,10 +347,12 @@ void CNetCacheWriter::Close()
     if (res != eRW_Success) {
         AbortConnection();
         if (res == eRW_Timeout) {
-            NCBI_THROW(CNetServiceException, eTimeout,
+            CONNSERV_THROW_FMT(CNetServiceException, eTimeout,
+                m_Connection->m_Server,
                 "Timeout while sending EOF packet");
         } else {
-            NCBI_THROW(CNetServiceException, eCommunicationError,
+            CONNSERV_THROW_FMT(CNetServiceException, eCommunicationError,
+                m_Connection->m_Server,
                 "IO error while sending EOF packet");
         }
     }
@@ -451,7 +454,8 @@ EIO_Status CNetCacheWriter::TransmitImpl(const char* buf, size_t count)
                             msg = NStr::ParseEscapes(msg);
                         }
 
-                        NCBI_THROW(CNetCacheException, eServerError, msg);
+                        CONNSERV_THROW_FMT(CNetCacheException, eServerError,
+                                m_Connection->m_Server, msg);
                     }
                 }
             }
@@ -489,8 +493,8 @@ EIO_Status CNetCacheWriter::TransmitImpl(const char* buf, size_t count)
         return eIO_Success;
     }
 
-    NCBI_THROW(CNetServiceException, eCommunicationError,
-        g_RW_ResultToString(res));
+    CONNSERV_THROW_FMT(CNetServiceException, eCommunicationError,
+            m_Connection->m_Server, g_RW_ResultToString(res));
 }
 
 void CNetCacheWriter::Transmit(const void* buf,
@@ -500,11 +504,13 @@ void CNetCacheWriter::Transmit(const void* buf,
         switch (TransmitImpl(static_cast<const char*>(buf), count))
         {
         case eIO_Closed:
-            NCBI_THROW(CNetServiceException, eCommunicationError,
+            CONNSERV_THROW_FMT(CNetServiceException, eCommunicationError,
+                m_Connection->m_Server,
                 "Server closed communication channel (timeout?)");
 
         case eIO_Timeout:
-            NCBI_THROW(CNetServiceException, eTimeout,
+            CONNSERV_THROW_FMT(CNetServiceException, eTimeout,
+                m_Connection->m_Server,
                     "Timeout while writing blob contents");
 
         case eIO_InvalidArg:
@@ -513,7 +519,8 @@ void CNetCacheWriter::Transmit(const void* buf,
             /* FALL THROUGH if not DEBUG */
 
         case eIO_Unknown:
-            NCBI_THROW(CNetServiceException, eCommunicationError,
+            CONNSERV_THROW_FMT(CNetServiceException, eCommunicationError,
+                m_Connection->m_Server,
                 "Unknown error");
 
         default:

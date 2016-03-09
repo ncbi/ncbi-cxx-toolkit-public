@@ -38,6 +38,11 @@
 
 BEGIN_NCBI_SCOPE
 
+#define CONNSERV_THROW_FMT(exception_class, err_code, server, message) \
+    NCBI_THROW(exception_class, err_code, \
+            FORMAT(server->m_ServerInPool->m_Address.AsString() << \
+            ": " << message))
+
 typedef pair<SNetServerInPool*, double> TServerRate;
 typedef vector<TServerRate> TNetServerList;
 typedef map<SServerAddress, SNetServerInPool*> TNetServerByAddress;

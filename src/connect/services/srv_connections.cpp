@@ -151,23 +151,20 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result,
         break;
     case eIO_Timeout:
         Abort();
-        NCBI_THROW_FMT(CNetSrvConnException, eReadTimeout,
-                "Communication timeout reading from " <<
-                m_Server->m_ServerInPool->m_Address.AsString() <<
+        CONNSERV_THROW_FMT(CNetSrvConnException, eReadTimeout, m_Server,
+                "Communication timeout while reading"
                 " (timeout=" << NcbiTimeoutToMs(
                         m_Socket.GetTimeout(eIO_Read)) / 1000.0 << "s)");
         break;
     case eIO_Closed:
         Abort();
-        NCBI_THROW_FMT(CNetSrvConnException, eConnClosedByServer,
-                "Connection closed by " <<
-                m_Server->m_ServerInPool->m_Address.AsString());
+        CONNSERV_THROW_FMT(CNetSrvConnException, eConnClosedByServer, m_Server,
+                "Connection closed");
         break;
     default: // invalid socket or request, bailing out
         Abort();
-        NCBI_THROW_FMT(CNetSrvConnException, eCommunicationError,
-                "Communication error reading from " <<
-                m_Server->m_ServerInPool->m_Address.AsString());
+        CONNSERV_THROW_FMT(CNetSrvConnException, eCommunicationError, m_Server,
+                "Communication error while reading");
     }
 
     if (NStr::StartsWith(result, "OK:")) {
@@ -232,10 +229,8 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
         if (io_st != eIO_Success) {
             Abort();
 
-            NCBI_THROW_FMT(CNetSrvConnException, eWriteFailure,
-                "Failed to write to " <<
-                m_Server->m_ServerInPool->m_Address.AsString() << ": " <<
-                IO_StatusStr(io_st));
+            CONNSERV_THROW_FMT(CNetSrvConnException, eWriteFailure,
+                m_Server, "Failed to write: " << IO_StatusStr(io_st));
         }
         len -= n_written;
         buf += n_written;
@@ -600,12 +595,9 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
         if (io_st != eIO_Success) {
             conn->m_Socket.Close();
 
-            string message = "Could not connect to " +
-                m_ServerInPool->m_Address.AsString();
-            message += ": ";
-            message += IO_StatusStr(io_st);
-
-            NCBI_THROW(CNetSrvConnException, eConnectionFailure, message);
+            NCBI_THROW(CNetSrvConnException, eConnectionFailure,
+                FORMAT(m_ServerInPool->m_Address.AsString() <<
+                    "Could not connect: " << IO_StatusStr(io_st)));
         }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
