@@ -158,4 +158,9 @@ February 16, 2016
 version 6.9.4 (CXX-7839)
 Changed to do mirroring after quorum requirement is met.
 
+March 01, 2016
+version 6.9.5 (CXX-7908)
+Changed to do blob synchronization after quorum requirement is met.
+
+
 
