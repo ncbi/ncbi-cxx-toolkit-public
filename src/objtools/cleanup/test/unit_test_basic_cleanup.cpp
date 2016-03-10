@@ -711,27 +711,27 @@ BOOST_AUTO_TEST_CASE(Test_SetFrameFromLoc)
     CRef<CCdregion> cdr(new CCdregion());
 
     // always set to one if 5' complete
-    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), scope), true);
+    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), true);
     BOOST_CHECK_EQUAL(cdr->GetFrame(), CCdregion::eFrame_one);
-    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), scope), false);
+    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), false);
 
     misc->SetLocation().SetPartialStart(true, eExtreme_Biological);
-    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), scope), true);
+    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), true);
     BOOST_CHECK_EQUAL(cdr->GetFrame(), CCdregion::eFrame_three);
-    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), scope), false);
+    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), false);
     
     misc->SetLocation().SetInt().SetFrom(1);
-    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), scope), true);
+    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), true);
     BOOST_CHECK_EQUAL(cdr->GetFrame(), CCdregion::eFrame_two);
-    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), scope), false);
+    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), false);
 
     misc->SetLocation().SetInt().SetFrom(2);
-    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), scope), true);
+    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), true);
     BOOST_CHECK_EQUAL(cdr->GetFrame(), CCdregion::eFrame_one);
-    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), scope), false);
+    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), false);
 
     misc->SetLocation().SetInt().SetFrom(3);
     misc->SetLocation().SetPartialStop(true, eExtreme_Biological);
-    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), scope), false);
+    BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), false);
     BOOST_CHECK_EQUAL(cdr->GetFrame(), CCdregion::eFrame_one);
 }
