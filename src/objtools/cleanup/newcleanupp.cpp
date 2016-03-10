@@ -714,7 +714,7 @@ void CNewCleanup_imp::SeqsetBC (
 
 static CMolInfo::TCompleteness GetCompletenessFromFlags(bool partial5, bool partial3, bool partial)
 {
-    CMolInfo::TCompleteness comp = CMolInfo::eCompleteness_unknown;
+    CMolInfo::TCompleteness comp = CMolInfo::eCompleteness_complete;
     if (partial5 && partial3) {
         comp = CMolInfo::eCompleteness_no_ends;
     } else if (partial5) {
