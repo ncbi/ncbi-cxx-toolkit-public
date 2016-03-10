@@ -901,7 +901,7 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp)
     ASSERT(sbp);
     sbp->psi_matrix->pssm->data = NULL;
     sfree(sbp->psi_matrix->pssm);
-    sfree(sbp->psi_matrix->freq_ratios);
+    sbp->psi_matrix->freq_ratios = NULL;
     sfree(sbp->psi_matrix);
 }
 
@@ -1239,6 +1239,11 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
                               seq_arg.seq->length);
       }
 
+      if (ext_params->options->compositionBasedStats > 0) {
+         _PSIDeallocateMatrix((void**)sbp->psi_matrix->freq_ratios,
+                              seq_arg.seq->length);
+
+      }
       if (hsp_list->hspcnt == 0) {
          hsp_list = Blast_HSPListFree(hsp_list);
          continue;
