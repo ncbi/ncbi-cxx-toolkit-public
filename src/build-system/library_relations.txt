@@ -181,6 +181,7 @@ build_config needs $(GPIPE_GENCOLL_LIBS)
 build_config needs bacterial_pipeline_proc
 build_config needs build_config_base
 build_config needs gpipe_xmlutil
+build_config needs ncbi_xcache_netcache
 build_config needs reftrack_access
 build_config_base needs gencoll_client
 build_config_base needs gpinit_bag_util
@@ -330,6 +331,7 @@ gc_util_sdbapi needs gencoll_client
 gc_util_sdbapi needs gpipe_common
 gc_utils needs gpipe_objutil
 gcaccess_utils needs $(GPIPE_GENCOLL_LIBS)
+gcaccess_utils needs ncbi_xcache_netcache
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcrypt needs3party $(ORIG_LIBS)
@@ -917,6 +919,7 @@ pn_ctl needs gpipe_prok_clean_prot_names
 pn_ctl needs hmm_file
 pn_ctl needs hmm_hit_handle
 pn_ctl needs idload_utils
+pn_ctl needs ncbi_xcache_netcache
 pn_ctl needs third_party
 png needs $(Z_LIB)
 png needs3party $(ORIG_LIBS)
@@ -1068,6 +1071,7 @@ sybunic64 needs3party $(ORIG_LIBS)
 tables needs3party $(ORIG_LIBS)
 tax_assignment_region needs gpipe_objutil
 tax_xml needs $(GPIPE_GENCOLL_LIBS)
+tax_xml needs ncbi_xcache_netcache
 taxon needs xser
 taxon1 needs $(SEQ_LIBS)
 taxon1 needs pub
@@ -1151,6 +1155,7 @@ valerr needs xser
 valid needs general
 valid needs xregexp
 validate_regions needs $(GPIPE_GENCOLL_LIBS)
+validate_regions needs ncbi_xcache_netcache
 variation needs $(SEQ_LIBS)
 variation needs pub
 variation_utils needs variation
@@ -1402,11 +1407,14 @@ xgdsdata_misc needs xncbi
 xgencoll needs aligndb_reader
 xgencoll needs gencoll_client
 xgencoll needs gpipe_objutil
+xgencoll needs ncbi_xcache_netcache
 xgencollstats needs $(GPIPE_GENCOLL_LIBS)
 xgencollstats needs gencoll_stats
+xgencollstats needs ncbi_xcache_netcache
 xgp_manifest needs xser
 xgpgcreport needs $(GPIPE_GENCOLL_LIBS)
 xgpgcreport needs gencoll_release_report
+xgpgcreport needs ncbi_xcache_netcache
 xgpp_console needs dbapi
 xgpp_console_access needs xgpp_console_commands
 xgpp_console_commands needs gpipe_common
