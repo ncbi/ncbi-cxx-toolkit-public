@@ -200,11 +200,13 @@ SFileTrackPostRequest::SFileTrackPostRequest(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
         const string& boundary,
+        const string& cookie,
         const string& user_header,
         FHTTP_ParseHeader parse_header) :
     SFileTrackRequest(config, object_loc,
             s_GetURL(object_loc, "/ft/upload/"), user_header, parse_header),
-    m_Boundary(boundary)
+    m_Boundary(boundary),
+    m_Cookie(cookie)
 {
 }
 
@@ -289,14 +291,14 @@ static string s_RemoveHTMLTags(const char* text)
 CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
         const CNetStorageObjectLoc& object_loc)
 {
-    string session_key(LoginAndGetSessionKey(object_loc));
+    string cookie(FILETRACK_SIDCOOKIE "=" + LoginAndGetSessionKey(object_loc));
 
     string boundary(GenerateUniqueBoundary());
 
     string user_header(MakeMutipartFormDataHeader(boundary));
 
-    user_header.append("Cookie: " FILETRACK_SIDCOOKIE "=");
-    user_header.append(session_key);
+    user_header.append("Cookie: ");
+    user_header.append(cookie);
     user_header.append("\r\n", 2);
 
     const string& my_ncbi_id(CRequestContext_PassThrough().Get("my_ncbi_id"));
@@ -308,7 +310,7 @@ CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
 
     CRef<SFileTrackPostRequest> new_request(
             new SFileTrackPostRequest(config, object_loc,
-            boundary, user_header,
+            boundary, cookie, user_header,
             s_HTTPParseHeader_SaveStatus));
 
     new_request->SendContentDisposition("file\"; filename=\"contents");
@@ -339,6 +341,7 @@ void SFileTrackPostRequest::FinishUpload()
     SendFormInput("expires", kEmptyStr);
     SendFormInput("owner_id", kEmptyStr);
     SendFormInput("file_id", unique_key);
+    SendFormInput("editable", "true");
     SendEndOfFormData();
 
     try {
@@ -365,13 +368,43 @@ void SFileTrackPostRequest::FinishUpload()
     string filetrack_file_id = upload_result.GetAt(0).GetString("file_id");
 
     if (filetrack_file_id != unique_key) {
-        NCBI_THROW_FMT(CNetStorageException, eIOError,
-                "Error while uploading \"" << m_ObjectLoc.GetLocator() <<
-                "\" to FileTrack: the file has been stored as \"" <<
-                filetrack_file_id << "\" instead of "
-                "\"" << unique_key << "\" as requested. "
-                "A file with the key might already exist.");
+        RenameFile(filetrack_file_id, unique_key);
     }
+}
+
+void SFileTrackPostRequest::RenameFile(const string& from, const string& to)
+{
+    string err;
+
+    try {
+        CHttpSession session;
+        session.SetHttpFlags(kDefaultHttpFlags);
+
+        string url(s_URLs[m_ObjectLoc.GetFileTrackSite()]);
+        url.append("/api/2.0/files/").append(from).append("/");
+
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePut);
+        auto& timeout(m_Config.read_timeout);
+        req.SetTimeout(CTimeout(timeout.sec, timeout.usec));
+        req.Headers().SetValue(CHttpHeaders::eContentType, "application/json");
+        req.Headers().SetValue(CHttpHeaders::eCookie, m_Cookie);
+        req.ContentStream() << "{\"key\": \"" << to << "\"}";
+
+        auto status = req.Execute().GetStatusCode();
+
+        if (status == 200) return;
+
+        err.append("status: ").append(to_string(status));
+    }
+    catch (CException& e) {
+        err.append("exception: ").append(e.what());
+    }
+
+    NCBI_THROW_FMT(CNetStorageException, eUnknown,
+            "Error while uploading \"" << m_ObjectLoc.GetLocator() <<
+            "\" to FileTrack: the file has been stored as \"" <<
+            from << "\" instead of \"" << to << "\" as requested. "
+            "Renaming failed, " << err);
 }
 
 CJsonNode SFileTrackRequest::ReadJsonResponse()

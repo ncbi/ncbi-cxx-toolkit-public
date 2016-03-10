@@ -718,14 +718,6 @@ IState* CFileTrack::StartWrite(const void* buf, size_t count,
 {
     _ASSERT(result);
 
-    // If exists, delete the file first
-    // TODO: Replace this with post upload file replacement
-    // in SFileTrackPostRequest::FinishUpload (filetrack_file_id != unique_key)
-    // after FileTrack implements that feature (FT-85).
-    bool exists = false;
-    try { exists = ExistsImpl(); } catch (...) { }
-    if (exists) RemoveImpl();
-
     CWOFileTrack::TRequest request = m_Context->filetrack_api.StartUpload(Locator());
     m_Write.Set(request);
     *result = m_Write.WriteImpl(buf, count, bytes_written);

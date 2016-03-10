@@ -102,6 +102,7 @@ struct SFileTrackPostRequest : public SFileTrackRequest
     SFileTrackPostRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
             const string& boundary,
+            const string& cookie,
             const string& user_header,
             FHTTP_ParseHeader parse_header);
 
@@ -113,6 +114,11 @@ struct SFileTrackPostRequest : public SFileTrackRequest
     void FinishUpload();
 
     string m_Boundary;
+
+private:
+    void RenameFile(const string& from, const string& to);
+
+    const string m_Cookie;
 };
 
 struct SFileTrackAPI
