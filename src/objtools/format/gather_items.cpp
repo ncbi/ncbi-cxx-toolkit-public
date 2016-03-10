@@ -1238,7 +1238,7 @@ void CFlatGatherer::x_TSAComment(CBioseqContext& ctx) const
     }
 
     if ( ctx.GetTech() == CMolInfo::eTech_tsa &&
-         ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) 
+         (ctx.GetBiomol() == CMolInfo::eBiomol_mRNA || ctx.GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) ) 
     {
         string str = CCommentItem::GetStringForTSA(ctx);
         if ( !str.empty() ) {

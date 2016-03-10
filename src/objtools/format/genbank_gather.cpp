@@ -187,7 +187,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         GATHER_VIA_FUNC(Wgs, x_GatherWGS);
     } else if( ctx.IsTSAMaster()  &&
                ctx.GetTech() == CMolInfo::eTech_tsa &&
-               ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) 
+               (ctx.GetBiomol() == CMolInfo::eBiomol_mRNA || ctx.GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) ) 
     {
         // Yes, the TSA info is considered a kind of PRIMARY block
         GATHER_VIA_FUNC(Tsa, x_GatherTSA);

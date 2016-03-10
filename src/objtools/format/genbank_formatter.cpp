@@ -1093,7 +1093,8 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
     {{
         // we split the if-statement into little local vars for ease of reading
         const bool is_wgs_master = ( ctx.IsWGSMaster() && ctx.GetTech() == CMolInfo::eTech_wgs );
-        const bool is_tsa_master = ( ctx.IsTSAMaster() && ctx.GetTech() == CMolInfo::eTech_tsa && ctx.GetBiomol() == CMolInfo::eBiomol_mRNA );
+        const bool is_tsa_master = ( ctx.IsTSAMaster() && ctx.GetTech() == CMolInfo::eTech_tsa && 
+                                     (ctx.GetBiomol() == CMolInfo::eBiomol_mRNA || ctx.GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) );
         const bool do_contig_style = ctx.DoContigStyle();
         const bool show_contig = ( (ctx.IsSegmented()  &&  ctx.HasParts())  ||
                                    (ctx.IsDelta()  &&  ! ctx.IsDeltaLitOnly()) );
