@@ -782,23 +782,20 @@ static void s_DeannounceCPP(const string& name,
                               "OK", 200, time_elapsed);
 }
 
-
-static void s_SelectPort(int&               count_before, 
-                         const string&      node_name,
-                         unsigned short&    port)
-{
-    port = s_GeneratePort();
-    count_before = s_CountServers(node_name, port);
-    while (count_before != 0) {
-        port = s_GeneratePort();
-        count_before = s_CountServers(node_name, port);
-    }
-    WRITE_LOG("Random port is " << port << ". "
-              "Count of servers with this port is " <<
-              count_before << ".");
-}
-
-
+// Macro, because we want to know from which line this was called
+// (original line will be shown in WRITE_LOG)
+#define SELECT_PORT(count_before,node_name,port)                              \
+do {                                                                          \
+    port = s_GeneratePort();                                                  \
+    count_before = s_CountServers(node_name, port);                           \
+    while (count_before != 0) {                                               \
+        port = s_GeneratePort();                                              \
+        count_before = s_CountServers(node_name, port);                       \
+    }                                                                         \
+    WRITE_LOG("Random port is " << port << ". "                               \
+              "Count of servers with this port is " <<                        \
+              count_before << ".");                                           \
+} while (false)
 
 
 static int  s_FindAnnouncedServer(string            service,
@@ -1761,7 +1758,7 @@ void AnnounceHostInHealthcheck__TryFindReturnsHostIP()
     * registered non-deleted service. We count server with chosen port
     * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
 
     /* Pre-cleanup */
     CLBOSIpCache::HostnameDelete(node_name, s_GetMyHost(), "1.0.0", port);
@@ -1792,7 +1789,7 @@ void AnnounceHostSeparate__TryFindReturnsHostkIP()
     * registered non-deleted service. We count server with chosen port
     * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
 
     /* Pre-cleanup */
     CLBOSIpCache::HostnameDelete(node_name, s_GetMyHost(), "1.0.0", port);
@@ -1824,7 +1821,7 @@ void NotAnnounceHost__TryFindReturnsTheSame()
     * registered non-deleted service. We count server with chosen port
     * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
 
     /* Pre-cleanup */
     CLBOSIpCache::HostnameDelete(node_name, "cnn.com", "1.0.0", port);
@@ -1847,7 +1844,7 @@ static void s_LBOSIPCacheTest(string host, string expected_result = "N/A")
     WRITE_LOG("Testing Resolve with host " << host << 
               ", expected result: " << expected_result);
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
 
     string resolved_ip = CLBOSIpCache::HostnameResolve(node_name, host,
                                                        "1.0.0", port);
@@ -1904,7 +1901,7 @@ void DeannounceHost__TryFindDoesNotFind()
     * registered non-deleted service. We count server with chosen port
     * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
 
     /* Pre-cleanup */
     CLBOSIpCache::HostnameDelete(node_name, host, "1.0.0", port);
@@ -1934,7 +1931,7 @@ void ResolveTwice__SecondTimeNoOp()
     WRITE_LOG("Resolving the same name twice - on the second run function "
               "should return already saved result");
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     string resolved_ip = CLBOSIpCache::HostnameResolve(node_name, host,
                                                        "1.0.0", port);
     int i;
@@ -1965,7 +1962,7 @@ void DeleteTwice__SecondTimeNoOp()
     WRITE_LOG("Resolving the same name twice - on the second run function "
               "should return already saved result");
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     string resolved_ip = CLBOSIpCache::HostnameResolve(node_name, host,
                                                        "1.0.0", port);
     int i;
@@ -1997,7 +1994,7 @@ void TryFindTwice__SecondTimeNoOp()
     WRITE_LOG("Resolving the same name twice - on the second run function "
         "should return already saved result");
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     string resolved_ip = CLBOSIpCache::HostnameResolve(node_name, host,
         "1.0.0", port);
     int i;
@@ -2407,21 +2404,21 @@ void FullCycle__ShouldWork()
      * registered non-deleted service. We count servers with chosen port
      * and check if there is no server already announced */
     lbos_answer = NULL;
-    s_SelectPort(count_before, service, port1);
+    SELECT_PORT(count_before, service, port1);
     s_AnnounceCSafe(service.c_str(), "1.0.0", "", port1,
                      (string("http://") + s_GetMyIP() + ":"
                              PORT_STR(PORT) "/health").c_str(),
                     &lbos_answer.Get(), NULL);
     lbos_answer = NULL;
 
-    s_SelectPort(count_before, service, port2);
+    SELECT_PORT(count_before, service, port2);
     s_AnnounceCSafe(service.c_str(), "1.0.0", "", port2,
                      (string("http://") + s_GetMyIP() + ":"
                              PORT_STR(PORT) "/health").c_str(),
                     &lbos_answer.Get(), NULL);
     lbos_answer = NULL;
 
-    s_SelectPort(count_before, service, port3);
+    SELECT_PORT(count_before, service, port3);
     s_AnnounceCSafe(service.c_str(), "1.0.0", "", port3,
                      (string("http://") + s_GetMyIP() + ":"
                              PORT_STR(PORT) "/health").c_str(),
@@ -3630,7 +3627,7 @@ void AllOK__ReturnSuccess()
     /* Prepare for test. We need to be sure that there is no previously 
      * registered non-deleted service. We count servers with chosen port 
      * and check if there is no server already announced */
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     unsigned short result;
     /*
      * I. Check with 0.0.0.0
@@ -3657,7 +3654,7 @@ void AllOK__ReturnSuccess()
      */
     WRITE_LOG("Part II: real IP");
     node_name = s_GenerateNodeName();
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(),
                     "1.0.0",
                     "", port,
@@ -3698,7 +3695,7 @@ void AllOK__LBOSAnswerProvided()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     /* Announce */
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                   (string("http://") + s_GetMyHost() + ":" PORT_STR(PORT) "/health").c_str(),
@@ -3715,7 +3712,7 @@ void AllOK__LBOSAnswerProvided()
 
     /* Now check with IP  */
     WRITE_LOG("Part II: real IP");
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                     (string("http://") + s_GetMyIP() + ":" PORT_STR(PORT) "/health").c_str(),
                     &lbos_answer.Get(), &lbos_status_message.Get());
@@ -3749,7 +3746,7 @@ void AllOK__LBOSStatusMessageIsOK()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     /* Announce */
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                     "http://0.0.0.0:" PORT_STR(PORT) "/health",
@@ -3767,11 +3764,11 @@ void AllOK__LBOSStatusMessageIsOK()
     /* Now check with IP  */
     WRITE_LOG("Part II: real IP");
     node_name = s_GenerateNodeName();
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     /* Prepare for test. We need to be sure that there is no previously 
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                   (string("http://") + s_GetMyIP() + ":" PORT_STR(PORT) "/health").c_str(),
                   &lbos_answer.Get(), &lbos_status_message.Get());
@@ -3806,7 +3803,7 @@ void AllOK__AnnouncedServerSaved()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     /* Announce */
     unsigned short result;
     result = s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
@@ -3816,19 +3813,18 @@ void AllOK__AnnouncedServerSaved()
                                    "Announcement function did not return "
                                    "SUCCESS as expected");
     int find_result = s_FindAnnouncedServer(node_name, "1.0.0", port,
-                                        "0.0.0.0");
+                                            "0.0.0.0");
     NCBITEST_CHECK_EQUAL_MT_SAFE(find_result, 1);
     /* Cleanup */
     lbos_answer = NULL;
     lbos_status_message = NULL;
     int deannounce_result = s_DeannounceC(node_name.c_str(), 
-                                            "1.0.0",
-                                            "", 
-                                            port, &lbos_answer.Get(), 
-                                            &lbos_status_message.Get());
+                                          "1.0.0", "", port,
+                                          &lbos_answer.Get(),
+                                          &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(deannounce_result == kLBOSSuccess,
-                           "Deannouncement function did not return "
-                           "SUCCESS as expected");
+                                   "Deannouncement function did not return "
+                                   "SUCCESS as expected");
     /* Cleanup */
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -3836,18 +3832,18 @@ void AllOK__AnnouncedServerSaved()
     /* Now check with IP instead of host name */
     WRITE_LOG("Part II: real IP");
     node_name = s_GenerateNodeName();
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     /* Announce */
     s_AnnounceCSafe(node_name.c_str(),
-                        "1.0.0",
-                        "",
-                        port,
-                        (string("http://") + s_GetMyIP() +
-                                ":" PORT_STR(PORT) "/health").c_str(),
-                        &lbos_answer.Get(), &lbos_status_message.Get());
+                    "1.0.0",
+                    "",
+                    port,
+                    (string("http://") + s_GetMyIP() +
+                            ":" PORT_STR(PORT) "/health").c_str(),
+                    &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(result == kLBOSSuccess,
-                           "Announcement function did not return "
-                           "SUCCESS as expected");
+                                   "Announcement function did not return "
+                                   "SUCCESS as expected");
     find_result = s_FindAnnouncedServer(node_name, "1.0.0", port,
                                         s_GetMyIP());
     NCBITEST_CHECK_EQUAL_MT_SAFE(find_result, 1);
@@ -3886,15 +3882,13 @@ void NoLBOS__ReturnNoLBOSAndNotFind()
                                       s_FakeReadEmpty);
     
     result = s_AnnounceC(node_name.c_str(),
-                   "1.0.0",
-                   "", port,
-                   "http://0.0.0.0:" PORT_STR(PORT) "/health",
-                   &lbos_answer.Get(), &lbos_status_message.Get());
+                         "1.0.0", "", port,
+                         "http://0.0.0.0:" PORT_STR(PORT) "/health",
+                         &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSNoLBOS);
 
     /* Cleanup*/
-    WRITE_LOG(
-        "Reverting mock of CONN_Read() with s_FakeReadEmpty()");
+    WRITE_LOG("Reverting mock of CONN_Read() with s_FakeReadEmpty()");
 }
 
 
@@ -4078,7 +4072,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     unsigned short result;
     const char* convert_result;
     /*
@@ -4408,7 +4402,7 @@ void RealLife__VisibleAfterAnnounce()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     unsigned short result;
     result = s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                              "http://0.0.0.0:" PORT_STR(PORT) "/health",
@@ -4441,7 +4435,7 @@ void IP0000__ReplaceWithIP()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     WRITE_LOG("Mocking SOCK_gethostbyaddr with \"1.2.3.4\"");
     CMockFunction<FLBOS_SOCKGetLocalHostAddressMethod*> mock1(
                              g_LBOS_UnitTesting_GetLBOSFuncs()->LocalHostAddr,
@@ -4942,7 +4936,7 @@ void Deannounced__Return1(unsigned short port)
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     /* 
      * I. Check with 0.0.0.0
      */
@@ -4973,7 +4967,7 @@ void Deannounced__Return1(unsigned short port)
      */
     WRITE_LOG("Part II. IP");
     node_name = s_GenerateNodeName();
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                     (string("http://") + s_GetMyIP() + 
                     ":" PORT_STR(PORT) "/health").c_str(),
@@ -5019,7 +5013,7 @@ void Deannounced__AnnouncedServerRemoved()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     unsigned short result;
     /* 
      * I. Check with hostname
@@ -5052,7 +5046,7 @@ void Deannounced__AnnouncedServerRemoved()
      */
     WRITE_LOG("Part II. Check with IP");
     node_name = s_GenerateNodeName();
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                     (string("http://") + s_GetMyIP() + ":8080/health").c_str(), 
                     &lbos_answer.Get(), &lbos_status_message.Get());
@@ -5082,7 +5076,7 @@ void Deannounced__AnnouncedServerRemoved()
     */
     WRITE_LOG("Part III. Check with 0.0.0.0");
     node_name = s_GenerateNodeName();
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                     "http://0.0.0.0:8080/health",
                     &lbos_answer.Get(), &lbos_status_message.Get());
@@ -5177,7 +5171,7 @@ void RealLife__InvisibleAfterDeannounce()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     Deannounced__Return1(port);
     int count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
@@ -5234,7 +5228,7 @@ void NoHostProvided__LocalAddress()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced                     */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                   "http://0.0.0.0:" PORT_STR(PORT) "/health",
                   &lbos_answer.Get(), &lbos_status_message.Get());
@@ -5320,7 +5314,7 @@ void AllDeannounced__NoSavedLeft()
     WRITE_LOG("Part I. Announcing");
     for (i = 0;  i < 10;  i++) {
         int count_before;
-        s_SelectPort(count_before, node_name, port);
+        SELECT_PORT(count_before, node_name, port);
         ports.push_back(port);
         counts_before.push_back(count_before);
         s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", ports[i],
@@ -5362,7 +5356,7 @@ void AllOK__ReturnSuccess()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     /*
     * I. Check with 0.0.0.0
     */
@@ -5379,7 +5373,7 @@ void AllOK__ReturnSuccess()
      */
     WRITE_LOG("Part II: real IP");
     node_name = s_GenerateNodeName();
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     string health = string("http://") + s_GetMyIP() + ":8080/health";
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
                                            health));
@@ -5407,7 +5401,7 @@ void AllOK__AnnouncedServerSaved()
      * and check if there is no server already announced */
     int count_before;
     WRITE_LOG("Part I : 0.0.0.0");
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
                          "http://0.0.0.0:" PORT_STR(PORT) "/health"));
     int find_result = s_FindAnnouncedServer(node_name.c_str(), "1.0.0", port,
@@ -5419,7 +5413,7 @@ void AllOK__AnnouncedServerSaved()
     /* Now check with IP instead of host name */
     WRITE_LOG("Part II: real IP");
     node_name = s_GenerateNodeName();
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     BOOST_CHECK_NO_THROW(
         s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
                           string("http://") + s_GetMyIP() + ":8080/health"));
@@ -5541,7 +5535,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     //SleepMilliSec(1500); //ZK is not that fast
     /*
      * First time
@@ -5630,7 +5624,7 @@ void IncorrectPort__ThrowInvalidArgs()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     /* Count how many servers there are before we announce */
     BOOST_CHECK_EXCEPTION(
             s_AnnounceCPP(node_name, "1.0.0", "", 0,
@@ -5715,7 +5709,7 @@ void RealLife__VisibleAfterAnnounce()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     BOOST_CHECK_NO_THROW(
         s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
                        "http://0.0.0.0:" PORT_STR(PORT) "/health"));
@@ -5859,7 +5853,7 @@ void HealthcheckDead__ThrowE_NotFound()
      */
      WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
                 "return  kLBOSBadRequest");
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     WRITE_LOG("Expected exception with error code \"" << 
                 "e_LBOSBadRequest" <<
                 "\", status code \"" << 400 <<
@@ -5880,7 +5874,7 @@ void HealthcheckDead__ThrowE_NotFound()
      */
      WRITE_LOG("Part II. Healthcheck is \"http:/0.0.0.0:4097/healt\" - "
                 "should work fine");
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     BOOST_CHECK_NO_THROW(                    //  missing 'h'
         s_AnnounceCPPSafe(node_name, "1.0.0", "", port,// v
                           "http://0.0.0.0:" PORT_STR(PORT)
@@ -5933,7 +5927,7 @@ void SeparateHost__AnnouncementOK()
     WRITE_LOG("Trying to announce server with separate host that is not the "
               "same as healtcheck host - return code from LBOS(200).");
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
 
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "cnn.com", port,
                                            "http://0.0.0.0:" PORT_STR(PORT)
@@ -6197,7 +6191,7 @@ void Deannounced__Return1(unsigned short port)
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     /*
     * I. Check with 0.0.0.0
     */
@@ -6215,7 +6209,7 @@ void Deannounced__Return1(unsigned short port)
     */
     WRITE_LOG("Part II. IP");
     node_name = s_GenerateNodeName();
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     string health =
             string("http://") + s_GetMyIP() + ":" PORT_STR(PORT) "/health";
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
@@ -6245,7 +6239,7 @@ void Deannounced__AnnouncedServerRemoved()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     string my_host = s_GetMyHost();
     /*
      * I. Check with hostname
@@ -6267,7 +6261,7 @@ void Deannounced__AnnouncedServerRemoved()
 
     /* Now check with IP instead of host name */
     node_name = s_GenerateNodeName();
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     /*
      * II. Now check with IP instead of host name
      */
@@ -6366,7 +6360,7 @@ void RealLife__InvisibleAfterDeannounce()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     //SleepMilliSec(1500); //ZK is not that fast
     Deannounced__Return1(port);
     //SleepMilliSec(1500); //ZK is not that fast
@@ -6387,7 +6381,7 @@ void NoHostProvided__LocalAddress()
      * registered non-deleted service. We count server with chosen port 
      * and check if there is no server already announced */
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     try {
         // We get random answers of LBOS in this test, so try-catch
         // Service always get announced, though
@@ -6467,7 +6461,7 @@ void AllDeannounced__NoSavedLeft()
     WRITE_LOG("Part I. Announcing");
     for (i = 0;  i < 10;  i++) {
         int count_before;
-        s_SelectPort(count_before, node_name, port);
+        SELECT_PORT(count_before, node_name, port);
         ports.push_back(port);
         counts_before.push_back(count_before);
         BOOST_CHECK_NO_THROW(
@@ -6730,10 +6724,10 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
     string health = 
         string("http://") + s_GetMyIP() + ":" PORT_STR(PORT) "/health";
     int count_before;
-    s_SelectPort(count_before, node_name, port1);
+    SELECT_PORT(count_before, node_name, port1);
     s_AnnounceCPPSafe(node_name, "v1", "", port1, health.c_str());
 
-    s_SelectPort(count_before, node_name, port2);
+    SELECT_PORT(count_before, node_name, port2);
     s_AnnounceCPPSafe(node_name, "v2", "", port2, health.c_str());
 
     /* Set first version */
@@ -6781,7 +6775,7 @@ void AnnounceThenDeleteVersion__DiscoverFindsNothing()
     string health = 
                  string("http://") + s_GetMyIP() + ":" PORT_STR(PORT) "/health";
     int count_before;
-    s_SelectPort(count_before, node_name, port);
+    SELECT_PORT(count_before, node_name, port);
     s_AnnounceCPPSafe(node_name, "1.0.0", "", port, health.c_str());
     unsigned int servers_found =
         s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec, 
@@ -7680,6 +7674,11 @@ static string s_PrintThreadNum() {
     ss << cl.AsString("h:m:s.l ");
     int* p_val = tls->GetValue();
     if (p_val != NULL) {
+        if (*p_val == kMainThreadNumber ) {
+            ss << "Main thread: ";
+        } else if (*p_val == kHealthThreadNumber ) {
+            ss << "H/check thread: ";
+        } else
         ss << "Thread " << *p_val << ": ";
     }
     return ss.str();
