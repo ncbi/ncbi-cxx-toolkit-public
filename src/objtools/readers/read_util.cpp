@@ -127,7 +127,7 @@ CRef<CSeq_id> CReadUtil::AsSeqId(
         }
         return pId;
     }
-    catch(...) {
+    catch(CSeqIdException&) {
     }
     return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, rawId));
 }

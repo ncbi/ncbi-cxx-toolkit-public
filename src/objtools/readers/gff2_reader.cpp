@@ -661,9 +661,9 @@ bool CGff2Reader::xAlignmentSetSegment(
 
     //ids
     denseg.SetIds().push_back(
-        CRef<CSeq_id>(new CSeq_id(targetParts[0])));
+        CReadUtil::AsSeqId(targetParts[0]));
     denseg.SetIds().push_back(
-        CRef<CSeq_id>(new CSeq_id(gff.Id())));
+        CReadUtil::AsSeqId(gff.Id()));
 
     //starts
     size_t targetOffset = 0;
