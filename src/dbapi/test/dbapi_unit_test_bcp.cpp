@@ -2277,17 +2277,17 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
     const short s1 = short(0xfade);
     const short s2 = short(0x0ec0);
     const Uint1 t1 = char(0x42);
-    const Uint1 b_vals[test_num][11] = {
-          {1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1},
-          {1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1},
-          {0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1},
-          {0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0},
-          {1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1},
-          {0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0},
-          {0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1},
-          {0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0},
-          {0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1},
-          {1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0},
+    const bool b_vals[test_num][11] = {
+          {true, false,false,true, false,true, true, false,true, false,true },
+          {true, false,true, false,false,true, true, true, false,false,true },
+          {false,true, false,true, true, true, true, false,false,false,true },
+          {false,false,false,true, true, false,false,false,false,false,false},
+          {true, false,true, false,false,true, false,true, true, false,true },
+          {false,true, false,true, false,false,false,true, true, false,false},
+          {false,true, false,false,true, true, false,true, false,false,true },
+          {false,true, true, false,true, false,false,true, false,true, false},
+          {false,true, false,false,true, false,true, false,true, true, true },
+          {true, false,false,true, false,false,false,false,true, false,false},
         };
 
     try {
@@ -2334,24 +2334,24 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
             CVariant b_id(eDB_Int);
             CVariant b_i1(eDB_Int);
             CVariant b_str1(eDB_VarChar);
-            CVariant b_b1(eDB_TinyInt);
-            CVariant b_b2(eDB_TinyInt);
+            CVariant b_b1(eDB_Bit);
+            CVariant b_b2(eDB_Bit);
             CVariant b_i2(eDB_Int);
-            CVariant b_b3(eDB_TinyInt);
+            CVariant b_b3(eDB_Bit);
             CVariant b_s1(eDB_SmallInt);
-            CVariant b_b4(eDB_TinyInt);
-            CVariant b_b5(eDB_TinyInt);
+            CVariant b_b4(eDB_Bit);
+            CVariant b_b5(eDB_Bit);
             CVariant b_i3(eDB_Int);
-            CVariant b_b6(eDB_TinyInt);
+            CVariant b_b6(eDB_Bit);
             CVariant b_str2(eDB_VarChar);
-            CVariant b_b7(eDB_TinyInt);
+            CVariant b_b7(eDB_Bit);
             CVariant b_s2(eDB_SmallInt);
-            CVariant b_b8(eDB_TinyInt);
-            CVariant b_b9(eDB_TinyInt);
+            CVariant b_b8(eDB_Bit);
+            CVariant b_b9(eDB_Bit);
             CVariant b_t1(eDB_TinyInt);
-            CVariant b_b10(eDB_TinyInt);
+            CVariant b_b10(eDB_Bit);
             CVariant b_str3(eDB_VarChar);
-            CVariant b_b11(eDB_TinyInt);
+            CVariant b_b11(eDB_Bit);
 
             Uint2 pos = 0;
             bi->Bind(++pos, &b_id);

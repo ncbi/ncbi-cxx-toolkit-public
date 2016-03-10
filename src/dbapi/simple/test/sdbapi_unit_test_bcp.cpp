@@ -871,17 +871,17 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
     const short s1 = short(0xfade);
     const short s2 = short(0x0ec0);
     const Uint1 t1 = char(0x42);
-    const Uint1 b_vals[test_num][11] = {
-          {1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1},
-          {1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1},
-          {0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1},
-          {0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0},
-          {1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1},
-          {0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0},
-          {0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1},
-          {0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0},
-          {0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1},
-          {1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0},
+    const bool b_vals[test_num][11] = {
+          {true, false,false,true, false,true, true, false,true, false,true },
+          {true, false,true, false,false,true, true, true, false,false,true },
+          {false,true, false,true, true, true, true, false,false,false,true },
+          {false,false,false,true, true, false,false,false,false,false,false},
+          {true, false,true, false,false,true, false,true, true, false,true },
+          {false,true, false,true, false,false,false,true, true, false,false},
+          {false,true, false,false,true, true, false,true, false,false,true },
+          {false,true, true, false,true, false,false,true, false,true, false},
+          {false,true, false,false,true, false,true, false,true, true, true },
+          {true, false,false,true, false,false,false,false,true, false,false},
         };
 
     try {
@@ -930,24 +930,24 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
             bi.Bind(++pos, eSDB_Int4);
             bi.Bind(++pos, eSDB_Int4);
             bi.Bind(++pos, eSDB_String);
-            bi.Bind(++pos, eSDB_Byte);
-            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Bit);
+            bi.Bind(++pos, eSDB_Bit);
             bi.Bind(++pos, eSDB_Int4);
-            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Bit);
             bi.Bind(++pos, eSDB_Short);
-            bi.Bind(++pos, eSDB_Byte);
-            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Bit);
+            bi.Bind(++pos, eSDB_Bit);
             bi.Bind(++pos, eSDB_Int4);
-            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Bit);
             bi.Bind(++pos, eSDB_String);
-            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Bit);
             bi.Bind(++pos, eSDB_Short);
+            bi.Bind(++pos, eSDB_Bit);
+            bi.Bind(++pos, eSDB_Bit);
             bi.Bind(++pos, eSDB_Byte);
-            bi.Bind(++pos, eSDB_Byte);
-            bi.Bind(++pos, eSDB_Byte);
-            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Bit);
             bi.Bind(++pos, eSDB_String);
-            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Bit);
 
             for (int j = 0; j < test_num; ++j) {
                 bi << j
@@ -985,24 +985,24 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
             ITERATE(CQuery, it, query) {
                 BOOST_CHECK_EQUAL(it["i1"].AsInt4(), i1);
                 BOOST_CHECK_EQUAL(it["str1"].AsString(), str1);
-                BOOST_CHECK_EQUAL(it["b1"].AsByte(), b_vals[j][0]);
-                BOOST_CHECK_EQUAL(it["b2"].AsByte(), b_vals[j][1]);
+                BOOST_CHECK_EQUAL(it["b1"].AsBool(), b_vals[j][0]);
+                BOOST_CHECK_EQUAL(it["b2"].AsBool(), b_vals[j][1]);
                 BOOST_CHECK_EQUAL(it["i2"].AsInt4(), i2);
-                BOOST_CHECK_EQUAL(it["b3"].AsByte(), b_vals[j][2]);
+                BOOST_CHECK_EQUAL(it["b3"].AsBool(), b_vals[j][2]);
                 BOOST_CHECK_EQUAL(it["s1"].AsShort(), s1);
-                BOOST_CHECK_EQUAL(it["b4"].AsByte(), b_vals[j][3]);
-                BOOST_CHECK_EQUAL(it["b5"].AsByte(), b_vals[j][4]);
+                BOOST_CHECK_EQUAL(it["b4"].AsBool(), b_vals[j][3]);
+                BOOST_CHECK_EQUAL(it["b5"].AsBool(), b_vals[j][4]);
                 BOOST_CHECK_EQUAL(it["i3"].AsInt4(), i3);
-                BOOST_CHECK_EQUAL(it["b6"].AsByte(), b_vals[j][5]);
+                BOOST_CHECK_EQUAL(it["b6"].AsBool(), b_vals[j][5]);
                 BOOST_CHECK_EQUAL(it["str2"].AsString(), str2);
-                BOOST_CHECK_EQUAL(it["b7"].AsByte(), b_vals[j][6]);
+                BOOST_CHECK_EQUAL(it["b7"].AsBool(), b_vals[j][6]);
                 BOOST_CHECK_EQUAL(it["s2"].AsShort(), s2);
-                BOOST_CHECK_EQUAL(it["b8"].AsByte(), b_vals[j][7]);
-                BOOST_CHECK_EQUAL(it["b9"].AsByte(), b_vals[j][8]);
+                BOOST_CHECK_EQUAL(it["b8"].AsBool(), b_vals[j][7]);
+                BOOST_CHECK_EQUAL(it["b9"].AsBool(), b_vals[j][8]);
                 BOOST_CHECK_EQUAL(it["t1"].AsByte(), t1);
-                BOOST_CHECK_EQUAL(it["b10"].AsByte(), b_vals[j][9]);
+                BOOST_CHECK_EQUAL(it["b10"].AsBool(), b_vals[j][9]);
                 BOOST_CHECK_EQUAL(it["str3"].AsString(), str3);
-                BOOST_CHECK_EQUAL(it["b11"].AsByte(), b_vals[j][10]);
+                BOOST_CHECK_EQUAL(it["b11"].AsBool(), b_vals[j][10]);
                 ++j;
             }
             BOOST_CHECK_EQUAL(j, test_num);

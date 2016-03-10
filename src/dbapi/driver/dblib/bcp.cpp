@@ -89,9 +89,14 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             switch ( param.GetType() ) {
-            case eDB_Bit:
-                DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
+            case eDB_Bit: {
+                CDB_Bit& val = dynamic_cast<CDB_Bit&> (param);
+                // DBBOOL v = (DBBOOL) val.Value();
+                r = Check(bcp_bind(GetCmd(), (BYTE*) val.BindVal(), 0,
+                                   val.IsNULL() ? 0 : 1, NULL, 0, SYBBIT,
+                                   i + 1));
                 break;
+            }
             case eDB_Int: {
                 CDB_Int& val = dynamic_cast<CDB_Int&> (param);
                 // DBINT v = (DBINT) val.Value();
@@ -270,6 +275,15 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             switch ( param.GetType() ) {
+            case eDB_Bit: {
+                CDB_Bit& val = dynamic_cast<CDB_Bit&> (param);
+                // DBTINYINT v = (DBTINYINT) val.Value();
+                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.BindVal(), i + 1))
+                    == SUCCEED &&
+                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : 1, i + 1))
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
             case eDB_Int: {
                 CDB_Int& val = dynamic_cast<CDB_Int&> (param);
                 // DBINT v = (DBINT) val.Value();

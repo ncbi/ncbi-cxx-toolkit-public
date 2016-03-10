@@ -159,7 +159,8 @@ enum ESDB_Type {
     eSDB_DateTime,   ///< Like Transact-SQL DATETIME
     eSDB_Text,       ///< Like Transact-SQL TEXT or VARCHAR(MAX)
     eSDB_TextUCS2,   ///< Like Transact-SQL NTEXT or NVARCHAR(MAX)
-    eSDB_Image       ///< Like Transact-SQL IMAGE or VARBINARY(MAX)
+    eSDB_Image,      ///< Like Transact-SQL IMAGE or VARBINARY(MAX)
+    eSDB_Bit         ///< Like Transact-SQL BIT
 };
 
 /// Stored procedure and statement parameter types
@@ -499,7 +500,7 @@ public:
     /// will be thrown.
     void SetParameter(CTempString   name,
                       bool          value,
-                      ESDB_Type     type = eSDB_Byte,
+                      ESDB_Type     type = eSDB_Bit,
                       ESP_ParamType param_type = eSP_In);
     /// Assign null value to the parameter.
     /// Data type should be given explicitly to show which type of data should

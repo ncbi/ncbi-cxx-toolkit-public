@@ -198,9 +198,18 @@ bool CTL_BCPInCmd::x_AssignParams()
         CS_RETCODE ret_code;
 
         switch ( param.GetType() ) {
-        case eDB_Bit: 
-            DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
+        case eDB_Bit: {
+            CDB_Bit& par = dynamic_cast<CDB_Bit&> (param);
+            param_fmt.datatype = CS_BIT_TYPE;
+            CS_BOOL value = (CS_BOOL) par.Value();
+            memcpy(bind.buffer, &value, sizeof(CS_BOOL));
+            bind.datalen = bind.indicator + 1;
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      (CS_VOID*) bind.buffer,
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
+        }
         case eDB_Int: {
             CDB_Int& par = dynamic_cast<CDB_Int&> (param);
             param_fmt.datatype = CS_INT_TYPE;

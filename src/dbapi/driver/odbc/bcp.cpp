@@ -161,6 +161,9 @@ CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
     case eDB_Image:
         bcp_datatype = SQLIMAGE;
         break;
+    case eDB_Bit:
+        bcp_datatype = SQLBIT;
+        break;
     default:
         break;
     }
@@ -278,9 +281,15 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             switch ( param.GetType() ) {
-            case eDB_Bit:
-                DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
+            case eDB_Bit: {
+                CDB_Bit& val = dynamic_cast<CDB_Bit&> (param);
+                r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : 1, i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+
                 break;
+            }
             case eDB_Int: {
                 CDB_Int& val = dynamic_cast<CDB_Int&> (param);
                 r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)

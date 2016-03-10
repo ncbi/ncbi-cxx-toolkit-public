@@ -145,6 +145,8 @@ s_ConvertType(ESDB_Type type)
         return eDB_Text;
     case eSDB_Image:
         return eDB_Image;
+    case eSDB_Bit:
+        return eDB_Bit;
     }
     return eDB_UnsupportedType;
 }
@@ -158,7 +160,6 @@ s_ConvertType(EDB_Type type)
     case eDB_SmallInt:
         return eSDB_Short;
     case eDB_TinyInt:
-    case eDB_Bit:
         return eSDB_Byte;
     case eDB_BigInt:
         return eSDB_Int8;
@@ -182,6 +183,8 @@ s_ConvertType(EDB_Type type)
         return eSDB_Text;
     case eDB_Image:
         return eSDB_Image;
+    case eDB_Bit:
+        return eSDB_Bit;
     case eDB_UnsupportedType:
         break;
     }
@@ -3387,7 +3390,7 @@ CQuery::SetParameter(CTempString   name,
 void
 CQuery::SetParameter(CTempString   name,
                      bool          value,
-                     ESDB_Type     type /* = eSDB_Byte */,
+                     ESDB_Type     type /* = eSDB_Bit */,
                      ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
