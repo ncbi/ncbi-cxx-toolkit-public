@@ -683,6 +683,8 @@ bool s_AnswerHealthcheck(CListeningSocket& listening_sock) {
  * OK)
  *  If multi-threaded mode, then just read, and healthcheck will be answered
  *  in the special thread. */
+static FLBOS_ConnReadMethod* s_ReadFunc = NULL;
+
 static
 EIO_Status s_RealReadAnnounce(CONN              conn,
                               void*             line,
@@ -698,8 +700,8 @@ EIO_Status s_RealReadAnnounce(CONN              conn,
     CONN_Flush(conn); //Send request for announcement
     s_AnswerHealthcheck(listening_sock); // answer the healthcheck
     do { // Get answer from LBOS after it received response for healthcheck
-        status = CONN_Read(conn, (char*) line + total_read,
-                           size - total_read, n_read, how);
+        status = s_ReadFunc(conn, (char*) line + total_read,
+                            size - total_read, n_read, how);
         total_read += *n_read;
     } while (total_read < size && status == eIO_Success);
     *n_read = total_read;
@@ -721,6 +723,9 @@ unsigned short s_LBOS_Announce(const char*             service,
 
     int announce_result = 0;
 #ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
+    // Since it is a ST application, we are not afraid to just set
+    // static variable directly
+    s_ReadFunc = g_LBOS_UnitTesting_GetLBOSFuncs()->Read;
     CMockFunction<FLBOS_ConnReadMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->Read, s_RealReadAnnounce);
 #endif /* NCBI_THREADS */
@@ -807,6 +812,7 @@ void s_LBOS_CPP_Announce(const string&   service,
 {
 
 #ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
+    s_ReadFunc = g_LBOS_UnitTesting_GetLBOSFuncs()->Read;
     CMockFunction<FLBOS_ConnReadMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
         s_RealReadAnnounce);
