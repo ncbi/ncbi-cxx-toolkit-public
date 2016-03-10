@@ -3043,7 +3043,7 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
                 // get frame from location
                 if( ! FIELD_EQUALS( feat, Pseudo, true ) &&
                     feat.IsSetLocation() &&
-                    CCleanup::SetFrameFromLoc(*new_cdregion, feat.GetLocation(), m_Scope)) {
+                    CCleanup::SetFrameFromLoc(*new_cdregion, feat.GetLocation(), *m_Scope)) {
                     ChangeMade(CCleanupChange::eChangeCdregion);
                 }
                 ChangeMade(CCleanupChange::eChangeKeywords);

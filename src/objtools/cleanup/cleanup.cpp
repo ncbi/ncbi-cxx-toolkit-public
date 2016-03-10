@@ -901,11 +901,11 @@ bool CCleanup::SetBestFrame(CSeq_feat& cds, CScope& scope)
 }
 
 // like C's function GetFrameFromLoc, but better
-bool CCleanup::SetFrameFromLoc(CCdregion& cdregion, const CSeq_loc& loc, CRef<CScope> scope)
+bool CCleanup::SetFrameFromLoc(CCdregion::EFrame &frame, const CSeq_loc& loc, CScope& scope)
 {
     if (!loc.IsPartialStart(eExtreme_Biological)) {
-        if (!cdregion.IsSetFrame() || cdregion.GetFrame() != CCdregion::eFrame_one) {
-            cdregion.SetFrame(CCdregion::eFrame_one);
+        if (frame != CCdregion::eFrame_one) {
+            frame = CCdregion::eFrame_one;
             return true;
         }
         return false;
@@ -915,7 +915,7 @@ bool CCleanup::SetFrameFromLoc(CCdregion& cdregion, const CSeq_loc& loc, CRef<CS
         return false;
     }
 
-    const TSeqPos seq_len = sequence::GetLength(loc, scope);
+    const TSeqPos seq_len = sequence::GetLength(loc, &scope);
 
     CCdregion::EFrame desired_frame = CCdregion::eFrame_not_set;
 
@@ -935,11 +935,26 @@ bool CCleanup::SetFrameFromLoc(CCdregion& cdregion, const CSeq_loc& loc, CRef<CS
             _ASSERT(false);
             return false;
     }
-    if (!cdregion.IsSetFrame() || cdregion.GetFrame() != desired_frame) {
-        cdregion.SetFrame(desired_frame);
+    if (frame != desired_frame) {
+        frame = desired_frame;
         return true;
     }
     return false;
+}
+
+
+bool CCleanup::SetFrameFromLoc(CCdregion &cdregion, const CSeq_loc& loc, CScope& scope)
+{
+    CCdregion::EFrame frame = CCdregion::eFrame_not_set;
+    if (cdregion.IsSetFrame()) {
+        frame = cdregion.GetFrame();
+    }
+    if (SetFrameFromLoc(frame, loc, scope)) {
+        cdregion.SetFrame(frame);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
