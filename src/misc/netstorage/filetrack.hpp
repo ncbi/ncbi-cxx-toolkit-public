@@ -44,11 +44,23 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SFileTrackAPI;
+struct SFileTrackConfig
+{
+    CNetStorageObjectLoc::EFileTrackSite site;
+    string key;
+    const bool chunked_upload = false;
+    const STimeout read_timeout;
+    const STimeout write_timeout;
+
+    SFileTrackConfig(EVoid = eVoid); // Means no FileTrack as a backend storage
+    SFileTrackConfig(const IRegistry& registry, const string& section = kEmptyStr);
+
+    static CNetStorageObjectLoc::EFileTrackSite GetSite(const string&);
+};
 
 struct SFileTrackRequest : public CObject
 {
-    SFileTrackRequest(SFileTrackAPI* storage_impl,
+    SFileTrackRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
             const string& url,
             FHTTP_ParseHeader parse_header = 0);
@@ -61,18 +73,19 @@ struct SFileTrackRequest : public CObject
     void CheckIOStatus();
 
 protected:
-    SFileTrackRequest(SFileTrackAPI* storage_impl,
+    SFileTrackRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
             const string& url,
             const string& user_header,
             FHTTP_ParseHeader parse_header);
+
+    const SFileTrackConfig& m_Config;
 
 private:
     SConnNetInfo* GetNetInfo() const;
     THTTP_Flags GetUploadFlags() const;
     void SetTimeout();
 
-    SFileTrackAPI* m_FileTrackAPI;
     AutoPtr<SConnNetInfo> m_NetInfo;
 
 public:
@@ -86,11 +99,11 @@ public:
 
 struct SFileTrackPostRequest : public SFileTrackRequest
 {
-    SFileTrackPostRequest(SFileTrackAPI* storage_impl,
+    SFileTrackPostRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
-            const string& url, const string& boundary,
-            const string& user_header = kEmptyStr,
-            FHTTP_ParseHeader parse_header = 0);
+            const string& boundary,
+            const string& user_header,
+            FHTTP_ParseHeader parse_header);
 
     void SendContentDisposition(const char* input_name);
     void SendFormInput(const char* input_name, const string& value);
@@ -100,20 +113,6 @@ struct SFileTrackPostRequest : public SFileTrackRequest
     void FinishUpload();
 
     string m_Boundary;
-};
-
-struct SFileTrackConfig
-{
-    CNetStorageObjectLoc::EFileTrackSite site;
-    string key;
-    const bool chunked_upload = false;
-    const STimeout read_timeout;
-    const STimeout write_timeout;
-
-    SFileTrackConfig(EVoid = eVoid); // Means no FileTrack as a backend storage
-    SFileTrackConfig(const IRegistry& registry, const string& section = kEmptyStr);
-
-    static CNetStorageObjectLoc::EFileTrackSite GetSite(const string&);
 };
 
 struct SFileTrackAPI
@@ -148,7 +147,6 @@ struct SFileTrackAPI
 
 private:
     const STimeout GetTimeout();
-    string GetURL(const CNetStorageObjectLoc&, const char*, const char* = 0);
 
     CRandom m_Random;
 };
