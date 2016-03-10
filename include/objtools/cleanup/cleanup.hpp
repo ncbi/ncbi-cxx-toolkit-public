@@ -311,7 +311,7 @@ private:
     CCleanup(const CCleanup&);
     CCleanup& operator= (const CCleanup&);
 
-    CScope*            m_Scope;
+    CRef<CScope>            m_Scope;
 };
 
 
