@@ -37,6 +37,7 @@
 #include <objtools/cleanup/cleanup_change.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/pub/Pub.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 
 
 BEGIN_NCBI_SCOPE
