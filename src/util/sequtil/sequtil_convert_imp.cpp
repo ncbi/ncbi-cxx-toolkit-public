@@ -1115,6 +1115,12 @@ SIZE_TYPE CSeqConvert_imp::Pack(const char* src, TSeqPos length,
 const CSeqUtil::ECoding CSeqConvert_imp::CPacker::kNoCoding
     = CSeqUtil::e_Ncbi2na_expand; // never used by best_coding
 
+CSeqConvert_imp::CPacker::~CPacker()
+{
+    m_EndingNarrow.Reset();
+    m_EndingWide.shared_codings = NULL;
+}
+
 SIZE_TYPE CSeqConvert_imp::CPacker::Pack(const char* src, TSeqPos length)
 {
     const char* src_end   = src + GetBytesNeeded(m_SrcCoding, length);
@@ -1152,14 +1158,21 @@ SIZE_TYPE CSeqConvert_imp::CPacker::Pack(const char* src, TSeqPos length)
 
     // XXX - fine-tune 4na/2na boundaries to minimize wastage?
 
-    size_t n = best_arrangement->codings.size();
-    _ASSERT(n == m_Boundaries.size() - 1);
+    size_t n = m_Boundaries.size() - 1;
+    vector<TCoding> coding_vec(n);
+    SCodings*       codings = best_arrangement->codings;
+    for (size_t i = 0;  i < n;  ++i) {
+        _ASSERT(codings != NULL);
+        coding_vec[i] = codings->current;
+        codings       = codings->previous;
+    }
+    _ASSERT(codings == NULL);
 
     SIZE_TYPE result = 0;
     for (size_t i = 0;  i < n;  ++i) {
-        TCoding coding  = best_arrangement->codings[i];
+        TCoding coding  = coding_vec[i];
         TSeqPos start   = m_Boundaries[i];
-        while (i < n - 1  &&  best_arrangement->codings[i + 1] == coding) {
+        while (i < n - 1  &&  coding_vec[i + 1] == coding) {
             ++i; // merge when possible
         }
 
@@ -1182,8 +1195,8 @@ void CSeqConvert_imp::CPacker::x_AddBoundary(TSeqPos pos, TCoding new_coding)
     if (m_Boundaries.empty()) {
         _ASSERT(pos == 0);
         m_Boundaries.push_back(pos);
-        m_EndingNarrow.codings.push_back(new_coding);
-        m_EndingWide.codings.push_back(m_WideCoding);
+        m_EndingNarrow.AddCoding(new_coding);
+        m_EndingWide.AddCoding(m_WideCoding);
         m_EndingWide.cost   = m_Target.GetOverhead(m_WideCoding);
         m_EndingNarrow.cost = m_Target.GetOverhead(new_coding);
         return;
@@ -1193,7 +1206,7 @@ void CSeqConvert_imp::CPacker::x_AddBoundary(TSeqPos pos, TCoding new_coding)
     _ASSERT(last_length > 0);
     m_Boundaries.push_back(pos);
 
-    TCoding last_narrow = m_EndingNarrow.codings.back();
+    TCoding last_narrow = m_EndingNarrow.codings->current;
     // This always rounds up to full bytes, and as such can slightly
     // overestimate the total cost of ncbi4na.
     m_EndingNarrow.cost += GetBytesNeeded(last_narrow,  last_length);
@@ -1230,10 +1243,27 @@ void CSeqConvert_imp::CPacker::x_AddBoundary(TSeqPos pos, TCoding new_coding)
     }
     // _TRACE('(' << m_EndingNarrow.cost << ", " << m_EndingWide.cost << ')');
 
-    m_EndingNarrow.codings.push_back(new_coding);
-    m_EndingWide.codings.push_back(m_WideCoding);
-    _ASSERT(m_EndingNarrow.codings.size() == m_Boundaries.size());
-    _ASSERT(m_EndingWide.codings.size() == m_Boundaries.size());    
+    m_EndingNarrow.AddCoding(new_coding);
+    m_EndingWide.AddCoding(m_WideCoding);
+}
+
+CSeqConvert_imp::CPacker::SArrangement&
+CSeqConvert_imp::CPacker::SArrangement::operator= (SArrangement& arr)
+{
+    _ASSERT(arr.shared_codings == shared_codings);
+    Reset();
+    codings = shared_codings = arr.shared_codings = arr.codings;
+    cost = arr.cost;
+    return *this;
+}
+
+void CSeqConvert_imp::CPacker::SArrangement::Reset(void)
+{
+    while (codings != NULL  &&  codings != shared_codings) {
+        SCodings* previous = codings->previous;
+        delete codings;
+        codings = previous;
+    }
 }
 
 CSeqUtil::ECoding

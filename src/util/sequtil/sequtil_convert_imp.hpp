@@ -251,6 +251,7 @@ private:
               m_Target(dst), m_SrcDensity(GetBasesPerByte(src_coding)),
               m_GapsOK(gaps_ok), m_WideCoding(x_GetWideCoding(src_coding))
             { }
+        ~CPacker();
 
         SIZE_TYPE Pack(const char* src, TSeqPos length);
 
@@ -258,9 +259,26 @@ private:
         void x_AddBoundary(TSeqPos pos, TCoding new_coding);
         static TCoding x_GetWideCoding(const TCoding coding);
 
+        struct SCodings {
+            SCodings(SCodings* prev, TCoding curr)
+                : previous(prev), current(curr)
+                { }
+            SCodings* previous;
+            TCoding   current;
+        };
         struct SArrangement {
-            vector<TCoding> codings;
-            SIZE_TYPE       cost;
+            SArrangement()
+                : codings(NULL), shared_codings(NULL), cost(0)
+                { }
+            ~SArrangement()
+                { Reset(); }
+            SArrangement& operator= (SArrangement& arr);
+            void AddCoding(TCoding coding)
+                { codings = new SCodings(codings, coding); }
+            void Reset(void);
+            SCodings* codings;
+            SCodings* shared_codings; // last common ancestor
+            SIZE_TYPE cost;
         };
 
         const TCoding        m_SrcCoding;
