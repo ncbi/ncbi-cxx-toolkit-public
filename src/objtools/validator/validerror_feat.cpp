@@ -6276,6 +6276,11 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
                 "Annotated by transcript or proteomic data exception does not have the required inference qualifier", feat);
         }
     }
+    if (NStr::Find(text, "gene split at ") != string::npos && feat.GetData().IsGene() &&
+        (!feat.GetData().GetGene().IsSetLocus_tag() || NStr::IsBlank(feat.GetData().GetGene().GetLocus_tag()))) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptionProblem, "Gene has split exception but no locus_tag", feat);
+
+    }
 }
 
 
