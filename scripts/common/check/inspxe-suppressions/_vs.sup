@@ -262,3 +262,13 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "False positive in MS implementation of basic_string::assign()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=xstring,func=assign;
+		}
+	}
+}
