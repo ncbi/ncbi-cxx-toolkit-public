@@ -597,7 +597,7 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
 
             NCBI_THROW(CNetSrvConnException, eConnectionFailure,
                 FORMAT(m_ServerInPool->m_Address.AsString() <<
-                    "Could not connect: " << IO_StatusStr(io_st)));
+                    ": Could not connect: " << IO_StatusStr(io_st)));
         }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
