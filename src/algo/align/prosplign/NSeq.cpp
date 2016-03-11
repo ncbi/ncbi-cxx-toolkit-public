@@ -94,6 +94,9 @@ void CNSeq::Init(CScope& scope, CSeq_loc& genomic)
     else {
         CRef<CSeq_loc> extra_seqloc(new CSeq_loc(*seqid,seq_end+1,loc_end,genomic.GetStrand()) );
         extended_seqloc = sequence::Seq_loc_Subtract(genomic,*extra_seqloc,CSeq_loc::fMerge_All|CSeq_loc::fSort,&scope);
+        if(extended_seqloc.Empty() || extended_seqloc->IsNull() || extended_seqloc->IsEmpty() ) {
+           NCBI_THROW(CProSplignException, eGenericError, "[from,to] range provided is out of sequence."); 
+        }
         extended_seqloc->SetId(*seqid); // Seq_loc_Subtract might change the id, e.g. replace accession with gi
         genomic.Assign(*extended_seqloc);
     }
