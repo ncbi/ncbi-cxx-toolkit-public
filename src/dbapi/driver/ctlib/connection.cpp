@@ -1113,7 +1113,15 @@ CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
     auto_ptr<CDB_LangCmd> lcmd;
     bool rc = false;
 
-    q  = "select top 1 ";
+    q  = "-- update " + descr_in.TableName() + " set " + descr_in.ColumnName();
+#ifdef FTDS_IN_USE
+    q += " = '0x0' where ";
+#else
+    q += " = NULL where ";
+#endif
+    q += descr_in.SearchConditions();
+    q += " -- Expected by PubSeqOS, not otherwise needed.\n";
+    q += "select top 1 ";
     q += descr_in.ColumnName();
     q += ", TEXTPTR(" + descr_in.ColumnName() + ")";
     q += " from ";
