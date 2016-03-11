@@ -1735,6 +1735,7 @@ CDatabase::operator= (const CDatabase& db)
 {
     m_Params = db.m_Params;
     m_Impl.Reset(db.m_Impl? new CDatabaseImpl(*db.m_Impl): NULL);
+    m_EverConnected = db.m_EverConnected;
     return *this;
 }
 
