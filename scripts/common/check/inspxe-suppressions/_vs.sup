@@ -268,7 +268,7 @@ suppression = {
 	stacks = {
 		{
 			!!!;
-			src=xstring,func=assign;
+			src=xstring,func=assign,line=1160,func_line=12;
 		}
 	}
 }
