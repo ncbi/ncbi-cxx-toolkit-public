@@ -1056,7 +1056,10 @@ public:
     CSDB_ConnectionParam& GetConnectionParam(void);
     const CSDB_ConnectionParam& GetConnectionParam(void) const;
 
-    /// Connect to the database server
+    /// Explicitly (re)connect to the database server.
+    /// NB: NewQuery et al. automatically establish initial connections,
+    /// but do not automatically reconnect, because the original connection
+    /// may have had important state.
     void Connect(void);
     /// Close database object.
     /// You cannot do anything with CQuery and CBulkInsert objects created
@@ -1076,14 +1079,16 @@ public:
     bool IsConnected(EConnectionCheckMethod check_method = eNoCheck);
 
     /// Get new CQuery object for this database.
-    /// Method can be called only when database object is connected to the
-    /// database server.
+    /// Automatically establish an initial connection if necessary,
+    /// but do not automatically reconnect.
     CQuery NewQuery(void);
     /// Get new CQuery object with particular sql statement for this database.
-    /// Method can be called only when database object is connected to the
-    /// database server.
+    /// Automatically establish an initial connection if necessary,
+    /// but do not automatically reconnect.
     CQuery NewQuery(const string& sql);  
     /// Get new CBulkInsert object.
+    /// Automatically establish an initial connection if necessary,
+    /// but do not automatically reconnect.
     ///
     /// @param table_name
     ///   Name of the table to insert to
@@ -1091,6 +1096,8 @@ public:
     ///   Number of rows to insert before the batch is committed to database
     CBulkInsert NewBulkInsert(const string& table_name, int autoflush);
     /// Get new CBlobBookmark object.
+    /// Automatically establish an initial connection if necessary,
+    /// but do not automatically reconnect.
     ///
     /// @param table_name
     ///   Name of the table to update.
@@ -1113,10 +1120,13 @@ public:
 private:
     friend CAutoTrans::CSubject DBAPI_MakeTrans(CDatabase& db);
 
+    void x_ConnectAsNeeded(const char* operation);
+
     /// Database parameters
     CSDB_ConnectionParam m_Params;
     /// Database implementation object
     CRef<CDatabaseImpl>  m_Impl;
+    bool                 m_EverConnected;
 };
 
 

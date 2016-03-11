@@ -1713,17 +1713,19 @@ CDatabaseImpl::GetContext(void) const
 
 
 CDatabase::CDatabase(void)
+    : m_EverConnected(false)
 {}
 
 CDatabase::CDatabase(const CSDB_ConnectionParam& params)
-    : m_Params(params)
+    : m_Params(params), m_EverConnected(false)
 {}
 
 CDatabase::CDatabase(const string& url_string)
-    : m_Params(url_string)
+    : m_Params(url_string), m_EverConnected(false)
 {}
 
 CDatabase::CDatabase(const CDatabase& db)
+    : m_EverConnected(false)
 {
     operator= (db);
 }
@@ -1755,6 +1757,7 @@ CDatabase::Connect(void)
             m_Impl.Reset();
         }
         m_Impl.Reset(new CDatabaseImpl(m_Params));
+        m_EverConnected = true;
     }
     SDBAPI_CATCH_LOWLEVEL()
 }
@@ -1808,33 +1811,26 @@ CDatabase::IsConnected(EConnectionCheckMethod check_method)
 CDatabase
 CDatabase::Clone(void)
 {
-    if (!m_Impl) {
-        NCBI_THROW(CSDB_Exception, eClosed,
-                   "Database cannot be cloned if it's not connected");
-    }
-
     CDatabase result(m_Params);
-    result.Connect();
+    if (IsConnected(eNoCheck)) {
+        result.Connect();
+    }
     return result;
 }
+
+#define CONNECT_AS_NEEDED() x_ConnectAsNeeded(NCBI_CURRENT_FUNCTION)
 
 CQuery
 CDatabase::NewQuery(void)
 {
-    if (!m_Impl) {
-        NCBI_THROW(CSDB_Exception, eClosed,
-                   "Cannot create query when not connected");
-    }
+    CONNECT_AS_NEEDED();
     return CQuery(m_Impl);
 }
 
 CBulkInsert
 CDatabase::NewBulkInsert(const string& table_name, int autoflush)
 {
-    if (!m_Impl) {
-        NCBI_THROW(CSDB_Exception, eClosed,
-                   "Cannot create query when not connected");
-    }
+    CONNECT_AS_NEEDED();
     return CBulkInsert(m_Impl, table_name, autoflush);
 }
 
@@ -1843,10 +1839,7 @@ CDatabase::NewBookmark(const string& table_name, const string& column_name,
                        const string& search_conditions,
                        CBlobBookmark::EBlobType column_type)
 {
-    if (!m_Impl) {
-        NCBI_THROW(CSDB_Exception, eClosed,
-                   "Cannot create bookmark when not connected");
-    }
+    CONNECT_AS_NEEDED();
 
     CDB_ITDescriptor::ETDescriptorType desc_type;
     switch (column_type) {
@@ -1861,6 +1854,19 @@ CDatabase::NewBookmark(const string& table_name, const string& column_name,
                                                        
     CRef<CBlobBookmarkImpl> bm(new CBlobBookmarkImpl(m_Impl, desc.release()));
     return CBlobBookmark(bm);
+}
+
+
+void CDatabase::x_ConnectAsNeeded(const char* operation)
+{
+    if ( !m_EverConnected ) {
+        ERR_POST_X(19, operation << ": connecting on demand.");
+        Connect();
+    } else if ( !IsConnected(eNoCheck) ) {
+        NCBI_THROW(CSDB_Exception, eClosed,
+                   string("Cannot call ") + operation
+                   + " when not connected.");
+    }
 }
 
 

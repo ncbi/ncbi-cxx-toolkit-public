@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(Test_CloneConnection)
         CSDB_ConnectionParam params(GetDatabase().GetConnectionParam());
         params.Set(CSDB_ConnectionParam::eDatabase, target_db_name);
         CDatabase db(params);
-        db.Connect();
+        // db.Connect();
 
         // Clone connection ...
         CDatabase new_db = db.Clone();
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
                 );
 
         CDatabase db(params);
-        db.Connect();
+        // db.Connect();
         CQuery query = db.NewQuery("SELECT @@version");
         query.Execute();
         query.RequireRowCount(1);
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
                 );
 
         CDatabase db(params);
-        db.Connect();
+        // db.Connect();
         CQuery query = db.NewQuery("SELECT @@version");
         query.Execute();
         query.RequireRowCount(1);
