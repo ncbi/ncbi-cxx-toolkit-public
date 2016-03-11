@@ -1085,7 +1085,10 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
         joiner.Add(" cultivar ").Add(m_Cultivar.substr (0, m_Cultivar.find(';')));
     }
     if (! m_Isolate.empty()) {
-        joiner.Add(" isolate ").Add(m_Isolate);
+        // x_EndsWithStrain just checks for supplied pattern, using here for isolate
+        if (! x_EndsWithStrain (m_Taxname, m_Isolate)) {
+            joiner.Add(" isolate ").Add(m_Isolate);
+        }
     }
     if (! m_Chromosome.empty()) {
         joiner.Add(" chromosome ").Add(m_Chromosome);
