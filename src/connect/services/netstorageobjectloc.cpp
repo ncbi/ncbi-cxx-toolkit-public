@@ -231,6 +231,8 @@ void CNetStorageObjectLoc::SetLocation_NetCache(
         const string& service_name,
         bool allow_xsite_conn)
 {
+    if (m_Location == eNFL_NetCache) return;
+
     m_Dirty = true;
 
     m_LocationCode = NETCACHE_STORAGE_CODE;
@@ -248,6 +250,8 @@ void CNetStorageObjectLoc::SetLocation_NetCache(
 
 void CNetStorageObjectLoc::SetLocation_FileTrack(EFileTrackSite ft_site)
 {
+    if (m_Location == eNFL_FileTrack) return;
+
     m_Dirty = true;
 
     m_LocationCode = FILETRACK_STORAGE_CODE;
