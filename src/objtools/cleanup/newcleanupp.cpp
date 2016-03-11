@@ -11048,7 +11048,7 @@ void CNewCleanup_imp::x_RemovePub(CSeq_descr& descr, const CPubdesc& pub)
 
 void CNewCleanup_imp::x_MovePopPhyMutPub(CBioseq_set& bioseq_set)
 {
-    if (!bioseq_set.IsSetSeq_set() || !bioseq_set.IsSetClass()) {
+    if (!bioseq_set.IsSetSeq_set() || bioseq_set.GetSeq_set().empty() || !bioseq_set.IsSetClass()) {
         return;
     }
     bool can_consolidate_pubs = false;

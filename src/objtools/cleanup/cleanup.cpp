@@ -1019,6 +1019,9 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
         } catch (CSeqMapException& e) {
             cout << e.what() << endl;
             return false;
+        } catch (CSeqVectorException& e) {
+            cout << e.what() << endl;
+            return false;
         }
         if (NStr::EndsWith(translation, "*")) {
             //already has stop codon
