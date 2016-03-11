@@ -91,7 +91,7 @@ class NCBI_SRAREAD_EXPORT CKConfig
 {
 public:
     NCBI_DEPRECATED_CTOR(CKConfig(void));
-    CKConfig(const CVDBMgr& mgr);
+    explicit CKConfig(const CVDBMgr& mgr);
     explicit CKConfig(ENull /*null*/)
         {
         }
@@ -102,7 +102,7 @@ class NCBI_SRAREAD_EXPORT CKDBManager
     : public CSraRef<const KDBManager>
 {
 public:
-    CKDBManager(const CVDBMgr& mgr);
+    explicit CKDBManager(const CVDBMgr& mgr);
     explicit CKDBManager(ENull /*null*/)
         {
         }
@@ -113,7 +113,7 @@ class NCBI_SRAREAD_EXPORT CKNSManager
     : public CSraRef<KNSManager>
 {
 public:
-    CKNSManager(const CVFSManager& mgr);
+    explicit CKNSManager(const CVFSManager& mgr);
     explicit CKNSManager(ENull /*null*/)
         {
         }
@@ -125,11 +125,11 @@ class NCBI_SRAREAD_EXPORT CVFSManager
 {
 public:
     NCBI_DEPRECATED_CTOR(CVFSManager(void));
-    CVFSManager(const CVDBMgr& mgr);
+    explicit CVFSManager(const CVDBMgr& mgr);
     enum ECreateNew {
         eCreateNew
     };
-    CVFSManager(ECreateNew);
+    explicit CVFSManager(ECreateNew);
     explicit CVFSManager(ENull /*null*/)
         {
         }
@@ -212,7 +212,7 @@ class NCBI_SRAREAD_EXPORT CVResolver
     : public CSraRef<VResolver>
 {
 public:
-    CVResolver(const CVFSManager& mgr);
+    explicit CVResolver(const CVFSManager& mgr);
     NCBI_DEPRECATED_CTOR(CVResolver(const CVFSManager& mgr, const CKConfig& cfg));
     explicit CVResolver(ENull /*null*/)
         : m_Mgr(null)
