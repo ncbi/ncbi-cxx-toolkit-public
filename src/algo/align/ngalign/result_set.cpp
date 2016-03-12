@@ -152,7 +152,7 @@ CRef<CSeq_align_set> CQuerySet::ToBestSeqAlignSet() const
    
     ITERATE(TAssemblyToSubjectSet, AssemIter, m_AssemblyMap) {
         int BestRank = GetBestRank( AssemIter->first );
-        ERR_POST(Info << "Best Rank: " << BestRank 
+        _TRACE("Best Rank: " << BestRank 
                     << " in " << AssemIter->first 
                     << " for " << m_QueryId->GetSeqIdString(true)
                     << " of " << AssemIter->second.size());
@@ -176,7 +176,7 @@ CRef<CSeq_align_set> CQuerySet::ToBestSeqAlignSet() const
 
     /*
     int BestRank = GetBestRank();
-    ERR_POST(Info << "Best Rank: " << BestRank << " for " << m_QueryId->GetSeqIdString(true));
+    _TRACE("Best Rank: " << BestRank << " for " << m_QueryId->GetSeqIdString(true));
     if(BestRank == -1) {
         return CRef<CSeq_align_set>();
     }
