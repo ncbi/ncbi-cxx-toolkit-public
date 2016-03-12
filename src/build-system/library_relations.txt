@@ -1114,6 +1114,11 @@ tiol needs3party $(Z_LIBS)
 tracking_utils needs gpipe_attr
 trackmgr needs $(SEQ_LIBS)
 trackmgr needs pub
+trackmgr_objtools needs $(OBJMGR_LIBS)
+trackmgr_objtools needs gencoll_client
+trackmgr_objtools needs trackmgrgridcli
+trackmgr_objtools needs uudutil
+trackmgr_objtools needs xid_mapper
 trackmgrcli needs trackmgr
 trackmgrcli needs xconnect
 trackmgrgridcli needs $(COMPRESS_LIBS)
