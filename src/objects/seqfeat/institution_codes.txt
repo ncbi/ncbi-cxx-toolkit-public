@@ -4727,6 +4727,7 @@ PAE	s	Stiftung Herbarium Paul Aellen, Universitat Basel
 PAL	s	Universita degli Studi di Palermo, Dipartimento de Scienze Botaniche
 PALEON	s	Wyoming Dinosaur International Society
 PAM	s	Pennsylvania Department of Agriculture
+PAMC	c	Polar and Alpine Microbial Collection
 PAMG	s	Empresa de Pesquisa Agropecuaria de Minas Gerais (EPAMIG), Departamento de Pesquisa
 PAMP	s	Universidad de Navarra, Departamento de Botanica
 PAN	s	Panjab University, Botany Department
@@ -5961,6 +5962,8 @@ TOM<CAN>	c	Tomicus collection Canadian Forest Service
 TONG	s	Tonghua Teachers College, Biology Department
 TOR	s	Torquay Museum
 TOYA	s	Toyama Science Museum, Botany Department
+TPI	s	The Pirbright Institute
+TPI:ENT	s	The Pirbright Institute, Entomology collection
 TPII	s	Thanksgiving Point Institute
 TPNG	s	Department of Primary Industry
 TPV	s	Prairie View A & M University, Biology Department
