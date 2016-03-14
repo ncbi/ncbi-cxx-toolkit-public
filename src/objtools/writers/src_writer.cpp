@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Frank Ludwig
+ * Authors:  Frank Ludwig, Justin Foley
  *
  * File Description:  Write source qualifiers
  *
@@ -684,17 +684,19 @@ bool CSrcWriter::xGatherLocalId(
     static const string colName = "localid";
     static const string displayName = colName;
     static const string defaultValue = "";
-
-    CConstRef<CSeq_id> seq_id = bsh.GetLocalIdOrNull();
-    if ( !seq_id ) {
-        return true;
-    }
-
-    string local_id = "";
-    seq_id->GetLabel(&local_id, CSeq_id::eContent);
-    if ( local_id.empty() ) {
-        return true;
-    }
+    
+    
+    string local_id = xGetOriginalId(bsh);
+    if ( NStr::IsBlank(local_id) ) {
+        CConstRef<CSeq_id> seq_id = bsh.GetLocalIdOrNull();
+        if ( !seq_id ) {
+            return true;
+        }
+        seq_id->GetLabel(&local_id, CSeq_id::eContent);
+        if ( NStr::IsBlank(local_id) ) {
+            return true;
+        }
+    } 
 
     xPrepareTableColumn(colName, displayName, defaultValue);
     xAppendColumnValue(colName, local_id);
