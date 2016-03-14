@@ -1514,7 +1514,7 @@ static unsigned short s_LBOS_PerformRequest(const char* request,
     }
     /* Cleanup */
     ConnNetInfo_Destroy(net_info);
-    return last_code;
+    return status_code;
 }
 
 
@@ -2351,16 +2351,10 @@ unsigned short s_LBOS_Deannounce(const char*      service,
 {
     const char*    query_format;
     char*          lbos_address;
-    int            last_code;
     char*          status_message = NULL;
     char*          buf;
     int            status_code;
     lbos_address = s_LBOS_Instance;
-    last_code    = 0; /* remember last non-zero http response code to analyze
-                   it (we do not give up on first fail, but it is
-                   better to know error code than "no connection"
-                   from non-working LBOS, which can happen after getting
-                   real error */
     status_code = 0;
     buf = NULL;
     query_format = "http://%s/lbos/json/conceal?name=%s&version=%s&port=%hu";
@@ -2401,9 +2395,6 @@ unsigned short s_LBOS_Deannounce(const char*      service,
         buf = s_LBOS_UrlReadAll(net_info, query, &status_code, 
                                 &status_message);
         free(query);
-        if (status_code != 0) {
-            last_code = status_code;
-        }
     }
     if (lbos_answer != NULL && !g_LBOS_StringIsNullOrEmpty(buf)) {
         *lbos_answer = strdup(buf);
@@ -2414,10 +2405,10 @@ unsigned short s_LBOS_Deannounce(const char*      service,
     }
     free(status_message);
 
-    if (last_code == 0) {
-        last_code = kLBOSNoLBOS;
+    if (status_code == 0) {
+        status_code = kLBOSNoLBOS;
     }
-    return last_code;
+    return status_code;
 }
 
 
