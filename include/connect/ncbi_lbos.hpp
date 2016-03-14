@@ -28,9 +28,9 @@
 * Authors:  Dmitriy Elisov
 * @file
 * File Description:
-*   A C++ wrapper for service discovery API based on lbos. 
-*   lbos is an adapter for ZooKeeper cloud-based DB. 
-*   lbos allows to announce, deannounce and resolve services.
+*   A client for service discovery API based on LBOS. 
+*   LBOS is a client for ZooKeeper cloud-based DB. 
+*   LBOS allows to announce, deannounce and resolve services.
 */
 
 #include <corelib/ncbiexpt.hpp>
@@ -197,12 +197,12 @@ class NCBI_XNCBI_EXPORT CLBOSException : public CException
 public:
     typedef int TErrCode;
     enum EErrCode {
-        e_LBOSNoLBOS          = 0,  /**< lbos was not found                  */
+        e_LBOSNoLBOS          = 0,  /**< LBOS was not found                  */
         e_LBOSDNSResolveError = 1,  /**< Local address not resolved          */
         e_LBOSInvalidArgs     = 2,  /**< Arguments not valid                 */
         e_LBOSNotFound        = 3,  /**< For de-announcement only. Did not
                                          find such server to deannounce      */
-        e_LBOSOff             = 4,  /**< LBOS mapper is off for any of the 
+        e_LBOSOff             = 4,  /**< LBOS client is off for any of the 
                                          two reasons: either it is not 
                                          enabled in registry, or no LBOS 
                                          working LBOS instance was found at
@@ -236,7 +236,7 @@ public:
     *  errors will not be processed) */
     virtual const char* GetErrCodeString(void) const;
 
-    /** Translate from numerical HTTP status code to lbos-specific
+    /** Translate from numerical HTTP status code to LBOS-specific
      * error code */
     static EErrCode s_HTTPCodeToEnum(unsigned short http_code);
 
