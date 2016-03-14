@@ -395,8 +395,8 @@ static void s_PrintAnnouncedDetails(const char*       name,
                                     unsigned short    result,
                                     double            time_elapsed)
 {
-    char* message = lbos_mes ? lbos_mes : "<NULL>";
-    char* status  = lbos_ans ? lbos_ans : "<NULL>";
+    const char* message = lbos_mes ? lbos_mes : "<NULL>";
+    const char* status  = lbos_ans ? lbos_ans : "<NULL>";
     WRITE_LOG("Announcing server \""  << (name ? name : "<NULL>") << "\" "  <<
                "with version "        << (version ? version : "<NULL>")     <<
                ", port "              << port                               <<
