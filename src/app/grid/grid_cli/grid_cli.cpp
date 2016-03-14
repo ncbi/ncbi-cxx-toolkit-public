@@ -656,12 +656,12 @@ struct SCommandDefinition {
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkObjectLoc,
         "mkobjectloc", "Turn a user-defined key into an object locator.",
-        "Take a unique user-defined key/namespace pair (or an "
-        "existing object locator) and make a new object locator. "
+        "Take a unique user-defined key/namespace pair "
+        "and make an object locator. "
         "The resulting object locator will reflect storage preferences "
         "specified by the '--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION
         "', '--" MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
-        {eOptionalObjectLoc, eObjectKey, eNamespace, ePersistent, eFastStorage,
+        {eObjectKey, eNamespace, ePersistent, eFastStorage,
             eNetStorage, eNetCache, eNamespace,
             eMovable, eCacheable, eNoMetaData,
             eLoginToken, eAuth, eFileTrackSite,

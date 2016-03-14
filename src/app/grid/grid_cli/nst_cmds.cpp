@@ -293,23 +293,14 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
 
     CNetStorageObject netstorage_object;
 
-    switch (IsOptionSet(eOptionalObjectLoc, OPTION_N(0)) |
-            IsOptionSet(eObjectKey, OPTION_N(1)) |
+    switch (IsOptionSet(eObjectKey, OPTION_N(1)) |
             IsOptionSet(eNamespace, OPTION_N(2))) {
-    case OPTION_N(0):
-        netstorage_object = m_NetStorage.Open(m_Opts.id);
-        break;
-
     case OPTION_N(1) + OPTION_N(2):
     {
         CCombinedNetStorageByKey nst(init_string, m_Opts.netstorage_flags);
         netstorage_object = nst.Open(m_Opts.id, m_Opts.netstorage_flags);
         break;
     }
-
-    case 0:
-        netstorage_object = m_NetStorage.Create(m_Opts.netstorage_flags);
-        break;
 
     case OPTION_N(1):
         fprintf(stderr, GRID_APP_NAME " mkobjectloc: '--" OBJECT_KEY_OPTION
@@ -322,10 +313,7 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
         return 2;
 
     default:
-        fprintf(stderr, GRID_APP_NAME " mkobjectloc: object locator cannot "
-                "be combined with either '--" OBJECT_KEY_OPTION
-                "' or '--" NAMESPACE_OPTION "'.\n");
-        return 2;
+        netstorage_object = m_NetStorage.Create(m_Opts.netstorage_flags);
     }
 
     netstorage_object.Close();
