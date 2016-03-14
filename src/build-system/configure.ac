@@ -1293,6 +1293,7 @@ case "$host_os:$compiler" in
    ;;
 
  cygwin*:GCC )
+   CPPFLAGS="-D_GLIBCXX_USE_C99 $CPPFLAGS"
    with_dll="no"
    # : ${NETWORK_LIBS:="-lws2_32"}
    CONF_exe_ext=".exe"
