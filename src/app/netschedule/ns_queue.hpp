@@ -60,6 +60,8 @@
 #include "ns_gc_registry.hpp"
 #include "ns_precise_time.hpp"
 #include "ns_job_info_cache.hpp"
+#include "ns_scope.hpp"
+#include "ns_server_params.hpp"
 
 #include <deque>
 #include <map>
@@ -149,6 +151,8 @@ public:
     bool GetRefuseSubmits(void) const { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val) { m_RefuseSubmits = val; }
     size_t GetAffSlotsUsed(void) const { return m_AffinityRegistry.size(); }
+    size_t GetGroupSlotsUsed(void) const { return m_GroupRegistry.size(); }
+    size_t GetScopeSlotsUsed(void) const { return m_ScopeRegistry.size(); }
     size_t GetClientsCount(void) const { return m_ClientsRegistry.size(); }
     size_t GetGroupsCount(void) const { return m_GroupRegistry.size(); }
     size_t GetNotifCount(void) const { return m_NotificationsList.size(); }
@@ -371,8 +375,10 @@ public:
     CNSPreciseTime NotifyExactListeners(void);
     string PrintClientsList(bool verbose) const;
     string PrintNotificationsList(bool verbose) const;
-    string PrintAffinitiesList(bool verbose) const;
-    string PrintGroupsList(bool verbose) const;
+    string PrintAffinitiesList(const CNSClientId &  client,
+                               bool verbose) const;
+    string PrintGroupsList(const CNSClientId &  client, bool verbose) const;
+    string PrintScopesList(bool verbose) const;
 
     // Check execution timeout. Now checks reading timeout as well.
     // All jobs failed to execute, go back to pending
@@ -434,14 +440,17 @@ public:
                               bool &         had_reader_pref_affs);
     void MarkClientAsAdmin(const CNSClientId &  client);
     void RegisterSocketWriteError(const CNSClientId &  client);
+    void SetClientScope(const CNSClientId &  client);
 
     void PrintStatistics(size_t &  aff_count) const;
     unsigned int GetJobsToDeleteCount(void) const;
     string PrintTransitionCounters(void) const;
-    string PrintJobsStat(const string &    group_token,
+    string PrintJobsStat(const CNSClientId &  client,
+                         const string &    group_token,
                          const string &    aff_token,
                          vector<string> &  warnings) const;
-    void GetJobsPerState(const string &    group_token,
+    void GetJobsPerState(const CNSClientId &  client,
+                         const string &    group_token,
                          const string &    aff_token,
                          size_t *          jobs,
                          vector<string> &  warnings) const;
@@ -503,10 +512,12 @@ private:
                     ECommandGroup                 cmd_group);
     x_SJobPick
     x_FindOutdatedPendingJob(const CNSClientId &  client,
-                             unsigned int         picked_earlier);
+                             unsigned int         picked_earlier,
+                             const TNSBitVector & group_ids);
     x_SJobPick
     x_FindOutdatedJobForReading(const CNSClientId &  client,
-                                unsigned int         picked_earlier);
+                                unsigned int         picked_earlier,
+                                const TNSBitVector & group_ids);
 
     void x_UpdateDB_PutResultNoLock(unsigned                job_id,
                                     const string &          auth_token,
@@ -679,13 +690,6 @@ private:
     mutable CStatisticsCounters m_StatisticsCountersLastPrinted;
     mutable CNSPreciseTime      m_StatisticsCountersLastPrintedTimestamp;
 
-    unsigned int                m_MaxAffinities;
-    unsigned int                m_AffinityHighMarkPercentage;
-    unsigned int                m_AffinityLowMarkPercentage;
-    unsigned int                m_AffinityHighRemoval;
-    unsigned int                m_AffinityLowRemoval;
-    unsigned int                m_AffinityDirtPercentage;
-
     // Notifications support
     CNSNotificationList         m_NotificationsList;
     CNSPreciseTime              m_NotifHifreqInterval;
@@ -723,6 +727,8 @@ private:
     // Job info cache for WST2
     unsigned int                m_JobInfoCacheSize;
     CJobInfoCache               m_JobInfoCache;
+
+    CNSScopeRegistry            m_ScopeRegistry;
 };
 
 

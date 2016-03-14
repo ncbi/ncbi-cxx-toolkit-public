@@ -12,7 +12,7 @@ SRC = netscheduled job_status queue_clean_thread \
       ns_clients ns_command_arguments ns_clients_registry ns_notifications \
       ns_service_thread ns_group ns_gc_registry ns_statistics_counters \
       ns_rollback ns_alert ns_start_ids ns_perf_logging ns_db_dump \
-      ns_job_info_cache
+      ns_job_info_cache ns_scope
 
 REQUIRES = MT bdb Linux
 

@@ -49,7 +49,8 @@ CJobStatusTracker::CJobStatusTracker()
     // for fast access, so that missed status vector is also created. The rest
     // of the code iterates only through the valid states.
     for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
-        m_StatusStor.push_back(new TNSBitVector(bm::BM_GAP));
+//        m_StatusStor.push_back(new TNSBitVector(bm::BM_GAP));
+        m_StatusStor.push_back(new TNSBitVector());
     }
 }
 
@@ -273,8 +274,8 @@ void CJobStatusTracker::AddPendingBatch(unsigned  job_id_from,
 unsigned int
 CJobStatusTracker::GetJobByStatus(TJobStatus            status,
                                   const TNSBitVector &  unwanted_jobs,
-                                  const TNSBitVector &  group_jobs,
-                                  bool                  use_group) const
+                                  const TNSBitVector &  restrict_jobs,
+                                  bool                  restricted) const
 {
     TNSBitVector &      bv = *m_StatusStor[(int)status];
     CReadLockGuard      guard(m_Lock);
@@ -285,9 +286,9 @@ CJobStatusTracker::GetJobByStatus(TJobStatus            status,
     TNSBitVector        candidates(bv);
 
     candidates -= unwanted_jobs;
-    if (use_group)
-        // Group restriction is provided
-        candidates &= group_jobs;
+    if (restricted)
+        // Restriction is provided: could be a group and/or a scope
+        candidates &= restrict_jobs;
 
     if (!candidates.any())
         return 0;
@@ -299,8 +300,8 @@ CJobStatusTracker::GetJobByStatus(TJobStatus            status,
 unsigned int
 CJobStatusTracker::GetJobByStatus(const vector<TJobStatus> &   statuses,
                                   const TNSBitVector &         unwanted_jobs,
-                                  const TNSBitVector &         group_jobs,
-                                  bool                         use_group) const
+                                  const TNSBitVector &         restrict_jobs,
+                                  bool                         restricted) const
 {
     TNSBitVector        jobs;
     CReadLockGuard      guard(m_Lock);
@@ -313,9 +314,9 @@ CJobStatusTracker::GetJobByStatus(const vector<TJobStatus> &   statuses,
         return 0;
 
     jobs -= unwanted_jobs;
-    if (use_group)
-        // Group restriction is provided
-        jobs &= group_jobs;
+    if (restricted)
+        // Restriction is provided: could be a group and/or a scope
+        jobs &= restrict_jobs;
 
     if (!jobs.any())
         return 0;

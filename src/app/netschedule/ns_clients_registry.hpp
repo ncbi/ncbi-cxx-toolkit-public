@@ -158,6 +158,7 @@ class CNSClientsRegistry
         { m_BlacklistTimeout = blacklist_timeout;
           m_ReadBlacklistTimeout = read_blacklist_timeout; }
         void RegisterSocketWriteError(const CNSClientId &  client);
+        void SetLastScope(const CNSClientId &  client);
         void AppendType(const CNSClientId &  client,
                         unsigned int         type_to_append);
         void GCBlacklistedJobs(const CJobStatusTracker &  tracker,

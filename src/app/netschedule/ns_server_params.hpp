@@ -86,6 +86,42 @@ struct SErrorEmulatorParameter
 #endif
 
 
+// A set of parameters for a registry. Used for affinities, groups and scopes
+struct SNSRegistryParameters
+{
+    // Max number of records in a registry
+    unsigned int    max_records;
+
+    // GC settings for a registry
+    unsigned int    high_mark_percentage;
+    unsigned int    low_mark_percentage;
+    unsigned int    high_removal;
+    unsigned int    low_removal;
+    unsigned int    dirt_percentage;
+
+    void Read(const IRegistry &  reg,
+              const string &  sname,
+              const string &  name,
+              unsigned int  default_max,
+              unsigned int  default_high_mark_percentage,
+              unsigned int  default_low_mark_percentage,
+              unsigned int  default_high_removal,
+              unsigned int  default_low_removal,
+              unsigned int  default_dirt_percentage);
+    string Serialize(const string &  name,
+                     const string &  prefix,
+                     const string &  suffix) const;
+
+    private:
+        void x_CheckGarbageCollectorSettings(
+                        unsigned int    default_high_mark_percentage,
+                        unsigned int    default_low_mark_percentage,
+                        unsigned int    default_high_removal,
+                        unsigned int    default_low_removal,
+                        unsigned int    default_dirt_percentage);
+};
+
+
 
 // Parameters for server
 struct SNS_Parameters : SServer_Parameters
@@ -110,19 +146,14 @@ struct SNS_Parameters : SServer_Parameters
     double          purge_timeout;      // Timeout in seconds between
                                         // Purge() calls
     unsigned int    stat_interval;      // Interval between statistics output
-    unsigned int    max_affinities;     // Max number of affinities a client
-                                        // can report as preferred.
     unsigned int    max_client_data;    // Max (transient) client data size
 
     string          admin_hosts;
     string          admin_client_names;
 
-    // Affinity GC settings
-    unsigned int    affinity_high_mark_percentage;
-    unsigned int    affinity_low_mark_percentage;
-    unsigned int    affinity_high_removal;
-    unsigned int    affinity_low_removal;
-    unsigned int    affinity_dirt_percentage;
+    SNSRegistryParameters       affinity_reg;
+    SNSRegistryParameters       group_reg;
+    SNSRegistryParameters       scope_reg;
 
     unsigned int    reserve_dump_space;
     unsigned int    wst_cache_size;
@@ -152,8 +183,7 @@ struct SNS_Parameters : SServer_Parameters
 
 
     private:
-        void x_CheckAffinityGarbageCollectorSettings(void);
-        void x_CheckGarbageCollectorSettings(void);
+        void x_CheckJobGarbageCollectorSettings(void);
 };
 
 END_NCBI_SCOPE

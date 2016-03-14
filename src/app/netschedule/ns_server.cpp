@@ -69,7 +69,6 @@ CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
       m_ScanBatchSize(default_scan_batch_size),
       m_PurgeTimeout(default_purge_timeout),
       m_StatInterval(default_stat_interval),
-      m_MaxAffinities(default_max_affinities),
       m_MaxClientData(default_max_client_data),
       m_NodeID("not_initialized"),
       m_SessionID("s" + x_GenerateGUID()),
@@ -254,13 +253,10 @@ CJsonNode CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     m_MarkdelBatchSize = params.markdel_batch_size;
     m_ScanBatchSize = params.scan_batch_size;
     m_PurgeTimeout = params.purge_timeout;
-    m_MaxAffinities = params.max_affinities;
 
-    m_AffinityHighMarkPercentage = params.affinity_high_mark_percentage;
-    m_AffinityLowMarkPercentage = params.affinity_low_mark_percentage;
-    m_AffinityHighRemoval = params.affinity_high_removal;
-    m_AffinityLowRemoval = params.affinity_low_removal;
-    m_AffinityDirtPercentage = params.affinity_dirt_percentage;
+    m_AffRegistrySettings = params.affinity_reg;
+    m_GroupRegistrySettings = params.group_reg;
+    m_ScopeRegistrySettings = params.scope_reg;
 
     // The difference is required only at the stage of RECO.
     // RECO always calls the function with the limited flag so there is no need
@@ -445,9 +441,9 @@ string CNetScheduleServer::PrintTransitionCounters(void)
 }
 
 
-string CNetScheduleServer::PrintJobsStat(void)
+string CNetScheduleServer::PrintJobsStat(const CNSClientId &  client)
 {
-    return m_QueueDB->PrintJobsStat();
+    return m_QueueDB->PrintJobsStat(client);
 }
 
 

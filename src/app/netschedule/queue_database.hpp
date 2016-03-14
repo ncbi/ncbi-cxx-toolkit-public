@@ -176,7 +176,7 @@ public:
     }
 
     string PrintTransitionCounters(void);
-    string PrintJobsStat(void);
+    string PrintJobsStat(const CNSClientId &  client);
     string GetQueueClassesInfo(void) const;
     string GetQueueClassesConfig(void) const;
     string GetQueueInfo(void) const;

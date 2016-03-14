@@ -89,6 +89,10 @@ const size_t    kDumpReservedSpaceFileBuffer = 1024 * 1024;
 const Int4      kDumpMagic(0xD0D0D0D0);
 
 
+// An empty bit vector is returned in quite a few places
+const TNSBitVector  kEmptyBitVector;
+
+
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_NS_TYPES__HPP */

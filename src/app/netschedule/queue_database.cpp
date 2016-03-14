@@ -1187,8 +1187,12 @@ CQueueDataBase::x_SingleQueueInfo(TQueueInfo::const_iterator  found) const
     // Usually used by QINF2 and STAT QUEUES
     params.refuse_submits = found->second.second->GetRefuseSubmits();
     params.pause_status = found->second.second->GetPauseStatus();
-    params.max_aff_slots = m_Server->GetMaxAffinities();
+    params.max_aff_slots = m_Server->GetAffRegistrySettings().max_records;
     params.aff_slots_used = found->second.second->GetAffSlotsUsed();
+    params.max_group_slots = m_Server->GetGroupRegistrySettings().max_records;
+    params.group_slots_used = found->second.second->GetGroupSlotsUsed();
+    params.max_scope_slots = m_Server->GetScopeRegistrySettings().max_records;
+    params.scope_slots_used = found->second.second->GetScopeSlotsUsed();
     params.clients = found->second.second->GetClientsCount();
     params.groups = found->second.second->GetGroupsCount();
     params.gc_backlog = found->second.second->GetGCBacklogCount();
@@ -1299,7 +1303,7 @@ string CQueueDataBase::PrintTransitionCounters(void)
 }
 
 
-string CQueueDataBase::PrintJobsStat(void)
+string CQueueDataBase::PrintJobsStat(const CNSClientId &  client)
 {
     string                      result;
     vector<string>              warnings;
@@ -1309,7 +1313,7 @@ string CQueueDataBase::PrintJobsStat(void)
         // Group and affinity tokens make no sense for the server,
         // so they are both "".
         result += "OK:[queue " + k->first + "]\n" +
-                  k->second.second->PrintJobsStat("", "", warnings);
+                  k->second.second->PrintJobsStat(client, "", "", warnings);
     return result;
 }
 

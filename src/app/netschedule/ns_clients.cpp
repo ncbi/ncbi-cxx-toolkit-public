@@ -67,23 +67,24 @@ void CNSClientId::Update(unsigned int            peer_addr,
     TNSProtoParams::const_iterator      found;
 
     m_Addr           = peer_addr;
-    m_ProgName       = "";
-    m_ClientName     = "";
-    m_ClientNode     = "";
-    m_ClientSession  = "";
+    m_ProgName       = kEmptyStr;
+    m_ClientName     = kEmptyStr;
+    m_ClientNode     = kEmptyStr;
+    m_ClientSession  = kEmptyStr;
     m_ClientType     = eClaimedNotProvided;
-    m_ClientHost     = "";
+    m_ClientHost     = kEmptyStr;
+    m_Scope          = kEmptyStr;
     m_ControlPort    = 0;
     m_PassedChecks   = 0;
     m_ID             = 0;
 
     found = params.find("client_node");
     if (found != params.end())
-        m_ClientNode = found->second;
+        m_ClientNode = NStr::ParseEscapes(found->second);
 
     found = params.find("client_session");
     if (found != params.end())
-        m_ClientSession = found->second;
+        m_ClientSession = NStr::ParseEscapes(found->second);
 
     found = params.find("client_type");
     if (found != params.end())
@@ -107,11 +108,15 @@ void CNSClientId::Update(unsigned int            peer_addr,
 
     found = params.find("prog");
     if (found != params.end())
-        m_ProgName = found->second;
+        m_ProgName = NStr::ParseEscapes(found->second);
 
     found = params.find("client");
     if (found != params.end())
-        m_ClientName = found->second;
+        m_ClientName = NStr::ParseEscapes(found->second);
+
+    found = params.find("scope");
+    if (found != params.end())
+        m_Scope = NStr::ParseEscapes(found->second);
 
     found = params.find("control_port");
     if (found != params.end()) {
@@ -128,7 +133,7 @@ void CNSClientId::Update(unsigned int            peer_addr,
 
     found = params.find("client_host");
     if (found != params.end())
-        m_ClientHost = found->second;
+        m_ClientHost = NStr::ParseEscapes(found->second);
 }
 
 
@@ -588,7 +593,8 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
     m_NumberOfSockErrors(0),
     m_ClientDataVersion(0),
     m_WNData(blacklist_timeout),
-    m_ReaderData(read_blacklist_timeout)
+    m_ReaderData(read_blacklist_timeout),
+    m_LastScope(client_id.GetScope())
 {
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -856,6 +862,7 @@ string CNSClient::Print(const string &               node_name,
         buffer += "OK:  READER AFFINITIES GARBAGE COLLECTED: FALSE\n";
     else
         buffer += "OK:  READER AFFINITIES GARBAGE COLLECTED: TRUE\n";
+    buffer += "OK: LAST SCOPE: '" + m_LastScope + "'\n";
 
     return buffer;
 }

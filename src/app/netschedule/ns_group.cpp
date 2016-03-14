@@ -92,6 +92,17 @@ size_t        CNSGroupsRegistry::size(void) const
 }
 
 
+bool  CNSGroupsRegistry::CanAccept(const string &  group,
+                                   size_t  max_records) const
+{
+    CMutexGuard         guard(m_Lock);
+    if (m_IDToAttr.size() < max_records)
+        return true;
+
+    return m_TokenToAttr.find(&group) != m_TokenToAttr.end();
+}
+
+
 TNSBitVector  CNSGroupsRegistry::GetJobs(const string &  group,
                                          bool  allow_exception) const
 {
@@ -281,8 +292,10 @@ void  CNSGroupsRegistry::RemoveJob(unsigned int  group_id,
 
 
 string  CNSGroupsRegistry::Print(const CQueue *  queue,
-                                 size_t          batch_size,
-                                 bool            verbose) const
+                                 const TNSBitVector &  scope_jobs,
+                                 const string &  scope,
+                                 size_t  batch_size,
+                                 bool  verbose) const
 {
     string              result;
     TNSBitVector        batch;
@@ -295,13 +308,13 @@ string  CNSGroupsRegistry::Print(const CQueue *  queue,
         ++en;
 
         if (batch.count() >= batch_size) {
-            result += x_PrintSelected(batch, queue, verbose);
+            result += x_PrintSelected(batch, queue, scope_jobs, scope, verbose);
             batch.clear();
         }
     }
 
     if (batch.count() > 0)
-        result += x_PrintSelected(batch, queue, verbose);
+        result += x_PrintSelected(batch, queue, scope_jobs, scope, verbose);
     return result;
 }
 
@@ -361,6 +374,30 @@ unsigned int  CNSGroupsRegistry::CollectGarbage(unsigned int  max_to_del)
 }
 
 
+unsigned int  CNSGroupsRegistry::CheckRemoveCandidates(void)
+{
+    unsigned int                still_candidate = 0;
+
+    CMutexGuard                 guard(m_Lock);
+    TNSBitVector::enumerator    en(m_RemoveCandidates.first());
+    for ( ; en.valid(); ++en) {
+        unsigned int                    group_id = *en;
+        TGroupIDToAttrMap::iterator     found = m_IDToAttr.find(group_id);
+
+        if (found == m_IDToAttr.end()) {
+            m_RemoveCandidates.set_bit(group_id, false);
+            continue;
+        }
+
+        if (found->second->CanBeDeleted())
+            ++still_candidate;
+        else
+            m_RemoveCandidates.set_bit(group_id, false);
+    }
+    return still_candidate;
+}
+
+
 unsigned int  CNSGroupsRegistry::x_GetNextGroupID(void)
 {
     CFastMutexGuard     guard(m_LastGroupIDLock);
@@ -404,9 +441,11 @@ unsigned int  CNSGroupsRegistry::x_CreateGroup(const string &  group)
 
 
 string
-CNSGroupsRegistry::x_PrintSelected(const TNSBitVector &    batch,
-                                   const CQueue *          queue,
-                                   bool                    verbose) const
+CNSGroupsRegistry::x_PrintSelected(const TNSBitVector &  batch,
+                                   const CQueue *  queue,
+                                   const TNSBitVector &  scope_jobs,
+                                   const string &  scope,
+                                   bool  verbose) const
 {
     string      buffer;
     size_t      printed = 0;
@@ -415,7 +454,7 @@ CNSGroupsRegistry::x_PrintSelected(const TNSBitVector &    batch,
     TGroupIDToAttrMap::const_iterator   k = m_IDToAttr.begin();
     for ( ; k != m_IDToAttr.end(); ++k ) {
         if (batch.get_bit(k->first)) {
-            buffer += x_PrintOne(*k->second, queue, verbose);
+            buffer += x_PrintOne(*k->second, queue, scope_jobs, scope, verbose);
             ++printed;
             if (printed >= batch.count())
                 break;
@@ -427,21 +466,35 @@ CNSGroupsRegistry::x_PrintSelected(const TNSBitVector &    batch,
 
 
 string
-CNSGroupsRegistry::x_PrintOne(const SNSGroupJobs &     group_attr,
-                              const CQueue *           queue,
-                              bool                     verbose) const
+CNSGroupsRegistry::x_PrintOne(const SNSGroupJobs &  group_attr,
+                              const CQueue *  queue,
+                              const TNSBitVector &  scope_jobs,
+                              const string &  scope,
+                              bool  verbose) const
 {
-    string      buffer;
+    string          buffer;
+    TNSBitVector    jobs = group_attr.m_Jobs;
+
+    if (scope == kNoScopeOnly) {
+        jobs -= scope_jobs;
+        if (!jobs.any())
+            return kEmptyStr;
+    }
+    else if (!scope.empty()) {
+        jobs &= scope_jobs;
+        if (!jobs.any())
+            return kEmptyStr;
+    }
 
     buffer += "OK:GROUP: '" +
               NStr::PrintableString(*(group_attr.m_GroupToken)) + "'\n"
               "OK:  ID: " + NStr::NumericToString(group_attr.m_GroupId) + "\n";
 
     if (verbose) {
-        if (group_attr.m_Jobs.any()) {
+        if (jobs.any()) {
             buffer += "OK:  JOBS:\n";
 
-            TNSBitVector::enumerator    en(group_attr.m_Jobs.first());
+            TNSBitVector::enumerator    en(jobs.first());
             for ( ; en.valid(); ++en) {
                 unsigned int    job_id = *en;
                 TJobStatus      status = queue->GetJobStatus(job_id);
@@ -454,7 +507,7 @@ CNSGroupsRegistry::x_PrintOne(const SNSGroupJobs &     group_attr,
     }
     else
         buffer += "OK:  NUMBER OF JOBS: " +
-                  NStr::NumericToString(group_attr.m_Jobs.count()) + "\n";
+                  NStr::NumericToString(jobs.count()) + "\n";
 
     return buffer;
 }

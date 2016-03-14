@@ -724,7 +724,7 @@ class Scenario1519( TestBase ):
 
         self.ns.shutdown()
         self.ns.resetPID()
-        time.sleep( 15 )
+        time.sleep( 5 )
         if self.ns.isRunning():
             raise Exception( "Cannot shutdown netschedule" )
 
@@ -735,7 +735,10 @@ class Scenario1519( TestBase ):
         ns_client = self.getNetScheduleService( 'TEST', 'scenario1519' )
         ns_client.set_client_identification( 'node', 'session' )
 
-        receivedJobID = self.ns.getJob( 'TEST', -1, 'a1' )[ 0 ]
+        receivedJobs = self.ns.getJob( 'TEST', -1, 'a1' )
+        if receivedJobs is None:
+            raise Exception( "Expected job was not provided" )
+        receivedJobID = receivedJobs[ 0 ]
         if jobID1 != receivedJobID:
             raise Exception( "Unexpected job for execution" )
         execAny( ns_client, "PUT " + jobID1 + " 0 nooutput" )

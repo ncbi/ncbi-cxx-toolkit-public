@@ -189,6 +189,7 @@ private:
     void x_ProcessDeleteDynamicQueue(CQueue*);
     void x_ProcessQueueInfo(CQueue*);
     void x_ProcessSetQueue(CQueue*);
+    void x_ProcessSetScope(CQueue*);
     void x_ProcessGetParam(CQueue*);
     void x_ProcessGetConfiguration(CQueue*);
     void x_ProcessReading(CQueue*);

@@ -672,6 +672,10 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
         prefix + "refuse_submits" + suffix + NStr::BoolToString(refuse_submits) + separator +
         prefix + "max_aff_slots" + suffix + NStr::NumericToString(max_aff_slots) + separator +
         prefix + "aff_slots_used" + suffix + NStr::NumericToString(aff_slots_used) + separator +
+        prefix + "max_group_slots" + suffix + NStr::NumericToString(max_group_slots) + separator +
+        prefix + "group_slots_used" + suffix + NStr::NumericToString(group_slots_used) + separator +
+        prefix + "max_scope_slots" + suffix + NStr::NumericToString(max_scope_slots) + separator +
+        prefix + "scope_slots_used" + suffix + NStr::NumericToString(scope_slots_used) + separator +
         prefix + "clients" + suffix + NStr::NumericToString(clients) + separator +
         prefix + "groups" + suffix + NStr::NumericToString(groups) + separator +
         prefix + "gc_backlog" + suffix + NStr::NumericToString(gc_backlog) + separator +

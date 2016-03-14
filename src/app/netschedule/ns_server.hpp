@@ -101,24 +101,18 @@ public:
     { return m_BackgroundHost; }
     CRequestExecutor & GetRequestExecutor()
     { return m_RequestExecutor; }
-    unsigned GetMaxAffinities(void) const
-    { return m_MaxAffinities; }
     unsigned int GetMaxClientData(void) const
     { return m_MaxClientData; }
     string GetNodeID(void) const
     { return m_NodeID; }
     string GetSessionID(void) const
     { return m_SessionID; }
-    unsigned GetAffinityHighMarkPercentage(void) const
-    { return m_AffinityHighMarkPercentage; }
-    unsigned GetAffinityLowMarkPercentage(void) const
-    { return m_AffinityLowMarkPercentage; }
-    unsigned GetAffinityHighRemoval(void) const
-    { return m_AffinityHighRemoval; }
-    unsigned GetAffinityLowRemoval(void) const
-    { return m_AffinityLowRemoval; }
-    unsigned GetAffinityDirtPercentage(void) const
-    { return m_AffinityDirtPercentage; }
+    SNSRegistryParameters GetAffRegistrySettings(void) const
+    { return m_AffRegistrySettings; }
+    SNSRegistryParameters GetGroupRegistrySettings(void) const
+    { return m_GroupRegistrySettings; }
+    SNSRegistryParameters GetScopeRegistrySettings(void) const
+    { return m_ScopeRegistrySettings; }
     bool IsDrainShutdown(void) const
     { return m_CurrentSubmitsCounter.Get() < kSubmitCounterInitialValue; }
     bool WasDBDrained(void) const
@@ -172,7 +166,7 @@ public:
     void PrintLockStat(CNcbiOstream& out);
     void PrintMemStat(CNcbiOstream& out);
     string PrintTransitionCounters(void);
-    string PrintJobsStat(void);
+    string PrintJobsStat(const CNSClientId &  client);
     string GetQueueClassesInfo(void) const;
     string GetQueueClassesConfig(void) const;
     string GetQueueInfo(void) const;
@@ -254,18 +248,14 @@ private:
     double                          m_PurgeTimeout;     // Time between purges
     unsigned int                    m_StatInterval;
 
-    unsigned int                    m_MaxAffinities;
     unsigned int                    m_MaxClientData;
 
     string                          m_NodeID;           // From the ini file
     string                          m_SessionID;        // Generated
 
-    // Affinity garbage collection settings
-    unsigned int                    m_AffinityHighMarkPercentage;
-    unsigned int                    m_AffinityLowMarkPercentage;
-    unsigned int                    m_AffinityHighRemoval;
-    unsigned int                    m_AffinityLowRemoval;
-    unsigned int                    m_AffinityDirtPercentage;
+    SNSRegistryParameters           m_AffRegistrySettings;
+    SNSRegistryParameters           m_GroupRegistrySettings;
+    SNSRegistryParameters           m_ScopeRegistrySettings;
 
     // List of admin stations
     CNetScheduleAccessList          m_AdminHosts;

@@ -116,6 +116,11 @@ class CNSClientId
         TNSCommandChecks GetPassedChecks(void) const
         { return m_PassedChecks; }
 
+        string GetScope(void) const
+        { return m_Scope; }
+        void SetScope(const string &  scope)
+        { m_Scope = scope; }
+
         // The admin check is done per connection so there is no need
         // to reset it when a queue is changed or when a queue is from a job
         // key.
@@ -153,6 +158,8 @@ class CNSClientId
         // registry will store IDs of the clients which informed that a certain
         // affinity is preferred.
         unsigned int        m_ID;
+
+        string              m_Scope;
 
     private:
         EClaimedClientType  x_ConvertToClaimedType(
@@ -479,6 +486,9 @@ class CNSClient
                      const set< string > &        read_gc_clients,
                      bool                         verbose) const;
 
+        void SetLastScope(const string &  scope)
+        { m_LastScope = scope; }
+
     private:
         ENSClientState      m_State;          // Client state
                                               // If true => m_Session == "n/a"
@@ -511,6 +521,8 @@ class CNSClient
 
         SRemoteNodeData     m_WNData;
         SRemoteNodeData     m_ReaderData;
+
+        string              m_LastScope;
 
     private:
         string  x_TypeAsString(void) const;

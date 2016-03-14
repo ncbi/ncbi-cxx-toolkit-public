@@ -114,6 +114,10 @@ struct SQueueParameters
     int             pause_status;
     size_t          max_aff_slots;
     size_t          aff_slots_used;
+    size_t          max_group_slots;
+    size_t          group_slots_used;
+    size_t          max_scope_slots;
+    size_t          scope_slots_used;
     size_t          clients;
     size_t          groups;
     size_t          gc_backlog;

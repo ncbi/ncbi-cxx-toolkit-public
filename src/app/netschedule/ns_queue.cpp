@@ -120,12 +120,6 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_StatisticsCounters(CStatisticsCounters::eQueueCounters),
     m_StatisticsCountersLastPrinted(CStatisticsCounters::eQueueCounters),
     m_StatisticsCountersLastPrintedTimestamp(0.0),
-    m_MaxAffinities(server->GetMaxAffinities()),
-    m_AffinityHighMarkPercentage(server->GetAffinityHighMarkPercentage()),
-    m_AffinityLowMarkPercentage(server->GetAffinityLowMarkPercentage()),
-    m_AffinityHighRemoval(server->GetAffinityHighRemoval()),
-    m_AffinityLowRemoval(server->GetAffinityLowRemoval()),
-    m_AffinityDirtPercentage(server->GetAffinityDirtPercentage()),
     m_NotificationsList(qdb, server->GetNodeID(), queue_name),
     m_NotifHifreqInterval(default_notif_hifreq_interval), // 0.1 sec
     m_NotifHifreqPeriod(default_notif_hifreq_period),
@@ -361,6 +355,7 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
     vector<CNetScheduleAPI::EJobStatus>     from_state;
     TNSBitVector                            pending_running_jobs;
     TNSBitVector                            other_jobs;
+    string                                  scope = client.GetScope();
 
     from_state.push_back(CNetScheduleAPI::ePending);
     from_state.push_back(CNetScheduleAPI::eRunning);
@@ -382,6 +377,24 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
     // be excluded.
     TNSBitVector        reading_jobs =
                             m_StatusTracker.GetJobs(CNetScheduleAPI::eReading);
+
+    // Apply scope limitations to all participant jobs
+    if (scope.empty() || scope == kNoScopeOnly) {
+        // Both these cases should consider only the non-scope jobs
+        TNSBitVector        all_jobs_in_scopes(bm::BM_GAP);
+        all_jobs_in_scopes = m_ScopeRegistry.GetAllJobsInScopes();
+        pending_running_jobs -= all_jobs_in_scopes;
+        other_jobs -= all_jobs_in_scopes;
+        reading_jobs -= all_jobs_in_scopes;
+    } else {
+        // Consider only the jobs in the particular scope
+        TNSBitVector        scope_jobs(bm::BM_GAP);
+        scope_jobs = m_ScopeRegistry.GetJobs(scope);
+        pending_running_jobs &= scope_jobs;
+        other_jobs &= scope_jobs;
+        reading_jobs &= scope_jobs;
+    }
+
     if (group_ids.any()) {
         // The pending and running jobs may change their group and or affinity
         // later via the RESCHEDULE command
@@ -397,6 +410,7 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
         other_jobs |= reading_jobs;
 
     TNSBitVector    candidates = pending_running_jobs | other_jobs;
+
     if (!candidates.any())
         return true;
 
@@ -491,7 +505,35 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
 
     // Take the queue lock and start the operation
     {{
+        string              scope = client.GetScope();
         CFastMutexGuard     guard(m_OperationLock);
+
+
+        if (!scope.empty()) {
+            // Check the scope registry limits
+            SNSRegistryParameters   params =
+                                        m_Server->GetScopeRegistrySettings();
+            if (!m_ScopeRegistry.CanAccept(scope, params.max_records))
+                NCBI_THROW(CNetScheduleException, eDataTooLong,
+                           "No available slots in the queue scope registry");
+        }
+        if (!group.empty()) {
+            // Check the group registry limits
+            SNSRegistryParameters   params =
+                                        m_Server->GetGroupRegistrySettings();
+            if (!m_GroupRegistry.CanAccept(group, params.max_records))
+                NCBI_THROW(CNetScheduleException, eDataTooLong,
+                           "No available slots in the queue group registry");
+        }
+        if (!aff_token.empty()) {
+            // Check the affinity registry limits
+            SNSRegistryParameters   params =
+                                        m_Server->GetAffRegistrySettings();
+            if (!m_AffinityRegistry.CanAccept(aff_token, params.max_records))
+                NCBI_THROW(CNetScheduleException, eDataTooLong,
+                           "No available slots in the queue affinity registry");
+        }
+
 
         if (!group.empty()) {
             group_id = m_GroupRegistry.AddJob(group, job_id);
@@ -510,6 +552,9 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
         }}
 
         m_StatusTracker.AddPendingJob(job_id);
+
+        if (!scope.empty())
+            m_ScopeRegistry.AddJob(scope, job_id);
 
         // Register the job with the client
         m_ClientsRegistry.AddToSubmitted(client, 1);
@@ -535,6 +580,7 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
         m_JobInfoCache.SetJobCachedInfo(job_id, job.GetClientIP(),
                                                 job.GetClientSID(),
                                                 job.GetNCBIPHID());
+
     }}
 
     rollback_action = new CNSSubmitRollback(client, job_id,
@@ -564,9 +610,43 @@ CQueue::SubmitBatch(const CNSClientId &             client,
     {{
         unsigned int        job_id_cnt = job_id;
         unsigned int        group_id = 0;
-        bool                no_aff_jobs = false;
+        vector<string>      aff_tokens;
+        string              scope = client.GetScope();
+
+        // Count the number of affinities
+        for (size_t  k = 0; k < batch_size; ++k) {
+            const string &      aff_token = batch[k].second;
+            if (!aff_token.empty())
+                aff_tokens.push_back(aff_token);
+        }
+
 
         CFastMutexGuard     guard(m_OperationLock);
+
+        if (!scope.empty()) {
+            // Check the scope registry limits
+            SNSRegistryParameters   params =
+                                        m_Server->GetScopeRegistrySettings();
+            if (!m_ScopeRegistry.CanAccept(scope, params.max_records))
+                NCBI_THROW(CNetScheduleException, eDataTooLong,
+                           "No available slots in the queue scope registry");
+        }
+        if (!group.empty()) {
+            // Check the group registry limits
+            SNSRegistryParameters   params =
+                                        m_Server->GetGroupRegistrySettings();
+            if (!m_GroupRegistry.CanAccept(group, params.max_records))
+                NCBI_THROW(CNetScheduleException, eDataTooLong,
+                           "No available slots in the queue group registry");
+        }
+        if (!aff_tokens.empty()) {
+            // Check the affinity registry limits
+            SNSRegistryParameters   params =
+                                        m_Server->GetAffRegistrySettings();
+            if (!m_AffinityRegistry.CanAccept(aff_tokens, params.max_records))
+                NCBI_THROW(CNetScheduleException, eDataTooLong,
+                           "No available slots in the queue affinity registry");
+        }
 
         group_id = m_GroupRegistry.ResolveGroup(group);
         {{
@@ -600,8 +680,6 @@ CQueue::SubmitBatch(const CNSClientId &             client,
                     job.SetAffinityId(aff_id);
                     affinities.set_bit(aff_id);
                 }
-                else
-                    no_aff_jobs = true;
 
                 job.Flush(this);
                 ++job_id_cnt;
@@ -614,12 +692,16 @@ CQueue::SubmitBatch(const CNSClientId &             client,
         m_StatusTracker.AddPendingBatch(job_id, job_id + batch_size - 1);
         m_ClientsRegistry.AddToSubmitted(client, batch_size);
 
+        if (!scope.empty())
+            m_ScopeRegistry.AddJobs(scope, job_id, batch_size);
+
         // Make a decision whether to notify clients or not
         TNSBitVector        jobs;
         jobs.set_range(job_id, job_id + batch_size - 1);
 
         if (m_PauseStatus == eNoPause)
-            m_NotificationsList.Notify(jobs, affinities, no_aff_jobs,
+            m_NotificationsList.Notify(jobs, affinities,
+                                       batch_size != aff_tokens.size(),
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
                                        m_GroupRegistry,
@@ -811,7 +893,8 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
             if (job_pick.job_id == 0) {
                 if (exclusive_new_affinity)
                     // Second try only if exclusive new aff is set on
-                    job_pick = x_FindOutdatedPendingJob(client, 0);
+                    job_pick = x_FindOutdatedPendingJob(client, 0,
+                                                        group_ids_vector);
 
                 if (job_pick.job_id == 0) {
                     if (timeout != 0 && port > 0)
@@ -837,7 +920,8 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                                     m_MaxPendingWaitTimeout) == false) {
                         x_SJobPick  outdated_pick =
                                         x_FindOutdatedPendingJob(
-                                                    client, job_pick.job_id);
+                                                    client, job_pick.job_id,
+                                                    group_ids_vector);
                         if (outdated_pick.job_id != 0) {
                             job_pick = outdated_pick;
                             outdated_job = true;
@@ -1011,13 +1095,15 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
     // the add list or some of affinities to add could already be in the list.
     // The precise checking however requires more CPU and blocking so only an
     // approximate (but fast) checking is done.
+    SNSRegistryParameters       aff_reg_settings =
+                                        m_Server->GetAffRegistrySettings();
     if (current_affinities.count() + aff_to_add.size()
                                    - aff_id_to_del.count() >
-                                         m_MaxAffinities) {
+                                         aff_reg_settings.max_records) {
         NCBI_THROW(CNetScheduleException, eTooManyPreferredAffinities,
                    "The client '" + client.GetNode() +
                    "' exceeds the limit (" +
-                   NStr::NumericToString(m_MaxAffinities) +
+                   NStr::NumericToString(aff_reg_settings.max_records) +
                    ") of the preferred affinities. Changed request ignored.");
     }
 
@@ -1083,11 +1169,14 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
     else
         m_ClientsRegistry.AppendType(client, CNSClient::eReader);
 
-    if (aff.size() > m_MaxAffinities) {
+    SNSRegistryParameters   aff_reg_settings =
+                                            m_Server->GetAffRegistrySettings();
+
+    if (aff.size() > aff_reg_settings.max_records) {
         NCBI_THROW(CNetScheduleException, eTooManyPreferredAffinities,
                    "The client '" + client.GetNode() +
                    "' exceeds the limit (" +
-                   NStr::NumericToString(m_MaxAffinities) +
+                   NStr::NumericToString(aff_reg_settings.max_records) +
                    ") of the preferred affinities. Set request ignored.");
     }
 
@@ -1690,10 +1779,23 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
                            bool                 is_ns_rollback)
 {
     TJobStatus          old_status;
+    string              scope = client.GetScope();
     CNSPreciseTime      current_time = CNSPreciseTime::Current();
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
+
+        // Consider the scope restrictions
+        if (scope.empty() || scope == kNoScopeOnly) {
+            // Both these cases should consider only the non-scope jobs
+            if (m_ScopeRegistry.GetAllJobsInScopes()[job_id] == true)
+                return CNetScheduleAPI::eJobNotFound;
+        } else {
+            // Consider only the jobs in the particular scope
+            if (m_ScopeRegistry.GetJobs(scope)[job_id] == false)
+                return CNetScheduleAPI::eJobNotFound;
+        }
+
 
         old_status = m_StatusTracker.GetStatus(job_id);
         if (old_status == CNetScheduleAPI::eJobNotFound)
@@ -1813,11 +1915,23 @@ unsigned int  CQueue::CancelAllJobs(const CNSClientId &  client,
 
 
 unsigned int CQueue::x_CancelJobs(const CNSClientId &   client,
-                                  const TNSBitVector &  jobs_to_cancel,
+                                  const TNSBitVector &  candidates_to_cancel,
                                   bool                  logging)
 {
     CJob                        job;
     CNSPreciseTime              current_time = CNSPreciseTime::Current();
+    TNSBitVector                jobs_to_cancel = candidates_to_cancel;
+
+    // Filter the jobs basing on scope if so
+    string                      scope = client.GetScope();
+    if (scope.empty() || scope != kNoScopeOnly) {
+        // Both these cases should consider only the non-scope jobs
+        jobs_to_cancel -= m_ScopeRegistry.GetAllJobsInScopes();
+    } else {
+        // Consider only the jobs in the particular scope
+        jobs_to_cancel &= m_ScopeRegistry.GetJobs(scope);
+    }
+
     TNSBitVector::enumerator    en(jobs_to_cancel.first());
     unsigned int                count = 0;
     for (; en.valid(); ++en) {
@@ -2123,7 +2237,8 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
 
             if (job_pick.job_id == 0) {
                 if (exclusive_new_affinity)
-                    job_pick = x_FindOutdatedJobForReading(client, 0);
+                    job_pick = x_FindOutdatedJobForReading(client, 0,
+                                                           group_ids_vector);
 
                 if (job_pick.job_id == 0) {
                     *no_more_jobs = x_NoMoreReadJobs(client, aff_ids_vector,
@@ -2156,7 +2271,8 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                     m_MaxPendingReadWaitTimeout) == false) {
                         x_SJobPick  outdated_pick =
                                         x_FindOutdatedJobForReading(
-                                                client, job_pick.job_id);
+                                                client, job_pick.job_id,
+                                                group_ids_vector);
                         if (outdated_pick.job_id != 0) {
                             job_pick = outdated_pick;
                             outdated_job = true;
@@ -2487,6 +2603,7 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
     TNSBitVector    group_jobs = m_GroupRegistry.GetJobs(group_ids);
     TNSBitVector    blacklisted_jobs =
                     m_ClientsRegistry.GetBlacklistedJobs(client, cmd_group);
+    string          scope = client.GetScope();
 
     TNSBitVector    pref_aff;
     if (use_pref_affinity) {
@@ -2502,14 +2619,23 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
         // Check all vacant jobs: pending jobs for eGet,
         //                        done/failed/cancel jobs for eRead
         TNSBitVector    vacant_jobs;
-        if (cmd_group == eGet)
+        if (cmd_group == eGet) {
             vacant_jobs = m_StatusTracker.GetJobs(CNetScheduleAPI::ePending);
+        }
         else {
             vector<CNetScheduleAPI::EJobStatus>     from_state;
             from_state.push_back(CNetScheduleAPI::eDone);
             from_state.push_back(CNetScheduleAPI::eFailed);
             from_state.push_back(CNetScheduleAPI::eCanceled);
             vacant_jobs = m_StatusTracker.GetJobs(from_state);
+        }
+
+        if (scope.empty() || scope == kNoScopeOnly) {
+            // Both these cases should consider only the non-scope jobs
+            vacant_jobs -= m_ScopeRegistry.GetAllJobsInScopes();
+        } else {
+            // Consider only the jobs in the particular scope
+            vacant_jobs &= m_ScopeRegistry.GetJobs(scope);
         }
 
         // Exclude blacklisted jobs
@@ -2616,20 +2742,49 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
          use_pref_affinity && !effective_use_pref_affinity &&
          !exclusive_new_affinity &&
          cmd_group == eGet)) {
-        if (cmd_group == eGet)
-            job_pick.job_id = m_StatusTracker.GetJobByStatus(
-                                        CNetScheduleAPI::ePending,
-                                        blacklisted_jobs,
-                                        group_jobs, group_ids.any());
+
+        TNSBitVector    jobs_in_scope;
+        TNSBitVector    restricted_jobs;
+        bool            no_scope_only = scope.empty() ||
+                                        scope == kNoScopeOnly;
+
+        if (no_scope_only)
+            jobs_in_scope = m_ScopeRegistry.GetAllJobsInScopes();
+        else {
+            restricted_jobs = m_ScopeRegistry.GetJobs(scope);
+            if (group_ids.any())
+                restricted_jobs &= group_jobs;
+        }
+
+        if (cmd_group == eGet) {
+            if (no_scope_only)  // only the jobs which are not in the scope
+                job_pick.job_id = m_StatusTracker.GetJobByStatus(
+                                            CNetScheduleAPI::ePending,
+                                            blacklisted_jobs | jobs_in_scope,
+                                            group_jobs, group_ids.any());
+
+            else    // only the specific scope jobs
+                job_pick.job_id = m_StatusTracker.GetJobByStatus(
+                                            CNetScheduleAPI::ePending,
+                                            blacklisted_jobs,
+                                            restricted_jobs, true);
+        }
         else {
             vector<CNetScheduleAPI::EJobStatus>     from_state;
             from_state.push_back(CNetScheduleAPI::eDone);
             from_state.push_back(CNetScheduleAPI::eFailed);
             from_state.push_back(CNetScheduleAPI::eCanceled);
-            job_pick.job_id = m_StatusTracker.GetJobByStatus(
-                                        from_state,
-                                        blacklisted_jobs | m_ReadJobs,
-                                        group_jobs, group_ids.any());
+
+            if (no_scope_only)  // only the jobs which are not in the scope
+                job_pick.job_id = m_StatusTracker.GetJobByStatus(
+                                from_state,
+                                blacklisted_jobs | m_ReadJobs | jobs_in_scope,
+                                group_jobs, group_ids.any());
+            else    // only the specific scope jobs
+                job_pick.job_id = m_StatusTracker.GetJobByStatus(
+                                            from_state,
+                                            blacklisted_jobs | m_ReadJobs,
+                                            restricted_jobs, true);
         }
         job_pick.exclusive = false;
         job_pick.aff_id = 0;
@@ -2641,8 +2796,9 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
 
 
 CQueue::x_SJobPick
-CQueue::x_FindOutdatedPendingJob(const CNSClientId &  client,
-                                 unsigned int         picked_earlier)
+CQueue::x_FindOutdatedPendingJob(const CNSClientId &   client,
+                                 unsigned int          picked_earlier,
+                                 const TNSBitVector &  group_ids)
 {
     x_SJobPick      job_pick = { 0, false, 0 };
 
@@ -2656,10 +2812,16 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &  client,
     if (picked_earlier != 0)
         outdated_pending.set_bit(picked_earlier, false);
 
-    if (!outdated_pending.any())
-        return job_pick;
-
     outdated_pending -= m_ClientsRegistry.GetBlacklistedJobs(client, eGet);
+
+    string      scope = client.GetScope();
+    if (scope.empty() || scope == kNoScopeOnly)
+        outdated_pending -= m_ScopeRegistry.GetAllJobsInScopes();
+    else
+        outdated_pending &= m_ScopeRegistry.GetJobs(scope);
+
+    if (group_ids.any())
+        outdated_pending &= m_GroupRegistry.GetJobs(group_ids);
 
     if (!outdated_pending.any())
         return job_pick;
@@ -2673,7 +2835,8 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &  client,
 
 CQueue::x_SJobPick
 CQueue::x_FindOutdatedJobForReading(const CNSClientId &  client,
-                                   unsigned int         picked_earlier)
+                                   unsigned int          picked_earlier,
+                                   const TNSBitVector &  group_ids)
 {
     x_SJobPick      job_pick = { 0, false, 0 };
 
@@ -2687,10 +2850,16 @@ CQueue::x_FindOutdatedJobForReading(const CNSClientId &  client,
     if (picked_earlier != 0)
         outdated_read_jobs.set_bit(picked_earlier, false);
 
-    if (!outdated_read_jobs.any())
-        return job_pick;
-
     outdated_read_jobs -= m_ClientsRegistry.GetBlacklistedJobs(client, eRead);
+
+    string      scope = client.GetScope();
+    if (scope.empty() || scope == kNoScopeOnly)
+        outdated_read_jobs -= m_ScopeRegistry.GetAllJobsInScopes();
+    else
+        outdated_read_jobs &= m_ScopeRegistry.GetJobs(scope);
+
+    if (group_ids.any())
+        outdated_read_jobs &= m_GroupRegistry.GetJobs(group_ids);
 
     if (!outdated_read_jobs.any())
         return job_pick;
@@ -3035,18 +3204,45 @@ string CQueue::PrintNotificationsList(bool verbose) const
 }
 
 
-string CQueue::PrintAffinitiesList(bool verbose) const
+string CQueue::PrintAffinitiesList(const CNSClientId &  client,
+                                   bool verbose) const
 {
+    TNSBitVector        scope_jobs;
+    string              scope = client.GetScope();
     CFastMutexGuard     guard(m_OperationLock);
+
+    if (scope == kNoScopeOnly)
+        scope_jobs = m_ScopeRegistry.GetAllJobsInScopes();
+    else if (!scope.empty())
+        scope_jobs = m_ScopeRegistry.GetJobs(scope);
+
     return m_AffinityRegistry.Print(this, m_ClientsRegistry,
+                                    scope_jobs, scope,
                                     m_DumpAffBufferSize, verbose);
 }
 
 
-string CQueue::PrintGroupsList(bool verbose) const
+string CQueue::PrintGroupsList(const CNSClientId &  client,
+                               bool verbose) const
+{
+    TNSBitVector        scope_jobs;
+    string              scope = client.GetScope();
+    CFastMutexGuard     guard(m_OperationLock);
+
+    if (scope == kNoScopeOnly)
+        scope_jobs = m_ScopeRegistry.GetAllJobsInScopes();
+    else if (!scope.empty())
+        scope_jobs = m_ScopeRegistry.GetJobs(scope);
+
+    return m_GroupRegistry.Print(this, scope_jobs, scope,
+                                 m_DumpGroupBufferSize, verbose);
+}
+
+
+string CQueue::PrintScopesList(bool verbose) const
 {
     CFastMutexGuard     guard(m_OperationLock);
-    return m_GroupRegistry.Print(this, m_DumpGroupBufferSize, verbose);
+    return m_ScopeRegistry.Print(this, 100, verbose);
 }
 
 
@@ -3321,6 +3517,9 @@ CQueue::CheckJobsExpiry(const CNSPreciseTime &  current_time,
                 if (group != 0)
                     m_GroupRegistry.RemoveJob(group, job_id);
 
+                // Remove the job from the scope registry if so
+                m_ScopeRegistry.RemoveJob(job_id);
+
                 if (result.deleted >= attributes.deleted)
                     break;
             }
@@ -3495,26 +3694,31 @@ unsigned int  CQueue::DeleteBatch(unsigned int  max_deleted)
 // going  to work.
 unsigned int  CQueue::PurgeAffinities(void)
 {
-    unsigned int    aff_dict_size = m_AffinityRegistry.size();
+    unsigned int            aff_dict_size = m_AffinityRegistry.size();
+    SNSRegistryParameters   aff_reg_settings =
+                                        m_Server->GetAffRegistrySettings();
 
-    if (aff_dict_size < (m_AffinityLowMarkPercentage / 100.0) * m_MaxAffinities)
+    if (aff_dict_size < (aff_reg_settings.low_mark_percentage / 100.0) *
+                         aff_reg_settings.max_records)
         // Did not reach the dictionary low mark
         return 0;
 
-    unsigned int    del_limit = m_AffinityHighRemoval;
+    unsigned int    del_limit = aff_reg_settings.high_removal;
     if (aff_dict_size <
-            (m_AffinityHighMarkPercentage / 100.0) * m_MaxAffinities) {
+            (aff_reg_settings.high_mark_percentage / 100.0) *
+             aff_reg_settings.max_records) {
         // Here: check the percentage of the affinities that have no references
         // to them
         unsigned int    candidates_size =
                                     m_AffinityRegistry.CheckRemoveCandidates();
 
         if (candidates_size <
-                (m_AffinityDirtPercentage / 100.0) * m_MaxAffinities)
+                (aff_reg_settings.dirt_percentage / 100.0) *
+                 aff_reg_settings.max_records)
             // The number of candidates to be deleted is low
             return 0;
 
-        del_limit = m_AffinityLowRemoval;
+        del_limit = aff_reg_settings.low_removal;
     }
 
 
@@ -3523,9 +3727,38 @@ unsigned int  CQueue::PurgeAffinities(void)
 }
 
 
+// See CQueue::PurgeAffinities - this one works similar
 unsigned int  CQueue::PurgeGroups(void)
 {
-    return m_GroupRegistry.CollectGarbage(100);
+    unsigned int            group_dict_size = m_GroupRegistry.size();
+    SNSRegistryParameters   group_reg_settings =
+                                    m_Server->GetGroupRegistrySettings();
+
+    if (group_dict_size < (group_reg_settings.low_mark_percentage / 100.0) *
+                           group_reg_settings.max_records)
+        // Did not reach the dictionary low mark
+        return 0;
+
+    unsigned int    del_limit = group_reg_settings.high_removal;
+    if (group_dict_size <
+            (group_reg_settings.high_mark_percentage / 100.0) *
+             group_reg_settings.max_records) {
+        // Here: check the percentage of the groups that have no references
+        // to them
+        unsigned int    candidates_size =
+                                m_GroupRegistry.CheckRemoveCandidates();
+
+        if (candidates_size <
+                (group_reg_settings.dirt_percentage / 100.0) *
+                 group_reg_settings.max_records)
+            // The number of candidates to be deleted is low
+            return 0;
+
+        del_limit = group_reg_settings.low_removal;
+    }
+
+    // Here: need to delete groups from the memory
+    return m_GroupRegistry.CollectGarbage(del_limit);
 }
 
 
@@ -3612,12 +3845,23 @@ string CQueue::PrintJobDbStat(const CNSClientId &  client,
     {{
         CFastMutexGuard     guard(m_JobsToDeleteLock);
         if (m_JobsToDelete.get_bit(job_id))
-            return "";
+            return kEmptyStr;
     }}
 
+    string              scope = client.GetScope();
     CJob                job;
     {{
         CFastMutexGuard     guard(m_OperationLock);
+
+        // Check the scope restrictions
+        if (scope == kNoScopeOnly) {
+            if (m_ScopeRegistry.GetAllJobsInScopes()[job_id] == true)
+                return kEmptyStr;
+        } else if (!scope.empty()) {
+            if (m_ScopeRegistry.GetJobs(scope)[job_id] == false)
+                return kEmptyStr;
+        }
+
 
         m_QueueDbBlock->job_db.SetTransaction(NULL);
         m_QueueDbBlock->events_db.SetTransaction(NULL);
@@ -3625,7 +3869,7 @@ string CQueue::PrintJobDbStat(const CNSClientId &  client,
 
         CJob::EJobFetchResult   res = job.Fetch(this, job_id);
         if (res != CJob::eJF_Ok)
-            return "";
+            return kEmptyStr;
     }}
 
     string  job_dump;
@@ -3677,6 +3921,7 @@ string CQueue::PrintAllJobDbStat(const CNSClientId &         client,
 
 
     {{
+        string              scope = client.GetScope();
         CFastMutexGuard     guard(m_OperationLock);
         jobs_to_dump = m_StatusTracker.GetJobs(statuses);
 
@@ -3701,6 +3946,14 @@ string CQueue::PrintAllJobDbStat(const CNSClientId &         client,
                                         "' is not found. No jobs to dump.");
             } else
                 jobs_to_dump &= m_AffinityRegistry.GetJobsWithAffinity(aff_id);
+        }
+
+        // Apply the scope limits
+        if (scope == kNoScopeOnly) {
+            jobs_to_dump -= m_ScopeRegistry.GetAllJobsInScopes();
+        } else if (!scope.empty()) {
+            // This is a specific scope
+            jobs_to_dump &= m_ScopeRegistry.GetJobs(scope);
         }
     }}
 
@@ -3843,6 +4096,14 @@ void CQueue::RegisterSocketWriteError(const CNSClientId &  client)
 {
     CFastMutexGuard     guard(m_OperationLock);
     m_ClientsRegistry.RegisterSocketWriteError(client);
+}
+
+
+void CQueue::SetClientScope(const CNSClientId &  client)
+{
+    // Memorize the last client scope
+    CFastMutexGuard     guard(m_OperationLock);
+    m_ClientsRegistry.SetLastScope(client);
 }
 
 
@@ -4152,10 +4413,11 @@ string CQueue::PrintTransitionCounters(void) const
 }
 
 
-void CQueue::GetJobsPerState(const string &    group_token,
-                             const string &    aff_token,
-                             size_t *          jobs,
-                             vector<string> &  warnings) const
+void CQueue::GetJobsPerState(const CNSClientId &  client,
+                             const string &       group_token,
+                             const string &       aff_token,
+                             size_t *             jobs,
+                             vector<string> &     warnings) const
 {
     TNSBitVector        group_jobs;
     TNSBitVector        aff_jobs;
@@ -4181,6 +4443,8 @@ void CQueue::GetJobsPerState(const string &    group_token,
     if (!warnings.empty())
         return;
 
+
+    string      scope = client.GetScope();
     for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
         TNSBitVector  candidates =
                         m_StatusTracker.GetJobs(g_ValidJobStatuses[index]);
@@ -4190,12 +4454,23 @@ void CQueue::GetJobsPerState(const string &    group_token,
         if (!aff_token.empty())
             candidates &= aff_jobs;
 
+        // Apply the scope limitations. Empty scope means that all the jobs
+        // must be provided
+        if (scope == kNoScopeOnly) {
+            // Exclude all scoped jobs
+            candidates -= m_ScopeRegistry.GetAllJobsInScopes();
+        } else if (!scope.empty()) {
+            // Specific scope
+            candidates &= m_ScopeRegistry.GetJobs(scope);
+        }
+
         jobs[index] = candidates.count();
     }
 }
 
 
-string CQueue::PrintJobsStat(const string &    group_token,
+string CQueue::PrintJobsStat(const CNSClientId &  client,
+                             const string &    group_token,
                              const string &    aff_token,
                              vector<string> &  warnings) const
 {
@@ -4203,7 +4478,7 @@ string CQueue::PrintJobsStat(const string &    group_token,
     string              result;
     size_t              jobs_per_state[g_ValidJobStatusesSize];
 
-    GetJobsPerState(group_token, aff_token, jobs_per_state, warnings);
+    GetJobsPerState(client, group_token, aff_token, jobs_per_state, warnings);
 
     // Warnings could be about non existing affinity or group. If so there are
     // no jobs to be printed.
@@ -4364,6 +4639,11 @@ void CQueue::Dump(const string &  dump_dname)
     statuses.push_back(CNetScheduleAPI::eReadFailed);
 
     jobs_to_dump = m_StatusTracker.GetJobs(statuses);
+
+    // Exclude all the jobs which belong to a certain scope. There is no
+    // need to save them
+    jobs_to_dump -= m_ScopeRegistry.GetAllJobsInScopes();
+
     if (!jobs_to_dump.any())
         return;     // Nothing to dump
 
@@ -4549,6 +4829,7 @@ void CQueue::x_ClearQueue(void)
     m_AffinityRegistry.Clear();
     m_GroupRegistry.Clear();
     m_GCRegistry.Clear();
+    m_ScopeRegistry.Clear();
 
     TNSBitVector::enumerator    en = jobs_to_erase.first();
     for ( ; en.valid(); ++en) {

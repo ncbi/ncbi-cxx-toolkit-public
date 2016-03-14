@@ -169,6 +169,10 @@ class CNSAffinityRegistry
         ~CNSAffinityRegistry();
 
         size_t        size(void) const;
+        bool          CanAccept(const string &  aff_token,
+                                size_t  max_records) const;
+        bool          CanAccept(const vector<string> &  aff_tokens,
+                                size_t  max_records) const;
         unsigned int  GetIDByToken(const string &  aff_token) const;
         string        GetTokenByID(unsigned int  aff_id) const;
 
@@ -202,6 +206,8 @@ class CNSAffinityRegistry
 
         string Print(const CQueue *              queue,
                      const CNSClientsRegistry &  clients_registry,
+                     const TNSBitVector &        scope_jobs,
+                     const string &              scope,
                      size_t                      batch_size,
                      bool                        verbose) const;
 
@@ -258,11 +264,15 @@ class CNSAffinityRegistry
         string  x_PrintSelected(const TNSBitVector &        batch,
                                 const CQueue *              queue,
                                 const CNSClientsRegistry &  clients_registry,
+                                const TNSBitVector &        scope_jobs,
+                                const string &              scope,
                                 bool                        verbose) const;
         string  x_PrintOne(unsigned int                aff_id,
                            const SNSJobsAffinity &     jobs_affinity,
                            const CQueue *              queue,
                            const CNSClientsRegistry &  clients_registry,
+                           const TNSBitVector &        scope_jobs,
+                           const string &              scope,
                            bool                        verbose) const;
         void x_AddClient(SNSJobsAffinity &  aff_data,
                          unsigned int       client_id,

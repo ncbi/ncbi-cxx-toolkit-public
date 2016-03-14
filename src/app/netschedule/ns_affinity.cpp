@@ -136,6 +136,33 @@ size_t  CNSAffinityRegistry::size(void) const
 }
 
 
+bool  CNSAffinityRegistry::CanAccept(const string &  aff_token,
+                                     size_t  max_records) const
+{
+    CMutexGuard         guard(m_Lock);
+    if (m_AffinityIDs.size() < max_records)
+        return true;
+
+    return m_AffinityIDs.find(&aff_token) != m_AffinityIDs.end();
+}
+
+
+bool  CNSAffinityRegistry::CanAccept(const vector<string> &  aff_tokens,
+                                     size_t  max_records) const
+{
+    CMutexGuard         guard(m_Lock);
+    if (m_AffinityIDs.size() + aff_tokens.size() <= max_records)
+        return true;
+
+    size_t      new_aff_count = 0;
+    for (vector<string>::const_iterator  k = aff_tokens.begin();
+            k != aff_tokens.end(); ++k)
+        if (m_AffinityIDs.find(&(*k)) == m_AffinityIDs.end())
+            ++new_aff_count;
+    return m_AffinityIDs.size() + new_aff_count <= max_records;
+}
+
+
 unsigned int
 CNSAffinityRegistry::GetIDByToken(const string &  aff_token) const
 {
@@ -510,6 +537,8 @@ CNSAffinityRegistry::SetWaitClientForAffinities(
 
 string  CNSAffinityRegistry::Print(const CQueue *              queue,
                                    const CNSClientsRegistry &  clients_registry,
+                                   const TNSBitVector &        scope_jobs,
+                                   const string &              scope,
                                    size_t                      batch_size,
                                    bool                        verbose) const
 {
@@ -525,6 +554,7 @@ string  CNSAffinityRegistry::Print(const CQueue *              queue,
 
         if (batch.count() >= batch_size) {
             result += x_PrintSelected(batch, queue, clients_registry,
+                                      scope_jobs, scope,
                                       verbose) + "\n";
             batch.clear();
         }
@@ -532,6 +562,7 @@ string  CNSAffinityRegistry::Print(const CQueue *              queue,
 
     if (batch.count() > 0)
         result += x_PrintSelected(batch, queue, clients_registry,
+                                  scope_jobs, scope,
                                   verbose) + "\n";
     return result;
 }
@@ -541,6 +572,8 @@ string
 CNSAffinityRegistry::x_PrintSelected(const TNSBitVector &        batch,
                                      const CQueue *              queue,
                                      const CNSClientsRegistry &  clients_registry,
+                                     const TNSBitVector &        scope_jobs,
+                                     const string &              scope,
                                      bool                        verbose) const
 {
     string          buffer;
@@ -552,7 +585,8 @@ CNSAffinityRegistry::x_PrintSelected(const TNSBitVector &        batch,
     for ( ; k != m_JobsAffinity.end(); ++k ) {
         if (batch[k->first]) {
             buffer += x_PrintOne(k->first, k->second,
-                                 queue, clients_registry, verbose);
+                                 queue, clients_registry,
+                                 scope_jobs, scope, verbose);
             ++printed;
             if (printed >= batch.count())
                 break;
@@ -567,19 +601,34 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
                                 const SNSJobsAffinity &     jobs_affinity,
                                 const CQueue *              queue,
                                 const CNSClientsRegistry &  clients_registry,
+                                const TNSBitVector &        scope_jobs,
+                                const string &              scope,
                                 bool                        verbose) const
 {
-    string      buffer;
+    string          buffer;
+    TNSBitVector    jobs = jobs_affinity.m_Jobs;
+
+    if (scope == kNoScopeOnly) {
+        jobs -= scope_jobs;
+        if (!jobs.any())
+            return kEmptyStr;
+    }
+    else if (!scope.empty()) {
+        jobs &= scope_jobs;
+        if (!jobs.any())
+            return kEmptyStr;
+    }
+
 
     buffer += "OK:AFFINITY: '" +
               NStr::PrintableString(*(jobs_affinity.m_AffToken)) + "'\n"
               "OK:  ID: " + NStr::NumericToString(aff_id) + "\n";
 
     if (verbose) {
-        if (jobs_affinity.m_Jobs.any()) {
+        if (jobs.any()) {
             buffer += "OK:  JOBS:\n";
 
-            TNSBitVector::enumerator    en(jobs_affinity.m_Jobs.first());
+            TNSBitVector::enumerator    en(jobs.first());
             for ( ; en.valid(); ++en) {
                 unsigned int    job_id = *en;
                 TJobStatus      status = queue->GetJobStatus(job_id);
@@ -592,7 +641,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
     }
     else
         buffer += "OK:  NUMBER OF JOBS: " +
-                  NStr::NumericToString(jobs_affinity.m_Jobs.count()) + "\n";
+                  NStr::NumericToString(jobs.count()) + "\n";
 
     if (verbose) {
         if (jobs_affinity.m_WNClients.any()) {

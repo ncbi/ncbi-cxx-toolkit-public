@@ -162,6 +162,12 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "SETSCOPE",      { &CNetScheduleHandler::x_ProcessSetScope,
+                         eNS_Queue },
+        { { "scope",             eNSPT_Id,  eNSPA_Optional      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "DROPQ",         { &CNetScheduleHandler::x_ProcessDropQueue,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
@@ -195,7 +201,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
-    /* The STAT commands makes sense with and without a queue */
+    /* The STAT command makes sense with and without a queue */
     { "STAT",          { &CNetScheduleHandler::x_ProcessStatistics,
                          eNS_NoChecks },
         { { "option",            eNSPT_Id,  eNSPA_Optional      },
@@ -1225,6 +1231,9 @@ void CNetScheduleHandler::x_UpdateClientPassedChecks(CQueue * q)
         if (q->IsProgramAllowed(m_ClientId.GetProgramName()))
             m_ClientId.SetPassedChecks(eNS_Program);
     }
+
+    // Also, update the client scope
+    q->SetClientScope(m_ClientId);
 }
 
 
@@ -2639,7 +2648,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         what != "JOBS" && what != "ALL" && what != "CLIENTS" &&
         what != "NOTIFICATIONS" && what != "AFFINITIES" &&
         what != "GROUPS" && what != "WNODE" && what != "SERVICES" &&
-        what != "ALERTS") {
+        what != "ALERTS" && what != "SCOPES") {
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "Unsupported '" + what +
                    "' parameter for the STAT command.");
@@ -2647,7 +2656,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 
     if (q == NULL && (what == "CLIENTS" || what == "NOTIFICATIONS" ||
                       what == "AFFINITIES" || what == "GROUPS" ||
-                      what == "WNODE")) {
+                      what == "WNODE" || what == "SCOPES")) {
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "STAT " + what + " requires a queue");
     }
@@ -2700,7 +2709,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 
     if (q == NULL) {
         if (what == "JOBS")
-            x_WriteMessage(m_Server->PrintJobsStat());
+            x_WriteMessage(m_Server->PrintJobsStat(m_ClientId));
         else {
             // Transition counters for all the queues
             x_WriteMessage("OK:Started: " +
@@ -3281,7 +3290,8 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
 
         queue_ref.Reset(m_Server->OpenQueue(qname));
         queue_ptr = queue_ref.GetPointer();
-        queue_ptr->GetJobsPerState("", "", jobs_per_state, warnings);
+        queue_ptr->GetJobsPerState(m_ClientId, "", "",
+                                   jobs_per_state, warnings);
         queue_ptr->GetLinkedSections(linked_sections);
 
         for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
@@ -3398,6 +3408,27 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
     m_QueueRef.Reset(queue_ref);
     m_QueueName = m_CommandArguments.qname;
 
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
+}
+
+
+void CNetScheduleHandler::x_ProcessSetScope(CQueue* q)
+{
+    size_t        used_slots = q->GetScopeSlotsUsed();
+    unsigned int  max_slots = m_Server->GetScopeRegistrySettings().max_records;
+
+    if (used_slots >= max_slots) {
+        ERR_POST("All scope slots are in use");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eInternalError:All scope slots are in use");
+        x_PrintCmdRequestStop();
+        return;
+    }
+
+    // Here: at the moment there are available scope slots, so let it go.
+    m_ClientId.SetScope(m_CommandArguments.scope);
+    q->SetClientScope(m_ClientId);
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
 }
@@ -4249,17 +4280,23 @@ CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
             x_WriteMessage(info);
     }
     else if (what == "AFFINITIES") {
-        info = q->PrintAffinitiesList(verbose);
+        info = q->PrintAffinitiesList(m_ClientId, verbose);
         if (!info.empty())
             x_WriteMessage(info);
     }
     else if (what == "GROUPS") {
-        info = q->PrintGroupsList(verbose);
+        info = q->PrintGroupsList(m_ClientId, verbose);
+        if (!info.empty())
+            x_WriteMessage(info);
+    }
+    else if (what == "SCOPES") {
+        info = q->PrintScopesList(verbose);
         if (!info.empty())
             x_WriteMessage(info);
     }
     else if (what == "JOBS") {
-        info = q->PrintJobsStat(m_CommandArguments.group,
+        info = q->PrintJobsStat(m_ClientId,
+                                m_CommandArguments.group,
                                 m_CommandArguments.affinity_token,
                                 warnings);
         if (!info.empty())
@@ -4321,29 +4358,15 @@ string CNetScheduleHandler::x_GetServerSection(void) const
                 NStr::NumericToString(m_Server->GetPurgeTimeout()) + "\"\n"
            "stat_interval=\"" +
                 NStr::NumericToString(m_Server->GetStatInterval()) + "\"\n"
-           "max_affinities=\"" +
-                NStr::NumericToString(m_Server->GetMaxAffinities()) + "\"\n"
            "max_client_data=\"" +
                 NStr::NumericToString(m_Server->GetMaxClientData()) + "\"\n"
            "admin_host=\"" +
                 m_Server->GetAdminHosts().GetAsFromConfig() + "\"\n"
            "admin_client_name=\"" +
-                m_Server->GetAdminClientNames() + "\"\n"
-           "affinity_high_mark_percentage=\"" +
-                NStr::NumericToString(
-                        m_Server->GetAffinityHighMarkPercentage()) + "\"\n"
-           "affinity_low_mark_percentage=\"" +
-                NStr::NumericToString(
-                        m_Server->GetAffinityLowMarkPercentage()) + "\"\n"
-           "affinity_high_removal=\"" +
-                NStr::NumericToString(
-                        m_Server->GetAffinityHighRemoval()) + "\"\n"
-           "affinity_low_removal=\"" +
-                NStr::NumericToString(
-                        m_Server->GetAffinityLowRemoval()) + "\"\n"
-           "affinity_dirt_percentage=\"" +
-                NStr::NumericToString(
-                        m_Server->GetAffinityDirtPercentage()) + "\"\n"
+                m_Server->GetAdminClientNames() + "\"\n" +
+           m_Server->GetAffRegistrySettings().Serialize("affinity", "", "\n") +
+           m_Server->GetGroupRegistrySettings().Serialize("group", "", "\n") +
+           m_Server->GetScopeRegistrySettings().Serialize("scope", "", "\n") +
            "reserve_dump_space=\"" +
                 NStr::NumericToString(
                         m_Server->GetReserveDumpSpace()) + "\"\n";

@@ -65,6 +65,17 @@ static string NS_OutOfLimitMessage(const string &  section,
                                    const string &  entry,
                                    unsigned int  low_limit,
                                    unsigned int  high_limit);
+static void
+NS_ValidateRegistrySettings(const IRegistry &  reg,
+                            const string &  section,
+                            const string &  name,
+                            unsigned int  default_max,
+                            unsigned int  default_high_mark_percentage,
+                            unsigned int  default_low_mark_percentage,
+                            unsigned int  default_high_removal,
+                            unsigned int  default_low_removal,
+                            unsigned int  default_dirt_percentage,
+                            vector<string> &  warnings);
 
 
 // Forms the ini file value name for warnings
@@ -367,16 +378,6 @@ void NS_ValidateServerSection(const IRegistry &  reg,
     }
 
 
-    ok = NS_ValidateInt(reg, section, "max_affinities", warnings);
-    if (ok) {
-        int     val = reg.GetInt(section, "max_affinities",
-                                 default_max_affinities);
-        if (val <= 0)
-            warnings.push_back(g_ValidPrefix + "value " +
-                     NS_RegValName(section, "max_affinities") +
-                     " must be > 0");
-    }
-
     ok = NS_ValidateInt(reg, section, "max_client_data", warnings);
     if (ok) {
         int     val = reg.GetInt(section, "max_client_data",
@@ -387,102 +388,31 @@ void NS_ValidateServerSection(const IRegistry &  reg,
                      " must be > 0");
     }
 
-    ok = NS_ValidateInt(reg, section, "affinity_high_mark_percentage",
-                        warnings);
-    unsigned int    affinity_high_mark_percentage_val =
-                                default_affinity_high_mark_percentage;
-    if (ok) {
-        int     val = reg.GetInt(section, "affinity_high_mark_percentage",
-                                 default_affinity_high_mark_percentage);
-        if (val <= 0 || val >= 100)
-            warnings.push_back(g_ValidPrefix + "value " +
-                     NS_RegValName(section, "affinity_high_mark_percentage") +
-                     " must be between 0 and 100");
-        else
-            affinity_high_mark_percentage_val = val;
-    }
 
-    ok = NS_ValidateInt(reg, section, "affinity_low_mark_percentage",
-                        warnings);
-    unsigned int    affinity_low_mark_percentage_val =
-                                default_affinity_low_mark_percentage;
-    if (ok) {
-        int     val = reg.GetInt(section, "affinity_low_mark_percentage",
-                                 default_affinity_low_mark_percentage);
-        if (val <= 0 || val >= 100)
-            warnings.push_back(g_ValidPrefix + "value " +
-                     NS_RegValName(section, "affinity_low_mark_percentage") +
-                     " must be between 0 and 100");
-        else
-            affinity_low_mark_percentage_val = val;
-    }
-
-    ok = NS_ValidateInt(reg, section, "affinity_high_removal", warnings);
-    unsigned int    affinity_high_removal_val =
-                                default_affinity_high_removal;
-    if (ok) {
-        int     val = reg.GetInt(section, "affinity_high_removal",
-                                 default_affinity_high_removal);
-        if (val <= 0)
-            warnings.push_back(g_ValidPrefix + "value " +
-                     NS_RegValName(section, "affinity_high_removal") +
-                     " must be > 0");
-        else
-            affinity_high_removal_val = val;
-    }
-
-    ok = NS_ValidateInt(reg, section, "affinity_low_removal", warnings);
-    unsigned int    affinity_low_removal_val =
-                                default_affinity_low_removal;
-    if (ok) {
-        int     val = reg.GetInt(section, "affinity_low_removal",
-                                 default_affinity_low_removal);
-        if (val <= 0)
-            warnings.push_back(g_ValidPrefix + "value " +
-                     NS_RegValName(section, "affinity_low_removal") +
-                     " must be > 0");
-        else
-            affinity_low_removal_val = val;
-    }
-
-    ok = NS_ValidateInt(reg, section, "affinity_dirt_percentage", warnings);
-    unsigned int    affinity_dirt_percentage_val =
-                                default_affinity_dirt_percentage;
-    if (ok) {
-        int     val = reg.GetInt(section, "affinity_dirt_percentage",
-                                 default_affinity_dirt_percentage);
-        if (val <= 0 || val >= 100)
-            warnings.push_back(g_ValidPrefix + "value " +
-                     NS_RegValName(section, "affinity_dirt_percentage") +
-                     " must be between 0 and 100");
-        else
-            affinity_dirt_percentage_val = val;
-    }
-
-    if (affinity_low_mark_percentage_val >= affinity_high_mark_percentage_val)
-        warnings.push_back(g_ValidPrefix + "values " +
-                 NS_RegValName(section, "affinity_low_mark_percentage") +
-                 " and " +
-                 NS_RegValName(section, "affinity_high_mark_percentage") +
-                 " break the mandatory condition "
-                 "affinity_low_mark_percentage < "
-                 "affinity_high_mark_percentage");
-
-    if (affinity_dirt_percentage_val >= affinity_low_mark_percentage_val)
-        warnings.push_back(g_ValidPrefix + "values " +
-                 NS_RegValName(section, "affinity_low_mark_percentage") +
-                 " and " +
-                 NS_RegValName(section, "affinity_dirt_percentage") +
-                 " break the mandatory condition "
-                 "affinity_dirt_percentage < affinity_low_mark_percentage");
-
-    if (affinity_high_removal_val < affinity_low_removal_val)
-        warnings.push_back(g_ValidPrefix + "values " +
-                 NS_RegValName(section, "affinity_high_removal") +
-                 " and " +
-                 NS_RegValName(section, "affinity_low_removal") +
-                 " break the mandatory condition "
-                 "affinity_low_removal <= affinity_high_removal");
+    NS_ValidateRegistrySettings(reg, section, "affinity",
+                                default_max_affinities,
+                                default_affinity_high_mark_percentage,
+                                default_affinity_low_mark_percentage,
+                                default_affinity_high_removal,
+                                default_affinity_low_removal,
+                                default_affinity_dirt_percentage,
+                                warnings);
+    NS_ValidateRegistrySettings(reg, section, "group",
+                                default_max_groups,
+                                default_group_high_mark_percentage,
+                                default_group_low_mark_percentage,
+                                default_group_high_removal,
+                                default_group_low_removal,
+                                default_group_dirt_percentage,
+                                warnings);
+    NS_ValidateRegistrySettings(reg, section, "scope",
+                                default_max_scopes,
+                                default_scope_high_mark_percentage,
+                                default_scope_low_mark_percentage,
+                                default_scope_high_removal,
+                                default_scope_low_removal,
+                                default_scope_dirt_percentage,
+                                warnings);
 
     NS_ValidateString(reg, section, "admin_host", warnings);
 
@@ -700,6 +630,133 @@ string NS_GetConfigFileChecksum(const string &  file_name,
         return s_ErrorGettingChecksum;
     }
     return s_ErrorGettingChecksum;
+}
+
+
+void NS_ValidateRegistrySettings(const IRegistry &  reg,
+                                 const string &  section,
+                                 const string &  name,
+                                 unsigned int  default_max,
+                                 unsigned int  default_high_mark_percentage,
+                                 unsigned int  default_low_mark_percentage,
+                                 unsigned int  default_high_removal,
+                                 unsigned int  default_low_removal,
+                                 unsigned int  default_dirt_percentage,
+                                 vector<string> &  warnings)
+{
+    bool        ok = true;
+    string      plural;
+
+    if (name == "affinity")
+        plural = "affinities";
+    else
+        plural = name + "s";
+
+
+    ok = NS_ValidateInt(reg, section, "max_" + plural, warnings);
+    if (ok) {
+        int     val = reg.GetInt(section, "max_" + plural, default_max);
+        if (val <= 0)
+            warnings.push_back(g_ValidPrefix + "value " +
+                     NS_RegValName(section, "max_" + plural) +
+                     " must be > 0");
+    }
+
+    ok = NS_ValidateInt(reg, section, name + "_high_mark_percentage",
+                        warnings);
+    unsigned int    high_mark_percentage_val =
+                                default_high_mark_percentage;
+    if (ok) {
+        int     val = reg.GetInt(section, name + "_high_mark_percentage",
+                                 default_high_mark_percentage);
+        if (val <= 0 || val >= 100)
+            warnings.push_back(g_ValidPrefix + "value " +
+                     NS_RegValName(section, name + "_high_mark_percentage") +
+                     " must be between 0 and 100");
+        else
+            high_mark_percentage_val = val;
+    }
+
+    ok = NS_ValidateInt(reg, section, name + "_low_mark_percentage",
+                        warnings);
+    unsigned int    low_mark_percentage_val =
+                                default_low_mark_percentage;
+    if (ok) {
+        int     val = reg.GetInt(section, name + "_low_mark_percentage",
+                                 default_low_mark_percentage);
+        if (val <= 0 || val >= 100)
+            warnings.push_back(g_ValidPrefix + "value " +
+                     NS_RegValName(section, name + "_low_mark_percentage") +
+                     " must be between 0 and 100");
+        else
+            low_mark_percentage_val = val;
+    }
+
+    ok = NS_ValidateInt(reg, section, name + "_high_removal", warnings);
+    unsigned int    high_removal_val = default_high_removal;
+    if (ok) {
+        int     val = reg.GetInt(section, name + "_high_removal",
+                                 default_high_removal);
+        if (val <= 0)
+            warnings.push_back(g_ValidPrefix + "value " +
+                     NS_RegValName(section, name + "_high_removal") +
+                     " must be > 0");
+        else
+            high_removal_val = val;
+    }
+
+    ok = NS_ValidateInt(reg, section, name + "_low_removal", warnings);
+    unsigned int    low_removal_val = default_low_removal;
+    if (ok) {
+        int     val = reg.GetInt(section, name + "_low_removal",
+                                 default_low_removal);
+        if (val <= 0)
+            warnings.push_back(g_ValidPrefix + "value " +
+                     NS_RegValName(section, name + "_low_removal") +
+                     " must be > 0");
+        else
+            low_removal_val = val;
+    }
+
+    ok = NS_ValidateInt(reg, section, name + "_dirt_percentage", warnings);
+    unsigned int    dirt_percentage_val = default_dirt_percentage;
+    if (ok) {
+        int     val = reg.GetInt(section, name + "_dirt_percentage",
+                                 default_dirt_percentage);
+        if (val <= 0 || val >= 100)
+            warnings.push_back(g_ValidPrefix + "value " +
+                     NS_RegValName(section, name + "_dirt_percentage") +
+                     " must be between 0 and 100");
+        else
+            dirt_percentage_val = val;
+    }
+
+    if (low_mark_percentage_val >= high_mark_percentage_val)
+        warnings.push_back(g_ValidPrefix + "values " +
+                 NS_RegValName(section, name + "_low_mark_percentage") +
+                 " and " +
+                 NS_RegValName(section, name + "_high_mark_percentage") +
+                 " break the mandatory condition " +
+                 name + "_low_mark_percentage < " +
+                 name + "_high_mark_percentage");
+
+    if (dirt_percentage_val >= low_mark_percentage_val)
+        warnings.push_back(g_ValidPrefix + "values " +
+                 NS_RegValName(section, name + "_low_mark_percentage") +
+                 " and " +
+                 NS_RegValName(section, name + "_dirt_percentage") +
+                 " break the mandatory condition " +
+                 name + "_dirt_percentage < " +
+                 name + "_low_mark_percentage");
+
+    if (high_removal_val < low_removal_val)
+        warnings.push_back(g_ValidPrefix + "values " +
+                 NS_RegValName(section, name + "_high_removal") +
+                 " and " +
+                 NS_RegValName(section, name + "_low_removal") +
+                 " break the mandatory condition " +
+                 name + "_low_removal <= " +
+                 name + "_high_removal");
 }
 
 

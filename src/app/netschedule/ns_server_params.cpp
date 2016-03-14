@@ -192,26 +192,33 @@ void SNS_Parameters::Read(const IRegistry &  reg)
                                      default_markdel_batch_size);
     scan_batch_size = GetIntNoErr("scan_batch_size", default_scan_batch_size);
     purge_timeout = GetDoubleNoErr("purge_timeout", default_purge_timeout);
-    x_CheckGarbageCollectorSettings();
+    x_CheckJobGarbageCollectorSettings();
 
     stat_interval = GetIntNoErr("stat_interval", default_stat_interval);
     if (stat_interval < 1)
         stat_interval = 1;
 
-    // Affinity GC settings
-    affinity_high_mark_percentage =
-                        GetIntNoErr("affinity_high_mark_percentage",
-                                    default_affinity_high_mark_percentage);
-    affinity_low_mark_percentage =
-                        GetIntNoErr("affinity_low_mark_percentage",
-                                    default_affinity_low_mark_percentage);
-    affinity_high_removal = GetIntNoErr("affinity_high_removal",
-                                        default_affinity_high_removal);
-    affinity_low_removal = GetIntNoErr("affinity_low_removal",
-                                       default_affinity_low_removal);
-    affinity_dirt_percentage = GetIntNoErr("affinity_dirt_percentage",
-                                           default_affinity_dirt_percentage);
-    x_CheckAffinityGarbageCollectorSettings();
+    affinity_reg.Read(reg, sname, "affinity",
+                      default_max_affinities,
+                      default_affinity_high_mark_percentage,
+                      default_affinity_low_mark_percentage,
+                      default_affinity_high_removal,
+                      default_affinity_low_removal,
+                      default_affinity_dirt_percentage);
+    group_reg.Read(reg, sname, "group",
+                   default_max_groups,
+                   default_group_high_mark_percentage,
+                   default_group_low_mark_percentage,
+                   default_group_high_removal,
+                   default_group_low_removal,
+                   default_group_dirt_percentage);
+    scope_reg.Read(reg, sname, "scope",
+                   default_max_scopes,
+                   default_scope_high_mark_percentage,
+                   default_scope_low_mark_percentage,
+                   default_scope_high_removal,
+                   default_scope_low_removal,
+                   default_scope_dirt_percentage);
 
     reserve_dump_space = NS_GetDataSize(reg, "server", "reserve_dump_space",
                                         default_reserve_dump_space);
@@ -220,10 +227,6 @@ void SNS_Parameters::Read(const IRegistry &  reg)
     if (wst_cache_size < 0)
         wst_cache_size = default_wst_cache_size;
 
-    // Max affinities
-    max_affinities = GetIntNoErr("max_affinities", default_max_affinities);
-    if (max_affinities <= 0)
-        max_affinities = default_max_affinities;
 
     max_client_data = GetIntNoErr("max_client_data", default_max_client_data);
     if (max_client_data <= 0)
@@ -276,33 +279,7 @@ void SNS_Parameters::ReadErrorEmulatorSection(const IRegistry &  reg)
 #endif
 
 
-void SNS_Parameters::x_CheckAffinityGarbageCollectorSettings(void)
-{
-    bool    well_formed = true;
-
-    if (affinity_high_mark_percentage >= 100)
-        well_formed = false;
-
-    if (affinity_low_mark_percentage >= affinity_high_mark_percentage)
-        well_formed = false;
-
-    if (affinity_dirt_percentage >= affinity_low_mark_percentage)
-        well_formed = false;
-
-    if (affinity_high_removal < affinity_low_removal)
-        well_formed = false;
-
-    if (!well_formed) {
-        affinity_high_mark_percentage = default_affinity_high_mark_percentage;
-        affinity_low_mark_percentage = default_affinity_low_mark_percentage;
-        affinity_high_removal = default_affinity_high_removal;
-        affinity_low_removal = default_affinity_low_removal;
-        affinity_dirt_percentage = default_affinity_dirt_percentage;
-    }
-}
-
-
-void SNS_Parameters::x_CheckGarbageCollectorSettings(void)
+void SNS_Parameters::x_CheckJobGarbageCollectorSettings(void)
 {
     bool    well_formed = true;
 
@@ -330,5 +307,99 @@ void SNS_Parameters::x_CheckGarbageCollectorSettings(void)
         purge_timeout = default_purge_timeout;
         markdel_batch_size = default_markdel_batch_size;
     }
+}
+
+
+void SNSRegistryParameters::Read(const IRegistry &  reg,
+                                 const string &  sname,
+                                 const string &  name,
+                                 unsigned int  default_max,
+                                 unsigned int  default_high_mark_percentage,
+                                 unsigned int  default_low_mark_percentage,
+                                 unsigned int  default_high_removal,
+                                 unsigned int  default_low_removal,
+                                 unsigned int  default_dirt_percentage)
+{
+    string      plural;
+    if (name == "affinity")
+        plural = "affinities";
+    else
+        plural = name + "s";
+
+    max_records = GetIntNoErr("max_" + plural, default_max);
+    if (max_records <= 0)
+        max_records = default_max;
+
+    // GC settings
+    high_mark_percentage = GetIntNoErr(name + "_high_mark_percentage",
+                                       default_high_mark_percentage);
+    low_mark_percentage = GetIntNoErr(name + "_low_mark_percentage",
+                                      default_low_mark_percentage);
+    high_removal = GetIntNoErr(name + "_high_removal", default_high_removal);
+    low_removal = GetIntNoErr(name + "_low_removal", default_low_removal);
+    dirt_percentage = GetIntNoErr(name + "dirt_percentage",
+                                  default_dirt_percentage);
+
+    x_CheckGarbageCollectorSettings(default_high_mark_percentage,
+                                    default_low_mark_percentage,
+                                    default_high_removal,
+                                    default_low_removal,
+                                    default_dirt_percentage);
+}
+
+
+void SNSRegistryParameters::x_CheckGarbageCollectorSettings(
+                        unsigned int    default_high_mark_percentage,
+                        unsigned int    default_low_mark_percentage,
+                        unsigned int    default_high_removal,
+                        unsigned int    default_low_removal,
+                        unsigned int    default_dirt_percentage)
+{
+    bool    well_formed = true;
+
+    if (high_mark_percentage >= 100)
+        well_formed = false;
+
+    if (low_mark_percentage >= high_mark_percentage)
+        well_formed = false;
+
+    if (dirt_percentage >= low_mark_percentage)
+        well_formed = false;
+
+    if (high_removal < low_removal)
+        well_formed = false;
+
+    if (!well_formed) {
+        high_mark_percentage = default_high_mark_percentage;
+        low_mark_percentage = default_low_mark_percentage;
+        high_removal = default_high_removal;
+        low_removal = default_low_removal;
+        dirt_percentage = default_dirt_percentage;
+    }
+}
+
+
+string SNSRegistryParameters::Serialize(const string &  name,
+                                        const string &  prefix,
+                                        const string &  suffix) const
+{
+    string      plural;
+    if (name == "affinity")
+        plural = "affinities";
+    else
+        plural = name + "s";
+
+    return prefix + "max_" + plural + "=\"" +
+                NStr::NumericToString(max_records) + "\"" + suffix +
+           prefix + name + "_high_mark_percentage=\"" +
+                NStr::NumericToString(high_mark_percentage) + "\"" + suffix +
+           prefix + name + "_low_mark_percentage=\"" +
+                NStr::NumericToString(low_mark_percentage) + "\"" + suffix +
+           prefix + name + "_high_removal=\"" +
+                NStr::NumericToString(high_removal) + "\"" + suffix +
+           prefix + name + "_low_removal=\"" +
+                NStr::NumericToString(low_removal) + "\"" + suffix +
+           prefix + name + "_dirt_percentage=\"" +
+                NStr::NumericToString(dirt_percentage) + "\"" + suffix;
 }
 

@@ -70,15 +70,28 @@ const unsigned int      default_scan_batch_size = 10000;
 const double            default_purge_timeout = 0.1;
 
 const unsigned int      default_stat_interval = 10;
-
-const unsigned int      default_max_affinities = 10000;
 const unsigned int      default_max_client_data = 2048;
 
+const unsigned int      default_max_affinities = 10000;
 const unsigned int      default_affinity_high_mark_percentage = 90;
 const unsigned int      default_affinity_low_mark_percentage = 50;
 const unsigned int      default_affinity_high_removal = 1000;
 const unsigned int      default_affinity_low_removal = 100;
 const unsigned int      default_affinity_dirt_percentage = 20;
+
+const unsigned int      default_max_groups = 10000;
+const unsigned int      default_group_high_mark_percentage = 90;
+const unsigned int      default_group_low_mark_percentage = 50;
+const unsigned int      default_group_high_removal = 1000;
+const unsigned int      default_group_low_removal = 100;
+const unsigned int      default_group_dirt_percentage = 20;
+
+const unsigned int      default_max_scopes = 10000;
+const unsigned int      default_scope_high_mark_percentage = 90;
+const unsigned int      default_scope_low_mark_percentage = 50;
+const unsigned int      default_scope_high_removal = 1000;
+const unsigned int      default_scope_low_removal = 100;
+const unsigned int      default_scope_dirt_percentage = 20;
 
 const unsigned int      default_reserve_dump_space = 1024 * 1024 * 1024; // 1GB
 const unsigned int      default_wst_cache_size = 2000;

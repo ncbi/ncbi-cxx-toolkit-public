@@ -79,6 +79,7 @@ struct SNSCommandArguments
     string          user;
     string          client_data;
     string          ncbi_phid;
+    string          scope;
 
     bool            any_affinity;
     bool            wnode_affinity;

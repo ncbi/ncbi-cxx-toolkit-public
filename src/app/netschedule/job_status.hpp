@@ -86,12 +86,12 @@ public:
     // in the unwanted jobs list
     unsigned int  GetJobByStatus(TJobStatus            status,
                                  const TNSBitVector &  unwanted_jobs,
-                                 const TNSBitVector &  group_jobs,
-                                 bool                  use_group) const;
+                                 const TNSBitVector &  restrict_jobs,
+                                 bool                  restricted) const;
     unsigned int  GetJobByStatus(const vector<TJobStatus> &   statuses,
                                  const TNSBitVector &         unwanted_jobs,
-                                 const TNSBitVector &         group_jobs,
-                                 bool                         use_group) const;
+                                 const TNSBitVector &         restrict_jobs,
+                                 bool                         restricted) const;
 
     TNSBitVector  GetJobs(const vector<TJobStatus> &  statuses) const;
     TNSBitVector  GetJobs(TJobStatus  status) const;

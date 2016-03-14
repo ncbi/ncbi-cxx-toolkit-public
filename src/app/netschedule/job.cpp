@@ -432,7 +432,7 @@ bool CJob::Flush(CQueue* queue)
         return true;
     }
 
-    if (!m_Dirty)
+    if (m_Dirty == 0 && m_New == false)
         return true;
 
     SJobDB &        job_db      = queue->m_QueueDbBlock->job_db;

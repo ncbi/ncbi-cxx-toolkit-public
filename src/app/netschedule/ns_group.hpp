@@ -88,7 +88,8 @@ class CNSGroupsRegistry
         ~CNSGroupsRegistry();
 
         size_t        size(void) const;
-
+        bool          CanAccept(const string &  group,
+                                size_t  max_records) const;
         TNSBitVector  GetJobs(const string &  group,
                               bool  allow_exception = true) const;
         TNSBitVector  GetJobs(const TNSBitVector &  group_ids) const;
@@ -106,12 +107,15 @@ class CNSGroupsRegistry
         void  RemoveJob(unsigned int  group_id,
                         unsigned int  job_id);
         string  Print(const CQueue *  queue,
-                      size_t          batch_size,
-                      bool            verbose) const;
+                      const TNSBitVector &  scope_jobs,
+                      const string &  scope,
+                      size_t  batch_size,
+                      bool  verbose) const;
 
         void  Clear(void);
 
         unsigned int  CollectGarbage(unsigned int  max_to_del);
+        unsigned int  CheckRemoveCandidates(void);
         void Dump(const string &  dump_dir_name,
                   const string &  queue_name) const;
         void RemoveDump(const string &  dump_dir_name,
@@ -155,12 +159,16 @@ class CNSGroupsRegistry
         TNSBitVector            m_RemoveCandidates;
 
         unsigned int  x_CreateGroup(const string &  group);
-        string  x_PrintSelected(const TNSBitVector &    batch,
-                                const CQueue *          queue,
-                                bool                    verbose) const;
-        string  x_PrintOne(const SNSGroupJobs &     group_attr,
-                           const CQueue *           queue,
-                           bool                     verbose) const;
+        string  x_PrintSelected(const TNSBitVector &  batch,
+                                const CQueue *  queue,
+                                const TNSBitVector &  scope_jobs,
+                                const string &  scope,
+                                bool  verbose) const;
+        string  x_PrintOne(const SNSGroupJobs &  group_attr,
+                           const CQueue *  queue,
+                           const TNSBitVector &  scope_jobs,
+                           const string &  scope,
+                           bool  verbose) const;
         void  x_DeleteSingleInMemory(TGroupIDToAttrMap::iterator  to_del);
         string x_GetDumpFileName(const string &  dump_dir_name,
                                  const string &  qname) const;

@@ -126,6 +126,19 @@ void CNSClientsRegistry::RegisterSocketWriteError(const CNSClientId &  client)
 }
 
 
+void CNSClientsRegistry::SetLastScope(const CNSClientId &  client)
+{
+    // Check if it is an old-style client
+    if (!client.IsComplete())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map< string, CNSClient >::iterator  cl = m_Clients.find(client.GetNode());
+    if (cl != m_Clients.end())
+        cl->second.SetLastScope(client.GetScope());
+}
+
+
 void
 CNSClientsRegistry::AppendType(const CNSClientId &  client,
                                unsigned int         type_to_append)
@@ -571,14 +584,13 @@ CNSClientsRegistry::CancelWaiting(const string &  node_name,
 }
 
 
-static TNSBitVector     s_empty_vector = TNSBitVector();
 
 TNSBitVector
 CNSClientsRegistry::GetBlacklistedJobs(const CNSClientId &  client,
                                        ECommandGroup        cmd_group) const
 {
     if (!client.IsComplete())
-        return s_empty_vector;
+        return kEmptyBitVector;
     return GetBlacklistedJobs(client.GetNode(), cmd_group);
 }
 
@@ -592,7 +604,7 @@ CNSClientsRegistry::GetBlacklistedJobs(const string &  client_node,
          CNSClient >::const_iterator    found = m_Clients.find(client_node);
 
     if (found == m_Clients.end())
-        return s_empty_vector;
+        return kEmptyBitVector;
     return found->second.GetBlacklistedJobs(cmd_group);
 }
 
@@ -602,7 +614,7 @@ CNSClientsRegistry::GetPreferredAffinities(const CNSClientId &  client,
                                            ECommandGroup        cmd_group) const
 {
     if (!client.IsComplete())
-        return s_empty_vector;
+        return kEmptyBitVector;
     return GetPreferredAffinities(client.GetNode(), cmd_group);
 }
 
@@ -612,13 +624,13 @@ CNSClientsRegistry::GetPreferredAffinities(const string &  node,
                                            ECommandGroup   cmd_group) const
 {
     if (node.empty())
-        return s_empty_vector;
+        return kEmptyBitVector;
 
     CMutexGuard                                 guard(m_Lock);
     map< string, CNSClient >::const_iterator    found = m_Clients.find(node);
 
     if (found == m_Clients.end())
-        return s_empty_vector;
+        return kEmptyBitVector;
     return found->second.GetPreferredAffinities(cmd_group);
 }
 
@@ -639,7 +651,7 @@ CNSClientsRegistry::GetWaitAffinities(const CNSClientId &  client,
                                       ECommandGroup        cmd_group) const
 {
     if (!client.IsComplete())
-        return s_empty_vector;
+        return kEmptyBitVector;
     return GetWaitAffinities(client.GetNode(), cmd_group);
 }
 
@@ -649,13 +661,13 @@ CNSClientsRegistry::GetWaitAffinities(const string &  node,
                                       ECommandGroup   cmd_group) const
 {
     if (node.empty())
-        return s_empty_vector;
+        return kEmptyBitVector;
 
     CMutexGuard                                 guard(m_Lock);
     map< string, CNSClient >::const_iterator    found = m_Clients.find(node);
 
     if (found == m_Clients.end())
-        return s_empty_vector;
+        return kEmptyBitVector;
     return found->second.GetWaitAffinities(cmd_group);
 }
 

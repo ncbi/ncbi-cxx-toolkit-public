@@ -78,6 +78,7 @@ void SNSCommandArguments::x_Reset()
     user.erase();
     client_data.erase();
     ncbi_phid.erase();
+    scope.erase();
 
     any_affinity = false;
     wnode_affinity = false;
@@ -317,6 +318,8 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
             }
             else if (key == "service")
                 service = NStr::ParseEscapes(val);
+            else if (key == "scope")
+                scope = NStr::ParseEscapes(val);
             break;
         case 't':
             if (key == "timeout")
