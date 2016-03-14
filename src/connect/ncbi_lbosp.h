@@ -31,7 +31,7 @@
  *   This header was made only because of unit testing application. Please, 
  *   include only ncbi_lbos.h.
  *   This file contains only those elements that are absolutely unneeded
- *   if you do not want to dive into internal LBOS mapper implementation.
+ *   if you do not want to dive into internal LBOS client implementation.
 */
 #include "ncbi_servicep.h"
 #include <connect/ncbi_http_connector.h>
@@ -50,7 +50,7 @@ extern "C" {
  *  452 - Invalid arguments provided, request was not sent to LBOS
  *  453 - Memory allocation error encountered
  *  454 - LBOS output could not be parsed
- *  550 - LBOS mapper is OFF in the current process
+ *  550 - LBOS client is OFF in the current process
  */
 static const int kLBOSSuccess         = 200;
 static const int kLBOSBadRequest      = 400;
@@ -224,7 +224,7 @@ void FLBOS_DestroyDataMethod(SLBOS_Data* data);
 
 
 /** Called under the hood of SERV_GetNextInfo and is responsible for 
- *  LBOS mapper.
+ *  LBOS client.
  *  @param iter[in]
  *   Iterator used to iterate through servers.
  *  @param host_info[out]  
@@ -300,7 +300,7 @@ int/*bool*/ FLBOS_DeannounceMethod(const char*       lbos_hostport,
 
 
 /** This function test existence of the application that should always be 
- * found - LBOS itself. If it is not found, we turn mapper off.              */
+ * found - LBOS itself. If it is not found, we turn client off.              */
 typedef 
 void FLBOS_InitializeMethod(void);
 
@@ -374,7 +374,7 @@ char* g_LBOS_GetLBOSAddressEx(ELBOSFindMethod priority_find_method,
  * @param[in] net_info
  *  Connection point.
  * @param[out] info
- *  Always assigned NULL, as not used in this mapper.
+ *  Always assigned NULL, as not used in this client.
  * @return
  *  Table of methods if found servers, NULL if not found.
  * @see
@@ -448,7 +448,7 @@ g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(const char* roleFile,
                                                  const char* lbosresolverFile);
 
 
-/**  Checks iterator, fact that iterator belongs to this mapper, iterator data.
+/**  Checks iterator, fact that iterator belongs to this client, iterator data.
  * Only debug function.
  * @param iter[in]
  *  Iterator to check. Not modified in any way.
@@ -535,7 +535,7 @@ NCBI_XCONNECT_EXPORT
 SLBOS_Functions* g_LBOS_UnitTesting_GetLBOSFuncs(void);
 
 
-/** Check whether LBOS mapper is turned ON or OFF.
+/** Check whether LBOS client is turned ON or OFF.
  * @return
  *  address of static variable s_LBOS_TurnedOn.
  * @see           
@@ -544,7 +544,7 @@ NCBI_XCONNECT_EXPORT
 int* g_LBOS_UnitTesting_PowerStatus(void);
 
 
-/** Check whether LBOS mapper is turned ON or OFF.
+/** Check whether LBOS client is turned ON or OFF.
  * @return         
  *  address of static variable s_LBOS_TurnedOn.
  * @see 
