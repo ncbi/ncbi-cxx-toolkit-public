@@ -405,7 +405,7 @@ static void s_PrintAnnouncedDetails(const char*       name,
                " returned code "      << result                             <<
                " after "              << time_elapsed << " seconds, "       <<
                ", status message: \"" << status  << "\""                    <<
-               ", body: \""           << message << "\"";
+               ", body: \""           << message << "\"");
 }
 
 
