@@ -19011,9 +19011,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadComment)
     STANDARD_SETUP
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
     cds->SetComment("ambiguity in stop codon");
-    edit::AddTerminalCodeBreak(*cds, seh.GetScope());
-    scope.RemoveTopLevelSeqEntry(seh);
-    seh = scope.AddTopLevelSeqEntry(*entry);
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "BadComment",
                               "Feature comment indicates ambiguity in stop codon but no ambiguities are present in stop codon."));
@@ -19022,6 +19019,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadComment)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    edit::AddTerminalCodeBreak(*cds, seh.GetScope());
+    scope.RemoveTopLevelSeqEntry(seh);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
     scope.RemoveTopLevelSeqEntry(seh);
     nentry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTNAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
     seh = scope.AddTopLevelSeqEntry(*entry);

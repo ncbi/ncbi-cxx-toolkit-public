@@ -8141,7 +8141,7 @@ void CValidError_feat::ValidateFeatComment
     }
     if (feat.IsSetData() && feat.GetData().IsCdregion()
         && NStr::Find(comment, "ambiguity in stop codon") != string::npos
-        && edit::DoesCodingRegionHaveTerminalCodeBreak(feat.GetData().GetCdregion())
+        && !edit::DoesCodingRegionHaveTerminalCodeBreak(feat.GetData().GetCdregion())
         && m_Scope) {        
         CRef<CSeq_loc> stop_codon_loc = edit::GetLastCodonLoc(feat, *m_Scope);
         if (stop_codon_loc) {
