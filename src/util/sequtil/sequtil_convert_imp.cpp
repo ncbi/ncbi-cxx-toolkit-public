@@ -1161,10 +1161,11 @@ SIZE_TYPE CSeqConvert_imp::CPacker::Pack(const char* src, TSeqPos length)
     size_t n = m_Boundaries.size() - 1;
     vector<TCoding> coding_vec(n);
     SCodings*       codings = best_arrangement->codings;
-    for (size_t i = 0;  i < n;  ++i) {
+    for (size_t i = 0;  i < n;
+         i += codings->current_used, codings = codings->previous) {
         _ASSERT(codings != NULL);
-        coding_vec[i] = codings->current;
-        codings       = codings->previous;
+        memcpy(coding_vec.data() + (n - i - codings->current_used),
+               codings->current, codings->current_used * sizeof(TCoding));
     }
     _ASSERT(codings == NULL);
 
@@ -1206,7 +1207,7 @@ void CSeqConvert_imp::CPacker::x_AddBoundary(TSeqPos pos, TCoding new_coding)
     _ASSERT(last_length > 0);
     m_Boundaries.push_back(pos);
 
-    TCoding last_narrow = m_EndingNarrow.codings->current;
+    TCoding last_narrow = m_EndingNarrow.codings->GetLast();
     // This always rounds up to full bytes, and as such can slightly
     // overestimate the total cost of ncbi4na.
     m_EndingNarrow.cost += GetBytesNeeded(last_narrow,  last_length);
@@ -1251,8 +1252,16 @@ CSeqConvert_imp::CPacker::SArrangement&
 CSeqConvert_imp::CPacker::SArrangement::operator= (SArrangement& arr)
 {
     _ASSERT(arr.shared_codings == shared_codings);
-    Reset();
-    codings = shared_codings = arr.shared_codings = arr.codings;
+    if (codings->previous == shared_codings) {
+        _ASSERT(arr.codings->previous == shared_codings);
+        codings->current_used = arr.codings->current_used;
+        memcpy(codings->current, arr.codings->current,
+               codings->current_used * sizeof(TCoding));
+    } else {
+        Reset();
+        codings = new SCodings(*arr.codings);
+        shared_codings = arr.shared_codings = codings->previous;
+    }
     cost = arr.cost;
     return *this;
 }
@@ -1264,6 +1273,17 @@ void CSeqConvert_imp::CPacker::SArrangement::Reset(void)
         delete codings;
         codings = previous;
     }
+}
+
+void CSeqConvert_imp::CPacker::SArrangement::AddCoding(TCoding coding)
+{
+    if (codings == NULL  ||  codings->current_used == SCodings::kBlockSize) {
+        SCodings* new_codings = new SCodings;
+        new_codings->previous = codings;
+        new_codings->current_used = 0;
+        codings = new_codings;
+    }
+    codings->current[codings->current_used++] = coding;
 }
 
 CSeqUtil::ECoding

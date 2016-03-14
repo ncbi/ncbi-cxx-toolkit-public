@@ -260,11 +260,13 @@ private:
         static TCoding x_GetWideCoding(const TCoding coding);
 
         struct SCodings {
-            SCodings(SCodings* prev, TCoding curr)
-                : previous(prev), current(curr)
-                { }
+            enum {
+                kBlockSize = 16
+            };
+            TCoding GetLast(void) const { return current[current_used - 1]; }
+            TCoding   current[16 /* kBlockSize */];
             SCodings* previous;
-            TCoding   current;
+            unsigned  current_used;
         };
         struct SArrangement {
             SArrangement()
@@ -273,9 +275,8 @@ private:
             ~SArrangement()
                 { Reset(); }
             SArrangement& operator= (SArrangement& arr);
-            void AddCoding(TCoding coding)
-                { codings = new SCodings(codings, coding); }
             void Reset(void);
+            void AddCoding(TCoding coding);
             SCodings* codings;
             SCodings* shared_codings; // last common ancestor
             SIZE_TYPE cost;
