@@ -286,8 +286,6 @@ private:
 
     string x_ExtractSatelliteFromComment( string &comment );
 
-    void x_SetFrameFromLoc( CCdregion &cdregion, const CSeq_loc &location );
-
     void x_CleanupECNumber( string &ec_num );
 
     void x_CleanupAndRepairInference( string &inference );

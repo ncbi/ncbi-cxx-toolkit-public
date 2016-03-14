@@ -796,7 +796,7 @@ void CNewCleanup_imp::ProtSeqBC (CBioseq& bs)
             edit_feature_handle.Replace(*replace);
             ChangeMade(CCleanupChange::eChangeSeqloc);
 
-            if (bs.IsSetDescr()) {
+            if (bs.IsSetDescr() && (make_partial5 || make_partial3)) {
                 CMolInfo::TCompleteness wanted = GetCompletenessFromFlags(make_partial5, make_partial3, true);
                 NON_CONST_ITERATE(CBioseq::TDescr::Tdata, ds, bs.SetDescr().Set()) {
                     if ((*ds)->IsMolinfo() &&
@@ -11790,7 +11790,7 @@ void CNewCleanup_imp::ResynchPeptidePartials (
                         ChangeMade(CCleanupChange::eChangeMolInfo);
                         changed = true;
                     }
-                } else if (desired != CMolInfo::eCompleteness_unknown) {
+                } else if (desired != CMolInfo::eCompleteness_unknown && desired != CMolInfo::eCompleteness_complete) {
                     (*it)->SetMolinfo().SetCompleteness(desired);
                     ChangeMade(CCleanupChange::eChangeMolInfo);
                     changed = true;
@@ -11803,7 +11803,9 @@ void CNewCleanup_imp::ResynchPeptidePartials (
         // no molinfo descriptor found, need to make new one
         CRef<CSeqdesc> new_desc(new CSeqdesc());
         new_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-        new_desc->SetMolinfo().SetCompleteness(desired);
+        if (partial5 || partial3) {
+            new_desc->SetMolinfo().SetCompleteness(desired);
+        }
         new_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans_a);
         seq.SetDescr().Set().push_back(new_desc);
         ChangeMade(CCleanupChange::eAddDescriptor);
