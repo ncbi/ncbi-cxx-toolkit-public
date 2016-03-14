@@ -1523,6 +1523,8 @@ private:
     bool x_HasCitCub(CBioseq_Handle bsh) const;
 
     void ValidatemRNAGene (const CBioseq& seq);
+    void ValidateCDSUTR(const CBioseq& seq);
+    bool x_ReportUTRPair(const CSeq_feat& utr5, const CSeq_feat& utr3);
 
     size_t x_CountAdjacentNs(const CSeq_literal& lit);
 

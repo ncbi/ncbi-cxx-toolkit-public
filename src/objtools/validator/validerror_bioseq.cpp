@@ -5645,9 +5645,12 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                      + " full-length protein features present on protein", seq);
         }
 
-        // validate abutting UTRs for nucleotides
+        
         if ( !is_aa ) {
+            // validate abutting UTRs for nucleotides
             x_ValidateAbuttingUTR(m_CurrentHandle);
+            // validate coding regions between UTRs
+            ValidateCDSUTR(seq);
         }
 
         // validate abutting RNA features
@@ -9786,6 +9789,70 @@ void CValidError_bioseq::ValidatemRNAGene (const CBioseq& seq)
     }
     m_FeatValidator.ValidatemRNAGene (*mrna);
 
+}
+
+
+bool CValidError_bioseq::x_ReportUTRPair(const CSeq_feat& utr5, const CSeq_feat& utr3)
+{
+    CConstRef<CSeq_feat> gene3 = GetGeneForFeature(utr3, m_Scope);
+    if (gene3) {
+        CConstRef<CSeq_feat> gene5 = GetGeneForFeature(utr5, m_Scope);
+        if (gene5 && gene3.GetPointer() == gene5.GetPointer()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CValidError_bioseq::ValidateCDSUTR(const CBioseq& seq)
+{
+    if (!m_AllFeatIt) {
+        return;
+    }
+    CConstRef<CSeq_feat> cds_minus(NULL);
+    CConstRef<CSeq_feat> utr3_minus(NULL);
+    CConstRef<CSeq_feat> utr5_minus(NULL);
+    CConstRef<CSeq_feat> cds_plus(NULL);
+    CConstRef<CSeq_feat> utr3_plus(NULL);
+    CConstRef<CSeq_feat> utr5_plus(NULL);
+
+    ITERATE(CCacheImpl::TFeatValue, f, *m_AllFeatIt) {
+        ENa_strand strand = f->GetLocation().GetStrand();
+        if (f->GetData().IsCdregion()) {
+            if (strand == eNa_strand_minus) {
+                cds_minus = f->GetSeq_feat();
+            } else {
+                cds_plus = f->GetSeq_feat();
+            }
+        } else if (f->GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR) {
+            if (strand == eNa_strand_minus) {
+                utr3_minus = f->GetSeq_feat();
+            } else {
+                utr3_plus = f->GetSeq_feat();
+                if (!cds_plus && utr5_plus && x_ReportUTRPair(*utr5_plus, *utr3_plus)) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSnotBetweenUTRs,
+                            "CDS not between 5'UTR and 3'UTR on plus strand", *utr3_plus);
+                }
+                utr5_plus.Reset(NULL);
+                cds_plus.Reset(NULL);
+                utr3_plus.Reset(NULL);
+            }
+        } else if (f->GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR) {
+            if (strand == eNa_strand_minus) {
+                utr5_minus = f->GetSeq_feat();
+                if (!cds_minus && utr3_minus && x_ReportUTRPair(*utr5_minus, *utr3_minus)) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSnotBetweenUTRs,
+                        "CDS not between 5'UTR and 3'UTR on minus strand", *utr5_minus);
+                }
+                utr5_minus.Reset(NULL);
+                cds_minus.Reset(NULL);
+                utr3_minus.Reset(NULL);
+            } else {
+                utr5_plus = f->GetSeq_feat();
+            }
+        }
+    }
 }
 
 
