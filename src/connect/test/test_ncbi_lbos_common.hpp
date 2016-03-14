@@ -138,7 +138,7 @@
         NCBITEST_CHECK_MESSAGE(P,M)           
 #   define NCBITEST_REQUIRE_MESSAGE(P,M)                                      \
         NCBITEST_REQUIRE_MESSAGE(P,M)           
-#   define BOOST_CHECK_EXCEPTION(S,E,P)                                        \
+#   define BOOST_CHECK_EXCEPTION(S,E,P)                                       \
         BOOST_CHECK_EXCEPTION(S,E,P)           
 #   define BOOST_CHECK_NO_THROW(S)                                            \
         BOOST_CHECK_NO_THROW(S)           
@@ -153,7 +153,7 @@
         NCBITEST_CHECK_MESSAGE(P,M)
 #   define NCBITEST_REQUIRE_MESSAGE(P,M)                                      \
         NCBITEST_REQUIRE_MESSAGE(P,M)
-#   define BOOST_CHECK_EXCEPTION(S,E,P)                                        \
+#   define BOOST_CHECK_EXCEPTION(S,E,P)                                       \
         BOOST_CHECK_EXCEPTION(S,E,P)
 #   define BOOST_CHECK_NO_THROW(S)                                            \
         BOOST_CHECK_NO_THROW(S)
@@ -167,21 +167,21 @@
 
 #endif
 
-/* Boost checks are not thread-safe, so they need to be handled appropriately */
+/* Boost checks are not thread-safe, so they need to be handled appropriately*/
 #define MT_SAFE(E)                                                            \
     {{                                                                        \
         CFastMutexGuard spawn_guard(s_BoostTestLock);                         \
         E;                                                                    \
     }}
-#define NCBITEST_CHECK_MESSAGE_MT_SAFE(P,M)                                  \
+#define NCBITEST_CHECK_MESSAGE_MT_SAFE(P,M)                                   \
             MT_SAFE(NCBITEST_CHECK_MESSAGE(P, M))
-#define NCBITEST_REQUIRE_MESSAGE_MT_SAFE(P,M)                                \
+#define NCBITEST_REQUIRE_MESSAGE_MT_SAFE(P,M)                                 \
             MT_SAFE(NCBITEST_REQUIRE_MESSAGE(P, M))
-#define NCBITEST_CHECK_EQUAL_MT_SAFE(S,E)                                    \
+#define NCBITEST_CHECK_EQUAL_MT_SAFE(S,E)                                     \
             MT_SAFE(NCBITEST_CHECK_EQUAL(S, E))
-#define NCBITEST_CHECK_NE_MT_SAFE(S,E)                                       \
+#define NCBITEST_CHECK_NE_MT_SAFE(S,E)                                        \
             MT_SAFE(NCBITEST_CHECK_NE(S, E))
-#define NCBITEST_REQUIRE_NE_MT_SAFE(S,E)                                     \
+#define NCBITEST_REQUIRE_NE_MT_SAFE(S,E)                                      \
             MT_SAFE(NCBITEST_REQUIRE_NE(S, E))
 
 #ifdef LBOS_TEST_MT
@@ -305,8 +305,8 @@ static bool            s_CheckIfAnnounced       (string         service,
                                                  string         version,
                                                  unsigned short server_port,
                                                  string         health_suffix,
-                                                 bool          expectedAnnounced
-                                                                         = true,
+                                                 bool         expectedAnnounced
+                                                                        = true,
                                                  string         host = "");
 static string          s_ReadLBOSVersion        (void);
 static bool            s_CheckTestVersion       (vector<SLBOSVersion>
@@ -317,9 +317,9 @@ vector<SLBOSVersion>   s_ParseVersionsString    (string versions);
 const int              kThreadsNum                  = 34;
 /** When the test is run in single-threaded mode, we set the number of the 
  * main thread to -1 to distinguish between MT and ST    */
-const int              kSingleThreadNumber = -1;
-const int              kMainThreadNumber   = 99;
-const int              kHealthThreadNumber = 100;
+const int              kSingleThreadNumber          = -1;
+const int              kMainThreadNumber            = 99;
+const int              kHealthThreadNumber          = 100;
 /* Seconds to try to find server. We wait maximum of 60 seconds. */
 const int              kDiscoveryDelaySec           = 60; 
 /* for tests where port is not necessary (they fail before announcement) */
@@ -335,6 +335,8 @@ static SLBOSVersion    s_LBOSVersion                = {0,0,0};
 
 /* Mutex for thread-unsafe Boost checks */
 DEFINE_STATIC_FAST_MUTEX(s_BoostTestLock);
+/* Mutex for log output */
+DEFINE_STATIC_FAST_MUTEX(s_WriteLogLock);
 
 #define PORT 8085 /* port for healtcheck */
 #define PORT_STR_HELPER(port) #port
@@ -343,9 +345,12 @@ DEFINE_STATIC_FAST_MUTEX(s_BoostTestLock);
 #include "test_ncbi_lbos_mocks.hpp"
 
 #define WRITE_LOG(text)                                                       \
-    LOG_POST(s_PrintThreadNum() << "\t" << __FILE__ <<              \
-                                             "\t" << __LINE__ <<              \
-                                             "\t" <<   text);
+{{                                                                            \
+    CFastMutexGuard spawn_guard(s_WriteLogLock);                              \
+    LOG_POST(s_PrintThreadNum() << "\t" << __FILE__ <<                        \
+                                   "\t" << __LINE__ <<                        \
+                                   "\t" <<   text);                           \
+}}
 
 /* Trash collector for Thread Local Storage that stores thread number */
 void TlsCleanup(int* p_value, void* /* data */)
@@ -359,11 +364,11 @@ static void s_PrintAnnouncementDetails(const char* name,
                                        const char* port,
                                        const char* health)
 {
-    WRITE_LOG("Announcing server \"" <<
-                  (name ? name : "<NULL>") <<
-                  "\" with version " << (version ? version : "<NULL>") <<
-                  ", port " << port << ", host " << host << 
-                  ", healthcheck \"" << (health ? health : "<NULL>") << "\"");
+    WRITE_LOG("Announcing server \"" << (name ? name : "<NULL>") << "\""    <<
+                "with version "      << (version ? version : "<NULL>")      <<
+                ", port "            << port                                << 
+                ", host "            << host                                << 
+                ", healthcheck \""   << (health ? health : "<NULL>") << "\"");
 }
 
 
@@ -390,17 +395,17 @@ static void s_PrintAnnouncedDetails(const char*       name,
                                     unsigned short    result,
                                     double            time_elapsed)
 {
-    WRITE_LOG("Announce of server \"" << (name ? name : "<NULL>") <<
-                "\" with version " << (version ? version : "<NULL>") <<
-                ", port " << port <<
-                ", host \"" << (host ? host : "<NULL>") <<
-                ", healthcheck \"" << (health ? health : "<NULL>") << 
-                " returned code " << result <<
-                " after " << time_elapsed << " seconds, " 
-                "LBOS status message: \"" <<
-                (lbos_mes ? lbos_mes : "<NULL>") <<
-                "\", LBOS answer: \"" <<
-                (lbos_ans ? lbos_ans : "<NULL>") << "\"");
+    char* message = lbos_mes ? lbos_mes : "<NULL>";
+    char* status  = lbos_ans ? lbos_ans : "<NULL>";
+    WRITE_LOG("Announcing server \""  << (name ? name : "<NULL>") << "\" "  <<
+               "with version "        << (version ? version : "<NULL>")     <<
+               ", port "              << port                               <<
+               ", host \""            << (host ? host : "<NULL>")           <<
+               ", healthcheck \""     << (health ? health : "<NULL>")       << 
+               " returned code "      << result                             <<
+               " after "              << time_elapsed << " seconds, "       <<
+               ", status message: \"" << status  << "\""                    <<
+               ", body: \""           << message << "\"";
 }
 
 
@@ -420,23 +425,25 @@ static void s_PrintAnnouncedDetails(const char*       name,
                             lbos_ans, lbos_mes, result, time_elapsed);
 }
 
-static void s_GetRegistryAnnouncementParams(const char* registry_section,
-                                            char** srvc, char** vers,
-                                            char** host, char** port,
-                                            char** hlth)
+static void s_GetRegistryAnnouncementParams(const char*     registry_section,
+                                                  char**    srvc, 
+                                                  char**    vers,
+                                                  char**    host, 
+                                                  char**    port,
+                                                  char**    hlth)
 {
-    const char* kLBOSAnnouncementSection = "LBOS_ANNOUNCEMENT";
-    const char* kLBOSServiceVariable = "SERVICE";
-    const char* kLBOSVersionVariable = "VERSION";
-    const char* kLBOSHostVariable = "HOST";
-    const char* kLBOSPortVariable = "PORT";
+    const char* kLBOSAnnouncementSection    = "LBOS_ANNOUNCEMENT";
+    const char* kLBOSServiceVariable        = "SERVICE";
+    const char* kLBOSVersionVariable        = "VERSION";
+    const char* kLBOSHostVariable           = "HOST";
+    const char* kLBOSPortVariable           = "PORT";
     const char* kLBOSHealthcheckUrlVariable = "HEALTHCHECK";
     if (g_LBOS_StringIsNullOrEmpty(registry_section)) {
         registry_section = kLBOSAnnouncementSection;
     }
-    *srvc =  g_LBOS_RegGet(registry_section,
-                           kLBOSServiceVariable,
-                           NULL);
+    *srvc = g_LBOS_RegGet(registry_section,
+                          kLBOSServiceVariable,
+                          NULL);
     *vers = g_LBOS_RegGet(registry_section,
                           kLBOSVersionVariable,
                           NULL);
@@ -444,8 +451,8 @@ static void s_GetRegistryAnnouncementParams(const char* registry_section,
                           kLBOSHostVariable,
                           NULL);
     *port = g_LBOS_RegGet(registry_section,
-                              kLBOSPortVariable,
-                              NULL);
+                          kLBOSPortVariable,
+                          NULL);
     *hlth = g_LBOS_RegGet(registry_section,
                           kLBOSHealthcheckUrlVariable,
                           NULL);
@@ -476,34 +483,34 @@ static void s_PrintRegistryAnnouncedDetails(const char*      registry_section,
     char *srvc_str, *vers_str, *host_str, *port_str, *hlth_str;
     s_GetRegistryAnnouncementParams(registry_section, &srvc_str, &vers_str,
                                     &host_str, &port_str, &hlth_str);
-    CCObjHolder<char> srvc(srvc_str);
-    CCObjHolder<char> vers(vers_str);
-    CCObjHolder<char> host(host_str);
-    CCObjHolder<char> port(port_str);
-    CCObjHolder<char> hlth(hlth_str);
+    CCObjHolder<char> srvc(srvc_str),
+                      vers(vers_str),
+                      host(host_str),
+                      port(port_str),
+                      hlth(hlth_str);
     s_PrintAnnouncedDetails(srvc.Get(), vers.Get(), host.Get(), port.Get(), 
                             hlth.Get(), lbos_ans, lbos_mes, result, 
                             time_elapsed);
 }
 
 
-#define MEASURE_TIME_START                                                     \
-    struct timeval      time_start;     /**< to measure start of               \
-                                                 announcement */               \
-    struct timeval      time_stop;                    /**< To check time at    \
-                                                 the end of each               \
-                                                 iteration*/                   \
-    double              time_elapsed = 0.0; /**< difference between start      \
-                                                 and end time */               \
-    if (s_GetTimeOfDay(&time_start) != 0) { /*  Initialize time of             \
-                                                 iteration start*/             \
-        memset(&time_start, 0, sizeof(time_start));                            \
+#define MEASURE_TIME_START                                                    \
+    struct timeval      time_start;         /**< to measure start of          \
+                                                 announcement */              \
+    struct timeval      time_stop;          /**< To check time at             \
+                                                 the end of each              \
+                                                 iteration*/                  \
+    double              time_elapsed = 0.0; /**< difference between start     \
+                                                 and end time */              \
+    if (s_GetTimeOfDay(&time_start) != 0) { /**  Initialize time of           \
+                                                 iteration start*/            \
+        memset(&time_start, 0, sizeof(time_start));                           \
     }
 
 
-#define MEASURE_TIME_FINISH                                                    \
-    if (s_GetTimeOfDay(&time_stop) != 0)                                       \
-        memset(&time_stop, 0, sizeof(time_stop));                              \
+#define MEASURE_TIME_FINISH                                                   \
+    if (s_GetTimeOfDay(&time_stop) != 0)                                      \
+        memset(&time_stop, 0, sizeof(time_stop));                             \
     time_elapsed = s_TimeDiff(&time_stop, &time_start);    
 
 
@@ -777,8 +784,8 @@ static void s_DeannounceCPP(const string& name,
     }
     MEASURE_TIME_FINISH
     /* Print good result */
-    s_PrintDeannouncedDetails(name.c_str(), version.c_str(), host.c_str(), port,
-                              "<C++ does not show answer from LBOS>",
+    s_PrintDeannouncedDetails(name.c_str(), version.c_str(), host.c_str(), 
+                              port, "<C++ does not show answer from LBOS>",
                               "OK", 200, time_elapsed);
 }
 
@@ -873,14 +880,16 @@ static string s_GetUnknownService() {
 }
 
 static void s_CleanDTabs() {
-    vector<string> nodes_to_delete;
-    CConnNetInfo net_info;
-    size_t start = 0, end = 0;
-    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
-    string lbos_addr(lbos_address.Get());
-    CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
-        UrlReadAll(*net_info, (string("http://") + lbos_addr +
-        "/admin/dtab").c_str(), NULL, NULL));
+    vector<string>      nodes_to_delete;
+    CConnNetInfo        net_info;
+    size_t              start           = 0, 
+                        end             = 0;
+    CCObjHolder<char>   lbos_address    (g_LBOS_GetLBOSAddress());
+    string              lbos_addr       (lbos_address.Get());
+    CCObjHolder<char>   lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                         UrlReadAll(*net_info, 
+                                         (string("http://") + lbos_addr +
+                                         "/admin/dtab").c_str(), NULL, NULL));
     if (*lbos_output_orig == NULL)
         lbos_output_orig = strdup("");
     string lbos_output = *lbos_output_orig;
@@ -927,40 +936,45 @@ public:
     }
 
     void AnswerHealthcheck() {
-        struct timeval time_stop;
-        STimeout rw_timeout     = { 1, 20000 };
-        STimeout accept_timeout = { 0, 20000 };
-        STimeout c_timeout      = { 0, 0 };
-        /* We collect garbage every 5 seconds */
-        int secs_btw_grbg_cllct = 5;
-        int iters_btw_grbg_cllct = secs_btw_grbg_cllct * 100000 /
-                                   (rw_timeout.sec * 100000 + rw_timeout.usec);
-        int iters_passed = 0;
+        WRITE_LOG("AnswerHealthcheck() started, size of m_ListeningSockets is " 
+                  << m_ListeningSockets.size());
+        struct timeval  time_stop;
+        STimeout        rw_timeout           = { 1, 20000 };
+        STimeout        accept_timeout       = { 0, 20000 };
+        STimeout        c_timeout            = { 0, 0 };
+        int             iters_passed         = 0;
+        size_t          n_ready              = 0;
+        int             secs_btw_grbg_cllct  = 5;/* collect garbage every 5s */
+        int             iters_btw_grbg_cllct = secs_btw_grbg_cllct * 100000 /
+                                               (rw_timeout.sec * 100000 + 
+                                                rw_timeout.usec);
         vector<CSocketAPI::SPoll>::iterator it;
-        size_t n_ready = 0;
 
         if (s_GetTimeOfDay(&time_stop) != 0)
             memset(&time_stop, 0, sizeof(time_stop));
         CSocketAPI::Poll(m_ListeningSockets, &rw_timeout, &n_ready);
         for (it = m_ListeningSockets.begin(); it != m_ListeningSockets.end(); it++) {
             if (it->m_REvent != eIO_Open && it->m_REvent != eIO_Close) {
-                AutoPtr<CSocket> sock = new CSocket;
+                AutoPtr<CSocket>    sock                = new CSocket;
                 struct timeval      accept_time_start;
                 struct timeval      accept_time_stop;
                 if (s_GetTimeOfDay(&accept_time_start) != 0) {
                     memset(&accept_time_start, 0, sizeof(accept_time_start));
                 }
-                double accept_time_elapsed = 0.0;
+                double accept_time_elapsed      = 0.0;
                 double last_accept_time_elapsed = 0.0;
                 if (static_cast<CListeningSocket*>(it->m_Pollable)->
                     Accept(*sock, &accept_timeout) != eIO_Success) {
                     if (s_GetTimeOfDay(&accept_time_stop) != 0)
                         memset(&accept_time_stop, 0, sizeof(accept_time_stop));
-                    accept_time_elapsed = s_TimeDiff(&accept_time_stop, &accept_time_start);
-                    last_accept_time_elapsed = s_TimeDiff(&accept_time_stop, &m_LastSuccAcceptTime);
-                    WRITE_LOG("healthcheck vacant after trying accept for " <<
-                              accept_time_elapsed << "s, last successful accept was "
-                              << last_accept_time_elapsed << "s ago");
+                    accept_time_elapsed      = s_TimeDiff(&accept_time_stop, 
+                                                          &accept_time_start);
+                    last_accept_time_elapsed = s_TimeDiff(&accept_time_stop, 
+                                                        &m_LastSuccAcceptTime);
+                    WRITE_LOG("healthcheck vacant after trying accept for " 
+                              << accept_time_elapsed << "s, last successful "
+                              "accept was " << last_accept_time_elapsed 
+                              << "s ago");
                     m_Busy = false;
                     sock->Close();
                     return;
@@ -1019,20 +1033,26 @@ protected:
     // As it is said in ncbithr.hpp, destructor must be protected
     ~CHealthcheckThread()
     {
+        WRITE_LOG("~AnswerHealthcheck() started, size of "
+                  "m_ListeningSockets is " << m_ListeningSockets.size());
         for (unsigned int i = 0;  i < m_ListeningSockets.size();  ++i) {
-            CListeningSocket* l_sock = 
-               static_cast<CListeningSocket*>(m_ListeningSockets[i].m_Pollable);
+            CListeningSocket* l_sock = static_cast<CListeningSocket*>
+                                            (m_ListeningSockets[i].m_Pollable);
             l_sock->Close();
             delete l_sock;
         }
         CollectGarbage();
         m_ListeningSockets.clear();
+        WRITE_LOG("~AnswerHealthcheck() ended, size of "
+                  "m_ListeningSockets is " << m_ListeningSockets.size());
     }
 private:
     /* Go through sockets in collection and remove closed ones */
     void CollectGarbage()
     {
-        size_t n_ready;
+        WRITE_LOG("CHealthcheckThread::CollectGarbage() started, size of "
+                  "m_SocketPool is " << m_SocketPool.size());
+        size_t   n_ready;
         STimeout rw_timeout = { 1, 20000 };
         CSocketAPI::Poll(m_SocketPool, &rw_timeout, &n_ready);
         /* We check sockets that have some events */
@@ -1040,7 +1060,8 @@ private:
         for (i = 0; i < m_SocketPool.size(); ++i) {
             if (m_SocketPool[i].m_REvent == eIO_ReadWrite) {
                 /* If this socket has some event */
-                CSocket* sock = static_cast<CSocket*>(m_SocketPool[i].m_Pollable);
+                CSocket* sock = 
+                             static_cast<CSocket*>(m_SocketPool[i].m_Pollable);
                 sock->Close();
                 delete sock;
                 /* Remove item from vector by swap and pop_back */
@@ -1048,6 +1069,8 @@ private:
                 m_SocketPool.pop_back();
             }
         }
+        WRITE_LOG("CHealthcheckThread::CollectGarbage() ended, size of "
+                  "m_SocketPool is " << m_SocketPool.size());
     }
 
     bool HasGarbage() {
@@ -1057,6 +1080,7 @@ private:
     void* Main(void) {
         tls->SetValue(new int, TlsCleanup);
         *tls->GetValue() = kHealthThreadNumber;
+        WRITE_LOG("Healthcheck thread started");
         if (s_GetTimeOfDay(&m_LastSuccAcceptTime) != 0) {
             memset(&m_LastSuccAcceptTime, 0, sizeof(m_LastSuccAcceptTime));
         }
@@ -1065,9 +1089,12 @@ private:
         }
         return NULL;
     }
+    /** Pool of listening sockets */
     vector<CSocketAPI::SPoll> m_ListeningSockets;
+    /** Pool of sockets created by accept() */
     vector<CSocketAPI::SPoll> m_SocketPool;
-    struct timeval            m_LastSuccAcceptTime;
+    /** time of last successful accept() */
+    struct timeval            m_LastSuccAcceptTime; 
     bool m_RunHealthCheck;
     bool m_Busy;
     map<unsigned short, short> m_ListenPorts;
@@ -1746,7 +1773,8 @@ namespace IPCache
 {
 /** Announce with host not empty - resolving works, resolves host to IP and 
     saves result. */
-/*  No multithread */
+/*  No multithread, test uses private methods that are not thread-safe by 
+ *  themselves */
 void AnnounceHostInHealthcheck__TryFindReturnsHostIP()
 {
     CLBOSStatus lbos_status(true, true);
@@ -1834,7 +1862,9 @@ void NotAnnounceHost__TryFindReturnsTheSame()
 }
 
 
-/* Common part for all tests that check if resolution works */
+/** Common part for all tests that check if resolution works */
+/* No multithread, test uses private methods that are not thread-safe by 
+ * themselves */
 static void s_LBOSIPCacheTest(string host, string expected_result = "N/A")
 {
     CLBOSStatus lbos_status(true, true);
@@ -1862,12 +1892,16 @@ static void s_LBOSIPCacheTest(string host, string expected_result = "N/A")
 
 
 /** Resolve usual hostname - it gets saved */
+/* No multithread, test uses private methods that are not thread-safe by 
+ * themselves */
 void ResolveHost__TryFindReturnsIP()
 {
     s_LBOSIPCacheTest("cnn.com");
 }
 
 
+/* No multithread, test uses private methods that are not thread-safe by 
+ * themselves */
 void ResolveIP__TryFindReturnsIP()
 {
     s_LBOSIPCacheTest("130.14.25.27", "130.14.25.27");
@@ -1882,7 +1916,8 @@ void ResolveEmpty__Error()
                          CLBOSException, comparator);
 }
 
-/* Actually, this behavior is not used anywhere, but this is the contract */
+
+/** Actually, this behavior is not used anywhere, but this is the contract */
 void Resolve0000__Return0000()
 {
     s_LBOSIPCacheTest("0.0.0.0", "0.0.0.0");
@@ -4643,21 +4678,20 @@ namespace AnnouncementRegistry /* These tests are NOT for multithreading */
         config) - return kLBOSSuccess                                       */
 void ParamsGood__ReturnSuccess() 
 {
-    CLBOSStatus lbos_status(true, true);
-    CCObjHolder<char> lbos_answer(NULL);
-    CCObjHolder<char> lbos_status_message(NULL);
-    unsigned short result;
+    CLBOSStatus         lbos_status(true, true);
+    CCObjHolder<char>   lbos_answer(NULL);
+    CCObjHolder<char>   lbos_status_message(NULL);
+    unsigned short      result;
     WRITE_LOG("Simple announcement from registry. "
               "Should return kLBOSSuccess");
-    result = s_AnnounceCRegistry(NULL, 
-                                 &lbos_answer.Get(), &lbos_status_message.Get());
+    result = s_AnnounceCRegistry(NULL, &lbos_answer.Get(), 
+                                 &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
-                           "Successful announcement did not end up with "
-                           "answer from LBOS");
+                                   "Successful announcement did not end up "
+                                   "with answer from LBOS");
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
-    //SleepMilliSec(1500); //ZK is not that fast
     /* Cleanup */
     s_DeannounceAll();
 }
@@ -4665,10 +4699,10 @@ void ParamsGood__ReturnSuccess()
 /*  2.  Custom section has nothing in config - return kLBOSInvalidArgs      */
 void CustomSectionNoVars__ReturnInvalidArgs()
 {
-    CLBOSStatus lbos_status(true, true);
-    CCObjHolder<char> lbos_answer(NULL);
-    CCObjHolder<char> lbos_status_message(NULL);
-    unsigned short result;
+    CLBOSStatus         lbos_status(true, true);
+    CCObjHolder<char>   lbos_answer(NULL);
+    CCObjHolder<char>   lbos_status_message(NULL);
+    unsigned short      result;
     WRITE_LOG("Custom section has nothing in config - "
               "return kLBOSInvalidArgs");
     result = s_AnnounceCRegistry("EMPTY_SECTION",
@@ -4676,29 +4710,30 @@ void CustomSectionNoVars__ReturnInvalidArgs()
                                  &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                         "LBOS status message is not NULL");
+                                   "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
-                           "Answer from LBOS was not NULL");
+                                   "Answer from LBOS was not NULL");
 }
 
 /*  3.  Section empty or NULL (should use default section and return 
         kLBOSSuccess, if section is Good)                                   */
 void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess()
 {
-    CLBOSStatus lbos_status(true, true);
-    CCObjHolder<char> lbos_answer(NULL);
-    CCObjHolder<char> lbos_status_message(NULL);
-    unsigned short result;
+    CLBOSStatus         lbos_status(true, true);
+    CCObjHolder<char>   lbos_answer(NULL);
+    CCObjHolder<char>   lbos_status_message(NULL);
+    unsigned short      result;
     WRITE_LOG("Section empty or NULL - should use default section and return "
               "kLBOSSuccess, if section is Good)");
     /*
      * I. NULL section
      */
-    result = s_AnnounceCRegistry(NULL, &lbos_answer.Get(), &lbos_status_message.Get());
+    result = s_AnnounceCRegistry(NULL, &lbos_answer.Get(), 
+                                 &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
-                           "Successful announcement did not end up with "
-                           "answer from LBOS");
+                                   "Successful announcement did not end up "
+                                   "with answer from LBOS");
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     /* Cleanup */
@@ -4708,7 +4743,8 @@ void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess()
     /* 
      * II. Empty section 
      */
-    result = s_AnnounceCRegistry("", &lbos_answer.Get(), &lbos_status_message.Get());
+    result = s_AnnounceCRegistry("", &lbos_answer.Get(), 
+                                 &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Successful announcement did not end up with "
@@ -4723,25 +4759,25 @@ void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess()
 
 void TestNullOrEmptyField(const char* field_tested)
 {
-    CLBOSStatus lbos_status(true, true);
-    CCObjHolder<char> lbos_answer(NULL);
-    unsigned short result;
-    CCObjHolder<char> lbos_status_message(NULL);
-    string null_section = "SECTION_WITHOUT_";
-    string empty_section = "SECTION_WITH_EMPTY_";
-    string field_name = field_tested;
+    CLBOSStatus         lbos_status             (true, true);
+    CCObjHolder<char>   lbos_answer             (NULL);
+    unsigned short      result;
+    CCObjHolder<char>   lbos_status_message     (NULL);
+    string              null_section            = "SECTION_WITHOUT_";
+    string              empty_section           = "SECTION_WITH_EMPTY_";
+    string              field_name              = field_tested;
     /* 
      * I. NULL section 
      */
     WRITE_LOG("Part I. " << field_tested << " is not in section (NULL)");
     result = s_AnnounceCRegistry((null_section + field_name).c_str(),
-                                       &lbos_answer.Get(), &lbos_status_message.Get());
+                                 &lbos_answer.Get(), 
+                                 &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                         "LBOS status message is not NULL");
+                                   "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
-                           "Answer from LBOS was not NULL");
-    //SleepMilliSec(1500); //ZK is not that fast
+                                   "Answer from LBOS was not NULL");
     /* Cleanup */
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -4750,12 +4786,13 @@ void TestNullOrEmptyField(const char* field_tested)
      */
     WRITE_LOG("Part II. " << field_tested << " is an empty string");
     result = s_AnnounceCRegistry((empty_section + field_name).c_str(),
-                                   &lbos_answer.Get(), &lbos_status_message.Get());
+                                 &lbos_answer.Get(), 
+                                 &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                         "LBOS status message is not NULL");
+                                   "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
-                           "Answer from LBOS was not NULL");
+                                   "Answer from LBOS was not NULL");
 }
 
 /*  4.  Service is empty or NULL - return kLBOSInvalidArgs                  */
@@ -4792,12 +4829,13 @@ void PortOutOfRange__ReturnInvalidArgs()
      */
     WRITE_LOG("Part I. Port is 0");
     result = s_AnnounceCRegistry("SECTION_WITH_PORT_OUT_OF_RANGE1",
-                                  &lbos_answer.Get(), &lbos_status_message.Get());
+                                  &lbos_answer.Get(), 
+                                  &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                         "LBOS status message is not NULL");
+                                   "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
-                           "Answer from LBOS was not NULL");
+                                   "Answer from LBOS was not NULL");
     /* Cleanup */
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -4806,12 +4844,13 @@ void PortOutOfRange__ReturnInvalidArgs()
      */
     WRITE_LOG("Part II. Port is 100000");
     result = s_AnnounceCRegistry("SECTION_WITH_PORT_OUT_OF_RANGE2",
-                                    &lbos_answer.Get(), &lbos_status_message.Get());
+                                 &lbos_answer.Get(), 
+                                 &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                         "LBOS status message is not NULL");
+                                   "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
-                           "Answer from LBOS was not NULL");
+                                   "Answer from LBOS was not NULL");
     /* Cleanup */
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -4820,12 +4859,13 @@ void PortOutOfRange__ReturnInvalidArgs()
      */
     WRITE_LOG("Part III. Port is 65536");
     result = s_AnnounceCRegistry("SECTION_WITH_PORT_OUT_OF_RANGE3",
-                                   &lbos_answer.Get(), &lbos_status_message.Get());
+                                 &lbos_answer.Get(), 
+                                 &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                         "LBOS status message is not NULL");
+                                   "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
-                           "Answer from LBOS was not NULL");
+                                   "Answer from LBOS was not NULL");
 }
 
 /*  8.  Port contains letters - return kLBOSInvalidArgs                     */
@@ -4837,12 +4877,13 @@ void PortContainsLetters__ReturnInvalidArgs()
     CCObjHolder<char> lbos_status_message(NULL);
     unsigned short result;
     result = s_AnnounceCRegistry("SECTION_WITH_CORRUPTED_PORT",
-                                 &lbos_answer.Get(), &lbos_status_message.Get());
+                                 &lbos_answer.Get(), 
+                                 &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                         "LBOS status message is not NULL");
+                                   "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
-                           "Answer from LBOS was not NULL");
+                                   "Answer from LBOS was not NULL");
     /* Cleanup */
     lbos_answer = NULL;    
 }
@@ -4865,12 +4906,13 @@ void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs()
     CCObjHolder<char> lbos_status_message(NULL);
     unsigned short result;
     result = s_AnnounceCRegistry("SECTION_WITH_CORRUPTED_HEALTHCHECK",
-                                   &lbos_answer.Get(), &lbos_status_message.Get());
+                                 &lbos_answer.Get(),
+                                 &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                         "LBOS status message is not NULL");
+                                   "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
-                           "Answer from LBOS was not NULL");
+                                   "Answer from LBOS was not NULL");
     /* Cleanup */
     lbos_answer = NULL;    
 }
@@ -4880,10 +4922,10 @@ void HealthcheckDead__ReturnKLBOSSuccess()
 {
     WRITE_LOG("Trying to announce server providing dead healthcheck URL - "
               "return kLBOSSuccess(previously was kLBOSNotFound)");
-    CLBOSStatus lbos_status(true, true);
-    CCObjHolder<char> lbos_answer(NULL);
-    CCObjHolder<char> lbos_status_message(NULL);
-    unsigned short result;
+    CLBOSStatus         lbos_status         (true, true);
+    CCObjHolder<char>   lbos_answer         (NULL);
+    CCObjHolder<char>   lbos_status_message (NULL);
+    unsigned short      result;
     /* 1. Non-existent domain in healthcheck */
     WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
               "return  kLBOSBadRequest");
@@ -4895,7 +4937,7 @@ void HealthcheckDead__ReturnKLBOSSuccess()
         "Bad Request");
     NCBITEST_CHECK_EQUAL_MT_SAFE(*lbos_answer, (char*)NULL);
     /* Cleanup */
-    lbos_answer = NULL;
+    lbos_answer         = NULL;
     lbos_status_message = NULL;
 
     /* 2. Healthcheck is reachable but does not answer */
@@ -4910,7 +4952,7 @@ void HealthcheckDead__ReturnKLBOSSuccess()
                            "Answer from LBOS was NULL");
     /* Cleanup */
     s_DeannounceAll();
-    lbos_answer = NULL;  
+    lbos_answer         = NULL;  
     lbos_status_message = NULL;
 }
 }
@@ -7249,11 +7291,7 @@ void TryMultiThread()
     X(14,MultiThreading::s_Stability_GetNextReset_ShouldNotCrash)             \
     X(15,MultiThreading::s_Stability_FullCycle_ShouldNotCrash)                \
     X(16,MultiThreading::s_Performance_FullCycle_ShouldNotCrash)              \
-    X(17,IPCache::AnnounceHostInHealthcheck__TryFindReturnsHostIP)            \
     X(18,IPCache::AnnounceHostSeparate__TryFindReturnsHostkIP)                \
-    X(19,IPCache::NotAnnounceHost__TryFindReturnsTheSame)                     \
-    X(20,IPCache::ResolveHost__TryFindReturnsIP)                              \
-    X(21,IPCache::ResolveIP__TryFindReturnsIP)                                \
     X(22,IPCache::ResolveEmpty__Error)                                        \
     X(23,IPCache::Resolve0000__Return0000)                                    \
     X(24,IPCache::DeannounceHost__TryFindDoesNotFind)                         \
