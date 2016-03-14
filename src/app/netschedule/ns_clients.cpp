@@ -862,7 +862,7 @@ string CNSClient::Print(const string &               node_name,
         buffer += "OK:  READER AFFINITIES GARBAGE COLLECTED: FALSE\n";
     else
         buffer += "OK:  READER AFFINITIES GARBAGE COLLECTED: TRUE\n";
-    buffer += "OK: LAST SCOPE: '" + m_LastScope + "'\n";
+    buffer += "OK:  LAST SCOPE: '" + m_LastScope + "'\n";
 
     return buffer;
 }
