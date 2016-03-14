@@ -499,6 +499,11 @@ private:
     bool x_IsDummyTSE(const CTSE_Info& tse,
                       const CSeq_annot_Info& annot) const;
 
+    void x_GetBioseqHandlesSorted(const TIds& ids,
+                                  size_t from,
+                                  size_t count,
+                                  TBioseqHandles& ret);
+
 public:
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
     typedef pair<CConstRef<CSeq_annot_Info>, TTSE_Lock> TSeq_annot_Lock;

@@ -68,6 +68,7 @@
 
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/scope_transaction_impl.hpp>
+#include <objmgr/impl/seq_id_sort.hpp>
 
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/error_codes.hpp>
@@ -3089,42 +3090,29 @@ static size_t sx_CountFalse(const vector<bool>& loaded)
 
 
 /// Bulk retrieval methods
-CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
+
+void CScope_Impl::x_GetBioseqHandlesSorted(const TIds&     ids,
+                                           size_t          from,
+                                           size_t          count,
+                                           TBioseqHandles& ret)
 {
-    TBioseqHandles ret;
-    size_t count = ids.size();
-    ret.reserve(count);
-    if ( count > 200 ) {
-        // split batch into smaller pieces to avoid problems with GC
-        TIds ids1;
-        for ( size_t pos = 0; pos < count; ) {
-            size_t cnt = count - pos;
-            if ( cnt > 150 ) cnt = 100;
-            ids1.assign(ids.begin()+pos, ids.begin()+pos+cnt);
-            TBioseqHandles ret1 = GetBioseqHandles(ids1);
-            ret.insert(ret.end(), ret1.begin(), ret1.end());
-            pos += cnt;
-        }
-        return ret;
-    }
-    ret.resize(count);
     TConfReadLockGuard rguard(m_ConfLock);
     // Keep locks to prevent cleanup of the loaded TSEs.
     typedef CDataSource_ScopeInfo::TSeqMatchMap TSeqMatchMap;
     TSeqMatchMap match_map;
-    for ( size_t i = 0; i < count; ++i ) {
+    for ( size_t i = from; i < from + count; ++i ) {
         ret[i] = GetBioseqHandle(ids[i], CScope::eGetBioseq_Resolved);
         if ( !ret[i] ) {
             match_map[ids[i]];
         }
     }
     if ( match_map.empty() ) {
-        return ret;
+        return;
     }
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         it->GetBlobs(match_map);
     }
-    for ( size_t i = 0; i < count; ++i ) {
+    for ( size_t i = from; i < from + count; ++i ) {
         if ( ret[i] ) {
             continue;
         }
@@ -3146,14 +3134,43 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
             ret[i].m_Info.Reset(info);
         }
     }
+}
+
+
+CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
+{
+    CSortedSeq_ids sorted_seq_ids(ids);
+    TIds sorted_ids;
+    sorted_seq_ids.GetSortedIds(sorted_ids);
+
+    TBioseqHandles ret;
+    size_t count = sorted_ids.size();
+    ret.resize(count);
+    if ( count > 200 ) {
+        // split batch into smaller pieces to avoid problems with GC
+        for ( size_t pos = 0; pos < count; ) {
+            size_t cnt = count - pos;
+            if ( cnt > 150 ) cnt = 100;
+            x_GetBioseqHandlesSorted(sorted_ids, pos, cnt, ret);
+            pos += cnt;
+        }
+    }
+    else {
+        x_GetBioseqHandlesSorted(sorted_ids, 0, count, ret);
+    }
+    sorted_seq_ids.RestoreOrder(ret);
     return ret;
 }
 
 
 void CScope_Impl::GetAccVers(TIds& ret,
-                             const TIds& ids,
+                             const TIds& unsorted_ids,
                              TGetFlags flags)
 {
+    CSortedSeq_ids sorted_seq_ids(unsorted_ids);
+    TIds ids;
+    sorted_seq_ids.GetSortedIds(ids);
+
     size_t count = ids.size(), remaining = count;
     ret.assign(count, CSeq_id_Handle());
     vector<bool> loaded(count);
@@ -3207,13 +3224,19 @@ void CScope_Impl::GetAccVers(TIds& ret,
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CScope::GetAccVers(): some sequences not found");
     }
+
+    sorted_seq_ids.RestoreOrder(ret);
 }
 
 
 void CScope_Impl::GetGis(TGIs& ret,
-                         const TIds& ids,
+                         const TIds& unsorted_ids,
                          TGetFlags flags)
 {
+    CSortedSeq_ids sorted_seq_ids(unsorted_ids);
+    TIds ids;
+    sorted_seq_ids.GetSortedIds(ids);
+
     size_t count = ids.size(), remaining = count;
     ret.assign(count, ZERO_GI);
     vector<bool> loaded(count);
@@ -3263,13 +3286,19 @@ void CScope_Impl::GetGis(TGIs& ret,
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CScope::GetGis(): some sequences not found");
     }
+
+    sorted_seq_ids.RestoreOrder(ret);
 }
 
 
 void CScope_Impl::GetLabels(TLabels& ret,
-                            const TIds& ids,
+                            const TIds& unsorted_ids,
                             TGetFlags flags)
 {
+    CSortedSeq_ids sorted_seq_ids(unsorted_ids);
+    TIds ids;
+    sorted_seq_ids.GetSortedIds(ids);
+
     size_t count = ids.size(), remaining = count;
     ret.assign(count, string());
     vector<bool> loaded(count);
@@ -3319,13 +3348,19 @@ void CScope_Impl::GetLabels(TLabels& ret,
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CScope::GetLabels(): some sequences not found");
     }
+
+    sorted_seq_ids.RestoreOrder(ret);
 }
 
 
 void CScope_Impl::GetTaxIds(TTaxIds& ret,
-                            const TIds& ids,
+                            const TIds& unsorted_ids,
                             TGetFlags flags)
 {
+    CSortedSeq_ids sorted_seq_ids(unsorted_ids);
+    TIds ids;
+    sorted_seq_ids.GetSortedIds(ids);
+
     size_t count = ids.size(), remaining = count;
     ret.assign(count, -1);
     vector<bool> loaded(count);
@@ -3381,13 +3416,19 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CScope::GetTaxIds(): some sequences not found");
     }
+
+    sorted_seq_ids.RestoreOrder(ret);
 }
 
 
 void CScope_Impl::GetSequenceLengths(TSequenceLengths& ret,
-                                     const TIds& ids,
+                                     const TIds& unsorted_ids,
                                      TGetFlags flags)
 {
+    CSortedSeq_ids sorted_seq_ids(unsorted_ids);
+    TIds ids;
+    sorted_seq_ids.GetSortedIds(ids);
+
     size_t count = ids.size(), remaining = count;
     ret.assign(count, kInvalidSeqPos);
     vector<bool> loaded(count);
@@ -3428,13 +3469,19 @@ void CScope_Impl::GetSequenceLengths(TSequenceLengths& ret,
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CScope::GetSequenceLengths(): some sequences not found");
     }
+
+    sorted_seq_ids.RestoreOrder(ret);
 }
 
 
 void CScope_Impl::GetSequenceTypes(TSequenceTypes& ret,
-                                   const TIds& ids,
+                                   const TIds& unsorted_ids,
                                    TGetFlags flags)
 {
+    CSortedSeq_ids sorted_seq_ids(unsorted_ids);
+    TIds ids;
+    sorted_seq_ids.GetSortedIds(ids);
+
     size_t count = ids.size(), remaining = count;
     ret.assign(count, CSeq_inst::eMol_not_set);
     vector<bool> loaded(count);
@@ -3475,13 +3522,19 @@ void CScope_Impl::GetSequenceTypes(TSequenceTypes& ret,
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CScope::GetSequenceTypes(): some sequences not found");
     }
+
+    sorted_seq_ids.RestoreOrder(ret);
 }
 
 
 void CScope_Impl::GetSequenceStates(TSequenceStates& ret,
-                                    const TIds& ids,
+                                    const TIds& unsorted_ids,
                                     TGetFlags flags)
 {
+    CSortedSeq_ids sorted_seq_ids(unsorted_ids);
+    TIds ids;
+    sorted_seq_ids.GetSortedIds(ids);
+
     const int kNotFound = (CBioseq_Handle::fState_not_found |
                            CBioseq_Handle::fState_no_data);
 
@@ -3525,13 +3578,19 @@ void CScope_Impl::GetSequenceStates(TSequenceStates& ret,
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CScope::GetSequenceStates(): some sequences not found");
     }
+
+    sorted_seq_ids.RestoreOrder(ret);
 }
 
 
 void CScope_Impl::GetSequenceHashes(TSequenceStates& ret,
-                                    const TIds& ids,
+                                    const TIds& unsorted_ids,
                                     TGetFlags flags)
 {
+    CSortedSeq_ids sorted_seq_ids(unsorted_ids);
+    TIds ids;
+    sorted_seq_ids.GetSortedIds(ids);
+
     size_t count = ids.size(), remaining = count;
     ret.assign(count, 0);
     vector<bool> loaded(count);
@@ -3573,6 +3632,8 @@ void CScope_Impl::GetSequenceHashes(TSequenceStates& ret,
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CScope::GetSequenceHashes(): some sequences not found");
     }
+
+    sorted_seq_ids.RestoreOrder(ret);
 }
 
 

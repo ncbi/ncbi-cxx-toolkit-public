@@ -313,9 +313,9 @@ bool CTestApplication::RunPass(int pass)
             data->LoadBulk(*scope);
         }
         ITERATE ( TIds, it, m_Ids ) {
-            _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded) ||
-                    (m_Type == IBulkTester::eBulk_hash &&
-                     !(m_GetFlags & CScope::fDoNotRecalculate)));
+            _ASSERT((m_Type == IBulkTester::eBulk_hash &&
+                     !(m_GetFlags & CScope::fDoNotRecalculate)) ||
+                     !scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded));
         }
     }}
     vector<bool> errors;
