@@ -686,7 +686,6 @@ char* g_LBOS_GetLBOSAddressEx (ELBOSFindMethod priority_find_method,
 {
     const char* lbosaddress = NULL; /* for const strings */
     char* lbosaddress_temp = NULL;  /* for non-const strings */
-    size_t lbosaddresses_count = 0;
     char* address = NULL;
     /* List of methods used, in their order */
     ELBOSFindMethod find_method_order[] = {
@@ -1320,7 +1319,6 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
     unsigned int    i;
     SSERV_Info**    hostports_array = 0;
     char*           lbos_address    = NULL; /* We copy LBOS address to  */
-    size_t          j               = 0;
 
     /* We suppose that number of addresses is constant (and so
        is position of NULL), so no mutex is necessary */
