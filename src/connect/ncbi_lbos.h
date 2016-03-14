@@ -28,8 +28,11 @@
 * Authors:  Dmitriy Elisov
 * @file
 * File Description:
-*   A service discovery API based on lbos. lbos is an adapter for ZooKeeper
-*   cloud-based DB. lbos allows to announce, deannounce and resolve services.
+*   Possibly public interface to LBOS client if someone ever needs a C version
+*
+*   LBOS client is a client for service discovery API based on LBOS.
+*   LBOS is a client for ZooKeeper cloud-based DB.
+*   LBOS allows to announce, deannounce and resolve services.
 */
 
 
