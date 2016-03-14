@@ -28,7 +28,7 @@
 * Authors:  Dmitriy Elisov
 * @file
 * File Description:
-*   Unit test functions for C++ wrapper for service discovery API based on LBOS.
+*   Unit test functions for the LBOS client.
 */
 
 #include <corelib/ncbiexpt.hpp>
@@ -60,16 +60,17 @@ private:
 class NCBI_XCONNECT_EXPORT CLBOSIpCache
 {
 public:
-    /** Search the cache for previously resolved hostname with a given service name,
-    * version, port. If not found - return the same hostname.
+    /** Search the cache for previously resolved hostname with a given 
+    * service name, version, port. If not found - return the same hostname.
     */
     static
     string HostnameTryFind(string service, string hostname, string version,
     unsigned short port);
 
 
-    /** Search the cache for previously resolved hostname with a given service name,
-    * version, port. If not found - resolve, cache and return result.
+    /** Search the cache for previously resolved hostname with a given 
+    * service name, version, port. If not found - resolve, cache and return 
+    * result.
     */
     static
         string HostnameResolve(string service, string hostname,
@@ -77,8 +78,9 @@ public:
 
 
     /** We do not need to store hostname<->IP record after the server is
-    * de-announced. So we just make sure that we delete the record only one time,
-    * in case if many threads are going to delete it at the same moment */
+    * de-announced. So we just make sure that we delete the record only one 
+    * time, in case if many threads are going to delete it at the same 
+    * moment */
     static
         void HostnameDelete(string service, string hostname, string version,
         unsigned short port);
