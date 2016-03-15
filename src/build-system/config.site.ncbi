@@ -295,7 +295,7 @@ case "$ncbi_platform" in
         ;;
 esac
 
-: ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.1.0-ncbi1} ;;
+: ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.1.0-ncbi1}
 
 case "$ncbi_platform" in
     *MAC       ) ;;
