@@ -134,7 +134,6 @@ public:
 protected:
     CNcbiOstream* m_ReportStream;
     bool m_UseDevServer;
-
 };
 
 
@@ -280,6 +279,8 @@ private:
     vector<CRef<CSeqdesc> > m_Descriptors;
 
     CBiosampleHandler * m_Handler;
+    
+    biosample_util::TBioSamples m_cache;
 };
 
 
@@ -930,7 +931,8 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
                                        unprocessed_ids,
                                        m_UseDevServer,
                                        m_CompareStructuredComments,
-                                       m_StructuredCommentPrefix);
+                                       m_StructuredCommentPrefix,
+                                       &m_cache);
     if (new_diffs.size() > 0) {
         m_Diffs.insert(m_Diffs.end(), new_diffs.begin(), new_diffs.end());
         ITERATE(vector<string>, id, unprocessed_ids) {
@@ -968,7 +970,7 @@ void CBiosampleChkApp::ProcessBioseqForUpdate(CBioseq_Handle bh)
     }
 
     ITERATE(vector<string>, id, biosample_ids) {
-        CRef<CSeq_descr> descr = biosample_util::GetBiosampleData(*id, m_UseDevServer);
+        CRef<CSeq_descr> descr = biosample_util::GetBiosampleData(*id, m_UseDevServer, &m_cache);
         if (descr) {
             m_Descriptors.clear();
             copy(descr->Set().begin(), descr->Set().end(),

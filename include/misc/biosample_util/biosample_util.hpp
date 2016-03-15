@@ -49,7 +49,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(biosample_util)
 
-CRef< CSeq_descr > GetBiosampleData(const string& accession, bool use_dev_server = false);
+typedef map< string, CRef< CSeq_descr > > TBioSamples;
+typedef map< string, CRef< CSeq_descr > >::iterator TBioSamplesIterator;
+
+CRef< CSeq_descr > GetBiosampleData(const string& accession, bool use_dev_server = false, TBioSamples *cache = NULL);
 
 enum EStatus {
     eStatus_Unknown = 0,
@@ -62,8 +65,9 @@ enum EStatus {
 };
 
 typedef map<string, EStatus> TStatuses;
+typedef map<string, EStatus>::iterator TStatusesIterator;
 typedef pair<string, biosample_util::EStatus> TStatus;
-EStatus GetBiosampleStatus(const string& accession, bool use_dev_server = false);
+EStatus GetBiosampleStatus(const string& accession, bool use_dev_server = false, TStatuses *cache = NULL);
 void GetBiosampleStatus(TStatuses& status, bool use_dev_server = false);
 string GetBiosampleStatusName(EStatus status);
 
@@ -118,7 +122,8 @@ GetBioseqDiffs(CBioseq_Handle bh,
                vector<string>& unprocessed_ids,
                bool use_dev_server = false,
                bool compare_structured_comments = false,
-               const string& expected_prefix = "");
+               const string& expected_prefix = "",
+               TBioSamples *cache = NULL);
 
 TBiosampleFieldDiffList GetFieldDiffs(const string& sequence_id, const string& biosample_id, const CBioSource& src, const CBioSource& sample);
 TBiosampleFieldDiffList GetFieldDiffs(const string& sequence_id, const string& biosample_id, CConstRef<CUser_object> src, CConstRef<CUser_object> sample);

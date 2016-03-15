@@ -54,9 +54,10 @@
 #include <objmgr/object_manager.hpp>
 #include <objtools/edit/dblink_field.hpp>
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 #include <list>
+#include <map>
 
 // for biosample fetching
 #include <objects/seq/Seq_descr.hpp>
@@ -81,8 +82,17 @@ BEGIN_SCOPE(biosample_util)
 using namespace xml;
 
 CRef< CSeq_descr >
-GetBiosampleData(const string& accession, bool use_dev_server)
+GetBiosampleData(const string& accession, bool use_dev_server, TBioSamples *cache)
 {
+    if (cache)
+    {
+        TBioSamplesIterator it = cache->find(accession);
+        if (it != cache->end())
+        {
+            return it->second;
+        }
+    }
+    
     string host = use_dev_server ? "dev-api-int" : "api-int";
     string path = "/biosample/fetch/";
     string args = "accession=" + accession + "&format=asn1raw";
@@ -95,6 +105,10 @@ GetBiosampleData(const string& accession, bool use_dev_server)
 	    *in_stream >> *response;
     } catch (...) {
         response.Reset(NULL);
+    }
+    if (cache)
+    {
+        (*cache)[accession] = response;
     }
     return response;
 }
@@ -149,8 +163,18 @@ TStatus ProcessBiosampleStatusNode(node& item)
     return response;
 }
 
-EStatus GetBiosampleStatus(const string& accession, bool use_dev_server)
+EStatus GetBiosampleStatus(const string& accession, bool use_dev_server, TStatuses *cache)
 {
+    if (cache)
+    {
+        TStatusesIterator it = cache->find(accession);
+        if (it != cache->end())
+        {
+            return it->second;
+        }
+    }
+
+    EStatus status = eStatus_Unknown;
     string host = use_dev_server ? "dev-api-int" : "api-int";
     string path = "/biosample/fetch/";
     string args = "accession=" + accession;
@@ -167,14 +191,19 @@ EStatus GetBiosampleStatus(const string& accession, bool use_dev_server)
     node::iterator it = root.begin();
     while (it != root.end())
     {
-        if (NStr::Equal(it->get_name(), "Status")) {
-            return GetBioSampleStatusFromNode(*it);
+        if (NStr::Equal(it->get_name(), "Status")) 
+        {
+            status = GetBioSampleStatusFromNode(*it);
+            break;
         }
         ++it;
     }
 #endif
-
-    return eStatus_Unknown;
+    if (cache)
+    {
+        (*cache)[accession] = status;
+    }
+    return status;
 }
 
 void ProcessBulkBioSample(TStatuses& status, string list, bool use_dev_server)
@@ -836,7 +865,8 @@ GetBioseqDiffs(CBioseq_Handle bh,
                vector<string>& unprocessed_ids,
                bool use_dev_server, 
                bool compare_structured_comments,
-               const string& expected_prefix)
+               const string& expected_prefix,
+               TBioSamples *cache)
 {
     TBiosampleFieldDiffList diffs;
 
@@ -874,7 +904,7 @@ GetBioseqDiffs(CBioseq_Handle bh,
     string sequence_id = GetBestBioseqLabel(bh);
 
     ITERATE(vector<string>, id, biosample_ids) {
-        CRef<CSeq_descr> descr = GetBiosampleData(*id, use_dev_server);
+        CRef<CSeq_descr> descr = GetBiosampleData(*id, use_dev_server, cache);
         if (descr) {
             ITERATE(CSeq_descr::Tdata, it, descr->Get()) {
                 if ((*it)->IsSource()) {
