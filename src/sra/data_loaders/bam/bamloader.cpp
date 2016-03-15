@@ -202,12 +202,20 @@ string CBAMDataLoader::GetLoaderNameFromArgs(
 
 
 CBAMDataLoader::CBAMDataLoader(const string& loader_name,
-                               const SLoaderParams& params)
+                               const SLoaderParams& params0)
     : CDataLoader(loader_name)
 {
-    string dir_path = params.m_DirPath;
-    if ( dir_path.empty() ) {
-        dir_path = NCBI_PARAM_TYPE(BAM, DIR_PATH)::GetDefault();
+    SLoaderParams params = params0;
+    if ( params.m_DirPath.empty() ) {
+        params.m_DirPath = NCBI_PARAM_TYPE(BAM, DIR_PATH)::GetDefault();
+    }
+    if ( params.m_BamFiles.empty() ) {
+        SBamFileName file;
+        file.m_BamName = NCBI_PARAM_TYPE(BAM, BAM_NAME)::GetDefault();
+        file.m_IndexName = NCBI_PARAM_TYPE(BAM, INDEX_NAME)::GetDefault();
+        if ( !file.m_BamName.empty() ) {
+            params.m_BamFiles.push_back(file);
+        }
     }
     m_Impl.Reset(new CBAMDataLoader_Impl(params));
 }
