@@ -70,7 +70,7 @@
 #define NETCACHE_OPTION "netcache"
 #define CACHE_OPTION "cache"
 #define TRY_ALL_SERVERS_OPTION "try-all-servers"
-#define NETSTORAGE_OPTION "netstorage"
+#define NETSTORAGE_OPTION "nst|netstorage"
 #define OBJECT_KEY_OPTION "object-key"
 #define NAMESPACE_OPTION "namespace"
 #define PERSISTENT_OPTION "persistent"
@@ -119,6 +119,7 @@
 #define PASSWORD_OPTION "password"
 #define OFFSET_OPTION "offset"
 #define SIZE_OPTION "size|length"
+#define DIRECT_MODE_OPTION "direct"
 
 #define LOGIN_COMMAND "login"
 #define JOBINFO_COMMAND "jobinfo"
@@ -251,6 +252,7 @@ enum EOption {
     eNoDNSLookup,
     eNCID,
     eOptionalNCID,
+    eDirectMode,
 
     eExtendedOptionDelimiter,
 

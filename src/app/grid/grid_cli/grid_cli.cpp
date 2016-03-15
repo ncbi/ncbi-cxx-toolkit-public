@@ -169,7 +169,7 @@ struct SOptionDefinition {
         "use-compound-id", "Return key in CompoundID format.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eNetStorage),
-        "nst|" NETSTORAGE_OPTION, "NetStorage service name "
+        NETSTORAGE_OPTION, "NetStorage service name "
             "or server address.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eObjectKey),
@@ -441,6 +441,11 @@ struct SOptionDefinition {
 
     {OPT_DEF(eZeroOrMorePositional, eOptionalNCID), "ID", NULL, {-1}},
 
+    {OPT_DEF(eSwitch, eDirectMode),
+        DIRECT_MODE_OPTION, "Use direct connection to the storage back-end "
+            "even if provided locator has a NetStorage service. Cannot be "
+            "used together with '--" NETSTORAGE_OPTION "' option.", {-1}},
+
     /* Options available only with --extended-cli go below. */
 
     {OPT_DEF(eSwitch, eExtendedOptionDelimiter), NULL, NULL, {-1}},
@@ -519,9 +524,12 @@ struct SCommandCategoryDefinition {
 
 #define ABOUT_NETSTORAGE_OPTION \
     "\n\nIf a NetStorage service (or server) is specified " \
-    "via the '--" NETSTORAGE_OPTION "' option, that service " \
+    "via the '--" NETSTORAGE_OPTION "' option or provided object locator " \
+    "contains a NetStorage service, that service " \
     "or server will be used as a gateway to the actual storage " \
-    "back-end (e.g. NetCache). If the option is not specified, " \
+    "back-end (e.g. NetCache). If the option is not specified " \
+    "and either the locator does not contain a NetStorage service " \
+    "or '--" DIRECT_MODE_OPTION "' option specified, " \
     "a direct connection to the storage back-end is established."
 
 #define WN_NOT_NOTIFIED_DISCLAIMER \
@@ -628,7 +636,7 @@ struct SCommandDefinition {
         {eOptionalObjectLoc, eNetStorage, ePersistent, eFastStorage,
             eNetCache, eNamespace, eTTL, eMovable, eCacheable, eNoMetaData,
             eInput, eInputFile, eLoginToken, eAuth,
-            eFileTrackSite, eFileTrackAPIKey,
+            eFileTrackSite, eFileTrackAPIKey, eDirectMode,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Download,
@@ -637,7 +645,7 @@ struct SCommandDefinition {
         "send its contents to the standard output or a file."
         ABOUT_NETSTORAGE_OPTION,
         {eObjectLoc, eNetStorage, eNetCache, eOffset, eSize,
-            eOutputFile, eLoginToken, eAuth,
+            eOutputFile, eLoginToken, eAuth, eDirectMode,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Relocate,
@@ -651,7 +659,7 @@ struct SCommandDefinition {
         ABOUT_NETSTORAGE_OPTION,
         {eObjectLoc, eNetStorage, ePersistent, eFastStorage, eNetCache, eNamespace,
             eMovable, eCacheable, eNoMetaData, eLoginToken, eAuth,
-            eFileTrackSite, eFileTrackAPIKey,
+            eFileTrackSite, eFileTrackAPIKey, eDirectMode,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkObjectLoc,
@@ -672,7 +680,7 @@ struct SCommandDefinition {
         "objectinfo", "Print information about a NetStorage object.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eObjectLoc, eNetStorage, eNetCache, eLoginToken, eAuth,
+        {eObjectLoc, eNetStorage, eNetCache, eLoginToken, eAuth, eDirectMode,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand,
@@ -680,7 +688,7 @@ struct SCommandDefinition {
         "rmobject", "Remove a NetStorage object by its locator.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eObjectLoc, eNetStorage, eNetCache, eLoginToken, eAuth,
+        {eObjectLoc, eNetStorage, eNetCache, eLoginToken, eAuth, eDirectMode,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttr,

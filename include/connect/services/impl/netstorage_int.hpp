@@ -107,6 +107,8 @@ public:
         m_Dirty = true;
     }
 
+    bool HasServiceName() const {return m_LocatorFlags & fLF_NetStorageService;}
+
     string GetServiceName() const {return m_ServiceName;}
 
     ENetStorageObjectLocation GetLocation() const {return m_Location;}

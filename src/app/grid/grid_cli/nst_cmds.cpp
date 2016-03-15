@@ -39,6 +39,12 @@ USING_NCBI_SCOPE;
 string CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity /*cmd_severity*/)
 {
+    if (IsOptionExplicitlySet(eNetStorage) &&
+            IsOptionExplicitlySet(eDirectMode)) {
+        NCBI_THROW(CArgException, eExcludedValue, "'--" DIRECT_MODE_OPTION "' "
+            "cannot be used together with '--" NETSTORAGE_OPTION "'");
+    }
+
     m_APIClass = api_class;
 
     if (api_class == eNetStorageAdmin && !IsOptionExplicitlySet(eNetStorage)) {
@@ -46,8 +52,22 @@ string CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             "must be explicitly specified.");
     }
 
-    string init_string = IsOptionSet(eNetStorage) ?
-        "nst=" + NStr::URLEncode(m_Opts.nst_service) : "mode=direct";
+    string init_string("mode=direct");
+   
+    if (IsOptionSet(eNetStorage)) {
+        init_string = "nst=";
+        init_string += NStr::URLEncode(m_Opts.nst_service);
+    } else if (!IsOptionExplicitlySet(eDirectMode)) {
+
+        if (IsOptionSet(eOptionalObjectLoc) || IsOptionSet(eObjectLoc)) {
+            CNetStorageObjectLoc locator(CCompoundIDPool(), m_Opts.id);
+
+            if (locator.HasServiceName()) {
+                init_string = "nst=";
+                init_string += NStr::URLEncode(locator.GetServiceName());
+            }
+        }
+    }
 
     if (IsOptionExplicitlySet(eFileTrackSite)) {
         init_string += "&ft_site=";
