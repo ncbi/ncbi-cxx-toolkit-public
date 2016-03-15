@@ -12,7 +12,7 @@ ASN_DEP = seqset seq
 
 LIB_OR_DLL = both
 
-DLL_LIB = $(SOBJMGR_LIBS) bamread$(STATIC) $(BAM_LIBS) $(CMPRS_LIB)
+DLL_LIB = xobjreadex xobjread $(SOBJMGR_LIBS) bamread$(STATIC) $(BAM_LIBS) $(CMPRS_LIB)
 LIBS = $(SRA_SDK_SYSLIBS) $(ORIG_LIBS)
 POST_LINK = $(VDB_POST_LINK)
 
