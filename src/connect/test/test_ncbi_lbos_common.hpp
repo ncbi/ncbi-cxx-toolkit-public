@@ -321,7 +321,7 @@ const int              kSingleThreadNumber          = -1;
 const int              kMainThreadNumber            = 99;
 const int              kHealthThreadNumber          = 100;
 /* Seconds to try to find server. We wait maximum of 60 seconds. */
-const int              kDiscoveryDelaySec           = 60; 
+const int              kDiscoveryDelaySec           = 15; 
 /* for tests where port is not necessary (they fail before announcement) */
 const unsigned short   kDefaultPort                 = 5000; 
 /** Static variables that are used in mock functions.
@@ -822,7 +822,7 @@ static int  s_FindAnnouncedServer(string            service,
     unsigned int found = 0;
     /* Just iterate and compare */
     unsigned int i = 0;
-    CORE_LOCK_WRITE;
+    CORE_LOCK_READ;
     for (i = 0; i < count; i++) {
         if (strcasecmp(service.c_str(), arr[i].service) == 0
             &&
@@ -866,7 +866,8 @@ static string s_GetUnknownService() {
     const int length = 10;
     unsigned int i;
     for (;;) {
-        string result = string("/deleteme") + NStr::Replace(s_GetMyIP(),".", "");
+        string result = 
+            string("/deleteme") + NStr::Replace(s_GetMyIP(),".", "");
         i = result.length();
         result.resize(result.length() + length);
         for ( ; i < result.length(); i++) {
