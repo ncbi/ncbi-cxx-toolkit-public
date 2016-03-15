@@ -15117,53 +15117,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_HpotheticalProteinMismatch) {
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureRefersToAccession)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
-    CRef<CSeq_id> gi(new CSeq_id());
-    gi->SetGi(GI_FROM(TIntId, 21914627));
-    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
-    nuc->SetSeq().SetId().push_back (gi);
-    CRef<CSeq_id> acc(new CSeq_id());
-    acc->SetGenbank().SetAccession("AY123456");
-    acc->SetGenbank().SetVersion(1);
-    nuc->SetSeq().SetId().push_back (acc);
-    CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
-    CRef<CSeq_id> acc2(new CSeq_id());
-    acc2->SetGenbank().SetAccession("XYZ12345");
-    prot->SetSeq().SetId().push_back(acc2);
-
-    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
-    cds->SetProduct().SetWhole().Assign(*acc2);
-    cds->SetLocation().SetInt().SetId().Assign(*gi);
-    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(nuc);
-    misc->SetLocation().SetInt().SetId().Assign(*acc);
-   
-    AddCDSAndProtForBigGoodNucProtSet (entry, "nuc", "prot2", 30);
-    CRef<CSeq_id> acc3(new CSeq_id());
-    acc3->SetGenbank().SetAccession("XYZ12346");
-    acc3->SetGenbank().SetVersion(1);
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetId().push_back(acc3);
-    CRef<CSeq_id> gi2(new CSeq_id());
-    gi2->SetGi(GI_FROM(TIntId, 123456));
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetId().push_back(gi2);
-    entry->SetSet().SetAnnot().front()->SetData().SetFtable().back()->SetProduct().SetWhole().Assign (*gi2);
-
-    STANDARD_SETUP_WITH_DATABASE
-
-    expected_errors.push_back (new CExpectedError("AY123456.1", eDiag_Warning, "FeatureRefersToAccession",
-                               "Feature location refers to accession"));
-    expected_errors.push_back (new CExpectedError("XYZ12346.1", eDiag_Warning, "UnexpectedIdentifierChange",
-                               "Gain of accession (gb|XYZ12346.1|) on gi (123456) compared to the NCBI sequence repository"));
-    expected_errors.push_back (new CExpectedError("AY123456.1", eDiag_Warning, "FeatureRefersToAccession",
-                               "Feature product refers to accession"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS    
-}
-
-
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SelfReferentialProduct)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();

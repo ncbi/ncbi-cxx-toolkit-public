@@ -630,65 +630,6 @@ void CValidError_feat::ValidateSeqFeatData
 }
 
 
-static bool s_SeqLocHasAccession (const CSeq_loc& loc)
-{
-    bool rval = false;
-
-    string label;
-    loc.GetLabel (&label);
-
-    for ( CSeq_loc_CI it(loc); it && !rval; ++it ) {
-        switch (it.GetSeq_id().Which()) {
-            case CSeq_id::e_Genbank:
-                if (it.GetSeq_id().GetGenbank().IsSetAccession()
-                    && !NStr::IsBlank (it.GetSeq_id().GetGenbank().GetAccession())) {
-                    rval = true;
-                }
-                break;
-            case CSeq_id::e_Embl:
-                if (it.GetSeq_id().GetEmbl().IsSetAccession()
-                    && !NStr::IsBlank (it.GetSeq_id().GetEmbl().GetAccession())) {
-                    rval = true;
-                }
-                break;
-            case CSeq_id::e_Ddbj:
-                if (it.GetSeq_id().GetDdbj().IsSetAccession()
-                    && !NStr::IsBlank (it.GetSeq_id().GetDdbj().GetAccession())) {
-                    rval = true;
-                }
-                break;
-            case CSeq_id::e_Tpg:
-                if (it.GetSeq_id().GetTpg().IsSetAccession()
-                    && !NStr::IsBlank (it.GetSeq_id().GetTpg().GetAccession())) {
-                    rval = true;
-                }
-                break;
-            case CSeq_id::e_Tpe:
-                if (it.GetSeq_id().GetTpe().IsSetAccession()
-                    && !NStr::IsBlank (it.GetSeq_id().GetTpe().GetAccession())) {
-                    rval = true;
-                }
-                break;
-            case CSeq_id::e_Tpd:
-                if (it.GetSeq_id().GetTpd().IsSetAccession()
-                    && !NStr::IsBlank (it.GetSeq_id().GetTpd().GetAccession())) {
-                    rval = true;
-                }
-                break;
-            case CSeq_id::e_Other:
-                if (it.GetSeq_id().GetOther().IsSetAccession()
-                    && !NStr::IsBlank (it.GetSeq_id().GetOther().GetAccession())) {
-                    rval = true;
-                }
-                break;
-            default:
-                break;
-        }
-    }
-    return rval;
-}
-
-
 void CValidError_feat::ValidateSeqFeatProduct
 (const CSeq_loc& prod, const CSeq_feat& feat)
 {
@@ -755,10 +696,6 @@ void CValidError_feat::ValidateSeqFeatProduct
                 break;
             }
         }
-    }
-    // look for accession IDs in location
-    if (m_Imp.DoesAnyProductLocHaveGI() && s_SeqLocHasAccession (prod) && !m_Imp.IsGpipe()) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureRefersToAccession, "Feature product refers to accession", feat);
     }
 }
 
@@ -8291,11 +8228,6 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                 "Bond location should only be on bond features", feat);
     }
 
-    // look for accession IDs in location
-    if (m_Imp.DoesAnyFeatLocHaveGI() && s_SeqLocHasAccession (feat.GetLocation()) && !m_Imp.IsGpipe()) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureRefersToAccession, "Feature location refers to accession", feat);
-    }
-                    
     // check for location on multiple near non-part bioseqs
     //CSeq_entry_Handle tse = m_Scope->GetSeq_entryHandle(m_Imp.GetTSE());
     CSeq_entry_Handle tse = m_Imp.GetTSEH();
