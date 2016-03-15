@@ -1640,23 +1640,29 @@ const CDB_Exception::SContext& CConnHolder::GetContext(void) const
 }
 
 
-inline
-CDatabaseImpl::CDatabaseImpl(const CSDB_ConnectionParam& params)
-    : m_IsOpen(false)
+inline void
+CDatabaseImpl::Connect(const CSDB_ConnectionParam& params)
 {
     CDBConnParamsBase lower_params;
     params.x_FillLowerParams(&lower_params);
     AutoPtr<IConnection> conn = s_GetDataSource()->CreateConnection();
     conn->Connect(lower_params);
     m_Conn.Reset(new CConnHolder(conn.release()));
-    m_IsOpen = true;
+    m_IsOpen = m_EverConnected = true;
     m_Conn->AddOpenRef();
+}
+
+inline
+CDatabaseImpl::CDatabaseImpl(void)
+    : m_IsOpen(false), m_EverConnected(false)
+{
 }
 
 inline
 CDatabaseImpl::CDatabaseImpl(const CDatabaseImpl& other)
     : m_Conn(other.m_Conn),
-      m_IsOpen(other.m_IsOpen)
+      m_IsOpen(other.m_IsOpen),
+      m_EverConnected(other.m_EverConnected)
 {
     if (m_IsOpen)
         m_Conn->AddOpenRef();
@@ -1686,6 +1692,12 @@ CDatabaseImpl::IsOpen(void) const
     return m_IsOpen;
 }
 
+inline bool
+CDatabaseImpl::EverConnected(void) const
+{
+    return m_EverConnected;
+}
+
 inline IConnection*
 CDatabaseImpl::GetConnection(void)
 {
@@ -1713,19 +1725,18 @@ CDatabaseImpl::GetContext(void) const
 
 
 CDatabase::CDatabase(void)
-    : m_EverConnected(false)
+    : m_Impl(new CDatabaseImpl)
 {}
 
 CDatabase::CDatabase(const CSDB_ConnectionParam& params)
-    : m_Params(params), m_EverConnected(false)
+    : m_Params(params), m_Impl(new CDatabaseImpl)
 {}
 
 CDatabase::CDatabase(const string& url_string)
-    : m_Params(url_string), m_EverConnected(false)
+    : m_Params(url_string), m_Impl(new CDatabaseImpl)
 {}
 
 CDatabase::CDatabase(const CDatabase& db)
-    : m_EverConnected(false)
 {
     operator= (db);
 }
@@ -1734,16 +1745,15 @@ CDatabase&
 CDatabase::operator= (const CDatabase& db)
 {
     m_Params = db.m_Params;
-    m_Impl.Reset(db.m_Impl? new CDatabaseImpl(*db.m_Impl): NULL);
-    m_EverConnected = db.m_EverConnected;
+    m_Impl   = db.m_Impl;
     return *this;
 }
 
 CDatabase::~CDatabase(void)
 {
-    if (m_Impl) {
+    if (m_Impl->IsOpen()) {
         try {
-            m_Impl->Close();
+            m_Impl.Reset();
         }
         STD_CATCH_ALL_X(12, "CDatabase::~CDatabase");
     }
@@ -1753,12 +1763,10 @@ void
 CDatabase::Connect(void)
 {
     try {
-        if (m_Impl) {
-            m_Impl->Close();
-            m_Impl.Reset();
+        if (m_Impl->IsOpen()) {
+            m_Impl.Reset(new CDatabaseImpl);
         }
-        m_Impl.Reset(new CDatabaseImpl(m_Params));
-        m_EverConnected = true;
+        m_Impl->Connect(m_Params);
     }
     SDBAPI_CATCH_LOWLEVEL()
 }
@@ -1766,19 +1774,18 @@ CDatabase::Connect(void)
 void
 CDatabase::Close(void)
 {
-    if (!m_Impl)
+    if ( !m_Impl->IsOpen() )
         return;
     try {
         m_Impl->Close();
     }
     SDBAPI_CATCH_LOWLEVEL()
-    m_Impl.Reset();
 }
 
 bool
 CDatabase::IsConnected(EConnectionCheckMethod check_method)
 {
-    if (m_Impl == NULL  ||  !m_Impl->IsOpen()) {
+    if ( !m_Impl->IsOpen() ) {
         return false;
     } else if (check_method == eNoCheck) {
         return true;
@@ -1860,7 +1867,7 @@ CDatabase::NewBookmark(const string& table_name, const string& column_name,
 
 void CDatabase::x_ConnectAsNeeded(const char* operation)
 {
-    if ( !m_EverConnected ) {
+    if ( !m_Impl->EverConnected() ) {
         ERR_POST_X(19, Info << operation << ": connecting on demand.");
         Connect();
     } else if ( !IsConnected(eNoCheck) ) {

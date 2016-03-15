@@ -67,11 +67,13 @@ private:
 class CDatabaseImpl : public CObject
 {
 public:
+    CDatabaseImpl(void);
     CDatabaseImpl(const CDatabaseImpl& other);
-    CDatabaseImpl(const CSDB_ConnectionParam& params);
     ~CDatabaseImpl(void);
 
+    void Connect(const CSDB_ConnectionParam& params);
     bool IsOpen() const;
+    bool EverConnected() const;
     void Close();
 
     IConnection* GetConnection(void);
@@ -83,6 +85,7 @@ public:
 private:
     CRef<CConnHolder>   m_Conn;
     bool                m_IsOpen;
+    bool                m_EverConnected;
 };
 
 

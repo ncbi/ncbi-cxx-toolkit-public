@@ -1126,7 +1126,6 @@ private:
     CSDB_ConnectionParam m_Params;
     /// Database implementation object
     CRef<CDatabaseImpl>  m_Impl;
-    bool                 m_EverConnected;
 };
 
 
