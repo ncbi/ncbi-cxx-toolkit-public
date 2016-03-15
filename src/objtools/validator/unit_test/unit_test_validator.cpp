@@ -1242,28 +1242,28 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFF');
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFF');
     entry->SetSeq().SetInst().SetLength(65);
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [69] at position [5]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [70] at position [6]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [73] at position [9]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [74] at position [10]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [76] at position [12]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [79] at position [15]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [80] at position [16]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [81] at position [17]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [85] at position [21]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [88] at position [24]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [90] at position [26]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [69] at position [31]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [70] at position [32]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [73] at position [35]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [74] at position [36]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [76] at position [38]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [79] at position [41]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [80] at position [42]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [81] at position [43]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [85] at position [47]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [88] at position [50]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [90] at position [52]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [E] at position [5]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [F] at position [6]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [I] at position [9]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [J] at position [10]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [L] at position [12]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [O] at position [15]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [P] at position [16]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [Q] at position [17]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [U] at position [21]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [X] at position [24]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [Z] at position [26]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [E] at position [31]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [F] at position [32]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [I] at position [35]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [J] at position [36]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [L] at position [38]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [O] at position [41]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [P] at position [42]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [Q] at position [43]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [U] at position [47]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [X] at position [50]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue [Z] at position [52]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid residue [251] at position [53]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid residue [251] at position [54]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid residue [251] at position [55]"));
@@ -3643,7 +3643,7 @@ BOOST_AUTO_TEST_CASE(Test_InternalGapsInSeqRaw)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid residue [45] at position [27]"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid residue [-] at position [27]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InternalGapsInSeqRaw", "Raw nucleotide should not contain gap characters"));
 
     eval = validator.Validate(seh, options);
@@ -10830,7 +10830,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     prot_feat->SetLocation().SetInt().SetTo(6);
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue [35] at position [3]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue [#] at position [3]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PartialsInconsistent",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "PartialProblem",
@@ -10849,7 +10849,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     prot_seq = entry->SetSet().SetSeq_set().back();
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Invalid residue [35] at position [25]");
+    expected_errors[0]->SetErrMsg("Invalid residue [#] at position [25]");
     expected_errors[2]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence (and is at bad sequence)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

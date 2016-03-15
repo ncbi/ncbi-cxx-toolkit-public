@@ -2925,7 +2925,11 @@ void CValidError_bioseq::ValidateRawConst(
                                 msg += " nucleotide";
                             }
                             msg += " residue [";
-                            msg += NStr::UIntToString(res);
+                            if (seqtyp == CSeq_data::e_Ncbistdaa) {
+                                msg += NStr::UIntToString(res);
+                            } else {
+                                msg += res;
+                            }
                             msg += "] at position [" + NStr::UIntToString(pos) + "]";
 
                             PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
