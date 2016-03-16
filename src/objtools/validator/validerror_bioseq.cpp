@@ -2664,11 +2664,13 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             return;
         }
                 
-        EBioseqEndIsType begin_n;
-        EBioseqEndIsType begin_gap;
-        EBioseqEndIsType end_n;
-        EBioseqEndIsType end_gap;
-        CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap);
+        EBioseqEndIsType begin_n = eBioseqEndIsType_None;
+        EBioseqEndIsType begin_gap = eBioseqEndIsType_None;
+        EBioseqEndIsType end_n = eBioseqEndIsType_None;
+        EBioseqEndIsType end_gap = eBioseqEndIsType_None;
+        if (x_IsDeltaLitOnly(seq.GetInst())) {
+            CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap);
+        }
 
         bool only_local = true;
         bool is_NC = false;
