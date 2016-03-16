@@ -2924,13 +2924,15 @@ void CValidError_bioseq::ValidateRawConst(
                             } else if (seq.IsNa() && res == 'U') {
                                 msg += " nucleotide";
                             }
-                            msg += " residue [";
+                            msg += " residue ";
                             if (seqtyp == CSeq_data::e_Ncbistdaa) {
-                                msg += NStr::UIntToString(res);
+                                msg += "[" + NStr::UIntToString(res) + "]";
                             } else {
+                                msg += "'";
                                 msg += res;
+                                msg += "'";
                             }
-                            msg += "] at position [" + NStr::UIntToString(pos) + "]";
+                            msg += " at position [" + NStr::UIntToString(pos) + "]";
 
                             PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
                                 msg, seq);
