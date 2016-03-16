@@ -272,3 +272,30 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "libsybct64.dll internal problem"
+	type = {invalid_memory_access}
+	stacks = {
+		allocation={
+			!!!;
+			mod=ntdll.dll,func=RtlCompareUnicodeStrings;
+			...;
+			mod=libsybct64.dll,func=ct_dynsqlda;
+		}
+	}
+}
+suppression = {
+	name = "MSVCR120.dll memory error in stat64()"
+	type = {invalid_memory_access}
+	stacks = {
+		allocation={
+			...;
+			mod=MSVCR120.dll,func=stat64;
+		}
+		{
+			...;
+			mod=MSVCR120.dll,func=stat64;
+		}
+	}
+}
+
