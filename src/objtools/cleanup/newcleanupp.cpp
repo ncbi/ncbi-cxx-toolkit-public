@@ -4835,7 +4835,18 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
             return eAction_Erase;
         }
 
-        if( !rna.IsSetExt() || rna.GetExt().IsGen() ) {
+        if (!rna.IsSetExt()) {
+            string remainder;
+            rna.SetRnaProductName(gb_qual_val, remainder);
+            ChangeMade(CCleanupChange::eChangeRNAref);
+            if (NStr::IsBlank(remainder)) {
+                return eAction_Erase;
+            } else {
+                gb_qual.SetQual(remainder);
+                return eAction_Nothing;
+            }
+        }
+        if( rna.GetExt().IsGen() ) {
             CRNA_gen & rna_gen = rna.SetExt().SetGen();
             if( RAW_FIELD_IS_EMPTY_OR_UNSET(rna_gen, Product) ) {
                 rna_gen.SetProduct(gb_qual_val);
@@ -4844,7 +4855,7 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
             }
             return eAction_Nothing;
         }
-        if (rna.IsSetExt() && rna.GetExt().IsName() && NStr::Equal(rna.GetExt().GetName(), gb_qual_val)) {
+        if (rna.GetExt().IsName() && NStr::Equal(rna.GetExt().GetName(), gb_qual_val)) {
             return eAction_Erase;
         }
         if ( rna.IsSetExt() && ! rna.GetExt().IsName() ) return eAction_Nothing;
