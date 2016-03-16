@@ -11436,9 +11436,6 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_TransLen)
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodNucProtSet();
     cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
-    cds->SetExcept(true);
-    cds->SetExcept_text("annotated by transcript or proteomic data");
-    cds->AddQualifier("inference", "similar to DNA sequence:INSD:AY123456.1");
     prot_seq = entry->SetSet().SetSeq_set().back();
     prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEINQQLLLLLLLLLLQQQQQQQQQQ");
     prot_seq->SetSeq().SetInst().SetLength(30);
@@ -11446,11 +11443,23 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_TransLen)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ProductLength",
                               "Protein product length [30] is more than 120% of the translation length [9]"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
+        "Given protein length [30] does not match translation length [9]"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    // setting this exception suppresses the error
+    cds->SetExcept(true);
+    cds->SetExcept_text("annotated by transcript or proteomic data");
+    // inference is required for exception
+    cds->AddQualifier("inference", "similar to DNA sequence:INSD:AY123456.1");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+
 }
 
 
