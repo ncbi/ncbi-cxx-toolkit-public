@@ -774,9 +774,9 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
     if (bin_hdr.empty() || OID>=0) {
         // Compress the deflines to binary.
 
-        ostringstream oss;
+        CNcbiOstrstream oss;
         oss << MSerial_AsnBinary << *deflines;
-        bin_hdr = oss.str();
+        bin_hdr = CNcbiOstrstreamToString(oss);
     }
 
     if (deflines.Empty() && (! bin_hdr.empty())) {
@@ -1547,6 +1547,8 @@ void CWriteDB_Impl::x_ComputeHash(const CBioseq & sequence)
     m_Hash = SeqDB_SequenceHash(sequence);
 }
 
+#define TAB_REPLACEMENT "   "
+
 void CWriteDB_Impl::
 x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                          CConstRef<CBlast_def_line_set> & deflines,
@@ -1583,8 +1585,8 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                     f.GetLabel().GetStr() == "DefLine" &&
                     f.CanGetData() &&
                     f.GetData().IsStr()) {
-
-                    fasta = NStr::ParseEscapes(f.GetData().GetStr());
+                    fasta = NStr::Replace(f.GetData().GetStr(), "\\t", TAB_REPLACEMENT);
+                    fasta = NStr::ParseEscapes(fasta);
                     break;
                 }
             }
@@ -1622,7 +1624,7 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
         // Replace ^A with space
         NStr::ReplaceInPlace(title, "\001", " ");
         // Replace tabs with three spaces
-        NStr::ReplaceInPlace(title, "\t", "   ");
+        NStr::ReplaceInPlace(title, "\t", TAB_REPLACEMENT);
         defline->SetTitle(title);
 
         if (mship_i < membits.size()) {

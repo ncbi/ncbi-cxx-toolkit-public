@@ -2535,6 +2535,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomy)
     CWriteDB blastdb(kDbName, CWriteDB::eNucleotide, kDbName);
     const CFastaReader::TFlags flags =
         CFastaReader::fAssumeNuc | CFastaReader::fAllSeqIds;
+    // This file contains TAB characters, which shouldn't create any warnings
     CFastaReader reader("data/rabbit_mrna.fsa", flags);
     set<TGi> gis;
     while (!reader.AtEOF()) {
