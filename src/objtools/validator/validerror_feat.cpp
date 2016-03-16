@@ -5236,7 +5236,7 @@ static const char* const sc_BypassMrnaTransCheckText[] = {
     "adjusted for low-quality genome",
     "annotated by transcript or proteomic data",
     "artificial frameshift",
-    "mismatches in transcription"
+    "mismatches in transcription",
     "reasons given in citation",
     "transcribed product replaced",
     "unclassified transcription discrepancy",    
