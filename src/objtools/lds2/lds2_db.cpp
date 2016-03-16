@@ -399,8 +399,8 @@ CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
             db_conn.Connection.reset(CSQLITE_Connection::CreateInMemoryDatabase(m_DbFile));
             break;
         }
-        db_conn.Connection->SetCacheSize(
-            (unsigned int)TSQLiteCacheSize::GetDefault());
+        unsigned int cache_size = (unsigned int)TSQLiteCacheSize::GetDefault();
+        db_conn.Connection->SetCacheSize(cache_size);
     }
     return *db_conn.Connection;
 }
@@ -412,7 +412,9 @@ CSQLITE_Statement& CLDS2_Database::x_GetStatement(EStatement st) const
     _ASSERT((size_t)st < db_conn.Statements.size());
     AutoPtr<CSQLITE_Statement>& ptr = db_conn.Statements[st];
     if ( !ptr.get() ) {
-        ptr.reset(new CSQLITE_Statement(&x_GetConn(), s_LDS2_SQL[st]));
+        CSQLITE_Connection* conn = &x_GetConn();
+        const char* sql = s_LDS2_SQL[st];
+        ptr.reset(new CSQLITE_Statement(conn, sql));
     }
     else {
         ptr->Reset();
