@@ -998,6 +998,9 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                 circular_length, range, loc, sel, scope, strand);
         } else {
             if ( circular_loc ) {
+                if ( !bioseq_handle ) {
+                    sel.SetSearchUnresolved();
+                }
                 feat_it_ptr.reset( new CFeat_CI(scope, *circular_loc, sel) );
             }
             else if ( bioseq_handle ) {
@@ -1047,29 +1050,35 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                 }
             }
 
-            // treat subset as a special case
-            Int8 cur_diff = ( !revert_locations_this_iteration ) ?
-                TestForOverlap64(*candidate_feat_loc,
-                *cleaned_loc_this_iteration,
-                overlap_type_this_iteration,
-                circular_length,
-                &scope) :
-            TestForOverlap64(*cleaned_loc_this_iteration,
-                *candidate_feat_loc,
-                overlap_type_this_iteration,
-                circular_length,
-                &scope);
-            if( plugin ) {
-                plugin->postProcessDiffAmount( cur_diff, cleaned_loc_this_iteration, 
-                    candidate_feat_loc, scope, sel, circular_length );
+            try {
+                // treat subset as a special case
+                Int8 cur_diff = ( !revert_locations_this_iteration ) ?
+                    TestForOverlap64(*candidate_feat_loc,
+                    *cleaned_loc_this_iteration,
+                    overlap_type_this_iteration,
+                    circular_length,
+                    &scope) :
+                TestForOverlap64(*cleaned_loc_this_iteration,
+                    *candidate_feat_loc,
+                    overlap_type_this_iteration,
+                    circular_length,
+                    &scope);
+                if( plugin ) {
+                    plugin->postProcessDiffAmount( cur_diff, cleaned_loc_this_iteration, 
+                        candidate_feat_loc, scope, sel, circular_length );
+                }
+                if (cur_diff < 0) {
+                    continue;
+                }
+
+                TFeatScore sc(cur_diff,
+                    ConstRef(&feat_it->GetMappedFeature()));
+                feats.push_back(sc);
             }
-            if (cur_diff < 0) {
+            catch (CObjmgrUtilException&) {
+                // On TestForOverlap64 error proceed to the next feature.
                 continue;
             }
-
-            TFeatScore sc(cur_diff,
-                ConstRef(&feat_it->GetMappedFeature()));
-            feats.push_back(sc);
         }
     }
     catch (exception&) {
