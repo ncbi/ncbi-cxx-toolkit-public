@@ -37,7 +37,7 @@ exe=$1.exe
 shift
 
 # Run test
-"$inspxe" -collect mi3 -knob detect-resource-leaks=false -result-dir $rd -return-app-exitcode -suppression-file "$suppress_dir" -- $exe "$@"
+"$inspxe" -collect mi3 -knob detect-resource-leaks=false -knob stack-depth=32 -result-dir $rd -return-app-exitcode -suppression-file "$suppress_dir" -- $exe "$@"
 app_result=$?
 "$inspxe" -report problems -report-all -result-dir $rd
 insp_result=$?
