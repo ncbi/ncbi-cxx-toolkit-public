@@ -668,7 +668,7 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
 
     CCleanup::ExtendToStopIfShortAndNotPartial(cd_feature, protein_handle);
 
-    cd_feature.ResetXref();
+    //cd_feature.ResetXref();
     //if (m_feature_links_kind != 0)
     {
         CRef<CSeq_feat> mrna((CSeq_feat*)sequence::GetmRNAForProduct(protein_handle));
@@ -1674,9 +1674,8 @@ namespace
         return *ostr;
     }
 }
-void CFeatureTableReader::GenerateECNumbers(objects::CSeq_entry_Handle seh, const string& fname)
+void CFeatureTableReader::GenerateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream)
 {   
-    auto_ptr<CNcbiOfstream> ostr;
     for (CFeat_CI feat_it(seh); feat_it; ++feat_it)
     {
         const CSeq_feat& feat = feat_it->GetOriginalFeature();
@@ -1693,16 +1692,16 @@ void CFeatureTableReader::GenerateECNumbers(objects::CSeq_entry_Handle seh, cons
                 switch (CProt_ref::GetECNumberStatus(*val))
                 {
                 case CProt_ref::eEC_deleted:
-                    InitOstream(ostr, fname) << label << "\tEC number deleted\t" << *val << '\t' << endl;
+                    InitOstream(ostream, fname) << label << "\tEC number deleted\t" << *val << '\t' << endl;
                     break;
                 case CProt_ref::eEC_replaced:
                 {
                     const string& newvalue = CProt_ref::GetECNumberReplacement(*val);
-                    InitOstream(ostr, fname) << label << "\tEC number changed\t" << *val << '\t' << newvalue << endl;
+                    InitOstream(ostream, fname) << label << "\tEC number changed\t" << *val << '\t' << newvalue << endl;
                 }
                 break;
                 case CProt_ref::eEC_unknown:
-                    InitOstream(ostr, fname) << label << "\tEC number invalid\t" << *val << '\t' << endl;
+                    InitOstream(ostream, fname) << label << "\tEC number invalid\t" << *val << '\t' << endl;
                     break;
                 default:
                     break;

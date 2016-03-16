@@ -47,7 +47,7 @@ public:
    static 
    void RemoveEmptyFtable(objects::CBioseq& bioseq);
    static
-   void GenerateECNumbers(objects::CSeq_entry_Handle seh, const string& fname);
+   void GenerateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream);
 private:
     void MergeCDSFeatures_impl(objects::CSeq_entry& entry);
     CRef<objects::CSeq_entry> TranslateProtein(

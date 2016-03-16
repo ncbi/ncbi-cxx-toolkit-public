@@ -654,6 +654,7 @@ int CTbl2AsnApp::Run(void)
     // Designate where do we output files: local folder, specified folder or a specific single output file
     if (args["o"])
     {
+        m_context.m_output_filename = args["o"].AsString();
         m_context.m_output = &args["o"].AsOutputFile();
     }
     else
@@ -932,7 +933,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         validator.Cleanup(*entry, m_context.m_cleanup);
     }
 
-    CFeatureTableReader::GenerateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"));
+    if (!IsDryRun())
+      CFeatureTableReader::GenerateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"), m_context.m_ecn_numbers_ostream);
 }
 
 string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
@@ -940,9 +942,16 @@ string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
     string dir;
     string outputfile;
     string base;
-    CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, 0);
+    if (m_context.m_output_filename.empty())
+    {
+        CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, 0);
 
-    outputfile = m_context.m_ResultsDirectory.empty() ? dir : m_context.m_ResultsDirectory;
+        outputfile = m_context.m_ResultsDirectory.empty() ? dir : m_context.m_ResultsDirectory;
+    }
+    else
+    {
+        CDirEntry::SplitPath(m_context.m_output_filename, &dir, &base, 0);
+    }
     outputfile += base;
     outputfile += ext;
 
@@ -1007,6 +1016,7 @@ void CTbl2AsnApp::ProcessOneFile()
             {
                 local_file = GenerateOutputFilename(m_context.m_asn1_suffix);
                 output = new CNcbiOfstream(local_file.GetPath().c_str());
+                m_context.m_ecn_numbers_ostream.release();
             }
             else
             {

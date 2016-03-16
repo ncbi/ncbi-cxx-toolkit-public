@@ -37,6 +37,7 @@ public:
     string m_current_file;
     string m_ResultsDirectory;
     CNcbiOstream* m_output;
+    string m_output_filename;
     string m_accession;
     string m_OrganismName;
     string m_single_source_qual_file;
@@ -98,6 +99,7 @@ public:
 
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;
+    auto_ptr<CNcbiOfstream> m_ecn_numbers_ostream;
 
     //string conffile;
 
