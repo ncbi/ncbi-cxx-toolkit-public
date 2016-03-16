@@ -735,8 +735,10 @@ char* g_LBOS_GetLBOSAddressEx (ELBOSFindMethod priority_find_method,
         case eLBOSFindMethod_Registry:
             lbosaddress_temp = g_LBOS_RegGet("CONN", "lbos", NULL);
             if (g_LBOS_StringIsNullOrEmpty(lbosaddress_temp)) {
-                CORE_LOG_X(1, eLOG_Warning, "Trying to find LBOS using "
-                           "registry failed");
+                CORE_LOG_X(1, eLOG_Warning, "Trying to find LBOS in "
+                                            "registry [CONN]lbos failed. "
+                                            "Using address in "
+                                            "/etc/ncbi/lbosresolver");
                 free(lbosaddress_temp); /* just in case */
                 lbosaddress_temp = NULL;
                 break;
@@ -2054,6 +2056,18 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
     } else {
         data->net_info = ConnNetInfo_Clone(net_info);
     }
+    // Check if CONNECT_Init() has been run before
+    if (g_CORE_GetRequestDtab == NULL) {
+        CORE_LOG(eLOG_Critical, 
+                  "LBOS FAIL! Please run CONNECT_Init() prior to using LBOS!\n"
+                  "Example:\n"
+                  "CNcbiRegistry& config = CNcbiApplication::Instance()"
+                  "->GetConfig();\n"
+                  "CONNECT_Init(&config);\n"
+                  "LBOS::Announce(...);");
+        s_LBOS_DestroyData(data);
+        return NULL;
+    }
     const char* request_dtab = g_CORE_GetRequestDtab();
     if (!g_LBOS_StringIsNullOrEmpty(request_dtab)) {
         /* Add a semicolon to separate DTabs */
@@ -2231,7 +2245,7 @@ unsigned short LBOS_Announce(const char*             service,
      * First we check input arguments
      */
     if (s_LBOS_CheckAnnounceArgs(service, version, host, port, healthcheck_url,
-                                                             lbos_answer) == 0)
+                                 lbos_answer) == 0)
     {
         return kLBOSInvalidArgs;
     }
@@ -2241,7 +2255,6 @@ unsigned short LBOS_Announce(const char*             service,
     *lbos_answer = NULL;
     /* Check if we need to replace 0.0.0.0 with local IP, and do it if needed*/
     my_healthcheck_url = s_LBOS_Replace0000WithIP(healthcheck_url);
-
 
 	/*my_healthcheck_url = strdup(healthcheck_url); */
     if (my_healthcheck_url == NULL) {
