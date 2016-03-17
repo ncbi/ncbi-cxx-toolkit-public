@@ -142,6 +142,76 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
         FOR_EACH_GRAPH_ON_ANNOT (graph, annot) {
             m_GraphValidator.ValidateSeqGraphContext (**graph, seq);
         }
+    } else if (annot.IsFtable()) {
+        FOR_EACH_SEQFEAT_ON_SEQANNOT(feat_it, annot) {
+            if (!(*feat_it)->IsSetLocation() || IsLocationUnindexed((*feat_it)->GetLocation())) {
+                string label = seq.GetId().front()->AsFastaString();
+                m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_UnindexedFeature,
+                    "Feature is not indexed on Bioseq " + label, **feat_it);
+            } else {
+                // check feature packaging
+                // a feature packaged on a bioseq should have at least one location on the bioseq
+                bool found = false;
+                for (CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it) {
+                    const CSeq_id& id = loc_it.GetSeq_id();
+                    FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
+                        if (id.Compare(**id_it) == CSeq_id::e_YES) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
+                        const CBioseq_Handle & part =
+                            GetCache().GetBioseqHandleFromLocation(
+                            m_Scope,
+                            loc_it.GetEmbeddingSeq_loc(),
+                            m_Imp.GetTSE_Handle());
+                        if (part) {
+                            CSeq_entry_Handle parent = part.GetParentEntry();
+                            if (parent && parent.IsSeq()) {
+                                parent = parent.GetParentEntry();
+                                if (parent && parent.IsSet()
+                                    && parent.GetSet().GetClass() == CBioseq_set::eClass_parts) {
+                                    parent = parent.GetParentEntry();
+                                    if (parent && parent.IsSet()
+                                        && parent.GetSet().GetClass() == CBioseq_set::eClass_segset) {
+                                        CBioseq_CI bi(parent);
+                                        if (bi && bi->GetCompleteBioseq()->Equals(seq)) {
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!found && seq.GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
+                        CBioseq_Handle part = m_Scope->GetBioseqHandle(seq);
+                        if (part) {
+                            CSeq_entry_Handle parent = part.GetParentEntry();
+                            if (parent && parent.IsSeq()) {
+                                parent = parent.GetParentEntry();
+                                if (parent && parent.IsSet()
+                                    && parent.GetSet().GetClass() == CBioseq_set::eClass_parts) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!found) {
+                        if (m_Imp.IsSmallGenomeSet()) {
+                            m_Imp.IncrementSmallGenomeSetMisplacedCount();
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    m_Imp.IncrementMisplacedFeatureCount();
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -208,12 +278,14 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
         // if a feature is packaged on a set, the bioseqs in the locations should be in the set
         CBioseq_set_Handle bssh = m_Scope->GetBioseq_setHandle(set);
         const bool is_embl_or_ddbj_on_set = x_IsEmblOrDdbjOnSet(bssh);
-        if( is_embl_or_ddbj_on_set ) {
-            return;
-        }
 
         FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, annot) {
-            if ( /* !(*feat_it)->GetData().IsCdregion() || */ !set.IsSetClass() ||
+            if (!(*feat_it)->IsSetLocation() || IsLocationUnindexed((*feat_it)->GetLocation())) {
+                m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_UnindexedFeature,
+                    "Feature is not indexed on Bioseq ?", **feat_it);
+            } else if (is_embl_or_ddbj_on_set) {
+                // don't check packaging
+            } else if ( !set.IsSetClass() ||
                 (set.GetClass() != CBioseq_set::eClass_nuc_prot && set.GetClass() != CBioseq_set::eClass_gen_prod_set)) {
                 m_Imp.IncrementMisplacedFeatureCount();
             } else if ((*feat_it)->IsSetLocation() &&
@@ -227,6 +299,25 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
         }
     }
 
+}
+
+
+// feature must have location on at least one sequence in this record
+// feature location must not extend past end of sequence
+bool CValidError_annot::IsLocationUnindexed(const CSeq_loc& loc)
+{
+    bool found_one = false;
+    for (CSeq_loc_CI loc_it(loc); loc_it; ++loc_it) {
+        const CSeq_id& id = loc_it.GetSeq_id();
+        CBioseq_Handle in_record = m_Scope->GetBioseqHandleFromTSE(id, m_Imp.GetTSE());
+        if (in_record) {
+            found_one = true;
+            if (!loc_it.IsWhole() && loc_it.GetRange().GetTo() > in_record.GetBioseqLength() - 1) {
+                return true;
+            }
+        }
+    }
+    return !found_one;
 }
 
 
