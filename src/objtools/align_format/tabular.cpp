@@ -80,7 +80,7 @@ void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
     }
     
     vector<string> format_tokens;
-    NStr::Tokenize(format, " ", format_tokens);
+    NStr::Split(format, " ", format_tokens);
 
     if (format_tokens.empty())
         x_AddDefaultFieldsToShow();
@@ -268,6 +268,11 @@ void CBlastTabularInfo::x_PrintSubjectAllAccessions(void)
     }
 }
 
+void CBlastTabularInfo::x_PrintSubjectTaxId()
+{
+       m_Ostream << m_SubjectTaxId;
+}
+
 void CBlastTabularInfo::x_PrintSubjectTaxIds()
 {
 	if(m_SubjectTaxIds.empty()) {
@@ -280,6 +285,11 @@ void CBlastTabularInfo::x_PrintSubjectTaxIds()
             m_Ostream << ";";
        m_Ostream << *iter;
     }
+}
+
+void CBlastTabularInfo::x_PrintSubjectBlastName()
+{
+	m_Ostream << m_SubjectBlastName;
 }
 
 void CBlastTabularInfo::x_PrintSubjectBlastNames()
@@ -296,6 +306,11 @@ void CBlastTabularInfo::x_PrintSubjectBlastNames()
 	}
 }
 
+void CBlastTabularInfo::x_PrintSubjectSuperKingdom()
+{
+	m_Ostream << m_SubjectSuperKingdom;
+}
+
 void CBlastTabularInfo::x_PrintSubjectSuperKingdoms()
 {
 	if(m_SubjectSuperKingdoms.empty()) {
@@ -310,6 +325,11 @@ void CBlastTabularInfo::x_PrintSubjectSuperKingdoms()
 	}
 }
 
+void CBlastTabularInfo::x_PrintSubjectSciName()
+{
+	m_Ostream << m_SubjectSciName;
+}
+
 void CBlastTabularInfo::x_PrintSubjectSciNames()
 {
 	if(m_SubjectSciNames.empty()) {
@@ -322,6 +342,11 @@ void CBlastTabularInfo::x_PrintSubjectSciNames()
 			 m_Ostream << ";";
 		 m_Ostream << *iter;
 	}
+}
+
+void CBlastTabularInfo::x_PrintSubjectCommonName()
+{
+	m_Ostream << m_SubjectCommonName;
 }
 
 void CBlastTabularInfo::x_PrintSubjectCommonNames()
@@ -535,82 +560,132 @@ bool s_IsValidName(const string & name)
 
 void CBlastTabularInfo::x_SetTaxInfo(const CBioseq_Handle & handle, const CRef<CBlast_def_line_set> & bdlRef)
 {
-	m_SubjectTaxIds.clear();
-	m_SubjectSciNames.clear();
-	m_SubjectCommonNames.clear();
-	m_SubjectBlastNames.clear();
-	m_SubjectSuperKingdoms.clear();
+    m_SubjectTaxId = 0;
+    m_SubjectSciName.clear();
+    m_SubjectCommonName.clear();
+    m_SubjectBlastName.clear();
+    m_SubjectSuperKingdom.clear();
 
     if (bdlRef.NotEmpty() && bdlRef->CanGet() && bdlRef->IsSet() && !bdlRef->Get().empty()){
-
-        ITERATE(CBlast_def_line_set::Tdata, itr, bdlRef->Get()) {
-        	if((*itr)->IsSetTaxid())
-        	{
-        		if((*itr)->GetTaxid())
-        			m_SubjectTaxIds.insert((*itr)->GetTaxid());
-        	}
-        }
-    }
-
-	if(m_SubjectTaxIds.empty())
-	{
-		CSeqdesc_CI desc_s(handle, CSeqdesc::e_Source);
-		for (;desc_s; ++desc_s)
-		{
-			 int t = desc_s->GetSource().GetOrg().GetTaxId();
-			 if(t)
-				  m_SubjectTaxIds.insert(t);
-		}
-
-		CSeqdesc_CI desc(handle, CSeqdesc::e_Org);
-		for (; desc; ++desc)
-		{
-			int t= desc->GetOrg().GetTaxId();
-			if(t)
-				m_SubjectTaxIds.insert(t);
-		}
-	}
-
-	if(m_SubjectTaxIds.empty())
-		return;
-
-   	if( x_IsFieldRequested(eSubjectSciNames) ||
-    	x_IsFieldRequested(eSubjectCommonNames) ||
-    	x_IsFieldRequested(eSubjectBlastNames) ||
-    	x_IsFieldRequested(eSubjectSuperKingdoms))
-   	{
-   		set<int>::iterator itr = m_SubjectTaxIds.begin();
-
-   		for(; itr !=  m_SubjectTaxIds.end(); ++itr)
-   		{
-    		try
-    		{
-    			SSeqDBTaxInfo taxinfo;
-    			CSeqDB::GetTaxInfo(*itr, taxinfo);
-    			m_SubjectSciNames.push_back(taxinfo.scientific_name);
-    			m_SubjectCommonNames.push_back(taxinfo.common_name);
-    			if(s_IsValidName(taxinfo.blast_name))
-    				m_SubjectBlastNames.insert(taxinfo.blast_name);
-
-    			if(s_IsValidName(taxinfo.s_kingdom))
-    				m_SubjectSuperKingdoms.insert(taxinfo.s_kingdom);
-
-    		} catch (const CException&) {
-    			//only put fillers in if we are going to show tax id
-    			// the fillers are put in so that the name list would
-    			// match the taxid list
-    			if(x_IsFieldRequested(eSubjectTaxIds) )
-    			{
-    				m_SubjectSciNames.push_back(NA);
-    				m_SubjectCommonNames.push_back(NA);
-    			}
-    		}
+    	ITERATE(CBlast_def_line_set::Tdata, itr, bdlRef->Get()) {
+            if((*itr)->IsSetTaxid()) {
+                    if((*itr)->GetTaxid()) {
+                    	m_SubjectTaxId = (*itr)->GetTaxid();
+                    	break;
+                    }
+            }
     	}
     }
 
-	return;
+    if(m_SubjectTaxId == 0) {
+          m_SubjectTaxId = sequence::GetTaxId(handle);
+    }
 
+    if(m_SubjectTaxId == 0)
+            return;
+
+    if( x_IsFieldRequested(eSubjectSciName) ||
+        x_IsFieldRequested(eSubjectCommonName) ||
+        x_IsFieldRequested(eSubjectBlastName) ||
+        x_IsFieldRequested(eSubjectSuperKingdom)) {
+
+        try {
+        	SSeqDBTaxInfo taxinfo;
+            CSeqDB::GetTaxInfo(m_SubjectTaxId, taxinfo);
+            m_SubjectSciName = taxinfo.scientific_name;
+            m_SubjectCommonName = taxinfo.common_name;
+            if(s_IsValidName(taxinfo.blast_name)) {
+            	m_SubjectBlastName = taxinfo.blast_name;
+            }
+
+            if(s_IsValidName(taxinfo.s_kingdom)) {
+            	m_SubjectSuperKingdom = taxinfo.s_kingdom;
+            }
+
+        } catch (const CException&) {
+        	//only put fillers in if we are going to show tax id
+            // the fillers are put in so that the name list would
+            // match the taxid list
+            if(x_IsFieldRequested(eSubjectTaxIds) ) {
+            	m_SubjectSciName = NA;
+                m_SubjectCommonName = NA;
+            }
+        }
+    }
+    return;
 }
+
+void CBlastTabularInfo::x_SetTaxInfoAll(const CBioseq_Handle & handle, const CRef<CBlast_def_line_set> & bdlRef)
+{
+    m_SubjectTaxIds.clear();
+    m_SubjectSciNames.clear();
+    m_SubjectCommonNames.clear();
+    m_SubjectBlastNames.clear();
+    m_SubjectSuperKingdoms.clear();
+
+    if (bdlRef.NotEmpty() && bdlRef->CanGet() && bdlRef->IsSet() && !bdlRef->Get().empty()){
+    	ITERATE(CBlast_def_line_set::Tdata, itr, bdlRef->Get()) {
+            if((*itr)->IsSetTaxid()) {
+                    if((*itr)->GetTaxid()) {
+                    	m_SubjectTaxIds.insert((*itr)->GetTaxid());
+                    }
+            }
+    	}
+    }
+
+    if(m_SubjectTaxIds.empty()) {
+            CSeqdesc_CI desc_s(handle, CSeqdesc::e_Source);
+            for (;desc_s; ++desc_s) {
+                     int t = desc_s->GetSource().GetOrg().GetTaxId();
+                     if(t) {
+                    	 m_SubjectTaxIds.insert(t);
+                     }
+            }
+
+            CSeqdesc_CI desc(handle, CSeqdesc::e_Org);
+            for (; desc; ++desc) {
+                    int t= desc->GetOrg().GetTaxId();
+                    if(t) {
+                    	m_SubjectTaxIds.insert(t);
+                    }
+            }
+    }
+
+    if(m_SubjectTaxIds.empty())
+            return;
+
+    if( x_IsFieldRequested(eSubjectSciNames) ||
+        x_IsFieldRequested(eSubjectCommonNames) ||
+        x_IsFieldRequested(eSubjectBlastNames) ||
+        x_IsFieldRequested(eSubjectSuperKingdoms)) {
+            set<int>::iterator itr = m_SubjectTaxIds.begin();
+
+            for(; itr !=  m_SubjectTaxIds.end(); ++itr) {
+            	try {
+                    SSeqDBTaxInfo taxinfo;
+                    CSeqDB::GetTaxInfo(*itr, taxinfo);
+                    m_SubjectSciNames.push_back(taxinfo.scientific_name);
+                    m_SubjectCommonNames.push_back(taxinfo.common_name);
+                    if(s_IsValidName(taxinfo.blast_name))
+                            m_SubjectBlastNames.insert(taxinfo.blast_name);
+
+                    if(s_IsValidName(taxinfo.s_kingdom))
+                            m_SubjectSuperKingdoms.insert(taxinfo.s_kingdom);
+
+            	} catch (const CException&) {
+                    //only put fillers in if we are going to show tax id
+                    // the fillers are put in so that the name list would
+                    // match the taxid list
+                    if(x_IsFieldRequested(eSubjectTaxIds) ) {
+                            m_SubjectSciNames.push_back(NA);
+                            m_SubjectCommonNames.push_back(NA);
+                    }
+            	}
+            }
+    }
+    return;
+}
+
 void CBlastTabularInfo::x_SetQueryCovSubject(const CSeq_align & align)
 {
 	int pct = -1;
@@ -719,12 +794,17 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     					  x_IsFieldRequested(eSubjectAllGis) ||
                           x_IsFieldRequested(eSubjectAllAccessions));
 
+    bool setSubjectTaxInfo = (x_IsFieldRequested(eSubjectTaxId) ||
+        					  x_IsFieldRequested(eSubjectSciName) ||
+        					  x_IsFieldRequested(eSubjectCommonName) ||
+        					  x_IsFieldRequested(eSubjectBlastName) ||
+        					  x_IsFieldRequested(eSubjectSuperKingdom));
 
-    bool setSubjectTaxInfo = (x_IsFieldRequested(eSubjectTaxIds) ||
-    						  x_IsFieldRequested(eSubjectSciNames) ||
-    						  x_IsFieldRequested(eSubjectCommonNames) ||
-    						  x_IsFieldRequested(eSubjectBlastNames) ||
-    						  x_IsFieldRequested(eSubjectSuperKingdoms));
+    bool setSubjectTaxInfoAll = (x_IsFieldRequested(eSubjectTaxIds) ||
+    						     x_IsFieldRequested(eSubjectSciNames) ||
+    						     x_IsFieldRequested(eSubjectCommonNames) ||
+    						     x_IsFieldRequested(eSubjectBlastNames) ||
+    						     x_IsFieldRequested(eSubjectSuperKingdoms));
 
     bool setSubjectTitle = (x_IsFieldRequested(eSubjectTitle) ||
 			  	  	  	  	x_IsFieldRequested(eSubjectAllTitles));
@@ -746,11 +826,14 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
             subject_is_na = subject_bh.IsNa();
             m_SubjectLength = subject_bh.GetBioseqLength();
 
-            if(setSubjectIds || setSubjectTaxInfo || setSubjectTitle) {
+            if(setSubjectIds || setSubjectTaxInfo || setSubjectTitle || setSubjectTaxInfoAll) {
             	CRef<CBlast_def_line_set> bdlRef =
             			CSeqDB::ExtractBlastDefline(subject_bh);
             	if(setSubjectIds) {
             		x_SetSubjectIds(subject_bh, bdlRef);
+            	}
+            	if(setSubjectTaxInfoAll) {
+            		x_SetTaxInfoAll(subject_bh, bdlRef);
             	}
             	if(setSubjectTaxInfo) {
             		x_SetTaxInfo(subject_bh, bdlRef);
@@ -1087,6 +1170,16 @@ void CBlastTabularInfo::x_PrintFieldNames()
         	m_Ostream << "subject blast names"; break;
         case eSubjectSuperKingdoms:
         	m_Ostream << "subject super kingdoms"; break;
+        case eSubjectTaxId:
+            m_Ostream << "subject tax id"; break;
+        case eSubjectSciName:
+            m_Ostream << "subject sci name"; break;
+        case eSubjectCommonName:
+            m_Ostream << "subject com names"; break;
+        case eSubjectBlastName:
+           	m_Ostream << "subject blast name"; break;
+        case eSubjectSuperKingdom:
+               	m_Ostream << "subject super kingdom"; break;
         case eSubjectTitle:
         	m_Ostream << "subject title"; break;
         case eSubjectAllTitles:
@@ -1327,14 +1420,24 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
         x_PrintBTOP(); break;        
     case eSubjectTaxIds:
     	x_PrintSubjectTaxIds(); break;
+    case eSubjectTaxId:
+    	x_PrintSubjectTaxId(); break;
     case eSubjectSciNames:
     	x_PrintSubjectSciNames(); break;
+    case eSubjectSciName:
+    	x_PrintSubjectSciName(); break;
     case eSubjectCommonNames:
     	x_PrintSubjectCommonNames(); break;
+    case eSubjectCommonName:
+    	x_PrintSubjectCommonName(); break;
     case eSubjectBlastNames:
     	x_PrintSubjectBlastNames(); break;
+    case eSubjectBlastName:
+    	x_PrintSubjectBlastName(); break;
     case eSubjectSuperKingdoms:
     	x_PrintSubjectSuperKingdoms(); break;
+    case eSubjectSuperKingdom:
+    	x_PrintSubjectSuperKingdom(); break;
     case eSubjectTitle:
     	x_PrintSubjectTitle(); break;
     case eSubjectAllTitles:

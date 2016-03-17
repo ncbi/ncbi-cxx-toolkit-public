@@ -218,12 +218,16 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
     CRef<CScope> scope = tmp_data_loader.NewScope();
 
     CNcbiOstrstream output_stream;
+    CNcbiOstrstream output_stream2;
     CBlastTabularInfo ctab(output_stream, "qacc sacc staxids sscinames scomnames sblastnames sskingdoms");
+    CBlastTabularInfo ctab2(output_stream2, "qacc sacc staxid ssciname scomname sblastname sskingdom");
 
     ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)
     {
        ctab.SetFields(**iter, *scope);
+       ctab2.SetFields(**iter, *scope);
        ctab.Print();
+       ctab2.Print();
     }
     const string ref[8] = {
 	"9940	Ovis aries	sheep	even-toed ungulates	Eukaryota",
@@ -236,12 +240,29 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
 	"89462	Bubalus bubalis	water buffalo	even-toed ungulates	Eukaryota"
  };
 
-    string output = CNcbiOstrstreamToString(output_stream);
-    vector<string> results;
-    NStr::Split(output, "\n", results);
+    {
+    	string output = CNcbiOstrstreamToString(output_stream);
+    	vector<string> results;
+    	NStr::Split(output, "\n", results);
 
-    for(unsigned int i=0; i < 8; i++) {
-    	BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
+    	for(unsigned int i=0; i < 8; i++) {
+    		BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
+    	}
+    }
+    {
+    	string output = CNcbiOstrstreamToString(output_stream2);
+    	vector<string> results;
+    	NStr::Split(output, "\n", results);
+    	const string single_tax = "89462	Bubalus bubalis	water buffalo	even-toed ungulates	Eukaryota";
+
+    	for(unsigned int i=0; i < 8; i++) {
+    		if(i != 6) {
+    			BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
+    		}
+    		else {
+    			BOOST_REQUIRE(results[i].find(single_tax) != NPOS);
+    		}
+    	}
     }
 }
 

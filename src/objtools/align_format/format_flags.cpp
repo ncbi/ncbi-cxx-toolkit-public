@@ -40,7 +40,7 @@ string kDfltArgTabularOutputFmt =
     "evalue bitscore";
 const string kDfltArgTabularOutputFmtTag("std");
 
-const size_t kNumTabularOutputFormatSpecifiers = 45;
+const size_t kNumTabularOutputFormatSpecifiers = 50;
 const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
     SFormatSpec("qseqid",   
                 "Query Seq-id",
@@ -144,6 +144,21 @@ const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
     SFormatSpec("btop",   
                 "Blast traceback operations (BTOP)", 
                 eBTOP),
+    SFormatSpec("staxid",
+                "Subject Taxonomy ID",
+                eSubjectTaxId),
+    SFormatSpec("ssciname",
+                "Subject Scientific Name",
+                eSubjectSciName),
+    SFormatSpec("scomname",
+                "Subject Common Name",
+                eSubjectCommonName),
+    SFormatSpec("sblastname",
+                "Subject Blast Name",
+                eSubjectBlastName),
+    SFormatSpec("sskingdom",
+                "Subject Super Kingdom",
+                eSubjectSuperKingdom),
     SFormatSpec("staxids",
                 "unique Subject Taxonomy ID(s), separated by a ';'\n\t\t\t (in numerical order)",
                 eSubjectTaxIds),

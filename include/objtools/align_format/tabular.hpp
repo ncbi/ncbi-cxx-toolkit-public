@@ -283,6 +283,11 @@ protected:
     void x_PrintSubjectCommonNames();
     void x_PrintSubjectBlastNames();
     void x_PrintSubjectSuperKingdoms();
+    void x_PrintSubjectTaxId();
+    void x_PrintSubjectSciName();
+    void x_PrintSubjectCommonName();
+    void x_PrintSubjectBlastName();
+    void x_PrintSubjectSuperKingdom();
     void x_PrintSubjectTitle();
     void x_PrintSubjectAllTitles();
     void x_PrintSubjectStrand();
@@ -290,6 +295,7 @@ protected:
     void x_PrintSubjectCoverage();
     void x_PrintUniqSubjectCoverage();
     void x_SetTaxInfo(const objects::CBioseq_Handle & handle, const CRef<objects::CBlast_def_line_set> & bdlRef);
+    void x_SetTaxInfoAll(const objects::CBioseq_Handle & handle, const CRef<objects::CBlast_def_line_set> & bdlRef);
     void x_SetSubjectIds(const objects::CBioseq_Handle& bh, const CRef<objects::CBlast_def_line_set> & bdlRef);
     void x_SetQueryCovSubject(const objects::CSeq_align & align);
     void x_SetQueryCovUniqSubject(const objects::CSeq_align & align);
@@ -339,6 +345,11 @@ private:
     vector<string>		m_SubjectCommonNames;
     set<string>		m_SubjectBlastNames;
     set<string>		m_SubjectSuperKingdoms;
+    int				m_SubjectTaxId;
+    string			m_SubjectSciName;
+    string			m_SubjectCommonName;
+    string			m_SubjectBlastName;
+    string			m_SubjectSuperKingdom;
     CRef<CBlast_def_line_set> m_SubjectDefline;
 
     string m_SubjectStrand;

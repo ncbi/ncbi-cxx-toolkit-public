@@ -114,17 +114,22 @@ enum ETabularField {
     eQueryFrame,           ///< Query frame
     eSubjFrame,            ///< Subject frame
     eBTOP,                 ///< BLAST traceback operations.
-    eSubjectTaxIds,		   ///< Subject Tax ID
-    eSubjectSciNames,	   ///< Subject Scientific Name
-    eSubjectCommonNames,   ///< Subject Common Name
-    eSubjectBlastNames,	   ///< Subject Blast Name
-    eSubjectSuperKingdoms, ///< Subject Super Kingdom
+    eSubjectTaxIds,		   ///< Subject Tax IDs
+    eSubjectSciNames,	   ///< Subject Scientific Names
+    eSubjectCommonNames,   ///< Subject Common Names
+    eSubjectBlastNames,	   ///< Subject Blast Names
+    eSubjectSuperKingdoms, ///< Subject Super Kingdoms
     eSubjectTitle,		   ///< Only the first subject defline
     eSubjectAllTitles,	   ///< All subject deflines
     eSubjectStrand,        ///< Subject Strand
     eQueryCovSubject,      ///< Query Coverage per Subject
     eQueryCovSeqalign,     ///< Query Coverage per Seqalign
-    eQueryCovUniqSubject,      ///< Query Coverage per Subject
+    eQueryCovUniqSubject,  ///< Query Coverage per Subject
+    eSubjectTaxId,		   ///< Subject Tax ID
+    eSubjectSciName,	   ///< Subject Scientific Name
+    eSubjectCommonName,    ///< Subject Common Name
+    eSubjectBlastName,	   ///< Subject Blast Name
+    eSubjectSuperKingdom,  ///< Subject Super Kingdom
     eMaxTabularField       ///< Sentinel value
 };
 
