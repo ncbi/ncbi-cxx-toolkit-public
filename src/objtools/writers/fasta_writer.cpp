@@ -520,6 +520,7 @@ void CFastaOstreamEx::x_AddLocationAttribute(const CBioseq_Handle& handle,
                                              const CSeq_feat& feat, 
                                              string& defline)
 {
+/*
     CFlatFileConfig cfg;
     CFlatFileContext ffctxt(cfg);
     CBioseqContext ctxt(handle, ffctxt);
@@ -533,7 +534,7 @@ void CFastaOstreamEx::x_AddLocationAttribute(const CBioseq_Handle& handle,
     }
 
     defline += " [location=" + loc_string + "]";
-
+*/
     return;
 }
 
