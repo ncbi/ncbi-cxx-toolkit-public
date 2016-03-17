@@ -191,6 +191,9 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     {
         // Yes, the TSA info is considered a kind of PRIMARY block
         GATHER_VIA_FUNC(Tsa, x_GatherTSA);
+    } else if( ctx.IsTLSMaster()  &&  ctx.GetTech() == CMolInfo::eTech_targeted ) 
+    {
+        GATHER_VIA_FUNC(Tsa, x_GatherTLS);
     } else if ( ctx.DoContigStyle() ) {
         if ( cfg.ShowContigFeatures() ) {
             GATHER_VIA_FUNC(FeatAndGap, x_GatherFeatures);
@@ -327,6 +330,41 @@ void CGenbankGatherer::x_GatherTSA(void) const
 
         if ( (first != 0)  &&  (last != 0) ) {
             CConstRef<IFlatItem> item( new CTSAItem(tsa_type, *first, *last, uo, ctx) );  
+            ItemOS() << item;
+        }
+    }    
+}
+
+void CGenbankGatherer::x_GatherTLS(void) const
+{
+    CBioseqContext& ctx = *m_Current;
+
+    const string* first = 0;
+    const string* last  = 0;
+
+    for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
+        const CUser_object& uo = desc->GetUser();
+
+        const string& type = uo.GetType().GetStr();
+        if ( ! NStr::EqualNocase(type, "TLSProjects") )
+        {
+            continue;
+        }
+
+        ITERATE (CUser_object::TData, it, uo.GetData()) {
+            if ( !(*it)->GetLabel().IsStr() ) {
+                continue;
+            }
+            const string& label = (*it)->GetLabel().GetStr();
+            if ( NStr::CompareNocase(label, "TLS_accession_first") == 0 ) {
+                first = &((*it)->GetData().GetStr());
+            } else if ( NStr::CompareNocase(label, "TLS_accession_last") == 0 ) {
+                last = &((*it)->GetData().GetStr());
+            }
+        }
+
+        if ( (first != 0)  &&  (last != 0) ) {
+            CConstRef<IFlatItem> item( new CTSAItem(CTSAItem::eTLS_Projects, *first, *last, uo, ctx) );
             ItemOS() << item;
         }
     }    

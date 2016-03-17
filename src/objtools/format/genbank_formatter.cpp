@@ -2068,6 +2068,9 @@ void CGenbankFormatter::FormatTSA
     case CTSAItem::eTSA_Projects:
         tag = "TSA";
         break;
+    case CTSAItem::eTLS_Projects:
+        tag = "TLS";
+        break;
 
     default:
         return;

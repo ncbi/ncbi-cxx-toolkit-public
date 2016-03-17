@@ -55,6 +55,7 @@ public:
 private:
     void x_GatherWGS(void) const;
     void x_GatherTSA(void) const;
+    void x_GatherTLS(void) const;
 };
 
 

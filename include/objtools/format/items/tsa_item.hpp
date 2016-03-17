@@ -48,14 +48,15 @@ class IFormatter;
 
 ///////////////////////////////////////////////////////////////////////////
 //
-// TSA
+// TSA (and TLS)
 
 class NCBI_FORMAT_EXPORT CTSAItem : public CFlatItem
 {
 public:
     enum ETSAType {
         eTSA_not_set,
-        eTSA_Projects
+        eTSA_Projects,
+        eTLS_Projects
         /*eTSA_ScaffoldList,
         eTSA_ContigList*/
     };
