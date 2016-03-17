@@ -753,23 +753,6 @@ bool EndsWithBadCharacter (string str)
 }
 
 
-bool IsBioseqWithIdInSet (const CSeq_id& id, CBioseq_set_Handle set)
-{
-    bool found = false;
-    for (CBioseq_CI b_ci (set);
-         b_ci && !found;
-         ++b_ci) {
-        FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(b_ci->GetCompleteBioseq())) {
-            if (id.Compare(**id_it) == CSeq_id::e_YES) {
-                found = true;
-                break;
-            }
-        }
-    }
-    return found;
-}
-
-
 int CheckDate (const CDate& date, bool require_full_date)
 {
     int rval = eDateValid_valid;

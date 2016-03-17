@@ -114,8 +114,6 @@ bool s_StringHasPMID (string str);
 bool HasBadCharacter (string str);
 bool EndsWithBadCharacter (string str);
 
-bool IsBioseqWithIdInSet (const CSeq_id& id, CBioseq_set_Handle set);
-
 typedef enum {
   eDateValid_valid = 0x0,
   eDateValid_bad_str = 0x01,

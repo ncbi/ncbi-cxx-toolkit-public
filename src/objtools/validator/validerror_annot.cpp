@@ -168,6 +168,36 @@ static bool x_IsEmblOrDdbjOnSet (const CBioseq_set_Handle & set)
 }
 
 
+bool s_IsBioseqInSet(CBioseq_Handle bsh, const CBioseq_set& set)
+{
+    CBioseq_set_Handle parent = bsh.GetParentBioseq_set();
+    while (parent) {
+        if (parent.GetCompleteBioseq_set().GetPointer() == &set) {
+            return true;
+        }
+        parent = parent.GetParentBioseq_set();
+    }
+    return false;
+}
+
+
+bool s_HasOneIntervalInSet(const CSeq_loc& loc, const CBioseq_set& set, CScope& scope, const CSeq_entry& tse)
+{
+    for (CSeq_loc_CI loc_it(loc); loc_it; ++loc_it) {
+        const CSeq_id& id = loc_it.GetSeq_id();
+            TSeqPos start = loc_it.GetRange().GetFrom();
+        TSeqPos stop = loc_it.GetRange().GetTo();
+        CBioseq_Handle in_record = scope.GetBioseqHandleFromTSE(id, tse);
+        if (!in_record) continue;
+
+        if (s_IsBioseqInSet(in_record, set)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const CBioseq_set& set)
 {
     if (annot.IsGraph()) {
@@ -186,24 +216,12 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
             if ( /* !(*feat_it)->GetData().IsCdregion() || */ !set.IsSetClass() ||
                 (set.GetClass() != CBioseq_set::eClass_nuc_prot && set.GetClass() != CBioseq_set::eClass_gen_prod_set)) {
                 m_Imp.IncrementMisplacedFeatureCount();
-            } else if ((*feat_it)->IsSetLocation()) {
-                for ( CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it ) {
-                    const CSeq_id& id = loc_it.GetSeq_id();
-                    CBioseq_Handle in_record = m_Scope->GetBioseqHandleFromTSE(id, m_Imp.GetTSE());
-                    if (!in_record) continue;
-
-                    // Since IsBioseqWithIdInSet is linear in the number of
-                    // bioseqs in bssh, if this turns out to be an issue
-                    // we will have to change this code
-                    // or IsBioseqWithIdInSet's code
-                    if (!IsBioseqWithIdInSet(id, bssh)) {
-                        if (m_Imp.IsSmallGenomeSet()) {
-                            m_Imp.IncrementSmallGenomeSetMisplacedCount();
-                        } else {
-                            m_Imp.IncrementMisplacedFeatureCount();
-                        }
-                        break;
-                    }
+            } else if ((*feat_it)->IsSetLocation() &&
+                !s_HasOneIntervalInSet((*feat_it)->GetLocation(), set, *m_Scope, m_Imp.GetTSE())) {
+                if (m_Imp.IsSmallGenomeSet()) {
+                    m_Imp.IncrementSmallGenomeSetMisplacedCount();
+                } else {
+                    m_Imp.IncrementMisplacedFeatureCount();
                 }
             }
         }
