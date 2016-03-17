@@ -779,7 +779,7 @@ CJsonNode CJsonNode::GetByKeyOrNull(const string& key) const
     return const_cast<SJsonNodeImpl*>(it->m_Node.GetPointerOrNull());
 }
 
-const string& CJsonNode::AsString() const
+const string CJsonNode::AsString() const
 {
     m_Impl->VerifyType("AsString()", eString);
 

@@ -252,7 +252,7 @@ class NCBI_XCONNECT_EXPORT CJsonNode
 
     /// Provided that this is a string node, return
     /// the string value of this node.
-    const string& AsString() const;
+    const string AsString() const;
 
     /// Provided that this is a numeric node (that is, either
     /// an integer or a floating point node), return the value
