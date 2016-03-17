@@ -2305,7 +2305,7 @@ void CDeflineGenerator::x_SetSuffix (
     }
 
     if (! study.empty()) {
-        suffix = study + " " + type + comp;
+        suffix = " " + study + " " + type + comp;
     } else {
         suffix = type + comp;
     }
