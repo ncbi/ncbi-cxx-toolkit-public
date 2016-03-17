@@ -5,6 +5,7 @@ AAPI	s	Plant Industry Laboratory
 AAR	s	Reliquae Aaronsohnianae
 AARI	s	Anatolian Agricultural Research Institute
 AAS	s	British Antarctic Survey
+AASU	s	Armstrong State University
 AAU	s	University of Aarhus, Institute of Biological Sciences
 AAU<ETH>	s	Addis Ababa University, Department of Biology
 AAU<ETH>:A	s	Addis Ababa University, Department of Biology, Amphibian collection
@@ -60,6 +61,7 @@ ACNS	s	Agriculture Canada Nova Scotia
 ACOI	c	Coimbra Collection of Algae
 ACOR	s	Universidad Nacional de Cordoba
 ACTC	s	Austin College
+ACU	s	Abilene Christian University
 ACUNHC	s	Abilene Christian University, Natural History Collection
 AD	s	Plant Biodiversity Centre
 ADA	s	Herbarium, Department of Agriculture, South Australia
@@ -86,7 +88,9 @@ AFSDU	s	Suleyman Demirel University, Agricultural Faculty
 AFTC	s	Alaska Frozen Tissue Collection
 AGRITEC	b	AGRITEC, Ltd.
 AGRL	s	Lethbridge Research Station
+AGU	s	Astrakhan State University
 AGUAT	s	Universidad de San Carlos
+AGUCH	s	Facultad de Ciencias Agronomicas de la Universidad de Chile
 AH	s	Universidad de Alcala, Departamento de Biologia Vegetal
 AHBC	s	Dixie College
 AHF	s	Allan Hancock Foundation, University of Southern California
@@ -109,6 +113,7 @@ AJ	c	Central Research Laboratories
 AJBC	s	Atkins Jardin Botanico de Cienfuegos
 AJOU	s	Ajou University, Biological Sciences Department
 AK	s	Auckland War Memorial Museum
+AKPM	s	Akita Prefectural Museum
 AKU<JPN>	c	Faculty of Agriculture
 AKU<NZ>	s	University of Auckland, School of Biological Sciences
 AL	s	Universite d'Alger
@@ -126,6 +131,7 @@ ALD	s	Alderney Society and Museum
 ALEX	s	University of Alexandria, Department of Botany
 ALF	s	Campus International de Baillarguet, Departement d'Elevage et de Medecine Veterinaire
 ALGOBANK	c	ALGOBANK
+ALGU	s	Universidade do Algarve
 ALIRU	c	Australian Legume Inoculants Research Unit
 ALK	s	Alnwick Scientific and Mechanical Institution
 ALM<FRA>	s	Museum National Historie Naturelle
@@ -133,10 +139,12 @@ ALM<GBR>	s	Art Gallery and Museum, Central Library
 ALMA	s	Alma College, Biology Department
 ALME	s	Estacion Experimental de Zonas Aridas
 ALN	s	Alnwick Botanical Society
+ALNHS	s	Natural Heritage Section-ALDCNR
 ALT	s	Curtis Museum
 ALTA	s	University of Alberta, Biological Sciences Department
 ALTB	s	University of Barnaul, Altai State University
 ALU	s	Alabama Museum of Natural History
+ALUH	s	Alzahra University
 AM	sb	Australian Museum
 AM:Arachnology	s	Australian Museum, Invertebrate Collections: Arachnology
 AM:EBU	sb	Australian Museum, Evolutionary Biology Unit Tissue Collection
@@ -151,7 +159,9 @@ AM:Ornithology	s	Australian Museum, Vertebrate Collections: Ornithology
 AM:Palaeontology	s	Australian Museum, Palaeontology Collection
 AM<ARG>	s	Acatushun Museum at the Estancia Haberton
 AM<BLG>	s	Asenovgrad Paleontology Museum
+AMAL	s	Anniston Museum of Natural History
 AMAZ	s	Universidad Nacional de la Amazonia Peruana
+AMB	s	Associazione Micologica Bresadola
 AMC	c	Department of Biologics Research
 AMCC	s	Ambrose Monell Cryo Collection, American Museum of Natural History
 AMCL	s	Macapa, Museu Territorial de Historia Natural "Angelo Moreira da Costa Lima"
@@ -180,6 +190,7 @@ ANACC<AUS>	c	Australian National Algae Culture Collection
 ANC	s	Universita di Ancona, Dipartimento di Biotecnologie Agrarie ed Ambientali
 ANCB	s	Museo Nacional de Historia Natural, La Paz
 AND	s	Slezske zemske muzeum Opava, Arboretum Nopvy Dvur, Dendrology Department
+ANDA	s	Andalas University
 ANDES	s	La Universidad de Los Andes
 ANDES:A	s	La Universidad de Los Andes, Amphibian Collection
 ANDES:O	s	La Universidad de Los Andes, Ornithology Collection
@@ -190,6 +201,7 @@ ANG	s	Arboretum de la Maulevrie
 ANGU	s	Instituto Nacional de Tecnologia Agropecuaria
 ANGUC	s	Universite Catholiques de l'Ouest
 ANH	s	Andong National University, School of Bioresource Science
+ANHC	s	Arkansas Natural Heritage Commission
 ANIC	s	Australian National Insect Collection
 ANK	s	Ankara Ueniversitesi, Biyoloji Boeluemue
 ANKO	s	Forest Research Institute, Turkey
@@ -218,7 +230,9 @@ APMJ	s	Aomori Prefectural Museum
 APP	s	Parco Nazionale del Gran Sasso e Monti della Laga - Universita di Camerino, Centro Richerche Floristiche dell'Appennino
 APSC	s	Austin Peay State University, Biology Department
 AQC	s	Aquinas College, Biology Department
+AQP	s	Estudios Fitogeograficos del Peru
 AQUI	s	Universita degli Studi di L'Aquila, Dipartimento di Scienze Ambientali
+AR	s	Pomor State University
 ARAGO	s	Universite Pierre et Marie Curie
 ARAN	s	Alto de Zorroaga s.n., Departamento de Botanica
 ARB	s	Salahiddin University, Biology Department
@@ -231,9 +245,13 @@ ARER	s	Associazione Romana di Entomologia
 ARG	s	Argotti Botanic Garden
 ARIZ	s	University of Arizona, Department of Plant Sciences
 ARK	s	University of Arkansas
+ARKH	s	Chingan State Nature Reserve
 ARM	s	County Museum
 ARMFN	s	Armagh Field Naturalists' Society
+ARRI	s	Ayurveda Regional Research Institute
 ARSEF	c	ARS Collection of Entomopathogenic Fungi
+ARTH	s	Artvin Coruh University
+ARUN	s	Botanical Survey of India, Arunachal Pradesh Regional Centre
 AS	c	China General Microbiological Culture Collection Center
 AS<DEU>	s	Paleontological Collection
 AS<PRY>	s	Jardin Botanico
@@ -257,6 +275,7 @@ ASSL	s	Academy of Sciences
 AST	s	University of Aston
 ASTC	s	Stephen F. Austin State University, Biology Department
 ASTN	s	Ashton-under-Lyne Linnean Botanical Society
+ASTU	s	Assiut University
 ASU	s	School of Life Sciences, Arizona State University
 ASUA	s	Ain Shams University
 ASUF	s	Rocky Mountain Research Station, USDA Forest Service
@@ -275,18 +294,22 @@ ATU	c	Dept.of Biotechnology University of Tokyo
 AU	s	Xiamen University, Biology Department
 AUA	s	Auburn University, Biological Sciences Department
 AUB	s	Andrews University
+AUBH	s	Athabasca University
 AUBL	s	Museum of Natural History, Beirut
 AUBSN	s	All-Union Botanical Society
 AUCE	s	El Azhar University
 AUEM	s	Auburn University Entomological Museum
 AUG	s	Augustana College, Biology Department
 AUGD	s	Department of Geology and Petroleum Geology
+AUH	s	Agriculture University Herbarium
 AUM	s	Auburn University Museum
 AUMC<EGY>	c	Assiut University Mycological Centre Culture Collection
+AURO	s	Auroville Foundation
 AUSPGRIS	b	Australian Plant Genetic Resource Information Service
 AUT	s	Museum d'Histoire Naturelle
 AUW	s	Acadia University, Wildlife Museum
 AV	s	Museum Requien
+AVCH	s	City of Alexandria
 AVE	s	Universidade de Aveiro, Departamento de Biologia
 AVU	s	Vrije Universiteit, Department of Systematic Botany
 AWH	s	Dr. Henri Van Heurck Museum
@@ -306,9 +329,11 @@ BA	s	Museo Argentino de Ciencias Naturales Bernardino Rivadavia
 BAA	s	Universidad de Buenos Aires, Facultad de Agronomia
 BAAC	s	Musee de Beni Abbes
 BAB	s	Instituto Nacional de Tecnologia Agropecuaria, Instituto de Recursos Biologicos
+BABY	s	B. A. Bennett Herbarium, Yukon Government
 BAC<CHN>	s	Beijing Agricultural College
 BAC<UK>	s	Bacup Natural History Society
 BACC	c	Brucella AFSSA Culture Collection
+BACH	s	Botswana College of Agriculture
 BACP	s	CEFYBO, Unidad Botanica
 BAE	s	Willis Museum and Art Gallery
 BAF	s	Universidad de Buenos Aires, Facultad de Farmacia y Bioquimica
@@ -322,15 +347,19 @@ BAJ	s	Instituto Municipal de Botanica, Parque Pte. Dr. Nicolas Avellaneda
 BAK	s	Academy of Sciences of Azerbaijan
 BAL	s	INTA, EEA Balcarce, Catedra de Botanica Agricola
 BALT	s	Towson University, Department of Biological Sciences
+BAMU	s	Dr. Babasaheb Ambedkar Marathwada University
 BAN	s	Banaras Hindu University, Botany Department
+BANG	s	Universite de Bangui,
 BAP	s	Oxford Botanic Garden
 BAR	s	University of the West Indies, Department of Biological and Chemical Sciences
 BARC	s	Systematic Botany and Mycology Laboratory, USDA/ARS
 BARO	s	Maharaja Sayajirao University of Baroda, Botany Department
+BART	s	Bartlett Arboretum
 BAS<BGR>	s	Bulgarian Academy of Science
 BAS<CHE>	s	Herbarium, Botanisches Institut, Universitat Basel
 BASBG	s	Universitaet Basel, Basler Botanische Gesellschaft
 BASSA	s	Museo Civico, Bassano del Grappa
+BASU	s	Bu-Ali Sina University
 BAT	s	Bagshaw Museum
 BATA	s	Instituto Nacional de Desarollo Forestal
 BATH	s	Bath Natural History Society
@@ -6090,6 +6119,7 @@ UAMZC	s	University of Arkansas, Museum Zoological Collections
 UANL	s	Universidad Autonoma de Nuevo Leon
 UARK	s	University of Arkansas
 UAS	s	Universidad Autonoma de Sinaloa
+UAS-B	s	University of Agricultural Sciences Bangalore
 UASB	s	University of Agricultural Sciences, Bangalore
 UASC	s	Museo de Historia Natural "Noel Kempff Mercado"
 UASK	s	Ukrainian Academy of Science
