@@ -254,10 +254,19 @@ CJsonNode CReadJsonFromSocket::ReadMessage(CSocket& sock)
 
 struct SIssue
 {
+    struct SBuilder;
+
     Int8 code;
     string message;
     string scope;
     Int8 sub_code;
+
+    SIssue(SBuilder builder) :
+        code(builder.GetCode()),
+        message(builder.GetMessage()),
+        scope(builder.GetScope()),
+        sub_code(builder.GetSubCode())
+    {}
 
     template <class TOstream>
     TOstream& Print(TOstream& os) const
@@ -268,24 +277,27 @@ struct SIssue
         return os << " (" << message << ')';
     }
 
-    struct SBuilder : private CJsonNode
+    struct SBuilder
     {
-        explicit SBuilder(const CJsonNode& node) : CJsonNode(node) {}
-
-        SIssue Build() const
+        SBuilder(const CJsonNode& node) :
+            m_Node(node)
         {
-            return SIssue{
-                    GetInteger("Code"),
-                    GetString("Message"),
-                    GetScope(),
-                    GetSubCode()
-                };
+            _ASSERT(m_Node);
         }
 
-    private:
+        Int8 GetCode() const
+        {
+            return m_Node.GetInteger("Code");
+        }
+
+        string GetMessage() const
+        {
+            return m_Node.GetString("Message");
+        }
+
         string GetScope() const
         {
-            if (CJsonNode scope = GetByKeyOrNull("Scope")) {
+            if (CJsonNode scope = m_Node.GetByKeyOrNull("Scope")) {
                 return scope.AsString();
             } else {
                 return string();
@@ -294,12 +306,15 @@ struct SIssue
 
         Int8 GetSubCode() const
         {
-            if (CJsonNode sub_code = GetByKeyOrNull("SubCode")) {
+            if (CJsonNode sub_code = m_Node.GetByKeyOrNull("SubCode")) {
                 return sub_code.AsInteger();
             } else {
                 return 0;
             }
         }
+
+    private:
+        CJsonNode m_Node;
     };
 
 };
@@ -356,7 +371,7 @@ static void s_TrapErrors(const CJsonNode& request,
 
     if (issues) {
         for (CJsonIterator it = issues.Iterate(); it; ++it) {
-            const SIssue issue(SIssue::SBuilder(*it).Build());
+            const SIssue issue(*it);
             LOG_POST(Warning << "NetStorage server " << server_address <<
                     " issued warning " << issue);
         }
@@ -371,7 +386,7 @@ static void s_TrapErrors(const CJsonNode& request,
         if (status_ok && err_mode != SNetStorage::SConfig::eThrow) {
             if (err_mode == SNetStorage::SConfig::eLog) {
                 for (CJsonIterator it = issues.Iterate(); it; ++it) {
-                    const SIssue issue(SIssue::SBuilder(*it).Build());
+                    const SIssue issue(*it);
                     LOG_POST(Error << "NetStorage server " << server_address <<
                             " issued error " << issue);
                 }
@@ -387,7 +402,7 @@ static void s_TrapErrors(const CJsonNode& request,
                 const char* prefix = "error ";
 
                 for (CJsonIterator it = issues.Iterate(); it; ++it) {
-                    const SIssue issue(SIssue::SBuilder(*it).Build());
+                    const SIssue issue(*it);
                     code = issue.code;
                     sub_code = issue.sub_code;
                     errors << prefix << issue;
