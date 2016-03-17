@@ -95,8 +95,7 @@ string AccessionToKey(const string & acc)
     if (CheckAccession(acc, gi, seqid, specific)) {
         if (seqid.Empty()) {
             if (gi != ZERO_GI) {
-                str = "gi|";
-                str += NStr::IntToString(GI_TO(int, gi));
+                str = NStr::IntToString(GI_TO(int, gi));
             }
         } else {
             GetSeqIdKey(*seqid, str);
@@ -157,7 +156,7 @@ bool CheckAccession(const string  & acc,
 
 void GetSeqIdKey(const objects::CSeq_id & id, string & key)
 {
-    id.GetLabel(& key, CSeq_id::eBoth, CSeq_id::fLabel_GeneralDbIsContent);
+    id.GetLabel(& key, CSeq_id::eContent, CSeq_id::fLabel_GeneralDbIsContent);
 }
 
 void GetDeflineKeys(const objects::CBlast_def_line & defline,

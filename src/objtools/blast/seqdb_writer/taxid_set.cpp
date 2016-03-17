@@ -99,6 +99,21 @@ int CTaxIdSet::x_SelectBestTaxid(const objects::CBlast_def_line & defline)
                 m_Matched = true;
                 break;
             }
+	
+	    // try removing version to see if strings match.
+	    // this is most likely to help if the Query ID was parsed as local ID but is really accession.
+	    string keyNoVersion;
+	    string version;
+	    if (NStr::SplitInTwo(*key, ".", keyNoVersion, version) == true)
+	    {
+            	item = m_TaxIdMap.find(keyNoVersion);
+            
+            	if (item != m_TaxIdMap.end()) {
+               	 retval = item->second;
+               	 m_Matched = true;
+               	 break;
+		}
+            }
         }
     } else if (defline.IsSetTaxid()) {
         retval = defline.GetTaxid();

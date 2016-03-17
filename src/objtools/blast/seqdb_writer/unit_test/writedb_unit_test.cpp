@@ -2552,14 +2552,51 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomy)
     blastdb.Close();
 
     CSeqDB db(kDbName, CSeqDB::eNucleotide);
-    ITERATE(set<TGi>, gi, gis) {
-        int oid = -1;
-        if (db.GiToOid(*gi, oid)) {
+    int total=db.GetNumSeqs();
+    for (int oid=0; oid<total; oid++)
+    {
             vector<int> taxids;
             db.GetTaxIDs(oid, taxids);
             BOOST_REQUIRE(taxids.size() == 1);
             BOOST_REQUIRE_EQUAL(kTaxId, taxids.front());
-        }
+    }
+    DeleteBlastDb(kDbName, CSeqDB::eNucleotide);
+}
+
+BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomyFromMap)
+{
+    const int kTaxId(9986);
+    CRef<CTaxIdSet> tis(new CTaxIdSet());
+    const string kDbName("foo");
+    CWriteDB blastdb(kDbName, CWriteDB::eNucleotide, kDbName);
+    const CFastaReader::TFlags flags =
+        CFastaReader::fAssumeNuc | CFastaReader::fAllSeqIds;
+    // This file contains TAB characters, which shouldn't create any warnings
+    CFastaReader reader("data/rabbit_mrna.fsa", flags);
+    CNcbiIfstream taxidmap("data/rabbit_taxidmap.txt");
+    tis->SetMappingFromFile(taxidmap);
+    set<TGi> gis;
+    while (!reader.AtEOF()) {
+        CRef<CSeq_entry> se = reader.ReadOneSeq();
+        BOOST_REQUIRE(se.NotEmpty());
+        BOOST_REQUIRE(se->IsSeq());
+        CRef<CBioseq> bs(&se->SetSeq());
+        CRef<CBlast_def_line_set> bds(CWriteDB::ExtractBioseqDeflines(*bs));
+        tis->FixTaxId(bds);
+        blastdb.AddSequence(*bs);
+        blastdb.SetDeflines(*bds);
+        gis.insert(FindGi(bs->GetId()));
+    }
+    blastdb.Close();
+
+    CSeqDB db(kDbName, CSeqDB::eNucleotide);
+    int total=db.GetNumSeqs();
+    for (int oid=0; oid<total; oid++)
+    {
+          vector<int> taxids;
+          db.GetTaxIDs(oid, taxids);
+          BOOST_REQUIRE(taxids.size() == 1);
+          BOOST_REQUIRE_EQUAL(kTaxId, taxids.front());
     }
     DeleteBlastDb(kDbName, CSeqDB::eNucleotide);
 }
