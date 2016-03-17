@@ -31,7 +31,7 @@
 #define _MISC_DISCREPANCY_DISCREPANCY_CORE_H_
 
 #include <misc/discrepancy/discrepancy.hpp>
-#include "report_object.hpp"
+#include <misc/discrepancy/report_object.hpp>
 #include <objects/macro/Suspect_rule_set.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/OrgName.hpp>

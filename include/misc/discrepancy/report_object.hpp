@@ -101,6 +101,8 @@ public:
     static string GetTextObjectDescription(const CSeqdesc& sd);
     static string GetTextObjectDescription(CBioseq_Handle bsh);
     static string GetTextObjectDescription(CBioseq_set_Handle bssh);
+    static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag);
+    static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &location, string &locus_tag);
 
     CScope& GetScope(void) const { return m_Scope; }
     CConstRef<CSerialObject> GetObject(void) const

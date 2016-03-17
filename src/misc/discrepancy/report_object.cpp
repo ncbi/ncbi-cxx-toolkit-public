@@ -34,8 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include "discrepancy_core.hpp"
-#include "report_object.hpp"
-
+#include <misc/discrepancy/report_object.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
@@ -310,54 +309,66 @@ string GetSeqLocDescription(const CSeq_loc& loc, CScope& scope)
     return location;
 }
 
+void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &location, string &locus_tag)
+{
+    location = GetSeqLocDescription(seq_feat.GetLocation(), scope);
+    label = seq_feat.GetData().GetKey();
+    locus_tag = GetLocusTagForFeature (seq_feat, scope);
+}
 
 string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product)
 {
-    string location = GetSeqLocDescription(seq_feat.GetLocation(), scope);
-    string label = seq_feat.GetData().GetKey();
-    string locus_tag = GetLocusTagForFeature (seq_feat, scope);
+    string location;
+    string label;
+    string locus_tag;
+    GetTextObjectDescription(seq_feat, scope, label, location, locus_tag);
     string rval = label + "\t" + product + "\t" + location + "\t" + locus_tag; // + "\n";
     return rval;
 }
 
-
-string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope)
+void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag)
 {
+    GetTextObjectDescription(seq_feat, scope, label, location, locus_tag);
+
     if ( seq_feat.GetData().IsProt()) {
         CConstRef <CBioseq> bioseq = sequence::GetBioseqFromSeqLoc(seq_feat.GetLocation(), scope).GetCompleteBioseq();
         if (bioseq) {
             const CSeq_feat* cds = sequence::GetCDSForProduct(*bioseq, &scope);
             if (cds) {
-                string product = GetProduct(seq_feat.GetData().GetProt());
-                return GetTextObjectDescription(*cds, scope, product);
+                context = GetProduct(seq_feat.GetData().GetProt());
+                return;
             }
         }
     }
-
-    string location= GetSeqLocDescription(seq_feat.GetLocation(), scope);
    
-    string label = seq_feat.GetData().GetKey();
-    string locus_tag = GetLocusTagForFeature (seq_feat, scope);
-    string context_label(kEmptyStr);
+    context.clear();
     if (seq_feat.GetData().IsCdregion()) { 
-        context_label = GetProductForCDS(seq_feat, scope);
-        if (NStr::IsBlank(context_label)) {
-            GetSeqFeatLabel(seq_feat, context_label);
+        context = GetProductForCDS(seq_feat, scope);
+        if (NStr::IsBlank(context)) {
+            GetSeqFeatLabel(seq_feat, context);
         }
     } else if (seq_feat.GetData().IsPub()) {
-        seq_feat.GetData().GetPub().GetPub().GetLabel(&context_label);
+        seq_feat.GetData().GetPub().GetPub().GetLabel(&context);
     } else if (seq_feat.GetData().IsGene()) {
         if (seq_feat.GetData().GetGene().CanGetLocus() &&
             !NStr::IsBlank(seq_feat.GetData().GetGene().GetLocus())) {
-            context_label = seq_feat.GetData().GetGene().GetLocus(); 
+            context = seq_feat.GetData().GetGene().GetLocus(); 
         } else if (seq_feat.GetData().GetGene().CanGetDesc()) {
-            context_label = seq_feat.GetData().GetGene().GetDesc(); 
+            context = seq_feat.GetData().GetGene().GetDesc(); 
         }
     } 
-    else GetSeqFeatLabel(seq_feat, context_label);
+    else GetSeqFeatLabel(seq_feat, context);
+}
 
+string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope)
+{
+    string location;
+    string label;
+    string context;
+    string locus_tag;
+    GetTextObjectDescription(seq_feat, scope, label, context, location, locus_tag);
 
-    string rval = label + "\t" + context_label + "\t" + location + "\t" + locus_tag;
+    string rval = label + "\t" + context + "\t" + location + "\t" + locus_tag;
     return rval;
 }
 
