@@ -3815,7 +3815,7 @@ struct SLinker
 typedef vector<SLinker> TLinkers;
 
 struct RangeOrder {
-    bool operator()(const TSignedSeqRange& a, const TSignedSeqRange& b) {
+    bool operator()(const TSignedSeqRange& a, const TSignedSeqRange& b) const {
         return Precede(a, b);
     }
 };
