@@ -2595,7 +2595,8 @@ static BlastGapAlignStruct* s_BlastGapAlignStruct_Copy(
             copy->state_struct = c;
             memcpy(c, o, sizeof(GapStateArrayStruct));
             c->state_array = (Uint1*) calloc(c->length, sizeof(Uint1));
-            for (int i = 0; i < c->length; ++i) {
+            int i;
+            for (i = 0; i < c->length; ++i) {
                 c->state_array[i] = o->state_array[i];
             }
             while (o->next != NULL) {
@@ -2605,7 +2606,8 @@ static BlastGapAlignStruct* s_BlastGapAlignStruct_Copy(
                 o = o->next;
                 memcpy(c, o, sizeof(GapStateArrayStruct));
                 c->state_array = (Uint1*) calloc(c->length, sizeof(Uint1));
-                for (int i = 0; i < c->length; ++i) {
+                int i;
+                for (i = 0; i < c->length; ++i) {
                     c->state_array[i] = o->state_array[i];
                 }
             }
@@ -2625,7 +2627,8 @@ static BlastGapAlignStruct* s_BlastGapAlignStruct_Copy(
                     sizeof(EGapAlignOpType)
             );
             c->num = (Int4*) calloc(o->size, sizeof(Int4));
-            for (int i = 0; i < o->size; ++i) {
+            int i;
+            for (i = 0; i < o->size; ++i) {
                 c->op_type[i] = o->op_type[i];
                 c->num[i] = o->num[i];
             }
@@ -2644,7 +2647,8 @@ static BlastGapAlignStruct* s_BlastGapAlignStruct_Copy(
                     o->num_ops_allocated,
                     sizeof(GapPrelimEditScript)
             );
-            for (int i = 0; i < o->num_ops_allocated; ++i) {
+            int i;
+            for (i = 0; i < o->num_ops_allocated; ++i) {
                 c->edit_ops[i].op_type = o->edit_ops[i].op_type;
                 c->edit_ops[i].num = o->edit_ops[i].num;
             }
@@ -2663,7 +2667,8 @@ static BlastGapAlignStruct* s_BlastGapAlignStruct_Copy(
                     o->num_ops_allocated,
                     sizeof(GapPrelimEditScript)
             );
-            for (int i = 0; i < o->num_ops_allocated; ++i) {
+            int i;
+            for (i = 0; i < o->num_ops_allocated; ++i) {
                 c->edit_ops[i].op_type = o->edit_ops[i].op_type;
                 c->edit_ops[i].num = o->edit_ops[i].num;
             }
@@ -2754,7 +2759,8 @@ BlastScoreBlk* s_BlastScoreBlk_Copy(
         }
         SBlastScoreMatrix* m = copy->matrix;
         if (m->data != NULL  &&  orig->matrix->data != NULL) {
-            for (int i = 0; i < orig->matrix->ncols; ++i) {
+            int i;
+            for (i = 0; i < orig->matrix->ncols; ++i) {
                 memcpy(
                         m->data[i],
                         orig->matrix->data[i],
@@ -2781,7 +2787,8 @@ BlastScoreBlk* s_BlastScoreBlk_Copy(
         SPsiBlastScoreMatrix* pm = copy->psi_matrix;
         SBlastScoreMatrix* m = pm->pssm;
         if (m->data != NULL  &&  orig->psi_matrix->pssm->data != NULL) {
-            for (int i = 0; i < orig->psi_matrix->pssm->ncols; ++i) {
+            int i;
+            for (i = 0; i < orig->psi_matrix->pssm->ncols; ++i) {
                 memcpy(
                         m->data[i],
                         orig->psi_matrix->pssm->data[i],
@@ -2800,7 +2807,8 @@ BlastScoreBlk* s_BlastScoreBlk_Copy(
         m->lambda = orig->psi_matrix->pssm->lambda;
         if (pm->freq_ratios != NULL
                 &&  orig->psi_matrix->freq_ratios != NULL) {
-            for (int i = 0; i < orig->psi_matrix->pssm->ncols; ++i) {
+            int i;
+            for (i = 0; i < orig->psi_matrix->pssm->ncols; ++i) {
                 memcpy(
                         pm->freq_ratios[i],
                         orig->psi_matrix->freq_ratios[i],
@@ -2829,7 +2837,8 @@ BlastScoreBlk* s_BlastScoreBlk_Copy(
     if (orig->gbp != NULL) {
         memcpy(copy->gbp, orig->gbp, sizeof(Blast_GumbelBlk));
     }
-    for (int ctx = 0; ctx < orig->number_of_contexts; ++ctx) {
+    int ctx;
+    for (ctx = 0; ctx < orig->number_of_contexts; ++ctx) {
         if (orig->sfp != NULL  &&  orig->sfp[ctx] != NULL) {
             copy->sfp[ctx] = Blast_ScoreFreqNew(
                     orig->sfp[ctx]->score_min,
@@ -3180,7 +3189,8 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                     sizeof(BlastHSPResults*)
             );
 
-    for (int i = 0; i < actual_num_threads; ++i) {
+    int i;
+    for (i = 0; i < actual_num_threads; ++i) {
         sbp_tld[i] = s_BlastScoreBlk_Copy(
                 program_number,
                 sbp,
@@ -3332,7 +3342,8 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
          */
         theseMatches =
                 (BlastHSPList**) calloc(numMatches, sizeof(BlastHSPList*));
-        for (int i = 0; i < numMatches; ++i) {
+        int i;
+        for (i = 0; i < numMatches; ++i) {
             theseMatches[i] = head->match;
             BlastHSPListLinkedList* here = head;
             head = head->next;
@@ -3659,12 +3670,12 @@ match_loop_cleanup:
 
 function_cleanup:
 
-    for (int i = 0; i < actual_num_threads; ++i) {
+    for (i = 0; i < actual_num_threads; ++i) {
         if (status_code_tld[i] != 0) {
             status_code = status_code_tld[i];
         }
     }
-    for (int i = 0; i < actual_num_threads; ++i) {
+    for (i = 0; i < actual_num_threads; ++i) {
         if (seqSrc  &&  status_code == 0) {
             s_FillResultsFromCompoHeaps(
                     results_tld[i],
@@ -3690,7 +3701,8 @@ function_cleanup:
         sfree(redoneMatches_tld[i]);
     }
     if (redoneMatches != NULL) {
-        for (int qi = 0; qi < numQueries; ++qi) {
+        int qi;
+        for (qi = 0; qi < numQueries; ++qi) {
             sfree(redoneMatches[qi].array);
             sfree(redoneMatches[qi].heapArray);
         }
@@ -3701,7 +3713,8 @@ function_cleanup:
         /* Reduce results from all threads and continue with business as usual */
         SThreadLocalDataArray* thread_data =
                 SThreadLocalDataArrayNew(actual_num_threads);
-        for (int i = 0; i < actual_num_threads; ++i) {
+        int i;
+        for (i = 0; i < actual_num_threads; ++i) {
             SThreadLocalData* tdi = thread_data->tld[i];
             BlastHSPResults* rdi = results_tld[i];
             tdi->hit_params = hit_params_tld[i];
@@ -3714,7 +3727,8 @@ function_cleanup:
                             tdi->results->num_queries,
                             sizeof(BlastHitList*)
                     );
-            for (int j = 0; j < tdi->results->num_queries; ++j) {
+            int j;
+            for (j = 0; j < tdi->results->num_queries; ++j) {
                 tdi->results->hitlist_array[j] = rdi->hitlist_array[j];
                 rdi->hitlist_array[j] = NULL;
             }
@@ -3725,13 +3739,14 @@ function_cleanup:
         /* post-traceback pipes */
         BlastHSPStreamTBackClose(hsp_stream, local_results);
 
-        for (int i = 0; i < local_results->num_queries; ++i) {
+        for (i = 0; i < local_results->num_queries; ++i) {
             results->hitlist_array[i] = local_results->hitlist_array[i];
             local_results->hitlist_array[i] = NULL;
         }
-        for (int i = 0; i < actual_num_threads; ++i) {
+        for (i = 0; i < actual_num_threads; ++i) {
             thread_data->tld[i]->hit_params = NULL;
-            for (int j = 0; j < local_results->num_queries; ++j) {
+            int j;
+            for (j = 0; j < local_results->num_queries; ++j) {
                 thread_data->tld[i]->results->hitlist_array[j] =
                         Blast_HitListFree(
                                 thread_data->tld[i]->results->hitlist_array[j]
@@ -3765,7 +3780,7 @@ function_cleanup:
                     positionBased, compo_adjust_mode);
     s_SavedParametersFree(&savedParams);
 
-    for (int i = 0; i < actual_num_threads; ++i) {
+    for (i = 0; i < actual_num_threads; ++i) {
         s_BlastScoreBlk_Free(&sbp_tld[i]);
         gap_align_tld[i]->sbp = NULL;
         s_BlastGapAlignStruct_Free(gap_align_tld[i]);
