@@ -312,7 +312,7 @@ bool CValidError_annot::IsLocationUnindexed(const CSeq_loc& loc)
         CBioseq_Handle in_record = m_Scope->GetBioseqHandleFromTSE(id, m_Imp.GetTSE());
         if (in_record) {
             found_one = true;
-            if (!loc_it.IsWhole() && loc_it.GetRange().GetTo() > in_record.GetBioseqLength() - 1) {
+            if (!loc_it.IsWhole() && loc_it.GetRange().GetFrom() > in_record.GetBioseqLength() - 1) {
                 return true;
             }
         }
