@@ -120,9 +120,6 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
     if (args["q"]) {
         options |= CValidator::eVal_do_tax_lookup;
     }
-    if (args["non_ascii"]) {
-        options |= CValidator::eVal_non_ascii;
-    }
     if (args["suppress_context"]) {
         options |= CValidator::eVal_no_context;
     }
