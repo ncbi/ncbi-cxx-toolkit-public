@@ -3043,6 +3043,11 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                          : PSI_INCLUSION_ETHRESH);
     ASSERT(inclusion_ethresh != 0.0);
 
+    int actual_num_threads = 1;
+#ifdef _OPENMP
+    actual_num_threads = num_threads;
+#endif
+
     /* Initialize savedParams */
     savedParams =
         s_SavedParametersNew(queryInfo->max_length, numContexts,
@@ -3105,11 +3110,6 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
             goto function_cleanup;
         }
     }
-
-    int actual_num_threads = 1;
-#ifdef _OPENMP
-    actual_num_threads = num_threads;
-#endif
 
     BlastCompo_Heap** redoneMatches_tld =
             (BlastCompo_Heap**) calloc(
