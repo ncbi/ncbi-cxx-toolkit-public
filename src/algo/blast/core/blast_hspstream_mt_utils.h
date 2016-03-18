@@ -54,12 +54,21 @@ typedef struct BlastHSPStreamResultsBatchArray {
 
 /** Extracts all data from the BlastHSPStream into its output parameters.
  * @param hsp_stream The BlastHSPStream object [in]
- * @param batches Each batch contains the results for a single OID [in|out] 
+ * @param batches Each batch contains the results for a single OID [in|out]
  * kBlastHSPStream_Success on successful conversion, otherwise an error code which explains the problem.
  */
 NCBI_XBLAST_EXPORT
 int BlastHSPStreamToHSPStreamResultsBatch(BlastHSPStream* hsp_stream,
                                           BlastHSPStreamResultsBatchArray** batches);
+
+/**
+ * Creates a BlastHSPStreamResultsBatchArray with a single element.
+ * Used to mimic BlastHSPStreamToHSPStreamResultsBatch when there is no
+ * hsp_stream.
+ */
+NCBI_XBLAST_EXPORT
+BlastHSPStreamResultsBatchArray*
+BlastHSPStreamResultsBatchNew(void);
 
 /** Releases memory acquired in BlastHSPStreamToHSPStreamResultsBatch
  */

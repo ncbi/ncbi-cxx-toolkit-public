@@ -49,7 +49,7 @@
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
+static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
@@ -94,8 +94,8 @@ typedef struct MatrixInfo {
 
 How the statistical parameters for the matrices are stored:
 -----------------------------------------------------------
-They parameters are stored in a two-dimensional array double (i.e., 
-doubles, which has as it's first dimensions the number of different 
+They parameters are stored in a two-dimensional array double (i.e.,
+doubles, which has as it's first dimensions the number of different
 gap existence and extension combinations and as it's second dimension 8.
 The eight different columns specify:
 
@@ -120,8 +120,8 @@ more parameters:
 10.) alpha_v
 11.) sigma
 
-where C is the prefactor to the p-value expression, alpha_v is the alpha parameter 
-for the variance of length correction:   
+where C is the prefactor to the p-value expression, alpha_v is the alpha parameter
+for the variance of length correction:
    var(L) = alpha_v * score + beta_v
 in contrast, the original alpha is the alpha parameter for the mean of length correction:
    avg(L) = alpha * score + beta.
@@ -134,7 +134,7 @@ http://www.ncbi.nlm.nih.gov/CBBresearch/Spouge/html.ncbi/blast/index.html
 
 Take BLOSUM45 (below) as an example.  Currently (5/17/02) there are
 14 different allowed combinations (specified by "#define BLOSUM45_VALUES_MAX 14").
-The first row in the array "blosum45_values" has INT2_MAX (i.e., 32767) for gap 
+The first row in the array "blosum45_values" has INT2_MAX (i.e., 32767) for gap
 existence, extension, and decline-to-align penalties.  For all practical purposes
 this value is large enough to be infinite, so the alignments will be ungapped.
 BLAST may also use this value (INT2_MAX) as a signal to skip gapping, so a
@@ -146,7 +146,7 @@ set to INT2_MAX.
 
 How to add a new matrix to blast_stat.c:
 --------------------------------------
-To add a new matrix to blast_stat.c it is necessary to complete 
+To add a new matrix to blast_stat.c it is necessary to complete
 four steps.  As an example consider adding the matrix
 called TESTMATRIX
 
@@ -161,7 +161,7 @@ if 14 values were to be allowed.
 
 static array_of_8 testmatrix_values[TESTMATRIX_VALUES_MAX] ={ ...
 
-3.) add a "prefs" array that should hint about the "optimal" 
+3.) add a "prefs" array that should hint about the "optimal"
 gap existence and extension penalties:
 
 static Int4 testmatrix_prefs[TESTMATRIX_VALUES_MAX] = {
@@ -170,7 +170,7 @@ BLAST_MATRIX_NOMINAL,
 };
 
 4.) Go to the function BlastLoadMatrixValues (in this file) and
-add two lines before the return at the end of the function: 
+add two lines before the return at the end of the function:
 
         matrix_info = MatrixInfoNew("TESTMATRIX", testmatrix_values, testmatrix_prefs, TESTMATRIX_VALUES_MAX);
         ListNodeAddPointer(&retval, 0, matrix_info);
@@ -180,8 +180,8 @@ add two lines before the return at the end of the function:
 ***************************************************************************************/
 
 
-   
-   
+
+
 
 #define BLOSUM45_VALUES_MAX 14 /**< Number of different combinations supported for BLOSUM45. */
 static array_of_8 blosum45_values[BLOSUM45_VALUES_MAX] = {
@@ -391,7 +391,7 @@ static array_of_8 pam30_values[PAM30_VALUES_MAX] = {
     {15, 3, (double) INT2_MAX, 0.339, 0.28, 1.70, 0.20, -0.5, 0.437688, 0.157089, 0.155299},
     {14, 2, (double) INT2_MAX, 0.337, 0.27, 1.62, 0.21, -0.8, 0.440010, 0.206970, 0.198524},
     {14, 1, (double) INT2_MAX, 0.333, 0.27, 1.43, 0.23, -1.4, 0.444817, 0.436301, 0.361947},
-    {13, 3, (double) INT2_MAX, 0.338, 0.27, 1.69, 0.20, -0.5, 0.439086, 0.178973, 0.175436},    
+    {13, 3, (double) INT2_MAX, 0.338, 0.27, 1.69, 0.20, -0.5, 0.439086, 0.178973, 0.175436},
 }; /**< Supported values (gap-existence, extension, etc.) for PAM30. */
 
 static Int4 pam30_prefs[PAM30_VALUES_MAX] = {
@@ -593,12 +593,12 @@ static Int4 prot_identity_prefs[PROT_IDENTITY_VALUES_MAX] = {
 /** Supported substitution and gap costs with corresponding quality values
  * for nucleotide sequence comparisons.
  * NB: the values 0 and 0 for the gap costs are treated as the defaults used for
- * the greedy gapped extension, i.e. 
- * gap opening = 0, 
+ * the greedy gapped extension, i.e.
+ * gap opening = 0,
  * gap extension = 1/2 match - mismatch.
- * 
+ *
  * The fields are:
- * 
+ *
  * 1. Gap opening cost,
  * 2. Gap extension cost,
  * 3. Lambda,
@@ -620,19 +620,19 @@ static const array_of_8 blastn_values_1_5[] = {
 /** Karlin-Altschul parameter values for substitution scores 1 and -4. */
 static const array_of_8 blastn_values_1_4[] = {
     { 0, 0, 1.383, 0.738, 1.36, 1.02,  0, 100 },
-    { 1, 2,  1.36,  0.67,  1.2,  1.1,  0,  98 }, 
+    { 1, 2,  1.36,  0.67,  1.2,  1.1,  0,  98 },
     { 0, 2,  1.26,  0.43, 0.90,  1.4, -1,  91 },
     { 2, 1,  1.35,  0.61,  1.1,  1.2, -1,  98 },
     { 1, 1,  1.22,  0.35, 0.72,  1.7, -3,  88 }
 };
 
-/** Karlin-Altschul parameter values for substitution scores 2 and -7. 
+/** Karlin-Altschul parameter values for substitution scores 2 and -7.
  * These parameters can only be applied to even scores. Any odd score must be
  * rounded down to the nearest even number before calculating the e-value.
  */
 static const array_of_8 blastn_values_2_7[] = {
     { 0, 0,  0.69, 0.73, 1.34, 0.515,  0, 100 },
-    { 2, 4,  0.68, 0.67,  1.2,  0.55,  0,  99 }, 
+    { 2, 4,  0.68, 0.67,  1.2,  0.55,  0,  99 },
     { 0, 4,  0.63, 0.43, 0.90,   0.7, -1,  91 },
     { 4, 2, 0.675, 0.62,  1.1,   0.6, -1,  98 },
     { 2, 2,  0.61, 0.35, 0.72,   1.7, -3,  88 }
@@ -664,10 +664,10 @@ static const array_of_8 blastn_values_2_5[] = {
 static const array_of_8 blastn_values_1_2[] = {
     { 0, 0, 1.28, 0.46, 0.85, 1.5, -2, 96 },
     { 2, 2, 1.33, 0.62,  1.1, 1.2,  0, 99 },
-    { 1, 2, 1.30, 0.52, 0.93, 1.4, -2, 97 }, 
+    { 1, 2, 1.30, 0.52, 0.93, 1.4, -2, 97 },
     { 0, 2, 1.19, 0.34, 0.66, 1.8, -3, 89 },
-    { 3, 1, 1.32, 0.57,  1.0, 1.3, -1, 99 }, 
-    { 2, 1, 1.29, 0.49, 0.92, 1.4, -1, 96 }, 
+    { 3, 1, 1.32, 0.57,  1.0, 1.3, -1, 99 },
+    { 2, 1, 1.29, 0.49, 0.92, 1.4, -1, 96 },
     { 1, 1, 1.14, 0.26, 0.52, 2.2, -5, 85 }
 };
 
@@ -709,11 +709,11 @@ static const array_of_8 blastn_values_4_5[] = {
 /** Karlin-Altschul parameter values for substitution scores 1 and -1. */
 static const array_of_8 blastn_values_1_1[] = {
     { 3,  2, 1.09,  0.31, 0.55, 2.0,  -2, 99 },
-    { 2,  2, 1.07,  0.27, 0.49, 2.2,  -3, 97 }, 
-    { 1,  2, 1.02,  0.21, 0.36, 2.8,  -6, 92 }, 
+    { 2,  2, 1.07,  0.27, 0.49, 2.2,  -3, 97 },
+    { 1,  2, 1.02,  0.21, 0.36, 2.8,  -6, 92 },
     { 0,  2, 0.80, 0.064, 0.17, 4.8, -16, 72 },
-    { 4,  1, 1.08,  0.28, 0.54, 2.0,  -2, 98 }, 
-    { 3,  1, 1.06,  0.25, 0.46, 2.3,  -4, 96 }, 
+    { 4,  1, 1.08,  0.28, 0.54, 2.0,  -2, 98 },
+    { 3,  1, 1.06,  0.25, 0.46, 2.3,  -4, 96 },
     { 2,  1, 0.99,  0.17, 0.30, 3.3, -10, 90 }
 };
 
@@ -732,7 +732,7 @@ static const array_of_8 blastn_values_5_4[] = {
  * @param matrix structure to deallocate [in]
  * @return NULL
  */
-static SBlastScoreMatrix*
+SBlastScoreMatrix*
 SBlastScoreMatrixFree(SBlastScoreMatrix* matrix)
 {
     if ( !matrix ) {
@@ -740,7 +740,7 @@ SBlastScoreMatrixFree(SBlastScoreMatrix* matrix)
     }
 
     if (matrix->data) {
-        matrix->data = (int**) _PSIDeallocateMatrix((void**) matrix->data, 
+        matrix->data = (int**) _PSIDeallocateMatrix((void**) matrix->data,
                                                     matrix->ncols);
     }
 
@@ -760,7 +760,7 @@ SBlastScoreMatrixFree(SBlastScoreMatrix* matrix)
  * @return NULL in case of memory allocation failure, else new
  * SBlastScoreMatrix structure
  */
-static SBlastScoreMatrix*
+SBlastScoreMatrix*
 SBlastScoreMatrixNew(size_t ncols, size_t nrows)
 {
     SBlastScoreMatrix* retval = NULL;
@@ -835,7 +835,7 @@ SPsiBlastScoreMatrixNew(size_t ncols)
     return retval;
 }
 
-/* 
+/*
    allocate space for gumbel block
 */
 static Blast_GumbelBlk*
@@ -843,7 +843,7 @@ s_BlastGumbelBlkNew() {
    return (Blast_GumbelBlk*) calloc(1, sizeof(Blast_GumbelBlk));
 }
 
-/* 
+/*
    free space for gumbel blcok
 */
 static Blast_GumbelBlk*
@@ -861,7 +861,7 @@ BlastScoreBlkCheck(BlastScoreBlk* sbp)
 
     if (sbp == NULL)
        return -1;
-    
+
     if (sbp->kbp == NULL || sbp->sfp == NULL)
       return 1;
 
@@ -927,7 +927,7 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
     if (!use_old_fsc) sbp->gbp = s_BlastGumbelBlkNew();
 
     sbp->number_of_contexts = number_of_contexts;
-    sbp->sfp = (Blast_ScoreFreq**) 
+    sbp->sfp = (Blast_ScoreFreq**)
      calloc(sbp->number_of_contexts, sizeof(Blast_ScoreFreq*));
     sbp->kbp_std = (Blast_KarlinBlk**)
      calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
@@ -972,7 +972,7 @@ BlastScoreBlkFree(BlastScoreBlk* sbp)
     Int4 index;
     if (sbp == NULL)
         return NULL;
-    
+
     for (index=0; index<sbp->number_of_contexts; index++) {
         if (sbp->sfp)
             sbp->sfp[index] = Blast_ScoreFreqFree(sbp->sfp[index]);
@@ -987,24 +987,28 @@ BlastScoreBlkFree(BlastScoreBlk* sbp)
     }
     if (sbp->kbp_ideal)
         sbp->kbp_ideal = Blast_KarlinBlkFree(sbp->kbp_ideal);
-    if (sbp->gbp) 
+    if (sbp->gbp)
         sbp->gbp = s_BlastGumbelBlkFree(sbp->gbp);
     sfree(sbp->sfp);
+    sbp->kbp = NULL;
+    sbp->kbp_gap = NULL;
     sfree(sbp->kbp_std);
     sfree(sbp->kbp_psi);
     sfree(sbp->kbp_gap_std);
     sfree(sbp->kbp_gap_psi);
     sbp->matrix = SBlastScoreMatrixFree(sbp->matrix);
     sbp->comments = ListNodeFreeData(sbp->comments);
-    sfree(sbp->name);
+    if (sbp->name) {
+        sfree(sbp->name);
+    }
     sbp->psi_matrix = SPsiBlastScoreMatrixFree(sbp->psi_matrix);
     sfree(sbp->ambiguous_res);
     sfree(sbp);
-    
+
     return NULL;
 }
 
-/* 
+/*
    Set the ambiguous residue (e.g, 'N', 'X') in the BlastScoreBlk*.
    Convert from ncbieaa to sbp->alphabet_code (i.e., ncbistdaa) first.
 */
@@ -1032,19 +1036,19 @@ BLAST_ScoreSetAmbigRes(BlastScoreBlk* sbp, char ambiguous_res)
 
    if (sbp->alphabet_code == BLASTAA_SEQ_CODE)
    {
-      sbp->ambiguous_res[sbp->ambig_occupy] = 
+      sbp->ambiguous_res[sbp->ambig_occupy] =
          AMINOACID_TO_NCBISTDAA[toupper((unsigned char) ambiguous_res)];
    }
    else {
       if (sbp->alphabet_code == BLASTNA_SEQ_CODE)
-         sbp->ambiguous_res[sbp->ambig_occupy] = 
+         sbp->ambiguous_res[sbp->ambig_occupy] =
             IUPACNA_TO_BLASTNA[toupper((unsigned char) ambiguous_res)];
       else if (sbp->alphabet_code == NCBI4NA_SEQ_CODE)
-         sbp->ambiguous_res[sbp->ambig_occupy] = 
+         sbp->ambiguous_res[sbp->ambig_occupy] =
             IUPACNA_TO_NCBI4NA[toupper((unsigned char) ambiguous_res)];
    }
    (sbp->ambig_occupy)++;
-   
+
 
    return 0;
 }
@@ -1065,7 +1069,7 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
     Int4 penalty; /* cost for mismatch of bases. */
     Int4** matrix; /* matrix to be populated. */
     /* How many of the first bases are ambiguous (four, of course). */
-    const int k_number_non_ambig_bp = 4; 
+    const int k_number_non_ambig_bp = 4;
 
     ASSERT(sbp);
     ASSERT(sbp->alphabet_size == BLASTNA_SIZE);
@@ -1081,7 +1085,7 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
         for (index2 = 0; index2<BLASTNA_SIZE; index2++)
             matrix[index1][index2] = 0;
 
-    /* In blastna the 1st four bases are A, C, G, and T, exactly as it is 
+    /* In blastna the 1st four bases are A, C, G, and T, exactly as it is
        ncbi2na. */
     /* ncbi4na gives them the value 1, 2, 4, and 8.  */
     /* Set the first four bases to degen. one */
@@ -1101,10 +1105,10 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
 
     for (index1=0; index1<BLASTNA_SIZE; index1++) {
         for (index2=index1; index2<BLASTNA_SIZE; index2++) {
-            if (BLASTNA_TO_NCBI4NA[index1] & BLASTNA_TO_NCBI4NA[index2]) { 
+            if (BLASTNA_TO_NCBI4NA[index1] & BLASTNA_TO_NCBI4NA[index2]) {
                 /* round up for positive scores, down for negatives. */
-                matrix[index1][index2] = 
-                    BLAST_Nint( (double) ((degeneracy[index2]-1)*penalty + 
+                matrix[index1][index2] =
+                    BLAST_Nint( (double) ((degeneracy[index2]-1)*penalty +
                                           reward)/ (double) degeneracy[index2]);
                 if (index1 != index2)
                 {
@@ -1119,7 +1123,7 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
         }
     }
 
-    /* The value of 15 is a gap, which is a sentinel between strands in 
+    /* The value of 15 is a gap, which is a sentinel between strands in
     the ungapped extension algorithm */
     for (index1=0; index1<BLASTNA_SIZE; index1++)
         matrix[BLASTNA_SIZE-1][index1] = INT4_MIN / 2;
@@ -1129,11 +1133,11 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
     return 0;
 }
 
-/** 
+/**
  * Read in a custom nucleotide matrix from the FILE *fp.
- * This function ASSUMES that the matrices are in the 
+ * This function ASSUMES that the matrices are in the
  * format:
- *          
+ *
  * # FREQS A 0.255 C 0.245 G 0.245 T 0.255
  *    A   R   G   C   Y   T   K   M   S   W   N   X
  * A  9   1  -5 -12 -12 -13  -9  -1  -8  -2  -1 -27
@@ -1143,13 +1147,13 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
  * @param sbp the BlastScoreBlk with the matrix to be populated [in|out]
  * @param fp the file pointer to read from [in]
  * @return zero on success
- *              
- * -RMH-        
- */                 
-                                          
-static Int2     
+ *
+ * -RMH-
+ */
+
+static Int2
 BlastScoreBlkNucleotideMatrixRead(BlastScoreBlk* sbp, FILE *fp)
-{                     
+{
     Int4 ** matrix;
     double* freqs;
     Int4 i = 0;
@@ -1327,7 +1331,7 @@ BlastScoreBlkNucleotideMatrixRead(BlastScoreBlk* sbp, FILE *fp)
    }
    sbp->matrix->lambda = lambda;
 
-   /* The value of 15 is a gap, which is a sentinel between strands in 
+   /* The value of 15 is a gap, which is a sentinel between strands in
       the ungapped extension algorithm. */
    for (index1=0; index1<BLASTNA_SIZE; index1++)
      matrix[BLASTNA_SIZE-1][index1] = INT4_MIN / 2;
@@ -1365,20 +1369,20 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
     int x_index, u_index, o_index;
     const char kCommentChar = '#';
     const char* kTokenStr = " \t\n\r";
-    
+
     ASSERT(sbp->alphabet_size == BLASTAA_SIZE);
     ASSERT(sbp->matrix);
     ASSERT(sbp->matrix->ncols == BLASTAA_SIZE);
     ASSERT(sbp->matrix->nrows == BLASTAA_SIZE);
 
-    matrix = sbp->matrix->data;  
-    
+    matrix = sbp->matrix->data;
+
     if (sbp->alphabet_code != BLASTNA_SEQ_CODE) {
         for (index1 = 0; index1 < sbp->alphabet_size; index1++)
             for (index2 = 0; index2 < sbp->alphabet_size; index2++)
                 matrix[index1][index2] = BLAST_SCORE_MIN;
     }
-    
+
     /* Read the residue names for the second alphabet */
     while (fgets(buf, sizeof(buf), fp) != NULL) {
         ++lineno;
@@ -1408,11 +1412,11 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
             a2chars[a2cnt++] = ch;
             lp = (char*)strtok(NULL, kTokenStr);
         }
-        
+
         break; /* Exit loop after reading one line. */
     }
-    
-    if (a2cnt <= 1) { 
+
+    if (a2cnt <= 1) {
         return 2;
     }
 
@@ -1449,7 +1453,7 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
                 return 2;
             }
             strcpy(temp, cp);
-            
+
             if (strcasecmp(temp, "na") == 0)  {
                 score = BLAST_SCORE_MIN;
             } else  {
@@ -1463,18 +1467,18 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
                 xscore += (xscore >= 0. ? 0.5 : -0.5);
                 score = (Int4)xscore;
             }
-            
+
             m[(int)a2chars[index2++]] = score;
-            
+
             cp = strtok(NULL, kTokenStr);
         }
     }
-    
+
     if (a1cnt <= 1) {
         return 2;
     }
-    
-    /* Use the X scores for the more exotic ncbistdaa characters; 
+
+    /* Use the X scores for the more exotic ncbistdaa characters;
        if this is not done then they will never align to non-gap residues */
     x_index = AMINOACID_TO_NCBISTDAA['X'];
     u_index = AMINOACID_TO_NCBISTDAA['U'];
@@ -1489,9 +1493,9 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
     return 0;
 }
 
-/** Sets maximum and minimum scores on the BlastScoreBlk for a 
+/** Sets maximum and minimum scores on the BlastScoreBlk for a
  * given matrix
- * @param sbp the BlastScoreBlk on which loscore and hiscore 
+ * @param sbp the BlastScoreBlk on which loscore and hiscore
  *   will be set [in|out]
  * @return zero on success
  */
@@ -1500,7 +1504,7 @@ static Int2
 BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
 {
     Int4 score;
-    Int4 ** matrix; 
+    Int4 ** matrix;
     Int2 index1, index2;
 
     sbp->loscore = BLAST_SCORE_MAX;
@@ -1533,7 +1537,7 @@ BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
 /** Sets sbp->matrix->data field using sbp->name field using
  * the matrices in the toolkit (util/tables/raw_scoremat.h).
  * @param sbp the object containing matrix and name [in|out]
- * @return 0 on success, 1 if matrix could not be loaded 
+ * @return 0 on success, 1 if matrix could not be loaded
  */
 static Int2
 BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
@@ -1545,7 +1549,7 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     const SNCBIPackedScoreMatrix* psm;
 
     ASSERT(sbp);
-    psm = NCBISM_GetStandardMatrix(sbp->name); 
+    psm = NCBISM_GetStandardMatrix(sbp->name);
     if (psm == NULL)
        return 1;
 
@@ -1566,11 +1570,11 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     for (i = 0; i < sbp->alphabet_size; i++) {
         for (j = 0; j < sbp->alphabet_size; j++) {
             /* skip special characters */
-            if (i == AMINOACID_TO_NCBISTDAA['U'] || 
+            if (i == AMINOACID_TO_NCBISTDAA['U'] ||
                 i == AMINOACID_TO_NCBISTDAA['O'] ||
                 i == AMINOACID_TO_NCBISTDAA['-'] ||
-                j == AMINOACID_TO_NCBISTDAA['U'] || 
-                j == AMINOACID_TO_NCBISTDAA['O'] || 
+                j == AMINOACID_TO_NCBISTDAA['U'] ||
+                j == AMINOACID_TO_NCBISTDAA['O'] ||
                 j == AMINOACID_TO_NCBISTDAA['-']) {
                 continue;
             }
@@ -1579,7 +1583,7 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
         }
     }
 
-    /* Use the X scores for the more exotic ncbistdaa characters; 
+    /* Use the X scores for the more exotic ncbistdaa characters;
        if this is not done then they will never align to non-gap residues */
     x_index = AMINOACID_TO_NCBISTDAA['X'];
     u_index = AMINOACID_TO_NCBISTDAA['U'];
@@ -1599,13 +1603,13 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
 {
     Boolean matrix_found = FALSE;
     Int2 status = 0;
-    
-    /* For nucleotide case we first create a default matrix, based on the 
+
+    /* For nucleotide case we first create a default matrix, based on the
        match and mismatch scores. */
     if (sbp->alphabet_code == BLASTNA_SEQ_CODE) {
         /* RMBLASTN supports reading a custom matrix.  Currently
          * I am using the sbp->read_in_matrix parameter to tell if
-         * we should invoke the matrix reader. 
+         * we should invoke the matrix reader.
          * -RMH-
          */
         if ( sbp->read_in_matrix && get_path )
@@ -1671,7 +1675,7 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
 
                 fclose(fp);
                 matrix_found = TRUE;
-            } 
+            }
     }
 
     if (matrix_found == FALSE)
@@ -1679,7 +1683,7 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
 
     if ( (status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
          return status;
-    
+
     return status;
 }
 
@@ -1700,7 +1704,7 @@ Blast_ResFreqFree(Blast_ResFreq* rfp)
 /*
    Allocates the Blast_ResFreq* and then fills in the frequencies
    in the probabilities.
-*/ 
+*/
 
 Blast_ResFreq*
 Blast_ResFreqNew(const BlastScoreBlk* sbp)
@@ -1719,7 +1723,7 @@ Blast_ResFreqNew(const BlastScoreBlk* sbp)
    rfp->alphabet_code = sbp->alphabet_code;
 
    rfp->prob0 = (double*) calloc(sbp->alphabet_size, sizeof(double));
-   if (rfp->prob0 == NULL) 
+   if (rfp->prob0 == NULL)
    {
       rfp = Blast_ResFreqFree(rfp);
       return rfp;
@@ -1865,11 +1869,11 @@ Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues, Uint4 residues_size)
    if (residues_size < DIM(STD_AMINO_ACID_FREQS))
       return -2;
 
-   for (index=0; index<(int)DIM(STD_AMINO_ACID_FREQS); index++) 
+   for (index=0; index<(int)DIM(STD_AMINO_ACID_FREQS); index++)
    {
       if (alphabet_code == BLASTAA_SEQ_CODE)
       {
-         residues[index] = 
+         residues[index] =
             AMINOACID_TO_NCBISTDAA[toupper((unsigned char) STD_AMINO_ACID_FREQS[index].ch)];
       }
       else
@@ -1894,7 +1898,7 @@ Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
       if (retval < 1)
          return retval;
 
-      for (index=0; index<DIM(STD_AMINO_ACID_FREQS); index++) 
+      for (index=0; index<DIM(STD_AMINO_ACID_FREQS); index++)
       {
          rfp->prob[residues[index]] = STD_AMINO_ACID_FREQS[index].p;
       }
@@ -1903,7 +1907,7 @@ Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
    else
    {  /* beginning of blastna and ncbi2na are the same. */
       /* Only blastna used  for nucleotides. */
-      for (index=0; index<DIM(nt_prob); index++) 
+      for (index=0; index<DIM(nt_prob); index++)
       {
          rfp->prob[index] = nt_prob[index].p;
       }
@@ -1914,7 +1918,7 @@ Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
    return 0;
 }
 
-/** 
+/**
 Intermediate structure to store the composition of a sequence
 */
 typedef struct Blast_ResComp {
@@ -1923,7 +1927,7 @@ typedef struct Blast_ResComp {
     Int4*   comp0;   /**< Same array as above, starts at zero. */
 } Blast_ResComp;
 
-/** Deallocates Blast_ResComp structure and 
+/** Deallocates Blast_ResComp structure and
  * associated arrays.
  * @param rcp the object to be freed [in|out]
  * @return NULL
@@ -1957,10 +1961,10 @@ BlastResCompNew(const BlastScoreBlk* sbp)
 
    rcp->alphabet_code = sbp->alphabet_code;
 
-/* comp0 has zero offset, comp starts at 0, only one 
+/* comp0 has zero offset, comp starts at 0, only one
 array is allocated.  */
    rcp->comp0 = (Int4*) calloc(sbp->alphabet_size, sizeof(Int4));
-   if (rcp->comp0 == NULL) 
+   if (rcp->comp0 == NULL)
    {
       rcp = BlastResCompDestruct(rcp);
       return rcp;
@@ -1971,7 +1975,7 @@ array is allocated.  */
    return rcp;
 }
 
-/** Store the composition of a (query) string.  
+/** Store the composition of a (query) string.
  * @param sbp needed for alphabet information [in]
  * @param rcp object to be filled in [in|out]
  * @param str sequence to have composition calculated for [in]
@@ -1994,7 +1998,7 @@ BlastResCompStr(const BlastScoreBlk* sbp, Blast_ResComp* rcp, char* str, Int4 le
         /* For megablast, check only the first 4 bits of the sequence values */
         mask = (sbp->protein_alphabet ? 0xff : 0x0f);
 
-/* comp0 starts at zero and extends for "num", comp is the same array, but 
+/* comp0 starts at zero and extends for "num", comp is the same array, but
 "start_at" offset. */
    for (index=0; index<(sbp->alphabet_size); index++)
       rcp->comp0[index] = 0;
@@ -2022,11 +2026,11 @@ static Int2
 Blast_ResFreqClr(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 {
    Int2  alphabet_max, index;
- 
+
    alphabet_max = sbp->alphabet_start + sbp->alphabet_size;
    for (index=sbp->alphabet_start; index<alphabet_max; index++)
                 rfp->prob[index] = 0.0;
- 
+
         return 0;
 }
 
@@ -2039,7 +2043,7 @@ Blast_ResFreqClr(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
  * @return zero on success, 1 on failure
 */
 static Int2
-Blast_ResFreqResComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp, 
+Blast_ResFreqResComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp,
                      const Blast_ResComp* rcp)
 {
    Int2  alphabet_max, index;
@@ -2076,7 +2080,7 @@ static Int2
 Blast_ResFreqString(const BlastScoreBlk* sbp, Blast_ResFreq* rfp, char* string, Int4 length)
 {
    Blast_ResComp* rcp;
-   
+
    rcp = BlastResCompNew(sbp);
 
    BlastResCompStr(sbp, rcp, string, length);
@@ -2122,7 +2126,7 @@ Blast_ScoreFreqNew(Int4 score_min, Int4 score_max)
 
    range = score_max - score_min + 1;
    sfp->sprob = (double*) calloc(range, sizeof(double));
-   if (sfp->sprob == NULL) 
+   if (sfp->sprob == NULL)
    {
       Blast_ScoreFreqFree(sfp);
       return NULL;
@@ -2171,7 +2175,7 @@ BlastScoreFreqCalc(const BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq
       for (index2=alphabet_start; index2<alphabet_end; index2++)
       {
          score = matrix[index1][index2];
-         if (score >= sbp->loscore) 
+         if (score >= sbp->loscore)
          {
             sfp->sprob[score] += rfp1->prob[index1] * rfp2->prob[index2];
          }
@@ -2182,7 +2186,7 @@ BlastScoreFreqCalc(const BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq
    obs_min = obs_max = BLAST_SCORE_MIN;
    for (score = sfp->score_min; score <= sfp->score_max; score++)
    {
-      if (sfp->sprob[score] > 0.) 
+      if (sfp->sprob[score] > 0.)
       {
          score_sum += sfp->sprob[score];
          obs_max = score;
@@ -2196,7 +2200,7 @@ BlastScoreFreqCalc(const BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq
    score_avg = 0.0;
    if (score_sum > 0.0001 || score_sum < -0.0001)
    {
-      for (score = obs_min; score <= obs_max; score++) 
+      for (score = obs_min; score <= obs_max; score++)
       {
          sfp->sprob[score] /= score_sum;
          score_avg += score * sfp->sprob[score];
@@ -2418,15 +2422,15 @@ BlastKarlinLHtoK(Blast_ScoreFreq* sfp, double lambda, double H)
 
 
 /**
- * Find positive solution to 
+ * Find positive solution to
  *
  *     sum_{i=low}^{high} exp(i lambda) * probs[i] = 1.
- * 
+ *
  * Note that this solution does not exist unless the average score is
  * negative and the largest score that occurs with nonzero probability
  * is positive.
- * 
- * @param probs         probabilities of a score occurring 
+ *
+ * @param probs         probabilities of a score occurring
  * @param d             the gcd of the possible scores. This equals 1 if
  *                      the scores are not a lattice
  * @param low           the lowest possible score that occurs with
@@ -2454,7 +2458,7 @@ BlastKarlinLHtoK(Blast_ScoreFreq* sfp, double lambda, double H)
  * know that for x, a solution lies in [0,1], and because Newton's
  * method is generally more stable and efficient for polynomials than
  * it is for exponentials.
- * 
+ *
  * For the most part, this function is a standard safeguarded Newton
  * iteration: define an interval of uncertainty [a,b] with f(a) > 0
  * and f(b) < 0 (except for the initial value b = 1, where f(b) = 0);
@@ -2485,9 +2489,9 @@ BlastKarlinLHtoK(Blast_ScoreFreq* sfp, double lambda, double H)
  * more difficult.  So (despite the length of this comment) the Newton
  * iteration on f(x) is the simpler solution.
  */
-static double 
+static double
 NlmKarlinLambdaNR(double* probs, Int4 d, Int4 low, Int4 high, double lambda0,
-                  double tolx, Int4 itmax, Int4 maxNewton, Int4 * itn ) 
+                  double tolx, Int4 itmax, Int4 maxNewton, Int4 * itn )
 {
   Int4 k;
   double x0, x, a = 0, b = 1;
@@ -2498,14 +2502,14 @@ NlmKarlinLambdaNR(double* probs, Int4 d, Int4 low, Int4 high, double lambda0,
 
    x0 = exp( -lambda0 );
   x = ( 0 < x0 && x0 < 1 ) ? x0 : .5;
-  
+
   for( k = 0; k < itmax; k++ ) { /* all iteration indices k */
     Int4 i;
     double g, fold = f;
     Int4 wasNewton = isNewton; /* If true, then the previous step was a */
                               /* Newton step */
     isNewton  = 0;            /* Assume that this step is not */
-    
+
     /* Horner's rule for evaluating a polynomial and its derivative */
     g = 0;
     f = probs[low];
@@ -2523,7 +2527,7 @@ NlmKarlinLambdaNR(double* probs, Int4 d, Int4 low, Int4 high, double lambda0,
 
     if( f > 0 ) {
       a = x; /* move the left endpoint */
-    } else if( f < 0 ) { 
+    } else if( f < 0 ) {
       b = x; /* move the right endpoint */
     } else { /* f == 0 */
       break; /* x is an exact solution */
@@ -2535,10 +2539,10 @@ NlmKarlinLambdaNR(double* probs, Int4 d, Int4 low, Int4 high, double lambda0,
 
     if( k >= maxNewton ||
         /* If convergence of Newton's method appears to be failing; or */
-            ( wasNewton && fabs( f ) > .9 * fabs(fold) ) ||  
-        /* if the previous iteration was a Newton step but didn't decrease 
+            ( wasNewton && fabs( f ) > .9 * fabs(fold) ) ||
+        /* if the previous iteration was a Newton step but didn't decrease
          * f sufficiently; or */
-        g >= 0 
+        g >= 0
         /* if a Newton step will move us away from the desired solution */
         ) { /* then */
       /* bisect */
@@ -2554,9 +2558,9 @@ NlmKarlinLambdaNR(double* probs, Int4 d, Int4 low, Int4 high, double lambda0,
         x = y;
         if( fabs( p ) < tolx * x * (1-x) ) break; /* Converged */
       } /* else the proposed iterate is in (a,b) */
-    } /* else try a Newton step. */ 
+    } /* else try a Newton step. */
   } /* end for all iteration indices k */
-   *itn = k; 
+   *itn = k;
   return -log(x)/d;
 }
 
@@ -2577,7 +2581,7 @@ Blast_KarlinLambdaNR(Blast_ScoreFreq* sfp, double initialLambdaGuess)
       return -1.0;
    }
    if (BlastScoreChk(low, high) != 0) return -1.;
-   
+
    sprob = sfp->sprob;
    /* Find greatest common divisor of all scores */
    for (i = 1, d = -low; i <= high-low && d > 1; ++i) {
@@ -2601,7 +2605,7 @@ Blast_KarlinLambdaNR(Blast_ScoreFreq* sfp, double initialLambdaGuess)
  * @param lambda a Karlin-Altschul parameter [in]
  * @return H, a Karlin-Altschul parameter
  */
-static double 
+static double
 BlastKarlinLtoH(Blast_ScoreFreq* sfp, double lambda)
 {
    Int4  score;
@@ -2696,7 +2700,7 @@ See:  Karlin, S. & Altschul, S.F. "Methods for Assessing the Statistical
 Int2
 Blast_KarlinBlkUngappedCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp)
 {
-   
+
 
    if (kbp == NULL || sfp == NULL)
       return 1;
@@ -2732,8 +2736,8 @@ ErrExit:
 }
 
 Int2
-Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program, 
-                              BlastScoreBlk* sbp, Uint1* query, 
+Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
+                              BlastScoreBlk* sbp, Uint1* query,
                               const BlastQueryInfo* query_info,
                               Blast_Message* *blast_message)
 {
@@ -2741,7 +2745,7 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
    Int4 context; /* loop variable. */
    Blast_ResFreq* rfp,* stdrfp;
    BlastContextInfo* contexts = query_info->contexts;
-   Boolean check_ideal = 
+   Boolean check_ideal =
       (program == eBlastTypeBlastx || program == eBlastTypeTblastx ||
        program == eBlastTypeRpsTblastn);
    Boolean valid_context = FALSE;
@@ -2759,20 +2763,20 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
 
    for (context = query_info->first_context;
         context <= query_info->last_context; ++context) {
-      
+
       Int4 context_offset;
       Int4 query_length;
       Uint1 *buffer;              /* holds sequence */
       Blast_KarlinBlk* kbp;
       Int2 loop_status; /* status flag for functions in this loop. */
-      
+
       if ( !contexts[context].is_valid )
           continue;
 
       query_length = contexts[context].query_length;
       context_offset = contexts[context].query_offset;
       buffer = &query[context_offset];
-      
+
       Blast_ResFreqString(sbp, rfp, (char*)buffer, query_length);
       sbp->sfp[context] = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
       BlastScoreFreqCalc(sbp, sbp->sfp[context], rfp, stdrfp);
@@ -2789,13 +2793,13 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
           continue;
       }
       /* For searches with translated queries, check whether ideal values
-         should be substituted instead of calculated values, so a more 
+         should be substituted instead of calculated values, so a more
          conservative (smaller) Lambda is used. */
       if (check_ideal && kbp->Lambda >= sbp->kbp_ideal->Lambda)
          Blast_KarlinBlkCopy(kbp, sbp->kbp_ideal);
 
       sbp->kbp_psi[context] = Blast_KarlinBlkNew();
-      loop_status = Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[context], 
+      loop_status = Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[context],
                                            sbp->sfp[context]);
       if (loop_status) {
           contexts[context].is_valid = FALSE;
@@ -2946,7 +2950,7 @@ BlastMatrixValuesDestruct(ListNode* vnp)
  * @return list of MatrixInfos.
  *
 */
-static ListNode* 
+static ListNode*
 BlastLoadMatrixValues (Boolean standard_only)
 
 {
@@ -3043,10 +3047,10 @@ Blast_GetMatrixValues(const char* matrix, Int4** open, Int4** extension, double*
       if (open)
          *open = open_array = (Int4 *) calloc(max_number_values, sizeof(Int4));
       if (extension)
-         *extension = extension_array = 
+         *extension = extension_array =
             (Int4 *) calloc(max_number_values, sizeof(Int4));
       if (lambda)
-         *lambda = lambda_array = 
+         *lambda = lambda_array =
             (double*) calloc(max_number_values, sizeof(double));
       if (K)
          *K = K_array = (double*) calloc(max_number_values, sizeof(double));
@@ -3057,7 +3061,7 @@ Blast_GetMatrixValues(const char* matrix, Int4** open, Int4** extension, double*
       if (beta)
          *beta = beta_array = (double*) calloc(max_number_values, sizeof(double));
       if (pref_flags)
-         *pref_flags = pref_flags_array = 
+         *pref_flags = pref_flags_array =
             (Int4 *) calloc(max_number_values, sizeof(Int4));
 
       for (index=0; index<max_number_values; index++)
@@ -3090,7 +3094,7 @@ Blast_GetMatrixValues(const char* matrix, Int4** open, Int4** extension, double*
 /*Extract the alpha and beta settings for this matrixName, and these
   gap open and gap extension costs*/
 void BLAST_GetAlphaBeta(const char* matrixName, double *alpha,
-                        double *beta, Boolean gapped, Int4 gap_open, 
+                        double *beta, Boolean gapped, Int4 gap_open,
                         Int4 gap_extend, const Blast_KarlinBlk* kbp_ungapped)
 {
    Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
@@ -3098,8 +3102,8 @@ void BLAST_GetAlphaBeta(const char* matrixName, double *alpha,
    Int2 num_values;
    Int4 i; /*loop index*/
 
-   num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr, 
-     &gapExtend_arr, NULL, NULL, NULL,  &alpha_arr, &beta_arr, 
+   num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr,
+     &gapExtend_arr, NULL, NULL, NULL,  &alpha_arr, &beta_arr,
      &pref_flags);
 
    if (gapped) {
@@ -3138,7 +3142,7 @@ void BLAST_GetAlphaBeta(const char* matrixName, double *alpha,
    sfree(beta_arr);
 }
 
-/** Splits an ArrayOf8 into two arrays of supported gap costs.  One is for non-affine 
+/** Splits an ArrayOf8 into two arrays of supported gap costs.  One is for non-affine
  * (megablast linear values) and the other is for standard (typically affine) values.
  * @param input the array to be split [in]
  * @param normal the standard (typically affine) values [out]
@@ -3195,7 +3199,7 @@ s_AdjustGapParametersByGcd(array_of_8* normal, array_of_8* linear, int size, Int
     if (normal)
     {
          int i;
-   
+
          for (i=0; i<size; i++)
          {  /* divide lambda and alpha by divisor. */
             /* multiply gap existence and extension by divisor. */
@@ -3217,7 +3221,7 @@ s_AdjustGapParametersByGcd(array_of_8* normal, array_of_8* linear, int size, Int
 }
 
 /** Returns the array of values corresponding to the given match/mismatch
- * scores, the number of supported gap cost combinations and thresholds for 
+ * scores, the number of supported gap cost combinations and thresholds for
  * the gap costs, beyond which the ungapped statistics can be applied.
  * @param reward Match reward score [in]
  * @param penalty Mismatch penalty score [in]
@@ -3259,36 +3263,36 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
     if (reward == 1 && penalty == -5) {
         if ((status=s_SplitArrayOf8(blastn_values_1_5, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *array_size = sizeof(blastn_values_1_5)/sizeof(array_of_8);
         *gap_open_max = 3;
         *gap_extend_max = 3;
     } else if (reward == 1 && penalty == -4) {
         if ((status=s_SplitArrayOf8(blastn_values_1_4, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *array_size = sizeof(blastn_values_1_4)/sizeof(array_of_8);
         *gap_open_max = 2;
         *gap_extend_max = 2;
     } else if (reward == 2 && penalty == -7) {
         if ((status=s_SplitArrayOf8(blastn_values_2_7, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *round_down = TRUE;
         *array_size = sizeof(blastn_values_2_7)/sizeof(array_of_8);
         *gap_open_max = 4;
         *gap_extend_max = 4;
-    } else if (reward == 1 && penalty == -3) { 
+    } else if (reward == 1 && penalty == -3) {
         if ((status=s_SplitArrayOf8(blastn_values_1_3, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *array_size = sizeof(blastn_values_1_3)/sizeof(array_of_8);
         *gap_open_max = 2;
         *gap_extend_max = 2;
     } else if (reward == 2 && penalty == -5) {
         if ((status=s_SplitArrayOf8(blastn_values_2_5, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *round_down = TRUE;
         *array_size = sizeof(blastn_values_2_5)/sizeof(array_of_8);
         *gap_open_max = 4;
@@ -3296,14 +3300,14 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
     } else if (reward == 1 && penalty == -2) {
         if ((status=s_SplitArrayOf8(blastn_values_1_2, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *array_size = sizeof(blastn_values_1_2)/sizeof(array_of_8);
         *gap_open_max = 2;
         *gap_extend_max = 2;
     } else if (reward == 2 && penalty == -3) {
         if ((status=s_SplitArrayOf8(blastn_values_2_3, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *round_down = TRUE;
         *array_size = sizeof(blastn_values_2_3)/sizeof(array_of_8);
         *gap_open_max = 6;
@@ -3311,7 +3315,7 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
     } else if (reward == 3 && penalty == -4) {
         if ((status=s_SplitArrayOf8(blastn_values_3_4, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *round_down = TRUE;
         *array_size = sizeof(blastn_values_3_4)/sizeof(array_of_8);
         *gap_open_max = 6;
@@ -3319,28 +3323,28 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
     } else if (reward == 1 && penalty == -1) {
         if ((status=s_SplitArrayOf8(blastn_values_1_1, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *array_size = sizeof(blastn_values_1_1)/sizeof(array_of_8);
         *gap_open_max = 4;
         *gap_extend_max = 2;
     } else if (reward == 3 && penalty == -2) {
         if ((status=s_SplitArrayOf8(blastn_values_3_2, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *array_size = sizeof(blastn_values_3_2)/sizeof(array_of_8);
         *gap_open_max = 5;
         *gap_extend_max = 5;
     } else if (reward == 4 && penalty == -5) {
         if ((status=s_SplitArrayOf8(blastn_values_4_5, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *array_size = sizeof(blastn_values_4_5)/sizeof(array_of_8);
         *gap_open_max = 12;
         *gap_extend_max = 8;
     } else if (reward == 5 && penalty == -4) {
         if ((status=s_SplitArrayOf8(blastn_values_5_4, &kValues, &kValues_non_affine, &split)))
            return status;
-        
+
         *array_size = sizeof(blastn_values_5_4)/sizeof(array_of_8);
         *gap_open_max = 25;
         *gap_extend_max = 10;
@@ -3348,7 +3352,7 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
         status = -1;
         if (error_return) {
             char buffer[256];
-            sprintf(buffer, "Substitution scores %d and %d are not supported", 
+            sprintf(buffer, "Substitution scores %d and %d are not supported",
                 reward, penalty);
             Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
         }
@@ -3369,18 +3373,18 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
     return status;
 }
 
-Int2 BLAST_GetProteinGapExistenceExtendParams(const char* matrixName, 
-                                       Int4* gap_existence, 
+Int2 BLAST_GetProteinGapExistenceExtendParams(const char* matrixName,
+                                       Int4* gap_existence,
                                        Int4* gap_extension)
 {
      Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
      Int4 i; /*loop index*/
-     Int2 num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr, 
+     Int2 num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr,
        &gapExtend_arr, NULL, NULL, NULL,  NULL, NULL, &pref_flags);
 
      if (num_values <= 0)
          return -1;
-   
+
      for(i = 1; i < num_values; i++) {
          if(pref_flags[i]==BLAST_MATRIX_BEST) {
              (*gap_existence) = gapOpen_arr[i];
@@ -3388,7 +3392,7 @@ Int2 BLAST_GetProteinGapExistenceExtendParams(const char* matrixName,
              break;
          }
      }
-   
+
      sfree(gapOpen_arr);
      sfree(gapExtend_arr);
      sfree(pref_flags);
@@ -3437,7 +3441,7 @@ Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
          if (!found)
          {   /* If values are above max, then use. Otherwise set max values. */
              if (*gap_existence < gap_existence_max || *gap_extension < gap_extension_max)
-             { 
+             {
                  *gap_existence = gap_existence_max;
                  *gap_extension = gap_extension_max;
              }
@@ -3473,7 +3477,7 @@ Boolean BLAST_CheckRewardPenaltyScores(Int4 reward, Int4 penalty)
  * @return zero on success.
  */
 static Int2
-BlastKarlinReportAllowedValues(const char *matrix_name, 
+BlastKarlinReportAllowedValues(const char *matrix_name,
    Blast_Message** error_return)
 {
    array_of_8 *values = NULL;
@@ -3516,7 +3520,7 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
 }
 
 /*
-   Supplies lambda, H, and K values, as calcualted by Stephen Altschul 
+   Supplies lambda, H, and K values, as calcualted by Stephen Altschul
    in Methods in Enzy. (vol 266, page 474).
 
    if kbp is NULL, then a validation is perfomed.
@@ -3526,8 +3530,8 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 
 {
    char buffer[256];
-   Int2 status = 
-      Blast_KarlinBlkGappedLoadFromTables(kbp, gap_open, 
+   Int2 status =
+      Blast_KarlinBlkGappedLoadFromTables(kbp, gap_open,
                                           gap_extend, matrix_name, FALSE);
 
    if (status && error_return)
@@ -3535,7 +3539,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
       if (status == 1)
       {
          MatrixInfo* matrix_info;
-         ListNode* vnp,* head;      
+         ListNode* vnp,* head;
 
          vnp = head = BlastLoadMatrixValues(FALSE);
 
@@ -3564,7 +3568,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 }
 
 /*
-   Attempts to fill KarlinBlk for given gap opening, extensions etc.  
+   Attempts to fill KarlinBlk for given gap opening, extensions etc.
    Will return non-zero status if that fails.
 
    return values: -1 if matrix_name is NULL;
@@ -3572,7 +3576,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
          2 if matrix found, but open, extend etc. values not supported.
 */
 Int2
-Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open, 
+Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open,
                                     Int4 gap_extend, const char* matrix_name,
                                     Boolean standard_only)
 {
@@ -3582,7 +3586,7 @@ Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open,
    Int4 max_number_values=0;
    MatrixInfo* matrix_info;
    ListNode* vnp,* head;
-   
+
    if (matrix_name == NULL)
       return -1;
 
@@ -3647,17 +3651,17 @@ Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open,
    Supplies Gumbel parameters for p-value estimation with FSC
 */
 Int2
-Blast_GumbelBlkCalc(Blast_GumbelBlk* gbp, Int4 gap_open, 
+Blast_GumbelBlkCalc(Blast_GumbelBlk* gbp, Int4 gap_open,
       Int4 gap_extend, const char* matrix_name, Blast_Message** error_return)
 {
    char buffer[256];
-   Int2 status = 
+   Int2 status =
       Blast_GumbelBlkLoadFromTables(gbp, gap_open, gap_extend, matrix_name);
 
    if (status && error_return) {
       if (status == 1) {
          MatrixInfo* matrix_info;
-         ListNode* vnp,* head;      
+         ListNode* vnp,* head;
 
          vnp = head = BlastLoadMatrixValues(FALSE);
 
@@ -3691,7 +3695,7 @@ Blast_GumbelBlkCalc(Blast_GumbelBlk* gbp, Int4 gap_open,
          2 if matrix found, but open, extend etc. values not supported.
 */
 Int2
-Blast_GumbelBlkLoadFromTables(Blast_GumbelBlk* gbp, Int4 gap_open, 
+Blast_GumbelBlkLoadFromTables(Blast_GumbelBlk* gbp, Int4 gap_open,
                               Int4 gap_extend, const char* matrix_name)
 {
    Boolean found_matrix=FALSE;
@@ -3700,7 +3704,7 @@ Blast_GumbelBlkLoadFromTables(Blast_GumbelBlk* gbp, Int4 gap_open,
    Int4 max_number_values=0;
    MatrixInfo* matrix_info;
    ListNode* vnp,* head;
-   
+
    if (matrix_name == NULL)
       return -1;
 
@@ -3782,7 +3786,7 @@ BLAST_PrintMatrixMessage(const char *matrix_name, Boolean standard_only)
 }
 
 char*
-BLAST_PrintAllowedValues(const char *matrix_name, 
+BLAST_PrintAllowedValues(const char *matrix_name,
                          Int4 gap_open, Int4 gap_extend)
 {
    array_of_8 *values = NULL;
@@ -3794,7 +3798,7 @@ BLAST_PrintAllowedValues(const char *matrix_name,
 
    ptr = buffer = (char *) calloc(2048, sizeof(char));
 
-   sprintf(ptr, "Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n", 
+   sprintf(ptr, "Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n",
       (long) gap_open, (long) gap_extend, matrix_name);
 
    ptr += strlen(ptr);
@@ -3831,7 +3835,7 @@ BLAST_PrintAllowedValues(const char *matrix_name,
 }
 
 Int2
-Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, 
+Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
                               Int4 gap_extend, Int4 reward, Int4 penalty,
                               Blast_KarlinBlk* kbp_ungap,
                               Boolean* round_down,
@@ -3845,7 +3849,7 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
     int num_combinations = 0;
     int gap_open_max, gap_extend_max;
     array_of_8* normal=NULL;
-    array_of_8* linear=NULL; 
+    array_of_8* linear=NULL;
     Int2 status = s_GetNuclValuesArray(reward,
                                        penalty,
                                        &num_combinations,
@@ -3887,7 +3891,7 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
                 break;
             }
         }
-    
+
         /* If gap costs are not found in the table, check if they belong to the
         infinite domain, where ungapped values of the parameters can be used. */
         if (index == num_combinations) {
@@ -3901,19 +3905,19 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
                 int len=0;
                 /* Unsupported gap costs combination. */
                 sprintf(buffer, "Gap existence and extension values %ld and %ld "
-                        "are not supported for substitution scores %ld and %ld\n", 
+                        "are not supported for substitution scores %ld and %ld\n",
                         (long) gap_open, (long) gap_extend, (long) reward, (long) penalty);
                 for (i = 0; i < num_combinations; ++i)
                 {
                      len = strlen(buffer);
-                     sprintf(buffer+len, "%ld and %ld are supported existence and extension values\n", 
+                     sprintf(buffer+len, "%ld and %ld are supported existence and extension values\n",
                         (long) normal[i][kGapOpenIndex],  (long) normal[i][kGapExtIndex]);
                 }
                 len = strlen(buffer);
-                sprintf(buffer+len, "%ld and %ld are supported existence and extension values\n", 
+                sprintf(buffer+len, "%ld and %ld are supported existence and extension values\n",
                      (long) gap_open_max, (long) gap_extend_max);
                 len = strlen(buffer);
-                sprintf(buffer+len, "Any values more stringent than %ld and %ld are supported\n", 
+                sprintf(buffer+len, "Any values more stringent than %ld and %ld are supported\n",
                      (long) gap_open_max, (long) gap_extend_max);
                 Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
                 sfree(normal);
@@ -3928,7 +3932,7 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
     return 0;
 }
 
-/** Returns the beta statistical parameter value, given the nucleotide 
+/** Returns the beta statistical parameter value, given the nucleotide
  * substitution scores.
  * @param reward Match reward score [in]
  * @param penalty Mismatch penalty score [in]
@@ -3937,14 +3941,14 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
 static double s_GetUngappedBeta(Int4 reward, Int4 penalty)
 {
     double beta = 0;
-    if ((reward == 1 && penalty == -1) || 
+    if ((reward == 1 && penalty == -1) ||
         (reward == 2 && penalty == -3))
         beta = -2;
-    
+
     return beta;
 }
 
-Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open, 
+Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
                             Int4 gap_extend, Blast_KarlinBlk* kbp,
                             Boolean gapped_calculation,
                             double *alpha, double *beta)
@@ -3957,19 +3961,19 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
     Int4 gap_open_max = 0, gap_extend_max = 0;
     Int4 index = 0;
     array_of_8* normal=NULL;
-    array_of_8* linear=NULL; 
+    array_of_8* linear=NULL;
     Boolean round_down = FALSE;
     Boolean found = FALSE;
     Int2 status = s_GetNuclValuesArray(reward,
                                        penalty,
-                                       &num_combinations, 
+                                       &num_combinations,
                                        &normal,
                                        &linear,
                                        &gap_open_max,
                                        &gap_extend_max,
                                        &round_down,
                                        NULL);
-    
+
     if (status)
        return status;
 
@@ -3985,9 +3989,9 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
         }
         else
         {
-      
+
             for (index = 0; index < num_combinations; ++index) {
-                if (normal[index][kGapOpenIndex] == gap_open && 
+                if (normal[index][kGapOpenIndex] == gap_open &&
                     normal[index][kGapExtIndex] == gap_extend) {
                     *alpha = normal[index][kAlphaIndex];
                     *beta = normal[index][kBetaIndex];
@@ -3996,7 +4000,7 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
                 }
             }
         }
-        
+
     }
 
     /* If input values not found in tables, or if this is an ungapped search,
@@ -4033,7 +4037,7 @@ BlastKarlinEtoS_simple(double E, /* Expect value */
    Lambda = kbp->Lambda;
    K = kbp->K;
    H = kbp->H;
-   if (Lambda < 0. || K < 0. || H < 0.0) 
+   if (Lambda < 0. || K < 0. || H < 0.0)
    {
       return BLAST_SCORE_MIN;
    }
@@ -4089,7 +4093,7 @@ BLAST_Cutoffs(Int4 *S, /* cutoff score */
    */
    es = 1;
    esave = e;
-   if (e > 0.) 
+   if (e > 0.)
    {
         if (dodecay) {
             /* Invert the adjustment to the e-value that will be applied
@@ -4113,7 +4117,7 @@ BLAST_Cutoffs(Int4 *S, /* cutoff score */
    /*
       Re-calculate E from the cutoff score, if E going in was too high
    */
-   if (esave <= 0. || !s_changed) 
+   if (esave <= 0. || !s_changed)
    {
       e = BLAST_KarlinStoE_simple(s, kbp, searchsp);
       if (dodecay) {
@@ -4186,14 +4190,14 @@ typedef struct SRombergCbackArgs {
 
 
 /** Callback for the Romberg integration function.
- *  This is the second of the double integrals that  
- *  BlastSumPCalc calculates This is eqn. 4 of Karlin 
+ *  This is the second of the double integrals that
+ *  BlastSumPCalc calculates This is eqn. 4 of Karlin
  *  and Altschul, PNAS USA, 90, 5873-5877 (1993).
- * 
+ *
  * @param x variable to integrate over [in]
  * @param vp pointer to parameters [in]
  * @return value of integrand
- */  
+ */
 static double
 s_OuterIntegralCback(double x, void* vp)
 {
@@ -4211,21 +4215,21 @@ s_OuterIntegralCback(double x, void* vp)
 }
 
 /** Callback for the Romberg integration function.
- *  This is the first of the double integrals that  
- *  BlastSumPCalc calculates.  This is the integral 
- *  described in the paragraph after eqn. 4 of Karlin 
+ *  This is the first of the double integrals that
+ *  BlastSumPCalc calculates.  This is the integral
+ *  described in the paragraph after eqn. 4 of Karlin
  *  and Altschul, PNAS USA, 90, 5873-5877 (1993).
- * 
+ *
  * @param s variable to integrate over [in]
  * @param vp pointer to parameters [in]
  * @return value of integrand
- */  
+ */
 static double
 s_InnerIntegralCback(double s, void* vp)
 {
    double   mx;
    SRombergCbackArgs* callback_args = (SRombergCbackArgs*) vp;
-   
+
    callback_args->adj2 = callback_args->adj1 - s;
    callback_args->sdvir = s / callback_args->num_hsps;
    mx = (s > 0. ? callback_args->sdvir + 3. : 3.);
@@ -4333,21 +4337,21 @@ s_BlastSumPCalc(int r, double s)
  * Approx. 2-1/2 digits accuracy minimum throughout the range of r, s.
  * @param r number of segments [in]
  * @param s total score (in nats), adjusted by -r*log(KN) [in]
- * @return p-value 
+ * @return p-value
 */
 static double
 s_BlastSumP(Int4 r, double s)
 {
     static const double  kTab2[] = { /* table for r == 2 */
-         0.01669,  0.0249,   0.03683,  0.05390,  0.07794,  0.1111,   0.1559,   0.2146,   
-         0.2890,   0.3794,   0.4836,   0.5965,   0.7092,   0.8114,   0.8931,   0.9490,   
+         0.01669,  0.0249,   0.03683,  0.05390,  0.07794,  0.1111,   0.1559,   0.2146,
+         0.2890,   0.3794,   0.4836,   0.5965,   0.7092,   0.8114,   0.8931,   0.9490,
          0.9806,   0.9944,   0.9989
-         };  
+         };
     static const double  kTab3[] = { /* table for r == 3 */
          0.9806,   0.9944,   0.9989,   0.0001682,0.0002542,0.0003829,0.0005745,0.0008587,
-         0.001278, 0.001893, 0.002789, 0.004088, 0.005958, 0.008627, 0.01240,  0.01770,  
-         0.02505,  0.03514,  0.04880,  0.06704,  0.09103,  0.1220,   0.1612,   0.2097,   
-         0.2682,   0.3368,   0.4145,   0.4994,   0.5881,   0.6765,   0.7596,   0.8326,   
+         0.001278, 0.001893, 0.002789, 0.004088, 0.005958, 0.008627, 0.01240,  0.01770,
+         0.02505,  0.03514,  0.04880,  0.06704,  0.09103,  0.1220,   0.1612,   0.2097,
+         0.2682,   0.3368,   0.4145,   0.4994,   0.5881,   0.6765,   0.7596,   0.8326,
          0.8922,   0.9367,   0.9667,   0.9846,   0.9939,   0.9980
          };
    static const double  kTab4[] = { /* table for r == 4 */
@@ -4359,7 +4363,7 @@ s_BlastSumP(Int4 r, double s)
          0.3254,   0.3906,   0.4612,   0.5355,   0.6110,   0.6849,   0.7544,   0.8168,
          0.8699,   0.9127,   0.9451,   0.9679,   0.9827,   0.9915,   0.9963
          };
-   const double* kTable[] = { kTab2, kTab3, kTab4 }; 
+   const double* kTable[] = { kTab2, kTab3, kTab4 };
    const int kTabsize[] = { DIM(kTab2)-1, DIM(kTab3)-1, DIM(kTab4)-1 };  /* sizes of tab2, tab3, tab4 */
 
    if (r == 1)
@@ -4425,7 +4429,7 @@ BLAST_SmallGapSumE(
         double pair_search_space;  /* The effective size of the search
                                  * space, for this query-subject pair */
         double sum_p;           /* The p-value of this set of alignments */
-      
+
         pair_search_space = (double)subject_length * (double)query_length;
 
         xsum -=
@@ -4464,8 +4468,8 @@ BLAST_SmallGapSumE(
  * @param query_length The effective len of the query seq [in]
  * @param subject_length The effective len of the database seq [in]
  * @param searchsp_eff effective size of the search space [in]
- * @param weight_divisor A divisor used to weight the e-value when multiple 
- *                       collections of alignments are being considered by 
+ * @param weight_divisor A divisor used to weight the e-value when multiple
+ *                       collections of alignments are being considered by
  *                       the calling routine [in]
  * @return Resulting e-value of a combined set.
  */
@@ -4541,9 +4545,9 @@ BLAST_LargeGapSumE(
     } else {
       xsum -= num*log(lcl_subject_length*lcl_query_length)
         - BLAST_LnFactorial((double) num);
-      
+
       sum_p = s_BlastSumP(num, xsum);
-      
+
       sum_e = BLAST_KarlinPtoE(sum_p) *
           ((double) searchsp_eff / (lcl_query_length * lcl_subject_length));
     }
@@ -4555,7 +4559,7 @@ BLAST_LargeGapSumE(
 }
 
 /* Please see comment in blast_stat.h */
-void 
+void
 Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resProb)
 {
     Int4 frequency[BLASTAA_SIZE];  /*frequency of each letter*/
@@ -4605,14 +4609,14 @@ RPSfindUngappedLambda(const char *matrixName)
     }
 }
 
-/** 
+/**
  *  the routine RPSFillScores computes the probability of each score weighted
  *       by the probability of each query residue and fills those probabilities
  *       into scoreArray and puts scoreArray as a field in
  *       that in the structure that is returned
  *  for indexing convenience the field storing scoreArray points to the
  *       entry for score 0, so that referring to the -k index corresponds to
- *       score -k 
+ *       score -k
  *FIXME: This can be replaced by _PSIComputeScoreProbabilities??
  * @param matrix a position-specific score matrix with matrixLength positions [in]
  * @param matrixLength number of positions in the pssm (arg above) [in]
@@ -4628,8 +4632,8 @@ RPSfindUngappedLambda(const char *matrixName)
 */
 
 static void
-RPSFillScores(Int4 **matrix, Int4 matrixLength, 
-              double *queryProbArray, double *scoreArray,  
+RPSFillScores(Int4 **matrix, Int4 matrixLength,
+              double *queryProbArray, double *scoreArray,
               Blast_ScoreFreq* return_sfp, Int4 range,
               Int4 alphabet_size)
 {
@@ -4642,7 +4646,7 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
         for (j = 0 ; j < alphabet_size; j++) {
             if (j == AMINOACID_TO_NCBISTDAA['X'])
                 continue;
-            if ((matrix[i][j] > BLAST_SCORE_MIN) && 
+            if ((matrix[i][j] > BLAST_SCORE_MIN) &&
                 (matrix[i][j] < minScore))
                 minScore = matrix[i][j];
             if (matrix[i][j] > maxScore)
@@ -4661,7 +4665,7 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
             if (j == AMINOACID_TO_NCBISTDAA['X'])
                 continue;
             if(matrix[i][j] >= minScore)
-                return_sfp->sprob[matrix[i][j]] += recipLength * 
+                return_sfp->sprob[matrix[i][j]] += recipLength *
                                                 queryProbArray[j];
         }
     }
@@ -4672,20 +4676,20 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
 }
 
 Int4 **
-RPSRescalePssm(double scalingFactor, Int4 rps_query_length, 
-               const Uint1* rps_query_seq, Int4 db_seq_length, 
+RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
+               const Uint1* rps_query_seq, Int4 db_seq_length,
                Int4 **posMatrix, BlastScoreBlk *sbp)
 {
     double *scoreArray;         /*array of score probabilities*/
     double *resProb;            /*array of probabilities for each residue*/
     Blast_ScoreFreq * return_sfp;/*score frequency pointers to compute lambda*/
     Int4* * returnMatrix;        /*the PSSM to return */
-    double initialUngappedLambda; 
-    double scaledInitialUngappedLambda; 
+    double initialUngappedLambda;
+    double scaledInitialUngappedLambda;
     double correctUngappedLambda;
     double finalLambda;
     double temp;               /*intermediate variable for adjusting matrix*/
-    Int4 index, inner_index; 
+    Int4 index, inner_index;
     Int4 alphabet_size;
 
     resProb = (double *)malloc(BLASTAA_SIZE * sizeof(double));
@@ -4695,13 +4699,13 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
     Blast_FillResidueProbability(rps_query_seq, rps_query_length, resProb);
 
     alphabet_size = sbp->psi_matrix->pssm->nrows;
-    RPSFillScores(posMatrix, db_seq_length, resProb, scoreArray, 
+    RPSFillScores(posMatrix, db_seq_length, resProb, scoreArray,
                  return_sfp, BLAST_SCORE_RANGE_MAX, alphabet_size);
 
     initialUngappedLambda = RPSfindUngappedLambda(sbp->name);
     ASSERT(initialUngappedLambda > 0.0);
     scaledInitialUngappedLambda = initialUngappedLambda / scalingFactor;
-    correctUngappedLambda = Blast_KarlinLambdaNR(return_sfp, 
+    correctUngappedLambda = Blast_KarlinLambdaNR(return_sfp,
                                               scaledInitialUngappedLambda);
     sfree(resProb);
     sfree(scoreArray);
@@ -4720,9 +4724,9 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
 
     for (index = 0; index < db_seq_length; index++) {
         for (inner_index = 0; inner_index < alphabet_size; inner_index++) {
-            if (posMatrix[index][inner_index] <= BLAST_SCORE_MIN || 
+            if (posMatrix[index][inner_index] <= BLAST_SCORE_MIN ||
                 inner_index == AMINOACID_TO_NCBISTDAA['X']) {
-                returnMatrix[index][inner_index] = 
+                returnMatrix[index][inner_index] =
                     posMatrix[index][inner_index];
             }
             else {
@@ -4770,7 +4774,7 @@ static void s_BuildCompressedTranslation(const char *trans_string,
         table[i] = compressed_alphabet_size;
 
     for (i = j = compressed_letter = 0; trans_string[i] != 0; i++) {
-        
+
         Int4 c = trans_string[i];
 
         if (isspace(c)) {
@@ -4797,7 +4801,7 @@ static void s_BuildCompressedTranslation(const char *trans_string,
  *              row of the table ends with a negative value [in]
  */
 static Int2 s_GetCompressedProbs(BlastScoreBlk *sbp,
-                                 double* compressed_prob, 
+                                 double* compressed_prob,
                                  Int4 compressed_alphabet_size,
                                  CompressedReverseLookup rev_table)
 {
@@ -4817,7 +4821,7 @@ static Int2 s_GetCompressedProbs(BlastScoreBlk *sbp,
         compressed_prob[i] = 0.0;
 
     for (letter = 0; letter < compressed_alphabet_size; letter++) {
-        double prob_sum = 0.; 
+        double prob_sum = 0.;
 
         /* sum the frequencies of the protein letters making
            up this compressed letter */
@@ -4858,11 +4862,11 @@ static Int2 s_BuildCompressedScoreMatrix(BlastScoreBlk *sbp,
                                         double matrix_scale_factor,
                                         CompressedReverseLookup rev_table)
 {
-    double compressed_prob[BLASTAA_SIZE]; 
+    double compressed_prob[BLASTAA_SIZE];
     double lambda;
     SFreqRatios * std_freqs;
     SBlastScoreMatrix *new_matrix;
-    Int4 compressed_alphabet_size = 
+    Int4 compressed_alphabet_size =
                     new_alphabet->compressed_alphabet_size;
 
     /* get the ungapped lambda for the protein score matrix */
@@ -4881,8 +4885,8 @@ static Int2 s_BuildCompressedScoreMatrix(BlastScoreBlk *sbp,
 
     /* sum the background frequencies of each compressed letter */
 
-    if (s_GetCompressedProbs(sbp, compressed_prob, 
-                             compressed_alphabet_size, 
+    if (s_GetCompressedProbs(sbp, compressed_prob,
+                             compressed_alphabet_size,
                              rev_table) < 0) {
         _PSIMatrixFrequencyRatiosFree(std_freqs);
         return -3;
@@ -4894,12 +4898,12 @@ static Int2 s_BuildCompressedScoreMatrix(BlastScoreBlk *sbp,
         Int4 **scores = new_matrix->data;
         Int4 i, q, s;
         const double min_freq = BLAST_SCORE_MIN / matrix_scale_factor;
-    
+
         for (q = 0; q < BLASTAA_SIZE; q++) {
             for (s = 0; s < compressed_alphabet_size; s++) {
 
                 double val = 0; /* combined frequency ratio */
-                
+
                 for (i = 0; i < BLASTAA_SIZE; i++) {
 
                     Int4 aa = rev_table[s][i];
@@ -4911,19 +4915,19 @@ static Int2 s_BuildCompressedScoreMatrix(BlastScoreBlk *sbp,
 
                     val += std_freqs->data[q][aa] * compressed_prob[aa];
                 }
-                
+
                 val = (val < 1e-8) ? min_freq : log(val);
                 scores[q][s] = BLAST_Nint(val * matrix_scale_factor);
             }
         }
     }
-  
+
     _PSIMatrixFrequencyRatiosFree(std_freqs);
     return 0;
 }
 
-/* for more information see Edgar RC, "Local homology 
-   recognition and distance measures in linear time using 
+/* for more information see Edgar RC, "Local homology
+   recognition and distance measures in linear time using
    compressed amino acid alphabets." PMID: 14729922.
    The strings below have letter groups sorted in order
    of decreasing combined residue frequency */
@@ -4946,7 +4950,7 @@ SCompressedAlphabetNew(BlastScoreBlk *sbp,
     ASSERT(compressed_alphabet_size == 10 ||
            compressed_alphabet_size == 15);
 
-    new_alphabet = (SCompressedAlphabet*)calloc(1, 
+    new_alphabet = (SCompressedAlphabet*)calloc(1,
                                 sizeof(SCompressedAlphabet));
 
     /* parse the compressed alphabet */
@@ -4965,7 +4969,7 @@ SCompressedAlphabetNew(BlastScoreBlk *sbp,
                                  matrix_scale_factor, rev_table) < 0) {
         return SCompressedAlphabetFree(new_alphabet);
     }
-    
+
     return new_alphabet;
 }
 
@@ -4980,33 +4984,33 @@ SCompressedAlphabetFree(SCompressedAlphabet *alphabet)
     return NULL;
 }
 
-/** 
+/**
  * Computes the adjustment to the lengths of the query and database sequences
- * that is used to compensate for edge effects when computing evalues. 
+ * that is used to compensate for edge effects when computing evalues.
  *
  * The length adjustment is an integer-valued approximation to the fixed
  * point of the function
  *
- *    f(ell) = beta + 
+ *    f(ell) = beta +
  *               (alpha/lambda) * (log K + log((m - ell)*(n - N ell)))
  *
  * where m is the query length n is the length of the database and N is the
  * number of sequences in the database. The values beta, alpha, lambda and
  * K are statistical, Karlin-Altschul parameters.
- * 
- * The value of the length adjustment computed by this routine, A, 
+ *
+ * The value of the length adjustment computed by this routine, A,
  * will always be an integer smaller than the fixed point of
  * f(ell). Usually, it will be the largest such integer.  However, the
- * computed length adjustment, A, will also be so small that 
+ * computed length adjustment, A, will also be so small that
  *
  *    K * (m - A) * (n - N * A) > MAX(m,n).
  *
  * Moreover, an iterative method is used to compute A, and under
- * unusual circumstances the iterative method may not converge. 
+ * unusual circumstances the iterative method may not converge.
  *
  * @param K      the statistical parameter K
  * @param logK   the natural logarithm of K
- * @param alpha_d_lambda    the ratio of the statistical parameters 
+ * @param alpha_d_lambda    the ratio of the statistical parameters
  *                          alpha and lambda (for ungapped alignments, the
  *                          value 1/H should be used)
  * @param beta              the statistical parameter beta (for ungapped
@@ -5078,7 +5082,7 @@ BLAST_ComputeLengthAdjustment(double K,
         } else { /* else ell is greater than the true fixed point */
             ell_max = ell;
         }
-        if(ell_min <= ell_bar && ell_bar <= ell_max) { 
+        if(ell_min <= ell_bar && ell_bar <= ell_max) {
           /* ell_bar is in range. Accept it */
             ell_next = ell_bar;
         } else { /* else ell_bar is not in range. Reject it */
@@ -5108,7 +5112,7 @@ BLAST_ComputeLengthAdjustment(double K,
 }
 
 /* UNUSED
-static double s_CalculateNormalProbability(double x_, double eps_) 
+static double s_CalculateNormalProbability(double x_, double eps_)
 {
     double pi = 3.1415926535897932384626433832795;
     double x_max;
@@ -5158,14 +5162,14 @@ double
 BLAST_SpougeStoE(Int4 y_,
                  Blast_KarlinBlk* kbp,
                  Blast_GumbelBlk* gbp,
-                 Int4 m_, Int4 n_) 
+                 Int4 m_, Int4 n_)
 {
     // the score and lambda may have been rescaled.  We will compute the scaling factor
     // and use it to scale a, alpha, and Sigma similarly.
     double scale_factor = kbp->Lambda / gbp->Lambda;
 
     // the pair-wise e-value must be scaled back to db-wise e-value
-    double db_scale_factor = (gbp->db_length) ? 
+    double db_scale_factor = (gbp->db_length) ?
             (double)gbp->db_length/(double)n_ : 1.0;
 
     double lambda_    = kbp->Lambda;
@@ -5210,15 +5214,15 @@ BLAST_SpougeStoE(Int4 y_,
     return area * k_ * exp(-lambda_ * y_) * db_scale_factor;
 }
 
-Int4 
+Int4
 BLAST_SpougeEtoS(double e0,
                  Blast_KarlinBlk* kbp,
                  Blast_GumbelBlk* gbp,
-                 Int4 m, Int4 n) 
+                 Int4 m, Int4 n)
 {
     Int4 a=0, b, c;
     double e;
-    double db_scale_factor = (gbp->db_length) ? 
+    double db_scale_factor = (gbp->db_length) ?
             (double)gbp->db_length : 1.0;
 
     b = MAX((int)(log(db_scale_factor/e0) / kbp->Lambda), 2);

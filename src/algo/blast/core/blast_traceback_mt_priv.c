@@ -31,7 +31,7 @@
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
+static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
@@ -48,7 +48,9 @@ SThreadLocalData* SThreadLocalDataFree(SThreadLocalData* tld)
 {
     if (tld) {
         /* Do not destruct score block here, it was just assigned */
-        tld->gap_align->sbp = NULL;
+        if (tld->gap_align != NULL) {
+            tld->gap_align->sbp = NULL;
+        }
         tld->gap_align = BLAST_GapAlignStructFree(tld->gap_align);
         tld->score_params = BlastScoringParametersFree(tld->score_params);
         tld->ext_params = BlastExtensionParametersFree(tld->ext_params);
@@ -115,11 +117,11 @@ static Uint4* s_CountHspListsPerQuery(const SThreadLocalDataArray* data, Int4* n
 {
     Uint4 i = 0;
     Uint4* retval = NULL;
-    
-    if (!data || !num_queries) 
+
+    if (!data || !num_queries)
         return retval;
     *num_queries = data->tld[0]->results->num_queries;
-    
+
     if ( !(retval = (Uint4*)calloc(*num_queries, sizeof(*retval))) ) {
         return NULL;
     }
@@ -144,7 +146,7 @@ BlastHSPResults* SThreadLocalDataArrayConsolidateResults(SThreadLocalDataArray* 
     BlastHSPResults* retval = NULL;
     Int4 num_queries = 0, query_idx = 0, hitlist_size = 0;
     Uint4* num_hsplists_per_query = NULL;
-    
+
     if ( !array ) {
         return retval;
     }
@@ -185,12 +187,12 @@ BlastHSPResults* SThreadLocalDataArrayConsolidateResults(SThreadLocalDataArray* 
             for (i = 0; i < thread_hitlist->hsplist_count; i++) {
                 if ( !Blast_HSPList_IsEmpty(thread_hitlist->hsplist_array[i])) {
                     hits4query->hsplist_array[hits4query->hsplist_count++] =
-                        thread_hitlist->hsplist_array[i]; 
+                        thread_hitlist->hsplist_array[i];
                     thread_hitlist->hsplist_array[i] = NULL;
                 }
             }
-            hits4query->worst_evalue = !tid 
-                ? thread_hitlist->worst_evalue 
+            hits4query->worst_evalue = !tid
+                ? thread_hitlist->worst_evalue
                 : MAX(thread_hitlist->worst_evalue, hits4query->worst_evalue);
             hits4query->low_score = !tid
                 ? thread_hitlist->low_score
@@ -202,9 +204,9 @@ BlastHSPResults* SThreadLocalDataArrayConsolidateResults(SThreadLocalDataArray* 
     return retval;
 }
 
-Int2 SThreadLocalDataArraySetup(SThreadLocalDataArray* array, 
-                                EBlastProgramType program, 
-                                const BlastScoringOptions* score_options, 
+Int2 SThreadLocalDataArraySetup(SThreadLocalDataArray* array,
+                                EBlastProgramType program,
+                                const BlastScoringOptions* score_options,
                                 const BlastEffectiveLengthsOptions* eff_len_options,
                                 const BlastExtensionOptions* ext_options,
                                 const BlastHitSavingOptions* hit_options,
@@ -218,14 +220,14 @@ Int2 SThreadLocalDataArraySetup(SThreadLocalDataArray* array,
     if (!array)
         return BLASTERR_INVALIDPARAM;
 
-    for (i = 0; i < array->num_elems; i++) { 
-        status = 
-           BLAST_GapAlignSetUp(program, seqsrc, score_options, eff_len_options, 
-              ext_options, hit_options, query_info, sbp, 
-              &array->tld[i]->score_params, 
-              &array->tld[i]->ext_params, 
-              &array->tld[i]->hit_params, 
-              &array->tld[i]->eff_len_params, 
+    for (i = 0; i < array->num_elems; i++) {
+        status =
+           BLAST_GapAlignSetUp(program, seqsrc, score_options, eff_len_options,
+              ext_options, hit_options, query_info, sbp,
+              &array->tld[i]->score_params,
+              &array->tld[i]->ext_params,
+              &array->tld[i]->hit_params,
+              &array->tld[i]->eff_len_params,
               &array->tld[i]->gap_align);
         if (status)
            return status;

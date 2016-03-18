@@ -33,7 +33,7 @@
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
+static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
@@ -83,7 +83,7 @@ s_BlastHSPStreamResultsBatchArrayNew(Uint4 num_elements)
     if ( !retval ) {
         return BlastHSPStreamResultsBatchArrayFree(retval);
     }
-    num_elements = !num_elements ? 10 : num_elements;
+    num_elements = (num_elements == 0) ? 10 : num_elements;
     retval->array_of_batches = (BlastHSPStreamResultBatch**)
         calloc(num_elements, sizeof(*retval->array_of_batches));
     if ( !retval->array_of_batches ) {
@@ -94,12 +94,18 @@ s_BlastHSPStreamResultsBatchArrayNew(Uint4 num_elements)
     return retval;
 }
 
+BlastHSPStreamResultsBatchArray*
+BlastHSPStreamResultsBatchNew(void)
+{
+    return s_BlastHSPStreamResultsBatchArrayNew(1);
+}
+
 /** Append a value to the array, reallocating it if necessary
  * @param batches array to append data to [in|out]
  * @param batch value to append to array [in]
  * @return 0 on success, otherwise non-zero */
 static int
-s_BlastHSPStreamResultsBatchArrayAppend(BlastHSPStreamResultsBatchArray* batches, 
+s_BlastHSPStreamResultsBatchArrayAppend(BlastHSPStreamResultsBatchArray* batches,
                                         BlastHSPStreamResultBatch* batch)
 {
     const size_t kResizeFactor = 2;

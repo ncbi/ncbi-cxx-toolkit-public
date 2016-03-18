@@ -55,7 +55,7 @@ static char const rcsid[] =
  *
  * This macro is usually used as part of a C-conditional
  * if (COMPO_INTENSE_DEBUG) {
- *     perform expensive tests 
+ *     perform expensive tests
  * }
  * The C compiler will then validate the code to perform the tests, but
  * will almost always strip the code if COMPO_INTENSE_DEBUG is false.
@@ -202,7 +202,7 @@ s_AlignmentsAreSorted(BlastCompo_Alignment * alignments)
 /** Calculate the length of a list of BlastCompo_Alignment objects.
  *  This is an O(n) operation */
 static int
-s_DistinctAlignmentsLength(BlastCompo_Alignment * list) 
+s_DistinctAlignmentsLength(BlastCompo_Alignment * list)
 {
     int length = 0;
     for ( ;  list != NULL;  list = list->next) {
@@ -213,7 +213,7 @@ s_DistinctAlignmentsLength(BlastCompo_Alignment * list)
 
 
 /**
- * Sort a list of Blast_Compo_Alignment objects, using s_AlignmentCmp 
+ * Sort a list of Blast_Compo_Alignment objects, using s_AlignmentCmp
  * comparison function.  The mergesort sorting algorithm is used.
  *
  * @param *plist        the list to be sorted
@@ -229,7 +229,7 @@ s_DistinctAlignmentsSort(BlastCompo_Alignment ** plist, int hspcnt)
         BlastCompo_Alignment * list = *plist;
         BlastCompo_Alignment *leftlist, *rightlist, **tail;
         int i, leftcnt, rightcnt;
-        
+
         /* Split the list in half */
         leftcnt = hspcnt/2;
         rightcnt = hspcnt - leftcnt;
@@ -250,7 +250,7 @@ s_DistinctAlignmentsSort(BlastCompo_Alignment ** plist, int hspcnt)
             assert(s_DistinctAlignmentsLength(leftlist) == leftcnt);
         }
         /* Sort the two lists */
-        if (leftcnt > 1) 
+        if (leftcnt > 1)
             s_DistinctAlignmentsSort(&leftlist, leftcnt);
         if (rightcnt > 1)
             s_DistinctAlignmentsSort(&rightlist, rightcnt);
@@ -301,7 +301,7 @@ s_AlignmentCopy(const BlastCompo_Alignment * align)
                                    align->matchStart,
                                    align->matchEnd, align->frame,
                                    align->context);
-    
+
 }
 
 /**
@@ -335,7 +335,7 @@ s_IsSimilarEndPoint(const BlastCompo_Alignment* newAlign,
                                align->matchStart, align->matchEnd,
                                newAlign->matchStart);
     /* is end of newAlign contained within align */
-    Boolean end_contained = 
+    Boolean end_contained =
         KAPPA_CONTAINED_IN_HSP(align->queryStart, align->queryEnd,
                                newAlign->queryEnd,
                                align->matchStart, align->matchEnd,
@@ -343,13 +343,13 @@ s_IsSimilarEndPoint(const BlastCompo_Alignment* newAlign,
 
     /* does either end point of newAlign lie on the same diagonal as the same
        end point of align */
-    Boolean result =  (start_contained && 
+    Boolean result =  (start_contained &&
                        (newAlign->queryStart - newAlign->matchStart ==
                         align->queryStart - align->matchStart)) ||
                       (end_contained &&
                        (newAlign->queryEnd - newAlign->matchEnd ==
                         align->queryEnd - align->matchEnd));
-       
+
     return result;
 }
 
@@ -377,7 +377,7 @@ s_IsSimilarEndPoint(const BlastCompo_Alignment* newAlign,
  *                          the list; on output NULL
  * @param p_oldAlignments   on input the existing list of alignments;
  *                          on output the new list
- * @param free_align_context    a routine to be used to free the context 
+ * @param free_align_context    a routine to be used to free the context
  *                              field of an alignment, if any alignment is
  *                              freed; may be NULL
  * @param is_same_adjustment    were all compared HSPs computed with the same
@@ -453,7 +453,7 @@ s_WithDistinctEnds(BlastCompo_Alignment **p_newAlign,
         BlastCompo_AlignmentsFree(&newAlign, free_align_context);
     } /* end else do not include newAlign */
 }
- 
+
 
 /** Release the data associated with this object. */
 static void s_SequenceDataRelease(BlastCompo_SequenceData * self)
@@ -543,7 +543,7 @@ static void
 s_WindowInfoJoin(s_WindowInfo * win1, s_WindowInfo ** pwin2)
 {
     /* the second window, which will be deleted when this routine exits */
-    s_WindowInfo * win2 = *pwin2;   
+    s_WindowInfo * win2 = *pwin2;
     BlastCompo_Alignment *align, **tail;
     /* subject ranges for the two windows */
     BlastCompo_SequenceRange * sbjct_range1 = &win1->subject_range;
@@ -587,7 +587,7 @@ s_LocationCompareWindows(const void * vp1, const void *vp2)
 
     int result;                   /* result of the comparison */
     if (0 == (result = CMP(qr1->context, qr2->context)) &&
-        0 == (result = CMP(sr1->context, sr2->context)) && 
+        0 == (result = CMP(sr1->context, sr2->context)) &&
         0 == (result = CMP(sr1->begin, sr2->begin)) &&
         0 == (result = CMP(sr1->end, sr2->end)) &&
         0 == (result = CMP(qr1->begin, qr2->begin))) {
@@ -600,7 +600,7 @@ s_LocationCompareWindows(const void * vp1, const void *vp2)
 /**
  * A comparison routine used to sort a list of windows by position in
  * the subject, ignoring strand and frame. Ties are broken
- * deterministically. 
+ * deterministically.
  */
 static int
 s_SubjectCompareWindows(const void * vp1, const void *vp2)
@@ -728,14 +728,14 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
     for (k = length_joined;  k < hspcnt;  k++) {
         windows[k] = NULL;
     }
- 
+
     /* for blastx, swap query and subject range */
-    if (!subject_is_translated) {   
+    if (!subject_is_translated) {
         for (k=0; k<length_joined; k++) {
             s_WindowSwapRange(windows[k]);
         }
     }
-            
+
     for (k = 0;  k < length_joined;  k++) {
         s_DistinctAlignmentsSort(&windows[k]->align, windows[k]->hspcnt);
     }
@@ -745,7 +745,7 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
 
 error_return:
     for (k = 0; k < *nWindows; k++) {
-        if (windows[k] != NULL) 
+        if (windows[k] != NULL)
             s_WindowInfoFree(&windows[k]);
     }
     free(windows);
@@ -790,13 +790,13 @@ s_WindowsFromProteinAligns(BlastCompo_Alignment * alignments,
 
         if (windows[query_index] == NULL) {
             windows[query_index] =
-                s_WindowInfoNew(0, sequence_length, 0, 
+                s_WindowInfoNew(0, sequence_length, 0,
                                 0, query_length, query_index, NULL);
-            if (windows[query_index] == NULL) 
+            if (windows[query_index] == NULL)
                 goto error_return;
         }
         copiedAlign = s_AlignmentCopy(align);
-        if (copiedAlign == NULL) 
+        if (copiedAlign == NULL)
             goto error_return;
         copiedAlign->next = windows[query_index]->align;
         windows[query_index]->align = copiedAlign;
@@ -863,7 +863,7 @@ s_WindowsFromAligns(BlastCompo_Alignment * alignments,
                 BlastCompo_QueryInfo * query_info, int hspcnt,
                 int numQueries, int border, int sequence_length,
                 s_WindowInfo ***pwindows, int * nWindows,
-                int query_is_translated, int subject_is_translated) 
+                int query_is_translated, int subject_is_translated)
 {
     if (subject_is_translated || query_is_translated) {
         return s_WindowsFromTranslatedAligns(alignments, query_info,
@@ -909,13 +909,13 @@ s_GetComposition(Blast_AminoAcidComposition * composition,
 
     data = seq->data;
     length = range->end - range->begin;
-   
+
     if (query_is_translated || subject_is_translated) {
-        int start;  
-        int end; 
-        start = ((query_is_translated) ?  
+        int start;
+        int end;
+        start = ((query_is_translated) ?
                  align->queryStart : align->matchStart) - range->begin;
-        end   = ((query_is_translated) ?  
+        end   = ((query_is_translated) ?
                  align->queryEnd   : align->matchEnd  ) - range->begin;
         Blast_GetCompositionRange(&left, &right, data, length, start, end);
     } else {
@@ -1101,6 +1101,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                    double *LambdaRatio)
 {
     int status = 0;                  /* return status */
+
     s_WindowInfo **windows;      /* array of windows */
     int nWindows;                    /* length of windows */
     int window_index;                /* loop index */
@@ -1122,9 +1123,9 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
         alignments[query_index] = NULL;
     }
     status =
-        s_WindowsFromAligns(incoming_aligns, query_info, hspcnt, numQueries,
-                            kWindowBorder, matchingSeq->length, &windows,
-                            &nWindows, query_is_translated, subject_is_translated);
+            s_WindowsFromAligns(incoming_aligns, query_info, hspcnt, numQueries,
+                    kWindowBorder, matchingSeq->length, &windows,
+                    &nWindows, query_is_translated, subject_is_translated);
     if (status != 0) {
         goto function_level_cleanup;
     }
@@ -1135,9 +1136,9 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
         int hsp_index;               /* index of the current alignment */
         /* data for the current window */
         BlastCompo_SequenceData subject = {0,};
-        BlastCompo_SequenceData query = {0,}; 
+        BlastCompo_SequenceData query = {0,};
         /* the composition of this query */
-        Blast_AminoAcidComposition * query_composition;  
+        Blast_AminoAcidComposition * query_composition;
         Boolean nearIdenticalStatus = TRUE; /* are query and subject nearly
                                                identical in the aligned part?*/
         Boolean oldNearIdenticalStatus = FALSE; /* were query and subject nearly
@@ -1160,41 +1161,44 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
 
         /* for all alignments in this window */
         for (in_align = window->align, hsp_index = 0;
-             in_align != NULL;
-             in_align = in_align->next, hsp_index++) {
+                in_align != NULL;
+                in_align = in_align->next, hsp_index++) {
 
 
             /* if the fist HSP for the pair or subject may have biased
                segments; if the subject is not biased, then segging is not
                necessary so we do not have to check for near identical status */
             if (hsp_index == 0 || subject_maybe_biased) {
-
-                nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,  
-                                             window,
-                                             in_align,
-                                             params->near_identical_cutoff);
+                nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,
+                        window,
+                        in_align,
+                        params->near_identical_cutoff);
             }
 
             /* if the first HSP for the pair or subject may have biased
                segments and near identical status is different than for the
                previous HSP */
             if (hsp_index == 0 ||
-                (subject_maybe_biased &&
-                 (nearIdenticalStatus != oldNearIdenticalStatus))) {
- 
+                    (subject_maybe_biased &&
+                            (nearIdenticalStatus != oldNearIdenticalStatus))) {
+
                 /* release previously allocated sequence data */
                 s_SequenceDataRelease(&subject);
                 s_SequenceDataRelease(&query);
-                status =
-                    callbacks->get_range(matchingSeq, &window->subject_range,
-                                 &subject, 
-                                 &query_info[query_index].seq,
-                                 &window->query_range,
-                                 &query,
-                                 query_info[query_index].words,
-                                 window->align, nearIdenticalStatus,
-                                 compo_adjust_mode, FALSE,
-                                 &subject_maybe_biased);
+                status = callbacks->get_range(
+                        matchingSeq,
+                        &window->subject_range,
+                        &subject,
+                        &query_info[query_index].seq,
+                        &window->query_range,
+                        &query,
+                        query_info[query_index].words,
+                        window->align,
+                        nearIdenticalStatus,
+                        compo_adjust_mode,
+                        FALSE,
+                        &subject_maybe_biased
+                );
 
                 if (status != 0) {
                     goto window_index_loop_cleanup;
@@ -1204,9 +1208,9 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
             /* do frequency count for partial translated query */
             if (query_is_translated) {
                 s_GetComposition(query_composition,
-                                        alphsize, &query,
-                                        &window->query_range,
-                                        in_align, TRUE, FALSE);
+                        alphsize, &query,
+                        &window->query_range,
+                        in_align, TRUE, FALSE);
             }
             /* if in_align is not contained in a higher-scoring
              * alignment */
@@ -1216,25 +1220,25 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                  * is called and returns a nonzero value */
                 int adjust_search_failed = 0;
                 if (compo_adjust_mode != eNoCompositionBasedStats &&
-                    (subject_is_translated || hsp_index == 0
-                     || (nearIdenticalStatus != oldNearIdenticalStatus))) {
+                        (subject_is_translated || hsp_index == 0
+                                || (nearIdenticalStatus != oldNearIdenticalStatus))) {
                     Blast_AminoAcidComposition subject_composition;
                     s_GetComposition(&subject_composition,
-                                            alphsize, &subject,
-                                            &window->subject_range,
-                                            in_align, FALSE, subject_is_translated);
+                            alphsize, &subject,
+                            &window->subject_range,
+                            in_align, FALSE, subject_is_translated);
                     adjust_search_failed =
-                        Blast_AdjustScores(matrix, query_composition,
-                                           query.length,
-                                           &subject_composition,
-                                           subject.length,
-                                           scaledMatrixInfo, compo_adjust_mode,
-                                           RE_pseudocounts, NRrecord,
-                                           &matrix_adjust_rule,
-                                           callbacks->calc_lambda,
-                                           pvalueForThisPair,
-                                           compositionTestIndex,
-                                           LambdaRatio);
+                            Blast_AdjustScores(matrix, query_composition,
+                                    query.length,
+                                    &subject_composition,
+                                    subject.length,
+                                    scaledMatrixInfo, compo_adjust_mode,
+                                    RE_pseudocounts, NRrecord,
+                                    &matrix_adjust_rule,
+                                    callbacks->calc_lambda,
+                                    pvalueForThisPair,
+                                    compositionTestIndex,
+                                    LambdaRatio);
                     if (adjust_search_failed < 0) { /* fatal error */
                         status = adjust_search_failed;
                         goto window_index_loop_cleanup;
@@ -1242,48 +1246,53 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                     num_adjustments++;
                 }
 
+                // By this point there's a discrepancy in
+                //  gapping_params->context->gap_align->sbp->matrix->data
                 if ( !adjust_search_failed ) {
-                    newAlign =
-                        callbacks->
-                        redo_one_alignment(in_align, matrix_adjust_rule,
-                                           &query, &window->query_range,
-                                           ccat_query_length,
-                                           &subject, &window->subject_range,
-                                           matchingSeq->length,
-                                           gapping_params);
+                    newAlign = callbacks->redo_one_alignment(
+                            in_align,
+                            matrix_adjust_rule,
+                            &query,
+                            &window->query_range,
+                            ccat_query_length,
+                            &subject,
+                            &window->subject_range,
+                            matchingSeq->length,
+                            gapping_params
+                    );
                     if (newAlign && newAlign->score >= params->cutoff_s) {
                         s_WithDistinctEnds(&newAlign, &alignments[query_index],
-                                           callbacks->free_align_traceback,
-                                           num_adjustments == 1);
+                                callbacks->free_align_traceback,
+                                num_adjustments == 1);
                     } else {
                         BlastCompo_AlignmentsFree(&newAlign,
-                                                  callbacks->
-                                                  free_align_traceback);
+                                callbacks->
+                                free_align_traceback);
                     }
                 }
             } /* end if in_align is not contained...*/
             oldNearIdenticalStatus = nearIdenticalStatus;
         } /* end for all alignments in this window */
-window_index_loop_cleanup:
+        window_index_loop_cleanup:
         if (subject.data != NULL)
             s_SequenceDataRelease(&subject);
         if (query.data != NULL)
             s_SequenceDataRelease(&query);
-        if (status != 0) 
+        if (status != 0)
             goto function_level_cleanup;
     } /* end for all windows */
-function_level_cleanup:
+    function_level_cleanup:
     if (status != 0) {
         for (query_index = 0;  query_index < numQueries;  query_index++) {
-            BlastCompo_AlignmentsFree(&alignments[query_index], 
-                                         callbacks->free_align_traceback);
+            BlastCompo_AlignmentsFree(&alignments[query_index],
+                    callbacks->free_align_traceback);
         }
     }
     for (window_index = 0;  window_index < nWindows;  window_index++) {
         s_WindowInfoFree(&windows[window_index]);
     }
     free(windows);
-    
+
     return status;
 }
 
@@ -1338,16 +1347,16 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
         s_WindowsFromAligns(incoming_aligns, query_info, hspcnt, numQueries,
                             kWindowBorder, matchingSeq->length, &windows,
                             &nWindows, query_is_translated, subject_is_translated);
-    if (status != 0) 
+    if (status != 0)
         goto function_level_cleanup;
     /* We are performing a Smith-Waterman alignment */
     for (window_index = 0;  window_index < nWindows;  window_index++) {
         /* for all window */
         s_WindowInfo * window = NULL; /* the current window */
-        BlastCompo_SequenceData subject = {0,}; 
+        BlastCompo_SequenceData subject = {0,};
         /* subject data for this window */
         BlastCompo_SequenceData query = {0,};       /* query data for this window */
-        Blast_AminoAcidComposition * query_composition;  
+        Blast_AminoAcidComposition * query_composition;
         double searchsp;                  /* effective search space */
 	Boolean nearIdenticalStatus; /*are query and subject nearly
 				       identical in the aligned part?*/
@@ -1355,7 +1364,7 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
          * is called and returns a nonzero value */
         int adjust_search_failed = FALSE;
 
-        
+
         window = windows[window_index];
         query_index = window->query_range.context;
         query_composition = &query_info[query_index].composition;
@@ -1367,7 +1376,7 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
 
         status =
             callbacks->get_range(matchingSeq, &window->subject_range,
-                                 &subject, 
+                                 &subject,
                                  &query_info[query_index].seq,
                                  &window->query_range,
                                  &query,
@@ -1376,9 +1385,9 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                                  compo_adjust_mode, TRUE,
                                  NULL);
 
-        if (status != 0) 
+        if (status != 0)
             goto window_index_loop_cleanup;
-            
+
         /* do frequency count for partial translated query */
         if (query_is_translated) {
             s_GetComposition(query_composition,
@@ -1518,10 +1527,10 @@ window_index_loop_cleanup:
             s_SequenceDataRelease(&subject);
         if (query.data != NULL)
             s_SequenceDataRelease(&query);
-        if (status != 0) 
+        if (status != 0)
             goto function_level_cleanup;
     } /* end for all windows */
-    
+
 function_level_cleanup:
     if (status != 0) {
         for (query_index = 0;  query_index < numQueries;  query_index++) {
@@ -1533,7 +1542,7 @@ function_level_cleanup:
         s_WindowInfoFree(&windows[window_index]);
     }
     free(windows);
-    
+
     return status;
 }
 

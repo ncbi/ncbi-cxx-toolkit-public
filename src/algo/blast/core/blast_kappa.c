@@ -51,6 +51,12 @@ static char const rcsid[] =
 #include "blast_gapalign_priv.h"
 #include "blast_hits_priv.h"
 #include "blast_posit.h"
+#include "blast_hspstream_mt_utils.h"
+#include "blast_traceback_mt_priv.h"
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include <algo/blast/composition_adjustment/nlm_linear_algebra.h>
 #include <algo/blast/composition_adjustment/compo_heap.h>
@@ -144,7 +150,7 @@ s_AdjustEvaluesForComposition(
     double query_eff   = MAX((query_length - length_adjustment), 1);
     double subject_eff = MAX((subject_length - length_adjustment), 1.0);
     double dblen_eff = (double) query_context->eff_searchsp / query_eff;
-    
+
     /* Scale factor to convert the database E-value to the sequence E-value */
     double db_to_sequence_scale = subject_eff / dblen_eff;
 
@@ -313,11 +319,11 @@ s_HSPListFromDistinctAlignments(BlastHSPList *hsp_list,
         BlastHSP * new_hsp = NULL;
         GapEditScript * editScript = align->context;
         align->context = NULL;
-        
+
         status = Blast_HSPInit(align->queryStart, align->queryEnd,
                                align->matchStart, align->matchEnd,
                                unknown_value, unknown_value,
-                               align->queryIndex, 
+                               align->queryIndex,
                                frame, (Int2) align->frame, align->score,
                                &editScript, &new_hsp);
         switch (align->matrix_adjust_rule) {
@@ -364,7 +370,7 @@ s_HSPListFromDistinctAlignments(BlastHSPList *hsp_list,
  * @param subject_length   length of the subject sequence
  * @param program_number   the type of BLAST search being performed
  * @param queryInfo        information about the queries
- * @param context_index      the index of the query corresponding to 
+ * @param context_index      the index of the query corresponding to
  *                         the HSPs in hsp_list
  * @param sbp              the score block for this search
  * @param hitParams        parameters used to assign evalues and
@@ -429,7 +435,7 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
 
 /** Compute the number of identities for the HSPs in the hsp_list
  * @note Should work for blastp and tblastn now.
- * 
+ *
  * @param query_blk the query sequence data [in]
  * @param query_info structure describing the query_blk structure [in]
  * @param seq_src source of subject sequence data [in]
@@ -492,9 +498,9 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
             query = query_blk->oof_sequence + CODON_LENGTH + context_offset;
             query_nomask = query_blk->oof_sequence + CODON_LENGTH + context_offset;
         } else {
-            query = query_blk->sequence + 
+            query = query_blk->sequence +
                 query_info->contexts[hsp->context].query_offset;
-            query_nomask = query_blk->sequence_nomask + 
+            query_nomask = query_blk->sequence_nomask +
                 query_info->contexts[hsp->context].query_offset;
         }
 
@@ -524,8 +530,8 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
 static double
 s_CalcLambda(double probs[], int min_score, int max_score, double lambda0)
 {
-   
-    int i;                 /* loop index */      
+
+    int i;                 /* loop index */
     int score_range;       /* range of possible scores */
     double avg;            /* expected score of aligning two characters */
     Blast_ScoreFreq freq;  /* score frequency data */
@@ -673,7 +679,7 @@ s_ScalePosMatrix(int ** fillPosMatrix,
                  BlastScoreBlk* sbp,
                  double scale_factor)
 {
-    /* Data used by scaling routines */    
+    /* Data used by scaling routines */
     Kappa_posSearchItems *posSearch = NULL;
     /* A reduced collection of search parameters used by PSI-blast */
     Kappa_compactSearchItems *compactSearch = NULL;
@@ -755,8 +761,8 @@ s_ResultHspToDistinctAlign(BlastCompo_Alignment **self,
     for (frame_index = 0; frame_index < 6; frame_index++) {
         tail[frame_index] = NULL;
         numAligns[frame_index] = 0;
-    } 
-    
+    }
+
     for (hsp_index = 0;  hsp_index < hspcnt;  hsp_index++) {
         BlastHSP * hsp = hsp_array[hsp_index]; /* current HSP */
         BlastCompo_Alignment * new_align;      /* newly-created alignment */
@@ -770,7 +776,7 @@ s_ResultHspToDistinctAlign(BlastCompo_Alignment **self,
             BlastCompo_AlignmentNew((int) (hsp->score * localScalingFactor),
                                     eDontAdjustMatrix,
                                     hsp->query.offset, hsp->query.end, hsp->context,
-                                    hsp->subject.offset, hsp->subject.end, 
+                                    hsp->subject.offset, hsp->subject.end,
                                     hsp->subject.frame, hsp);
         if (new_align == NULL) /* out of memory */
             return -1;
@@ -946,7 +952,7 @@ static int s_ExtendRight(Uint1* query_seq, int query_len,
             /* mismatches */
             if (query_seq[q_pos + n] == subject_seq[s_pos + n]
                 && query_seq[q_pos + n + 1] == subject_seq[s_pos + n + 1]) {
-                
+
                 /* we have already checked that two positions behind mismatches
                    match so we can advance further */
                 q_pos += n + 2;
@@ -958,7 +964,7 @@ static int s_ExtendRight(Uint1* query_seq, int query_len,
             /* gap in subject */
             if (!match && query_seq[q_pos + n] == subject_seq[s_pos]
                 && query_seq[q_pos + n + 1] == subject_seq[s_pos + 1]) {
-                
+
                 q_pos += n + 2;
                 s_pos += 2;
                 num_identical += 2;
@@ -993,7 +999,7 @@ static int s_ExtendRight(Uint1* query_seq, int query_len,
 }
 
 
-/** 
+/**
  * Extend left from the end of the sequence and subject ranges and count
  * identities. The extension stops when there are more than max_shift
  * mismatches or mismatches or gaps are not followed by two identical matches.
@@ -1081,7 +1087,7 @@ static int s_ExtendLeft(Uint1* query_seq, int query_len,
 }
 
 
-/** 
+/**
  * Get hash for a word of word_size residues assuming 28-letter alphabet
  *
  * @param data Sequence [in]
@@ -1100,7 +1106,7 @@ static Uint8 s_GetHash(const Uint1* data, int word_size)
 }
 
 
-/** 
+/**
  * Find a local number of identical residues in two aligned sequences by
  * finding word matches and doing a simple gapped extensions from the word hits
  *
@@ -1153,7 +1159,7 @@ static int s_FindNumIdentical(Uint1* query_seq,
             hash += subject_seq[s_pos + word_size - 1];
         }
 
-        /* find matching query word; index of hash is position of the word 
+        /* find matching query word; index of hash is position of the word
            the query */
         for (q_pos = query_from;q_pos < query_len - word_size; q_pos++) {
             if (query_hashes[q_pos] == hash) {
@@ -1169,7 +1175,7 @@ static int s_FindNumIdentical(Uint1* query_seq,
             int query_left_len, query_right_len;
             int subject_left_len, subject_right_len;
             int align_len_left=0, align_len_right=0;
-            
+
             match = TRUE;
             num_identical += word_size;
 
@@ -1468,7 +1474,7 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
     int translation_start;   /* location in na_sequence to start
                                 translating */
     int num_nucleotides;     /* the number of nucleotides to be translated */
-    
+
     local_data = self->local_data;
     na_sequence = local_data->seq_arg.seq->sequence_start;
 
@@ -1486,7 +1492,7 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
     }
     num_nucleotides =
         3 * (range->end - range->begin) + ABS(translation_frame) - 1;
-    
+
     status = Blast_GetPartialTranslation(na_sequence + translation_start,
                                          num_nucleotides,
                                          (Int2) translation_frame,
@@ -1533,7 +1539,7 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
  * @param seqData       the resulting data [out]
  * @param queryData     the query sequence [in]
  * @param queryOffset   offset for align if there are multiple queries
- * @param align          information about the alignment 
+ * @param align          information about the alignment
  *                         between query and subject [in]
  * @param shouldTestIdentical did alignment pass a preliminary test in
  *                       redo_alignment.c that indicates the sequence
@@ -1668,7 +1674,7 @@ s_SequenceGetRange(const BlastCompo_MatchingSequence * self,
                                             compo_adjust_mode, isSmithWaterman,
                                             subject_maybe_biased);
     } else {
-        return s_SequenceGetProteinRange(self, s_range, seqData, 
+        return s_SequenceGetProteinRange(self, s_range, seqData,
                                          q_range, queryData, query_words,
                                          align, shouldTestIdentical,
                                          compo_adjust_mode, isSmithWaterman,
@@ -2031,7 +2037,7 @@ s_RecordInitialSearch(BlastKappa_SavedParameters * searchParams,
     searchParams->gapExtend    = scoring->gap_extend;
     searchParams->scale_factor = scoring->scale_factor;
 
-    for (i = 0;  i < searchParams->num_queries;  i++) { 
+    for (i = 0;  i < searchParams->num_queries;  i++) {
         if (sbp->kbp_gap[i] != NULL) {
             /* There is a kbp_gap for query i and it must be copied */
             searchParams->kbp_gap_orig[i] = Blast_KarlinBlkNew();
@@ -2223,7 +2229,7 @@ s_CreateWordArray(const Uint1* seq_data, Int4 seq_len, Uint8** words)
         return -1;
     }
 
-    
+
     /* find query word hashes */
     query_hashes[0] = s_GetHash(&seq_data[0], word_size);
     for (i = 1; i < seq_len - word_size; i++) {
@@ -2251,7 +2257,7 @@ static void s_FreeBlastCompo_QueryInfoArray(BlastCompo_QueryInfo** query_info,
             free((*query_info)[i].words);
         }
     }
-    
+
     free(*query_info);
     *query_info = NULL;
 }
@@ -2330,7 +2336,7 @@ s_GappingParamsNew(BlastKappa_GappingParamsContext * context,
         gapping_params->gap_extend = scoring->gap_extend;
         gapping_params->context = context;
     }
-    
+
     for (i = 0;  i < num_queries;  i++) {
         if (context->sbp->kbp_gap[i] != NULL &&
             context->sbp->kbp_gap[i]->Lambda < min_lambda) {
@@ -2358,7 +2364,7 @@ redo_align_callbacks = {
    test */
 #define NEAR_IDENTICAL_BITS_PER_POSITION (1.8)
 
-/** 
+/**
  * Read the parameters required for the Blast_RedoOneMatch* functions from
  * the corresponding parameters in standard BLAST datatypes.  Return a new
  * object representing these parameters.
@@ -2406,7 +2412,7 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
 		break;
 	}
     }
-    
+
     if (do_link_hsps) {
         ASSERT(hitParams->link_hsp_params != NULL);
         cutoff_s =
@@ -2457,7 +2463,7 @@ s_FillResultsFromCompoHeaps(BlastHSPResults * results,
     int query_index;   /* loop index */
     int num_queries;   /* Number of queries in this search */
 
-    num_queries = results->num_queries; 
+    num_queries = results->num_queries;
     for (query_index = 0;  query_index < num_queries;  query_index++) {
         BlastHSPList* hsp_list;
         BlastHitList* hitlist;
@@ -2486,13 +2492,414 @@ static void s_ClearHeap(BlastCompo_Heap * self)
 
 extern void
 BLAST_SetupPartialFetching(EBlastProgramType program_number,
-                           BlastSeqSrc* seq_src, 
+                           BlastSeqSrc* seq_src,
                            const BlastHSPList** hsp_list,
                            Int4 num_hsplists);
 
 /**
+ * Free a BlastGapAlignStruct copy created by s_BlastGapAlignStruct_Copy
+ *
+ * @param copy Pointer to BlastGapAlignStruct to be freed
+ */
+static void s_BlastGapAlignStruct_Free(BlastGapAlignStruct* copy)
+{
+    {
+        while (copy->state_struct != NULL) {
+            GapStateArrayStruct* cur = copy->state_struct;
+            copy->state_struct = copy->state_struct->next;
+            if (cur->state_array) {
+                sfree(cur->state_array);
+            }
+            if (cur) {
+                sfree(cur);
+            }
+        }
+    }
+    {
+        if (copy->edit_script != NULL) {
+            if (copy->edit_script->op_type) {
+                sfree(copy->edit_script->op_type);
+            }
+            if (copy->edit_script->num) {
+                sfree(copy->edit_script->num);
+            }
+            sfree(copy->edit_script);
+        }
+    }
+    {
+        if (copy->fwd_prelim_tback != NULL) {
+            if (copy->fwd_prelim_tback->edit_ops) {
+                sfree(copy->fwd_prelim_tback->edit_ops);
+            }
+            sfree(copy->fwd_prelim_tback);
+        }
+    }
+    {
+        if (copy->rev_prelim_tback != NULL) {
+            if (copy->rev_prelim_tback->edit_ops) {
+                sfree(copy->rev_prelim_tback->edit_ops);
+            }
+            sfree(copy->rev_prelim_tback);
+        }
+    }
+    {
+        if (copy->greedy_align_mem != NULL) {
+            sfree(copy->greedy_align_mem);
+        }
+    }
+    {
+        if (copy->dp_mem != NULL) {
+            sfree(copy->dp_mem);
+        }
+    }
+    {
+        if (copy->sbp != NULL) {
+            sfree(copy->sbp);
+        }
+    }
+    sfree(copy);
+}
+
+/**
+ * Create a "deep" copy of a BlastGapAlignStruct structure.
+ *
+ * Non-pointer structure members are copied.  Pointers to data which will
+ * only be read are copied.  For data which will be changing, memory for copies
+ * will be allocated and new pointers will be assigned to them.  The process
+ * repeats down the structure hierarchy until all pointers are dealt with.
+ *
+ * @param orig Pointer to BlastGapAlignStruct structure to be copied
+ * @param sbp  Pointer to BlastScoreBlk structure, required to set copy->sbp
+ *
+ * @return Pointer to copy of original BlastGapAlignStruct structure
+ */
+static BlastGapAlignStruct* s_BlastGapAlignStruct_Copy(
+        BlastGapAlignStruct* orig,
+        BlastScoreBlk* sbp
+)
+{
+    BlastGapAlignStruct* copy =
+            (BlastGapAlignStruct*) calloc(1, sizeof(BlastGapAlignStruct));
+
+    // Copy plain old data (ints, doubles, booleans, ...).
+    // Any pointer members will be processed separately.
+    memcpy(copy, orig, sizeof(BlastGapAlignStruct));
+
+    {
+        GapStateArrayStruct* o = orig->state_struct;
+        if (o != NULL) {
+            GapStateArrayStruct* c = (GapStateArrayStruct*) calloc(
+                    1,
+                    sizeof(GapStateArrayStruct)
+            );
+            copy->state_struct = c;
+            memcpy(c, o, sizeof(GapStateArrayStruct));
+            c->state_array = (Uint1*) calloc(c->length, sizeof(Uint1));
+            for (int i = 0; i < c->length; ++i) {
+                c->state_array[i] = o->state_array[i];
+            }
+            while (o->next != NULL) {
+                c->next = (GapStateArrayStruct*)
+                        calloc(1, sizeof(GapStateArrayStruct));
+                c = c->next;
+                o = o->next;
+                memcpy(c, o, sizeof(GapStateArrayStruct));
+                c->state_array = (Uint1*) calloc(c->length, sizeof(Uint1));
+                for (int i = 0; i < c->length; ++i) {
+                    c->state_array[i] = o->state_array[i];
+                }
+            }
+        }
+    }
+    {
+        GapEditScript* o = orig->edit_script;
+        if (o != NULL) {
+            GapEditScript* c = (GapEditScript*) calloc(
+                    1,
+                    sizeof(GapEditScript)
+            );
+            copy->edit_script = c;
+            memcpy(c, o, sizeof(GapEditScript));
+            c->op_type = (EGapAlignOpType*) calloc(
+                    o->size,
+                    sizeof(EGapAlignOpType)
+            );
+            c->num = (Int4*) calloc(o->size, sizeof(Int4));
+            for (int i = 0; i < o->size; ++i) {
+                c->op_type[i] = o->op_type[i];
+                c->num[i] = o->num[i];
+            }
+        }
+    }
+    {
+        GapPrelimEditBlock* o = orig->fwd_prelim_tback;
+        if (o != NULL) {
+            GapPrelimEditBlock* c = (GapPrelimEditBlock*) calloc(
+                    1,
+                    sizeof(GapPrelimEditBlock)
+            );
+            copy->fwd_prelim_tback = c;
+            memcpy(c, o, sizeof(GapPrelimEditBlock));
+            c->edit_ops = calloc(
+                    o->num_ops_allocated,
+                    sizeof(GapPrelimEditScript)
+            );
+            for (int i = 0; i < o->num_ops_allocated; ++i) {
+                c->edit_ops[i].op_type = o->edit_ops[i].op_type;
+                c->edit_ops[i].num = o->edit_ops[i].num;
+            }
+        }
+    }
+    {
+        GapPrelimEditBlock* o = orig->rev_prelim_tback;
+        if (o != NULL) {
+            GapPrelimEditBlock* c = (GapPrelimEditBlock*) calloc(
+                    1,
+                    sizeof(GapPrelimEditBlock)
+            );
+            copy->rev_prelim_tback = c;
+            memcpy(c, o, sizeof(GapPrelimEditBlock));
+            c->edit_ops = calloc(
+                    o->num_ops_allocated,
+                    sizeof(GapPrelimEditScript)
+            );
+            for (int i = 0; i < o->num_ops_allocated; ++i) {
+                c->edit_ops[i].op_type = o->edit_ops[i].op_type;
+                c->edit_ops[i].num = o->edit_ops[i].num;
+            }
+        }
+    }
+    {
+        SGreedyAlignMem* o = orig->greedy_align_mem;
+        if (o != NULL) {
+            SGreedyAlignMem* c = (SGreedyAlignMem*) calloc(
+                    1,
+                    sizeof(SGreedyAlignMem)
+            );
+            copy->greedy_align_mem = c;
+            memcpy(c, o, sizeof(SGreedyAlignMem));
+        }
+    }
+    {
+        BlastGapDP* o = orig->dp_mem;
+        if (o != NULL) {
+            BlastGapDP* c = (BlastGapDP*) calloc(
+                    orig->dp_mem_alloc,
+                    sizeof(BlastGapDP)
+            );
+            copy->dp_mem = c;
+            memcpy(c, o, orig->dp_mem_alloc * sizeof(BlastGapDP));
+        }
+    }
+    {
+        copy->sbp = sbp;
+    }
+
+    return copy;
+}
+
+/**
+ * Free a BlastScoreBlk copy created by s_BlastScoreBlk_Copy
+ *
+ * BlastScoreBlk* pointer "bsb_ptr" should be passed as (&bsb_ptr);
+ * this function will set bsb_ptr to NULL before returning.
+ *
+ * @param copy Pointer to (pointer to BlastScoreBlk to be freed)
+ */
+static
+void s_BlastScoreBlk_Free(BlastScoreBlk** copy)
+{
+    BlastScoreBlkFree(*copy);
+    *copy = NULL;
+}
+
+/**
+ * Create a "deep" copy of a BlastScoreBlk structure.
+ *
+ * Non-pointer structure members are copied.  Pointers to data which will
+ * only be read are copied.  For data which will be changing, memory for copies
+ * will be allocated and new pointers will be assigned to them.  The process
+ * repeats down the structure hierarchy until all pointers are dealt with.
+ *
+ * @param program            The program type
+ * @param orig               Pointer to BlastScoreBlk structure to be copied
+ * @param alphabet_code      Alphabet code
+ * @param number_of_contexts Number of contexts
+ *
+ * @return Pointer to copy of original BlastScoreBlk structure
+ */
+static
+BlastScoreBlk* s_BlastScoreBlk_Copy(
+        EBlastProgramType program,
+        BlastScoreBlk* orig,
+        Uint1 alphabet_code,
+        Int4 number_of_contexts
+)
+{
+    BlastScoreBlk* copy = BlastScoreBlkNew(
+            orig->alphabet_code,
+            orig->number_of_contexts
+    );
+    if (copy == NULL) {
+        return NULL;
+    }
+
+    copy->alphabet_start = orig->alphabet_start;
+    copy->name = strdup(orig->name);
+    copy->comments = orig->comments;
+    /* Deep-copy orig->matrix */
+    if (orig->matrix != NULL) {
+        if (copy->matrix == NULL) {
+            return BlastScoreBlkFree(copy);
+        }
+        SBlastScoreMatrix* m = copy->matrix;
+        if (m->data != NULL  &&  orig->matrix->data != NULL) {
+            for (int i = 0; i < orig->matrix->ncols; ++i) {
+                memcpy(
+                        m->data[i],
+                        orig->matrix->data[i],
+                        m->nrows * sizeof(int)
+                );
+            }
+        }
+        if (m->freqs != NULL  &&  orig->matrix->freqs != NULL) {
+            memcpy(
+                    m->freqs,
+                    orig->matrix->freqs,
+                    m->ncols * sizeof(double)
+            );
+        }
+        m->lambda = orig->matrix->lambda;
+    }
+    /* Deep-copy orig->psi_matrix */
+    if (orig->psi_matrix != NULL
+            &&  orig->psi_matrix->pssm != NULL) {
+        copy->psi_matrix = SPsiBlastScoreMatrixNew(orig->psi_matrix->pssm->ncols);
+        if (copy->psi_matrix == NULL) {
+            return BlastScoreBlkFree(copy);
+        }
+        SPsiBlastScoreMatrix* pm = copy->psi_matrix;
+        SBlastScoreMatrix* m = pm->pssm;
+        if (m->data != NULL  &&  orig->psi_matrix->pssm->data != NULL) {
+            for (int i = 0; i < orig->psi_matrix->pssm->ncols; ++i) {
+                memcpy(
+                        m->data[i],
+                        orig->psi_matrix->pssm->data[i],
+                        m->nrows * sizeof(int)
+                );
+            }
+        }
+        if (m->freqs != NULL
+                &&  orig->psi_matrix->pssm->freqs != NULL) {
+            memcpy(
+                    m->freqs,
+                    orig->psi_matrix->pssm->freqs,
+                    m->ncols * sizeof(double)
+            );
+        }
+        m->lambda = orig->psi_matrix->pssm->lambda;
+        if (pm->freq_ratios != NULL
+                &&  orig->psi_matrix->freq_ratios != NULL) {
+            for (int i = 0; i < orig->psi_matrix->pssm->ncols; ++i) {
+                memcpy(
+                        pm->freq_ratios[i],
+                        orig->psi_matrix->freq_ratios[i],
+                        orig->psi_matrix->pssm->nrows * sizeof(double)
+                );
+            }
+        }
+        if (orig->psi_matrix->kbp != NULL) {
+            memcpy(pm->kbp, orig->psi_matrix->kbp, sizeof(Blast_KarlinBlk));
+        }
+    }
+    copy->matrix_only_scoring = orig->matrix_only_scoring;
+    copy->complexity_adjusted_scoring = orig->complexity_adjusted_scoring;
+    copy->loscore = orig->loscore;
+    copy->hiscore = orig->hiscore;
+    copy->penalty = orig->penalty;
+    copy->reward = orig->reward;
+    copy->read_in_matrix = orig->read_in_matrix;
+    if (Blast_QueryIsPssm(program)) {
+        copy->kbp     = copy->kbp_psi;
+        copy->kbp_gap = copy->kbp_gap_psi;
+    } else {
+        copy->kbp     = copy->kbp_std;
+        copy->kbp_gap = copy->kbp_gap_std;
+    }
+    if (orig->gbp != NULL) {
+        memcpy(copy->gbp, orig->gbp, sizeof(Blast_GumbelBlk));
+    }
+    for (int ctx = 0; ctx < orig->number_of_contexts; ++ctx) {
+        if (orig->sfp != NULL  &&  orig->sfp[ctx] != NULL) {
+            copy->sfp[ctx] = Blast_ScoreFreqNew(
+                    orig->sfp[ctx]->score_min,
+                    orig->sfp[ctx]->score_max
+            );
+            if (copy->sfp[ctx] == NULL) {
+                return BlastScoreBlkFree(copy);
+            }
+            copy->sfp[ctx]->obs_min = orig->sfp[ctx]->obs_min;
+            copy->sfp[ctx]->obs_max = orig->sfp[ctx]->obs_max;
+            copy->sfp[ctx]->score_avg = orig->sfp[ctx]->score_avg;
+            int r = orig->sfp[ctx]->score_max - orig->sfp[ctx]->score_min + 1;
+            memcpy(
+                    copy->sfp[ctx]->sprob0,
+                    orig->sfp[ctx]->sprob0,
+                    r * sizeof(double)
+            );
+        }
+        if (orig->kbp_std != NULL  &&  orig->kbp_std[ctx] != NULL) {
+            copy->kbp_std[ctx] = Blast_KarlinBlkNew();
+            if (Blast_KarlinBlkCopy(copy->kbp_std[ctx], orig->kbp_std[ctx]) != 0) {
+                return BlastScoreBlkFree(copy);
+            }
+        }
+        if (orig->kbp_gap_std != NULL  &&  orig->kbp_gap_std[ctx] != NULL) {
+            copy->kbp_gap_std[ctx] = Blast_KarlinBlkNew();
+            if (Blast_KarlinBlkCopy(copy->kbp_gap_std[ctx], orig->kbp_gap_std[ctx]) != 0) {
+                return BlastScoreBlkFree(copy);
+            }
+        }
+        if (orig->kbp_psi != NULL  &&  orig->kbp_psi[ctx] != NULL) {
+            copy->kbp_psi[ctx] = Blast_KarlinBlkNew();
+            if (Blast_KarlinBlkCopy(copy->kbp_psi[ctx], orig->kbp_psi[ctx]) != 0) {
+                return BlastScoreBlkFree(copy);
+            }
+        }
+        if (orig->kbp_gap_psi != NULL  &&  orig->kbp_gap_psi[ctx] != NULL) {
+            copy->kbp_gap_psi[ctx] = Blast_KarlinBlkNew();
+            if (Blast_KarlinBlkCopy(copy->kbp_gap_psi[ctx], orig->kbp_gap_psi[ctx]) != 0) {
+                return BlastScoreBlkFree(copy);
+            }
+        }
+        if (Blast_QueryIsPssm(program)) {
+            copy->kbp[ctx]     = copy->kbp_psi[ctx];
+            copy->kbp_gap[ctx] = copy->kbp_gap_psi[ctx];
+        } else {
+            copy->kbp[ctx]     = copy->kbp_std[ctx];
+            copy->kbp_gap[ctx] = copy->kbp_gap_std[ctx];
+        }
+    }
+    if (orig->kbp_ideal != NULL) {
+        copy->kbp_ideal = Blast_KarlinBlkNew();
+        if (Blast_KarlinBlkCopy(copy->kbp_ideal, orig->kbp_ideal) != 0) {
+            return BlastScoreBlkFree(copy);
+        }
+    }
+    copy->ambiguous_res = (Uint1*) calloc(orig->ambig_size, sizeof(Uint1));
+    if (orig->ambiguous_res != NULL) {
+        memcpy(copy->ambiguous_res, orig->ambiguous_res, orig->ambig_size);
+    }
+    copy->ambig_size = orig->ambig_size;
+    copy->ambig_occupy = orig->ambig_occupy;
+    copy->round_down = orig->round_down;
+
+    return copy;
+}
+
+/**
  *  Recompute alignments for each match found by the gapped BLAST
- *  algorithm.
+ *  algorithm.  Single-thread adapter to Blast_RedoAlignmentCore_MT.
  */
 Int2
 Blast_RedoAlignmentCore(EBlastProgramType program_number,
@@ -2510,29 +2917,61 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                         const PSIBlastOptions* psiOptions,
                         BlastHSPResults* results)
 {
+    return Blast_RedoAlignmentCore_MT(
+            program_number,
+            1,                  /* number of threads */
+            queryBlk,
+            queryInfo,
+            sbp,
+            subjectBlk,
+            seqSrc,
+            default_db_genetic_code,
+            thisMatch,
+            hsp_stream,
+            scoringParams,
+            extendParams,
+            hitParams,
+            psiOptions,
+            results
+    );
+}
+
+/**
+ *  Recompute alignments for each match found by the gapped BLAST
+ *  algorithm.
+ */
+Int2
+Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
+                           Uint4 num_threads,
+                           BLAST_SequenceBlk * queryBlk,
+                           const BlastQueryInfo* queryInfo,
+                           BlastScoreBlk* sbp,
+                           BLAST_SequenceBlk * subjectBlk,
+                           const BlastSeqSrc* seqSrc,
+                           Int4 default_db_genetic_code,
+                           BlastHSPList * thisMatch,
+                           BlastHSPStream* hsp_stream,
+                           BlastScoringParameters* scoringParams,
+                           const BlastExtensionParameters* extendParams,
+                           const BlastHitSavingParameters* hitParams,
+                           const PSIBlastOptions* psiOptions,
+                           BlastHSPResults* results)
+{
     int status_code = 0;                    /* return value code */
     /* the factor by which to scale the scoring system in order to
      * obtain greater precision */
     double localScalingFactor;
-    /* the values of the search parameters that will be recorded, altered
-     * in the search structure in this routine, and then restored before
-     * the routine exits. */
-    BlastKappa_SavedParameters *savedParams = NULL;
     /* forbidden ranges for each database position (used in
      * Smith-Waterman alignments) */
     Blast_ForbiddenRanges forbidden = {0,};
     /* a collection of alignments for each query sequence with
      * sequences from the database */
-    BlastCompo_Heap * redoneMatches = NULL;
+    BlastCompo_Heap* redoneMatches = NULL;
     /* stores all fields needed for computing a compositionally
      * adjusted score matrix using Newton's method */
-    Blast_CompositionWorkspace *NRrecord = NULL;
+    Blast_CompositionWorkspace** NRrecord_tld = NULL;
     /* loop index */
     int query_index;
-    /* context number */
-    int context_index;
-    /* frame number */
-    int frame_index;
     /* number of queries in the concatenated query */
     int numQueries = queryInfo->num_queries;
     /* number of contexts in the concatenated query */
@@ -2541,28 +2980,23 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     int numFrames = (program_number == eBlastTypeBlastx) ? 6:1;
     /* keeps track of gapped alignment params */
     BlastGapAlignStruct* gapAlign = NULL;
-    /* All alignments above this value will be reported, no matter how
-     * many. */
+    /* the values of the search parameters that will be recorded, altered
+     * in the search structure in this routine, and then restored before
+     * the routine exits. */
+    BlastKappa_SavedParameters *savedParams = NULL;
+    /* All alignments above this value will be reported, no matter how many. */
     double inclusion_ethresh;
-    /* array of lists of alignments for each query to this subject */
-    BlastCompo_Alignment ** alignments = NULL;
 
-    BlastCompo_QueryInfo * query_info = NULL;
-    Blast_RedoAlignParams * redo_align_params = NULL;
+    BlastHSPResults* local_results = NULL;
+
+    BlastCompo_QueryInfo* query_info = NULL;
+    Blast_RedoAlignParams** redo_align_params_tld = NULL;
     Boolean positionBased = (Boolean) (sbp->psi_matrix != NULL);
     ECompoAdjustModes compo_adjust_mode =
         (ECompoAdjustModes) extendParams->options->compositionBasedStats;
     Boolean smithWaterman =
         (Boolean) (extendParams->options->eTbackExt == eSmithWatermanTbck);
-    /* existing alignments for a match */
-    BlastCompo_Alignment ** incoming_align_set = NULL;
-    BlastCompo_Alignment * incoming_aligns = NULL;
-    Int4      **matrix;                   /* score matrix */
-    BlastKappa_GappingParamsContext gapping_params_context;
 
-    double pvalueForThisPair = (-1); /* p-value for this match
-                                        for composition; -1 == no adjustment*/
-    double LambdaRatio; /*lambda ratio*/
     /* which test function do we use to see if a composition-adjusted
        p-value is desired; value needs to be passed in eventually*/
     int compositionTestIndex = extendParams->options->unifiedP;
@@ -2574,15 +3008,6 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
            program_number == eBlastTypePsiBlast ||
            program_number == eBlastTypeRpsBlast);
 
-    if (positionBased) {
-        matrix = sbp->psi_matrix->pssm->data;
-    } else {
-        matrix = sbp->matrix->data;
-    }
-    /**** Validate parameters *************/
-    if (matrix == NULL) {
-        return -1;
-    }
     if (0 == strcmp(scoringParams->options->matrix, "BLOSUM62_20") &&
         compo_adjust_mode == eNoCompositionBasedStats) {
         return -1;                   /* BLOSUM62_20 only makes sense if
@@ -2605,7 +3030,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     }
     /*****************/
     inclusion_ethresh = (psiOptions /* this can be NULL for CBl2Seq */
-                         ? psiOptions->inclusion_ethresh 
+                         ? psiOptions->inclusion_ethresh
                          : PSI_INCLUSION_ETHRESH);
     ASSERT(inclusion_ethresh != 0.0);
 
@@ -2624,6 +3049,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     if (status_code != 0) {
         goto function_cleanup;
     }
+
     if (compo_adjust_mode != eNoCompositionBasedStats) {
         if((0 == strcmp(scoringParams->options->matrix, "BLOSUM62_20"))) {
             localScalingFactor = SCALING_FACTOR / 10;
@@ -2636,26 +3062,13 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     s_RescaleSearch(sbp, scoringParams, numContexts, localScalingFactor);
     status_code =
         BLAST_GapAlignStructNew(scoringParams, extendParams,
-                                (seqSrc) ?  BlastSeqSrcGetMaxSeqLen(seqSrc) 
+                                (seqSrc) ?  BlastSeqSrcGetMaxSeqLen(seqSrc)
                                          :  subjectBlk->length,
                                 sbp, &gapAlign);
     if (status_code != 0) {
         return (Int2) status_code;
     }
-    gapping_params_context.gap_align = gapAlign;
-    gapping_params_context.scoringParams = scoringParams;
-    gapping_params_context.sbp = sbp;
-    gapping_params_context.localScalingFactor = localScalingFactor;
-    gapping_params_context.prog_number = program_number;
-    redo_align_params =
-        s_GetAlignParams(&gapping_params_context, queryBlk, queryInfo, 
-                         hitParams, extendParams);
-    if (redo_align_params == NULL) {
-        status_code = -1;
-        goto function_cleanup;
-    }
-
-    query_info = s_GetQueryInfo(queryBlk->sequence, queryInfo, 
+    query_info = s_GetQueryInfo(queryBlk->sequence, queryInfo,
                                 (program_number == eBlastTypeBlastx));
     if (query_info == NULL) {
         status_code = -1;
@@ -2683,219 +3096,664 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
             goto function_cleanup;
         }
     }
-    if( (int) compo_adjust_mode > 1 && !positionBased ) {
-        NRrecord = Blast_CompositionWorkspaceNew();
-        status_code =
-            Blast_CompositionWorkspaceInit(NRrecord,
-                                           scoringParams->options->matrix);
+
+    int actual_num_threads = 1;
+#ifdef _OPENMP
+    actual_num_threads = num_threads;
+#endif
+
+    BlastCompo_Heap** redoneMatches_tld =
+            (BlastCompo_Heap**) calloc(
+                    actual_num_threads,
+                    sizeof(BlastCompo_Heap*)
+            );
+    BlastCompo_Alignment*** alignments_tld =
+            (BlastCompo_Alignment***) calloc(
+                    actual_num_threads,
+                    sizeof(BlastCompo_Alignment**)
+            );
+    BlastCompo_Alignment*** incoming_align_set_tld =
+            (BlastCompo_Alignment***) calloc(
+                    actual_num_threads,
+                    sizeof(BlastCompo_Alignment**)
+            );
+    BlastKappa_SavedParameters** savedParams_tld =
+            (BlastKappa_SavedParameters**) calloc(
+                    actual_num_threads,
+                    sizeof(BlastKappa_SavedParameters*)
+            );
+    BlastScoreBlk** sbp_tld =
+            (BlastScoreBlk**) calloc(
+                    actual_num_threads,
+                    sizeof(BlastScoreBlk*)
+            );
+    BlastKappa_GappingParamsContext* gapping_params_context_tld =
+            (BlastKappa_GappingParamsContext*) calloc(
+                    actual_num_threads,
+                    sizeof(BlastKappa_GappingParamsContext)
+            );
+    Int4*** matrix_tld =
+            (Int4***) calloc(
+                    actual_num_threads,
+                    sizeof(Int4**)
+            );
+
+    NRrecord_tld =
+            (Blast_CompositionWorkspace**) calloc(
+                    actual_num_threads,
+                    sizeof(Blast_CompositionWorkspace*)
+            );
+
+    redo_align_params_tld =
+            (Blast_RedoAlignParams**) calloc(
+                    actual_num_threads,
+                    sizeof(Blast_RedoAlignParams*)
+            );
+    int* status_code_tld =
+            (int*) calloc(
+                    actual_num_threads,
+                    sizeof(int)
+            );
+    BlastSeqSrc** seqsrc_tld =
+            (BlastSeqSrc**) calloc(
+                    actual_num_threads,
+                    sizeof(BlastSeqSrc*)
+            );
+    BlastGapAlignStruct** gap_align_tld =
+            (BlastGapAlignStruct**) calloc(
+                    actual_num_threads,
+                    sizeof(BlastGapAlignStruct*)
+            );
+    BlastScoringParameters** score_params_tld =
+            (BlastScoringParameters**) calloc(
+                    actual_num_threads,
+                    sizeof(BlastScoringParameters*)
+            );
+    BlastHitSavingParameters** hit_params_tld =
+            (BlastHitSavingParameters**) calloc(
+                    actual_num_threads,
+                    sizeof(BlastHitSavingParameters*)
+            );
+    BlastHSPResults** results_tld =
+            (BlastHSPResults**) calloc(
+                    actual_num_threads,
+                    sizeof(BlastHSPResults*)
+            );
+
+    for (int i = 0; i < actual_num_threads; ++i) {
+        sbp_tld[i] = s_BlastScoreBlk_Copy(
+                program_number,
+                sbp,
+                sbp->alphabet_code,
+                sbp->number_of_contexts
+        );
+
+        seqsrc_tld[i]         = (BlastSeqSrc*) seqSrc;
+        gap_align_tld[i]      =
+                s_BlastGapAlignStruct_Copy(gapAlign, sbp_tld[i]);
+        score_params_tld[i]   = scoringParams;
+        hit_params_tld[i]     = (BlastHitSavingParameters*) hitParams;
+        results_tld[i]        = Blast_HSPResultsNew(queryInfo->num_queries);
+
+        redoneMatches_tld[i] =
+                (BlastCompo_Heap*) calloc(numQueries, sizeof(BlastCompo_Heap));
+        if (redoneMatches_tld[i] == NULL) {
+            status_code = -1;
+            goto function_cleanup;
+        }
+        for (query_index = 0; query_index < numQueries; query_index++) {
+            status_code =
+                BlastCompo_HeapInitialize(&redoneMatches_tld[i][query_index],
+                                          hitParams->options->hitlist_size,
+                                          inclusion_ethresh);
+            if (status_code != 0) {
+                goto function_cleanup;
+            }
+        }
+
+        alignments_tld[i] = (BlastCompo_Alignment**) calloc(
+                numContexts,
+                sizeof(BlastCompo_Alignment*)
+        );
+        incoming_align_set_tld[i] = (BlastCompo_Alignment**) calloc(
+                numFrames,
+                sizeof(BlastCompo_Alignment*)
+        );
+
+        savedParams_tld[i] = s_SavedParametersNew(
+                queryInfo->max_length,
+                numContexts,
+                compo_adjust_mode,
+                positionBased
+        );
+        if (savedParams_tld[i] == NULL) {
+            status_code = -1;
+            goto function_cleanup;
+        }
+        status_code = s_RecordInitialSearch(
+                savedParams_tld[i],
+                sbp,
+                scoringParams,
+                queryInfo->max_length,
+                compo_adjust_mode,
+                positionBased
+        );
         if (status_code != 0) {
             goto function_cleanup;
         }
-    }
-    alignments = calloc(numContexts, sizeof(BlastCompo_Alignment *));
-    incoming_align_set = calloc(numFrames, sizeof(BlastCompo_Alignment *));
-    if (alignments == NULL || incoming_align_set == NULL) {
-        status_code = -1;
-        goto function_cleanup;
-    }
-   
-    while (1) {
-        int numAligns[6];
-        Blast_KarlinBlk * kbp = NULL;
-        BlastCompo_MatchingSequence matchingSeq = {0,};
-        BlastHSPList * hsp_list = NULL; 
-        double best_evalue;   
-        Int4 best_score;
-        void * discarded_aligns = NULL;
-     
-        if (seqSrc
-           && BlastHSPStreamRead(hsp_stream, &thisMatch) == kBlastHSPStream_Eof) 
-           break;
 
-        if (thisMatch->hsp_array == NULL) {
-            if (seqSrc) continue;
-            break;
+        if ((int) compo_adjust_mode > 1 && !positionBased) {
+            NRrecord_tld[i] = Blast_CompositionWorkspaceNew();
+            status_code = Blast_CompositionWorkspaceInit(
+                    NRrecord_tld[i],
+                    scoringParams->options->matrix
+            );
+            if (status_code != 0) {
+                goto function_cleanup;
+            }
         }
 
-        if (BlastCompo_EarlyTermination(thisMatch->best_evalue,
-                                        redoneMatches, numQueries)) {
-            Blast_HSPListFree(thisMatch);
-            if (seqSrc) continue;
-            break;
+        gapping_params_context_tld[i].gap_align = gap_align_tld[i];
+        gapping_params_context_tld[i].scoringParams = score_params_tld[i];
+        gapping_params_context_tld[i].sbp = sbp_tld[i];
+        gapping_params_context_tld[i].localScalingFactor = localScalingFactor;
+        gapping_params_context_tld[i].prog_number = program_number;
+
+        redo_align_params_tld[i] =
+            s_GetAlignParams(
+                    &gapping_params_context_tld[i],
+                    queryBlk,
+                    queryInfo,
+                    hitParams,
+                    extendParams
+            );
+        if (redo_align_params_tld[i] == NULL) {
+            status_code = -1;
+            goto function_cleanup;
         }
 
-        query_index = thisMatch->query_index;
-        context_index = query_index * numFrames;
-        /* Get the sequence for this match */
-        if (seqSrc && BlastSeqSrcGetSupportsPartialFetching(seqSrc)) {
-            BLAST_SetupPartialFetching(program_number, (BlastSeqSrc*)seqSrc, 
-                                       (const BlastHSPList**)&thisMatch, 1);
-        }
-
-        if (subjectBlk) {
-            matchingSeq.length = subjectBlk->length;
-            matchingSeq.index = -1;
-            matchingSeq.local_data = subjectBlk;
+        if (positionBased) {
+            matrix_tld[i] = sbp_tld[i]->psi_matrix->pssm->data;
         } else {
-            status_code =
-                s_MatchingSequenceInitialize(&matchingSeq, program_number,
-                                         seqSrc, default_db_genetic_code,
-                                         thisMatch->oid);
-            if (status_code != 0) {
-                /* some sequences may have been excluded by membit filtering 
-                   so this is not really an exception */
-                status_code = 0;
-                goto match_loop_cleanup;
-            }
+            matrix_tld[i] = sbp_tld[i]->matrix->data;
         }
-        status_code =
-            s_ResultHspToDistinctAlign(incoming_align_set, numAligns,
-                                       thisMatch->hsp_array, 
-                                       thisMatch->hspcnt, context_index,
-                                       queryInfo, localScalingFactor);
-        if (status_code != 0) {
-            goto match_loop_cleanup;
+        /**** Validate parameters *************/
+        if (matrix_tld[i] == NULL) {
+            goto function_cleanup;
         }
+    }
 
-        hsp_list = Blast_HSPListNew(0);
-        for (frame_index=0; frame_index<numFrames; frame_index++, context_index++) {
-            incoming_aligns = incoming_align_set[frame_index];
-            if (!incoming_aligns) continue;
-            /* All alignments in thisMatch should be to the same query */
-            kbp = sbp->kbp_gap[context_index];
-            if (smithWaterman) {
-                status_code =
-                    Blast_RedoOneMatchSmithWaterman(alignments,
-                                                redo_align_params,
-                                                incoming_aligns,
-                                                numAligns[frame_index],
-                                                kbp->Lambda, kbp->logK,
-                                                &matchingSeq, query_info,
-                                                numQueries,
-                                                matrix, BLASTAA_SIZE,
-                                                NRrecord, &forbidden,
-                                                redoneMatches,
-                                                &pvalueForThisPair,
-                                                compositionTestIndex,
-                                                &LambdaRatio);
+    /*
+     * There are two use cases here.
+     * (1) hsp_stream == NULL, so single match is passed in thisMatch.
+     *     Also, seqSrc == NULL and subjectBlk are != NULL.
+     * (2) hsp_stream != NULL, so one or more matches are taken from
+     *     hsp_stream, and thisMatch is (probably) NULL.
+     *     Also, seqSrc != NULL, subjectBlk and thisMatch are == NULL.
+     */
+    struct BlastHSPListLinkedList {
+        BlastHSPList* match;
+        struct BlastHSPListLinkedList* next;
+    };
+    typedef struct BlastHSPListLinkedList BlastHSPListLinkedList;
+
+    BlastHSPList** theseMatches = NULL;
+    int numMatches = 0;
+    if (hsp_stream == NULL) {
+        theseMatches = (BlastHSPList**) calloc(1, sizeof(BlastHSPList*));
+        *theseMatches = thisMatch;
+        numMatches = 1;
+    } else {
+        BlastHSPList* localMatch = NULL;
+        BlastHSPListLinkedList* head = NULL;
+        BlastHSPListLinkedList* tail = NULL;
+        /*
+         * Collect matches from stream into linked list, counting them
+         * along the way.
+         */
+        while (BlastHSPStreamRead(hsp_stream, &localMatch)
+                != kBlastHSPStream_Eof) {
+            BlastHSPListLinkedList* entry =
+                    (BlastHSPListLinkedList*) calloc(
+                            1,
+                            sizeof(BlastHSPListLinkedList)
+                    );
+            entry->match = localMatch;
+            if (head == NULL) {
+                head = entry;
             } else {
-                status_code =
-                    Blast_RedoOneMatch(alignments, redo_align_params,
-                                   incoming_aligns, numAligns[frame_index],
-                                   kbp->Lambda, &matchingSeq,
-                                   -1, query_info,
-                                   numContexts, matrix, BLASTAA_SIZE,
-                                   NRrecord, &pvalueForThisPair,
-                                   compositionTestIndex,
-                                   &LambdaRatio);
+                tail->next = entry;
             }
+            tail = entry;
+            ++numMatches;
+        }
+        /*
+         * Convert linked list of matches into array.
+         */
+        theseMatches =
+                (BlastHSPList**) calloc(numMatches, sizeof(BlastHSPList*));
+        for (int i = 0; i < numMatches; ++i) {
+            theseMatches[i] = head->match;
+            BlastHSPListLinkedList* here = head;
+            head = head->next;
+            sfree(here);
+        }
+    }
 
-            if (status_code != 0) {
-                goto match_loop_cleanup;
-            }
+    Boolean interrupt = FALSE;
+    int b;
+#pragma omp parallel for default(none) num_threads(actual_num_threads) \
+        schedule(static) \
+        if(actual_num_threads>1) \
+        shared(interrupt, seqsrc_tld, score_params_tld, hit_params_tld, \
+        gap_align_tld, results_tld, \
+        redoneMatches_tld, \
+        numQueries, numMatches, theseMatches, \
+        numFrames, program_number, subjectBlk, positionBased, \
+        default_db_genetic_code, localScalingFactor, queryInfo, \
+        sbp, smithWaterman, compositionTestIndex, forbidden, \
+        NRrecord_tld, actual_num_threads, sbp_tld, \
+        matrix_tld, query_info, numContexts, \
+        genetic_code_string, queryBlk, compo_adjust_mode, \
+        alignments_tld, incoming_align_set_tld, savedParams_tld, \
+        scoringParams, redo_align_params_tld, \
+        status_code_tld)
+    for (b = 0; b < numMatches; ++b) {
+#pragma omp flush(interrupt)
+        if (!interrupt) {
+            BlastCompo_Alignment** alignments = NULL;
+            BlastCompo_Alignment** incoming_align_set = NULL;
+            Blast_CompositionWorkspace* NRrecord = NULL;
 
-            if (alignments[context_index] != NULL) {
-                Int2 qframe = frame_index;
-                if (program_number == eBlastTypeBlastx) {
-                    if (qframe < 3) qframe++;
-                    else qframe = 2-qframe;
+            int numAligns[6];
+            Blast_KarlinBlk* kbp = NULL;
+            BlastCompo_MatchingSequence matchingSeq = {0,};
+            BlastHSPList* hsp_list = NULL;
+            BlastCompo_Alignment* incoming_aligns = NULL;
+            Blast_RedoAlignParams* redo_align_params;
+            double best_evalue;
+            Int4 best_score;
+            int query_index;
+            int context_index;
+            int frame_index;
+            void* discarded_aligns = NULL;
+            int tid = 0;
+            BlastSeqSrc* seqSrc;
+            BlastScoringParameters* scoringParams;
+            BlastHitSavingParameters* hitParams;
+            BlastCompo_Heap* redoneMatches;
+            BlastScoreBlk* sbp;
+            /* existing alignments for a match */
+            Int4** matrix;                   /* score matrix */
+            int* pStatusCode;
+
+            double pvalueForThisPair = (-1); /* p-value for this match
+                                                for composition; -1 == no adjustment*/
+            double LambdaRatio; /*lambda ratio*/
+
+#ifdef _OPENMP
+            tid = omp_get_thread_num();
+#endif
+            seqSrc             = seqsrc_tld[tid];
+            scoringParams      = score_params_tld[tid];
+            hitParams          = hit_params_tld[tid];
+            redoneMatches      = redoneMatches_tld[tid];
+            alignments         = alignments_tld[tid];
+            incoming_align_set = incoming_align_set_tld[tid];
+            NRrecord           = NRrecord_tld[tid];
+            sbp                = sbp_tld[tid];
+            redo_align_params  = redo_align_params_tld[tid];
+            matrix             = matrix_tld[tid];
+            pStatusCode        = &status_code_tld[tid];
+
+            BlastHSPList* localMatch = theseMatches[b];
+
+            if (localMatch->hsp_array == NULL) {
+                if (seqSrc) {
+                    continue;
                 }
-                status_code =             
-                    s_HSPListFromDistinctAlignments(hsp_list,
-                                          &alignments[context_index],
-                                          matchingSeq.index,
-                                          queryInfo, qframe);
-                if (status_code) {
+#pragma omp critical(intrpt)
+                interrupt = TRUE;
+#pragma omp flush(interrupt)
+                continue;
+            }
+
+            if (BlastCompo_EarlyTermination(
+                    localMatch->best_evalue,
+                    redoneMatches,
+                    numQueries
+            )) {
+                Blast_HSPListFree(localMatch);
+                if (seqSrc) {
+                    continue;
+                }
+#pragma omp critical(intrpt)
+                interrupt = TRUE;
+#pragma omp flush(interrupt)
+                continue;
+            }
+
+            query_index = localMatch->query_index;
+            context_index = query_index * numFrames;
+            /* Get the sequence for this match */
+            if (seqSrc && BlastSeqSrcGetSupportsPartialFetching(seqSrc)) {
+                BLAST_SetupPartialFetching(
+                        program_number,
+                        (BlastSeqSrc*) seqSrc,
+                        (const BlastHSPList**)&localMatch,
+                        1
+                );
+            }
+
+            if (subjectBlk) {
+                matchingSeq.length = subjectBlk->length;
+                matchingSeq.index = -1;
+                matchingSeq.local_data = subjectBlk;
+            } else {
+                *pStatusCode = s_MatchingSequenceInitialize(
+                        &matchingSeq,
+                        program_number,
+                        seqSrc,
+                        default_db_genetic_code,
+                        localMatch->oid
+                );
+                if (*pStatusCode != 0) {
+                    /*
+                     * some sequences may have been excluded by membit filtering
+                     * so this is not really an exception
+                     */
+                    *pStatusCode = 0;
                     goto match_loop_cleanup;
                 }
             }
-            BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
-            incoming_align_set[frame_index] = NULL;
-        }
-
-        if (hsp_list->hspcnt > 1) {
-            s_HitlistReapContained(hsp_list->hsp_array,
-                                   &hsp_list->hspcnt);
-        }
-        status_code =
-            s_HitlistEvaluateAndPurge(&best_score, &best_evalue,
-                                              hsp_list,
-                                              seqSrc,
-                                              matchingSeq.length,
-                                              program_number,
-                                              queryInfo, context_index,
-                                              sbp, hitParams,
-                                              pvalueForThisPair, LambdaRatio,
-                                              matchingSeq.index);
-        if (status_code != 0) {
-            goto query_loop_cleanup;
-        }
-        if (best_evalue <= hitParams->options->expect_value) {
-            /* The best alignment is significant */
-            s_HSPListNormalizeScores(hsp_list, kbp->Lambda, kbp->logK,
-                                             localScalingFactor);
-            s_ComputeNumIdentities(queryBlk, queryInfo, subjectBlk, seqSrc,
-                                           hsp_list, scoringParams->options,
-                                           genetic_code_string, sbp);
-            if (!seqSrc) goto query_loop_cleanup;
-            if ( BlastCompo_HeapWouldInsert(&redoneMatches[query_index],
-                                               best_evalue, best_score,
-                                               thisMatch->oid)) {
-                status_code = BlastCompo_HeapInsert(&redoneMatches[query_index],
-                                              hsp_list, best_evalue,
-                                              best_score, thisMatch->oid,
-                                              &discarded_aligns);
-                if (status_code == 0) hsp_list = NULL;
-            } else {
-                hsp_list = Blast_HSPListFree(hsp_list);
+            *pStatusCode = s_ResultHspToDistinctAlign(
+                    incoming_align_set,     /* o */
+                    numAligns,              /* o */
+                    localMatch->hsp_array,  /* i */
+                    localMatch->hspcnt,     /* i */
+                    context_index,          /* i */
+                    queryInfo,              /* i */
+                    localScalingFactor      /* i */
+            );
+            if (*pStatusCode != 0) {
+                goto match_loop_cleanup;
             }
 
-            if (status_code) goto query_loop_cleanup;
-            if (discarded_aligns != NULL) {
-                Blast_HSPListFree(discarded_aligns);
+            hsp_list = Blast_HSPListNew(0);
+            for (frame_index = 0;
+                    frame_index < numFrames;
+                    frame_index++, context_index++) {
+                incoming_aligns = incoming_align_set[frame_index];
+                if (!incoming_aligns) {
+                    continue;
+                }
+                /*
+                 * All alignments in thisMatch should be to the same query
+                 */
+                kbp = sbp->kbp_gap[context_index];
+                if (smithWaterman) {
+                    *pStatusCode =
+                            Blast_RedoOneMatchSmithWaterman(
+                                    alignments,
+                                    redo_align_params,
+                                    incoming_aligns,
+                                    numAligns[frame_index],
+                                    kbp->Lambda,
+                                    kbp->logK,
+                                    &matchingSeq,
+                                    query_info,
+                                    numQueries,
+                                    matrix,
+                                    BLASTAA_SIZE,
+                                    NRrecord,
+                                    &forbidden,
+                                    redoneMatches,
+                                    &pvalueForThisPair,
+                                    compositionTestIndex,
+                                    &LambdaRatio
+                            );
+                } else {
+                    *pStatusCode =
+                            Blast_RedoOneMatch(
+                                    alignments,             // thread-local
+                                    redo_align_params,      // thread-local
+                                    incoming_aligns,        // thread-local
+                                    numAligns[frame_index], // local
+                                    kbp->Lambda,            // thread-local
+                                    &matchingSeq,           // local
+                                    -1,                     // const
+                                    query_info,             // shared
+                                    numContexts,            // shared
+                                    matrix,                 // thread-local
+                                    BLASTAA_SIZE,           // const
+                                    NRrecord,               // thread-local
+                                    &pvalueForThisPair,     // local
+                                    compositionTestIndex,   // shared
+                                    &LambdaRatio            // local
+                            );
+                }
+
+                if (*pStatusCode != 0) {
+                    goto match_loop_cleanup;
+                }
+
+                if (alignments[context_index] != NULL) {
+                    Int2 qframe = frame_index;
+                    if (program_number == eBlastTypeBlastx) {
+                        if (qframe < 3) {
+                            qframe++;
+                        } else {
+                            qframe = 2 - qframe;
+                        }
+                    }
+                    *pStatusCode =
+                            s_HSPListFromDistinctAlignments(hsp_list,
+                                    &alignments[context_index],
+                                    matchingSeq.index,
+                                    queryInfo, qframe);
+                    if (*pStatusCode) {
+                        goto match_loop_cleanup;
+                    }
+                }
+                BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
+                incoming_align_set[frame_index] = NULL;
             }
-        }
+
+            if (hsp_list->hspcnt > 1) {
+                s_HitlistReapContained(hsp_list->hsp_array,
+                        &hsp_list->hspcnt);
+            }
+            *pStatusCode =
+                    s_HitlistEvaluateAndPurge(&best_score, &best_evalue,
+                            hsp_list,
+                            seqSrc,
+                            matchingSeq.length,
+                            program_number,
+                            queryInfo, context_index,
+                            sbp, hitParams,
+                            pvalueForThisPair, LambdaRatio,
+                            matchingSeq.index);
+            if (*pStatusCode != 0) {
+                goto query_loop_cleanup;
+            }
+            if (best_evalue <= hitParams->options->expect_value) {
+                /* The best alignment is significant */
+                s_HSPListNormalizeScores(hsp_list, kbp->Lambda, kbp->logK,
+                        localScalingFactor);
+                s_ComputeNumIdentities(
+                        queryBlk,
+                        queryInfo,
+                        subjectBlk,
+                        seqSrc,
+                        hsp_list,
+                        scoringParams->options,
+                        genetic_code_string,
+                        sbp
+                );
+                if (!seqSrc) {
+                    goto query_loop_cleanup;
+                }
+                if (BlastCompo_HeapWouldInsert(
+                        &redoneMatches[query_index],
+                        best_evalue,
+                        best_score,
+                        localMatch->oid
+                )) {
+                    *pStatusCode =
+                            BlastCompo_HeapInsert(
+                                    &redoneMatches[query_index],
+                                    hsp_list,
+                                    best_evalue,
+                                    best_score,
+                                    localMatch->oid,
+                                    &discarded_aligns
+                            );
+                    if (*pStatusCode == 0) {
+                        hsp_list = NULL;
+                    }
+                } else {
+                    hsp_list = Blast_HSPListFree(hsp_list);
+                }
+
+                if (*pStatusCode) {
+                    goto query_loop_cleanup;
+                }
+                if (discarded_aligns != NULL) {
+                    Blast_HSPListFree(discarded_aligns);
+                }
+            }
 query_loop_cleanup:
 match_loop_cleanup:
-        if (seqSrc) {
-            thisMatch = Blast_HSPListFree(thisMatch);
-        } else {
-            Blast_HSPListSwap(thisMatch, hsp_list);
-            thisMatch->oid = hsp_list->oid;
-        }
-        hsp_list = Blast_HSPListFree(hsp_list);
+            if (seqSrc) {
+                localMatch = Blast_HSPListFree(localMatch);
+            } else {
+                Blast_HSPListSwap(localMatch, hsp_list);
+                localMatch->oid = hsp_list->oid;
+            }
+            hsp_list = Blast_HSPListFree(hsp_list);
 
-        if (status_code != 0) {
-            for (query_index = 0;  query_index < numContexts;  query_index++) {
-                BlastCompo_AlignmentsFree(&alignments[query_index],
-                                          s_FreeEditScript);
+            if (*pStatusCode != 0) {
+                for (context_index = 0;
+                        context_index < numContexts;
+                        context_index++) {
+                    BlastCompo_AlignmentsFree(
+                            &alignments[context_index],
+                            s_FreeEditScript
+                    );
+                }
+            }
+            s_MatchingSequenceRelease(&matchingSeq);
+            BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
+            if (*pStatusCode != 0 || !seqSrc) {
+#pragma omp critical(intrpt)
+                interrupt = TRUE;
+#pragma omp flush(interrupt)
+                continue;
+            }
+
+        } /* end of if(!interrupt) */
+    }
+    /*
+     * end of omp parallel section
+     */
+
+function_cleanup:
+
+    for (int i = 0; i < actual_num_threads; ++i) {
+        if (status_code_tld[i] != 0) {
+            status_code = status_code_tld[i];
+        }
+    }
+    for (int i = 0; i < actual_num_threads; ++i) {
+        if (seqSrc  &&  status_code == 0) {
+            s_FillResultsFromCompoHeaps(
+                    results_tld[i],
+                    redoneMatches_tld[i],
+                    hitParams->options->hitlist_size
+            );
+            if (redoneMatches_tld[i] != NULL) {
+                for (int qi = 0; qi < numQueries; ++qi) {
+                    sfree(redoneMatches_tld[i][qi].array);
+                    sfree(redoneMatches_tld[i][qi].heapArray);
+                }
+                s_ClearHeap(redoneMatches_tld[i]);
+            }
+        } else {
+            if (redoneMatches_tld[i] != NULL) {
+                for (int qi = 0; qi < numQueries; ++qi) {
+                    sfree(redoneMatches_tld[i][qi].array);
+                    sfree(redoneMatches_tld[i][qi].heapArray);
+                }
+                s_ClearHeap(redoneMatches_tld[i]);
             }
         }
-        s_MatchingSequenceRelease(&matchingSeq);
-        BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
-        if (status_code != 0 || !seqSrc) {
-            goto function_cleanup;
-        }
+        sfree(redoneMatches_tld[i]);
     }
-    /* end for all matching sequences */
-function_cleanup:
-    sfree(alignments);
-    sfree(incoming_align_set);
-    if (seqSrc && status_code == 0) {
-        s_FillResultsFromCompoHeaps(results, redoneMatches,
-                                    hitParams->options->hitlist_size);
-    } else {
-        if (redoneMatches != NULL) {
-            s_ClearHeap(&redoneMatches[0]);
+    if (redoneMatches != NULL) {
+        for (int qi = 0; qi < numQueries; ++qi) {
+            sfree(redoneMatches[qi].array);
+            sfree(redoneMatches[qi].heapArray);
         }
+        s_ClearHeap(redoneMatches);
     }
+
+    if (hsp_stream != NULL) {
+        /* Reduce results from all threads and continue with business as usual */
+        SThreadLocalDataArray* thread_data =
+                SThreadLocalDataArrayNew(actual_num_threads);
+        for (int i = 0; i < actual_num_threads; ++i) {
+            SThreadLocalData* tdi = thread_data->tld[i];
+            BlastHSPResults* rdi = results_tld[i];
+            tdi->hit_params = hit_params_tld[i];
+            hit_params_tld[i] = NULL;
+            tdi->results =
+                    (BlastHSPResults*) calloc(1, sizeof(BlastHSPResults));
+            tdi->results->num_queries = rdi->num_queries;
+            tdi->results->hitlist_array =
+                    (BlastHitList**) calloc(
+                            tdi->results->num_queries,
+                            sizeof(BlastHitList*)
+                    );
+            for (int j = 0; j < tdi->results->num_queries; ++j) {
+                tdi->results->hitlist_array[j] = rdi->hitlist_array[j];
+                rdi->hitlist_array[j] = NULL;
+            }
+        }
+        local_results = SThreadLocalDataArrayConsolidateResults(thread_data);
+        ASSERT(local_results);
+
+        /* post-traceback pipes */
+        BlastHSPStreamTBackClose(hsp_stream, local_results);
+
+        for (int i = 0; i < local_results->num_queries; ++i) {
+            results->hitlist_array[i] = local_results->hitlist_array[i];
+            local_results->hitlist_array[i] = NULL;
+        }
+        for (int i = 0; i < actual_num_threads; ++i) {
+            thread_data->tld[i]->hit_params = NULL;
+            for (int j = 0; j < local_results->num_queries; ++j) {
+                thread_data->tld[i]->results->hitlist_array[j] =
+                        Blast_HitListFree(
+                                thread_data->tld[i]->results->hitlist_array[j]
+                        );
+            }
+            sfree(thread_data->tld[i]->results->hitlist_array);
+            sfree(thread_data->tld[i]->results);
+            thread_data->tld[i] = SThreadLocalDataFree(thread_data->tld[i]);
+            results_tld[i] = Blast_HSPResultsFree(results_tld[i]);
+        }
+        sfree(thread_data->tld);
+        sfree(thread_data);
+        Blast_HSPResultsFree(local_results);
+    }
+
     s_FreeBlastCompo_QueryInfoArray(&query_info, numContexts);
-    Blast_RedoAlignParamsFree(&redo_align_params);
     if (redoneMatches != NULL) {
         for (query_index = 0;  query_index < numQueries;  query_index++) {
             BlastCompo_HeapRelease(&redoneMatches[query_index]);
         }
-        sfree(redoneMatches); redoneMatches = NULL;
+        sfree(redoneMatches);
+        redoneMatches = NULL;
     }
     if (smithWaterman) {
         Blast_ForbiddenRangesRelease(&forbidden);
@@ -2906,7 +3764,33 @@ function_cleanup:
     s_RestoreSearch(sbp, scoringParams, savedParams, queryBlk->length,
                     positionBased, compo_adjust_mode);
     s_SavedParametersFree(&savedParams);
-    Blast_CompositionWorkspaceFree(&NRrecord);
+
+    for (int i = 0; i < actual_num_threads; ++i) {
+        s_BlastScoreBlk_Free(&sbp_tld[i]);
+        gap_align_tld[i]->sbp = NULL;
+        s_BlastGapAlignStruct_Free(gap_align_tld[i]);
+        Blast_RedoAlignParamsFree(&redo_align_params_tld[i]);
+        sfree(alignments_tld[i]);
+        sfree(incoming_align_set_tld[i]);
+        Blast_CompositionWorkspaceFree(&NRrecord_tld[i]);
+        s_SavedParametersFree(&savedParams_tld[i]);
+    }
+    sfree(theseMatches);
+    sfree(NRrecord_tld);
+    sfree(alignments_tld);
+    sfree(incoming_align_set_tld);
+    sfree(savedParams_tld);
+    sfree(sbp_tld);
+    sfree(matrix_tld);
+    sfree(seqsrc_tld);
+    sfree(gap_align_tld);
+    sfree(score_params_tld);
+    sfree(hit_params_tld);
+    sfree(results_tld);
+    sfree(gapping_params_context_tld);
+    sfree(redo_align_params_tld);
+    sfree(redoneMatches_tld);
+    sfree(status_code_tld);
 
     return (Int2) status_code;
 }

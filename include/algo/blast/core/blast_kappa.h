@@ -47,8 +47,10 @@ extern "C" {
 #endif
 
 /** Top level routine to recompute alignments for each
- *  match found by the gapped BLAST algorithm
- *  A linked list of alignments is returned (param hitList); the alignments 
+ *  match found by the gapped BLAST algorithm (single-thread prototype)
+ *  This prototype is an adapter to the multi-thread prototype with
+ *  num_threads set to 1.
+ *  A linked list of alignments is returned (param hitList); the alignments
  *  are sorted according to the lowest E-value of the best alignment for each
  *  matching sequence; alignments for the same matching sequence
  *  are in the list consecutively regardless of the E-value of the
@@ -77,6 +79,53 @@ extern "C" {
 NCBI_XBLAST_EXPORT
 Int2
 Blast_RedoAlignmentCore(EBlastProgramType program_number,
+                  BLAST_SequenceBlk* queryBlk,
+                  const BlastQueryInfo* query_info,
+                  BlastScoreBlk* sbp,
+                  BLAST_SequenceBlk* subjectBlk,
+                  const BlastSeqSrc* seqSrc,
+                  Int4 db_genetic_code,
+                  BlastHSPList* thisMatch,
+                  BlastHSPStream* hsp_stream,
+                  BlastScoringParameters* scoringParams,
+                  const BlastExtensionParameters* extendParams,
+                  const BlastHitSavingParameters* hitParams,
+                  const PSIBlastOptions* psiOptions,
+                  BlastHSPResults* results);
+
+/** Top level routine to recompute alignments for each
+ *  match found by the gapped BLAST algorithm (multi-thread prototype)
+ *  A linked list of alignments is returned (param hitList); the alignments
+ *  are sorted according to the lowest E-value of the best alignment for each
+ *  matching sequence; alignments for the same matching sequence
+ *  are in the list consecutively regardless of the E-value of the
+ *  secondary alignments. Ties in sorted order are much rarer than
+ *  for the standard BLAST method, but are broken deterministically
+ *  based on the index of the matching sequences in the database.
+ * @param program_number the type of blast search being performed [in]
+ * @param num_threads number of OpenMP threads to be used [in]
+ * @param queryBlk query sequence [in]
+ * @param query_info query information [in]
+ * @param sbp (Karlin-Altschul) information for search [in]
+ * @param subjectBlk subject sequence [in]
+ * @param seqSrc used to fetch database/match sequences [in]
+ * @param db_genetic_code Genetic code to use if database sequences are
+ *                        translated, and there is no other guidance on
+ *                        which genetic code to use [in]
+ * @param thisMatch hit for further processing [in]
+ * @param hsp_stream used to fetch hits for further processing [in]
+ * @param scoringParams parameters used for scoring (matrix, gap costs etc.) [in]
+ * @param extendParams parameters used for extension [in]
+ * @param hitParams parameters used for saving hits [in]
+ * @param psiOptions options related to psi-blast [in]
+ * @param results All HSP results from previous stages of the search [in] [out]
+ * @return 0 on success, otherwise failure.
+*/
+
+NCBI_XBLAST_EXPORT
+Int2
+Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
+                  Uint4 num_threads,
                   BLAST_SequenceBlk* queryBlk,
                   const BlastQueryInfo* query_info,
                   BlastScoreBlk* sbp,
