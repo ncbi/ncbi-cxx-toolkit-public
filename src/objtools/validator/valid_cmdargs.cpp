@@ -58,7 +58,6 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("w", "SeqSubmitParent Flag");
     argdescr->AddFlag("require_taxid", "Require Taxonomy ID on BioSources");
     argdescr->AddFlag("q", "Taxonomy Lookup");
-    argdescr->AddFlag("non_ascii", "Report non-ASCII from reading");
     argdescr->AddFlag("suppress_context", "Suppress context when reporting");
     argdescr->AddFlag("splice_as_error", "Report splice problems as errors");
     argdescr->AddDefaultKey("N", "LatLonStrictness", "Flags for lat-lon tests (1 Test State/Province, 2 Ignore Water Exception)", CArgDescriptions::eInteger, "0"); 
