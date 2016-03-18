@@ -3683,7 +3683,8 @@ function_cleanup:
                     hitParams->options->hitlist_size
             );
             if (redoneMatches_tld[i] != NULL) {
-                for (int qi = 0; qi < numQueries; ++qi) {
+                int qi;
+                for (qi = 0; qi < numQueries; ++qi) {
                     sfree(redoneMatches_tld[i][qi].array);
                     sfree(redoneMatches_tld[i][qi].heapArray);
                 }
@@ -3691,7 +3692,8 @@ function_cleanup:
             }
         } else {
             if (redoneMatches_tld[i] != NULL) {
-                for (int qi = 0; qi < numQueries; ++qi) {
+                int qi;
+                for (qi = 0; qi < numQueries; ++qi) {
                     sfree(redoneMatches_tld[i][qi].array);
                     sfree(redoneMatches_tld[i][qi].heapArray);
                 }
