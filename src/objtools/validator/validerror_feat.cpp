@@ -6741,7 +6741,7 @@ void CValidError_feat::x_CheckCDSFrame
             }
         } else if ((part_loc & eSeqlocPartial_Start) && !Is5AtEndSpliceSiteOrGap (location)) {
             if (s_PartialAtGapOrNs(m_Scope, location, eSeqlocPartial_Nostart)
-                && NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos) {
+                || NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos) {
                 // suppress
             } else {
                 EDiagSev sev = eDiag_Warning;
