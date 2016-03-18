@@ -1147,7 +1147,14 @@ CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
                     _ASSERT(descr->DescriptorType()
                             == CTL_ITDESCRIPTOR_TYPE_MAGNUM);
                     CS_IODESC& iod = ((CTL_ITDescriptor*)descr)->m_Desc;
-                    if (iod.textptrlen <= 0) {
+                    bool all_zero = true;
+                    for (CS_INT i = 0;  i < iod.textptrlen;  ++i) {
+                        if (iod.textptr[i] != '\0') {
+                            all_zero = false;
+                            break;
+                        }
+                    }
+                    if (all_zero) {
                         res->SkipItem();
                         CDB_VarBinary textptr;
                         res->GetItem(&textptr);
