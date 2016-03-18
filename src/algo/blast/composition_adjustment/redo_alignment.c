@@ -1246,8 +1246,6 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                     num_adjustments++;
                 }
 
-                // By this point there's a discrepancy in
-                //  gapping_params->context->gap_align->sbp->matrix->data
                 if ( !adjust_search_failed ) {
                     newAlign = callbacks->redo_one_alignment(
                             in_align,
