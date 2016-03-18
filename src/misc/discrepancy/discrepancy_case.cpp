@@ -500,7 +500,9 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eDisc, "Overlapping CDs")
 
 DISCREPANCY_SUMMARIZE(OVERLAPPING_CDS)
 {
-    m_Objs[kEmptyStr][kOverlap0].Promote();
+    if (m_Objs[kEmptyStr].Exist(kOverlap0)) {
+        m_Objs[kEmptyStr][kOverlap0].Promote();
+    }
     m_ReportItems = m_Objs[kEmptyStr].Export(*this)->GetSubitems();
 }
 
@@ -790,7 +792,7 @@ DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eDisc, "Contained CDs")
 
 DISCREPANCY_SUMMARIZE(CONTAINED_CDS)
 {
-    if (m_Objs[kEmptyStr][kContained].GetMap().size() == 1) {
+    if (m_Objs[kEmptyStr].Exist(kContained) && m_Objs[kEmptyStr][kContained].GetMap().size() == 1) {
         m_ReportItems = m_Objs[kEmptyStr][kContained].Export(*this)->GetSubitems();
     }
     else {

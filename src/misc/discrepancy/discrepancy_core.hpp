@@ -201,6 +201,7 @@ public:
     CReportNode& Ext(bool b = true) { m_Ext = b; return *this; }
 
     static bool Exist(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
+    bool Exist(const string& name) { return m_Map.find(name) != m_Map.end(); }
     bool Exist(CReportObj& obj) { return Exist(m_Objs, m_Hash, obj); }
     static void Add(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj, bool unique = true);
     CReportNode& Add(CReportObj& obj, bool unique = true) { Add(m_Objs, m_Hash, obj, unique);  return *this; }
