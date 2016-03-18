@@ -328,19 +328,19 @@ string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope
 
 void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag)
 {
-    GetTextObjectDescription(seq_feat, scope, label, location, locus_tag);
-
     if ( seq_feat.GetData().IsProt()) {
         CConstRef <CBioseq> bioseq = sequence::GetBioseqFromSeqLoc(seq_feat.GetLocation(), scope).GetCompleteBioseq();
         if (bioseq) {
             const CSeq_feat* cds = sequence::GetCDSForProduct(*bioseq, &scope);
             if (cds) {
                 context = GetProduct(seq_feat.GetData().GetProt());
+                GetTextObjectDescription(*cds, scope, label, location, locus_tag);
                 return;
             }
         }
     }
-   
+    
+    GetTextObjectDescription(seq_feat, scope, label, location, locus_tag);   
     context.clear();
     if (seq_feat.GetData().IsCdregion()) { 
         context = GetProductForCDS(seq_feat, scope);
