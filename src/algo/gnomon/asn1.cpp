@@ -55,8 +55,6 @@ BEGIN_SCOPE(gnomon)
 USING_SCOPE(ncbi::objects);
 
 
-/// Uncomment this to provide extended evidence output
-//#define _EVIDENCE_WANTED
 
 // defined in gnomon_model.cpp
 typedef map<string,string> TAttributes;
@@ -119,7 +117,6 @@ private:
     CRef< CUser_object > create_ModelEvidence_user_object(const CGeneModel& model);
     void AddInternalFeature(const SModelData& md);
     void DumpEvidence(const SModelData& md);
-    void DumpUnusedChains();
 
     string contig_name;
     CRef<CSeq_id> contig_sid;
@@ -182,12 +179,6 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     internal_feature_table = &seq_annot->SetData().SetFtable();
 
     model_alignments = NULL;
-#ifdef _EVIDENCE_WANTED
-    seq_annot.Reset(new CSeq_annot);
-    bioseq_set.SetAnnot().push_back(seq_annot);
-    model_alignments = &seq_annot->SetData().SetAlign();
-    NameAnnot(*seq_annot, "Model Alignments");
-#endif
 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     scope.Reset(new CScope(*obj_mgr));
@@ -210,9 +201,6 @@ CAnnotationASN1::~CAnnotationASN1()
 
 CRef<CSeq_entry> CAnnotationASN1::GetASN1() const
 {
-#ifdef _EVIDENCE_WANTED
-    m_data->DumpUnusedChains();
-#endif
     return m_data->main_seq_entry;
 }
 
@@ -418,7 +406,6 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
     if (model.Support().empty())
         return;
     CRef<CSeq_annot> seq_annot(new CSeq_annot);
-    main_seq_entry->SetSet().SetAnnot().push_back(seq_annot);
     CSeq_annot::C_Data::TAlign* aligns = &seq_annot->SetData().SetAlign();
 
     {{
@@ -432,57 +419,27 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
          seq_annot->SetId().push_back(annot_id);
      }}
     
-    
+
     ITERATE(CSupportInfoSet, s, model.Support()) {
         Int8 id = s->GetId();
 
-        const CAlignModel* m = evidence.GetModel(id);
-        auto_ptr<SModelData> smd;
-        if (m != NULL) {
-            smd.reset( new SModelData(*m, contig_ds_seq[ePlus]) );
-            AddInternalFeature(*smd);
-        }
-
         CRef<CSeq_align> a(const_cast<CSeq_align*>(evidence.GetSeq_align(id).GetPointerOrNull()));
-        if (a.NotEmpty()) {
+        if (a.NotEmpty()) {                                     //output asn alignments (chainer)
             aligns->push_back(a);
-            continue;
-        }
-
-        if (m == NULL)
-            continue;
-
-        if (m->Type()&CGeneModel::eChain) {
-            CreateModelProducts(*smd);
-            DumpEvidence(*smd);
         } else {
-            smd->mrna_sid->Assign(*m->GetTargetId()); 
+            const CAlignModel* m = evidence.GetModel(id);
+            if (m != NULL && (m->Type()&CGeneModel::eChain)) { //output supporting chains (gnomon)
+                auto_ptr<SModelData> smd;
+                smd.reset( new SModelData(*m, contig_ds_seq[ePlus]) );
+                AddInternalFeature(*smd);
+                CreateModelProducts(*smd);
+                aligns->push_back(model2spliced_seq_align(*smd));
+            }
         }
-        aligns->push_back(model2spliced_seq_align(*smd));
     }
-}
 
-void CAnnotationASN1::CImplementationData::DumpUnusedChains()
-{
-    CRef<CSeq_annot> seq_annot(new CSeq_annot);
-    main_seq_entry->SetSet().SetAnnot().push_back(seq_annot);
-    CSeq_annot::C_Data::TAlign* aligns = &seq_annot->SetData().SetAlign();
-    NameAnnot(*seq_annot, "Unused chains");
-
-    auto_ptr<IEvidence::iterator> it( evidence.GetUnusedModels(contig_name) );
-    const CAlignModel* m;
-    while ((m = it->GetNext()) != NULL) {
-        if ((m->Type()&CAlignModel::eChain) == 0)
-            continue;
-        
-        SModelData smd(*m, contig_ds_seq[ePlus]);
-
-        aligns->push_back(model2spliced_seq_align(smd));
-
-        AddInternalFeature(smd);
-        CreateModelProducts(smd);
-        DumpEvidence(smd);
-    }
+    if(!aligns->empty())
+        main_seq_entry->SetSet().SetAnnot().push_back(seq_annot);
 }
 
 int CollectUserField(const CUser_field& field, const string& name, vector<string>& values)
@@ -525,6 +482,12 @@ string ModelMethod(const CGeneModel& model) {
 
 CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_user_object(const CGeneModel& model)
 {
+    if(model.Type()&CGeneModel::eChain) {
+        CRef<CUser_object> uo = evidence.GetModelEvidenceUserObject(model.ID());
+        if(uo.NotNull() && uo->HasField("Support"))
+            return uo;
+    }
+
     CRef< CUser_object > user_obj(new CUser_object);
     CRef< CObject_id > type(new CObject_id);
     type->SetStr("ModelEvidence");
@@ -534,7 +497,6 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
 
     if (!model.Support().empty()) {
         CRef<CUser_field> support_field(new CUser_field());
-        user_obj->SetData().push_back(support_field);
         support_field->SetLabel().SetStr("Support");
         vector<string> chains;
         vector<string> cores;
@@ -546,24 +508,19 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
         vector<string> others;
         vector<string> unknown;
 
-        CSupportInfoSet support;
-
-        ExpandSupport(model.Support(), support, evidence);
-
         int ests_count = 0;
         int long_sras_count = 0;
         int others_count = 0;
 
-        ITERATE(CSupportInfoSet, s, support) {
-            
-            Int8 id = s->GetId();
-            
+        ITERATE(CSupportInfoSet, s, model.Support()) {
+            Int8 id = s->GetId();            
             const CAlignModel* m = evidence.GetModel(id);
+            if(m == 0)
+                continue;
 
-            int type = m ?  m->Type() : 0;
-
+            int type = m->Type();
             string accession;
-            if (m == NULL || (m->Type()&CGeneModel::eChain)) {
+            if (m->Type()&CGeneModel::eChain) {
                 accession = CIdHandler::ToString(*CIdHandler::GnomonMRNA(id));
             } else {
                 accession = CIdHandler::ToString(*m->GetTargetId());
@@ -572,13 +529,24 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             if (s->IsCore())
                 cores.push_back(accession);
 
-            if (type&CGeneModel::eChain)
+            if (type&CGeneModel::eChain) {
                 chains.push_back(accession);
-            else if (type&CGeneModel::eProt)
+                CRef<CUser_object> uo = evidence.GetModelEvidenceUserObject(id);
+                if(uo.NotNull() && uo->HasField("Support")) {
+                    const CUser_field& support_field = uo->GetField("Support");
+                    CollectUserField(support_field, "Core", cores);
+                    CollectUserField(support_field, "Proteins", proteins);
+                    CollectUserField(support_field, "mRNAs", mrnas);
+                    ests_count += CollectUserField(support_field, "ESTs", ests);
+                    CollectUserField(support_field, "RNASeq", short_reads);
+                    long_sras_count += CollectUserField(support_field, "longSRA", long_sras);
+                    others_count += CollectUserField(support_field, "other", others);                
+                }
+            } else if (type&CGeneModel::eProt) {
                 proteins.push_back(accession);
-            else if (type&CGeneModel::emRNA)
+            } else if (type&CGeneModel::emRNA) {
                 mrnas.push_back(accession);
-            else if (type&CGeneModel::eEST) {
+            } else if (type&CGeneModel::eEST) {
                 if(NStr::StartsWith(accession, "gi|")) {
                     ests.push_back(accession);
                     ests_count += m->Weight();
@@ -589,94 +557,69 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
                     others.push_back(accession);
                     others_count += m->Weight();
                 }
-            } else if (type&CGeneModel::eSR)
+            } else if (type&CGeneModel::eSR) {
                 short_reads.push_back(accession);
-            else
+            } else {
                 unknown.push_back(accession);
+            }
         }
 
-        if (proteins.empty() && mrnas.empty() && ests.empty() && short_reads.empty() && long_sras.empty() && others.empty()) {
-            if ((model.Type()&CGeneModel::eChain)) {
-                support.clear();
-                support.insert(CSupportInfo(model.ID()));
-            } else {
-                support = model.Support();
-            }
-            vector<string> collected_cores;
-            ITERATE(CSupportInfoSet, s, support) {
-                Int8 id = s->GetId();
-                const CGeneModel* m = (id == model.ID()) ? &model : evidence.GetModel(id);
-                if (m != NULL && (m->Type()&CGeneModel::eChain)) {
-                    CRef<CUser_object> uo = evidence.GetModelEvidenceUserObject(id);
-                    if (uo.NotNull() && uo->HasField("Support")) {
-                        const CUser_field& support_field = uo->GetField("Support");
-                        CollectUserField(support_field, "Core", collected_cores);
-                        CollectUserField(support_field, "Proteins", proteins);
-                        CollectUserField(support_field, "mRNAs", mrnas);
-                        ests_count += CollectUserField(support_field, "ESTs", ests);
-                        CollectUserField(support_field, "RNASeq", short_reads);
-                        long_sras_count += CollectUserField(support_field, "longSRA", long_sras);
-                        others_count += CollectUserField(support_field, "other", others);
-                    }
-                }
-            }
-            if (!(proteins.empty() && mrnas.empty() && ests.empty() && short_reads.empty() && long_sras.empty() && others.empty())) {
-                cores = collected_cores;
-                unknown.clear();
-            }
-        }
+        bool have_something = false;
 
         if (!chains.empty()) {
             support_field->AddField("Chains",chains);
-            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(chains.size());
+            have_something = true;
         }
         if (!cores.empty()) {
             support_field->AddField("Core",cores);
-            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(cores.size());
+            have_something = true;
         }
         if (!proteins.empty()) {
             sort(proteins.begin(),proteins.end());
             support_field->AddField("Proteins",proteins);
-            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(proteins.size());
+            have_something = true;
         }
         if (!mrnas.empty()) {
             sort(mrnas.begin(),mrnas.end());
             support_field->AddField("mRNAs",mrnas);
-            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(mrnas.size());
+            have_something = true;
         }
         if (!ests.empty()) {
             sort(ests.begin(),ests.end());
             support_field->AddField("ESTs",ests);
-            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(ests_count);
+            have_something = true;
         }
         if (!short_reads.empty()) {
             sort(short_reads.begin(),short_reads.end());
             support_field->AddField("RNASeq",short_reads);
-            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(short_reads.size());
+            have_something = true;
         }
         if (!long_sras.empty()) {
             sort(long_sras.begin(),long_sras.end());
             support_field->AddField("longSRA",long_sras);
-            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(long_sras_count);
+            have_something = true;
         }
         if (!others.empty()) {
             sort(others.begin(),others.end());
             support_field->AddField("other",others);
-            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(others_count);
+            have_something = true;
         }
         if (!unknown.empty()) {
             support_field->AddField("unknown",unknown);
-            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(unknown.size());
+            have_something = true;
         }
+
+        if (have_something)
+            user_obj->SetData().push_back(support_field);
     }
 
     if(!model.ProteinHit().empty())
@@ -686,6 +629,7 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
 
     return user_obj;
 }
+
 
 CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_internal_feature(const SModelData& md)
 {
