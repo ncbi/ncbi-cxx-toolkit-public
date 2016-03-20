@@ -22,5 +22,7 @@
 #define PREC_1  1
 #define PREC_2  2
 #define PREC_3  4
-#define PREC_4  6
-#define PREC_5  8
+#define PREC_4  8
+#define PREC_5  16
+//#define PREC_4  6
+//#define PREC_5  8
