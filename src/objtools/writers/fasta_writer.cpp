@@ -231,12 +231,44 @@ string CFastaOstreamEx::x_GetRNAIdString(const CBioseq_Handle& handle,
 
     auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
 
-//    if (!feat.GetData().GetRna().IsSetType()) {
-//        return id_string +  "_rna_" + to_string(++m_FeatCount);
-//    }
+    if (!feat.GetData().GetRna().IsSetType()) {
+        return id_string +  "_miscrna_" + to_string(++m_FeatCount);
+    }
 
-    // Do we need to extend this to distinguish between different RNA types
-    return id_string + "_rna_"+ to_string(++m_FeatCount);
+    const auto rna_type = feat.GetData().GetRna().GetType();
+
+    string rna_tag;
+    switch (rna_type) {
+    case CRNA_ref::eType_mRNA: {
+        rna_tag = "_mrna_";
+        break;
+    }
+
+    case CRNA_ref::eType_ncRNA: 
+    case CRNA_ref::eType_snRNA:
+    case CRNA_ref::eType_scRNA:
+    case CRNA_ref::eType_snoRNA: {
+        rna_tag = "_ncrna_";
+        break;
+    }
+
+    case CRNA_ref::eType_rRNA: {
+        rna_tag = "_rrna_";
+        break;
+    }
+
+    case CRNA_ref::eType_tRNA: {
+        rna_tag = "_trna_";
+        break;
+    }
+
+    default: {
+        rna_tag = "_miscrna_";
+        break;
+    }
+    }
+
+    return id_string + rna_tag + to_string(++m_FeatCount);
 }
 
 
@@ -498,7 +530,6 @@ void CFastaOstreamEx::x_AddLocationAttribute(const CBioseq_Handle& handle,
     
 
     auto loc_string = CFlatSeqLoc(feat.GetLocation(), ctxt).GetString();
-
 
     if (loc_string.empty()) {
         return;
