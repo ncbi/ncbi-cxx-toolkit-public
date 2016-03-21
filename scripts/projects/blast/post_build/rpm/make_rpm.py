@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Script to create a source/binary RPM.
 """
 # $Id$
@@ -36,16 +36,16 @@ def setup_rpmbuild():
     # Create ~/.rpmmacros
     try:
         out = open(RPMMACROS, "w")
-        print >> out, "%_topdir %( echo", os.path.join(cwd, RPMBUILD_HOME), ")"
-        print >> out, "%_tmppath %( echo", 
-        print >> out, os.path.join(cwd, RPMBUILD_HOME, "tmp"), ")"
-        print >> out
-        print >> out, "%packager Christiam E. Camacho (camacho@ncbi.nlm.nih.gov)"
-        print >> out, "%debug_package %{nil}"
+        print("%_topdir %( echo", os.path.join(cwd, RPMBUILD_HOME), ")", file=out)
+        print("%_tmppath %( echo", end=' ', file=out) 
+        print(os.path.join(cwd, RPMBUILD_HOME, "tmp"), ")", file=out)
+        print(file=out)
+        print("%packager Christiam E. Camacho (camacho@ncbi.nlm.nih.gov)", file=out)
+        print("%debug_package %{nil}", file=out)
     finally:
         out.close()
     if VERBOSE: 
-        print "Created", RPMMACROS
+        print("Created", RPMMACROS)
 
 def cleanup_rpm():
     """ Delete rpm files """
@@ -68,7 +68,7 @@ def cleanup_srctarball_contents():
         if os.path.exists(path):
             shutil.rmtree(path)
             if VERBOSE: 
-                print "Deleting", path
+                print("Deleting", path)
                
     projects_path = os.path.join(PACKAGE_NAME, "c++", "scripts", "projects")
     for root, dirs, files in os.walk(projects_path): 
@@ -77,7 +77,7 @@ def cleanup_srctarball_contents():
             if fnmatch.fnmatch(name, "*blast/*"): 
                 continue
             if VERBOSE:
-                print "Deleting file", name
+                print("Deleting file", name)
             os.remove(name)
             
         for name in dirs:
@@ -85,7 +85,7 @@ def cleanup_srctarball_contents():
             if fnmatch.fnmatch(name, "*blast*"):
                 continue
             if VERBOSE: 
-                print "Deleting directory", name
+                print("Deleting directory", name)
             shutil.rmtree(name)
             
 
@@ -135,7 +135,7 @@ def move_rpms_to_installdir(installdir):
     output = subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
     for rpm in output.split():
         if VERBOSE: 
-            print "mv", rpm, installer_dir
+            print("mv", rpm, installer_dir)
         shutil.move(rpm, installer_dir)
 
 
@@ -156,7 +156,7 @@ def main():
     global VERBOSE, PACKAGE_NAME, TARBALL #IGNORE:W0603
     VERBOSE = options.VERBOSE
     if VERBOSE: 
-        print "Installing RPM to", installdir
+        print("Installing RPM to", installdir)
         
     PACKAGE_NAME = "ncbi-blast-" + blast_version + "+"
     TARBALL = PACKAGE_NAME + ".tgz"
