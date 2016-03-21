@@ -198,7 +198,6 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
        } else if ((7 == options->gap_open) && (2 == options->gap_extend)) {
            kbp->Lambda = 0.306;
            kbp->K = 0.15;
-           return status;
        } else if ((6 == options->gap_open) && (2 == options->gap_extend)) {
            kbp->Lambda = 0.292;
            kbp->K = 0.13;
@@ -211,7 +210,6 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
        } else if ((8 == options->gap_open) && (1 == options->gap_extend)) {
            kbp->Lambda = 0.270;
            kbp->K = 0.070;
-           return status;
        } else {
            status = -1;
        }
@@ -255,7 +253,6 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
        } else if ((11 == options->gap_open) && (1 == options->gap_extend)) {
            kbp->Lambda = 0.314;
            kbp->K = 0.096;
-           return status;
        } else if ((9 == options->gap_open) && (1 == options->gap_extend)) {
            kbp->Lambda = 0.277;
            kbp->K = 0.046;
