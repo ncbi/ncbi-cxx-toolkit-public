@@ -44,6 +44,7 @@
 #include <objtools/format/context.hpp>
 #include <objtools/format/items/flat_seqloc.hpp>
 #include <objtools/writers/write_util.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
 //#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
@@ -540,6 +541,28 @@ void CFastaOstreamEx::x_AddLocationAttribute(const CBioseq_Handle& handle,
 }
 
 
+void CFastaOstreamEx::x_AddncRNAClassAttribute(const CSeq_feat& feat,
+                                               string& defline)
+{
+    if (!feat.IsSetData() ||
+        !feat.GetData().IsRna() ||
+        !feat.GetData().GetRna().IsSetExt() ||
+        !feat.GetData().GetRna().GetExt().IsGen() ||
+        !feat.GetData().GetRna().GetExt().GetGen().IsSetClass()) {
+        return;
+    }
+
+    const auto ncRNA_class = feat.GetData().GetRna().GetExt().GetGen().GetClass();
+
+    if (ncRNA_class.empty()) {
+        return;
+    }
+
+    defline += " [ncRNA_class=" + ncRNA_class + "]";
+    return;
+}
+
+
 void CFastaOstreamEx::x_WriteModifiers(const CBioseq_Handle& handle, 
                                        const CSeq_feat& feat)
 {
@@ -554,6 +577,8 @@ void CFastaOstreamEx::x_WriteModifiers(const CBioseq_Handle& handle,
     x_AddDbxrefAttribute(handle, feat, defline);
 
     x_AddProteinNameAttribute(handle, feat, defline);
+
+    x_AddncRNAClassAttribute(feat,defline);
 
     x_AddReadingFrameAttribute(feat, defline);
 
