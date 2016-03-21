@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """ Various utilities/tools for BLAST """
 
 __all__ = [ "safe_exec", "update_blast_version" ]
@@ -21,7 +21,7 @@ def safe_exec(cmd):
         elif retcode != 0:
             msg += "Failed with exit code " + str(retcode)
             raise RuntimeError(msg)
-    except OSError, err:
+    except OSError as err:
         msg += "Execution failed: " + err
         raise RuntimeError(msg)
 
@@ -38,7 +38,7 @@ def update_blast_version(config_file, blast_version):
         out = open(config_file, "w")
         infile = open(temp_fname, "r")
         for line in infile:
-            print >> out, re.sub("BLAST_VERSION", blast_version, line),
+            print(re.sub("BLAST_VERSION", blast_version, line), end=' ', file=out)
     finally:
         out.close()
         infile.close()
@@ -77,7 +77,7 @@ def determine_platform():
     """
 
     p = platform.platform().lower()
-    print "PLATFORM = " + p
+    print("PLATFORM = " + p)
     if p.find("linux") != -1:
         if p.find("x86_64") != -1:
             return "Linux64"

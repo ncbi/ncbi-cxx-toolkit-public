@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 """Script to create the Windows installer for BLAST command line applications"""
 # $Id$
 #
@@ -46,7 +46,7 @@ def main():
     for app in apps:
         app = os.path.join(installdir, "bin", app)
         if VERBOSE: 
-            print "Copying", app, "to", cwd
+            print("Copying", app, "to", cwd)
         shutil.copy(app, cwd)
     
     
@@ -67,7 +67,7 @@ def main():
         os.chdir(newdir)
         dest = os.path.join(cwd, directory)
         if VERBOSE:
-            print "Copying", directory, "to", dest
+            print("Copying", directory, "to", dest)
         shutil.copytree(directory, dest)
     os.chdir(cwd)
     for root, dirs, files in os.walk(cwd):
@@ -75,13 +75,13 @@ def main():
             path = os.path.join(root, subdir)
             if subdir == ".svn":
                 if VERBOSE:
-                    print "Removing ", path
+                    print("Removing", path)
                 shutil.rmtree(path)
 
     for aux_file in ("EnvVarUpdate.nsh", "unix2dos.nsh", "ncbilogo.ico"):
         src = os.path.join(SCRIPT_DIR, aux_file)
         if VERBOSE:
-            print "Copying", src, "to", cwd
+            print("Copying", src, "to", cwd)
         shutil.copy(src, cwd)
         
     # makensis is in the path of the script courtesy of the release framework

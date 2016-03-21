@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Script to create a source/binary RPM.
 """
 # $Id$
@@ -6,6 +6,7 @@
 import sys, os, shutil
 from optparse import OptionParser
 import subprocess
+import tarfile
 SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(SCRIPT_DIR, ".."))
 from blast_utils import *   #IGNORE:W0401
@@ -43,7 +44,7 @@ def setup_rpmbuild():
     finally:
         out.close()
     if VERBOSE: 
-        print "Created", RPMMACROS
+        print("Created", RPMMACROS)
 
 def cleanup_rpm():
     """ Delete rpm files """
@@ -65,7 +66,7 @@ def cleanup_svn_co():
         if os.path.exists(path):
             shutil.rmtree(path)
             if VERBOSE: 
-                print "Deleting", path
+                print("Deleting", path)
                
     projects_path = os.path.join(PACKAGE_NAME, "c++", "scripts", "projects")
     for root, dirs, files in os.walk(projects_path): 
@@ -74,7 +75,7 @@ def cleanup_svn_co():
             if fnmatch.fnmatch(name, "*blast/*"): 
                 continue
             if VERBOSE:
-                print "Deleting file", name
+                print("Deleting file", name)
             os.remove(name)
             
         for name in dirs:
@@ -82,7 +83,7 @@ def cleanup_svn_co():
             if fnmatch.fnmatch(name, "*blast*"):
                 continue
             if VERBOSE: 
-                print "Deleting directory", name
+                print("Deleting directory", name)
             shutil.rmtree(name)
             
 
@@ -102,7 +103,6 @@ def svn_checkout(blast_version):
 
 def compress_sources():
     """Compress sources to be included in source RPM"""
-    import tarfile
     tar = tarfile.open(TARBALL, "w:bz2")
     tar.add(PACKAGE_NAME)
     tar.close()
@@ -136,7 +136,7 @@ def move_rpms_to_installdir(installdir):
     output = subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
     for rpm in output.split():
         if VERBOSE: 
-            print "mv", rpm, installer_dir
+            print("mv", rpm, installer_dir)
         shutil.move(rpm, installer_dir)
 
 
@@ -154,7 +154,7 @@ def main():
     global VERBOSE, PACKAGE_NAME, TARBALL #IGNORE:W0603
     VERBOSE = options.VERBOSE
     if VERBOSE: 
-        print "Installing RPM to", installdir
+        print("Installing RPM to", installdir)
         
     PACKAGE_NAME = "ncbi-igblast-" + blast_version
     TARBALL = PACKAGE_NAME + ".tgz"
