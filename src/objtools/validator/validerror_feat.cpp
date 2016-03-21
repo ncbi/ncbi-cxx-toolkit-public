@@ -7575,12 +7575,13 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                                                   CSeqTranslator::fIs5PrimePartial,
                                                   gcode, &altst);
 
-                        if(NStr::Equal(p, except_char))
+                        if (!NStr::Equal(except_char, "*")) {
                             PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
-                                    "Unexpected transl_except " + except_char
-                                    + " at position " + NStr::SizetToString(prot_pos + 1)
-                                    + " just past end of protein",
-                                    feat);
+                                "Unexpected transl_except " + except_char
+                                + " at position " + NStr::SizetToString(prot_pos + 1)
+                                + " just past end of protein",
+                                feat);
+                        }
                     }
                 }
                 else
