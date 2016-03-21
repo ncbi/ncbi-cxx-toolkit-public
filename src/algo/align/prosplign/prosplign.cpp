@@ -661,6 +661,11 @@ public:
         m_Interrupt.Interrupt();
     }
 
+    void SetInterruptCallback( CProSplign::TInterruptFnPtr prg_callback, void* data)
+    {
+        m_Interrupt.SetInterruptCallback(prg_callback, data);
+    }
+
 
 private:
     virtual int stage1() = 0;
@@ -920,12 +925,17 @@ bool IsProteinSpanWhole(const CSpliced_seg& sps)
 }
 }
 
-    //Use this method to set/change genetic code field in ASN 
-
 void CProSplign::Interrupt(void)
 {
     m_implementation->Interrupt();
 }
+
+void CProSplign::SetInterruptCallback( CProSplign::TInterruptFnPtr prg_callback, void* data)
+{
+    m_implementation->SetInterruptCallback(prg_callback, data);
+}
+
+    //Use this method to set/change genetic code field in ASN 
 
 void CProSplign::AssignGeneticCode(CScope& scope, const CSeq_id& gid, int gcode) {
     CBioseq_Handle hp = scope.GetBioseqHandle(gid);

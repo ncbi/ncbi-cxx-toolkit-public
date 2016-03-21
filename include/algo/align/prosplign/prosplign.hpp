@@ -277,6 +277,11 @@ public:
     /// is going to throw CProSplignException of "eUserInterrupt" type 
     void Interrupt(void);
 
+    ///User interrupt logic for GBENCH. Set up callback function
+    ///when callback function returns true, CProSplignException of "eUserInterrupt" type will be thrown
+    typedef bool(* TInterruptFnPtr) (void *callback_data);
+    void SetInterruptCallback( TInterruptFnPtr prg_callback, void* data);
+
     /// Aligns protein to a region on genomic sequence.
     /// genomic seq_loc should be a continuous region - an interval or a whole sequence
     ///

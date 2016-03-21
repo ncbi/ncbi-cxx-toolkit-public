@@ -180,18 +180,32 @@ public:
     CProSplignInterrupt(void)    
     {
         m_Interrupt.Set(0);
+        m_InterruptFnPtr = NULL;
+        m_InterruptData = NULL;
     }
     void Interrupt(void) {
         m_Interrupt.Add(1);
     }
+
+    typedef bool(* TInterruptFnPtr) (void *callback_data);
+
     inline void CheckUserInterrupt(void) const
     {
         if(m_Interrupt.Get()) NCBI_THROW(CProSplignException, eUserInterrupt, "Interrupted by user" );
+        if( ( m_InterruptFnPtr != NULL ) && m_InterruptFnPtr(m_InterruptData) ) NCBI_THROW(CProSplignException, eUserInterrupt, "Interrupted by user" );
+            
     }
 
+    void SetInterruptCallback( TInterruptFnPtr prg_callback, void* data)
+    {
+        m_InterruptFnPtr = prg_callback;
+        m_InterruptData = data;
+    }    
 
 private:
     CAtomicCounter m_Interrupt;
+    TInterruptFnPtr m_InterruptFnPtr;
+    void * m_InterruptData;
 };
 
 
