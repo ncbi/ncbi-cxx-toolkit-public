@@ -29,9 +29,8 @@ namespace DeBruijn {
         }
         void Reserve(size_t rsrv) { apply_visitor(reserve(rsrv), m_container); }
         void Clear() { apply_visitor(clear(), m_container); }
-        size_t Capacity() const {
-            return apply_visitor(container_capacity(), m_container);
-        }
+        size_t Capacity() const { return apply_visitor(container_capacity(), m_container); }
+        size_t ElementSize() const { return apply_visitor(element_size(), m_container); }
         void PushBack(const TKmer& kmer, size_t count) { 
             if(m_kmer_len == 0) {
                 cerr << "Can't insert in not initialized container" << endl;
@@ -120,6 +119,7 @@ namespace DeBruijn {
         };
         struct container_size : public static_visitor<size_t> { template <typename T> size_t operator()(const T& v) const { return v.size();} };
         struct container_capacity : public static_visitor<size_t> { template <typename T> size_t operator()(const T& v) const { return v.capacity();} };
+        struct element_size : public static_visitor<size_t> { template <typename T> size_t operator()(const T& v) const { return sizeof(typename  T::value_type);} };
         struct clear : public static_visitor<> { template <typename T> void operator()(const T& v) const { v.clear();} };
         struct push_back : public static_visitor<> { 
             push_back(const TKmer& k, size_t c) : kmer(k), count(c) {}
@@ -525,6 +525,7 @@ namespace DeBruijn {
             m_read_length.push_back(read.size());
             m_total_seq += read.size();
         }
+        size_t TotalSeq() const { return m_total_seq; }
         size_t MaxLength() const { 
             if(m_read_length.empty())
                 return 0;
@@ -533,6 +534,8 @@ namespace DeBruijn {
         }
         size_t KmerNum(unsigned kmer_len) const {
             size_t num = 0;
+            if(m_read_length.empty())
+                return num;
             for(auto l : m_read_length) {
                 if(l >= kmer_len)
                     num += l-kmer_len+1;
@@ -614,7 +617,7 @@ namespace DeBruijn {
         private:
             void SkipShortReads() {
                 while(m_position < 2*m_readholder.m_total_seq && m_read < m_readholder.m_read_length.size() && m_readholder.m_read_length[m_read] < m_kmer_len)
-                    m_position += 2*m_readholder.m_read_length[m_read++];               
+                    m_position += 2*m_readholder.m_read_length[m_read++];                               
             }
             uint32_t m_kmer_len;
             const CReadHolder& m_readholder;
@@ -622,8 +625,8 @@ namespace DeBruijn {
             uint32_t m_position_in_read; // SYMBOL in read
             size_t m_read;          // read number
         };
+        kmer_iterator kend() const { return kmer_iterator(0, *this, 2*m_total_seq); }
         kmer_iterator kbegin(int kmer_len) const { return kmer_iterator(kmer_len, *this); }
-        kmer_iterator kend() const { return kmer_iterator(0, *this, 2*m_total_seq, m_read_length.back(), m_read_length.size()); }
 
         class string_iterator {
         public:
@@ -655,9 +658,8 @@ namespace DeBruijn {
             size_t m_position;
             size_t m_read;
         };
-        string_iterator sbegin() const { return string_iterator(*this); }
         string_iterator send() const { return string_iterator(*this, 2*m_total_seq, m_read_length.size()); }
-
+        string_iterator sbegin() const { return string_iterator(*this); }
 
     private:
         deque<uint64_t> m_storage;
@@ -875,7 +877,7 @@ public:
         return make_pair(contig, abundance);
     }
 
-    void FilterNeighbors(vector<CDBGraph::Successor>& successors, const CDBGraph::Node& previous) const {
+    void FilterNeighbors(vector<CDBGraph::Successor>& successors) const {
         if(successors.size() > 1) {
             int abundance = 0;
             for(auto& suc : successors) {
@@ -885,7 +887,7 @@ public:
             for(int j = successors.size()-1; j > 0 && m_graph.Abundance(successors.back().m_node) <= m_fraction*abundance; --j) 
                 successors.pop_back();            
         }
-
+        
         if(m_graph.GraphIsStranded() && successors.size() > 1) {
             bool has_both = false;
             for(int j = 0; !has_both && j < (int)successors.size(); ++j) {
@@ -904,42 +906,6 @@ public:
                 }
             }
         }
-        
-        /*
-        //if(m_graph.GraphIsStranded() && m_graph.PlusFraction(previous) < 0.75 && successors.size() > 1) {
-        if(m_graph.GraphIsStranded() && successors.size() > 1) {
-            bool has_minus = false;
-            for(int j = 0; !has_minus && j < (int)successors.size(); ++j)
-                has_minus = (m_graph.PlusFraction(successors[j].m_node) < 0.75);
-            if(has_minus) {
-                for(int j = 0; j < (int)successors.size(); ) {
-                    double plusf = m_graph.PlusFraction(successors[j].m_node);
-                    double minusf = 1.- plusf;
-                    if(minusf < m_fraction*plusf)
-                        successors.erase(successors.begin()+j);
-                    else
-                        ++j;
-                }
-            }
-        }
-
-        //        if(m_graph.GraphIsStranded() && m_graph.PlusFraction(previous) > 0.25 && successors.size() > 1) {
-        if(m_graph.GraphIsStranded() && successors.size() > 1) {
-            bool has_plus = false;
-            for(int j = 0; !has_plus && j < (int)successors.size(); ++j)
-                has_plus = (m_graph.PlusFraction(successors[j].m_node) > 0.25);
-            if(has_plus) {
-                for(int j = 0; j < (int)successors.size(); ) {
-                    double plusf = m_graph.PlusFraction(successors[j].m_node);
-                    double minusf = 1.- plusf;
-                    if(plusf < m_fraction*minusf)
-                        successors.erase(successors.begin()+j);
-                    else
-                        ++j;
-                }
-            }
-        }
-        */              
     }
 
 private:
@@ -952,7 +918,7 @@ private:
         TBranch new_branch;
         for(auto& leaf : branch) {
             vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(leaf.first);
-            FilterNeighbors(successors, leaf.first);
+            FilterNeighbors(successors);
             if(successors.empty()) {
                 sequences.erase(get<0>(leaf.second));
                 continue;
@@ -1035,7 +1001,7 @@ private:
         m_graph.SetVisited(node);
         while(true) {
             vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(node);
-            FilterNeighbors(successors, node);
+            FilterNeighbors(successors);
             if(successors.empty())                     // no extensions
                 break; 
 
@@ -1052,7 +1018,7 @@ private:
         
             CDBGraph::Node rev_node = CDBGraph::ReverseComplement(step.back().m_node);
             vector<CDBGraph::Successor> predecessors = m_graph.GetNodeSuccessors(rev_node);
-            FilterNeighbors(predecessors, rev_node);
+            FilterNeighbors(predecessors);
             if(predecessors.empty())                     // no extensions
                 break; 
 
@@ -1082,7 +1048,7 @@ private:
             if(overshoot > 0) { // overshoot
                 CDBGraph::Node over_node = CDBGraph::ReverseComplement(step_back.back().m_node);
                 vector<CDBGraph::Successor> oversuc = m_graph.GetNodeSuccessors(over_node);
-                FilterNeighbors(oversuc, over_node);
+                FilterNeighbors(oversuc);
                 if(oversuc.empty())
                     break;
                 TBases step_over;
