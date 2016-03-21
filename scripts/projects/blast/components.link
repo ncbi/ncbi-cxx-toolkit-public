@@ -1,10 +1,10 @@
 [components]
-infrastructure  16.1
-core            16.1
-dbase           16.1
-web             16.1
-objects         16.1
-objtools        16.1
-algo            16.1
-blast           16.1
-app             16.1
+infrastructure  17.0
+core            17.0
+dbase           17.0
+web             17.0
+objects         17.0
+objtools        17.0
+algo            17.0
+blast           17.0
+app             17.0
