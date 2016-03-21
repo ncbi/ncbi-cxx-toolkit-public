@@ -62,7 +62,6 @@ const unsigned int      max_threads_low_limit = 1;
 const unsigned int      max_threads_high_limit = 1000;
 
 const bool              default_log = true;
-const bool              default_log_timing = false;
 const bool              default_log_timing_nst_api = false;
 const bool              default_log_timing_client_socket = false;
 

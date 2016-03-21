@@ -37,9 +37,9 @@
 #include "nst_exception.hpp"
 #include "nst_application.hpp"
 #include "nst_server.hpp"
-#include "nst_timing.hpp"
 #include "nst_clients.hpp"
 #include "nst_config.hpp"
+#include "nst_perf_logging.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -138,8 +138,7 @@ CNSTDatabase::SetParameters(const IRegistry &  reg)
 
 int
 CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
-                                     Int8  count,
-                                     CNSTTiming &  timing)
+                                     Int8  count)
 {
     const string        proc_name = "GetNextObjectID";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -163,7 +162,9 @@ CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
             else
                 object_id = -1;
 
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -175,15 +176,16 @@ CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
 
 
 int
-CNSTDatabase::ExecSP_CreateClient(
-            const string &  client, Int8 &  client_id, CNSTTiming &  timing)
+CNSTDatabase::ExecSP_CreateClient(const string &  client, Int8 &  client_id)
 {
     const string        proc_name = "CreateClient";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -208,7 +210,9 @@ CNSTDatabase::ExecSP_CreateClient(
             else
                 client_id = k_UndefinedClientID;
 
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -220,7 +224,9 @@ CNSTDatabase::ExecSP_CreateClient(
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -231,7 +237,7 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
             Int8  client_id, const TNSTDBValue<CTimeSpan>  ttl,
-            bool &  size_was_null, CNSTTiming &  timing)
+            bool &  size_was_null)
 {
     const string        proc_name = "CreateObjectWithClientID";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -271,7 +277,9 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
 
             if (status == kSPStatusOK) {
                 size_was_null = (query.
@@ -289,7 +297,9 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -302,8 +312,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
             const TNSTDBValue<CTime> &  object_expiration,
-            bool &  size_was_null,
-            CNSTTiming &  timing)
+            bool &  size_was_null)
 {
     // Calculate separate expirations for two cases:
     // - record is found
@@ -356,7 +365,9 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
 
             if (status == kSPStatusOK) {
                 size_was_null = (query.
@@ -374,7 +385,9 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -386,8 +399,7 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
-            const TNSTDBValue<CTime> &  object_expiration,
-            CNSTTiming &  timing)
+            const TNSTDBValue<CTime> &  object_expiration)
 {
     // Calculate separate expirations for two cases:
     // - record is found
@@ -433,7 +445,9 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -445,7 +459,9 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -458,8 +474,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_read,
             const TNSTDBValue<CTime> &  object_expiration,
-            bool &  size_was_null,
-            CNSTTiming &  timing)
+            bool &  size_was_null)
 {
     // Calculate separate expirations for two cases:
     // - record is found
@@ -513,7 +528,9 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
 
             if (status == kSPStatusOK) {
                 size_was_null = (query.
@@ -531,7 +548,9 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -543,8 +562,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
             const string &  object_loc, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_relocate,
-            const TNSTDBValue<CTime> &  object_expiration,
-            CNSTTiming &  timing)
+            const TNSTDBValue<CTime> &  object_expiration)
 {
     // Calculate separate expirations for two cases:
     // - record is found
@@ -589,7 +607,9 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -601,15 +621,16 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
 
 
 int
-CNSTDatabase::ExecSP_RemoveObject(const string &  object_key,
-                                  CNSTTiming &  timing)
+CNSTDatabase::ExecSP_RemoveObject(const string &  object_key)
 {
     const string        proc_name = "RemoveObject";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -627,7 +648,9 @@ CNSTDatabase::ExecSP_RemoveObject(const string &  object_key,
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -639,7 +662,9 @@ CNSTDatabase::ExecSP_RemoveObject(const string &  object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -651,8 +676,7 @@ CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
                                    bool  create_if_not_found,
                                    const string &  object_loc,
                                    Int8  client_id,
-                                   TNSTDBValue<Int8> &  object_size,
-                                   CNSTTiming &  timing)
+                                   TNSTDBValue<Int8> &  object_size)
 {
     const string        proc_name = "SetObjectExpiration";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -690,7 +714,9 @@ CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
                                                                     AsInt8();
             }
 
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -702,7 +728,9 @@ CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -715,8 +743,7 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
                                   const string &  attr_value,
                                   Int8  client_id,
                                   bool  create_if_not_found,
-                                  const TNSTDBValue<CTimeSpan> &  ttl,
-                                  CNSTTiming &  timing)
+                                  const TNSTDBValue<CTimeSpan> &  ttl)
 {
     const string        proc_name = "AddAttribute";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -745,7 +772,9 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -757,7 +786,9 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -765,8 +796,7 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
 
 int
 CNSTDatabase::ExecSP_GetAttributeNames(const string &  object_key,
-                                       vector<string> &  attr_names,
-                                       CNSTTiming &  timing)
+                                       vector<string> &  attr_names)
 {
     const string        proc_name = "GetAttributeNames";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -790,7 +820,9 @@ CNSTDatabase::ExecSP_GetAttributeNames(const string &  object_key,
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -802,7 +834,9 @@ CNSTDatabase::ExecSP_GetAttributeNames(const string &  object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -812,8 +846,7 @@ int
 CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
                                   const string &  attr_name,
                                   bool            need_update,
-                                  string &        value,
-                                  CNSTTiming &    timing)
+                                  string &        value)
 {
     const string        proc_name = "GetAttribute";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -838,7 +871,9 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
                 value = query.GetParameter("@attr_value").AsString();
             else
                 value = "";
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -850,7 +885,9 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -858,8 +895,7 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
 
 int
 CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
-                                  const string &  attr_name,
-                                  CNSTTiming &    timing)
+                                  const string &  attr_name)
 {
     const string        proc_name = "DelAttribute";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -878,7 +914,9 @@ CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -890,7 +928,9 @@ CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -906,8 +946,7 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                               TNSTDBValue<CTime> &  attr_write,
                                               TNSTDBValue<Int8> &   read_count,
                                               TNSTDBValue<Int8> &   write_count,
-                                              TNSTDBValue<string> & client_name,
-                                              CNSTTiming &          timing
+                                              TNSTDBValue<string> & client_name
                                               )
 {
     const string        proc_name = "GetObjectFixedAttributes";
@@ -986,7 +1025,9 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                     client_name.m_Value = query.GetParameter("@client_name").
                                                                 AsString();
             }
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -998,7 +1039,9 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -1006,8 +1049,7 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
 
 int
 CNSTDatabase::ExecSP_GetObjectExpiration(const string &        object_key,
-                                         TNSTDBValue<CTime> &  expiration,
-                                         CNSTTiming &          timing)
+                                         TNSTDBValue<CTime> &  expiration)
 {
     const string        proc_name = "GetObjectExpiration";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -1034,7 +1076,9 @@ CNSTDatabase::ExecSP_GetObjectExpiration(const string &        object_key,
                     expiration.m_Value = query.GetParameter("@expiration").
                                                                 AsDateTime();
             }
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -1046,14 +1090,16 @@ CNSTDatabase::ExecSP_GetObjectExpiration(const string &        object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
 
 
 map<string, string>
-CNSTDatabase::ExecSP_GetGeneralDBInfo(CNSTTiming &  timing)
+CNSTDatabase::ExecSP_GetGeneralDBInfo(void)
 {
     map<string, string>     result;
     const string            proc_name = "sp_spaceused";
@@ -1078,7 +1124,9 @@ CNSTDatabase::ExecSP_GetGeneralDBInfo(CNSTTiming &  timing)
             }
             query.VerifyDone();
 
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return result;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -1090,14 +1138,16 @@ CNSTDatabase::ExecSP_GetGeneralDBInfo(CNSTTiming &  timing)
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
 
 
 map<string, string>
-CNSTDatabase::ExecSP_GetStatDBInfo(CNSTTiming &  timing)
+CNSTDatabase::ExecSP_GetStatDBInfo(void)
 {
     map<string, string>     result;
     const string            proc_name = "GetStatInfo";
@@ -1119,7 +1169,9 @@ CNSTDatabase::ExecSP_GetStatDBInfo(CNSTTiming &  timing)
             }
             query.VerifyDone();
 
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return result;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -1131,7 +1183,9 @@ CNSTDatabase::ExecSP_GetStatDBInfo(CNSTTiming &  timing)
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -1141,8 +1195,7 @@ int
 CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
                                       TNSTDBValue<Int8>  limit,
                                       Int8 &  total,
-                                      vector<string> &  locators,
-                                      CNSTTiming &  timing)
+                                      vector<string> &  locators)
 {
     const string            proc_name = "GetClientObjects";
     CNSTPreciseTime         start = CNSTPreciseTime::Current();
@@ -1174,7 +1227,9 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -1186,15 +1241,16 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
 
 
 int
-CNSTDatabase::ExecSP_GetClients(vector<string> &  names,
-                                CNSTTiming &  timing)
+CNSTDatabase::ExecSP_GetClients(vector<string> &  names)
 {
     const string            proc_name = "GetClients";
     CNSTPreciseTime         start = CNSTPreciseTime::Current();
@@ -1217,7 +1273,9 @@ CNSTDatabase::ExecSP_GetClients(vector<string> &  names,
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -1229,15 +1287,16 @@ CNSTDatabase::ExecSP_GetClients(vector<string> &  names,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
 
 
 int
-CNSTDatabase::ExecSP_DoesObjectExist(const string &  object_key,
-                                     CNSTTiming &  timing)
+CNSTDatabase::ExecSP_DoesObjectExist(const string &  object_key)
 {
     const string        proc_name = "DoesObjectExist";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -1255,7 +1314,9 @@ CNSTDatabase::ExecSP_DoesObjectExist(const string &  object_key,
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -1267,7 +1328,9 @@ CNSTDatabase::ExecSP_DoesObjectExist(const string &  object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -1275,8 +1338,7 @@ CNSTDatabase::ExecSP_DoesObjectExist(const string &  object_key,
 
 int
 CNSTDatabase::ExecSP_GetObjectSize(const string &  object_key,
-                                   TNSTDBValue<Int8> &  object_size,
-                                   CNSTTiming &  timing)
+                                   TNSTDBValue<Int8> &  object_size)
 {
     const string        proc_name = "GetObjectSize";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -1304,7 +1366,9 @@ CNSTDatabase::ExecSP_GetObjectSize(const string &  object_key,
                                                                     AsInt8();
             }
 
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -1316,7 +1380,9 @@ CNSTDatabase::ExecSP_GetObjectSize(const string &  object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }
@@ -1324,8 +1390,7 @@ CNSTDatabase::ExecSP_GetObjectSize(const string &  object_key,
 
 int
 CNSTDatabase::ExecSP_UpdateObjectSizeIfNULL(const string &  object_key,
-                                            TNSTDBValue<Int8> &  object_size,
-                                            CNSTTiming &  timing)
+                                            TNSTDBValue<Int8> &  object_size)
 {
     const string        proc_name = "UpdateObjectSizeIfNULL";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -1353,7 +1418,9 @@ CNSTDatabase::ExecSP_UpdateObjectSizeIfNULL(const string &  object_key,
                                                                     AsInt8();
             }
 
-            timing.Append("MS SQL " + proc_name, start);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
             return status;
         } catch (const std::exception &  ex) {
             m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
@@ -1365,7 +1432,9 @@ CNSTDatabase::ExecSP_UpdateObjectSizeIfNULL(const string &  object_key,
             throw;
         }
     } catch (...) {
-        timing.Append("MS SQL " + proc_name + " (exception)", start);
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
         throw;
     }
 }

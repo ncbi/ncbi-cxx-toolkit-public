@@ -51,7 +51,6 @@ CNetStorageServer::CNetStorageServer()
      m_Shutdown(false),
      m_SigNum(0),
      m_Log(default_log),
-     m_LogTiming(default_log_timing),
      m_LogTimingNSTAPI(default_log_timing_nst_api),
      m_LogTimingClientSocket(default_log_timing_client_socket),
      m_SessionID("s" + x_GenerateGUID()),
@@ -89,7 +88,6 @@ CNetStorageServer::SetParameters(
 
         m_Port = params.port;
         m_Log = params.log;
-        m_LogTiming = params.log_timing;
         m_LogTimingNSTAPI = params.log_timing_nst_api;
         m_LogTimingClientSocket = params.log_timing_client_socket;
         m_NetworkTimeout = params.network_timeout;
@@ -128,7 +126,6 @@ CNetStorageServer::SetParameters(
     CServer::GetParameters(&current_params);
 
     if (m_Log == params.log &&
-        m_LogTiming == params.log_timing &&
         m_LogTimingNSTAPI == params.log_timing_nst_api &&
         m_LogTimingClientSocket == params.log_timing_client_socket &&
         m_NetworkTimeout == params.network_timeout &&
@@ -149,15 +146,6 @@ CNetStorageServer::SetParameters(
         diff.SetByKey("log", values);
 
         m_Log = params.log;
-    }
-    if (m_LogTiming != params.log_timing) {
-        CJsonNode   values = CJsonNode::NewObjectNode();
-
-        values.SetByKey("Old", CJsonNode::NewBooleanNode(m_LogTiming));
-        values.SetByKey("New", CJsonNode::NewBooleanNode(params.log_timing));
-        diff.SetByKey("log_timing", values);
-
-        m_LogTiming = params.log_timing;
     }
     if (m_LogTimingNSTAPI != params.log_timing_nst_api) {
         CJsonNode   values = CJsonNode::NewObjectNode();
@@ -651,7 +639,7 @@ string  CNetStorageServer::RemoveCrashFlagFile(void)
 }
 
 
-Int8 CNetStorageServer::GetNextObjectID(CNSTTiming &  timing)
+Int8 CNetStorageServer::GetNextObjectID(void)
 {
     CFastMutexGuard     guard(m_NextObjectIDLock);
 
@@ -662,7 +650,7 @@ Int8 CNetStorageServer::GetNextObjectID(CNSTTiming &  timing)
     // All reserved IDs were used, retrieve more
 
     const Int8  batch_size = 10000;
-    GetDb().ExecSP_GetNextObjectID(m_LastUsedObjectID, batch_size, timing);
+    GetDb().ExecSP_GetNextObjectID(m_LastUsedObjectID, batch_size);
     m_LastReservedObjectID = m_LastUsedObjectID + batch_size - 1;
     return m_LastUsedObjectID;
 }

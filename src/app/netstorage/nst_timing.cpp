@@ -51,14 +51,6 @@ string CNSTTiming::Serialize(CDiagContext_Extra  extra)
     string  retval;
     for ( vector< pair< string, CNSTPreciseTime > >::const_iterator
             k = data.begin(); k != data.end(); ++k ) {
-        if (NStr::StartsWith(k->first, "MS SQL")) {
-
-            // It was decided to log MS SQL timing as an integer in
-            // milliseconds: CXX-7802
-            unsigned long   msec = round((double)(k->second) * kMSecsPerSecond);
-            extra.Print(NStr::Replace(k->first, " ", "_"), msec);
-            continue;
-        }
         if (!retval.empty())
             retval += " ";
         retval += k->first + ": " + NST_FormatPreciseTimeAsSec(k->second);

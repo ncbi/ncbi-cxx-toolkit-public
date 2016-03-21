@@ -66,12 +66,10 @@ public:
 
     const bool &  IsLog() const
     { return m_Log; }
-    const bool &  IsLogTiming() const
-    { return m_LogTiming; }
     bool  IsLogTimingNSTAPI() const
-    { return m_LogTimingNSTAPI && m_LogTiming; }
+    { return m_LogTimingNSTAPI; }
     bool  IsLogTimingClientSocket() const
-    { return m_LogTimingClientSocket && m_LogTiming; }
+    { return m_LogTimingClientSocket; }
 
     unsigned int  GetNetworkTimeout(void) const
     { return m_NetworkTimeout; }
@@ -150,7 +148,6 @@ private:
     mutable bool                m_Shutdown;
     int                         m_SigNum;
     bool                        m_Log;
-    bool                        m_LogTiming;
     bool                        m_LogTimingNSTAPI;
     bool                        m_LogTimingClientSocket;
     string                      m_SessionID;
@@ -206,7 +203,7 @@ private:
     bool    x_DoesCrashFlagFileExist(void) const;
 
 public:
-    Int8  GetNextObjectID(CNSTTiming &  timing);
+    Int8  GetNextObjectID(void);
 
 private:
     CFastMutex      m_NextObjectIDLock;

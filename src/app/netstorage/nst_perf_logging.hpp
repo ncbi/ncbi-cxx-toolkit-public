@@ -1,5 +1,5 @@
-#ifndef NETSTORAGE_SERVER_PARAMS__HPP
-#define NETSTORAGE_SERVER_PARAMS__HPP
+#ifndef NETSTORAGE_PERF_LOGGING__HPP
+#define NETSTORAGE_PERF_LOGGING__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,39 +26,27 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
+ * Authors:  Sergey Satskiy
  *
- * File Description: [server] section of the configuration
+ * File Description: NetStorage performance logging
  *
  */
 
-#include <corelib/ncbireg.hpp>
-#include <connect/server.hpp>
 
-#include <string>
+#include <corelib/request_status.hpp>
+#include "nst_precise_time.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 
-//
-// NetStorage server parameters
-//
-struct SNetStorageServerParameters : SServer_Parameters
-{
-    void Read(const IRegistry& reg, const string& sname,
-              string &  decrypt_warning);
+// Produces a record for the performance logging
+void g_DoPerfLogging(const string &  resource,
+                     const CNSTPreciseTime &  timing,
+                     CRequestStatus::ECode  code);
 
-    unsigned short  port;
-    unsigned int    network_timeout;
-    bool            log;
-    bool            log_timing_nst_api;
-    bool            log_timing_client_socket;
-    string          admin_client_names;
-    string          data_path;
-};
 
 END_NCBI_SCOPE
 
-#endif
+#endif /* NETSTORAGE_PERF_LOGGING__HPP */
 

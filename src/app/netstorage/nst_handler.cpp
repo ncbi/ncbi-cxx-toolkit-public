@@ -321,7 +321,7 @@ void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     // here as the last chance.
     if (m_CmdContext.NotNull()) {
         CDiagContext::SetRequestContext(m_CmdContext);
-        if (!m_Timing.Empty() && m_Server->IsLogTiming()) {
+        if (!m_Timing.Empty()) {
             string      timing =  m_Timing.Serialize(GetDiagContext().Extra());
             if (!timing.empty())
                 GetDiagContext().Extra().Print("timing", timing);
@@ -696,7 +696,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 m_Server->GetDb().ExecSP_CreateObjectWithClientID(
                         m_DBObjectID, object_loc_struct.GetUniqueKey(),
                         locator, m_ObjectSize, m_DBClientID, m_CreateTTL,
-                        size_was_null, m_Timing);
+                        size_was_null);
             } catch (const exception &  ex) {
                 x_SetCmdRequestStatus(eStatus_ServerError);
                 string  message = "Error while updating meta info DB for " +
@@ -742,8 +742,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 TNSTDBValue<CTime>  object_expiration;
                 string  object_key = object_loc_struct.GetUniqueKey();
                 m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
-                                                             object_expiration,
-                                                             m_Timing);
+                                                             object_expiration);
 
                 // The record will be created if it does not exist
                 m_Server->GetDb().ExecSP_UpdateObjectOnWrite(
@@ -751,8 +750,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                                     locator, m_ObjectSize, m_DBClientID,
                                     m_WriteServiceProps.GetTTL(),
                                     m_WriteServiceProps.GetProlongOnWrite(),
-                                    object_expiration, size_was_null,
-                                    m_Timing);
+                                    object_expiration, size_was_null);
             } catch (const exception &  ex) {
                 string  message = "Error while updating meta info DB for " +
                                   locator + " upon writing: " + ex.what();
@@ -1009,7 +1007,7 @@ CNetStorageHandler::x_PrintMessageRequestStop(void)
 {
     if (m_CmdContext.NotNull()) {
         CDiagContext::SetRequestContext(m_CmdContext);
-        if (!m_Timing.Empty() && m_Server->IsLogTiming()) {
+        if (!m_Timing.Empty()) {
             string      timing =  m_Timing.Serialize(GetDiagContext().Extra());
             if (!timing.empty())
                 GetDiagContext().Extra().Print("timing", timing);
@@ -1173,12 +1171,12 @@ CNetStorageHandler::x_ProcessHealth(
     if (connected) {
         try {
             map<string, string>   db_stat = m_Server->GetDb().
-                                            ExecSP_GetGeneralDBInfo(m_Timing);
+                                            ExecSP_GetGeneralDBInfo();
             for (map<string, string>::const_iterator  k = db_stat.begin();
                  k != db_stat.end(); ++k)
                 db_stat_node.SetString(k->first, k->second);
 
-            db_stat = m_Server->GetDb().ExecSP_GetStatDBInfo(m_Timing);
+            db_stat = m_Server->GetDb().ExecSP_GetStatDBInfo();
             for (map<string, string>::const_iterator  k = db_stat.begin();
                  k != db_stat.end(); ++k)
                 db_stat_node.SetString(k->first, k->second);
@@ -1468,8 +1466,7 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
     if (db_access) {
         try {
             vector<string>      names;
-            int     status = m_Server->GetDb().ExecSP_GetClients(names,
-                                                                 m_Timing);
+            int     status = m_Server->GetDb().ExecSP_GetClients(names);
             if (status != kSPStatusOK) {
                 reply.SetString("DBClients", "MetadataAccessWarning");
                 AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
@@ -1565,7 +1562,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                                         obj_read, obj_write,
                                         attr_read, attr_write,
                                         read_count, write_count,
-                                        client_name, m_Timing);
+                                        client_name);
 
             if (status != kSPStatusOK) {
                 // The record in the meta DB for the object is not found
@@ -1751,7 +1748,7 @@ CNetStorageHandler::x_ProcessGetAttrList(
     // Note: object expiration is checked in a stored procedure
     vector<string>  attr_names;
     int             status = m_Server->GetDb().ExecSP_GetAttributeNames(
-                                        object_key, attr_names, m_Timing);
+                                        object_key, attr_names);
 
     if (status == kSPStatusOK) {
         // Everything is fine, the attribute is found
@@ -1819,8 +1816,7 @@ CNetStorageHandler::x_ProcessGetClientObjects(
     Int8            total_client_objects;
     int             status = m_Server->GetDb().ExecSP_GetClientObjects(
                                         message.GetString("ClientName"), limit,
-                                        total_client_objects, locators,
-                                        m_Timing);
+                                        total_client_objects, locators);
 
     if (status == kSPStatusOK) {
         // Everything is fine, the object is found
@@ -1890,7 +1886,7 @@ CNetStorageHandler::x_ProcessGetAttr(
     int         status = m_Server->GetDb().ExecSP_GetAttribute(
                                         object_key, attr_name,
                                         m_MetadataOption != eMetadataMonitoring,
-                                        value, m_Timing);
+                                        value);
 
     if (status == kSPStatusOK) {
         // Everything is fine, the attribute is found
@@ -1976,7 +1972,7 @@ CNetStorageHandler::x_ProcessSetAttr(
                                           object_key, object_loc,
                                           attr_name, value,
                                           m_DBClientID, create_if_not_found,
-                                          ttl, m_Timing);
+                                          ttl);
     x_CheckExistanceStatus(status);
     x_CheckExpirationStatus(status);
     if (status != kSPStatusOK) {
@@ -2028,7 +2024,7 @@ CNetStorageHandler::x_ProcessDelAttr(
                                         direct_object.Locator().GetUniqueKey();
 
     int         status = m_Server->GetDb().ExecSP_DelAttribute(
-                                            object_key, attr_name, m_Timing);
+                                            object_key, attr_name);
 
     x_CheckExpirationStatus(status);
     if (status == kSPObjectNotFound) {
@@ -2156,8 +2152,7 @@ CNetStorageHandler::x_ProcessWrite(
         if (create_if_not_found == false) {
             // The DoesObjectExist procedure will check the object expiration as
             // well.
-            int  status = m_Server->GetDb().ExecSP_DoesObjectExist(
-                                                        object_key, m_Timing);
+            int  status = m_Server->GetDb().ExecSP_DoesObjectExist(object_key);
             x_CheckExpirationStatus(status);
             x_CheckExistanceStatus(status);
         }
@@ -2223,8 +2218,7 @@ CNetStorageHandler::x_ProcessRead(
 
         // The DoesObjectExist procedure will check the object expiration as
         // well.
-        int  status = m_Server->GetDb().ExecSP_DoesObjectExist(
-                                    object_key, m_Timing);
+        int  status = m_Server->GetDb().ExecSP_DoesObjectExist(object_key);
 
         x_CheckExpirationStatus(status);
         if (status == kSPObjectNotFound) {
@@ -2314,14 +2308,13 @@ CNetStorageHandler::x_ProcessRead(
             // which is technically not safe in multiple access scenario...
             TNSTDBValue<CTime>              object_expiration;
             m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
-                                                         object_expiration,
-                                                         m_Timing);
+                                                         object_expiration);
 
             m_Server->GetDb().ExecSP_UpdateObjectOnRead(
                     object_key, locator, total_bytes, m_DBClientID,
                     service_properties.GetTTL(),
                     service_properties.GetProlongOnRead(),
-                    object_expiration, size_was_null, m_Timing);
+                    object_expiration, size_was_null);
         } catch (const exception &  ex) {
             ERR_POST(ex);
 
@@ -2395,7 +2388,7 @@ CNetStorageHandler::x_ProcessDelete(
 
         // Meta information is required so delete from the DB first
         status = m_Server->GetDb().ExecSP_RemoveObject(
-                    direct_object.Locator().GetUniqueKey(), m_Timing);
+                    direct_object.Locator().GetUniqueKey());
 
         x_CheckExpirationStatus(status);
         if (status == kSPObjectNotFound) {
@@ -2492,8 +2485,7 @@ CNetStorageHandler::x_ProcessRelocate(
 
         // The DoesObjectExist procedure will check the object expiration as
         // well.
-        int  status = m_Server->GetDb().ExecSP_DoesObjectExist(
-                                    object_key, m_Timing);
+        int  status = m_Server->GetDb().ExecSP_DoesObjectExist(object_key);
         x_CheckExpirationStatus(status);
         if (status == kSPObjectNotFound) {
             if (create_if_not_found == false) {
@@ -2525,8 +2517,7 @@ CNetStorageHandler::x_ProcessRelocate(
             // which is technically not safe in multiple access scenario...
             TNSTDBValue<CTime>              object_expiration;
             m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
-                                                         object_expiration,
-                                                         m_Timing);
+                                                         object_expiration);
 
             // The record is created if does not exist
             m_Server->GetDb().ExecSP_UpdateObjectOnRelocate(
@@ -2535,7 +2526,7 @@ CNetStorageHandler::x_ProcessRelocate(
                                     m_DBClientID,
                                     service_properties.GetTTL(),
                                     service_properties.GetProlongOnRelocate(),
-                                    object_expiration, m_Timing);
+                                    object_expiration);
         } catch (const exception &  ex) {
             // Append error however the overall reply must be OK
             ERR_POST(ex);
@@ -2599,8 +2590,7 @@ CNetStorageHandler::x_ProcessExists(
 
     if (need_db_access) {
         int  status = m_Server->GetDb().ExecSP_DoesObjectExist(
-                                    direct_object.Locator().GetUniqueKey(),
-                                    m_Timing);
+                                    direct_object.Locator().GetUniqueKey());
         if (status == kSPStatusOK) {
             reply.SetBoolean("Exists", true);
             x_SendSyncMessage(reply);
@@ -2666,7 +2656,7 @@ CNetStorageHandler::x_ProcessGetSize(
     if (need_db_access) {
         TNSTDBValue<Int8>   db_object_size;
         int  status = m_Server->GetDb().ExecSP_GetObjectSize(
-                                    object_key, db_object_size, m_Timing);
+                                    object_key, db_object_size);
         x_CheckExpirationStatus(status);
 
         if (status == kSPStatusOK) {
@@ -2718,7 +2708,7 @@ CNetStorageHandler::x_ProcessGetSize(
                 db_object_size.m_Value = object_size;
 
                 int  status = m_Server->GetDb().ExecSP_UpdateObjectSizeIfNULL(
-                                    object_key, db_object_size, m_Timing);
+                                    object_key, db_object_size);
                 if (status == kSPStatusOK) {
                     object_size = db_object_size.m_Value;
                 }
@@ -2820,8 +2810,7 @@ CNetStorageHandler::x_ProcessSetExpTime(
                                                             create_if_not_found,
                                                             object_loc,
                                                             m_DBClientID,
-                                                            object_size,
-                                                            m_Timing);
+                                                            object_size);
             object_size_unknown = object_size.m_IsNull;
         } catch (const exception &  ex) {
             string          error_scope;
@@ -2941,8 +2930,7 @@ CNetStorageHandler::x_ProcessLockFTPath(
 
     if (x_DetectMetaDBNeedOnGetObjectInfo(message)) {
         // The only required check in the DB is if the object is expired
-        int  status = m_Server->GetDb().ExecSP_DoesObjectExist(
-                                                        object_key, m_Timing);
+        int  status = m_Server->GetDb().ExecSP_DoesObjectExist(object_key);
             x_CheckExpirationStatus(status);
     }
 
@@ -3386,7 +3374,7 @@ CNetStorageHandler::x_CreateClient(void)
         return;
 
     // Here: the ID is not set thus a DB request is required
-    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID, m_Timing);
+    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
     if (m_DBClientID != k_UndefinedClientID)
         m_Server->GetClientRegistry().SetDBClientID(m_Client, m_DBClientID);
 }
@@ -3395,7 +3383,7 @@ CNetStorageHandler::x_CreateClient(void)
 Int8
 CNetStorageHandler::x_GetNextObjectID(void)
 {
-    return m_Server->GetNextObjectID(m_Timing);
+    return m_Server->GetNextObjectID();
 }
 
 
