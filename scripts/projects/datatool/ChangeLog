@@ -145,3 +145,13 @@ Fixed bugs in schema parsing .
 June 29, 2015
 version 2.14.0,  CXX-6104
 Added option to selectively write named integers by value only.
+
+March 21, 2016
+version 2.15.0, CXX-7948
+Added mapping of certain data types to strings.
+Fixed delayed buffer in choice variants.
+Changed to print schema comments using documentation tag.
+
+
+
+
