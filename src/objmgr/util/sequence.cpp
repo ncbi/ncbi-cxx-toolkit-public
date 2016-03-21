@@ -3026,7 +3026,9 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
 
 
 void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
-                                  const CSeq_loc* location)
+                                  const CSeq_loc* location,
+                                  const CSeq_loc::EOpFlags merge_flags)
+
 {
     vector<CTSE_Handle> used_tses;
     if ( !(m_Flags & fAssembleParts)  &&  !handle.IsSetInst_Seq_data() ) {
@@ -3049,7 +3051,7 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
                        "CFastaOstream: location out of range: " + label);
         }
         CRef<CSeq_loc> merged
-            = sequence::Seq_loc_Merge(*location, CSeq_loc::fMerge_All, &scope);
+            = sequence::Seq_loc_Merge(*location, merge_flags, &scope);
         v = CSeqVector(*merged, scope, CBioseq_Handle::eCoding_Iupac);
     } else {
         v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
