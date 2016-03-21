@@ -4361,13 +4361,13 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
             TSeqPos left = fi->GetLocation().GetStart(eExtreme_Positional);
             vector< CConstRef < CSeq_feat > >::iterator cit = containing_genes.begin();
             vector< int >::iterator nit = num_contained.begin();
-            bool go_on = true;
-            while (go_on && cit != containing_genes.end() && nit != num_contained.end()) {
+            while (cit != containing_genes.end() && nit != num_contained.end()) {
                 ECompare comp = Compare(fi->GetLocation(), (*cit)->GetLocation(), m_Scope, fCompareOverlapping);
                 if (comp == eContained  ||  comp == eSame) {
                     (*nit)++;
                 }
-                if (/* !is_circular && */ (*cit)->GetLocation().GetStop(eExtreme_Positional) < left) {
+                TSeqPos n_right = (*cit)->GetLocation().GetStop(eExtreme_Positional);
+                if (n_right < left) {
                     // report if necessary
                     if (*nit > 4) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultipleGeneOverlap, 
@@ -4377,7 +4377,6 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
                     // remove from list
                     cit = containing_genes.erase(cit);
                     nit = num_contained.erase(nit);
-                    go_on = false;
                 } else {
                     ++cit;
                     ++nit;
