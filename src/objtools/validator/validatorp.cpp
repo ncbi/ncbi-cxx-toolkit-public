@@ -1816,20 +1816,6 @@ unsigned int s_CountMix(const CSeq_loc& loc)
     return num_mix;
 }
 
-unsigned int s_CountZeroGI(const CSeq_loc& loc)
-{
-    unsigned int zero_gi = 0;
-
-    CTypeConstIterator<CSeq_loc> lit = ConstBegin(loc);
-    for (; lit; ++lit) {
-        if (lit->GetId() != 0 && lit->GetId()->IsGi() && lit->GetId()->GetGi() == ZERO_GI) {
-            zero_gi++;
-        }
-    }
-    return zero_gi;
-}
-
-
 void CValidError_imp::ValidateSeqLoc
 (const CSeq_loc& loc,
  const CBioseq_Handle&  seq,
@@ -1961,20 +1947,6 @@ void CValidError_imp::ValidateSeqLoc
             prefix + ": SeqLoc [" + label + "] has nested SEQLOC_MIX elements",
                  obj);
     }
-    unsigned int zero_gi = s_CountZeroGI(loc);
-    if (zero_gi > 0) {
-        string label = "?";
-        if (seq && seq.IsSetId()) {
-            label = seq.GetId().front().GetSeqId()->AsFastaString();
-        }
-
-        PostErr (eDiag_Critical, eErr_SEQ_FEAT_FeatureLocationIsGi0,
-                 "Feature has " + NStr::IntToString(zero_gi) 
-                 + " gi|0 location" + (zero_gi > 1 ? "s" : "")
-                 + " on Bioseq " + label,
-                 obj);
-    }
-
 
     // Warn if different parts of a seq-loc refer to the same bioseq using 
     // differnt id types (i.e. gi and accession)

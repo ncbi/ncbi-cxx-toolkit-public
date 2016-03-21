@@ -144,8 +144,9 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
         }
     } else if (annot.IsFtable()) {
         FOR_EACH_SEQFEAT_ON_SEQANNOT(feat_it, annot) {
-            if (!(*feat_it)->IsSetLocation() || IsLocationUnindexed((*feat_it)->GetLocation())) {
-                string label = seq.GetId().front()->AsFastaString();
+            string label = seq.GetId().front()->AsFastaString();
+            ReportLocationGI0(**feat_it, label);
+            if (!(*feat_it)->IsSetLocation() || IsLocationUnindexed((*feat_it)->GetLocation())) {                
                 m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_UnindexedFeature,
                     "Feature is not indexed on Bioseq " + label, **feat_it);
             } else {
@@ -280,6 +281,7 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
         const bool is_embl_or_ddbj_on_set = x_IsEmblOrDdbjOnSet(bssh);
 
         FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, annot) {
+            ReportLocationGI0(**feat_it, "?");
             if (!(*feat_it)->IsSetLocation() || IsLocationUnindexed((*feat_it)->GetLocation())) {
                 m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_UnindexedFeature,
                     "Feature is not indexed on Bioseq ?", **feat_it);
@@ -318,6 +320,30 @@ bool CValidError_annot::IsLocationUnindexed(const CSeq_loc& loc)
         }
     }
     return !found_one;
+}
+
+
+void CValidError_annot::ReportLocationGI0(const CSeq_feat& f, const string& label)
+{
+    if (!f.IsSetLocation()) {
+        return;
+    }
+    
+    unsigned int zero_gi = 0;
+
+    for (CSeq_loc_CI lit(f.GetLocation()); lit; ++lit) {
+        if (lit.GetSeq_id().IsGi() && lit.GetSeq_id().GetGi() == ZERO_GI) {
+            zero_gi++;
+        }
+    }
+
+    if (zero_gi > 0) {
+        PostErr(eDiag_Critical, eErr_SEQ_FEAT_FeatureLocationIsGi0,
+            "Feature has " + NStr::IntToString(zero_gi)
+            + " gi|0 location" + (zero_gi > 1 ? "s" : "")
+            + " on Bioseq " + label,
+            f);
+    }
 }
 
 

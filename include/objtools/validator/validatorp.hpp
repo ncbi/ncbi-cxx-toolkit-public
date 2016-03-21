@@ -1245,6 +1245,7 @@ public:
     void ValidateSeqAnnotContext(const CSeq_annot& annot, const CBioseq& seq);
     void ValidateSeqAnnotContext(const CSeq_annot& annot, const CBioseq_set& set);
     bool IsLocationUnindexed(const CSeq_loc& loc);
+    void ReportLocationGI0(const CSeq_feat& f, const string& label);
 
 private:
     CValidError_graph m_GraphValidator;
