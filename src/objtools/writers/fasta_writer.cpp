@@ -81,6 +81,25 @@ void CFastaOstreamEx::WriteFeature(CScope& scope,
 }
 
 
+void CFastaOstreamEx::WriteFeatureTitle(CScope& scope, 
+                                        const CSeq_feat& feat)
+{
+
+    if (!feat.IsSetData() ||
+        !feat.IsSetLocation()) {
+        return;
+    }
+
+    auto bsh = scope.GetBioseqHandle(feat.GetLocation());
+
+    if (!bsh) {
+        return;
+    }
+
+    WriteFeatureTitle(bsh, feat);
+}
+
+
 void CFastaOstreamEx::WriteFeature(const CBioseq_set_Handle& handle,
                                    const CSeq_feat& feat)
 {
@@ -115,9 +134,30 @@ void CFastaOstreamEx::WriteFeature(const CBioseq_Handle& handle,
         return;
     }
 
-
     WriteFeatureTitle(handle, feat);
-    WriteSequence(handle, &(feat.GetLocation()));
+    if (!feat.GetData().IsCdregion() ||
+        !feat.GetData().GetCdregion().IsSetFrame() ||
+        feat.GetData().GetCdregion().GetFrame()==1) {
+        WriteSequence(handle, &(feat.GetLocation()), CSeq_loc::fMerge_AbuttingOnly);
+        return;
+    }
+
+    // Cdregion with frameshift
+    const auto& loc = feat.GetLocation();
+    const auto loc_start = loc.GetStart(eExtreme_Positional);
+    const auto strand = loc.GetStrand();
+    auto seq_id = Ref(new CSeq_id());
+    seq_id->Assign(*loc.GetId());
+
+    auto frame = feat.GetData().GetCdregion().GetFrame();
+    auto untranslated_loc = Ref(new CSeq_loc(*seq_id, loc_start, loc_start+frame-2, strand));
+
+    auto translated_loc = sequence::Seq_loc_Subtract(loc, *untranslated_loc, 
+                                                CSeq_loc::fMerge_AbuttingOnly, &(handle.GetScope()));
+
+
+
+    WriteSequence(handle, translated_loc.GetPointer(), CSeq_loc::fMerge_AbuttingOnly);
 }
 
 
@@ -388,73 +428,6 @@ void CFastaOstreamEx::x_AddPartialAttribute(const CBioseq_Handle& handle,
     }
 }
 
-/*
-bool s_GetAaName(const CCode_break& cb, string& aaName)
-{
-    const char* AANames[] = {
-        "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
-        "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", "Ser", "Thr", "Val",
-        "Trp", "Other", "Tyr", "Glx", "Sec", "TERM", "Pyl"
-    };
-
-    static const char* other = "OTHER";
-    unsigned char aa(0);
-    switch (cb.GetAa().Which()) {
-        case CCode_break::C_Aa::e_Ncbieaa:
-            aa = cb.GetAa().GetNcbieaa();
-            aa = CSeqportUtil::GetMapToIndex(
-                    CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
-            break;
-        case CCode_break::C_Aa::e_Ncbi8aa:
-            aa = cb.GetAa().GetNcbi8aa();
-            break;
-        case CCode_break::C_Aa::e_Ncbistdaa:
-            aa = cb.GetAa().GetNcbistdaa();
-            break;
-        default:
-            return false;
-    }
-    aaName = ((aa < sizeof(AANames)/sizeof(*AANames)) ? AANames[aa] : other);
-    return true;
-}
-
-
-bool s_GetCodeBreakString(const CCode_break& cb, string& cbString)
-{
-    string cb_str("(pos:");
-    if (cb.IsSetLoc()) {
-        const auto& loc = cb.GetLoc();
-        switch( loc.Which() ) {
-            default:
-                cb_str += NStr::IntToString(loc.GetStart(eExtreme_Positional)+1);
-                cb_str += "..";
-                cb_str += NStr::IntToString(loc.GetStop(eExtreme_Positional)+1);
-                break;
-            case CSeq_loc::e_Int:
-                const auto& intv = loc.GetInt();
-                string intv_str = NStr::IntToString(intv.GetFrom()+1);
-                intv_str += "..";
-                intv_str += NStr::IntToString(intv.GetTo()+1);
-                if ( intv.IsSetStrand() && intv.GetStrand() == eNa_strand_minus) {
-                    intv_str = "complement(" + intv_str + ")";
-                }
-                cb_str += intv_str;
-                break;    
-        }
-
-    }
-    cb_str += ",aa:";
-
-    string aaName = "";
-    if (!s_GetAaName(cb, aaName)) {
-        return false;
-    }
-
-    cb_str += aaName + ")";
-    cbString = cb_str;
-    return true;
-}
-*/
 
 void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CBioseq_Handle& handle,
                                                          const CSeq_feat& feat,
@@ -472,7 +445,6 @@ void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CBioseq_Handle& h
     string transl_exception = "";
     for (auto && code_break : code_breaks) {
         string cb_string = "";
-        //if (s_GetCodeBreakString(*code_break, cb_string)) {
         if (CWriteUtil::GetCodeBreak(*code_break, cb_string)) {
             if (!transl_exception.empty()) {
                 transl_exception += ",";
@@ -520,7 +492,6 @@ void CFastaOstreamEx::x_AddLocationAttribute(const CBioseq_Handle& handle,
                                              const CSeq_feat& feat, 
                                              string& defline)
 {
-/*
     CFlatFileConfig cfg;
     CFlatFileContext ffctxt(cfg);
     CBioseqContext ctxt(handle, ffctxt);
@@ -534,7 +505,6 @@ void CFastaOstreamEx::x_AddLocationAttribute(const CBioseq_Handle& handle,
     }
 
     defline += " [location=" + loc_string + "]";
-*/
     return;
 }
 

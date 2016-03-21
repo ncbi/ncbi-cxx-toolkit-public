@@ -47,7 +47,7 @@ class CBioseq_Handle;
 class CSeq_entry_Handle;
 
 
-class CFastaOstreamEx : public CFastaOstream
+class NCBI_XOBJWRITE_EXPORT CFastaOstreamEx : public CFastaOstream
 {
 public:
 
@@ -64,6 +64,9 @@ public:
                
     virtual void WriteFeature(CScope& scope, // Should probably be const
                               const CSeq_feat& feat);
+
+    virtual void WriteFeatureTitle(CScope& scope,
+                                   const CSeq_feat& feat);
 
     void ResetFeatureCount(void);
 
