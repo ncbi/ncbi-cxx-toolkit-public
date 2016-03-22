@@ -51,12 +51,12 @@ public:
     /// Constructor which takes a string as input, can be a GI, accession,
     /// NCBI Seq-id
     /// @param entry string to parse [in]
-    CBlastDBSeqId(const string& entry) : m_OID(kInvalid), m_EntryChoice(eNone) 
+    CBlastDBSeqId(const string& entry) : m_OID(kInvalid), m_EntryChoice(eNone)
     {
-        try { 
-            m_EntrySpecified.m_GI = NStr::StringToInt(entry); 
+        try {
+            m_EntrySpecified.m_GI = NStr::StringToLong(entry);
             m_EntryChoice = eGi;
-            return; 
+            return;
         } catch (...) {}
         m_EntrySpecified.m_SequenceId = new string(entry);
         m_EntryChoice = eSeqId;
@@ -148,7 +148,7 @@ private:
         eGi,    ///< GI
         eSeqId  ///< Sequence identifier as string
     };
-    /// Choice of entry set, only valid if 
+    /// Choice of entry set, only valid if
     EEntryChoices m_EntryChoice;
 
     /// Union to hold the memory of the data stored
@@ -166,7 +166,7 @@ private:
             m_EntryChoice = rhs.m_EntryChoice;
             if (IsStringId()) {
                 _ASSERT(rhs.m_EntrySpecified.m_SequenceId);
-                m_EntrySpecified.m_SequenceId = 
+                m_EntrySpecified.m_SequenceId =
                     new string(*rhs.m_EntrySpecified.m_SequenceId);
             } else {
                 m_EntrySpecified = rhs.m_EntrySpecified;
