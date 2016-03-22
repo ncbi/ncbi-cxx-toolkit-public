@@ -44,7 +44,7 @@
 #include <objects/seqtable/seqtable__.hpp>
 #include <sra/error_codes.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
-#include <corelib/hash_map.hpp>
+#include <unordered_map>
 
 #include <sra/readers/sra/kdbread.hpp>
 
@@ -586,13 +586,13 @@ struct SSeqTableConverter {
     CRef<CSeqTable_column> col_alleles;
     CCommonString_table::TStrings* val_alleles;
     CCommonString_table::TIndexes* arr_alleles;
-    typedef hash_map<string, size_t> TIndex_alleles;
+    typedef unordered_map<string, size_t> TIndex_alleles;
     TIndex_alleles index_alleles;
 
     CRef<CSeqTable_column> col_qa;
     CCommonBytes_table::TBytes* val_qa;
     CCommonBytes_table::TIndexes* arr_qa;
-    typedef hash_map<Uint8, size_t> TIndex_qa;
+    typedef unordered_map<Uint8, size_t> TIndex_qa;
     TIndex_qa index_qa;
 
     CRef<CSeqTable_column> col_dbxref;
