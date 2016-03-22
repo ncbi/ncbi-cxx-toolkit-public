@@ -3,6 +3,7 @@
 """
 # $Id$
 
+from __future__ import print_function
 import sys, os, shutil
 from optparse import OptionParser
 import subprocess
