@@ -492,7 +492,8 @@ END_LOCAL_NAMESPACE;
 
 
 CRef<CSeq_graph>
-CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
+CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range,
+                                    const SFilter& /*filter*/) const
 {
     CRef<CSeq_graph> graph = x_NewCoverageGraph(*this);
     x_AdjustCoverageGraphRange(range, *this);
@@ -514,6 +515,7 @@ CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
 
 CRef<CSeq_annot>
 CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
+                                    const SFilter& /*filter*/,
                                     TFlags flags) const
 {
     CRef<CSeq_annot> annot = x_NewAnnot();
@@ -544,12 +546,14 @@ CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
 
 CRef<CSeq_annot>
 CSNPDbSeqIterator::GetFeatAnnot(CRange<TSeqPos> range,
+                                const SFilter& filter,
                                 TFlags flags) const
 {
     CRef<CSeq_annot> annot = x_NewAnnot();
     x_AdjustRange(range, *this);
     CSeq_annot::TData::TFtable& feats = annot->SetData().SetFtable();
-    for ( CSNPDbFeatIterator it(*this, range, eSearchByStart); it; ++it ) {
+    SSelector sel(eSearchByStart, filter);
+    for ( CSNPDbFeatIterator it(*this, range, sel); it; ++it ) {
         feats.push_back(it.GetSeq_feat());
     }
     if ( feats.empty() ) {
@@ -751,11 +755,13 @@ END_LOCAL_NAMESPACE;
 
 CSNPDbSeqIterator::TAnnotSet
 CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
+                                      const SFilter& filter,
                                       TFlags flags) const
 {
     x_AdjustRange(range, *this);
     SSeqTableConverter cvt(*this);
-    for ( CSNPDbFeatIterator it(*this, range, eSearchByStart); it; ++it ) {
+    SSelector sel(eSearchByStart, filter);
+    for ( CSNPDbFeatIterator it(*this, range, sel); it; ++it ) {
         cvt.Add(it);
     }
     return cvt.GetAnnots();
@@ -836,6 +842,7 @@ END_LOCAL_NAMESPACE;
 
 CSNPDbSeqIterator::TPackedAnnot
 CSNPDbSeqIterator::GetPackedFeatAnnot(CRange<TSeqPos> range,
+                                      const SFilter& filter,
                                       TFlags flags) const
 {
     x_AdjustRange(range, *this);
@@ -845,7 +852,8 @@ CSNPDbSeqIterator::GetPackedFeatAnnot(CRange<TSeqPos> range,
 
     SSNP_Info info;
     x_InitSNP_Info(info);
-    for ( CSNPDbFeatIterator it(*this, range, eSearchByStart); it; ++it ) {
+    SSelector sel(eSearchByStart, filter);
+    for ( CSNPDbFeatIterator it(*this, range, sel); it; ++it ) {
         if ( !x_ParseSNP_Info(info, it, *packed) ) {
             feats.push_back(it.GetSeq_feat());
         }
@@ -1127,7 +1135,6 @@ CSNPDbFeatIterator::operator=(const CSNPDbFeatIterator& iter)
         m_Extra = iter.m_Extra;
         m_ExtraRowId = iter.m_ExtraRowId;
         m_Filter = iter.m_Filter;
-        m_FilterMask = iter.m_FilterMask;
         m_CurRange = iter.m_CurRange;
         m_CurrFeatId = iter.m_CurrFeatId;
         m_FirstBadFeatId = iter.m_FirstBadFeatId;
@@ -1144,8 +1151,8 @@ CSNPDbFeatIterator::~CSNPDbFeatIterator(void)
 
 void CSNPDbFeatIterator::x_SetFilter(const SSelector& sel)
 {
-    m_Filter = sel.m_Filter & sel.m_FilterMask;
-    m_FilterMask = sel.m_FilterMask;
+    m_Filter = sel.m_Filter;
+    m_Filter.Normalize();
 }
 
 
@@ -1186,8 +1193,8 @@ CSNPDbFeatIterator::EExcluded CSNPDbFeatIterator::x_Excluded(void)
     if ( ref_end <= GetSearchRange().GetFrom() ) {
         return eExluded;
     }
-    if ( m_FilterMask ) {
-        if ( (GetQualityCodes() & m_FilterMask) != m_Filter ) {
+    if ( m_Filter.IsSet() ) {
+        if ( !m_Filter.Matches(GetQualityCodes()) ) {
             return eExluded;
         }
     }

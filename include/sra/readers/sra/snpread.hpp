@@ -74,6 +74,85 @@ struct SSNPDb_Defs
         eSearchByOverlap,
         eSearchByStart
     };
+
+    typedef Uint8 TFilter;
+
+    struct SFilter {
+        SFilter()
+            : m_Filter(0),
+              m_FilterMask(0)
+            {
+            }
+        SFilter(TFilter filter,
+                TFilter filter_mask = TFilter(-1))
+            : m_Filter(filter),
+              m_FilterMask(filter_mask)
+            {
+            }
+
+        void SetNoFilter(void)
+            {
+                m_Filter = 0;
+                m_FilterMask = 0;
+            }
+        void SetFilter(TFilter filter,
+                       TFilter filter_mask = TFilter(-1))
+            {
+                m_Filter = filter;
+                m_FilterMask = filter_mask;
+            }
+
+        void Normalize(void)
+            {
+                m_Filter &= m_FilterMask;
+            }
+
+        bool IsSet(void) const
+            {
+                return m_FilterMask != 0;
+            }
+        bool Matches(TFilter bits) const
+            {
+                return (bits & m_FilterMask) == m_Filter;
+            }
+
+        TFilter m_Filter;
+        TFilter m_FilterMask;
+    };
+
+    struct SSelector {
+        SSelector(const SFilter& filter = SFilter())
+            : m_SearchMode(eSearchByOverlap),
+              m_Filter(filter)
+            {
+            }
+        SSelector(ESearchMode search_mode,
+                  const SFilter& filter = SFilter())
+            : m_SearchMode(search_mode),
+              m_Filter(filter)
+            {
+            }
+
+        SSelector& SetNoFilter(void)
+            {
+                m_Filter = SFilter();
+                return *this;
+            }
+        SSelector& SetFilter(const SFilter& filter)
+            {
+                m_Filter = filter;
+                return *this;
+            }
+        SSelector& SetFilter(TFilter filter,
+                             TFilter filter_mask = TFilter(-1))
+            {
+                m_Filter = SFilter(filter, filter_mask);
+                return *this;
+            }
+
+        ESearchMode m_SearchMode;
+        SFilter m_Filter;
+    };
 };
 
 
@@ -272,18 +351,39 @@ public:
     };
     typedef int TFlags;
 
-    CRef<CSeq_graph> GetCoverageGraph(CRange<TSeqPos> range) const;
+    CRef<CSeq_graph> GetCoverageGraph(CRange<TSeqPos> range,
+                                      const SFilter& filter = SFilter()) const;
     CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
+                                      const SFilter& filter,
                                       TFlags flags = fDefaultFlags) const;
+    CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
+                                      TFlags flags = fDefaultFlags) const {
+        return GetCoverageAnnot(range, SFilter(), flags);
+    }
 
     CRef<CSeq_annot> GetFeatAnnot(CRange<TSeqPos> range,
+                                  const SFilter& filter,
                                   TFlags flags = fDefaultFlags) const;
+    CRef<CSeq_annot> GetFeatAnnot(CRange<TSeqPos> range,
+                                  TFlags flags = fDefaultFlags) const {
+        return GetFeatAnnot(range, SFilter(), flags);
+    }
     typedef vector< CRef<CSeq_annot> > TAnnotSet;
     TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
+                                 const SFilter& filter,
                                  TFlags flags = fDefaultFlags) const;
+    TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
+                                 TFlags flags = fDefaultFlags) const {
+        return GetTableFeatAnnots(range, SFilter(), flags);
+    }
     typedef pair< CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > TPackedAnnot;
     TPackedAnnot GetPackedFeatAnnot(CRange<TSeqPos> range,
+                                    const SFilter& filter,
                                     TFlags flags = fDefaultFlags) const;
+    TPackedAnnot GetPackedFeatAnnot(CRange<TSeqPos> range,
+                                    TFlags flags = fDefaultFlags) const {
+        return GetPackedFeatAnnot(range, SFilter(), flags);
+    }
 
 protected:
     friend class CSNPDbPageIterator;
@@ -407,29 +507,6 @@ private:
 class NCBI_SRAREAD_EXPORT CSNPDbFeatIterator : public SSNPDb_Defs
 {
 public:
-    typedef Uint8 TFilter;
-
-    struct SSelector {
-        SSelector(ESearchMode search_mode = eSearchByOverlap)
-            : m_SearchMode(search_mode),
-              m_Filter(0),
-              m_FilterMask(0)
-            {
-            }
-
-        SSelector& SetBitFilter(TFilter filter,
-                                TFilter filter_mask = TFilter(-1))
-            {
-                m_Filter = filter;
-                m_FilterMask = filter_mask;
-                return *this;
-            }
-
-        ESearchMode m_SearchMode;
-        TFilter m_Filter;
-        TFilter m_FilterMask;
-    };
-
     CSNPDbFeatIterator(void);
     CSNPDbFeatIterator(const CSNPDb& db,
                        const CSeq_id_Handle& ref_id,
@@ -563,7 +640,7 @@ private:
     mutable TVDBRowId m_ExtraRowId;
 
     COpenRange<TSeqPos> m_CurRange; // current SNP refseq range
-    Uint8 m_Filter, m_FilterMask;
+    SFilter m_Filter;
 
     Uint4 m_CurrFeatId, m_FirstBadFeatId;
 

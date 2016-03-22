@@ -107,6 +107,13 @@ void CSNPTestApp::Init(void)
                             CArgDescriptions::eInteger,
                             "100");
 
+    arg_desc->AddOptionalKey("filter", "Filter",
+                             "Quality codes filter",
+                             CArgDescriptions::eInt8);
+    arg_desc->AddOptionalKey("filter-mask", "FilterMask",
+                             "Quality codes filter mask",
+                             CArgDescriptions::eInt8);
+
     arg_desc->AddFlag("verbose", "Print info about found data");
 
     arg_desc->AddFlag("make_feat", "Make feature object");
@@ -339,6 +346,17 @@ int CSNPTestApp::Run(void)
     if ( query_idh ) {
         sw.Restart();
         
+        CSNPDbFeatIterator::SFilter filter;
+        if ( args["filter"] ) {
+            if ( args["filter-mask"] ) {
+                filter.SetFilter(args["filter"].AsInt8(),
+                              args["filter-mask"].AsInt8());
+            }
+            else {
+                filter.SetFilter(args["filter"].AsInt8());
+            }
+        }
+
         size_t count = 0;
         CSNPDbFeatIterator::TFlags flags = CSNPDbFeatIterator::fDefaultFlags;
         if ( args["no_shared_objects"] ) {
@@ -346,21 +364,21 @@ int CSNPTestApp::Run(void)
         }
         if ( args["make_cov_graph"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
-            CRef<CSeq_graph> graph = it.GetCoverageGraph(query_range);
+            CRef<CSeq_graph> graph = it.GetCoverageGraph(query_range, filter);
             if ( graph && print ) {
                 out << MSerial_AsnText << *graph;
             }
         }
         if ( args["make_cov_annot"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
-            CRef<CSeq_annot> annot = it.GetCoverageAnnot(query_range);
+            CRef<CSeq_annot> annot = it.GetCoverageAnnot(query_range, filter);
             if ( annot && print ) {
                 out << MSerial_AsnText << *annot;
             }
         }
         if ( args["make_feat_annot"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
-            CRef<CSeq_annot> annot = it.GetFeatAnnot(query_range);
+            CRef<CSeq_annot> annot = it.GetFeatAnnot(query_range, filter);
             if ( annot && print ) {
                 out << MSerial_AsnText << *annot;
             }
@@ -368,7 +386,7 @@ int CSNPTestApp::Run(void)
         if ( args["make_table_feat_annot"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
             CSNPDbSeqIterator::TAnnotSet annots =
-                it.GetTableFeatAnnots(query_range);
+                it.GetTableFeatAnnots(query_range, filter);
             if ( print ) {
                 ITERATE ( CSNPDbSeqIterator::TAnnotSet, it, annots ) {
                     out << MSerial_AsnText << **it;
@@ -378,7 +396,7 @@ int CSNPTestApp::Run(void)
         if ( args["make_packed_feat_annot"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
             pair<CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > annot =
-                it.GetPackedFeatAnnot(query_range);
+                it.GetPackedFeatAnnot(query_range, filter);
             if ( annot.second ) {
                 CSeq_annot::TData::TFtable& feats =
                     annot.first->SetData().SetFtable();
@@ -390,7 +408,7 @@ int CSNPTestApp::Run(void)
                 out << MSerial_AsnText << *annot.first;
             }
         }
-        for ( CSNPDbFeatIterator it(snp_db, query_idh, query_range); it; ++it ) {
+        for ( CSNPDbFeatIterator it(snp_db, query_idh, query_range, filter); it; ++it ) {
             if ( verbose ) {
                 out << it.GetAccession();
                 out << " pos: "<<it.GetSNPPosition();
