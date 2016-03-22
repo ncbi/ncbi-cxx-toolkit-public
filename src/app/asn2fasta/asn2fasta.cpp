@@ -55,13 +55,18 @@
 
 #include <objtools/cleanup/cleanup.hpp>
 
+#include <objmgr/util/sequence.hpp>
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <dbapi/driver/drivers.hpp>
+
+#include <objtools/writers/fasta_writer.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+
 
 //  ==========================================================================
 class CAsn2FastaApp:
@@ -84,24 +89,25 @@ public:
     CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is);
     CSeq_entry_Handle ObtainSeqEntryFromSeqSubmit(CObjectIStream& is);
 
-    CFastaOstream* OpenFastaOstream(const string& argname, const string& strname, bool use_stdout);
+    CFastaOstreamEx* OpenFastaOstream(const string& argname, const string& strname, bool use_stdout);
 
     void PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_stream);
 
 private:
+    CFastaOstreamEx* x_GetFastaOstream(CBioseq_Handle& handle);
     CObjectIStream* x_OpenIStream(const CArgs& args);
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     CRef<CScope>                m_Scope;
 
-    auto_ptr<CFastaOstream>     m_Os;           // all sequence output stream
+    auto_ptr<CFastaOstreamEx>     m_Os;           // all sequence output stream
 
-    auto_ptr<CFastaOstream>     m_On;           // nucleotide output stream
-    auto_ptr<CFastaOstream>     m_Og;           // genomic output stream
-    auto_ptr<CFastaOstream>     m_Or;           // RNA output stream
-    auto_ptr<CFastaOstream>     m_Op;           // protein output stream
-    auto_ptr<CFastaOstream>     m_Ou;           // unknown output stream
+    auto_ptr<CFastaOstreamEx>     m_On;           // nucleotide output stream
+    auto_ptr<CFastaOstreamEx>     m_Og;           // genomic output stream
+    auto_ptr<CFastaOstreamEx>     m_Or;           // RNA output stream
+    auto_ptr<CFastaOstreamEx>     m_Op;           // protein output stream
+    auto_ptr<CFastaOstreamEx>     m_Ou;           // unknown output stream
     CNcbiOstream*               m_Oq;           // quality score output stream
 
     string                      m_OgHead;
@@ -114,6 +120,10 @@ private:
     bool                        m_OnlyProts;
     bool                        m_DeflineOnly;
     bool                        m_do_cleanup;
+    bool                        m_FeaturesOnly;
+    bool                        m_CDSFeaturesOnly;
+    bool                        m_GeneFeaturesOnly;
+    bool                        m_RNAFeaturesOnly;
 };
 
 // constructor
@@ -171,6 +181,18 @@ void CAsn2FastaApp::Init(void)
 
         arg_desc->AddFlag("defline-only",
                           "Only output the defline");
+
+        arg_desc->AddFlag("feats", 
+                          "Only process CDS, gene, prot, and RNA features");
+
+        arg_desc->AddFlag("cds",
+                          "Only process CDS features");
+
+        arg_desc->AddFlag("gene",
+                          "Only process gene features");
+
+        arg_desc->AddFlag("rna", 
+                          "Only process rna features");
     }}
 
     // output
@@ -254,7 +276,7 @@ void CAsn2FastaApp::Init(void)
 }
 
 //  --------------------------------------------------------------------------
-CFastaOstream* CAsn2FastaApp::OpenFastaOstream(const string& argname, const string& strname, bool use_stdout)
+CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const string& strname, bool use_stdout)
 //  --------------------------------------------------------------------------
 {
     const CArgs& args = GetArgs();
@@ -280,31 +302,31 @@ CFastaOstream* CAsn2FastaApp::OpenFastaOstream(const string& argname, const stri
             return NULL;
         }
     }
-    auto_ptr<CFastaOstream> fasta_os(new CFastaOstream(*os));
+    auto_ptr<CFastaOstreamEx> fasta_os(new CFastaOstreamEx(*os));
 
     fasta_os->SetAllFlags(
-        CFastaOstream::fInstantiateGaps |
-        CFastaOstream::fAssembleParts |
-        CFastaOstream::fNoDupCheck |
-        CFastaOstream::fKeepGTSigns |
-        CFastaOstream::fNoExpensiveOps);
+        CFastaOstreamEx::fInstantiateGaps |
+        CFastaOstreamEx::fAssembleParts |
+        CFastaOstreamEx::fNoDupCheck |
+        CFastaOstreamEx::fKeepGTSigns |
+        CFastaOstreamEx::fNoExpensiveOps);
     if( GetArgs()["gap-mode"] ) {
         fasta_os->SetFlag(
-            CFastaOstream::fInstantiateGaps);
+            CFastaOstreamEx::fInstantiateGaps);
         string gapmode = GetArgs()["gap-mode"].AsString();
         if ( gapmode == "one-dash" ) {
-            fasta_os->SetGapMode(CFastaOstream::eGM_one_dash);
+            fasta_os->SetGapMode(CFastaOstreamEx::eGM_one_dash);
         } else if ( gapmode == "dashes" ) {
-            fasta_os->SetGapMode(CFastaOstream::eGM_dashes);
+            fasta_os->SetGapMode(CFastaOstreamEx::eGM_dashes);
         } else if ( gapmode == "letters" ) {
-            fasta_os->SetGapMode(CFastaOstream::eGM_letters);
+            fasta_os->SetGapMode(CFastaOstreamEx::eGM_letters);
         } else if ( gapmode == "count" ) {
-            fasta_os->SetGapMode(CFastaOstream::eGM_count);
+            fasta_os->SetGapMode(CFastaOstreamEx::eGM_count);
         }
     }
 
     if( args["show-mods"] ) {
-        fasta_os->SetFlag(CFastaOstream::fShowModifiers);
+        fasta_os->SetFlag(CFastaOstreamEx::fShowModifiers);
     }
     if( args["width"] ) {
         fasta_os->SetWidth( GetArgs()["width"].AsInteger() );
@@ -389,6 +411,10 @@ int CAsn2FastaApp::Run(void)
     }
 
     m_DeflineOnly = args["defline-only"];
+    m_FeaturesOnly = args["feats"];
+    m_CDSFeaturesOnly = args["cds"];
+    m_GeneFeaturesOnly = args["gene"];
+    m_RNAFeaturesOnly = args["rna"];
 
     if ( args["batch"] ) {
         CGBReleaseFile in(*is.release());
@@ -740,10 +766,113 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
     }
 }
 
+CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
+{
+    CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
+
+    CFastaOstreamEx* fasta_os = NULL;
+
+    bool is_genomic = false;
+    bool is_RNA = false;
+
+    CConstRef<CSeqdesc> closest_molinfo = bsr->GetClosestDescriptor(CSeqdesc::e_Molinfo);
+    if (closest_molinfo) {
+        const CMolInfo& molinf = closest_molinfo->GetMolinfo();
+        CMolInfo::TBiomol biomol = molinf.GetBiomol();
+        switch (biomol) {
+        case NCBI_BIOMOL(genomic):
+        case NCBI_BIOMOL(other_genetic):
+        case NCBI_BIOMOL(genomic_mRNA):
+        case NCBI_BIOMOL(cRNA):
+        is_genomic = true;
+        break;
+        case NCBI_BIOMOL(pre_RNA):
+        case NCBI_BIOMOL(mRNA):
+        case NCBI_BIOMOL(rRNA):
+        case NCBI_BIOMOL(tRNA):
+        case NCBI_BIOMOL(snRNA):
+        case NCBI_BIOMOL(scRNA):
+        case NCBI_BIOMOL(snoRNA):
+        case NCBI_BIOMOL(transcribed_RNA):
+        case NCBI_BIOMOL(ncRNA):
+        case NCBI_BIOMOL(tmRNA):
+        is_RNA = true;
+        break;
+        case NCBI_BIOMOL(other):
+            {
+                CBioseq_Handle::TMol mol = bsh.GetSequenceType();
+                switch (mol) {
+                    case CSeq_inst::eMol_dna:
+                        is_genomic = true;
+                        break;
+                    case CSeq_inst::eMol_rna:
+                        is_RNA = true;
+                        break;
+                    case CSeq_inst::eMol_na:
+                        is_genomic = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    if ( m_Oq != NULL && bsh.IsNa() ) {
+        PrintQualityScores (*bsr, m_Oq);
+    }
+
+    if ( m_Os.get() != NULL ) {
+        if ( m_OnlyNucs && ! bsh.IsNa() ) return NULL;
+        if ( m_OnlyProts && ! bsh.IsAa() ) return NULL;
+        fasta_os = m_Os.get();
+    } else if ( bsh.IsNa() ) {
+        if ( m_On.get() != NULL ) {
+            fasta_os = m_On.get();
+        } else if ( (is_genomic || ! closest_molinfo) && m_Og.get() != NULL ) {
+            fasta_os = m_Og.get();
+            if (! m_OgHead.empty() && ! m_OgTail.empty()) {
+                TSeqPos len = bsr->GetLength();
+                if ( m_OgCurrLen > 0 && m_OgCurrLen + len > m_OgMax ) {
+                    m_OgIndex++;
+                    m_OgCurrLen = 0;
+                    string ogx = m_OgHead + NStr::IntToString(m_OgIndex) + m_OgTail;
+                    m_Og.reset( OpenFastaOstream ("", ogx, false) );
+                    fasta_os = m_Og.get();
+                }
+                m_OgCurrLen += len;
+            }
+        } else if ( is_RNA && m_Or.get() != NULL ) {
+            fasta_os = m_Or.get();
+        } else {
+            return NULL;
+        }
+    } else if ( bsh.IsAa() ) {
+        if ( m_Op.get() != NULL ) {
+            fasta_os = m_Op.get();
+        }
+    } else {
+        if ( m_Ou.get() != NULL ) {
+            fasta_os = m_Ou.get();
+        } else if ( m_On.get() != NULL ) {
+            fasta_os = m_On.get();
+        } else {
+            return NULL;
+        }
+    }
+
+    return fasta_os;
+}
+
+
 //  --------------------------------------------------------------------------
 bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 //  --------------------------------------------------------------------------
 {
+
     if ( m_do_cleanup ) {
         CSeq_entry_EditHandle tseh = seh.GetTopLevelEntry().GetEditHandle();
         CBioseq_set_EditHandle bseth;
@@ -773,110 +902,50 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         }
     }
 
-    for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
-        CBioseq_Handle bsh = *bioseq_it;
-        CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
 
-        CFastaOstream* fasta_os = NULL;
+    if(!m_FeaturesOnly &&
+       !m_CDSFeaturesOnly &&
+       !m_GeneFeaturesOnly &&
+       !m_RNAFeaturesOnly) {
+        for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
+            CBioseq_Handle bsh = *bioseq_it;
+            CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
 
-        bool is_genomic = false;
-        bool is_RNA = false;
+            if ( fasta_os == NULL) continue;
 
-        CConstRef<CSeqdesc> closest_molinfo = bsr->GetClosestDescriptor(CSeqdesc::e_Molinfo);
-        if (closest_molinfo) {
-            const CMolInfo& molinf = closest_molinfo->GetMolinfo();
-            CMolInfo::TBiomol biomol = molinf.GetBiomol();
-            switch (biomol) {
-                case NCBI_BIOMOL(genomic):
-                case NCBI_BIOMOL(other_genetic):
-                case NCBI_BIOMOL(genomic_mRNA):
-                case NCBI_BIOMOL(cRNA):
-                    is_genomic = true;
-                    break;
-                case NCBI_BIOMOL(pre_RNA):
-                case NCBI_BIOMOL(mRNA):
-                case NCBI_BIOMOL(rRNA):
-                case NCBI_BIOMOL(tRNA):
-                case NCBI_BIOMOL(snRNA):
-                case NCBI_BIOMOL(scRNA):
-                case NCBI_BIOMOL(snoRNA):
-                case NCBI_BIOMOL(transcribed_RNA):
-                case NCBI_BIOMOL(ncRNA):
-                case NCBI_BIOMOL(tmRNA):
-                    is_RNA = true;
-                    break;
-                case NCBI_BIOMOL(other):
-                    {
-                        CBioseq_Handle::TMol mol = bsh.GetSequenceType();
-                        switch (mol) {
-                             case CSeq_inst::eMol_dna:
-                                is_genomic = true;
-                                break;
-                            case CSeq_inst::eMol_rna:
-                                is_RNA = true;
-                                break;
-                            case CSeq_inst::eMol_na:
-                                is_genomic = true;
-                                break;
-                            default:
-                                break;
-                       }
-                   }
-                   break;
-                default:
-                    break;
-            }
-        }
-
-        if ( m_Oq != NULL && bsh.IsNa() ) {
-            PrintQualityScores (*bsr, m_Oq);
-        }
-
-        if ( m_Os.get() != NULL ) {
-            if ( m_OnlyNucs && ! bsh.IsNa() ) continue;
-            if ( m_OnlyProts && ! bsh.IsAa() ) continue;
-            fasta_os = m_Os.get();
-        } else if ( bsh.IsNa() ) {
-            if ( m_On.get() != NULL ) {
-                fasta_os = m_On.get();
-            } else if ( (is_genomic || ! closest_molinfo) && m_Og.get() != NULL ) {
-                fasta_os = m_Og.get();
-                if (! m_OgHead.empty() && ! m_OgTail.empty()) {
-                    TSeqPos len = bsr->GetLength();
-                    if ( m_OgCurrLen > 0 && m_OgCurrLen + len > m_OgMax ) {
-                        m_OgIndex++;
-                        m_OgCurrLen = 0;
-                        string ogx = m_OgHead + NStr::IntToString(m_OgIndex) + m_OgTail;
-                        m_Og.reset( OpenFastaOstream ("", ogx, false) );
-                        fasta_os = m_Og.get();
-                    }
-                    m_OgCurrLen += len;
-                }
-            } else if ( is_RNA && m_Or.get() != NULL ) {
-                fasta_os = m_Or.get();
+            if ( m_DeflineOnly ) {
+                fasta_os->WriteTitle(bsh);
             } else {
-                continue;
-            }
-        } else if ( bsh.IsAa() ) {
-            if ( m_Op.get() != NULL ) {
-                fasta_os = m_Op.get();
-            }
-        } else {
-            if ( m_Ou.get() != NULL ) {
-                fasta_os = m_Ou.get();
-            } else if ( m_On.get() != NULL ) {
-                fasta_os = m_On.get();
-            } else {
-                continue;
+                fasta_os->Write(bsh);
             }
         }
+        return true;
+    }
 
-        if ( fasta_os == NULL) continue;
+    // Iterate over features
+    SAnnotSelector sel;
+    sel.SetAdaptiveDepth(true);
+    sel.SetResolveAll();
+    sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
+    sel.SetResolveDepth(100);
+
+    for (CFeat_CI feat_it(seh, sel); feat_it; ++feat_it) {
+
+        const CSeq_feat& feat = feat_it->GetOriginalFeature();
+        auto bsh = seh.GetScope().GetBioseqHandle(feat.GetLocation());
+        CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
+
+        if (!feat.IsSetData() ||
+            (!feat.GetData().IsCdregion() && m_CDSFeaturesOnly) ||
+            (!feat.GetData().IsGene() && m_GeneFeaturesOnly) ||
+            (!feat.GetData().IsRna() && m_RNAFeaturesOnly)) {
+            continue;
+        }
 
         if ( m_DeflineOnly ) {
-            fasta_os->WriteTitle(bsh);
+            fasta_os->WriteFeatureTitle(seh.GetScope(), feat);
         } else {
-            fasta_os->Write(bsh);
+            fasta_os->WriteFeature(seh.GetScope(), feat);
         }
     }
     return true;
