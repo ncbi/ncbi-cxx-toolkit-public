@@ -1531,6 +1531,8 @@ xstruct_dp needs xncbi
 xstruct_thread needs xutil
 xstruct_util needs $(BLAST_LIBS)
 xstruct_util needs xstruct_dp
+xsubmit2id needs sqlitewrapp
+xsubmit2id needs xid_utils
 xsvcgi needs $(DBAPI_CTLIB)
 xsvcgi needs $(OBJMGR_LIBS)
 xsvcgi needs $(ncbi_xreader_pubseqos2)
