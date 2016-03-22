@@ -276,21 +276,22 @@ case "$ncbi_platform" in
     Linux64    ) : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e} ;;
 esac
 
+net_vdb_base=/net/snowman/vol/projects/trace_software/vdb/vdb-versions
+local_vdb_base=/opt/ncbi/64/trace_software/vdb/vdb-versions
 case "$ncbi_platform" in
     Linux64 )
-        vdb_base=/opt/ncbi/64/trace_software/vdb/vdb-versions
         if [ "x$with_vdb" = 'xrc' ]; then
-            with_vdb=$vdb_base/cxx_toolkit/2
+            # with_vdb=$local_vdb_base/cxx_toolkit/2
+            with_vdb=$net_vdb_base/cxx_toolkit/2-rc
         else
-            : ${VDB_PATH=$vdb_base/2.5.7}
+            : ${VDB_PATH=$local_vdb_base/2.5.7}
         fi
         ;;
     *MAC )
-        vdb_base=/net/snowman/vol/projects/trace_software/vdb/vdb-versions
         if [ "x$with_vdb" = 'xrc' ]; then
-            with_vdb=$vdb_base/cxx_toolkit/2-rc
+            with_vdb=$net_vdb_base/cxx_toolkit/2-rc
         else
-            : ${VDB_PATH=$vdb_base/2.6.1}
+            : ${VDB_PATH=$net_vdb_base/2.6.1}
         fi
         ;;
 esac
