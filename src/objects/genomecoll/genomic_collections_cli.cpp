@@ -97,13 +97,22 @@ void LogRequest(const TReq& req)
 #endif
 }
 
-CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc, 
+static void ValidateAsmAccession(const string& acc)
+{
+    if(acc.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != string::npos)
+        NCBI_THROW(CException, eUnknown, "Invalid accession format: " + acc);
+}
+
+CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc_,
                                             int level, 
                                             int asmAttrFlags, 
                                             int chrAttrFlags, 
                                             int scafAttrFlags, 
                                             int compAttrFlags)
 {
+    string acc = NStr::TruncateSpaces(acc_);
+    ValidateAsmAccession(acc);
+
     CGCClient_GetAssemblyRequest req;
     CGCClientResponse reply;
 
@@ -170,8 +179,11 @@ static string ToStringMode(CGCClient_GetAssemblyRequest::EAssemblyMode mode)
     }
 }
 
-CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc, CGCClient_GetAssemblyRequest::EAssemblyMode mode)
+CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc_, CGCClient_GetAssemblyRequest::EAssemblyMode mode)
 {
+    string acc = NStr::TruncateSpaces(acc_);
+    ValidateAsmAccession(acc);
+
     return GetAssembly(acc, ToStringMode(mode));
 }
 
@@ -180,8 +192,11 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, CGCCli
     return GetAssembly(releaseId, ToStringMode(mode));
 }
 
-CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc, const string& mode)
+CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc_, const string& mode)
 {
+    string acc = NStr::TruncateSpaces(acc_);
+    ValidateAsmAccession(acc);
+
     CGCClient_GetAssemblyBlobRequest req;
     CGCClientResponse reply;
 
