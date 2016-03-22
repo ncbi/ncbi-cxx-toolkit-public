@@ -412,7 +412,8 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
                          part_start += part_len;
                      }
                  } else {
-                     aln_identities += s_IntersectionLength(ranges, product_span);
+                     has_non_standard = true;
+                     break;
                  }
              }
              if ( !has_non_standard ) {
