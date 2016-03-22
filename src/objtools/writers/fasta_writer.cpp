@@ -47,6 +47,8 @@
 #include <objects/seqfeat/RNA_gen.hpp>
 //#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
+#include <util/sequtil/sequtil.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -240,7 +242,8 @@ string CFastaOstreamEx::x_GetRNAIdString(const CBioseq_Handle& handle,
 
     string rna_tag;
     switch (rna_type) {
-    case CRNA_ref::eType_mRNA: {
+    case CRNA_ref::eType_mRNA: 
+    {
         rna_tag = "_mrna_";
         break;
     }
@@ -248,22 +251,26 @@ string CFastaOstreamEx::x_GetRNAIdString(const CBioseq_Handle& handle,
     case CRNA_ref::eType_ncRNA: 
     case CRNA_ref::eType_snRNA:
     case CRNA_ref::eType_scRNA:
-    case CRNA_ref::eType_snoRNA: {
+    case CRNA_ref::eType_snoRNA: 
+    {
         rna_tag = "_ncrna_";
         break;
     }
 
-    case CRNA_ref::eType_rRNA: {
+    case CRNA_ref::eType_rRNA: 
+    {
         rna_tag = "_rrna_";
         break;
     }
 
-    case CRNA_ref::eType_tRNA: {
+    case CRNA_ref::eType_tRNA: 
+    {
         rna_tag = "_trna_";
         break;
     }
 
-    default: {
+    default: 
+    {
         rna_tag = "_miscrna_";
         break;
     }
@@ -563,6 +570,158 @@ void CFastaOstreamEx::x_AddncRNAClassAttribute(const CSeq_feat& feat,
 }
 
 
+static const string s_TrnaList[] = {
+    "tRNA-Gap",
+    "tRNA-Ala",
+    "tRNA-Asx",
+    "tRNA-Cys",
+    "tRNA-Asp",
+    "tRNA-Glu",
+    "tRNA-Phe",
+    "tRNA-Gly",
+    "tRNA-His",
+    "tRNA-Ile",
+    "tRNA-Xle",
+    "tRNA-Lys",
+    "tRNA-Leu",
+    "tRNA-Met",
+    "tRNA-Asn",
+    "tRNA-Pyl",
+    "tRNA-Pro",
+    "tRNA-Gln",
+    "tRNA-Arg",
+    "tRNA-Ser",
+    "tRNA-Thr",
+    "tRNA-Sec",
+    "tRNA-Val",
+    "tRNA-Trp",
+    "tRNA-OTHER",
+    "tRNA-Tyr",
+    "tRNA-Glx",
+    "tRNA-TERM"
+};
+
+
+static const string& s_AaName(int aa)
+{
+    int idx = 255;
+    if (aa != '*') {
+        idx = aa - 64;
+    } else {
+        idx = 27;
+    }
+    if ( idx > 0 && idx < ArraySize(s_TrnaList) ) {
+        return s_TrnaList [idx];
+    }
+    return kEmptyStr;
+}
+
+
+
+
+void CFastaOstreamEx::x_AddRNAProductAttribute(const CBioseq_Handle& handle,
+                                               const CSeq_feat& feat,
+                                               string& defline)
+{
+    if (!feat.IsSetData() ||
+        !feat.GetData().IsRna()) {
+        return;
+    }
+
+    const auto& rna = feat.GetData().GetRna();
+    const auto rna_type = rna.IsSetType() ?
+        rna.GetType() : CRNA_ref::eType_unknown;
+
+    string product_string;
+    switch (rna_type) {
+    case CRNA_ref::eType_tRNA:
+    {
+        if (!rna.IsSetExt()) {
+            return;
+        }
+
+        CFlatFileConfig cfg;
+
+        const auto& ext = rna.GetExt();
+        switch (ext.Which()) {
+        case CRNA_ref::C_Ext::e_Name: 
+        {
+            if (!cfg.DropIllegalQuals()) {
+                product_string = ext.GetName();
+                break;
+            }
+
+            product_string = "tRNA-OTHER";
+            break;
+        }
+
+        case CRNA_ref::C_Ext::e_TRNA:
+        {
+            const auto& trna = ext.GetTRNA();
+            int aa=0;
+            if (trna.IsSetAa() && trna.GetAa().IsNcbieaa()) {
+                aa = trna.GetAa().GetNcbieaa();
+            } else {
+                return;
+            }
+            if (cfg.IupacaaOnly()) {
+                vector<char> n(1, static_cast<char>(aa));
+                vector<char> i;
+                CSeqConvert::Convert(n, CSeqUtil::e_Ncbieaa, 0, 1, i, CSeqUtil::e_Iupacaa);
+                aa = i.front();
+            }
+            product_string = s_AaName(aa);
+            break;
+        }
+        default:
+            return;
+        }
+        break;
+    } // case CRNA_ref::eType_tRNA
+
+    case CRNA_ref::eType_mRNA: 
+    {
+        if (rna.IsSetExt() &&
+            rna.GetExt().IsName()) {
+            product_string = rna.GetExt().GetName();
+        }
+        break;
+    }
+
+    case CRNA_ref::eType_miscRNA:
+    case CRNA_ref::eType_other:
+    {
+        if (rna.IsSetExt() &&
+            rna.GetExt().IsName()) {
+            string name = rna.GetExt().GetName();
+            if (name != "misc_RNA") {
+                product_string = name;
+            }
+        }
+        break;
+    }
+
+//    case CRNA_ref::eType_ncRNA: 
+//    case CRNA_ref::eType_snRNA:
+//    case CRNA_ref::eType_scRNA:
+//    case CRNA_ref::eType_snoRNA: 
+//    case CRNA_ref::eType_tmRNA:
+//    {
+//        break;
+//    }
+
+    default:
+        return;
+    }
+
+    if (product_string.empty()) {
+        return;
+    }
+    defline += " [product=" + product_string + "]"; 
+}
+
+
+
 void CFastaOstreamEx::x_WriteModifiers(const CBioseq_Handle& handle, 
                                        const CSeq_feat& feat)
 {
@@ -577,6 +736,8 @@ void CFastaOstreamEx::x_WriteModifiers(const CBioseq_Handle& handle,
     x_AddDbxrefAttribute(handle, feat, defline);
 
     x_AddProteinNameAttribute(handle, feat, defline);
+
+    x_AddRNAProductAttribute(handle, feat, defline);
 
     x_AddncRNAClassAttribute(feat,defline);
 

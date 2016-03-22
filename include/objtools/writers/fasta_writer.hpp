@@ -93,6 +93,10 @@ protected:
     virtual void x_AddncRNAClassAttribute(const CSeq_feat& feat,
                                           string& defline);
 
+    virtual void x_AddRNAProductAttribute(const CBioseq_Handle& handle,
+                                          const CSeq_feat& feat,
+                                          string& defline);
+
     virtual void x_AddPartialAttribute(const CBioseq_Handle& handle, 
                                        const CSeq_feat& feat, 
                                        string& defline);
