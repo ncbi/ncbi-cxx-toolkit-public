@@ -18,7 +18,7 @@ SRC = agp_write \
       src_writer \
       fasta_writer 
 
-DLL_LIB = variation_utils
+DLL_LIB = variation_utils $(XFORMAT_LIBS)
 
 WATCHERS = ludwigf boukn kornbluh gotvyans foleyjp
 
