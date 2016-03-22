@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """ Various utilities/tools for BLAST """
+from __future__ import print_function
 
 __all__ = [ "safe_exec", "update_blast_version" ]
 
