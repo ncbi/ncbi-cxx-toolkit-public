@@ -367,13 +367,11 @@ int CSNPTestApp::Run(void)
         }
         if ( args["make_table_feat_annot"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
-            pair<CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > annot =
-                it.GetPackedFeatAnnot(query_range);
-            CRef<CSeq_table> table = sx_ConvertToTable(*annot.second);
-            if ( annot.first && print ) {
-                out << MSerial_AsnText << *annot.first;
-                if ( table ) {
-                    out << MSerial_AsnText << *table;
+            CSNPDbSeqIterator::TAnnotSet annots =
+                it.GetTableFeatAnnots(query_range);
+            if ( print ) {
+                ITERATE ( CSNPDbSeqIterator::TAnnotSet, it, annots ) {
+                    out << MSerial_AsnText << **it;
                 }
             }
         }

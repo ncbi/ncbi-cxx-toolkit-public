@@ -41,8 +41,10 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
+#include <objects/seqtable/seqtable__.hpp>
 #include <sra/error_codes.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <corelib/hash_map.hpp>
 
 #include <sra/readers/sra/kdbread.hpp>
 
@@ -57,7 +59,7 @@ BEGIN_NAMESPACE(objects);
 #define RC_NO_MORE_ALIGNMENTS RC(rcApp, rcQuery, rcSearching, rcRow, rcNotFound)
 
 static const TSeqPos kPageSize = 5000;
-static const TSeqPos kMaxSNPLength = kPageSize;
+static const TSeqPos kMaxSNPLength = 256;
 static const size_t kFlagsSize = 8;
 static const TSeqPos kCoverageZoom = 100;
 static const size_t kMax_AlleleLength  = 32;
@@ -83,7 +85,7 @@ struct CSNPDb_Impl::SSNPTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(TVDBRowId, EXTRA_ROW_NUM);
     DECLARE_VDB_COLUMN_AS(Uint4, FEAT_ID_PREFIX);
     DECLARE_VDB_COLUMN_AS(Uint8, FEAT_ID_VALUE);
-    DECLARE_VDB_COLUMN_AS(Uint1, BIT_FLAGS);
+    DECLARE_VDB_COLUMN_AS(Uint8, BIT_FLAGS);
     DECLARE_VDB_COLUMN_AS(Uint4, FEAT_ZOOM_COUNT);
 };
 
@@ -191,7 +193,7 @@ CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
             throw;
         }
     }
-    m_SNPTable = CVDBTable(m_Db, "feature");
+    m_SNPTable = CVDBTable(m_Db, "features");
     // only one ref seq
     if ( CRef<SSNPTableCursor> snp = SNP() ) {
         SSeqInfo* info = 0;
@@ -257,7 +259,7 @@ void CSNPDb_Impl::OpenTable(CVDBTable& table,
 
 void CSNPDb_Impl::OpenExtraTable(void)
 {
-    OpenTable(m_ExtraTable, "extra", m_ExtraTableIsOpened);
+    OpenTable(m_ExtraTable, "extras", m_ExtraTableIsOpened);
 }
 
 
@@ -560,6 +562,209 @@ CSNPDbSeqIterator::GetFeatAnnot(CRange<TSeqPos> range,
 BEGIN_LOCAL_NAMESPACE;
 
 
+struct SSeqTableConverter {
+    SSeqTableConverter(const CSNPDbSeqIterator& it);
+    
+    bool AddToTable(const CSNPDbFeatIterator& it);
+
+    void Add(const CSNPDbFeatIterator& it);
+
+    vector< CRef<CSeq_annot> > GetAnnots(void);
+
+    CRef<CSeq_id> m_Seq_id;
+    int m_TableSize;
+    CRef<CSeq_annot> m_RegularAnnot;
+
+    // columns
+    CRef<CSeqTable_column> col_from;
+    CRef<CSeqTable_column> col_to;
+    
+    CRef<CSeqTable_column> col_alleles;
+    CCommonString_table::TStrings* val_alleles;
+    CCommonString_table::TIndexes* arr_alleles;
+    typedef hash_map<string, size_t> TIndex_alleles;
+    TIndex_alleles index_alleles;
+
+    CRef<CSeqTable_column> col_qa;
+    CCommonBytes_table::TBytes* val_qa;
+    CCommonBytes_table::TIndexes* arr_qa;
+    typedef hash_map<Uint8, size_t> TIndex_qa;
+    TIndex_qa index_qa;
+
+    CRef<CSeqTable_column> col_dbxref;
+    CSeqTable_multi_data::TInt* arr_dbxref;
+    CSeqTable_multi_data::TInt8* arr_dbxref8;
+
+    CSeqTable_multi_data::TInt* arr_from;
+    CSeqTable_sparse_index::TIndexes* ind_to;
+    CSeqTable_multi_data::TInt* arr_to;
+};
+
+
+CRef<CSeqTable_column> x_MakeColumn(CSeqTable_column_info::EField_id id,
+                                    const string& name = kEmptyStr)
+{
+    CRef<CSeqTable_column> col(new CSeqTable_column);
+    col->SetHeader().SetField_id(id);
+    if ( !name.empty() ) {
+        col->SetHeader().SetField_name(name);
+    }
+    return col;
+}
+
+
+SSeqTableConverter::SSeqTableConverter(const CSNPDbSeqIterator& it)
+{
+    m_Seq_id = it.GetSeqId();
+    m_TableSize = 0;
+
+    col_from = x_MakeColumn(CSeqTable_column_info::eField_id_location_from);
+    arr_from = &col_from->SetData().SetInt();
+
+    col_to = x_MakeColumn(CSeqTable_column_info::eField_id_location_to);
+    ind_to = &col_to->SetSparse().SetIndexes();
+    arr_to = &col_to->SetData().SetInt();
+
+    col_alleles = x_MakeColumn(CSeqTable_column_info::eField_id_qual,
+                               "Q.alleles");
+    val_alleles = &col_alleles->SetData().SetCommon_string().SetStrings();
+    arr_alleles = &col_alleles->SetData().SetCommon_string().SetIndexes();
+
+    col_qa = x_MakeColumn(CSeqTable_column_info::eField_id_ext,
+                          "E.QualityCodes");
+    val_qa = &col_qa->SetData().SetCommon_bytes().SetBytes();
+    arr_qa = &col_qa->SetData().SetCommon_bytes().SetIndexes();
+
+    col_dbxref = x_MakeColumn(CSeqTable_column_info::eField_id_dbxref,
+                              "D.dbSNP");
+    arr_dbxref = &col_dbxref->SetData().SetInt();
+    arr_dbxref8 = 0;
+
+}
+
+
+bool SSeqTableConverter::AddToTable(const CSNPDbFeatIterator& it)
+{
+    TSeqPos from = it.GetSNPPosition();
+    arr_from->push_back(from);
+
+    TSeqPos len = it.GetSNPLength();
+    if ( len != 1 ) {
+        TSeqPos to = from + len - 1;
+        ind_to->push_back(m_TableSize);
+        arr_to->push_back(to);
+    }
+
+    string alleles = it.GetAlleles();
+    pair<TIndex_alleles::iterator, bool> ins_alleles =
+        index_alleles.insert(TIndex_alleles::value_type(alleles,
+                                                        index_alleles.size()));
+    if ( ins_alleles.second ) {
+        val_alleles->push_back(alleles);
+    }
+    arr_alleles->push_back(ins_alleles.first->second);
+
+    Uint8 qa = it.GetQualityCodes();
+    pair<TIndex_qa::iterator, bool> ins_qa =
+        index_qa.insert(TIndex_qa::value_type(qa, index_qa.size()));
+    if ( ins_qa.second ) {
+        val_qa->push_back(new vector<char>(reinterpret_cast<const char*>(&qa),
+                                           reinterpret_cast<const char*>(&qa+1)));
+    }
+    arr_qa->push_back(ins_qa.first->second);
+
+    Uint8 id = it.GetFeatId();
+    if ( arr_dbxref && id < kMax_Int ) {
+        arr_dbxref->push_back(id);
+    }
+    else {
+        if ( !arr_dbxref8 ) {
+            col_dbxref->SetData().ChangeToInt8();
+            arr_dbxref = 0;
+            arr_dbxref8 = &col_dbxref->SetData().SetInt8();
+        }
+        arr_dbxref8->push_back(id);
+    }
+
+    ++m_TableSize;
+    return true;
+}
+
+
+vector< CRef<CSeq_annot> > SSeqTableConverter::GetAnnots(void)
+{
+    vector< CRef<CSeq_annot> > ret;
+    if ( m_TableSize ) {
+        CRef<CSeq_annot> table_annot = x_NewAnnot();
+
+        CSeq_table& table = table_annot->SetData().SetSeq_table();
+        table.SetFeat_type(CSeqFeatData::e_Imp);
+        table.SetFeat_subtype(CSeqFeatData::eSubtype_variation);
+        table.SetNum_rows(m_TableSize);
+
+        // single-value columns
+        CRef<CSeqTable_column> col_imp =
+            x_MakeColumn(CSeqTable_column_info::eField_id_data_imp_key);
+        col_imp->SetDefault().SetString("variation");
+        CRef<CSeqTable_column> col_id =
+            x_MakeColumn(CSeqTable_column_info::eField_id_location_id);
+        col_id->SetDefault().SetId(*m_Seq_id);
+
+        CRef<CSeqTable_column> col_qa_type =
+            x_MakeColumn(CSeqTable_column_info::eField_id_ext_type);
+        col_qa_type->SetDefault().SetString("dbSnpQAdata");
+
+        table.SetColumns().push_back(col_imp);
+        table.SetColumns().push_back(col_id);
+        table.SetColumns().push_back(col_from);
+        if ( !arr_to->empty() ) {
+            table.SetColumns().push_back(col_to);
+        }
+        table.SetColumns().push_back(col_alleles);
+        table.SetColumns().push_back(col_qa_type);
+        table.SetColumns().push_back(col_qa);
+        table.SetColumns().push_back(col_dbxref);
+
+        ret.push_back(table_annot);
+    }
+    if ( m_RegularAnnot ) {
+        ret.push_back(m_RegularAnnot);
+    }
+    return ret;
+}
+
+
+void SSeqTableConverter::Add(const CSNPDbFeatIterator& it)
+{
+    if ( AddToTable(it) ) {
+        return;
+    }
+    if ( !m_RegularAnnot ) {
+        m_RegularAnnot = x_NewAnnot();
+    }
+    m_RegularAnnot->SetData().SetFtable().push_back(it.GetSeq_feat());
+}
+
+
+END_LOCAL_NAMESPACE;
+
+
+CSNPDbSeqIterator::TAnnotSet
+CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
+                                      TFlags flags) const
+{
+    x_AdjustRange(range, *this);
+    SSeqTableConverter cvt(*this);
+    for ( CSNPDbFeatIterator it(*this, range, eSearchByStart); it; ++it ) {
+        cvt.Add(it);
+    }
+    return cvt.GetAnnots();
+}
+
+
+BEGIN_LOCAL_NAMESPACE;
+
+
 inline
 void x_InitSNP_Info(SSNP_Info& info)
 {
@@ -619,7 +824,7 @@ bool x_ParseSNP_Info(SSNP_Info& info,
         return false;
     }
 
-    info.m_SNP_Id = it.GetRsId();
+    info.m_SNP_Id = it.GetFeatId();
 
     packed.x_AddSNP(info);
     return true;
@@ -875,9 +1080,10 @@ CSNPDbFeatIterator::CSNPDbFeatIterator(const CSNPDb& db,
                                        const CSeq_id_Handle& ref_id,
                                        TSeqPos ref_pos,
                                        TSeqPos window,
-                                       ESearchMode search_mode)
-    : m_PageIter(db, ref_id, ref_pos, window, search_mode)
+                                       const SSelector& sel)
+    : m_PageIter(db, ref_id, ref_pos, window, sel.m_SearchMode)
 {
+    x_SetFilter(sel);
     x_InitPage();
     x_Settle();
 }
@@ -886,9 +1092,10 @@ CSNPDbFeatIterator::CSNPDbFeatIterator(const CSNPDb& db,
 CSNPDbFeatIterator::CSNPDbFeatIterator(const CSNPDb& db,
                                        const CSeq_id_Handle& ref_id,
                                        COpenRange<TSeqPos> range,
-                                       ESearchMode search_mode)
-    : m_PageIter(db, ref_id, range, search_mode)
+                                       const SSelector& sel)
+    : m_PageIter(db, ref_id, range, sel.m_SearchMode)
 {
+    x_SetFilter(sel);
     x_InitPage();
     x_Settle();
 }
@@ -896,9 +1103,10 @@ CSNPDbFeatIterator::CSNPDbFeatIterator(const CSNPDb& db,
 
 CSNPDbFeatIterator::CSNPDbFeatIterator(const CSNPDbSeqIterator& seq,
                                        COpenRange<TSeqPos> range,
-                                       ESearchMode search_mode)
-    : m_PageIter(seq, range, search_mode)
+                                       const SSelector& sel)
+    : m_PageIter(seq, range, sel.m_SearchMode)
 {
+    x_SetFilter(sel);
     x_InitPage();
     x_Settle();
 }
@@ -918,6 +1126,8 @@ CSNPDbFeatIterator::operator=(const CSNPDbFeatIterator& iter)
         m_PageIter = iter.m_PageIter;
         m_Extra = iter.m_Extra;
         m_ExtraRowId = iter.m_ExtraRowId;
+        m_Filter = iter.m_Filter;
+        m_FilterMask = iter.m_FilterMask;
         m_CurRange = iter.m_CurRange;
         m_CurrFeatId = iter.m_CurrFeatId;
         m_FirstBadFeatId = iter.m_FirstBadFeatId;
@@ -932,11 +1142,19 @@ CSNPDbFeatIterator::~CSNPDbFeatIterator(void)
 }
 
 
+void CSNPDbFeatIterator::x_SetFilter(const SSelector& sel)
+{
+    m_Filter = sel.m_Filter & sel.m_FilterMask;
+    m_FilterMask = sel.m_FilterMask;
+}
+
+
 CSNPDbFeatIterator&
 CSNPDbFeatIterator::Select(COpenRange<TSeqPos> ref_range,
-                           ESearchMode search_mode)
+                           const SSelector& sel)
 {
-    m_PageIter.Select(ref_range, search_mode);
+    m_PageIter.Select(ref_range, sel.m_SearchMode);
+    x_SetFilter(sel);
     x_InitPage();
     x_Settle();
     return *this;
@@ -956,21 +1174,26 @@ TSeqPos CSNPDbFeatIterator::x_GetLength(void) const
 
 
 inline
-int CSNPDbFeatIterator::x_Excluded(void)
+CSNPDbFeatIterator::EExcluded CSNPDbFeatIterator::x_Excluded(void)
 {
     TSeqPos ref_pos = x_GetFrom();
     if ( ref_pos >= GetSearchRange().GetToOpen() ) {
         // no more
-        return 2;
+        return ePassedTheRegion;
     }
     TSeqPos ref_len = x_GetLength();
     TSeqPos ref_end = ref_pos + ref_len;
     if ( ref_end <= GetSearchRange().GetFrom() ) {
-        return 1;
+        return eExluded;
+    }
+    if ( m_FilterMask ) {
+        if ( (GetQualityCodes() & m_FilterMask) != m_Filter ) {
+            return eExluded;
+        }
     }
     m_CurRange.SetFrom(ref_pos);
     m_CurRange.SetToOpen(ref_end);
-    return 0;
+    return eIncluded;
 }
 
 
@@ -978,12 +1201,12 @@ void CSNPDbFeatIterator::x_Settle(void)
 {
     while ( m_PageIter ) {
         while ( m_CurrFeatId < m_FirstBadFeatId ) {
-            int exc = x_Excluded();
-            if ( !exc ) {
+            EExcluded exc = x_Excluded();
+            if ( exc == eIncluded ) {
                 // found
                 return;
             }
-            if ( exc == 2 ) {
+            if ( exc == ePassedTheRegion ) {
                 // passed the region
                 break;
             }
@@ -1013,9 +1236,16 @@ void CSNPDbFeatIterator::x_ReportInvalid(const char* method) const
 }
 
 
-Uint4 CSNPDbFeatIterator::GetRsId(void) const
+Uint4 CSNPDbFeatIterator::GetFeatIdPrefix(void) const
 {
-    x_CheckValid("CSNPDbFeatIterator::GetRsId");
+    x_CheckValid("CSNPDbFeatIterator::GetFeatIdPrefix");
+    return Cur().FEAT_ID_PREFIX(GetPageRowId())[m_CurrFeatId];
+}
+
+
+Uint8 CSNPDbFeatIterator::GetFeatId(void) const
+{
+    x_CheckValid("CSNPDbFeatIterator::GetFeatId");
     return Cur().FEAT_ID_VALUE(GetPageRowId())[m_CurrFeatId];
 }
 
@@ -1041,12 +1271,18 @@ CTempString CSNPDbFeatIterator::GetAlleles(void) const
 }
 
 
-void CSNPDbFeatIterator::GetQualityCodes(vector<char>& codes) const
+Uint8 CSNPDbFeatIterator::GetQualityCodes(void) const
 {
     x_CheckValid("CSNPDbFeatIterator::GetQualityCodes");
-    CVDBValueFor<Uint1> data = Cur().BIT_FLAGS(GetPageRowId());
-    codes.assign(&data[m_CurrFeatId*kFlagsSize],
-                 &data[m_CurrFeatId*kFlagsSize+kFlagsSize-1]+1);
+    return Cur().BIT_FLAGS(GetPageRowId())[m_CurrFeatId];
+}
+
+
+void CSNPDbFeatIterator::GetQualityCodes(vector<char>& codes) const
+{
+    Uint8 data = GetQualityCodes();
+    codes.assign(reinterpret_cast<const char*>(&data),
+                 reinterpret_cast<const char*>(&data+1));
 }
 
 
@@ -1235,7 +1471,18 @@ CRef<CSeq_feat> CSNPDbFeatIterator::GetSeq_feat(TFlags flags) const
         dbxref[0] = null;
         CDbtag& dbtag = x_GetPrivate(cache.m_Dbtag);
         x_SetStringConstant(dbtag, Db, "dbSNP");
-        dbtag.SetTag().SetId(GetRsId());
+        Uint8 feat_id = GetFeatId();
+        switch ( GetFeatIdPrefix() ) {
+        case eFeatIdPrefix_rs:
+            dbtag.SetTag().SetStr("rs"+NStr::NumericToString(feat_id));
+            break;
+        case eFeatIdPrefix_ss:
+            dbtag.SetTag().SetStr("ss"+NStr::NumericToString(feat_id));
+            break;
+        default:
+            dbtag.SetTag().SetId8(feat_id);
+            break;
+        }
         dbxref[0] = &dbtag;
     }
     else {

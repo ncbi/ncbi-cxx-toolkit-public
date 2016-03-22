@@ -278,6 +278,9 @@ public:
 
     CRef<CSeq_annot> GetFeatAnnot(CRange<TSeqPos> range,
                                   TFlags flags = fDefaultFlags) const;
+    typedef vector< CRef<CSeq_annot> > TAnnotSet;
+    TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
+                                 TFlags flags = fDefaultFlags) const;
     typedef pair< CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > TPackedAnnot;
     TPackedAnnot GetPackedFeatAnnot(CRange<TSeqPos> range,
                                     TFlags flags = fDefaultFlags) const;
@@ -404,27 +407,49 @@ private:
 class NCBI_SRAREAD_EXPORT CSNPDbFeatIterator : public SSNPDb_Defs
 {
 public:
-    CSNPDbFeatIterator(void);
+    typedef Uint8 TFilter;
 
+    struct SSelector {
+        SSelector(ESearchMode search_mode = eSearchByOverlap)
+            : m_SearchMode(search_mode),
+              m_Filter(0),
+              m_FilterMask(0)
+            {
+            }
+
+        SSelector& SetBitFilter(TFilter filter,
+                                TFilter filter_mask = TFilter(-1))
+            {
+                m_Filter = filter;
+                m_FilterMask = filter_mask;
+                return *this;
+            }
+
+        ESearchMode m_SearchMode;
+        TFilter m_Filter;
+        TFilter m_FilterMask;
+    };
+
+    CSNPDbFeatIterator(void);
     CSNPDbFeatIterator(const CSNPDb& db,
                        const CSeq_id_Handle& ref_id,
                        TSeqPos ref_pos = 0,
                        TSeqPos window = 0,
-                       ESearchMode search_mode = eSearchByOverlap);
+                       const SSelector& sel = SSelector());
     CSNPDbFeatIterator(const CSNPDb& db,
                        const CSeq_id_Handle& ref_id,
                        COpenRange<TSeqPos> ref_range,
-                       ESearchMode search_mode = eSearchByOverlap);
+                       const SSelector& sel = SSelector());
     CSNPDbFeatIterator(const CSNPDbSeqIterator& seq,
                        COpenRange<TSeqPos> ref_range,
-                       ESearchMode search_mode = eSearchByOverlap);
+                       const SSelector& sel = SSelector());
     CSNPDbFeatIterator(const CSNPDbFeatIterator& iter);
     ~CSNPDbFeatIterator(void);
 
     CSNPDbFeatIterator& operator=(const CSNPDbFeatIterator& iter);
 
     CSNPDbFeatIterator& Select(COpenRange<TSeqPos> ref_range,
-                               ESearchMode search_mode = eSearchByOverlap);
+                               const SSelector& sel = SSelector());
 
     void Reset(void);
 
@@ -469,8 +494,15 @@ public:
 
     CTempString GetAlleles(void) const;
 
-    Uint4 GetRsId(void) const;
+    enum EFeatIdPrefix {
+        eFeatIdPrefix_none = 0,
+        eFeatIdPrefix_rs = 1,
+        eFeatIdPrefix_ss = 2
+    };
+    Uint4 GetFeatIdPrefix(void) const;
+    Uint8 GetFeatId(void) const;
 
+    Uint8 GetQualityCodes(void) const;
     void GetQualityCodes(vector<char>& codes) const;
 
     enum EFlags {
@@ -515,8 +547,14 @@ protected:
 
     void x_Next(void);
     void x_Settle(void);
-    int x_Excluded(void);
+    enum EExcluded {
+        eIncluded,
+        eExluded,
+        ePassedTheRegion
+    };
+    EExcluded x_Excluded(void);
 
+    void x_SetFilter(const SSelector& sel);
     void x_InitPage(void);
 
 private:
@@ -525,6 +563,7 @@ private:
     mutable TVDBRowId m_ExtraRowId;
 
     COpenRange<TSeqPos> m_CurRange; // current SNP refseq range
+    Uint8 m_Filter, m_FilterMask;
 
     Uint4 m_CurrFeatId, m_FirstBadFeatId;
 
