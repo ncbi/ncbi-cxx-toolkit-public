@@ -5097,7 +5097,14 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                     m_Imp.SetFarFetchFailure();
                 } else if ( x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap) ) {
                     if (!is_gap) {
-                        if (!feat.GetData().IsCdregion() || x_SplicingNotExpected (feat)) {
+                        if (feat.GetData().IsCdregion() && m_Imp.IsOrganelle(m_Scope->GetBioseqHandle(feat.GetLocation()))) {
+                            if (x_PartialAdjacentToIntron(feat.GetLocation())) {
+                            } else {
+                                PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
+                                    "PartialLocation: " + parterr[i] + " (organelle does not use standard splice site convention)",
+                                    *(feat.GetSeq_feat()));
+                            }
+                        } else if (!feat.GetData().IsCdregion() || x_SplicingNotExpected (feat)) {
                             if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                                 // ignore in genomic gpipe sequence
                             } else if (feat.IsSetPseudo() && feat.GetPseudo()) {
