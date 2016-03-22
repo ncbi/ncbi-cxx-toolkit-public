@@ -479,6 +479,8 @@ EIO_Status CNetCacheWriter::TransmitImpl(const char* buf, size_t count)
                 if (res != eRW_Success || !count) {
                     in = eIO_Read;
                     deadline = CDeadline(0, 0);
+                } else {
+                    deadline = g_STimeoutToCTimeout(&timeout);
                 }
             }
         }
