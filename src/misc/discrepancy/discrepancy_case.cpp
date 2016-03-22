@@ -1120,7 +1120,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_LOCUS_TAG_PREFIX)
 
 static const string kInconsistent_Moltype = "[n] sequences have inconsistent moltypes";
 
-DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eOncaller, "Inconsistent molecule types")
+DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eDisc | eOncaller, "Inconsistent molecule types")
 {
     if (obj.IsAa() ) {
         return;

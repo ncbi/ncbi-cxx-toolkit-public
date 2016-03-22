@@ -1,0 +1,36 @@
+Discrepancy Report Results
+
+Summary
+SOURCE_QUALS: culture-collection (all present, all unique)
+SOURCE_QUALS: location (all present, all unique)
+SOURCE_QUALS: plasmid-name (all present, all unique)
+SOURCE_QUALS: strain (all present, all unique)
+SOURCE_QUALS: taxid (all present, all unique)
+SOURCE_QUALS: taxname (all present, all unique)
+
+Detailed Report
+
+SOURCE_QUALS: culture-collection (all present, all unique)
+SOURCE_QUALS: 1 biosource has qualifier culture-collection = DSM:12163
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-181.sqn:emb|FN392236.1| (2 components):Erwinia pyrifoliae DSM 12163
+
+SOURCE_QUALS: location (all present, all unique)
+SOURCE_QUALS: 1 biosource has qualifier location = plasmid
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-181.sqn:emb|FN392236.1| (2 components):Erwinia pyrifoliae DSM 12163
+
+SOURCE_QUALS: plasmid-name (all present, all unique)
+SOURCE_QUALS: 1 biosource has qualifier plasmid-name = pEP2.6
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-181.sqn:emb|FN392236.1| (2 components):Erwinia pyrifoliae DSM 12163
+
+SOURCE_QUALS: strain (all present, all unique)
+SOURCE_QUALS: 1 biosource has qualifier strain = DSM 12163
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-181.sqn:emb|FN392236.1| (2 components):Erwinia pyrifoliae DSM 12163
+
+SOURCE_QUALS: taxid (all present, all unique)
+SOURCE_QUALS: 1 biosource has qualifier taxid = 644651
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-181.sqn:emb|FN392236.1| (2 components):Erwinia pyrifoliae DSM 12163
+
+SOURCE_QUALS: taxname (all present, all unique)
+SOURCE_QUALS: 1 biosource has qualifier taxname = Erwinia pyrifoliae DSM 12163
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-181.sqn:emb|FN392236.1| (2 components):Erwinia pyrifoliae DSM 12163
+

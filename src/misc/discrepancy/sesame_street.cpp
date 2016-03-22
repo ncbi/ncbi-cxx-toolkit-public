@@ -246,10 +246,17 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
             CRef<CSourseQualsAutofixData> fix;
             if (bins > capital.size()) { // capitalization
                 ITERATE (TStringStringObjVectorMap, cap, capital) {
-                    if (cap->second.size() < 2) {
+                    const TStringObjVectorMap& mmm = cap->second;
+                    if (mmm.size() < 2) {
+                        ITERATE(TStringObjVectorMap, x, mmm) {
+                            const vector<CRef<CReportObj> >& v = x->second;
+                            ITERATE(vector<CRef<CReportObj> >, o, v) {
+                                CRef<CReportObj> r = *o;
+                                report[diagnosis]["[n] biosource[s] [has] qualifier " + it->first + " = " + x->first].Add(*r);
+                            }
+                        }
                         continue;
                     }
-                    const TStringObjVectorMap& mmm = cap->second;
                     size_t best_count = 0;
                     fix.Reset(new CSourseQualsAutofixData);
                     fix->m_Qualifier = it->first;
@@ -269,6 +276,15 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                     }
                 }
             }
+            else {
+                NON_CONST_ITERATE(CReportNode::TNodeMap, jj, sub) {
+                    TReportObjectList& obj = jj->second->GetObjects();
+                    ITERATE(TReportObjectList, o, obj) {
+                        CRef<CReportObj> r = *o;
+                        report[diagnosis]["[n] biosource[s] [has] qualifier " + it->first + " = " + jj->first].Add(*r);
+                    }
+                }
+            }
             if (num < total && capital.size() == 1) { // some missing all same
                 if (num / (float)total >= context.GetSesameStreetCutoff()) { // autofixable
                     if (fix.IsNull()) {
@@ -281,6 +297,19 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                         report[diagnosis]["[n] biosource[s] may have missing qualifier: " + it->first + " (" + sub.begin()->first + ")"].Add(*((const CDiscrepancyObject&)*o->second).Clone(true, CRef<CObject>(fix.GetNCPointer())));
                     }
                 }
+            }
+        }
+        else { // not autofixable
+            NON_CONST_ITERATE (CReportNode::TNodeMap, jj, sub) {
+                TReportObjectList& obj = jj->second->GetObjects();
+                ITERATE (TReportObjectList, o, obj) {
+                    CRef<CReportObj> r = *o;
+                    report[diagnosis]["[n] biosource[s] [has] qualifier " + it->first + " = " + jj->first].Add(*r);
+                }
+            }
+            ITERATE(TReportObjPtrMap, o, missing) {
+                CRef<CReportObj> r = o->second;
+                report[diagnosis]["[n] biosource[s] [has] missing qualifier: " + it->first].Add(*r);
             }
         }
     }
@@ -332,14 +361,15 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
         CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(obj.GetObject().GetPointer()));
         CRef<CBioSource> bs(&desc->SetSource());
+        fix = dynamic_cast<const CSourseQualsAutofixData*>(obj.GetMoreInfo().GetPointer());
         if (!fix) {
-            fix = dynamic_cast<const CSourseQualsAutofixData*>(obj.GetMoreInfo().GetPointer());
-            CAutofixHookRegularArguments arg;
-            arg.m_User = fix->m_User;
-            //if (m_Hook) {
-            //    m_Hook(&arg);
-            //}
+            continue;
         }
+        CAutofixHookRegularArguments arg;
+        arg.m_User = fix->m_User;
+        //if (m_Hook) {
+        //    m_Hook(&arg);
+        //}
         
         if (fix->m_Qualifier == "host") {
             SetOrgMod(bs, COrgMod::eSubtype_nat_host, fix->m_Value, added, changed);
