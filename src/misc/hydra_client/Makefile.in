@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile ("misc/hydra_client" project)
+############################################
+
+LIB_PROJ = hydra_client
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
