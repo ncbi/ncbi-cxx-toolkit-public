@@ -5356,16 +5356,16 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     string gene_pseudo = "unqualified";
                     if (gene != 0) {
                         FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
-                            if (!(*it)->IsSetQual()) continue;
+                            if (!(*it)->IsSetQual() || !(*it)->IsSetVal()) continue;
                             string str = (*it)->GetQual();
                             if (! NStr::EqualNocase (str, "pseudogene")) continue;
-                            sfp_pseudo = str;
+                            sfp_pseudo = (*it)->GetVal();
                         }
                         FOR_EACH_GBQUAL_ON_FEATURE (it, *gene) {
                             if (!(*it)->IsSetQual()) continue;
                             string str = (*it)->GetQual();
                             if (! NStr::EqualNocase (str, "pseudogene")) continue;
-                            gene_pseudo = str;
+                            gene_pseudo = (*it)->GetVal();
                         }
                         if (! NStr::EqualNocase (sfp_pseudo, gene_pseudo)) {
                             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InconsistentPseudogeneValue,
