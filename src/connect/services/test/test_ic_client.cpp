@@ -273,7 +273,7 @@ static void s_SimpleTest()
     api.SetFlags(ICache::fBestReliability);
 
     const int kIterations = 50;
-    const size_t kSrcSize = 20 * 1024 * 1024; // 20MB
+    const size_t kSrcSize = 100 * 1024 * 1024;
     const size_t kBufSize = 100 * 1024; // 100KB
     vector<char> src;
     vector<char> buf;
