@@ -152,7 +152,14 @@ public:
     void ResetStrand(void);
 
     /// Return start and stop positions of the seq-loc.
-    /// Stop may be less than Start for circular sequences.
+    /// Start position is the start of the first range in the seq-loc,
+    /// stop is the end of the last range. if eExtreme_Biological flag
+    /// is used, the effective order of ranges and range direction depends
+    /// on the strand.
+    /// NOTE: The returned values are not necessarily the same as
+    /// the boundaries returned by GetTotalRange(). It's also not
+    /// guaranteed that the value returned by GetStart() is less or
+    /// equal to the one returned by GetStop().
     TSeqPos GetStart(ESeqLocExtremes ext) const;
     TSeqPos GetStop (ESeqLocExtremes ext) const;
 
