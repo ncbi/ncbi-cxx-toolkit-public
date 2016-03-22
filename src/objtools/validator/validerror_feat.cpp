@@ -8316,36 +8316,40 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                         CSeqVector vec = GetSequenceFromLoc (loc_it.GetEmbeddingSeq_loc(), *m_Scope);
                         if ( !vec.empty() ) {
                             CBioseq_Handle ph = GetCache().GetBioseqHandleFromLocation(m_Scope, loc_it.GetEmbeddingSeq_loc(), m_Imp.GetTSE_Handle());
-                            TSeqPos offset = loc_it.GetEmbeddingSeq_loc().GetStart (eExtreme_Positional);
                             string vec_data;
                             vec.GetSeqData(0, vec.size(), vec_data);
+
+                            local_first_gap = false;
+                            local_last_gap = false;
+                            TSeqLength len = loc_it.GetRange().GetLength();
+                            TSeqPos start = loc_it.GetRange().GetFrom();
+                            TSeqPos stop = loc_it.GetRange().GetTo();
+                            ENa_strand strand = loc_it.GetStrand();
 
                             int pos = 0;
                             string::iterator it = vec_data.begin();
                             while (it != vec_data.end()) {
-                                if (*it == 'N') {
-                                    CSeqMap_CI map_iter(ph, SSeqMapSelector(), offset + pos);
-                                    if (map_iter.GetType() == CSeqMap::eSeqGap) {
-                                        if (map_iter.IsUnknownLength()) {
-                                            num_unknown_gap ++;
-                                        } else {
-                                            num_gap++;
-                                        }
-                                    } else {
-                                        num_n++;
+                                CSeqMap_CI map_iter(ph, SSeqMapSelector(), 
+                                    strand == eNa_strand_minus ? stop - pos : start + pos);
+                                if (map_iter.GetType() == CSeqMap::eSeqGap) {
+                                    if (pos == 0) {
+                                        local_first_gap = true;
+                                    } else if (pos == len - 1) {
+                                        local_last_gap = true;
                                     }
+                                    if (map_iter.IsUnknownLength()) {
+                                        num_unknown_gap++;
+                                    } else {
+                                        num_gap++;
+                                    }
+                                } else if (*it == 'N') {
+                                    num_n++;
                                 } else {
                                     num_real++;
                                 }
                                 ++it;
                                 ++pos;
                             }
-                        }
-                        local_first_gap = false;
-                        local_last_gap = false;
-                        if (!vec.empty()) {
-                            local_first_gap = vec.IsInGap(0);
-                            local_last_gap = vec.IsInGap(vec.size() - 1);
                         }
                         if (first) {
                             first_in_gap = local_first_gap;
@@ -8396,7 +8400,10 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap, 
                                  "Internal interval begins or ends in gap", feat);
                     }            
-                } catch (CException ) {
+                } catch (CException &e) {
+                    PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+                        string("Exeption while checking for intervals in gaps. EXCEPTION: ") +
+                        e.what(), feat);
                 } catch (std::exception ) {
                 }
             }
