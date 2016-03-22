@@ -418,7 +418,7 @@ void CNetCacheWriter::AbortConnection()
 
 EIO_Status CNetCacheWriter::TransmitImpl(const char* buf, size_t count)
 {
-    STimeout timeout =
+    const STimeout timeout =
         m_NetCacheAPI->m_Service->m_ServerPool.GetCommunicationTimeout();
     CDeadline deadline(g_STimeoutToCTimeout(&timeout));
 
@@ -431,8 +431,8 @@ EIO_Status CNetCacheWriter::TransmitImpl(const char* buf, size_t count)
 
     for (;;) {
         const CNanoTimeout remaining = deadline.GetRemainingTime();
-        const STimeout* wait = g_CTimeoutToSTimeout(remaining, timeout);
-        stat = CSocketAPI::Poll(poll, wait);
+        STimeout wait;
+        stat = CSocketAPI::Poll(poll, g_CTimeoutToSTimeout(remaining, wait));
 
         if (stat != eIO_Interrupt) {
             if (stat != eIO_Success) {
