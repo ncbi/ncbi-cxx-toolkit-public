@@ -73,6 +73,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "BDGP_INS", CDbtag::eDbtagType_BDGP_INS },
     { "BEEBASE", CDbtag::eDbtagType_BEEBASE },
     { "BEETLEBASE", CDbtag::eDbtagType_BEETLEBASE },
+    { "BEI", CDbtag::eDbtagType_BEI },
     { "BGD", CDbtag::eDbtagType_BGD },
     { "BOLD", CDbtag::eDbtagType_BoLD },
     { "CDD", CDbtag::eDbtagType_CDD },
@@ -204,6 +205,7 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
     { "ATCC(dna)", CDbtag::eDbtagType_ATCC_dna },
     { "ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host },
     { "AntWeb", CDbtag::eDbtagType_AntWeb },
+    { "BEI", CDbtag::eDbtagType_BEI },
     { "BOLD", CDbtag::eDbtagType_BoLD },
     { "FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB },
     { "FBOL", CDbtag::eDbtagType_FBOL },
@@ -686,6 +688,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_ISHAM_ITS, "http://its.mycologylab.org/BioloMICS.aspx?Table=Sequences&ExactMatch=T&Name=MITS" },
     { CDbtag::eDbtagType_I5KNAL, "https://i5k.nal.usda.gov/" },
     { CDbtag::eDbtagType_VISTA, "http://enhancer.lbl.gov/cgi-bin/dbxref.pl?id=" },
+    { CDbtag::eDbtagType_BEI, "https://www.beiresources.org/Catalog/animalViruses/" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
@@ -782,6 +785,10 @@ string CDbtag::GetUrl(const string & genus,
         if (NStr::Find(tag, "FBan") != NPOS) {
             prefix = kFBan;
         }
+        break;
+
+    case eDbtagType_BEI:
+        tag += ".aspx";
         break;
 
     case CDbtag::eDbtagType_Fungorum:
