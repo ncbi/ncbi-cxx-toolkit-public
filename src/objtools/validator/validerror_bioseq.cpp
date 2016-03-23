@@ -5731,6 +5731,64 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
 }
 
 
+TGi GetGIForSeqId(const CSeq_id& id, CScope& scope)
+{
+    if (id.IsGi()) {
+        return id.GetGi();
+    }
+    CBioseq_Handle bsh = scope.GetBioseqHandle(id);
+    if (!bsh) {
+        return ZERO_GI;
+    }
+    ITERATE(CBioseq::TId, id_it, bsh.GetBioseqCore()->GetId()) {
+        if ((*id_it)->IsGi()) {
+            return (*id_it)->GetGi();
+        }
+    }
+    return ZERO_GI;
+}
+
+
+string s_GetMrnaProteinLink(const CUser_field& field)
+{
+    string ml = kEmptyStr;
+    if (field.IsSetLabel() && field.GetLabel().IsStr() &&
+        NStr::Equal(field.GetLabel().GetStr(), "protein seqID") &&
+        field.IsSetData() && field.GetData().IsStr()) {
+        ml = field.GetData().GetStr();
+    }
+    return ml;
+}
+
+
+string s_GetMrnaProteinLink(const CUser_object& user)
+{
+    string ml = kEmptyStr;
+    if (user.IsSetType() && user.GetType().IsStr() &&
+        NStr::Equal(user.GetType().GetStr(), "MrnaProteinLink") &&
+        user.IsSetData()) {
+        ITERATE(CUser_object::TData, it, user.GetData()) {
+            ml = s_GetMrnaProteinLink(**it);
+            if (!NStr::IsBlank(ml)) {
+                break;
+            }
+        }
+    }
+    return ml;
+}
+
+
+string s_GetMrnaProteinLink(const CSeq_feat &mrna)
+{
+    string ml = kEmptyStr;
+
+    if (mrna.IsSetExt()) {
+        ml = s_GetMrnaProteinLink(mrna.GetExt());
+    }
+    return ml;
+
+}
+
 
 unsigned int CValidError_bioseq::x_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna)
 {
@@ -5768,28 +5826,16 @@ unsigned int CValidError_bioseq::x_IdXrefsNotReciprocal (const CSeq_feat &cds, c
         return 0;
     }
     
-    TGi gi = ZERO_GI;
-    if (cds.GetProduct().GetId()->IsGi()) {
-        gi = cds.GetProduct().GetId()->GetGi();
-    } else {
-        // TODO: get gi for other kinds of SeqIds
-    }
+    TGi gi = GetGIForSeqId(*(cds.GetProduct().GetId()), *m_Scope);
 
     if (gi == ZERO_GI) {
         return 0;
     }
 
-    if (mrna.IsSetExt() && mrna.GetExt().IsSetType() && mrna.GetExt().GetType().IsStr()
-        && NStr::EqualNocase(mrna.GetExt().GetType().GetStr(), "MrnaProteinLink")
-        && mrna.GetExt().IsSetData()
-        && mrna.GetExt().GetData().front()->IsSetLabel()
-        && mrna.GetExt().GetData().front()->GetLabel().IsStr()
-        && NStr::EqualNocase (mrna.GetExt().GetData().front()->GetLabel().GetStr(), "protein seqID")
-        && mrna.GetExt().GetData().front()->IsSetData()
-        && mrna.GetExt().GetData().front()->GetData().IsStr()) {
-        string str = mrna.GetExt().GetData().front()->GetData().GetStr();
+    string ml = s_GetMrnaProteinLink(mrna);
+    if (!NStr::IsBlank(ml)) {
         try {
-            CSeq_id id (str);
+            CSeq_id id (ml);
             if (id.IsGi()) {
                 if (id.GetGi() == gi) {
                     return 0;
@@ -5798,7 +5844,9 @@ unsigned int CValidError_bioseq::x_IdXrefsNotReciprocal (const CSeq_feat &cds, c
                 }
             }
         } catch (CException ) {
+            return 2;
         } catch (std::exception ) {
+            return 2;
         }
     }
     return 0;
