@@ -1070,6 +1070,15 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CStrictGi& gi)
     return out << TIntId(gi);
 }
 
+inline
+CNcbiIstream& operator>>(CNcbiIstream& in, CStrictGi& gi)
+{
+    TIntId id;
+    in >> id;
+    gi = id;
+    return in;
+}
+
 typedef CStrictGi TGi;
 
 #else // NCBI_STRICT_GI
