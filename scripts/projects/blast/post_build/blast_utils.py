@@ -58,16 +58,18 @@ def update_blast_version(config_file, ver):
     be replaced by the contents of the variable passed to this function.
     """
     (fd, fname) = tempfile.mkstemp()
-    with open(config_file, "r") as infile, open(fname, "w") as out:
-        for line in infile:
-            newline = re.sub("BLAST_VERSION", ver, line.rstrip())
-            print(newline, file=out)
+    try:
+        with open(config_file, "r") as infile, open(fname, "w") as out:
+            for line in infile:
+                newline = re.sub("BLAST_VERSION", ver, line.rstrip())
+                print(newline, file=out)
 
-    with open(config_file, "w") as out, open(fname, "r") as infile:
-        for line in infile:
-            print(line.rstrip(), file=out)
-    os.close(fd)
-    os.remove(fname)
+        with open(config_file, "w") as out, open(fname, "r") as infile:
+            for line in infile:
+                print(line.rstrip(), file=out)
+    finally:
+        os.close(fd)
+        os.remove(fname)
 
 
 def create_new_tarball_name(platform, program, version):
