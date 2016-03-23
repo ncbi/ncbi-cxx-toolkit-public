@@ -977,7 +977,6 @@ seqcode needs xser
 seqdb needs $(SOBJMGR_LIBS)
 seqdb needs blastdb
 seqedit needs seqset
-seqentry_comparator needs $(XFORMAT_LIBS)
 seqentry_comparator needs xobjwrite
 seqgapscan needs $(SDBAPI_LIB)
 seqgapscan needs xconnect
@@ -1489,6 +1488,7 @@ xobjreadex needs xobjutil
 xobjsimple needs $(OBJMGR_LIBS)
 xobjutil needs $(SOBJMGR_LIBS)
 xobjwrite needs $(OBJREAD_LIBS)
+xobjwrite needs $(XFORMAT_LIBS)
 xobjwrite needs variation_utils
 xobjwrite needs xalnmgr
 xomssa needs $(COMPRESS_LIBS)
