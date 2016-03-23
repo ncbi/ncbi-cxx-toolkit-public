@@ -99,7 +99,7 @@ void LogRequest(const TReq& req)
 
 static void ValidateAsmAccession(const string& acc)
 {
-    if(acc.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != string::npos)
+    if(acc.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.") != string::npos)
         NCBI_THROW(CException, eUnknown, "Invalid accession format: " + acc);
 }
 
