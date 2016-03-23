@@ -59,14 +59,14 @@ def update_blast_version(config_file, ver):
     """
     (fd, fname) = tempfile.mkstemp()
     try:
-    with open(config_file, "r") as infile, open(fname, "w") as out:
-        for line in infile:
-            newline = re.sub("BLAST_VERSION", ver, line.rstrip())
-            print(newline, file=out)
+        with open(config_file, "r") as infile, open(fname, "w") as out:
+            for line in infile:
+                newline = re.sub("BLAST_VERSION", ver, line.rstrip())
+                print(newline, file=out)
 
-    with open(config_file, "w") as out, open(fname, "r") as infile:
-        for line in infile:
-            print(line.rstrip(), file=out)
+        with open(config_file, "w") as out, open(fname, "r") as infile:
+            for line in infile:
+                print(line.rstrip(), file=out)
     finally:
         os.close(fd)
     os.remove(fname)
