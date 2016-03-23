@@ -164,7 +164,7 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
 
-    if (m_ShowPercentIdentity) {
+    if (m_ShowPercentIdentity && !m_IsIgBlast) {
         arg_desc.SetCurrentGroup("Restrict search or results");
         arg_desc.AddOptionalKey(kArgPercentIdentity, "float_value",
                                 "Percent identity",
@@ -1454,6 +1454,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
         arg_desc.SetConstraint(kArgDPenalty, 
                                new CArgAllowValuesBetween(-6, 0));
+       
     }
 
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
@@ -1476,6 +1477,12 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.AddFlag(kArgExtendAlign, "Extend V gene alignment at 5' end", true);
 
+    arg_desc.AddDefaultKey(kArgMinVLength, "Min_V_Length",
+                           "Minimal required V gene length",
+                           CArgDescriptions::eInteger, "9");
+    arg_desc.SetConstraint(kArgMinVLength, 
+                           new CArgAllowValuesGreaterThanOrEqual(9));
+    
     if (! m_IsProtein) {
         arg_desc.AddFlag(kArgTranslate, "Show translated alignments", true);
     }
@@ -1528,7 +1535,8 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_DomainSystem = args[kArgGLDomainSystem].AsString();
     m_IgOptions->m_FocusV = args.Exist(kArgGLFocusV) ? args[kArgGLFocusV] : false;
     m_IgOptions->m_ExtendAlign = args.Exist(kArgExtendAlign) ? args[kArgExtendAlign] : false;
-
+    m_IgOptions->m_MinVLength = args[kArgMinVLength].AsInteger();
+   
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
     if (!m_IsProtein) {
         string aux_file = (args.Exist(kArgGLChainType) && args[kArgGLChainType])

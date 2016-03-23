@@ -78,6 +78,7 @@ public:
     bool m_FocusV;                   // should alignment restrict to V
     bool m_Translate;                // should translation be displayed
     bool m_ExtendAlign;
+    int m_MinVLength;
 };
 
 class CIgAnnotation : public CObject
@@ -353,6 +354,7 @@ private:
                      bool va_or_vd_as_heavy_chain);
 
     void x_ExtendAlign(CRef<CSearchResultSet> & results);
+    void x_ScreenV(CRef<CSearchResultSet> & results);
     void x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & annot);
     
 };

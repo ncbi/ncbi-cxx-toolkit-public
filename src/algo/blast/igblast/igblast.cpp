@@ -133,6 +133,22 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     }
 };
 
+void CIgBlast::x_ScreenV(CRef<CSearchResultSet> & results){
+    NON_CONST_ITERATE(CSearchResultSet, result, *results) {
+        if ((*result)->HasAlignments()) {
+            CSeq_align_set::Tdata & align_list = (*result)->SetSeqAlign()->Set();
+            CSeq_align_set::Tdata::iterator it = align_list.begin();
+            while (it != align_list.end()) {
+                if((*it)->GetAlignLength() - (*it)->GetTotalGapCount(0) < m_IgOptions->m_MinVLength){
+                    it = align_list.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
+    }
+}
+
 
 void CIgBlast::x_ExtendAlign(CRef<CSearchResultSet> & results){
     
@@ -237,7 +253,7 @@ CIgBlast::Run()
         if (m_IgOptions->m_ExtendAlign){
             x_ExtendAlign(results[0]);
         }
-       
+        x_ScreenV(results[0]);
         x_ConvertResultType(results[0]);
         s_SortResultsByEvalue(results[0]);
         x_AnnotateV(results[0], annots);
@@ -251,6 +267,7 @@ CIgBlast::Run()
         if (m_IgOptions->m_ExtendAlign){
             x_ExtendAlign(results[3]);
         }
+        x_ScreenV(results[3]);
         s_SortResultsByEvalue(results[3]);
         x_AnnotateDomain(results[0], results[3], annots);
     }
@@ -270,8 +287,9 @@ CIgBlast::Run()
                 break;
             }
         }
-        if (num_genes > 1) 
+        if (num_genes > 1){
             x_AnnotateDJ(results[1], results[2], annots);
+        }
     }
 
     /*** collect germline search results */
