@@ -275,6 +275,12 @@ string CFastaOstreamEx::x_GetRNAIdString(const CBioseq_Handle& handle,
         break;
     }
 
+    case CRNA_ref::eType_tmRNA:
+    {
+        rna_tag = "_tmrna_";
+        break;
+    }
+
     default: 
     {
         rna_tag = "_miscrna_";
