@@ -66,6 +66,7 @@ def update_blast_version(config_file, ver):
     with open(config_file, "w") as out, open(fname, "r") as infile:
         for line in infile:
             print(line.rstrip(), file=out)
+    os.close(fd)
     os.remove(fname)
 
 
