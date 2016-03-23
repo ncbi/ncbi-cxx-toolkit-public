@@ -60,7 +60,7 @@ def launch_rpm_build(installdir, blast_version):
     '''Linux post-build: create RPM'''
     if VERBOSE: 
         print("Packing linux RPM...")
-    cmd = "python " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
+    cmd = "python3 " + os.path.join(SCRIPTS_DIR, "rpm", "make_rpm.py") + " "
     cmd += blast_version + " " + installdir
     if VERBOSE: 
         cmd += " -v"

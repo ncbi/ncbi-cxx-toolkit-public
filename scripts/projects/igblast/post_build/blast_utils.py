@@ -2,12 +2,15 @@
 """ Various utilities/tools for BLAST """
 from __future__ import print_function
 
-__all__ = [ "safe_exec", "update_blast_version" ]
+__all__ = ["safe_exec", "update_blast_version"]
 
 import os
 import subprocess
-import shutil
 import platform
+import unittest
+import tempfile
+import re
+
         
 def safe_exec(cmd):
     """ Executes a command and checks its return value, throwing an
@@ -26,24 +29,48 @@ def safe_exec(cmd):
         msg += "Execution failed: " + err
         raise RuntimeError(msg)
 
-def update_blast_version(config_file, blast_version):
+
+class Tester(unittest.TestCase):
+    '''Testing class for this script.'''
+    def test_one(self):
+        ver = "2.3.0"
+        line1 = "Hello BLAST"
+        with tempfile.NamedTemporaryFile(mode='w+t') as fp:
+            print(line1, file=fp)
+            print("BLAST_VERSION", file=fp)
+            print(line1, file=fp, flush=True)
+
+            update_blast_version(fp.name, ver)
+
+            fp.seek(0)
+            line = fp.readline().rstrip()
+            self.assertEqual(line1, line)
+            line = fp.readline().rstrip()
+            self.assertEqual(ver, line)
+            line = fp.readline().rstrip()
+            self.assertEqual(line1, line)
+
+
+def update_blast_version(config_file, ver):
     """Updates the BLAST version in the specified file.
     
     Assumes the specified file contains the string BLAST_VERSION, which will
     be replaced by the contents of the variable passed to this function.
     """
-    import re
-    temp_fname = os.tmpnam()
-    shutil.move(config_file, temp_fname)
+    (fd, fname) = tempfile.mkstemp()
     try:
-        out = open(config_file, "w")
-        infile = open(temp_fname, "r")
+    with open(config_file, "r") as infile, open(fname, "w") as out:
         for line in infile:
-            print(re.sub("BLAST_VERSION", blast_version, line), end=' ', file=out)
+            newline = re.sub("BLAST_VERSION", ver, line.rstrip())
+            print(newline, file=out)
+
+    with open(config_file, "w") as out, open(fname, "r") as infile:
+        for line in infile:
+            print(line.rstrip(), file=out)
     finally:
-        out.close()
-        infile.close()
-        os.unlink(temp_fname)
+        os.close(fd)
+    os.remove(fname)
+
 
 def create_new_tarball_name(platform, version):
     """ Converts the name of a platform as specified to the prepare_release 

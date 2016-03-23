@@ -35,17 +35,15 @@ def setup_rpmbuild():
     os.chdir(cwd)
 
     # Create ~/.rpmmacros
-    try:
-        out = open(RPMMACROS, "w")
-        print >> out, "%_topdir %( echo", os.path.join(cwd, RPMBUILD_HOME), ")"
-        print >> out, "%_tmppath %( echo", 
-        print >> out, os.path.join(cwd, RPMBUILD_HOME, "tmp"), ")"
-        print >> out
-        print >> out, "%packager Christiam E. Camacho (camacho@ncbi.nlm.nih.gov)"
-    finally:
-        out.close()
-    if VERBOSE: 
-        print("Created", RPMMACROS)
+    with open(RPMMACROS, "w") as out:
+        print("%_topdir %( echo", os.path.join(cwd, RPMBUILD_HOME), ")", file=out)
+        print("%_tmppath %( echo", end=' ', file=out) 
+        print(os.path.join(cwd, RPMBUILD_HOME, "tmp"), ")", file=out)
+        print(file=out)
+        print("%packager Christiam E. Camacho (camacho@ncbi.nlm.nih.gov)", file=out)
+        print("%debug_package %{nil}", file=out)
+        if VERBOSE: 
+            print("Created", RPMMACROS)
 
 def cleanup_rpm():
     """ Delete rpm files """
@@ -136,6 +134,7 @@ def move_rpms_to_installdir(installdir):
     args = [ "find", RPMBUILD_HOME, "-name", "*.rpm" ]
     output = subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
     for rpm in output.split():
+        rpm = rpm.decode('ascii')
         if VERBOSE: 
             print("mv", rpm, installer_dir)
         shutil.move(rpm, installer_dir)
