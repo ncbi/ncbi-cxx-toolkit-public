@@ -695,6 +695,26 @@ FFFFFFFF8188118411241181222818128281811144112241844121422142842144881844841418
                     id local str "scaffold1",
                     fuzz-from lim lt
                   }
+                },
+                {
+                  id local id 5,
+                  data rna {
+                    type mRNA,
+                    ext name "favorite 2"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 4950,
+                    to 5999,
+                    strand plus,
+                    id local str "scaffold1",
+                    fuzz-from lim lt
+                  },
+                  xref {
+                    {
+                      id local id 4
+                    }
+                  }
                 }
               }
             }
@@ -711,7 +731,8 @@ FFFFFFFF8188118411241181222818128281811144112241844121422142842144881844841418
             title "favorite 1",
             molinfo {
               biomol peptide,
-              tech concept-trans
+              tech concept-trans,
+              completeness no-left
             }
           },
           inst {
@@ -730,13 +751,15 @@ FFFFFFFF8188118411241181222818128281811144112241844121422142842144881844841418
                       "favorite 1"
                     }
                   },
+                  partial TRUE,
                   location int {
                     from 0,
                     to 31,
                     id general {
                       db "ncbi",
                       tag str "test_0001"
-                    }
+                    },
+                    fuzz-from lim lt
                   }
                 }
               }
@@ -754,7 +777,8 @@ FFFFFFFF8188118411241181222818128281811144112241844121422142842144881844841418
             title "favorite 2",
             molinfo {
               biomol peptide,
-              tech concept-trans
+              tech concept-trans,
+              completeness no-left
             }
           },
           inst {
@@ -771,18 +795,21 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
             {
               data ftable {
                 {
+                  id local id 6,
                   data prot {
                     name {
                       "favorite 2"
                     }
                   },
+                  partial TRUE,
                   location int {
                     from 0,
                     to 349,
                     id general {
                       db "ncbi",
                       tag str "test_0002"
-                    }
+                    },
+                    fuzz-from lim lt
                   }
                 }
               }
@@ -820,6 +847,7 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
               }
             },
             {
+              id local id 4,
               data cdregion {
                 frame one,
                 code {
@@ -924,6 +952,11 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
                       }
                     }
                   }
+                }
+              },
+              xref {
+                {
+                  id local id 5
                 }
               }
             }

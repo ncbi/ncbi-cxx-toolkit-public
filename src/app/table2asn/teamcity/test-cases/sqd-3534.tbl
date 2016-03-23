@@ -22,7 +22,7 @@
 			go_component	transcription factor TFIID complex|0005669||IEA
 			go_process	transcription initiation|0006352||IEA
 			go_function	transcription initiation factor activity|0016986||IEA
-<4951	6000	mRNAs
+<4951	6000	mRNA
 			product	favorite 2
 			protein_id	gnl|ncbi|test_0002
 			transcript_id	gnl|ncbi|mrna.test_0002
