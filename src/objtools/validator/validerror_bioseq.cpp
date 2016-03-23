@@ -5101,7 +5101,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                             if (x_PartialAdjacentToIntron(feat.GetLocation())) {
                             } else {
                                 PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
-                                    "PartialLocation: " + parterr[i] + " (organelle does not use standard splice site convention)",
+                                    "PartialLocation: " + parterrs[j] + " (organelle does not use standard splice site convention)",
                                     *(feat.GetSeq_feat()));
                             }
                         } else if (!feat.GetData().IsCdregion() || x_SplicingNotExpected (feat)) {
