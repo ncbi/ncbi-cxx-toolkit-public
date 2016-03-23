@@ -248,10 +248,10 @@ string CFastaOstreamEx::x_GetRNAIdString(const CBioseq_Handle& handle,
         break;
     }
 
-    case CRNA_ref::eType_ncRNA: 
-    case CRNA_ref::eType_snRNA:
+    case CRNA_ref::eType_snoRNA:
     case CRNA_ref::eType_scRNA:
-    case CRNA_ref::eType_snoRNA: 
+    case CRNA_ref::eType_snRNA:
+    case CRNA_ref::eType_ncRNA: 
     {
         rna_tag = "_ncrna_";
         break;
@@ -266,6 +266,12 @@ string CFastaOstreamEx::x_GetRNAIdString(const CBioseq_Handle& handle,
     case CRNA_ref::eType_tRNA: 
     {
         rna_tag = "_trna_";
+        break;
+    }
+
+    case CRNA_ref::eType_premsg:
+    {
+        rna_tag = "_precursorrna_";
         break;
     }
 
@@ -632,91 +638,49 @@ void CFastaOstreamEx::x_AddRNAProductAttribute(const CBioseq_Handle& handle,
     const auto rna_type = rna.IsSetType() ?
         rna.GetType() : CRNA_ref::eType_unknown;
 
+
     string product_string;
-    switch (rna_type) {
-    case CRNA_ref::eType_tRNA:
-    {
-        if (!rna.IsSetExt()) {
-            return;
+    if (rna_type == CRNA_ref::eType_tRNA) {
+
+        if (rna.IsSetExt() && rna.GetExt().IsTRNA()) {
+            
+            const auto& trna = rna.GetExt().GetTRNA();
+
+            CWriteUtil::GetTrnaProductName(trna, product_string);
         }
+    } // rna_type == CRNA_ref::eType_tRNA
 
-        CFlatFileConfig cfg;
+    if (product_string.empty() && 
+        rna.IsSetExt() && 
+        rna.GetExt().IsName()) {
+        product_string = rna.GetExt().GetName();
+    }
 
-        const auto& ext = rna.GetExt();
-        switch (ext.Which()) {
-        case CRNA_ref::C_Ext::e_Name: 
+    if (product_string.empty() &&
+        rna.IsSetExt() &&
+        rna.GetExt().IsGen() &&
+        rna.GetExt().GetGen().IsSetProduct()) {
+        product_string = rna.GetExt().GetGen().GetProduct();
+    }
+
+    if (product_string.empty() &&
+        feat.IsSetQual()) {
+
+        const auto& quals = feat.GetQual();
+
+        for (const auto& qual : feat.GetQual()) 
         {
-            if (!cfg.DropIllegalQuals()) {
-                product_string = ext.GetName();
-                break;
-            }
-
-            product_string = "tRNA-OTHER";
-            break;
-        }
-
-        case CRNA_ref::C_Ext::e_TRNA:
-        {
-            const auto& trna = ext.GetTRNA();
-            int aa=0;
-            if (trna.IsSetAa() && trna.GetAa().IsNcbieaa()) {
-                aa = trna.GetAa().GetNcbieaa();
-            } else {
-                return;
-            }
-            if (cfg.IupacaaOnly()) {
-                vector<char> n(1, static_cast<char>(aa));
-                vector<char> i;
-                CSeqConvert::Convert(n, CSeqUtil::e_Ncbieaa, 0, 1, i, CSeqUtil::e_Iupacaa);
-                aa = i.front();
-            }
-            product_string = s_AaName(aa);
-            break;
-        }
-        default:
-            return;
-        }
-        break;
-    } // case CRNA_ref::eType_tRNA
-
-    case CRNA_ref::eType_mRNA: 
-    {
-        if (rna.IsSetExt() &&
-            rna.GetExt().IsName()) {
-            product_string = rna.GetExt().GetName();
-        }
-        break;
-    }
-
-    case CRNA_ref::eType_miscRNA:
-    case CRNA_ref::eType_other:
-    {
-        if (rna.IsSetExt() &&
-            rna.GetExt().IsName()) {
-            string name = rna.GetExt().GetName();
-            if (name != "misc_RNA") {
-                product_string = name;
+            if (qual->IsSetQual() && 
+                qual->IsSetVal() &&
+                qual->GetQual() == "product") {
+                product_string = qual->GetVal();
+                if (!product_string.empty()) {
+                    break;
+                }
             }
         }
-        break;
     }
 
-//    case CRNA_ref::eType_ncRNA: 
-//    case CRNA_ref::eType_snRNA:
-//    case CRNA_ref::eType_scRNA:
-//    case CRNA_ref::eType_snoRNA: 
-//    case CRNA_ref::eType_tmRNA:
-//    {
-//        break;
-//    }
-
-    default:
-        return;
-    }
-
-    if (product_string.empty()) {
-        return;
-    }
     defline += " [product=" + product_string + "]"; 
 }
 
