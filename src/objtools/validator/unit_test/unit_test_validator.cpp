@@ -16813,7 +16813,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadGeneOntologyFormat)
 
     CRef<CUser_field> go_field(new CUser_field());
     go_term->SetData().SetFields().push_back(go_field);
-    expected_errors[0]->SetErrMsg("No label on GO term qualifier field");
+    expected_errors[0]->SetErrMsg("Unrecognized label on GO term qualifier field [blank]");
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GeneOntologyTermMissingGOID", 
                               "GO term does not have GO identifier"));
     eval = validator.Validate(seh, options);

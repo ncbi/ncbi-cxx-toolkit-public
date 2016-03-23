@@ -797,12 +797,14 @@ void CValidError_feat::ValidateGoTerms (CUser_object::TData field_list, const CS
         string goid = "";
         int pmid = 0; 
         ITERATE (CUser_object::TData, sub_it, sublist) {
-            if (!(*sub_it)->IsSetLabel() || !(*sub_it)->GetLabel().IsStr()) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
-                         "No label on GO term qualifier field",
-                         feat);
-                continue;
-            } else if (NStr::Equal ((*sub_it)->GetLabel().GetStr(), kGoTermText)) {
+            string label = kEmptyStr;
+            if ((*sub_it)->IsSetLabel() && (*sub_it)->GetLabel().IsStr()) {
+                label = (*sub_it)->GetLabel().GetStr();
+            }
+            if (NStr::IsBlank(label)) {
+                label = "[blank]";
+            }
+            if (NStr::Equal (label, kGoTermText)) {
                 if ((*sub_it)->GetData().IsStr()) {
                     textstr = (*sub_it)->GetData().GetStr();
                 } else {
@@ -810,7 +812,7 @@ void CValidError_feat::ValidateGoTerms (CUser_object::TData field_list, const CS
                              "Bad data format for GO term qualifier term",
                              feat);
                 }
-            } else if (NStr::Equal ((*sub_it)->GetLabel().GetStr(), kGoTermID)) {
+            } else if (NStr::Equal (label, kGoTermID)) {
                 if ((*sub_it)->GetData().IsInt()) {
                     goid = NStr::IntToString ((*sub_it)->GetData().GetInt());
                 } else if ((*sub_it)->GetData().IsStr()) {
@@ -820,7 +822,7 @@ void CValidError_feat::ValidateGoTerms (CUser_object::TData field_list, const CS
                              "Bad data format for GO term qualifier GO ID",
                              feat);
                 }
-            } else if (NStr::Equal ((*sub_it)->GetLabel().GetStr(), kGoTermPubMedID)) {
+            } else if (NStr::Equal (label, kGoTermPubMedID)) {
                 if ((*sub_it)->GetData().IsInt()) {
                     pmid = (*sub_it)->GetData().GetInt();
                 } else {
@@ -828,7 +830,7 @@ void CValidError_feat::ValidateGoTerms (CUser_object::TData field_list, const CS
                              "Bad data format for GO term qualifier PMID",
                              feat);
                 }
-            } else if (NStr::Equal ((*sub_it)->GetLabel().GetStr(), kGoTermEvidence)) {
+            } else if (NStr::Equal (label, kGoTermEvidence)) {
                 if ((*sub_it)->GetData().IsStr()) {
                     evidence = (*sub_it)->GetData().GetStr();
                 } else {
@@ -836,12 +838,12 @@ void CValidError_feat::ValidateGoTerms (CUser_object::TData field_list, const CS
                              "Bad data format for GO term qualifier evidence",
                              feat);
                 }
-            } else if (NStr::Equal ((*sub_it)->GetLabel().GetStr(), kGoTermRef)) {
+            } else if (NStr::Equal (label, kGoTermRef)) {
                 // recognized term
                 
             } else {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
-                         "Unrecognized label on GO term qualifier field " + (*sub_it)->GetLabel().GetStr(),
+                         "Unrecognized label on GO term qualifier field " + label,
                          feat);
             }
         }
