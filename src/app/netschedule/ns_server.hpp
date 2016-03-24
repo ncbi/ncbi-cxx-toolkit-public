@@ -73,6 +73,8 @@ public:
     { return m_LogStatisticsThreadFlag; }
     const unsigned int & GetStatInterval() const
     { return m_StatInterval; }
+    const unsigned int & GetJobCountersInterval() const
+    { return m_JobCountersInterval; }
     bool GetRefuseSubmits() const
     { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)
@@ -178,11 +180,15 @@ public:
 
     bool AdminHostValid(unsigned host) const;
     bool IsAdminClientName(const string &  name) const;
+    bool ShouldPerfLogTransitions(const string &  queue_name,
+                                  const string &  class_name) const;
 
     void InitNodeID(const string &  db_path);
 
     static CNetScheduleServer*  GetInstance(void);
     string GetAdminClientNames(void) const;
+    string GetStateTransitionPerfLogQueues(void) const;
+    string GetStateTransitionPerfLogClasses(void) const;
 
     string GetAlerts(void) const;
     string SerializeAlerts(void) const;
@@ -247,6 +253,7 @@ private:
     unsigned int                    m_ScanBatchSize;    // Max # of scanned
     double                          m_PurgeTimeout;     // Time between purges
     unsigned int                    m_StatInterval;
+    unsigned int                    m_JobCountersInterval;
 
     unsigned int                    m_MaxClientData;
 
@@ -264,6 +271,11 @@ private:
 
     mutable CRWLock                 m_AdminClientsLock;
     vector<string>                  m_AdminClientNames;
+
+    mutable CRWLock                 m_STPerfLogQCLock;
+    vector<string>                  m_StateTransitionPerfLogQueues;
+    vector<string>                  m_StateTransitionPerfLogClasses;
+
     CNSAlerts                       m_Alerts;
 
     mutable CFastMutex              m_ServicesLock;
@@ -284,6 +296,8 @@ private:
 private:
     string x_GenerateGUID(void) const;
     CJsonNode x_SetAdminClientNames(const string &  client_names);
+    CJsonNode x_SetFromList(const string &  from, vector<string> &  to,
+                            CRWLock &  lock);
 
 #if defined(_DEBUG) && !defined(NDEBUG)
 private:

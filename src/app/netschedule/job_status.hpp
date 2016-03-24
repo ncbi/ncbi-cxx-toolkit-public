@@ -127,6 +127,8 @@ public:
     // Return number of jobs in specified status/statuses
     unsigned int  CountStatus(TJobStatus  status) const;
     unsigned int  CountStatus(const vector<TJobStatus> &  statuses) const;
+    vector<unsigned int>
+        GetJobCounters(const vector<TJobStatus> &  statuses) const;
 
     // Count all jobs in any status
     unsigned int  Count(void) const;

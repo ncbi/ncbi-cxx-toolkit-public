@@ -142,7 +142,8 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_ClientRegistryTimeoutUnknown(default_client_registry_timeout_unknown),
     m_ClientRegistryMinUnknowns(default_client_registry_min_unknowns),
     m_JobInfoCacheSize(server->GetWSTCacheSize()),
-    m_JobInfoCache(m_StatusTracker, m_JobInfoCacheSize, m_StatisticsCounters)
+    m_JobInfoCache(m_StatusTracker, m_JobInfoCacheSize, m_StatisticsCounters),
+    m_ShouldPerfLogTransitions(false)
 {
     _ASSERT(!queue_name.empty());
     m_ClientsRegistry.SetRegistries(&m_AffinityRegistry,
@@ -224,7 +225,6 @@ void CQueue::x_Detach(void)
 
 void CQueue::SetParameters(const SQueueParameters &  params)
 {
-    // When modifying this, modify all places marked with PARAMETERS
     CFastMutexGuard     guard(m_ParamLock);
 
     m_Timeout    = params.timeout;
@@ -288,6 +288,15 @@ void CQueue::SetParameters(const SQueueParameters &  params)
 
     m_JobInfoCacheSize = m_Server->GetWSTCacheSize();
     m_JobInfoCache.SetLimit(m_JobInfoCacheSize);
+
+    UpdatePerfLoggingSettings(params.qclass);
+}
+
+
+void CQueue::UpdatePerfLoggingSettings(const string &  qclass)
+{
+    m_ShouldPerfLogTransitions = m_Server->ShouldPerfLogTransitions(m_QueueName,
+                                                                    qclass);
 }
 
 
@@ -4391,6 +4400,23 @@ void CQueue::PrintStatistics(size_t &  aff_count) const
 
     m_StatisticsCountersLastPrinted = counters_copy;
     m_StatisticsCountersLastPrintedTimestamp = current;
+}
+
+
+void CQueue::PrintJobCounters(void) const
+{
+    vector<TJobStatus>      statuses;
+    statuses.push_back(CNetScheduleAPI::ePending);
+    statuses.push_back(CNetScheduleAPI::eRunning);
+    statuses.push_back(CNetScheduleAPI::eCanceled);
+    statuses.push_back(CNetScheduleAPI::eFailed);
+    statuses.push_back(CNetScheduleAPI::eDone);
+    statuses.push_back(CNetScheduleAPI::eReading);
+    statuses.push_back(CNetScheduleAPI::eConfirmed);
+    statuses.push_back(CNetScheduleAPI::eReadFailed);
+
+    vector<unsigned int>    counters = m_StatusTracker.GetJobCounters(statuses);
+    g_DoPerfLogging(*this, statuses, counters);
 }
 
 

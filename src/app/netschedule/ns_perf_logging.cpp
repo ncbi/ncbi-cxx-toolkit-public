@@ -37,11 +37,26 @@
 #include "ns_perf_logging.hpp"
 #include "ns_queue.hpp"
 #include "job.hpp"
-#include "ns_types.hpp"
 
 
 
 BEGIN_NCBI_SCOPE
+
+static
+void s_AppendCommonExtras(const string &  qname,
+                          const string &  job_key,
+                          const string &  agent,
+                          const string &  client_node,
+                          unsigned int    client_host,
+                          const string &  variation,
+                          CDiagContext_Extra &  extra);
+static
+void s_DoDonePerfLogging(const CJob &  job, const CNSPreciseTime &  time_to,
+                         int  status, const string &  qname,
+                         const string &  job_key, const string &  agent,
+                         const string &  client_node,
+                         unsigned int    client_host,
+                         const string &  variation);
 
 
 struct JobEventToAgent {
@@ -114,9 +129,13 @@ void g_DoPerfLogging(const CQueue &  queue, const CJob &  job, int  status)
 {
     if (!CPerfLogger::IsON())
         return;
+    if (!queue.ShouldPerfLogTransitions())
+        return;
 
     const vector<CJobEvent>&    job_events = job.GetEvents();
     size_t                      last_index = job_events.size() - 1;
+    string                      job_key = queue.MakeJobKey(job.GetId());
+    string                      qname = queue.GetQueueName();
 
     if (last_index == 0 || job_events.empty())
         return;     // Must never happened
@@ -141,10 +160,6 @@ void g_DoPerfLogging(const CQueue &  queue, const CJob &  job, int  status)
     CDiagContext_Extra  extra = perf_logger.Post(status,
                                                  s_FormResourceName(status_from,
                                                                     status_to));
-    extra.Print("qname", queue.GetQueueName())
-         .Print("job_key", queue.MakeJobKey(job.GetId()))
-         .Print("agent", agent);
-
     string          client_node;
     unsigned int    client_host;
     if (last_event == CJobEvent::eSessionChanged) {
@@ -165,14 +180,8 @@ void g_DoPerfLogging(const CQueue &  queue, const CJob &  job, int  status)
         client_host = job_events[last_index].GetNodeAddr();
     }
 
-    if (!client_node.empty())
-        extra.Print("client_node", client_node);
-    if (client_host != 0)
-        extra.Print("client_host", CSocketAPI::gethostbyaddr(client_host));
-
-
-    if (!variation.empty())
-        extra.Print("variation", variation);
+    s_AppendCommonExtras(qname, job_key, agent, client_node, client_host,
+                         variation, extra);
 
     // Handle the run/read counters and clients
     if (status_from == CNetScheduleAPI::eRunning ||
@@ -181,6 +190,82 @@ void g_DoPerfLogging(const CQueue &  queue, const CJob &  job, int  status)
     if (status_from == CNetScheduleAPI::eReading ||
         status_to == CNetScheduleAPI::eReading)
         extra.Print("read_count", job.GetReadCount());
+
+    if (status_to == CNetScheduleAPI::eDone &&
+        status_from != CNetScheduleAPI::eReading)
+        s_DoDonePerfLogging(job, time_to, status, qname, job_key, agent,
+                            client_node, client_host, variation);
+}
+
+
+// Produce a syntetic metric for the transition to the 'Done' state
+void s_DoDonePerfLogging(const CJob &  job, const CNSPreciseTime &  time_to,
+                         int  status, const string &  qname,
+                         const string &  job_key, const string &  agent,
+                         const string &  client_node,
+                         unsigned int    client_host,
+                         const string &  variation)
+{
+    CNSPreciseTime      time_submit = job.GetEvents()[ 0 ].GetTimestamp();
+    CNSPreciseTime      time_diff = time_to - time_submit;
+
+    // Create a logger and set the time
+    CPerfLogger         perf_logger(CPerfLogger::eSuspend);
+    perf_logger.Adjust(CTimeSpan(time_diff.Sec(), time_diff.NSec()));
+
+    // Log the event and a variation
+    CDiagContext_Extra  extra = perf_logger.Post(
+                status, s_FormResourceName(CNetScheduleAPI::ePending,
+                                           CNetScheduleAPI::eDone));
+
+    s_AppendCommonExtras(qname, job_key, agent, client_node, client_host,
+                         variation, extra);
+}
+
+
+void s_AppendCommonExtras(const string &  qname,
+                          const string &  job_key,
+                          const string &  agent,
+                          const string &  client_node,
+                          unsigned int    client_host,
+                          const string &  variation,
+                          CDiagContext_Extra &  extra)
+{
+    extra.Print("qname", qname)
+         .Print("job_key", job_key)
+         .Print("agent", agent);
+
+    if (!client_node.empty())
+        extra.Print("client_node", client_node);
+    if (client_host != 0)
+        extra.Print("client_host", CSocketAPI::gethostbyaddr(client_host));
+
+    if (!variation.empty())
+        extra.Print("variation", variation);
+}
+
+
+void g_DoPerfLogging(const CQueue &  queue,
+                     const vector<TJobStatus> &  statuses,
+                     const vector<unsigned int> &  counters)
+{
+    if (!CPerfLogger::IsON())
+        return;
+    if (counters.size() != statuses.size())
+        return;     // inconsistent
+
+    // It was decided for the time being that the jobs counter is sitting in
+    // the seconds portion of the time field. It was also decided to produce
+    // a separate record for each job state.
+    for (size_t k = 0; k < statuses.size(); ++k) {
+        CPerfLogger         perf_logger(CPerfLogger::eSuspend);
+
+        perf_logger.Adjust(CTimeSpan(counters[k], 0));
+        CDiagContext_Extra  extra = perf_logger.Post(
+                CRequestStatus::e200_Ok,
+                CNetScheduleAPI::StatusToString(statuses[k]));
+        extra.Print("qname", queue.GetQueueName());
+    }
 }
 
 

@@ -148,6 +148,7 @@ public:
 
     // Print statistics
     void PrintStatistics(size_t &  aff_count);
+    void PrintJobCounters(void);
     void RunServiceThread(void);
     void StopServiceThread(void);
 

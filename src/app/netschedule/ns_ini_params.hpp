@@ -70,6 +70,7 @@ const unsigned int      default_scan_batch_size = 10000;
 const double            default_purge_timeout = 0.1;
 
 const unsigned int      default_stat_interval = 10;
+const unsigned int      default_job_counters_interval = 0;
 const unsigned int      default_max_client_data = 2048;
 
 const unsigned int      default_max_affinities = 10000;

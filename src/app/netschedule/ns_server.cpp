@@ -69,6 +69,7 @@ CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
       m_ScanBatchSize(default_scan_batch_size),
       m_PurgeTimeout(default_purge_timeout),
       m_StatInterval(default_stat_interval),
+      m_JobCountersInterval(default_job_counters_interval),
       m_MaxClientData(default_max_client_data),
       m_NodeID("not_initialized"),
       m_SessionID("s" + x_GenerateGUID()),
@@ -165,6 +166,14 @@ CJsonNode CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     }
     m_StatInterval = params.stat_interval;
 
+    if (m_JobCountersInterval != params.job_counters_interval) {
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendInteger(m_JobCountersInterval);
+        values.AppendInteger(params.job_counters_interval);
+        changes.SetByKey("job_counters_interval", values);
+    }
+    m_JobCountersInterval = params.job_counters_interval;
+
     if (m_MaxClientData != params.max_client_data) {
         CJsonNode       values = CJsonNode::NewArrayNode();
         values.AppendInteger(m_MaxClientData);
@@ -177,9 +186,27 @@ CJsonNode CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     if (accepted_hosts.GetSize() > 0)
         changes.SetByKey("admin_host", accepted_hosts);
 
-    CJsonNode   admin_diff = x_SetAdminClientNames(params.admin_client_names);
+    CJsonNode   admin_diff = x_SetFromList(params.admin_client_names,
+                                           m_AdminClientNames,
+                                           m_AdminClientsLock);
     if (admin_diff.GetSize() > 0)
         changes.SetByKey("admin_client_name", admin_diff);
+
+    CJsonNode   state_transition_perf_log_queues_diff =
+                        x_SetFromList(params.state_transition_perf_log_queues,
+                                      m_StateTransitionPerfLogQueues,
+                                      m_STPerfLogQCLock);
+    if (state_transition_perf_log_queues_diff.GetSize() > 0)
+        changes.SetByKey("state_transition_perf_log_queues",
+                         state_transition_perf_log_queues_diff);
+
+    CJsonNode   state_transition_perf_log_classes_diff =
+                        x_SetFromList(params.state_transition_perf_log_classes,
+                                      m_StateTransitionPerfLogClasses,
+                                      m_STPerfLogQCLock);
+    if (state_transition_perf_log_classes_diff.GetSize() > 0)
+        changes.SetByKey("state_transition_perf_log_classes",
+                         state_transition_perf_log_classes_diff);
 
     if (m_InactivityTimeout != params.network_timeout) {
         CJsonNode       values = CJsonNode::NewArrayNode();
@@ -549,6 +576,67 @@ string CNetScheduleServer::GetAdminClientNames(void) const
 }
 
 
+string CNetScheduleServer::GetStateTransitionPerfLogQueues(void) const
+{
+    string              ret;
+    CReadLockGuard      guard(m_STPerfLogQCLock);
+
+    for (vector<string>::const_iterator
+            k(m_StateTransitionPerfLogQueues.begin());
+            k != m_StateTransitionPerfLogQueues.end(); ++k) {
+        if (!ret.empty())
+            ret += ", ";
+        ret += *k;
+    }
+    return ret;
+}
+
+
+string CNetScheduleServer::GetStateTransitionPerfLogClasses(void) const
+{
+    string              ret;
+    CReadLockGuard      guard(m_STPerfLogQCLock);
+
+    for (vector<string>::const_iterator
+            k(m_StateTransitionPerfLogClasses.begin());
+            k != m_StateTransitionPerfLogClasses.end(); ++k) {
+        if (!ret.empty())
+            ret += ", ";
+        ret += *k;
+    }
+    return ret;
+}
+
+
+bool
+CNetScheduleServer::ShouldPerfLogTransitions(const string &  queue_name,
+                                             const string &  class_name) const
+{
+    CReadLockGuard      guard(m_STPerfLogQCLock);
+    for (vector<string>::const_iterator
+            k(m_StateTransitionPerfLogQueues.begin());
+            k != m_StateTransitionPerfLogQueues.end(); ++k) {
+        if (*k == "*")
+            return true;
+        if (NStr::CompareNocase(*k, queue_name) == 0)
+            return true;
+    }
+
+    if (!class_name.empty()) {
+        for (vector<string>::const_iterator
+                k(m_StateTransitionPerfLogClasses.begin());
+                k != m_StateTransitionPerfLogClasses.end(); ++k) {
+            if (*k == "*")
+                return true;
+            if (NStr::CompareNocase(*k, class_name) == 0)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+
 string CNetScheduleServer::GetAlerts(void) const
 {
     return m_Alerts.GetURLEncoded();
@@ -672,26 +760,28 @@ string  CNetScheduleServer::x_GenerateGUID(void) const
 
 
 CJsonNode
-CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
+CNetScheduleServer::x_SetFromList(const string &  from,
+                                  vector<string> &  to,
+                                  CRWLock &  lock)
 {
     CJsonNode           diff = CJsonNode::NewArrayNode();
-    CWriteLockGuard     guard(m_AdminClientsLock);
-    vector<string>      old_admins = m_AdminClientNames;
+    CWriteLockGuard     guard(lock);
+    vector<string>      old = to;
 
-    m_AdminClientNames.clear();
-    NStr::Split(client_names, ";, \n\r", m_AdminClientNames,
+    to.clear();
+    NStr::Split(from, ";, \n\r", to,
                 NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-    sort(m_AdminClientNames.begin(), m_AdminClientNames.end());
+    sort(to.begin(), to.end());
 
-    if (old_admins != m_AdminClientNames) {
+    if (old != to) {
         CJsonNode       old_vals = CJsonNode::NewArrayNode();
         CJsonNode       new_vals = CJsonNode::NewArrayNode();
 
-        for (vector<string>::const_iterator  k = old_admins.begin();
-                k != old_admins.end(); ++k)
+        for (vector<string>::const_iterator  k = old.begin();
+                k != old.end(); ++k)
             old_vals.AppendString(*k);
-        for (vector<string>::const_iterator  k = m_AdminClientNames.begin();
-                k != m_AdminClientNames.end(); ++k)
+        for (vector<string>::const_iterator  k = to.begin();
+                k != to.end(); ++k)
             new_vals.AppendString(*k);
 
         diff.Append(old_vals);
@@ -699,6 +789,7 @@ CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
     }
     return diff;
 }
+
 
 
 void CNetScheduleServer::SetRAMConfigFileChecksum(const string &  checksum)

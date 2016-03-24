@@ -146,10 +146,13 @@ struct SNS_Parameters : SServer_Parameters
     double          purge_timeout;      // Timeout in seconds between
                                         // Purge() calls
     unsigned int    stat_interval;      // Interval between statistics output
+    unsigned int    job_counters_interval;
     unsigned int    max_client_data;    // Max (transient) client data size
 
     string          admin_hosts;
     string          admin_client_names;
+    string          state_transition_perf_log_queues;
+    string          state_transition_perf_log_classes;
 
     SNSRegistryParameters       affinity_reg;
     SNSRegistryParameters       group_reg;

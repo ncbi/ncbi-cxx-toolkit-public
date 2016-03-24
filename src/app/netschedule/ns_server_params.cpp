@@ -198,6 +198,13 @@ void SNS_Parameters::Read(const IRegistry &  reg)
     if (stat_interval < 1)
         stat_interval = 1;
 
+    int     val = GetIntNoErr("job_counters_interval",
+                              default_job_counters_interval);
+    if (val < 0)
+        job_counters_interval = 0;
+    else
+        job_counters_interval = val;
+
     affinity_reg.Read(reg, sname, "affinity",
                       default_max_affinities,
                       default_affinity_high_mark_percentage,
@@ -240,6 +247,12 @@ void SNS_Parameters::Read(const IRegistry &  reg)
         // All the warnings are collected at the time of validating the
         // configuration file, so here a problem is simply suppressed
     }
+
+    state_transition_perf_log_queues = reg.GetString(sname,
+                            "state_transition_perf_log_queues", kEmptyStr);
+    state_transition_perf_log_classes = reg.GetString(sname,
+                            "state_transition_perf_log_classes", kEmptyStr);
+
 
     #if defined(_DEBUG) && !defined(NDEBUG)
     ReadErrorEmulatorSection(reg);

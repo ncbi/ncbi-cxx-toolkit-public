@@ -4358,12 +4358,19 @@ string CNetScheduleHandler::x_GetServerSection(void) const
                 NStr::NumericToString(m_Server->GetPurgeTimeout()) + "\"\n"
            "stat_interval=\"" +
                 NStr::NumericToString(m_Server->GetStatInterval()) + "\"\n"
+           "job_counters_interval=\"" +
+                NStr::NumericToString(m_Server->GetJobCountersInterval()) +
+                "\"\n"
            "max_client_data=\"" +
                 NStr::NumericToString(m_Server->GetMaxClientData()) + "\"\n"
            "admin_host=\"" +
                 m_Server->GetAdminHosts().GetAsFromConfig() + "\"\n"
            "admin_client_name=\"" +
                 m_Server->GetAdminClientNames() + "\"\n" +
+           "state_transition_perf_log_queues=\"" +
+                m_Server->GetStateTransitionPerfLogQueues() + "\"\n" +
+           "state_transition_perf_log_classes=\"" +
+                m_Server->GetStateTransitionPerfLogClasses() + "\"\n" +
            m_Server->GetAffRegistrySettings().Serialize("affinity", "", "\n") +
            m_Server->GetGroupRegistrySettings().Serialize("group", "", "\n") +
            m_Server->GetScopeRegistrySettings().Serialize("scope", "", "\n") +

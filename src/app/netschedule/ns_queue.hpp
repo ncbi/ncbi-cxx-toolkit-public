@@ -443,6 +443,7 @@ public:
     void SetClientScope(const CNSClientId &  client);
 
     void PrintStatistics(size_t &  aff_count) const;
+    void PrintJobCounters(void) const;
     unsigned int GetJobsToDeleteCount(void) const;
     string PrintTransitionCounters(void) const;
     string PrintJobsStat(const CNSClientId &  client,
@@ -477,6 +478,9 @@ public:
     void Dump(const string &  dump_dir_name);
     void RemoveDump(const string &  dump_dir_name);
     unsigned int LoadFromDump(const string &  dump_dir_name);
+    bool ShouldPerfLogTransitions(void) const
+    { return m_ShouldPerfLogTransitions; }
+    void UpdatePerfLoggingSettings(const string &  qclass);
 
 private:
     void x_Detach(void);
@@ -729,6 +733,8 @@ private:
     CJobInfoCache               m_JobInfoCache;
 
     CNSScopeRegistry            m_ScopeRegistry;
+
+    bool                        m_ShouldPerfLogTransitions;
 };
 
 

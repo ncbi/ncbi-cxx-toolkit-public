@@ -34,6 +34,8 @@
 
 #include <connect/services/netschedule_api.hpp>
 
+#include "ns_types.hpp"
+
 BEGIN_NCBI_SCOPE
 
 
@@ -43,6 +45,9 @@ class CQueue;
 
 // Produces a record for the performance logging
 void g_DoPerfLogging(const CQueue &  queue, const CJob &  job, int  status);
+void g_DoPerfLogging(const CQueue &  queue,
+                     const vector<TJobStatus> &  statuses,
+                     const vector<unsigned int> &  counters);
 
 
 

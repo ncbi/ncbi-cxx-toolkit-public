@@ -377,6 +377,15 @@ void NS_ValidateServerSection(const IRegistry &  reg,
                      " must be > 0");
     }
 
+    ok = NS_ValidateInt(reg, section, "job_counters_interval", warnings);
+    if (ok) {
+        int     val = reg.GetInt(section, "job_counters_interval",
+                                 default_job_counters_interval);
+        if (val < 0)
+            warnings.push_back(g_ValidPrefix + "value " +
+                    NS_RegValName(section, "job_counters_interval") +
+                    " must be >= 0");
+    }
 
     ok = NS_ValidateInt(reg, section, "max_client_data", warnings);
     if (ok) {
@@ -415,6 +424,10 @@ void NS_ValidateServerSection(const IRegistry &  reg,
                                 warnings);
 
     NS_ValidateString(reg, section, "admin_host", warnings);
+    NS_ValidateString(reg, section,
+                      "state_transition_perf_log_queues", warnings);
+    NS_ValidateString(reg, section,
+                      "state_transition_perf_log_classes", warnings);
 
     // Instead of just validating the administrator names we try to read them
     decrypting_error = false;

@@ -772,6 +772,11 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
     for (TQueueInfo::iterator    k = m_Queues.begin();
          k != m_Queues.end(); ++k) {
 
+        // The server configuration which affects the performance logging for
+        // queues could have been changed, so let the queues update the flag
+        k->second.second->UpdatePerfLoggingSettings(k->second.first.qclass);
+
+
         if (k->second.first.kind == CQueue::eKindDynamic)
             continue;   // It's not the config business to deal
                         // with dynamic queues
@@ -1463,6 +1468,16 @@ void CQueueDataBase::PrintStatistics(size_t &  aff_count)
 }
 
 
+void CQueueDataBase::PrintJobCounters(void)
+{
+    CFastMutexGuard             guard(m_ConfigureLock);
+
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+            k != m_Queues.end(); ++k)
+        k->second.second->PrintJobCounters();
+}
+
+
 void CQueueDataBase::CheckExecutionTimeout(bool  logging)
 {
     for (unsigned int  index = 0; ; ++index) {
@@ -2103,7 +2118,8 @@ void CQueueDataBase::RunServiceThread(void)
     m_ServiceThread.Reset(new CServiceThread(
                                 *m_Server, m_Host, *this,
                                 m_Server->IsLogStatisticsThread(),
-                                m_Server->GetStatInterval()));
+                                m_Server->GetStatInterval(),
+                                m_Server->GetJobCountersInterval()));
     m_ServiceThread->Run();
 }
 

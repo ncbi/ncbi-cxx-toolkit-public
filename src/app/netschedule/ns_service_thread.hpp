@@ -51,14 +51,17 @@ public:
                    CBackgroundHost &     host,
                    CQueueDataBase &      qdb,
                    const bool &          logging,
-                   const unsigned int &  statistics_interval)
+                   const unsigned int &  statistics_interval,
+                   const unsigned int &  job_counters_interval)
     : CThreadNonStop(1),    // Once in 1 seconds
       m_Server(server),
       m_Host(host),
       m_QueueDB(qdb),
       m_StatisticsLogging(logging),
       m_StatisticsInterval(statistics_interval),
+      m_JobCountersInterval(job_counters_interval),
       m_LastStatisticsOutput(0),
+      m_LastJobCountersOutput(0),
       m_LastDrainCheck(0),
       m_LastConfigFileCheck(0)
     {}
@@ -84,7 +87,9 @@ private:
     CQueueDataBase &        m_QueueDB;
     const bool &            m_StatisticsLogging;
     const unsigned int &    m_StatisticsInterval;
+    const unsigned int &    m_JobCountersInterval;
     time_t                  m_LastStatisticsOutput;
+    time_t                  m_LastJobCountersOutput;
     time_t                  m_LastDrainCheck;
     time_t                  m_LastConfigFileCheck;
 };

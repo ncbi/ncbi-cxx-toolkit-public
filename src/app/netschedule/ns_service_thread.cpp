@@ -65,6 +65,13 @@ void  CServiceThread::DoJob(void)
         m_LastConfigFileCheck = current_time;
     }
 
+    if (m_JobCountersInterval > 0) {
+        if (current_time - m_LastJobCountersOutput >= m_JobCountersInterval) {
+            m_LastJobCountersOutput = current_time;
+            m_QueueDB.PrintJobCounters();
+        }
+    }
+
     if (!m_StatisticsLogging)
         return;
 

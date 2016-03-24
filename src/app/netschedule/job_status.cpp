@@ -99,6 +99,20 @@ CJobStatusTracker::CountStatus(const vector<TJobStatus> &  statuses) const
 }
 
 
+vector<unsigned int>
+CJobStatusTracker::GetJobCounters(const vector<TJobStatus> &  statuses) const
+{
+    vector<unsigned int>        counters;
+    CReadLockGuard              guard(m_Lock);
+
+    for (vector<TJobStatus>::const_iterator  k = statuses.begin();
+            k != statuses.end(); ++k)
+        counters.push_back(m_StatusStor[(int)(*k)]->count());
+
+    return counters;
+}
+
+
 unsigned int  CJobStatusTracker::Count(void) const
 {
     unsigned int    cnt = 0;
