@@ -221,7 +221,8 @@ class NSCommandsSender:
             "CWREAD":               self.__cwread,
             "SETRAFF":              self.__setraff,
             "CHRAFF":               self.__chraff,
-            "READ2":                self.__read2 }
+            "READ2":                self.__read2,
+            "SETSCOPE":             self.__setscope }
         return
 
     def visitAll( self ):
@@ -303,6 +304,17 @@ class NSCommandsSender:
         jobKey = self.__submit()
         self.__nsConnect.execute( "STATUS2 " + jobKey, False )
         self.__nsConnect.execute( "CANCEL " + jobKey, False )
+        return
+
+    def __setscope( self ):
+        self.__nsConnect.execute( "SETSCOPE scope=myscope", False )
+        jobKey = self.__submit()
+        return
+
+    def __statscope( self ):
+        self.__nsConnect.execute( "SETSCOPE scope=myscope", False )
+        jobKey = self.__submit()
+        self.__nsConnect.execute( "STAT SCOPES VERBOSE", False )
         return
 
     def __stat( self ):
