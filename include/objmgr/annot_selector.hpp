@@ -338,9 +338,11 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         fAdaptive_ByTriggers = 1<<1,
         fAdaptive_BySubtypes = 1<<2,
         fAdaptive_ByPolicy   = 1<<3,
-        kAdaptive_All        = fAdaptive_ByTriggers | fAdaptive_BySubtypes |
-                                   fAdaptive_ByPolicy,
-        kAdaptive_DefaultBits= fAdaptive_ByTriggers | fAdaptive_ByPolicy
+        fAdaptive_BySeqClass = 1<<4,
+        kAdaptive_All        = (fAdaptive_ByTriggers | fAdaptive_BySubtypes |
+                                fAdaptive_ByPolicy | fAdaptive_BySeqClass),
+        kAdaptive_DefaultBits= (fAdaptive_ByTriggers | fAdaptive_ByPolicy |
+                                fAdaptive_BySeqClass)
     };
     typedef Uint1 TAdaptiveDepthFlags;
     /// GetAdaptiveDepth() returns current value of 'adaptive depth' flag.

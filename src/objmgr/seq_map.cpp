@@ -546,6 +546,15 @@ void CSeqMap::x_SetSeq_data(size_t index, CSeq_data& data)
 }
 
 
+int CSeqMap::x_GetSequenceClass(void) const
+{
+    if ( m_Bioseq ) {
+        return m_Bioseq->GetSequenceClass();
+    }
+    return CBioseq_Handle::eSequenceClass_none;
+}
+
+
 void CSeqMap::x_SetChanged(size_t index)
 {
     while ( m_Resolved > index ) {

@@ -87,6 +87,7 @@ public:
     TSeqPos x_GetSkipAfter(void) const;
     TSeqPos x_CalcLength(void) const;
     TSeqPos x_GetTopOffset(void) const;
+    int x_GetSequenceClass(void) const;
 
 private:
 
@@ -100,6 +101,7 @@ private:
     TSeqPos            m_LevelRangePos;
     TSeqPos            m_LevelRangeEnd;
     bool               m_MinusStrand;
+    mutable Int1       m_SequenceClass;
 
     friend class CSeqMap_CI;
     friend class CSeqMap;
@@ -183,6 +185,12 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
     SSeqMapSelector& SetByFeaturePolicy(void)
         {
             m_Flags |= CSeqMap::fByFeaturePolicy;
+            return *this;
+        }
+
+    SSeqMapSelector& SetBySequenceClass(void)
+        {
+            m_Flags |= CSeqMap::fBySequenceClass;
             return *this;
         }
 
@@ -347,6 +355,7 @@ private:
 
     TSeqPos x_GetTopOffset(void) const;
     void x_Resolve(TSeqPos pos);
+    CBioseq_Handle x_GetBioseq(const CSeq_id& seq_id) const;
 
     bool x_Found(void) const;
 
@@ -369,6 +378,8 @@ private:
     void x_Select(const CConstRef<CSeqMap>& seqMap,
                   const SSeqMapSelector& selector,
                   TSeqPos pos);
+
+    int x_GetSequenceClass(void) const; // CBioseq_Handle::ESequenceClass
 
     typedef vector<TSegmentInfo> TStack;
 
@@ -489,7 +500,8 @@ const CSeqMap::CSegment& CSeqMap_CI_SegmentInfo::x_GetSegment(void) const
 inline
 CSeqMap_CI_SegmentInfo::CSeqMap_CI_SegmentInfo(void)
     : m_Index(kInvalidSeqPos),
-      m_LevelRangePos(kInvalidSeqPos), m_LevelRangeEnd(kInvalidSeqPos)
+      m_LevelRangePos(kInvalidSeqPos), m_LevelRangeEnd(kInvalidSeqPos),
+      m_MinusStrand(false), m_SequenceClass(-1)
 {
 }
 

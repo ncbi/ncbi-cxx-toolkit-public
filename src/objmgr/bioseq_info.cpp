@@ -1256,5 +1256,27 @@ int CBioseq_Info::GetTaxId(void) const
 }
 
 
+int CBioseq_Info::GetSequenceClass(void) const
+{
+    ITERATE ( TId, it, GetId() ) {
+        switch ( it->Which() ) {
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Ddbj:
+            return CBioseq_Handle::eSequenceClass_INSD;
+        case CSeq_id::e_Other:
+            return CBioseq_Handle::eSequenceClass_REFSEQ;
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+            return CBioseq_Handle::eSequenceClass_TPA;
+        default:
+            break;
+        }
+    }
+    return CBioseq_Handle::eSequenceClass_none;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

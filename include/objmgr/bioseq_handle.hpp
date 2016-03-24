@@ -303,6 +303,14 @@ public:
     bool IsNa(void) const;
     bool IsAa(void) const;
 
+    enum ESequenceClass {
+        eSequenceClass_none,
+        eSequenceClass_INSD,
+        eSequenceClass_REFSEQ,
+        eSequenceClass_TPA
+    };
+    ESequenceClass GetSequenceClass(void) const;
+
     /// Get sequence map.
     const CSeqMap& GetSeqMap(void) const;
 

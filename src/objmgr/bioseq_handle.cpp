@@ -1168,6 +1168,13 @@ CBioseq_Handle::GetFeatureFetchPolicy(void) const
 }
 
 
+CBioseq_Handle::ESequenceClass
+CBioseq_Handle::GetSequenceClass(void) const
+{
+    return ESequenceClass(x_GetInfo().GetSequenceClass());
+}
+
+
 // end of Bioseq members
 /////////////////////////////////////////////////////////////////////////////
 

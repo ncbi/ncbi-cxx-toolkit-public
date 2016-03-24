@@ -1914,6 +1914,9 @@ void CAnnot_Collector::x_CollectSegments(const CBioseq_Handle& bh,
     if ( adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy ) {
         sel.SetByFeaturePolicy();
     }
+    if ( adaptive_flags & SAnnotSelector::fAdaptive_BySeqClass) {
+        sel.SetBySequenceClass();
+    }
 
     const CRange<TSeqPos>& range = master_range.begin()->first;
     for ( CSeqMap_CI smit(bh, sel, range);
@@ -1958,6 +1961,9 @@ bool CAnnot_Collector::x_SearchSegments(const CBioseq_Handle& bh,
     int adaptive_flags = exact_depth? 0: m_Selector->GetAdaptiveDepthFlags();
     if ( adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy ) {
         sel.SetByFeaturePolicy();
+    }
+    if ( adaptive_flags & SAnnotSelector::fAdaptive_BySeqClass) {
+        sel.SetBySequenceClass();
     }
 
     bool has_more = false;
@@ -2050,6 +2056,9 @@ void CAnnot_Collector::x_CollectSegments(const CHandleRangeMap& master_loc,
         if ( adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy ) {
             sel.SetByFeaturePolicy();
         }
+        if ( adaptive_flags & SAnnotSelector::fAdaptive_BySeqClass) {
+            sel.SetBySequenceClass();
+        }
 
         CHandleRange::TRange range = idit->second.GetOverlappingRange();
         for ( CSeqMap_CI smit(bh, sel, range);
@@ -2117,6 +2126,9 @@ bool CAnnot_Collector::x_SearchSegments(const CHandleRangeMap& master_loc,
         int adaptive_flags = exact_depth?0:m_Selector->GetAdaptiveDepthFlags();
         if ( adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy ) {
             sel.SetByFeaturePolicy();
+        }
+        if ( adaptive_flags & SAnnotSelector::fAdaptive_BySeqClass) {
+            sel.SetBySequenceClass();
         }
 
         CHandleRange::TRange range = idit->second.GetOverlappingRange();

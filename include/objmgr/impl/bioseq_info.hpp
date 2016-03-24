@@ -224,6 +224,8 @@ public:
 
     int GetTaxId(void) const;
 
+    int GetSequenceClass(void) const;
+
     void x_AttachMap(CSeqMap& seq_map);
 
     void x_AddSeq_dataChunkId(TChunkId chunk_id);

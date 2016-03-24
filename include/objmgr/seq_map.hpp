@@ -133,6 +133,7 @@ public:
         fFindExactLevel = (1<<4),
         fIgnoreUnresolved = (1<<5),
         fByFeaturePolicy= (1<<6),
+        fBySequenceClass= (1<<7),
         fFindRef        = (fFindLeafRef | fFindInnerRef),
         fFindAny        = fFindData | fFindGap | fFindRef,
         fFindAnyLeaf    = fFindData | fFindGap | fFindLeafRef,
@@ -371,6 +372,8 @@ protected:
                          const CSeq_id& ref_id,
                          TSeqPos ref_pos,
                          bool ref_minus_strand);
+
+    int x_GetSequenceClass(void) const;
 
     CBioseq_Info*    m_Bioseq;
 

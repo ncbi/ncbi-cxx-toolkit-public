@@ -352,6 +352,15 @@ TSeqPos CSeqMap_CI_SegmentInfo::x_GetTopOffset(void) const
 }
 
 
+int CSeqMap_CI_SegmentInfo::x_GetSequenceClass(void) const
+{
+    if ( m_SequenceClass == -1 ) {
+        m_SequenceClass = m_SeqMap->x_GetSequenceClass();
+    }
+    return m_SequenceClass;
+}
+
+
 TSeqPos CSeqMap_CI::x_GetTopOffset(void) const
 {
     return x_GetSegmentInfo().x_GetTopOffset();
@@ -373,6 +382,30 @@ bool CSeqMap_CI::x_CanResolve(const CSeqMap::CSegment& seg) const
 {
     return m_Selector.CanResolve() &&
         (!m_Selector.x_HasLimitTSE() || x_RefTSEMatch(seg));
+}
+
+
+CBioseq_Handle CSeqMap_CI::x_GetBioseq(const CSeq_id& seq_id) const
+{
+    CBioseq_Handle bh;
+    if ( m_Selector.x_HasLimitTSE() ) {
+        // Check TSE limit
+        bh = m_Selector.x_GetLimitTSE().GetBioseqHandle(seq_id);
+    }
+    else {
+        if ( !GetScope() ) {
+            NCBI_THROW(CSeqMapException, eNullPointer,
+                       "Cannot resolve "+
+                       seq_id.AsFastaString()+": null scope pointer");
+        }
+        bh = GetScope()->GetBioseqHandle(seq_id);
+        if ( !bh && !(GetFlags() & CSeqMap::fIgnoreUnresolved) ) {
+            NCBI_THROW(CSeqMapException, eFail,
+                       "Cannot resolve "+
+                       seq_id.AsFastaString()+": unknown");
+        }
+    }
+    return bh;
 }
 
 
@@ -402,31 +435,10 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
         if ( !resolveExternal ) {
             return false;
         }
-        const CSeq_id& seq_id =
-            static_cast<const CSeq_id&>(*info.m_SeqMap->x_GetObject(seg));
-        CBioseq_Handle bh;
-        if ( m_Selector.x_HasLimitTSE() ) {
-            // Check TSE limit
-            bh = m_Selector.x_GetLimitTSE().GetBioseqHandle(seq_id);
-            if ( !bh ) {
-                return false;
-            }
-        }
-        else {
-            if ( !GetScope() ) {
-                NCBI_THROW(CSeqMapException, eNullPointer,
-                           "Cannot resolve "+
-                           seq_id.AsFastaString()+": null scope pointer");
-            }
-            bh = GetScope()->GetBioseqHandle(seq_id);
-            if ( !bh ) {
-                if ( GetFlags() & CSeqMap::fIgnoreUnresolved ) {
-                    return false;
-                }
-                NCBI_THROW(CSeqMapException, eFail,
-                           "Cannot resolve "+
-                           seq_id.AsFastaString()+": unknown");
-            }
+        const CSeq_id& seq_id = info.m_SeqMap->x_GetRefSeqid(seg);
+        CBioseq_Handle bh = x_GetBioseq(seq_id);
+        if ( !bh ) {
+            return false;
         }
         if ( (GetFlags() & CSeqMap::fByFeaturePolicy) ) {
             CBioseq_Handle::EFeatureFetchPolicy p = bh.GetFeatureFetchPolicy();
@@ -618,28 +630,46 @@ bool CSeqMap_CI::x_Found(void) const
          m_Selector.GetResolveCount() != 0 ) {
         return false;
     }
-    switch ( x_GetSegment().m_SegType ) {
+    const TSegmentInfo& info = x_GetSegmentInfo();
+    const CSeqMap::CSegment& seg = info.x_GetSegment();
+    switch ( seg.m_SegType ) {
     case CSeqMap::eSeqRef:
         if ( (GetFlags() & CSeqMap::fFindLeafRef) != 0 ) {
             if ( (GetFlags() & CSeqMap::fFindInnerRef) != 0 ) {
-                // both
-                return true;
+                // both leaf and inner segments are accepted
             }
             else {
-                // leaf only
-                return !x_CanResolve(x_GetSegment());
+                // leaf only are accepted
+                if ( x_CanResolve(seg) ) {
+                    // this is not a leaf segment
+                    return false;
+                }
             }
         }
         else {
             if ( (GetFlags() & CSeqMap::fFindInnerRef) != 0 ) {
-                // inner only
-                return x_CanResolve(x_GetSegment());
+                // inner only are accepted
+                if ( !x_CanResolve(seg) ) {
+                    // this is a leaf segment
+                    return false;
+                }
             }
             else {
-                // none
+                // none reference segments are accepted
                 return false;
             }
         }
+        if ( (GetFlags() & CSeqMap::fBySequenceClass) ) {
+            int p_class = x_GetSequenceClass();
+            if ( p_class != CBioseq_Handle::eSequenceClass_none ) {
+                const CSeq_id& seq_id = info.m_SeqMap->x_GetRefSeqid(seg);
+                CBioseq_Handle bh = x_GetBioseq(seq_id);
+                if ( bh && p_class != bh.GetSequenceClass() ) {
+                    return false;
+                }
+            }
+        }
+        return true;
     case CSeqMap::eSeqData:
         return (GetFlags() & CSeqMap::fFindData) != 0;
     case CSeqMap::eSeqGap:
@@ -703,6 +733,12 @@ bool CSeqMap_CI::IsValid(void) const
 void CSeqMap_CI::x_UpdateLength(void)
 {
     m_Selector.m_Length = x_GetSegmentInfo().x_CalcLength();
+}
+
+
+int CSeqMap_CI::x_GetSequenceClass(void) const
+{
+    return x_GetSegmentInfo().x_GetSequenceClass();
 }
 
 
