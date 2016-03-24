@@ -72,8 +72,8 @@ public:
 
 protected:
 
-    virtual void x_WriteModifiers(const CBioseq_Handle& handle,
-                                  const CSeq_feat& feat);
+    virtual void x_WriteFeatureModifiers(const CBioseq_Handle& handle,
+                                         const CSeq_feat& feat);
 
     virtual void x_AddGeneAttributes(const CBioseq_Handle& handle, 
                                      const CSeq_feat& feat,

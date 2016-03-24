@@ -188,7 +188,7 @@ void CFastaOstreamEx::WriteFeatureTitle(const CBioseq_Handle& handle,
    
     m_Out << ">lcl|" << id_string;
 
-    x_WriteModifiers(handle, feat);
+    x_WriteFeatureModifiers(handle, feat);
 }
 
 
@@ -692,8 +692,8 @@ void CFastaOstreamEx::x_AddRNAProductAttribute(const CBioseq_Handle& handle,
 
 
 
-void CFastaOstreamEx::x_WriteModifiers(const CBioseq_Handle& handle, 
-                                       const CSeq_feat& feat)
+void CFastaOstreamEx::x_WriteFeatureModifiers(const CBioseq_Handle& handle, 
+                                              const CSeq_feat& feat)
 {
 
     string defline = "";
