@@ -1956,7 +1956,12 @@ static bool s_OrgModCompare (
     const string& attrib1 = ( FIELD_IS_SET(omd1, Attrib) ? GET_FIELD (omd1, Attrib) : kEmptyStr );
     const string& attrib2 = ( FIELD_IS_SET(omd2, Attrib) ? GET_FIELD (omd2, Attrib) : kEmptyStr );
 
-    return NStr::CompareNocase( attrib1, attrib2 ) < 0;
+    const int attrib_comparison = NStr::CompareNocase( attrib1, attrib2 ) < 0;
+    if (attrib_comparison < 0) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 // Two OrgMod's are equal and duplicates if:
@@ -6321,13 +6326,6 @@ CNewCleanup_imp::x_OrgnameModBC( COrgName &orgname, const string &org_ref_common
             const string &prev_subname = GET_FIELD(*prev, Subname);
 
             if( subname.empty() ) {
-                unlink = true;
-            } else if ( (prev_subtype == subtype &&
-                NStr::EqualNocase(prev_subname, subname)) ||
-                (prev_subtype == subtype &&
-                prev_subtype ==  NCBI_ORGMOD(other) &&
-                NStr::Find(prev_subname, subname) != NPOS )) 
-            {
                 unlink = true;
             } else if (prev_subtype == subtype &&
                 prev_subtype == NCBI_ORGMOD(other) &&
