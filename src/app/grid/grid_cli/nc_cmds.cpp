@@ -67,6 +67,10 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
                     (unsigned short) NStr::StringToInt(port));
         }
 
+        if (IsOptionSet(eNoServerCheck)) {
+            m_NetCacheAPI.SetDefaultParameters(nc_server_check = eOff);
+        }
+
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (IsOptionSet(eAllowXSiteConn))
             m_NetCacheAPI.GetService().AllowXSiteConnections();

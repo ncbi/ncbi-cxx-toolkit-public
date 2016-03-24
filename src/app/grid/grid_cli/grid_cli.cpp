@@ -446,6 +446,9 @@ struct SOptionDefinition {
             "even if provided locator has a NetStorage service. Cannot be "
             "used together with '--" NETSTORAGE_OPTION "' option.", {-1}},
 
+    {OPT_DEF(eSwitch, eNoServerCheck),
+        "no-server-check", "Disable server check.", {-1}},
+
     /* Options available only with --extended-cli go below. */
 
     {OPT_DEF(eSwitch, eExtendedOptionDelimiter), NULL, NULL, {-1}},
@@ -587,6 +590,7 @@ struct SCommandDefinition {
         "Expired blobs will be reported as not found."
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eNCID, eNetCache, eCache, eTryAllServers, eLoginToken, eAuth,
+            eNoServerCheck,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_GetBlob,
@@ -596,7 +600,7 @@ struct SCommandDefinition {
         "file). Expired blobs will be reported as not found."
         ICACHE_KEY_FORMAT_EXPLANATION_OPT_VERSION,
         {eNCID, eNetCache, eCache, ePassword, eOffset, eSize,
-            eTryAllServers, eOutputFile, eLoginToken, eAuth,
+            eTryAllServers, eOutputFile, eLoginToken, eAuth, eNoServerCheck,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_PutBlob,
@@ -606,7 +610,7 @@ struct SCommandDefinition {
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eOptionalNCID, eNetCache, eCache, ePassword, eTTL,
             eEnableMirroring, eUseCompoundID,
-            eInput, eInputFile, eCompatMode, eLoginToken, eAuth,
+            eInput, eInputFile, eCompatMode, eLoginToken, eAuth, eNoServerCheck,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_RemoveBlob,
@@ -615,6 +619,7 @@ struct SCommandDefinition {
         "(or never existed), no errors are reported."
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eNCID, eNetCache, eCache, ePassword, eLoginToken, eAuth,
+            eNoServerCheck,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Purge,
