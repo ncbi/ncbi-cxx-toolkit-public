@@ -5367,8 +5367,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                 if (m_Imp.IsFarFetchMRNAproducts()) {
                     rna = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
                     if (!rna) {
-                        string label;
-                        product_id->GetLabel(&label);
+                        string label = product_id->AsFastaString();
                         PostErr (eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure, 
                                  "Unable to fetch mRNA transcript '" + label + "'", feat);
                     }

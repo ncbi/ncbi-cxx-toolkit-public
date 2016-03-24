@@ -14643,7 +14643,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency)
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "FeatureProductInconsistency",
                                 "2 mRNA features have 1 product references"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "ProductFetchFailure", 
-                                "Unable to fetch mRNA transcript 'gb|AY123456'"));
+                                "Unable to fetch mRNA transcript 'gb|AY123456|'"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14655,9 +14655,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency)
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "FeatureProductInconsistency",
                                 "mRNA products are not unique"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "ProductFetchFailure", 
-                                "Unable to fetch mRNA transcript 'gb|AY123456'"));
+                                "Unable to fetch mRNA transcript 'gb|AY123456|'"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "ProductFetchFailure", 
-                                "Unable to fetch mRNA transcript 'gb|AY123456'"));
+                                "Unable to fetch mRNA transcript 'gb|AY123456|'"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
