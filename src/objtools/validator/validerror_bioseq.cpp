@@ -317,6 +317,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                             (num_digits == 8  ||  num_digits == 9)  && 
                             ctx.IsNa() ) {
                 } else if (num_letters == 4 && num_digits == 10 && ctx.IsNa()) {
+                } else if (num_letters == 5 && num_digits == 7 && ctx.IsNa()) {
                 } else {
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                         "Bad accession " + acc, ctx);
@@ -383,7 +384,6 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                         num_underscores == 1 ) {
                         // valid accession - do nothing!
                     } else if (num_letters == 4 && num_digits == 10 && ctx.IsNa()) {
-                    } else if (num_letters == 5 && num_digits == 7 && ctx.IsNa()) {
                     } else {
                         PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                             "Bad accession " + acc, ctx);
