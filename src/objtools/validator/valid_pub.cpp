@@ -973,15 +973,12 @@ void CValidError_imp::ValidateSubAffil
  const CSeq_entry *ctx)
 {
     EDiagSev sev = eDiag_Critical;
-    if (IsGenbank() || IsRefSeq()) {
+
+    if (m_IsINSDInSep || IsRefSeq() || s_IsHtgInSep(GetTSE()) || IsPDB()) {
         sev = eDiag_Warning;
     }
     if (!std.IsSetCountry() || NStr::IsBlank(std.GetCountry())) {
-        EDiagSev this_sev =
-            s_IsRefSeqInSep(GetTSE(), *m_Scope) || s_IsHtgInSep(GetTSE()) || s_IsPDBInSep(GetTSE(), *m_Scope) ?
-        eDiag_Warning : eDiag_Critical;
-
-        PostObjErr(this_sev, eErr_GENERIC_MissingPubInfo,
+        PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
                     "Submission citation affiliation has no country",
                     obj, ctx);
     } else if (NStr::EqualCase (std.GetCountry(), "USA")) {
