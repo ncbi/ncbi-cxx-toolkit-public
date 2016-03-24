@@ -1,3 +1,12 @@
+Release 4.25.0 based on SC-17.0 (2016-03-24)
+
+Improvements:
+    * Configure which queues should log state transition performance records
+      (JIRA: CXX-7958)
+    * NetSchedule: scope feature (JIRA: CXX-7856)
+    * NetSchedule: changing the PHID generation for logging (JIRA: CXX-7651)
+
+
 Release 4.24.0 cloned from 4.23.2 (2015-11-30)
 
 Improvements:
