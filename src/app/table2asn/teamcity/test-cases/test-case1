@@ -39,4 +39,6 @@
 -i sqd-3542.fsa
 -i sqd-3534.fsa -a s
 -i sqd-3495.fsa -a s
--i sqd-3700.fsa -a s -j "[organism=Tribolium castaneum]" -R -T -J -t sqd-3700.sbt
+#-i sqd-3700.fsa -a s -j "[organism=Tribolium castaneum]" -R -T -J -t sqd-3700.sbt
+#-i sqd-3700.fsa -c f -a s -j "[organism=Tribolium castaneum]" -R -T -J -t sqd-3700.sbt
+-i mss-364.fsa
