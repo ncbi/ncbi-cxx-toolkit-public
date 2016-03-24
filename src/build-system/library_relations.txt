@@ -594,6 +594,8 @@ homologene needs $(SEQ_LIBS)
 homologene needs pub
 htbcli needs txserv
 htbcon needs txserv
+hydra_client needs xconnect
+hydra_client needs xmlwrapp
 icudata needs3party $(ORIG_LIBS)
 icui18n needs3party $(ORIG_LIBS)
 icuuc needs3party $(ORIG_LIBS)
