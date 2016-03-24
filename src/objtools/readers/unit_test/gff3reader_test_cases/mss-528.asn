@@ -1,0 +1,721 @@
+Seq-annot ::= {
+  id {
+    local str "U00096.3"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data imp {
+        key "chromosome"
+      },
+      location int {
+        from 0,
+        to 4641651,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "Is_circular",
+          val "true"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data gene {
+        locus "thrL",
+        syn {
+          "ECK0001",
+          "JW4367"
+        },
+        locus-tag "b0001"
+      },
+      location int {
+        from 189,
+        to 254,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene0"
+        }
+      },
+      dbxref {
+        {
+          db "EcoGene",
+          tag str "EG11277"
+        }
+      }
+    },
+    {
+      id local id 3,
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 189,
+          to 254,
+          strand plus,
+          id genbank {
+            accession "U00096",
+            version 3
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "mrna0"
+        },
+        {
+          qual "Parent",
+          val "gene0"
+        }
+      },
+      xref {
+        {
+          id local id 4
+        }
+      }
+    },
+    {
+      id local id 4,
+      data cdregion {
+        frame one
+      },
+      product whole genbank {
+        accession "AAC73112"
+      },
+      location int {
+        from 189,
+        to 254,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "thr operon leader peptide"
+        },
+        {
+          qual "protein_id",
+          val "gb|AAC73112"
+        },
+        {
+          qual "ID",
+          val "cds0"
+        },
+        {
+          qual "Parent",
+          val "mrna0"
+        },
+        {
+          qual "function",
+          val "leader; Amino acid biosynthesis: Threonine"
+        },
+        {
+          qual "go_process",
+          val "threonine biosynthetic process|0009088"
+        }
+      },
+      xref {
+        {
+          id local id 3
+        }
+      },
+      dbxref {
+        {
+          db "ASAP",
+          tag str "ABE-0000006"
+        },
+        {
+          db "UniProtKB/Swiss-Prot",
+          tag str "P0AD86"
+        }
+      }
+    },
+    {
+      id local id 5,
+      data gene {
+        locus "thrA",
+        syn {
+          "ECK0002",
+          "Hs",
+          "JW0001",
+          "thrA1",
+          "thrA2",
+          "thrD"
+        },
+        locus-tag "b0002"
+      },
+      location int {
+        from 336,
+        to 2798,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene1"
+        }
+      },
+      dbxref {
+        {
+          db "EcoGene",
+          tag str "EG10998"
+        }
+      }
+    },
+    {
+      id local id 6,
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 336,
+          to 2798,
+          strand plus,
+          id genbank {
+            accession "U00096",
+            version 3
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "mrna1"
+        },
+        {
+          qual "Parent",
+          val "gene1"
+        }
+      },
+      xref {
+        {
+          id local id 7
+        }
+      }
+    },
+    {
+      id local id 7,
+      data cdregion {
+        frame one
+      },
+      comment "bifunctional: aspartokinase I (N-terminal); homoserine
+ dehydrogenase I (C-terminal)",
+      product whole genbank {
+        accession "AAC73113"
+      },
+      location int {
+        from 336,
+        to 2798,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "experiment",
+          val "N-terminus verified by Edman degradation:PMID 354697,4562989"
+        },
+        {
+          qual "product",
+          val "Bifunctional aspartokinase/homoserine dehydrogenase 1"
+        },
+        {
+          qual "protein_id",
+          val "gb|AAC73113"
+        },
+        {
+          qual "ID",
+          val "cds1"
+        },
+        {
+          qual "Parent",
+          val "mrna1"
+        },
+        {
+          qual "ec_number",
+          val "1.1.1.3"
+        },
+        {
+          qual "ec_number",
+          val "2.7.2.4"
+        },
+        {
+          qual "function",
+          val "enzyme; Amino acid biosynthesis: Threonine"
+        },
+        {
+          qual "go_component",
+          val "cytoplasm|0005737"
+        },
+        {
+          qual "go_process",
+          val "threonine biosynthetic process|0009088"
+        },
+        {
+          qual "go_process",
+          val "methionine biosynthetic process|0009086"
+        },
+        {
+          qual "go_process",
+          val "homoserine biosynthetic process|0009090"
+        }
+      },
+      xref {
+        {
+          id local id 6
+        }
+      },
+      dbxref {
+        {
+          db "ASAP",
+          tag str "ABE-0000008"
+        },
+        {
+          db "UniProtKB/Swiss-Prot",
+          tag str "P00561"
+        }
+      }
+    },
+    {
+      id local id 8,
+      data imp {
+        key "repeat_region"
+      },
+      comment "RIP1 (repetitive extragenic palindromic) element; contains 2
+ REP sequences and 1 IHF site",
+      location int {
+        from 5564,
+        to 5668,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id1"
+        }
+      }
+    },
+    {
+      id local id 9,
+      data imp {
+        key "mobile_element"
+      },
+      location int {
+        from 15386,
+        to 16730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id2"
+        },
+        {
+          qual "mobile_element_type",
+          val "insertion sequence:IS186A"
+        }
+      }
+    },
+    {
+      id local id 10,
+      data gene {
+        locus "sokC",
+        syn {
+          "ECK0019",
+          "JWR0224",
+          "sof"
+        },
+        locus-tag "b4413"
+      },
+      location int {
+        from 16951,
+        to 17005,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene17"
+        }
+      },
+      dbxref {
+        {
+          db "EcoGene",
+          tag str "EG31128"
+        }
+      }
+    },
+    {
+      id local id 11,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "antisense_RNA"
+        }
+      },
+      comment "IS186A interrupts hokC transcript downstream of hokC gene in
+ K-12",
+      product whole local str "sRNA antisense regulator blocking mokC, and
+ hence hokC, translation",
+      location int {
+        from 16951,
+        to 17005,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "sRNA antisense regulator blocking mokC, and hence hokC,
+ translation"
+        },
+        {
+          qual "ID",
+          val "rna0"
+        },
+        {
+          qual "Parent",
+          val "gene17"
+        },
+        {
+          qual "function",
+          val "component of addiction module"
+        }
+      },
+      dbxref {
+        {
+          db "ASAP",
+          tag str "ABE-0047238"
+        }
+      }
+    },
+    {
+      id local id 12,
+      data gene {
+        locus "ssrA",
+        syn {
+          "ECK2617",
+          "JWR0055",
+          "sipB"
+        },
+        locus-tag "b2621"
+      },
+      location int {
+        from 2755592,
+        to 2755954,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene2687"
+        }
+      },
+      dbxref {
+        {
+          db "EcoGene",
+          tag str "EG30100"
+        }
+      }
+    },
+    {
+      id local id 13,
+      data rna {
+        type tmRNA
+      },
+      comment "acts as tRNA-Ala and mRNA template for tagging proteins
+ resulting from premature transcription termination for degradation, a process
+ known as trans-translation",
+      product whole local str "tmRNA, 10Sa RNA",
+      location mix {
+        int {
+          from 2755592,
+          to 2755954,
+          strand plus,
+          id genbank {
+            accession "U00096",
+            version 3
+          }
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tmRNA, 10Sa RNA"
+        },
+        {
+          qual "ID",
+          val "rna88"
+        },
+        {
+          qual "Parent",
+          val "gene2687"
+        },
+        {
+          qual "function",
+          val "2.2.6 information transfer; RNA related; rRNA, stable RNA"
+        },
+        {
+          qual "function",
+          val "2.3.6 information transfer; protein related; turnover,
+ degradation"
+        },
+        {
+          qual "function",
+          val "6.6 cell structure; ribosome"
+        },
+        {
+          qual "function",
+          val "7.1 location of gene products; cytoplasm"
+        },
+        {
+          qual "function",
+          val "RNA; Ribosomal and stable RNAs"
+        }
+      },
+      dbxref {
+        {
+          db "ASAP",
+          tag str "ABE-0008624"
+        }
+      }
+    },
+    {
+      id local id 14,
+      data imp {
+        key "misc_feature"
+      },
+      comment "cryptic prophage CP4-57",
+      location int {
+        from 2755956,
+        to 2777985,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id324"
+        }
+      }
+    },
+    {
+      id local id 15,
+      data gene {
+        locus "ileY",
+        syn {
+          "ECK2648",
+          "JWR0056"
+        },
+        locus-tag "b2652"
+      },
+      location int {
+        from 2785761,
+        to 2785836,
+        strand minus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene2717"
+        }
+      },
+      dbxref {
+        {
+          db "EcoGene",
+          tag str "EG31121"
+        }
+      }
+    },
+    {
+      id local id 16,
+      data rna {
+        type tRNA
+      },
+      comment "anticodon: GAU",
+      product whole local str "tRNA-Ile",
+      location mix {
+        int {
+          from 2785761,
+          to 2785836,
+          strand minus,
+          id genbank {
+            accession "U00096",
+            version 3
+          }
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Ile"
+        },
+        {
+          qual "ID",
+          val "rna90"
+        },
+        {
+          qual "Parent",
+          val "gene2717"
+        }
+      },
+      dbxref {
+        {
+          db "ASAP",
+          tag str "ABE-0008733"
+        }
+      }
+    },
+    {
+      id local id 17,
+      data gene {
+        locus "rrfF",
+        syn {
+          "ECK3259",
+          "JWR0073",
+          "rrfDbeta",
+          "rrvD"
+        },
+        locus-tag "b3272"
+      },
+      location int {
+        from 3423422,
+        to 3423541,
+        strand minus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene3334"
+        }
+      },
+      dbxref {
+        {
+          db "EcoGene",
+          tag str "EG30091"
+        }
+      }
+    },
+    {
+      id local id 18,
+      data rna {
+        type rRNA
+      },
+      product whole local str "5S ribosomal RNA of rrnD operon",
+      location mix {
+        int {
+          from 3423422,
+          to 3423541,
+          strand minus,
+          id genbank {
+            accession "U00096",
+            version 3
+          }
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "5S ribosomal RNA of rrnD operon"
+        },
+        {
+          qual "ID",
+          val "rna117"
+        },
+        {
+          qual "Parent",
+          val "gene3334"
+        }
+      },
+      dbxref {
+        {
+          db "ASAP",
+          tag str "ABE-0010740"
+        }
+      }
+    },
+    {
+      id local id 19,
+      data imp {
+        key "rep_origin"
+      },
+      comment "oriC; origin of chromosomal DNA replication,
+ bidirectional~oriC; b4489; ECK3735; JWS0001",
+      location int {
+        from 3925743,
+        to 3925974,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id472"
+        }
+      },
+      dbxref {
+        {
+          db "ASAP",
+          tag str "ABE-0012233"
+        }
+      }
+    }
+  }
+}

@@ -1235,12 +1235,13 @@ bool CGff2Record::xInitFeatureData(
 
     CFeatListItem itemtype = SofaTypes().MapSofaTermToFeatListItem( Type());
     switch( itemtype.GetType() ) {
-        default:
-            break;
-
-        case CSeqFeatData::e_Gene:
+        default: {
+            return true;
+        }
+        case CSeqFeatData::e_Gene: {
             pFeature->SetData().SetGene();
             return true;
+        }
 
         case CSeqFeatData::e_Cdregion: {
             //oh my --- phases again ---
@@ -1283,15 +1284,24 @@ bool CGff2Record::xInitFeatureData(
             }
             return true;
         }
+        case CSeqFeatData::e_Imp: {
+            CSeqFeatData::TImp& imp = pFeature->SetData().SetImp();
+            CSeqFeatData::ESubtype subType = 
+                static_cast<CSeqFeatData::ESubtype>(itemtype.GetSubtype());
+            if (subType == CSeqFeatData::eSubtype_bad) {
+                if (Type() == ".") {
+                    imp.SetKey("misc_feature");
+                    return true;
+                }
+                imp.SetKey(Type());
+                return true;
+            }
+            const string& key = CSeqFeatData::SubtypeValueToName(
+                static_cast<CSeqFeatData::ESubtype>(itemtype.GetSubtype()));
+            imp.SetKey(key);
+            return true;
+        }
     }
-    pFeature->SetData().SetImp();  
-    if (Type() == ".") {
-        pFeature->SetData().SetImp().SetKey("misc_feature");
-    }
-    else {
-        pFeature->SetData().SetImp().SetKey(Type());
-    }
-    return true;
 }
 
 END_objects_SCOPE

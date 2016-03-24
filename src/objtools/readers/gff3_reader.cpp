@@ -696,7 +696,10 @@ bool CGff3Reader::xIsIgnoredFeatureType(
     if (cit != ignoredTypesGenbank.end()) {
         return true;
     }
-
+    CSeqFeatData::ESubtype iGenbankType = SofaTypes().MapSofaTermToGenbankType(ftype);
+    if (iGenbankType == CSeqFeatData::eSubtype_bad) {
+        return true;
+    }
     /*anything else?*/
     return false;
 }

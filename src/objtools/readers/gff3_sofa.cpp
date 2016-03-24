@@ -83,7 +83,7 @@ CSeqFeatData::ESubtype CGff3SofaTypes::MapSofaTermToGenbankType(
 {
     TLookupSofaToGenbankCit cit = m_Lookup->find( strSofa );
     if ( cit == m_Lookup->end() ) {
-        return CSeqFeatData::eSubtype_misc_feature;
+        return CSeqFeatData::eSubtype_bad;
     }
     return CSeqFeatData::ESubtype(cit->second.GetSubtype());
 }
@@ -96,7 +96,7 @@ CFeatListItem CGff3SofaTypes::MapSofaTermToFeatListItem(
     TLookupSofaToGenbankCit cit = m_Lookup->find( strSofa );
     if ( cit == m_Lookup->end() ) {
         return CFeatListItem(CSeqFeatData::e_Imp, 
-            CSeqFeatData::eSubtype_misc_feature, "", "");
+            CSeqFeatData::eSubtype_bad, "", "");
     }
     return cit->second;
 }
