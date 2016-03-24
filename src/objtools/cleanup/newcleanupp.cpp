@@ -1480,6 +1480,63 @@ static void s_CorrectTildes (
 #endif //NCBI_OS_MSWIN
 }
 
+
+bool s_SameSubtype(const CSubSource& s1, const CSubSource& s2)
+{
+    if (!s1.IsSetSubtype() && !s2.IsSetSubtype()) {
+        return true;
+    } else if (!s1.IsSetSubtype() || !s2.IsSetSubtype()) {
+        return false;
+    } else {
+        return s1.GetSubtype() == s2.GetSubtype();
+    }
+}
+
+
+// close enough if second name contains the first
+bool s_NameCloseEnough(const CSubSource& s1, const CSubSource& s2)
+{
+    if (!s1.IsSetName() && !s2.IsSetName()) {
+        return true;
+    } else if (!s1.IsSetName() || !s2.IsSetName()) {
+        return false;
+    } else if (NStr::Find(s2.GetName(), s1.GetName()) == string::npos) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+void CNewCleanup_imp::SubSourceListBC(CBioSource& biosrc)
+{
+    if (!biosrc.IsSetSubtype()) {
+        return;
+    }
+
+    // sort and remove duplicates.
+    if (biosrc.IsSetSubtype() && biosrc.GetSubtype().size() > 1) {
+        if (!SUBSOURCE_ON_BIOSOURCE_IS_SORTED(biosrc, s_SubsourceCompare)) {
+            SORT_SUBSOURCE_ON_BIOSOURCE(biosrc, s_SubsourceCompare);
+            ChangeMade(CCleanupChange::eCleanSubsource);
+        }
+
+        // remove duplicates and subsources that contain previous values
+        CBioSource::TSubtype::iterator s = biosrc.SetSubtype().begin();
+        CBioSource::TSubtype::iterator s_next = s;
+        ++s_next;
+        while (s_next != biosrc.SetSubtype().end()) {
+            if (s_SameSubtype(**s, **s_next) && s_NameCloseEnough(**s, **s_next)) {
+                s = biosrc.SetSubtype().erase(s);
+                ChangeMade(CCleanupChange::eCleanSubsource);
+            } else {
+                ++s;
+            }
+            ++s_next;
+        }
+    }
+}
+
 void CNewCleanup_imp::BiosourceBC (
     CBioSource& biosrc
 )
@@ -1629,15 +1686,7 @@ void CNewCleanup_imp::BiosourceBC (
     }
 
     // sort and remove duplicates.
-    if (! SUBSOURCE_ON_BIOSOURCE_IS_SORTED (biosrc, s_SubsourceCompare)) {
-        SORT_SUBSOURCE_ON_BIOSOURCE (biosrc, s_SubsourceCompare);
-        ChangeMade (CCleanupChange::eCleanSubsource);
-    }
-
-    if (! SUBSOURCE_ON_BIOSOURCE_IS_UNIQUE (biosrc, s_SubsourceEqual)) {
-        UNIQUE_SUBSOURCE_ON_BIOSOURCE (biosrc, s_SubsourceEqual);
-        ChangeMade (CCleanupChange::eCleanSubsource);
-    }
+    SubSourceListBC(biosrc);
 
     // PCR Primers
     if( FIELD_IS_SET(biosrc, Pcr_primers) ) {

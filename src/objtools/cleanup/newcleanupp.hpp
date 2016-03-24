@@ -293,6 +293,7 @@ private:
     void UserObjectBC( CUser_object &user_object );
 
     void PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set );
+    void SubSourceListBC(CBioSource& biosrc);
 
     void MolInfoBC( CMolInfo &molinfo );
     void CreateMissingMolInfo( CBioseq& seq );
