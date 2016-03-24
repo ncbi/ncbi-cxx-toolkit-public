@@ -378,7 +378,9 @@ private:
     // for rpt_unit and replace GenBank qualifiers 
     bool x_CleanupRptUnit(CGb_qual& gbq);
     bool x_CleanupRptUnitRange(string& val);
-    bool x_IsBaseRange(const string& val);
+    static bool x_IsBaseRange(const string& val);
+    static bool x_IsDotBaseRange(const string& val);
+    static bool x_IsHyphenBaseRange(const string& val);
 
 
     void x_ChangeTransposonToMobileElement(CGb_qual& gbq);

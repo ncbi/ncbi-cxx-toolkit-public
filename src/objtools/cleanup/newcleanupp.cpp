@@ -3950,12 +3950,9 @@ void CNewCleanup_imp::x_CleanupConsSplice(CGb_qual& gbq)
 }
 
 
-bool CNewCleanup_imp::x_IsBaseRange(const string& val)
+bool CNewCleanup_imp::x_IsDotBaseRange(const string& val)
 {
-    if (val.length() > 25) {
-        return false;
-    }
-    size_t pos = NStr::Find (val, "..");
+    size_t pos = NStr::Find(val, "..");
     if (string::npos == pos) {
         return false;
     }
@@ -3972,11 +3969,48 @@ bool CNewCleanup_imp::x_IsBaseRange(const string& val)
 }
 
 
+bool CNewCleanup_imp::x_IsHyphenBaseRange(const string& val)
+{
+    size_t pos = NStr::Find(val, "-");
+    if (string::npos == pos) {
+        return false;
+    }
+    try {
+        long start = NStr::StringToLong(val.substr(0, pos));
+        long stop = NStr::StringToLong(val.substr(pos + 1));
+        if (start < 1 || stop < 1) {
+            return false;
+        }
+    } catch (...) {
+        return false;
+    }
+    return true;
+}
+
+
+bool CNewCleanup_imp::x_IsBaseRange(const string& val)
+{
+    if (val.length() > 25) {
+        return false;
+    }
+    if (x_IsDotBaseRange(val)) {
+        return true;
+    } else if (x_IsHyphenBaseRange(val)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool CNewCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
 {
     CGb_qual::CleanupRptUnitRange(gbq.SetVal());
     if (x_IsBaseRange(gbq.GetVal())) {
         gbq.SetQual("rpt_unit_range");
+        if (x_IsHyphenBaseRange(gbq.GetVal())) {
+            NStr::ReplaceInPlace(gbq.SetVal(), "-", "..");
+        }
     } else {
         gbq.SetQual("rpt_unit_seq");
         CGb_qual::CleanupRptUnitSeq(gbq.SetVal());
@@ -4756,7 +4790,8 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             }
 
             if (aa == 'M') {
-                if (NStr::Find(product, "fMet") != NPOS) {
+                if (NStr::Find(product, "fMet") != NPOS &&
+                    (!feat.IsSetComment() || NStr::Find(feat.GetComment(), "fMet") == NPOS)) {
                     x_AddToComment(feat, "fMet");
                 }
             }
