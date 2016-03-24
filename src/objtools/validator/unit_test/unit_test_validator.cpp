@@ -2332,7 +2332,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     bad_ids.push_back("ABC1234");      // three letters bad unless prot and 5 digits
     bad_ids.push_back("ABC123456");
     bad_ids.push_back("ABCD1234567");  // four letters
-    bad_ids.push_back("ABCD1234567890");
     bad_ids.push_back("ABCDE123456");  // five letters
     bad_ids.push_back("ABCDE12345678");  
 
@@ -2350,6 +2349,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     good_nuc_ids.push_back("AY123456");
     good_nuc_ids.push_back("A12345");
     good_nuc_ids.push_back("ABCD123456789");
+    good_nuc_ids.push_back("ABCD1234567890");
 
     vector<string> good_prot_ids;
     good_prot_ids.push_back("ABC12345");

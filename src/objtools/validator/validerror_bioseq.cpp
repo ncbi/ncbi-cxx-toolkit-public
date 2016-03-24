@@ -316,6 +316,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 } else if ( num_letters == 4  &&
                             (num_digits == 8  ||  num_digits == 9)  && 
                             ctx.IsNa() ) {
+                } else if (num_letters == 4 && num_digits == 10 && ctx.IsNa()) {
                 } else {
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                         "Bad accession " + acc, ctx);
@@ -381,6 +382,8 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                         (num_digits == 6  ||  num_digits == 8  || num_digits == 9)  &&
                         num_underscores == 1 ) {
                         // valid accession - do nothing!
+                    } else if (num_letters == 4 && num_digits == 10 && ctx.IsNa()) {
+                    } else if (num_letters == 5 && num_digits == 7 && ctx.IsNa()) {
                     } else {
                         PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                             "Bad accession " + acc, ctx);
@@ -417,12 +420,12 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
             }
             break;
         case CSeq_id::e_General:
+            if (!id.GetGeneral().IsSetDb() || NStr::IsBlank(id.GetGeneral().GetDb())) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier missing database field", ctx);
+            }
             if (id.GetGeneral().IsSetDb()) {
                 const CDbtag& dbt = id.GetGeneral();
                 size_t dblen = dbt.GetDb().length();
-                if (dblen < 1) {
-                   PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier missing database field", ctx);
-                }
                 EDiagSev sev = eDiag_Error;
                 if (m_Imp.IsLocalGeneralOnly()) {
                     sev = eDiag_Critical;
@@ -613,9 +616,10 @@ void CValidError_bioseq::ValidateSeqIds
         case CSeq_id::e_Ddbj:
             if ( tsid  &&  tsid->IsSetAccession() ) {
                 const string& acc = tsid->GetAccession();
-                    
-                is_wgs |= acc.length() == 12  ||  acc.length() == 13  ||  acc.length() == 14  ||  acc.length() == 15;
-
+                   
+                if ((*k)->IsGenbank() || (*k)->IsEmbl() || (*k)->IsDdbj()) {
+                    is_wgs |= acc.length() == 12 || acc.length() == 13 || acc.length() == 14 || acc.length() == 15;
+                }
 
                 if ( has_gi ) {
                     if (tsid->IsSetVersion() && tsid->GetVersion() == 0) {
@@ -636,12 +640,21 @@ void CValidError_bioseq::ValidateSeqIds
                             "Missing accession for " + tsid->GetName(), seq);
                     }
                 }
+                accn_count++;
             }
+            break;
             // Fall thru
         case CSeq_id::e_Pir:
         case CSeq_id::e_Swissprot:
         case CSeq_id::e_Prf:
-            if ( tsid ) {
+            if ( tsid) {
+                if ((!tsid->IsSetAccession() || NStr::IsBlank(tsid->GetAccession())) &&
+                    (!tsid->IsSetName() || NStr::IsBlank(tsid->GetName())) &&
+                    seq.GetInst().IsAa()) {
+                    string label = (*k)->AsFastaString();
+                    PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                            "Missing identifier for " + label, seq);
+                }
                 accn_count++;
             }
             break;
