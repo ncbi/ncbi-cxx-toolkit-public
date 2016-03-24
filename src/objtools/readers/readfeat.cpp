@@ -2685,6 +2685,12 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
                 case CSeqFeatData::eSubtype_sig_peptide_aa:
                     prot_ref.SetProcessed(CProt_ref::eProcessed_signal_peptide);
                     break;
+                case CSeqFeatData::eSubtype_preprotein:
+                    prot_ref.SetProcessed(CProt_ref::eProcessed_preprotein);
+                    break;
+                case CSeqFeatData::eSubtype_transit_peptide_aa:
+                    prot_ref.SetProcessed(CProt_ref::eProcessed_transit_peptide);
+                    break;
             }
         }
 
