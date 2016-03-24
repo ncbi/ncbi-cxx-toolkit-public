@@ -1543,7 +1543,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                     for(;smit; ++smit) {
                         if(smit.GetType() == CSeqMap::eSeqGap) {
                             CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral();
-                            if(slit && !slit->IsBridgeable()) {
+                            if(slit && slit->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
                                 TSeqPos pos = smit.GetEndPosition();//exclusive 
                                 _ASSERT( smin + pos <= hitmin );
                                 smin += pos;
@@ -1562,7 +1562,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                     for(;smit; ++smit) {
                         if(smit.GetType() == CSeqMap::eSeqGap) {
                             CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral();
-                            if(slit && !slit->IsBridgeable()) {
+                            if(slit && slit->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
                                 TSeqPos pos = smit.GetPosition();
                                 _ASSERT( hitmax + pos < smax );
                                 smax = hitmax + pos;

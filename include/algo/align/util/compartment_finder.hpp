@@ -98,7 +98,7 @@ public:
             CSeqMap_CI it = m_seq_map->ResolvedRangeIterator(m_scope,  from, to - from + 1, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);
             for( ; it; ++it) {
                 CConstRef<CSeq_literal> lit = it.GetRefGapLiteral();
-                if(lit && !lit->IsBridgeable()) {
+                if(lit && lit->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
                     res = true;
                     break;
                 }
