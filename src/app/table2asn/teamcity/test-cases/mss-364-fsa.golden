@@ -2337,7 +2337,8 @@ F41182228888448118888841111188811111111118811181188881822488111811244288241128
               data prot {
                 name {
                   "proprotein name HA3"
-                }
+                },
+                processed preprotein
               },
               location int {
                 from 499,
@@ -2350,7 +2351,8 @@ F41182228888448118888841111188811111111118811181188881822488111811244288241128
               data prot {
                 name {
                   "transit protein name HA4"
-                }
+                },
+                processed transit-peptide
               },
               location int {
                 from 699,
@@ -2371,8 +2373,7 @@ F41182228888448118888841111188811111111118811181188881822488111811244288241128
         title "hemagglutinin [Dictyostelium discoideum AX4]",
         molinfo {
           biomol peptide,
-          tech concept-trans,
-          completeness complete
+          tech concept-trans
         }
       },
       inst {
