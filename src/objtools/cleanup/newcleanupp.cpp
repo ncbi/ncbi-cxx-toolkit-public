@@ -11101,12 +11101,15 @@ void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
     switch( GET_FIELD_OR_DEFAULT(
         bioseq_set, Class, NCBI_BIOSEQSETCLASS(not_set)) )
     {
-    case NCBI_BIOSEQSETCLASS(nuc_prot):
-        x_BioseqSetNucProtEC( bioseq_set );
-        break;
-    default:
-        // no special logic for other bioseq-set classes
-        break;
+        case CBioseq_set::eClass_nuc_prot:
+            x_BioseqSetNucProtEC( bioseq_set );
+            break;
+        case CBioseq_set::eClass_genbank:
+            x_BioseqSetGenBankEC(bioseq_set);
+            break;
+        default:
+            // no special logic for other bioseq-set classes
+            break;
     }
 }
 
@@ -11252,6 +11255,36 @@ void CNewCleanup_imp::x_BioseqSetNucProtEC(CBioseq_set & bioseq_set)
 {
     x_MoveNpSrc(bioseq_set);
     x_MoveNpDBlinks(bioseq_set);
+}
+
+
+void CNewCleanup_imp::x_BioseqSetGenBankEC(CBioseq_set & bioseq_set)
+{
+    //propagate source descriptors to set components
+    if (bioseq_set.IsSetDescr() && bioseq_set.IsSetSeq_set() && !bioseq_set.GetSeq_set().empty()) {  
+        CBioseq_set::TDescr::Tdata::iterator it = bioseq_set.SetDescr().Set().begin();
+        while (it != bioseq_set.SetDescr().Set().end()) {
+            if ((*it)->IsSource()) {
+                NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, bioseq_set.SetSeq_set()) {
+                    CRef<CSeqdesc> cpy(new CSeqdesc());
+                    cpy->Assign(**it);
+                    if ((*s)->IsSeq()) {
+                        (*s)->SetSeq().SetDescr().Set().push_back(cpy);
+                    } else if ((*s)->IsSet()) {
+                        (*s)->SetSet().SetDescr().Set().push_back(cpy);
+                    }
+                }
+                it = bioseq_set.SetDescr().Set().erase(it);
+                ChangeMade(CCleanupChange::eAddDescriptor);
+                ChangeMade(CCleanupChange::eRemoveDescriptor);
+            } else {
+                ++it;
+            }
+        }
+        if (bioseq_set.SetDescr().Set().empty()) {
+            bioseq_set.ResetDescr();
+        }
+    }
 }
 
 
