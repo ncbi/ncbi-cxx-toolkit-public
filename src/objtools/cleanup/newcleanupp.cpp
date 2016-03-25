@@ -8391,6 +8391,10 @@ CNewCleanup_imp::x_RRNANameBC( string &name )
            s_RegexpReplace( name, "RNA +rRNA", "RNA ") );
 
     NStr::TruncateSpacesInPlace(name);
+    if (NStr::EndsWith(name, ".")) {
+        name = name.substr(0, name.length() - 1);
+        NStr::TruncateSpacesInPlace(name);
+    }
 
     if( original_name != name ) {
         ChangeMade(CCleanupChange::eChangeRNAref);
