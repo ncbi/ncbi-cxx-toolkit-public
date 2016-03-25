@@ -11568,11 +11568,14 @@ void CNewCleanup_imp::CreateMissingMolInfo( CBioseq& seq )
 
 void CNewCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_feat& f)
 {
+#if 0
+    //C Toolkit does not remove unnecessary Gene Xrefs
     if ( ! m_IsGpipe ) {
         if (CCleanup::RemoveUnnecessaryGeneXrefs(f, *m_Scope)) {
             ChangeMade(CCleanupChange::eRemoveGeneXref);
         }
     }
+#endif
 }
 
 
