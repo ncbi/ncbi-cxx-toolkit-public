@@ -1105,7 +1105,10 @@ protected:
             l_sock->Close();
             delete l_sock;
         }
-        CollectGarbage();
+        for (unsigned int i = 0; i < 100 /* random number */; ++i) {
+            if (!HasGarbage()) break;
+            CollectGarbage();
+        }
         m_ListeningSockets.clear();
         WRITE_LOG("~CHealthcheckThread() ended");
     }
@@ -1121,6 +1124,8 @@ private:
         CSocketAPI::Poll(m_SocketPool, &rw_timeout, &n_ready);
         /* We check sockets that have some events */
         unsigned int i;
+
+        WRITE_LOG("m_SocketPool has " << m_SocketPool.size() << " sockets");
         for (i = 0; i < m_SocketPool.size(); ++i) {
             if (m_SocketPool[i].m_REvent == eIO_ReadWrite) {
                 /* If this socket has some event */
