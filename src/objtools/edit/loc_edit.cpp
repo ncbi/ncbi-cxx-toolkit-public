@@ -543,7 +543,7 @@ bool CLocationEditPolicy::ApplyPolicyToFeature(CSeq_feat& feat, CScope& scope) c
             break;
     }
 
-    any_change |= feature::AdjustFeaturePartialFlagForLocation(feat);
+    any_change |= AdjustFeaturePartialFlagForLocation(feat);
 
     return any_change;
 }
@@ -766,8 +766,8 @@ bool ApplyPolicyToFeature(const CLocationEditPolicy& policy, const CSeq_feat& or
 
         // retranslate or resynch if coding region
         if (new_feat->IsSetProduct() && new_feat->GetData().IsCdregion()) {
-            if (!retranslate_cds || !feature::RetranslateCDS(*new_feat, scope)) {
-                feature::AdjustForCDSPartials(*new_feat, scope.GetBioseqHandle(new_feat->GetLocation()).GetSeq_entry_Handle());
+            if (!retranslate_cds || !RetranslateCDS(*new_feat, scope)) {
+                AdjustForCDSPartials(*new_feat, scope.GetBioseqHandle(new_feat->GetLocation()).GetSeq_entry_Handle());
             }
         }
     }
