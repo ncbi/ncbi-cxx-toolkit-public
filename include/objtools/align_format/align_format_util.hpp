@@ -65,7 +65,7 @@ static const char kClassInfo[] = "class=\"info\"";
 
 ///entrez
 // .ncbirc alias: ENTREZ
-static const char kEntrezUrl[] = "<a title=\"Show report for <@acc@>\" <@cssInf@>href=\"//www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\" <@target@>>";
+static const char kEntrezUrl[] = "<a title=\"Show report for <@acc@>\" <@cssInf@>href=\"https://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\" <@target@>>";
 
 //.ncbirc alias: ENTREZ_TM
 static const char kEntrezTMUrl[] = "//www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>";
