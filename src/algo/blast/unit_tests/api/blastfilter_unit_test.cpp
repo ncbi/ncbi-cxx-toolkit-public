@@ -545,14 +545,14 @@ BOOST_AUTO_TEST_CASE(WindowMasker)
         { 0, 79,
           100, 122,
           146, 169,
-          225, 247,
+          225, 248,
           286, 329,
           348, 366,
           373, 688,
           701, 1303,
           1450, 1485,
           2858, 2887,
-          3103, 3212,
+          3086, 3212,
           3217, 3735,
           4142, 4162,
           5423, 5443,
@@ -564,8 +564,8 @@ BOOST_AUTO_TEST_CASE(WindowMasker)
           7170, 7189,
           7604, 7623,
           8454, 8476,
-          8829, 8851,
-          8860, 8889 };
+          8829, 8889 
+        };
     
     size_t num_locs = sizeof(intervals) / pair_size;
     BOOST_REQUIRE(0 == (sizeof(intervals) % pair_size));
