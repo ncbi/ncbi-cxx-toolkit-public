@@ -1793,6 +1793,19 @@ static void s_LBOS_Initialize(void)
                    ("DTAB from registry: %s ", s_LBOS_DTABLocal));
     }
 
+    /* Check On/Off status */
+    char* lbos_toggle = g_LBOS_RegGet("CONN", "LBOS_ENABLE", NULL);
+    int lbos_toggled = ConnNetInfo_Boolean(lbos_toggle);
+    free(lbos_toggle);
+    if (lbos_toggled) {
+        CORE_LOG_X(1, eLOG_Note, "LBOS is turned ON in config!");
+    } else {
+        CORE_LOG_X(1, eLOG_Warning, 
+                   "LBOS is NOT turned ON in config! Please provide "
+                   "[CONN]LBOS_ENABLE=1");
+        s_LBOS_TurnedOn = 0;
+        return;
+    }
     /*
      * Try to find LBOS
      */
@@ -1803,7 +1816,11 @@ static void s_LBOS_Initialize(void)
     iter->op    = SERV_LBOS_Open(iter, net_info, NULL);
     ConnNetInfo_Destroy(net_info);
     if (iter->op == NULL) {
-        CORE_LOG_X(1, eLOG_Warning, "Turning LBOS off in this process.");
+        CORE_LOGF_X(1, eLOG_Warning, 
+                    ("Could not connect to LBOS, or "
+                     "http://%s/lbos/text/mlresolve?name=%%2flbos "
+                     "is empty. Turning LBOS off in this "
+                     "process.", s_LBOS_Instance));
         s_LBOS_TurnedOn = 0;
     } else {
         s_LBOS_Close(iter);
@@ -2059,12 +2076,12 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
     // Check if CONNECT_Init() has been run before
     if (g_CORE_GetRequestDtab == NULL) {
         CORE_LOG(eLOG_Critical, 
-                  "LBOS FAIL! Please run CONNECT_Init() prior to using LBOS!\n"
-                  "Example:\n"
-                  "CNcbiRegistry& config = CNcbiApplication::Instance()"
-                  "->GetConfig();\n"
-                  "CONNECT_Init(&config);\n"
-                  "LBOS::Announce(...);");
+                 "LBOS FAIL! Please run CONNECT_Init() prior to using LBOS!\n"
+                 "Example:\n"
+                 "CNcbiRegistry& config = CNcbiApplication::Instance()"
+                 "->GetConfig();\n"
+                 "CONNECT_Init(&config);\n"
+                 "LBOS::Announce(...);");
         s_LBOS_DestroyData(data);
         return NULL;
     }
