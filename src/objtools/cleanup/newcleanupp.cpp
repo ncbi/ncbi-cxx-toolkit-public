@@ -7255,8 +7255,11 @@ void CNewCleanup_imp::x_MendSatelliteQualifier( string &val )
         }
 
         // remove spaces after first colon
-        if( s_RegexpReplace( val, ":[ ]+", ":", 1 ) ) {
-            ChangeMade(CCleanupChange::eChangeQualifiers);
+        size_t pos = NStr::Find(val, ":");
+        if (pos != string::npos && isspace(val.c_str()[pos + 1])) {
+            if (s_RegexpReplace(val, ":[ ]+", ":", 1)) {
+                ChangeMade(CCleanupChange::eChangeQualifiers);
+            }
         }
     } else {
         NStr::TruncateSpacesInPlace( val, NStr::eTrunc_Begin );
