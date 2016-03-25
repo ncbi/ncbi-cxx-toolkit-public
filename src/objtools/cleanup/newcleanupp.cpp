@@ -8013,6 +8013,13 @@ void CNewCleanup_imp::ProtrefBC (
     }
 
     CLEAN_STRING_MEMBER (prot_ref, Desc);
+    if (prot_ref.IsSetDesc() &&
+        NStr::StartsWith(prot_ref.GetDesc(), "'") &&
+        NStr::EndsWith(prot_ref.GetDesc(), "'")) {
+        string desc = prot_ref.GetDesc();
+        desc = desc.substr(1, desc.length() - 2);
+        prot_ref.SetDesc(desc);
+    }
     REMOVE_IF_EMPTY_NAME_ON_PROTREF(prot_ref);
 
     CLEAN_STRING_LIST (prot_ref, Ec);
