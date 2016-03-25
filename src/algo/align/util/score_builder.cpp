@@ -504,6 +504,12 @@ int CScoreBuilder::GetBlastScoreProtToNucl(CScope& scope,
                     Uint1 prot = prot_vec[(int)(q_pos / 3)];
                     Uint1 xlate = AMINOACID_TO_NCBISTDAA[(unsigned)tbl.GetCodonResidue(state)];
 
+                    if (q_pos/3 == 0 &&
+                        prot != xlate &&
+                        prot == AMINOACID_TO_NCBISTDAA[(unsigned)tbl.GetStartResidue(state)]
+                        ) {
+                        xlate = prot;
+                    }
                     int this_score = matrix[prot][xlate];
 
 //                         num_match += (prot == xlate);
