@@ -4557,6 +4557,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NPT	s	Newport Museum and Art Gallery",
 "NPWRC	s	Northern Prairie Research Center",
 "NRC	c	Division of Biological Sciences, National Research Council of Canada",
+"NRC<EGY>	s	National Research Centre",
 "NRCC	s	National Research Council of Canada",
 "NRCS	c	National Reference Center for Streptococci in Aachen",
 "NRIBAS	s	National Research Institute of Biology, Academia Sinica",
