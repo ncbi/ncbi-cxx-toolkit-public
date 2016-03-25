@@ -1500,10 +1500,14 @@ bool s_NameCloseEnough(const CSubSource& s1, const CSubSource& s2)
         return true;
     } else if (!s1.IsSetName() || !s2.IsSetName()) {
         return false;
-    } else if (NStr::Find(s2.GetName(), s1.GetName()) == string::npos) {
-        return false;
-    } else {
+    }
+    const string& n1 = s1.GetName();
+    const string& n2 = s2.GetName();
+
+    if (NStr::Equal(n1, n2)) {
         return true;
+    } else {
+        return false;
     }
 }
 
@@ -2005,7 +2009,7 @@ static bool s_OrgModCompare (
     const string& attrib1 = ( FIELD_IS_SET(omd1, Attrib) ? GET_FIELD (omd1, Attrib) : kEmptyStr );
     const string& attrib2 = ( FIELD_IS_SET(omd2, Attrib) ? GET_FIELD (omd2, Attrib) : kEmptyStr );
 
-    const int attrib_comparison = NStr::CompareNocase( attrib1, attrib2 ) < 0;
+    const int attrib_comparison = NStr::CompareNocase( attrib1, attrib2 );
     if (attrib_comparison < 0) {
         return true;
     } else {
@@ -9017,12 +9021,16 @@ bool CNewCleanup_imp::x_FixMiscRNA(CSeq_feat& feat)
             rna_name != "tmRNA" &&
             rna_name != "misc_RNA")
         {
-            rna.SetExt().SetGen().SetProduct(rna_name);
+            string remainder;
+            rna.SetRnaProductName(rna_name, remainder);
+            if (!NStr::IsBlank(remainder)) {
+                x_AddToComment(feat, remainder);
+            }
             any_change = true;
         }
     }
-
-    if (feat.IsSetQual())
+    string product_name = rna.GetRnaProductName();
+    if (NStr::IsBlank(product_name) && feat.IsSetQual())
     {
         CSeq_feat::TQual::iterator qual_iter = feat.SetQual().begin();
         while (qual_iter != feat.SetQual().end()) {
