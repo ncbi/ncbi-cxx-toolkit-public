@@ -521,8 +521,6 @@ void x_BasicCleanupSeqFeat_ids_ETC( Tcontainer_ncbi_cref_cfeat_id_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_location_location_equiv_ETC( CSeq_loc_equiv & arg0 );
   void x_BasicCleanupSeqFeat_location_location1767_ETC( CSeq_loc & arg0 );
   void x_BasicCleanupSeqFeat_location_ETC( CSeq_loc & arg0 );
-  void x_BasicCleanupSeqFeat_product_product1765_ETC( CSeq_loc & arg0 );
-  void x_BasicCleanupSeqFeat_product_ETC( CSeq_loc & arg0 );
   template< typename Tcontainer_ncbi_cref_cgb_qual_ >
 void x_BasicCleanupSeqFeat_qual_ETC( Tcontainer_ncbi_cref_cgb_qual_ & arg0 );
   void x_BasicCleanupSeqFeat_support_support_inference_E_E_basis_basis_ETC( CEvidenceBasis & arg0 );
