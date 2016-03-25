@@ -207,6 +207,11 @@ protected:
     void x_InitLocsKeys(CTSE_Info& tse);
     void x_InitFeatTableKeys(CTSE_Info& tse);
 
+    void x_AddAlignKeys(CAnnotObject_Info& info,
+                        const CSeq_align& align,
+                        const CMasterSeqSegments* master,
+                        CTSEAnnotObjectMapper& mapper);
+
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
 

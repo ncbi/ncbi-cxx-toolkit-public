@@ -58,6 +58,7 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seqtable/seqtable__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objmgr/seq_feat_handle.hpp>
 
 
@@ -827,38 +828,36 @@ void CSeq_annot_Info::x_InitGraphKeys(CTSE_Info& tse)
 }
 
 
-void CSeq_annot_Info::x_InitAlignKeys(CTSE_Info& tse)
+void CSeq_annot_Info::x_AddAlignKeys(CAnnotObject_Info& info,
+                                     const CSeq_align& align,
+                                     const CMasterSeqSegments* master,
+                                     CTSEAnnotObjectMapper& mapper)
 {
-    _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetAlign().size());
-    size_t object_count = m_ObjectIndex.GetInfos().size();
-    m_ObjectIndex.ReserveMapSize(object_count);
-
-    SAnnotObject_Key key;
-    SAnnotObject_Index index;
-    CConstRef<CMasterSeqSegments> master = tse.GetMasterSeqSegments();
-    vector<CHandleRangeMap> hrmaps;
-
-    CTSEAnnotObjectMapper mapper(tse, GetName());
-
-    NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
-                        m_ObjectIndex.GetInfos() ) {
-        CAnnotObject_Info& info = *it;
-        if ( info.IsRemoved() ) {
-            continue;
+    if ( align.GetSegs().IsDisc() ) {
+        // discontinued alignments should be indexed separately
+        // add keys for each sub-alignment
+        const CSeq_align_set::Tdata& sub_aligns = 
+            align.GetSegs().GetDisc().Get();
+        for ( auto& align_ref : sub_aligns ) {
+            x_AddAlignKeys(info, *align_ref, master, mapper);
         }
-        size_t keys_begin = m_ObjectIndex.GetKeys().size();
-        index.m_AnnotObject_Info = &info;
+    }
+    else {
+        vector<CHandleRangeMap> hrmaps;
+        CAnnotObject_Info::x_ProcessAlign(hrmaps, align, master);
 
-        info.GetMaps(hrmaps, master);
+        SAnnotObject_Index index;
+        index.m_AnnotObject_Info = &info;
         index.m_AnnotLocationIndex = 0;
 
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
                 const CHandleRange& hr = hrit->second;
+                SAnnotObject_Key key;
                 key.m_Range = hr.GetOverlappingRange();
                 if ( key.m_Range.Empty() ) {
-                    ERR_POST_X(3, "Empty region in "<<GetDescription()<<" "<<
-                               MSerial_AsnText<<info.GetAlign());
+                    ERR_POST_X(3, "Empty region in "<<GetDescription()<<
+                               " "<<MSerial_AsnText<<info.GetAlign());
                     continue;
                 }
                 key.m_Handle = hrit->first;
@@ -874,6 +873,27 @@ void CSeq_annot_Info::x_InitAlignKeys(CTSE_Info& tse)
             }
             ++index.m_AnnotLocationIndex;
         }
+    }
+}
+
+
+void CSeq_annot_Info::x_InitAlignKeys(CTSE_Info& tse)
+{
+    _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetAlign().size());
+    size_t object_count = m_ObjectIndex.GetInfos().size();
+    m_ObjectIndex.ReserveMapSize(object_count);
+
+    CConstRef<CMasterSeqSegments> master = tse.GetMasterSeqSegments();
+    CTSEAnnotObjectMapper mapper(tse, GetName());
+
+    NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
+                        m_ObjectIndex.GetInfos() ) {
+        CAnnotObject_Info& info = *it;
+        if ( info.IsRemoved() ) {
+            continue;
+        }
+        size_t keys_begin = m_ObjectIndex.GetKeys().size();
+        x_AddAlignKeys(info, info.GetAlign(), master, mapper);
         x_UpdateObjectKeys(info, keys_begin);
     }
 }
