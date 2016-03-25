@@ -103,6 +103,7 @@ class CAnnotationASN1::CImplementationData {
 public:
     CImplementationData(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc, int genetic_code);
 
+    void ResetASN1();
     void AddModel(const CAlignModel& model);
     CRef<CSeq_entry> main_seq_entry;
 
@@ -120,15 +121,13 @@ private:
 
     string contig_name;
     CRef<CSeq_id> contig_sid;
-    const CResidueVec& contig_seq;
-    CDoubleStrandSeq  contig_ds_seq;
+    CEResidueVec contig_seq;
 
     int gencode;
 
     CBioseq_set::TSeq_set* nucprots;
     CSeq_annot* gnomon_models_annot;
     CSeq_annot::C_Data::TFtable* feature_table;
-    CSeq_annot::C_Data::TAlign*  model_alignments;
     CSeq_annot::C_Data::TFtable* internal_feature_table;
     set<Int8> models_in_internal_feature_table;
 
@@ -148,14 +147,8 @@ void NameAnnot(CSeq_annot& annot, const string& name)
     annot.SetTitleDesc(name);
 }
 
-CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig_name, const CResidueVec& seq, IEvidence& evdnc, int genetic_code) :
-    main_seq_entry(new CSeq_entry),
-    contig_name(a_contig_name),
-    contig_sid(CIdHandler::ToSeq_id(a_contig_name)), contig_seq(seq),
-    gencode(genetic_code),
-    evidence(evdnc)
-{
-    Convert(contig_seq, contig_ds_seq);
+void CAnnotationASN1::CImplementationData::ResetASN1() {
+    main_seq_entry = new CSeq_entry;
 
     CBioseq_set& bioseq_set = main_seq_entry->SetSet();
 
@@ -177,8 +170,16 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     NameAnnot(*seq_annot, "Gnomon internal attributes");
     bioseq_set.SetAnnot().push_back(seq_annot);
     internal_feature_table = &seq_annot->SetData().SetFtable();
+}
 
-    model_alignments = NULL;
+CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig_name, const CResidueVec& seq, IEvidence& evdnc, int genetic_code) :
+    contig_name(a_contig_name),
+    contig_sid(CIdHandler::ToSeq_id(a_contig_name)),
+    gencode(genetic_code),
+    evidence(evdnc)
+{
+    Convert(seq, contig_seq);
+    ResetASN1();
 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     scope.Reset(new CScope(*obj_mgr));
@@ -187,6 +188,10 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     feature_generator->SetFlags(CFeatureGenerator::fCreateGene | CFeatureGenerator::fCreateMrna | CFeatureGenerator::fCreateCdregion | CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna | CFeatureGenerator::fDeNovoProducts);
     feature_generator->SetMinIntron(numeric_limits<TSeqPos>::max());
     feature_generator->SetAllowedUnaligned(0);
+}
+
+void CAnnotationASN1::ResetASN1() {
+    m_data->ResetASN1();
 }
 
 CAnnotationASN1::CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc,
@@ -239,7 +244,7 @@ void CAnnotationASN1::CImplementationData::AddInternalFeature(const SModelData& 
 
 void CAnnotationASN1::CImplementationData::AddModel(const CAlignModel& model)
 {
-    SModelData md(model, contig_ds_seq[ePlus]);
+    SModelData md(model, contig_seq);
 
     CRef< CSeq_align > align = model2spliced_seq_align(md);
     CRef<CSeq_feat> cds_feat;
@@ -259,10 +264,6 @@ void CAnnotationASN1::CImplementationData::AddModel(const CAlignModel& model)
 
         CRef< CUser_object > user_obj = create_ModelEvidence_user_object(model);
         mrna_feat->SetExts().push_back(user_obj);
-
-        if (model_alignments != NULL) {
-            model_alignments->push_back(align);
-        }
 
         AddInternalFeature(md);
     }
@@ -430,7 +431,7 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
             const CAlignModel* m = evidence.GetModel(id);
             if (m != NULL && (m->Type()&CGeneModel::eChain)) { //output supporting chains (gnomon)
                 auto_ptr<SModelData> smd;
-                smd.reset( new SModelData(*m, contig_ds_seq[ePlus]) );
+                smd.reset( new SModelData(*m, contig_seq) );
                 AddInternalFeature(*smd);
                 CreateModelProducts(*smd);
                 aligns->push_back(model2spliced_seq_align(*smd));

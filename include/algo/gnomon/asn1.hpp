@@ -63,6 +63,7 @@ public:
                     int genetic_code = 1);
     ~CAnnotationASN1();
 
+    void ResetASN1();
     void AddModel(const CAlignModel& model);
     CRef<objects::CSeq_entry> GetASN1() const;
     static string ExtractModels(objects::CSeq_entry& seq_entry,
