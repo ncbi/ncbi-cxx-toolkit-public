@@ -53,38 +53,28 @@ public:
 
     CFastaOstreamEx(CNcbiOstream& out);
 
-    virtual void WriteFeature(const CBioseq_Handle& handle, 
-                              const CSeq_feat& feat);
+    virtual void WriteFeature(const CSeq_feat& feat,
+                              CScope& scope);
 
-    virtual void WriteFeatureTitle (const CBioseq_Handle& handle,
-                                    const CSeq_feat& feat);
-
-    virtual void WriteFeature(const CBioseq_set_Handle& handle,
-                              const CSeq_feat& feat);
-               
-    virtual void WriteFeature(CScope& scope, // Should probably be const
-                              const CSeq_feat& feat);
-
-    virtual void WriteFeatureTitle(CScope& scope,
-                                   const CSeq_feat& feat);
+    virtual void WriteFeatureTitle(const CSeq_feat& feat,
+                                   CScope& scope);
 
     void ResetFeatureCount(void);
 
 protected:
 
-    virtual void x_WriteFeatureModifiers(const CBioseq_Handle& handle,
-                                         const CSeq_feat& feat);
+    virtual void x_WriteFeatureAttributes(const CSeq_feat& feat, 
+                                          CScope& scope);
 
-    virtual void x_AddGeneAttributes(const CBioseq_Handle& handle, 
-                                     const CSeq_feat& feat,
+    virtual void x_AddGeneAttributes(const CSeq_feat& feat,
+                                     CScope& scope,
                                      string& defline);
 
-    virtual void x_AddProteinNameAttribute(const CBioseq_Handle& handle,
-                                           const CSeq_feat& feat,
+    virtual void x_AddProteinNameAttribute(const CSeq_feat& feat,
+                                           CScope& scope,
                                            string& defline);
 
-    virtual void x_AddDbxrefAttribute(const CBioseq_Handle& handle,
-                                      const CSeq_feat& feat,
+    virtual void x_AddDbxrefAttribute(const CSeq_feat& feat,
                                       string& defline);
 
     virtual void x_AddReadingFrameAttribute(const CSeq_feat& feat, 
@@ -93,40 +83,38 @@ protected:
     virtual void x_AddncRNAClassAttribute(const CSeq_feat& feat,
                                           string& defline);
 
-    virtual void x_AddRNAProductAttribute(const CBioseq_Handle& handle,
-                                          const CSeq_feat& feat,
+    virtual void x_AddRNAProductAttribute(const CSeq_feat& feat,
                                           string& defline);
 
-    virtual void x_AddPartialAttribute(const CBioseq_Handle& handle, 
-                                       const CSeq_feat& feat, 
+    virtual void x_AddPartialAttribute(const CSeq_feat& feat, 
+                                       CScope& scope,
                                        string& defline);
 
     virtual void x_AddExceptionAttribute(const CSeq_feat& feat, 
                                          string& defline);
 
-    virtual void x_AddProteinIdAttribute(const CBioseq_Handle& handle,
-                                         const CSeq_feat& feat,
+    virtual void x_AddProteinIdAttribute(const CSeq_feat& feat,
+                                         CScope& scope,
                                          string& defline);
     
-    virtual void x_AddTranslationExceptionAttribute(const CBioseq_Handle& handle, 
-                                                    const CSeq_feat& feat,
+    virtual void x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
                                                     string& defline);
 
-    virtual void x_AddLocationAttribute(const CBioseq_Handle& handle,
-                                        const CSeq_feat& feat,
+    virtual void x_AddLocationAttribute(const CSeq_feat& feat,
+                                        CScope& scope,
                                         string& defline);
 
-    virtual string x_GetCDSIdString(const CBioseq_Handle& handle,
-                                    const CSeq_feat& cds);
+    virtual string x_GetCDSIdString(const CSeq_feat& cds,
+                                    CScope& scope);
 
-    virtual string x_GetRNAIdString(const CBioseq_Handle& handle,
-                                    const CSeq_feat& rna);
+    virtual string x_GetRNAIdString(const CSeq_feat& rna,
+                                    CScope& scope);
 
-    virtual string x_GetProtIdString(const CBioseq_Handle& handle,
-                                     const CSeq_feat& prot);
+    virtual string x_GetProtIdString(const CSeq_feat& prot,
+                                     CScope& scope);
 
-    virtual string x_GetGeneIdString(const CBioseq_Handle& handle,
-                                     const CSeq_feat& gene);
+    virtual string x_GetGeneIdString(const CSeq_feat& gene,
+                                     CScope& scope);
 
     TSeqPos m_FeatCount;
 };

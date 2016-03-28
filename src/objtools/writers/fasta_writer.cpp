@@ -66,65 +66,8 @@ void CFastaOstreamEx::ResetFeatureCount(void)
 }
 
 
-void CFastaOstreamEx::WriteFeature(CScope& scope,
-                                   const CSeq_feat& feat)
-{
-    if (!feat.IsSetData() ||
-        !feat.IsSetLocation()) {
-        return;
-    }
-
-    auto bsh = scope.GetBioseqHandle(feat.GetLocation());
-
-    if (!bsh) {
-        return;
-    }
-
-    WriteFeature(bsh, feat);
-}
-
-
-void CFastaOstreamEx::WriteFeatureTitle(CScope& scope, 
-                                        const CSeq_feat& feat)
-{
-
-    if (!feat.IsSetData() ||
-        !feat.IsSetLocation()) {
-        return;
-    }
-
-    auto bsh = scope.GetBioseqHandle(feat.GetLocation());
-
-    if (!bsh) {
-        return;
-    }
-
-    WriteFeatureTitle(bsh, feat);
-}
-
-
-void CFastaOstreamEx::WriteFeature(const CBioseq_set_Handle& handle,
-                                   const CSeq_feat& feat)
-{
-    if (!feat.IsSetData()) {
-        return;
-    }
-
-    auto bsh = handle.GetScope().GetBioseqHandle(feat.GetLocation());
-
-    if (!bsh) {
-        return;
-    }
-
-
-    WriteFeature(bsh, feat);
-
-
-}
-
-
-void CFastaOstreamEx::WriteFeature(const CBioseq_Handle& handle, 
-                                   const CSeq_feat& feat)
+void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat, 
+                                   CScope& scope)
 {
     if (!feat.IsSetData()) {
         return;
@@ -136,11 +79,16 @@ void CFastaOstreamEx::WriteFeature(const CBioseq_Handle& handle,
         return;
     }
 
-    WriteFeatureTitle(handle, feat);
+    auto bsh = scope.GetBioseqHandle(feat.GetLocation());
+    if (!bsh) {
+        return;
+    }
+
+    WriteFeatureTitle(feat, scope);
     if (!feat.GetData().IsCdregion() ||
         !feat.GetData().GetCdregion().IsSetFrame() ||
         feat.GetData().GetCdregion().GetFrame()==1) {
-        WriteSequence(handle, &(feat.GetLocation()), CSeq_loc::fMerge_AbuttingOnly);
+        WriteSequence(bsh, &(feat.GetLocation()), CSeq_loc::fMerge_AbuttingOnly);
         return;
     }
 
@@ -155,14 +103,14 @@ void CFastaOstreamEx::WriteFeature(const CBioseq_Handle& handle,
     auto untranslated_loc = Ref(new CSeq_loc(*seq_id, loc_start, loc_start+frame-2, strand));
 
     auto translated_loc = sequence::Seq_loc_Subtract(loc, *untranslated_loc, 
-                                                CSeq_loc::fMerge_AbuttingOnly, &(handle.GetScope()));
+                                                CSeq_loc::fMerge_AbuttingOnly, &scope);
 
-    WriteSequence(handle, translated_loc.GetPointer(), CSeq_loc::fMerge_AbuttingOnly);
+    WriteSequence(bsh, translated_loc.GetPointer(), CSeq_loc::fMerge_AbuttingOnly);
 }
 
 
-void CFastaOstreamEx::WriteFeatureTitle(const CBioseq_Handle& handle, 
-                                        const CSeq_feat& feat)
+void CFastaOstreamEx::WriteFeatureTitle(const CSeq_feat& feat,
+                                        CScope& scope)
 {
     if (!feat.IsSetData()) {
         return;
@@ -170,11 +118,11 @@ void CFastaOstreamEx::WriteFeatureTitle(const CBioseq_Handle& handle,
 
     string id_string;
     if (feat.GetData().IsCdregion()) {
-        id_string = x_GetCDSIdString(handle, feat);
+        id_string = x_GetCDSIdString(feat, scope);
     } else if (feat.GetData().IsGene()) {
-        id_string = x_GetGeneIdString(handle, feat);
+        id_string = x_GetGeneIdString(feat, scope);
     } else if (feat.GetData().IsRna()) {
-        id_string = x_GetRNAIdString(handle, feat);
+        id_string = x_GetRNAIdString(feat, scope);
     }
 
     if (id_string.empty()) { // skip - maybe throw an exception instead
@@ -183,17 +131,17 @@ void CFastaOstreamEx::WriteFeatureTitle(const CBioseq_Handle& handle,
    
     m_Out << ">lcl|" << id_string;
 
-    x_WriteFeatureModifiers(handle, feat);
+    x_WriteFeatureAttributes(feat, scope);
 }
 
 
-string CFastaOstreamEx::x_GetCDSIdString(const CBioseq_Handle& handle,
-                                              const CSeq_feat& cds)
+string CFastaOstreamEx::x_GetCDSIdString(const CSeq_feat& cds,
+                                         CScope& scope)
 {
     // Need to put a whole bunch of checks in here
     const auto& src_loc = cds.GetLocation();
 
-    auto id_string  = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
+    auto id_string  = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
     id_string += "_cds";
 
 
@@ -202,7 +150,7 @@ string CFastaOstreamEx::x_GetCDSIdString(const CBioseq_Handle& handle,
         const auto& product = cds.GetProduct();
         _ASSERT(product.IsWhole());
         try {
-            auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), handle.GetScope());
+            auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), scope);
             id_string += "_" + prod_accver;
         } catch (...) {
             // Move on if there's a problem getting the product accession
@@ -216,8 +164,8 @@ string CFastaOstreamEx::x_GetCDSIdString(const CBioseq_Handle& handle,
 }
 
 
-string CFastaOstreamEx::x_GetRNAIdString(const CBioseq_Handle& handle,
-                                               const CSeq_feat& feat)
+string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat, 
+                                         CScope& scope)
 {
     if (!feat.IsSetData() ||
         !feat.GetData().IsRna()) {
@@ -227,7 +175,7 @@ string CFastaOstreamEx::x_GetRNAIdString(const CBioseq_Handle& handle,
 
     const auto& src_loc = feat.GetLocation();
 
-    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
+    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
 
     if (!feat.GetData().GetRna().IsSetType()) {
         return id_string +  "_miscrna_" + to_string(++m_FeatCount);
@@ -287,19 +235,19 @@ string CFastaOstreamEx::x_GetRNAIdString(const CBioseq_Handle& handle,
 }
 
 
-string CFastaOstreamEx::x_GetProtIdString(const CBioseq_Handle& handle,
-                                               const CSeq_feat& prot) 
+string CFastaOstreamEx::x_GetProtIdString(const CSeq_feat& prot,
+                                          CScope& scope) 
 {
     const auto& src_loc = prot.GetLocation();
 
-    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
+    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
     id_string += "_prot";
 
     if (prot.IsSetProduct()) {
         const auto& product = prot.GetProduct();
         _ASSERT(product.IsWhole());
         try {
-            auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), handle.GetScope());
+            auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), scope);
             id_string += "_" + prod_accver;
         } catch (...) {
             // Move on...
@@ -311,21 +259,21 @@ string CFastaOstreamEx::x_GetProtIdString(const CBioseq_Handle& handle,
 }
 
 
-string CFastaOstreamEx::x_GetGeneIdString(const CBioseq_Handle& handle, 
-                                               const CSeq_feat& gene)
+string CFastaOstreamEx::x_GetGeneIdString(const CSeq_feat& gene,
+                                          CScope& scope)
 {
     const auto& src_loc = gene.GetLocation();
     
-    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), handle.GetScope());
+    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
     id_string += "_gene_" + to_string(++m_FeatCount);
 
     return id_string;
 }
 
 
-void CFastaOstreamEx::x_AddGeneAttributes(const CBioseq_Handle& handle, 
-                                               const CSeq_feat& feat,
-                                               string& defline)
+void CFastaOstreamEx::x_AddGeneAttributes(const CSeq_feat& feat,
+                                          CScope& scope,
+                                          string& defline)
 {
     if (!feat.IsSetData()) {
         return;
@@ -334,7 +282,7 @@ void CFastaOstreamEx::x_AddGeneAttributes(const CBioseq_Handle& handle,
     auto gene = Ref(new CGene_ref());
 
     if (feat.GetData().IsCdregion()) {
-        auto gene_feat = sequence::GetBestGeneForCds(feat, handle.GetScope());
+        auto gene_feat = sequence::GetBestGeneForCds(feat, scope);
         if (gene_feat.Empty() ||
             !gene_feat->IsSetData() ||
             !gene_feat->GetData().IsGene()) {
@@ -362,9 +310,8 @@ void CFastaOstreamEx::x_AddGeneAttributes(const CBioseq_Handle& handle,
 }
 
 
-void CFastaOstreamEx::x_AddDbxrefAttribute(const CBioseq_Handle& handle,
-                                                const CSeq_feat& feat,
-                                                string& defline)
+void CFastaOstreamEx::x_AddDbxrefAttribute(const CSeq_feat& feat,
+                                           string& defline)
 {
     if (feat.IsSetDbxref()) {
         string dbxref_string = "";
@@ -390,9 +337,9 @@ void CFastaOstreamEx::x_AddDbxrefAttribute(const CBioseq_Handle& handle,
 }
 
 
-void CFastaOstreamEx::x_AddProteinNameAttribute(const CBioseq_Handle& handle, 
-                                              const CSeq_feat& feat,
-                                              string& defline)
+void CFastaOstreamEx::x_AddProteinNameAttribute(const CSeq_feat& feat,
+                                                CScope& scope,
+                                                string& defline)
 {
     string protein_name;
     if (feat.GetData().IsProt() &&
@@ -412,7 +359,7 @@ void CFastaOstreamEx::x_AddProteinNameAttribute(const CBioseq_Handle& handle,
         if (feat.IsSetProduct()) { // Copied from gff3_writer
             const auto pId = feat.GetProduct().GetId();
             if (pId) {
-                auto product_handle = handle.GetScope().GetBioseqHandle(*pId);
+                auto product_handle = scope.GetBioseqHandle(*pId);
                 if (product_handle) {
                     SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
                     sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
@@ -453,11 +400,11 @@ void CFastaOstreamEx::x_AddReadingFrameAttribute(const CSeq_feat& feat,
 }
 
 
-void CFastaOstreamEx::x_AddPartialAttribute(const CBioseq_Handle& handle, 
-                                          const CSeq_feat& feat,
-                                          string& defline)
+void CFastaOstreamEx::x_AddPartialAttribute(const CSeq_feat& feat,
+                                            CScope& scope,
+                                            string& defline)
 {
-    auto partial = sequence::SeqLocPartialCheck(feat.GetLocation(), &(handle.GetScope()));
+    auto partial = sequence::SeqLocPartialCheck(feat.GetLocation(), &scope);
     string partial_string = "";
     if (partial & sequence::eSeqlocPartial_Nostart) {
         partial_string += "5\'";
@@ -476,8 +423,7 @@ void CFastaOstreamEx::x_AddPartialAttribute(const CBioseq_Handle& handle,
 }
 
 
-void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CBioseq_Handle& handle,
-                                                         const CSeq_feat& feat,
+void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
                                                          string& defline)
 {
     if (!feat.IsSetData() ||
@@ -509,7 +455,7 @@ void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CBioseq_Handle& h
 
 
 void CFastaOstreamEx::x_AddExceptionAttribute(const CSeq_feat& feat, 
-                                                   string& defline)
+                                              string& defline)
 {
     if (feat.IsSetExcept_text()) {
         auto except_string = feat.GetExcept_text();
@@ -520,14 +466,14 @@ void CFastaOstreamEx::x_AddExceptionAttribute(const CSeq_feat& feat,
 }
 
 
-void CFastaOstreamEx::x_AddProteinIdAttribute(const CBioseq_Handle& handle,
-                                                   const CSeq_feat& feat,
-                                                   string& defline)
+void CFastaOstreamEx::x_AddProteinIdAttribute(const CSeq_feat& feat,
+                                              CScope& scope,
+                                              string& defline)
 {
     if (feat.GetData().IsCdregion() &&
         feat.IsSetProduct() &&
         feat.GetProduct().GetId()) {
-        string protein_id = sequence::GetAccessionForId(*(feat.GetProduct().GetId()), handle.GetScope());
+        string protein_id = sequence::GetAccessionForId(*(feat.GetProduct().GetId()), scope);
         if (!protein_id.empty()) {
             defline += " [protein_id=" + protein_id + "]";
         }
@@ -535,13 +481,22 @@ void CFastaOstreamEx::x_AddProteinIdAttribute(const CBioseq_Handle& handle,
 }
 
 
-void CFastaOstreamEx::x_AddLocationAttribute(const CBioseq_Handle& handle, 
-                                             const CSeq_feat& feat, 
+void CFastaOstreamEx::x_AddLocationAttribute(const CSeq_feat& feat, 
+                                             CScope& scope,
                                              string& defline)
 {
+
     CFlatFileConfig cfg;
     CFlatFileContext ffctxt(cfg);
-    CBioseqContext ctxt(handle, ffctxt);
+
+
+    auto bsh = scope.GetBioseqHandle(feat.GetLocation());
+    if (!bsh) {
+        return;
+    }
+
+
+    CBioseqContext ctxt(bsh, ffctxt);
     
 
     auto loc_string = CFlatSeqLoc(feat.GetLocation(), ctxt).GetString();
@@ -626,8 +581,7 @@ static const string& s_AaName(int aa)
 
 
 
-void CFastaOstreamEx::x_AddRNAProductAttribute(const CBioseq_Handle& handle,
-                                               const CSeq_feat& feat,
+void CFastaOstreamEx::x_AddRNAProductAttribute(const CSeq_feat& feat,
                                                string& defline)
 {
     if (!feat.IsSetData() ||
@@ -687,8 +641,8 @@ void CFastaOstreamEx::x_AddRNAProductAttribute(const CBioseq_Handle& handle,
 
 
 
-void CFastaOstreamEx::x_WriteFeatureModifiers(const CBioseq_Handle& handle, 
-                                              const CSeq_feat& feat)
+void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
+                                               CScope& scope)
 {
 
     string defline = "";
@@ -696,27 +650,28 @@ void CFastaOstreamEx::x_WriteFeatureModifiers(const CBioseq_Handle& handle,
         return;
     }
 
-    x_AddGeneAttributes(handle, feat, defline);
 
-    x_AddDbxrefAttribute(handle, feat, defline);
+    x_AddGeneAttributes(feat, scope, defline);
 
-    x_AddProteinNameAttribute(handle, feat, defline);
+    x_AddDbxrefAttribute(feat, defline);
 
-    x_AddRNAProductAttribute(handle, feat, defline);
+    x_AddProteinNameAttribute(feat, scope, defline);
+
+    x_AddRNAProductAttribute(feat, defline);
 
     x_AddncRNAClassAttribute(feat,defline);
 
     x_AddReadingFrameAttribute(feat, defline);
 
-    x_AddPartialAttribute(handle, feat, defline);
+    x_AddPartialAttribute(feat, scope, defline);
 
-    x_AddTranslationExceptionAttribute(handle, feat, defline);
+    x_AddTranslationExceptionAttribute(feat, defline);
 
     x_AddExceptionAttribute(feat, defline);
 
-    x_AddProteinIdAttribute(handle, feat, defline);
+    x_AddProteinIdAttribute(feat, scope, defline);
 
-    x_AddLocationAttribute(handle, feat, defline);
+    x_AddLocationAttribute(feat, scope, defline);
 
     m_Out << defline << "\n";
 }
