@@ -342,6 +342,10 @@ DEFINE_STATIC_FAST_MUTEX(s_WriteLogLock);
 #define PORT_STR_HELPER(port) #port
 #define PORT_STR(port) PORT_STR_HELPER(port)
 
+const int kPortsNeeded = 9;
+static CSafeStatic<vector<unsigned short>> s_ListeningPorts;
+
+
 #include "test_ncbi_lbos_mocks.hpp"
 
 #define WRITE_LOG(text)                                                       \
@@ -938,10 +942,7 @@ static void s_CleanDTabs() {
     }
 }
 
-const int kPortsNeeded = 9;
-static CSafeStatic<vector<unsigned short>> s_ListeningPorts;
-
-static string s_PortStr(int i = 0) 
+static string s_PortStr(unsigned int i = 0) 
 {
     if (i >= s_ListeningPorts->size()) {
         WRITE_LOG("Error index in s_PortStr(): " << i);

@@ -694,9 +694,9 @@ EIO_Status s_RealReadAnnounce(CONN              conn,
 {
     EIO_Status status = eIO_Timeout;
     size_t total_read = 0;
-    CListeningSocket listening_sock(PORT);
+    CListeningSocket listening_sock((*s_ListeningPorts)[PORT_N]);
     CSocket sock;
-    listening_sock.Listen(PORT);
+    listening_sock.Listen((*s_ListeningPorts)[PORT_N]);
     CONN_Flush(conn); //Send request for announcement
     s_AnswerHealthcheck(listening_sock); // answer the healthcheck
     do { // Get answer from LBOS after it received response for healthcheck
