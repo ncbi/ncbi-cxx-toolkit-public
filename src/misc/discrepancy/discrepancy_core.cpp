@@ -411,6 +411,55 @@ void CDiscrepancyContext::Summarize()
 }
 
 
+TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all) const
+{
+    TReportItemList out;
+    ITERATE (vector<CRef<CDiscrepancyGroup> >, it, m_List) {
+        TReportItemList tmp = (*it)->Collect(tests, false);
+        ITERATE(TReportItemList, tt, tmp) {
+            out.push_back(*tt);
+        }
+    }
+    if (!m_Test.empty() && tests.find(m_Test) != tests.end()) {
+        TReportItemList tmp = tests[m_Test]->GetReport();
+        ITERATE(TReportItemList, tt, tmp) {
+            out.push_back(*tt);
+        }
+        tests.erase(m_Test);
+    }
+    if (!m_Name.empty()) {
+        TReportObjectList objs;
+        TReportObjectSet hash;
+        CRef<CDiscrepancyItem> di(new CDiscrepancyItem(m_Name));
+        di->m_Subs = out;
+        ITERATE (TReportItemList, tt, out) {
+            TReportObjectList details = (*tt)->GetDetails();
+            NON_CONST_ITERATE(TReportObjectList, ob, details) {
+                CReportNode::Add(objs, hash, **ob);
+            }
+            if ((*tt)->CanAutofix()) {
+                di->m_Autofix = true;
+            }
+            if ((*tt)->IsFatal()) {
+                di->m_Fatal = true;
+            }
+        }
+        di->m_Objs = objs;
+        out.clear();
+        out.push_back(CRef<CReportItem>(di));
+    }
+    if (all) {
+        ITERATE(TDiscrepancyCaseMap, it, tests) {
+            TReportItemList list = it->second->GetReport();
+            ITERATE(TReportItemList, it, list) {
+                out.push_back(*it);
+            }
+        }
+    }
+    return out;
+}
+
+
 DISCREPANCY_LINK_MODULE(discrepancy_case);
 DISCREPANCY_LINK_MODULE(suspect_product_names);
 DISCREPANCY_LINK_MODULE(division_code_conflicts);

@@ -154,14 +154,16 @@ class CReportNode;
 class CDiscrepancyItem : public CReportItem
 {
 public:
+    CDiscrepancyItem(const string& s) : m_Msg(s), m_Autofix(false), m_Fatal(false), m_Ext(false) {}
     CDiscrepancyItem(CDiscrepancyCase& t, const string& s) : m_Msg(s), m_Autofix(false), m_Fatal(false), m_Ext(false), m_Test(&t) {}
-    string GetTitle(void) const { return m_Test->GetName();}
+    string GetTitle(void) const { return m_Test->GetName(); }
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
     TReportItemList GetSubitems(void) const { return m_Subs;}
     bool CanAutofix(void) const { return m_Autofix; }
     bool IsFatal(void) const { return m_Fatal; }
     bool IsExtended(void) const { return m_Ext; }
+    bool IsReal(void) const { return !m_Test.Empty(); }
     CRef<CAutofixReport> Autofix(CScope& scope);
 protected:
     string m_Msg;
@@ -172,6 +174,7 @@ protected:
     TReportItemList m_Subs;
     CRef<CDiscrepancyCase> m_Test;
 friend class CReportNode;
+friend class CDiscrepancyGroup;
 };
 
 

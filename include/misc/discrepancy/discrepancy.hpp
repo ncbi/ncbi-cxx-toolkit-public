@@ -76,6 +76,7 @@ public:
     virtual bool CanAutofix(void) const = 0;
     virtual bool IsFatal(void) const = 0;
     virtual bool IsExtended(void) const = 0;
+    virtual bool IsReal(void) const = 0;
     virtual CRef<CAutofixReport> Autofix(objects::CScope&) = 0;
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
@@ -122,6 +123,20 @@ protected:
     float m_SesameStreetCutoff;
     bool m_KeepRef;     // set true to allow autofix
     void* m_UserData;
+};
+
+
+class NCBI_DISCREPANCY_EXPORT CDiscrepancyGroup : public CObject
+{
+public:
+    CDiscrepancyGroup(const string& name = "", const string& test = "") : m_Name(name), m_Test(test) {}
+    void Add(CRef<CDiscrepancyGroup> child) { m_List.push_back(child); }
+    TReportItemList Collect(TDiscrepancyCaseMap& tests, bool all = true) const;
+
+protected:
+    string m_Name;
+    string m_Test;
+    vector<CRef<CDiscrepancyGroup> > m_List;
 };
 
 
