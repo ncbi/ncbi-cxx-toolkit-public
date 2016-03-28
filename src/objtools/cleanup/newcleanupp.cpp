@@ -4675,7 +4675,6 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
     s_TokenizeTRnaString (comment, head);
     bool justt = true;
     list<string>::const_iterator head_iter = head.begin();
-    bool is_A = false;
     bool is_ambig = false;
     for( ; head_iter != head.end(); ++head_iter ) {
         const string &str = *head_iter;
@@ -4686,9 +4685,7 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
         } else {
             curraa = s_FindTrnaAA (str);
         }
-        if( curraa == 'A' && str.length() == 1 ) {
-            is_A = true;
-        } else if (curraa != '\0') {
+        if(curraa != '\0') {
             if (aa == '\0') {
                 aa = curraa;
             } else if( curraa != aa) {
@@ -4713,9 +4710,6 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
                 justt = false;
             }
         }
-    }
-    if( is_A && aa == 0 ) {
-        aa = 'A';
     }
     if( is_ambig ) {
         aa = 0;
@@ -5839,54 +5833,6 @@ void CNewCleanup_imp::x_SeqFeatTRNABC( CSeq_feat& feat, CTrna_ext & tRNA )
         const int old_value = tRNA.GetAa().GetIupacaa();
         tRNA.SetAa().SetNcbieaa( old_value );
         ChangeMade(CCleanupChange::eChange_tRna);
-    }
-
-    if ( FIELD_IS_SET(feat, Comment) ) {
-        char aa = '\0';
-        char new_aa = '\0';
-        if( tRNA.IsSetAa() ) {
-            aa = s_ConvertTrnaAaToLetter( tRNA.GetAa(), CSeqUtil::e_Ncbieaa );
-        }
-        bool justTrnaText = false;
-        string tRNA_codon;
-        if (aa != 'X') {
-            new_aa = s_ParseSeqFeatTRnaString ( comment, &justTrnaText, tRNA_codon, true);
-            if (aa == '\0' && new_aa != '\0') {
-                aa = new_aa;
-                tRNA.SetAa().SetNcbieaa( new_aa );
-                ChangeMade(CCleanupChange::eChange_tRna);
-            }
-            if (aa != '\0' && aa == new_aa) {
-                if (justTrnaText) {
-                    CTrna_ext::TCodon & arg_codon = GET_MUTABLE( tRNA, Codon );
-                    if( arg_codon.size() < tRNA_codon.length() ) {
-                        copy( tRNA_codon.begin() + arg_codon.size(), tRNA_codon.end(), back_inserter(arg_codon) );
-                        ChangeMade(CCleanupChange::eChange_tRna);
-                    }
-                    if ( FIELD_IS_SET(feat, Comment) && comment != "fMet" ) {
-                        RESET_FIELD(feat, Comment);
-                        ChangeMade(CCleanupChange::eChangeComment);
-                    }
-                }
-            }
-        } else {
-            aa = s_ParseSeqFeatTRnaString ( comment, &justTrnaText, tRNA_codon, true);
-            if (aa != '\0') {
-                tRNA.SetAa().SetNcbieaa( aa );
-                ChangeMade(CCleanupChange::eChange_tRna);
-                if (justTrnaText) {
-                    CTrna_ext::TCodon & arg_codon = tRNA.SetCodon();
-                    if( arg_codon.size() < tRNA_codon.length() ) {
-                        copy( tRNA_codon.begin() + arg_codon.size(), tRNA_codon.end(), back_inserter(arg_codon) );
-                        ChangeMade(CCleanupChange::eChange_tRna);
-                    }
-                    if ( FIELD_IS_SET(feat, Comment) && comment != "fMet" ) {
-                        RESET_FIELD(feat, Comment);
-                        ChangeMade(CCleanupChange::eChangeComment);
-                    }
-                }
-            }
-        }
     }
 
     if (! CODON_ON_TRNAEXT_IS_SORTED(tRNA, s_CodonCompare)) {
@@ -9295,7 +9241,7 @@ void CNewCleanup_imp::RnaFeatBC (
 
     // if not tRNA and ext is tRNA and tRNA is empty, remove ext.tRNA
     if (rna.IsSetType() && 
-        (rna.GetType() == CRNA_ref::eType_mRNA || rna.GetType() == CRNA_ref::eType_rRNA) &&
+        (rna.GetType() == CRNA_ref::eType_mRNA || rna.GetType() == CRNA_ref::eType_rRNA || CRNA_ref::eType_tRNA) &&
         rna.IsSetExt() && rna.GetExt().IsTRNA() &&
         s_IsEmpty(rna.GetExt().GetTRNA())) {
         rna.ResetExt();
@@ -11568,14 +11514,11 @@ void CNewCleanup_imp::CreateMissingMolInfo( CBioseq& seq )
 
 void CNewCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_feat& f)
 {
-#if 0
-    //C Toolkit does not remove unnecessary Gene Xrefs
-    if ( ! m_IsGpipe ) {
+    if ( ! m_IsGpipe && !m_IsEmblOrDdbj) {
         if (CCleanup::RemoveUnnecessaryGeneXrefs(f, *m_Scope)) {
             ChangeMade(CCleanupChange::eRemoveGeneXref);
         }
     }
-#endif
 }
 
 
