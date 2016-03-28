@@ -11204,8 +11204,37 @@ void CNewCleanup_imp::x_BioseqSetNucProtEC(CBioseq_set & bioseq_set)
 }
 
 
+void CNewCleanup_imp::x_RemoveNestedGenBankSet(CBioseq_set & bioseq_set)
+{
+    if (bioseq_set.IsSetSeq_set() && bioseq_set.GetSeq_set().size() == 1 &&
+        bioseq_set.GetSeq_set().front()->IsSet() &&
+        bioseq_set.GetSeq_set().front()->GetSet().IsSetClass() &&
+        bioseq_set.GetSeq_set().front()->GetSet().GetClass() == CBioseq_set::eClass_genbank) {
+        CBioseq_set& child = bioseq_set.SetSeq_set().front()->SetSet();
+        if (bioseq_set.IsSetAnnot()) {
+            ITERATE(CBioseq_set::TAnnot, it, bioseq_set.GetAnnot()) {
+                CRef<CSeq_annot> cpy(new CSeq_annot());
+                cpy->Assign(**it);
+                child.SetAnnot().push_back(cpy);
+            }
+        }
+        if (bioseq_set.IsSetDescr()) {
+            ITERATE(CBioseq_set::TDescr::Tdata, it, bioseq_set.GetDescr().Get()) {
+                CRef<CSeqdesc> cpy(new CSeqdesc());
+                cpy->Assign(**it);
+                child.SetDescr().Set().push_back(cpy);
+            }
+        }
+        bioseq_set.Assign(child);
+    }
+
+}
+
+
 void CNewCleanup_imp::x_BioseqSetGenBankEC(CBioseq_set & bioseq_set)
 {
+    // clean up nested GenBank sets
+    x_RemoveNestedGenBankSet(bioseq_set);
     //propagate source descriptors to set components
     if (bioseq_set.IsSetDescr() && bioseq_set.IsSetSeq_set() && !bioseq_set.GetSeq_set().empty()) {  
         CBioseq_set::TDescr::Tdata::iterator it = bioseq_set.SetDescr().Set().begin();
