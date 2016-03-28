@@ -229,8 +229,8 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedTarget(
         genomicId.GetLabel(&genomicLabel, CSeq_id::eContent);
     }
 
-    string seqStart = NStr::IntToString(exon.GetGenomic_start());
-    string seqStop = NStr::IntToString(exon.GetGenomic_end());
+    string seqStart = NStr::IntToString(exon.GetGenomic_start()+1);
+    string seqStop = NStr::IntToString(exon.GetGenomic_end()+1);
     string seqStrand = "+";
     if (spliced.IsSetGenomic_strand()  &&  
             spliced.GetGenomic_strand() == objects::eNa_strand_minus) {
