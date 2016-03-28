@@ -1204,7 +1204,6 @@ void CFeatureItem::x_AddQualPseudo(
 //  ----------------------------------------------------------------------------
 {
     if ( !pseudo || 
-        subtype == CSeqFeatData::eSubtype_repeat_region ||
         subtype == CSeqFeatData::eSubtype_mobile_element ||
         subtype == CSeqFeatData::eSubtype_centromere ||
         subtype == CSeqFeatData::eSubtype_telomere ) 
@@ -1644,8 +1643,7 @@ void CFeatureItem::x_AddQuals(
     bool suppressed = false;
 
     const bool gene_forbidden_if_genbank = 
-        ( subtype == CSeqFeatData::eSubtype_repeat_region || 
-          subtype == CSeqFeatData::eSubtype_mobile_element ||
+        ( subtype == CSeqFeatData::eSubtype_mobile_element ||
           subtype == CSeqFeatData::eSubtype_centromere ||
           subtype == CSeqFeatData::eSubtype_telomere );
 
@@ -1677,38 +1675,6 @@ void CFeatureItem::x_AddQuals(
             }
         }
     }
-
-    /*
-    if ( feat_gene_xref && feat_gene_xref->IsSuppressed() ) {
-        // suppress gene by overlap
-    } else if ( type != CSeqFeatData::e_Gene &&
-         subtype != CSeqFeatData::eSubtype_operon &&
-         subtype != CSeqFeatData::eSubtype_gap && 
-         (  ! gene_forbidden_if_genbank || is_not_genbank ) )
-    {
-        CMappedFeat mapped_gene = GetBestGeneForFeat (m_Feat, m_Feat_Tree);
-        if (mapped_gene && subtype != CSeqFeatData::eSubtype_primer_bind) {
-            gene_feat = &mapped_gene.GetOriginalFeature();
-            gene_ref = &gene_feat->GetData().GetGene();
-        } else {
-            // e.g., check sig_peptide for gene overlapping parent CDS
-            CSeq_feat_Handle parent_feat_handle;
-            if( parentFeatureItem ) {
-                parent_feat_handle = parentFeatureItem->GetFeat();
-            }
-            CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
-                gene_feat, parent_feat_handle );
-        }
-
-    } else if( ! is_not_genbank && gene_forbidden_if_genbank ) {
-        // We include a gene_ref on the genbank-forbidden features if there's
-        // an explicit xref and the referenced gene does not exist
-        // e.g. NC_014095.1
-        if( feat_gene_xref && ! CGeneFinder::ResolveGeneXref(feat_gene_xref, ctx.GetTopLevelEntry()) ) {
-            gene_ref = feat_gene_xref;
-        }
-    }
-    */
 
     bool pseudo = x_GetPseudo(gene_ref, gene_feat );
 
@@ -3001,6 +2967,10 @@ void CFeatureItem::x_AddQualsGene(
 
     const bool is_gene = (subtype == CSeqFeatData::eSubtype_gene);
 
+    const bool okay_to_propage = (subtype != CSeqFeatData::eSubtype_mobile_element &&
+                                  subtype != CSeqFeatData::eSubtype_centromere &&
+                                  subtype != CSeqFeatData::eSubtype_telomere);
+
     const string* locus = (gene_ref->IsSetLocus()  &&  !NStr::IsBlank(gene_ref->GetLocus())) ?
         &gene_ref->GetLocus() : NULL;
     const string* desc = (gene_ref->IsSetDesc() &&  !NStr::IsBlank(gene_ref->GetDesc())) ?
@@ -3012,12 +2982,11 @@ void CFeatureItem::x_AddQualsGene(
         &gene_ref->GetLocus_tag() : 0;
 
     //  gene:
-//    if ( subtype != CSeqFeatData::eSubtype_repeat_region ) {
-    if ( !from_overlap  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
+    if ( !from_overlap  ||  okay_to_propage ) {
         if ( locus != 0 ) {
             m_Gene = *locus;
         } 
-        else if ( ( desc != 0 ) && (subtype != CSeqFeatData::eSubtype_repeat_region) ) {
+        else if ( ( desc != 0 ) && okay_to_propage ) {
             m_Gene = *desc;
         }
         else if (syn != NULL) {
@@ -3031,15 +3000,9 @@ void CFeatureItem::x_AddQualsGene(
             }
         }
     }
-    else { // for repeat regions
-//        if ( from_overlap && locus != 0 ) {
-//            m_Gene = *locus;
-//            x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
-//        }
-    }
 
     //  locus tag:
-    if ( gene_ref  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
+    if ( gene_ref  ||  okay_to_propage ) {
         if (locus != NULL) {
             if (locus_tag != NULL) {
                 x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag, CFormatQual::eTrim_WhitespaceOnly));
@@ -3051,7 +3014,7 @@ void CFeatureItem::x_AddQualsGene(
     }
 
     //  gene desc:
-    if ( gene_ref  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
+    if ( gene_ref  ||  okay_to_propage ) {
         if (locus != NULL) {
             if (is_gene  &&  desc != NULL) {
                 string desc_cleaned = *desc;
@@ -3067,7 +3030,7 @@ void CFeatureItem::x_AddQualsGene(
     }
 
     //  gene syn:
-    if ( gene_ref  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
+    if ( gene_ref  ||  okay_to_propage ) {
         if (locus != NULL) {
             if (syn != NULL) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
@@ -3100,8 +3063,7 @@ void CFeatureItem::x_AddQualsGene(
         // these bool vars just break up the if-statement to make it easier to understand
         const bool is_type_where_allele_from_gene_forbidden = (subtype == CSeqFeatData::eSubtype_variation);
         const bool is_type_where_allele_from_gene_forbidden_except_with_embl_or_ddbj = 
-            ( subtype == CSeqFeatData::eSubtype_repeat_region ||
-              subtype == CSeqFeatData::eSubtype_mobile_element || 
+            ( subtype == CSeqFeatData::eSubtype_mobile_element || 
               subtype == CSeqFeatData::eSubtype_centromere ||
               subtype == CSeqFeatData::eSubtype_telomere );
         const bool is_embl_or_ddbj = ( GetContext()->IsEMBL() || GetContext()->IsDDBJ() );
