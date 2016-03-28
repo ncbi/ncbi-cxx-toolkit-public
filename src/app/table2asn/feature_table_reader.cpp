@@ -545,6 +545,7 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     CRef<CBioseq> protein;
     if (replacement.Empty())
     {
+        CCleanup::ExtendToStopIfShortAndNotPartial(cd_feature, scope.GetBioseqHandle(bioseq));
         protein = CSeqTranslator::TranslateToProtein(cd_feature, scope);
         if (protein.Empty())
             return CRef<CSeq_entry>();
@@ -563,6 +564,7 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     CAutoAddDesc molinfo_desc(protein->SetDescr(), CSeqdesc::e_Molinfo);
     molinfo_desc.Set().SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
     molinfo_desc.Set().SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+    feature::AdjustProteinMolInfoToMatchCDS(molinfo_desc.Set().SetMolinfo(), cd_feature);
 
     string org_name;
     GetOrgName(org_name, *top_entry_h.GetCompleteObject());
@@ -660,6 +662,7 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     prot_feat.SetLocation().SetInt().SetFrom(0);
     prot_feat.SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
     prot_feat.SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
+    feature::CopyFeaturePartials(prot_feat, cd_feature);
 
     if (!cd_feature.IsSetProduct())
        cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));

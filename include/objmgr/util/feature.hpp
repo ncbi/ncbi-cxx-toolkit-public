@@ -540,7 +540,7 @@ NCBI_XOBJUTIL_EXPORT bool CopyFeaturePartials(CSeq_feat& dst, const CSeq_feat& s
 /// @param cds      The CDS to match
 ///
 /// @return         Boolean to indicate whether molinfo was changed
-bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds);
+NCBI_XOBJUTIL_EXPORT bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds);
 
 /// AdjustForCDSPartials
 /// A function to make all of the necessary related changes to
@@ -558,7 +558,7 @@ NCBI_XOBJUTIL_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_
 /// @param cds        The feature for which adjustments are to be made
 ///
 /// @return           Boolean to indicate whether the coding region was retranslated.
-bool RetranslateCDS(const CSeq_feat& cds, CScope& scope);
+NCBI_XOBJUTIL_EXPORT bool RetranslateCDS(const CSeq_feat& cds, CScope& scope);
 
 /// AddFeatureToBioseq
 /// A function to add a feature to a Bioseq - will create a new feature table
@@ -566,7 +566,7 @@ bool RetranslateCDS(const CSeq_feat& cds, CScope& scope);
 /// @param seq        The sequence on which to add the feature
 /// @param f          The feature to add
 /// @param scope      The scope that contains the sequence
-void AddFeatureToBioseq(const CBioseq& seq, const CSeq_feat& f, CScope& scope);
+NCBI_XOBJUTIL_EXPORT void AddFeatureToBioseq(const CBioseq& seq, const CSeq_feat& f, CScope& scope);
 
 /// AddProteinFeature
 /// A function to create a protein feature with the specified protein name
