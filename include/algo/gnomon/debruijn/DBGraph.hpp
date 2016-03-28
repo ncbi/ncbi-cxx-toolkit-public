@@ -671,7 +671,13 @@ class CDBGraphDigger {
 public:
     typedef list<string> TStrList;
 
-    CDBGraphDigger(CDBGraph& graph, double fraction, int jump, int max_kmer, bool allow_bubble) : m_graph(graph), m_fraction(fraction), m_jump(jump), m_max_kmer(max_kmer), m_allow_bubble(allow_bubble), m_hist_min(graph.HistogramMinimum()) { cerr << "Valley: " << m_hist_min << endl; }
+    CDBGraphDigger(CDBGraph& graph, double fraction, int jump, int max_kmer) : m_graph(graph), m_fraction(fraction), m_jump(jump), m_max_kmer(max_kmer), m_hist_min(graph.HistogramMinimum()) { 
+
+        m_low_count = 5;
+        m_max_branch = 200   ;
+
+        cerr << "Valley: " << m_hist_min << endl; 
+    }
 
 private:
     typedef deque<CDBGraph::Successor> TBases;
@@ -682,9 +688,17 @@ public:
         int SCAN_WINDOW = 50;  // 0 - no scan
         int kmer_len = m_graph.KmerLen();
 
+        TStrList new_contigs;
+
         ERASE_ITERATE(TStrList, ic, contigs) {
-            if((int)ic->size() < kmer_len+2*SCAN_WINDOW)
+            if((int)ic->size() < kmer_len+2*SCAN_WINDOW) {
+
+                /* Don't keep shorter contigs
+                new_contigs.push_back(*ic);
+                */
+
                 contigs.erase(ic);
+            }
         }
         
         cerr << "Kmer: " << m_graph.KmerLen() << " Graph size: " << m_graph.GraphSize() << " Contigs in: " << contigs.size() << endl;
@@ -710,10 +724,10 @@ public:
             size_t num = 0;
             for(size_t index = 0; index < m_graph.GraphSize(); ++index) {
                 CDBGraph::Node node = 2*(index+1);
-                pair<string, double> contig = GetContigForKmer(node);
-                if(!contig.first.empty()) {
+                string contig = GetContigForKmer(node, kmer_len);
+                if(!contig.empty()) {
                     ++num;
-                    contigs.push_back(contig.first);                                                    
+                    contigs.push_back(contig);                                                    
                 }
             }
             cerr << "New seeds: " << num << endl;
@@ -759,7 +773,6 @@ public:
             }                    
         }
 
-        TStrList new_contigs;
         while(!contigs.empty()) {
             TStrList::iterator ic = contigs.begin();
             new_contigs.push_back(*ic);
@@ -782,7 +795,7 @@ public:
                         CDBGraph::Node rnode = m_graph.GetNode(rkmer);
                         if(!rnode)          // invalid kmer 
                             continue;
-                        CDBGraphDigger::TBases step = ExtendToRightAndConnect(rnode, landing_spots, 0);
+                        CDBGraphDigger::TBases step = ExtendToRightAndConnect(rnode, landing_spots);
                         if(step.empty())
                             continue;
                         CDBGraph::Node last_node = step.back().m_node;
@@ -807,11 +820,17 @@ public:
                             contig += rcontig.substr(kmer_len+landing_shift);
                             included.push_back(ir);
                             connected = true;
-                        } else if(contig.size()-shift+step.size() > extended_contig.size()) {  //extended
-                            extended_contig = contig.substr(0,len-shift);
-                            for(auto& suc : step)
-                                extended_contig.push_back(suc.m_nt);                            
-                        }                        
+                        } else {
+                            for(int clip = min((int)step.size(), m_graph.KmerLen()); clip > 0; --clip) {
+                                m_graph.ClearVisited(step.back().m_node);
+                                step.pop_back();                    
+                            }
+                            if(contig.size()-shift+step.size() > extended_contig.size()) {  //extended
+ 	                            extended_contig = contig.substr(0,len-shift);
+ 	                            for(auto& suc : step)
+ 	                                extended_contig.push_back(suc.m_nt);                            
+                            }
+                        }  
                     }
                     if(!connected) {
                         if(extended_contig.size() > contig.size())
@@ -849,32 +868,68 @@ public:
     }
 
     //assembles the contig; changes the state of all used nodes to 'visited'
-    pair<string, double> GetContigForKmer(const CDBGraph::Node& initial_node) {
+    string GetContigForKmer(const CDBGraph::Node& initial_node, int clip) {
         if(m_graph.IsVisited(initial_node) || m_graph.Abundance(initial_node) < m_hist_min)
-            return make_pair(string(),0.);
+            return string();
 
         unordered_map<CDBGraph::Node, TContigEnd> landing_spots;
-        TBases contigr = ExtendToRightAndConnect(initial_node, landing_spots, 0);
-        TBases contigl = ExtendToRightAndConnect(CDBGraph::ReverseComplement(initial_node), landing_spots, 0);
+        TBases contigr = ExtendToRightAndConnect(initial_node, landing_spots);
+        TBases contigl = ExtendToRightAndConnect(CDBGraph::ReverseComplement(initial_node), landing_spots);
+                      
+        int contigl_size = contigl.size();
+        int contigr_size = contigr.size();
+        int kmer_len = m_graph.KmerLen();
+        int total_len = contigl_size+kmer_len+contigr_size;
 
-        double abundance = 0;
+        
+        if(total_len < kmer_len+2*clip) {
+            m_graph.ClearVisited(initial_node);
+            for(auto& base : contigl)
+                m_graph.ClearVisited(base.m_node);
+            for(auto& base : contigr)
+                m_graph.ClearVisited(base.m_node);
+
+            return string();
+        }
+        
+
         string contig;
-        for(auto& base : contigl) {
-            CDBGraph::Node rv = CDBGraph::ReverseComplement(base.m_node);
-            abundance += m_graph.Abundance(rv);
-            contig.push_back(base.m_nt);
+        int pos = 0;
+        for(int j = contigl_size-1; j >= 0; --j, ++pos) {
+            if(pos >= clip && pos < total_len-clip)
+                contig.push_back(Complement(contigl[j].m_nt));
+            else
+                m_graph.ClearVisited(contigl[j].m_node);
         }
-        ReverseComplement(contig.begin(), contig.end());
-        abundance += m_graph.Abundance(initial_node);
         string kmer = m_graph.GetNodeSeq(initial_node);
-        //        kmer = NStr::ToLower(kmer);
-        contig += kmer;
-        for(auto& base : contigr) {
-            abundance += m_graph.Abundance(base.m_node);
-            contig.push_back(base.m_nt);
+        for(int j = 0; j < kmer_len; ++j, ++pos) {
+            if(pos >= clip && pos < total_len-clip)
+                contig.push_back(kmer[j]);
         }
+        for(int j = 0; j < contigr_size; ++j, ++pos) {
+            if(pos >= clip && pos < total_len-clip)
+                contig.push_back(contigr[j].m_nt);
+            else
+               m_graph.ClearVisited(contigr[j].m_node); 
+        }
+        if(min(contigl_size,contigr_size) < clip+1)
+            m_graph.ClearVisited(initial_node);
 
-        return make_pair(contig, abundance);
+        return contig;               
+    }
+
+    string MostLikelySeq(CDBGraph::Successor base, unsigned len) const {
+        string s(1, base.m_nt);
+        CDBGraph::Node node = base.m_node;
+        while(s.size() < len) {
+            vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(node);
+            if(successors.empty())
+                return s;            
+            sort(successors.begin(), successors.end(), [&](const CDBGraph::Successor& a, const CDBGraph::Successor& b) {return m_graph.Abundance(a.m_node) > m_graph.Abundance(b.m_node);}); 
+            node = successors[0].m_node;
+            s.push_back(successors[0].m_nt);
+        }
+        return s;
     }
 
     void FilterNeighbors(vector<CDBGraph::Successor>& successors) const {
@@ -889,12 +944,98 @@ public:
         }
         
         if(m_graph.GraphIsStranded() && successors.size() > 1) {
+            
+            int target = -1;
+            for(int j = 0; target < 0 && j < (int)successors.size(); ++j) {
+                if(m_graph.GetNodeSeq(successors[j].m_node).substr(m_graph.KmerLen()-3) == "GGT") 
+                    target = j;
+            }
+            if(target >= 0) {
+                double am = m_graph.Abundance(successors[target].m_node)*(1-m_graph.PlusFraction(successors[target].m_node));
+                for(int j = 0; j < (int)successors.size(); ) {
+                    if(m_graph.Abundance(successors[j].m_node)*(1-m_graph.PlusFraction(successors[j].m_node)) < m_fraction*am)
+                        successors.erase(successors.begin()+j);
+                    else
+                        ++j;
+                }
+                return;
+            }
+
+            for(int j = 0; target < 0 && j < (int)successors.size(); ++j) {
+                if(MostLikelySeq(successors[j], 3) == "ACC") 
+                    target = j;
+            }
+            if(target >= 0) {
+                double ap = m_graph.Abundance(successors[target].m_node)*m_graph.PlusFraction(successors[target].m_node);
+                for(int j = 0; j < (int)successors.size(); ) {
+                    if(m_graph.Abundance(successors[j].m_node)*m_graph.PlusFraction(successors[j].m_node) < m_fraction*ap)
+                        successors.erase(successors.begin()+j);
+                    else
+                        ++j;
+                }
+                return;
+            }
+                                   
+
+            /*            
+            if(successors.size() == 2) {
+                string a = m_graph.GetNodeSeq(successors[0].m_node).substr(m_graph.KmerLen()-3);
+                string b = m_graph.GetNodeSeq(successors[1].m_node).substr(m_graph.KmerLen()-3);
+                int swapped = -1;
+                if(a < b) {
+                    swap(a, b);
+                    swap(successors[0],successors[1]);
+                    swapped = -swapped;
+                }
+                // !!!!!!!!!!!!!!!!!!!!!!!!!!!               if(a == "GGT" && b == "GGG") {
+                if(a == "GGT") {
+                    double am = m_graph.Abundance(successors[0].m_node)*(1-m_graph.PlusFraction(successors[0].m_node));
+                    double bm = m_graph.Abundance(successors[1].m_node)*(1-m_graph.PlusFraction(successors[1].m_node));
+                    if(bm < m_fraction*am) {
+                        successors.pop_back();
+                        return;
+                    }
+                }
+
+                a = MostLikelySeq(successors[0], 3);
+                b = MostLikelySeq(successors[1], 3);
+                if(a.size() < b.size()) {
+                    successors.erase(successors.begin());
+                    return;
+                } else if(b.size() < a.size()) {
+                    successors.erase(successors.begin()+1);
+                    return;
+                }
+
+                if(a > b) {
+                    swap(a, b);
+                    swap(successors[0],successors[1]);
+                    swapped = -swapped;
+                }
+                //!!!!!!!!!!!!!!!!!!!!!!!                if(a == "ACC" && b == "CCC") {
+                if(a == "ACC") {
+                    double ap = m_graph.Abundance(successors[0].m_node)*m_graph.PlusFraction(successors[0].m_node);
+                    double bp = m_graph.Abundance(successors[1].m_node)*m_graph.PlusFraction(successors[1].m_node);
+                    if(bp < m_fraction*ap) {
+                        successors.pop_back();
+                        return;
+                    }
+                }
+
+                if(swapped > 0)
+                   swap(successors[0],successors[1]); 
+            }
+            */            
+            
+                       
             bool has_both = false;
             for(int j = 0; !has_both && j < (int)successors.size(); ++j) {
                 double plusf = m_graph.PlusFraction(successors[j].m_node);
                 double minusf = 1.- plusf;
-                has_both = (min(plusf,minusf) > 0.25);
+                //has_both = (min(plusf,minusf) > 0.25);
+                has_both = m_graph.Abundance(successors[j].m_node) > m_low_count && (min(plusf,minusf) > 0.25);
             }
+
             if(has_both) {
                 for(int j = 0; j < (int)successors.size(); ) {
                     double plusf = m_graph.PlusFraction(successors[j].m_node);
@@ -905,7 +1046,105 @@ public:
                         ++j;
                 }
             }
+           
+           
         }
+    }
+
+    enum EConnectionStatus {eSuccess, eNoConnection, eAmbiguousConnection, eBrokenConnection};
+
+    struct SElement {
+        SElement (char nt, SElement* link) : m_link(link), m_nt(nt) {}
+        struct SElement* m_link;   // previous element
+        char m_nt;
+    };
+
+    pair<string, EConnectionStatus> ConnectTwoNodes(const CDBGraph::Node& first_node, const CDBGraph::Node& last_node, int steps) const {
+        deque<SElement> storage; // will contain ALL extensions (nothing is deleted)
+
+        typedef unordered_map<CDBGraph::Node,SElement*> TElementMap;  //pointer to its own element OR zero if umbiguous path
+        TElementMap current_elements;
+        vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(first_node);
+        FilterNeighbors(successors);
+        for(auto& suc : successors) {
+            storage.push_back(SElement(suc.m_nt, 0));
+            current_elements[suc.m_node] = &storage.back();
+        }
+
+        list<SElement> connections;
+        EConnectionStatus status = eSuccess;
+        for(int step = 1; step < steps && !current_elements.empty(); ++step) {
+
+            if(current_elements.size() > 1) {
+                int abundance = 0;
+                for(auto& el : current_elements)
+                    abundance = max(abundance, m_graph.Abundance(el.first));
+                if(abundance <= m_low_count) {
+                    connections.clear();
+                    status = eBrokenConnection;
+                    break;
+                }
+            }
+
+            TElementMap new_elements;
+            for(auto& el : current_elements) {
+                vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(el.first);
+                FilterNeighbors(successors);
+                if(el.second == 0) {  // umbiguous path
+                    for(auto& suc : successors) {
+                        new_elements[suc.m_node] = 0;
+                        if(suc.m_node == last_node)
+                            status = eAmbiguousConnection;
+                    }
+                } else {
+                    for(auto& suc : successors) {
+                        storage.push_back(SElement(suc.m_nt, el.second));
+                        if(suc.m_node == last_node) {
+                            if(!connections.empty())
+                                status = eAmbiguousConnection;
+                            else
+                                connections.push_back(storage.back());
+                        } else {
+                            pair<TElementMap::iterator, bool> rslt = new_elements.insert(make_pair(suc.m_node, &storage.back()));
+                            if(!rslt.second)
+                                rslt.first->second = 0;
+                        }
+                    }
+                }                    
+            }
+            if(status == eAmbiguousConnection)
+                break;
+
+            swap(current_elements, new_elements);
+
+            bool still_can_connect = false;
+            for(auto& el: current_elements) {
+                if(el.second != 0) {
+                    still_can_connect = true;
+                    break;
+                }
+            }
+            if((!still_can_connect && connections.empty()) || current_elements.size() > m_max_branch) {
+                connections.clear();
+                status = eNoConnection;
+                break;
+            }
+        }
+
+        if(status != eSuccess)
+            return make_pair(string(), status);
+        if(connections.empty())
+            return make_pair(string(), eNoConnection);
+
+        string seq;
+        SElement el = connections.front();
+        while(el.m_link != 0) {
+            seq.push_back(el.m_nt);
+            el = *el.m_link;
+        }
+        seq.push_back(el.m_nt);
+        reverse(seq.begin(), seq.end());
+        return make_pair(seq, eSuccess);
     }
 
 private:
@@ -959,7 +1198,8 @@ private:
     }
 
     TBases JumpOver(vector<CDBGraph::Successor>& successors, int max_extent, int min_extent) {
-        if(max_extent < m_graph.KmerLen())
+        //        if(max_extent == 0 || m_hist_min < 4)
+        if(max_extent == 0 || m_hist_min == 0)
             return TBases();
 
         TBranch extensions;
@@ -969,13 +1209,18 @@ private:
             extensions[suc.m_node] = make_tuple(sequences.begin(), false);         
         }
 
-        size_t MAX_BRANCH = 200;
-        while(!extensions.empty() && extensions.size() < MAX_BRANCH) {
+        while(!extensions.empty() && extensions.size() < m_max_branch) {
             TSeqList::iterator is = get<0>(extensions.begin()->second);
             int len = get<0>(*is).size();
             if(len == max_extent)
                 break;
-
+            
+            int abundance = 0;
+            for(auto& e : extensions)
+                abundance = max(abundance, m_graph.Abundance(e.first));
+            if(abundance <= m_low_count)
+                break;
+            
             if(!OneStepBranchExtend(extensions, sequences) || extensions.empty())  // ambiguos buble in a or can't extend
                 return TBases();
 
@@ -983,35 +1228,36 @@ private:
                 break;
         }
 
-        if(extensions.size() == 1 && (!get<1>(extensions.begin()->second) || m_allow_bubble)) {
+        if(extensions.size() == 1 && !get<1>(extensions.begin()->second)) {
             TSeqList::iterator is = get<0>(extensions.begin()->second);
-            return get<0>(*is);
-        } else {
-            return TBases();
+            TBases& bases = get<0>(*is);            
+            if(bases.front().m_nt == successors[0].m_nt && m_graph.Abundance(bases.back().m_node) > m_low_count) // the variant with higher abundance survived
+                return bases;            
         }
+
+        return TBases();        
     }
 
     template<typename T>  // T has to have fast count(elem)
-    TBases ExtendToRightAndConnect(const CDBGraph::Node& initial_node, const T& landing_spots, int jump_free_zone) {
+    TBases ExtendToRightAndConnect(const CDBGraph::Node& initial_node, const T& landing_spots) {
         CDBGraph::Node node = initial_node;
         TBases extension;
-        vector<pair<int,int>> jumps;
-        int kmer_len = m_graph.KmerLen();
-        int max_extent = kmer_len-1+m_jump;
+        int max_extent = m_jump;
         m_graph.SetVisited(node);
         while(true) {
+            int extension_size = extension.size();
             vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(node);
             FilterNeighbors(successors);
-            if(successors.empty())                     // no extensions
-                break; 
+            if(successors.empty())                    // no extensions
+                break;             
 
             TBases step;
-            if(successors.size() > 1) {                // test for bubble   
+            if(successors.size() > 1) {                // test for dead end   
                 step = JumpOver(successors, max_extent, 0);
             } else {                                   // simple extension  
                 step.push_back(successors.front());
             }
-            if(step.empty())                     // multiple extensions
+            if(step.empty())                    // multiple extensions
                 break;
 
             int step_size = step.size();
@@ -1032,7 +1278,6 @@ private:
             if(step_back_size < step_size)
                 break;
 
-            int extension_size = extension.size();
             bool good = true;
             for(int i = 0; i <= step_size-2 && good; ++i)
                 good = (CDBGraph::ReverseComplement(step_back[i].m_node) == step[step_size-2-i].m_node);
@@ -1065,9 +1310,6 @@ private:
                     break;
             }
 
-            if(step_size > 1)  // jump
-                jumps.push_back(make_pair(extension_size,extension_size+step_size-1));            
-
             bool repeat = false;
             for(auto& s : step) {
                 extension.push_back(s);
@@ -1086,25 +1328,13 @@ private:
             node = extension.back().m_node;
         }
 
-        //jump free zone
-        if(m_allow_bubble) {
-            for( ; !jumps.empty(); jumps.pop_back()) {
-                int ext = extension.size();
-                int l = jumps.back().first;
-                if(l >= ext)                          // not included
-                    continue;
-                int r = min(ext-1,jumps.back().second);
-                if(ext - jump_free_zone > r) {        // allowed
-                    break;
-                } else {                              // trim   
-                    for(int j = ext-1; j >= l; --j) {
-                        m_graph.ClearVisited(extension[j].m_node);
-                        extension.pop_back();                    
-                    }
-                }
-            }
+        /*        
+        for(int clip = min((int)extension.size(), m_graph.KmerLen()); clip > 0; --clip) {
+            m_graph.ClearVisited(extension.back().m_node);
+            extension.pop_back();                    
         }
-
+        */        
+        
         return extension;
     }
 
@@ -1113,8 +1343,9 @@ private:
     double m_fraction;
     int m_jump;
     int m_max_kmer;
-    bool m_allow_bubble;
     int m_hist_min;
+    int m_low_count;
+    size_t m_max_branch;
 };
 
 }; // namespace
