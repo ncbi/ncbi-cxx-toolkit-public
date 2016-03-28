@@ -39,6 +39,10 @@
 #include <objmgr/util/create_defline.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 #include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
+#include <objects/seqalign/Score_set.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
@@ -262,6 +266,31 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedSeqId(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3FlybaseWriter::xAssignAlignmentSplicedScores(
+    CGffAlignRecord& record,
+    const CSpliced_seg& spliced,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    if (exon.IsSetScores()) {
+        typedef list<CRef<CScore> > SCORES;
+
+        const SCORES& scores = exon.GetScores().Get();
+        for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
+                ++cit) {
+            const CScore& score = **cit;
+            if (score.IsSetId()  &&  score.GetId().IsStr()) {
+                if (score.GetId().GetStr() == "idty") {
+                    continue;
+                }
+            }
+            record.SetScore(score);
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3FlybaseWriter::xAssignAlignmentScores(
     CGffAlignRecord& record,
     const CSeq_align& align)
@@ -396,6 +425,32 @@ bool CGff3FlybaseWriter::xAssignAlignmentDensegLocation(
         eNa_strand_plus : 
         eNa_strand_minus);
     record.SetLocation(seqStart, seqStop, seqStrand);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3FlybaseWriter::xAssignAlignmentDensegScores(
+    CGffAlignRecord& record,
+    const CAlnMap& alnMap,
+    unsigned int srcRow)
+//  ----------------------------------------------------------------------------
+{
+    typedef vector<CRef<CScore> > SCORES;
+    const CDense_seg& denseSeg = alnMap.GetDenseg();
+    if (!denseSeg.IsSetScores()) {
+        return true;
+    }
+    const SCORES& scores = denseSeg.GetScores();
+    for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
+            ++cit) {
+        const CScore& score = **cit;
+        if (score.IsSetId()  &&  score.GetId().IsStr()) {
+            if (score.GetId().GetStr() == "idty") {
+                continue;
+            }
+        }
+        record.SetScore(score);
+    }        
     return true;
 }
 

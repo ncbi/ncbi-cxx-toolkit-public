@@ -177,7 +177,7 @@ protected:
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int);
-    bool xAssignAlignmentDensegScores(
+    virtual bool xAssignAlignmentDensegScores(
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int);
@@ -215,7 +215,7 @@ protected:
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);
-    bool xAssignAlignmentSplicedScores(
+    virtual bool xAssignAlignmentSplicedScores(
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);

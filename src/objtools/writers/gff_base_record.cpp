@@ -345,6 +345,7 @@ void CGffBaseRecord::SetScore(
     }
     if (key == "score") {
         mScore = value;
+        return;
     }
 
     //mss-263: if a record has multiple scores with the same key, turn them into

@@ -70,6 +70,11 @@ protected:
         const CSpliced_seg&,
         const CSpliced_exon&) override;
 
+    virtual bool xAssignAlignmentSplicedScores(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&) override;
+
     virtual bool xAssignAlignmentDensegSeqId(
         CGffAlignRecord&,
         const CAlnMap&,
@@ -81,6 +86,11 @@ protected:
         unsigned int) override;
 
     virtual bool xAssignAlignmentDensegLocation(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int) override;
+
+    virtual bool xAssignAlignmentDensegScores(
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int) override;
