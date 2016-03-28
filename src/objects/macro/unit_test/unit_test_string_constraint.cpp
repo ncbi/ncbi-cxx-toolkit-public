@@ -677,5 +677,5 @@ BOOST_AUTO_TEST_CASE(Test_Matching_COI)
     subst1->SetWhole_word(false);
     s.SetIgnore_words().Set().push_back(subst1);
 
-    BOOST_CHECK_EQUAL(s.Match("cytochrome oxidase subunit I (COI)"), true);// fails
+    BOOST_CHECK_EQUAL(s.Match("cytochrome oxidase subunit I (COI)"), true);
 }

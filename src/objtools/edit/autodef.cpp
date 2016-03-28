@@ -1312,6 +1312,34 @@ bool CAutoDef::RegenerateDefLines(CSeq_entry_Handle se)
             }                   
         }
     }
+
+    // update the title of the set 
+    for (CSeq_entry_CI si(se, CSeq_entry_CI::fRecursive | CSeq_entry_CI::fIncludeGivenEntry, CSeq_entry::e_Set); si; ++si) {
+        if (si->IsSet() && CAutoDef::NeedsDocsumDefline(*(si->GetSet().GetCompleteBioseq_set()))) {
+            CAutoDef autodef;
+            autodef.AddSources(se);
+            string defline = autodef.GetDocsumDefLine(*si);
+
+            bool found_existing = false;
+            CBioseq_set_EditHandle bsseh(si->GetSet());
+            NON_CONST_ITERATE(CBioseq_set_EditHandle::TDescr::Tdata, it, bsseh.SetDescr().Set()) {
+                if ((*it)->IsTitle()) {
+                    if (!NStr::Equal((*it)->GetTitle(), defline)) {
+                        (*it)->SetTitle(defline);
+                        any = true;
+                    }
+                    found_existing = true;
+                    break;
+                }
+            }
+            if (!found_existing) {
+                CRef<CSeqdesc> new_desc(new CSeqdesc());
+                new_desc->SetTitle(defline);
+                bsseh.SetDescr().Set().push_back(new_desc);
+                any = true;
+            }
+        }
+    }
     return any;
 }
 
