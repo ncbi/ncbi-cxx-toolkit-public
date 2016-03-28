@@ -929,10 +929,12 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
     sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
     sel.SetResolveDepth(100);
 
+    auto& scope = seh.GetScope();
+
     for (CFeat_CI feat_it(seh, sel); feat_it; ++feat_it) {
 
         const CSeq_feat& feat = feat_it->GetOriginalFeature();
-        auto bsh = seh.GetScope().GetBioseqHandle(feat.GetLocation());
+        auto bsh = scope.GetBioseqHandle(feat.GetLocation());
         CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
 
         if (!feat.IsSetData() ||
@@ -943,9 +945,9 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         }
 
         if ( m_DeflineOnly ) {
-            fasta_os->WriteFeatureTitle(seh.GetScope(), feat);
+            fasta_os->WriteFeatureTitle(feat, scope);
         } else {
-            fasta_os->WriteFeature(seh.GetScope(), feat);
+            fasta_os->WriteFeature(feat, scope);
         }
     }
     return true;
