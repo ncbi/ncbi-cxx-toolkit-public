@@ -131,7 +131,6 @@ void CFastaOstreamEx::WriteFeature(const CBioseq_Handle& handle,
     }
 
     if (!feat.GetData().IsCdregion() &&
-        !feat.GetData().IsProt() &&
         !feat.GetData().IsGene() &&
         !feat.GetData().IsRna()) {
         return;
@@ -158,8 +157,6 @@ void CFastaOstreamEx::WriteFeature(const CBioseq_Handle& handle,
     auto translated_loc = sequence::Seq_loc_Subtract(loc, *untranslated_loc, 
                                                 CSeq_loc::fMerge_AbuttingOnly, &(handle.GetScope()));
 
-
-
     WriteSequence(handle, translated_loc.GetPointer(), CSeq_loc::fMerge_AbuttingOnly);
 }
 
@@ -174,8 +171,6 @@ void CFastaOstreamEx::WriteFeatureTitle(const CBioseq_Handle& handle,
     string id_string;
     if (feat.GetData().IsCdregion()) {
         id_string = x_GetCDSIdString(handle, feat);
-    } else if (feat.GetData().IsProt()) {
-        id_string = x_GetProtIdString(handle, feat);
     } else if (feat.GetData().IsGene()) {
         id_string = x_GetGeneIdString(handle, feat);
     } else if (feat.GetData().IsRna()) {
