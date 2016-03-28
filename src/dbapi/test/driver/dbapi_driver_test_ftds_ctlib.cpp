@@ -60,7 +60,7 @@ int CDriverTest::Run()
 		 CDriverManager &dm = CDriverManager::GetInstance();
 		 ds = dm.CreateDs("ftds");
 		 conMS.reset(ds->CreateConnection());
-		 conMS->Connect("anyone", "allowed", "GPIPE_GCOL_TEST", "GPIPE_INIT");
+		 conMS->Connect("anyone", "allowed", "GPIPE_TEST", "GPIPE_INIT");
 	}
 
 	{
