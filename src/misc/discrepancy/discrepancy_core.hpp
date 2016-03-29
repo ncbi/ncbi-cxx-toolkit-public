@@ -219,6 +219,7 @@ public:
 
     bool empty() { return m_Map.empty() && m_Objs.empty(); }
     void clear() { m_Map.clear(); m_Objs.clear(); }
+    void clearObjs() { m_Objs.clear(); }
 protected:
     string m_Name;
     TNodeMap m_Map;

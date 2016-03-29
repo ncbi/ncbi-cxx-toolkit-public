@@ -111,7 +111,7 @@ DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
 
     CRef<CReportObj> bioseq = m_Objs[kEmptyStr].GetObjects()[0];
     string short_name = bioseq->GetShort();
-    m_Objs[kEmptyStr].clear();
+    m_Objs[kEmptyStr].clearObjs();
 
     size_t total = 0;
     // count rRNAs
@@ -133,9 +133,10 @@ DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
         ss << it->second->GetObjects().size() << " rRNA features on " << short_name << " have the same name (" << it->first << ")";
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[it->first].GetObjects(), false);
     }
-    TReportItemList tmpList = m_Objs[kEmptyStr].Export(*this, false)->GetSubitems();
-    m_ReportItems.insert(m_ReportItems.end(), tmpList.begin(), tmpList.end());
+    CReportNode tmp = m_Objs[kEmptyStr];
     m_Objs.clear();
+    m_Objs[kEmptyStr] = tmp;
+    m_ReportItems = tmp.Export(*this, false)->GetSubitems();
 }
 
 

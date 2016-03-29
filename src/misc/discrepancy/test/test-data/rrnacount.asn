@@ -1,0 +1,5223 @@
+Seq-entry ::= set {
+  class genbank,
+  descr {
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 3
+        },
+        {
+          label str "day",
+          data int 10
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    }
+  },
+  seq-set {
+    set {
+      class phy-set,
+      descr {
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Deshmukh",
+                      first "Amit",
+                      initials "A.G."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Patil",
+                      first "Vikram",
+                      initials "V.B."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Kale",
+                      first "Swapnil",
+                      initials "S.K."
+                    }
+                  }
+                }
+              },
+              title "Identification and Characterization of Epiphytic and
+ Endophytic Bacteria from Turmeric"
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Deshmukh",
+                      first "Amit",
+                      initials "A.G."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Patil",
+                      first "Vikram",
+                      initials "V.B."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Kale",
+                      first "Swapnil",
+                      initials "S.K."
+                    }
+                  }
+                },
+                affil std {
+                  affil "Nagarjun Medicinal Plants Garden",
+                  city "Akola",
+                  sub "Maharashtra",
+                  country "India",
+                  street "Krishi Nagar",
+                  postal-code "444 104"
+                }
+              },
+              medium email,
+              date std {
+                year 2015,
+                month 12,
+                day 7
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10054805
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:agd4in@yahoo.com"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1876534"
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "Sanger dideoxy sequencing"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:28"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SETS:28"
+            }
+          }
+        },
+        update-date std {
+          year 2015,
+          month 12,
+          day 7,
+          hour 1,
+          minute 11,
+          second 15
+        },
+        title "Bacteria 16S ribosomal RNA gene, partial sequence;
+ mitochondrial."
+      },
+      seq-set {
+        seq {
+          id {
+            local str "seq1",
+            general {
+              db "BankIt",
+              tag str "1876534/seq1"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555968
+            },
+            genbank {
+              accession "KU257641"
+            }
+          },
+          descr {
+            title "Bacillus safensis strain TR18 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Bacillus safensis",
+                db {
+                  {
+                    db "taxon",
+                    tag id 561879
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Bacillus",
+                    species "safensis"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR18"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Bacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq1"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq1"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 696,
+            strand ds,
+            seq-data ncbi2na 'ABB641EDBAAE1A9AEEC0A56A06CF459A4E78D663C498F59F
+464B62F921E63581E2048FCEA3E9C05F9ADF9257FBDED4FB246EEC952B4C2A938E3F86D35517D7
+5AFED1692D17C8B9507839E90708D0ABE676F9A87C1504DD1846278610539145ED1DED560A8095
+CDDCABED228ED085EB0AF7D9BE7D83C05139D459FB9A955B43D7F8BF4B7E616C75529A2E7C39BC
+5E491C2AA688557047C91D36FC69BA1C52ACDC35EF675599FD9D761B6BF1224A22'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 695,
+                    strand plus,
+                    id local str "seq1",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq2",
+            general {
+              db "BankIt",
+              tag str "1876534/seq2"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555969
+            },
+            genbank {
+              accession "KU257642"
+            }
+          },
+          descr {
+            title "Agrobacterium fabrum strain TR20-2 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Agrobacterium fabrum",
+                db {
+                  {
+                    db "taxon",
+                    tag id 1176649
+                  }
+                },
+                syn {
+                  "Agrobacterium genomic group 8",
+                  "Agrobacterium genomic species 8",
+                  "Agrobacterium genomosp. 8",
+                  "Agrobacterium genomovar 8",
+                  "Agrobacterium tumefaciens genomovar G8"
+                },
+                orgname {
+                  name binomial {
+                    genus "Agrobacterium",
+                    species "fabrum"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR20-2"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhizobiales; Rhizobiaceae; Rhizobium/Agrobacterium group; Agrobacterium;
+ Agrobacterium tumefaciens complex",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq2"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq2"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 639,
+            strand ds,
+            seq-data ncbi2na '08D15EAB2B54695B0018F80EFC95B6A92F317BD6BA65270D
+93C013D597AA2C6B6423C01D0283E1AA959109AE893BAFC3D824199205F149DF84F6AB3A93E886
+3B5F4BCA7A55204AE793A7B6D276EDB88EFABC2D590626415D95F2F9493F2FA91DC2A8796B8C25
+88A0AEA8E1B42D74E95F1A9EA7111B9C43AEB84BA92621263B6270DD4025374BDA3E47790762E4
+E0BE83672C3648D24E79AE0C6F56A5FB111754'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 638,
+                    strand plus,
+                    id local str "seq2",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq3",
+            general {
+              db "BankIt",
+              tag str "1876534/seq3"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555970
+            },
+            genbank {
+              accession "KU257643"
+            }
+          },
+          descr {
+            title "Rhizobium phaseoli strain TR19-3 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Rhizobium phaseoli",
+                db {
+                  {
+                    db "taxon",
+                    tag id 396
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Rhizobium",
+                    species "phaseoli"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR19-3"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhizobiales; Rhizobiaceae; Rhizobium/Agrobacterium group; Rhizobium",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq3"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq3"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 791,
+            strand ds,
+            seq-data ncbi2na 'E02F2C8CF64A0452E9829A7C7AD441E1B8AE6026EA890128
+F2315EB2D465B018E0EF25B6A4B71EF6BA649C193C04F597AA2C6B6423C01D0283E1AA959109AE
+893BAFC3D824199205F1495F84E509C5E488E4ABD5F6AA7E844AE793A7B6D276EDB88EFABC2D59
+0626415D95F2F9493D2FA91DC2A8796B8C2588A0AEA8E1B42D74E95F1A9EA7111B9C43AEB84BA9
+2624662EE270DD4025374BDA3E47790762E4E0BE83672C3668D24659AE0C6F56A5FB111656D114
+EA2FAFC560ACB99C16428A4945DCCFFF5554'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 790,
+                    strand plus,
+                    id local str "seq3",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq4",
+            general {
+              db "BankIt",
+              tag str "1876534/seq4"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555971
+            },
+            genbank {
+              accession "KU257644"
+            }
+          },
+          descr {
+            title "Oceanobacillus caeni strain TR1-1 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Oceanobacillus caeni",
+                db {
+                  {
+                    db "taxon",
+                    tag id 405946
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Oceanobacillus",
+                    species "caeni"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR1-1"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Oceanobacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq4"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq4"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 472,
+            strand ds,
+            seq-data ncbi2na 'E1AA959109AE893BAFC3D824199207F149DF84F6AB3A93E8
+863B5F4BCA7A55204AE793A7B6D276EDB88EFABC2D590626415D95F2F9493F2FA91DC2A8796B8C
+2588A0AEA8E1B42D74E95F1A9EA7111B9C43AEB84BA92621263B6270DD4025374BDA3E47790762
+E4E0BE83672C3648D24E39AC0CFD5A97'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 471,
+                    strand plus,
+                    id local str "seq4",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq5",
+            general {
+              db "BankIt",
+              tag str "1876534/seq5"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555972
+            },
+            genbank {
+              accession "KU257645"
+            }
+          },
+          descr {
+            title "Agrobacterium fabrum strain TR23-1 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Agrobacterium fabrum",
+                db {
+                  {
+                    db "taxon",
+                    tag id 1176649
+                  }
+                },
+                syn {
+                  "Agrobacterium genomic group 8",
+                  "Agrobacterium genomic species 8",
+                  "Agrobacterium genomosp. 8",
+                  "Agrobacterium genomovar 8",
+                  "Agrobacterium tumefaciens genomovar G8"
+                },
+                orgname {
+                  name binomial {
+                    genus "Agrobacterium",
+                    species "fabrum"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR23-1"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhizobiales; Rhizobiaceae; Rhizobium/Agrobacterium group; Agrobacterium;
+ Agrobacterium tumefaciens complex",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq5"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq5"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 784,
+            strand ds,
+            seq-data ncbi2na '6565A7C16E8AB4F201E8A1F8B9208622683F4EEC9AE039B2
+233A28114BA60A61DFEB7B078678A26026EAC98128F2315EB2D465B018E2E72BBCAAB75957CB9E
+0BC193C247597AA2C696429E01D0083E1AA159109AE893BAFC3D824198205F14ADF84D7F617572
+232A3F57DAA180B84AEB93AFB6D276EDB88EFABC2D590626415F8DF2F9493C2FA91DC2B8796B84
+05A282BAA386D034D3957CE17A9C446E710E8EB102A4980590AD090354C014F74BDA3ECA790765
+C4E09683672C3668D24E59AE0C6F56AD'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 783,
+                    strand plus,
+                    id local str "seq5",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq6",
+            general {
+              db "BankIt",
+              tag str "1876534/seq6"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555973
+            },
+            genbank {
+              accession "KU257646"
+            }
+          },
+          descr {
+            title "Bacillus pumilus strain TR26-1 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Bacillus pumilus",
+                db {
+                  {
+                    db "taxon",
+                    tag id 1408
+                  }
+                },
+                syn {
+                  "Bacillus aminoglucosidicus"
+                },
+                orgname {
+                  name binomial {
+                    genus "Bacillus",
+                    species "pumilus"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR26-1"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Bacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq6"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq6"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 519,
+            strand ds,
+            seq-data ncbi2na 'AFDA7B47C48E8566993C9CBEBAAC3A7450A618E6C961788A
+B8DA511EA1E211A54875C6A2924B2A0DF590E8602DE1A241966E2E382BFDA36C09DEFBCA82042E
+622C1E7645F86B170520251A7071B949259AC31B2BA426FB5A0F3EA6C0A9D929AFDF0B78EE0255
+69D05AA2AD3E807A807E2E400088BA0F51BB06B80E6C08EEE08116B8'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 518,
+                    strand plus,
+                    id local str "seq6",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq7",
+            general {
+              db "BankIt",
+              tag str "1876534/seq7"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555974
+            },
+            genbank {
+              accession "KU257647"
+            }
+          },
+          descr {
+            title "Oceanobacillus caeni strain TR1-2 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Oceanobacillus caeni",
+                db {
+                  {
+                    db "taxon",
+                    tag id 405946
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Oceanobacillus",
+                    species "caeni"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR1-2"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Oceanobacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq7"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq7"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 326,
+            strand ds,
+            seq-data ncbi2na 'D61EA30766806E270C5A30C7FF3E4C3082FE029A6C27B47C
+C8EA566993C5CBEB8AC0A7450A418E6C961788AB8DA515EA1E211A54875C6A2924B2A0DF590E86
+02DE1A241966E2E082BFDA36C01DEFBCA82070'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 325,
+                    strand plus,
+                    id local str "seq7",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq8",
+            general {
+              db "BankIt",
+              tag str "1876534/seq8"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555975
+            },
+            genbank {
+              accession "KU257648"
+            }
+          },
+          descr {
+            title "Bacillus safensis strain TR23-2 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Bacillus safensis",
+                db {
+                  {
+                    db "taxon",
+                    tag id 561879
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Bacillus",
+                    species "safensis"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR23-2"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Bacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq8"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq8"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 650,
+            strand ds,
+            seq-data ncbi2na 'E1E70BBA8BA5F5D77CB9E4ACD92C247557668B2AD908F807
+40A0F86A6564426BA24EE9F0F2090660817C52B7E135DE10572232A7F57DAA122E12BAE4EBEDB4
+9DBB6E23BEAF0B5641899057E37CBE524F4BEA4770AE1E5AE10168A0AEA8E1B40D34E55F385EA7
+111B9C43A12040A9E421642BF250D53037BDD2F68D92DE41D879B827A0D9CB0D9A3493966B831B
+D5A97EC44595B445188BF904560B6B8AC17F3A252590'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 649,
+                    strand plus,
+                    id local str "seq8",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq9",
+            general {
+              db "BankIt",
+              tag str "1876534/seq9"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555976
+            },
+            genbank {
+              accession "KU257649"
+            }
+          },
+          descr {
+            title "Bacillus pumilus strain L14 16S ribosomal RNA gene, partial
+ sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Bacillus pumilus",
+                db {
+                  {
+                    db "taxon",
+                    tag id 1408
+                  }
+                },
+                syn {
+                  "Bacillus aminoglucosidicus"
+                },
+                orgname {
+                  name binomial {
+                    genus "Bacillus",
+                    species "pumilus"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "L14"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Bacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric Leaf"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq9"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq9"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 672,
+            strand ds,
+            seq-data ncbi2na 'A27E7568EF2E9E1AB8B046EAC1797B087A8C1D6A01689C31
+68CBD7E0593AF428E021AFDA7B47C48E8566993C9CBEBAAC3A7450A618E6C961788AB8DA511EA1
+E211A54875C6A2924B2A0DF590E8602DE1A241966E2E382BFDA36C09DEFBCA82042E622C1E7645
+F86B170520251A7071B949259AC31B2BA426FB5A0F3EA6C8AA76929AFDF0B78EE025569D05AA2A
+D3E807A807E2E440088BA0F545EC7BC0E6C23BA82045AE982A1DDD'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 671,
+                    strand plus,
+                    id local str "seq9",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq10",
+            general {
+              db "BankIt",
+              tag str "1876534/seq10"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555977
+            },
+            genbank {
+              accession "KU257650"
+            }
+          },
+          descr {
+            title "Bacillus safensis strain TR20-1 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Bacillus safensis",
+                db {
+                  {
+                    db "taxon",
+                    tag id 561879
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Bacillus",
+                    species "safensis"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR20-1"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Bacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq10"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq10"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 942,
+            strand ds,
+            seq-data ncbi2na '9C1F6E54A49E6F306CAFA426FB5A0CFA9B02A7E5A7BF7C2F
+A3880956BD016A8AB4FA01A807E2E482288BA0F51BB26B80E6C88EE8A0452E98298777ADEC1E19
+E289809BAA2604A3C8C57ACB5196C0638B9C2EF2AAFD655F2E7927064F091D65EA8B1AD9087807
+40A0F86AA564426BA24EEBF0F6090660817C52B7E135DE10572232A7F57DAA122E12BAE4EBEDB4
+9DBB6E23BEAF0B5641899057E37CBE524F4BEA4770AE1E5AE10168A0AEA8E1B40D34E55F385EA7
+111B9C43A12040A9E421642BF250D53037BDD2F68D92DE41D879B827A0D9CB0D9A3493966B831B
+D5A97EC44595B445188BF713D8EDAE0B00'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 941,
+                    strand plus,
+                    id local str "seq10",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq11",
+            general {
+              db "BankIt",
+              tag str "1876534/seq11"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555978
+            },
+            genbank {
+              accession "KU257651"
+            }
+          },
+          descr {
+            title "Bacillus nealsonii strain TR19-4 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Bacillus nealsonii",
+                db {
+                  {
+                    db "taxon",
+                    tag id 115979
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Bacillus",
+                    species "nealsonii"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR19-4"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Bacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq11"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq11"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 1015,
+            strand ds,
+            seq-data ncbi2na 'D89987C009F9FFC2F269A1AB8B046EA41797B087A8C1F6A0
+1689C3168C35FF71D3B2009E021AFC67B47C48EA566993C9CBEB8AC1A7450A618E6C961788AB8D
+A511EA1E211A54875C6A2924B2A0DF590E8602DE1A241966E2E382BFDA36C01DEFBCA82042C622
+C1E76C5F86B170520251A7071B949259AC31B2BA426FB5A0F3EA6C0999929AD7F0B78EE025469D
+05BA2AD3E807AA87E2E482208BA0F51BB26B80E6C88EE8A0452E9829877FADEC1E19E299809BAA
+2404A3C8C57ACB5196C0638B9C2EF22AFD657F2E7924064F091D65EA8B1A590A780740A0F86AA5
+64426BA24EEBF0F6090660817C52B7E1375E10D7208CA1BD57DAA84A384AEB93AFB6D0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 1014,
+                    strand plus,
+                    id local str "seq11",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq12",
+            general {
+              db "BankIt",
+              tag str "1876534/seq12"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555979
+            },
+            genbank {
+              accession "KU257652"
+            }
+          },
+          descr {
+            title "Klebsiella oxytoca strain TR22-1 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Klebsiella oxytoca",
+                db {
+                  {
+                    db "taxon",
+                    tag id 571
+                  }
+                },
+                syn {
+                  "Bacillus oxytocus perniciosus"
+                },
+                orgname {
+                  name binomial {
+                    genus "Klebsiella",
+                    species "oxytoca"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR22-1"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Enterobacteriales; Enterobacteriaceae; Klebsiella",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq12"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq12"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 316,
+            strand ds,
+            seq-data ncbi2na '2D81AC912889F9DDAB862E9A1AB8B0EDEA01E5E3A2AA3071
+E806B270C59306D9085022AA17DA977E5348EE548EA3C9CB2BAAC1A745CA618D5C9EB788A38525
+11E81E211AD5475C6A2924BAA0CF910E'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 315,
+                    strand plus,
+                    id local str "seq12",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq13",
+            general {
+              db "BankIt",
+              tag str "1876534/seq13"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555980
+            },
+            genbank {
+              accession "KU257653"
+            }
+          },
+          descr {
+            title "Bacillus mojavensis strain TR4-2 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Bacillus mojavensis",
+                db {
+                  {
+                    db "taxon",
+                    tag id 72360
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Bacillus",
+                    species "mojavensis"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR4-2"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Bacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq13"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq13"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 739,
+            strand ds,
+            seq-data ncbi2na '27E7578EF269A1AB8B046EAC1797B087A8C1D6A016A9C316
+8E7EFE0593AF404C02BA7DA7147C48E8566993C9CBEB8AC3A7450A418E6C961788AB8DA511EA1E
+211A54875C6A2924B2A0DF590E8602DE1A241966E2E382BFDA36C09DEFBCA82042C5BD832A6B17
+E1AC5C14809469C1C6E524966B0C6CAE909BED683CFA9B02A764A6BD7C2DE3B80955A7416A8AB4
+FA01EA81F8B9208A22E83D46EC9AE039B023BA28114BA60A61DDEB7B078678A26026EA898118F1
+315EB2D464'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 738,
+                    strand plus,
+                    id local str "seq13",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq14",
+            general {
+              db "BankIt",
+              tag str "1876534/seq14"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555981
+            },
+            genbank {
+              accession "KU257654"
+            }
+          },
+          descr {
+            title "Aeromonas taiwanensis strain TR10 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Aeromonas taiwanensis",
+                db {
+                  {
+                    db "taxon",
+                    tag id 633417
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Aeromonas",
+                    species "taiwanensis"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR10"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Aeromonadales; Aeromonadaceae; Aeromonas",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq14"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq14"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 480,
+            strand ds,
+            seq-data ncbi2na 'AE2C397A80F952D8AA8C12FA01879C3164C6571AA8092A85
+F6A5F998FA33952BA8F272FAE2B0E9D14298635727ADE228E349447A078846B521D71A8A492EA8
+33E443AA80578E494E59BBB820A5F6AFB0247F498A280AD2C9C3379E1EE1BC7648209169C1D6E5
+24966B0C68AB909BC3683C7A9B026464A6BE'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 479,
+                    strand plus,
+                    id local str "seq14",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq15",
+            general {
+              db "BankIt",
+              tag str "1876534/seq15"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555982
+            },
+            genbank {
+              accession "KU257655"
+            }
+          },
+          descr {
+            title "Stenotrophomonas rhizophila strain TR13-2 16S ribosomal RNA
+ gene, partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Stenotrophomonas rhizophila",
+                db {
+                  {
+                    db "taxon",
+                    tag id 216778
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Stenotrophomonas",
+                    species "rhizophila"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR13-2"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Xanthomonadales; Xanthomonadaceae; Stenotrophomonas",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq15"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq15"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 486,
+            strand ds,
+            seq-data ncbi2na '89F9DDEAE98BA686AE28313683717FDBAA8C1B2A01F19C31
+64C617DAB8092A85F6A5F99A3238963B68F072FA6AB029514298635B27ADE228E349447A078846
+B521D71A8A492EA833E843A990978D494C59BAB820A5F6AFB0257FEFA80802494BC317AFBDE1AC
+5408301169C1F6E51259AC3182AE426F7683C7A0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 485,
+                    strand plus,
+                    id local str "seq15",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq16",
+            general {
+              db "BankIt",
+              tag str "1876534/seq16"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555983
+            },
+            genbank {
+              accession "KU257656"
+            }
+          },
+          descr {
+            title "Bacillus licheniformis strain L9 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Bacillus licheniformis",
+                db {
+                  {
+                    db "taxon",
+                    tag id 1402
+                  }
+                },
+                syn {
+                  "Clostridium licheniforme",
+                  "Denitrobacillus licheniformis"
+                },
+                orgname {
+                  name binomial {
+                    genus "Bacillus",
+                    species "licheniformis"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "L9"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Bacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric Leaf"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq16"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq16"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 616,
+            strand ds,
+            seq-data ncbi2na 'FCB92490593C247595AA2C6B6421E01D028321AA959109AE
+893BAFC3D824198205F14ADF84D778415C88CA9F55F6AA48B84AEB93AFB6D276EDB88EFABC2D59
+0626415F8DF2F9493D2FA91DC2B8796B8405A282BAA386D034D3957CE17A9C446E710EA48102A4
+982598A709435440DEF74BDA364B790761E6E09E83672C3668D24E59AE0C6F56A5FB111656D114
+622FEC11582DAE2B05FE894967'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 615,
+                    strand plus,
+                    id local str "seq16",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq17",
+            general {
+              db "BankIt",
+              tag str "1876534/seq17"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555984
+            },
+            genbank {
+              accession "KU257657"
+            }
+          },
+          descr {
+            title "Agrobacterium tumefaciens strain TR21-2 16S ribosomal RNA
+ gene, partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Agrobacterium tumefaciens",
+                db {
+                  {
+                    db "taxon",
+                    tag id 358
+                  }
+                },
+                syn {
+                  "Achromobacter radiobacter",
+                  "Agrobacterium genomosp. 4",
+                  "Agrobacterium genomovar 4",
+                  "Agrobacterium radiobacter",
+                  "Alcaligenes radiobacter",
+                  "Bacillus radiobacter",
+                  "Bacterium radiobacter",
+                  "Bacterium tumefaciens",
+                  "Phytomonas tumefaciens",
+                  "Polymonas tumefaciens",
+                  "Pseudomonas radiobacter",
+                  "Pseudomonas tumefaciens",
+                  "Rhizobium radiobacter"
+                },
+                orgname {
+                  name binomial {
+                    genus "Agrobacterium",
+                    species "tumefaciens"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR21-2"
+                    },
+                    {
+                      subtype gb-synonym,
+                      subname "Agrobacterium radiobacter = Rhizobium
+ radiobacter"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhizobiales; Rhizobiaceae; Rhizobium/Agrobacterium group; Agrobacterium;
+ Agrobacterium tumefaciens complex",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq17"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq17"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 675,
+            strand ds,
+            seq-data ncbi2na '95642A8BB921AB8B066EA04C57F5E683275A807A0F0C5931
+95C6AA023F36A828FA566FA3C9CBEBAAC0A5C50A618D4C9EB788A38D2513EA1E211A54075C6A29
+24BAA0CFA10EA6425E35253966E2E38297CABEC09DFD1688230E1ACD688209569C1F6E524966B0
+C60AA9C9BEF683C7A9B02646CA68CFC2D2AB80D522741DE81E5FE31EACDF8B3A08AC2E83D62EC8
+AE03DB233DA28114BA60A69F1EB53C78678AE7026EA890128F0315E8'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 674,
+                    strand plus,
+                    id local str "seq17",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq18",
+            general {
+              db "BankIt",
+              tag str "1876534/seq18"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555985
+            },
+            genbank {
+              accession "KU257658"
+            }
+          },
+          descr {
+            title "[Brevibacterium] halotolerans strain TR19-1 16S ribosomal
+ RNA gene, partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "[Brevibacterium] halotolerans",
+                db {
+                  {
+                    db "taxon",
+                    tag id 260554
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Bacillus",
+                    species "[Brevibacterium] halotolerans"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR19-1"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Bacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq18"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq18"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 618,
+            strand ds,
+            seq-data ncbi2na 'FC9954BC193C24755DEA8B0AD908F80740A0F86AA564426B
+A24EEBF0F6090660817C52B7E135F8435C88CA1B55F6AA48B84AEB93AFB6D276EDB88EFABC2D59
+0626415F8DF2F9493D2FA91DC2B8796B8405A282BAA386D034D3957CE17A9C446E710E848102A4
+980598AF09435440DEF74BDA364B790761E6E09E83672C3668D24E59AE0C6F56A5FB111656D114
+622FEC1158EDAE2B073CE4541650'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 617,
+                    strand plus,
+                    id local str "seq18",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq19",
+            general {
+              db "BankIt",
+              tag str "1876534/seq19"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555986
+            },
+            genbank {
+              accession "KU257659"
+            }
+          },
+          descr {
+            title "Agrobacterium fabrum strain TR25-2 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Agrobacterium fabrum",
+                db {
+                  {
+                    db "taxon",
+                    tag id 1176649
+                  }
+                },
+                syn {
+                  "Agrobacterium genomic group 8",
+                  "Agrobacterium genomic species 8",
+                  "Agrobacterium genomosp. 8",
+                  "Agrobacterium genomovar 8",
+                  "Agrobacterium tumefaciens genomovar G8"
+                },
+                orgname {
+                  name binomial {
+                    genus "Agrobacterium",
+                    species "fabrum"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR25-2"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhizobiales; Rhizobiaceae; Rhizobium/Agrobacterium group; Agrobacterium;
+ Agrobacterium tumefaciens complex",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq19"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq19"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 740,
+            strand ds,
+            seq-data ncbi2na '8CF2860452E982A69F1EB54E786F8AEE026EA89104A3F231
+5EB2D465EC06383BC96DA92CC7BDAE992B0E4F013D65EA8B1AD908F00740A0F86AA564426BA24E
+EBF0F2090664817C5277E13DAACEA4FA218EDBD2F2AE954812B9E4E9EDB49DBB6E23BEAF0B5641
+899057657CBE524FCBEA4770AA1E5AE30962282BAA386D0B7D3A57C6A7A9C446E710EBAE12EA49
+88498ED89C3F50094DD2F68F91DE41D8B9382FA0D9CB0D9234939E6B831BD5A97EC44595B4451A
+8BEBF1582B'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 739,
+                    strand plus,
+                    id local str "seq19",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq20",
+            general {
+              db "BankIt",
+              tag str "1876534/seq20"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555987
+            },
+            genbank {
+              accession "KU257660"
+            }
+          },
+          descr {
+            title "Aeromonas caviae strain TR7 16S ribosomal RNA gene, partial
+ sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Aeromonas caviae",
+                db {
+                  {
+                    db "taxon",
+                    tag id 648
+                  }
+                },
+                syn {
+                  "Aeromonas dourgesi anaerogene",
+                  "Aeromonas formicans",
+                  "Aeromonas hydrophila anaerogenes",
+                  "Aeromonas hydrophila subsp. anaerogenes",
+                  "Aeromonas punctata caviae",
+                  "Aeromonas punctata subsp. caviae",
+                  "Aeromonas punctata subsp. punctata",
+                  "Bacillus punctatus",
+                  "Pseudomonas caviae",
+                  "Pseudomonas punctata"
+                },
+                orgname {
+                  name binomial {
+                    genus "Aeromonas",
+                    species "caviae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR7"
+                    },
+                    {
+                      subtype gb-synonym,
+                      subname "Aeromonas punctata"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Aeromonadales; Aeromonadaceae; Aeromonas",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq20"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq20"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 852,
+            strand ds,
+            seq-data ncbi2na 'C7A9B44991929A7A8C2F23B80956A741EA0793F007B52722
+DEC8AAAC83D4AEC9AE039B2237A28116BA60A6957A1021E19D2B9809BAA2404A3C8C57ACB5196C
+063B63FA29EED7E21BA7D689C19BC0D8597AA2C69642BC01D0383E1AA959109AE893BAFC3D8E41
+98205F17A5F84EDE835EC88C6A2E5F6A0D2044AE793A7B6D276EDB88EFABC2D5906264157B5FEF
+9491B0EBA81D0A88796B8C05A282BAA386D0B4D3A57C694A9C446E710E99B122A7909C98CB8983
+540099B6CB5A3E8B790761D4E0B683672C3640D20EF9AE0C6F56A5FB111656D114'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 851,
+                    strand plus,
+                    id local str "seq20",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq21",
+            general {
+              db "BankIt",
+              tag str "1876534/seq21"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555988
+            },
+            genbank {
+              accession "KU257661"
+            }
+          },
+          descr {
+            title "Stenotrophomonas maltophilia strain TR4-1 16S ribosomal RNA
+ gene, partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Stenotrophomonas maltophilia",
+                db {
+                  {
+                    db "taxon",
+                    tag id 40324
+                  }
+                },
+                syn {
+                  "Pseudomonas beteli",
+                  "Pseudomonas betle",
+                  "Pseudomonas maltiphilia",
+                  "Pseudomonas maltophilia",
+                  "Stenotrophomonas africana",
+                  "Xanthomonas maltiphilia",
+                  "Xanthomonas maltophilia"
+                },
+                orgname {
+                  name binomial {
+                    genus "Stenotrophomonas",
+                    species "maltophilia"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR4-1"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Xanthomonadales; Xanthomonadaceae; Stenotrophomonas; Stenotrophomonas
+ maltophilia group",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq21"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq21"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 748,
+            strand ds,
+            seq-data ncbi2na '2D91A4912889F9DDEAE98BA686AE2831368371DEDBAA8C1B
+2A01F19C3164C6171AB8092A85F6A5F998F838963B68F272FA6AB029514298635B27ADE228E349
+447A078846B521D71A8A492EA833E843A990978D494C59BAB820A5F6AFB0257FEFA8080D49E9C3
+15AFA8E1AC5408309169C1F6E524966B0C60AB909BC7683C7A9B026E6CAEBCFC2D6FB8095EA741
+7A81E4BA31E8E1C83BAC82B2683D7AEC90E039B02342281353AA8099717B1513E11F2990097AA2
+404A8F3315DAAB'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 747,
+                    strand plus,
+                    id local str "seq21",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq22",
+            general {
+              db "BankIt",
+              tag str "1876534/seq22"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555989
+            },
+            genbank {
+              accession "KU257662"
+            }
+          },
+          descr {
+            title "Agrobacterium fabrum strain TR23-4 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Agrobacterium fabrum",
+                db {
+                  {
+                    db "taxon",
+                    tag id 1176649
+                  }
+                },
+                syn {
+                  "Agrobacterium genomic group 8",
+                  "Agrobacterium genomic species 8",
+                  "Agrobacterium genomosp. 8",
+                  "Agrobacterium genomovar 8",
+                  "Agrobacterium tumefaciens genomovar G8"
+                },
+                orgname {
+                  name binomial {
+                    genus "Agrobacterium",
+                    species "fabrum"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR23-4"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhizobiales; Rhizobiaceae; Rhizobium/Agrobacterium group; Agrobacterium;
+ Agrobacterium tumefaciens complex",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq22"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq22"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 781,
+            strand ds,
+            seq-data ncbi2na '8B0A08AC2E83F5899229847688CFA8A0452E9829A7C7AD4F
+1E1B8AEE026EA890128F23157ACB5196C06383BC96DA92CC7B5AE9927064F013D65EA8B1AD908F
+00740A0F86AA564426BA24EEBF0F6090664817C5277E13DAACEA4FA218ED7D2F29E954812B9E4E
+9EDB49DBB6E23BEAF0B5641899057657CBE524FCBEA4770AA1E5AE30962282BAA386D0B5D3A57C
+6A7A9C446E710EBAE12EA4988498ED89C3750094DD2F68F91DE41D8B9382E83672C3648D24E79A
+E0C6F56A5FB111656D114EA2FAFC5600'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 780,
+                    strand plus,
+                    id local str "seq22",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq23",
+            general {
+              db "BankIt",
+              tag str "1876534/seq23"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555990
+            },
+            genbank {
+              accession "KU257663"
+            }
+          },
+          descr {
+            title "Agrobacterium larrymoorei strain L5 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Agrobacterium larrymoorei",
+                db {
+                  {
+                    db "taxon",
+                    tag id 160699
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Agrobacterium",
+                    species "larrymoorei"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "L5"
+                    },
+                    {
+                      subtype gb-synonym,
+                      subname "Rhizobium larrymoorei"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhizobiales; Rhizobiaceae; Rhizobium/Agrobacterium group; Agrobacterium",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric Leaf"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq23"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq23"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 907,
+            strand ds,
+            seq-data ncbi2na 'B9494965AC3180AA9C9BBDE83C5EA6C09651B2A68CFC2D2A
+B80D522741DE81E5FE31EACD7E2CE822B0BA0F98BB22B80F6C8CF64A0452E9829A7C7AD4F1E19E
+2B9809BAA2404A3C8C57ACB5196C06383BC96DA92CC7BDAE9927064F013D65EA8B1AD908F00740
+A0F86AA564426BA24EEBF0F6090664817C5277E13DAACEB4FA218E17D2F69E95C812B9E4E9EDB4
+9DBB6E23BEAF0B5641899057657CBE524FCBEA4770AA1E5AE30962282BAA386D0B5D3A57C6A7A9
+C446E710EBAE12EA4988498ED89C3750094DD2F68F91DE41D8B9382FA0D9CB0D9234938E6B831B
+D5A97EC44515B444'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 906,
+                    strand plus,
+                    id local str "seq23",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq24",
+            general {
+              db "BankIt",
+              tag str "1876534/seq24"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555991
+            },
+            genbank {
+              accession "KU257664"
+            }
+          },
+          descr {
+            title "Beijerinckia fluminensis strain TR21-1 16S ribosomal RNA
+ gene, partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Beijerinckia fluminensis",
+                db {
+                  {
+                    db "taxon",
+                    tag id 513651
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Beijerinckia",
+                    species "fluminensis"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR21-1"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhizobiales; Beijerinckiaceae; Beijerinckia",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq24"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq24"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 887,
+            strand ds,
+            seq-data ncbi2na 'B29A8CFC2D2AB80D54E20D035981E5DE33EAB3558B3A08AC
+2E837589B22B843DB233DA28114B99829A7C7AD4F1E19E2B9809BAA2404A3C8C56EB2D465B018E
+0EF256DA92CC7BD6BA649C193C04F597AA2C6B6423C01D0283E1AA959109AE893BAFC3D8241992
+05F149DF84F6AB3A93A218ED7D2F29E954812B9E4E9EDB49DBB6E23BEAF0B5641899057657CBE5
+24FCBEA4770AA1E5AE30962282BAA386D0B5D3A57C6A7A9C446E710EBAE12EA4988498ED89C375
+0094DD2F68F91DE41D8B9382FA0D9CB0D9234939E6B831BD5A97EC44595B4453A8BEBF1582B2E6
+705908'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 886,
+                    strand plus,
+                    id local str "seq24",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq25",
+            general {
+              db "BankIt",
+              tag str "1876534/seq25"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555992
+            },
+            genbank {
+              accession "KU257665"
+            }
+          },
+          descr {
+            title "Bacillus safensis strain TR13-3 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Bacillus safensis",
+                db {
+                  {
+                    db "taxon",
+                    tag id 561879
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Bacillus",
+                    species "safensis"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR13-3"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Bacillaceae; Bacillus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq25"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq25"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 640,
+            strand ds,
+            seq-data ncbi2na 'B018E2E70BBCABADD7557CB9E49C164F091D65EA8B1AD908
+F80740A0F86AA559109AE893BAFC3D824198205F14ADF84D778415C88CA9FD5F6A848B84AEB93A
+FB6D276EDB88EFABC2D590626415F8DF2F9493D2FA91DC2B8796B8405A282BAA386D034D3957CE
+17A9C446E710E848102A7908590AFC94354C0DEF74BDA364B790761E6E09E83672C3668D24E59A
+E0C6F56A5FB111656D114622F904563B6B82C1'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 639,
+                    strand plus,
+                    id local str "seq25",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq26",
+            general {
+              db "BankIt",
+              tag str "1876534/seq26"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555993
+            },
+            genbank {
+              accession "KU257666"
+            }
+          },
+          descr {
+            title "Pseudomonas migulae strain TR3 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Pseudomonas migulae",
+                db {
+                  {
+                    db "taxon",
+                    tag id 78543
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Pseudomonas",
+                    species "migulae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR3"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Pseudomonadales; Pseudomonadaceae; Pseudomonas",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq26"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq26"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 588,
+            strand ds,
+            seq-data ncbi2na 'EA891128F2317ACB5196C023B41C96FA89789FF2E9923064
+F0BE167AA2C69642BC01D038386AA564426BA24EEBF0FE090660817C5297E1350E07F5223A3EB9
+7DA893E212B9E4E9EDB49DBB6E23BEAF0B56C1899057ED7CBC5244F3AEA4770A21E5AE10168A0A
+EA8E1B42D34E95F1A5EA7111B9C43ADAC48ABE509662BA270D510058DB2D68D92DE41D879A0B68
+3672C3660D20'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 587,
+                    strand plus,
+                    id local str "seq26",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq27",
+            general {
+              db "BankIt",
+              tag str "1876534/seq27"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555994
+            },
+            genbank {
+              accession "KU257667"
+            }
+          },
+          descr {
+            title "Staphylococcus pasteuri strain TR16 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Staphylococcus pasteuri",
+                db {
+                  {
+                    db "taxon",
+                    tag id 45972
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Staphylococcus",
+                    species "pasteuri"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR16"
+                    }
+                  },
+                  lineage "Bacteria; Firmicutes; Bacilli; Bacillales;
+ Staphylococcaceae; Staphylococcus",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq27"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq27"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 844,
+            strand ds,
+            seq-data ncbi2na 'AB4FA01E801F8B9208A82820754E2C98E0FBB2233A28114B
+A61A63FDE77B0786F8EE6026EA8D0128F2316EB2D467B018E2E70BBCAAB75957F2E7923064F091
+D65EA8B18590AF80740A0F86A8564426BA24EEBF0F6090660817C5037E135FE167722322FF55F6
+AA102E12BAE4EBEDB49DBB6E23BEAF0B5641899057C27CBE534F0BEA4770BE1E5AE10168A0AEA8
+E1B40D34E55F38FEA7111B9C43A10C40A92701662B4240D5302FBDD2F68FB2DE41D8713827A0D9
+CB0DB234939C6B831BD5AB7EC44595B445188BFB0456096BA2C1773A0725B6'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 843,
+                    strand plus,
+                    id local str "seq27",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq28",
+            general {
+              db "BankIt",
+              tag str "1876534/seq28"
+            },
+            general {
+              db "TMSMART",
+              tag id 60555995
+            },
+            genbank {
+              accession "KU257668"
+            }
+          },
+          descr {
+            title "Rhizobium pusense strain TR23-3 16S ribosomal RNA gene,
+ partial sequence; mitochondrial.",
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Rhizobium pusense",
+                db {
+                  {
+                    db "taxon",
+                    tag id 648995
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Rhizobium",
+                    species "pusense"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TR23-3"
+                    },
+                    {
+                      subtype gb-synonym,
+                      subname "Agrobacterium pusense"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhizobiales; Rhizobiaceae; Rhizobium/Agrobacterium group; Rhizobium",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India"
+                },
+                {
+                  subtype isolation-source,
+                  name "Termeric rhizome"
+                },
+                {
+                  subtype collected-by,
+                  name "swapnil K kale"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "agagtttgatcctggctcag",
+                      name "27f"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cggttaccttgttacgactt",
+                      name "1492r"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq28"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "seq28"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 566,
+            strand ds,
+            seq-data ncbi2na '5B018E0EF27B2A4B31EFDAE99270E4F013D67AA8B1AD908F
+00740A0F86AA564426BA24EEBF0F6090664817C5277E13DAACEA4FA218ED7D2F29E954812B9E4E
+9EDB49DBB6E23BEAF0B5641899057657CBE524FCBEA4770AA1E5AE30962282BAA386D0B5D3A57C
+6A7A9C446E710EBAE12EA4988498ED89C3750094DD2F68F91DE41D8B9382FA0D9CB0D9234938E6
+B0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 565,
+                    strand plus,
+                    id local str "seq28",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
