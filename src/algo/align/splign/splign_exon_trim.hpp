@@ -44,11 +44,17 @@ BEGIN_NCBI_SCOPE
 class CSplignTrim {
 public:
 
-    typedef CNWFormatter::SSegment TSeg;
+    typedef CNWFormatter::SSegment TSeg; //AKA CSplign::TSegment
+    typedef vector<TSeg> TSegs;          //AKA CSplign::TSegments
 
     CSplignTrim(const char *seq, int seqlen, CConstRef<CSplicedAligner> aligner, double max_part_exon_drop) : m_seq(seq), m_seqlen(seqlen), m_aligner(aligner), m_MaxPartExonIdentDrop(max_part_exon_drop)
     {
     }
+
+    //check if the exon segments[p] abuts another exon in genomic coordinates
+    static bool HasAbuttingExonOnRight(TSegs segments, TSeqPos p);
+    //same check on the left side
+    static bool HasAbuttingExonOnLeft(TSegs segments, TSeqPos p);
 
     //legacy check
     //if two short throws away and reterns true
@@ -73,7 +79,7 @@ public:
     void Cut50FromRight(TSeg& s);
     void ImproveFromRight(TSeg& s);
 
-    void AdjustGaps(vector<TSeg>& segments);
+    void AdjustGaps(TSegs& segments);
 
 private:
     const char *m_seq;//genomic sequence

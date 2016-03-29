@@ -575,6 +575,7 @@ double CSplign::GetCompartmentPenalty( void ) const
 
 bool CSplign::x_IsInGap(THit::TCoord pos)
 {
+    if( m_GenomicSeqMap.Empty() ) return false;
     bool res = false;
     CSeqMap_CI it = m_GenomicSeqMap->FindResolved(GetScope(), pos, SSeqMapSelector());
     if(it) {
@@ -1722,7 +1723,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 m_polya_start = coord;
             } else {//gap
                 if( GetTestType() == kTestType_20_28 || GetTestType() == kTestType_20_28_plus ) {
-                    if(  ( (int)mrna_size - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {//gap, cut to splice 
+                    if(  ( (int)mrna_size - (int)s.m_box[1] - 1 ) >= kFlankExonProx && 
+                         ! x_IsInGap( s.m_box[3] + 1) ) {//a sequence gap, but not a genomic gap, cut to splice 
                         int seq1_pos = (int)s.m_box[1];
                         int seq2_pos = (int)s.m_box[3];
                         int det_pos = s.m_details.size() - 1;
@@ -2011,11 +2013,12 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     first = false;
                 } else {
                     if(prev->m_exon) {//if not exon, it will be trimmed later anyway
+                        /*  old logic
                         TSeqPos from =  prev->m_box[3];
                         TSeqPos length = ii->m_box[2] - prev->m_box[3] + 1;
                         if(m_GenomicSeqMap && m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),  from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap)) { //gap, trim.
                             
-                            /* TEST OUTPUT      
+                            // TEST OUTPUT      
                                CSeqMap_CI smit = m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),   from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);   
                                CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral(); 
                                string type = "not_gap";    
@@ -2027,8 +2030,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                                cout<<" End Position: "<<smit.GetEndPosition()+1;   
                                }   
                                cout<<endl; 
-                            */
-                            
+
                             if(is_test_plus) {
                                 trim.ImproveFromRight(*prev);                
                                 trim.ImproveFromLeft(*ii);                
@@ -2036,7 +2038,15 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                                 prev->ImproveFromRight1(Seq1, Seq2, m_aligner);                
                                 ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
                             }
-                            //add gaps if needed        
+                            */
+
+                       //trim only if one exon abuts a gap, and the other one not
+                       bool prev_abuts_gap = x_IsInGap(prev->m_box[3] + 1);
+                       bool abuts_gap = x_IsInGap( ii->m_box[2] - 1 );
+                       if( abuts_gap && !prev_abuts_gap ) trim.ImproveFromRight(*prev);
+                       if( !abuts_gap && prev_abuts_gap ) trim.ImproveFromLeft(*ii);
+    
+                            //add an alignment gap if needed        
                             if( ii->m_box[0] > prev->m_box[1] + 1) {
                                 TSegment sgap;
                                 sgap.m_box[0] = prev->m_box[1] + 1;
@@ -2047,7 +2057,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                                 ii = segments.insert(ii, sgap);
                                 ++ii;
                             }                        
-                        }
+                       //} end of old logic
                     }
                 }
                 prev = ii;
@@ -2233,10 +2243,15 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 if( k0 > 0 && segments[k0-1].m_exon) {
                     if(is_test) {
                         if(is_test_plus) {
-                            if( ( (int)SeqLen1 - (int)segments[k0-1].m_box[1] - 1 ) >= kFlankExonProx ) {
-                                trim.ImproveFromRight(segments[k0-1]);
+                            if( x_IsInGap(segments[k0-1].m_box[3] + 1) ||
+                                CSplignTrim::HasAbuttingExonOnRight(segments, k0-1) ) {
+                                //abuting an exon or a sequence gap on the genome, do not trim    
                             } else {
-                                trim.Cut50FromRight(segments[k0-1]);
+                                if( ( (int)SeqLen1 - (int)segments[k0-1].m_box[1] - 1 ) >= kFlankExonProx ) {
+                                    trim.ImproveFromRight(segments[k0-1]);
+                                } else {
+                                    trim.Cut50FromRight(segments[k0-1]);
+                                }
                             }
                         } else {
                             segments[k0-1].ImproveFromRight1(Seq1, Seq2, m_aligner);                
@@ -2248,10 +2263,15 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 if( k0 + 1 < segments.size() && segments[k0+1].m_exon) {
                     if(is_test) {
                             if(is_test_plus) {
-                                if( (int)segments[k0+1].m_box[0] >= kFlankExonProx ) {
-                                    trim.ImproveFromLeft(segments[k0+1]);                
+                                if( x_IsInGap(segments[k0+1].m_box[2] - 1) ||
+                                    CSplignTrim::HasAbuttingExonOnLeft(segments, k0-1) ) {
+                                    //abuting an exon or a sequence gap on the genome, do not trim    
                                 } else {
-                                    trim.Cut50FromLeft(segments[k0+1]);
+                                    if( (int)segments[k0+1].m_box[0] >= kFlankExonProx ) {
+                                        trim.ImproveFromLeft(segments[k0+1]);                
+                                    } else {
+                                        trim.Cut50FromLeft(segments[k0+1]);
+                                    }
                                 }
                             } else {
                                 segments[k0+1].ImproveFromLeft1(Seq1, Seq2, m_aligner);                
@@ -2633,23 +2653,32 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 bool cut_from_right = false;
                 if(s.m_exon) {
                     //check left
-                    if(first_exon) {
-                        if( (int)s.m_box[0] >= kFlankExonProx ) {//gap on left
+                    if( x_IsInGap(s.m_box[2] - 1) ||
+                        CSplignTrim::HasAbuttingExonOnLeft(m_segments, k0) ) {
+                        //abuting an exon or a sequence gap on the genome, do not cut    
+                    } else {
+                        if(first_exon) {
+                            if( (int)s.m_box[0] >= kFlankExonProx ) {//gap on left
+                                cut_from_left = true;
+                            }
+                            first_exon = false;
+                        } else if( ! m_segments[k0-1].m_exon ) {//gap on left   
                             cut_from_left = true;
                         }
-                        first_exon = false;
-                    } else if( ! m_segments[k0-1].m_exon ) {//gap on left
-                        cut_from_left = true;
                     }
                     //check right
-                    if( last_exon_index == (int)k0 ) {
-                        if(  ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {//gap on right
+                    if( x_IsInGap(s.m_box[3] + 1) ||
+                        CSplignTrim::HasAbuttingExonOnRight(m_segments, k0) ) {
+                        //abuting an exon or a sequence gap on the genome, do not cut    
+                    } else {
+                        if( last_exon_index == (int)k0 ) {
+                            if(  ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {//gap on right
+                                cut_from_right = true;
+                            }
+                        } else if(k0 + 1 < sdim && (! m_segments[k0+1].m_exon ) ) {//gap on right   
                             cut_from_right = true;
                         }
-                    } else if(k0 + 1 < sdim && (! m_segments[k0+1].m_exon ) ) {//gap on right
-                        cut_from_right = true;
                     }
-
                     //try to cut from left
                     if(cut_from_left) {
                         int seq1_pos = (int)s.m_box[0];

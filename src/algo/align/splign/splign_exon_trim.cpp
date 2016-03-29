@@ -36,8 +36,41 @@
 
 BEGIN_NCBI_SCOPE
 
+//check if the exon segments[p] abuts another exon in genomic coordinates, right side
+bool CSplignTrim::HasAbuttingExonOnRight(TSegs segments, TSeqPos p)
+{
+    TSeqPos len = segments.size();
+    TSeqPos np = p+1;
+    for( ; np < len; ++np) {
+        if( segments[np].m_exon ) break;
+    }
+    if(np == len) {// no exons on the right found
+        return false;
+    } 
+    if( segments[p].m_box[3] + 1 == segments[np].m_box[2] ) { //abutting
+        return true;
+    }
+    return false;
+}
+
+//check if the exon segments[p] abuts another exon in genomic coordinates, right side
+bool CSplignTrim::HasAbuttingExonOnLeft(TSegs segments, TSeqPos p)
+{
+    int pp = (int)p-1;
+    for( ; pp>=0; --pp ) {
+        if( segments[pp].m_exon ) break;
+    }
+    if(pp < 0) {//no exons found on the left
+        return false;
+    }
+    if( segments[pp].m_box[3] + 1 == segments[p].m_box[2] ) { //abutting
+        return true;
+    }
+    return false;
+}    
+
 //legacy check
-//it two short throws away and reterns true
+//it two short throws away and returns true
 //otherwise returns false
 bool CSplignTrim::ThrowAwayShortExon(TSeg& s)
 {
@@ -59,9 +92,9 @@ bool CSplignTrim::ThrowAway20_28_90(TSeg& s)
     return false;
 }
 
-void CSplignTrim::AdjustGaps(vector<TSeg>& segments)
+void CSplignTrim::AdjustGaps(TSegs& segments)
 {
-    vector<TSeg> new_segments;
+    TSegs new_segments;
         int gap_start_idx (-1);
         if(segments.size() && segments[0].m_exon == false) {
             gap_start_idx = 0;
