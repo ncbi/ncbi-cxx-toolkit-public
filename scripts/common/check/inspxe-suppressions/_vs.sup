@@ -285,7 +285,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "MSVCR120.dll memory error in stat64()"
+	name = "Unreachable MSVCR120.dll memory error in stat64()"
 	type = {invalid_memory_access}
 	stacks = {
 		allocation={
@@ -298,4 +298,13 @@ suppression = {
 		}
 	}
 }
-
+suppression = {
+	name = "Unreachable OLEAUT32.dll memory error in SysStringByteLen()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=OLEAUT32.dll,func=SysStringByteLen;
+		}
+	}
+}
