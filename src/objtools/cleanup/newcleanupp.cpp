@@ -10985,16 +10985,17 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
             while (it != bioseq.SetAnnot().end()) {
                 if ((*it)->IsFtable()) {
                     x_RemoveEmptyFeatures(**it);
-                    if (s_ShouldRemoveAnnot(**it)) {
-                        CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(**it);
-                        CSeq_annot_EditHandle eh(ah);
-                        eh.Remove();
-                        any_erasures = true;
-                        ChangeMade(CCleanupChange::eChangeOther);
-                        break;
-                    }
                 }
-                ++it;
+                if (s_ShouldRemoveAnnot(**it)) {
+                    CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(**it);
+                    CSeq_annot_EditHandle eh(ah);
+                    eh.Remove();
+                    any_erasures = true;
+                    ChangeMade(CCleanupChange::eChangeOther);
+                    break;
+                } else {
+                    ++it;
+                }
             }
         }
     }
@@ -11015,17 +11016,18 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
             while (it != bioseq_set.SetAnnot().end()) {
                 if ((*it)->IsFtable()) {
                     x_RemoveEmptyFeatures(**it);
-                    if (s_ShouldRemoveAnnot(**it)) {
-                        CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(**it);
-                        CSeq_annot_EditHandle eh(ah);
-                        eh.Remove();
-                        any_erasures = true;
-                        ChangeMade(CCleanupChange::eChangeOther);
-                        break;
-                    }
+                } 
+                if (s_ShouldRemoveAnnot(**it)) {
+                    CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(**it);
+                    CSeq_annot_EditHandle eh(ah);
+                    eh.Remove();
+                    any_erasures = true;
+                    ChangeMade(CCleanupChange::eChangeOther);
+                    break;
+                } else {
+                    ++it;
                 }
             }
-            ++it;
         }
     }
     if (bioseq_set.GetAnnot().empty()) {
