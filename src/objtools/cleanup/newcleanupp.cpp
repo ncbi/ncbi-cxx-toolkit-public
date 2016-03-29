@@ -10846,9 +10846,24 @@ bool CNewCleanup_imp::x_CleanEmptyFeature(CSeq_feat& feat)
     switch (feat.GetData().Which()) {
     case CSeqFeatData::e_Gene:
         any_change = x_CleanEmptyGene(feat.SetData().SetGene());
+        if (x_ShouldRemoveEmptyGene(feat.GetData().GetGene()) &&
+            feat.IsSetComment() && !NStr::IsBlank(feat.GetComment())) {
+            feat.SetData().SetImp().SetKey("misc_feature");
+            any_change = true;
+        }
         break;
     case CSeqFeatData::e_Prot:
         any_change = x_CleanEmptyProt(feat.SetData().SetProt());
+        if (x_ShouldRemoveEmptyProt(feat.GetData().GetProt()) &&
+            feat.IsSetComment() && !NStr::IsBlank(feat.GetComment())) {
+            if (NStr::EqualNocase(feat.GetComment(), "putative")) {
+                feat.SetData().SetProt().SetName().push_back("putative");
+                feat.ResetComment();
+            } else {
+                feat.SetData().SetImp().SetKey("misc_feature");
+            }
+            any_change = true;
+        }
         break;
     default:
         break;
@@ -10915,21 +10930,47 @@ void CNewCleanup_imp::x_RemoveEmptyFeatures( CSeq_annot & seq_annot )
     }
 }
 
-void CNewCleanup_imp::x_RemoveEmptyFeatureTables( list< CRef< CSeq_annot > >& annot_list)
+
+bool s_IsGenomeAnnotationStart(const CUser_object& user)
 {
-    list< CRef< CSeq_annot > >::iterator it = annot_list.begin();
-    while (it != annot_list.end()) {
-        if ((*it)->IsFtable()) {
-            x_RemoveEmptyFeatures(**it);
-            if ((*it)->GetData().GetFtable().empty()) {
-                it = annot_list.erase(it);
-                ChangeMade(CCleanupChange::eRemoveAnnot);
-            } else {
-                it++;
+    if (user.GetObjectType() == CUser_object::eObjectType_StructuredComment &&
+        user.IsSetData()) {
+        try {
+            const CUser_field& prefix = user.GetField("StructuredCommentPrefix");
+            if (prefix.IsSetData() && prefix.GetData().IsStr() &&
+                NStr::Equal(prefix.GetData().GetStr(), "##Genome-Annotation-Data-START##")) {
+                return true;
             }
-        } else {
-            it++;
+        } catch (CException& e) {
+
         }
+    }
+    return false;                
+}
+
+
+bool s_RetainEmptyAnnot(const CSeq_annot& annot)
+{
+    if (!annot.IsSetDesc()) {
+        return false;
+    }
+    ITERATE(CSeq_annot::TDesc::Tdata, it, annot.GetDesc().Get()) {
+        if ((*it)->IsUser() && s_IsGenomeAnnotationStart((*it)->GetUser())) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool s_ShouldRemoveAnnot(const CSeq_annot& annot)
+{
+    if (!s_RetainEmptyAnnot(annot) &&
+        (annot.IsFtable() && annot.GetData().GetFtable().empty()) ||
+        !annot.IsSetData()) {
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -10944,11 +10985,12 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
             while (it != bioseq.SetAnnot().end()) {
                 if ((*it)->IsFtable()) {
                     x_RemoveEmptyFeatures(**it);
-                    if ((*it)->GetData().GetFtable().empty()) {
+                    if (s_ShouldRemoveAnnot(**it)) {
                         CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(**it);
                         CSeq_annot_EditHandle eh(ah);
                         eh.Remove();
                         any_erasures = true;
+                        ChangeMade(CCleanupChange::eChangeOther);
                         break;
                     }
                 }
@@ -10956,15 +10998,39 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
             }
         }
     }
+    if (bioseq.GetAnnot().empty()) {
+        bioseq.ResetAnnot();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+
 }
 
 void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
 {
     if (bioseq_set.IsSetAnnot()) {
-        x_RemoveEmptyFeatureTables(bioseq_set.SetAnnot());
-        if (bioseq_set.GetAnnot().empty()) {
-            bioseq_set.ResetAnnot();
+        bool any_erasures = true;
+        while (any_erasures) {
+            any_erasures = false;
+            CBioseq::TAnnot::iterator it = bioseq_set.SetAnnot().begin();
+            while (it != bioseq_set.SetAnnot().end()) {
+                if ((*it)->IsFtable()) {
+                    x_RemoveEmptyFeatures(**it);
+                    if (s_ShouldRemoveAnnot(**it)) {
+                        CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(**it);
+                        CSeq_annot_EditHandle eh(ah);
+                        eh.Remove();
+                        any_erasures = true;
+                        ChangeMade(CCleanupChange::eChangeOther);
+                        break;
+                    }
+                }
+            }
+            ++it;
         }
+    }
+    if (bioseq_set.GetAnnot().empty()) {
+        bioseq_set.ResetAnnot();
+        ChangeMade(CCleanupChange::eChangeOther);
     }
 }
 

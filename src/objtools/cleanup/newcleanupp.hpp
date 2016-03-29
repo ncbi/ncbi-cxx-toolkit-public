@@ -538,7 +538,6 @@ private:
     void x_RemoveOldDescriptors( CSeq_descr & seq_descr );
     void x_RemoveEmptyDescriptors(CSeq_descr& seq_descr);
     void x_RemoveEmptyFeatures( CSeq_annot & seq_annot );
-    void x_RemoveEmptyFeatureTables( list< CRef< CSeq_annot > > & annot_list);
     void x_RemoveEmptyFeatureTables( CBioseq & bioseq );
     void x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set );
     bool x_CleanEmptyFeature(CSeq_feat& feat);
