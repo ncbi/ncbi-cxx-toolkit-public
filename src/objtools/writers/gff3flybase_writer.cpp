@@ -233,8 +233,8 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedLocation(
     }
     const int tgtWidth = (productInfo & CSeq_id::fAcc_prot) ? 3 : 1;
 
-    unsigned int seqStart = exon.GetProduct_start().AsSeqPos()/tgtWidth+1;
-    unsigned int seqStop = exon.GetProduct_end().AsSeqPos()/tgtWidth+1;
+    unsigned int seqStart = exon.GetProduct_start().AsSeqPos()/tgtWidth;
+    unsigned int seqStop = exon.GetProduct_end().AsSeqPos()/tgtWidth;
     ENa_strand seqStrand = eNa_strand_plus;
     if (spliced.CanGetProduct_strand()  &&  
             spliced.GetProduct_strand() == objects::eNa_strand_minus) {
