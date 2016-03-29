@@ -63,6 +63,36 @@ USING_SCOPE(objects);
 
 
 //  ----------------------------------------------------------------------------
+bool CGff3FlybaseWriter::xIsNeededScore(
+    const string& seqId,
+    const CScore& score) const
+//  ----------------------------------------------------------------------------
+{
+    static const vector<string> supportedScores{
+        "Gap", "ambiguous_orientation", "consensus_splices",
+        "pct_coverage", "pct_identity_gap", "pct_identity_ungap",
+        "rank", "score"
+    };
+    static const vector<string> coreScores{
+        "ID", "Target", "Gap"
+    };
+
+    if (!score.IsSetId()  ||  !score.GetId().IsStr()) {
+        return false;
+    }
+    string key = score.GetId().GetStr();
+    if (seqId == mCurrentIdForAttributes  &&  
+            std::find(coreScores.begin(), coreScores.end(), key) == coreScores.end()) {
+        return false;
+    }
+    if (std::find(supportedScores.begin(), supportedScores.end(), key)
+            == supportedScores.end()) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3FlybaseWriter::xAssignTaxid(
     CBioseq_Handle bsh,
     CGffAlignRecord& record)
@@ -279,10 +309,8 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedScores(
         for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
                 ++cit) {
             const CScore& score = **cit;
-            if (score.IsSetId()  &&  score.GetId().IsStr()) {
-                if (score.GetId().GetStr() == "idty") {
-                    continue;
-                }
+            if (!xIsNeededScore(record.StrSeqId(), score)) {
+                continue;
             }
             record.SetScore(score);
         }
@@ -298,33 +326,24 @@ bool CGff3FlybaseWriter::xAssignAlignmentScores(
 {
     CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(record.StrSeqId());
     CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
-    xAssignTaxid(bsh, record);
-    xAssignDefline(bsh, record);
-
-    static const vector<string> supportedScores{
-        "Gap", "ambiguous_orientation", "consensus_splices",
-        "pct_coverage", "pct_identity_gap", "pct_identity_ungap",
-        "rank", "score"
-    };
+    if (mCurrentIdForAttributes != record.StrSeqId()) {
+        xAssignTaxid(bsh, record);
+        xAssignDefline(bsh, record);
+    }
 
     typedef vector<CRef<CScore> > SCORES;
-    if (!align.IsSetScore()) {
-        return true;
-    }
-    const SCORES& scores = align.GetScore();
-    for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
-            ++cit) {
-        const CScore& score = **cit;
-        if (!score.IsSetId()  ||  !score.GetId().IsStr()) {
-            continue;
+    if (align.IsSetScore()) {
+        const SCORES& scores = align.GetScore();
+        for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
+                ++cit) {
+            const CScore& score = **cit;
+            if (!xIsNeededScore(record.StrSeqId(), score)) {
+                continue;
+            }
+            record.SetScore(**cit);
         }
-        string key = score.GetId().GetStr();
-        if (std::find(supportedScores.begin(), supportedScores.end(), key)
-                == supportedScores.end()) {
-            continue;
-        }
-        record.SetScore(**cit);
     }
+    mCurrentIdForAttributes = record.StrSeqId();
     return true;
 }
 
@@ -444,10 +463,8 @@ bool CGff3FlybaseWriter::xAssignAlignmentDensegScores(
     for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
             ++cit) {
         const CScore& score = **cit;
-        if (score.IsSetId()  &&  score.GetId().IsStr()) {
-            if (score.GetId().GetStr() == "idty") {
-                continue;
-            }
+        if (!xIsNeededScore(record.StrSeqId(), score)) {
+            continue;
         }
         record.SetScore(score);
     }        

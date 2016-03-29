@@ -107,8 +107,13 @@ protected:
         CBioseq_Handle,
         CGffAlignRecord&);
 
+    bool xIsNeededScore(
+        const std::string&,
+        const CScore&) const;
+
     map<string, string> mTaxidMap;
     map<string, string> mDeflineMap;
+    string mCurrentIdForAttributes;
 };
 
 END_objects_SCOPE
