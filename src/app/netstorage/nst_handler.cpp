@@ -51,6 +51,7 @@
 #include "nst_config.hpp"
 #include "nst_util.hpp"
 #include "error_codes.hpp"
+#include "nst_constants.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -1936,6 +1937,13 @@ CNetStorageHandler::x_ProcessSetAttr(
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
                    "Mandatory field 'AttrValue' is missed");
 
+    string      value = message.GetString("AttrValue");
+    if (value.size() > max_attr_value)
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "The 'AttrValue' field value may not exceed " +
+                   NStr::NumericToString(max_attr_value) + " bytes");
+
+
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
                    "SETATTR message must have ObjectLoc or UserKey. "
@@ -1963,7 +1971,6 @@ CNetStorageHandler::x_ProcessSetAttr(
     string                      object_loc =
                                         direct_object.Locator().GetLocator();
 
-    string                      value = message.GetString("AttrValue");
     TNSTDBValue<CTimeSpan>      ttl;
     m_Server->GetServiceTTL(m_Service, ttl);
 

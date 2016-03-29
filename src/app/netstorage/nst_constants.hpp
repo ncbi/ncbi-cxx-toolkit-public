@@ -1,5 +1,5 @@
-#ifndef NETSTORAGE_CONFIG__HPP
-#define NETSTORAGE_CONFIG__HPP
+#ifndef NETSTORAGE_CONSTANTS__HPP
+#define NETSTORAGE_CONSTANTS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,34 +28,43 @@
  *
  * Authors:  Sergey Satskiy
  *
- * File Description: NetStorage config file utilities
+ * File Description: NetStorage constants used in the server code
  *
  */
 
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbitime.hpp>
-
-#include "nst_database.hpp"
-
-
 BEGIN_NCBI_SCOPE
 
-// Forward declaration
-class CNetStorageServer;
+
+// Configuration file default values
+const unsigned short    port_low_limit = 1;
+const unsigned short    port_high_limit = 65535;
+
+const unsigned int      default_network_timeout = 10;
+
+const unsigned int      default_max_connections = 500;
+const unsigned int      max_connections_low_limit = 1;
+const unsigned int      max_connections_high_limit = 1000;
+
+const unsigned int      default_init_threads = 10;
+const unsigned int      init_threads_low_limit = 1;
+const unsigned int      init_threads_high_limit = 1000;
+
+const unsigned int      default_max_threads = 50;
+const unsigned int      max_threads_low_limit = 1;
+const unsigned int      max_threads_high_limit = 1000;
+
+const bool              default_log = true;
+const bool              default_log_timing_nst_api = false;
+const bool              default_log_timing_client_socket = false;
+
+const double            default_execute_sp_timeout = 20.0;
 
 
-// Validates the config file - it does LOG_POST(...) of the problems it found
-// Returns true if the config file is perfectly well formed
-void NSTValidateConfigFile(const IRegistry &  reg,
-                           vector<string> &  warnings,
-                           bool  throw_port_exception);
-CJsonNode NSTGetBackendConfiguration(const IRegistry &  reg,
-                                     CNetStorageServer *  server,
-                                     vector<string> &  warnings);
-TNSTDBValue<CTimeSpan>  ReadTimeSpan(const string &  reg_value,
-                                     bool  allow_infinity);
+// Limitations
+const size_t            max_attr_value = 900;
+
 
 END_NCBI_SCOPE
 
-#endif /* NETSTORAGE_CONFIG__HPP */
+#endif /* NETSTORAGE_CONSTANTS__HPP */
 

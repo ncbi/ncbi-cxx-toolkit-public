@@ -35,7 +35,7 @@
 #include "nst_server.hpp"
 #include "nst_service_thread.hpp"
 #include "nst_config.hpp"
-
+#include "nst_constants.hpp"
 
 
 USING_NCBI_SCOPE;

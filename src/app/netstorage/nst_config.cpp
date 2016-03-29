@@ -36,6 +36,7 @@
 #include "nst_config.hpp"
 #include "nst_exception.hpp"
 #include "nst_server.hpp"
+#include "nst_constants.hpp"
 
 
 BEGIN_NCBI_SCOPE
