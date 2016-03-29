@@ -11683,6 +11683,29 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
         }
         ChangeMade(CCleanupChange::eChangeFeatureLocation);
     }
+    if (sf.IsSetPseudo() && sf.GetPseudo() && sf.IsSetProduct()) {
+        CBioseq_Handle pseq = m_Scope->GetBioseqHandle(sf.GetProduct());
+        if (pseq) {
+            CFeat_CI prot(pseq, CSeqFeatData::eSubtype_prot);
+            if (prot) {
+                string label;
+                if (prot->GetData().GetProt().IsSetName() &&
+                    !prot->GetData().GetProt().GetName().empty()) {
+                    label = prot->GetData().GetProt().GetName().front();
+                } else if (prot->GetData().GetProt().IsSetDesc()) {
+                    label = prot->GetData().GetProt().GetDesc();
+                }
+                if (!NStr::IsBlank(label)) {
+                    x_AddToComment(sf, label);
+                }
+            }
+            CBioseq_EditHandle pseq_e(pseq);
+            pseq_e.Remove();
+            ChangeMade(CCleanupChange::eChangeOther);
+        }
+        sf.ResetProduct();
+        ChangeMade(CCleanupChange::eChangeCdregion);
+    }
 }
 
 
