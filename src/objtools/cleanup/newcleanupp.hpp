@@ -530,6 +530,7 @@ private:
 
     void x_RemoveProtDescThatDupsProtName( CProt_ref & prot );
     void x_RemoveRedundantComment( CGene_ref& gene, CSeq_feat& seq_feat );
+    void x_ExceptTextEC(string& except_text);
 
     void x_RemoveEmptyUserObject( CSeq_descr & seq_descr );
     void x_CleanupGenbankBlock( CSeq_descr & seq_descr );

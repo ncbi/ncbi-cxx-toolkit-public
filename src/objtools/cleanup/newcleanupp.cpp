@@ -10414,6 +10414,14 @@ void CNewCleanup_imp::x_RemoveRedundantComment( CGene_ref& gene, CSeq_feat & seq
     }
 }
 
+void CNewCleanup_imp::x_ExceptTextEC(string& except_text)
+{
+    if (NStr::EqualNocase(except_text, "reasons cited in publication")) {
+        except_text = "reasons given in citation";
+        ChangeMade(CCleanupChange::eChangeException);
+    }
+}
+
 void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
 {
     EDIT_EACH_SEQDESC_ON_SEQDESCR( descr_iter, seq_descr ) {

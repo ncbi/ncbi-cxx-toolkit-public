@@ -99,6 +99,8 @@ use m_NewCleanup.x_RemoveRedundantComment
     Seq-feat.data.gene AND Seq-feat
 }
 
+use m_NewCleanup.x_ExceptTextEC { Seq-feat.except-text }
+
 use m_NewCleanup.x_RemoveEmptyUserObject
 {
     Bioseq.descr,

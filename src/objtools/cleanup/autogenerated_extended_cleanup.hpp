@@ -110,6 +110,7 @@ void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_ETC( Tcon
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_ETC( CTxinit & arg0 );
   void x_ExtendedCleanupSeqFeat_data_data( CSeqFeatData & arg0 );
   void x_ExtendedCleanupSeqFeat_data( CSeqFeatData & arg0 );
+  void x_ExtendedCleanupSeqFeat_except_text_ETC( std::string & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_ETC( CSeqFeatData & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_ETC( CSeqFeatData & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_ETC( CSeqFeatXref & arg0 );
