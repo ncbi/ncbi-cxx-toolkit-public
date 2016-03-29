@@ -309,10 +309,13 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedScores(
         for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
                 ++cit) {
             const CScore& score = **cit;
-            if (!xIsNeededScore(record.StrSeqId(), score)) {
+            if (!score.IsSetId()  ||  !score.GetId().IsStr()) {
                 continue;
             }
-            record.SetScore(score);
+            const string& key = score.GetId().GetStr();
+            if (key == "score"  ||  xIsNeededScore(record.StrSeqId(), score)) {
+                record.SetScore(score);
+            }
         }
     }
     return true;
@@ -463,10 +466,13 @@ bool CGff3FlybaseWriter::xAssignAlignmentDensegScores(
     for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
             ++cit) {
         const CScore& score = **cit;
-        if (!xIsNeededScore(record.StrSeqId(), score)) {
+        if (!score.IsSetId()  ||  !score.GetId().IsStr()) {
             continue;
         }
-        record.SetScore(score);
+        const string& key = score.GetId().GetStr();
+        if (key == "score"  ||  xIsNeededScore(record.StrSeqId(), score)) {
+            record.SetScore(score);
+        }
     }        
     return true;
 }
