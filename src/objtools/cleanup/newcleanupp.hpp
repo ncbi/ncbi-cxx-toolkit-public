@@ -394,6 +394,7 @@ private:
     EAction x_ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str);
     EAction x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQualOpt opt );
     void x_AddEnvSamplOrMetagenomic(CBioSource& biosrc);
+    void x_CleanupOldName(COrg_ref& org);
     void x_AddToComment(CSeq_feat& feat, const string& comment);
 
     // publication-related cleanup

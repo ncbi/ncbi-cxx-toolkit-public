@@ -5200,6 +5200,9 @@ CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQua
 void CNewCleanup_imp::BioSourceEC(CBioSource& biosrc)
 {
     x_AddEnvSamplOrMetagenomic(biosrc);
+    if (biosrc.IsSetOrg()) {
+        x_CleanupOldName(biosrc.SetOrg());
+    }
 }
 
 
@@ -5249,6 +5252,30 @@ void CNewCleanup_imp::x_AddEnvSamplOrMetagenomic(CBioSource& biosrc)
                 biosrc.SetSubtype().push_back(s);
                 ChangeMade(CCleanupChange::eAddSubSource);
             }
+        }
+    }
+}
+
+
+void CNewCleanup_imp::x_CleanupOldName(COrg_ref& org)
+{
+    if (org.IsSetTaxname() && org.IsSetOrgname() && org.GetOrgname().IsSetMod()) {
+        COrgName::TMod::iterator it = org.SetOrgname().SetMod().begin();
+        while (it != org.SetOrgname().SetMod().end()) {
+            if ((*it)->IsSetSubtype() &&
+                (*it)->GetSubtype() == COrgMod::eSubtype_old_name &&
+                (*it)->IsSetSubname() &&
+                NStr::Equal((*it)->GetSubname(), org.GetTaxname()) &&
+                (!(*it)->IsSetAttrib() || NStr::IsBlank((*it)->GetAttrib()))) {
+                it = org.SetOrgname().SetMod().erase(it);
+                ChangeMade(CCleanupChange::eRemoveOrgmod);
+            } else {
+                ++it;
+            }            
+        }
+        if (org.GetOrgname().GetMod().empty()) {
+            org.SetOrgname().ResetMod();
+
         }
     }
 }
