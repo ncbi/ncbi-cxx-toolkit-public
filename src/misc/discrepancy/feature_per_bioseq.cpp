@@ -42,41 +42,6 @@ USING_SCOPE(objects);
 
 DISCREPANCY_MODULE(feature_per_bioseq);
 
-/*// Removing from the list
-// DUPLICATE_GENE_LOCUS
-DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS, CSeq_feat_BY_BIOSEQ, eDisc, "Duplicate Gene Locus")
-{
-    if (!obj.GetData().IsGene() || !obj.GetData().GetGene().IsSetLocus()) {
-        return;
-    }
-    if (m_Count != context.GetCountBioseq()) {
-        m_Count = context.GetCountBioseq();
-        Summarize(context);
-    }
-    if (!context.IsCurrentRnaInGenProdSet()) {
-        m_Objs[obj.GetData().GetGene().GetLocus()].Add(*new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj), context.GetScope(), context.GetFile(), context.GetKeepRef()), false);
-    }
-}
-
-
-DISCREPANCY_SUMMARIZE(DUPLICATE_GENE_LOCUS)
-{
-    if (m_Objs.empty()) {
-        return;
-    }
-    NON_CONST_ITERATE (CReportNode::TNodeMap, it, m_Objs.GetMap()) {
-        if (!NStr::IsBlank(it->first) && it->second->GetObjects().size() > 1) {
-            CReportNode tmpNode;
-            tmpNode["[n] gene[s] [has] the same locus as another gene on the same Bioseq"].Add(it->second->GetObjects());
-            TReportItemList tmpList = tmpNode.Export(*this)->GetSubitems();
-            m_ReportItems.insert(m_ReportItems.end(), tmpList.begin(), tmpList.end());
-        }
-    }
-    m_Objs.clear();
-}
-*/
-
-
 // COUNT_RRNAS
 
 DISCREPANCY_CASE(COUNT_RRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Count rRNAs")
@@ -222,7 +187,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
 
     CRef<CReportObj> bioseq = m_Objs[kEmptyStr].GetObjects()[0];
     string short_name = bioseq->GetShort();
-    m_Objs[kEmptyStr].clear();
+    m_Objs[kEmptyStr].clearObjs();
 
     size_t total = 0;
     // count tRNAs
@@ -272,9 +237,10 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
     }
 
-    TReportItemList tmpList = m_Objs[kEmptyStr].Export(*this, false)->GetSubitems();
-    m_ReportItems.insert(m_ReportItems.end(), tmpList.begin(), tmpList.end());
+    CReportNode tmp = m_Objs[kEmptyStr];
     m_Objs.clear();
+    m_Objs[kEmptyStr] = tmp;
+    m_ReportItems = tmp.Export(*this, false)->GetSubitems();
 }
 
 
@@ -308,54 +274,6 @@ static CConstRef<CProt_ref> sGetProtRefForFeature(const CSeq_feat& seq_feat, CSc
 
     return prot_ref;
 }
-
-
-/*// removed from the list
-
-DISCREPANCY_CASE(EC_NUMBER_NOTE, CSeq_feat_BY_BIOSEQ, eDisc, "Seq-feat has EC number note")
-{
-    bool discrepancy_found = false;
-
-    if (obj.IsSetComment() &&
-        validator::HasECnumberPattern(obj.GetComment())) {
-        discrepancy_found = true;
-    }
-    else if (obj.IsSetData() &&
-             obj.GetData().IsCdregion() &&
-             obj.IsSetProduct()) {
-        CConstRef<CProt_ref> prot_ref(sGetProtRefForFeature(obj, context.GetScope(), false));
-        if (prot_ref.NotEmpty()) {
-            if (prot_ref->IsSetName()) {
-                ITERATE (list<string>, it, prot_ref->GetName()) {
-                    if (validator::HasECnumberPattern(*it)) {
-                        discrepancy_found = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!discrepancy_found &&
-                prot_ref->IsSetDesc() &&
-                validator::HasECnumberPattern(prot_ref->GetDesc())) {
-                discrepancy_found = true;
-            }
-        }
-    }
-
-    if (discrepancy_found) {
-        m_Objs["[n] feature[s] [has] EC numbers in notes or products"].Add(
-                *new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj),
-                                        context.GetScope(),
-                                        context.GetFile(),
-                                        context.GetKeepRef()));
-    }
-}
-
-DISCREPANCY_SUMMARIZE(EC_NUMBER_NOTE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-*/
 
 
 END_SCOPE(NDiscrepancy)
