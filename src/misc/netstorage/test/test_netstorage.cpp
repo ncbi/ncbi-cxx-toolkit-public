@@ -1043,18 +1043,23 @@ struct SAttrApi : SAttrApiBase
     template <class TLocation>
     void Read(TLocation, const SCtx& ctx, CNetStorageObject& object)
     {
+#if 0
         BOOST_CHECK_THROW_CTX(SAttrApiBase::Read(ctx, object),
                 CNetStorageException, ctx);
+#endif
     }
 
     template <class TLocation>
     void Write(TLocation, const SCtx& ctx, CNetStorageObject& object)
     {
+#if 0
         BOOST_CHECK_THROW_CTX(SAttrApiBase::Write(ctx, object),
                 CNetStorageException, ctx);
+#endif
     }
 };
 
+#if 0
 // Attribute testing is enabled
 template <>
 struct SAttrApi<boost::true_type> : SAttrApiBase
@@ -1083,6 +1088,7 @@ struct SAttrApi<boost::true_type> : SAttrApiBase
                 CNetStorageException, ctx);
     }
 };
+#endif
 
 
 // Locations and flags used for tests
