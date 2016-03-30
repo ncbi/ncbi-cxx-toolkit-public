@@ -4883,6 +4883,9 @@ bool CFeatureItem::x_AddFTableGeneQuals(
     if ( gene.IsSetLocus()  &&  !gene.GetLocus().empty() ) {
         x_AddFTableQual("gene", gene.GetLocus(), CFormatQual::eTrim_WhitespaceOnly);
     }
+    if ( gene.IsSetAllele()  &&  !gene.GetAllele().empty() ) {
+        x_AddFTableQual("allele", gene.GetAllele());
+    }
     ITERATE (CGene_ref::TSyn, it, gene.GetSyn()) {
         x_AddFTableQual("gene_syn", *it, CFormatQual::eTrim_WhitespaceOnly);
     }
