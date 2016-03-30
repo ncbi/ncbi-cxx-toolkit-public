@@ -117,14 +117,14 @@ bool CBedFeatureRecord::AssignDisplayData(
         if ( strLabel == "thickStart" ) {
             BUMP( m_uColumnCount, 7 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsInt() ) {
-                m_strThickStart = NStr::UIntToString( (*it)->GetData().GetInt() + 1 );
+                m_strThickStart = NStr::UIntToString( (*it)->GetData().GetInt());
             }
             continue;
         }
         if ( strLabel == "thickEnd" ) {
             BUMP( m_uColumnCount, 8 );
             if ( (*it)->IsSetData() && (*it)->GetData().IsInt() ) {
-                m_strThickEnd = NStr::UIntToString( (*it)->GetData().GetInt() + 1 );
+                m_strThickEnd = NStr::UIntToString( (*it)->GetData().GetInt()+1);
             }
             continue;
         }
