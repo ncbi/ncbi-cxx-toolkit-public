@@ -113,6 +113,7 @@ void CFeatTableEdit::InferParentMrnas()
         //add new rna to feature table
         mEditHandle.AddFeat(*pRna);
     }
+    mTree = feature::CFeatTree(mHandle);
 }
 
 //  ---------------------------------------------------------------------------
@@ -129,7 +130,7 @@ void CFeatTableEdit::InferParentGenes()
             if (!rna.IsSetPartial() ||  !rna.GetPartial()) {
                 continue;
             }
-            CMappedFeat parentGene = feature::GetBestGeneForMrna(rna); 
+            CMappedFeat parentGene = feature::GetBestGeneForMrna(rna, &mTree); 
             if (parentGene  &&  
                     !(parentGene.IsSetPartial()  &&  parentGene.GetPartial())) {
                 CRef<CSeq_feat> pEditedGene(new CSeq_feat);
@@ -151,6 +152,7 @@ void CFeatTableEdit::InferParentGenes()
         //add new gene to feature table
         mEditHandle.AddFeat(*pGene);
     }
+    mTree = feature::CFeatTree(mHandle);
 }
 
 //  ----------------------------------------------------------------------------
