@@ -44,6 +44,8 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <sra/data_loaders/wgs/wgsloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
@@ -104,6 +106,15 @@ private:
     void x_XOptionsValid(const string& opt);
     bool x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh);
     bool x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh);
+    bool x_GFF3Batch(CSeq_entry_Handle seh);
+    enum EFixCDSOptions {
+        eFixCDS_FrameFromLoc = 0x1,
+        eFixCDS_Retranslate = 0x2,
+        eFixCDS_ExtendToStop = 0x4
+    };
+    const Uint4 kGFF3CDSFixOptions = eFixCDS_FrameFromLoc | eFixCDS_Retranslate | eFixCDS_ExtendToStop;
+
+    bool x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& missing_prot_name);
     bool x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, bool do_basic = true, bool do_extended = false, Uint4 options = 0);
 
     template<typename T> void x_WriteToFile(const T& s);
@@ -221,7 +232,7 @@ void CCleanupApp::x_FeatureOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'r') {
+            if (*s != 'r' && *s != 'a') {
                 unrecognized += *s;
             }
         }
@@ -263,7 +274,7 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'w' && *s != 'r') {
+            if (*s != 'w' && *s != 'r' && *s != 'b') {
                 unrecognized += *s;
             }
         }
@@ -625,6 +636,9 @@ bool CCleanupApp::x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle s
     if (NStr::Find(opt, "r") != string::npos) {
         any_changes |= CCleanup::RemoveUnnecessaryGeneXrefs(seh);
     }
+    if (NStr::Find(opt, "a") != string::npos) {
+        any_changes |= x_FixCDS(seh, eFixCDS_ExtendToStop, kEmptyStr);
+    }
     return any_changes;
 }
 
@@ -642,8 +656,81 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh)
         }
         
     }
+    if (NStr::Find(opt, "b") != string::npos) {
+        any_changes = x_GFF3Batch(seh);
+    }
     return any_changes;
 }
+
+
+bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& missing_prot_name)
+{
+    bool any_changes = false;
+    for (CBioseq_CI bi(seh, CSeq_inst::eMol_na); bi; ++bi) {
+        any_changes |= CCleanup::SetGeneticCodes(*bi);
+        for (CFeat_CI fi(*bi, CSeqFeatData::eSubtype_cdregion); fi; ++fi) {
+            CConstRef<CSeq_feat> orig = fi->GetSeq_feat();
+            CRef<CSeq_feat> sf(new CSeq_feat());
+            sf->Assign(*orig);
+            bool feat_change = false;
+            if ((options & eFixCDS_FrameFromLoc) &&
+                CCleanup::SetFrameFromLoc(sf->SetData().SetCdregion(), sf->GetLocation(), bi.GetScope())) {
+                feat_change = true;
+            }
+            if ((options & eFixCDS_Retranslate)) {
+                feat_change |= feature::RetranslateCDS(*sf, bi.GetScope());
+            }
+            if ((options & eFixCDS_ExtendToStop) &&
+                CCleanup::ExtendToStopIfShortAndNotPartial(*sf, *bi)) {
+                CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*orig, seh.GetScope());
+                if (mrna &&
+                    ((mrna->GetLocation().GetStrand() == eNa_strand_minus &&
+                    mrna->GetLocation().GetStop(eExtreme_Biological) > sf->GetLocation().GetStop(eExtreme_Biological)) ||
+                    (mrna->GetLocation().GetStrand() != eNa_strand_minus &&
+                    mrna->GetLocation().GetStop(eExtreme_Biological) < sf->GetLocation().GetStop(eExtreme_Biological)))) {
+                    CRef<CSeq_feat> new_mrna(new CSeq_feat());
+                    new_mrna->Assign(*mrna);
+                    if (CCleanup::ExtendToStopCodon(*new_mrna, *bi, 3)) {
+                        CSeq_feat_EditHandle efh(seh.GetScope().GetSeq_featHandle(*mrna));
+                        efh.Replace(*new_mrna);
+                    }
+                }
+                feat_change = true;
+            }
+            if (feat_change) {
+                CSeq_feat_EditHandle ofh = CSeq_feat_EditHandle(seh.GetScope().GetSeq_featHandle(*orig));
+                ofh.Replace(*sf);
+                any_changes = true;
+            }
+            //also set protein name if missing, change takes place on protein bioseq
+            if (!NStr::IsBlank(missing_prot_name)) {
+                string current_name = CCleanup::GetProteinName(*sf, seh.GetScope());
+                if (NStr::IsBlank(current_name)) {
+                    CCleanup::SetProteinName(*sf, missing_prot_name, false, seh.GetScope());
+                    any_changes = true;
+                }
+            }
+        }
+    }
+    return any_changes;
+}
+
+
+bool CCleanupApp::x_GFF3Batch(CSeq_entry_Handle seh)
+{
+    bool any_changes = x_FixCDS(seh, kGFF3CDSFixOptions, kEmptyStr);
+    CCleanup cleanup;
+    cleanup.SetScope(&(seh.GetScope()));
+    Uint4 options = CCleanup::eClean_NoNcbiUserObjects;
+    CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(seh, options);
+    any_changes |= (!changes.Empty());
+    changes = cleanup.ExtendedCleanup(seh, options);
+    any_changes |= (!changes.Empty());
+    any_changes |= x_FixCDS(seh, 0, "unnamed protein product");
+
+    return any_changes;
+}
+
 
 bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, 
                                      bool do_basic, bool do_extended, Uint4 options)
