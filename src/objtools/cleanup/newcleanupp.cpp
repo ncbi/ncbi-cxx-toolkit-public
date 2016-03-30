@@ -10998,12 +10998,11 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
                 }
             }
         }
+        if (bioseq.GetAnnot().empty()) {
+            bioseq.ResetAnnot();
+            ChangeMade(CCleanupChange::eChangeOther);
+        }
     }
-    if (bioseq.GetAnnot().empty()) {
-        bioseq.ResetAnnot();
-        ChangeMade(CCleanupChange::eChangeOther);
-    }
-
 }
 
 void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
