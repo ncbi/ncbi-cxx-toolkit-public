@@ -1089,7 +1089,7 @@ struct SAttrApi<boost::true_type> : SAttrApiBase
 
 struct SLocBase
 {
-    typedef boost::true_type TAttrTesting;
+    typedef boost::false_type TAttrTesting;
 
     static const bool check_relocate = true;
     static const bool loc_info = true;
