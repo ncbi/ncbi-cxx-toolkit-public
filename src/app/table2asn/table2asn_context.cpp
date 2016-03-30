@@ -135,6 +135,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_handle_as_aa(false),
     m_handle_as_nuc(false),
     m_feature_links(0),
+    m_use_hypothetic_protein(false),
     m_logger(0)
 {
 }

@@ -8329,8 +8329,7 @@ FFFFFFFFFFFFFFFFF8282481421844842841122188444111144111281828418418818118111141
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC001593 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8353,8 +8352,7 @@ PNTFTIPTSSHHQNYNQSNIPTSQGMKPYRPWGTELAY"
                       data prot {
                         name {
                           "Hairy/enhancer-of-split related with YRPW motif
- protein-like Protein",
-                          "hypothetical protein"
+ protein-like Protein"
                         }
                       },
                       location int {
@@ -8377,8 +8375,7 @@ PNTFTIPTSSHHQNYNQSNIPTSQGMKPYRPWGTELAY"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC001594 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8407,8 +8404,7 @@ AEKTRSWKEGEVLIFDDSFEHEVWHNGTSLRLVLIVDVWHPDLTPGEKRTLSPI"
                     {
                       data prot {
                         name {
-                          "Aspartyl/asparaginyl beta-hydroxylase-like Protein",
-                          "hypothetical protein"
+                          "Aspartyl/asparaginyl beta-hydroxylase-like Protein"
                         }
                       },
                       location int {
@@ -8435,8 +8431,7 @@ AEKTRSWKEGEVLIFDDSFEHEVWHNGTSLRLVLIVDVWHPDLTPGEKRTLSPI"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004664 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8462,8 +8457,7 @@ RLKEEGDGSPAKKKPRTD"
                     {
                       data prot {
                         name {
-                          "Bloom syndrome protein homolog-like Protein",
-                          "hypothetical protein"
+                          "Bloom syndrome protein homolog-like Protein"
                         }
                       },
                       location int {
@@ -8486,8 +8480,7 @@ RLKEEGDGSPAKKKPRTD"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004667 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8514,8 +8507,7 @@ PISRFKVTRVIPSPDEDLAIGKFANVRSSVSSNDSVDSLQLDVDSDRD"
                       data prot {
                         name {
                           "Protein phosphatase 1 regulatory subunit 37-like
- Protein",
-                          "hypothetical protein"
+ Protein"
                         }
                       },
                       location int {
@@ -8539,8 +8531,7 @@ PISRFKVTRVIPSPDEDLAIGKFANVRSSVSSNDSVDSLQLDVDSDRD"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004667 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8567,8 +8558,7 @@ PSPDEDLAIGKFANVRSSVSSNDSVDSLQLDVDSDRD"
                       data prot {
                         name {
                           "Protein phosphatase 1 regulatory subunit 37-like
- Protein",
-                          "hypothetical protein"
+ Protein"
                         }
                       },
                       location int {
@@ -8595,8 +8585,7 @@ PSPDEDLAIGKFANVRSSVSSNDSVDSLQLDVDSDRD"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004668 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8616,7 +8605,6 @@ LVFPNQ"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -8643,8 +8631,7 @@ LVFPNQ"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004669 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8666,8 +8653,7 @@ AAFQLLTAEVYAEWVCDKCLSSKNIPLVKFKP"
                     {
                       data prot {
                         name {
-                          "Protein pygopus-like Protein",
-                          "hypothetical protein"
+                          "Protein pygopus-like Protein"
                         }
                       },
                       location int {
@@ -8693,8 +8679,7 @@ AAFQLLTAEVYAEWVCDKCLSSKNIPLVKFKP"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004670 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8716,8 +8701,7 @@ KRRIRVA"
                     {
                       data prot {
                         name {
-                          "Transcription factor Sp3-like Protein",
-                          "hypothetical protein"
+                          "Transcription factor Sp3-like Protein"
                         }
                       },
                       location int {
@@ -8743,8 +8727,7 @@ KRRIRVA"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004672 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8769,7 +8752,6 @@ PK"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -8796,8 +8778,7 @@ PK"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004673 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8819,8 +8800,7 @@ RVCGKGFCRNFDLKKHMRKLHESTSASDSDFVANAAPPAVYPNERDLHHFISPFLRPPVPVYSKLL"
                     {
                       data prot {
                         name {
-                          "Fez family zinc finger protein 2-like Protein",
-                          "hypothetical protein"
+                          "Fez family zinc finger protein 2-like Protein"
                         }
                       },
                       location int {
@@ -8846,8 +8826,7 @@ RVCGKGFCRNFDLKKHMRKLHESTSASDSDFVANAAPPAVYPNERDLHHFISPFLRPPVPVYSKLL"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004674 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8870,8 +8849,7 @@ KILVWHTQTKKNEPSQPLDLAKYNSTNLVMLKQILV"
                       data prot {
                         name {
                           "Galactosylgalactosylxylosylprotein
- 3-beta-glucuronosyltransferase P-like Protein",
-                          "hypothetical protein"
+ 3-beta-glucuronosyltransferase P-like Protein"
                         }
                       },
                       location int {
@@ -8897,8 +8875,7 @@ KILVWHTQTKKNEPSQPLDLAKYNSTNLVMLKQILV"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004675 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8928,8 +8905,7 @@ GLAVDVVGQAGKPKTITGFQTHTTPVLLAHGERAELATEEYIALTPIMEGFVILRKNPDFYPS"
                       data prot {
                         name {
                           "26S proteasome non-ATPase regulatory subunit 2-like
- Protein",
-                          "hypothetical protein"
+ Protein"
                         }
                       },
                       location int {
@@ -8952,8 +8928,7 @@ GLAVDVVGQAGKPKTITGFQTHTTPVLLAHGERAELATEEYIALTPIMEGFVILRKNPDFYPS"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004676 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -8990,7 +8965,6 @@ EKAKANDLAKMHLKKYGREDTAVTSIAQGHEPEAFTSVFPSWNPDFWDSLESYDDIKAKIAEDNKAL"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -9015,8 +8989,7 @@ EKAKANDLAKMHLKKYGREDTAVTSIAQGHEPEAFTSVFPSWNPDFWDSLESYDDIKAKIAEDNKAL"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004677 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9042,8 +9015,7 @@ EMSEWKPMIINRIKQKIVKTCDFTHDKGVGCPQDNRFTFKYVYDNKKTRTVT"
                       data prot {
                         name {
                           "Leucine-rich repeat-containing protein 15-like
- Protein",
-                          "hypothetical protein"
+ Protein"
                         }
                       },
                       location int {
@@ -9070,8 +9042,7 @@ EMSEWKPMIINRIKQKIVKTCDFTHDKGVGCPQDNRFTFKYVYDNKKTRTVT"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004678 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9093,7 +9064,6 @@ LHVPTNFAHLFTV"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -9117,8 +9087,7 @@ LHVPTNFAHLFTV"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004679 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9145,8 +9114,7 @@ SIYFYVTGCKHFHQARQLLENIQADSEIIDLIKISKTNFIVLKLLAGGHKKDSVTPPEFDFSVNRYFPIIKLT"
                       data prot {
                         name {
                           "N-alpha-acetyltransferase, 35 NatC auxiliary
- subunit homolog-like Protein",
-                          "hypothetical protein"
+ subunit homolog-like Protein"
                         }
                       },
                       location int {
@@ -9173,8 +9141,7 @@ SIYFYVTGCKHFHQARQLLENIQADSEIIDLIKISKTNFIVLKLLAGGHKKDSVTPPEFDFSVNRYFPIIKLT"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004680 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9193,8 +9160,7 @@ DWKLILQYMPYYNGKFKEE"
                     {
                       data prot {
                         name {
-                          "Cytochrome b-c1 complex subunit 10-like Protein",
-                          "hypothetical protein"
+                          "Cytochrome b-c1 complex subunit 10-like Protein"
                         }
                       },
                       location int {
@@ -9220,8 +9186,7 @@ DWKLILQYMPYYNGKFKEE"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004681 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9241,7 +9206,6 @@ RRPMRLTCGTNTELRSETCPDPSFLYLSSSFLSTHFIPYYRINHAYTLDPVLVPTRQKPVSFLVLRQAKPVPYSTQTGY"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -9265,8 +9229,7 @@ RRPMRLTCGTNTELRSETCPDPSFLYLSSSFLSTHFIPYYRINHAYTLDPVLVPTRQKPVSFLVLRQAKPVPYSTQTGY"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004682 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9297,8 +9260,7 @@ PRYKICKYCSNSYLDNSFFVEHLNQCPFRISPKRETFDNEVDNNIKQEVTEIASEEKDEQ"
                     {
                       data prot {
                         name {
-                          "Zinc finger protein 423-like Protein",
-                          "hypothetical protein"
+                          "Zinc finger protein 423-like Protein"
                         }
                       },
                       location int {
@@ -9322,8 +9284,7 @@ PRYKICKYCSNSYLDNSFFVEHLNQCPFRISPKRETFDNEVDNNIKQEVTEIASEEKDEQ"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004682 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9354,8 +9315,7 @@ FFVEHLNQCPFRISPKRETFDNEVDNNIKQEVTEIASEEKDEQ"
                     {
                       data prot {
                         name {
-                          "Zinc finger protein 423-like Protein",
-                          "hypothetical protein"
+                          "Zinc finger protein 423-like Protein"
                         }
                       },
                       location int {
@@ -9379,8 +9339,7 @@ FFVEHLNQCPFRISPKRETFDNEVDNNIKQEVTEIASEEKDEQ"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004682 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9412,8 +9371,7 @@ VDNNIKQEVTEIASEEKDEQ"
                     {
                       data prot {
                         name {
-                          "Zinc finger protein 423-like Protein",
-                          "hypothetical protein"
+                          "Zinc finger protein 423-like Protein"
                         }
                       },
                       location int {
@@ -9440,8 +9398,7 @@ VDNNIKQEVTEIASEEKDEQ"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004683 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9470,8 +9427,7 @@ ADISALQIFFDHYSTPKARSYFQEALDIIPPLENSEATVVQDILRQCRARMRIQLLCLTSHANGPVKKRSH"
                     {
                       data prot {
                         name {
-                          "Exocyst complex component 2-like Protein",
-                          "hypothetical protein"
+                          "Exocyst complex component 2-like Protein"
                         }
                       },
                       location int {
@@ -9497,8 +9453,7 @@ ADISALQIFFDHYSTPKARSYFQEALDIIPPLENSEATVVQDILRQCRARMRIQLLCLTSHANGPVKKRSH"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004685 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9518,7 +9473,6 @@ NIDVKKNYTLIV"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -9545,8 +9499,7 @@ NIDVKKNYTLIV"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004686 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9568,7 +9521,6 @@ NNNEVCNKSVTDENSIADAVPTPKQRKNKLSKNILLGTESVCN"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -9595,8 +9547,7 @@ NNNEVCNKSVTDENSIADAVPTPKQRKNKLSKNILLGTESVCN"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004687 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9616,7 +9567,6 @@ TTINS"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -9640,8 +9590,7 @@ TTINS"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004688 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9660,7 +9609,6 @@ RLQEAEEYANVLLKSQE"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -9688,8 +9636,7 @@ RLQEAEEYANVLLKSQE"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004689 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9712,8 +9659,7 @@ LQKKPLHHSKKN"
                       data prot {
                         name {
                           "Tubulin polyglutamylase complex subunit 2-like
- Protein",
-                          "hypothetical protein"
+ Protein"
                         }
                       },
                       location int {
@@ -9739,8 +9685,7 @@ LQKKPLHHSKKN"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004690 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9762,8 +9707,7 @@ FVGFELCKTFLAYLSKASPV"
                     {
                       data prot {
                         name {
-                          "Congested-like trachea protein",
-                          "hypothetical protein"
+                          "Congested-like trachea protein"
                         }
                       },
                       location int {
@@ -9786,8 +9730,7 @@ FVGFELCKTFLAYLSKASPV"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004690 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9806,8 +9749,7 @@ DVLKSRLQTAPEGTYPNGIRDVFKKLMLTEGPGALYKGITPVLLRAFPANAACFVGFELCKTFLAYLSKASPV"
                     {
                       data prot {
                         name {
-                          "Congested-like trachea protein",
-                          "hypothetical protein"
+                          "Congested-like trachea protein"
                         }
                       },
                       location int {
@@ -9831,8 +9773,7 @@ DVLKSRLQTAPEGTYPNGIRDVFKKLMLTEGPGALYKGITPVLLRAFPANAACFVGFELCKTFLAYLSKASPV"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004690 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9852,8 +9793,7 @@ IMAPGERIKCLLQIQQASTGPKTYSGPVDVVKKLYKEGGIRSIYRGSGATLLRGKGFIRKLQKAVKLHN"
                     {
                       data prot {
                         name {
-                          "Congested-like trachea protein",
-                          "hypothetical protein"
+                          "Congested-like trachea protein"
                         }
                       },
                       location int {
@@ -9880,8 +9820,7 @@ IMAPGERIKCLLQIQQASTGPKTYSGPVDVVKKLYKEGGIRSIYRGSGATLLRGKGFIRKLQKAVKLHN"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004691 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9905,8 +9844,7 @@ WSFDCAAAHVYHLMKSDSYSRYLRSEMYKEFLNGSKKKTSVKGIRSIVSFSARKDNVT"
                     {
                       data prot {
                         name {
-                          "Regulator of G-protein signaling 7-like Protein",
-                          "hypothetical protein"
+                          "Regulator of G-protein signaling 7-like Protein"
                         }
                       },
                       location int {
@@ -9932,8 +9870,7 @@ WSFDCAAAHVYHLMKSDSYSRYLRSEMYKEFLNGSKKKTSVKGIRSIVSFSARKDNVT"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004692 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -9952,7 +9889,6 @@ FESLYCLNIRARVQCSEVYRCGITFPTFTGTKNNAHRSLFITKSDQ"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -9979,8 +9915,7 @@ FESLYCLNIRARVQCSEVYRCGITFPTFTGTKNNAHRSLFITKSDQ"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004695 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10005,7 +9940,6 @@ SRM"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -10029,8 +9963,7 @@ SRM"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004696 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10061,8 +9994,7 @@ VELLKVGCAGWWFVKIIGSSVEGWAPAAYLENLHRKTSRSSSRSQDKLNDH"
                     {
                       data prot {
                         name {
-                          "Guanine nucleotide exchange factor DBS-like Protein",
-                          "hypothetical protein"
+                          "Guanine nucleotide exchange factor DBS-like Protein"
                         }
                       },
                       location int {
@@ -10089,8 +10021,7 @@ VELLKVGCAGWWFVKIIGSSVEGWAPAAYLENLHRKTSRSSSRSQDKLNDH"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004697 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10125,8 +10056,7 @@ KIREVRQKVMARNNSTPHSANSQSSPVTPAEPLNVSSSS"
                     {
                       data prot {
                         name {
-                          "capicua",
-                          "hypothetical protein"
+                          "capicua"
                         }
                       },
                       location int {
@@ -10152,8 +10082,7 @@ KIREVRQKVMARNNSTPHSANSQSSPVTPAEPLNVSSSS"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004699 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10173,8 +10102,7 @@ TKCLKEERQRRRQENYDKSQQLKAKLRLQFEEDRKKRDAL"
                       data prot {
                         name {
                           "COX assembly mitochondrial protein 2 homolog-like
- Protein",
-                          "hypothetical protein"
+ Protein"
                         }
                       },
                       location int {
@@ -10200,8 +10128,7 @@ TKCLKEERQRRRQENYDKSQQLKAKLRLQFEEDRKKRDAL"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC004701 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10230,8 +10157,7 @@ MVESALAEANQTPVPGS"
                     {
                       data prot {
                         name {
-                          "Sarcalumenin-like Protein",
-                          "hypothetical protein"
+                          "Sarcalumenin-like Protein"
                         }
                       },
                       location int {
@@ -10254,8 +10180,7 @@ MVESALAEANQTPVPGS"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031459 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10274,7 +10199,6 @@ GRGSVSTEITVLEYEITPCMCHNYQRENEVNENLERRWRCKYY"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -10299,8 +10223,7 @@ GRGSVSTEITVLEYEITPCMCHNYQRENEVNENLERRWRCKYY"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031461 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10321,8 +10244,7 @@ VRAVKKGSRCAIALWFTFDPKHSETDRDEAWEVLGKMK"
                     {
                       data prot {
                         name {
-                          "Prolyl 3-hydroxylase 1-like Protein",
-                          "hypothetical protein"
+                          "Prolyl 3-hydroxylase 1-like Protein"
                         }
                       },
                       location int {
@@ -10346,8 +10268,7 @@ VRAVKKGSRCAIALWFTFDPKHSETDRDEAWEVLGKMK"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031462 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10370,8 +10291,7 @@ KFIVHEYKFDVSTELTSEVVPRATLLE"
                     {
                       data prot {
                         name {
-                          "Prolyl 3-hydroxylase 1-like Protein",
-                          "hypothetical protein"
+                          "Prolyl 3-hydroxylase 1-like Protein"
                         }
                       },
                       location int {
@@ -10395,8 +10315,7 @@ KFIVHEYKFDVSTELTSEVVPRATLLE"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031463 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10419,7 +10338,6 @@ SDNNESTDPNDMNSGGESYYGDQNDQH"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -10444,8 +10362,7 @@ SDNNESTDPNDMNSGGESYYGDQNDQH"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031463 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10468,7 +10385,6 @@ VCQFCGFVGYNYPLGPREISIDIHLPPPEESDNNESTDPNDMNSGGESYYGDQNDQH"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -10493,8 +10409,7 @@ VCQFCGFVGYNYPLGPREISIDIHLPPPEESDNNESTDPNDMNSGGESYYGDQNDQH"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031464 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10522,8 +10437,7 @@ VHCMDCARKQSPNLEGFVCLEEYKMEELTEVYDNFTLYPTVSATAEQYRLM"
                     {
                       data prot {
                         name {
-                          "Lysine-specific demethylase 6A-like Protein",
-                          "hypothetical protein"
+                          "Lysine-specific demethylase 6A-like Protein"
                         }
                       },
                       location int {
@@ -10547,8 +10461,7 @@ VHCMDCARKQSPNLEGFVCLEEYKMEELTEVYDNFTLYPTVSATAEQYRLM"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031465 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10572,8 +10485,7 @@ LTDSHTHYSSVITELTAFVNYIGQVELLPEADELLFPPDFFLVLLVVLSPQFYLLK"
                     {
                       data prot {
                         name {
-                          "Lysine-specific demethylase 6A-like Protein",
-                          "hypothetical protein"
+                          "Lysine-specific demethylase 6A-like Protein"
                         }
                       },
                       location int {
@@ -10597,8 +10509,7 @@ LTDSHTHYSSVITELTAFVNYIGQVELLPEADELLFPPDFFLVLLVVLSPQFYLLK"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031465 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10620,8 +10531,7 @@ AFVNYIGQVELLPEADELLFPPDFFLVLLVVLSPQFYLLK"
                     {
                       data prot {
                         name {
-                          "Lysine-specific demethylase 6A-like Protein",
-                          "hypothetical protein"
+                          "Lysine-specific demethylase 6A-like Protein"
                         }
                       },
                       location int {
@@ -10645,8 +10555,7 @@ AFVNYIGQVELLPEADELLFPPDFFLVLLVVLSPQFYLLK"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031465 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10666,8 +10575,7 @@ HWMDPTFLYGLGLVYFHFNAFQW"
                     {
                       data prot {
                         name {
-                          "Lysine-specific demethylase 6A-like Protein",
-                          "hypothetical protein"
+                          "Lysine-specific demethylase 6A-like Protein"
                         }
                       },
                       location int {
@@ -10691,8 +10599,7 @@ HWMDPTFLYGLGLVYFHFNAFQW"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031466 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10716,8 +10623,7 @@ RQGWEVGNIDYMGRDSFDNIWNKICQTLSAALPEDAPKTTEAPPPSTDAKPIEKSLTEGQLAAKTAIMPKKITPLANV"
                     {
                       data prot {
                         name {
-                          "Glycogenin-1-like Protein",
-                          "hypothetical protein"
+                          "Glycogenin-1-like Protein"
                         }
                       },
                       location int {
@@ -10741,8 +10647,7 @@ RQGWEVGNIDYMGRDSFDNIWNKICQTLSAALPEDAPKTTEAPPPSTDAKPIEKSLTEGQLAAKTAIMPKKITPLANV"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031466 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10765,8 +10670,7 @@ AIMPKKITPLANV"
                     {
                       data prot {
                         name {
-                          "Glycogenin-1-like Protein",
-                          "hypothetical protein"
+                          "Glycogenin-1-like Protein"
                         }
                       },
                       location int {
@@ -10790,8 +10694,7 @@ AIMPKKITPLANV"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031467 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10813,7 +10716,6 @@ LQINLKHPQFLQKNNFQLLLHRKHRQLQLQNNKHHRQLQLRLHNSRLQPQLRLRKLEKANLNQNSRNLKQHKVPHL"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -10838,8 +10740,7 @@ LQINLKHPQFLQKNNFQLLLHRKHRQLQLQNNKHHRQLQLRLHNSRLQPQLRLRKLEKANLNQNSRNLKQHKVPHL"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031468 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10869,8 +10770,7 @@ SNGKYGSPARVAKSRRSPSPSRTKSNRRSTSPRNRRSPSPRSRRGSTSPYRSRYHSPESSRKHRHKHKY"
                       data prot {
                         name {
                           "U2 snRNP-associated SURP motif-containing
- protein-like Protein",
-                          "hypothetical protein"
+ protein-like Protein"
                         }
                       },
                       location int {
@@ -10894,8 +10794,7 @@ SNGKYGSPARVAKSRRSPSPSRTKSNRRSTSPRNRRSPSPRSRRGSTSPYRSRYHSPESSRKHRHKHKY"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC031469 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10913,7 +10812,6 @@ SNGKYGSPARVAKSRRSPSPSRTKSNRRSTSPRNRRSPSPRSRRGSTSPYRSRYHSPESSRKHRHKHKY"
                     {
                       data prot {
                         name {
-                          "hypothetical protein",
                           "hypothetical protein"
                         }
                       },
@@ -10938,8 +10836,7 @@ SNGKYGSPARVAKSRRSPSPSRTKSNRRSTSPRNRRSPSPRSRRGSTSPYRSRYHSPESSRKHRHKHKY"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC034512 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -10973,8 +10870,7 @@ KHYGRVMKYTLRMQEEKPSKELEERLIDLCKINDWGYLGAHLQRNLLSKFPLSYRPF"
                     {
                       data prot {
                         name {
-                          "Tripeptidyl-peptidase 2-like protein",
-                          "hypothetical protein"
+                          "Tripeptidyl-peptidase 2-like protein"
                         }
                       },
                       location int {
@@ -10998,8 +10894,7 @@ KHYGRVMKYTLRMQEEKPSKELEERLIDLCKINDWGYLGAHLQRNLLSKFPLSYRPF"
                 }
               },
               descr {
-                title "hypothetical protein TcasGA2_TC034513 [Tribolium
- castaneum]",
+                title "[Tribolium castaneum]",
                 molinfo {
                   biomol peptide,
                   tech concept-trans
@@ -11027,8 +10922,7 @@ VSLPQ"
                       data prot {
                         name {
                           "Solute carrier organic anion transporter family
- member 4C1-like protein",
-                          "hypothetical protein"
+ member 4C1-like protein"
                         }
                       },
                       location int {

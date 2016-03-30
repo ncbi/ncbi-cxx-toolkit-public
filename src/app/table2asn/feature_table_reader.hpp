@@ -18,12 +18,12 @@ namespace objects
 };
 class CSerialObject;
 class ILineReader;
-
+class CTable2AsnContext;
 
 class CFeatureTableReader
 {
 public:
-   CFeatureTableReader(objects::ILineErrorListener* logger);
+   CFeatureTableReader(CTable2AsnContext& context);
 
    bool CheckIfNeedConversion(const objects::CSeq_entry& entry) const;
    void ConvertSeqIntoSeqSet(objects::CSeq_entry& entry, bool nuc_prod_set) const;
@@ -31,12 +31,12 @@ public:
    // MergeCDSFeatures looks for cdregion features in the feature tables
 //    in sequence annotations and creates protein sequences based on them
 //    as well as converting the sequence or a seq-set into nuc-prot-set
-   void MergeCDSFeatures(objects::CSeq_entry& obj, char feature_links);
+   void MergeCDSFeatures(objects::CSeq_entry& obj);
    void ParseCdregions(objects::CSeq_entry& entry);
    // This method reads 5 column table and attaches these features
 //    to corresponding sequences
 // This method requires certain postprocessing of plain features added
-   void ReadFeatureTable(objects::CSeq_entry& obj, ILineReader& line_reader, const string& genome_center_id);
+   void ReadFeatureTable(objects::CSeq_entry& obj, ILineReader& line_reader);
    void FindOpenReadingFrame(objects::CSeq_entry& entry) const;
    CRef<objects::CSeq_entry> ReadProtein(ILineReader& line_reader);
    void AddProteins(const objects::CSeq_entry& possible_proteins, objects::CSeq_entry& entry);
@@ -54,11 +54,12 @@ private:
        objects::CScope& scope, objects::CSeq_entry_Handle top_entry_h, 
        const objects::CBioseq& bioseq,
        objects::CSeq_feat& cd_feature);
-   objects::ILineErrorListener* m_logger;
+
    int m_local_id_counter;
-   char m_feature_links_kind;
    bool AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
    void MoveCdRegions(objects::CSeq_entry_Handle entry_h, const objects::CBioseq& bioseq, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable);
+
+   CTable2AsnContext& m_context;
 };
 
 END_NCBI_SCOPE

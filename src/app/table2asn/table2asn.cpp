@@ -399,12 +399,16 @@ int CTbl2AsnApp::Run(void)
     else
        m_context.m_cleanup = "b"; // always cleanup
 
-
-    // Process file based on its content
-    // Unless otherwise specifien we assume the file in hand is
-    // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
-    // Release file (batch processing) where we process each Seq-entry
-    // at a time.
+    if (args["M"])
+    {
+        m_context.m_master_genome_flag = args["M"].AsString();
+        m_context.m_remove_unnec_xref = true;
+        m_context.m_delay_genprodset = true;
+        m_context.m_GenomicProductSet = false;
+        m_context.m_HandleAsSet = true;
+        m_context.m_feature_links = 'p';
+        m_context.m_cleanup += 'f';
+    }
 
     m_reader.reset(new CMultiReader(m_context));
     m_context.m_remote_updater.reset(new edit::CRemoteUpdater);
@@ -449,16 +453,6 @@ int CTbl2AsnApp::Run(void)
     {
         const string& extra = args["X"].AsString();
         m_context.m_flipped_struc_cmt = extra.find('C') != string::npos;
-    }
-
-    if (args["M"])
-    {
-        m_context.m_master_genome_flag = args["M"].AsString();
-        m_context.m_remove_unnec_xref = true;
-        m_context.m_delay_genprodset = true;
-        m_context.m_GenomicProductSet = false;
-        m_context.m_HandleAsSet = true;
-        m_context.m_cleanup += 'f';
     }
 
     if (m_context.m_delay_genprodset)
@@ -675,6 +669,9 @@ int CTbl2AsnApp::Run(void)
         m_context.m_discrepancy_file = &args["Z"].AsOutputFile();
     }
 
+    if (m_context.m_cleanup.find('f') != string::npos)
+        m_context.m_use_hypothetic_protein = true;
+
     try
     {
         if (args["t"])
@@ -839,7 +836,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     ProcessSecretFiles(*entry);
 
-    CFeatureTableReader fr(m_logger);
+    CFeatureTableReader fr(m_context);
     // this may convert seq into seq-set
     if (!m_context.m_avoid_orf_lookup && !m_context.m_find_open_read_frame.empty())
         fr.FindOpenReadingFrame(*entry);
@@ -855,7 +852,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     fr.m_replacement_protein = m_replacement_proteins;
     if (!m_context.m_ecoset)
-    fr.MergeCDSFeatures(*entry, m_context.m_feature_links);
+    fr.MergeCDSFeatures(*entry);
 
     entry->Parentize();
     
@@ -1155,9 +1152,9 @@ void CTbl2AsnApp::ProcessTBLFile(const string& pathname, CSeq_entry& result)
     m_context.m_avoid_orf_lookup = true;
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
-    CFeatureTableReader feature_reader(m_logger);
+    CFeatureTableReader feature_reader(m_context);
 
-    feature_reader.ReadFeatureTable(result, *reader, m_context.m_genome_center_id);
+    feature_reader.ReadFeatureTable(result, *reader);
 }
 
 void CTbl2AsnApp::ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry& result, const string& opt_map_xml)
@@ -1205,7 +1202,7 @@ void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& entry)
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
-    CFeatureTableReader peps(m_context.m_logger);
+    CFeatureTableReader peps(m_context);
 
     m_replacement_proteins = peps.ReadProtein(*reader);
 }
@@ -1223,7 +1220,7 @@ void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
-    CFeatureTableReader prts(m_context.m_logger);
+    CFeatureTableReader prts(m_context);
 
     m_possible_proteins = prts.ReadProtein(*reader);
 }

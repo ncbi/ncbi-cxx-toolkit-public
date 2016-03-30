@@ -352,13 +352,13 @@ namespace
         return GetNewProteinId(seh.GetScope(), id_base);
     }
 
-    string NewProteinName(const CSeq_feat& feature)
+    string NewProteinName(const CSeq_feat& feature, bool make_hypotethic)
     {
         string protein_name;
         GetProteinName(protein_name, feature);
 
 
-        if (protein_name.empty())
+        if (protein_name.empty() && make_hypotethic)
         {
             protein_name = "hypothetical protein";
         }
@@ -535,7 +535,7 @@ namespace
 
 }
 
-CFeatureTableReader::CFeatureTableReader(ILineErrorListener* logger) : m_logger(logger), m_local_id_counter(0), m_feature_links_kind(0)
+CFeatureTableReader::CFeatureTableReader(CTable2AsnContext& context) : m_context(context), m_local_id_counter(0)
 {
 }
 
@@ -574,7 +574,7 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     {
         locustag = gene->GetData().GetGene().GetLocus_tag();
     }
-    string protein_name = NewProteinName(cd_feature);
+    string protein_name = NewProteinName(cd_feature, m_context.m_use_hypothetic_protein);
     string title = protein_name;
     if (protein_name == "hypothetical protein" && !locustag.empty())
     {
@@ -669,9 +669,6 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
 
     CBioseq_Handle protein_handle = scope.AddBioseq(*protein);
 
-    CCleanup::ExtendToStopIfShortAndNotPartial(cd_feature, protein_handle);
-
-    //cd_feature.ResetXref();
     //if (m_feature_links_kind != 0)
     {
         CRef<CSeq_feat> mrna((CSeq_feat*)sequence::GetmRNAForProduct(protein_handle));
@@ -698,9 +695,8 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     return protein_entry;
 }
 
-void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry, char feature_links)
+void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
 {
-    m_feature_links_kind = feature_links;
     m_local_id_counter = 0;
     FindMaximumId(entry, ++m_local_id_counter);
     MergeCDSFeatures_impl(entry);
@@ -761,7 +757,7 @@ CConstRef<CSeq_id> GetSeqIdWithoutVersion(const CSeq_id& id)
     return CConstRef<CSeq_id>(0);
 }
 
-void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_reader, const string& genome_center_id)
+void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_reader)
 {
     //CFeature_table_reader::ReadSequinFeatureTables(line_reader, entry, CFeature_table_reader::fCreateGenesFromCDSs, m_logger);
 
@@ -787,15 +783,16 @@ void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_
     }
 
     string seqid_prefix;
-    if (!genome_center_id.empty())
-        seqid_prefix = "gnl|" + genome_center_id + "|";
+    if (!m_context.m_genome_center_id.empty())
+        seqid_prefix = "gnl|" + m_context.m_genome_center_id + "|";
 
     while (!line_reader.AtEOF()) {
         CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable(
             line_reader, 
+            CFeature_table_reader::fReportBadKey |
             CFeature_table_reader::fLeaveProteinIds |
             CFeature_table_reader::fCreateGenesFromCDSs, 
-            m_logger, 0/*filter*/, seqid_prefix);
+            m_context.m_logger, 0/*filter*/, seqid_prefix);
 
         if (annot.Empty() || !annot->IsSetData() || !annot->GetData().IsFtable() ||
             annot->GetData().GetFtable().empty()) {
@@ -1030,7 +1027,7 @@ CRef<CSeq_entry> CFeatureTableReader::ReadProtein(ILineReader& line_reader)
 
     auto_ptr<CFastaReader> pReader(new CFastaReader(0, flags));
 
-    CRef<CSerialObject> pep = pReader->ReadObject(line_reader, m_logger);
+    CRef<CSerialObject> pep = pReader->ReadObject(line_reader, m_context.m_logger);
     CRef<CSeq_entry> result;
 
     if (pep.NotEmpty())
@@ -1436,7 +1433,7 @@ bool CFeatureTableReader::AddProteinToSeqEntry(const CSeq_entry* protein, CSeq_e
         string label = "";        
         protein->GetSeq().GetId().front()->GetLabel(&label, CSeq_id::eContent);
         string error = "Unable to find coding region location for protein sequence " + label + ".";
-        m_logger->PutError(*auto_ptr<CLineError>(
+        m_context.m_logger->PutError(*auto_ptr<CLineError>(
             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
             error)));
         return false;
@@ -1482,7 +1479,7 @@ bool CFeatureTableReader::AddProteinToSeqEntry(const CSeq_entry* protein, CSeq_e
     string org_name;
     GetOrgName(org_name, *seh.GetCompleteObject());
 
-    string protein_name = NewProteinName(*protein_feat);
+    string protein_name = NewProteinName(*protein_feat, m_context.m_use_hypothetic_protein);
     string title = protein_name;
     if (org_name.length() > 0)
     {
@@ -1550,7 +1547,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
                 CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(CFastaReader::CanonicalizeString((**sLE_qual).GetVal()));
                 if (it == linkage_evidence_to_value_map.end())
                 {
-                    m_logger->PutError(*auto_ptr<CLineError>(
+                    m_context.m_logger->PutError(*auto_ptr<CLineError>(
                         CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                         string("Unrecognized linkage evidence ") + (**sLE_qual).GetVal())));
                     return CRef<CDelta_seq>(0);
@@ -1566,7 +1563,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
                 case CSeq_gap::eLinkEvid_UnspecifiedOnly:
                     if (evidence != CLinkage_evidence::eType_unspecified)
                     {
-                        m_logger->PutError(*auto_ptr<CLineError>(
+                        m_context.m_logger->PutError(*auto_ptr<CLineError>(
                             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                             string("Linkage evidence must not be specified for ") + sGT)));
                         return CRef<CDelta_seq>(0);
@@ -1576,7 +1573,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
                 case CSeq_gap::eLinkEvid_Forbidden:
                     if (evidence == CLinkage_evidence::eType_unspecified)
                     {
-                        m_logger->PutError(*auto_ptr<CLineError>(
+                        m_context.m_logger->PutError(*auto_ptr<CLineError>(
                             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                             string("Linkage evidence must be specified for ") + sGT)));
                         return CRef<CDelta_seq>(0);
@@ -1594,7 +1591,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
         }
         else
         {
-            m_logger->PutError(*auto_ptr<CLineError>(
+            m_context.m_logger->PutError(*auto_ptr<CLineError>(
                 CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                 string("Unrecognized gap type ") + sGT)));
             return CRef<CDelta_seq>(0);
@@ -1638,7 +1635,7 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
                             CRef<CDelta_seq> gap = MakeGap(*bioseq_it, feature_gap);
                             if (gap.Empty())
                             {
-                                m_logger->PutError(*auto_ptr<CLineError>(
+                                m_context.m_logger->PutError(*auto_ptr<CLineError>(
                                     CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                                     "Failed to convert feature gap into a gap")));
                             }
@@ -1649,7 +1646,7 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
                         }
                         catch(const CException& ex)
                         {
-                            m_logger->PutError(*auto_ptr<CLineError>(
+                            m_context.m_logger->PutError(*auto_ptr<CLineError>(
                                 CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                                 ex.GetMsg())));
                         }
