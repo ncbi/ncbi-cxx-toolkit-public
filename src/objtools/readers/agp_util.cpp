@@ -180,7 +180,7 @@ string CAgpErr::FormatMessage(const string& msg, const string& details)
     // string msg = GetMsg(code);
     if( details.size()==0 ) return msg;
 
-    SIZE_TYPE pos = NStr::Find( string(" ") + msg + " ", " X " );
+    SIZE_TYPE pos = ( string(" ") + msg + " " ).find(" X ");
     if(pos!=NPOS) {
         // Substitute "X" with the real value (e.g. a column name or value)
         return msg.substr(0, pos) + details + msg.substr(pos+1);
@@ -289,7 +289,7 @@ int CAgpRow::FromString(const string& line)
 {
     // Comments
     cols.clear();
-    pcomment = NStr::Find(line, "#");
+    pcomment = line.find("#");
 
     bool tabsStripped=false;
     bool extraTabOrSpace=false;
@@ -300,7 +300,7 @@ int CAgpRow::FromString(const string& line)
             pcomment--;
         }
         if(pcomment==0) return -1; // A comment line; to be skipped.
-        NStr::Tokenize(line.substr(0, pcomment), "\t", cols);
+        NStr::Split(line.substr(0, pcomment), "\t", cols);
     }
     else {
       int pos=line.size();
@@ -313,12 +313,12 @@ int CAgpRow::FromString(const string& line)
         do {
           pos--;
         } while(pos>0 && line[pos-1]==' ');
-        NStr::Tokenize(line.substr(0, pos), "\t", cols);
+        NStr::Split(line.substr(0, pos), "\t", cols);
         m_AgpErr->Msg(CAgpErr::W_ExtraTab);
         extraTabOrSpace=true;
         pcomment=pos;
       }
-      else NStr::Tokenize(line, "\t", cols);
+      else NStr::Split(line, "\t", cols);
     }
 
 
@@ -643,7 +643,7 @@ int CAgpRow::ParseGapCols(bool log_errors)
             }
             else {
                 vector<string> raw_linkage_evidences;
-                NStr::Tokenize(GetLinkageEvidence(), ";", raw_linkage_evidences);
+                NStr::Split(GetLinkageEvidence(), ";", raw_linkage_evidences);
                 bool has_unspecified=false;
                 ITERATE( vector<string>, evid_iter, raw_linkage_evidences ) {
                     int le_flag = str_to_le(*evid_iter);
@@ -1212,16 +1212,21 @@ void CAgpErrEx::PrintLine(CNcbiOstream& ostr,
     const string& filename, int linenum, const string& content)
 {
     string line=content.size()<200 ? content : content.substr(0,160)+"...";
+    string comment;
 
     // Mark the first space that is not inside a EOL comment
-    SIZE_TYPE posComment = NStr::Find(line, "#");
-    SIZE_TYPE posSpace   = NStr::Find(line, " ", 0, posComment);
+    SIZE_TYPE posComment = line.find("#");
+    if(posComment!=NPOS) {
+        comment=line.substr(posComment);
+        line.resize(posComment);
+    }
+    SIZE_TYPE posSpace   = line.find(" ");
     if(posSpace!=NPOS) {
-        SIZE_TYPE posTab     = NStr::Find(line, "\t", 0, posComment);
+        SIZE_TYPE posTab     = line.find("\t");
         if(posTab!=NPOS && posTab>posSpace+1 && posSpace!=0 ) {
             // GCOL-1236: allow spaces in object names, emit a WARNING instead of an ERROR
             // => if there is ANOTHER space not inside the object name, then mark that another space
-            posTab = NStr::Find(line, " ", posTab+1, posComment);
+            posTab = line.find(" ", posTab+1);
             if(posTab!=NPOS) posSpace = posTab;
         }
         posSpace++;
@@ -1229,7 +1234,7 @@ void CAgpErrEx::PrintLine(CNcbiOstream& ostr,
     }
 
     if(filename.size()) ostr << filename << ":";
-    ostr<< linenum  << ":" << line << "\n";
+    ostr<< linenum  << ":" << line << comment << "\n";
 }
 
 void ReplaceUnprintableCharacters(string& text)
@@ -1531,7 +1536,7 @@ string CAgpErrEx::SkipMsg(const string& str, bool skip_other)
     res="";
     for( int i=E_First; i<CODE_Last; i++ ) {
         bool matchesCode = ( str==GetPrintableCode(i) || str==GetPrintableCode(i, true) );
-        if( matchesCode || NStr::Find(GetMsg(i), str) != NPOS) {
+        if( matchesCode || string(GetMsg(i)).find(str) != NPOS) {
             m_MustSkip[i] = !skip_other;
             res += "  ";
             res += GetPrintableCode(i);
