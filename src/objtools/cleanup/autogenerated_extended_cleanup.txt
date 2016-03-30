@@ -141,6 +141,8 @@ use m_NewCleanup.CdRegionEC { Seq-feat }
 use m_NewCleanup.MoveDbxrefs { Seq-feat }
 use m_NewCleanup.MoveStandardName { Seq-feat }
 
+use m_NewCleanup.CreatePubFromFeat { Seq-feat }
+
 use m_NewCleanup.MoveCitationQuals { Bioseq }
 use m_NewCleanup.CreateMissingMolInfo { Bioseq }
 

@@ -313,6 +313,7 @@ private:
 
     void MoveDbxrefs(CSeq_feat& sf);
     void MoveStandardName(CSeq_feat& sf);
+    void CreatePubFromFeat(CSeq_feat& sf);
     void ResynchProteinPartials ( CSeq_feat& feat );
     void ResynchPeptidePartials( CBioseq& seq );
     void RemoveBadProteinTitle(CBioseq& seq);

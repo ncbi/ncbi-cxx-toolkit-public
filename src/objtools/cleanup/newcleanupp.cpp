@@ -11952,6 +11952,11 @@ void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
 }
 
 
+void CNewCleanup_imp::CreatePubFromFeat(CSeq_feat& feat)
+{
+}
+
+
 void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
 {
     if (!feat.IsSetData() || !feat.GetData().IsProt()) {
