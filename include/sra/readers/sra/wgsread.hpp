@@ -1155,7 +1155,12 @@ public:
     CTempString GetProteinName(void) const;
 
     TVDBRowIdRange GetLocFeatRowIdRange(void) const;
-    TVDBRowId GetProductFeatRowId(void) const;
+    size_t GetProductFeatCount(void) const;
+    TVDBRowId GetProductFeatRowId(size_t index) const;
+    // return best product feature or 0 if none
+    TVDBRowId GetBestProductFeatRowId(void) const;
+    NCBI_DEPRECATED
+    TVDBRowId GetProductFeatRowId(void) const; // single or 0 if none
 
     enum EFlags {
         fIds_gi       = 1<<0,

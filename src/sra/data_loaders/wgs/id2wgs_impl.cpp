@@ -938,7 +938,7 @@ CID2WGSProcessor_Impl::GetRootSeq(SWGSSeqInfo& seq0)
         return seq0;
     }
     // proteins can be located in nuc-prot set
-    TVDBRowId cds_row_id = GetProteinIterator(seq0).GetProductFeatRowId();
+    TVDBRowId cds_row_id = GetProteinIterator(seq0).GetBestProductFeatRowId();
     if ( !cds_row_id ) {
         seq0.m_NoRootSeq = true;
         return seq0;

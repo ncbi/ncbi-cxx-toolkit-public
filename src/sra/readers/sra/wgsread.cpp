@@ -1037,6 +1037,15 @@ void sx_AddSplitId(CID2S_Bioseq_Ids::Tdata& split_ids, CSeq_id& id)
 }
 
 
+void sx_AddSplitIds(CID2S_Bioseq_Ids::Tdata& split_ids,
+                    const CBioseq::TId& ids)
+{
+    ITERATE ( CBioseq::TId, it, ids ) {
+        sx_AddSplitId(split_ids, it->GetNCObject());
+    }
+}
+
+
 void sx_SetSplitInterval(CID2S_Seq_loc& split_loc, CSeq_id& id,
                         TSeqPos pos, TSeqPos end)
 {
@@ -1631,7 +1640,6 @@ TVDBRowId CWGSDb_Impl::GetContigNameRowId(const string& name)
                 seq->CONTIG_NAME_ROW_RANGE(0, CVDBValue::eMissing_Allow);
             if ( !value.empty() ) {
                 range = *value;
-                LOG_POST("contig name range("<<name<<"): "<<range.first<<"-"<<range.second);
             }
             Put(seq);
             return range.first;
@@ -1836,16 +1844,6 @@ void CWGSSeqIterator::Reset(void)
 }
 
 
-CWGSSeqIterator::CWGSSeqIterator(void)
-    : m_CurrId(0),
-      m_FirstGoodId(0),
-      m_FirstBadId(0),
-      m_Withdrawn(eExcludeWithdrawn),
-      m_ClipByQuality(true)
-{
-}
-
-
 CWGSSeqIterator::CWGSSeqIterator(const CWGSSeqIterator& iter)
 {
     *this = iter;
@@ -1865,6 +1863,16 @@ CWGSSeqIterator& CWGSSeqIterator::operator=(const CWGSSeqIterator& iter)
         m_ClipByQuality = iter.m_ClipByQuality;
     }
     return *this;
+}
+
+
+CWGSSeqIterator::CWGSSeqIterator(void)
+    : m_CurrId(0),
+      m_FirstGoodId(0),
+      m_FirstBadId(0),
+      m_Withdrawn(eExcludeWithdrawn),
+      m_ClipByQuality(true)
+{
 }
 
 
@@ -3491,8 +3499,9 @@ void SWGSCreateInfo::x_CreateProtSet(TVDBRowIdRange range)
                                "invalid protein row id: "<<*it);
                     continue;
                 }
-                CRef<CSeq_id> prot_id = prot_it.GetId(flags);
-                sx_AddSplitId(*ids, *prot_id);
+                CBioseq::TId prot_ids;
+                prot_it.GetIds(prot_ids, flags);
+                sx_AddSplitIds(*ids, prot_ids);
             }
         }
         else {
@@ -3721,14 +3730,6 @@ void CWGSScaffoldIterator::Reset(void)
 }
 
 
-CWGSScaffoldIterator::CWGSScaffoldIterator(void)
-    : m_CurrId(0),
-      m_FirstGoodId(0),
-      m_FirstBadId(0)
-{
-}
-
-
 CWGSScaffoldIterator::CWGSScaffoldIterator(const CWGSScaffoldIterator& iter)
     : m_CurrId(0),
       m_FirstGoodId(0),
@@ -3750,6 +3751,14 @@ CWGSScaffoldIterator::operator=(const CWGSScaffoldIterator& iter)
         m_FirstBadId = iter.m_FirstBadId;
     }
     return *this;
+}
+
+
+CWGSScaffoldIterator::CWGSScaffoldIterator(void)
+    : m_CurrId(0),
+      m_FirstGoodId(0),
+      m_FirstBadId(0)
+{
 }
 
 
@@ -4609,6 +4618,40 @@ TVDBRowIdRange CWGSProteinIterator::GetLocFeatRowIdRange(void) const
                        "feature row range is invalid: "<<start<<","<<end);
     }
     return TVDBRowIdRange(start, end-start+1);
+}
+
+
+size_t CWGSProteinIterator::GetProductFeatCount(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetProductFeatCount");
+    
+    if ( !m_Cur->m_FEAT_PRODUCT_ROW_ID ) {
+        return 0;
+    }
+    return m_Cur->FEAT_PRODUCT_ROW_ID(m_CurrId).size();
+}
+
+
+TVDBRowId CWGSProteinIterator::GetProductFeatRowId(size_t index) const
+{
+    x_CheckValid("CWGSProteinIterator::GetProductFeatRowId");
+    
+    if ( !m_Cur->m_FEAT_PRODUCT_ROW_ID ) {
+        return 0;
+    }
+    return m_Cur->FEAT_PRODUCT_ROW_ID(m_CurrId)[index];
+}
+
+
+TVDBRowId CWGSProteinIterator::GetBestProductFeatRowId(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetBestProductFeatRowId");
+    
+    if ( !m_Cur->m_FEAT_PRODUCT_ROW_ID ) {
+        return 0;
+    }
+    CVDBValueFor<TVDBRowId> row = m_Cur->FEAT_PRODUCT_ROW_ID(m_CurrId);
+    return row.empty()? 0: row[row.size()-1];
 }
 
 
