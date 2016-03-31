@@ -549,7 +549,7 @@ private:
     bool x_CleanEmptyFeature(CSeq_feat& feat);
     bool x_ShouldRemoveEmptyFeature(const CSeq_feat& feat );
     bool x_CleanEmptyGene(CGene_ref& gene);
-    bool x_ShouldRemoveEmptyGene(const CGene_ref& gene );
+    bool x_ShouldRemoveEmptyGene(const CGene_ref& gene, const CSeq_feat& feat);
     bool x_CleanEmptyProt(CProt_ref& prot);
     bool x_ShouldRemoveEmptyProt(const CProt_ref& prot );
     static bool x_IsPubContentBad(const CPubdesc& pub, bool strict);

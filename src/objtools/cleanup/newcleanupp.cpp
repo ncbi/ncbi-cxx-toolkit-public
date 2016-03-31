@@ -10629,8 +10629,8 @@ void CNewCleanup_imp::x_RemoveOldDescriptors( CSeq_descr & seq_descr )
             case CSeqdesc::e_Method:
             case CSeqdesc::e_Org:
                 ERASE_SEQDESC_ON_SEQDESCR(d, seq_descr);
-                ChangeMade(CCleanupChange::eRemoveDescriptor);
-                break;
+ChangeMade(CCleanupChange::eRemoveDescriptor);
+break;
             default:
                 break;
         }
@@ -10721,17 +10721,37 @@ bool CNewCleanup_imp::x_CleanEmptyGene(CGene_ref& gene)
 }
 
 
-bool CNewCleanup_imp::x_ShouldRemoveEmptyGene(const CGene_ref& gene)
+bool s_FeatureHasEvidenceOrInferenceQuals(const CSeq_feat& feat)
+{
+    if (!feat.IsSetQual()) {
+        return false;
+    }
+    ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
+        if ((*it)->IsSetQual() &&
+            (NStr::Equal((*it)->GetQual(), "evidence") ||
+            (NStr::Equal((*it)->GetQual(), "inference")))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CNewCleanup_imp::x_ShouldRemoveEmptyGene(const CGene_ref& gene, const CSeq_feat& feat)
 {
     bool should_remove = false;
     if (!gene.IsSetLocus() &&
         !gene.IsSetAllele() &&
         !gene.IsSetDesc() &&
-!gene.IsSetMaploc() &&
-!gene.IsSetLocus_tag() &&
-!gene.IsSetDb() &&
-!gene.IsSetSyn()) {
-should_remove = true;
+        !gene.IsSetMaploc() &&
+        !gene.IsSetLocus_tag() &&
+        !gene.IsSetDb() &&
+        !gene.IsSetSyn() &&
+        !gene.IsSetPseudo() &&
+        !feat.IsSetPseudo() &&
+        !feat.IsSetExp_ev() &&
+        !s_FeatureHasEvidenceOrInferenceQuals(feat)) {
+        should_remove = true;
     }
     return should_remove;
 }
@@ -10971,7 +10991,7 @@ bool CNewCleanup_imp::x_CleanEmptyFeature(CSeq_feat& feat)
     switch (feat.GetData().Which()) {
     case CSeqFeatData::e_Gene:
         any_change = x_CleanEmptyGene(feat.SetData().SetGene());
-        if (x_ShouldRemoveEmptyGene(feat.GetData().GetGene()) &&
+        if (x_ShouldRemoveEmptyGene(feat.GetData().GetGene(), feat) &&
             feat.IsSetComment() && !NStr::IsBlank(feat.GetComment())) {
             feat.SetData().SetImp().SetKey("misc_feature");
             any_change = true;
@@ -11005,7 +11025,7 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyFeature(const CSeq_feat& feat)
     }
     switch (feat.GetData().Which()) {
         case CSeqFeatData::e_Gene:
-            is_empty = x_ShouldRemoveEmptyGene(feat.GetData().GetGene());
+            is_empty = x_ShouldRemoveEmptyGene(feat.GetData().GetGene(), feat);
             break;
         case CSeqFeatData::e_Prot:
             is_empty = x_ShouldRemoveEmptyProt(feat.GetData().GetProt());
