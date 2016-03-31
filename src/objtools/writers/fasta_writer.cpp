@@ -149,22 +149,20 @@ string CFastaOstreamEx::x_GetCDSIdString(const CSeq_feat& cds,
     const auto& src_loc = cds.GetLocation();
 
     auto id_string  = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
-    id_string += "_cds";
+    id_string += "_cds_";
 
 
     if (cds.IsSetProduct()) {
-
         const auto& product = cds.GetProduct();
         _ASSERT(product.IsWhole());
         try {
             auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), scope);
-            id_string += "_" + prod_accver;
+            id_string +=  prod_accver + "_";
         } catch (...) {
             // Move on if there's a problem getting the product accession
         }
     }
 
-    id_string += "_";
     id_string += to_string(++m_FeatCount);
 
     return id_string;
@@ -184,11 +182,15 @@ string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat,
 
     auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
 
-    if (!feat.GetData().GetRna().IsSetType()) {
-        return id_string +  "_miscrna_" + to_string(++m_FeatCount);
-    }
 
-    const auto rna_type = feat.GetData().GetRna().GetType();
+
+
+    const auto& rna = feat.GetData().GetRna();
+  
+
+
+   
+    const auto rna_type = rna.IsSetType() ? rna.GetType() : CRNA_ref::eType_unknown;
 
     string rna_tag;
     switch (rna_type) {
@@ -237,8 +239,21 @@ string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat,
         break;
     }
     }
+    
+    id_string += rna_tag;
 
-    return id_string + rna_tag + to_string(++m_FeatCount);
+    if (feat.IsSetProduct()) {
+        const auto& product = feat.GetProduct();
+        _ASSERT(product.IsWhole());
+        try {
+            auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), scope);
+            id_string +=  prod_accver + "_";
+        } catch (...) {
+            // Move on if there's a problem getting the product accession
+        }
+    }
+
+    return id_string + to_string(++m_FeatCount);
 }
 
 
