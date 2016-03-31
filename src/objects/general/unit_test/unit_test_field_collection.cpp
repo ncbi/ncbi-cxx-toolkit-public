@@ -48,7 +48,7 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 // Load test data once, for all tests.
-static CUser_object data;
+static CUser_object s_Data;
 
 NCBITEST_INIT_CMDLINE(arg_desc)
 {
@@ -65,20 +65,20 @@ NCBITEST_AUTO_INIT()
 
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     CNcbiIstream& istr = args["data-in"].AsInputFile();
-    istr >> MSerial_AsnText >> data;
+    istr >> MSerial_AsnText >> s_Data;
 }
 
 BOOST_AUTO_TEST_CASE(s_TestModelEvidence)
 {
     const string test = "TestModelEvidence";
     const string test_no_case = "testmodelevidencE";
-    BOOST_CHECK(data.HasField(test));
-    BOOST_CHECK( ! data.HasField(test_no_case));
-    BOOST_CHECK( data.HasField(test_no_case, ".", NStr::eNocase) );
-    BOOST_CHECK(data.GetFieldRef(test));
-    BOOST_CHECK( ! data.GetFieldRef(test_no_case, ".", NStr::eCase));
-    BOOST_CHECK(data.GetFieldRef(test_no_case, ".", NStr::eNocase));
-    const CUser_object& uo(data.GetField(test).GetData().GetObject());
+    BOOST_CHECK(s_Data.HasField(test));
+    BOOST_CHECK( ! s_Data.HasField(test_no_case));
+    BOOST_CHECK( s_Data.HasField(test_no_case, ".", NStr::eNocase) );
+    BOOST_CHECK(s_Data.GetFieldRef(test));
+    BOOST_CHECK( ! s_Data.GetFieldRef(test_no_case, ".", NStr::eCase));
+    BOOST_CHECK(s_Data.GetFieldRef(test_no_case, ".", NStr::eNocase));
+    const CUser_object& uo(s_Data.GetField(test).GetData().GetObject());
 
     BOOST_CHECK(uo.HasField("Method"));
     BOOST_CHECK(uo.GetFieldRef("Method"));
@@ -99,9 +99,9 @@ BOOST_AUTO_TEST_CASE(s_TestGeneOntology)
 {
     // Use GeneOntology user object as an example.
     const string test = "TestGeneOntology";
-    BOOST_CHECK(data.HasField(test));
-    BOOST_CHECK(data.GetFieldRef(test));
-    const CUser_object& uo(data.GetField(test).GetData().GetObject());
+    BOOST_CHECK(s_Data.HasField(test));
+    BOOST_CHECK(s_Data.GetFieldRef(test));
+    const CUser_object& uo(s_Data.GetField(test).GetData().GetObject());
 
     BOOST_CHECK(! uo.HasField("ModelEvidence"));
     BOOST_CHECK(! uo.GetFieldRef("ModelEvidence"));
@@ -110,9 +110,9 @@ BOOST_AUTO_TEST_CASE(s_TestGeneOntology)
 BOOST_AUTO_TEST_CASE(s_TestSeqFeat1)
 {
     const string test = "TestSeqFeat1";
-    BOOST_CHECK(data.HasField(test));
-    BOOST_CHECK(data.GetFieldRef(test));
-    const CUser_object& uo(data.GetField(test).GetData().GetObject());
+    BOOST_CHECK(s_Data.HasField(test));
+    BOOST_CHECK(s_Data.GetFieldRef(test));
+    const CUser_object& uo(s_Data.GetField(test).GetData().GetObject());
 
     BOOST_CHECK(uo.HasField("ModelEvidence"));
 
@@ -138,42 +138,42 @@ BOOST_AUTO_TEST_CASE(s_TestSeqFeat1)
 BOOST_AUTO_TEST_CASE(s_TestNesting)
 {
     const string test = "TestNesting";
-    BOOST_CHECK(data.HasField(test));
-    BOOST_CHECK(data.GetFieldRef(test));
+    BOOST_CHECK(s_Data.HasField(test));
+    BOOST_CHECK(s_Data.GetFieldRef(test));
 
     // Nested fields should not be returned unexpectedly. Recursive search
     // should not apply to anchored paths.
-    BOOST_CHECK(! data.HasField("FieldsField"));
-    BOOST_CHECK(! data.HasField("Nested"));
+    BOOST_CHECK(! s_Data.HasField("FieldsField"));
+    BOOST_CHECK(! s_Data.HasField("Nested"));
 
     // Test various types of fileds: string and int.
 
-    BOOST_CHECK(data.HasField("TestNesting.StrField"));
-    BOOST_CHECK(data.GetFieldRef("TestNesting.StrField"));
-    BOOST_CHECK_EQUAL(data.GetField("TestNesting.StrField")
+    BOOST_CHECK(s_Data.HasField("TestNesting.StrField"));
+    BOOST_CHECK(s_Data.GetFieldRef("TestNesting.StrField"));
+    BOOST_CHECK_EQUAL(s_Data.GetField("TestNesting.StrField")
             .GetData().GetStr(), "Str");
 
-    BOOST_CHECK(data.HasField("TestNesting.IntField"));
-    BOOST_CHECK(data.GetFieldRef("TestNesting.IntField"));
-    BOOST_CHECK_EQUAL(data.GetField("TestNesting.IntField")
+    BOOST_CHECK(s_Data.HasField("TestNesting.IntField"));
+    BOOST_CHECK(s_Data.GetFieldRef("TestNesting.IntField"));
+    BOOST_CHECK_EQUAL(s_Data.GetField("TestNesting.IntField")
             .GetData().GetInt(), 100);
 
     // Test nested paths, multiple levels deep. Only User-fields
     // appear in these nesting tests. User-objects don't appear
     // to participate in field nesting.
-    BOOST_CHECK(data.HasField("TestNesting.FieldsField"));
-    BOOST_CHECK(data.GetFieldRef("TestNesting.FieldsField"));
-    BOOST_CHECK(data.HasField("TestNesting.FieldsField.Nested"));
-    BOOST_CHECK(data.GetFieldRef("TestNesting.FieldsField.Nested"));
-    BOOST_CHECK_EQUAL(data.GetField("TestNesting.FieldsField.Nested")
+    BOOST_CHECK(s_Data.HasField("TestNesting.FieldsField"));
+    BOOST_CHECK(s_Data.GetFieldRef("TestNesting.FieldsField"));
+    BOOST_CHECK(s_Data.HasField("TestNesting.FieldsField.Nested"));
+    BOOST_CHECK(s_Data.GetFieldRef("TestNesting.FieldsField.Nested"));
+    BOOST_CHECK_EQUAL(s_Data.GetField("TestNesting.FieldsField.Nested")
             .GetData().GetStr(), "NestedStr");
     BOOST_CHECK_EQUAL(
-        data.GetField("TESTNESTING.fieldsfield.NESTED", ".", NStr::eNocase)
+        s_Data.GetField("TESTNESTING.fieldsfield.NESTED", ".", NStr::eNocase)
             .GetData().GetStr(),
         "NestedStr");
 
     /// Test GetFieldsMap
-    CConstRef<CUser_field> pTestField = data.GetFieldRef(test);
+    CConstRef<CUser_field> pTestField = s_Data.GetFieldRef(test);
     CUser_field::TMapFieldNameToRef mapFieldNameToRef;
     pTestField->GetFieldsMap(mapFieldNameToRef, 
         CUser_field::fFieldMapFlags_ExcludeThis);
