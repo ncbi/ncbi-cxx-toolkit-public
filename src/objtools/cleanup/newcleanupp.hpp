@@ -38,6 +38,7 @@
 
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seq/MolInfo.hpp>
 
 #include <objtools/cleanup/cleanup_change.hpp>
 
@@ -65,6 +66,7 @@ class CUser_field;
 class CUser_object;
 class CObject_id;
 class CGB_block;
+class CMolInfo;
 class CEMBL_block;
 class CPubdesc;
 class CPub_equiv;
@@ -535,6 +537,8 @@ private:
     void x_ExceptTextEC(string& except_text);
 
     void x_RemoveEmptyUserObject( CSeq_descr & seq_descr );
+    static bool s_ShouldRemoveKeyword(const string& keyword, CMolInfo::TTech tech);
+    static bool x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tech);
     void x_CleanupGenbankBlock(CBioseq& seq);
     void x_CleanupGenbankBlock( CSeq_descr & seq_descr );
     void x_RemoveOldDescriptors( CSeq_descr & seq_descr );

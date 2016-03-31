@@ -10500,6 +10500,51 @@ string s_GetDiv(const CBioSource& src)
 }
 
 
+bool CNewCleanup_imp::s_ShouldRemoveKeyword(const string& keyword, CMolInfo::TTech tech)
+{
+    if (NStr::Equal(keyword, "HTGS")) {
+        return true;
+    } else if (tech == CMolInfo::eTech_htgs_0 && NStr::Equal(keyword, "HTGS_PHASE0")) {
+        return true;
+    } else if (tech == CMolInfo::eTech_htgs_1 && NStr::Equal(keyword, "HTGS_PHASE1")) {
+        return true;
+    } else if (tech == CMolInfo::eTech_htgs_2 && NStr::Equal(keyword, "HTGS_PHASE2")) {
+        return true;
+    } else if (tech == CMolInfo::eTech_htgs_3 && NStr::Equal(keyword, "HTGS_PHASE3")) {
+        return true;
+    } else if (tech == CMolInfo::eTech_est && NStr::Equal(keyword, "EST")) {
+        return true;
+    } else if (tech == CMolInfo::eTech_sts && NStr::Equal(keyword, "STS")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CNewCleanup_imp::x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tech)
+{
+    if (!blk.IsSetKeywords()) {
+        return false;
+    }
+    bool any_change = false;
+    CGB_block::TKeywords::iterator it = blk.SetKeywords().begin();
+    while (it != blk.SetKeywords().end()) {
+        if (s_ShouldRemoveKeyword(*it, tech)) {
+            it = blk.SetKeywords().erase(it);
+            any_change = true;
+        } else {
+            ++it;
+        }
+    }
+    if (blk.GetKeywords().empty()) {
+        blk.ResetKeywords();
+        any_change = true;
+    }
+    return any_change;
+}
+
+
 void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
 {
     if (!seq.IsSetDescr()) {
@@ -10517,9 +10562,12 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
     if (src) {
         div = s_GetDiv(src->GetSource());
     }
-    if (!is_patent && NStr::IsBlank(div)) {
-        return;
+    CMolInfo::TTech tech = CMolInfo::eTech_unknown;
+    CSeqdesc_CI molinfo(b, CSeqdesc::e_Molinfo);
+    if (molinfo && molinfo->GetMolinfo().IsSetTech()) {
+        tech = molinfo->GetMolinfo().GetTech();
     }
+
     EDIT_EACH_SEQDESC_ON_SEQDESCR(descr_iter, seq.SetDescr()) {
         CSeqdesc &desc = **descr_iter;
         if (!FIELD_IS(desc, Genbank)) {
@@ -10535,6 +10583,9 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
                 gb.ResetDiv();
                 ChangeMade(CCleanupChange::eChangeOther);
             }
+        }
+        if (x_CleanGenbankKeywords(gb, tech)) {
+            ChangeMade(CCleanupChange::eChangeKeywords);
         }
     }
 }
@@ -10557,7 +10608,8 @@ void CNewCleanup_imp::x_CleanupGenbankBlock( CSeq_descr & seq_descr )
 
         if (gb.IsSetDiv()) {
             if (NStr::Equal(gb.GetDiv(), "UNA") ||
-                NStr::Equal(gb.GetDiv(), "UNC")) {
+                NStr::Equal(gb.GetDiv(), "UNC") ||
+                NStr::IsBlank(gb.GetDiv())) {
                 gb.ResetDiv();
                 ChangeMade(CCleanupChange::eChangeOther);
             }
@@ -10588,12 +10640,12 @@ void CNewCleanup_imp::x_RemoveOldDescriptors( CSeq_descr & seq_descr )
 
 bool CNewCleanup_imp::x_IsGenbankBlockEmpty(const CGB_block& gbk)
 {
-    if (gbk.IsSetExtra_accessions() ||
-        gbk.IsSetSource() ||
-        gbk.IsSetKeywords() ||
-        gbk.IsSetOrigin() ||
-        gbk.IsSetDate() ||
-        gbk.IsSetDiv()) {
+    if ((gbk.IsSetExtra_accessions() && !gbk.GetExtra_accessions().empty()) ||
+        (gbk.IsSetSource() && !NStr::IsBlank(gbk.GetSource())) ||
+        (gbk.IsSetKeywords() && gbk.GetKeywords().empty()) ||
+        (gbk.IsSetOrigin() && !NStr::IsBlank(gbk.GetOrigin())) ||
+        (gbk.IsSetDate() && !NStr::IsBlank(gbk.GetDate())) ||
+        (gbk.IsSetDiv() && !NStr::IsBlank(gbk.GetDiv()))) {
         return false;
     } else {
         return true;
