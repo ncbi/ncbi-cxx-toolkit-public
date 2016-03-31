@@ -3045,7 +3045,8 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
 
     int actual_num_threads = 1;
 #ifdef _OPENMP
-    actual_num_threads = num_threads;
+    // Temporary workaround
+    actual_num_threads = (program_number == eBlastTypeBlastx) ? 1 : num_threads;
 #endif
 
     /* Initialize savedParams */
