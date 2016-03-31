@@ -327,6 +327,85 @@ namespace DeBruijn {
     };
     typedef CKmerMapTemplate <INTEGER_TYPES> TKmerMap;
 
+    typedef vector<pair<int,size_t>> TBins;
+    int FindValleyAndPeak(const TBins& bins, int rlimit) {
+        int SLOPE_LEN = 5;
+        int peak = min(rlimit,(int)bins.size()-SLOPE_LEN-1);
+        while(peak >= SLOPE_LEN) {
+            bool maxim = true;
+            for(int i = 1; i <= SLOPE_LEN && maxim; ++i) 
+                maxim = bins[peak+i].second < bins[peak].second;
+            for(int i = 1; i <= SLOPE_LEN && maxim; ++i) 
+                maxim = bins[peak-i].second < bins[peak].second;
+            if(maxim)
+                break;
+            --peak;
+        }
+
+        if(peak < SLOPE_LEN)
+            return -1;
+
+        int valley = 0;
+        for(int i = 1; i <= peak; ++i) {
+            if(bins[i].second < bins[valley].second)
+                valley = i;
+        }
+        if(valley == peak)
+            return -1;
+
+        for(int i = valley; i < (int)bins.size(); ++i) {
+            if(bins[i].second > bins[peak].second)
+                peak = i;
+        }
+        
+        if(bins[valley].second < 0.7*bins[peak].second)
+            return valley;
+        else            
+            return -1;
+    }
+
+    pair<int,int> HistogramRange(const TBins& bins) {  // returns <valley,rlimit>
+        unsigned MIN_NUM = 100;
+        size_t gsize = 0;
+        for(auto& bin : bins) {
+            if(bin.second >= MIN_NUM) 
+                gsize += bin.first*bin.second;
+        }
+
+        int rl = 0;
+        size_t gs = 0;
+        for(auto& bin : bins) {
+            gs += bin.first*bin.second;
+            ++rl;
+            if(gs > 0.8*gsize)
+                break;
+        }
+
+        int valley = -1;
+        int rlimit = rl;
+        size_t genome = 0;
+
+        while(true) {
+            int v = FindValleyAndPeak(bins, rl);
+
+            size_t g = 0;
+            for(int i = max(0, v); i <= rl; ++i)
+                g += bins[i].second;
+
+            if((v >= 0 && g > genome) || g > 10*genome) {
+                valley = v;
+                rlimit = rl;
+                genome = g;
+                cerr << valley << " " << rlimit << " " << genome << endl;
+            }
+
+            if(v < 0)
+                break;
+            rl = v;
+        }
+        
+        return make_pair(valley, rlimit);
+    }
 
     class CDBGraph {
     public:
@@ -338,7 +417,6 @@ namespace DeBruijn {
             char m_nt;
         };
 
-        typedef vector<pair<int,size_t>> TBins;
         CDBGraph(const TKmerCount& kmers, const TBins& bins, bool is_stranded) : m_graph_kmers(kmers.KmerLen()), m_bins(bins), m_is_stranded(is_stranded) {
             m_graph_kmers.PushBackElementsFrom(kmers);
             string max_kmer(m_graph_kmers.KmerLen(), bin2NT[3]);
@@ -452,55 +530,12 @@ namespace DeBruijn {
         size_t GraphSize() const { return m_graph_kmers.Size(); }
         bool GraphIsStranded() const { return m_is_stranded; }
 
-        int HistogramMinimum() const { // naive algorithm for finding peak and valley
-            unsigned MIN_NUM = 100;
-            size_t gsize = 0;
-            for(auto& bin : m_bins) {
-                if(bin.second >= MIN_NUM)            
-                    gsize += bin.first*bin.second;
-            }
-
-            int rlimit = 0;
-            size_t gs = 0;
-            for(auto& bin : m_bins) {
-                gs += bin.first*bin.second;
-                ++rlimit;
-                if(gs > 0.8*gsize)
-                    break;
-            }
-
-            int SLOPE_LEN = 5;
-            int peak = min(rlimit,(int)m_bins.size()-SLOPE_LEN-1);
-            while(peak >= SLOPE_LEN) {
-                bool maxim = true;
-                for(int i = 1; i <= SLOPE_LEN && maxim; ++i) 
-                    maxim = m_bins[peak+i].second < m_bins[peak].second;
-                for(int i = 1; i <= SLOPE_LEN && maxim; ++i) 
-                    maxim = m_bins[peak-i].second < m_bins[peak].second;
-                if(maxim)
-                    break;
-                --peak;
-            }
-            if(peak < SLOPE_LEN)
+        int HistogramMinimum() const {
+            pair<int,int> r = HistogramRange(m_bins);
+            if(r.first < 0)
                 return 0;
-
-            int valley = 0;
-            for(int i = 1; i <= peak; ++i) {
-                if(m_bins[i].second < m_bins[valley].second)
-                    valley = i;
-            }
-            if(valley == peak)
-                return 0;
-
-            for(int i = valley; i < (int)m_bins.size(); ++i) {
-                if(m_bins[i].second > m_bins[peak].second)
-                    peak = i;
-            }
-
-            if(m_bins[valley].second < 0.7*m_bins[peak].second)
-                return m_bins[valley].first;
-            else            
-                return 0;
+            else 
+                return m_bins[r.first].first;
         }
 
     private:
@@ -671,11 +706,8 @@ class CDBGraphDigger {
 public:
     typedef list<string> TStrList;
 
-    CDBGraphDigger(CDBGraph& graph, double fraction, int jump, int max_kmer) : m_graph(graph), m_fraction(fraction), m_jump(jump), m_max_kmer(max_kmer), m_hist_min(graph.HistogramMinimum()) { 
-
-        m_low_count = 5;
-        m_max_branch = 200   ;
-
+    CDBGraphDigger(CDBGraph& graph, double fraction, int jump, int low_count) : m_graph(graph), m_fraction(fraction), m_jump(jump), m_hist_min(graph.HistogramMinimum()), m_low_count(low_count) { 
+        m_max_branch = 200;
         cerr << "Valley: " << m_hist_min << endl; 
     }
 
@@ -950,7 +982,7 @@ public:
                 if(m_graph.GetNodeSeq(successors[j].m_node).substr(m_graph.KmerLen()-3) == "GGT") 
                     target = j;
             }
-            if(target >= 0) {
+            if(target >= 0 && m_graph.Abundance(successors[target].m_node) > m_low_count) {
                 double am = m_graph.Abundance(successors[target].m_node)*(1-m_graph.PlusFraction(successors[target].m_node));
                 for(int j = 0; j < (int)successors.size(); ) {
                     if(m_graph.Abundance(successors[j].m_node)*(1-m_graph.PlusFraction(successors[j].m_node)) < m_fraction*am)
@@ -965,7 +997,7 @@ public:
                 if(MostLikelySeq(successors[j], 3) == "ACC") 
                     target = j;
             }
-            if(target >= 0) {
+            if(target >= 0 && m_graph.Abundance(successors[target].m_node) > m_low_count) {
                 double ap = m_graph.Abundance(successors[target].m_node)*m_graph.PlusFraction(successors[target].m_node);
                 for(int j = 0; j < (int)successors.size(); ) {
                     if(m_graph.Abundance(successors[j].m_node)*m_graph.PlusFraction(successors[j].m_node) < m_fraction*ap)
@@ -975,58 +1007,6 @@ public:
                 }
                 return;
             }
-                                   
-
-            /*            
-            if(successors.size() == 2) {
-                string a = m_graph.GetNodeSeq(successors[0].m_node).substr(m_graph.KmerLen()-3);
-                string b = m_graph.GetNodeSeq(successors[1].m_node).substr(m_graph.KmerLen()-3);
-                int swapped = -1;
-                if(a < b) {
-                    swap(a, b);
-                    swap(successors[0],successors[1]);
-                    swapped = -swapped;
-                }
-                // !!!!!!!!!!!!!!!!!!!!!!!!!!!               if(a == "GGT" && b == "GGG") {
-                if(a == "GGT") {
-                    double am = m_graph.Abundance(successors[0].m_node)*(1-m_graph.PlusFraction(successors[0].m_node));
-                    double bm = m_graph.Abundance(successors[1].m_node)*(1-m_graph.PlusFraction(successors[1].m_node));
-                    if(bm < m_fraction*am) {
-                        successors.pop_back();
-                        return;
-                    }
-                }
-
-                a = MostLikelySeq(successors[0], 3);
-                b = MostLikelySeq(successors[1], 3);
-                if(a.size() < b.size()) {
-                    successors.erase(successors.begin());
-                    return;
-                } else if(b.size() < a.size()) {
-                    successors.erase(successors.begin()+1);
-                    return;
-                }
-
-                if(a > b) {
-                    swap(a, b);
-                    swap(successors[0],successors[1]);
-                    swapped = -swapped;
-                }
-                //!!!!!!!!!!!!!!!!!!!!!!!                if(a == "ACC" && b == "CCC") {
-                if(a == "ACC") {
-                    double ap = m_graph.Abundance(successors[0].m_node)*m_graph.PlusFraction(successors[0].m_node);
-                    double bp = m_graph.Abundance(successors[1].m_node)*m_graph.PlusFraction(successors[1].m_node);
-                    if(bp < m_fraction*ap) {
-                        successors.pop_back();
-                        return;
-                    }
-                }
-
-                if(swapped > 0)
-                   swap(successors[0],successors[1]); 
-            }
-            */            
-            
                        
             bool has_both = false;
             for(int j = 0; !has_both && j < (int)successors.size(); ++j) {
@@ -1045,9 +1025,7 @@ public:
                     else
                         ++j;
                 }
-            }
-           
-           
+            }                      
         }
     }
 
@@ -1072,7 +1050,6 @@ public:
         }
 
         list<SElement> connections;
-        EConnectionStatus status = eSuccess;
         for(int step = 1; step < steps && !current_elements.empty(); ++step) {
 
             if(current_elements.size() > 1) {
@@ -1081,8 +1058,7 @@ public:
                     abundance = max(abundance, m_graph.Abundance(el.first));
                 if(abundance <= m_low_count) {
                     connections.clear();
-                    status = eBrokenConnection;
-                    break;
+                    return make_pair(string(), eBrokenConnection);
                 }
             }
 
@@ -1094,16 +1070,16 @@ public:
                     for(auto& suc : successors) {
                         new_elements[suc.m_node] = 0;
                         if(suc.m_node == last_node)
-                            status = eAmbiguousConnection;
+                            return make_pair(string(), eAmbiguousConnection);
                     }
                 } else {
                     for(auto& suc : successors) {
                         storage.push_back(SElement(suc.m_nt, el.second));
                         if(suc.m_node == last_node) {
                             if(!connections.empty())
-                                status = eAmbiguousConnection;
+                                return make_pair(string(), eAmbiguousConnection);
                             else
-                                connections.push_back(storage.back());
+                                connections.push_back(storage.back());                            
                         } else {
                             pair<TElementMap::iterator, bool> rslt = new_elements.insert(make_pair(suc.m_node, &storage.back()));
                             if(!rslt.second)
@@ -1112,8 +1088,6 @@ public:
                     }
                 }                    
             }
-            if(status == eAmbiguousConnection)
-                break;
 
             swap(current_elements, new_elements);
 
@@ -1126,13 +1100,10 @@ public:
             }
             if((!still_can_connect && connections.empty()) || current_elements.size() > m_max_branch) {
                 connections.clear();
-                status = eNoConnection;
-                break;
+                return make_pair(string(), eNoConnection);
             }
         }
 
-        if(status != eSuccess)
-            return make_pair(string(), status);
         if(connections.empty())
             return make_pair(string(), eNoConnection);
 
@@ -1327,13 +1298,6 @@ private:
 
             node = extension.back().m_node;
         }
-
-        /*        
-        for(int clip = min((int)extension.size(), m_graph.KmerLen()); clip > 0; --clip) {
-            m_graph.ClearVisited(extension.back().m_node);
-            extension.pop_back();                    
-        }
-        */        
         
         return extension;
     }
@@ -1342,7 +1306,6 @@ private:
     CDBGraph& m_graph;
     double m_fraction;
     int m_jump;
-    int m_max_kmer;
     int m_hist_min;
     int m_low_count;
     size_t m_max_branch;
