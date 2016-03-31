@@ -11179,6 +11179,16 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
 }
 
 
+void CNewCleanup_imp::x_MergeAdjacentFeatureTables( CBioseq & bioseq )
+{
+}
+
+
+void CNewCleanup_imp::x_MergeAdjacentFeatureTables( CBioseq_set & bioseq_set )
+{
+}
+
+
 CRef<CBioSource> BioSourceFromImpFeat(const CSeq_feat& sf)
 {
     CRef<CBioSource> src(NULL);

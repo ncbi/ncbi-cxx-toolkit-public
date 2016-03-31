@@ -178,6 +178,12 @@ use m_NewCleanup.x_RemoveEmptyFeatureTables
     Bioseq-set
 }
 
+use m_NewCleanup.x_MergeAdjacentFeatureTables
+{
+    Bioseq,
+    Bioseq-set
+}
+
 use  m_NewCleanup.x_MovePopPhyMutPub
 {
     Bioseq-set

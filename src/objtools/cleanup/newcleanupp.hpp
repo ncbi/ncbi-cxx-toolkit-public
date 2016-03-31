@@ -546,6 +546,8 @@ private:
     void x_RemoveEmptyFeatures( CSeq_annot & seq_annot );
     void x_RemoveEmptyFeatureTables( CBioseq & bioseq );
     void x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set );
+    void x_MergeAdjacentFeatureTables( CBioseq & bioseq );
+    void x_MergeAdjacentFeatureTables( CBioseq_set & bioseq_set );
     bool x_CleanEmptyFeature(CSeq_feat& feat);
     bool x_ShouldRemoveEmptyFeature(const CSeq_feat& feat );
     bool x_CleanEmptyGene(CGene_ref& gene);
