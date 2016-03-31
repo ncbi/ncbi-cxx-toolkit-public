@@ -32,11 +32,12 @@
  *    Common NetSchedule Worker Node declarations
  */
 
-#include <corelib/hash_set.hpp>
 
 #include "wn_commit_thread.hpp"
 #include "wn_cleanup.hpp"
 #include "netschedule_api_impl.hpp"
+
+#include <unordered_set>
 
 BEGIN_NCBI_SCOPE
 
@@ -273,7 +274,7 @@ struct SGridWorkerNodeImpl : public CObject
 
     private:
         CFastMutex m_Mutex;
-        hash_set<string> m_Ids;
+        unordered_set<string> m_Ids;
     };
 
     SJobsInProgress m_JobsInProgress;
