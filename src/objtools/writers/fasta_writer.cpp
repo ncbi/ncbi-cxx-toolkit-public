@@ -94,13 +94,20 @@ void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat,
 
     // Cdregion with frameshift
     const auto& loc = feat.GetLocation();
-    const auto loc_start = loc.GetStart(eExtreme_Positional);
-    const auto strand = loc.GetStrand();
     auto seq_id = Ref(new CSeq_id());
     seq_id->Assign(*loc.GetId());
 
-    auto frame = feat.GetData().GetCdregion().GetFrame();
-    auto untranslated_loc = Ref(new CSeq_loc(*seq_id, loc_start, loc_start+frame-2, strand));
+    auto start = loc.GetStart(eExtreme_Biological);
+    auto stop =  start;
+
+    const auto strand = loc.GetStrand();
+    const auto frame = feat.GetData().GetCdregion().GetFrame();
+    if (strand == eNa_strand_minus) {
+        start += 2-frame;
+    } else {
+        stop += frame-2;
+    }
+    auto untranslated_loc = Ref(new CSeq_loc(*seq_id, start, stop, strand));
 
     auto translated_loc = sequence::Seq_loc_Subtract(loc, *untranslated_loc, 
                                                 CSeq_loc::fMerge_AbuttingOnly, &scope);
