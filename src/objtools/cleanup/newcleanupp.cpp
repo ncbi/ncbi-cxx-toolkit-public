@@ -10856,8 +10856,8 @@ bool CNewCleanup_imp::x_CleanEmptyFeature(CSeq_feat& feat)
         any_change = x_CleanEmptyProt(feat.SetData().SetProt());
         if (x_ShouldRemoveEmptyProt(feat.GetData().GetProt()) &&
             feat.IsSetComment() && !NStr::IsBlank(feat.GetComment())) {
-            if (NStr::EqualNocase(feat.GetComment(), "putative")) {
-                feat.SetData().SetProt().SetName().push_back("putative");
+            if (!NStr::EqualNocase(feat.GetComment(), "putative")) {
+                feat.SetData().SetProt().SetName().push_back(feat.GetComment());
                 feat.ResetComment();
             } else {
                 feat.SetData().SetImp().SetKey("misc_feature");
@@ -11730,6 +11730,25 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
             cdr.ResetConflict();
             ChangeMade(CCleanupChange::eChangeOther);
         }
+    }
+
+    CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(sf, *m_Scope);
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(sf.GetLocation());
+    if (bsh && CCleanup::ExtendToStopIfShortAndNotPartial(sf, bsh)) {
+        if (mrna &&
+            ((mrna->GetLocation().GetStrand() == eNa_strand_minus &&
+            mrna->GetLocation().GetStop(eExtreme_Biological) > sf.GetLocation().GetStop(eExtreme_Biological)) ||
+            (mrna->GetLocation().GetStrand() != eNa_strand_minus &&
+            mrna->GetLocation().GetStop(eExtreme_Biological) < sf.GetLocation().GetStop(eExtreme_Biological)))) {
+            CRef<CSeq_feat> new_mrna(new CSeq_feat());
+            new_mrna->Assign(*mrna);
+            if (CCleanup::ExtendToStopCodon(*new_mrna, bsh, 3)) {
+                CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*mrna));
+                efh.Replace(*new_mrna);
+            }
+        }
+        ChangeMade(CCleanupChange::eChangeFeatureLocation);
     }
 
     if (sf.IsSetPseudo() && sf.GetPseudo() && sf.IsSetProduct()) {
