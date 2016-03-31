@@ -52,4 +52,4 @@ IntelMAC : Debug : GCC.sh --with-debug --with-mt --without-bdb
 Win32_13 : Release : static 32 ReleaseDLL
 Win32_13 : Debug : static 32 DebugDLL
 
-#USE_COMPONENTS
+USE_COMPONENTS
