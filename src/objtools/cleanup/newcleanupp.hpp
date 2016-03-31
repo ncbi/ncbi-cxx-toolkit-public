@@ -535,6 +535,7 @@ private:
     void x_ExceptTextEC(string& except_text);
 
     void x_RemoveEmptyUserObject( CSeq_descr & seq_descr );
+    void x_CleanupGenbankBlock(CBioseq& seq);
     void x_CleanupGenbankBlock( CSeq_descr & seq_descr );
     void x_RemoveOldDescriptors( CSeq_descr & seq_descr );
     void x_RemoveEmptyDescriptors(CSeq_descr& seq_descr);
@@ -549,6 +550,7 @@ private:
     bool x_ShouldRemoveEmptyProt(const CProt_ref& prot );
     static bool x_IsPubContentBad(const CPubdesc& pub, bool strict);
     bool x_ShouldRemoveEmptyPub(const CPubdesc& pubdesc );
+    static bool x_IsGenbankBlockEmpty(const CGB_block& gbk);
     void x_RemoveOldFeatures(CBioseq & bioseq);
 
     void x_BioseqSetEC( CBioseq_set & bioseq_set );

@@ -10488,6 +10488,58 @@ void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
     }
 }
 
+
+string s_GetDiv(const CBioSource& src)
+{
+    if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() &&
+        src.GetOrg().GetOrgname().IsSetDiv()) {
+        return src.GetOrg().GetOrgname().GetDiv();
+    } else {
+        return kEmptyCStr;
+    }
+}
+
+
+void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
+{
+    if (!seq.IsSetDescr()) {
+        return;
+    }
+    bool is_patent = false;
+    ITERATE(CBioseq::TId, id, seq.GetId()) {
+        if ((*id)->IsPatent()) {
+            is_patent = true;
+        }
+    }
+    CBioseq_Handle b = m_Scope->GetBioseqHandle(seq);
+    string div = kEmptyCStr;
+    CSeqdesc_CI src(b, CSeqdesc::e_Source);
+    if (src) {
+        div = s_GetDiv(src->GetSource());
+    }
+    if (!is_patent && NStr::IsBlank(div)) {
+        return;
+    }
+    EDIT_EACH_SEQDESC_ON_SEQDESCR(descr_iter, seq.SetDescr()) {
+        CSeqdesc &desc = **descr_iter;
+        if (!FIELD_IS(desc, Genbank)) {
+            continue;
+        }
+
+        CGB_block& gb = desc.SetGenbank();
+        if (gb.IsSetDiv()) {
+            if (NStr::Equal(gb.GetDiv(), div)) {
+                gb.ResetDiv();
+                ChangeMade(CCleanupChange::eChangeOther);
+            } else if (is_patent && NStr::Equal(gb.GetDiv(), "PAT")) {
+                gb.ResetDiv();
+                ChangeMade(CCleanupChange::eChangeOther);
+            }
+        }
+    }
+}
+
+
 void CNewCleanup_imp::x_CleanupGenbankBlock( CSeq_descr & seq_descr )
 {
     EDIT_EACH_SEQDESC_ON_SEQDESCR( descr_iter, seq_descr ) {
@@ -10503,18 +10555,14 @@ void CNewCleanup_imp::x_CleanupGenbankBlock( CSeq_descr & seq_descr )
             ChangeMade(CCleanupChange::eChangeOther);
         }
 
-        // remove empty GenBank blocks
-        if (!gb.IsSetExtra_accessions() &&
-            !gb.IsSetSource() &&
-            !gb.IsSetKeywords() &&
-            !gb.IsSetOrigin() &&
-            !gb.IsSetDate() &&
-            !gb.IsSetEntry_date() &&
-            !gb.IsSetDiv()) {
-           
-            ERASE_SEQDESC_ON_SEQDESCR(descr_iter, seq_descr);
-            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        if (gb.IsSetDiv()) {
+            if (NStr::Equal(gb.GetDiv(), "UNA") ||
+                NStr::Equal(gb.GetDiv(), "UNC")) {
+                gb.ResetDiv();
+                ChangeMade(CCleanupChange::eChangeOther);
+            }
         }
+
     }
   
 }
@@ -10538,12 +10586,37 @@ void CNewCleanup_imp::x_RemoveOldDescriptors( CSeq_descr & seq_descr )
 }
 
 
+bool CNewCleanup_imp::x_IsGenbankBlockEmpty(const CGB_block& gbk)
+{
+    if (gbk.IsSetExtra_accessions() ||
+        gbk.IsSetSource() ||
+        gbk.IsSetKeywords() ||
+        gbk.IsSetOrigin() ||
+        gbk.IsSetDate() ||
+        gbk.IsSetDiv()) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
 void CNewCleanup_imp::x_RemoveEmptyDescriptors(CSeq_descr& seq_descr)
 {
     EDIT_EACH_SEQDESC_ON_SEQDESCR(d, seq_descr) {
         if ((*d)->IsPub() && x_IsPubContentBad((*d)->GetPub(), false)) {
             ERASE_SEQDESC_ON_SEQDESCR(d, seq_descr);
             ChangeMade(CCleanupChange::eRemoveDescriptor);
+        } else if ((*d)->IsGenbank()) {
+            CGB_block& blk = (*d)->SetGenbank();
+            if (blk.IsSetTaxonomy()) {
+                blk.ResetTaxonomy();
+                ChangeMade(CCleanupChange::eChangeOther);
+            }
+            if (x_IsGenbankBlockEmpty(blk)) {
+                ERASE_SEQDESC_ON_SEQDESCR(d, seq_descr);
+                ChangeMade(CCleanupChange::eRemoveDescriptor);
+            }
         }
     }
 }
