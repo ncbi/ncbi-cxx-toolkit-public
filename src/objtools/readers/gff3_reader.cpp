@@ -287,31 +287,43 @@ bool CGff3Reader::xUpdateAnnotCds(
             eDiag_Error,
             0,
             "Bad data line: CDS record with bad parent assignments.",
-            ILineError::eProblem_FeatureBadStartAndOrStop) );
+            ILineError::eProblem_GeneralParsingError) );
         ProcessError(*pErr, pEC);
     }
 
-    //if the feature has a parent that's still under construction then
-    // add feature location to parent location:
     list<string> parents;
-    if (record.GetAttribute("Parent", parents)) {
-        for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
-                ++it) {
-            IdToFeatureMap::iterator fit = m_MapIdToFeature.find(*it);
-            if (fit != m_MapIdToFeature.end()) {
-                if (!record.UpdateFeature(m_iFlags, fit->second)) {
-                    return false;
-                }
+    record.GetAttribute("Parent", parents);
+
+    // Preliminary:
+    //  We do not support multiparented CDS features in -genbank mode yet.
+    if ((m_iFlags & CGff3Reader::fGenbankMode)  &&  parents.size() > 1){
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Unsupported: CDS record with multiple parents.",
+            ILineError::eProblem_GeneralParsingError) );
+        ProcessError(*pErr, pEC);
+    }
+
+    // Step 1:
+    // Locations of parent mRNAs are constructed on the fly, by joining in the 
+    //  locations of child exons and CDSs as we discover them. Do this
+    //  first:
+    for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
+            ++it) {
+        IdToFeatureMap::iterator featIt = m_MapIdToFeature.find(*it);
+        if (featIt != m_MapIdToFeature.end()) {
+            if (!record.UpdateFeature(m_iFlags, featIt->second)) {
+                return false;
             }
         }
     }
 
     string id;
     record.GetAttribute("ID", id);
-    string strParents;
-    if (record.GetAttribute("Parent", strParents)) {
-        list<string> parents;
-        NStr::Split(strParents, ",", parents, 0);
+
+    if (!parents.empty()) {
         for (list<string>::const_iterator cit = parents.begin();
                 cit != parents.end();
                 ++cit) {
@@ -321,7 +333,7 @@ bool CGff3Reader::xUpdateAnnotCds(
             // if successful then update the pre-existing CDS feature
             // if not then create a brand new CDS feature
 
-            //find pre-existing cds to append to ---
+            //find pre-existing cds to append to:
             // if this record had an ID attribute then look for a cds of the same ID:parent
             // combination:
             string cdsId;
@@ -336,7 +348,7 @@ bool CGff3Reader::xUpdateAnnotCds(
                     continue;
                 }
             }
-            //find pre-existing cds to append to ---
+            //find pre-existing cds to append to:
             // if this record did not have an ID attribute then look for a cds with feature
             // ID of pattern genericXX:parent:
             else {
@@ -402,7 +414,36 @@ bool CGff3Reader::xUpdateAnnotCds(
         }
         return true;
     }
-    return false;
+
+    //--------------------------------------------------------------------------
+    //orphaned cds:
+    string cdsId = id;
+    if (cdsId.empty()) {
+        cdsId = xNextGenericId();
+    }
+    IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
+    if (it != m_MapIdToFeature.end()) {
+        record.UpdateFeature(m_iFlags, it->second);
+        m_MapIdToFeature[id] = it->second;
+        return true;
+    }
+
+    //still here?
+    // create brand new CDS feature:
+    if (!record.InitializeFeature(m_iFlags, pFeature)) {
+        return false;
+    }
+    if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
+        return false;
+    }
+    if (! cdsId.empty()) {
+        if (!id.empty()) {
+            m_MapIdToFeature[id] = pFeature;
+        }
+        m_MapIdToFeature[cdsId] = pFeature;
+    }
+    pFeature.Reset(new CSeq_feat);
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
