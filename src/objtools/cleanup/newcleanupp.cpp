@@ -10642,7 +10642,7 @@ bool CNewCleanup_imp::x_IsGenbankBlockEmpty(const CGB_block& gbk)
 {
     if ((gbk.IsSetExtra_accessions() && !gbk.GetExtra_accessions().empty()) ||
         (gbk.IsSetSource() && !NStr::IsBlank(gbk.GetSource())) ||
-        (gbk.IsSetKeywords() && gbk.GetKeywords().empty()) ||
+        (gbk.IsSetKeywords() && !gbk.GetKeywords().empty()) ||
         (gbk.IsSetOrigin() && !NStr::IsBlank(gbk.GetOrigin())) ||
         (gbk.IsSetDate() && !NStr::IsBlank(gbk.GetDate())) ||
         (gbk.IsSetDiv() && !NStr::IsBlank(gbk.GetDiv()))) {
