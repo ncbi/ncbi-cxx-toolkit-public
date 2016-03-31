@@ -230,6 +230,7 @@ CJsonNode CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         values.AppendInteger(params.wst_cache_size);
         changes.SetByKey("wst_cache_size", values);
     }
+    m_WSTCacheSize = params.wst_cache_size;
 
 
     if (limited) {
