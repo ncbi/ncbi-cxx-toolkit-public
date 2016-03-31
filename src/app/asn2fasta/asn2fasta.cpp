@@ -928,6 +928,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
     sel.SetResolveAll();
     sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
     sel.SetResolveDepth(100);
+    sel.ExcludeNamedAnnots("SNP");
 
     auto& scope = seh.GetScope();
 
