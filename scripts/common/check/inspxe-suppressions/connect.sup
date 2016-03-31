@@ -46,3 +46,17 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "gnutls_handshake() non-important (only DLL build)"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		allocation={
+			!!!;
+			mod=test_netstorage.exe,func=s_GnuTlsOpen;
+		}
+		{
+			!!!;
+			mod=libgnutls-28.dll,func=gnutls_psk_set_server_params_function;
+		}
+	}
+}
