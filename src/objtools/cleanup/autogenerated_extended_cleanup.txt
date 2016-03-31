@@ -113,6 +113,8 @@ use m_NewCleanup.KeepLatestDateDesc
     Bioseq-set.descr
 }
 
+use m_NewCleanup.x_CleanupGenbankBlock { CBioseq }
+
 use m_NewCleanup.x_CleanupGenbankBlock
 {
     Bioseq.descr,
