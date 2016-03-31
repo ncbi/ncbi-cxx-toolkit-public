@@ -894,6 +894,134 @@ static void s_SimpleTest(const CNamedParameterList* nc_params)
     }
 }
 
+#define OUTPUT_CTX(ctx) ctx << '[' << __LINE__ << "]: "
+
+#define BOOST_ERROR_CTX(message, ctx) \
+    BOOST_ERROR(OUTPUT_CTX(ctx) << message)
+                    
+#define BOOST_CHECK_THROW_CTX(expression, exception, ctx) \
+    do { \
+        try { \
+            expression; \
+            BOOST_ERROR_CTX("exception " #exception " is expected", ctx); \
+        } \
+        catch (exception&) {} \
+        catch (...) { \
+            BOOST_ERROR_CTX("an unexpected exception is caught", ctx); \
+        } \
+    } while (0)
+
+#define BOOST_CHECK_NO_THROW_CTX(expression, ctx) \
+    do { \
+        try { \
+            expression; \
+        } \
+        catch (...) { \
+            BOOST_ERROR_CTX("an unexpected exception is caught", ctx); \
+            throw; \
+        } \
+    } while (0)
+
+static void s_AllowedServicesTest()
+{
+    const string kService0 = TNetCache_ServiceName::GetDefault();
+    const string kService1 = "NC_Test";
+    const string kService2 = "NC_TestRes";
+    string key, short_key;
+
+
+    // Preparation
+
+    {
+        CNetCacheAPI api(kService0, s_ClientName);
+
+        char data[] = "TEST";
+        key = api.PutData(data, sizeof(data));
+        short_key = CNetCacheKey(key).StripKeyExtensions();
+    }
+
+
+    // API not restricted
+
+    // Configured service / server in configured service
+    {
+        const string ctx = "Unrestricted::Configured";
+        CNetCacheAPI api(kService0, s_ClientName);
+        BOOST_CHECK_NO_THROW_CTX(api.HasBlob(key), ctx);
+        BOOST_CHECK_NO_THROW_CTX(api.HasBlob(short_key), ctx);
+    }
+
+    // Not configured service / server not in configured service
+    {
+        const string ctx = "Unrestricted::NotConfigured";
+        CNetCacheAPI api(kService1, s_ClientName);
+        BOOST_CHECK_NO_THROW_CTX(api.HasBlob(key), ctx);
+        BOOST_CHECK_NO_THROW_CTX(api.HasBlob(short_key), ctx);
+    }
+
+
+    // API restricted to one service
+
+    // Configured service / server in configured service
+    {
+        const string ctx = "RestrictedToOne::Configured";
+        CMemoryRegistry registry;
+        registry.Set("netcache_api", "service", kService0);
+        registry.Set("netcache_api", "allowed_services", kService0);
+        CNetCacheAPI api(registry);
+        BOOST_CHECK_NO_THROW_CTX(api.HasBlob(key), ctx);
+        BOOST_CHECK_NO_THROW_CTX(api.HasBlob(short_key), ctx);
+    }
+
+    // Not configured service / server not in configured service
+    {
+        const string ctx = "RestrictedToOne::NotConfigured";
+        CMemoryRegistry registry;
+        registry.Set("netcache_api", "service", kService1);
+        registry.Set("netcache_api", "allowed_services", kService1);
+        CNetCacheAPI api(registry);
+        BOOST_CHECK_THROW_CTX(api.HasBlob(key), CNetCacheException, ctx);
+        BOOST_CHECK_THROW_CTX(api.HasBlob(short_key), CNetCacheException, ctx);
+    }
+
+
+    // API restricted to a few services
+
+    // Configured service / server in configured service
+    {
+        const string ctx = "RestrictedToAFew::Configured";
+        CMemoryRegistry registry;
+        registry.Set("netcache_api", "service", kService0);
+        registry.Set("netcache_api", "allowed_services", kService1);
+        CNetCacheAPI api(registry);
+        BOOST_CHECK_NO_THROW_CTX(api.HasBlob(key), ctx);
+        BOOST_CHECK_NO_THROW_CTX(api.HasBlob(short_key), ctx);
+    }
+
+    // Allowed service / server in allowed service
+    {
+        const string ctx = "RestrictedToAFew::Additional";
+        CMemoryRegistry registry;
+        registry.Set("netcache_api", "service", kService1);
+        registry.Set("netcache_api", "allowed_services", kService0);
+        CNetCacheAPI api(registry);
+        BOOST_CHECK_NO_THROW_CTX(api.HasBlob(key), ctx);
+        BOOST_CHECK_NO_THROW_CTX(api.HasBlob(short_key), ctx);
+    }
+
+
+    // Not allowed service / server not in allowed service
+    {
+        const string ctx = "RestrictedToAFew::NotConfigured";
+        CMemoryRegistry registry;
+        registry.Set("netcache_api", "service", kService1);
+        registry.Set("netcache_api", "allowed_services", kService2);
+        CNetCacheAPI api(registry);
+        BOOST_CHECK_THROW_CTX(api.HasBlob(key), CNetCacheException, ctx);
+        BOOST_CHECK_THROW_CTX(api.HasBlob(short_key), CNetCacheException, ctx);
+    }
+}
+
 BOOST_AUTO_TEST_SUITE(NetCache)
 
 NCBITEST_AUTO_INIT()
@@ -924,6 +1052,11 @@ BOOST_AUTO_TEST_CASE(SimpleTest)
 BOOST_AUTO_TEST_CASE(SimpleTestMirroring)
 {
     s_SimpleTest(nc_mirroring_mode = CNetCacheAPI::eMirroringEnabled);
+}
+
+BOOST_AUTO_TEST_CASE(AllowedServices)
+{
+    s_AllowedServicesTest();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

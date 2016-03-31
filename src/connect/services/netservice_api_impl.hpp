@@ -388,6 +388,17 @@ struct SNetServiceMap {
 
     CNetService GetServiceByName(const string& service_name,
             SNetServiceImpl* prototype);
+
+    void Restrict() { m_Restricted = true; }
+    bool IsAllowed(const string& service_name) const;
+    bool IsAllowed(CNetServer::TInstance server, SNetServiceImpl* prototype);
+    void AddToAllowed(const string& service_name);
+
+private:
+    CNetService GetServiceByNameImpl(const string&, SNetServiceImpl*);
+
+    bool m_Restricted;
+    set<string, PNocase> m_Allowed;
 };
 
 struct SUseNextSubHitID

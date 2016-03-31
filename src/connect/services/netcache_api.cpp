@@ -155,6 +155,25 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
         if (config->GetBool(config_section,
                 "use_compound_id", CConfig::eErr_NoThrow, false))
             nc_impl->m_DefaultParameters.SetUseCompoundID(true);
+
+        const auto allowed_services = config->GetString(config_section,
+                "allowed_services", CConfig::eErr_NoThrow, kEmptyStr);
+
+        if (!allowed_services.empty()) {
+            nc_impl->m_ServiceMap.Restrict();
+
+            vector<string> services;
+            NStr::Split(allowed_services, ", ", services,
+                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+
+            for (auto& service : services) {
+                // Do not add configured service, it is always allowed
+                if (NStr::CompareNocase(service,
+                            nc_impl->m_Service.GetServiceName())) {
+                    nc_impl->m_ServiceMap.AddToAllowed(service);
+                }
+            }
+        }
     } else {
         nc_impl->m_TempDir = default_temp_dir;
         nc_impl->m_CacheInput = false;
@@ -373,8 +392,16 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
     CNetService service(m_Service);
 
-    if (service_name_is_defined && service_name != service.GetServiceName())
+    if (service_name_is_defined && service_name != service.GetServiceName()) {
+        // NB: Configured service is always allowed
+
+        if (!m_ServiceMap.IsAllowed(service_name)) {
+            NCBI_THROW_FMT(CNetCacheException, eAccessDenied, "Service " <<
+                    service_name << " is not in the allowed services");
+        }
+
         service = m_ServiceMap.GetServiceByName(service_name, m_Service);
+    }
 
     bool key_is_mirrored = service_name_is_defined &&
             !key.GetFlag(CNetCacheKey::fNCKey_SingleServer) &&
@@ -447,12 +474,26 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
         return exec_result;
     }
 
-    if (service_name_is_defined && server_check != eOff &&
-            !service->IsInService(primary_server)) {
-        NCBI_THROW_FMT(CNetSrvConnException, eServerNotInService,
-                key.GetKey() << ": NetCache server " <<
-                primary_server.GetServerAddress() << " could not be "
-                "accessed because it is not registered for the service.");
+    // If enabled, check if the server belongs to the selected service
+    if (server_check != eOff && !service->IsInService(primary_server)) {
+
+        // Service name is known, no need to check other services
+        if (service_name_is_defined) {
+            NCBI_THROW_FMT(CNetSrvConnException, eServerNotInService,
+                    key.GetKey() << ": NetCache server " <<
+                    primary_server.GetServerAddress() << " could not be "
+                    "accessed because it is not registered for the service.");
+
+        // Service name is not known,
+        // check if the server belongs to one of the explicitly allowed services
+        } else if (!m_ServiceMap.IsAllowed(primary_server, m_Service)) {
+            NCBI_THROW_FMT(CNetCacheException, eAccessDenied,
+                    key.GetKey() << ": NetCache server " <<
+                    primary_server.GetServerAddress() << " could not be "
+                    "accessed because it is not registered for the allowed "
+                    "services.");
+        }
+
     }
 
     return primary_server.ExecWithRetry(cmd, multiline_output, conn_listener);

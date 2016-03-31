@@ -1344,13 +1344,46 @@ CNetService SNetServiceMap::GetServiceByName(const string& service_name,
         SNetServiceImpl* prototype)
 {
     CFastMutexGuard guard(m_ServiceMapMutex);
+    return GetServiceByNameImpl(service_name, prototype);
+}
 
+CNetService SNetServiceMap::GetServiceByNameImpl(const string& service_name,
+        SNetServiceImpl* prototype)
+{
     pair<TNetServiceByName::iterator, bool> loc(m_ServiceByName.insert(
             TNetServiceByName::value_type(service_name, CNetService())));
 
     return !loc.second ? loc.first->second :
             (loc.first->second =
                     new SNetServiceImpl(service_name, prototype));
+}
+
+bool SNetServiceMap::IsAllowed(const string& service_name) const
+{
+    // Not restricted or found
+    return !m_Restricted || m_Allowed.count(service_name);
+}
+
+bool SNetServiceMap::IsAllowed(CNetServer::TInstance server,
+        SNetServiceImpl* prototype)
+{
+    if (!m_Restricted) return true;
+
+    CFastMutexGuard guard(m_ServiceMapMutex);
+
+    // Check if server belongs to some allowed service
+    for (auto& service_name: m_Allowed) {
+        CNetService service(GetServiceByNameImpl(service_name, prototype));
+
+        if (service->IsInService(server)) return true;
+    }
+
+    return false;
+}
+
+void SNetServiceMap::AddToAllowed(const string& service_name)
+{
+    m_Allowed.insert(service_name);
 }
 
 CJsonNode g_ExecToJson(IExecToJson& exec_to_json, CNetService service,
