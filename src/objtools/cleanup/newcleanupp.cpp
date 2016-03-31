@@ -10984,8 +10984,6 @@ bool CNewCleanup_imp::x_CleanEmptyFeature(CSeq_feat& feat)
             if (!NStr::EqualNocase(feat.GetComment(), "putative")) {
                 feat.SetData().SetProt().SetName().push_back(feat.GetComment());
                 feat.ResetComment();
-            } else {
-                feat.SetData().SetImp().SetKey("misc_feature");
             }
             any_change = true;
         }
