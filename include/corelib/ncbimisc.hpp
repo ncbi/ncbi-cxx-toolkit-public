@@ -1095,6 +1095,9 @@ typedef Uint4 TUintId;
 
 #endif
 
+/// TUid type for UIDs which require the same strictness as TGi.
+typedef TGi TUid;
+
 /// a helper template to enforce constness of argument to GI_CONST macro
 template<TIntId gi>
 class CConstGIChecker {
