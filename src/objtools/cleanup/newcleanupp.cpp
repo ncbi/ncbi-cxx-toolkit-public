@@ -11179,13 +11179,68 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
 }
 
 
+bool s_IsMergeableFeatureTable(const CSeq_annot& annot)
+{
+    if (!annot.IsFtable() ||
+        annot.IsSetId() ||
+        annot.IsSetName() ||
+        annot.IsSetDb() ||
+        annot.IsSetDesc()) {
+        return false;
+    } else {
+        return true;
+    }
+
+}
+
+
+void CNewCleanup_imp::x_MergeAdjacentFeatureTables(list< CRef< CSeq_annot > > & annot_list)
+{
+    if (annot_list.size() < 2) {
+        return;
+    }
+    bool any_erased = true;
+    while (any_erased) {
+        any_erased = false;
+        CBioseq::TAnnot::iterator it = annot_list.begin();
+        CBioseq::TAnnot::iterator it_next = it;
+        ++it_next;
+        while (it_next != annot_list.end())
+        {
+            if (s_IsMergeableFeatureTable(**it) &&
+                s_IsMergeableFeatureTable(**it_next)) {
+                CSeq_annot_EditHandle eh1 = m_Scope->GetSeq_annotEditHandle(**it);
+                CSeq_annot_EditHandle eh2 = m_Scope->GetSeq_annotEditHandle(**it_next);
+                while ((*it_next)->IsSetData() && !(*it_next)->GetData().GetFtable().empty()) {
+                    CSeq_feat_Handle fh = m_Scope->GetSeq_featHandle(*((*it_next)->GetData().GetFtable().front()));
+                    CSeq_feat_EditHandle efh(fh);
+                    eh1.TakeFeat(efh);
+                }
+                eh2.Remove();
+                ChangeMade(CCleanupChange::eRemoveAnnot);
+                any_erased = true;
+                break;
+            }
+            ++it_next;
+            ++it;
+        }
+    }
+}
+
+
 void CNewCleanup_imp::x_MergeAdjacentFeatureTables( CBioseq & bioseq )
 {
+    if (bioseq.IsSetAnnot()) {
+        x_MergeAdjacentFeatureTables(bioseq.SetAnnot());
+    }
 }
 
 
 void CNewCleanup_imp::x_MergeAdjacentFeatureTables( CBioseq_set & bioseq_set )
 {
+    if (bioseq_set.IsSetAnnot()) {
+        x_MergeAdjacentFeatureTables(bioseq_set.SetAnnot());
+    }
 }
 
 
