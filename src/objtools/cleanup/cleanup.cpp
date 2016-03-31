@@ -924,7 +924,7 @@ bool CCleanup::SetFrameFromLoc(CCdregion &cdregion, const CSeq_loc& loc, CScope&
 }
 
 
-CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
+CConstRef <CSeq_feat> CCleanup::GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
 {
     const CGene_ref* gene = feat.GetGeneXref();
     if (gene && gene->IsSuppressed()) {

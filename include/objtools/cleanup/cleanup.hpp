@@ -307,6 +307,8 @@ public:
 /// in the list
     static vector<CConstRef<CPub> > GetCitationList(CBioseq_Handle bsh);
 
+    static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

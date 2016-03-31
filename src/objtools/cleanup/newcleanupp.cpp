@@ -11844,6 +11844,19 @@ void CNewCleanup_imp::ProtRefEC(CProt_ref& pr)
 }
 
 
+bool s_LocationShouldBeExtendedToMatch(const CSeq_loc& orig, const CSeq_loc& improved)
+{
+    if ((orig.GetStrand() == eNa_strand_minus &&
+        orig.GetStop(eExtreme_Biological) > improved.GetStop(eExtreme_Biological)) ||
+        (orig.GetStrand() != eNa_strand_minus &&
+        orig.GetStop(eExtreme_Biological) < improved.GetStop(eExtreme_Biological))) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
 {
     if (!sf.IsSetData() || !sf.GetData().IsCdregion()) {
@@ -11876,14 +11889,19 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
     }
 
     CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(sf, *m_Scope);
+    CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(sf, *m_Scope);
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(sf.GetLocation());
     if (bsh && CCleanup::ExtendToStopIfShortAndNotPartial(sf, bsh)) {
-        if (mrna &&
-            ((mrna->GetLocation().GetStrand() == eNa_strand_minus &&
-            mrna->GetLocation().GetStop(eExtreme_Biological) > sf.GetLocation().GetStop(eExtreme_Biological)) ||
-            (mrna->GetLocation().GetStrand() != eNa_strand_minus &&
-            mrna->GetLocation().GetStop(eExtreme_Biological) < sf.GetLocation().GetStop(eExtreme_Biological)))) {
+        if (gene && s_LocationShouldBeExtendedToMatch(gene->GetLocation(), sf.GetLocation())) {
+            CRef<CSeq_feat> new_gene(new CSeq_feat());
+            new_gene->Assign(*gene);
+            if (CCleanup::ExtendToStopCodon(*new_gene, bsh, 3)) {
+                CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*gene));
+                efh.Replace(*new_gene);
+            }
+        }
+        if (mrna && s_LocationShouldBeExtendedToMatch(mrna->GetLocation(), sf.GetLocation())) {
             CRef<CSeq_feat> new_mrna(new CSeq_feat());
             new_mrna->Assign(*mrna);
             if (CCleanup::ExtendToStopCodon(*new_mrna, bsh, 3)) {
