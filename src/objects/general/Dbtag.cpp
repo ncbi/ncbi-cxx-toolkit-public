@@ -558,7 +558,7 @@ typedef SStaticPair<CDbtag::EDbtagType, const char*>    TDbtUrl;
 static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_AFTOL, "http://wasabi.lutzonilab.net/pub/displayTaxonInfo?aftol_id=" },
     { CDbtag::eDbtagType_APHIDBASE, "http://bipaa.genouest.org/apps/grs-2.3/grs?reportID=aphidbase_transcript_report&objectID=" },
-    { CDbtag::eDbtagType_ASAP, "https://asap.ahabs.wisc.edu/annotation/php/feature_info.php?FeatureID=" },
+    { CDbtag::eDbtagType_ASAP, "https://asap.genetics.wisc.edu/asap/feature_info.php?FeatureID=" },
     { CDbtag::eDbtagType_ATCC, "http://www.atcc.org/Products/All/" },
     { CDbtag::eDbtagType_AceView_WormGenes, "http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q=" },
     { CDbtag::eDbtagType_AntWeb, "http://www.antweb.org/specimen.do?name=" },
