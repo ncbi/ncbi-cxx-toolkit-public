@@ -94,6 +94,9 @@ use m_NewCleanup.ProtRefEC
     Prot-ref
 }
 
+use m_NewCleanup.x_BondEC { Seq-feat }
+ 
+
 use m_NewCleanup.x_RemoveRedundantComment
 {
     Seq-feat.data.gene AND Seq-feat

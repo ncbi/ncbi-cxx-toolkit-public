@@ -10814,8 +10814,9 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyProt(const CProt_ref& prot)
 // if bond is other and comment can be used to set bond type, do so.
 void CNewCleanup_imp::x_BondEC(CSeq_feat& feat)
 {
-    if (feat.GetData().IsBond() && 
-        feat.GetData().GetBond() == CSeqFeatData::eBond_other &&
+    if (feat.GetData().IsImp() && 
+        feat.GetData().GetImp().IsSetKey() &&
+        NStr::Equal(feat.GetData().GetImp().GetKey(), "misc_feature") &&
         feat.IsSetComment()) {
         CBondList bl;
         if (bl.IsBondName(feat.GetComment())) {
