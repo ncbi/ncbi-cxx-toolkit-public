@@ -208,6 +208,8 @@ public:
         CSeq_entry_Handle& seh
     );
 
+    static bool ShouldRemoveAnnot(const CSeq_annot& annot);
+
 private:
 
     // many more methods and variables ...
@@ -521,6 +523,7 @@ private:
     void x_RememberSeqFeatCitPubs( CPub &pub );
 
     void x_DecodeXMLMarkChanged( std::string & str );
+
 
 private:
     void x_SortSeqDescs( CSeq_entry & seq_entry );

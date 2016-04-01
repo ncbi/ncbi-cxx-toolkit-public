@@ -11125,7 +11125,7 @@ bool s_RetainEmptyAnnot(const CSeq_annot& annot)
 }
 
 
-bool s_ShouldRemoveAnnot(const CSeq_annot& annot)
+bool CNewCleanup_imp::ShouldRemoveAnnot(const CSeq_annot& annot)
 {
     if (!s_RetainEmptyAnnot(annot) &&
         (annot.IsFtable() && annot.GetData().GetFtable().empty()) ||
@@ -11148,7 +11148,7 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
                 if ((*it)->IsFtable()) {
                     x_RemoveEmptyFeatures(**it);
                 }
-                if (s_ShouldRemoveAnnot(**it)) {
+                if (ShouldRemoveAnnot(**it)) {
                     CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(**it);
                     CSeq_annot_EditHandle eh(ah);
                     eh.Remove();
@@ -11178,7 +11178,7 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
                 if ((*it)->IsFtable()) {
                     x_RemoveEmptyFeatures(**it);
                 } 
-                if (s_ShouldRemoveAnnot(**it)) {
+                if (ShouldRemoveAnnot(**it)) {
                     CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(**it);
                     CSeq_annot_EditHandle eh(ah);
                     eh.Remove();

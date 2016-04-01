@@ -484,9 +484,8 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     new_feat->ResetLocation();
     new_feat->SetLocation(*new_loc);
 
-    // remove the feature from the nuc bioseq
     CSeq_feat_EditHandle edh(fh);
-    edh.Remove();
+    CSeq_annot_Handle ah = fh.GetAnnot();
 
     CBioseq_Handle target_bsh = fh.GetScope().GetBioseqHandle(new_feat->GetLocation());
     CBioseq_EditHandle eh = target_bsh.GetEditHandle();
@@ -508,7 +507,14 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
 
     // add feature to the protein bioseq
     CSeq_annot_EditHandle aeh(ftable);
-    aeh.AddFeat(*new_feat);
+    aeh.TakeFeat(edh);
+
+    // remove old annot if now empty
+    if (CNewCleanup_imp::ShouldRemoveAnnot(*(ah.GetCompleteSeq_annot()))) {
+        CSeq_annot_EditHandle orig(ah);
+        orig.Remove();
+    }
+    //aeh.AddFeat(*new_feat);
     return true;
 
 }
