@@ -10585,6 +10585,9 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CGB_block& gb, bool is_patent, const
         } else if (is_patent && NStr::Equal(gb.GetDiv(), "PAT")) {
             gb.ResetDiv();
             ChangeMade(CCleanupChange::eChangeOther);
+        } else if (s_ShouldRemoveKeyword(gb.GetDiv(), tech)) {
+            gb.ResetDiv();
+            ChangeMade(CCleanupChange::eChangeOther);
         }
     }
     if (x_CleanGenbankKeywords(gb, tech)) {
