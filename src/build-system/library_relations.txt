@@ -311,6 +311,10 @@ fbsdstd_g needs3party $(ORIG_LIBS)
 fcgi needs3party $(ORIG_LIBS)
 featdef needs xser
 filter_snps needs xalnmgr
+flatfile needs $(OBJMGR_LIBS)
+flatfile needs ncbi_xcache_netcache
+flatfile needs ncbi_xloader_wgs
+flatfile needs xobjwrite
 freetype needs3party $(ORIG_LIBS)
 fscreen needs agp_lookup
 fscreen needs dbapi_util_blobstore
