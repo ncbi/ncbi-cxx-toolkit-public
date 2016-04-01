@@ -11307,6 +11307,12 @@ CRef<CBioSource> BioSourceFromImpFeat(const CSeq_feat& sf)
             }
         }
     }
+    if (sf.IsSetComment() && !NStr::IsBlank(sf.GetComment())) {
+        CRef<COrgMod> note(new COrgMod());
+        note->SetSubtype(COrgMod::eSubtype_other);
+        note->SetSubname(sf.GetComment());
+        src->SetOrg().SetOrgname().SetMod().push_back(note);
+    }
     return src;
 }
 
