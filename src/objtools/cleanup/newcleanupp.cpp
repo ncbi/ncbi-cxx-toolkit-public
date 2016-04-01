@@ -11366,9 +11366,6 @@ void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
 
 }
 
-void CNewCleanup_imp::x_MoveProteinFeatures(CBioseq & bioseq)
-{
-}
 
 void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
 {

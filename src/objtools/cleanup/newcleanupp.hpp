@@ -563,7 +563,6 @@ private:
     bool x_ShouldRemoveEmptyPub(const CPubdesc& pubdesc );
     static bool x_IsGenbankBlockEmpty(const CGB_block& gbk);
     void x_RemoveOldFeatures(CBioseq & bioseq);
-    void x_MoveProteinFeatures(CBioseq& bioseq);
 
     void x_BioseqSetEC( CBioseq_set & bioseq_set );
     void x_BioseqSetNucProtEC( CBioseq_set & bioseq_set );
