@@ -10551,6 +10551,45 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq_set& set)
         return;
     }
 
+    string div = kEmptyStr;
+    CMolInfo::TTech tech = CMolInfo::eTech_unknown;
+
+    ITERATE(CBioseq_set::TDescr::Tdata, it, set.GetDescr().Get()) {
+        if ((*it)->IsSource()) {
+            div = s_GetDiv((*it)->GetSource());
+        } else if ((*it)->IsMolinfo() &&
+                   (*it)->GetMolinfo().IsSetTech()) {
+            tech = (*it)->GetMolinfo().GetTech();
+        }
+    }
+
+    EDIT_EACH_SEQDESC_ON_SEQDESCR(descr_iter, set.SetDescr()) {
+        CSeqdesc &desc = **descr_iter;
+        if (!FIELD_IS(desc, Genbank)) {
+            continue;
+        }
+
+        CGB_block& gb = desc.SetGenbank();
+        x_CleanupGenbankBlock(gb, false, div, tech);
+    }
+
+}
+
+
+void CNewCleanup_imp::x_CleanupGenbankBlock(CGB_block& gb, bool is_patent, const string& div, CMolInfo::TTech tech)
+{
+    if (gb.IsSetDiv()) {
+        if (NStr::Equal(gb.GetDiv(), div)) {
+            gb.ResetDiv();
+            ChangeMade(CCleanupChange::eChangeOther);
+        } else if (is_patent && NStr::Equal(gb.GetDiv(), "PAT")) {
+            gb.ResetDiv();
+            ChangeMade(CCleanupChange::eChangeOther);
+        }
+    }
+    if (x_CleanGenbankKeywords(gb, tech)) {
+        ChangeMade(CCleanupChange::eChangeKeywords);
+    }
 }
 
 
@@ -10584,18 +10623,7 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
         }
 
         CGB_block& gb = desc.SetGenbank();
-        if (gb.IsSetDiv()) {
-            if (NStr::Equal(gb.GetDiv(), div)) {
-                gb.ResetDiv();
-                ChangeMade(CCleanupChange::eChangeOther);
-            } else if (is_patent && NStr::Equal(gb.GetDiv(), "PAT")) {
-                gb.ResetDiv();
-                ChangeMade(CCleanupChange::eChangeOther);
-            }
-        }
-        if (x_CleanGenbankKeywords(gb, tech)) {
-            ChangeMade(CCleanupChange::eChangeKeywords);
-        }
+        x_CleanupGenbankBlock(gb, is_patent, div, tech);
     }
 }
 
