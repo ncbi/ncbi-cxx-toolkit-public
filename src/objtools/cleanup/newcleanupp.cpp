@@ -10502,7 +10502,7 @@ string s_GetDiv(const CBioSource& src)
 
 bool CNewCleanup_imp::s_ShouldRemoveKeyword(const string& keyword, CMolInfo::TTech tech)
 {
-    if (NStr::Equal(keyword, "HTGS")) {
+    if (NStr::Equal(keyword, "HTG")) {
         return true;
     } else if (tech == CMolInfo::eTech_htgs_0 && NStr::Equal(keyword, "HTGS_PHASE0")) {
         return true;
