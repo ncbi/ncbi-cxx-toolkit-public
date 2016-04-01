@@ -6974,6 +6974,14 @@ void CNewCleanup_imp::x_CleanupECNumberListEC( CProt_ref::TEc & ec_num_list )
         if(tlen != ec_num.length()) {
             ChangeMade(CCleanupChange::eCleanECNumber);
         }
+        if (CProt_ref::GetECNumberStatus(ec_num) == CProt_ref::eEC_replaced) {
+            string new_val = CProt_ref::GetECNumberReplacement(ec_num);
+            if (!NStr::IsBlank(new_val)) {
+                ec_num = new_val;
+                ChangeMade(CCleanupChange::eCleanECNumber);
+            }
+        }
+
     }
 }
 
