@@ -10817,10 +10817,12 @@ void CNewCleanup_imp::x_BondEC(CSeq_feat& feat)
     if (feat.GetData().IsImp() && 
         feat.GetData().GetImp().IsSetKey() &&
         NStr::Equal(feat.GetData().GetImp().GetKey(), "misc_feature") &&
-        feat.IsSetComment()) {
+        feat.IsSetComment() &&
+        NStr::EndsWith(feat.GetComment(), " bond")) {
+        string bond_type = feat.GetComment().substr(0, feat.GetComment().length() - 5);
         CBondList bl;
-        if (bl.IsBondName(feat.GetComment())) {
-            feat.SetData().SetBond(bl.GetBondType(feat.GetComment()));
+        if (bl.IsBondName(bond_type)) {
+            feat.SetData().SetBond(bl.GetBondType(bond_type));
             feat.ResetComment();
             ChangeMade(CCleanupChange::eChangeComment);
         }        
@@ -12778,6 +12780,18 @@ void CNewCleanup_imp::x_MergeDupBioSources(CSeq_descr & seq_descr)
 }
 
 
+void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
+{
+    // This is for global changes
+    if (CCleanup::FixGeneXrefSkew(seh)) {
+        ChangeMade(CCleanupChange::eChangeGeneRef);
+    }
+    if (CCleanup::MoveProteinSpecificFeats(seh)) {
+        ChangeMade(CCleanupChange::eMoveFeat);
+    }
+}
+
+
 void CNewCleanup_imp::ExtendedCleanupSeqEntry (
     CSeq_entry& seq_entry
 )
@@ -12793,9 +12807,7 @@ void CNewCleanup_imp::ExtendedCleanupSeqEntry (
     auto_ext_cleanup.ExtendedCleanupSeqEntry( seq_entry );
     
     CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(seq_entry);
-    if (CCleanup::FixGeneXrefSkew(seh)) {
-        ChangeMade(CCleanupChange::eChangeGeneRef);
-    }
+    x_ExtendedCleanupExtra(seh);
     // TODO: implement more of ExtendedCleanup
 }
 
@@ -12817,9 +12829,7 @@ void CNewCleanup_imp::ExtendedCleanupSeqSubmit (
     if (ss.IsSetData() && ss.GetData().IsEntrys()) {
         NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, ss.SetData().SetEntrys()) {
             CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(**it);
-            if (CCleanup::FixGeneXrefSkew(seh)) {
-                ChangeMade(CCleanupChange::eChangeGeneRef);
-            }
+            x_ExtendedCleanupExtra(seh);
         }
     }
 

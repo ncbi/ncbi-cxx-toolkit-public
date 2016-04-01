@@ -579,6 +579,8 @@ private:
     bool x_FixMiscRNA(CSeq_feat& feat);
     void x_ModernizeRNAFeat(CSeq_feat& feat);
 
+    void x_ExtendedCleanupExtra(CSeq_entry_Handle seh);
+
 protected:
 
     // variables used for the whole cleaning process
