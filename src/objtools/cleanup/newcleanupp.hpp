@@ -543,6 +543,7 @@ private:
     static bool s_ShouldRemoveKeyword(const string& keyword, CMolInfo::TTech tech);
     static bool x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tech);
     void x_CleanupGenbankBlock(CBioseq& seq);
+    void x_CleanupGenbankBlock(CBioseq_set& set);
     void x_CleanupGenbankBlock( CSeq_descr & seq_descr );
     void x_RemoveOldDescriptors( CSeq_descr & seq_descr );
     void x_RemoveEmptyDescriptors(CSeq_descr& seq_descr);

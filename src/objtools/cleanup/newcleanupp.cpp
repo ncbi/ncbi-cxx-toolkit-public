@@ -10545,6 +10545,15 @@ bool CNewCleanup_imp::x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tec
 }
 
 
+void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq_set& set)
+{
+    if (!set.IsSetDescr()) {
+        return;
+    }
+
+}
+
+
 void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
 {
     if (!seq.IsSetDescr()) {
