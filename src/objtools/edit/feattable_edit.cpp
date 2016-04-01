@@ -301,7 +301,7 @@ void CFeatTableEdit::xGenerateMissingGeneForSubtype(
                 continue;
             }
             CMappedFeat parentGene = feature::GetBestGeneForFeat(mf, &mTree);
-            assert(parentGene); //we would not be "else" if not
+            //assert(parentGene); //we would not be "else" if not
             if (parentGene.IsSetPartial()  &&  parentGene.GetPartial()) {
                 continue;
             }
