@@ -65,6 +65,9 @@ public:
     void GenerateProteinAndTranscriptIds();
     void GenerateLocusIds();
     void SubmitFixProducts();
+    void GenerateMissingMrnaForCds();
+    void GenerateMissingGeneForMrna();
+    void GenerateMissingGeneForCds();
 
     unsigned int PendingLocusTagNumber() const {
         return mLocusTagNumber;
@@ -97,8 +100,10 @@ protected:
     void xFeatureAddTranscriptId(
         CMappedFeat);
 
-    CRef<CSeq_feat> xMakeGeneForMrna(
+    CRef<CSeq_feat> xMakeGeneForFeature(
         const CMappedFeat&);
+    void xGenerateMissingGeneForSubtype(
+        CSeqFeatData::ESubtype);
 
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;

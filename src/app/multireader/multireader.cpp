@@ -485,6 +485,11 @@ void CMultiReaderApp::Init(void)
         true);
         
     arg_desc->AddFlag(
+        "euk",
+        "in -genbank mode, generate any missing mRNA features",
+        true);
+
+    arg_desc->AddFlag(
         "gene-xrefs",
         "generate parent-child xrefs involving genes",
         true);
@@ -1289,8 +1294,13 @@ void CMultiReaderApp::xPostProcessAnnot(
 
     edit::CFeatTableEdit fte(annot, prefix, startingLocusTagNumber, m_pErrors);
     fte.InferPartials();
-    fte.InferParentMrnas();
-    fte.InferParentGenes();
+    if (args["euk"].AsBoolean()) {
+        fte.GenerateMissingMrnaForCds();
+        fte.GenerateMissingGeneForMrna();
+    }
+    else {
+        fte.GenerateMissingGeneForCds();
+    }
     fte.EliminateBadQualifiers();
     fte.GenerateLocusTags();
     fte.GenerateProteinAndTranscriptIds();

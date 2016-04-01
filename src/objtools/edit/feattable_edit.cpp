@@ -89,7 +89,14 @@ CFeatTableEdit::~CFeatTableEdit()
 };
 
 //  -------------------------------------------------------------------------
-void CFeatTableEdit::InferParentMrnas()
+void CFeatTableEdit::GenerateMissingGeneForCds()
+//  -------------------------------------------------------------------------
+{
+    xGenerateMissingGeneForSubtype(CSeqFeatData::eSubtype_cdregion);
+}
+
+//  -------------------------------------------------------------------------
+void CFeatTableEdit::GenerateMissingMrnaForCds()
 //  -------------------------------------------------------------------------
 {
     SAnnotSelector sel;
@@ -112,47 +119,29 @@ void CFeatTableEdit::InferParentMrnas()
         feh.AddFeatXref(rnaId);
         //add new rna to feature table
         mEditHandle.AddFeat(*pRna);
+        mTree.AddFeature(mpScope->GetObjectHandle(*pRna));
     }
-    mTree = feature::CFeatTree(mHandle);
+}
+
+//  -------------------------------------------------------------------------
+void CFeatTableEdit::InferParentMrnas()
+//  -------------------------------------------------------------------------
+{
+    GenerateMissingMrnaForCds();
+}
+
+//  ---------------------------------------------------------------------------
+void CFeatTableEdit::GenerateMissingGeneForMrna()
+//  ---------------------------------------------------------------------------
+{
+    xGenerateMissingGeneForSubtype(CSeqFeatData::eSubtype_mRNA);
 }
 
 //  ---------------------------------------------------------------------------
 void CFeatTableEdit::InferParentGenes()
 //  ---------------------------------------------------------------------------
 {
-    SAnnotSelector sel;
-    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
-    CFeat_CI it(mHandle, sel);
-    for ( ; it; ++it) {
-        CMappedFeat rna = *it;
-        CRef<CSeq_feat> pGene = xMakeGeneForMrna(rna);
-        if (!pGene) {
-            if (!rna.IsSetPartial() ||  !rna.GetPartial()) {
-                continue;
-            }
-            CMappedFeat parentGene = feature::GetBestGeneForMrna(rna, &mTree); 
-            if (parentGene  &&  
-                    !(parentGene.IsSetPartial()  &&  parentGene.GetPartial())) {
-                CRef<CSeq_feat> pEditedGene(new CSeq_feat);
-                pEditedGene->Assign(parentGene.GetOriginalFeature());
-                pEditedGene->SetPartial(true);
-                CSeq_feat_EditHandle geneEh(
-                    mpScope->GetObjectHandle(parentGene.GetOriginalFeature()));
-                geneEh.Replace(*pEditedGene);
-            }
-            continue;
-        }
-        //find proper name for gene
-        string geneId(xNextFeatId());
-        pGene->SetId().SetLocal().SetStr(geneId);
-        //add gene xref to rna
-        CSeq_feat_EditHandle feh(
-            mpScope->GetObjectHandle(rna.GetOriginalFeature()));
-        feh.AddFeatXref(geneId);
-        //add new gene to feature table
-        mEditHandle.AddFeat(*pGene);
-    }
-    mTree = feature::CFeatTree(mHandle);
+    GenerateMissingGeneForMrna();
 }
 
 //  ----------------------------------------------------------------------------
@@ -282,6 +271,47 @@ void CFeatTableEdit::GenerateProteinAndTranscriptIds()
         CMappedFeat mf = *it;
         xFeatureAddProteinId(mf);
         xFeatureAddTranscriptId(mf);
+    }
+}
+
+//  ---------------------------------------------------------------------------
+void CFeatTableEdit::xGenerateMissingGeneForSubtype(
+    CSeqFeatData::ESubtype subType)
+//  ---------------------------------------------------------------------------
+{
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(subType);
+    CFeat_CI it(mHandle, sel);
+    for ( ; it; ++it) {
+        CMappedFeat mf = *it;
+        CRef<CSeq_feat> pGene = xMakeGeneForFeature(mf);
+        if (pGene) {
+            // missing gene was created. make it fit and add to table:
+            string geneId(xNextFeatId());
+            pGene->SetId().SetLocal().SetStr(geneId);
+            CSeq_feat_EditHandle feh(
+                mpScope->GetObjectHandle(mf.GetOriginalFeature()));
+            feh.AddFeatXref(geneId);
+            mEditHandle.AddFeat(*pGene);
+            mTree.AddFeature(mpScope->GetObjectHandle(*pGene));
+        }
+        else {
+            // gene wasn't missing. just adjust partialness if necessary:
+            if (!mf.IsSetPartial()  ||  !mf.GetPartial()) {
+                continue;
+            }
+            CMappedFeat parentGene = feature::GetBestGeneForFeat(mf, &mTree);
+            assert(parentGene); //we would not be "else" if not
+            if (parentGene.IsSetPartial()  &&  parentGene.GetPartial()) {
+                continue;
+            }
+            CRef<CSeq_feat> pEditedGene(new CSeq_feat);
+            pEditedGene->Assign(parentGene.GetOriginalFeature());
+            pEditedGene->SetPartial(true);
+            CSeq_feat_EditHandle geneEH(
+                mpScope->GetObjectHandle(parentGene.GetOriginalFeature()));
+            geneEH.Replace(*pEditedGene);
+        }        
     }
 }
 
@@ -612,7 +642,7 @@ string CFeatTableEdit::xNextTranscriptId(
 }
 
 //  ----------------------------------------------------------------------------
-CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForMrna(
+CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
     const CMappedFeat& rna)
 //  ----------------------------------------------------------------------------
 {
@@ -623,7 +653,7 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForMrna(
     if (!sah) {
         return pGene;
     }
-    CMappedFeat existingGene = feature::GetBestGeneForMrna(rna, &mTree);
+    CMappedFeat existingGene = feature::GetBestGeneForFeat(rna, &mTree);
     if (existingGene) {
         return pGene;
     }
