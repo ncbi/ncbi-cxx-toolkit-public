@@ -61,12 +61,12 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ID",
-          val "maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40-mRNA-1"
-        },
-        {
           qual "Parent",
           val "maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40"
+        },
+        {
+          qual "ID",
+          val "maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40-mRNA-1"
         },
         {
           qual "_AED",

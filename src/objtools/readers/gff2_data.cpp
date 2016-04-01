@@ -752,6 +752,15 @@ bool CGff2Record::x_MigrateAttributes(
         }
     }
 
+    it = attrs_left.find("Parent");
+    if (it != attrs_left.end()) {
+        if (Type() != "CDS") {
+            xMigrateAttributeSingle(
+                attrs_left, "Parent", pFeature, "Parent", flags);
+        }
+        else attrs_left.erase(it);
+    }
+
     it = attrs_left.find("Name");
     if (it != attrs_left.end()) {
         if (0 == NStr::CompareNocase(Type(), "cds")) {
@@ -1011,7 +1020,7 @@ bool CGff2Record::x_MigrateAttributes(
     //  Turn whatever is left into a gbqual:
     //
     while (!attrs_left.empty()) {
-        string key = attrs_left.begin()->first;
+        const string& key = attrs_left.begin()->first;
         if (!xMigrateAttributeDefault(attrs_left, key, pFeature, key, flags)) {
             return false;
         }

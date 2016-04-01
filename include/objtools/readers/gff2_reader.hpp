@@ -164,7 +164,7 @@ public:
         const CGff2Record&,
         CRef< CSeq_annot > );
 
-    virtual bool x_AddFeatureToAnnot(
+    virtual bool xAddFeatureToAnnot(
         CRef< CSeq_feat >,
         CRef< CSeq_annot > );
                             
@@ -179,6 +179,11 @@ public:
     bool x_FeatureTrimQualifiers(
         const CGff2Record&,
         CRef< CSeq_feat > );
+
+    bool xFeatureSetQualifier(
+        const string&,
+        const string&,
+        CRef<CSeq_feat>);
 
     virtual bool x_ProcessQualifierSpecialCase(
         CGff2Record::TAttrCit,

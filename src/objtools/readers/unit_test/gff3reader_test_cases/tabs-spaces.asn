@@ -75,12 +75,12 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ID",
-          val "mRNA00001"
-        },
-        {
           qual "Parent",
           val "gene00001"
+        },
+        {
+          qual "ID",
+          val "mRNA00001"
         }
       },
       xref {
@@ -122,20 +122,17 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ID",
-          val "mRNA00002"
-        },
-        {
           qual "Parent",
           val "gene00001"
+        },
+        {
+          qual "ID",
+          val "mRNA00002"
         }
       },
       xref {
         {
           id local id 7
-        },
-        {
-          id local id 8
         }
       }
     },
@@ -166,17 +163,17 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ID",
-          val "mRNA00003"
-        },
-        {
           qual "Parent",
           val "gene00001"
+        },
+        {
+          qual "ID",
+          val "mRNA00003"
         }
       },
       xref {
         {
-          id local id 9
+          id local id 8
         }
       }
     },
@@ -219,10 +216,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "mRNA00001"
-        },
-        {
-          qual "Parent",
-          val "mRNA00002"
         }
       },
       xref {
@@ -269,10 +262,6 @@ Seq-annot ::= {
         },
         {
           qual "Parent",
-          val "mRNA00001"
-        },
-        {
-          qual "Parent",
           val "mRNA00002"
         }
       },
@@ -311,55 +300,6 @@ Seq-annot ::= {
         {
           qual "ID",
           val "cds00002"
-        },
-        {
-          qual "Parent",
-          val "mRNA00002"
-        },
-        {
-          qual "Parent",
-          val "mRNA00003"
-        }
-      },
-      xref {
-        {
-          id local id 4
-        }
-      }
-    },
-    {
-      id local id 9,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 1200,
-          to 1499,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 4999,
-          to 5499,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 6999,
-          to 7599,
-          strand plus,
-          id local str "ctg123"
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds00002"
-        },
-        {
-          qual "Parent",
-          val "mRNA00002"
         },
         {
           qual "Parent",

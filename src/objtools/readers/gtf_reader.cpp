@@ -845,7 +845,7 @@ bool CGtfReader::x_CreateParentGene(
     }
     m_GeneMap[ s_GeneKey( gff ) ] = pFeature;
 
-    x_AddFeatureToAnnot( pFeature, pAnnot );
+    xAddFeatureToAnnot( pFeature, pAnnot );
     return true;
 }
     
@@ -903,7 +903,7 @@ bool CGtfReader::x_CreateParentCds(
 
     m_CdsMap[ s_FeatureKey( gff ) ] = pFeature;
 
-    return x_AddFeatureToAnnot( pFeature, pAnnot );
+    return xAddFeatureToAnnot( pFeature, pAnnot );
 }
 
 //  -----------------------------------------------------------------------------
@@ -935,7 +935,7 @@ bool CGtfReader::x_CreateParentMrna(
 
     m_MrnaMap[ s_FeatureKey( gff ) ] = pFeature;
 
-    return x_AddFeatureToAnnot( pFeature, pAnnot );
+    return xAddFeatureToAnnot( pFeature, pAnnot );
 }
 
 //  ----------------------------------------------------------------------------

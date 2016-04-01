@@ -24,3 +24,9 @@ ctg123 . CDS             7000  7600  .  +  0  ID=cds00001;Parent=mRNA00001,mRNA0
 ctg123 . CDS             1201  1500  .  +  0  ID=cds00002;Parent=mRNA00002,mRNA00003
 ctg123 . CDS             5000  5500  .  +  0  ID=cds00002;Parent=mRNA00002,mRNA00003
 ctg123 . CDS		     7000  7600  .  +  0  ID=cds00002;Parent=mRNA00002,mRNA00003
+ctg123 . CDS		     8000  8100  .  +  0  ID=cds00005
+ctg123 . CDS		     8200  8300  .  +  0  ID=cds00005
+ctg123 . CDS		     8400  8500  .  +  0  ID=cds00005
+ctg123 . CDS		     9000  9100  .  +  0  Note=No ID, no Parent
+ctg123 . CDS		     9200  9300  .  +  0  Note=No ID, no Parent
+ctg123 . CDS		     9400  9500  .  +  0  Note=No ID, no Parent

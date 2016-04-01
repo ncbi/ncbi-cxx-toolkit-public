@@ -55,16 +55,16 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "Parent",
+          val "gene649"
+        },
+        {
           qual "product",
           val "16S ribosomal RNA"
         },
         {
           qual "ID",
           val "rna9"
-        },
-        {
-          qual "Parent",
-          val "gene649"
         }
       }
     },
@@ -117,16 +117,16 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "Parent",
+          val "gene891"
+        },
+        {
           qual "product",
           val "10Sa RNA (tmRNA)"
         },
         {
           qual "ID",
           val "rna11"
-        },
-        {
-          qual "Parent",
-          val "gene891"
         },
         {
           qual "gene",
@@ -185,16 +185,16 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "Parent",
+          val "gene1111"
+        },
+        {
           qual "product",
           val "bacterial RNase P"
         },
         {
           qual "ID",
           val "rna14"
-        },
-        {
-          qual "Parent",
-          val "gene1111"
         }
       }
     }

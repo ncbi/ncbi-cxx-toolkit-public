@@ -289,14 +289,16 @@ bool CGff3Reader::xUpdateAnnotCds(
             "Bad data line: CDS record with bad parent assignments.",
             ILineError::eProblem_GeneralParsingError) );
         ProcessError(*pErr, pEC);
+        return false;
     }
 
     list<string> parents;
     record.GetAttribute("Parent", parents);
+    map<string, string> impliedCdsFeats;
 
     // Preliminary:
     //  We do not support multiparented CDS features in -genbank mode yet.
-    if ((m_iFlags & CGff3Reader::fGenbankMode)  &&  parents.size() > 1){
+    if (IsInGenbankMode()  &&  parents.size() > 1){
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
@@ -304,147 +306,81 @@ bool CGff3Reader::xUpdateAnnotCds(
             "Unsupported: CDS record with multiple parents.",
             ILineError::eProblem_GeneralParsingError) );
         ProcessError(*pErr, pEC);
+        return false;
     }
 
     // Step 1:
     // Locations of parent mRNAs are constructed on the fly, by joining in the 
     //  locations of child exons and CDSs as we discover them. Do this
-    //  first:
+    //  first.
+    // IDs for CDS features are derived from the IDs of their parent features.
+    //  Generate a list of CDS IDs this record pertains to as we cycle through
+    //  the parent list.
+    //
     for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
             ++it) {
-        IdToFeatureMap::iterator featIt = m_MapIdToFeature.find(*it);
+        string parentId = *it;
+
+        //update parent location:
+        IdToFeatureMap::iterator featIt = m_MapIdToFeature.find(parentId);
         if (featIt != m_MapIdToFeature.end()) {
             if (!record.UpdateFeature(m_iFlags, featIt->second)) {
                 return false;
             }
         }
+
+        //generate applicable CDS ID:
+        string siblingId("cds:");
+        siblingId += parentId;
+        impliedCdsFeats[siblingId] = parentId;
     }
-
-    string id;
-    record.GetAttribute("ID", id);
-
-    if (!parents.empty()) {
-        for (list<string>::const_iterator cit = parents.begin();
-                cit != parents.end();
-                ++cit) {
-            //the following needs to happen for each of the parent mRNAs:
-            // try to find a CDS feature that belongs to the same parent and that should
-            //  be appended to
-            // if successful then update the pre-existing CDS feature
-            // if not then create a brand new CDS feature
-
-            //find pre-existing cds to append to:
-            // if this record had an ID attribute then look for a cds of the same ID:parent
-            // combination:
-            string cdsId;
-            if (!IsInGenbankMode()  &&  !id.empty()) {
-                cdsId = id + ":" + *cit;
-                IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
-                if (it != m_MapIdToFeature.end()) {
-                    record.UpdateFeature(m_iFlags, it->second);
-                    if (!id.empty()) {
-                        m_MapIdToFeature[id] = it->second;
-                    }
-                    continue;
-                }
+    // deal with unparented cds
+    if (parents.empty()) {
+        string cdsId;
+        if (!record.GetAttribute("ID", cdsId)) {
+            if (IsInGenbankMode()) {
+                cdsId = xNextGenericId();
             }
-            //find pre-existing cds to append to:
-            // if this record did not have an ID attribute then look for a cds with feature
-            // ID of pattern genericXX:parent:
             else {
-                cdsId = xNextGenericId() + ":" + *cit;
-                IdToFeatureMap::iterator it;
-                CTempString sep = ":";
-                CTempStringEx prefix, parent;
-                for (it = m_MapIdToFeature.begin(); it != m_MapIdToFeature.end(); ++it) {
-                    const string& key = it->first;
-                    NStr::SplitInTwo(key, sep, prefix, parent);
-                    if (!NStr::StartsWith(prefix, "generic")) {
-                        continue;
-                    }
-                    if (parent != *cit) {
-                        continue;
-                    }
-                    break;
-                }
-                if (it != m_MapIdToFeature.end()) {
-                    if (!id.empty()) {
-                        m_MapIdToFeature[id] = it->second;
-                    }
-                    record.UpdateFeature(m_iFlags, it->second);
-                    continue;
-                }
+                cdsId = "cds";
             }
+        }
+        impliedCdsFeats[cdsId] = "";
+    }
 
-            //still here?
-            // create brand new CDS feature:
-            if (!record.InitializeFeature(m_iFlags, pFeature)) {
-                return false;
-            }
-            if (!xFeatureSetXrefParent(*cit, pFeature)) {
-                AutoPtr<CObjReaderLineException> pErr(
-                    CObjReaderLineException::Create(
-                    eDiag_Warning,
-                    0,
-                    "Bad data line: CDS record with bad parent assignment.",
-                    ILineError::eProblem_MissingContext) );
-                ProcessError(*pErr, pEC);
-            }
-            if (m_iFlags & fGeneXrefs) {
-                if (!xFeatureSetXrefGrandParent(*cit, pFeature)) {
-                    AutoPtr<CObjReaderLineException> pErr(
-                        CObjReaderLineException::Create(
-                        eDiag_Warning,
-                        0,
-                        "Bad data line: CDS record with bad parent assignment.",
-                        ILineError::eProblem_MissingContext) );
-                    ProcessError(*pErr, pEC);
-                }
-            }
-            if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
-                return false;
-            }
-            if (! cdsId.empty()) {
-                if (!id.empty()) {
-                    m_MapIdToFeature[id] = pFeature;
-                }
-                m_MapIdToFeature[cdsId] = pFeature;
-            }
+    // Step 2:
+    // For every sibling CDS feature, look if there is already a feature with that
+    //  ID under construction.
+    // If there is, use record to update feature under construction.
+    // If there isn't, use record to initialize a brand new feature.
+    //
+    for (map<string, string>::iterator featIt = impliedCdsFeats.begin(); 
+            featIt != impliedCdsFeats.end(); ++featIt) {
+        string cdsId = featIt->first;
+        string parentId = featIt->second;
+        IdToFeatureMap::iterator idIt = m_MapIdToFeature.find(cdsId);
+        if (idIt != m_MapIdToFeature.end()) {
+            //found feature with ID in question: update
+            record.UpdateFeature(m_iFlags, idIt->second);
+        }
+        else {
+            //didn't find feature with that ID: create new one
             pFeature.Reset(new CSeq_feat);
+            record.InitializeFeature(m_iFlags, pFeature);
+            if (!parentId.empty()) {
+                xFeatureSetQualifier("Parent", parentId, pFeature);
+                xFeatureSetXrefParent(parentId, pFeature);
+                if (m_iFlags & fGeneXrefs) {
+                    xFeatureSetXrefGrandParent(parentId, pFeature);
+                }
+            }
+            xAddFeatureToAnnot(pFeature, pAnnot);
+            m_MapIdToFeature[cdsId] = pFeature;
         }
-        return true;
     }
-
-    //--------------------------------------------------------------------------
-    //orphaned cds:
-    string cdsId = id;
-    if (cdsId.empty()) {
-        cdsId = xNextGenericId();
-    }
-    IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
-    if (it != m_MapIdToFeature.end()) {
-        record.UpdateFeature(m_iFlags, it->second);
-        m_MapIdToFeature[id] = it->second;
-        return true;
-    }
-
-    //still here?
-    // create brand new CDS feature:
-    if (!record.InitializeFeature(m_iFlags, pFeature)) {
-        return false;
-    }
-    if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
-        return false;
-    }
-    if (! cdsId.empty()) {
-        if (!id.empty()) {
-            m_MapIdToFeature[id] = pFeature;
-        }
-        m_MapIdToFeature[cdsId] = pFeature;
-    }
-    pFeature.Reset(new CSeq_feat);
     return true;
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xFeatureSetXrefGrandParent(
@@ -562,7 +498,7 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
         return false;
     }
-    if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
+    if (! xAddFeatureToAnnot(pFeature, pAnnot)) {
         return false;
     }
     string strId;
@@ -628,7 +564,7 @@ bool CGff3Reader::xUpdateAnnotMrna(
         }
     }
 
-    if (! x_AddFeatureToAnnot(pFeature, pAnnot)) {
+    if (! xAddFeatureToAnnot(pFeature, pAnnot)) {
         return false;
     }
     string strId;
@@ -650,7 +586,7 @@ bool CGff3Reader::xUpdateAnnotGene(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::x_AddFeatureToAnnot(
+bool CGff3Reader::xAddFeatureToAnnot(
     CRef< CSeq_feat > pFeature,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------

@@ -594,7 +594,7 @@ bool CGff2Reader::x_UpdateAnnotFeature(
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
         return false;
     }
-    if (!x_AddFeatureToAnnot( pFeature, pAnnot )) {
+    if (!xAddFeatureToAnnot( pFeature, pAnnot )) {
         return false;
     }
     string strId;
@@ -892,6 +892,20 @@ bool CGff2Reader::x_FeatureSetQualifiers(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff2Reader::xFeatureSetQualifier(
+    const string& key,
+    const string& value,
+    CRef<CSeq_feat> pTargetFeature)
+//  ----------------------------------------------------------------------------
+{
+    if (!pTargetFeature) {
+        return false;
+    }
+    pTargetFeature->AddOrReplaceQualifier(key, value);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff2Reader::x_FeatureSetGffInfo(
     const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
@@ -1080,7 +1094,7 @@ bool CGff2Reader::IsCds(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::x_AddFeatureToAnnot(
+bool CGff2Reader::xAddFeatureToAnnot(
     CRef< CSeq_feat > pFeature,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------

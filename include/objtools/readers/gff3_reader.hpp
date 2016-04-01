@@ -101,7 +101,7 @@ protected:
         const CGff2Record&,
         CRef<CSeq_feat>);
 
-    virtual bool x_AddFeatureToAnnot(
+    virtual bool xAddFeatureToAnnot(
         CRef< CSeq_feat >,
         CRef< CSeq_annot > );
 

@@ -75,12 +75,12 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ID",
-          val "mRNA00001"
-        },
-        {
           qual "Parent",
           val "gene00001"
+        },
+        {
+          qual "ID",
+          val "mRNA00001"
         }
       },
       xref {
@@ -116,12 +116,12 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ID",
-          val "mRNA00002"
-        },
-        {
           qual "Parent",
           val "gene00001"
+        },
+        {
+          qual "ID",
+          val "mRNA00002"
         }
       },
       xref {
@@ -163,12 +163,12 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ID",
-          val "mRNA00003"
-        },
-        {
           qual "Parent",
           val "gene00001"
+        },
+        {
+          qual "ID",
+          val "mRNA00003"
         }
       },
       xref {

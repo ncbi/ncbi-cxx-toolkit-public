@@ -74,12 +74,12 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ID",
-          val "mrna0"
-        },
-        {
           qual "Parent",
           val "gene0"
+        },
+        {
+          qual "ID",
+          val "mrna0"
         }
       },
       xref {
@@ -119,16 +119,16 @@ Seq-annot ::= {
           val "cds0"
         },
         {
-          qual "Parent",
-          val "mrna0"
-        },
-        {
           qual "function",
           val "leader; Amino acid biosynthesis: Threonine"
         },
         {
           qual "go_process",
           val "threonine biosynthetic process|0009088"
+        },
+        {
+          qual "Parent",
+          val "mrna0"
         }
       },
       xref {
@@ -201,12 +201,12 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "ID",
-          val "mrna1"
-        },
-        {
           qual "Parent",
           val "gene1"
+        },
+        {
+          qual "ID",
+          val "mrna1"
         }
       },
       xref {
@@ -252,10 +252,6 @@ Seq-annot ::= {
           val "cds1"
         },
         {
-          qual "Parent",
-          val "mrna1"
-        },
-        {
           qual "ec_number",
           val "1.1.1.3"
         },
@@ -282,6 +278,10 @@ Seq-annot ::= {
         {
           qual "go_process",
           val "homoserine biosynthetic process|0009090"
+        },
+        {
+          qual "Parent",
+          val "mrna1"
         }
       },
       xref {
@@ -404,6 +404,10 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "Parent",
+          val "gene17"
+        },
+        {
           qual "product",
           val "sRNA antisense regulator blocking mokC, and hence hokC,
  translation"
@@ -411,10 +415,6 @@ Seq-annot ::= {
         {
           qual "ID",
           val "rna0"
-        },
-        {
-          qual "Parent",
-          val "gene17"
         },
         {
           qual "function",
@@ -483,16 +483,16 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "Parent",
+          val "gene2687"
+        },
+        {
           qual "product",
           val "tmRNA, 10Sa RNA"
         },
         {
           qual "ID",
           val "rna88"
-        },
-        {
-          qual "Parent",
-          val "gene2687"
         },
         {
           qual "function",
@@ -597,16 +597,16 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "Parent",
+          val "gene2717"
+        },
+        {
           qual "product",
           val "tRNA-Ile"
         },
         {
           qual "ID",
           val "rna90"
-        },
-        {
-          qual "Parent",
-          val "gene2717"
         }
       },
       dbxref {
@@ -669,16 +669,16 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "Parent",
+          val "gene3334"
+        },
+        {
           qual "product",
           val "5S ribosomal RNA of rrnD operon"
         },
         {
           qual "ID",
           val "rna117"
-        },
-        {
-          qual "Parent",
-          val "gene3334"
         }
       },
       dbxref {
