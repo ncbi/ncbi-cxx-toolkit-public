@@ -555,6 +555,7 @@ private:
     bool x_ShouldRemoveEmptyGene(const CGene_ref& gene, const CSeq_feat& feat);
     bool x_CleanEmptyProt(CProt_ref& prot);
     bool x_ShouldRemoveEmptyProt(const CProt_ref& prot );
+    void x_BondEC(CSeq_feat& feat);
     static bool x_IsPubContentBad(const CPubdesc& pub, bool strict);
     bool x_ShouldRemoveEmptyPub(const CPubdesc& pubdesc );
     static bool x_IsGenbankBlockEmpty(const CGB_block& gbk);

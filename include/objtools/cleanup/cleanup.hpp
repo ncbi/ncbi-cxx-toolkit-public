@@ -118,6 +118,12 @@ public:
 /// @return Boolean return value indicates whether any changes were made
     static bool MoveProteinSpecificFeats(CSeq_entry_Handle seh);
 
+    /// Moves one feature from nucleotide bioseq to
+    /// the appropriate protein sequence.
+    /// @param fh Feature to edit
+    /// @return Boolean return value indicates whether any changes were made
+    static bool MoveFeatToProtein(CSeq_feat_Handle fh);
+
 /// Calculates whether a Gene-xref is unnecessary (because it refers to the
 /// same gene as would be calculated using overlap)
 /// @param sf Seq-feat with the xref [in]
@@ -308,6 +314,15 @@ public:
     static vector<CConstRef<CPub> > GetCitationList(CBioseq_Handle bsh);
 
     static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope);
+
+/// Examine all genes and gene xrefs in the Seq-entry.
+/// If no genes have locus and some have locus tag AND no gene xrefs have locus-tag
+/// and some gene xrefs have locus, change all gene xrefs to use locus tag.
+/// If no genes have locus tag and some have locus AND no gene xrefs have locus
+/// and some gene xrefs have locus tag, change all gene xrefs to use locus.
+/// @param seh Seq-entry to edit
+/// @return bool indicates whether any changes were made
+    static bool FixGeneXrefSkew(CSeq_entry_Handle seh);
 
 private:
     // Prohibit copy constructor & assignment operator
