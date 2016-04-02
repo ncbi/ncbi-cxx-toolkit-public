@@ -326,6 +326,7 @@ gbproj needs xconnect
 gbseq needs xser
 gc_common needs xser
 gc_load_utils needs $(GPIPE_COMMON_LIBS)
+gc_load_utils needs gc_common
 gc_load_utils needs gc_organism
 gc_load_utils needs gc_utils
 gc_organism needs gpipe_attr
