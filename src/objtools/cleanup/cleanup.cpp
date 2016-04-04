@@ -450,6 +450,28 @@ CProt_ref::EProcessed s_ProcessedFromKey(const string& key)
     }
 }
 
+string s_KeyFromProcessed(CProt_ref::EProcessed processed)
+{
+    switch (processed) {
+    case CProt_ref::eProcessed_mature:
+        return "mat_peptide";
+        break;
+    case CProt_ref::eProcessed_preprotein:
+        return "proprotein";
+        break;
+    case CProt_ref::eProcessed_signal_peptide:
+        return "sig_peptide";
+        break;
+    case CProt_ref::eProcessed_transit_peptide:
+        return "trans_peptide";
+        break;
+    case CProt_ref::eProcessed_not_set:
+        return kEmptyStr;
+        break;
+    }
+    return kEmptyStr;
+}
+
 bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
 {
     CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
@@ -478,6 +500,19 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     if (!cds || !cds->IsSetProduct()) {
         // there is no overlapping coding region feature, so there is no appropriate
         // protein sequence to move to
+
+        if (fh.GetData().IsProt() && fh.GetData().GetProt().IsSetProcessed()) {
+            string key = s_KeyFromProcessed(fh.GetData().GetProt().GetProcessed());
+            if (!NStr::IsBlank(key)) {
+                CRef<CSeq_feat> new_feat(new CSeq_feat());
+                new_feat->Assign(*(fh.GetSeq_feat()));
+                new_feat->SetData().SetImp().SetKey(key);
+                CSeq_feat_EditHandle efh(fh);
+                efh.Replace(*new_feat);
+                return true;
+            }
+        }
+
         return false;
     }
 
