@@ -314,6 +314,7 @@ int/*bool*/ s_LBOS_AddAnnouncedServer(const char*            service,
         if (realloc_result != NULL) {
             *arr = realloc_result;
             *alloc = new_size;
+            memset(&(*arr)[*count], 0, sizeof(char) * (alloc - count));
         } else {
             free(handle.version);
             free(handle.service);
@@ -1798,7 +1799,7 @@ static void s_LBOS_Initialize(void)
     int lbos_toggled = ConnNetInfo_Boolean(lbos_toggle);
     free(lbos_toggle);
     if (lbos_toggled) {
-        CORE_LOG_X(1, eLOG_Note, "LBOS is turned ON in config!");
+        CORE_LOG_X(1, eLOG_Note, "LBOS is turned ON in config.");
     } else {
         CORE_LOG_X(1, eLOG_Warning, 
                    "LBOS is NOT turned ON in config! Please provide "
