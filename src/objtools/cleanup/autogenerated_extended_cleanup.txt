@@ -59,6 +59,7 @@ use m_NewCleanup.x_TrimInternalSemicolonsMarkChanged {
     Seq-feat.title ,
     Imp-feat.key ,
     Imp-feat.loc ,
+    Pubdesc.comment ,
 }
 
 use m_NewCleanup.x_BioseqSetEC

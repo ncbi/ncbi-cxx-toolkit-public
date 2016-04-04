@@ -45,8 +45,11 @@
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
+#include <objects/seq/Pubdesc.hpp>
 #include <objects/seqfeat/Txinit.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqblock/GB_block.hpp>
@@ -100,6 +103,8 @@ void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_o
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_imp_ETC( CImp_feat & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ETC( CProt_ref & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_ETC( CProt_ref & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_pub_pub_ETC( CPubdesc & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_pub_ETC( CPubdesc & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_E_ETC( CGene_ref & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_ETC( CGene_ref & arg0 );
   template< typename Tcontainer_ncbi_cref_cgene_ref_ >
@@ -121,6 +126,11 @@ void x_ExtendedCleanupSeqFeat_xref_ETC( Tcontainer_ncbi_cref_cseqfeatxref_ & arg
   template< typename Tcontainer_ncbi_cref_cseq_feat_ >
 void x_ExtendedCleanupSeqAnnot_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
   void x_ExtendedCleanupSeqAnnot_data( CSeq_annot::C_Data & arg0 );
+  void x_ExtendedCleanupBioseqSet_annot_E_E_desc_desc_E_E_ETC( CAnnotdesc & arg0 );
+  void x_ExtendedCleanupBioseqSet_annot_E_E_desc_desc_E_ETC( CAnnotdesc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cannotdesc_ >
+void x_ExtendedCleanupBioseqSet_annot_E_E_desc_desc_ETC( Tcontainer_ncbi_cref_cannotdesc_ & arg0 );
+  void x_ExtendedCleanupBioseqSet_annot_E_E_desc_ETC( CAnnot_descr & arg0 );
   void x_ExtendedCleanupBioseq_annot_E( CSeq_annot & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_ExtendedCleanupBioseq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
