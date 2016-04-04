@@ -397,7 +397,7 @@ struct SNetServiceMap {
 private:
     CNetService GetServiceByNameImpl(const string&, SNetServiceImpl*);
 
-    bool m_Restricted;
+    bool m_Restricted = false;
     set<string, PNocase> m_Allowed;
 };
 
