@@ -435,8 +435,34 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
 };
 
 
+CProt_ref::EProcessed s_ProcessedFromKey(const string& key)
+{
+    if (NStr::Equal(key, "sig_peptide")) {
+        return CProt_ref::eProcessed_signal_peptide;
+    } else if (NStr::Equal(key, "mat_peptide")) {
+        return CProt_ref::eProcessed_mature;
+    } else if (NStr::Equal(key, "trans_peptide")) {
+        return CProt_ref::eProcessed_mature;
+    } else if (NStr::Equal(key, "proprotein")) {
+        return CProt_ref::eProcessed_preprotein;
+    } else {
+        return CProt_ref::eProcessed_not_set;
+    }
+}
+
 bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
 {
+    CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
+    if (fh.GetData().IsImp()) {
+        if (!fh.GetData().GetImp().IsSetKey()) {
+            return false;
+        }
+        processed = s_ProcessedFromKey(fh.GetData().GetImp().GetKey());
+        if (processed == CProt_ref::eProcessed_not_set) {
+            return false;
+        }
+    }
+
     CBioseq_Handle parent_bsh = fh.GetScope().GetBioseqHandle(fh.GetLocation());
 
     if (!parent_bsh) {
@@ -461,7 +487,8 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         return false;
     }
 
-    if (feature::IsLocationInFrame(cds_h, fh.GetLocation()) != feature::eLocationInFrame_InFrame) {
+    if (processed != CProt_ref::eProcessed_signal_peptide &&
+        feature::IsLocationInFrame(cds_h, fh.GetLocation()) != feature::eLocationInFrame_InFrame) {
         // not in frame, can't convert
         return false;
     }
@@ -478,6 +505,10 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         return false;
     }
     new_loc->ResetStrand();
+
+    if (new_feat->GetData().Which() == CSeqFeatData::e_Imp) {
+        new_feat->SetData().SetProt().SetProcessed(processed);
+    }
 
     // change location to protein
     new_feat->ResetLocation();
@@ -514,7 +545,6 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         CSeq_annot_EditHandle orig(ah);
         orig.Remove();
     }
-    //aeh.AddFeat(*new_feat);
     return true;
 
 }
@@ -523,11 +553,18 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
 bool CCleanup::MoveProteinSpecificFeats(CSeq_entry_Handle seh)
 {
     bool any_change = false;
-    SAnnotSelector sel(CSeqFeatData::e_Prot);
-    sel.IncludeFeatType(CSeqFeatData::e_Psec_str);
-    sel.IncludeFeatType(CSeqFeatData::e_Bond);
-    for (CFeat_CI prot_it(seh, sel); prot_it; ++prot_it) {
-        any_change |= MoveFeatToProtein(*prot_it);
+    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
+    while (bi) {
+        SAnnotSelector sel(CSeqFeatData::e_Prot);
+        sel.IncludeFeatType(CSeqFeatData::e_Psec_str);
+        sel.IncludeFeatType(CSeqFeatData::e_Bond);
+        for (CFeat_CI prot_it(*bi, sel); prot_it; ++prot_it) {
+            any_change |= MoveFeatToProtein(*prot_it);
+        }
+        for (CFeat_CI imp_it(*bi, CSeqFeatData::e_Imp); imp_it; ++imp_it) {
+            any_change |= MoveFeatToProtein(*imp_it);
+        }
+        ++bi;
     }
     return any_change;
 }
