@@ -477,14 +477,14 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         // unable to map to protein location
         return false;
     }
-    new_loc->GetStart(eExtreme_Biological);
-    new_loc->GetStop(eExtreme_Biological);
+    new_loc->ResetStrand();
 
     // change location to protein
     new_feat->ResetLocation();
     new_feat->SetLocation(*new_loc);
 
     CSeq_feat_EditHandle edh(fh);
+    edh.Replace(*new_feat);
     CSeq_annot_Handle ah = fh.GetAnnot();
 
     CBioseq_Handle target_bsh = fh.GetScope().GetBioseqHandle(new_feat->GetLocation());

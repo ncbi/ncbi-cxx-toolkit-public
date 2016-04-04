@@ -10467,13 +10467,7 @@ void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
 
         bool needs_removal = false;
 
-        // remove user-objects with no type
         CUser_object & user_obj = GET_MUTABLE(desc, User);
-        if( ! FIELD_IS_SET(user_obj, Type) || 
-            ( FIELD_IS(user_obj.GetType(), Str) && user_obj.GetType().GetStr().empty() ) ) 
-        {
-            needs_removal = true;
-        }
 
         // get type string, if any
         const string *pTypeStr = &kEmptyStr;
@@ -10593,7 +10587,7 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CGB_block& gb, bool is_patent, const
         } else if (is_patent && NStr::Equal(gb.GetDiv(), "PAT")) {
             gb.ResetDiv();
             ChangeMade(CCleanupChange::eChangeOther);
-        } else if (s_ShouldRemoveKeyword(gb.GetDiv(), tech)) {
+        } else if (!NStr::Equal(gb.GetDiv(), "HTG") && s_ShouldRemoveKeyword(gb.GetDiv(), tech)) {
             gb.ResetDiv();
             ChangeMade(CCleanupChange::eChangeOther);
         }
@@ -10870,9 +10864,8 @@ void CNewCleanup_imp::x_BondEC(CSeq_feat& feat)
         string bond_type = feat.GetComment().substr(0, feat.GetComment().length() - 5);
         CBondList bl;
         if (bl.IsBondName(bond_type)) {
-            feat.SetData().SetBond(bl.GetBondType(bond_type));
-            feat.ResetComment();
-            ChangeMade(CCleanupChange::eChangeComment);
+            feat.SetData().SetBond(CSeqFeatData::eBond_other);
+            ChangeMade(CCleanupChange::eChangeOther);
         }        
     }
 }
