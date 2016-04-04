@@ -3111,10 +3111,17 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
         url_link = s_MapCommonUrlParams(l_EntrezUrl, seqUrlInfo);
         
         if(!seqUrlInfo->useTemplates) {
+            string httpProt = kDefaultProtocol;
+            if(m_Reg && !m_Reg->Empty()) {
+                if(m_Reg->HasEntry("BLASTFMTUTIL","PROTOCOL")) {
+                    httpProt = m_Reg->Get("BLASTFMTUTIL","PROTOCOL");
+                }
+            }                    
 			url_link = CAlignFormatUtil::MapTemplate(url_link,"acc",seqUrlInfo->accession);                 
             temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline)):temp_class_info;
             url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
             url_link = CAlignFormatUtil::MapTemplate(url_link,"target",seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"protocol",httpProt);
         }	           
             
     } else {//seqid general, dbtag specified		
