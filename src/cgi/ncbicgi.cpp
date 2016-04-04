@@ -1011,7 +1011,6 @@ CCgiRequest::CCgiRequest
       m_OwnInput(false),
       m_ErrBufSize(errbuf_size),
       m_QueryStringParsed(false),
-      m_TrackingEnvHolder(NULL), 
       m_Session(NULL),
       m_EntryReaderContext(NULL)
 {
@@ -1036,7 +1035,6 @@ CCgiRequest::CCgiRequest
       m_OwnInput(false),
       m_ErrBufSize(errbuf_size),
       m_QueryStringParsed(false),
-      m_TrackingEnvHolder(NULL),
       m_Session(NULL),
       m_EntryReaderContext(NULL)
 {
@@ -1061,7 +1059,6 @@ CCgiRequest::CCgiRequest
       m_OwnInput(false),
       m_ErrBufSize(errbuf_size),
       m_QueryStringParsed(false),
-      m_TrackingEnvHolder(NULL), 
       m_Session(NULL),
       m_EntryReaderContext(NULL)
 {

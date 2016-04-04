@@ -211,7 +211,7 @@ public:
 private:
     const CCgiRequest& m_Request;
     ICgiSessionStorage* m_Impl;
-    auto_ptr<ICgiSessionStorage> m_ImplGuard;
+    unique_ptr<ICgiSessionStorage> m_ImplGuard;
     ECookieSupport m_CookieSupport;
 
     string m_SessionId;
@@ -220,7 +220,7 @@ private:
     string m_SessionCookieDomain;
     string m_SessionCookiePath;
     CTime m_SessionCookieExpTime;
-    auto_ptr<CCgiCookie> m_SessionCookie;
+    unique_ptr<CCgiCookie> m_SessionCookie;
     EStatus m_Status;
 
     void x_Load() const;

@@ -4194,7 +4194,7 @@ public:
 
 private:
     string           m_Original;
-    auto_ptr<string> m_Encoded;
+    unique_ptr<string> m_Encoded;
 };
 
 

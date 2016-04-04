@@ -305,14 +305,14 @@ private:
     // Check if HEAD request has been served.
     bool x_DoneHeadRequest(void) const;
 
-    auto_ptr<CNcbiResource>   m_Resource;
-    auto_ptr<CCgiContext>     m_Context;
-    auto_ptr<ICache>          m_Cache;
+    unique_ptr<CNcbiResource>   m_Resource;
+    unique_ptr<CCgiContext>     m_Context;
+    unique_ptr<ICache>          m_Cache;
 
     typedef map<string, CDiagFactory*> TDiagFactoryMap;
     TDiagFactoryMap           m_DiagFactories;
 
-    auto_ptr<CCookieAffinity> m_Caf;         // Cookie affinity service pointer
+    unique_ptr<CCookieAffinity> m_Caf;         // Cookie affinity service pointer
     char*                     m_HostIP;      // Cookie affinity host IP buffer
 
     unsigned int              m_Iteration;   // (always 0 for plain CGI)
@@ -325,11 +325,11 @@ private:
     mutable bool              m_ArgContextSync;
 
     /// Parsed cmd.-line args (cmdline + CGI)
-    mutable auto_ptr<CArgs>   m_CgiArgs;
+    mutable unique_ptr<CArgs>   m_CgiArgs;
 
     /// Wrappers for cin and cout
-    auto_ptr<CNcbiIstream>    m_InputStream;
-    auto_ptr<CNcbiOstream>    m_OutputStream;
+    unique_ptr<CNcbiIstream>    m_InputStream;
+    unique_ptr<CNcbiOstream>    m_OutputStream;
     bool                      m_OutputBroken;
 
     string m_RID;

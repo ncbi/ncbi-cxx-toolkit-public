@@ -787,8 +787,7 @@ bool CDiagContextThreadData::IsInitialized(void)
 
 
 CDiagContextThreadData::CDiagContextThreadData(void)
-    : m_Properties(NULL),
-      m_DiagBuffer(new CDiagBuffer),
+    : m_DiagBuffer(new CDiagBuffer),
       m_TID(s_GetThreadId()),
       m_ThreadPostNumber(0),
       m_DiagCollectionSize(0),

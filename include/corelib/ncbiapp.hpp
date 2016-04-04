@@ -581,12 +581,12 @@ private:
 
     static CNcbiApplication*   m_Instance;   ///< Current app. instance
     CRef<CVersion>             m_Version;    ///< Program version
-    auto_ptr<CNcbiEnvironment> m_Environ;    ///< Cached application env.
+    unique_ptr<CNcbiEnvironment> m_Environ;    ///< Cached application env.
     CRef<CNcbiRegistry>        m_Config;     ///< Guaranteed to be non-NULL
-    auto_ptr<CNcbiOstream>     m_DiagStream; ///< Opt., aux., see eDS_ToMemory
-    auto_ptr<CNcbiArguments>   m_Arguments;  ///< Command-line arguments
-    auto_ptr<CArgDescriptions> m_ArgDesc;    ///< Cmd.-line arg descriptions
-    auto_ptr<CArgs>            m_Args;       ///< Parsed cmd.-line args
+    unique_ptr<CNcbiOstream>     m_DiagStream; ///< Opt., aux., see eDS_ToMemory
+    unique_ptr<CNcbiArguments>   m_Arguments;  ///< Command-line arguments
+    unique_ptr<CArgDescriptions> m_ArgDesc;    ///< Cmd.-line arg descriptions
+    unique_ptr<CArgs>            m_Args;       ///< Parsed cmd.-line args
     TDisableArgDesc            m_DisableArgDesc;  ///< Arg desc. disabled
     THideStdArgs               m_HideArgs;   ///< Std cmd.-line flags to hide
     TStdioSetupFlags           m_StdioFlags; ///< Std C++ I/O adjustments

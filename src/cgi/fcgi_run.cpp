@@ -111,9 +111,9 @@ class CAutoCgiContext
 public:
     CAutoCgiContext(void) : m_Ctx(NULL) {}
     ~CAutoCgiContext(void) { if (m_Ctx) m_Ctx->reset(); }
-    void Reset(auto_ptr<CCgiContext>& ctx) { m_Ctx = &ctx; }
+    void Reset(unique_ptr<CCgiContext>& ctx) { m_Ctx = &ctx; }
 private:
-    auto_ptr<CCgiContext>* m_Ctx;
+    unique_ptr<CCgiContext>* m_Ctx;
 };
 
 
@@ -132,8 +132,8 @@ public:
     void SetErrorStream(FCGX_Stream* pferr);
 
 private:
-    auto_ptr<CCgiObuffer>  m_Buffer;
-    auto_ptr<CNcbiOstream> m_SavedCerr;
+    unique_ptr<CCgiObuffer>  m_Buffer;
+    unique_ptr<CNcbiOstream> m_SavedCerr;
 #ifdef HAVE_FCGX_ACCEPT_R
     FCGX_Request           m_Request;
 #endif
@@ -354,7 +354,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     // Statistics
     bool is_stat_log = reg.GetBool("CGI", "StatLog", false, 0,
                                    CNcbiRegistry::eReturn);
-    auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
+    unique_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
 
     Uint8 total_memory_limit =
         NStr::StringToUInt8_DataSize(
@@ -383,7 +383,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     }}
 
     // Watcher file -- to allow for stopping the Fast-CGI loop "prematurely"
-    auto_ptr<CCgiWatchFile> watcher(0);
+    unique_ptr<CCgiWatchFile> watcher;
     {{
         const string& orig_filename = reg.Get("FastCGI", "WatchFile.Name");
         if ( !orig_filename.empty() ) {
@@ -568,7 +568,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             CNcbiOstream* orig_stream = NULL;
             //int orig_fd = -1;
             CNcbiStrstream result_copy;
-            auto_ptr<CNcbiOstream> new_stream;
+            unique_ptr<CNcbiOstream> new_stream;
 
             auto_context.Reset(m_Context);
 
@@ -652,7 +652,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                 if(caching_needed)
                                     SaveResultToCache(m_Context->GetRequest(), result_copy);
                                 else {
-                                    auto_ptr<CCgiRequest> request(GetSavedRequest(m_RID));
+                                    unique_ptr<CCgiRequest> request(GetSavedRequest(m_RID));
                                     if (request.get())
                                         SaveResultToCache(*request, result_copy);
                                 }

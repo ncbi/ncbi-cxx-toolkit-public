@@ -417,16 +417,16 @@ private:
         SData(const string& value, const string& filename,
               unsigned int position, const string& type)
             : m_Value(value), m_Filename(filename), m_ContentType(type),
-              m_Position(position), m_Reader(NULL) { }
+              m_Position(position) { }
         SData(const SData& data)
             : m_Value(data.m_Value), m_Filename(data.m_Filename),
               m_ContentType(data.m_ContentType),
-              m_Position(data.m_Position), m_Reader(NULL)
+              m_Position(data.m_Position)
             { _ASSERT( !data.m_Reader.get() ); }
 
         string            m_Value, m_Filename, m_ContentType;
         unsigned int      m_Position;
-        auto_ptr<IReader> m_Reader;
+        unique_ptr<IReader> m_Reader;
     };
 
 public:
@@ -890,9 +890,9 @@ public:
 private:
     /// set of environment variables
     const CNcbiEnvironment*    m_Env;
-    auto_ptr<CNcbiEnvironment> m_OwnEnv;
+    unique_ptr<CNcbiEnvironment> m_OwnEnv;
     /// Original request content or NULL if fSaveRequestContent is not set
-    auto_ptr<string>           m_Content;
+    unique_ptr<string>           m_Content;
     /// set of the request FORM-like entries(already retrieved; cached)
     TCgiEntries m_Entries;
     /// set of the request ISINDEX-like indexes(already retrieved; cached)
@@ -937,7 +937,7 @@ private:
 
     string x_RetrieveSessionId() const;
 
-    mutable auto_ptr<CTrackingEnvHolder> m_TrackingEnvHolder;
+    mutable unique_ptr<CTrackingEnvHolder> m_TrackingEnvHolder;
     CCgiSession* m_Session;
     CCgiEntryReaderContext* m_EntryReaderContext;
 
@@ -1116,7 +1116,7 @@ void CCgiEntry::x_ForceComplete() const
     _ASSERT(m_Data->m_Reader.get());
     _ASSERT(m_Data->m_Value.empty());
     SData& data = const_cast<SData&>(*m_Data);
-    auto_ptr<IReader> reader(data.m_Reader.release());
+    unique_ptr<IReader> reader(data.m_Reader.release());
     g_ExtractReaderContents(*reader, data.m_Value);
 }
 

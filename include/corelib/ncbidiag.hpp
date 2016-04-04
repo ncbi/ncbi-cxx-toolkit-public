@@ -1850,15 +1850,15 @@ private:
     // Collected diag messages
     typedef list<SDiagMessage>       TDiagCollection;
 
-    auto_ptr<TProperties> m_Properties;       // Per-thread properties
-    auto_ptr<CDiagBuffer> m_DiagBuffer;       // Thread's diag buffer
+    unique_ptr<TProperties> m_Properties;       // Per-thread properties
+    unique_ptr<CDiagBuffer> m_DiagBuffer;       // Thread's diag buffer
     TTID                  m_TID;              // Cached thread ID
     TCount                m_ThreadPostNumber; // Number of posted messages
     TCollectGuards        m_CollectGuards;
     TDiagCollection       m_DiagCollection;
     size_t                m_DiagCollectionSize; // cached size of m_DiagCollection
-    auto_ptr<SRequestCtxWrapper> m_RequestCtx;        // Request context
-    auto_ptr<SRequestCtxWrapper> m_DefaultRequestCtx; // Default request context
+    unique_ptr<SRequestCtxWrapper> m_RequestCtx;        // Request context
+    unique_ptr<SRequestCtxWrapper> m_DefaultRequestCtx; // Default request context
 };
 
 
@@ -2346,21 +2346,21 @@ private:
     static TPID                         sm_PID;
 
     mutable TUID                        m_UID;
-    mutable auto_ptr<CEncodedString>    m_Host;
+    mutable unique_ptr<CEncodedString>    m_Host;
     string                              m_HostIP;
-    auto_ptr<CEncodedString>            m_Username;
-    auto_ptr<CEncodedString>            m_AppName;
+    unique_ptr<CEncodedString>            m_Username;
+    unique_ptr<CEncodedString>            m_AppName;
     mutable bool                        m_AppNameSet;
-    mutable auto_ptr<CEncodedString>    m_DefaultSessionId;
-    mutable auto_ptr<string>            m_DefaultHitId;
+    mutable unique_ptr<CEncodedString>    m_DefaultSessionId;
+    mutable unique_ptr<string>            m_DefaultHitId;
     mutable bool                        m_LoggedHitId;
     int                                 m_ExitCode;
     bool                                m_ExitCodeSet;
     int                                 m_ExitSig;
     EDiagAppState                       m_AppState;
     TProperties                         m_Properties;
-    auto_ptr<CStopWatch>                m_StopWatch;
-    auto_ptr<TMessages>                 m_Messages;
+    unique_ptr<CStopWatch>                m_StopWatch;
+    unique_ptr<TMessages>                 m_Messages;
     size_t                              m_MaxMessages;
     static CDiagContext*                sm_Instance;
 
@@ -2368,9 +2368,9 @@ private:
     static bool                         sm_ApplogSeverityLocked;
 
     // Rate control
-    auto_ptr<CRequestRateControl>       m_AppLogRC;
-    auto_ptr<CRequestRateControl>       m_ErrLogRC;
-    auto_ptr<CRequestRateControl>       m_TraceLogRC;
+    unique_ptr<CRequestRateControl>       m_AppLogRC;
+    unique_ptr<CRequestRateControl>       m_ErrLogRC;
+    unique_ptr<CRequestRateControl>       m_TraceLogRC;
     bool                                m_AppLogSuspended;
     bool                                m_ErrLogSuspended;
     bool                                m_TraceLogSuspended;
@@ -2610,7 +2610,7 @@ private:
 
     /// Save messages if the handle is unavailable
     typedef deque<SDiagMessage> TMessages;
-    auto_ptr<TMessages> m_Messages;
+    unique_ptr<TMessages> m_Messages;
 };
 
 

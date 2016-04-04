@@ -2232,8 +2232,8 @@ private:
     ERemoveMode m_RemoveOnDestruction; ///< Remove file on destruction
 
     // Automatic pointers to store I/O streams.
-    auto_ptr<CNcbiIstream> m_InFile;
-    auto_ptr<CNcbiOstream> m_OutFile;
+    unique_ptr<CNcbiIstream> m_InFile;
+    unique_ptr<CNcbiOstream> m_OutFile;
 
 private:
     // Prevent copying
@@ -2852,7 +2852,7 @@ void FindFilesInDir(const CDir&            dir,
         // nothing to find
         return;
     }
-    auto_ptr<CDir::TEntries> 
+    unique_ptr<CDir::TEntries> 
         contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive | CDir::fIgnorePath));
     if (contents.get() == NULL) {
         // error
@@ -2906,7 +2906,7 @@ void FindFilesInDir(const CDir&   dir,
         // nothing to find
         return;
     }
-    auto_ptr<CDir::TEntries> 
+    unique_ptr<CDir::TEntries> 
         contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive |  CDir::fIgnorePath));
     if (contents.get() == NULL) {
         // error
