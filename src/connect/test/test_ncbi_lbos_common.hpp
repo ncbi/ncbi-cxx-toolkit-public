@@ -68,6 +68,7 @@
 
 /* Boost Test Framework or test_mt */
 #ifdef LBOS_TEST_MT
+
 #   undef  NCBITEST_CHECK_MESSAGE
 #   define NCBITEST_CHECK_MESSAGE(P,M)                                        \
     {                                                                         \
@@ -78,6 +79,10 @@
             ss << "Thread " << *p_val << ": ";                                \
         }                                                                     \
         ss << M;                                                              \
+        if (!(P)) {/* the process is doomed, let's print what was announced */\
+            s_PrintPortsLines();                                              \
+            s_Print500sCount();                                               \
+        }                                                                     \
         NCBI_ALWAYS_ASSERT(P,ss.str().c_str());                               \
     }
 #   undef  NCBITEST_REQUIRE_MESSAGE
@@ -313,24 +318,31 @@ static bool            s_CheckTestVersion       (vector<SLBOSVersion>
                                                                 versions_arr);
 static 
 vector<SLBOSVersion>   s_ParseVersionsString    (string versions);
+static void            s_PrintPortsLines        (void);
+static void            s_Print500sCount         (void);
 
 const int              kThreadsNum                  = 34;
 /** When the test is run in single-threaded mode, we set the number of the 
- * main thread to -1 to distinguish between MT and ST    */
+ * main thread to -1 to distinguish between MT and ST                        */
 const int              kSingleThreadNumber          = -1;
 const int              kMainThreadNumber            = 99;
 const int              kHealthThreadNumber          = 100;
-/* Seconds to try to find server. We wait maximum of 60 seconds. */
+/* Seconds to try to find server. We wait maximum of 60 seconds.             */
 const int              kDiscoveryDelaySec           = 15; 
-/* for tests where port is not necessary (they fail before announcement) */
+/* for tests where port is not necessary (they fail before announcement)     */
 const unsigned short   kDefaultPort                 = 5000; 
 /** Static variables that are used in mock functions.
- * This is not thread-safe! */
+ * This is not thread-safe!                                                  */
 static int             s_CallCounter                = 0;
 /** It is yet impossible on TeamCity, but useful for local tests, where 
-   local LBOS can be easily run                                              */
+ * local LBOS can be easily run                                              */
 static string          s_LastHeader;
 static SLBOSVersion    s_LBOSVersion                = {0,0,0};
+/** To remember on which line of code which port was announced 
+ *  (for debugging purposes)                                                 */
+static map<int, int>   s_PortsLines;
+/** Remember how times we got 500 */
+static unsigned int    s_500sCount                  = 0;
 
 
 /* Mutex for thread-unsafe Boost checks */
@@ -344,7 +356,6 @@ DEFINE_STATIC_FAST_MUTEX(s_WriteLogLock);
 
 const int kPortsNeeded = 9;
 static CSafeStatic<vector<unsigned short>> s_ListeningPorts;
-
 
 #include "test_ncbi_lbos_mocks.hpp"
 
@@ -556,6 +567,9 @@ static unsigned short s_AnnounceC(const char*       name,
                                  healthcheck_cstr, lbos_ans, lbos_mes);
     }
     MEASURE_TIME_FINISH;
+    if (result == 500) {
+        s_500sCount++;
+    }
     s_PrintAnnouncedDetails(name, version, host, port, 
                             healthcheck_cstr, 
                             lbos_ans ? *lbos_ans : NULL,
@@ -666,6 +680,9 @@ static void s_AnnounceCPP(const string& name,
     }
     catch (CLBOSException& ex) {
         MEASURE_TIME_FINISH
+            if (ex.GetErrCode() == 500) {
+                s_500sCount++;
+            }
             s_PrintAnnouncedDetails(name.c_str(), version.c_str(), 
                                     host.c_str(), port, health.c_str(),   
                                     ex.what(), ex.GetErrCodeString(),  
@@ -832,7 +849,33 @@ do {                                                                          \
     WRITE_LOG("Random port is " << port << ". "                               \
               "Count of servers with this port is " <<                        \
               count_before << ".");                                           \
+    s_PortsLines[port] = __LINE__;                                            \
 } while (false)
+
+
+/**  */
+static void s_PrintPortsLines()
+{
+    /* We will not surround it with mutex because it is not so important */
+    static bool already_launched = false;
+    if (already_launched) return;
+    already_launched = true;
+
+    stringstream ports_lines;
+    ports_lines << "Printing port<->line:" << endl;
+    auto ports_iter = s_PortsLines.begin();
+    for (  ;  ports_iter != s_PortsLines.end()  ;  ports_iter++  ) {
+        ports_lines << "Port " << ports_iter->first 
+                    << " was announced on line " << ports_iter->second << endl;
+    }
+    WRITE_LOG(ports_lines.str());
+}
+
+
+static void s_Print500sCount()
+{
+    WRITE_LOG("Got " << s_500sCount << " 500's during test");
+}
 
 
 static int  s_FindAnnouncedServer(string            service,
@@ -1020,8 +1063,9 @@ public:
                 }
                 double accept_time_elapsed      = 0.0;
                 double last_accept_time_elapsed = 0.0;
-                    if (static_cast<CListeningSocket*>(it->m_Pollable)->
-                    Accept(*sock, &accept_timeout) != eIO_Success) {
+                if (static_cast<CListeningSocket*>(it->m_Pollable)->
+                            Accept(*sock, &accept_timeout) != eIO_Success) 
+                {
                     if (s_GetTimeOfDay(&accept_time_stop) != 0)
                         memset(&accept_time_stop, 0, sizeof(accept_time_stop));
                     accept_time_elapsed      = s_TimeDiff(&accept_time_stop, 
@@ -1196,46 +1240,46 @@ int s_CountServersWithExpectation(string            service,
     int retries = 0;
     int servers = 0;
     MEASURE_TIME_START
-        while (servers != expected_count && retries < max_retries) {
-            WRITE_LOG("Counting number of servers \"" << service <<
-                           "\" with dtab \"" << dtab <<
-                           "\" and port " << port << ", ip " << s_GetMyIP() <<
-                           " via service discovery "
-                           "(expecting " << expected_count << 
-                           " servers found). Retry #" << retries);
-            servers = 0;
-            if (retries > 0) { /* for the first cycle we do not sleep */
+    while (servers != expected_count && retries < max_retries) {
+        WRITE_LOG("Counting number of servers \"" << service <<
+                  "\" with dtab \"" << dtab <<
+                  "\" and port " << port << ", ip " << s_GetMyIP() <<
+                  " via service discovery "
+                  "(expecting " << expected_count << 
+                  " servers found). Retry #" << retries);
+        servers = 0;
+        if (retries > 0) { /* for the first cycle we do not sleep */
 #ifdef NCBI_THREADS
-                SleepMilliSec(wait_time);
+            SleepMilliSec(wait_time);
 #else
-                /* Answer healthcheck a few times */
-                for (int i = 0;  i < 10;  i++) {
-                    s_HealthchecKThread->AnswerHealthcheck();
-                };
+            /* Answer healthcheck a few times */
+            for (int i = 0;  i < 10;  i++) {
+                s_HealthchecKThread->AnswerHealthcheck();
+            };
 #endif /* NCBI_THREADS */
-            }
-            const SSERV_Info* info;
-
-            if (dtab.length() > 1) {
-                ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
-            } else {
-                ConnNetInfo_SetUserHeader(*net_info, "DTab-Local: ");
-            }
-            CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                *net_info, 0/*skip*/, 0/*n_skip*/,
-                0/*external*/, 0/*arg*/, 0/*val*/));
-            do {
-                info = SERV_GetNextInfoEx(*iter, NULL);
-                if (info != NULL && info->port == port)
-                    servers++;
-            } while (info != NULL);
-            MEASURE_TIME_FINISH
-            WRITE_LOG("Found " << servers << " servers of service " 
-                        << service << ", port " << port << " after " 
-                        << time_elapsed << " seconds via service discovery.");
-            retries++;
         }
+        const SSERV_Info* info;
+
+        if (dtab.length() > 1) {
+            ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+        } else {
+            ConnNetInfo_SetUserHeader(*net_info, "DTab-Local: ");
+        }
+        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
+                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                       *net_info, 0/*skip*/, 0/*n_skip*/,
+                       0/*external*/, 0/*arg*/, 0/*val*/));
+        do {
+            info = SERV_GetNextInfoEx(*iter, NULL);
+            if (info != NULL && info->port == port)
+                servers++;
+        } while (info != NULL);
+        MEASURE_TIME_FINISH
+        WRITE_LOG("Found " << servers << " servers of service " 
+                  << service << ", port " << port << " after " 
+                  << time_elapsed << " seconds via service discovery.");
+        retries++;
+    }
     return servers;
 }
 
@@ -2195,28 +2239,27 @@ void RoleFail__ShouldReturnNULL()
     roleFile.close();
 
     CCObjHolder<char> result(g_LBOS_ComposeLBOSAddress());
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result), "LBOS address "
-                           "construction did not fail appropriately "
-                           "on empty role");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result) == 1, 
+                                   "LBOS address construction did not fail "
+                                   "appropriately on empty role");
 
     /* 2. Garbage role */
     roleFile.open(corruptRoleString.data());
     roleFile << "I play a thousand of roles";
     roleFile.close();
     result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result), "LBOS address "
-                           "construction did not fail appropriately "
-                           "on garbage role");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result) == 1, 
+                                   "LBOS address construction did not fail "
+                                   "appropriately on garbage role");
 
     /* 3. No role file (use set of symbols that certainly
      * cannot constitute a file name)*/
     role_domain.setRole("|*%&&*^");
     result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result), "LBOS address "
-                           "construction did not fail appropriately "
-                           "on bad role file");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result) == 1, 
+                                   "LBOS address construction did not fail "
+                                   "appropriately on bad role file");
 }
-
 
 /* Thread-unsafe because of g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles().
  * Excluded from multi threaded testing.
@@ -2247,16 +2290,17 @@ void DomainFail__ShouldReturnNULL()
     /* 1. Empty domain file */
     role_domain.setDomain(corruptDomain);
     CCObjHolder<char> result(g_LBOS_ComposeLBOSAddress());
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result), "LBOS address "
-                           "construction did not fail appropriately");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result) == 1, 
+                                   "LBOS address construction did not fail "
+                                   "appropriately on empty domain file");
 
     /* 2. No domain file (use set of symbols that certainly cannot constitute
      * a file name)*/
     role_domain.setDomain("|*%&&*^");
     result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result), "LBOS address "
-                           "construction did not fail appropriately "
-                           "on bad domain file");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result) == 1, 
+                                   "LBOS address construction did not fail "
+                                   "appropriately on bad domain file");
     /* Cleanup */
     if (has_reg_domain) {
         registry.Set("CONN", "lbos_domain", reg_domain);

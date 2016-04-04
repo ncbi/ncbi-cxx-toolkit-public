@@ -49,13 +49,15 @@ NCBITEST_INIT_CMDLINE(args)
 }
 
 
-#ifdef NCBI_THREADS
 NCBITEST_AUTO_FINI()
 {
+#ifdef NCBI_THREADS
     s_HealthchecKThread->Stop(); // Stop listening on the socket
     s_HealthchecKThread->Join();
-}
 #endif
+    s_PrintPortsLines();
+    s_Print500sCount();
+}
 
 /* We might want to clear ZooKeeper from nodes before running tests.
  * This is generally not good, because if this test application runs
@@ -86,8 +88,8 @@ NCBITEST_AUTO_INIT()
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> status_message(NULL);
     LBOS_ServiceVersionGet("/lbostest", 
-                                  &lbos_answer.Get(), 
-                                  &status_message.Get());
+                           &lbos_answer.Get(), 
+                           &status_message.Get());
     lbos_answer = NULL;
     status_message = NULL;
     string lbostest_version = LBOS::ServiceVersionGet("/lbostest");
