@@ -70,7 +70,7 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str,
         NStr::EqualNocase(name, "orgmod-note")) {
         return eSubtype_other;
     } else if (vocabulary == eVocabulary_insdc) {
-        if (name == "host") {
+        if (name == "host" || name == "specific-host") {
             return eSubtype_nat_host;
         } else if (name == "sub-strain") {
             return eSubtype_substrain;

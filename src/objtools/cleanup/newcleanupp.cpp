@@ -1207,7 +1207,7 @@ bool s_StringHasOrgModPrefix(const string &str, string::size_type &out_val_start
         &&  (pos2 = str.find_first_not_of(": =", pos)) != NPOS) {
         try {
             string val = str.substr(0, pos);
-            COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(val);
+            COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(val, COrgMod::eVocabulary_insdc);
             if ( !COrgMod::IsDiscouraged(subtype) ) {
                 out_subtype       = subtype;
                 out_val_start_pos = pos2;
@@ -1232,7 +1232,7 @@ bool s_StringHasSubSourcePrefix(const string &str, string::size_type &out_val_st
             if (NStr::EqualNocase(val, "Lat-long") || NStr::EqualNocase(val, "Latitude-Longitude")) {
                 subtype = CSubSource::eSubtype_lat_lon;
             } else {
-                subtype = CSubSource::GetSubtypeValue(val);
+                subtype = CSubSource::GetSubtypeValue(val, CSubSource::eVocabulary_insdc);
             }
             if ( subtype == CSubSource::eSubtype_fwd_primer_name ||
                  subtype == CSubSource::eSubtype_fwd_primer_seq ||
