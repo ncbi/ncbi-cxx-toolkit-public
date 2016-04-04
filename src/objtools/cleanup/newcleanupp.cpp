@@ -10447,6 +10447,10 @@ void CNewCleanup_imp::x_RemoveRedundantComment( CGene_ref& gene, CSeq_feat & seq
             RESET_FIELD(gene, Desc);
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
+        if ( STRING_FIELD_MATCH (gene, Locus, comm) ) {
+           seq_feat.ResetComment();
+           ChangeMade(CCleanupChange::eChangeComment);
+        }
     }
 }
 
