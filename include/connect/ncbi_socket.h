@@ -1142,7 +1142,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
  * This call is available for stream sockets only.
  * @note  Even though the underlying OS socket handle may have been marked for
  *        preservation via fSOCK_KeepOnClose, this call always and
- *        unconditially closes and destroys the actual OS handle.
+ *        unconditionally closes and destroys the actual OS handle.
  * @param sock
  *  [in] socket handle
  */
