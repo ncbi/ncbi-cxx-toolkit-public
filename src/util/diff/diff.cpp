@@ -31,8 +31,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
-#include <corelib/hash_map.hpp>
 #include <util/diff/diff.hpp>
+#include <unordered_map>
 #include "dtl/dtl/dtl.hpp"
 
 
@@ -761,7 +761,7 @@ void CDiff::x_Diff(CTempString s1, CTempString s2, CDiffList& diffs) const
 // to have full compatibility with 'patch' utility we need 
 // a "correct" diff. to get that we should add "\n" to all
 // hashed strings in the text except last one.
-typedef hash_map<string, CDiffList::size_type > TStringToLineNumMap;
+typedef unordered_map<string, CDiffList::size_type > TStringToLineNumMap;
 
 CDiffList& CDiffText::Diff(CTempString s1, CTempString s2, TFlags flags)
 {
@@ -788,9 +788,6 @@ CDiffList& CDiffText::Diff(CTempString s1, CTempString s2, TFlags flags)
     s2_num_lines = lines.size() - s1_num_lines;
 
     // Create a map of unique strings with its positions in lines[].
-    // We reserve as maximum size for hash_map and use insert_noresize()
-    // to avoid its re-balancing on an elements insertion.
-    // insert_noresize() have better performance than: hm[lines[i]] = i
     TStringToLineNumMap hm(lines.size());
     for (size_type i = 0; i < lines.size(); i++) {
         string s = lines[i];
@@ -803,7 +800,7 @@ CDiffList& CDiffText::Diff(CTempString s1, CTempString s2, TFlags flags)
         if (i != s1_num_lines-1  &&  i != lines.size()-1) {
             s += "\n";
         }
-        hm.insert_noresize(TStringToLineNumMap::value_type(s, i));
+        hm.insert(TStringToLineNumMap::value_type(s, i));
     }
 
     // "Convert" both our texts to an array of integer indexes of
@@ -856,8 +853,8 @@ CDiffList& CDiffText::Diff(CTempString s1, CTempString s2, TFlags flags)
     vector< pair<size_type, dtl::elemInfo> >::iterator it;
 
     // Convert obtained line-num-based diff to string-based.
-    // We cannot use strings from hash_map directly, as well
-    // as indexes to get line from lines[], because "equal"
+    // We cannot use strings from an unordered_map directly,
+    // as well as indexes to get line from lines[], because "equal"
     // lines can have a difference in EOLs, and accordingly
     // -- different lengths, that can be fatal for CTempString.
     // Instead, we will use our own counters for line positions for
