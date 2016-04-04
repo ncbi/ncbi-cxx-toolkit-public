@@ -45,7 +45,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
+//  ----------------------------------------------------------------------------
 class NCBI_XOBJEDIT_EXPORT CFeatTableEdit
+//  ----------------------------------------------------------------------------
 {
     typedef list<CRef<CSeq_feat> > FEATS;
 

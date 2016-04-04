@@ -33,8 +33,11 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -42,7 +45,6 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature.hpp>
 
-#include <objtools/edit/cds_fix.hpp>
 #include <objtools/edit/loc_edit.hpp>
 #include <objtools/edit/feattable_edit.hpp>
 
@@ -59,6 +61,41 @@ const string str)
     CRef<CSeq_id> pId(new CSeq_id(CSeq_id::e_Local, str));
     pProduct->SetId(*pId);
     return pProduct;
+}
+
+//  ----------------------------------------------------------------------------
+string sGetCdsProductName (
+    const CSeq_feat& cds, 
+    CScope& scope)
+//  ----------------------------------------------------------------------------
+{
+    string productName;
+    if (cds.IsSetProduct()) {
+        CBioseq_Handle bsh = sequence::GetBioseqFromSeqLoc(cds.GetProduct(), scope);
+        if (bsh) {
+            CFeat_CI protCi(bsh, CSeqFeatData::e_Prot);
+            if (protCi) {
+                const CProt_ref& prot = protCi->GetOriginalFeature().GetData().GetProt();
+                if (prot.IsSetName() && prot.GetName().size() > 0) {
+                    productName = prot.GetName().front();
+                }
+            }
+            return productName;
+        }  
+    } 
+    if (cds.IsSetXref()) {
+        ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
+            const CSeqFeatXref& xref = **it;
+            if (xref.IsSetData() && xref.GetData().IsProt()) {
+                const CProt_ref& prot = xref.GetData().GetProt();
+                if (prot.IsSetName() && prot.GetName().size() > 0) {
+                    productName = prot.GetName().front();
+                }
+            }
+            return productName;
+        }
+    }
+    return productName;
 }
 
 //  -------------------------------------------------------------------------
@@ -104,13 +141,29 @@ void CFeatTableEdit::GenerateMissingMrnaForCds()
     CFeat_CI it(mHandle, sel);
     for ( ; it; ++it) {
         const CSeq_feat& cds = it->GetOriginalFeature();
-        CRef<CSeq_feat> pRna = edit::MakemRNAforCDS(cds, *mpScope);
-        if (!pRna) {
+        CConstRef<CSeq_feat> pOverlappingRna =
+            sequence::GetBestOverlappingFeat(
+                cds.GetLocation(),
+                CSeqFeatData::e_Rna,
+                sequence::eOverlap_CheckIntRev,
+                *mpScope);
+        if (pOverlappingRna) {
             continue;
         }
+        //CRef<CSeq_feat> pRna = edit::MakemRNAforCDS(cds, *mpScope);
+        //if (!pRna) {
+        //    //should never happen!
+        //    continue;
+        //}
+        CRef<CSeq_feat> pRna(new CSeq_feat);
+        pRna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+        pRna->SetLocation().Assign(cds.GetLocation());
         pRna->SetLocation().SetPartialStart(false, eExtreme_Positional);
         pRna->SetLocation().SetPartialStop(false, eExtreme_Positional);
         pRna->ResetPartial();
+        //product name
+        pRna->SetData().SetRna().SetExt().SetName(
+            sGetCdsProductName(cds, *mpScope));
         //find proper name for rna
         string rnaId(xNextFeatId());
         pRna->SetId().SetLocal().SetStr(rnaId);
