@@ -49,6 +49,10 @@
 #include <connect/ncbi_util.h>
 #include <algorithm>
 
+#include <objects/general/general__.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
+#include <serial/iterator.hpp>
+
 #include <corelib/test_boost.hpp>
 
 USING_NCBI_SCOPE;
@@ -71,20 +75,20 @@ TIntId GetGiOffset(void)
 }
 
 
-static CRef<CScope> s_InitScope(void)
+static CRef<CScope> s_InitScope(bool reset_loader = true)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
-    CDataLoader* loader =
-        om->FindDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
-    if ( loader ) {
-        BOOST_CHECK(om->RevokeDataLoader(*loader));
+    if ( reset_loader ) {
+        CDataLoader* loader =
+            om->FindDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
+        if ( loader ) {
+            BOOST_CHECK(om->RevokeDataLoader(*loader));
+        }
     }
-    else {
 #ifdef HAVE_PUBSEQ_OS
-        DBAPI_RegisterDriver_FTDS();
-        GenBankReaders_Register_Pubseq();
+    DBAPI_RegisterDriver_FTDS();
+    GenBankReaders_Register_Pubseq();
 #endif
-    }
     CGBDataLoader::RegisterInObjectManager(*om);
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
@@ -117,6 +121,17 @@ bool s_HaveID2(void)
         return false;
     }
     return true;
+}
+
+
+bool s_HaveID1(void)
+{
+    const char* env = getenv("GENBANK_LOADER_METHOD_BASE");
+    if ( !env ) {
+        // assume default ID2
+        return false;
+    }
+    return NStr::EqualNocase(env, "id1");
 }
 
 
@@ -332,6 +347,39 @@ BOOST_AUTO_TEST_CASE(CheckAll)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckNoAcc)
+{
+    CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(156205);
+    {
+        CRef<CScope> scope = s_InitScope();
+        BOOST_CHECK(scope->GetBioseqHandle(id));
+        BOOST_CHECK(!scope->GetAccVer(id));
+    }
+    {
+        CRef<CScope> scope = s_InitScope();
+        BOOST_CHECK(!scope->GetAccVer(id));
+        BOOST_CHECK(scope->GetBioseqHandle(id));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(CheckNoGi)
+{
+    if ( s_HaveID1() ) {
+        return;
+    }
+    CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|Annot:SNP|568802115");
+    {
+        CRef<CScope> scope = s_InitScope();
+        BOOST_CHECK(scope->GetBioseqHandle(id));
+        BOOST_CHECK(!scope->GetGi(id));
+    }
+    {
+        CRef<CScope> scope = s_InitScope();
+        BOOST_CHECK(!scope->GetGi(id));
+        BOOST_CHECK(scope->GetBioseqHandle(id));
+    }
+}
+
 BOOST_AUTO_TEST_CASE(CheckExtSNP)
 {
     LOG_POST("Checking ExtAnnot SNP");
@@ -339,6 +387,183 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP)
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("SNP");
     s_CheckFeat(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+template<class TObject>
+void s_CheckFeatData(const SAnnotSelector& sel,
+                     const string& str_id,
+                     CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+{
+    CRef<CScope> scope = s_InitScope(false);
+    CRef<CSeq_id> seq_id(new CSeq_id("NC_000001.10"));
+    CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
+    BOOST_REQUIRE(bh);
+
+    vector< CConstRef<TObject> > objs, objs_copy;
+    CFeat_CI fit(bh, range, sel);
+    BOOST_REQUIRE(fit);
+    for ( ; fit; ++fit ) {
+        CConstRef<CSeq_feat> feat = fit->GetSeq_feat();
+        bool old_data = true;
+        for ( size_t i = 0; i < objs.size(); ++i ) {
+            BOOST_REQUIRE(objs[i]->Equals(*objs_copy[i]));
+        }
+        for ( CTypeConstIterator<TObject> it(Begin(*feat)); it; ++it ) {
+            if ( old_data ) {
+                objs.clear();
+                objs_copy.clear();
+                old_data = false;
+            }
+            CConstRef<TObject> obj(&*it);
+            objs.push_back(obj);
+            objs_copy.push_back(Ref(SerialClone(*obj)));
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_Seq_feat)
+{
+    LOG_POST("Checking ExtAnnot SNP Seq-feat generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CSeq_feat>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_SeqFeatData)
+{
+    LOG_POST("Checking ExtAnnot SNP SeqFeatData generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CSeqFeatData>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_Imp_feat)
+{
+    LOG_POST("Checking ExtAnnot SNP Imp-feat generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CImp_feat>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_Seq_loc)
+{
+    LOG_POST("Checking ExtAnnot SNP Seq-loc generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CSeq_loc>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_Seq_id)
+{
+    LOG_POST("Checking ExtAnnot SNP Seq-id generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CSeq_id>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_Seq_point)
+{
+    LOG_POST("Checking ExtAnnot SNP Seq-point generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CSeq_point>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_Seq_interval)
+{
+    LOG_POST("Checking ExtAnnot SNP Seq-interval generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CSeq_interval>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_Gb_qual)
+{
+    LOG_POST("Checking ExtAnnot SNP Gb-qual generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CGb_qual>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_Dbtag)
+{
+    LOG_POST("Checking ExtAnnot SNP Dbtag generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CDbtag>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_Object_id)
+{
+    LOG_POST("Checking ExtAnnot SNP Object-id generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CObject_id>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_User_object)
+{
+    LOG_POST("Checking ExtAnnot SNP User-object generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CUser_object>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNP_User_field)
+{
+    LOG_POST("Checking ExtAnnot SNP User-field generation");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("SNP");
+
+    s_CheckFeatData<CUser_field>
+        (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
 }
 
 

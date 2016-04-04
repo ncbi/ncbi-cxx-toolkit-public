@@ -492,6 +492,16 @@ CRef<CSeq_feat> SSNP_Info::x_CreateSeq_feat(void) const
 }
 
 
+template<class C>
+C* sx_GetUnreferenced(CRef<C>& ref)
+{
+    if ( !ref || !ref->ReferencedOnlyOnce() ) {
+        ref = new C;
+    }
+    return ref;
+}
+
+
 void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
                                      const CSeq_annot_SNP_Info& annot) const
 {
@@ -520,9 +530,9 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
         size_t qual_index = 0;
         for ( size_t i = 0; i < alleles_count; ++i ) {
             TAlleleIndex allele_index = m_AllelesIndices[i];
-            CGb_qual* gb_qual;
+            CGb_qual* gb_qual = 0;
             if ( qual_index < qual.size() ) {
-                gb_qual = qual[qual_index].GetPointer();
+                gb_qual = sx_GetUnreferenced(qual[qual_index]);
             }
             else {
                 qual.push_back(CRef<CGb_qual>(gb_qual = new CGb_qual));
@@ -536,7 +546,7 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
         if ( m_Weight & fwWeightQual ) { // weight in qual
             CGb_qual* gb_qual;
             if ( qual_index < qual.size() ) {
-                gb_qual = qual[qual_index].GetPointer();
+                gb_qual = sx_GetUnreferenced(qual[qual_index]);
             }
             else {
                 qual.push_back(CRef<CGb_qual>(gb_qual = new CGb_qual));
@@ -574,42 +584,45 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
     else if ( (m_Flags & fQualityCodesMask) ||
               (m_ExtraIndex != kNo_ExtraIndex) ) {
         // qadata in ext
-        CSeq_feat::TExt& ext = feat.SetExt();
-        CPackString::Assign(ext.SetType().SetStr(), kId_dbSnpQAdata);
-        CSeq_feat::TExt::TData& data = ext.SetData();
+        CUser_object* ext = &feat.SetExt();
+        if ( !ext->ReferencedOnlyOnce() ) {
+            feat.SetExt(*(ext = new CUser_object));
+        }
+        CPackString::Assign(ext->SetType().SetStr(), kId_dbSnpQAdata);
+        CSeq_feat::TExt::TData& data = ext->SetData();
         CSeq_feat::TExt::TData::iterator it = data.begin();
         if ( m_ExtraIndex != kNo_ExtraIndex ) {
+            CUser_field* user_field;
             if ( it == data.end() ) {
-                it = data.insert(it, Ref(new CUser_field));
+                it = data.insert(it, Ref(user_field = new CUser_field));
             }
-            else if ( !*it ) {
-                *it = new CUser_field;
+            else {
+                user_field = sx_GetUnreferenced(*it);
             }
-            CUser_field& user_field = **it;
-            CPackString::Assign(user_field.SetLabel().SetStr(),
+            CPackString::Assign(user_field->SetLabel().SetStr(),
                                 kId_Extra);
             TExtraIndex index = m_ExtraIndex;
-            CPackString::Assign(user_field.SetData().SetStr(),
+            CPackString::Assign(user_field->SetData().SetStr(),
                                 annot.x_GetExtra(index));
             ++it;
         }
         if ( m_Flags & fQualityCodesMask ) {
+            CUser_field* user_field;
             if ( it == data.end() ) {
-                it = data.insert(it, Ref(new CUser_field));
+                it = data.insert(it, Ref(user_field = new CUser_field));
             }
-            else if ( !*it ) {
-                *it = new CUser_field;
+            else {
+                user_field = sx_GetUnreferenced(*it);
             }
-            CUser_field& user_field = **it;
-            CPackString::Assign(user_field.SetLabel().SetStr(),
+            CPackString::Assign(user_field->SetLabel().SetStr(),
                                 kId_QualityCodes);
             TQualityCodesIndex index = m_QualityCodesIndex;
             if ( m_Flags & fQualityCodesStr ) {
-                CPackString::Assign(user_field.SetData().SetStr(),
+                CPackString::Assign(user_field->SetData().SetStr(),
                                     annot.x_GetQualityCodesStr(index));
             }
             else {
-                annot.x_GetQualityCodesOs(index, user_field.SetData().SetOs());
+                annot.x_GetQualityCodesOs(index, user_field->SetData().SetOs());
             }
             ++it;
         }
@@ -622,13 +635,14 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
     { // snpid
         CSeq_feat::TDbxref& dbxref = feat.SetDbxref();
         dbxref.resize(1);
-        if ( !dbxref.front() ) {
-            dbxref.front().Reset(new CDbtag);
-        }
-        CDbtag& dbtag = *dbxref[0];
-        CPackString::Assign(dbtag.SetDb(),
+        CDbtag* dbtag = sx_GetUnreferenced(dbxref.front());
+        CPackString::Assign(dbtag->SetDb(),
                             kId_dbSNP);
-        dbtag.SetTag().SetId(m_SNP_Id);
+        CObject_id* id = &dbtag->SetTag();
+        if ( !id->ReferencedOnlyOnce() ) {
+            dbtag->SetTag(*(id = new CObject_id));
+        }
+        id->SetId(m_SNP_Id);
     }
 }
 
@@ -646,10 +660,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
         if ( position_delta == 0 ) {
             // point
             feat.SetLocation().Reset();
-            if ( !seq_point || !seq_point->ReferencedOnlyOnce() ) {
-                seq_point.Reset(new CSeq_point);
-            }
-            CSeq_point& point = *seq_point;
+            CSeq_point& point = *sx_GetUnreferenced(seq_point);
             feat.SetLocation().SetPnt(point);
             point.SetPoint(to_position);
             if ( PlusStrand() ) {
@@ -672,10 +683,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
         else {
             // interval
             feat.SetLocation().Reset();
-            if ( !seq_interval || !seq_interval->ReferencedOnlyOnce() ) {
-                seq_interval.Reset(new CSeq_interval);
-            }
-            CSeq_interval& interval = *seq_interval;
+            CSeq_interval& interval = *sx_GetUnreferenced(seq_interval);
             feat.SetLocation().SetInt(interval);
             interval.SetFrom(to_position-position_delta);
             interval.SetTo(to_position);
