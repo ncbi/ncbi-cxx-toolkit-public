@@ -311,7 +311,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                     nc_try_all_servers = IsOptionSet(eTryAllServers))));
         }
     } else {
-        ICache::EBlobVersionValidity validity;
+        ICache::EBlobVersionValidity validity = ICache::eValid;
         switch (reader_select) {
         case 0: /* no special case */
             reader.reset(m_Opts.ncid.HasVersion() ?

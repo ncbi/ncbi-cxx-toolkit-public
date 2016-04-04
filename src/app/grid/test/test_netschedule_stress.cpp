@@ -249,7 +249,7 @@ int CTestNetScheduleStress::Run(void)
     submitter.CancelJob(job.job_id);
     status = executor.GetJobStatus(job);
 
-    _ASSERT(status == CNetScheduleAPI::eCanceled);
+    if (status != CNetScheduleAPI::eCanceled) _TROUBLE;
 
     vector<string> jobs;
     jobs.reserve(jcount);
