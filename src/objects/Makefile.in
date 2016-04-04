@@ -11,7 +11,7 @@ SUB_PROJ = general biblio medline pub seqcode seq seqset submit \
            pcsubstance pcassay gbseq insdseq tinyseq biotree entrezgene \
            omssa remap seqtest taxon1 taxon3 gbproj trackmgr valerr valid \
            access docsum featdef genomecoll homologene mim objprt \
-           variation macro genesbyloc coords
+           variation macro genesbyloc coords varrep
 
 REQUIRES = objects
 

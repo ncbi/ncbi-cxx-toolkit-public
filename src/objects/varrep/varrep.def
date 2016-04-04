@@ -1,0 +1,17 @@
+[AaSite]
+index._type = TSeqPos
+
+[NtSite]
+base.val._type = TSeqPos
+offset.val._type = TSignedSeqPos
+
+[Count]
+val._type = TSeqPos
+fuzzy-val._type = TSeqPos
+range.start.val._type = TSeqPos
+range.stop.val._type = TSeqPos
+
+
+
+
+

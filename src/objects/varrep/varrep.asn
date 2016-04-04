@@ -1,0 +1,301 @@
+NCBI-VariationIRep DEFINITIONS AUTOMATIC TAGS ::=
+BEGIN 
+
+
+--EXPORTS VariantExpression, SimpleVariant;
+
+VariantExpression ::= SEQUENCE {
+    input-expr VisibleString, -- contains the input expression to be parsed
+    reference-id VisibleString, -- contains the accession id or other identifier for the reference sequence
+    seqvars SEQUENCE OF SeqVariants -- an expression can contain a number of sequence variants 
+}
+
+
+SeqVariants ::= SEQUENCE {
+    seqtype VariantSeqType,
+    variants CHOICE {
+        simple-variant SimpleVariant,
+        knownChromosomeVariant SEQUENCE {
+            chrom1-variant CHOICE { 
+                simple-variant-seq SimpleVariantSeq,
+                special-variant SpecialVariant
+            },
+
+            chrom2-variant SEQUENCE {
+                type CHOICE {
+                    simple-variant-seq SimpleVariantSeq,
+                    special-variant SpecialVariant
+                },
+                single-gene BOOLEAN
+            } OPTIONAL
+        },
+        unknownChromosomeVariant SimpleVariantSeq
+    }
+}
+
+
+VariantSeqType ::= INTEGER {
+    g (0), --genomic
+    m (1), --mitochondrial
+    c (2), --coding
+    r (3), --rna
+    n (4), --non-coding rna
+    p (5), --protein
+    u (6)  --unknown
+}
+
+
+SpecialVariant ::= INTEGER { 
+    unknown                     (0),
+    not-analyzed                (1),
+    no-change                   (2),
+    no-change-expected          (3),
+    no-seq                      (4),
+    no-seq-expected             (5),
+    rna-splice-effect           (6),
+    rna-splice-effect-expected  (7)   
+}
+
+
+SimpleVariantSeq ::= SEQUENCE {
+    variants SEQUENCE OF SimpleVariant,  
+    sisters BOOLEAN DEFAULT FALSE,
+    fuzzy BOOLEAN DEFAULT FALSE
+}
+
+
+SimpleVariant ::= SEQUENCE {
+    type  CHOICE {
+        na-identity NaIdentity,
+        na-sub NaSub,
+        prot-sub ProteinSub,
+        del Deletion,
+        dup Duplication,
+        inv Inversion,
+        ins Insertion,
+        conv Conversion,
+        delins Delins,
+        repeat Repeat, --short-sequence repeat (ssr)
+        prot-ext ProteinExtension,
+        frameshift Frameshift
+    },
+    fuzzy BOOLEAN DEFAULT FALSE
+}
+
+
+Delins ::= SEQUENCE {
+    loc SeqLocation,
+    deleted-raw-seq VisibleString OPTIONAL, -- can optionally specify the deleted sequence
+    inserted-seq-info CHOICE {
+        identifier VisibleString, -- A sequence identifier (e.g. an accession id)
+        raw-seq VisibleString, -- The actual nucleotide / amino-acid sequence
+        count Count, -- The number of elements inserted
+        subseq Subsequence -- A subsequence specified by an id, type descriptor, and a range
+    }
+}
+
+
+NaSub ::= SEQUENCE {
+    loc NtLocation,
+    initial VisibleString,
+    final VisibleString
+}
+
+NaIdentity ::= SEQUENCE {
+    loc NtLocation,
+    nucleotide VisibleString OPTIONAL
+}
+
+
+ProteinSub ::= SEQUENCE {
+    type INTEGER {
+        missense(0),
+        nonsense(1),
+        unknown(2)
+    },
+    initial AaSite,
+    final VisibleString OPTIONAL
+}
+
+
+ProteinExtension ::= CHOICE {
+    nterm-ext NtermExtension,
+    cterm-ext CtermExtension
+}
+
+
+NtermExtension ::= SEQUENCE {
+    newStart Count,
+    newAa VisibleString OPTIONAL
+}
+
+
+CtermExtension ::= SEQUENCE {
+    initialStop Count, 
+    newStop Count, 
+    newAa VisibleString
+}
+
+
+Frameshift ::= CHOICE {
+    aasite AaSite,
+    stopcodon NULL
+}
+
+
+Deletion ::= SEQUENCE { 
+    loc SeqLocation,
+    raw-seq VisibleString OPTIONAL -- can optionally specify the deleted sequence
+}
+
+
+Duplication ::= SEQUENCE {
+    loc SeqLocation,
+    raw-seq VisibleString OPTIONAL -- can optionally specify the sequence duplicated sequence
+}
+
+
+Inversion ::= SEQUENCE {
+    ntint NtInterval,
+    raw-seq VisibleString OPTIONAL
+}
+
+
+Insertion ::= SEQUENCE {
+    int SeqInterval,
+
+    seqinfo CHOICE {
+        identifier VisibleString, -- A sequence identifier (e.g. an accession id)
+        raw-seq VisibleString, -- The actual nucleotide / amino-acid sequence
+        count Count, -- The number of elements inserted
+        subseq Subsequence -- A subsequence specified by an id, type descriptor, and a range
+    }
+}
+
+
+Conversion ::= SEQUENCE {
+    src NtInterval,
+    dst NtInterval
+}
+
+
+Subsequence ::= SEQUENCE {
+    identifier VisibleString, -- For example, an accession id
+    type VariantSeqType,
+    int SeqInterval
+}
+
+
+Repeat ::= SEQUENCE {
+    loc SeqLocation,
+    count Count,
+    raw-seq VisibleString OPTIONAL --Used if ntloc is a site, not an interval
+}
+
+
+SeqLocation ::= CHOICE {
+    aaloc AaLocation,
+    ntloc NtLocation
+}
+
+SeqInterval ::= CHOICE {
+    aaint AaInterval,
+    ntint NtInterval
+}
+
+
+AaLocation ::= CHOICE {
+    site AaSite,
+    range AaSiteRange,
+    int AaInterval
+}
+
+
+AaInterval ::= SEQUENCE {
+    start AaSite,
+    stop AaSite
+}
+
+
+AaSiteRange ::= SEQUENCE {
+    start AaSite,
+    stop  AaSite
+}
+
+
+AaSite ::= SEQUENCE {
+    index INTEGER,
+    aa VisibleString
+}
+
+
+NtLocation ::= CHOICE {
+    site NtSite,
+    range NtSiteRange,
+    int NtInterval
+}
+
+
+NtIntLimit ::= CHOICE {
+    site NtSite,
+    range NtSiteRange
+}
+
+NtInterval ::= SEQUENCE {
+    start NtIntLimit,
+    stop NtIntLimit
+}
+
+
+NtSiteRange ::= SEQUENCE {
+    start NtSite,
+    stop  NtSite
+}
+
+
+NtSite ::= SEQUENCE {
+    seqid VisibleString OPTIONAL,
+    seqtype VariantSeqType OPTIONAL,
+
+    base CHOICE {
+        val INTEGER,
+        unknown NULL 
+    },
+
+    offset CHOICE {
+        val INTEGER,
+        plus-unknown NULL,
+        minus-unknown NULL
+    } OPTIONAL,
+
+    utr CHOICE {
+        five-prime NULL,
+        three-prime NULL
+    } OPTIONAL,
+
+
+    strand-minus BOOLEAN DEFAULT FALSE, -- TRUE implies opposite transcriptional orientation to 
+                                            -- to the reference sequence
+    fuzzy BOOLEAN DEFAULT FALSE, -- TRUE implies HGVS subexpression of the form (base + offset),
+    fuzzy-offset BOOLEAN DEFAULT FALSE -- TRUE implies HGVS subexpression of the form base+(offset)
+}
+
+
+Count ::= CHOICE {
+    unknown NULL,
+    val INTEGER,
+    fuzzy-val INTEGER,
+    range SEQUENCE { 
+        start CHOICE {
+            val INTEGER,
+            unknown NULL   
+        },
+        stop CHOICE {
+            val INTEGER,
+            unknown NULL
+        }
+    }
+}
+
+END
+
