@@ -10443,7 +10443,7 @@ void CNewCleanup_imp::x_RemoveRedundantComment( CGene_ref& gene, CSeq_feat & seq
 {
     if( FIELD_IS_SET(seq_feat, Comment) ) {
         const string & comm = GET_FIELD(seq_feat, Comment);
-        if ( STRING_FIELD_MATCH (gene, Desc, comm) ) {
+        if ( STRING_FIELD_MATCH (gene, Desc, comm)) { 
             RESET_FIELD(gene, Desc);
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
@@ -12070,6 +12070,14 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
         }
         sf.ResetProduct();
         ChangeMade(CCleanupChange::eChangeCdregion);
+    } else if (sf.IsSetProduct()) {
+        //resynch protein molinfo
+        CBioseq_Handle prot = m_Scope->GetBioseqHandle(sf.GetProduct());
+        if (prot) {
+            bool partial5 = sf.GetLocation().IsPartialStart(eExtreme_Biological);
+            bool partial3 = sf.GetLocation().IsPartialStop(eExtreme_Biological);            
+            x_SetPartialsForProtein(*(const_cast<CBioseq *>(prot.GetCompleteBioseq().GetPointer())), partial5, partial3);
+        }
     }
 }
 
@@ -12316,32 +12324,8 @@ void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
 }
 
 
-void CNewCleanup_imp::ResynchPeptidePartials (
-    CBioseq& seq
-)
-
+void CNewCleanup_imp::x_SetPartialsForProtein(CBioseq& seq, bool partial5, bool partial3)
 {
-    if (!seq.IsSetInst() || !seq.GetInst().IsSetMol() || !seq.IsAa()) {
-        return;
-    }
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-
-    // need to find best protein feature
-    SAnnotSelector sel( CSeqFeatData::eSubtype_prot );
-    CFeat_CI feat_ci( bsh, sel );
-    if (!feat_ci) {
-        // no protein feature;
-        return;
-    }
-    if (feat_ci->GetData().GetProt().IsSetProcessed() && 
-        feat_ci->GetData().GetProt().GetProcessed() != CProt_ref::eProcessed_not_set) {
-        // not a "real" protein feature
-        return;
-    }
-
-    bool partial5 = feat_ci->GetLocation().IsPartialStart(eExtreme_Biological);
-    bool partial3 = feat_ci->GetLocation().IsPartialStop(eExtreme_Biological);
-
     CMolInfo::TCompleteness desired = GetCompletenessFromFlags(partial5, partial3, partial5 || partial3);
 
     bool found = false;
@@ -12380,6 +12364,36 @@ void CNewCleanup_imp::ResynchPeptidePartials (
     if (changed) {
         x_AddPartialToProteinTitle(seq);
     }
+}
+
+
+void CNewCleanup_imp::ResynchPeptidePartials (
+    CBioseq& seq
+)
+
+{
+    if (!seq.IsSetInst() || !seq.GetInst().IsSetMol() || !seq.IsAa()) {
+        return;
+    }
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+
+    // need to find best protein feature
+    SAnnotSelector sel( CSeqFeatData::eSubtype_prot );
+    CFeat_CI feat_ci( bsh, sel );
+    if (!feat_ci) {
+        // no protein feature;
+        return;
+    }
+    if (feat_ci->GetData().GetProt().IsSetProcessed() && 
+        feat_ci->GetData().GetProt().GetProcessed() != CProt_ref::eProcessed_not_set) {
+        // not a "real" protein feature
+        return;
+    }
+
+    bool partial5 = feat_ci->GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial3 = feat_ci->GetLocation().IsPartialStop(eExtreme_Biological);
+
+    x_SetPartialsForProtein(seq, partial5, partial3);
 }
 
 

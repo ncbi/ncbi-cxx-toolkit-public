@@ -535,7 +535,11 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     CRef<CSeq_loc_Mapper> nuc2prot_mapper(
         new CSeq_loc_Mapper(*cds, CSeq_loc_Mapper::eLocationToProduct, &fh.GetScope()));
     new_loc = nuc2prot_mapper->Map(orig_feat->GetLocation());
-    if (!new_loc || new_loc->GetId()->Equals(*(orig_feat->GetLocation().GetId()))) {
+    if (!new_loc) {
+        return false;
+    }
+    const CSeq_id* sid = new_loc->GetId();
+    if (!sid || sid->Equals(*(orig_feat->GetLocation().GetId()))) {
         // unable to map to protein location
         return false;
     }
