@@ -4,7 +4,7 @@
 ############################################
 
 LIB_PROJ = xobjread xobjreadex
-SUB_PROJ = app test unit_test
+SUB_PROJ = app test unit_test hgvs
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
