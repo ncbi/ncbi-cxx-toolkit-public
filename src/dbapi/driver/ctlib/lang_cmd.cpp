@@ -479,7 +479,35 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         break;
     }
 	case eDB_Text:
+    {
+        CDB_Text& par = dynamic_cast<CDB_Text&> (param);
+        param_fmt.datatype = CS_TEXT_TYPE;
+        if (declare_only) {
+            break;
+        } else if ( !par.IsNULL() ) {
+            ret_code = CS_FAIL;
+            return false;
+        } else {
+            ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt, NULL, 0,
+                                      indicator));
+        }
+        break;
+    }
 	case eDB_Image:
+    {
+        CDB_Image& par = dynamic_cast<CDB_Image&> (param);
+        param_fmt.datatype = CS_IMAGE_TYPE;
+        if (declare_only) {
+            break;
+        } else if ( !par.IsNULL() ) {
+            ret_code = CS_FAIL;
+            return false;
+        } else {
+            ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt, NULL, 0,
+                                      indicator));
+        }
+        break;
+    }
 	case eDB_Numeric:
 	case eDB_UnsupportedType:
 		ret_code = CS_FAIL;
