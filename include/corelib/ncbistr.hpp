@@ -5393,18 +5393,12 @@ int NStr::CompareNocase(const char* s1, const char* s2)
 inline
 int NStr::CompareCase(const CTempStringEx s1, const CTempStringEx s2)
 {
-    if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
-        return CompareCase(s1.data(), s2.data());
-    }
     return CompareCase(s1, 0, s1.length(), s2);
 }
 
 inline
 int NStr::CompareNocase(const CTempStringEx s1, const CTempStringEx s2)
 {
-    if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
-        return CompareNocase(s1.data(), s2.data());
-    }
     return CompareNocase(s1, 0, s1.length(), s2);
 }
 
@@ -5459,9 +5453,6 @@ bool NStr::EqualCase(const char* s1, const char* s2)
 inline
 bool NStr::EqualCase(const CTempStringEx s1, const CTempStringEx s2)
 {
-    if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
-        return EqualCase(s1.data(), s2.data());
-    }
     return s1 == s2;
 }
 
@@ -5488,9 +5479,6 @@ bool NStr::EqualNocase(const char* s1, const char* s2)
 inline
 bool NStr::EqualNocase(const CTempStringEx s1, const CTempStringEx s2)
 {
-    if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
-        return EqualNocase(s1.data(), s2.data());
-    }
     return EqualNocase(s1, 0, s1.length(), s2);
 }
 
