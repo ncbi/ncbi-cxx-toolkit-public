@@ -10444,8 +10444,19 @@ void CNewCleanup_imp::x_RemoveRedundantComment( CGene_ref& gene, CSeq_feat & seq
     if( FIELD_IS_SET(seq_feat, Comment) ) {
         const string & comm = GET_FIELD(seq_feat, Comment);
         if ( STRING_FIELD_MATCH (gene, Desc, comm)) { 
-            RESET_FIELD(gene, Desc);
-            ChangeMade(CCleanupChange::eChangeQualifiers);
+            // only reset desc if there are other fields present
+            if (gene.IsSetLocus() ||
+                gene.IsSetAllele() ||
+                gene.IsSetMaploc() ||
+                gene.IsSetLocus_tag() ||
+                gene.IsSetDb() ||
+                gene.IsSetSyn()) {
+                gene.ResetDesc();
+                ChangeMade(CCleanupChange::eChangeQualifiers);
+            } else {
+                seq_feat.ResetComment();
+                ChangeMade(CCleanupChange::eChangeComment);
+            }
         }
         if ( STRING_FIELD_MATCH (gene, Locus, comm) ) {
            seq_feat.ResetComment();
