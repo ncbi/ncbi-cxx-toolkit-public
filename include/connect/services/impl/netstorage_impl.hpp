@@ -81,6 +81,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorage
 
     static SNetStorageImpl* CreateImpl(const SConfig&, TNetStorageFlags);
     static SNetStorageByKeyImpl* CreateByKeyImpl(const SConfig&, TNetStorageFlags);
+    static void CheckUserKey(const string& key);
 };
 
 /// @internal

@@ -365,6 +365,7 @@ CDirectNetStorageByKey::CDirectNetStorageByKey(
 CDirectNetStorageObject CDirectNetStorageByKey::Open(const string& key,
         TNetStorageFlags flags)
 {
+    SNetStorage::CheckUserKey(key);
     return Impl<SDirectNetStorageByKeyImpl>(m_Impl)->OpenImpl(key, flags);
 }
 
