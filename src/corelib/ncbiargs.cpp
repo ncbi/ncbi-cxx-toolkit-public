@@ -2396,6 +2396,10 @@ void CArgDescriptions::AddNegatedFlagAlias(const string& alias,
     arg.release();
 }
 
+void CArgDescriptions::AddDependencyGroup(CArgDependencyGroup* dep_group)
+{
+    m_DependencyGroups.insert( CConstRef<CArgDependencyGroup>(dep_group));
+}
 
 void CArgDescriptions::SetConstraint(const string&      name, 
                                      const CArgAllow*   constraint,
@@ -3055,6 +3059,11 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
         def_args.push_back(&arg);
     }
 
+    for (set< CConstRef<CArgDependencyGroup> >::const_iterator i = m_DependencyGroups.begin();
+        i != m_DependencyGroups.end(); ++i) {
+        i->GetPointer()->Evaluate(args);
+    }
+
     // Set default values (if available) for the arguments not defined
     // in the command line.
     ITERATE (list<const CArgDesc*>, it, def_args) {
@@ -3582,6 +3591,15 @@ void CArgDescriptions::CPrintUsage::AddDetails(list<string>& arr) const
         arr.push_back("OPTIONAL ARGUMENTS");
         arr.splice(arr.end(), opt);
     }
+
+    if (!m_desc.m_DependencyGroups.empty()) {
+        arr.push_back(kEmptyStr);
+        arr.push_back("DEPENDENCY GROUPS");
+        for (set< CConstRef<CArgDependencyGroup> >::const_iterator i = m_desc.m_DependencyGroups.begin();
+            i != m_desc.m_DependencyGroups.end(); ++i) {
+            i->GetPointer()->PrintUsage(arr, 0);
+        }
+    }
 }
 
 string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
@@ -3611,7 +3629,7 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
 }
 
 CArgDescriptions::CPrintUsageXml::CPrintUsageXml(const CArgDescriptions& desc, CNcbiOstream& out)
-    : m_out(out)
+    : m_desc(desc), m_out(out)
 {
     m_out << "<?xml version=\"1.0\"?>" << endl;
     m_out << "<" << "ncbi_application xmlns=\"ncbi:application\"" << endl
@@ -3712,6 +3730,11 @@ void CArgDescriptions::CPrintUsageXml::PrintArguments(const CArgDescriptions& de
             }
         }
         m_out << "</" << "dependencies" << ">" << endl;
+    }
+
+    for (set< CConstRef<CArgDependencyGroup> >::const_iterator i = m_desc.m_DependencyGroups.begin();
+        i != m_desc.m_DependencyGroups.end(); ++i) {
+        i->GetPointer()->PrintUsageXml(m_out);
     }
     m_out << "</" << "arguments" << ">" << endl;
 }
@@ -4595,6 +4618,236 @@ CArgAllow* CArgAllow_Doubles::Clone(void) const
     CArgAllow_Doubles* clone = new CArgAllow_Doubles;
     clone->m_MinMax = m_MinMax;
     return clone;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+CRef<CArgDependencyGroup> CArgDependencyGroup::Create(
+        const string& name, const string& description)
+{
+    CRef<CArgDependencyGroup> gr(new CArgDependencyGroup());
+    gr->m_Name = name;
+    gr->m_Description = description;
+    return gr;
+}
+
+CArgDependencyGroup::CArgDependencyGroup()
+    : m_MinMembers(0), m_MaxMembers(0)
+{
+}
+
+CArgDependencyGroup::~CArgDependencyGroup(void)
+{
+}
+
+CArgDependencyGroup& CArgDependencyGroup::SetMinMembers(size_t min_members)
+{
+    m_MinMembers = min_members;
+    return *this;
+}
+
+CArgDependencyGroup& CArgDependencyGroup::SetMaxMembers(size_t max_members)
+{
+    m_MaxMembers = max_members;
+    return *this;
+}
+
+CArgDependencyGroup& CArgDependencyGroup::Add(const string& arg_name, EInstantSet  instant_set)
+{
+    m_Arguments[arg_name] = instant_set;
+    return *this;
+}
+
+CArgDependencyGroup& CArgDependencyGroup::Add(
+    CArgDependencyGroup* dep_group, EInstantSet instant_set)
+{
+    m_Groups[ CConstRef<CArgDependencyGroup>(dep_group)] = instant_set;
+    return *this;
+}
+
+void CArgDependencyGroup::Evaluate( const CArgs& args) const
+{
+    x_Evaluate(args, nullptr, nullptr);
+}
+
+bool CArgDependencyGroup::x_Evaluate( const CArgs& args, string* arg_set, string* arg_unset) const
+{
+    bool top_level = !arg_set || !arg_unset;
+    bool has_instant_set = false;
+    size_t count_set = 0;
+    set<string> names_set, names_unset;
+    string args_set, args_unset;
+
+    for (map< CConstRef<CArgDependencyGroup>, EInstantSet>::const_iterator i = m_Groups.begin();
+        i != m_Groups.end(); ++i) {
+        string msg_set, msg_unset;
+        if (i->first.GetPointer()->x_Evaluate(args, &msg_set, &msg_unset)) {
+            ++count_set;
+            has_instant_set = has_instant_set || (i->second == eInstantSet);
+            names_set.insert(msg_set);
+        } else {
+            names_unset.insert(msg_unset);
+        }
+    }
+    for (map<string, EInstantSet>::const_iterator i = m_Arguments.begin();
+        i != m_Arguments.end(); ++i) {
+        if (args.Exist(i->first)) {
+            ++count_set;
+            has_instant_set = has_instant_set || (i->second == eInstantSet);
+            names_set.insert(i->first);
+        } else {
+            names_unset.insert(i->first);
+        }
+    }
+    size_t count_total = m_Groups.size() + m_Arguments.size();
+    size_t count_max = m_MaxMembers != 0 ? m_MaxMembers : count_total;
+
+    if (names_set.size() > 1) {
+        args_set = "(" + NStr::Join(names_set, ", ") + ")";
+    } else if (names_set.size() == 1) {
+        args_set = *names_set.begin();
+    }
+
+    if (names_unset.size() > 1) {
+        args_unset = "(" + NStr::Join(names_unset, m_MinMembers <= 1 ? " | " : ", ") + ")";
+    } else if (names_unset.size() == 1) {
+        args_unset = *names_unset.begin();
+    }
+
+    bool result = count_set != 0 || top_level;
+    if (result) {
+        if (count_set > count_max) {
+            string msg("Argument conflict: ");
+            msg += args_set + " may not be specified simultaneously";
+            NCBI_THROW(CArgException, eConstraint, msg);
+        }
+        if (!has_instant_set && count_set < m_MinMembers) {
+            string msg("Argument has no value: ");
+            if (count_total != count_max) {
+                msg += (m_MinMembers - count_set > 1) ? "some" : "one";                                  
+                msg += " of ";
+            }
+            msg += args_unset + " must be specified";
+            NCBI_THROW(CArgException,eNoValue, msg);
+        }
+    }
+    if (arg_set) {
+        *arg_set = args_set;
+    }
+    if (arg_unset) {
+        *arg_unset = args_unset;
+    }
+    return result;
+}
+
+void CArgDependencyGroup::PrintUsage(list<string>& arr, size_t offset) const
+{
+    arr.push_back(kEmptyStr);
+    string off(2*offset,' ');
+    string msg(off);
+    msg += m_Name + ": {";
+
+    bool first = true;
+    list<string> instant;
+    for (map< CConstRef<CArgDependencyGroup>, EInstantSet>::const_iterator i = m_Groups.begin();
+        i != m_Groups.end(); ++i) {
+        if (!first) {
+            msg += ",";
+        }
+        first = false;
+        msg += i->first.GetPointer()->m_Name;
+        if (i->second == eInstantSet) {
+            instant.push_back(i->first.GetPointer()->m_Name);
+        }
+    }
+    for (map<string, EInstantSet>::const_iterator i = m_Arguments.begin();
+        i != m_Arguments.end(); ++i) {
+        if (!first) {
+            msg += ",";
+        }
+        first = false;
+        msg += i->first;
+        if (i->second == eInstantSet) {
+            instant.push_back(i->first);
+        }
+    }
+    msg += "}";
+    arr.push_back(msg);
+    if (!m_Description.empty()) {
+        msg = off;
+        msg += m_Description;
+        arr.push_back(msg);
+    }
+    size_t count_total = m_Groups.size() + m_Arguments.size();
+    size_t count_max = m_MaxMembers != 0 ? m_MaxMembers : count_total;
+
+    msg = off + "in which ";
+    size_t count = m_MinMembers;
+    if (m_MinMembers == count_max) {
+        msg += "exactly ";
+        msg += NStr::NumericToString(m_MinMembers);
+    } else if (count_max == count_total && m_MinMembers != 0) {
+        msg += "at least ";
+        msg += NStr::NumericToString(m_MinMembers);
+    } else if (count_max != count_total && m_MinMembers == 0) {
+        msg += "no more than ";
+        msg += NStr::NumericToString(m_MaxMembers);
+        count = m_MaxMembers;
+    } else {
+        msg += NStr::NumericToString(m_MinMembers);
+        msg += " to ";
+        msg += NStr::NumericToString(m_MaxMembers);
+        count = m_MaxMembers;
+    }
+    msg += " element";
+    if (count != 1) {
+        msg += "s";
+    }
+    msg += " must be set";
+    arr.push_back(msg);
+
+    if (!instant.empty()) {
+        msg = off;
+        msg += "Instant set: ";
+        msg += NStr::Join(instant, ",");
+        arr.push_back(msg);
+    }
+    for (map< CConstRef<CArgDependencyGroup>, EInstantSet>::const_iterator i = m_Groups.begin();
+        i != m_Groups.end(); ++i) {
+        i->first.GetPointer()->PrintUsage(arr, offset+1);
+    }
+}
+
+void CArgDependencyGroup::PrintUsageXml(CNcbiOstream& out) const
+{
+    out << "<" << "dependencygroup" << ">" << endl;
+    out << "<" << "name" << ">" << m_Name << "</" << "name" << ">" << endl;
+    out << "<" << "description" << ">" << m_Description << "</" << "description" << ">" << endl;
+
+    for (map< CConstRef<CArgDependencyGroup>, EInstantSet>::const_iterator i = m_Groups.begin();
+        i != m_Groups.end(); ++i) {
+        out << "<" << "group";
+        if (i->second == eInstantSet) {
+            out << " instantset=\"true\"";
+        }
+        out << ">" << i->first.GetPointer()->m_Name << "</" << "group" << ">" << endl;
+    }
+    for (map<string, EInstantSet>::const_iterator i = m_Arguments.begin();
+        i != m_Arguments.end(); ++i) {
+        out << "<" << "argument";
+        if (i->second == eInstantSet) {
+            out << " instantset=\"true\"";
+        }
+        out << ">" << i->first << "</" << "argument" << ">" << endl;
+    }
+    out << "<" << "minmembers" << ">" << m_MinMembers << "</" << "minmembers" << ">" << endl;
+    out << "<" << "maxmembers" << ">" << m_MaxMembers << "</" << "maxmembers" << ">" << endl;
+    for (map< CConstRef<CArgDependencyGroup>, EInstantSet>::const_iterator i = m_Groups.begin();
+        i != m_Groups.end(); ++i) {
+        i->first.GetPointer()->PrintUsageXml(out);
+    }
+    out << "</" << "dependencygroup" << ">" << endl;
 }
 
 ///////////////////////////////////////////////////////

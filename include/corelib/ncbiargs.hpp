@@ -104,6 +104,7 @@ BEGIN_NCBI_SCOPE
 class CNcbiArguments;
 class CArgAllow;
 class CDir;
+class CArgDependencyGroup;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -874,6 +875,16 @@ public:
                              const string& arg_name,
                              const string& comment = kEmptyStr);
 
+    /// Add a dependency group.
+    /// The argument constraints specified by the dependency group(s)
+    /// will be processed only after all regular dependencies for arguments and
+    /// dependency groups have been processed.
+    /// @attention
+    ///  The "dep_group" will be added by reference, and its lifetime will then
+    ///  be managed according to the usual CObject/CRef rules.
+    /// @sa SetDependency()
+    void AddDependencyGroup(CArgDependencyGroup* dep_group);
+
     /// Flag to invert constraint logically
     enum EConstraintNegate {
         eConstraintInvert,  ///< Logical NOT
@@ -1069,6 +1080,7 @@ private:
     EArgPositionalMode m_PositionalMode; ///< Processing of positional args
     TDependencies      m_Dependencies;   ///< Arguments' dependencies
     TMiscFlags   m_MiscFlags;    ///< Flags for USAGE, error handling etc.
+    set< CConstRef<CArgDependencyGroup> > m_DependencyGroups;
 
     // Extra USAGE info
 protected:
@@ -1179,6 +1191,7 @@ protected:
         ~CPrintUsageXml();
         void PrintArguments(const CArgDescriptions& desc) const;
     private:
+        const CArgDescriptions& m_desc;
         CNcbiOstream& m_out;
     };
 
@@ -1797,6 +1810,90 @@ public:
 private:
     string m_Name;      ///< Argument name
     string m_Comment;   ///< Argument description
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+class NCBI_XNCBI_EXPORT CArgDependencyGroup : public CObject
+{
+public:
+    /// Create new dependency group.
+    /// @param name
+    ///  Name of the group 
+    /// @param description
+    ///  User-provided description of the dependency group (for Usage).
+    ///  A generated description will be added to it.
+    static CRef<CArgDependencyGroup> Create(
+        const string& name, const string& description = kEmptyStr);
+
+    virtual ~CArgDependencyGroup(void);
+
+    /// @param min_members
+    ///  Mark this group as "set" (in the context of
+    ///  CArgDescriptions::EDependency) if at least "min_members" of its
+    ///  members (args or groups listed in this group) are set.
+    /// @note This condition can be weakened by "eInstantSet" mechanism.
+    /// @sa EInstantSet
+    /// @return "*this"
+    CArgDependencyGroup& SetMinMembers(size_t min_members);
+
+    /// @param max_members
+    ///  No more than "max_members" of members (args or immediate groups
+    ///  listed in this group) are allowed to be in the "set" state.
+    ///  If this condition is not met, then this group will be marked
+    ///  as "not set".
+    /// @return "*this"
+    CArgDependencyGroup& SetMaxMembers(size_t max_members);
+
+    /// Control whether the "setting" of this particular member marks the
+    /// whole group as "set" regardless of the value passed to  SetMinMembers()
+    /// @sa SetMinMembers(), Add()
+    enum EInstantSet {
+        eNoInstantSet,
+        eInstantSet
+    };
+
+    /// Make a regular argument a member of this dependency group.
+    /// An argument with this name will need to be added separately using
+    /// CArgDescriptions::AddXXX().
+    /// @param arg_name
+    ///  Name of the argument, as specified in CArgDescriptions::AddXXX()
+    /// @param instant_set
+    ///  "eInstantSet" means that if the added argument ("arg_name") is
+    ///  set, then the SetMinMembers() condition doesn't apply anymore.
+    /// @return  "*this"
+    CArgDependencyGroup& Add(const string& arg_name,
+                             EInstantSet  instant_set = eNoInstantSet);
+
+    /// Make another dependency group a member of this dependency group.
+    /// @attention
+    ///  The "dep_group" will be added by reference, and its lifetime will
+    ///  be managed according to the usual CObject/CRef rules.
+    /// @param instant_set
+    ///  "eInstantSet" means that if the added group ("dep_group") is
+    ///  set, then the SetMinMembers() condition doesn't apply anymore.
+    /// @return  "*this"
+    CArgDependencyGroup& Add(CArgDependencyGroup* dep_group,
+                             EInstantSet instant_set = eNoInstantSet);
+
+private:
+    bool x_Evaluate( const CArgs& args, string* arg_set, string* arg_unset) const;
+
+    string m_Name;
+    string m_Description;
+    size_t m_MinMembers, m_MaxMembers;
+    map<string,                         EInstantSet> m_Arguments;
+    map<CConstRef<CArgDependencyGroup>, EInstantSet> m_Groups;
+
+    // prohibit unwanted ctors and assignments
+    CArgDependencyGroup(void);
+    CArgDependencyGroup( const CArgDependencyGroup& dep_group);
+    CArgDependencyGroup& operator= (const CArgDependencyGroup&);
+
+public:
+    void PrintUsage(list<string>& arr, size_t offset) const;
+    void PrintUsageXml(CNcbiOstream& out) const;
+    void Evaluate( const CArgs& args) const;
 };
 
 END_NCBI_SCOPE

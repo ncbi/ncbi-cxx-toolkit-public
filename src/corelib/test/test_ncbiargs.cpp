@@ -387,6 +387,32 @@ static void s_InitTest6(CArgDescriptions& arg_desc)
     arg_desc.AddPositional
         ("p2", "This is a mandatory positional argument",
          CArgDescriptions::eBoolean);
+
+    arg_desc.AddOptionalKey ("first", "MandatoryKey",
+                             "This is a mandatory first key argument", CArgDescriptions::eInteger);
+    arg_desc.AddOptionalKey("second", "MandatoryKey",
+                            "This is a mandatory second key argument", CArgDescriptions::eInteger);
+    arg_desc.AddFlag("f1", "Flag 1");
+    arg_desc.AddFlag("f2", "Flag 2");
+    arg_desc.AddFlag("f3", "Flag 3");
+
+    CRef<CArgDependencyGroup> args1 = CArgDependencyGroup::Create("container1", "description1");
+    args1->Add("first");
+    args1->Add("second");
+    args1->SetMinMembers(1).SetMaxMembers(1);
+
+    CRef<CArgDependencyGroup> args2 = CArgDependencyGroup::Create("container2", "description2");
+    args2->Add("f1");
+    args2->Add("f2");
+    args2->Add("f3");
+    args2->SetMinMembers(2).SetMaxMembers(2);
+
+    CRef<CArgDependencyGroup> args12 = CArgDependencyGroup::Create("container12", "description12");
+    args12->Add(args1);
+    args12->Add(args2);
+    args12->SetMinMembers(2).SetMaxMembers(2);
+
+    arg_desc.AddDependencyGroup(args12);
 }
 
 static void s_RunTest6(const CArgs& args, ostream& os)
