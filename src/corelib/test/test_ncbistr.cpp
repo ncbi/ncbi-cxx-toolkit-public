@@ -2700,6 +2700,20 @@ BOOST_AUTO_TEST_CASE(s_Compare)
     BOOST_CHECK(NStr::Compare("0123", 1, 2, "12") == 0);
     BOOST_CHECK(NStr::Compare("0123", 2, 2, "12") >  0);
     BOOST_CHECK(NStr::Compare("0123", 3, 2,  "3") == 0);
+
+    // std::string/CTempString with zero symbols inside
+
+    string zs1{ 't', 'e', 0, 's', 't', 0 };
+    string zs2("te");
+
+    BOOST_CHECK( zs1.compare(zs2)                         >  0 );
+    BOOST_CHECK( NStr::Compare(zs1, zs2)                  >  0 );
+    BOOST_CHECK( NStr::CompareCase(zs1, zs2)              >  0 );
+    BOOST_CHECK( NStr::CompareNocase(zs1, zs2)            >  0 );
+    BOOST_CHECK( NStr::Compare(zs2, zs1)                  <  0 );
+    BOOST_CHECK( NStr::Compare(zs1, 0, zs1.length(), zs2) >  0 );
+    BOOST_CHECK( NStr::Compare(zs1, 0, zs2.length(), zs2) == 0 );
+    BOOST_CHECK( NStr::Compare(zs1.data(), zs2.data())    == 0 );  // char*
 }
 
 BOOST_AUTO_TEST_CASE(s_XCompare)
@@ -3237,12 +3251,25 @@ BOOST_AUTO_TEST_CASE(s_Equal)
     BOOST_CHECK_EQUAL( AStrEquiv(as1, as3, PCase()),   false );
     BOOST_CHECK_EQUAL( AStrEquiv(as2, as4, PCase()),   false );
 
-    BOOST_CHECK_EQUAL( NStr::EqualNocase(as1, as2), true );
-    BOOST_CHECK_EQUAL( NStr::EqualNocase(as1, as3), true );
-    BOOST_CHECK_EQUAL( NStr::EqualNocase(as3, as4), false );
-    BOOST_CHECK_EQUAL( NStr::EqualCase(as1, as2),   true );
-    BOOST_CHECK_EQUAL( NStr::EqualCase(as1, as3),   false );
-    BOOST_CHECK_EQUAL( NStr::EqualCase(as2, as4),   false );
+    BOOST_CHECK_EQUAL( NStr::EqualNocase(as1, as2),    true );
+    BOOST_CHECK_EQUAL( NStr::EqualNocase(as1, as3),    true );
+    BOOST_CHECK_EQUAL( NStr::EqualNocase(as3, as4),    false );
+    BOOST_CHECK_EQUAL( NStr::EqualCase(as1, as2),      true );
+    BOOST_CHECK_EQUAL( NStr::EqualCase(as1, as3),      false );
+    BOOST_CHECK_EQUAL( NStr::EqualCase(as2, as4),      false );
+
+
+    // std::string/CTempString with zero symbols inside
+
+    string zs1{ 't', 'e', 0, 's', 't', 0 };
+    string zs2("te");
+
+    BOOST_CHECK_EQUAL( zs1 == zs2,                  false );
+    BOOST_CHECK_EQUAL( NStr::Equal(zs1, zs2),       false );
+    BOOST_CHECK_EQUAL( NStr::EqualCase(zs1, zs2),   false );
+    BOOST_CHECK_EQUAL( NStr::EqualNocase(zs1, zs2), false );
+    BOOST_CHECK_EQUAL( NStr::Equal(zs1, 0, zs1.length(), zs2), false );
+    BOOST_CHECK_EQUAL( NStr::Equal(zs1, 0, zs2.length(), zs2), true  );
 }
 
 
