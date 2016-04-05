@@ -796,6 +796,10 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
         params->flags += SDBConfParams::fUsernameSet;
         params->username = reg.Get(section_name, "username");
     }
+    if (reg.HasEntry(section_name, "password_key", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fPasswordKeySet;
+        params->password_key_id = reg.Get(section_name, "password_key");
+    }
     if (reg.HasEntry(section_name, "password", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fPasswordSet;
         params->password = reg.Get(section_name, "password");
@@ -803,7 +807,7 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
             try {
                 params->password = CNcbiEncrypt::Decrypt(params->password);
             } NCBI_CATCH("Password decryption for " + service_name);
-        } else {
+        } else if (params->password_key_id.empty()) {
             ERR_POST(Warning
                      << "Using unencrypted password for " + service_name);
         }
@@ -815,10 +819,6 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
         // exceptions as necessary.
         params->flags += SDBConfParams::fPasswordFileSet;
         params->password_file = reg.Get(section_name, "password_file");
-    }
-    if (reg.HasEntry(section_name, "password_key", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fPasswordKeySet;
-        params->password_key_id = reg.Get(section_name, "password_key");
     }
     if (reg.HasEntry(section_name, "login_timeout", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fLoginTimeoutSet;
