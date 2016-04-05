@@ -396,7 +396,7 @@ namespace DeBruijn {
                 valley = v;
                 rlimit = rl;
                 genome = g;
-                cerr << valley << " " << rlimit << " " << genome << endl;
+                //                cerr << valley << " " << rlimit << " " << genome << endl;
             }
 
             if(v < 0)
@@ -705,6 +705,7 @@ namespace DeBruijn {
 class CDBGraphDigger {
 public:
     typedef list<string> TStrList;
+    typedef deque<CDBGraph::Successor> TBases;
 
     CDBGraphDigger(CDBGraph& graph, double fraction, int jump, int low_count) : m_graph(graph), m_fraction(fraction), m_jump(jump), m_hist_min(graph.HistogramMinimum()), m_low_count(low_count) { 
         m_max_branch = 200;
@@ -712,10 +713,9 @@ public:
     }
 
 private:
-    typedef deque<CDBGraph::Successor> TBases;
     typedef tuple<TStrList::iterator,int> TContigEnd;
-public:
 
+public:
     void ImproveContigs(TStrList& contigs) {
         int SCAN_WINDOW = 50;  // 0 - no scan
         int kmer_len = m_graph.KmerLen();
@@ -901,7 +901,7 @@ public:
 
     //assembles the contig; changes the state of all used nodes to 'visited'
     string GetContigForKmer(const CDBGraph::Node& initial_node, int clip) {
-        if(m_graph.IsVisited(initial_node) || m_graph.Abundance(initial_node) < m_hist_min)
+        if(m_graph.IsVisited(initial_node) || m_graph.Abundance(initial_node) < m_hist_min || !GoodNode(initial_node))
             return string();
 
         unordered_map<CDBGraph::Node, TContigEnd> landing_spots;
@@ -950,9 +950,8 @@ public:
         return contig;               
     }
 
-    string MostLikelySeq(CDBGraph::Successor base, unsigned len) const {
-        string s(1, base.m_nt);
-        CDBGraph::Node node = base.m_node;
+    string MostLikelyExtension(CDBGraph::Node node, unsigned len) const { //don't do FilterNeighbors because it is called in it
+        string s;
         while(s.size() < len) {
             vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(node);
             if(successors.empty())
@@ -962,7 +961,28 @@ public:
             s.push_back(successors[0].m_nt);
         }
         return s;
+    }            
+
+    string MostLikelySeq(CDBGraph::Successor base, unsigned len) const {
+        string s(1, base.m_nt);
+        return s+MostLikelyExtension(base.m_node, len-1);
     }
+
+    string StringentExtension(CDBGraph::Node node, unsigned len) const {
+        string s;
+        while(s.size() < len) {
+            vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(node);
+            FilterNeighbors(successors);
+            if(successors.size() != 1)
+                return s;            
+            node = successors[0].m_node;
+            s.push_back(successors[0].m_nt);
+        }
+        return s;
+    }
+
+
+    bool GoodNode(const CDBGraph::Node& node) const { return m_graph.Abundance(node) > m_low_count; }
 
     void FilterNeighbors(vector<CDBGraph::Successor>& successors) const {
         if(successors.size() > 1) {
@@ -982,7 +1002,7 @@ public:
                 if(m_graph.GetNodeSeq(successors[j].m_node).substr(m_graph.KmerLen()-3) == "GGT") 
                     target = j;
             }
-            if(target >= 0 && m_graph.Abundance(successors[target].m_node) > m_low_count) {
+            if(target >= 0 && GoodNode(successors[target].m_node)) {
                 double am = m_graph.Abundance(successors[target].m_node)*(1-m_graph.PlusFraction(successors[target].m_node));
                 for(int j = 0; j < (int)successors.size(); ) {
                     if(m_graph.Abundance(successors[j].m_node)*(1-m_graph.PlusFraction(successors[j].m_node)) < m_fraction*am)
@@ -997,7 +1017,7 @@ public:
                 if(MostLikelySeq(successors[j], 3) == "ACC") 
                     target = j;
             }
-            if(target >= 0 && m_graph.Abundance(successors[target].m_node) > m_low_count) {
+            if(target >= 0 && GoodNode(successors[target].m_node)) {
                 double ap = m_graph.Abundance(successors[target].m_node)*m_graph.PlusFraction(successors[target].m_node);
                 for(int j = 0; j < (int)successors.size(); ) {
                     if(m_graph.Abundance(successors[j].m_node)*m_graph.PlusFraction(successors[j].m_node) < m_fraction*ap)
@@ -1013,7 +1033,7 @@ public:
                 double plusf = m_graph.PlusFraction(successors[j].m_node);
                 double minusf = 1.- plusf;
                 //has_both = (min(plusf,minusf) > 0.25);
-                has_both = m_graph.Abundance(successors[j].m_node) > m_low_count && (min(plusf,minusf) > 0.25);
+                has_both = GoodNode(successors[j].m_node) && (min(plusf,minusf) > 0.25);
             }
 
             if(has_both) {
@@ -1029,39 +1049,31 @@ public:
         }
     }
 
-    enum EConnectionStatus {eSuccess, eNoConnection, eAmbiguousConnection, eBrokenConnection};
+    enum EConnectionStatus {eSuccess, eNoConnection, eAmbiguousConnection};
 
     struct SElement {
-        SElement (char nt, SElement* link) : m_link(link), m_nt(nt) {}
+        SElement (CDBGraph::Successor suc, SElement* link) : m_link(link), m_suc(suc) {}
         struct SElement* m_link;   // previous element
-        char m_nt;
+        CDBGraph::Successor m_suc;
     };
 
-    pair<string, EConnectionStatus> ConnectTwoNodes(const CDBGraph::Node& first_node, const CDBGraph::Node& last_node, int steps) const {
-        deque<SElement> storage; // will contain ALL extensions (nothing is deleted)
+    pair<TBases, EConnectionStatus> ConnectTwoNodes(const CDBGraph::Node& first_node, const CDBGraph::Node& last_node, int steps) const {
+        
+        pair<TBases, EConnectionStatus> bases(TBases(), eNoConnection);
 
+        deque<SElement> storage; // will contain ALL extensions (nothing is deleted)
         typedef unordered_map<CDBGraph::Node,SElement*> TElementMap;  //pointer to its own element OR zero if umbiguous path
         TElementMap current_elements;
+
         vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(first_node);
         FilterNeighbors(successors);
         for(auto& suc : successors) {
-            storage.push_back(SElement(suc.m_nt, 0));
+            storage.push_back(SElement(suc, 0));
             current_elements[suc.m_node] = &storage.back();
         }
 
         list<SElement> connections;
         for(int step = 1; step < steps && !current_elements.empty(); ++step) {
-
-            if(current_elements.size() > 1) {
-                int abundance = 0;
-                for(auto& el : current_elements)
-                    abundance = max(abundance, m_graph.Abundance(el.first));
-                if(abundance <= m_low_count) {
-                    connections.clear();
-                    return make_pair(string(), eBrokenConnection);
-                }
-            }
-
             TElementMap new_elements;
             for(auto& el : current_elements) {
                 vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(el.first);
@@ -1069,53 +1081,47 @@ public:
                 if(el.second == 0) {  // umbiguous path
                     for(auto& suc : successors) {
                         new_elements[suc.m_node] = 0;
-                        if(suc.m_node == last_node)
-                            return make_pair(string(), eAmbiguousConnection);
+                        if(suc.m_node == last_node) {
+                            bases.second = eAmbiguousConnection;
+                            return bases;
+                        }
                     }
                 } else {
                     for(auto& suc : successors) {
-                        storage.push_back(SElement(suc.m_nt, el.second));
+                        storage.push_back(SElement(suc, el.second));
                         if(suc.m_node == last_node) {
-                            if(!connections.empty())
-                                return make_pair(string(), eAmbiguousConnection);
-                            else
-                                connections.push_back(storage.back());                            
-                        } else {
-                            pair<TElementMap::iterator, bool> rslt = new_elements.insert(make_pair(suc.m_node, &storage.back()));
-                            if(!rslt.second)
-                                rslt.first->second = 0;
+                            if(!connections.empty()) {
+                                bases.second = eAmbiguousConnection;
+                                return bases;
+                            } else {
+                                connections.push_back(storage.back()); 
+                            }                           
                         }
+
+                        pair<TElementMap::iterator, bool> rslt = new_elements.insert(make_pair(suc.m_node, &storage.back()));
+                        if(!rslt.second || !GoodNode(suc.m_node))
+                            rslt.first->second = 0;
+                        
                     }
                 }                    
             }
 
             swap(current_elements, new_elements);
-
-            bool still_can_connect = false;
-            for(auto& el: current_elements) {
-                if(el.second != 0) {
-                    still_can_connect = true;
-                    break;
-                }
-            }
-            if((!still_can_connect && connections.empty()) || current_elements.size() > m_max_branch) {
-                connections.clear();
-                return make_pair(string(), eNoConnection);
-            }
+            if(current_elements.size() > m_max_branch)
+                return bases;
         }
 
         if(connections.empty())
-            return make_pair(string(), eNoConnection);
+            return bases;
 
-        string seq;
         SElement el = connections.front();
         while(el.m_link != 0) {
-            seq.push_back(el.m_nt);
+            bases.first.push_front(el.m_suc);
             el = *el.m_link;
         }
-        seq.push_back(el.m_nt);
-        reverse(seq.begin(), seq.end());
-        return make_pair(seq, eSuccess);
+        bases.first.push_front(el.m_suc);
+        bases.second = eSuccess;
+        return bases;
     }
 
 private:
@@ -1186,12 +1192,6 @@ private:
             if(len == max_extent)
                 break;
             
-            int abundance = 0;
-            for(auto& e : extensions)
-                abundance = max(abundance, m_graph.Abundance(e.first));
-            if(abundance <= m_low_count)
-                break;
-            
             if(!OneStepBranchExtend(extensions, sequences) || extensions.empty())  // ambiguos buble in a or can't extend
                 return TBases();
 
@@ -1201,8 +1201,15 @@ private:
 
         if(extensions.size() == 1 && !get<1>(extensions.begin()->second)) {
             TSeqList::iterator is = get<0>(extensions.begin()->second);
-            TBases& bases = get<0>(*is);            
-            if(bases.front().m_nt == successors[0].m_nt && m_graph.Abundance(bases.back().m_node) > m_low_count) // the variant with higher abundance survived
+            TBases& bases = get<0>(*is);
+            bool all_good = true;
+            for(auto& base : bases) {
+                if(!GoodNode(base.m_node)) {
+                    all_good = false;
+                    break;
+                }
+            }
+            if(bases.front().m_nt == successors[0].m_nt && all_good) // the variant with higher abundance survived
                 return bases;            
         }
 
@@ -1229,6 +1236,16 @@ private:
                 step.push_back(successors.front());
             }
             if(step.empty())                    // multiple extensions
+                break;
+
+            bool all_good = true;
+            for(auto& s : step) {
+                if(!GoodNode(s.m_node)) {
+                    all_good = false;
+                    break;
+                }
+            }
+            if(!all_good)
                 break;
 
             int step_size = step.size();
