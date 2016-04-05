@@ -37,6 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 struct SNetStorageObjectRWStream : public CRWStream
 {
     SNetStorageObjectRWStream(SNetStorageObjectImpl* nst_object) :
@@ -183,27 +184,27 @@ CNetStorageByKey::CNetStorageByKey(const string& init_string,
 CNetStorageObject CNetStorageByKey::Open(const string& unique_key,
         TNetStorageFlags flags)
 {
-    SNetStorage::CheckUserKey(unique_key);
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SUserKey>(unique_key);
     return m_Impl->Open(unique_key, flags);
 }
 
 string CNetStorageByKey::Relocate(const string& unique_key,
         TNetStorageFlags flags, TNetStorageFlags old_flags)
 {
-    SNetStorage::CheckUserKey(unique_key);
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SUserKey>(unique_key);
     return m_Impl->Relocate(unique_key, flags, old_flags);
 }
 
 bool CNetStorageByKey::Exists(const string& key, TNetStorageFlags flags)
 {
-    SNetStorage::CheckUserKey(key);
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SUserKey>(key);
     return m_Impl->Exists(key, flags);
 }
 
 ENetStorageRemoveResult CNetStorageByKey::Remove(const string& key,
         TNetStorageFlags flags)
 {
-    SNetStorage::CheckUserKey(key);
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SUserKey>(key);
     return m_Impl->Remove(key, flags);
 }
 

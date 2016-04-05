@@ -650,19 +650,7 @@ void SNetStorage::SConfig::ParseArg(const string& name, const string& value)
 
 void SNetStorage::SConfig::Validate(const string& init_string)
 {
-    if (app_domain.length() > 32) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Namespace exceeds maximum length of 32 characters: " <<
-                app_domain);
-    }
-
-    auto valid_char = [](char c)->bool { return isalnum(c) || c == '_'; };
-
-    if (!all_of(app_domain.begin(), app_domain.end(), valid_char)) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Namespace may only contain alphanumeric or underscore: " <<
-                app_domain);
-    }
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SNamespace>(app_domain);
 
     if (client_name.empty()) {
         CNcbiApplication* app = CNcbiApplication::Instance();
@@ -1537,19 +1525,6 @@ SNetStorageByKeyImpl* SNetStorage::CreateByKeyImpl(const SConfig& config,
         TNetStorageFlags default_flags)
 {
     return new SNetStorageByKeyRPC(config, default_flags);
-}
-
-void SNetStorage::CheckUserKey(const string& key)
-{
-    if (key.length() > 256) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "User key exceeds maximum length of 256 characters: " << key);
-    }
-
-    if (!all_of(key.begin(), key.end(), ::isprint)) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "User key may only contain printable characters: " << key);
-    }
 }
 
 END_NCBI_SCOPE

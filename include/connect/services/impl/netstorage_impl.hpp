@@ -37,6 +37,8 @@
 #include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/netstorage.hpp>
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 
 /// @internal
@@ -78,10 +80,10 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl :
 struct NCBI_XCONNECT_EXPORT SNetStorage
 {
     struct SConfig;
+    struct SLimits;
 
     static SNetStorageImpl* CreateImpl(const SConfig&, TNetStorageFlags);
     static SNetStorageByKeyImpl* CreateByKeyImpl(const SConfig&, TNetStorageFlags);
-    static void CheckUserKey(const string& key);
 };
 
 /// @internal
@@ -137,6 +139,53 @@ protected:
 private:
     static EDefaultStorage GetDefaultStorage(const string&);
     static EErrMode GetErrMode(const string&);
+};
+
+/// @internal
+struct NCBI_XCONNECT_EXPORT SNetStorage::SLimits
+{
+    struct SNamespace
+    {
+        static string   Name()          { return "Namespace"; }
+        static size_t   MaxLength()     { return 32; }
+        static bool     IsValid(char c) { return isalnum(c) || c == '_'; };
+    };
+
+    struct SUserKey
+    {
+        static string   Name()          { return "User key"; }
+        static size_t   MaxLength()     { return 256; }
+        static bool     IsValid(char c) { return ::isprint(c); };
+    };
+
+    struct SAttrName
+    {
+        static string   Name()          { return "Attribute name"; }
+        static size_t   MaxLength()     { return 64; }
+        static bool     IsValid(char c) { return isalnum(c) || c == '_'; };
+    };
+
+    struct SAttrValue
+    {
+        static string   Name()          { return "Attribute value"; }
+        static size_t   MaxLength()     { return 900; }
+        static bool     IsValid(char c) { return true; };
+    };
+
+    template <class TValue>
+    static void Check(const string& value)
+    {
+        if (value.length() > TValue::MaxLength()) {
+            NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                    TValue::Name() << " exceeds maximum allowed length of " <<
+                    TValue::MaxLength() << " characters: " << value);
+        }
+
+        if (!all_of(value.begin(), value.end(), TValue::IsValid)) {
+            NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                    TValue::Name() << " contains illegal characters: " << value);
+        }
+    }
 };
 
 /// @internal
