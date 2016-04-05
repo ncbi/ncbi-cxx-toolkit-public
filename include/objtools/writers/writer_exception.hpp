@@ -43,6 +43,7 @@ public:
         /// Argument validation failed
         eArgErr,
         eBadInput,
+        eInterrupted,
         eInternal,
     };
     
@@ -53,6 +54,8 @@ public:
             return "eArgErr";
         case eBadInput:
             return "eBadInput";
+        case eInterrupted:
+            return "eInterrpted";
         case eInternal:
             return "eInternal";
         default:

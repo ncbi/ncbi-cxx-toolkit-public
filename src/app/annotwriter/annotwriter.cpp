@@ -89,6 +89,19 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+//#define CANCELER_CODE
+#if defined(CANCELER_CODE)
+#include <conio.h>
+//  ============================================================================
+class TestCanceler: public ICanceled
+//  ============================================================================
+{
+    bool IsCanceled() const { 
+        return kbhit(); 
+    };
+};
+#endif
+
 //  ----------------------------------------------------------------------------
 class CAnnotWriterApp : public CNcbiApplication
 //  ----------------------------------------------------------------------------
@@ -105,7 +118,7 @@ private:
     CWriterBase* xInitWriter(
         const CArgs&,
         CNcbiOstream* );
-
+    
     bool xTryProcessInputId(
         const CArgs& );
     bool xTryProcessInputFile(
@@ -268,7 +281,10 @@ int CAnnotWriterApp::Run()
     try {
         CNcbiOstream* pOs = xInitOutputStream(args);
         m_pWriter.Reset(xInitWriter(args, pOs));
-
+#if defined(CANCELER_CODE)
+        TestCanceler canceller;
+        m_pWriter->SetCanceler(&canceller);
+#endif
         if (xTryProcessInputId(args)) {
             pOs->flush();
             return 0;
@@ -522,6 +538,7 @@ bool CAnnotWriterApp::xTryProcessSeqAlign(
         m_pWriter->WriteHeader();
     }
     m_pWriter->WriteAlign( align, xAssemblyName(), xAssemblyAccession());
+
     m_pWriter->WriteFooter();
     return true;
 }

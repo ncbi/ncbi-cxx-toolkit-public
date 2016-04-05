@@ -42,6 +42,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 
+#include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/bed_track_record.hpp>
 #include <objtools/writers/bed_feature_record.hpp>
@@ -103,6 +104,12 @@ bool CBedWriter::WriteAnnot(
     SAnnotSelector sel = xGetAnnotSelector();
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot(annot);
     for (CFeat_CI pMf(sah, sel); pMf; ++pMf ) {
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
         if (!xWriteFeature(track, *pMf)) {
             m_Scope.RemoveSeq_annot(sah);
             return false;

@@ -33,6 +33,7 @@
 #define OBJTOOLS_WRITERS___WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <util/icanceled.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
@@ -62,7 +63,8 @@ protected:
         CNcbiOstream& ostr,
         unsigned int uFlags=0 ) :
         m_Os( ostr ),
-        m_uFlags( uFlags )
+        m_uFlags( uFlags ),
+        mpCancelled(0)
     {};
 public:
     virtual ~CWriterBase()
@@ -177,10 +179,20 @@ public:
     ///
     virtual bool WriteFooter() { return true; };
 
+    void SetCanceler(
+        ICanceled* pCanceller) { mpCancelled = pCanceller; };
+
+    bool IsCanceled() const {
+        if (0 == mpCancelled) {
+            return false;
+        }
+        return mpCancelled->IsCanceled();
+    };
 
 protected:
     CNcbiOstream& m_Os;
     unsigned int m_uFlags;
+    ICanceled* mpCancelled;
 };
 
 END_objects_SCOPE
