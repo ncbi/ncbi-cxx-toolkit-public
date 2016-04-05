@@ -799,6 +799,14 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
     if (reg.HasEntry(section_name, "password", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fPasswordSet;
         params->password = reg.Get(section_name, "password");
+        if (CNcbiEncrypt::IsEncrypted(params->password)) {
+            try {
+                params->password = CNcbiEncrypt::Decrypt(params->password);
+            } NCBI_CATCH("Password decryption for " + service_name);
+        } else {
+            ERR_POST(Warning
+                     << "Using unencrypted password for " + service_name);
+        }
     }
     if (reg.HasEntry(section_name, "password_file",
                      IRegistry::fCountCleared)) {
