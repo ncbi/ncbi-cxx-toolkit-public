@@ -56,7 +56,7 @@ typedef limited_size_map<int, string> TMap;
 void check(const TMap& m, CTempString elems)
 {
     list<CTempString> ee;
-    NStr::Split(elems, ",", ee);
+    NStr::Split(elems, ",", ee, NStr::fSplit_Tokenize);
     _ASSERT(ee.size() == m.size());
     TMap::const_iterator m_it = m.begin();
     ITERATE ( list<CTempString>, it, ee ) {
@@ -74,7 +74,7 @@ void check(const TMap& m, CTempString elems)
 void check(TMap& m, CTempString elems)
 {
     list<CTempString> ee;
-    NStr::Split(elems, ",", ee);
+    NStr::Split(elems, ",", ee, NStr::fSplit_Tokenize);
     _ASSERT(ee.size() == m.size());
     TMap::iterator m_it = m.begin();
     ITERATE ( list<CTempString>, it, ee ) {

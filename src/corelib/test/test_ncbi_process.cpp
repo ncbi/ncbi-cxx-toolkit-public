@@ -180,8 +180,6 @@ static void Test_PIDGuard(int ppid, string lockfile)
     } else if (ppid == -2) {
         // Reuse lockfile in the child process
         CPIDGuard guard(lockfile);
-        TPid old_pid = guard.GetOldPID(); // -- always 0
-        assert(old_pid == 0);
     } else {
         _TROUBLE;
     }

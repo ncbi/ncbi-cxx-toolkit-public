@@ -133,7 +133,7 @@ public:
         const char* kCFParam_timestamp_check_expiration   = "check_expiration";
 
         list<string> opt;
-        NStr::Split(options, " \t", opt);
+        NStr::Split(options, " \t", opt, NStr::fSplit_Tokenize);
         ICache::TTimeStampFlags ts_flag = 0;
         ITERATE(list<string>, it, opt) {
             const string& opt_value = *it;

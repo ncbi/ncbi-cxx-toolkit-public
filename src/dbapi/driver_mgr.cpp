@@ -127,7 +127,7 @@ IDataSource* CDriverManager::CreateDsFrom(const string&    drivers,
     CMutexGuard mg(m_Mutex);
 
     list<string> names;
-    NStr::Split(drivers, ":", names);
+    NStr::Split(drivers, ":", names, NStr::fSplit_Tokenize);
 
     list<string>::iterator i_name = names.begin();
     for( ; i_name != names.end(); ++i_name ) {

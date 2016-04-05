@@ -1287,7 +1287,7 @@ CNcbiTestApplication::x_InitCommonParserVars(void)
     }
     // Split $FEATURES to tokens
     list<string> features_list;
-    NStr::Split(features_str, " ", features_list);
+    NStr::Split(features_str, " ", features_list, NStr::fSplit_Tokenize);
     // Convert list<> to set<> to speed up a search
     typedef set<string> TFeatures;
     TFeatures features;

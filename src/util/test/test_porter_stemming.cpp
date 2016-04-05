@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(TestPorterStemming)
         list<string> tokens;
         string line;
         while (NcbiGetlineEOL(istr, line)) {
-            NStr::Split(line, ".[]{};:()!@#$%^&* \t", tokens);
+            NStr::Split(line, ".[]{};:()!@#$%^&* \t", tokens, NStr::fSplit_Tokenize);
         }
 
         cerr << "Found " << tokens.size() << " items to tokenize..." << endl;
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(TestPorterStemming)
         string line;
         while (NcbiGetlineEOL(istr, line)) {
             list<string> toks;
-            NStr::Split(line, "\t", toks);
+            NStr::Split(line, "\t", toks, NStr::fSplit_Tokenize);
             if (toks.size() != 2) {
                 NCBI_THROW(CException, eUnknown,
                            "invalid input line: " + line);

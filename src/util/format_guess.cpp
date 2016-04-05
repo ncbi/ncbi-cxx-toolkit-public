@@ -1022,7 +1022,7 @@ CFormatGuess::TestFormatDistanceMatrix(
     list<string> toks;
 
     /// first line: one token, one number
-    NStr::Split(*iter++, "\t ", toks);
+    NStr::Split(*iter++, "\t ", toks, NStr::fSplit_Tokenize);
     if (toks.size() != 1  ||
         toks.front().find_first_not_of("0123456789") != string::npos) {
         return false;
@@ -1033,7 +1033,7 @@ CFormatGuess::TestFormatDistanceMatrix(
     // line, the number of values should increase monotonically
     for (size_t i = 1;  iter != m_TestLines.end();  ++i, ++iter) {
         toks.clear();
-        NStr::Split(*iter, "\t ", toks);
+        NStr::Split(*iter, "\t ", toks, NStr::fSplit_Tokenize);
         if (toks.size() != i) {
             /// we can ignore the last line ; it may be truncated
             list<string>::const_iterator it = iter;
@@ -1189,7 +1189,7 @@ CFormatGuess::TestFormatAlignment(
         }
 
         toks.clear();
-        NStr::Split(*iter, delims, toks);
+        NStr::Split(*iter, delims, toks, NStr::fSplit_Tokenize);
         ncols = toks.size();
         found = true;
     }
@@ -1206,7 +1206,7 @@ CFormatGuess::TestFormatAlignment(
         } 
 
         toks.clear();
-        NStr::Split(*iter, delims, toks);
+        NStr::Split(*iter, delims, toks, NStr::fSplit_Tokenize);
         if (toks.size() != ncols) {
             list<string>::const_iterator it = iter;
             ++it;
@@ -1348,8 +1348,8 @@ CFormatGuess::TestFormatTextAsn(
 
     while ( ! TestBuffer.fail() ) {
         vector<string> Fields;
-        NcbiGetline( TestBuffer, strLine, "\n\r" );
-        NStr::Tokenize( strLine, " \t", Fields, NStr::eMergeDelims );
+        NcbiGetline(TestBuffer, strLine, "\n\r");
+        NStr::Split(strLine, " \t", Fields, NStr::fSplit_Tokenize);
         if ( IsAsnComment( Fields  ) ) {
             continue;
         }
@@ -1426,7 +1426,7 @@ CFormatGuess::TestFormatBed(
         }
 
         vector<string> columns;
-        NStr::Tokenize( str, " \t", columns, NStr::eMergeDelims );
+        NStr::Split(str, " \t", columns, NStr::fSplit_Tokenize);
         if (columns.size() < 3 || columns.size() > 12) {
             return false;
         }
@@ -1479,7 +1479,7 @@ CFormatGuess::TestFormatBed15(
         }
 
         vector<string> columns;
-        NStr::Tokenize( *it, " \t", columns, NStr::eMergeDelims );
+        NStr::Split(*it, " \t", columns, NStr::fSplit_Tokenize);
         if ( columns.size() != columncount ) {
             return false;
         } else {
@@ -2015,7 +2015,7 @@ bool CFormatGuess::IsLineAgp(
     }
 
     vector<string> tokens;
-    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+    if ( NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize).size() < 8 ) {
         return false;
     }
 
@@ -2072,7 +2072,7 @@ bool CFormatGuess::IsLineGlimmer3(
     const string& line )
 {
     list<string> toks;
-    NStr::Split(line, "\t ", toks);
+    NStr::Split(line, "\t ", toks, NStr::fSplit_Tokenize);
     if (toks.size() != 5) {
         return false;
     }
@@ -2113,7 +2113,7 @@ bool CFormatGuess::IsLineGtf(
     const string& line )
 {
     vector<string> tokens;
-    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+    if ( NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize).size() < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {
@@ -2145,7 +2145,7 @@ bool CFormatGuess::IsLineGvf(
 //  ----------------------------------------------------------------------------
 {
     vector<string> tokens;
-    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+    if ( NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize).size() < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {
@@ -2220,7 +2220,7 @@ bool CFormatGuess::IsLineGff3(
     const string& line )
 {
     vector<string> tokens;
-    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+    if ( NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize).size() < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {
@@ -2264,7 +2264,7 @@ bool CFormatGuess::IsLineGff2(
     const string& line )
 {
     vector<string> tokens;
-    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+    if ( NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize).size() < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {
@@ -2291,7 +2291,7 @@ bool CFormatGuess::IsLinePhrapId(
     const string& line )
 {
     vector<string> values;
-    if ( NStr::Tokenize( line, " \t", values, NStr::eMergeDelims ).empty() ) {
+    if ( NStr::Split(line, " \t", values, NStr::fSplit_Tokenize).empty() ) {
         return false;
     }
 
@@ -2324,7 +2324,7 @@ bool CFormatGuess::IsLineRmo(
     //  Make sure there is enough stuff on that line:
     //
     list<string> values;
-    if ( NStr::Split( line, " \t", values ).size() < MIN_VALUES_PER_RECORD ) {
+    if ( NStr::Split(line, " \t", values, NStr::fSplit_Tokenize).size() < MIN_VALUES_PER_RECORD ) {
         return false;
     }
 
@@ -2428,14 +2428,14 @@ CFormatGuess::EnsureSplitLines()
     string data( m_pTestBuffer, (size_t)m_iTestDataSize );
     m_TestLines.clear();
 
-    if ( string::npos != data.find( "\r\n" ) ) {
-        NStr::Split( data, "\r\n", m_TestLines );
+    if ( string::npos != data.find("\r\n") ) {
+        NStr::Split(data, "\r\n", m_TestLines, NStr::fSplit_Tokenize);
     }
-    else if ( string::npos != data.find( "\n" ) ) {
-        NStr::Split( data, "\n", m_TestLines );
+    else if ( string::npos != data.find("\n") ) {
+        NStr::Split(data, "\n", m_TestLines, NStr::fSplit_Tokenize);
     }
-    else if ( string::npos != data.find( "\r" ) ) {
-        NStr::Split( data, "\r", m_TestLines );
+    else if ( string::npos != data.find("\r") ) {
+        NStr::Split(data, "\r", m_TestLines, NStr::fSplit_Tokenize);
     }
     else {
         //single truncated line
