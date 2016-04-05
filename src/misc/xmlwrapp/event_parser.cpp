@@ -48,7 +48,6 @@
 #endif
 
 // xmlwrapp includes
-#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/event_parser.hpp>
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/exception.hpp>
@@ -318,9 +317,9 @@ bool event_parser::parse_file (const char *filename, error_messages* messages,
 //####################################################################
 bool event_parser::parse_stream (std::istream &stream, error_messages* messages,
                                  warnings_as_errors_type how) {
-    char buffer[const_buffer_size];
-    error_messages* temp(messages);
-    std::auto_ptr<error_messages>   msgs;
+    char                                buffer[const_buffer_size];
+    error_messages *                    temp(messages);
+    std::unique_ptr<error_messages>     msgs;
     if (!messages)
         msgs.reset(temp = new error_messages);
 
@@ -360,8 +359,8 @@ bool event_parser::parse_stream (std::istream &stream, error_messages* messages,
 bool event_parser::parse_chunk (const char *chunk, size_type length,
                                 error_messages* messages,
                                 warnings_as_errors_type how) {
-    error_messages* temp(messages);
-    std::auto_ptr<error_messages>   msgs;
+    error_messages *                    temp(messages);
+    std::unique_ptr<error_messages>     msgs;
     if (!messages)
         msgs.reset(temp = new error_messages);
     else

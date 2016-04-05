@@ -36,7 +36,6 @@
 **/
 
 // xmlwrapp includes
-#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/schema.hpp>
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/exception.hpp>
@@ -75,9 +74,9 @@ schema::schema (const char* filename,
     if (!filename)
         throw xml::exception("invalid file name");
 
-    std::auto_ptr<schema_impl> ap(pimpl_ = new schema_impl);
-    error_messages *    temp(messages);
-    std::auto_ptr<error_messages>   msgs;
+    std::unique_ptr<schema_impl>        ap(pimpl_ = new schema_impl);
+    error_messages *                    temp(messages);
+    std::unique_ptr<error_messages>     msgs;
     if (!messages)
         msgs.reset(temp = new error_messages);
 
@@ -91,9 +90,9 @@ schema::schema (const char* data, size_type size,
     if (!data)
         throw xml::exception("invalid data pointer");
 
-    std::auto_ptr<schema_impl> ap(pimpl_ = new schema_impl);
-    error_messages *    temp(messages);
-    std::auto_ptr<error_messages>   msgs;
+    std::unique_ptr<schema_impl>        ap(pimpl_ = new schema_impl);
+    error_messages *                    temp(messages);
+    std::unique_ptr<error_messages>     msgs;
     if (!messages)
         msgs.reset(temp = new error_messages);
 
@@ -110,8 +109,8 @@ bool schema::validate (const document& doc,
         throw std::bad_alloc();
     }
 
-    error_messages* temp(messages);
-    std::auto_ptr<error_messages>   msgs;
+    error_messages *                    temp(messages);
+    std::unique_ptr<error_messages>     msgs;
     if (!messages)
         msgs.reset(temp = new error_messages);
     else

@@ -36,7 +36,6 @@
 **/
 
 // xmlwrapp includes
-#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/dtd.hpp>
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/exception.hpp>
@@ -90,7 +89,7 @@ dtd::dtd (const char* filename, error_messages* messages,
 {
     if (!filename)
         throw xml::exception("invalid file name");
-    std::auto_ptr<dtd_impl> ap(pimpl_ = new dtd_impl);
+    std::unique_ptr<dtd_impl> ap(pimpl_ = new dtd_impl);
 
     if (messages)
         messages->get_messages().clear();
@@ -121,8 +120,8 @@ bool dtd::validate (const document& doc, error_messages* messages,
     if (!pimpl_->dtd_)
         throw xml::exception("dtd has not been loaded");
 
-    error_messages *    temp(messages);
-    std::auto_ptr<error_messages>   msgs;
+    error_messages *                    temp(messages);
+    std::unique_ptr<error_messages>     msgs;
     if (!messages)
         msgs.reset(temp = new error_messages);
 

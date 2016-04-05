@@ -44,7 +44,6 @@
 **/
 
 // xmlwrapp includes
-#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/attributes.hpp>
 #include <misc/xmlwrapp/node_set.hpp>
@@ -380,96 +379,104 @@ namespace {
     }
 }
 //####################################################################
-xml::node::node (int) {
-    pimpl_ = new node_impl;
-}
+xml::node::node (int) :
+    pimpl_(new node_impl)
+{}
 //####################################################################
-xml::node::node (void) {
-    std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
-
+xml::node::node (void) :
+    pimpl_(new node_impl)
+{
     pimpl_->xmlnode_ = xmlNewNode(0, reinterpret_cast<const xmlChar*>("blank"));
-    if (!pimpl_->xmlnode_) throw std::bad_alloc();
-
-    ap.release();
+    if (!pimpl_->xmlnode_) {
+        delete pimpl_;
+        throw std::bad_alloc();
+    }
 }
 //####################################################################
-xml::node::node (const char *name) {
-    std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
-
+xml::node::node (const char *name) :
+    pimpl_(new node_impl)
+{
     pimpl_->xmlnode_ = xmlNewNode(0, reinterpret_cast<const xmlChar*>(name));
-    if (!pimpl_->xmlnode_) throw std::bad_alloc();
-
-    ap.release();
+    if (!pimpl_->xmlnode_) {
+        delete pimpl_;
+        throw std::bad_alloc();
+    }
 }
 //####################################################################
-xml::node::node (const char *name, const char *content) {
-    std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
-
+xml::node::node (const char *name, const char *content) :
+    pimpl_(new node_impl)
+{
     pimpl_->xmlnode_ = xmlNewNode(0, reinterpret_cast<const xmlChar*>(name));
-    if (!pimpl_->xmlnode_) throw std::bad_alloc();
+    if (!pimpl_->xmlnode_) {
+        delete pimpl_;
+        throw std::bad_alloc();
+    }
 
     xmlNodePtr content_node = xmlNewText(reinterpret_cast<const xmlChar*>(content));
-    if (!content_node) throw std::bad_alloc();
+    if (!content_node) {
+        delete pimpl_;
+        throw std::bad_alloc();
+    }
 
     if (!xmlAddChild(pimpl_->xmlnode_, content_node)) {
         xmlFreeNode(content_node);
+        delete pimpl_;
         throw std::bad_alloc();
     }
-
-    ap.release();
 }
 //####################################################################
-xml::node::node (cdata cdata_info) {
-    std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
-
-    if ( (pimpl_->xmlnode_ = xmlNewCDataBlock(0, reinterpret_cast<const xmlChar*>(cdata_info.t),
-                                              static_cast<int>(std::strlen(cdata_info.t)))) == 0) {
+xml::node::node (cdata cdata_info) :
+    pimpl_(new node_impl)
+{
+    if ( (pimpl_->xmlnode_ =
+            xmlNewCDataBlock(0, reinterpret_cast<const xmlChar*>(cdata_info.t),
+                             static_cast<int>(std::strlen(
+                                                    cdata_info.t)))) == 0) {
+        delete pimpl_;
         throw std::bad_alloc();
     }
-
-    ap.release();
 }
 //####################################################################
-xml::node::node (comment comment_info) {
-    std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
-
-    if ( (pimpl_->xmlnode_ =  xmlNewComment(reinterpret_cast<const xmlChar*>(comment_info.t))) == 0) {
+xml::node::node (comment comment_info) :
+    pimpl_(new node_impl)
+{
+    if ( (pimpl_->xmlnode_ =
+            xmlNewComment(reinterpret_cast<const xmlChar*>(
+                                                    comment_info.t))) == 0) {
+        delete pimpl_;
         throw std::bad_alloc();
     }
-
-    ap.release();
 }
 //####################################################################
-xml::node::node (pi pi_info) {
-    std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
-
+xml::node::node (pi pi_info) :
+    pimpl_(new node_impl)
+{
     if ( (pimpl_->xmlnode_ =
             xmlNewPI(reinterpret_cast<const xmlChar*>(pi_info.n),
                      reinterpret_cast<const xmlChar*>(pi_info.c))) == 0) {
+        delete pimpl_;
         throw std::bad_alloc();
     }
-
-    ap.release();
 }
 //####################################################################
-xml::node::node (text text_info) {
-    std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
-
+xml::node::node (text text_info) :
+    pimpl_(new node_impl)
+{
     if ( (pimpl_->xmlnode_ =
             xmlNewText(reinterpret_cast<const xmlChar*>(text_info.t))) == 0) {
+        delete pimpl_;
         throw std::bad_alloc();
     }
-
-    ap.release();
 }
 //####################################################################
-xml::node::node (const node &other) {
-    std::auto_ptr<node_impl> ap(pimpl_ = new node_impl);
-
+xml::node::node (const node &other) :
+    pimpl_(new node_impl)
+{
     pimpl_->xmlnode_ = xmlCopyNode(other.pimpl_->xmlnode_, 1);
-    if (!pimpl_->xmlnode_) throw std::bad_alloc();
-
-    ap.release();
+    if (!pimpl_->xmlnode_) {
+        delete pimpl_;
+        throw std::bad_alloc();
+    }
 } /* NCBI_FAKE_WARNING */
 //####################################################################
 xml::node& xml::node::assign (const node &other) {

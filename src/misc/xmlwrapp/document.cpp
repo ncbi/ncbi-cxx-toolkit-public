@@ -42,7 +42,6 @@
 **/
 
 // xmlwrapp includes
-#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/dtd.hpp>
@@ -303,7 +302,7 @@ xml::document::document (const char *               filename,
         sax.ignorableWhitespace =  cb_tree_parser_ignore;
 
     error_messages *                temp(messages);
-    std::auto_ptr<error_messages>   msgs;
+    std::unique_ptr<error_messages> msgs;
     if (!messages)
         msgs.reset(temp = new error_messages);
     else
@@ -367,7 +366,7 @@ xml::document::document (const char *               data,
     ctxt->sax = &sax;
 
     error_messages *                temp(messages);
-    std::auto_ptr<error_messages>   msgs;
+    std::unique_ptr<error_messages> msgs;
     if (!messages)
         msgs.reset(temp = new error_messages);
     else
@@ -397,7 +396,7 @@ xml::document::document (const char *root_name) :
 {}
 //####################################################################
 xml::document::document (const node &n) {
-    std::auto_ptr<doc_impl> ap(pimpl_ = new doc_impl);
+    std::unique_ptr<doc_impl> ap(pimpl_ = new doc_impl);
     pimpl_->set_root_node(n);
     ap.release();
 }
@@ -433,7 +432,7 @@ xml::document::document (std::istream &           stream,
 
     /* Make sure we have where to collect messages */
     error_messages *                temp(messages);
-    std::auto_ptr<error_messages>   msgs;
+    std::unique_ptr<error_messages> msgs;
     if (!messages)
         msgs.reset(temp = new error_messages);
     else
@@ -598,7 +597,7 @@ const xml::dtd& xml::document::get_external_subset (void) const {
 bool document::validate (error_messages *  messages_,
                          warnings_as_errors_type how) const {
     error_messages *                temp(messages_);
-    std::auto_ptr<error_messages>   msgs;
+    std::unique_ptr<error_messages> msgs;
     if (!messages_)
         msgs.reset(temp = new error_messages);
 

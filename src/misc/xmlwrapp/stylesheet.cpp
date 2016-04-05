@@ -42,7 +42,6 @@
 **/
 
 // xmlwrapp includes
-#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/stylesheet.hpp>
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/exception.hpp>
@@ -461,7 +460,7 @@ xslt::stylesheet::stylesheet(const char *filename)
     if (!filename)
         throw xslt::exception("invalid file name");
 
-    std::auto_ptr<impl::stylesheet_impl>
+    std::unique_ptr<impl::stylesheet_impl>
                     ap(pimpl_ = new impl::stylesheet_impl);
     xml::error_messages msgs;
     xml::document       doc(filename, &msgs, xml::type_warnings_not_errors);
@@ -494,7 +493,7 @@ xslt::stylesheet::stylesheet(const xml::document &  doc)
     xml::document           doc_copy(doc);  /* NCBI_FAKE_WARNING */
     xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(
                                                 doc_copy.get_doc_data());
-    std::auto_ptr<impl::stylesheet_impl>
+    std::unique_ptr<impl::stylesheet_impl>
                             ap(pimpl_ = new impl::stylesheet_impl);
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
@@ -522,7 +521,7 @@ xslt::stylesheet::stylesheet(const xml::document &  doc)
 
 xslt::stylesheet::stylesheet (const char* data, size_t size)
 {
-    std::auto_ptr<impl::stylesheet_impl>
+    std::unique_ptr<impl::stylesheet_impl>
                             ap(pimpl_ = new impl::stylesheet_impl);
     xml::error_messages     msgs;
     xml::document           doc(data, size, &msgs,
@@ -553,7 +552,7 @@ xslt::stylesheet::stylesheet (const char* data, size_t size)
 
 xslt::stylesheet::stylesheet (std::istream & stream)
 {
-    std::auto_ptr<impl::stylesheet_impl>
+    std::unique_ptr<impl::stylesheet_impl>
                             ap(pimpl_ = new impl::stylesheet_impl);
     xml::error_messages     msgs;
     xml::document           doc(stream, &msgs, xml::type_warnings_not_errors);
