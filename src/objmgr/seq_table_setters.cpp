@@ -181,7 +181,7 @@ CSeqTableSetExt::CSeqTableSetExt(const CTempString& fullname)
     : name(fullname.substr(2))
 {
     if ( name.find('.') != NPOS ) {
-        NStr::Tokenize(name, ".", subfields);
+        NStr::Split(name, ".", subfields);
         name = subfields.back();
         subfields.pop_back();
     }
