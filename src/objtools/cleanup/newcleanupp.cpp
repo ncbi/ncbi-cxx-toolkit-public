@@ -10534,6 +10534,8 @@ bool CNewCleanup_imp::s_ShouldRemoveKeyword(const string& keyword, CMolInfo::TTe
         return true;
     } else if (tech == CMolInfo::eTech_sts && NStr::Equal(keyword, "STS")) {
         return true;
+    } else if (tech == CMolInfo::eTech_survey && NStr::Equal(keyword, "GSS")) {
+        return true;
     } else {
         return false;
     }
@@ -10560,6 +10562,65 @@ bool CNewCleanup_imp::x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tec
         any_change = true;
     }
     return any_change;
+}
+
+
+bool s_SetMolinfoTechFromString(CMolInfo& molinfo, const string& keyword)
+{
+    if (NStr::Equal(keyword, "HTGS_PHASE0")) {
+        molinfo.SetTech(CMolInfo::eTech_htgs_0);
+        return true;
+    } else if (NStr::Equal(keyword, "HTGS_PHASE1")) {
+        molinfo.SetTech(CMolInfo::eTech_htgs_1);
+        return true;
+    } else if (NStr::Equal(keyword, "HTGS_PHASE2")) {
+        molinfo.SetTech(CMolInfo::eTech_htgs_2);
+        return true;
+    } else if (NStr::Equal(keyword, "HTGS_PHASE3")) {
+        molinfo.SetTech(CMolInfo::eTech_htgs_3);
+        return true;
+    } else if (NStr::Equal(keyword, "EST")) {
+        molinfo.SetTech(CMolInfo::eTech_est);
+        return true;
+    } else if (NStr::Equal(keyword, "STS")) {
+        molinfo.SetTech(CMolInfo::eTech_sts);
+        return true;
+    } else if (NStr::Equal(keyword, "GSS")) {
+        molinfo.SetTech(CMolInfo::eTech_survey);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+// if molinfo is missing tech, try to set it using GB_block.div
+// note - may want to also do this with keywords later
+void CNewCleanup_imp::x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr, CGB_block& block)
+{
+    if (!block.IsSetDiv())
+    {
+        return;
+    }
+    NON_CONST_ITERATE(CSeq_descr::Tdata, it, seq_descr.Set()) {
+        if ((*it)->IsMolinfo() &&
+            !(*it)->GetMolinfo().IsSetTech()) {
+            if (block.IsSetDiv() && s_SetMolinfoTechFromString((*it)->SetMolinfo(), block.GetDiv())) {
+                block.ResetDiv();
+                ChangeMade(CCleanupChange::eChangeMolInfo);
+            }            
+        }
+    }
+}
+
+
+void CNewCleanup_imp::x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr)
+{
+    NON_CONST_ITERATE(CSeq_descr::Tdata, it, seq_descr.Set()) {
+        if ((*it)->IsGenbank()) {
+            x_SetMolInfoTechFromGenBankBlock(seq_descr, (*it)->SetGenbank());
+        }
+    }
 }
 
 
@@ -10603,7 +10664,15 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CGB_block& gb, bool is_patent, const
         } else if (is_patent && NStr::Equal(gb.GetDiv(), "PAT")) {
             gb.ResetDiv();
             ChangeMade(CCleanupChange::eChangeOther);
-        } else if (!NStr::Equal(gb.GetDiv(), "HTG") && s_ShouldRemoveKeyword(gb.GetDiv(), tech)) {
+        } else if (NStr::Equal(gb.GetDiv(), "HTG")) {
+            if (tech == CMolInfo::eTech_htgs_0 ||
+                tech == CMolInfo::eTech_htgs_1 ||
+                tech == CMolInfo::eTech_htgs_2 ||
+                tech == CMolInfo::eTech_htgs_3) {
+                gb.ResetDiv();
+                ChangeMade(CCleanupChange::eChangeOther);
+            }
+        } else if (s_ShouldRemoveKeyword(gb.GetDiv(), tech)) {
             gb.ResetDiv();
             ChangeMade(CCleanupChange::eChangeOther);
         }
@@ -10619,6 +10688,7 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
     if (!seq.IsSetDescr()) {
         return;
     }
+    x_SetMolInfoTechFromGenBankBlock(seq.SetDescr());
     bool is_patent = false;
     ITERATE(CBioseq::TId, id, seq.GetId()) {
         if ((*id)->IsPatent()) {

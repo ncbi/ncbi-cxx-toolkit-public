@@ -542,6 +542,8 @@ private:
     void x_ExceptTextEC(string& except_text);
 
     void x_RemoveEmptyUserObject( CSeq_descr & seq_descr );
+    void x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr, CGB_block& block);
+    void x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr);
     static bool s_ShouldRemoveKeyword(const string& keyword, CMolInfo::TTech tech);
     static bool x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tech);
     void x_CleanupGenbankBlock(CBioseq& seq);
