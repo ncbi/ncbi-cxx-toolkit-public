@@ -389,9 +389,9 @@ static void s_InitTest6(CArgDescriptions& arg_desc)
          CArgDescriptions::eBoolean);
 
     arg_desc.AddOptionalKey ("first", "MandatoryKey",
-                             "This is a mandatory first key argument", CArgDescriptions::eInteger);
+                             "This is an optional first key argument", CArgDescriptions::eInteger);
     arg_desc.AddOptionalKey("second", "MandatoryKey",
-                            "This is a mandatory second key argument", CArgDescriptions::eInteger);
+                            "This is an optional second key argument", CArgDescriptions::eInteger);
     arg_desc.AddFlag("f1", "Flag 1");
     arg_desc.AddFlag("f2", "Flag 2");
     arg_desc.AddFlag("f3", "Flag 3");
@@ -410,7 +410,7 @@ static void s_InitTest6(CArgDescriptions& arg_desc)
     CRef<CArgDependencyGroup> args12 = CArgDependencyGroup::Create("container12", "description12");
     args12->Add(args1);
     args12->Add(args2);
-    args12->SetMinMembers(2).SetMaxMembers(2);
+    args12->SetMinMembers(0).SetMaxMembers(2);
 
     arg_desc.AddDependencyGroup(args12);
 }
@@ -654,7 +654,6 @@ void CArgTestApplication::Init(void)
         m_TestNo = NStr::StringToNumeric<size_t>(test_str);
         assert(m_TestNo <= max_test);
     }
-
     // Create cmd-line argument descriptions class
     auto_ptr<CCommandArgDescriptions> cmd_desc(
         new CCommandArgDescriptions(true,0, CCommandArgDescriptions::eCommandOptional |
