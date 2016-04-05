@@ -11662,6 +11662,7 @@ namespace {
 void CNewCleanup_imp::x_BioseqSetNucProtEC(CBioseq_set & bioseq_set)
 {
     x_MoveNpSrc(bioseq_set);
+    x_MoveNpPub(bioseq_set);
     x_MoveNpDBlinks(bioseq_set);
 }
 
@@ -11864,6 +11865,49 @@ void CNewCleanup_imp::x_MoveNpSrc(CBioseq_set& set)
     }
     if (add_desc && srcdesc) {
         set.SetDescr().Set().push_back(srcdesc);
+    }
+}
+
+
+void CNewCleanup_imp::x_MoveNpPub(CBioseq_set& np_set, CSeq_descr& descr)
+{
+    CSeq_descr::Tdata::iterator d = descr.Set().begin();
+    while (d != descr.Set().end()) {
+        if ((*d)->IsPub()) {
+            CRef<CSeqdesc> new_desc(new CSeqdesc());
+            new_desc->Assign(**d);
+            np_set.SetDescr().Set().push_back(new_desc);
+            d = descr.Set().erase(d);
+            ChangeMade(CCleanupChange::eMoveDescriptor);
+        } else {
+            ++d;
+        }
+    }
+
+}
+
+
+void CNewCleanup_imp::x_MoveNpPub(CBioseq_set& set)
+{
+    if (!set.IsSetClass() || set.GetClass() != CBioseq_set::eClass_nuc_prot ||
+        !set.IsSetSeq_set()) {
+        return;
+    }
+
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, set.SetSeq_set()) {
+        if ((*it)->IsSetDescr()) {
+            if ((*it)->IsSeq() && (*it)->GetSeq().IsSetDescr()) {
+                x_MoveNpPub(set, (*it)->SetSeq().SetDescr());
+                if ((*it)->SetSeq().SetDescr().Set().empty()) {
+                    (*it)->SetSeq().ResetDescr();
+                }
+            } else if ((*it)->IsSet() && (*it)->GetSeq().IsSetDescr()) {
+                x_MoveNpPub(set, (*it)->SetSet().SetDescr());
+                if ((*it)->SetSet().SetDescr().Set().empty()) {
+                    (*it)->SetSet().ResetDescr();
+                }
+            }
+        }
     }
 }
 
