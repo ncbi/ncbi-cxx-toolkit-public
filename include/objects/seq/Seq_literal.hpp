@@ -62,7 +62,10 @@ public:
     enum EBridgeableStatus { e_NotAGap, e_Bridgeable,
                              e_NotBridgeable, e_MaybeBridgeable };
 
-    EBridgeableStatus IsBridgeable() const;
+    EBridgeableStatus GetBridgeability() const;
+
+    // change the method name to GetBridgeability to make it clear
+    NCBI_DEPRECATED EBridgeableStatus IsBridgeable() const { return GetBridgeability(); }
 
 private:
     // Prohibit copy constructor and assignment operator

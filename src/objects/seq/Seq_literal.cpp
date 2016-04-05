@@ -53,7 +53,7 @@ CSeq_literal::~CSeq_literal(void)
 {
 }
 
-CSeq_literal::EBridgeableStatus CSeq_literal::IsBridgeable() const
+CSeq_literal::EBridgeableStatus CSeq_literal::GetBridgeability() const
 {
     if (!IsSetSeq_data()) {
         return e_MaybeBridgeable;
