@@ -3631,7 +3631,7 @@ bool sFeatureGetChildrenOfSubtype(
 }
 
 bool GetFeatureGeneBiotype(
-    feature::CFeatTree ft,
+    feature::CFeatTree& ft,
     CMappedFeat mf,
     string& biotype)
 {
