@@ -34,6 +34,8 @@
 #include "grid_cli.hpp"
 #include "util.hpp"
 
+#include <sstream>
+
 USING_NCBI_SCOPE;
 
 string CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
@@ -376,8 +378,35 @@ int CGridCommandLineInterfaceApp::Cmd_SetAttr()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
+    string value;
+
+    if (IsOptionSet(eAttrValue)) {
+        if (IsOptionSet(eInput)) {
+            fprintf(stderr, GRID_APP_NAME ": option '--" INPUT_OPTION
+                    "' and argument '" ATTR_VALUE_ARG
+                    "' are mutually exclusive.\n");
+            return 2;
+        } else if (IsOptionSet(eInputFile)) {
+            fprintf(stderr, GRID_APP_NAME ": option '--" INPUT_FILE_OPTION
+                    "' and argument '" ATTR_VALUE_ARG
+                    "' are mutually exclusive.\n");
+            return 2;
+        }
+
+        value = m_Opts.attr_value;
+
+    } else if (IsOptionSet(eInput)) {
+        value = m_Opts.input;
+
+    } else {
+        // Either input file or cin
+        ostringstream ostr;
+        ostr << m_Opts.input_stream->rdbuf();
+        value = ostr.str();
+    }
+
     m_NetStorage.Open(m_Opts.id).
-            SetAttribute(m_Opts.attr_name, m_Opts.attr_value);
+            SetAttribute(m_Opts.attr_name, value);
 
     return 0;
 }

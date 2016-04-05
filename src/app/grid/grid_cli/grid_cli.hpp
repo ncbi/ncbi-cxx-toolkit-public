@@ -120,6 +120,7 @@
 #define OFFSET_OPTION "offset"
 #define SIZE_OPTION "size|length"
 #define DIRECT_MODE_OPTION "direct"
+#define ATTR_VALUE_ARG "ATTR_VALUE"
 
 #define LOGIN_COMMAND "login"
 #define JOBINFO_COMMAND "jobinfo"

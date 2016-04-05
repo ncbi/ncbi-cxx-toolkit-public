@@ -91,7 +91,7 @@ struct SOptionDefinition {
 
     {OPT_DEF(ePositionalArgument, eAttrName), "ATTR_NAME", NULL, {-1}},
 
-    {OPT_DEF(ePositionalArgument, eAttrValue), "ATTR_VALUE", NULL, {-1}},
+    {OPT_DEF(eOptionalPositional, eAttrValue), ATTR_VALUE_ARG, NULL, {-1}},
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     {OPT_DEF(eSwitch, eAllowXSiteConn),
@@ -707,7 +707,7 @@ struct SCommandDefinition {
         "setattr", "Set a NetStorage object attribute value.",
         "",
         {eObjectLoc, eAttrName, eAttrValue, eNetStorage,
-            eLoginToken, eAuth,
+            eLoginToken, eAuth, eInput, eInputFile,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
