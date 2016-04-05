@@ -66,13 +66,18 @@ protected:
     bool xWriteDefaultTrackLine();
     bool xWriteSingleGraph( const CSeq_graph& );
     bool xWriteSingleGraphFixedStep( const CSeq_graph&, size_t );
-    bool xWriteSingleGraphRecords( const CSeq_graph&, size_t );
 
     bool xWriteTableFixedStep(const CSeq_table&, const string&, int, int, int);
     bool xWriteTableVariableStep(const CSeq_table&, const string&, int);
     bool xWriteTableBedStyle(const CSeq_table&);
 
-    bool xContainsData( const CSeq_graph&, size_t );
+    bool xContainsDataByte( const CSeq_graph&, size_t );
+    bool xContainsDataInt( const CSeq_graph&, size_t );
+    bool xContainsDataReal( const CSeq_graph&, size_t );
+    bool xWriteSingleGraphRecordsByte( const CSeq_graph&, size_t );
+    bool xWriteSingleGraphRecordsInt( const CSeq_graph&, size_t );
+    bool xWriteSingleGraphRecordsReal( const CSeq_graph&, size_t );
+
     bool xIsFixedStepData(const CSeq_table&, string&, int&, int&, int&);
     bool xIsVariableStepData(const CSeq_table&, string&, int&);
     

@@ -42,6 +42,8 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqres/Byte_graph.hpp>
+#include <objects/seqres/Int_graph.hpp>
+#include <objects/seqres/Real_graph.hpp>
 #include <objects/seqtable/Seq_table.hpp>
 #include <objects/seqtable/SeqTable_column.hpp>
 #include <objects/seqtable/SeqTable_column_info.hpp>
@@ -133,14 +135,29 @@ bool CWiggleWriter::xWriteSingleGraph( const CSeq_graph& graph )
     size_t uNumVals = graph.GetNumval();
 
     for ( size_t u=0; u < uNumVals; u += m_uTrackSize ) {
-        if ( ! xContainsData( graph, u ) ) {
-            continue;
+        if (xContainsDataByte(graph, u)) {
+            if (!xWriteSingleGraphFixedStep(graph, u)) {
+                return false;
+            }
+            if (!xWriteSingleGraphRecordsByte(graph, u)) {
+                return false;
+            }
         }
-        if ( ! xWriteSingleGraphFixedStep( graph, u ) ) {
-            return false;
+        if (xContainsDataInt(graph, u)) {
+            if (!xWriteSingleGraphFixedStep(graph, u)) {
+                return false;
+            }
+            if (!xWriteSingleGraphRecordsInt(graph, u)) {
+                return false;
+            }
         }
-        if ( !xWriteSingleGraphRecords( graph, u ) ) {
-            return false;
+        if (xContainsDataReal(graph, u)) {
+            if (!xWriteSingleGraphFixedStep(graph, u)) {
+                return false;
+            }
+            if (!xWriteSingleGraphRecordsReal(graph, u)) {
+                return false;
+            }
         }
     }
     return true;
@@ -237,11 +254,11 @@ bool CWiggleWriter::xWriteSingleGraphFixedStep(
     //  ------------------------------------------------------------------------
     string strStart( " start=" );
     //  ------------------------------------------------------------------------
+    size_t uFrom = 0;
     const CSeq_loc& location = graph.GetLoc();
-    if ( ! location.IsInt() || ! location.GetInt().CanGetFrom() ) {
-        return false;
+    if ( location.IsInt() && location.GetInt().CanGetFrom() ) {
+        uFrom = location.GetInt().GetFrom();;
     }
-    size_t uFrom = location.GetInt().GetFrom();
 
     strStart += NStr::NumericToString( (uFrom + 1) + uSeqStart * graph.GetComp() );
     strFixedStep += strStart;
@@ -261,7 +278,7 @@ bool CWiggleWriter::xWriteSingleGraphFixedStep(
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleWriter::xWriteSingleGraphRecords( 
+bool CWiggleWriter::xWriteSingleGraphRecordsByte( 
     const CSeq_graph& graph,
     size_t uStartRecord )
 //  ----------------------------------------------------------------------------
@@ -289,7 +306,63 @@ bool CWiggleWriter::xWriteSingleGraphRecords(
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleWriter::xContainsData(
+bool CWiggleWriter::xWriteSingleGraphRecordsInt( 
+    const CSeq_graph& graph,
+    size_t uStartRecord )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! graph.CanGetA() || ! graph.CanGetB() ) {
+        return false;
+    }
+    if ( ! graph.CanGetNumval() || ! graph.CanGetGraph() ) {
+        return false;
+    }
+    if ( ! graph.GetGraph().IsInt() || ! graph.GetGraph().GetInt().CanGetValues() ) {
+        return false;
+    }
+    double dA = graph.GetA(); 
+    double dB = graph.GetB();
+    size_t uNumVals = graph.GetNumval();
+    const vector<int>& values = graph.GetGraph().GetInt().GetValues();
+
+    for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
+        double dVal = values[u + uStartRecord];
+        m_Os << (dA*dVal+dB) << '\n';
+    }
+//    m_Os << '\n';
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleWriter::xWriteSingleGraphRecordsReal( 
+    const CSeq_graph& graph,
+    size_t uStartRecord )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! graph.CanGetA() || ! graph.CanGetB() ) {
+        return false;
+    }
+    if ( ! graph.CanGetNumval() || ! graph.CanGetGraph() ) {
+        return false;
+    }
+    if ( ! graph.GetGraph().IsReal() || ! graph.GetGraph().GetReal().CanGetValues() ) {
+        return false;
+    }
+    double dA = graph.GetA(); 
+    double dB = graph.GetB();
+    size_t uNumVals = graph.GetNumval();
+    const vector<double>& values = graph.GetGraph().GetReal().GetValues();
+
+    for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
+        double dVal = values[u + uStartRecord];
+        m_Os << ( dA*dVal+dB ) << '\n';
+    }
+//    m_Os << '\n';
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleWriter::xContainsDataByte(
     const CSeq_graph& graph,
     size_t uStartRecord )
 //  ----------------------------------------------------------------------------
@@ -302,6 +375,52 @@ bool CWiggleWriter::xContainsData(
     }
     size_t uNumVals = graph.GetNumval();
     const vector<char>& values = graph.GetGraph().GetByte().GetValues();
+    for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
+        int iVal = (unsigned char)values[u + uStartRecord];
+        if ( 0 != iVal ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleWriter::xContainsDataInt(
+    const CSeq_graph& graph,
+    size_t uStartRecord )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! graph.CanGetNumval() || ! graph.CanGetGraph() ) {
+        return false;
+    }
+    if ( ! graph.GetGraph().IsInt() || ! graph.GetGraph().GetInt().CanGetValues() ) {
+        return false;
+    }
+    size_t uNumVals = graph.GetNumval();
+    const vector<int>& values = graph.GetGraph().GetInt().GetValues();
+    for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
+        int iVal = (unsigned char)values[u + uStartRecord];
+        if ( 0 != iVal ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleWriter::xContainsDataReal(
+    const CSeq_graph& graph,
+    size_t uStartRecord )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! graph.CanGetNumval() || ! graph.CanGetGraph() ) {
+        return false;
+    }
+    if ( ! graph.GetGraph().IsReal() || ! graph.GetGraph().GetReal().CanGetValues() ) {
+        return false;
+    }
+    size_t uNumVals = graph.GetNumval();
+    const vector<double>& values = graph.GetGraph().GetReal().GetValues();
     for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
         int iVal = (unsigned char)values[u + uStartRecord];
         if ( 0 != iVal ) {
