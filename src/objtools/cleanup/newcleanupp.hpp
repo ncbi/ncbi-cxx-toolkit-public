@@ -321,7 +321,7 @@ private:
     void CreatePubFromFeat(CSeq_feat& sf);
     void ResynchProteinPartials ( CSeq_feat& feat );
     void ResynchPeptidePartials( CBioseq& seq );
-    void x_SetPartialsForProtein(CBioseq& prot, bool partial5, bool partial3, bool set_trans);
+    void x_SetPartialsForProtein(CBioseq& prot, bool partial5, bool partial3);
     void RemoveBadProteinTitle(CBioseq& seq);
     void MoveCitationQuals(CBioseq& seq);
     void KeepLatestDateDesc(CSeq_descr & seq_descr);

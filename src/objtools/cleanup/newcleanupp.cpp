@@ -12201,7 +12201,7 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
         if (prot) {
             bool partial5 = sf.GetLocation().IsPartialStart(eExtreme_Biological);
             bool partial3 = sf.GetLocation().IsPartialStop(eExtreme_Biological);            
-            x_SetPartialsForProtein(*(const_cast<CBioseq *>(prot.GetCompleteBioseq().GetPointer())), partial5, partial3, false);
+            x_SetPartialsForProtein(*(const_cast<CBioseq *>(prot.GetCompleteBioseq().GetPointer())), partial5, partial3);
         }
     }
 }
@@ -12449,7 +12449,7 @@ void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
 }
 
 
-void CNewCleanup_imp::x_SetPartialsForProtein(CBioseq& seq, bool partial5, bool partial3, bool set_trans)
+void CNewCleanup_imp::x_SetPartialsForProtein(CBioseq& seq, bool partial5, bool partial3)
 {
     CMolInfo::TCompleteness desired = GetCompletenessFromFlags(partial5, partial3, partial5 || partial3);
 
@@ -12479,9 +12479,6 @@ void CNewCleanup_imp::x_SetPartialsForProtein(CBioseq& seq, bool partial5, bool 
         new_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
         if (partial5 || partial3) {
             new_desc->SetMolinfo().SetCompleteness(desired);
-        }
-        if (set_trans) {
-            new_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans_a);
         }
         seq.SetDescr().Set().push_back(new_desc);
         ChangeMade(CCleanupChange::eAddDescriptor);
@@ -12520,7 +12517,7 @@ void CNewCleanup_imp::ResynchPeptidePartials (
     bool partial5 = feat_ci->GetLocation().IsPartialStart(eExtreme_Biological);
     bool partial3 = feat_ci->GetLocation().IsPartialStop(eExtreme_Biological);
 
-    x_SetPartialsForProtein(seq, partial5, partial3, true);
+    x_SetPartialsForProtein(seq, partial5, partial3);
 }
 
 
