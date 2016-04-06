@@ -1,0 +1,6 @@
+LIB_PROJ = hgvs_reader
+APP_PROJ = hgvs_to_irep hgvs_to_seqfeat
+
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
