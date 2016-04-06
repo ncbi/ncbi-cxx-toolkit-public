@@ -366,9 +366,14 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     case eDB_LongBinary: {
         CDB_LongBinary& par = dynamic_cast<CDB_LongBinary&> (param);
 #ifdef FTDS_IN_USE
-        if (GetConnection().GetServerType() == CDBConnParams::eMSSqlServer)
-            param_fmt.datatype = CS_BINARY_TYPE;
-        else
+        if (GetConnection().GetServerType() == CDBConnParams::eMSSqlServer) {
+#  ifdef CS_TDS_72
+            if (GetConnection().m_TDSVersion >= CS_TDS_72)
+                param_fmt.datatype = CS_IMAGE_TYPE;
+            else
+#  endif
+                param_fmt.datatype = CS_BINARY_TYPE;
+        } else
 #endif
             param_fmt.datatype = CS_LONGBINARY_TYPE;
 
@@ -385,7 +390,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     }
     case eDB_VarBinary: {
         CDB_VarBinary& par = dynamic_cast<CDB_VarBinary&> (param);
-        param_fmt.datatype = CS_BINARY_TYPE;
+#if defined(FTDS_IN_USE)  &&  defined(CS_TDS_72)
+        if (GetConnection().m_TDSVersion >= CS_TDS_72)
+            param_fmt.datatype = CS_IMAGE_TYPE;
+        else
+#endif
+            param_fmt.datatype = CS_BINARY_TYPE;
         if ( declare_only ) {
             break;
         }

@@ -107,6 +107,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 , m_Cntx(&cntx)
 , m_ActiveCmd(NULL)
 , m_Handle(cntx, *this)
+, m_TDSVersion(0)
 , m_TextPtrProcsLoaded(false)
 #ifdef FTDS_IN_USE
 #  if NCBI_FTDS_VERSION >= 95
@@ -330,6 +331,9 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         auto_stmt->DumpResults();
     }
     */
+
+    CheckWhileOpening(ct_con_props(x_GetSybaseConn(), CS_GET, CS_TDS_VERSION, 
+                                   &m_TDSVersion, CS_UNUSED, NULL));
 
 #ifdef FTDS_IN_USE
     SetServerType(GetTDSServerType(m_Handle.GetNativeHandle()));

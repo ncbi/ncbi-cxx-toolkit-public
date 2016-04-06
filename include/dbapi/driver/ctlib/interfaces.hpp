@@ -498,6 +498,7 @@ private:
     CTLibContext*       m_Cntx;
     CTL_CmdBase*        m_ActiveCmd;
     ctlib::Connection   m_Handle;
+    int                 m_TDSVersion; // as CS_TDS_nn
     bool                m_TextPtrProcsLoaded;
 
 #ifdef FTDS_IN_USE
