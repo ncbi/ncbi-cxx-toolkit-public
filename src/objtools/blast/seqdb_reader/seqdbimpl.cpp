@@ -1490,9 +1490,10 @@ void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
 
     CSeqDBTaxInfo taxinfo(atlas);
     if (! taxinfo.GetTaxNames(taxid, info, locked)) {
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "Specified taxid was not found.");
+        CNcbiOstrstream oss;
+        oss << "Taxid " << taxid << " not found";
+        string msg = CNcbiOstrstreamToString(oss);
+        NCBI_THROW(CSeqDBException, eArgErr, msg);
     }
 }
 
