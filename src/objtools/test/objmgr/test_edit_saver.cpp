@@ -396,7 +396,7 @@ static void s_RemoveFeat(const CBioseq_Handle& handle)
 static void s_AddAnnot(const CBioseq_Handle& handle)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
-    annot->AddName(kAddedAnnotName);
+    annot->SetNameDesc(kAddedAnnotName);
     annot->SetData().SetFtable();
     handle.GetEditHandle().AttachAnnot(*annot);
 }
