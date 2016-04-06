@@ -9,7 +9,7 @@ SRC = hgvs_reader hgvs_lexer hgvs_parser hgvs_nucleic_acid_parser hgvs_protein_p
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) 
 LDFLAGS = $(ORIG_LDFLAGS)
 
-LIB = varrep seq xvalidate \
+LIB = varrep seq \
 	  $(OBJREAD_LIBS) xregexp $(PCRE_LIB) xobjutil \
 	  entrez2cli entrez2 $(OBJMGR_LIBS)  
 
