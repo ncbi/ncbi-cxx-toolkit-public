@@ -122,7 +122,7 @@ public:
 
     CInitMutexPool& GetMutexPool(void) { return m_Loader->m_MutexPool; }
 
-    virtual TExpirationTime GetIdExpirationTimeout(void) const;
+    virtual TExpirationTime GetIdExpirationTimeout(GBL::EExpirationType type) const;
 
     virtual bool GetAddWGSMasterDescr(void) const;
 
@@ -633,7 +633,7 @@ bool CGBDataLoader::x_CreateReaders(const string& str,
                                     CGBLoaderParams::EPreopenConnection preopen)
 {
     vector<string> str_list;
-    NStr::Tokenize(str, ";", str_list, NStr::eNoMergeDelims);
+    NStr::Split(str, ";", str_list);
     size_t reader_count = 0;
     for ( size_t i = 0; i < str_list.size(); ++i ) {
         CRef<CReader> reader(x_CreateReader(str_list[i], params));
@@ -657,7 +657,7 @@ void CGBDataLoader::x_CreateWriters(const string& str,
                                     const TParamTree* params)
 {
     vector<string> str_list;
-    NStr::Tokenize(str, ";", str_list, NStr::eNoMergeDelims);
+    NStr::Split(str, ";", str_list);
     for ( size_t i = 0; i < str_list.size(); ++i ) {
         CRef<CWriter> writer(x_CreateWriter(str_list[i], params));
         if( writer ) {
@@ -1810,9 +1810,14 @@ void CGBReaderRequestResult::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
 
 
 CGBDataLoader::TExpirationTimeout
-CGBReaderRequestResult::GetIdExpirationTimeout(void) const
+CGBReaderRequestResult::GetIdExpirationTimeout(GBL::EExpirationType type) const
 {
-    return m_Loader->GetIdExpirationTimeout();
+    if ( type == GBL::eExpire_normal ) {
+        return m_Loader->GetIdExpirationTimeout();
+    }
+    else {
+        return CReaderRequestResult::GetIdExpirationTimeout(type);
+    }
 }
 
 

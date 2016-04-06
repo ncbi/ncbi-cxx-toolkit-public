@@ -401,7 +401,7 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
         args["packet"]="3584"; // 7*512
         args["version"]="125"; // for correct connection to OpenServer
         vector<string> driver_list;
-        NStr::Tokenize(m_DbapiDriver, ";", driver_list);
+        NStr::Split(m_DbapiDriver, ";", driver_list);
         size_t driver_count = driver_list.size();
         vector<string> errmsg(driver_count);
         for ( size_t i = 0; i < driver_count; ++i ) {

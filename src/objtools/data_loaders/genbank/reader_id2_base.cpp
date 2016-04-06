@@ -176,7 +176,7 @@ CId2ReaderBase::CId2ReaderBase(void)
 {
     vector<string> proc_list;
     string proc_param = NCBI_PARAM_TYPE(GENBANK, ID2_PROCESSOR)::GetDefault();
-    NStr::Tokenize(proc_param, ";", proc_list, NStr::eNoMergeDelims);
+    NStr::Split(proc_param, ";", proc_list);
     ITERATE ( vector<string>, it, proc_list ) {
         const string& proc_name = *it;
         CRef<CID2Processor> proc;

@@ -147,11 +147,15 @@ public:
     void SaveResults(CNcbiOstream& out) const
         {
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                if ( data[i] ) {
+                if ( Valid(i) ) {
                     out << TIntId(data[i]);
                 }
                 out << NcbiEndl;
             }
+        }
+    bool Valid(size_t i) const
+        {
+            return data[i];
         }
     bool Correct(size_t i) const
         {
@@ -214,11 +218,15 @@ public:
     void SaveResults(CNcbiOstream& out) const
         {
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                if ( data[i] ) {
+                if ( Valid(i) ) {
                     out << data[i];
                 }
                 out << NcbiEndl;
             }
+        }
+    bool Valid(size_t i) const
+        {
+            return data[i];
         }
     bool Correct(size_t i) const
         {
@@ -306,9 +314,15 @@ public:
     void SaveResults(CNcbiOstream& out) const
         {
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                out << data[i];
+                if ( Valid(i) ) {
+                    out << data[i];
+                }
                 out << NcbiEndl;
             }
+        }
+    bool Valid(size_t i) const
+        {
+            return !data[i].empty();
         }
     bool Correct(size_t i) const
         {
@@ -382,11 +396,15 @@ public:
     void SaveResults(CNcbiOstream& out) const
         {
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                if ( data[i] != -1 ) {
+                if ( Valid(i) ) {
                     out << data[i];
                 }
                 out << NcbiEndl;
             }
+        }
+    bool Valid(size_t i) const
+        {
+            return data[i] != -1;
         }
     bool Correct(size_t i) const
         {
@@ -455,11 +473,15 @@ public:
     void SaveResults(CNcbiOstream& out) const
         {
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                if ( data[i] ) {
+                if ( Valid(i) ) {
                     out << data[i];
                 }
                 out << NcbiEndl;
             }
+        }
+    bool Valid(size_t i) const
+        {
+            return data[i];
         }
     bool Correct(size_t i) const
         {
@@ -522,11 +544,15 @@ public:
     void SaveResults(CNcbiOstream& out) const
         {
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                if ( data[i] != kInvalidSeqPos ) {
+                if ( Valid(i) ) {
                     out << data[i];
                 }
                 out << NcbiEndl;
             }
+        }
+    bool Valid(size_t i) const
+        {
+            return data[i] != kInvalidSeqPos;
         }
     bool Correct(size_t i) const
         {
@@ -589,11 +615,15 @@ public:
     void SaveResults(CNcbiOstream& out) const
         {
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                if ( data[i] != CSeq_inst::eMol_not_set ) {
+                if ( Valid(i) ) {
                     out << data[i];
                 }
                 out << NcbiEndl;
             }
+        }
+    bool Valid(size_t i) const
+        {
+            return data[i] != CSeq_inst::eMol_not_set;
         }
     bool Correct(size_t i) const
         {
@@ -656,11 +686,15 @@ public:
     void SaveResults(CNcbiOstream& out) const
         {
             for ( size_t i = 0; i < ids.size(); ++i ) {
-                if ( data[i] != -1 ) {
+                if ( Valid(i) ) {
                     out << data[i];
                 }
                 out << NcbiEndl;
             }
+        }
+    bool Valid(size_t i) const
+        {
+            return data[i] != -1;
         }
     bool Correct(size_t i) const
         {

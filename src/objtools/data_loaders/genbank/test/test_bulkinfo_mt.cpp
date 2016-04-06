@@ -277,10 +277,10 @@ bool CTestApplication::TestApp_Init(void)
         }
     }
     if ( args["other_loaders"] ) {
-        list<string> names;
+        vector<string> names;
         NStr::Split(args["other_loaders"].AsString(), ",", names);
         CRef<CObjectManager> pOm = CObjectManager::GetInstance();
-        ITERATE ( list<string>, i, names ) {
+        ITERATE ( vector<string>, i, names ) {
             other_loaders.push_back(pOm->RegisterDataLoader(0, *i)->GetName());
         }
     }

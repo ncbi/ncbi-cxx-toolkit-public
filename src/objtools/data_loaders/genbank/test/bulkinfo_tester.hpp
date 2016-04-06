@@ -74,6 +74,7 @@ public:
     virtual void LoadVerify(CScope& scope) = 0;
     virtual void LoadVerify(const vector<string>& lines) = 0;
     virtual void SaveResults(CNcbiOstream& out) const = 0;
+    virtual bool Valid(size_t i) const = 0;
     virtual bool Correct(size_t i) const = 0;
     virtual void DisplayData(CNcbiOstream& out, size_t i) const = 0;
     virtual void DisplayDataVerify(CNcbiOstream& out, size_t i) const = 0;
