@@ -233,7 +233,7 @@ CCSRADataLoader::TRegisterLoaderInfo CCSRADataLoader::RegisterInObjectManager(
     CObjectManager::TPriority priority)
 {
     SLoaderParams params;
-    NStr::Tokenize(NCBI_PARAM_TYPE(CSRA, ACCESSIONS)::GetDefault(), ",",
+    NStr::Split(NCBI_PARAM_TYPE(CSRA, ACCESSIONS)::GetDefault(), ",",
                    params.m_CSRAFiles);
     TMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);

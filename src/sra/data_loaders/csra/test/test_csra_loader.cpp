@@ -98,7 +98,7 @@ void sx_CheckNames(CScope& scope, const CSeq_loc& loc,
 string sx_GetPath(const string& dir)
 {
     vector<string> reps;
-    NStr::Tokenize(NCBI_TEST_BAM_FILE_PATH, ":", reps);
+    NStr::Split(NCBI_TEST_BAM_FILE_PATH, ":", reps);
     ITERATE ( vector<string>, it, reps ) {
         string path = CFile::MakePath(*it, dir);
         if ( CDirEntry(path).Exists() ) {

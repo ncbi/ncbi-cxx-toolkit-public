@@ -131,7 +131,7 @@ bool CCSRATestApp::TestApp_Init(void)
     if ( m_Verbose ) {
         LOG_POST(Info<<"Seed: "<<m_Seed);
     }
-    NStr::Tokenize(args["accs"].AsString(), ",", m_Accession);
+    NStr::Split(args["accs"].AsString(), ",", m_Accession);
     if ( args["accs-file"] ) {
         m_Accession.clear();
         CNcbiIstream& in = args["accs-file"].AsInputFile();

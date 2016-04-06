@@ -212,7 +212,7 @@ void CBAMDataLoader_Impl::AddSrzDef(void)
     vector<string> tokens;
     while ( getline(in, line) ) {
         tokens.clear();
-        NStr::Tokenize(line, "\t", tokens);
+        NStr::Split(line, "\t", tokens);
         if ( tokens.size() < 4 ) {
             NCBI_THROW(CLoaderException, eNoData,
                        "CBAMDataLoader: bad def line: \""+line+"\"");
