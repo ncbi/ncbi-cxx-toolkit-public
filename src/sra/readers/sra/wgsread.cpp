@@ -2598,22 +2598,6 @@ Uint1 sx_To2na(Uint1 b)
 }
 
 
-static inline
-bool sx_IsGap(const CVDBValueFor<Uint1>& read,
-              TSeqPos pos,
-              TSeqPos len)
-{
-    PROFILE(sw____IsGap);
-    _ASSERT(len > 0);
-    for ( const Uint1* ptr = read.data()+pos; len; --len, ++ptr ) {
-        if ( *ptr != 0xf ) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
 inline
 const Uint1* CWGSSeqIterator::x_GetUnpacked4na(TSeqPos pos, TSeqPos len) const
 {
