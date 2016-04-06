@@ -105,6 +105,9 @@ void CBAMTestApp::Init(void)
                             "BAM file name",
                             CArgDescriptions::eString,
                             BAM_FILE1);
+    arg_desc->AddOptionalKey("index", "IndexFile",
+                             "Explicit path to BAM index file",
+                             CArgDescriptions::eString);
     arg_desc->AddFlag("no_index", "Access BAM file without index");
     arg_desc->AddFlag("header", "Dump BAM header text");
     arg_desc->AddFlag("refseq_table", "Dump RefSeq table");
@@ -391,7 +394,7 @@ int CBAMTestApp::Run(void)
     }
     else {
         vector<string> reps;
-        NStr::Tokenize(NCBI_TEST_BAM_FILE_PATH, ":", reps);
+        NStr::Split(NCBI_TEST_BAM_FILE_PATH, ":", reps);
         ITERATE ( vector<string>, it, reps ) {
             dirs.push_back(CFile::MakePath(*it, BAM_DIR1));
             dirs.push_back(CFile::MakePath(*it, BAM_DIR2));
@@ -467,11 +470,19 @@ int CBAMTestApp::Run(void)
         out << "File: " << path << NcbiEndl;
         CBamMgr mgr;
         CBamDb bam_db;
+        
         if ( args["no_index"] ) {
             bam_db = CBamDb(mgr, path);
         }
         else {
-            bam_db = CBamDb(mgr, path, path+".bai");
+            string index_path;
+            if ( args["index"] ) {
+                index_path = args["index"].AsString();
+            }
+            else {
+                index_path = path+".bai";
+            }
+            bam_db = CBamDb(mgr, path, index_path);
         }
 
         if ( args["mapfile"] ) {
@@ -515,7 +526,7 @@ int CBAMTestApp::Run(void)
 
         vector<string> refseqs;
         if ( args["refseq"] ) {
-            NStr::Tokenize(args["refseq"].AsString(), ",", refseqs);
+            NStr::Split(args["refseq"].AsString(), ",", refseqs);
         }
         else {
             refseqs.push_back(string());

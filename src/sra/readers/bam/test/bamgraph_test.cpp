@@ -134,7 +134,7 @@ int CBamGraphTestApp::Run(void)
     }
     else {
         vector<string> reps;
-        NStr::Tokenize(NCBI_TEST_BAM_FILE_PATH, ":", reps);
+        NStr::Split(NCBI_TEST_BAM_FILE_PATH, ":", reps);
         ITERATE ( vector<string>, it, reps ) {
             dirs.push_back(CFile::MakePath(*it, BAM_DIR1));
             dirs.push_back(CFile::MakePath(*it, BAM_DIR2));
@@ -188,7 +188,7 @@ int CBamGraphTestApp::Run(void)
             p1 += 1;
         }
         vector<string> tt;
-        NStr::Tokenize(file.substr(p1), ".", tt);
+        NStr::Split(file.substr(p1), ".", tt);
         if ( tt.size() > 2 ) {
             ref_label = tt[1];
         }

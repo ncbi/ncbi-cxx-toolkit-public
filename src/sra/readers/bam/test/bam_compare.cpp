@@ -262,7 +262,7 @@ int CBAMCompareApp::Run(void)
     }
     else {
         vector<string> reps;
-        NStr::Tokenize(NCBI_TEST_BAM_FILE_PATH, ":", reps);
+        NStr::Split(NCBI_TEST_BAM_FILE_PATH, ":", reps);
         ITERATE ( vector<string>, it, reps ) {
             dirs.push_back(CFile::MakePath(*it, BAM_DIR1));
             dirs.push_back(CFile::MakePath(*it, BAM_DIR2));

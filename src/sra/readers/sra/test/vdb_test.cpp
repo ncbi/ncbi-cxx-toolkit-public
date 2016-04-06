@@ -310,6 +310,135 @@ void CheckRc(rc_t rc, const char* code, const char* file, int line)
     }
 }
 
+#if 1
+int LowLevelTest(void)
+{
+    cout << "LowLevelTest for memory overuse..." << endl;
+    const char* file_name = NCBI_TRACES01_PATH
+        "/compress/1KG/CEU/NA12249/exome.ILLUMINA.MOSAIK.csra";
+    const VDBManager* mgr = 0;
+    CALL(VDBManagerMakeRead(&mgr, 0));
+        
+    const VDatabase* db = 0;
+    CALL(VDBManagerOpenDBRead(mgr, &db, 0, file_name));
+        
+    const VTable* ref_table = 0;
+    CALL(VDatabaseOpenTableRead(db, &ref_table, "REFERENCE"));
+    
+    const VCursor* ref_cursor = 0;
+    CALL(VTableCreateCursorRead(ref_table, &ref_cursor));
+    CALL(VCursorPermitPostOpenAdd(ref_cursor));
+    CALL(VCursorOpen(ref_cursor));
+    
+    uint32_t align_column;
+    CALL(VCursorAddColumn(ref_cursor, &align_column, "PRIMARY_ALIGNMENT_IDS"));
+    
+    const VTable* align_table = 0;
+    CALL(VDatabaseOpenTableRead(db, &align_table, "PRIMARY_ALIGNMENT"));
+
+    const VCursor* align_cursor = 0;
+    CALL(VTableCreateCursorRead(align_table, &align_cursor));
+    CALL(VCursorPermitPostOpenAdd(align_cursor));
+    CALL(VCursorOpen(align_cursor));
+    
+    uint32_t spot_id_column;
+    CALL(VCursorAddColumn(align_cursor, &spot_id_column,
+                          "SEQ_SPOT_ID"));
+    uint32_t read_id_column;
+    CALL(VCursorAddColumn(align_cursor, &read_id_column,
+                          "SEQ_READ_ID"));
+
+    const VTable* seq_table = 0;
+    CALL(VDatabaseOpenTableRead(db, &seq_table, "SEQUENCE"));
+
+    const VCursor* seq_cursor = 0;
+    CALL(VTableCreateCursorRead(seq_table, &seq_cursor));
+    CALL(VCursorPermitPostOpenAdd(seq_cursor));
+    CALL(VCursorOpen(seq_cursor));
+    
+    uint32_t read_column;
+    CALL(VCursorAddColumn(seq_cursor, &read_column, "READ"));
+    
+    for ( int64_t ref_row = 582444; ref_row <= 582444; ++ref_row ) {
+        const int64_t* align_rows = 0;
+        size_t align_count = 0;
+        {
+            const void* data;
+            uint32_t bit_offset, bit_length;
+            uint32_t elem_count;
+            CALL(VCursorCellDataDirect(ref_cursor, ref_row,
+                                       align_column,
+                                       &bit_length, &data, &bit_offset,
+                                       &elem_count));
+            _ASSERT(bit_length == 8*sizeof(int64_t));
+            _ASSERT(bit_offset == 0);
+            align_rows = static_cast<const int64_t*>(data);
+            align_count = elem_count;
+        }
+        
+        for ( size_t i = 0; i < align_count; ++i ) {
+            int64_t align_row = align_rows[i];
+            int64_t spot_id = 0;
+            uint32_t read_id = 0;
+            {
+                const void* data;
+                uint32_t bit_offset, bit_length;
+                uint32_t elem_count;
+                CALL(VCursorCellDataDirect(align_cursor, align_row,
+                                           spot_id_column,
+                                           &bit_length, &data, &bit_offset,
+                                           &elem_count));
+                _ASSERT(bit_length == 8*sizeof(int64_t));
+                _ASSERT(bit_offset == 0);
+                _ASSERT(elem_count == 1);
+                spot_id = *static_cast<const int64_t*>(data);
+                _ASSERT(spot_id);
+            }
+            {
+                const void* data;
+                uint32_t bit_offset, bit_length;
+                uint32_t elem_count;
+                CALL(VCursorCellDataDirect(align_cursor, align_row,
+                                           read_id_column,
+                                           &bit_length, &data, &bit_offset,
+                                           &elem_count));
+                _ASSERT(bit_length == 8*sizeof(uint32_t));
+                _ASSERT(bit_offset == 0);
+                _ASSERT(elem_count == 1);
+                read_id = *static_cast<const uint32_t*>(data);
+                _ASSERT(read_id);
+            }
+
+            const char* read = 0;
+            {
+                const void* data;
+                uint32_t bit_offset, bit_length;
+                uint32_t elem_count;
+                CALL(VCursorCellDataDirect(seq_cursor, spot_id,
+                                           read_column,
+                                           &bit_length, &data, &bit_offset,
+                                           &elem_count));
+                _ASSERT(bit_length == 8);
+                _ASSERT(bit_offset == 0);
+                read = static_cast<const char*>(data);
+            }
+
+            cout << " " << align_row << ":" << spot_id << "." << read_id
+                 << endl;
+        }
+    }
+    CALL(VCursorRelease(seq_cursor));
+    CALL(VTableRelease(seq_table));
+    CALL(VCursorRelease(align_cursor));
+    CALL(VTableRelease(align_table));
+    CALL(VCursorRelease(ref_cursor));
+    CALL(VTableRelease(ref_table));
+    CALL(VDatabaseRelease(db));
+    CALL(VDBManagerRelease(mgr));
+    cout << "LowLevelTest done" << endl;
+    return 0;
+}
+#else
 struct SThreadInfo
 {
 #ifdef _MSC_VER
@@ -434,6 +563,7 @@ int LowLevelTest(void)
     cout << "LowLevelTest done" << endl;
     return 0;
 }
+#endif
 #endif
 
 struct SBaseStat

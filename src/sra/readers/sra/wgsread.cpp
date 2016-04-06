@@ -766,7 +766,7 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
     }
     if ( !vol_path.empty() ) {
         vector<CTempString> dirs;
-        NStr::Tokenize(vol_path, ":", dirs);
+        NStr::Split(vol_path, ":", dirs);
         ITERATE ( vector<CTempString>, it, dirs ) {
             string path = CDirEntry::MakePath(*it, path_or_acc);
             if ( CDirEntry(path).Exists() ) {

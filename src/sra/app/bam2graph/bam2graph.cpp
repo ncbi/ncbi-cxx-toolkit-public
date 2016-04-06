@@ -170,7 +170,7 @@ void CBam2GraphApp::ProcessFile(const string& file)
         }
         else {
             vector<string> reps;
-            NStr::Tokenize(NCBI_TEST_BAM_FILE_PATH, ":", reps);
+            NStr::Split(NCBI_TEST_BAM_FILE_PATH, ":", reps);
             ITERATE ( vector<string>, it, reps ) {
                 string path = CFile::MakePath(*it, BAM_DIR);
                 if ( !CDirEntry(dir).Exists() ) {
@@ -183,7 +183,7 @@ void CBam2GraphApp::ProcessFile(const string& file)
         path = CFile::MakePath(dir, file);
         if ( !CFile(path).Exists() ) {
             vector<string> tt;
-            NStr::Tokenize(CFile(file).GetBase(), ".", tt);
+            NStr::Split(CFile(file).GetBase(), ".", tt);
             if ( tt.size() > 0 ) {
                 path = CFile::MakePath(dir, tt[0]);
                 path = CFile::MakePath(path, "alignment");
@@ -198,7 +198,7 @@ void CBam2GraphApp::ProcessFile(const string& file)
     }
     else {
         vector<string> tt;
-        NStr::Tokenize(CFile(file).GetBase(), ".", tt);
+        NStr::Split(CFile(file).GetBase(), ".", tt);
         if ( tt.size() > 1 ) {
             ref_label = tt[1];
         }
@@ -303,7 +303,7 @@ void CBam2GraphApp::ProcessSrz(string srz_name)
     CNcbiIfstream srz(srz_name.c_str());
     while ( getline(srz, line) ) {
         tokens.clear();
-        NStr::Tokenize(line, "\t", tokens);
+        NStr::Split(line, "\t", tokens, NStr::fSplit_Tokenize);
         if ( tokens.size() < 4 ) {
             ERR_POST(Fatal<<"Bad def line: \""<<line<<"\"");
         }

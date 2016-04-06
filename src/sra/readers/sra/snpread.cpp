@@ -167,7 +167,11 @@ CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
     // However, there could be other VDBs in the same namespace (NA*)
     // so we have to check this situation and return normal eNotFoundDb error.
     try {
-        m_Db = CVDB(m_Mgr, path_or_acc);
+        CTempString acc = path_or_acc;
+        if ( acc == "NA000000000" ) {
+            acc = "~holmesbr/test_vdb/database";
+        }
+        m_Db = CVDB(m_Mgr, acc);
     }
     catch ( CSraException& exc ) {
         bool another_vdb_table = false;

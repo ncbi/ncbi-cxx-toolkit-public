@@ -229,13 +229,13 @@ void CSrzPath::x_Init(void)
 
 void CSrzPath::AddRepPath(const string& rep_path)
 {
-    NStr::Tokenize(rep_path, ":", m_RepPath);
+    NStr::Split(rep_path, ":", m_RepPath);
 }
 
 
 void CSrzPath::AddVolPath(const string& vol_path)
 {
-    NStr::Tokenize(vol_path, ":", m_VolPath);
+    NStr::Split(vol_path, ":", m_VolPath);
 }
 
 
