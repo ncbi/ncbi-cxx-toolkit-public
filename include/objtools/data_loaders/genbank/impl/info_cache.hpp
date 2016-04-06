@@ -42,7 +42,7 @@
 #include <list>
 #include <set>
 #include <map>
-#include <corelib/hash_map.hpp>
+#include <unordered_map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -275,8 +275,8 @@ protected:
             return size_t(ptr)>>3;
         }
     };
-    typedef hash_map<CInfo_Base*, CRef<CInfoRequestorLock>, PtrHash> TLockMap;
-    typedef hash_map<CInfoCache_Base*, vector<CInfo_Base*>, PtrHash> TCacheMap;
+    typedef unordered_map<CInfo_Base*, CRef<CInfoRequestorLock>, PtrHash> TLockMap;
+    typedef unordered_map<CInfoCache_Base*, vector<CInfo_Base*>, PtrHash> TCacheMap;
     
     CRef<CInfoManager> m_Manager;
     TLockMap m_LockMap; // map from CInfo_Base -> CInfoRequestorLock
