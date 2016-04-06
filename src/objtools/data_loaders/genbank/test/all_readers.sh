@@ -6,15 +6,25 @@ if test ! -d "$status_dir"; then
     status_dir="../../../../../status"
 fi
 
+disabled() {
+    if test -f "$status_dir/$1.enabled"; then
+        return 1
+    fi
+    case "$FEATURES" in
+        *" $1 "*) return 1;;
+    esac
+    return 0;
+}
+
 if test "$1" = "-id2"; then
     shift
     methods="ID2"
 else
-    if test -f "$status_dir/PubSeqOS.enabled"; then
-        methods="PUBSEQOS ID1"
-    else
+    if disabled PubSeqOS; then
         echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
         methods="ID1"
+    else
+        methods="PUBSEQOS ID1"
     fi
     if test "$1" = "-xid2"; then
         shift
@@ -22,7 +32,7 @@ else
         methods="$methods ID2"
     fi
 fi
-if test ! -f "$status_dir/DLL_BUILD.enabled"; then
+if disabled DLL_BUILD; then
     # enable dll plugins for ftds and bdb
     NCBI_LOAD_PLUGINS_FROM_DLLS=1
     export NCBI_LOAD_PLUGINS_FROM_DLLS
@@ -75,10 +85,10 @@ init_cache() {
         fi
         unset NCBI_CONFIG_OVERRIDES
     fi
-    if test ! -f "$status_dir/BerkeleyDB.enabled"; then
+    if disabled BerkeleyDB; then
         return 1
     fi
-    if test ! -f "$status_dir/MT.enabled"; then
+    if disabled MT; then
         return 1
     fi
     echo "Init BDB cache"
