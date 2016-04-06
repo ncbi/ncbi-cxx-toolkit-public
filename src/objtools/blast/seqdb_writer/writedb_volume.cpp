@@ -220,13 +220,16 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
     if (m_Indices != CWriteDB::eNoIndex) {
     	set<string>::size_type orig_size = m_IdSet.size();
     	string id_u;
+    	pair<set<string>::iterator, bool > rv;
         ITERATE(TIdList, iter, idlist) {
-            string id = (*iter)->AsFastaString();
+            string id = (*iter)->GetSeqIdString(true);
             id_u = NStr::ToUpper(id);
-            if (m_IdSet.find(id_u) != m_IdSet.end() ) {
-            	continue;
+            rv = m_IdSet.insert(id_u);
+            if((rv.second == false) && (!(*iter)->IsLocal())) {
+            	CNcbiOstrstream msg;
+            	msg << "Error: Duplicate seq_ids are found: " << endl << id_u << endl;
+            	NCBI_THROW(CWriteDBException, eArgErr, CNcbiOstrstreamToString(msg));
             }
-            m_IdSet.insert(id_u);
         }
 
         if(m_IdSet.size() == orig_size) {
