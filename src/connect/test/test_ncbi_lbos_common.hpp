@@ -1872,8 +1872,9 @@ void CheckErrorCodeStrings()
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSOff, "",
                                   kLBOSBadRequest).GetErrCodeString();
-    NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "LBOS functionality is turned OFF. "
-                                       "Check config file.");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, 
+                                 "LBOS functionality is turned OFF. Check "
+                                 "config file or connection to LBOS.");
     /* unknown */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSUnknown, "",
