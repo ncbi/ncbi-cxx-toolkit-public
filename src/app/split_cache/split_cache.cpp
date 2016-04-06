@@ -564,7 +564,7 @@ void CSplitCacheApp::Process(void)
     }
     if ( args["blob_id"] ) {
         vector<string> vv;
-        NStr::Tokenize(args["blob_id"].AsString(), ",", vv);
+        NStr::Split(args["blob_id"].AsString(), ",", vv);
         if ( vv.size() != 2 && vv.size() != 3 ) {
             ERR_FATAL("Bad blob_id");
         }
