@@ -919,7 +919,7 @@ int CWGSTestApp::Run(void)
     /*
       if ( args["resolve-gi"] ) {
       vector<string> gis_str;
-      NStr::Tokenize(args["resolve-gi"].AsString(), ",", gis_str);
+      NStr::Split(args["resolve-gi"].AsString(), ",", gis_str);
       ITERATE ( vector<string>, it, gis_str ) {
       TGi gi = NStr::StringToNumeric<TIntId>(*it);
             

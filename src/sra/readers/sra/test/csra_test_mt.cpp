@@ -114,7 +114,7 @@ bool CCSRATestApp::TestApp_Init(void)
     if ( m_Verbose ) {
         LOG_POST(Info<<"Seed: "<<m_Seed);
     }
-    NStr::Tokenize(args["accs"].AsString(), ",", m_Accession);
+    NStr::Split(args["accs"].AsString(), ",", m_Accession);
     if ( m_Accession.empty() ) {
         ERR_POST(Fatal<<"empty accession list");
     }
