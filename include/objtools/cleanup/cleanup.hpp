@@ -313,6 +313,14 @@ public:
 /// in the list
     static vector<CConstRef<CPub> > GetCitationList(CBioseq_Handle bsh);
 
+/// Remove duplicate publications
+    static bool RemoveDuplicatePubs(CSeq_descr& descr);
+
+/// Convert full-length publication features to publication descriptors
+/// @param seh Seq-entry to edit
+/// @return bool indicates whether any changes were made
+    static bool ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh);
+
     static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope);
 
 /// Examine all genes and gene xrefs in the Seq-entry.

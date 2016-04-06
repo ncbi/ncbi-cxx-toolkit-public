@@ -10305,23 +10305,9 @@ void CNewCleanup_imp::x_RemoveDupBioSource( CBioseq_set & bioseq_set )
 
 void CNewCleanup_imp::x_RemoveDupPubs(CSeq_descr & descr)
 {
-    CSeq_descr::Tdata::iterator it1 = descr.Set().begin();
-    while (it1 != descr.Set().end()) {
-        if ((*it1)->IsPub()) {
-            CSeq_descr::Tdata::iterator it2 = it1;
-            ++it2;
-            while (it2 != descr.Set().end()) {
-                if ((*it2)->IsPub() && (*it1)->GetPub().Equals((*it2)->GetPub())) {
-                    it2 = descr.Set().erase(it2);
-                    ChangeMade(CCleanupChange::eRemoveDescriptor);
-                } else {
-                    ++it2;
-                }
-            }
-        }
-        ++it1;
+    if (CCleanup::RemoveDuplicatePubs(descr)) {
+        ChangeMade(CCleanupChange::eRemoveDescriptor);
     }
-
 }
 
 void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
@@ -12978,6 +12964,10 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
     }
     if (CCleanup::MoveProteinSpecificFeats(seh)) {
         ChangeMade(CCleanupChange::eMoveFeat);
+    }
+    if (CCleanup::ConvertPubFeatsToPubDescs(seh)) {
+        ChangeMade(CCleanupChange::eAddDescriptor);
+        ChangeMade(CCleanupChange::eRemoveFeat);
     }
 }
 

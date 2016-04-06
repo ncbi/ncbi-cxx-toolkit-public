@@ -443,7 +443,7 @@ CProt_ref::EProcessed s_ProcessedFromKey(const string& key)
         return CProt_ref::eProcessed_mature;
     } else if (NStr::Equal(key, "trans_peptide")) {
         return CProt_ref::eProcessed_mature;
-    } else if (NStr::Equal(key, "proprotein")) {
+    } else if (NStr::Equal(key, "preprotein") || NStr::Equal(key, "proprotein")) {
         return CProt_ref::eProcessed_preprotein;
     } else {
         return CProt_ref::eProcessed_not_set;
@@ -457,7 +457,7 @@ string s_KeyFromProcessed(CProt_ref::EProcessed processed)
         return "mat_peptide";
         break;
     case CProt_ref::eProcessed_preprotein:
-        return "proprotein";
+        return "preprotein";
         break;
     case CProt_ref::eProcessed_signal_peptide:
         return "sig_peptide";
@@ -471,6 +471,48 @@ string s_KeyFromProcessed(CProt_ref::EProcessed processed)
     }
     return kEmptyStr;
 }
+
+
+bool ConvertProteinToImp(CSeq_feat_Handle fh)
+{
+    if (fh.GetData().IsProt() && fh.GetData().GetProt().IsSetProcessed()) {
+        string key = s_KeyFromProcessed(fh.GetData().GetProt().GetProcessed());
+        if (!NStr::IsBlank(key)) {
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*(fh.GetSeq_feat()));
+            if (fh.GetData().GetProt().IsSetName() && !fh.GetData().GetProt().GetName().empty()) {
+                CRef<CGb_qual> q(new CGb_qual());
+                q->SetQual("product");
+                q->SetVal(fh.GetData().GetProt().GetName().front());
+                new_feat->SetQual().push_back(q);
+            }
+            new_feat->SetData().SetImp().SetKey(key);
+            CSeq_feat_EditHandle efh(fh);
+            efh.Replace(*new_feat);
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool s_IsPreprotein(CSeq_feat_Handle fh)
+{
+    if (!fh.IsSetData()) {
+        return false;
+    } else if (fh.GetData().IsProt() &&
+        fh.GetData().GetProt().IsSetProcessed() &&
+        fh.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_preprotein) {
+        return true;
+    } else if (fh.GetData().IsImp() &&
+        fh.GetData().GetImp().IsSetKey() &&
+        s_ProcessedFromKey(fh.GetData().GetImp().GetKey()) == CProt_ref::eProcessed_preprotein) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 
 bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
 {
@@ -500,20 +542,7 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     if (!cds || !cds->IsSetProduct()) {
         // there is no overlapping coding region feature, so there is no appropriate
         // protein sequence to move to
-
-        if (fh.GetData().IsProt() && fh.GetData().GetProt().IsSetProcessed()) {
-            string key = s_KeyFromProcessed(fh.GetData().GetProt().GetProcessed());
-            if (!NStr::IsBlank(key)) {
-                CRef<CSeq_feat> new_feat(new CSeq_feat());
-                new_feat->Assign(*(fh.GetSeq_feat()));
-                new_feat->SetData().SetImp().SetKey(key);
-                CSeq_feat_EditHandle efh(fh);
-                efh.Replace(*new_feat);
-                return true;
-            }
-        }
-
-        return false;
+        return ConvertProteinToImp(fh);
     }
 
     CSeq_feat_Handle cds_h = fh.GetScope().GetSeq_featHandle(*cds);
@@ -522,67 +551,73 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         return false;
     }
 
-    if (processed != CProt_ref::eProcessed_signal_peptide &&
-        feature::IsLocationInFrame(cds_h, fh.GetLocation()) != feature::eLocationInFrame_InFrame) {
+    bool is_preprotein = s_IsPreprotein(fh);
+    bool in_frame = (feature::IsLocationInFrame(cds_h, fh.GetLocation()) == feature::eLocationInFrame_InFrame);
+    if (!in_frame && !is_preprotein) {
         // not in frame, can't convert
-        return false;
+        return ConvertProteinToImp(fh);
     }
 
     CConstRef<CSeq_feat> orig_feat = fh.GetSeq_feat();
     CRef<CSeq_feat> new_feat(new CSeq_feat());
     new_feat->Assign(*orig_feat);
-    CRef<CSeq_loc> new_loc;
-    CRef<CSeq_loc_Mapper> nuc2prot_mapper(
-        new CSeq_loc_Mapper(*cds, CSeq_loc_Mapper::eLocationToProduct, &fh.GetScope()));
-    new_loc = nuc2prot_mapper->Map(orig_feat->GetLocation());
-    if (!new_loc) {
-        return false;
-    }
-    const CSeq_id* sid = new_loc->GetId();
-    if (!sid || sid->Equals(*(orig_feat->GetLocation().GetId()))) {
-        // unable to map to protein location
-        return false;
-    }
-    new_loc->ResetStrand();
-
     if (new_feat->GetData().Which() == CSeqFeatData::e_Imp) {
         new_feat->SetData().SetProt().SetProcessed(processed);
     }
 
-    // change location to protein
-    new_feat->ResetLocation();
-    new_feat->SetLocation(*new_loc);
+    if (in_frame) {
+        CRef<CSeq_loc> new_loc;
+        CRef<CSeq_loc_Mapper> nuc2prot_mapper(
+            new CSeq_loc_Mapper(*cds, CSeq_loc_Mapper::eLocationToProduct, &fh.GetScope()));
+        new_loc = nuc2prot_mapper->Map(orig_feat->GetLocation());
+        if (!new_loc) {
+            return false;
+        }
+        const CSeq_id* sid = new_loc->GetId();
+        if (!sid || sid->Equals(*(orig_feat->GetLocation().GetId()))) {
+            // unable to map to protein location
+            return false;
+        }
+        new_loc->ResetStrand();
+        // change location to protein
+        new_feat->ResetLocation();
+        new_feat->SetLocation(*new_loc);
+    }
+
 
     CSeq_feat_EditHandle edh(fh);
     edh.Replace(*new_feat);
-    CSeq_annot_Handle ah = fh.GetAnnot();
 
-    CBioseq_Handle target_bsh = fh.GetScope().GetBioseqHandle(new_feat->GetLocation());
-    CBioseq_EditHandle eh = target_bsh.GetEditHandle();
+    if (in_frame) {
+        CSeq_annot_Handle ah = fh.GetAnnot();
 
-    // Find a feature table on the protein sequence to add the feature to.       
-    CSeq_annot_Handle ftable;
-    CSeq_annot_CI annot_ci(target_bsh);
-    for (; annot_ci; ++annot_ci) {
-        if ((*annot_ci).IsFtable()) {
-            ftable = *annot_ci;
-            break;
+        CBioseq_Handle target_bsh = fh.GetScope().GetBioseqHandle(new_feat->GetLocation());
+        CBioseq_EditHandle eh = target_bsh.GetEditHandle();
+
+        // Find a feature table on the protein sequence to add the feature to.       
+        CSeq_annot_Handle ftable;
+        CSeq_annot_CI annot_ci(target_bsh);
+        for (; annot_ci; ++annot_ci) {
+            if ((*annot_ci).IsFtable()) {
+                ftable = *annot_ci;
+                break;
+            }
         }
-    }
-    // If there is no feature table present, make one
-    if (!ftable) {
-        CRef<CSeq_annot> new_annot(new CSeq_annot());
-        ftable = eh.AttachAnnot(*new_annot);
-    }
+        // If there is no feature table present, make one
+        if (!ftable) {
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
+            ftable = eh.AttachAnnot(*new_annot);
+        }
 
-    // add feature to the protein bioseq
-    CSeq_annot_EditHandle aeh(ftable);
-    aeh.TakeFeat(edh);
+        // add feature to the protein bioseq
+        CSeq_annot_EditHandle aeh(ftable);
+        aeh.TakeFeat(edh);
 
-    // remove old annot if now empty
-    if (CNewCleanup_imp::ShouldRemoveAnnot(*(ah.GetCompleteSeq_annot()))) {
-        CSeq_annot_EditHandle orig(ah);
-        orig.Remove();
+        // remove old annot if now empty
+        if (CNewCleanup_imp::ShouldRemoveAnnot(*(ah.GetCompleteSeq_annot()))) {
+            CSeq_annot_EditHandle orig(ah);
+            orig.Remove();
+        }
     }
     return true;
 
@@ -2072,6 +2107,68 @@ vector<CConstRef<CPub> > CCleanup::GetCitationList(CBioseq_Handle bsh)
         ++fi;
     }
     return pub_list;
+}
+
+
+bool CCleanup::RemoveDuplicatePubs(CSeq_descr& descr)
+{
+    bool any_change = false;
+    CSeq_descr::Tdata::iterator it1 = descr.Set().begin();
+    while (it1 != descr.Set().end()) {
+        if ((*it1)->IsPub()) {
+            CSeq_descr::Tdata::iterator it2 = it1;
+            ++it2;
+            while (it2 != descr.Set().end()) {
+                if ((*it2)->IsPub() && (*it1)->GetPub().Equals((*it2)->GetPub())) {
+                    it2 = descr.Set().erase(it2);
+                    any_change = true;
+                } else {
+                    ++it2;
+                }
+            }
+        }
+        ++it1;
+    }
+    return any_change;
+}
+
+
+bool CCleanup::ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh)
+{
+    bool any_change = false;
+    for (CBioseq_CI b(seh); b; ++b) {
+        for (CFeat_CI p(*b, CSeqFeatData::e_Pub); p; ++p) {
+            if (p->GetLocation().IsInt() &&
+                p->GetLocation().GetStart(eExtreme_Biological) == 0 &&
+                p->GetLocation().GetStop(eExtreme_Biological) == b->GetBioseqLength() - 1) {
+                CRef<CSeqdesc> d(new CSeqdesc());
+                d->SetPub().Assign(p->GetData().GetPub());
+                if (p->IsSetComment()) {
+                    if (d->GetPub().IsSetComment() && !NStr::IsBlank(d->GetPub().GetComment())) {
+                        d->SetPub().SetComment(d->GetPub().GetComment() + "; " + p->GetComment());
+                    } else {
+                        d->SetPub().SetComment();
+                    }
+                }
+                // add descriptor to nuc-prot parent or sequence itself
+                CBioseq_set_Handle parent = b->GetParentBioseq_set();
+                if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
+                    CBioseq_set_EditHandle eh(parent);
+                    eh.AddSeqdesc(*d);
+                    RemoveDuplicatePubs(eh.SetDescr());
+                } else {
+                    CBioseq_EditHandle eh(*b);
+                    eh.AddSeqdesc(*d);
+                    RemoveDuplicatePubs(eh.SetDescr());
+                }
+                // remove feature
+                CSeq_feat_EditHandle feh(*p);
+                feh.Remove();
+                any_change = true;
+            }
+        }
+    }
+    return any_change;
 }
 
 
