@@ -214,7 +214,7 @@ void s_CheckIds(const SBioseqInfo& info, CScope* scope)
     vector<CSeq_id_Handle> req_ids;
     {
         vector<string> req_ids_str;
-        NStr::Tokenize(info.m_RequiredIds, ";", req_ids_str);
+        NStr::Split(info.m_RequiredIds, ";", req_ids_str);
         TIntId gi_offset = GetGiOffset();
         ITERATE ( vector<string>, it, req_ids_str ) {
             CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*it);
