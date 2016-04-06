@@ -5,9 +5,24 @@ GENBANK_LOADER_METHOD="$1"
 export GENBANK_LOADER_METHOD
 shift
 
+status_dir="$CFG_LIB/../status"
+if test ! -d "$status_dir"; then
+    status_dir="../../../../status"
+fi
+
+disabled() {
+    if test -f "$status_dir/$1.enabled"; then
+        return 1
+    fi
+    case "$FEATURES" in
+        *" $1 "*) return 1;;
+    esac
+    return 0;
+}
+
 if test "$GENBANK_LOADER_METHOD" = pubseqos; then
     # special checks and settings for PubSeqOS reader
-    if test ! -f "../../../../status/PubSeqOS.enabled"; then
+    if disabled PubSeqOS; then
         echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
         exit 0
     fi

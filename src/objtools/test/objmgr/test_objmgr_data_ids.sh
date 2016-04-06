@@ -5,9 +5,24 @@ GENBANK_LOADER_METHOD="$1"
 export GENBANK_LOADER_METHOD
 shift
 
+status_dir="$CFG_LIB/../status"
+if test ! -d "$status_dir"; then
+    status_dir="../../../../status"
+fi
+
+disabled() {
+    if test -f "$status_dir/$1.enabled"; then
+        return 1
+    fi
+    case "$FEATURES" in
+        *" $1 "*) return 1;;
+    esac
+    return 0;
+}
+
 if test "$GENBANK_LOADER_METHOD" = pubseqos; then
     # special checks and settings for PubSeqOS reader
-    if test ! -f "../../../../status/PubSeqOS.enabled"; then
+    if disabled PubSeqOS; then
         echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
         exit 0
     fi
@@ -42,8 +57,8 @@ for mode in "" "-no_reset" "-keep_handles" "-no_reset -keep_handles"; do
         fi
     done
 done
-if test -f test_objmgr_data.id_wgs?; then
-    for file in test_objmgr_data.id_wgs?; do
+for file in test_objmgr_data.id_wgs?; do
+    if test -f "$file"; then
         echo "Testing: $@ -idlist $file"
         $CHECK_EXEC "$@" -idlist "$file"
         error=$?
@@ -55,6 +70,6 @@ if test -f test_objmgr_data.id_wgs?; then
                 129|130|137|143) echo "Apparently killed"; break 1 ;;
             esac
         fi
-    done
-fi
+    fi
+done
 exit $exitcode
