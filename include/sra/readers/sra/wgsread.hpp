@@ -183,7 +183,8 @@ public:
 
     bool IsTSA(void) const;
 
-    CRef<CSeq_id> GetGeneralSeq_id(CTempString tag) const;
+    CRef<CSeq_id> GetGeneralSeq_id(CTempString tag,
+                                   bool omit_wgs_version = false) const;
     CRef<CSeq_id> GetAccSeq_id(CTempString acc,
                                int version) const;
     CRef<CSeq_id> GetAccSeq_id(ERowType type,
@@ -406,6 +407,7 @@ private:
     CVDBTable m_SeqTable;
     string m_IdPrefixWithVersion;
     string m_IdPrefix;
+    string m_IdPrefixDbWithVersion;
     string m_IdPrefixDb;
     int m_IdVersion;
     SIZE_TYPE m_IdRowDigits;

@@ -744,7 +744,8 @@ void CWGSDb_Impl::x_InitIdParams(void)
     m_IdPrefixWithVersion = acc.substr(0, prefix_len+2);
     m_IdPrefix = acc.substr(0, prefix_len);
     m_IdVersion = NStr::StringToNumeric<int>(acc.substr(prefix_len, 2));
-    m_IdPrefixDb = (IsTSA()? "TSA:": "WGS:")+m_IdPrefixWithVersion;
+    m_IdPrefixDbWithVersion = (IsTSA()? "TSA:": "WGS:")+m_IdPrefixWithVersion;
+    m_IdPrefixDb = (IsTSA()? "TSA:": "WGS:")+m_IdPrefix;
     Put(seq);
 }
 
@@ -1080,7 +1081,8 @@ bool CWGSDb_Impl::IsTSA(void) const
 }
 
 
-CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString tag) const
+CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString tag,
+                                            bool omit_wgs_version) const
 {
     CRef<CSeq_id> id;
     if ( m_IdPrefixWithVersion.empty() ) {
@@ -1094,10 +1096,12 @@ CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString tag) const
         sx_SetTag(dbtag, tag.substr(colon+1));
     }
     else if ( !m_IdPrefixWithVersion.empty() ) {
-        dbtag.SetDb(m_IdPrefixDb);
-        if ( NStr::StartsWith(tag, m_IdPrefixDb) &&
-             tag[m_IdPrefixDb.size()] == ':' ) {
-            sx_SetTag(dbtag, tag.substr(m_IdPrefixDb.size()+1));
+        const string& db =
+            omit_wgs_version? m_IdPrefixDb: m_IdPrefixDbWithVersion;
+        dbtag.SetDb(db);
+        if ( NStr::StartsWith(tag, db) &&
+             tag[db.size()] == ':' ) {
+            sx_SetTag(dbtag, tag.substr(db.size()+1));
         }
         else {
             sx_SetTag(dbtag, tag);
@@ -4469,7 +4473,7 @@ CRef<CSeq_id> CWGSProteinIterator::GetGeneralSeq_id(void) const
     if ( sx_IsArtificialName(name, m_CurrId) ) {
         return null;
     }
-    return GetDb().GetGeneralSeq_id(name);
+    return GetDb().GetGeneralSeq_id(name, true);
 }
 
 
