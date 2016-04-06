@@ -1170,6 +1170,7 @@ variation needs $(SEQ_LIBS)
 variation needs pub
 variation_utils needs variation
 variation_utils needs xobjutil
+varrep needs xser
 vdb2blast needs $(BLAST_LIBS)
 vdb2blast needs $(VDB_LIB)
 vdb2blast needs3party $(VDB_LIBS)
