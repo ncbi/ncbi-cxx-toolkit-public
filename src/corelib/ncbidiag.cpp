@@ -4708,6 +4708,7 @@ private:
 string CExtraEncoder::Encode(const CTempString src, EStringType stype) const
 {
     string dst;
+    dst.reserve(src.length() * 2);
     ITERATE(CTempString, c, src) {
         const char* enc = s_ExtraEncodeChars[(unsigned char)(*c)];
         if (stype == eName  &&  !m_AllowBadNames &&
