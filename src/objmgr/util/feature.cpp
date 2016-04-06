@@ -92,6 +92,12 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(feature)
 USING_SCOPE(sequence);
 
+// internal prototypes
+bool sFeatureGetChildrenOfSubtypeFaster(CMappedFeat, CSeqFeatData::ESubtype, 
+    vector<CMappedFeat>&, feature::CFeatTree&);
+bool sFeatureGetChildrenOfSubtype(CMappedFeat, CSeqFeatData::ESubtype, 
+    vector<CMappedFeat>&);
+bool sGetFeatureGeneBiotypeWrapper(feature::CFeatTree&, CMappedFeat, string&, bool);
 
 // Appends a label onto "label" based on the type of feature       
 void s_GetTypeLabel(const CSeq_feat& feat, string* label, TFeatLabelFlags flags)
@@ -3599,41 +3605,61 @@ void AddProteinFeature(const CBioseq& seq, const string& protein_name, const CSe
 }
 
 
-
-bool sFeatureGetChildrenOfSubtype(
+//  ----------------------------------------------------------------------------
+bool sFeatureGetChildrenOfSubtypeFaster(
     CMappedFeat mf,
     CSeqFeatData::ESubtype subtype,
     vector<CMappedFeat>& children,
-    feature::CFeatTree* pTree = 0)
+    feature::CFeatTree& featTree)
+//  ----------------------------------------------------------------------------
 {
     const CSeq_feat& ff = mf.GetOriginalFeature();
-    bool bTreeIsMine = false;
-    if (!pTree) {
-        pTree = new feature::CFeatTree;
-        pTree->AddFeaturesFor(mf, subtype, mf.GetFeatSubtype());
-        bTreeIsMine = true;
-    }
 
-    vector<CMappedFeat> c = pTree->GetChildren(mf);
+    vector<CMappedFeat> c = featTree.GetChildren(mf);
     for (vector<CMappedFeat>::iterator it = c.begin(); it != c.end(); it++) {
         CMappedFeat f = *it;
         if (f.GetFeatSubtype() == subtype) {
             children.push_back(f);
         }
         else {
-            sFeatureGetChildrenOfSubtype(f, subtype, children, pTree);
+            sFeatureGetChildrenOfSubtypeFaster(f, subtype, children, featTree);
         }
-    }
-    if (bTreeIsMine) {
-        delete pTree;
     }
     return true;
 }
 
-bool GetFeatureGeneBiotype(
+
+//  ----------------------------------------------------------------------------
+bool sFeatureGetChildrenOfSubtype(
+    CMappedFeat mf,
+    CSeqFeatData::ESubtype subtype,
+    vector<CMappedFeat>& children)
+//  ----------------------------------------------------------------------------
+{
+    const CSeq_feat& ff = mf.GetOriginalFeature();
+    feature::CFeatTree myTree;
+    myTree.AddFeaturesFor(mf, subtype, mf.GetFeatSubtype());
+
+    vector<CMappedFeat> c = myTree.GetChildren(mf);
+    for (vector<CMappedFeat>::iterator it = c.begin(); it != c.end(); it++) {
+        CMappedFeat f = *it;
+        if (f.GetFeatSubtype() == subtype) {
+            children.push_back(f);
+        }
+        else {
+            sFeatureGetChildrenOfSubtypeFaster(f, subtype, children, myTree);
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool sGetFeatureGeneBiotypeWrapper(
     feature::CFeatTree& ft,
     CMappedFeat mf,
-    string& biotype)
+    string& biotype,
+    bool fast)
+//  ----------------------------------------------------------------------------
 {
 #define SUBTYPE(x) CSeqFeatData::eSubtype_ ## x
 
@@ -3658,7 +3684,12 @@ bool GetFeatureGeneBiotype(
     // }
 
     vector<CMappedFeat> vecCds;
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(cdregion), vecCds);
+    if (fast) {
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(cdregion), vecCds, ft);
+    }
+    else {
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(cdregion), vecCds);
+    }
 
     //1a 
     // If there is at least one non-pseudo CDS child without a 
@@ -3677,19 +3708,34 @@ bool GetFeatureGeneBiotype(
     }
 
     vector<CMappedFeat> vecOthers;
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(V_region), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(C_region), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(V_segment), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(D_segment), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(J_segment), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(tRNA), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(rRNA), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(snRNA), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(snoRNA), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(tmRNA), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(otherRNA), vecOthers);
-    sFeatureGetChildrenOfSubtype(mf, SUBTYPE(ncRNA), vecOthers);
-
+    if (fast) {
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(V_region), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(C_region), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(V_segment), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(D_segment), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(J_segment), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(tRNA), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(rRNA), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(snRNA), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(snoRNA), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(tmRNA), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(otherRNA), vecOthers, ft);
+        sFeatureGetChildrenOfSubtypeFaster(mf, SUBTYPE(ncRNA), vecOthers, ft);
+    }
+    else{
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(V_region), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(C_region), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(V_segment), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(D_segment), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(J_segment), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(tRNA), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(rRNA), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(snRNA), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(snoRNA), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(tmRNA), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(otherRNA), vecOthers);
+        sFeatureGetChildrenOfSubtype(mf, SUBTYPE(ncRNA), vecOthers);
+    }
     CSeqFeatData::ESubtype singleSubtype = SUBTYPE(bad);
     CMappedFeat nonPseudo;
 
@@ -3793,6 +3839,27 @@ bool GetFeatureGeneBiotype(
 
     return true;
 #undef SUBTYPE
+}
+
+
+//  ----------------------------------------------------------------------------
+bool GetFeatureGeneBiotypeFaster(
+    feature::CFeatTree& ft,
+    CMappedFeat mf,
+    string& biotype)
+//  ----------------------------------------------------------------------------
+{
+    return sGetFeatureGeneBiotypeWrapper(ft, mf, biotype, true);
+}
+
+//  ----------------------------------------------------------------------------
+bool GetFeatureGeneBiotype(
+    feature::CFeatTree& ft,
+    CMappedFeat mf,
+    string& biotype)
+//  ----------------------------------------------------------------------------
+{
+    return sGetFeatureGeneBiotypeWrapper(ft, mf, biotype, false);
 }
 
 

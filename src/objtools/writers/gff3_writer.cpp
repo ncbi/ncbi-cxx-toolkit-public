@@ -2268,7 +2268,7 @@ bool CGff3Writer::xAssignFeatureAttributeGeneBiotype(
     }
 
     string biotype;
-    if (!feature::GetFeatureGeneBiotype(fc.FeatTree(), mf, biotype)) {
+    if (!feature::GetFeatureGeneBiotypeFaster(fc.FeatTree(), mf, biotype)) {
         return true;
     }
     record.SetAttribute("gene_biotype", biotype);

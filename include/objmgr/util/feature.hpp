@@ -497,6 +497,10 @@ NCBI_XOBJUTIL_EXPORT
 bool GetFeatureGeneBiotype(feature::CFeatTree& ft,
                            CMappedFeat mf,
                            string& biotype);
+NCBI_XOBJUTIL_EXPORT
+bool GetFeatureGeneBiotypeFaster(feature::CFeatTree& ft,
+                           CMappedFeat mf,
+                           string& biotype);
 
 typedef enum {
     eLocationInFrame_InFrame = 0,
