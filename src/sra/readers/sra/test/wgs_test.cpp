@@ -429,8 +429,6 @@ int LowLevelTest(void)
 }
 #endif
 
-static const size_t kMinAccessionLength = 6;
-static const size_t kMaxAccessionLength = 8;
 typedef pair<TIntId, TIntId> TGiRange;
 typedef pair<string, string> TAccRange;
 typedef vector<TGiRange> TGiRanges;

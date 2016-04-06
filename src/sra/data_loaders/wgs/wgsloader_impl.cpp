@@ -78,8 +78,6 @@ BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
-static const int kChunkId_QualityGraph = 1;
-
 NCBI_PARAM_DECL(int, WGS_LOADER, DEBUG);
 NCBI_PARAM_DEF_EX(int, WGS_LOADER, DEBUG, 0,
                   eParam_NoThread, WGS_LOADER_DEBUG);
