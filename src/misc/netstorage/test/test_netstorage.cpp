@@ -42,6 +42,9 @@
 #include <boost/preprocessor.hpp>
 #include <boost/type_traits/integral_constant.hpp>
 
+#include <algorithm>
+#include <random>
+
 USING_NCBI_SCOPE;
 
 
@@ -297,21 +300,6 @@ struct CRandomSingleton
 };
 
 
-// Convenience function to fill container with random char data
-template <class TContainer>
-void RandomFill(TContainer& container, size_t length, bool printable = true)
-{
-    CRandom& random(CRandomSingleton::instance());
-    const char kMin = printable ? '!' : numeric_limits<char>::min();
-    const char kMax = printable ? '~' : numeric_limits<char>::max();
-    container.clear();
-    container.reserve(length);
-    while (length-- > 0) {
-        container.push_back(kMin + random.GetRandIndex(kMax - kMin + 1));
-    }
-}
-
-
 // An extended IReader interface
 class IExtReader : public IReader
 {
@@ -414,7 +402,12 @@ public:
         {
             const size_t kSize = 20 * 1024 * 1024; // 20MB
             data.reserve(kSize);
-            RandomFill(data, kSize, false);
+
+            uniform_int_distribution<short> range(
+                    numeric_limits<char>::min(),
+                    numeric_limits<char>::max());
+            auto random_char = bind(range, default_random_engine());
+            generate_n(back_inserter(data), kSize, random_char);
         }
     };
 
@@ -931,37 +924,49 @@ struct SAttrApiBase
 
     SAttrApiBase()
     {
-        CRandom& r(CRandomSingleton::instance());
+        default_random_engine generator;
 
         // Attribute name/value length range
-        const size_t kMinLength = 5;
-        const size_t kNameMaxLength = 256;
-        const size_t kValueMaxLength = 1024;
+        uniform_int_distribution<size_t> name_range(5, 64);
+        uniform_int_distribution<size_t> value_range(5, 900);
+        auto name_length = bind(name_range, generator);
+        auto value_length = bind(value_range, generator);
+
+        const char name_chars[] =
+            "0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        uniform_int_distribution<size_t> name_indexes(0, sizeof(name_chars) - 2);
+        uniform_int_distribution<short> value_chars(
+                numeric_limits<char>::min(),
+                numeric_limits<char>::max());
+        auto name_char = [&]()->char { return name_chars[name_indexes(generator)]; };
+        auto value_char = bind(value_chars, generator);
 
         // Number of attributes
-        const size_t kMinSize = 3;
-        const size_t kMaxSize = 10;
-        size_t size = r.GetRand(kMinSize, kMaxSize);
+        uniform_int_distribution<size_t> attr_number(3, 10);
+        size_t size = attr_number(generator);
 
-        // The probability of an attribute to be set:
-        // (kSetProbability - 1) / kSetProbability
-        const size_t kSetProbability = 10;
+        // The probability of an attribute value to be { empty, not_empty }:
+        discrete_distribution<int> attr_set{ 1, 9 };
 
         string name;
         string value;
 
-        name.reserve(kNameMaxLength);
-        value.reserve(kValueMaxLength);
+        name.reserve(name_range.max());
+        value.reserve(value_range.max());
 
         while (size-- > 0) {
-            RandomFill(name, r.GetRand(kMinLength, kNameMaxLength));
+            generate_n(back_inserter(name), name_length(), name_char);
 
-            if (r.GetRandIndex(kSetProbability)) {
-                RandomFill(value, r.GetRand(kMinLength, kValueMaxLength));
+            if (attr_set(generator)) {
+                generate_n(back_inserter(value), value_length(), value_char);
                 attrs.insert(make_pair(name, value));
             } else {
                 attrs.insert(make_pair(name, kEmptyStr));
             }
+
+            name.clear();
+            value.clear();
         }
 
         data.reserve(attrs.size());
@@ -1043,23 +1048,18 @@ struct SAttrApi : SAttrApiBase
     template <class TLocation>
     void Read(TLocation, const SCtx& ctx, CNetStorageObject& object)
     {
-#if 0
         BOOST_CHECK_THROW_CTX(SAttrApiBase::Read(ctx, object),
                 CNetStorageException, ctx);
-#endif
     }
 
     template <class TLocation>
     void Write(TLocation, const SCtx& ctx, CNetStorageObject& object)
     {
-#if 0
         BOOST_CHECK_THROW_CTX(SAttrApiBase::Write(ctx, object),
                 CNetStorageException, ctx);
-#endif
     }
 };
 
-#if 0
 // Attribute testing is enabled
 template <>
 struct SAttrApi<boost::true_type> : SAttrApiBase
@@ -1088,14 +1088,13 @@ struct SAttrApi<boost::true_type> : SAttrApiBase
                 CNetStorageException, ctx);
     }
 };
-#endif
 
 
 // Locations and flags used for tests
 
 struct SLocBase
 {
-    typedef boost::false_type TAttrTesting;
+    typedef boost::true_type TAttrTesting;
 
     static const bool check_relocate = true;
     static const bool loc_info = true;
