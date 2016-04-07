@@ -829,7 +829,7 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
     }
 
     CSeq_loc_CI i2(loc, CSeq_loc_CI::eEmpty_Allow);
-    for ( ; i2; ++i2 ) {
+    while ( i2 ) {
         const CSeq_loc* slp = &(i2.GetEmbeddingSeq_loc());
         switch (slp->Which()) {
         case CSeq_loc::e_Null:
@@ -861,7 +861,7 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
                         *scope);
                     ++i2;
                 }
-                break;
+                continue;
             }
         case CSeq_loc::e_Pnt:
             if (slp->GetPnt().IsSetFuzz()) {
@@ -917,6 +917,7 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
             // First try to loop through CMolInfo
             const CMolInfo& mi = di->GetMolinfo();
             if (!mi.IsSetCompleteness()) {
+                ++i2;
                 continue;
             }
             switch (mi.GetCompleteness()) {
@@ -949,9 +950,7 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
         default:
             break;
         }
-        if ( !i2 ) {
-            break;
-        }
+        ++i2;
     }
     return retval;
 }
