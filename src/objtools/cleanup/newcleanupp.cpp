@@ -12205,8 +12205,62 @@ bool CNewCleanup_imp::IsSyntheticConstruct(const CBioSource& src)
 }
 
 
+void CNewCleanup_imp::x_ExtendFeatureToCoverSequence(CSeq_feat_Handle fh, const CBioseq& seq)
+{
+    if (fh.GetLocation().IsInt() &&
+        fh.GetLocation().GetStart(eExtreme_Biological) == 0 &&
+        fh.GetLocation().GetStop(eExtreme_Biological) == seq.GetLength() - 1) {
+        // already full length, no need to change
+        return;
+    }
+
+    bool partial_start = fh.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial_stop = fh.GetLocation().IsPartialStop(eExtreme_Biological);
+
+    CRef<CSeq_feat> new_feat(new CSeq_feat());
+    new_feat->Assign(*(fh.GetSeq_feat()));
+    new_feat->SetLocation().SetInt().SetId().Assign(*(fh.GetLocation().GetId()));
+    new_feat->SetLocation().SetInt().SetFrom(0);
+    new_feat->SetLocation().SetInt().SetTo(seq.GetLength() - 1);
+    new_feat->SetLocation().SetPartialStart(partial_start, eExtreme_Biological);
+    new_feat->SetLocation().SetPartialStop(partial_stop, eExtreme_Biological);
+
+    CSeq_feat_EditHandle eh(fh);
+    eh.Replace(*new_feat);
+    ChangeMade(CCleanupChange::eChangeFeatureLocation);
+
+}
+
+
 void CNewCleanup_imp::x_ExtendProteinFeatureOnProteinSeq(CBioseq& seq)
 {
+    // don't bother unless length greater than zero and protein
+    if (!seq.IsSetInst() ||
+        !seq.GetInst().IsSetLength() ||
+        seq.GetInst().GetLength() == 0 ||
+        !seq.GetInst().IsSetMol() ||
+        !seq.GetInst().IsAa()) {
+        return;
+    }
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if (!bsh) {
+        return;
+    }
+
+    CFeat_CI f(bsh, CSeqFeatData::eSubtype_prot);
+    if (!f) {
+        // no feature to adjust
+        return;
+    }
+
+    if (f->GetLocation().IsInt() &&
+        f->GetLocation().GetStart(eExtreme_Biological) == 0 &&
+        f->GetLocation().GetStop(eExtreme_Biological) == seq.GetLength() - 1) {
+        // already full length, no need to change
+        return;
+    }
+
+    x_ExtendFeatureToCoverSequence(*f, seq);
 }
 
 
@@ -12280,28 +12334,8 @@ void CNewCleanup_imp::x_ExtendSingleGeneOnMrna(CBioseq& seq)
         }
     }
 
-    if (gene->GetLocation().IsInt() &&
-        gene->GetLocation().GetStart(eExtreme_Biological) == 0 &&
-        gene->GetLocation().GetStop(eExtreme_Biological) == seq.GetLength() - 1) {
-        // already full length, no need to change
-        return;
-    }
-
-    bool partial_start = gene->GetLocation().IsPartialStart(eExtreme_Biological);
-    bool partial_stop = gene->GetLocation().IsPartialStop(eExtreme_Biological);
-
-    CRef<CSeq_feat> new_gene(new CSeq_feat());
-    new_gene->Assign(*gene);
-    new_gene->SetLocation().SetInt().SetId().Assign(*(gene->GetLocation().GetId()));
-    new_gene->SetLocation().SetInt().SetFrom(0);
-    new_gene->SetLocation().SetInt().SetTo(seq.GetLength() - 1);
-    new_gene->SetLocation().SetPartialStart(partial_start, eExtreme_Biological);
-    new_gene->SetLocation().SetPartialStop(partial_stop, eExtreme_Biological);
-
     CSeq_feat_Handle fh = m_Scope->GetSeq_featHandle(*gene);
-    CSeq_feat_EditHandle eh(fh);
-    eh.Replace(*new_gene);
-    ChangeMade(CCleanupChange::eChangeFeatureLocation);
+    x_ExtendFeatureToCoverSequence(fh, seq);
 }
 
 
