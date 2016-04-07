@@ -1321,7 +1321,6 @@ BOOST_AUTO_TEST_CASE( testInitialWordParamNewSomeInvalidKbp )
 
 BOOST_AUTO_TEST_CASE( testRemoteFilterString)
 {
-       typedef ncbi::objects::CBlast4_parameters TBlast4Opts;
        CBlastOptions opts(CBlastOptions::eRemote);
 
        opts.SetProgram(eBlastn);
