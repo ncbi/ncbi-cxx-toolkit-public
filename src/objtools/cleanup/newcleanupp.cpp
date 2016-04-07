@@ -10347,7 +10347,6 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
     }
 
     vector<string> new_keywords;
-    CFeat_CI f(bsh);
 
     for (CSeqdesc_CI di(bsh, CSeqdesc::e_User); di; ++di) {
         const CUser_object& usr = di->GetUser();
@@ -10734,8 +10733,98 @@ void CNewCleanup_imp::x_CleanupGenbankBlock( CSeq_descr & seq_descr )
 }
 
 
+CMolInfo::TBiomol s_BiomolFromGIBBMolType(EGIBB_mol mol)
+{
+    switch (mol) {
+        case eGIBB_mol_genomic:
+            return CMolInfo::eBiomol_genomic;
+            break;
+        case eGIBB_mol_genomic_mRNA:
+            return CMolInfo::eBiomol_genomic_mRNA;
+            break;
+        case eGIBB_mol_mRNA:
+            return CMolInfo::eBiomol_mRNA;
+            break;
+        case eGIBB_mol_other:
+            return CMolInfo::eBiomol_other;
+            break;
+        case eGIBB_mol_other_genetic:
+            return CMolInfo::eBiomol_other_genetic;
+            break;
+        case eGIBB_mol_peptide:
+            return CMolInfo::eBiomol_peptide;
+            break;
+        case eGIBB_mol_pre_mRNA:
+            return CMolInfo::eBiomol_pre_RNA;
+            break;
+        case eGIBB_mol_rRNA:
+            return CMolInfo::eBiomol_rRNA;
+            break;
+        case eGIBB_mol_scRNA:
+            return CMolInfo::eBiomol_scRNA;
+            break;
+        case eGIBB_mol_snRNA:
+            return CMolInfo::eBiomol_snRNA;
+            break;
+        case eGIBB_mol_tRNA:
+            return CMolInfo::eBiomol_tmRNA;
+            break;
+        case eGIBB_mol_unknown:
+            return CMolInfo::eBiomol_unknown;
+            break;
+    }
+    return CMolInfo::eBiomol_unknown;
+}
+
+
 void CNewCleanup_imp::x_RescueMolInfo(CBioseq& seq)
 {
+    if (!seq.IsSetDescr()) {
+        return;
+    }
+
+    CRef<CSeqdesc> d(NULL);
+    CRef<CMolInfo> mi(new CMolInfo());
+    CSeq_descr::Tdata::iterator it = seq.SetDescr().Set().begin();
+    while (it != seq.SetDescr().Set().end()) {
+        if ((*it)->IsMolinfo()) {
+            d = *it;
+            mi->Assign((*it)->GetMolinfo());
+        }
+        ++it;
+    }
+    bool any_change = false;
+    it = seq.SetDescr().Set().begin();
+    while (it != seq.SetDescr().Set().end()) {
+        bool erase = false;
+        if ((*it)->IsMol_type()) {
+            CMolInfo::TBiomol biomol = s_BiomolFromGIBBMolType((*it)->GetMol_type());
+            if (!mi->IsSetBiomol()) {
+                mi->SetBiomol(biomol);
+                any_change = true;
+                erase = true;
+            } else if (mi->GetBiomol() == biomol) {
+                erase = true;
+            }
+        }
+        if (erase) {
+            it = seq.SetDescr().Set().erase(it);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        } else {
+            ++it;
+        }
+    }
+    if (any_change) {
+        if (d) {
+            d->SetMolinfo().Assign(*mi);
+            ChangeMade(CCleanupChange::eChangeMolInfo);
+        } else {
+            d.Reset(new CSeqdesc());
+            d->SetMolinfo().Assign(*mi);
+            seq.SetDescr().Set().push_back(d);
+            ChangeMade(CCleanupChange::eAddDescriptor);
+        }
+    }
 }
 
 
@@ -11257,6 +11346,7 @@ bool CNewCleanup_imp::ShouldRemoveAnnot(const CSeq_annot& annot)
 
 void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
 {
+#if 0
     if (bioseq.IsSetAnnot()) {
         bool any_erasures = true;
         while (any_erasures) {
@@ -11283,6 +11373,7 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
             ChangeMade(CCleanupChange::eChangeOther);
         }
     }
+#endif
 }
 
 void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
