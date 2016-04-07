@@ -557,6 +557,9 @@ BOOST_AUTO_TEST_CASE(Test_MoveProteinSpecificFeatures)
     seh = scope->AddTopLevelSeqEntry(*entry);
     BOOST_CHECK_EQUAL(false, CCleanup::MoveProteinSpecificFeats(seh));
 
+#if 0
+    //code for not moving features on a codon boundary has been removed,
+    //now moves all protein features
     // protein features that are not on a codon boundary cannot be moved
     scope->RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
@@ -574,7 +577,7 @@ BOOST_AUTO_TEST_CASE(Test_MoveProteinSpecificFeatures)
     mat_peptide->SetLocation().SetInt().SetFrom(cds->GetLocation().GetStart(eExtreme_Biological) + 3);
     seh = scope->AddTopLevelSeqEntry(*entry);
     BOOST_CHECK_EQUAL(true, CCleanup::MoveProteinSpecificFeats(seh));
-
+#endif
 }
 
 
