@@ -256,6 +256,8 @@ struct SIssue
 {
     struct SBuilder;
 
+    static const Int8 kEmptySubCode = -1;
+
     Int8 code;
     string message;
     string scope;
@@ -309,7 +311,7 @@ struct SIssue
             if (CJsonNode sub_code = m_Node.GetByKeyOrNull("SubCode")) {
                 return sub_code.AsInteger();
             } else {
-                return 0;
+                return kEmptySubCode;
             }
         }
 
@@ -333,7 +335,7 @@ ostream& operator<< (ostream& os, const SIssue& issue)
 void s_ThrowError(Int8 code, Int8 sub_code, const string& err_msg)
 {
     // Issues were reported by a NetStorage server v2.2.0 or later
-    if (sub_code) {
+    if (sub_code != SIssue::kEmptySubCode) {
         switch (code) {
             case 3000:
                 code = sub_code; // CNetStorageServerError
@@ -393,7 +395,7 @@ static void s_TrapErrors(const CJsonNode& request,
             }
         } else {
             Int8 code = CNetStorageServerError::eUnknownError;
-            Int8 sub_code = 0;
+            Int8 sub_code = SIssue::kEmptySubCode;
             ostringstream errors;
 
             if (!issues)
