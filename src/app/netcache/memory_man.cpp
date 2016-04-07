@@ -1412,6 +1412,9 @@ operator delete[] (void* ptr) throw ()
 // Also, see comments in FinalizeMemoryMan
 #if __NC_MEMMAN_USE_MALLOC_HOOK
 #include <malloc.h>
+#ifndef __MALLOC_HOOK_VOLATILE
+#  define __MALLOC_HOOK_VOLATILE
+#endif
 
 static void*
 s_MallocHook(size_t size, const void* caller)
@@ -1439,7 +1442,7 @@ s_InitMallocHook(void)
     __free_hook    = &s_FreeHook;
 }
 
-void (*__malloc_initialize_hook) (void) = &s_InitMallocHook;
+void (*__MALLOC_HOOK_VOLATILE __malloc_initialize_hook) (void) = &s_InitMallocHook;
 
 #else
 
