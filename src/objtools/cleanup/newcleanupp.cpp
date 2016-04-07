@@ -10777,6 +10777,76 @@ CMolInfo::TBiomol s_BiomolFromGIBBMolType(EGIBB_mol mol)
 }
 
 
+CMolInfo::TTech s_TechFromGIBBMethod(EGIBB_method method)
+{
+    switch (method)
+    {
+        case eGIBB_method_concept_trans:
+            return CMolInfo::eTech_concept_trans;
+            break;
+        case eGIBB_method_seq_pept:
+            return CMolInfo::eTech_seq_pept;
+            break;
+        case eGIBB_method_both:
+            return CMolInfo::eTech_both;
+            break;
+        case eGIBB_method_seq_pept_overlap:
+            return CMolInfo::eTech_seq_pept_overlap;
+            break;
+        case eGIBB_method_seq_pept_homol:
+            return CMolInfo::eTech_seq_pept;
+            break;
+        case eGIBB_method_concept_trans_a:
+            return CMolInfo::eTech_concept_trans_a;
+            break;
+        case eGIBB_method_other:
+            return CMolInfo::eTech_other;
+            break;
+
+    }
+    return CMolInfo::eTech_other;
+}
+
+
+bool SetMolinfoFromGIBBMod(CMolInfo& mi, EGIBB_mod mod)
+{
+    bool changed = false;
+    switch (mod) {
+        case eGIBB_mod_partial:
+            mi.SetCompleteness(CMolInfo::eCompleteness_partial);
+            changed = true;
+            break;
+        case eGIBB_mod_complete:
+            mi.SetCompleteness(CMolInfo::eCompleteness_complete);
+            changed = true;
+            break;
+        case eGIBB_mod_no_left:
+            mi.SetCompleteness(CMolInfo::eCompleteness_no_left);
+            changed = true;
+            break;
+        case eGIBB_mod_no_right:
+            mi.SetCompleteness(CMolInfo::eCompleteness_no_right);
+            changed = true;
+            break;
+        case eGIBB_mod_est:
+            mi.SetTech(CMolInfo::eTech_est);
+            changed = true;
+            break;
+        case eGIBB_mod_sts:
+            mi.SetCompleteness(CMolInfo::eTech_sts);
+            changed = true;
+            break;
+        case eGIBB_mod_survey:
+            mi.SetCompleteness(CMolInfo::eTech_survey);
+            changed = true;
+            break;
+        default:
+            break;
+    }
+    return changed;
+}
+
+
 void CNewCleanup_imp::x_RescueMolInfo(CBioseq& seq)
 {
     if (!seq.IsSetDescr()) {
@@ -10806,6 +10876,19 @@ void CNewCleanup_imp::x_RescueMolInfo(CBioseq& seq)
             } else if (mi->GetBiomol() == biomol) {
                 erase = true;
             }
+        } else if ((*it)->IsMethod()) {
+            CMolInfo::TTech tech = s_TechFromGIBBMethod((*it)->GetMethod());
+            if (!mi->IsSetTech()) {
+                mi->SetTech(tech);
+                any_change = true;
+                erase = true;
+            } else if (mi->GetTech() == tech) {
+                erase = true;
+            }
+        } else if ((*it)->IsModif()) {
+            ITERATE(CSeqdesc::TModif, m, (*it)->GetModif()) {
+                any_change |= SetMolinfoFromGIBBMod(*mi, *m);
+            }
         }
         if (erase) {
             it = seq.SetDescr().Set().erase(it);
@@ -10832,7 +10915,6 @@ void CNewCleanup_imp::x_RemoveOldDescriptors( CSeq_descr & seq_descr )
 {
     EDIT_EACH_SEQDESC_ON_SEQDESCR( d, seq_descr ) {
         switch ((*d)->Which()) {
-            case CSeqdesc::e_Modif:
             case CSeqdesc::e_Mol_type:
             case CSeqdesc::e_Method:
             case CSeqdesc::e_Org:
