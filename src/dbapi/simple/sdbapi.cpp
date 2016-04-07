@@ -2349,7 +2349,12 @@ CQueryImpl::x_SetOutParameter(const string& name, const CVariant& value)
 {
     SQueryParamInfo& info = m_Params[name];
     if (info.value) {
-        *info.value = value;
+        try {
+            *info.value = value;
+        } catch (CDB_ClientEx&) {
+            delete info.value;
+            info.value = new CVariant(value);
+        }
     }
     else {
         info.value = new CVariant(value);
