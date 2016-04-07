@@ -40,6 +40,7 @@
 #include <corelib/resource_info.hpp>
 #include <connect/services/netstorage.hpp>
 #include <corelib/ncbi_message.hpp>
+#include <connect/services/impl/netstorage_impl.hpp>
 
 #include "nst_handler.hpp"
 #include "nst_server.hpp"
@@ -1929,20 +1930,14 @@ CNetStorageHandler::x_ProcessSetAttr(
                    "Mandatory field 'AttrName' is missed");
 
     string      attr_name = message.GetString("AttrName");
-    if (attr_name.empty())
-        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                    "Attribute name must not be empty");
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SAttrName>(attr_name);
 
     if (!message.HasKey("AttrValue"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
                    "Mandatory field 'AttrValue' is missed");
 
     string      value = message.GetString("AttrValue");
-    if (value.size() > max_attr_value)
-        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                   "The 'AttrValue' field value may not exceed " +
-                   NStr::NumericToString(max_attr_value) + " bytes");
-
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SAttrValue>(value);
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,

@@ -126,6 +126,13 @@ void CNetStorageDApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 
     SOCK_InitializeAPI();
+
+    // To make the VARBINARY parameters working properly (the length of the
+    // data received from a stored procedure will always be 8000 bytes
+    // otherwise) the following two calls should be made.
+    // See CXX-7993
+    CSDBAPI::UseDriver(CSDBAPI::eDriver_FTDS95);
+    SetEnvironment("TDSVER", "7.3");
 }
 
 

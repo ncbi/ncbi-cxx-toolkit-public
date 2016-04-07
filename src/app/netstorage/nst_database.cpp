@@ -696,7 +696,8 @@ CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
             else
                 query.SetParameter("@expiration", CTime(CTime::eCurrent) +
                                                   ttl.m_Value);
-            query.SetParameter("@create_if_not_found", create_if_not_found);
+            query.SetParameter("@create_if_not_found", create_if_not_found,
+                               eSDB_Int4);
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@client_id", client_id);
             query.SetParameter("@object_size", object_size.m_Value,
@@ -760,7 +761,8 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
             query.SetParameter("@attr_name", attr_name);
             query.SetParameter("@attr_value", attr_value, eSDB_Binary);
             query.SetParameter("@client_id", client_id);
-            query.SetParameter("@create_if_not_found", create_if_not_found);
+            query.SetParameter("@create_if_not_found", create_if_not_found,
+                               eSDB_Int4);
             query.SetParameter("@object_loc", object_loc);
 
             if (ttl.m_IsNull)
@@ -861,8 +863,15 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
 
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@attr_name", attr_name);
-            query.SetParameter("@need_update", need_update);
-            query.SetParameter("@attr_value", "", eSDB_Binary, eSP_InOut);
+            query.SetParameter("@need_update", need_update,
+                               eSDB_Int4);
+
+            // The MS SQL DB has the datatype of this field as VARBINARY(900)
+            // However, in order to get the real length of that field another
+            // data type must be used here: eSDB_Image.
+            // An alternative SetParameter(..., eSP_InOut) does not work here
+            // either.
+            query.SetOutputParameter("@attr_value", eSDB_Image);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
