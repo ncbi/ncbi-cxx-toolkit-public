@@ -896,7 +896,7 @@ public:
             n50 = contigs_len[j];
             len += contigs_len[j];
         }
-        cerr << "Contigs out: " << contigs_len.size() << " Genome: " << genome_len << " N50: " << n50 << " L50: " << l50 << endl << endl;           
+        cerr << "Contigs out: " << contigs_len.size() << " Genome: " << genome_len << " N50: " << n50 << " L50: " << l50 << endl;           
     }
 
     //assembles the contig; changes the state of all used nodes to 'visited'
