@@ -1,8 +1,5 @@
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-/* ===========================================================================
+/*  $Id$
+ * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
