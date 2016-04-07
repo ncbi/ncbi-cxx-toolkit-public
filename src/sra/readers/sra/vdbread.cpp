@@ -953,6 +953,28 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
 }
 
 
+CNcbiOstream& CVDBValue::SSaveRef::PrintFullName(CNcbiOstream& out) const
+{
+    if ( m_Table ) {
+        m_Table->PrintFullName(out);
+    }
+    if ( m_Row ) {
+        out << '[' << m_Row << ']';
+    }
+    if ( m_ColumnName ) {
+        out << '.' << m_ColumnName;
+    }
+    return out;
+}
+
+
+static inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBValue& obj)
+{
+    return obj.PrintFullName(out);
+}
+
+
 void CVDBValue::x_Get(const CVDBCursor& cursor, const CVDBColumn& column)
 {
     DECLARE_SDK_GET_GUARD();
@@ -969,6 +991,7 @@ void CVDBValue::x_Get(const CVDBCursor& cursor, const CVDBColumn& column)
                         <<cursor<<column<<": "<<bit_offset,
                         RC(rcApp, rcColumn, rcDecoding, rcOffset, rcUnsupported));
     }
+    m_Ref.Set(cursor, 0, column);
 }
 
 
@@ -996,6 +1019,7 @@ void CVDBValue::x_Get(const CVDBCursor& cursor,
                         cursor<<column<<'['<<row<<"]: "<<bit_offset,
                         RC(rcApp, rcColumn, rcDecoding, rcOffset, rcUnsupported));
     }
+    m_Ref.Set(cursor, row, column);
 }
 
 
@@ -1003,7 +1027,8 @@ void CVDBValue::x_ReportIndexOutOfBounds(size_t index) const
 {
     if ( index >= size() ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid index for VDB value array: "<<index,
+                        "Invalid index for VDB value array: "<<
+                        *this<<'['<<index<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
 }
@@ -1013,7 +1038,8 @@ void CVDBValue::x_ReportNotOneValue(void) const
 {
     if ( size() != 1 ) {
         NCBI_THROW2_FMT(CSraException, eDataError,
-                        "VDB value array doen't have single value: "<<size(),
+                        "VDB value array doen't have single value: "<<
+                        *this<<'['<<size()<<']',
                         RC(rcApp, rcData, rcRetrieving, rcSize, rcIncorrect));
     }
 }
@@ -1023,19 +1049,29 @@ void CVDBValue::x_CheckRange(size_t pos, size_t len) const
 {
     if ( pos > size() ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid index for VDB value array: "<<pos,
+                        "Invalid index for VDB value array: "<<
+                        *this<<'['<<pos<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
     if ( pos+len < pos ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid length for VDB value sub-array: "<<pos<<','<<len,
+                        "Invalid length for VDB value sub-array: "<<
+                        *this<<'['<<pos<<','<<len<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
     if ( pos+len > size() ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid end of VDB value sub-array: "<<pos<<','<<len,
+                        "Invalid end of VDB value sub-array: "<<
+                        *this<<'['<<pos<<','<<len<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
+}
+
+
+static inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBValueFor4Bits& obj)
+{
+    return obj.PrintFullName(out);
 }
 
 
@@ -1062,6 +1098,7 @@ void CVDBValueFor4Bits::x_Get(const CVDBCursor& cursor,
     m_RawData = static_cast<const char*>(data);
     m_ElemOffset = bit_offset >> 2;
     m_ElemCount = elem_count;
+    m_Ref.Set(cursor, row, column);
 }
 
 
@@ -1069,7 +1106,8 @@ void CVDBValueFor4Bits::x_ReportIndexOutOfBounds(size_t index) const
 {
     if ( index >= size() ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid index for VDB 4-bits value array: "<<index,
+                        "Invalid index for VDB 4-bits value array: "<<
+                        *this<<'['<<index<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
 }
@@ -1080,17 +1118,20 @@ void CVDBValueFor4Bits::x_CheckRange(size_t pos, size_t len) const
 {
     if ( pos > size() ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid index for VDB 4-bits value array: "<<pos,
+                        "Invalid index for VDB 4-bits value array: "<<
+                        *this<<'['<<pos<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
     if ( pos+len < pos ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid length for VDB 4-bits value sub-array: "<<pos<<','<<len,
+                        "Invalid length for VDB 4-bits value sub-array: "<<
+                        *this<<'['<<pos<<','<<len<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
     if ( pos+len > size() ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid end of VDB 4-bits value sub-array: "<<pos<<','<<len,
+                        "Invalid end of VDB 4-bits value sub-array: "<<
+                        *this<<'['<<pos<<','<<len<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
 }
@@ -1103,7 +1144,14 @@ CVDBValueFor4Bits CVDBValueFor4Bits::substr(size_t pos, size_t len) const
     const char* raw_data = m_RawData + offset/2;
     offset %= 2;
     // limits are checked above
-    return CVDBValueFor4Bits(raw_data, uint32_t(offset), uint32_t(len));
+    return CVDBValueFor4Bits(m_Ref, raw_data, uint32_t(offset), uint32_t(len));
+}
+
+
+static inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBValueFor2Bits& obj)
+{
+    return obj.PrintFullName(out);
 }
 
 
@@ -1130,6 +1178,7 @@ void CVDBValueFor2Bits::x_Get(const CVDBCursor& cursor,
     m_RawData = static_cast<const char*>(data);
     m_ElemOffset = bit_offset >> 1;
     m_ElemCount = elem_count;
+    m_Ref.Set(cursor, row, column);
 }
 
 
@@ -1137,7 +1186,8 @@ void CVDBValueFor2Bits::x_ReportIndexOutOfBounds(size_t index) const
 {
     if ( index >= size() ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid index for VDB 2-bits value array: "<<index,
+                        "Invalid index for VDB 2-bits value array: "<<
+                        *this<<'['<<index<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
 }
@@ -1148,17 +1198,20 @@ void CVDBValueFor2Bits::x_CheckRange(size_t pos, size_t len) const
 {
     if ( pos > size() ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid index for VDB 2-bits value array: "<<pos,
+                        "Invalid index for VDB 2-bits value array: "<<
+                        *this<<'['<<pos<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
     if ( pos+len < pos ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid length for VDB 2-bits value sub-array: "<<pos<<','<<len,
+                        "Invalid length for VDB 2-bits value sub-array: "<<
+                        *this<<'['<<pos<<','<<len<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
     if ( pos+len > size() ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid end of VDB 2-bits value sub-array: "<<pos<<','<<len,
+                        "Invalid end of VDB 2-bits value sub-array: "<<
+                        *this<<'['<<pos<<','<<len<<']',
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
 }
@@ -1171,7 +1224,7 @@ CVDBValueFor2Bits CVDBValueFor2Bits::substr(size_t pos, size_t len) const
     const char* raw_data = m_RawData + offset/4;
     offset %= 4;
     // limits are checked above
-    return CVDBValueFor2Bits(raw_data, uint32_t(offset), uint32_t(len));
+    return CVDBValueFor2Bits(m_Ref, raw_data, uint32_t(offset), uint32_t(len));
 }
 
 

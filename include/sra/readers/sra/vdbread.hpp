@@ -594,13 +594,34 @@ public:
         SRef(const CVDBCursor& cursor,
              TVDBRowId row,
              const CVDBColumn& column)
-            : cursor(cursor), row(row), column(column)
+            : cursor(cursor), column(column), row(row)
             {
             }
         
         const CVDBCursor& cursor;
-        TVDBRowId row;
         const CVDBColumn& column;
+        TVDBRowId row;
+    };
+    struct SSaveRef {
+        SSaveRef(void)
+            : m_Table(0), m_ColumnName(0), m_Row(0)
+            {
+            }
+        
+        void Set(const CVDBCursor& cursor,
+                 TVDBRowId row,
+                 const CVDBColumn& column)
+            {
+                m_Table = &cursor.GetTable();
+                m_ColumnName = column.GetName();
+                m_Row = row;
+            }
+
+        CNcbiOstream& PrintFullName(CNcbiOstream& out) const;
+        
+        const CVDBTable* m_Table;
+        const char* m_ColumnName;
+        TVDBRowId m_Row;
     };
     CVDBValue(void)
         : m_Data(0),
@@ -645,12 +666,12 @@ public:
             return m_ElemCount;
         }
 
-protected:
-    CVDBValue(const void* data, uint32_t size)
-        : m_Data(data), m_ElemCount(size)
+    CNcbiOstream& PrintFullName(CNcbiOstream& out) const
         {
+            return m_Ref.PrintFullName(out);
         }
 
+protected:
     void x_Get(const CVDBCursor& cursor,
                const CVDBColumn& column);
     void x_Get(const CVDBCursor& cursor,
@@ -674,6 +695,7 @@ protected:
             }
         }
 
+    SSaveRef m_Ref;
     const void* m_Data;
     uint32_t m_ElemCount;
 };
@@ -735,6 +757,11 @@ public:
 
     CVDBValueFor4Bits substr(size_t pos, size_t len) const;
 
+    CNcbiOstream& PrintFullName(CNcbiOstream& out) const
+        {
+            return m_Ref.PrintFullName(out);
+        }
+
 protected:
     void x_Get(const CVDBCursor& cursor,
                TVDBRowId row,
@@ -757,13 +784,16 @@ protected:
         }
     void x_CheckRange(size_t pos, size_t len) const;
 
-    CVDBValueFor4Bits(const char* raw_data, uint32_t offset, uint32_t size)
-        : m_RawData(raw_data),
+    CVDBValueFor4Bits(const CVDBValue::SSaveRef& ref,
+                      const char* raw_data, uint32_t offset, uint32_t size)
+        : m_Ref(ref),
+          m_RawData(raw_data),
           m_ElemOffset(offset),
           m_ElemCount(size)
         {
         }
 
+    CVDBValue::SSaveRef m_Ref;
     const char* m_RawData;
     uint32_t m_ElemOffset;
     uint32_t m_ElemCount;
@@ -826,6 +856,11 @@ public:
 
     CVDBValueFor2Bits substr(size_t pos, size_t len) const;
 
+    CNcbiOstream& PrintFullName(CNcbiOstream& out) const
+        {
+            return m_Ref.PrintFullName(out);
+        }
+
 protected:
     void x_Get(const CVDBCursor& cursor,
                TVDBRowId row,
@@ -848,13 +883,16 @@ protected:
         }
     void x_CheckRange(size_t pos, size_t len) const;
 
-    CVDBValueFor2Bits(const char* raw_data, uint32_t offset, uint32_t size)
-        : m_RawData(raw_data),
+    CVDBValueFor2Bits(const CVDBValue::SSaveRef& ref,
+                      const char* raw_data, uint32_t offset, uint32_t size)
+        : m_Ref(ref),
+          m_RawData(raw_data),
           m_ElemOffset(offset),
           m_ElemCount(size)
         {
         }
 
+    CVDBValue::SSaveRef m_Ref;
     const char* m_RawData;
     uint32_t m_ElemOffset;
     uint32_t m_ElemCount;
@@ -921,12 +959,6 @@ public:
         {
             x_CheckRange(pos, len);
             return CVDBValueFor<TValue>(data()+pos, uint32_t(len));
-        }
-
-protected:
-    CVDBValueFor(const TValue* data, uint32_t len)
-        : CVDBValue(data, len)
-        {
         }
 
 private:
