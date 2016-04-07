@@ -469,7 +469,7 @@ int CAgpValidateApplication::Run(void)
         cout << (string)CNcbiOstrstreamToString(*error_details_out);
         delete error_details_out;
       }
-      return pAgpErr->CountTotals(CAgpErrEx::E_Last, error_details_out!=NULL /*strict mode*/ )>0 || taxid_check_failed ? 2 : 0;
+      return (pAgpErr->CountTotals(CAgpErrEx::E_Last)>0 || taxid_check_failed) ? 2 : 0;
   }
   else {
       // Note: traditional validation (now in the "if" clause above) used to be done regardless of args["comp"].
