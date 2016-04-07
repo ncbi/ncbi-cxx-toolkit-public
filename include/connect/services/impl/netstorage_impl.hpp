@@ -176,16 +176,17 @@ struct NCBI_XCONNECT_EXPORT SNetStorage::SLimits
     static void Check(const string& value)
     {
         if (value.length() > TValue::MaxLength()) {
-            NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                    TValue::Name() << " exceeds maximum allowed length of " <<
-                    TValue::MaxLength() << " characters: " << value);
+            ThrowTooLong(TValue::Name(), TValue::MaxLength());
         }
 
         if (!all_of(value.begin(), value.end(), TValue::IsValid)) {
-            NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                    TValue::Name() << " contains illegal characters: " << value);
+            ThrowIllegalChars(TValue::Name(), value);
         }
     }
+
+private:
+    static void ThrowTooLong(const string&, size_t);
+    static void ThrowIllegalChars(const string&, const string&);
 };
 
 /// @internal

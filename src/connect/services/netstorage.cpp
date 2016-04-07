@@ -258,4 +258,19 @@ CNetStorageObject_FileTrack_Path::CNetStorageObject_FileTrack_Path(
 {
 }
 
+void SNetStorage::SLimits::ThrowTooLong(const string& name, size_t max_length)
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+            name << " exceeds maximum allowed length of " <<
+            max_length << " characters.");
+}
+
+void SNetStorage::SLimits::ThrowIllegalChars(const string& name,
+        const string& value)
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+            name << " contains illegal characters: " <<
+            NStr::PrintableString(value));
+}
+
 END_NCBI_SCOPE
