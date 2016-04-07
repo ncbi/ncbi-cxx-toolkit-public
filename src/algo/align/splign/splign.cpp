@@ -575,15 +575,11 @@ double CSplign::GetCompartmentPenalty( void ) const
 
 bool CSplign::x_IsInGap(THit::TCoord pos)
 {
-    if( m_GenomicSeqMap.Empty() ) return false;
-    bool res = false;
-    CSeqMap_CI it = m_GenomicSeqMap->FindResolved(GetScope(), pos, SSeqMapSelector());
-    if(it) {
-        if(CSeqMap::eSeqGap == it.GetType()) { 
-            res = true;
-        }
+    if( pos+1 == 0 || pos >= m_genomic.size()  ) return true;//outside genome boundaries
+    if(m_GenomicSeqMap && m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),  pos, 1, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap)) {//gap
+        return true;
     }
-    return res;
+    return false;
 }
 
 
@@ -2264,7 +2260,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     if(is_test) {
                             if(is_test_plus) {
                                 if( x_IsInGap(segments[k0+1].m_box[2] - 1) ||
-                                    CSplignTrim::HasAbuttingExonOnLeft(segments, k0-1) ) {
+                                    CSplignTrim::HasAbuttingExonOnLeft(segments, k0+1) ) {
                                     //abuting an exon or a sequence gap on the genome, do not trim    
                                 } else {
                                     if( (int)segments[k0+1].m_box[0] >= kFlankExonProx ) {
@@ -2653,7 +2649,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 bool cut_from_right = false;
                 if(s.m_exon) {
                     //check left
-                    if( x_IsInGap(s.m_box[2] - 1) ||
+                    if( s.m_box[2] == 0 || x_IsInGap(s.m_box[2] - 1) ||
                         CSplignTrim::HasAbuttingExonOnLeft(m_segments, k0) ) {
                         //abuting an exon or a sequence gap on the genome, do not cut    
                     } else {
