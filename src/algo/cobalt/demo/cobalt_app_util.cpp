@@ -1,6 +1,4 @@
-static char const rcsid[] = "$Id: cobalt_app_util.cpp";
-
-/*
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
