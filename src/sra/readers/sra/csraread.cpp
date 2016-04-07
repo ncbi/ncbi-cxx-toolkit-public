@@ -1108,7 +1108,7 @@ TSeqPos CCSraAlignIterator::GetShortPos(void) const
         return 0;
     }
     if ( m_Aln->m_REF_OFFSET_TYPE &&
-         *m_Aln->REF_OFFSET_TYPE(*m_AlnRowCur) != 1 ) {
+         m_Aln->REF_OFFSET_TYPE(*m_AlnRowCur)[0] != 1 ) {
         return 0;
     }
     return -m_Aln->REF_OFFSET(*m_AlnRowCur)[0];
