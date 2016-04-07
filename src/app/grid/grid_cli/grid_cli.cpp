@@ -700,7 +700,7 @@ struct SCommandDefinition {
         "getattr", "Get a NetStorage object attribute value.",
         "",
         {eObjectLoc, eAttrName, eNetStorage,
-            eLoginToken, eAuth,
+            eLoginToken, eAuth, eOutputFile,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_SetAttr,

@@ -369,7 +369,11 @@ int CGridCommandLineInterfaceApp::Cmd_GetAttr()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    PrintLine(m_NetStorage.Open(m_Opts.id).GetAttribute(m_Opts.attr_name));
+    CNetStorageObject object(m_NetStorage.Open(m_Opts.id));
+    const string value(object.GetAttribute(m_Opts.attr_name));
+
+    // Either output file or cout
+    fwrite(value.data(), value.size(), 1, m_Opts.output_stream);
 
     return 0;
 }
