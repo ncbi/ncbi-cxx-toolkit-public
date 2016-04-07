@@ -11346,7 +11346,6 @@ bool CNewCleanup_imp::ShouldRemoveAnnot(const CSeq_annot& annot)
 
 void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
 {
-#if 0
     if (bioseq.IsSetAnnot()) {
         bool any_erasures = true;
         while (any_erasures) {
@@ -11373,7 +11372,6 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
             ChangeMade(CCleanupChange::eChangeOther);
         }
     }
-#endif
 }
 
 void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
