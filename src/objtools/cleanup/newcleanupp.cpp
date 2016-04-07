@@ -11658,7 +11658,8 @@ void CNewCleanup_imp::x_RemoveNestedGenBankSet(CBioseq_set & bioseq_set)
     if (bioseq_set.IsSetSeq_set() && bioseq_set.GetSeq_set().size() == 1 &&
         bioseq_set.GetSeq_set().front()->IsSet() &&
         bioseq_set.GetSeq_set().front()->GetSet().IsSetClass() &&
-        bioseq_set.GetSeq_set().front()->GetSet().GetClass() == CBioseq_set::eClass_genbank) {
+        (bioseq_set.GetSeq_set().front()->GetSet().GetClass() == CBioseq_set::eClass_genbank ||
+         bioseq_set.GetSeq_set().front()->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot)) {
         CBioseq_set_EditHandle p = m_Scope->GetBioseq_setEditHandle(bioseq_set);
         CSeq_entry_Handle ch = m_Scope->GetSeq_entryHandle(*(bioseq_set.GetSeq_set().front()));
         const CBioseq_set& child = bioseq_set.GetSeq_set().front()->GetSet();
