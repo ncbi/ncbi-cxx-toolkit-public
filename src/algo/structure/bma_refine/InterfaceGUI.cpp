@@ -123,7 +123,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
 
     //  Cycles/trials
     wxStaticBox *item60 = new wxStaticBox( panel, -1, wxT("General Refiner Parameters") );
-    item60->SetFont( wxFont( 10, wxROMAN, wxNORMAL, wxBOLD ) );
+    item60->SetFont( wxFont( 10, wxFONTFAMILY_ROMAN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD ) );
     wxStaticBoxSizer *item64 = new wxStaticBoxSizer( item60, wxVERTICAL );
 
     wxFlexGridSizer *item61 = new wxFlexGridSizer( 2, 0, 0 );
@@ -154,7 +154,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     //  **************************************************  //
     //  Start GUI elements for LOO/LNO block shifting parameters
     wxStaticBox *item4 = new wxStaticBox( panel, -1, wxT("Block Shifting Parameters") );
-    item4->SetFont( wxFont( 10, wxROMAN, wxNORMAL, wxBOLD ) );
+    item4->SetFont( wxFont( 10, wxFONTFAMILY_ROMAN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD ) );
     wxStaticBoxSizer *item3 = new wxStaticBoxSizer( item4, wxVERTICAL );
 
     wxFlexGridSizer *item5 = new wxFlexGridSizer( 2, 0, 0 );
@@ -332,7 +332,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     //  **************************************************  //
     //  Start GUI elements for block extension parameters.
     wxStaticBox *item37 = new wxStaticBox( panel, -1, wxT("Block Modification Parameters") );
-    item37->SetFont( wxFont( 10, wxROMAN, wxNORMAL, wxBOLD ) );
+    item37->SetFont( wxFont( 10, wxFONTFAMILY_ROMAN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD ) );
     wxStaticBoxSizer *item36 = new wxStaticBoxSizer( item37, wxVERTICAL );
 
     wxFlexGridSizer *item38 = new wxFlexGridSizer( 2, 0, 0 );
