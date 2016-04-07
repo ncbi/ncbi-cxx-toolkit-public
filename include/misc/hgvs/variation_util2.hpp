@@ -490,5 +490,5 @@ private:
 
 };
 
-END_NCBI_SCOPE;
+END_NCBI_SCOPE
 #endif

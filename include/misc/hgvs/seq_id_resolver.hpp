@@ -137,6 +137,6 @@ private:
     mutable CRef<CSeq_loc_Mapper> m_SLMapper;
 };
 
-END_NCBI_SCOPE;
+END_NCBI_SCOPE
 
 #endif
