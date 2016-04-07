@@ -175,6 +175,8 @@ use m_NewCleanup.x_RemoveEmptyFeatures
 
 use m_NewCleanup.x_MoveCDSFromNucAnnotToSetAnnot { Bioseq-set }
 
+use m_NewCleanup.x_RescueMolInfo { Bioseq }
+
 use m_NewCleanup.x_RemoveOldFeatures { Bioseq }
 
 use m_NewCleanup.x_RemoveEmptyFeatureTables

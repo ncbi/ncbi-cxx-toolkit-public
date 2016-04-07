@@ -10734,6 +10734,11 @@ void CNewCleanup_imp::x_CleanupGenbankBlock( CSeq_descr & seq_descr )
 }
 
 
+void CNewCleanup_imp::x_RescueMolInfo(CBioseq& seq)
+{
+}
+
+
 void CNewCleanup_imp::x_RemoveOldDescriptors( CSeq_descr & seq_descr )
 {
     EDIT_EACH_SEQDESC_ON_SEQDESCR( d, seq_descr ) {

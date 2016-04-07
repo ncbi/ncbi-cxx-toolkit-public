@@ -552,6 +552,7 @@ private:
     void x_CleanupGenbankBlock(CBioseq_set& set);
     void x_CleanupGenbankBlock( CSeq_descr & seq_descr );
     void x_CleanupGenbankBlock(CGB_block& block, bool is_patent, const string& div, CMolInfo::TTech tech);
+    void x_RescueMolInfo(CBioseq& seq);
     void x_RemoveOldDescriptors( CSeq_descr & seq_descr );
     void x_RemoveEmptyDescriptors(CSeq_descr& seq_descr);
     void x_RemoveEmptyFeatures( CSeq_annot & seq_annot );
