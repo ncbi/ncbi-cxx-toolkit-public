@@ -567,8 +567,7 @@ string ExtractAccession(const string& long_acc)
     CSeq_id::ParseFastaIds(ids, long_acc.substr(pos2));
     string s = ids.front()->GetSeqIdString(true);
     // remove undesirable "XXXX:" from "XXXX:Scaffold1_1".
-    //pos1 = s.find(':');
-    pos1 = NStr::Find(s, ":", 0, NPOS, NStr::eLast);
+    pos1 = s.rfind(':');
     if( pos1 != NPOS ) return s.substr(pos1+1);
     return s;
   }
@@ -588,7 +587,7 @@ void OverrideLenIfAccession(const string & acc, int & in_out_len)
         }
 
         CSeq_id::EAccessionInfo fAccnInfo = temp_seq_id->IdentifyAccession();
-        const bool bAccnIsProtOnly = ( 
+        const bool bAccnIsProtOnly = (
             (fAccnInfo & CSeq_id::fAcc_prot) &&
             ! (fAccnInfo & CSeq_id::fAcc_nuc));
         if ( bAccnIsProtOnly ) {
