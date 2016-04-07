@@ -316,6 +316,9 @@ public:
 /// Remove duplicate publications
     static bool RemoveDuplicatePubs(CSeq_descr& descr);
 
+    /// Some pubs should not be promoted to nuc-prot set from sequence
+    static bool OkToPromoteNpPub(const CPubdesc& pd);
+
 /// Convert full-length publication features to publication descriptors
 /// @param seh Seq-entry to edit
 /// @return bool indicates whether any changes were made

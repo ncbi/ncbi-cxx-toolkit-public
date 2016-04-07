@@ -11859,7 +11859,7 @@ void CNewCleanup_imp::x_MoveNpPub(CBioseq_set& np_set, CSeq_descr& descr)
 {
     CSeq_descr::Tdata::iterator d = descr.Set().begin();
     while (d != descr.Set().end()) {
-        if ((*d)->IsPub()) {
+        if ((*d)->IsPub() && CCleanup::OkToPromoteNpPub((*d)->GetPub())) {
             CRef<CSeqdesc> new_desc(new CSeqdesc());
             new_desc->Assign(**d);
             np_set.SetDescr().Set().push_back(new_desc);
@@ -12691,7 +12691,8 @@ void CNewCleanup_imp::x_RemoveOrphanedProteins(CBioseq_set& set)
 void CNewCleanup_imp::x_SingleSeqSetToSeq(CBioseq_set& set)
 {
     if (set.IsSetSeq_set() && set.GetSeq_set().size() == 1 &&
-        set.GetSeq_set().front()->IsSeq()) {
+        set.GetSeq_set().front()->IsSeq() &&
+        set.IsSetClass() && set.GetClass() == CBioseq_set::eClass_genbank) {
         CBioseq_set_Handle bh = m_Scope->GetBioseq_setHandle(set);
         CSeq_entry_Handle seh = bh.GetParentEntry();
         CSeq_entry_EditHandle eh(seh);

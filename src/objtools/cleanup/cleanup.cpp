@@ -2128,6 +2128,16 @@ bool CCleanup::RemoveDuplicatePubs(CSeq_descr& descr)
 }
 
 
+bool CCleanup::OkToPromoteNpPub(const CPubdesc& pd)
+{
+    if (pd.IsSetNum() || pd.IsSetName() || pd.IsSetFig() || pd.IsSetComment()) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
 bool CCleanup::ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh)
 {
     bool any_change = false;
@@ -2147,7 +2157,9 @@ bool CCleanup::ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh)
                 }
                 // add descriptor to nuc-prot parent or sequence itself
                 CBioseq_set_Handle parent = b->GetParentBioseq_set();
-                if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
+                if (OkToPromoteNpPub((d)->GetPub()) &&
+                    parent && parent.IsSetClass() && 
+                    parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
                     CBioseq_set_EditHandle eh(parent);
                     eh.AddSeqdesc(*d);
                     RemoveDuplicatePubs(eh.SetDescr());
