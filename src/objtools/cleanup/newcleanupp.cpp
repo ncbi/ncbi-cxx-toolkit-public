@@ -12205,6 +12205,11 @@ bool CNewCleanup_imp::IsSyntheticConstruct(const CBioSource& src)
 }
 
 
+void CNewCleanup_imp::x_ExtendProteinFeatureOnProteinSeq(CBioseq& seq)
+{
+}
+
+
 void CNewCleanup_imp::x_ExtendSingleGeneOnMrna(CBioseq& seq)
 {
     // don't bother unless length greater than zero and mRNA

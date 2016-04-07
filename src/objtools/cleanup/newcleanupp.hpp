@@ -313,6 +313,7 @@ private:
     void AddProteinTitles (CBioseq& seq);
     void ProtRefEC( CProt_ref& pr);
     void CdRegionEC( CSeq_feat& sf);
+    void x_ExtendProteinFeatureOnProteinSeq(CBioseq& seq);
     void x_ExtendSingleGeneOnMrna(CBioseq& seq);
     static bool IsSyntheticConstruct(const CBioSource& src);
 
