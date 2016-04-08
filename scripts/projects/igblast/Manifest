@@ -31,16 +31,15 @@ DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-mt --with-build-roo
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-Linux32-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
-Linux64-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
+Linux64-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
 #Linux64-Centos     : gcc-debug : GCC.sh            --with-strip --with-debug --without-pcre --with-mt --with-flat-makefile
 
-DEFAULT_CONFIGURATIONS: Linux32-Centos:icc Linux64-Centos:icc
+DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
 
-Win32_13    : plain : static  32  ReleaseMT
-Win64_13    : plain : static  64  ReleaseMT
+Win32    : plain : static  32  ReleaseMT
+Win64    : plain : static  64  ReleaseMT
 
-IntelMAC    : universal : GCC.sh 4.0     --without-debug --without-pcre --with-mt --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
+IntelMAC    : universal : Clang.sh      --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
 
 USE_COMPONENTS
 
