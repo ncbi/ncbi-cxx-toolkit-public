@@ -514,11 +514,11 @@ size_t CDBL_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
 }
 
 
-I_ITDescriptor* CDBL_RowResult::GetImageOrTextDescriptor()
+I_BlobDescriptor* CDBL_RowResult::GetBlobDescriptor()
 {
     if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum())
         return 0;
-    return new CDBL_ITDescriptor(GetConnection(), GetCmd(), m_CurrItem+1);
+    return new CDBL_BlobDescriptor(GetConnection(), GetCmd(), m_CurrItem+1);
 }
 
 
@@ -717,11 +717,11 @@ size_t CDBL_BlobResult::ReadItem(void* buffer, size_t buffer_size,
 }
 
 
-I_ITDescriptor* CDBL_BlobResult::GetImageOrTextDescriptor()
+I_BlobDescriptor* CDBL_BlobResult::GetBlobDescriptor()
 {
     if (m_CurrItem != 0)
         return 0;
-    return new CDBL_ITDescriptor(GetConnection(), GetCmd(), 1);
+    return new CDBL_BlobDescriptor(GetConnection(), GetCmd(), 1);
 }
 
 
@@ -856,7 +856,7 @@ size_t CDBL_ParamResult::ReadItem(void* buffer, size_t buffer_size,
 }
 
 
-I_ITDescriptor* CDBL_ParamResult::GetImageOrTextDescriptor()
+I_BlobDescriptor* CDBL_ParamResult::GetBlobDescriptor()
 {
     return 0;
 }
@@ -1005,7 +1005,7 @@ size_t CDBL_ComputeResult::ReadItem(void* buffer, size_t buffer_size,
 }
 
 
-I_ITDescriptor* CDBL_ComputeResult::GetImageOrTextDescriptor()
+I_BlobDescriptor* CDBL_ComputeResult::GetBlobDescriptor()
 {
     return 0;
 }
@@ -1107,7 +1107,7 @@ size_t CDBL_StatusResult::ReadItem(void* buffer, size_t buffer_size,
 }
 
 
-I_ITDescriptor* CDBL_StatusResult::GetImageOrTextDescriptor()
+I_BlobDescriptor* CDBL_StatusResult::GetBlobDescriptor()
 {
     return 0;
 }
@@ -1244,9 +1244,9 @@ size_t CDBL_CursorResult::ReadItem(void* buffer, size_t buffer_size,
 }
 
 
-I_ITDescriptor* CDBL_CursorResult::GetImageOrTextDescriptor()
+I_BlobDescriptor* CDBL_CursorResult::GetBlobDescriptor()
 {
-    return GetResultSet() ? GetResultSet()->GetImageOrTextDescriptor() : 0;
+    return GetResultSet() ? GetResultSet()->GetBlobDescriptor() : 0;
 }
 
 
@@ -1268,13 +1268,13 @@ CDBL_CursorResult::~CDBL_CursorResult()
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CDBL_ITDescriptor::
+//  CDBL_BlobDescriptor::
 //
 
-CDBL_ITDescriptor::CDBL_ITDescriptor(CDBL_Connection& conn,
-                                     DBPROCESS* dblink,
-                                     int col_num) :
-CDBL_Result(conn, dblink)
+CDBL_BlobDescriptor::CDBL_BlobDescriptor(CDBL_Connection& conn,
+                                         DBPROCESS* dblink,
+                                         int col_num)
+    : CDBL_Result(conn, dblink)
 {
     // !!! This is a hack !!!
     // dbcolname returns char*
@@ -1304,10 +1304,10 @@ CDBL_Result(conn, dblink)
         m_TimeStamp_is_NULL = true;
 }
 
-CDBL_ITDescriptor::CDBL_ITDescriptor(CDBL_Connection& conn,
-                                     DBPROCESS* dblink,
-                                     const CDB_ITDescriptor& inp_d) :
-CDBL_Result(conn, dblink)
+CDBL_BlobDescriptor::CDBL_BlobDescriptor(CDBL_Connection& conn,
+                                         DBPROCESS* dblink,
+                                         const CDB_BlobDescriptor& inp_d)
+    : CDBL_Result(conn, dblink)
 {
     m_ObjName= inp_d.TableName();
     m_ObjName+= ".";
@@ -1330,16 +1330,16 @@ CDBL_Result(conn, dblink)
 }
 
 
-int CDBL_ITDescriptor::DescriptorType() const
+int CDBL_BlobDescriptor::DescriptorType() const
 {
-    return CDBL_ITDESCRIPTOR_TYPE_MAGNUM;
+    return CDBL_BLOB_DESCRIPTOR_TYPE_MAGNUM;
 }
 
-CDBL_ITDescriptor::~CDBL_ITDescriptor()
+CDBL_BlobDescriptor::~CDBL_BlobDescriptor()
 {
 }
 
-bool CDBL_ITDescriptor::x_MakeObjName(DBCOLINFO* col_info)
+bool CDBL_BlobDescriptor::x_MakeObjName(DBCOLINFO* col_info)
 {
     if (!col_info || !col_info->coltxobjname)
         return false;

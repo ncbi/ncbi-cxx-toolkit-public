@@ -69,7 +69,7 @@ CDriverContext::CDriverContext(void) :
     m_LoginTimeout(0),
     m_Timeout(0),
     m_CancelTimeout(0),
-    m_MaxTextImageSize(0),
+    m_MaxBlobSize(0),
     m_ClientEncoding(eEncoding_ISO8859_1)
 {
     PushCntxMsgHandler    ( &CDB_UserHandler::GetDefault(), eTakeOwnership );
@@ -175,13 +175,13 @@ bool CDriverContext::SetCancelTimeout(unsigned int nof_secs)
     return success;
 }
 
-bool CDriverContext::SetMaxTextImageSize(size_t nof_bytes)
+bool CDriverContext::SetMaxBlobSize(size_t nof_bytes)
 {
     CMutexGuard mg(x_GetCtxMtx());
 
-    m_MaxTextImageSize = nof_bytes;
+    m_MaxBlobSize = nof_bytes;
 
-    UpdateConnMaxTextImageSize();
+    UpdateConnMaxBlobSize();
 
     return true;
 }
@@ -1199,7 +1199,7 @@ void CDriverContext::UpdateConnTimeout(void) const
 }
 
 
-void CDriverContext::UpdateConnMaxTextImageSize(void) const
+void CDriverContext::UpdateConnMaxBlobSize(void) const
 {
     // Do not protect this method. It is protected.
 
@@ -1207,14 +1207,14 @@ void CDriverContext::UpdateConnMaxTextImageSize(void) const
         CConnection* t_con = *it;
         if (!t_con) continue;
 
-        t_con->SetTextImageSize(GetMaxTextImageSize());
+        t_con->SetBlobSize(GetMaxBlobSize());
     }
 
     ITERATE(TConnPool, it, m_InUse) {
         CConnection* t_con = *it;
         if (!t_con) continue;
 
-        t_con->SetTextImageSize(GetMaxTextImageSize());
+        t_con->SetBlobSize(GetMaxBlobSize());
     }
 }
 

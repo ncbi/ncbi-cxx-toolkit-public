@@ -94,7 +94,7 @@ public:
 
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
-    virtual bool SetMaxTextImageSize(size_t nof_bytes);
+    virtual bool SetMaxBlobSize  (size_t nof_bytes);
 
     virtual bool IsAbleTo(ECapability cpb) const;
 
@@ -210,12 +210,12 @@ protected:
     virtual CDB_CursorCmd*   Cursor(const string&        cursor_name,
                                     const string&        query,
                                     unsigned int         batch_size = 1);
-    virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
+    virtual CDB_SendDataCmd* SendDataCmd(I_BlobDescriptor& desc,
                                          size_t          data_size,
                                          bool            log_it = true,
                                          bool            dump_results = true);
 
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
+    virtual bool SendData(I_BlobDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
 
     virtual bool Refresh(void);
@@ -238,8 +238,9 @@ protected:
     virtual void SetCancelTimeout(size_t nof_secs);
 
 private:
-    bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
-    I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
+    bool x_SendData(I_BlobDescriptor& desc, CDB_Stream& img,
+                    bool log_it = true);
+    I_BlobDescriptor* x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& d);
     RETCODE x_Results(DBPROCESS* pLink);
 
     CDBLibContext& GetDBLibCtx(void) const
@@ -445,8 +446,8 @@ protected:
 protected:
     virtual CDB_Result* OpenCursor(void);
     virtual bool Update(const string& table_name, const string& upd_query);
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                 bool log_it = true);
+    virtual bool UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                            bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,
                                          bool dump_results = true);
@@ -465,7 +466,7 @@ private:
 
 private:
     bool x_AssignParams(void);
-    I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
+    I_BlobDescriptor* x_GetBlobDescriptor(unsigned int item_num);
 
     CDB_LangCmd*       m_LCmd;
     CDBL_CursorResult* m_Res;
@@ -498,7 +499,7 @@ protected:
 private:
     bool x_AssignParams(void* pb);
 
-    bool m_HasTextImage;
+    bool m_HasBlob;
     bool m_WasBound;
 };
 
@@ -675,7 +676,7 @@ protected:
                             I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual I_BlobDescriptor* GetBlobDescriptor(void);
 };
 
 
@@ -704,7 +705,7 @@ protected:
                             I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual I_BlobDescriptor* GetBlobDescriptor(void);
     virtual bool            SkipItem(void);
 
     // data
@@ -741,7 +742,7 @@ protected:
                             I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual I_BlobDescriptor* GetBlobDescriptor(void);
 
     // data
     bool m_1stFetch;
@@ -773,7 +774,7 @@ protected:
                             I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual I_BlobDescriptor* GetBlobDescriptor(void);
 
     // data
     int  m_ComputeId;
@@ -805,7 +806,7 @@ protected:
                             I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual I_BlobDescriptor* GetBlobDescriptor(void);
     virtual bool            SkipItem(void);
 
     // data
@@ -838,7 +839,7 @@ protected:
                             I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual I_BlobDescriptor* GetBlobDescriptor(void);
     virtual bool            SkipItem(void);
 
 private:
@@ -869,14 +870,14 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-///  CDBL_ITDescriptor::
+///  CDBL_BlobDescriptor::
 ///
 
-#define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd00
+#define CDBL_BLOB_DESCRIPTOR_TYPE_MAGNUM 0xd00
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ITDescriptor :
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BlobDescriptor :
     CDBL_Result,
-    public I_ITDescriptor
+    public I_BlobDescriptor
 {
     friend class CDBL_RowResult;
     friend class CDBL_BlobResult;
@@ -884,15 +885,15 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ITDescriptor :
     friend class CDBL_CursorCmd;
 
 protected:
-    CDBL_ITDescriptor(CDBL_Connection& conn,
-                      DBPROCESS* m_link,
-                      int col_num);
-    CDBL_ITDescriptor(CDBL_Connection& conn,
-                      DBPROCESS* m_link,
-                      const CDB_ITDescriptor& inp_d);
+    CDBL_BlobDescriptor(CDBL_Connection& conn,
+                        DBPROCESS* m_link,
+                        int col_num);
+    CDBL_BlobDescriptor(CDBL_Connection& conn,
+                        DBPROCESS* m_link,
+                        const CDB_BlobDescriptor& inp_d);
 
 public:
-    virtual ~CDBL_ITDescriptor(void);
+    virtual ~CDBL_BlobDescriptor(void);
 
 public:
     virtual int DescriptorType(void) const;
@@ -909,6 +910,9 @@ protected:
     bool                m_TimeStamp_is_NULL;
 };
 
+// historical names
+#define CDBL_ITDESCRIPTOR_TYPE_MAGNUM CDBL_BLOB_DESCRIPTOR_TYPE_MAGNUM
+typedef CDBL_BlobDescriptor CDBL_ITDescriptor;
 
 /////////////////////////////////////////////////////////////////////////////
 inline

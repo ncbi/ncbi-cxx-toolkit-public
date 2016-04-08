@@ -282,7 +282,8 @@ bool CODBC_RowResult::CheckSIENoD_Text(CDB_Stream* val)
         ReportErrors();
     default:
         {
-            string err_message = "SQLGetData failed while retrieving text/image into CDB_Text." +
+            string err_message
+                = "SQLGetData failed while retrieving BLOB into CDB_Text." +
                 GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430021 );
         }
@@ -326,7 +327,8 @@ bool CODBC_RowResult::CheckSIENoD_WText(CDB_Stream* val)
         ReportErrors();
     default:
         {
-            string err_message = "SQLGetData failed while retrieving text/image into CDB_Text." +
+            string err_message
+                = "SQLGetData failed while retrieving BLOB into CDB_Text." +
                 GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430021 );
         }
@@ -357,7 +359,8 @@ bool CODBC_RowResult::CheckSIENoD_Binary(CDB_Stream* val)
         ReportErrors();
     default:
         {
-            string err_message = "SQLGetData failed while retrieving text/image into CDB_Image." +
+            string err_message
+                = "SQLGetData failed while retrieving BLOB into CDB_Image." +
                 GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430022 );
         }
@@ -1070,8 +1073,8 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
 }
 
 
-CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
-                                                            const string& cond)
+CDB_BlobDescriptor* CODBC_RowResult::GetBlobDescriptor(int item_no,
+                                                       const string& cond)
 {
     enum {eNameStrLen = 128};
     SQLSMALLINT slp;
@@ -1137,25 +1140,24 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         }
     }
 
-    CDB_ITDescriptor::ETDescriptorType type = CDB_ITDescriptor::eUnknown;
+    CDB_BlobDescriptor::ETDescriptorType type = CDB_BlobDescriptor::eUnknown;
     switch (column_type) {
     case SQL_BINARY:
     case SQL_VARBINARY:
     case SQL_LONGVARBINARY:
-        type = CDB_ITDescriptor::eBinary;
+        type = CDB_BlobDescriptor::eBinary;
         break;
     case SQL_LONGVARCHAR:
-        type = CDB_ITDescriptor::eText;
+        type = CDB_BlobDescriptor::eText;
         break;
     };
 
-    return new CDB_ITDescriptor(base_table, base_column, cond, type);
+    return new CDB_BlobDescriptor(base_table, base_column, cond, type);
 }
 
-I_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor()
+I_BlobDescriptor* CODBC_RowResult::GetBlobDescriptor()
 {
-    return (I_ITDescriptor*) GetImageOrTextDescriptor(m_CurrItem,
-                                                      "don't use me");
+    return (I_BlobDescriptor*) GetBlobDescriptor(m_CurrItem, "don't use me");
 }
 
 bool CODBC_RowResult::SkipItem()
@@ -1342,9 +1344,9 @@ size_t CODBC_CursorResult::ReadItem(void* buffer, size_t buffer_size,
 }
 
 
-I_ITDescriptor* CODBC_CursorResult::GetImageOrTextDescriptor()
+I_BlobDescriptor* CODBC_CursorResult::GetBlobDescriptor()
 {
-    return m_Res ? m_Res->GetImageOrTextDescriptor() : 0;
+    return m_Res ? m_Res->GetBlobDescriptor() : 0;
 }
 
 

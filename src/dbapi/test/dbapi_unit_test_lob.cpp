@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Replication)
 
             txt.Append(NStr::Int8ToString(CTime(CTime::eCurrent).GetTimeT()));
 
-            auto_ptr<I_ITDescriptor> descr[2];
+            auto_ptr<I_BlobDescriptor> descr[2];
             int i = 0;
             while(auto_stmt->HasMoreResults()) {
                 auto_ptr<CDB_Result> rs(auto_stmt->Result());
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Replication)
 
                 while(rs->Fetch()) {
                     rs->ReadItem(NULL, 0);
-                    descr[i].reset(rs->GetImageOrTextDescriptor());
+                    descr[i].reset(rs->GetBlobDescriptor());
                     ++i;
 
                 }
@@ -796,7 +796,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
         }
 
         // Retrieve descriptor ...
-        auto_ptr<I_ITDescriptor> descr;
+        auto_ptr<I_BlobDescriptor> descr;
         {
             sql = "SELECT text_field FROM " + GetTableName();
             auto_stmt.reset(conn->LangCmd(sql));
@@ -817,7 +817,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
 
                 while(rs->Fetch()) {
                     rs->ReadItem(NULL, 0);
-                    descr.reset(rs->GetImageOrTextDescriptor());
+                    descr.reset(rs->GetBlobDescriptor());
                 }
             }
 
@@ -841,9 +841,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
             BOOST_CHECK_EQUAL(caught, is_tds72);
         }
 
-        // Use CDB_ITDescriptor explicitely ..,
+        // Use CDB_BlobDescriptor explicitely ..,
         {
-            CDB_ITDescriptor descriptor(GetTableName(), "text_field", "int_field = 1");
+            CDB_BlobDescriptor descriptor(GetTableName(), "text_field", "int_field = 1");
             CDB_Text text;
 
             text.Append("test clob data ...");
@@ -852,7 +852,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
 
         // Create relatively big CLOB ...
         {
-            CDB_ITDescriptor descriptor(GetTableName(), "text_field", "int_field = 1");
+            CDB_BlobDescriptor descriptor(GetTableName(), "text_field", "int_field = 1");
             CDB_Text text;
 
             for(int i = 0; i < 1000; ++i) {
@@ -963,27 +963,27 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
                 auto_ptr<CDB_Result> rs(auto_cursor->Open());
                 BOOST_CHECK (rs.get() != NULL);
 
-                auto_ptr<I_ITDescriptor> text01;
-                auto_ptr<I_ITDescriptor> text02;
-                auto_ptr<I_ITDescriptor> image01;
-                auto_ptr<I_ITDescriptor> image02;
+                auto_ptr<I_BlobDescriptor> text01;
+                auto_ptr<I_BlobDescriptor> text02;
+                auto_ptr<I_BlobDescriptor> image01;
+                auto_ptr<I_BlobDescriptor> image02;
 
                 while (rs->Fetch()) {
                     // ReadItem must not be called here
                     //rs->ReadItem(NULL, 0);
-                    text01.reset(rs->GetImageOrTextDescriptor());
+                    text01.reset(rs->GetBlobDescriptor());
                     BOOST_CHECK(text01.get());
                     rs->SkipItem();
 
-                    text02.reset(rs->GetImageOrTextDescriptor());
+                    text02.reset(rs->GetBlobDescriptor());
                     BOOST_CHECK(text02.get());
                     rs->SkipItem();
 
-                    image01.reset(rs->GetImageOrTextDescriptor());
+                    image01.reset(rs->GetBlobDescriptor());
                     BOOST_CHECK(image01.get());
                     rs->SkipItem();
 
-                    image02.reset(rs->GetImageOrTextDescriptor());
+                    image02.reset(rs->GetBlobDescriptor());
                     BOOST_CHECK(image02.get());
                     rs->SkipItem();
                 }
@@ -1317,7 +1317,7 @@ BOOST_AUTO_TEST_CASE(Test_Iskhakov)
         bool rc = auto_stmt->Send();
         BOOST_CHECK( rc );
 
-        auto_ptr<I_ITDescriptor> descr;
+        auto_ptr<I_BlobDescriptor> descr;
 
         while(auto_stmt->HasMoreResults()) {
             auto_ptr<CDB_Result> rs(auto_stmt->Result());
@@ -1333,7 +1333,7 @@ BOOST_AUTO_TEST_CASE(Test_Iskhakov)
             while(rs->Fetch()) {
                 rs->ReadItem(NULL, 0);
 
-                descr.reset(rs->GetImageOrTextDescriptor());
+                descr.reset(rs->GetBlobDescriptor());
             }
         }
     }

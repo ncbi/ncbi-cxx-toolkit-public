@@ -47,7 +47,7 @@ USING_NCBI_SCOPE;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-class CTestLOB : public CTL_ITDescriptor
+class CTestLOB : public CTL_BlobDescriptor
 {
 public:
     CTestLOB(void);

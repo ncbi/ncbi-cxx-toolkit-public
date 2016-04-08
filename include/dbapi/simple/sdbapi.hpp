@@ -336,13 +336,13 @@ public:
         SQueryParamInfo*                 m_ParamInfo;
         /// Column number the field was created for
         unsigned int                     m_ColNum;
-        /// Vector to represent Text/Image value
+        /// Vector to cache BLOB value
         mutable vector<unsigned char>    m_Vector;
-        /// String to represent Text/Image value
+        /// String to cache BLOB value
         mutable string                   m_ValueForStream;
-        /// Stream to represent Text/Image value
+        /// Stream to cache BLOB value
         mutable auto_ptr<CNcbiIstrstream> m_IStream;
-        /// Stream to change Text/Image value
+        /// Stream to change BLOB value
         mutable auto_ptr<CWStream>       m_OStream;
     };
 

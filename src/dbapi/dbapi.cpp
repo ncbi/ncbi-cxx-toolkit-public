@@ -70,14 +70,14 @@ IStatement::~IStatement()
 {
 }
 
-IWriter* IStatement::GetBlobWriter(I_ITDescriptor& d, size_t blob_size,
+IWriter* IStatement::GetBlobWriter(I_BlobDescriptor& d, size_t blob_size,
                                    EAllowLog log_it)
 {
     return GetBlobWriter(d, blob_size,
                          (log_it == eDisableLog) ? fBOS_SkipLogging : 0);
 }
 
-CNcbiOstream& IStatement::GetBlobOStream(I_ITDescriptor& d, size_t blob_size,
+CNcbiOstream& IStatement::GetBlobOStream(I_BlobDescriptor& d, size_t blob_size,
                                          EAllowLog log_it, size_t buf_size)
 {
     return GetBlobOStream(d, blob_size,

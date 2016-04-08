@@ -289,7 +289,7 @@ bool CStatement::HasRows()
     return m_irs != 0;
 }
 
-IWriter* CStatement::GetBlobWriter(I_ITDescriptor &d, size_t blob_size,
+IWriter* CStatement::GetBlobWriter(I_BlobDescriptor &d, size_t blob_size,
                                    TBlobOStreamFlags flags)
 {
     delete m_wr;
@@ -299,7 +299,7 @@ IWriter* CStatement::GetBlobWriter(I_ITDescriptor &d, size_t blob_size,
     return m_wr;
 }
 
-CNcbiOstream& CStatement::GetBlobOStream(I_ITDescriptor &d, size_t blob_size,
+CNcbiOstream& CStatement::GetBlobOStream(I_BlobDescriptor &d, size_t blob_size,
                                          TBlobOStreamFlags flags,
                                          size_t buf_size)
 {

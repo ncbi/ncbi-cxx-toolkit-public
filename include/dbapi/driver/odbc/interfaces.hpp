@@ -274,12 +274,12 @@ protected:
     virtual CDB_CursorCmd*   Cursor      (const string&   cursor_name,
                                           const string&   query,
                                           unsigned int    batch_size = 1);
-    virtual CDB_SendDataCmd* SendDataCmd (I_ITDescriptor& desc,
+    virtual CDB_SendDataCmd* SendDataCmd (I_BlobDescriptor& desc,
                                           size_t          data_size,
                                           bool            log_it = true,
                                           bool            dump_results = true);
 
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
+    virtual bool SendData(I_BlobDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
 
     virtual bool Refresh(void);
@@ -334,7 +334,7 @@ protected:
     }
 
 private:
-    bool x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
+    bool x_SendData(CDB_BlobDescriptor::ETDescriptorType descr_type,
                     CStatementBase& stmt,
                     CDB_Stream& stream);
     static string x_MakeFreeTDSVersion(int version);
@@ -585,8 +585,8 @@ protected:
 protected:
     virtual CDB_Result* OpenCursor(void);
     virtual bool Update(const string& table_name, const string& upd_query);
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                 bool log_it = true);
+    virtual bool UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                            bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,
                                          bool dump_results = true);
@@ -594,7 +594,7 @@ protected:
     virtual bool CloseCursor(void);
 
 protected:
-    CDB_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
+    CDB_BlobDescriptor* x_GetBlobDescriptor(unsigned int item_num);
 };
 
 
@@ -613,8 +613,8 @@ protected:
 protected:
     virtual CDB_Result* OpenCursor(void);
     virtual bool Update(const string& table_name, const string& upd_query);
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                 bool log_it = true);
+    virtual bool UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                            bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,
                                          bool dump_results = true);
@@ -622,7 +622,7 @@ protected:
     virtual bool CloseCursor(void);
 
 protected:
-    CDB_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
+    CDB_BlobDescriptor* x_GetBlobDescriptor(unsigned int item_num);
 
 protected:
     auto_ptr<CODBC_LangCmd> m_LCmd;
@@ -675,7 +675,7 @@ private:
 
     SQLHDBC m_Cmd;
     bool    m_WasBound;
-    bool    m_HasTextImage;
+    bool    m_HasBlob;
 };
 
 
@@ -692,7 +692,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd :
 
 protected:
     CODBC_SendDataCmd(CODBC_Connection& conn,
-                      CDB_ITDescriptor& descr,
+                      CDB_BlobDescriptor& descr,
                       size_t nof_bytes,
                       bool logit,
                       bool dump_results);
@@ -709,7 +709,7 @@ private:
     bool xCheck4MoreResults(void);
 
     SQLLEN  m_ParamPH;
-    const CDB_ITDescriptor::ETDescriptorType m_DescrType;
+    const CDB_BlobDescriptor::ETDescriptorType m_DescrType;
     CODBC_RowResult*  m_Res;
     bool m_HasMoreResults;
     bool m_DumpResults;
@@ -762,9 +762,8 @@ protected:
                             I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
-    CDB_ITDescriptor* GetImageOrTextDescriptor(int item_no,
-                                               const string& cond);
+    virtual I_BlobDescriptor* GetBlobDescriptor(void);
+    CDB_BlobDescriptor*     GetBlobDescriptor(int item_no, const string& cond);
     virtual bool            SkipItem(void);
 
     int xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
@@ -889,7 +888,7 @@ protected:
                             I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual I_BlobDescriptor* GetBlobDescriptor(void);
     virtual bool            SkipItem(void);
 
 protected:

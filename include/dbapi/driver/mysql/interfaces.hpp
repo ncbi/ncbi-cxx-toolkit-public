@@ -98,7 +98,7 @@ protected:
     virtual bool IsAlive();
 
     virtual CDB_LangCmd*     LangCmd(const string& lang_query);
-    virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
+    virtual CDB_SendDataCmd* SendDataCmd(I_BlobDescriptor& desc,
                                          size_t          data_size,
                                          bool            log_it = true,
                                          bool            dump_results = true);
@@ -109,7 +109,7 @@ protected:
                                   unsigned int batch_size = 1);
 
 
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
+    virtual bool SendData(I_BlobDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
 
     virtual bool Refresh();
@@ -230,7 +230,7 @@ protected:
 							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor();
+    virtual I_BlobDescriptor* GetBlobDescriptor();
     virtual bool            SkipItem();
 
     const CMySQL_Connection& GetConnection() const

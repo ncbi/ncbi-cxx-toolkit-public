@@ -132,7 +132,7 @@ string CDBConnParamsDelegate::GetParam(const string& key) const
 
 
 ////////////////////////////////////////////////////////////////////////////
-I_ITDescriptor::~I_ITDescriptor(void)
+I_BlobDescriptor::~I_BlobDescriptor(void)
 {
     return;
 }

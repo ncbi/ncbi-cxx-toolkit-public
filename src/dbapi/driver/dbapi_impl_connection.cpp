@@ -336,7 +336,7 @@ void CConnection::ReleaseInterface(void)
 }
 
 
-void CConnection::SetTextImageSize(size_t /* nof_bytes */)
+void CConnection::SetBlobSize(size_t /* nof_bytes */)
 {
 }
 

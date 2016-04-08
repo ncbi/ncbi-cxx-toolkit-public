@@ -566,7 +566,9 @@ bool CTL_BCPInCmd::Send(void)
 
                     CHECK_DRIVER_ERROR(
                         HasFailed(),
-                        "blk_textxfer failed for the text/image field." + GetDbgInfo(), 123005
+                        "blk_textxfer failed for the BLOB field."
+                        + GetDbgInfo(),
+                        123005
                         );
 
                     datalen -= (CS_INT) len;

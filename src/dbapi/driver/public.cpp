@@ -377,7 +377,7 @@ CDB_CursorCmd* CDB_Connection::Cursor(const string& cursor_name,
     return m_ConnImpl->Cursor(cursor_name, query, batch_size);
 }
 
-CDB_SendDataCmd* CDB_Connection::SendDataCmd(I_ITDescriptor& desc,
+CDB_SendDataCmd* CDB_Connection::SendDataCmd(I_BlobDescriptor& desc,
                                              size_t data_size,
                                              bool log_it,
                                              bool dump_results)
@@ -387,7 +387,8 @@ CDB_SendDataCmd* CDB_Connection::SendDataCmd(I_ITDescriptor& desc,
     return m_ConnImpl->SendDataCmd(desc, data_size, log_it, dump_results);
 }
 
-bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob, bool log_it)
+bool CDB_Connection::SendData(I_BlobDescriptor& desc, CDB_Stream& lob,
+                              bool log_it)
 {
     CHECK_CONNECTION(m_ConnImpl);
     _TRACE("Sending " << lob.Size() << " byte(s) of data");
@@ -666,10 +667,10 @@ size_t CDB_Result::ReadItem(void* buffer, size_t buffer_size, bool* is_null)
     return GetIResult().ReadItem(buffer, buffer_size, is_null);
 }
 
-I_ITDescriptor* CDB_Result::GetImageOrTextDescriptor()
+I_BlobDescriptor* CDB_Result::GetBlobDescriptor()
 {
     CHECK_RESULT( GetIResultPtr() );
-    return GetIResult().GetImageOrTextDescriptor();
+    return GetIResult().GetBlobDescriptor();
 }
 
 bool CDB_Result::SkipItem()
@@ -1039,10 +1040,11 @@ bool CDB_CursorCmd::Update(const string& table_name, const string& upd_query)
     return m_CmdImpl->Update(table_name, upd_query);
 }
 
-bool CDB_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, bool log_it)
+bool CDB_CursorCmd::UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                               bool log_it)
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->UpdateTextImage(item_num, data, log_it);
+    return m_CmdImpl->UpdateBlob(item_num, data, log_it);
 }
 
 CDB_SendDataCmd* CDB_CursorCmd::SendDataCmd(unsigned int item_num,
@@ -1145,10 +1147,10 @@ CDB_SendDataCmd::~CDB_SendDataCmd()
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CDB_ITDescriptor::
+//  CDB_BlobDescriptor::
 //
 
-CDB_ITDescriptor::CDB_ITDescriptor(const string& table_name,
+CDB_BlobDescriptor::CDB_BlobDescriptor(const string& table_name,
                                    const string& column_name,
                                    const string& search_conditions,
                                    ETDescriptorType column_type)
@@ -1159,11 +1161,11 @@ CDB_ITDescriptor::CDB_ITDescriptor(const string& table_name,
 {
 }
 
-CDB_ITDescriptor::~CDB_ITDescriptor()
+CDB_BlobDescriptor::~CDB_BlobDescriptor()
 {
 }
 
-int CDB_ITDescriptor::DescriptorType() const
+int CDB_BlobDescriptor::DescriptorType() const
 {
     return 0;
 }

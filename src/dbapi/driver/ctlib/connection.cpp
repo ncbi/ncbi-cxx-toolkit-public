@@ -537,15 +537,15 @@ void CTL_Connection::x_LoadTextPtrProcs(void)
 }
 
 
-void CTL_Connection::CompleteITDescriptor(I_ITDescriptor& desc,
-                                          const string& cursor_name,
-                                          int item_num)
+void CTL_Connection::CompleteBlobDescriptor(I_BlobDescriptor& desc,
+                                            const string& cursor_name,
+                                            int item_num)
 {
-    if (desc.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+    if (desc.DescriptorType() != CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
         return; // not ours
     }
 
-    CTL_ITDescriptor& ctl_desc = static_cast<CTL_ITDescriptor&>(desc);
+    CTL_BlobDescriptor& ctl_desc = static_cast<CTL_BlobDescriptor&>(desc);
     if (ctl_desc.m_Desc.textptrlen > 0
         &&  (strcmp((const char*)ctl_desc.m_Desc.textptr, "dummy textptr\0\0")
              != 0)) {
@@ -590,8 +590,8 @@ void CTL_Connection::CompleteITDescriptor(I_ITDescriptor& desc,
 }
 
 
-void CTL_Connection::CompleteITDescriptors(vector<I_ITDescriptor*>& descs,
-                                          const string& cursor_name)
+void CTL_Connection::CompleteBlobDescriptors(vector<I_BlobDescriptor*>& descs,
+                                             const string& cursor_name)
 {
     x_LoadTextPtrProcs();
 
@@ -629,8 +629,9 @@ void CTL_Connection::CompleteITDescriptors(vector<I_ITDescriptor*>& descs,
                                130016);
             _ASSERT(descs[i] != NULL);
             _ASSERT(descs[i]->DescriptorType()
-                    == CTL_ITDESCRIPTOR_TYPE_MAGNUM);
-            CS_IODESC& iod = static_cast<CTL_ITDescriptor*>(descs[i])->m_Desc;
+                    == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM);
+            CS_IODESC& iod
+                = static_cast<CTL_BlobDescriptor*>(descs[i])->m_Desc;
             iod.textptrlen = (CS_INT) min(textptr.Size(), (size_t) CS_TP_SIZE);
             memcpy(iod.textptr, textptr.Data(), iod.textptrlen);
         }
@@ -710,7 +711,7 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 }
 
 
-CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
+CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_BlobDescriptor& descr_in,
                                              size_t data_size,
                                              bool log_it,
                                              bool dump_results)
@@ -725,7 +726,7 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 }
 
 
-bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob,
+bool CTL_Connection::SendData(I_BlobDescriptor& desc, CDB_Stream& lob,
                               bool log_it)
 {
     return x_SendData(desc, lob, log_it);
@@ -780,7 +781,7 @@ CTL_Connection::xLangCmd(const string& lang_query)
 }
 
 
-// bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in,
+// bool CTL_Connection::x_SendData(I_BlobDescriptor& descr_in,
 //                                 CDB_Stream& img,
 //                                 bool log_it)
 // {
@@ -788,25 +789,25 @@ CTL_Connection::xLangCmd(const string& lang_query)
 //     if ( !size )
 //         return false;
 //
-//     I_ITDescriptor* p_desc = 0;
+//     I_BlobDescriptor* p_desc = 0;
 //
 //     // check what type of descriptor we've got
-//     if(descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+//     if(descr_in.DescriptorType() != CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
 //         // this is not a native descriptor
-//         p_desc = x_GetNativeITDescriptor
-//             (dynamic_cast<CDB_ITDescriptor&> (descr_in));
+//         p_desc = x_GetNativeBlobDescriptor
+//             (dynamic_cast<CDB_BlobDescriptor&> (descr_in));
 //         if(p_desc == 0)
 //             return false;
 //     }
 //
-//     auto_ptr<I_ITDescriptor> d_guard(p_desc);
+//     auto_ptr<I_BlobDescriptor> d_guard(p_desc);
 //     ctlib::Command cmd(*this);
 //
 //     cmd.Open(CS_SEND_DATA_CMD, CS_COLUMN_DATA);
 //
-//     CTL_ITDescriptor& desc = p_desc ?
-//         dynamic_cast<CTL_ITDescriptor&> (*p_desc) :
-//             dynamic_cast<CTL_ITDescriptor&> (descr_in);
+//     CTL_BlobDescriptor& desc = p_desc ?
+//         dynamic_cast<CTL_BlobDescriptor&> (*p_desc) :
+//             dynamic_cast<CTL_BlobDescriptor&> (descr_in);
 //     // desc->m_Desc.datatype = CS_TEXT_TYPE;
 //     desc.m_Desc.total_txtlen  = size;
 //     desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;
@@ -819,7 +820,7 @@ CTL_Connection::xLangCmd(const string& lang_query)
 //         char   buff[1800];
 //         CS_INT n_read = (CS_INT) img.Read(buff, sizeof(buff));
 //         if (!n_read) {
-//             DATABASE_DRIVER_ERROR( "Text/Image data corrupted." + GetDbgInfo(), 110032 );
+//             DATABASE_DRIVER_ERROR( "BLOB data corrupted." + GetDbgInfo(), 110032 );
 //         }
 //
 //         if (!cmd.SendData(buff, n_read)) {
@@ -880,7 +881,7 @@ CTL_Connection::x_CmdAlloc(CS_COMMAND** cmd)
 }
 
 
-bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
+bool CTL_Connection::x_SendData(I_BlobDescriptor& descr_in, CDB_Stream& stream,
                                 bool log_it)
 {
     CS_INT size = (CS_INT) stream.Size();
@@ -891,35 +892,35 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
         DATABASE_DRIVER_ERROR("Connection has died." + GetDbgInfo(), 122012);
     }
 
-    I_ITDescriptor* p_desc= 0;
-    CDB_ITDescriptor* dbdesc = dynamic_cast<CDB_ITDescriptor*>(&descr_in);
+    I_BlobDescriptor* p_desc= 0;
+    CDB_BlobDescriptor* dbdesc = dynamic_cast<CDB_BlobDescriptor*>(&descr_in);
 
     // check what type of descriptor we've got
-    if (descr_in.DescriptorType() == CTL_ITDESCRIPTOR_TYPE_CURSOR) {
+    if (descr_in.DescriptorType() == CTL_BLOB_DESCRIPTOR_TYPE_CURSOR) {
         return x_SendUpdateWrite(*dbdesc, stream, size);
-    } else if (descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+    } else if (descr_in.DescriptorType() != CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
         if (dbdesc != NULL) {
             try {
-                p_desc = x_GetNativeITDescriptor(*dbdesc);
+                p_desc = x_GetNativeBlobDescriptor(*dbdesc);
             } catch (CDB_Exception&) { // apparently not a legacy column type
                 return x_SendUpdateWrite(*dbdesc, stream, size);
             }
         }
         if (p_desc == NULL) {
             return false;
-        } else if (static_cast<CTL_ITDescriptor*>(p_desc)->m_Desc.textptrlen
+        } else if (static_cast<CTL_BlobDescriptor*>(p_desc)->m_Desc.textptrlen
                    <= 0) {
             return x_SendUpdateWrite(*dbdesc, stream, size);
         }
     }
 
 
-    auto_ptr<I_ITDescriptor> d_guard(p_desc);
+    auto_ptr<I_BlobDescriptor> d_guard(p_desc);
     CS_COMMAND* cmd;
 
-    CTL_ITDescriptor& desc = p_desc ?
-        dynamic_cast<CTL_ITDescriptor&> (*p_desc) :
-            dynamic_cast<CTL_ITDescriptor&> (descr_in);
+    CTL_BlobDescriptor& desc = p_desc ?
+        dynamic_cast<CTL_BlobDescriptor&> (*p_desc) :
+            dynamic_cast<CTL_BlobDescriptor&> (descr_in);
     if (desc.m_Desc.textptrlen <= 0) {
         _ASSERT(desc.m_Context.get());
         DATABASE_DRIVER_ERROR_EX(
@@ -952,7 +953,8 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
         if (!len) {
             Check(ct_cancel(0, cmd, CS_CANCEL_ALL));
             Check(ct_cmd_drop(cmd));
-            DATABASE_DRIVER_ERROR( "Text/Image data corrupted." + GetDbgInfo(), 110032 );
+            DATABASE_DRIVER_ERROR("BLOB data corrupted." + GetDbgInfo(),
+                                  110032);
         }
 
         if (Check(ct_send_data(cmd, buff, len)) != CS_SUCCEED) {
@@ -1025,14 +1027,14 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
 
 
 
-bool CTL_Connection::x_SendUpdateWrite(CDB_ITDescriptor& desc,
+bool CTL_Connection::x_SendUpdateWrite(CDB_BlobDescriptor& desc,
                                        CDB_Stream& img, size_t size)
 {
-    CHECK_DRIVER_ERROR(desc.DescriptorType() == CTL_ITDESCRIPTOR_TYPE_CURSOR
-                       &&  !(static_cast<CTL_CursorITDescriptor&>(desc)
+    CHECK_DRIVER_ERROR(desc.DescriptorType() == CTL_BLOB_DESCRIPTOR_TYPE_CURSOR
+                       &&  !(static_cast<CTL_CursorBlobDescriptor&>(desc)
                              .IsValid()),
                        "Invalid blob descriptor (originally tied to a cursor"
-                       " that has been advanced or destroyed",
+                       " that has been advanced or destroyed)",
                        110040);
 #ifdef FTDS_IN_USE // Only ever needed with MS SQL Server
     // Always start with an empty column for simplicity.
@@ -1068,14 +1070,14 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_ITDescriptor& desc,
         }
 
         size_t len = img.Read(p, n);
-        CHECK_DRIVER_ERROR(len == 0, "Text/image data corrupted.", 110032);
+        CHECK_DRIVER_ERROR(len == 0, "BLOB data corrupted.", 110032);
         size -= len;
         len += p - buff; // Account for fragment after updating size.
 
         // Avoid accidentally splitting up multi-byte UTF-8 sequences,
         // while taking care not to interfere with binary data or
         // non-UTF-8 text.
-        if (desc.GetColumnType() != CDB_ITDescriptor::eBinary
+        if (desc.GetColumnType() != CDB_BlobDescriptor::eBinary
             &&  text != NULL  &&  encoding != eBulkEnc_RawUCS2) {
             SIZE_TYPE l = impl::GetValidUTF8Len(CTempString(buff, len));
             if (l < len) {
@@ -1085,7 +1087,7 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_ITDescriptor& desc,
         }
 
         auto_ptr<CDB_Object> chunk;
-        if (desc.GetColumnType() == CDB_ITDescriptor::eBinary) {
+        if (desc.GetColumnType() == CDB_BlobDescriptor::eBinary) {
             chunk.reset(new CDB_VarBinary(buff, len));
         } else {
             chunk.reset(new CDB_VarChar(buff, len));
@@ -1110,8 +1112,8 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_ITDescriptor& desc,
 }
 
 
-I_ITDescriptor*
-CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
+I_BlobDescriptor*
+CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
 {
     string q;
     auto_ptr<CDB_LangCmd> lcmd;
@@ -1138,7 +1140,7 @@ CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
     CHECK_DRIVER_ERROR( rc, "Cannot send the language command." + GetDbgInfo(), 110035 );
 
     CDB_Result* res;
-    I_ITDescriptor* descr = NULL;
+    I_BlobDescriptor* descr = NULL;
 
     while(lcmd->HasMoreResults()) {
         res = lcmd->Result();
@@ -1146,11 +1148,11 @@ CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
         if((res->ResultType() == eDB_RowResult) && (descr == NULL)) {
             while(res->Fetch()) {
                 // res->ReadItem(NULL, 0);
-                descr = res->GetImageOrTextDescriptor();
+                descr = res->GetBlobDescriptor();
                 if (descr) {
                     _ASSERT(descr->DescriptorType()
-                            == CTL_ITDESCRIPTOR_TYPE_MAGNUM);
-                    CS_IODESC& iod = ((CTL_ITDescriptor*)descr)->m_Desc;
+                            == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM);
+                    CS_IODESC& iod = ((CTL_BlobDescriptor*)descr)->m_Desc;
                     bool all_zero = true;
                     for (CS_INT i = 0;  i < iod.textptrlen;  ++i) {
                         if (iod.textptr[i] != '\0') {
@@ -1353,33 +1355,33 @@ int CTL_Connection::x_TimeoutFunc(void* param, unsigned int total_timeout)
 //
 
 CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
-                                 I_ITDescriptor& descr_in,
+                                 I_BlobDescriptor& descr_in,
                                  size_t nof_bytes,
                                  bool log_it,
                                  bool dump_results)
 : CTL_LRCmd(conn, kEmptyStr)
 , impl::CSendDataCmd(conn, nof_bytes)
-, m_DescrType(CDB_ITDescriptor::eUnknown)
+, m_DescrType(CDB_BlobDescriptor::eUnknown)
 , m_DumpResults(dump_results)
 , m_UseUpdateWrite(false)
 {
     CHECK_DRIVER_ERROR(!nof_bytes, "Wrong (zero) data size." + GetDbgInfo(), 110092);
 
-    I_ITDescriptor* p_desc = NULL;
+    I_BlobDescriptor* p_desc = NULL;
 
     // check what type of descriptor we've got
-    if (descr_in.DescriptorType() == CTL_ITDESCRIPTOR_TYPE_CURSOR) {
+    if (descr_in.DescriptorType() == CTL_BLOB_DESCRIPTOR_TYPE_CURSOR) {
         m_UseUpdateWrite = true;
-    } else if (descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+    } else if (descr_in.DescriptorType() != CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
         // this is not a native descriptor
         try {
-            p_desc = GetConnection().x_GetNativeITDescriptor
-                (dynamic_cast<CDB_ITDescriptor&>(descr_in));
+            p_desc = GetConnection().x_GetNativeBlobDescriptor
+                (dynamic_cast<CDB_BlobDescriptor&>(descr_in));
             if (p_desc == NULL) {
-                DATABASE_DRIVER_ERROR("Cannot retrieve I_ITDescriptor.",
+                DATABASE_DRIVER_ERROR("Cannot retrieve I_BlobDescriptor.",
                                       110093);
-            } else if (static_cast<CTL_ITDescriptor*>(p_desc)->m_Desc.textptrlen
-                       <= 0) {
+            } else if (static_cast<CTL_BlobDescriptor*>(p_desc)
+                       ->m_Desc.textptrlen <= 0) {
                 m_UseUpdateWrite = true;
             }
         } catch (CDB_Exception&) {
@@ -1389,15 +1391,15 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
 
     if (m_UseUpdateWrite) {
 #ifdef FTDS_IN_USE
-        CDB_ITDescriptor& desc = dynamic_cast<CDB_ITDescriptor&>(descr_in);
+        CDB_BlobDescriptor& desc = dynamic_cast<CDB_BlobDescriptor&>(descr_in);
         m_DescrType = desc.GetColumnType();
 
         CHECK_DRIVER_ERROR(desc.DescriptorType()
-                           == CTL_ITDESCRIPTOR_TYPE_CURSOR
-                           &&  !(static_cast<CTL_CursorITDescriptor&>(desc)
+                           == CTL_BLOB_DESCRIPTOR_TYPE_CURSOR
+                           &&  !(static_cast<CTL_CursorBlobDescriptor&>(desc)
                                  .IsValid()),
                            "Invalid blob descriptor (originally tied to a"
-                           " cursor that has been advanced or destroyed",
+                           " cursor that has been advanced or destroyed)",
                            110094);
 
         // Always start with an empty column for simplicity.
@@ -1417,14 +1419,15 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
             + " .WRITE(@chunk, NULL, NULL) WHERE " + desc.SearchConditions();
         return;
 #else
-        DATABASE_DRIVER_ERROR("Cannot retrieve I_ITDescriptor.", 110093);
+        DATABASE_DRIVER_ERROR("Cannot retrieve I_BlobDescriptor.", 110093);
 #endif
     }
 
-    auto_ptr<I_ITDescriptor> d_guard(p_desc);
+    auto_ptr<I_BlobDescriptor> d_guard(p_desc);
 
-    CTL_ITDescriptor& desc = p_desc ? dynamic_cast<CTL_ITDescriptor&>(*p_desc) :
-        dynamic_cast<CTL_ITDescriptor&> (descr_in);
+    CTL_BlobDescriptor& desc
+        = p_desc ? dynamic_cast<CTL_BlobDescriptor&>(*p_desc) :
+        dynamic_cast<CTL_BlobDescriptor&> (descr_in);
     if (desc.m_Desc.textptrlen <= 0) {
         _ASSERT(desc.m_Context.get());
         DATABASE_DRIVER_ERROR_EX(
@@ -1450,9 +1453,9 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
 
     // Calculate descriptor type ...
     if (desc.m_Desc.datatype == CS_TEXT_TYPE) {
-        m_DescrType = CDB_ITDescriptor::eText;
+        m_DescrType = CDB_BlobDescriptor::eText;
     } else if (desc.m_Desc.datatype == CS_IMAGE_TYPE) {
-        m_DescrType = CDB_ITDescriptor::eBinary;
+        m_DescrType = CDB_BlobDescriptor::eBinary;
     }
 
     if (Check(ct_data_info(x_GetSybaseCmd(),
@@ -1510,7 +1513,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         // Avoid accidentally splitting up multi-byte UTF-8 sequences,
         // while taking care not to interfere with binary data or
         // non-UTF-8 text.
-        if (m_DescrType != CDB_ITDescriptor::eBinary) {
+        if (m_DescrType != CDB_BlobDescriptor::eBinary) {
             SIZE_TYPE l = impl::GetValidUTF8Len(CTempString(buff, n));
             if (l < n) {
                 m_UTF8Fragment.assign(buff + l, n - l);
@@ -1518,7 +1521,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
             }
         }
         auto_ptr<CDB_Object> chunk;
-        if (m_DescrType == CDB_ITDescriptor::eBinary) {
+        if (m_DescrType == CDB_BlobDescriptor::eBinary) {
             chunk.reset(new CDB_VarBinary(buff, n));
         } else {
             chunk.reset(new CDB_VarChar(buff, n));

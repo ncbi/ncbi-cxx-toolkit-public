@@ -355,17 +355,20 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-///  I_ITDescriptor::
+///  I_BlobDescriptor::
 ///
-/// Image or Text descriptor.
+/// BLOB descriptor.
 ///
 
-class NCBI_DBAPIDRIVER_EXPORT I_ITDescriptor
+class NCBI_DBAPIDRIVER_EXPORT I_BlobDescriptor
 {
 public:
     virtual int DescriptorType(void) const = 0;
-    virtual ~I_ITDescriptor(void);
+    virtual ~I_BlobDescriptor(void);
 };
+
+// historical name
+typedef I_BlobDescriptor I_ITDescriptor;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -545,8 +548,11 @@ protected:
     /// NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query) = 0;
 
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                                 bool log_it = true) = 0;
+    virtual bool UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                            bool log_it = true) = 0;
+    bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
+                         bool log_it = true)
+        { return UpdateBlob(item_num, data, log_it); }
 
     /// @brief 
     ///   Create send-data command.
@@ -707,7 +713,7 @@ public:
     virtual CDB_Object* GetItem(CDB_Object* item_buf = 0, EGetItem policy = eAppendLOB) = 0;
 
     /// @brief 
-    ///   Read a result item body (for text/image mostly).
+    ///   Read a result item body (for BLOB columns, mostly).
     ///   Throw an exception on any error.
     /// 
     /// @param buffer 
@@ -726,15 +732,18 @@ public:
                             bool* is_null = 0) = 0;
 
     /// @brief 
-    ///   Get a descriptor for text/image column (for SendData).
+    ///   Get a descriptor for a BLOB column (for SendData).
     /// 
     /// @return 
-    ///   Return NULL if this result doesn't (or can't) have img/text descriptor.
+    ///   Return NULL if this result doesn't (or can't) have a BLOB descriptor.
     ///
     /// @note
     ///   You need to call ReadItem (maybe even with buffer_size == 0)
     ///   before calling this method!
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void) = 0;
+    virtual I_BlobDescriptor* GetBlobDescriptor(void) = 0;
+
+    I_BlobDescriptor* GetImageOrTextDescriptor(void)
+        { return GetBlobDescriptor(); }
 
     /// @brief 
     /// Skip result item
@@ -821,14 +830,15 @@ public:
     ///   SetTimeout()
     virtual unsigned int GetTimeout(void) const = 0;
 
-    /// Set maximal size for Text and Image objects. 
+    /// Set maximal size for BLOB data. 
     ///
     /// @param nof_bytes
-    ///   Maximal size for Text and Image objects. Text and Image objects 
-    ///   exceeding this size will be truncated.
+    ///   Maximal size for BLOB data ([N]TEXT, IMAGE, [N]VARCHAR(MAX),
+    ///   VARBINARY(MAX), XML).  BLOBs exceeding this size will be truncated.
     /// @return 
     ///   FALSE on error (e.g. if "nof_bytes" is too big).
-    virtual bool SetMaxTextImageSize(size_t nof_bytes) = 0;
+    virtual bool SetMaxBlobSize(size_t nof_bytes) = 0;
+    bool SetMaxTextImageSize(size_t n) { return SetMaxBlobSize(n); }
 
 
     /// @brief 
@@ -1031,7 +1041,8 @@ public:
     /// Report if the driver supports this functionality
     enum ECapability {
         eBcp,                 //< Is able to run BCP operations.
-        eReturnITDescriptors, //< Is able to return ITDescriptor.
+        eReturnBlobDescriptors, //< Is able to return BlobDescriptor.
+        eReturnITDescriptors = eReturnBlobDescriptors,
         eReturnComputeResults //< Is able to return compute results.
     };
 
@@ -1180,10 +1191,11 @@ protected:
     ///   Newly created send-data object.
     ///
     /// @sa SendData
-    virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
-                                         size_t          data_size,
-                                         bool            log_it = true,
-                                         bool            discard_results = true) = 0;
+    virtual CDB_SendDataCmd* SendDataCmd(I_BlobDescriptor& desc,
+                                         size_t            data_size,
+                                         bool              log_it = true,
+                                         bool              discard_results = true)
+        = 0;
 
     /// @brief 
     ///   Shortcut to send text and image to the server without using the
@@ -1192,7 +1204,7 @@ protected:
     /// @param desc 
     ///   Lob descriptor.
     /// @param lob 
-    ///   Text or Image object.
+    ///   Large object -- [N]TEXT, IMAGE, [N]VARCHAR(MAX), or VARBINARY(MAX).
     /// @param log_it 
     ///   Log LOB operation if this value is set to true.
     /// 
@@ -1201,7 +1213,7 @@ protected:
     ///
     /// @sa
     ///   SendDataCmd
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
+    virtual bool SendData(I_BlobDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true) = 0;
 
     /// @brief 

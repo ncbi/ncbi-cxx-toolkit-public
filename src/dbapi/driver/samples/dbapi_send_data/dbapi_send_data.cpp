@@ -73,7 +73,7 @@ CDbapiSendDataApp::RunSample(void)
     try {
         auto_ptr<CDB_LangCmd> set_cmd;
 
-        GetDriverContext().SetMaxTextImageSize(1000000);
+        GetDriverContext().SetMaxBlobSize(1000000);
 
         // Create table in database for the test
         CreateTable(GetTableName());
@@ -86,7 +86,7 @@ CDbapiSendDataApp::RunSample(void)
         // by using function SendData()
 
         // Get a descriptor
-        CDB_ITDescriptor d(GetTableName(), "txt_val", "int_val = 4");
+        CDB_BlobDescriptor d(GetTableName(), "txt_val", "int_val = 4");
 
         // Update text field
         GetConnection().SendData(d, txt);

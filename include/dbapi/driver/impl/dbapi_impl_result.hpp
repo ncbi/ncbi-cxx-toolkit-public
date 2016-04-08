@@ -76,18 +76,21 @@ public:
     virtual CDB_Object* GetItem(CDB_Object* item_buf = 0, 
 					I_Result::EGetItem policy = I_Result::eAppendLOB) = 0;
 
-    /// Read a result item body (for text/image mostly).
+    /// Read a result item body (for BLOB columns, mostly).
     /// Return number of successfully read bytes.
     /// Set "*is_null" to TRUE if the item is <NULL>.
     /// Throw an exception on any error.
     virtual size_t ReadItem(void* buffer, size_t buffer_size,
                             bool* is_null = 0) = 0;
 
-    /// Get a descriptor for text/image column (for SendData).
-    /// Return NULL if this result doesn't (or can't) have img/text descriptor.
+    /// Get a descriptor for a BLOB column (for SendData).
+    /// Return NULL if this result doesn't (or can't) have a BLOB descriptor.
     /// NOTE: you need to call ReadItem (maybe even with buffer_size == 0)
     ///       before calling this method!
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void) = 0;
+    virtual I_BlobDescriptor* GetBlobDescriptor(void) = 0;
+
+    I_BlobDescriptor* GetImageOrTextDescriptor(void)
+        { return GetBlobDescriptor(); }
 
     /// Skip result item
     virtual bool SkipItem(void) = 0;

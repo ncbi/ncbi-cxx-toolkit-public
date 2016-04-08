@@ -53,7 +53,7 @@ class CBlobOStream : public ostream
 public:
     
     CBlobOStream(CDB_Connection* connAux,
-	             I_ITDescriptor* desc,
+                 I_BlobDescriptor* desc,
                  size_t datasize, 
                  streamsize bufsize,
                  TBlobOStreamFlags flags,
@@ -69,7 +69,7 @@ public:
     virtual ~CBlobOStream();
     
 private:
-    I_ITDescriptor* m_desc;
+    I_BlobDescriptor* m_desc;
     CDB_Connection* m_conn;
     bool m_destroyConn;
 };

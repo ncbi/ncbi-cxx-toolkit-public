@@ -206,9 +206,15 @@ public:
     // Moves the internal position pointer
     bool MoveTo(size_t pos) const;
 
-    void SetITDescriptor(I_ITDescriptor* descr);
-    I_ITDescriptor& GetITDescriptor(void) const;
-    I_ITDescriptor* ReleaseITDescriptor(void) const;
+    void SetBlobDescriptor(I_BlobDescriptor* descr);
+    I_BlobDescriptor& GetBlobDescriptor(void) const;
+    I_BlobDescriptor* ReleaseBlobDescriptor(void) const;
+
+    void SetITDescriptor(I_BlobDescriptor* descr) { SetBlobDescriptor(descr); }
+    I_BlobDescriptor& GetITDescriptor(void) const
+        { return GetBlobDescriptor(); }
+    I_BlobDescriptor* ReleaseITDescriptor(void) const
+        { return ReleaseBlobDescriptor(); }
 
     // Simplify bulk insertion into NVARCHAR columns, which require
     // explicit handling.
@@ -228,7 +234,7 @@ private:
     void x_Inapplicable_Method(const char* method) const;
 
     class CDB_Object* m_data;
-    mutable auto_ptr<I_ITDescriptor> m_descr;
+    mutable auto_ptr<I_BlobDescriptor> m_descr;
 };
 
 bool NCBI_DBAPI_EXPORT operator==(const CVariant& v1, const CVariant& v2);
@@ -263,13 +269,13 @@ EDB_Type CVariant::GetType() const
 
 
 inline void
-CVariant::SetITDescriptor(I_ITDescriptor* descr)
+CVariant::SetBlobDescriptor(I_BlobDescriptor* descr)
 {
     m_descr.reset(descr);
 }
 
-inline I_ITDescriptor&
-CVariant::GetITDescriptor(void) const
+inline I_BlobDescriptor&
+CVariant::GetBlobDescriptor(void) const
 {
     if (m_descr.get() == NULL) {
         NCBI_THROW(CVariantException, eVariant,
@@ -278,8 +284,8 @@ CVariant::GetITDescriptor(void) const
     return *m_descr;
 }
 
-inline I_ITDescriptor*
-CVariant::ReleaseITDescriptor(void) const
+inline I_BlobDescriptor*
+CVariant::ReleaseBlobDescriptor(void) const
 {
     return m_descr.release();
 }

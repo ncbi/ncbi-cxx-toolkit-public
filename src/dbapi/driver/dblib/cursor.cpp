@@ -193,7 +193,7 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
     return true;
 }
 
-I_ITDescriptor* CDBL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
+I_BlobDescriptor* CDBL_CursorCmd::x_GetBlobDescriptor(unsigned int item_num)
 {
     if(!CursorIsOpen() || (GetResultSet() == 0)) {
         return 0;
@@ -202,15 +202,16 @@ I_ITDescriptor* CDBL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
         if(!GetResultSet()->SkipItem()) return 0;
     }
 
-    I_ITDescriptor* desc= new CDBL_ITDescriptor(GetConnection(), GetCmd(), item_num+1);
+    I_BlobDescriptor* desc
+        = new CDBL_BlobDescriptor(GetConnection(), GetCmd(), item_num + 1);
     return desc;
 }
 
-bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                                     bool log_it)
+bool CDBL_CursorCmd::UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                                bool log_it)
 {
-    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    auto_ptr<I_ITDescriptor> d_guard(desc);
+    I_BlobDescriptor* desc = x_GetBlobDescriptor(item_num);
+    auto_ptr<I_BlobDescriptor> d_guard(desc);
 
     if(desc) {
         return GetConnection().x_SendData(*desc, data, log_it);
@@ -222,8 +223,8 @@ CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
                                              bool log_it,
                                              bool /*dump_results*/)
 {
-    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    auto_ptr<I_ITDescriptor> d_guard(desc);
+    I_BlobDescriptor* desc= x_GetBlobDescriptor(item_num);
+    auto_ptr<I_BlobDescriptor> d_guard(desc);
 
     if(desc) {
         m_LCmd->DumpResults();

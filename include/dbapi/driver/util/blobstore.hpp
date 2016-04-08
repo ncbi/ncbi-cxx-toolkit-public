@@ -77,14 +77,18 @@ private:
 };
 
 
-class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT ItDescriptorMaker
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT IBlobDescriptorMaker
 {
 public:
     virtual bool Init(CDB_Connection* con)= 0;
-    virtual I_ITDescriptor& ItDescriptor(void)= 0;
+    virtual I_BlobDescriptor& BlobDescriptor(void)= 0;
+    I_BlobDescriptor& ItDescriptor(void) { return BlobDescriptor(); }
     virtual bool Fini(void)= 0;
-    virtual ~ItDescriptorMaker(){};
+    virtual ~IBlobDescriptorMaker(){};
 };
+
+// historical name
+typedef IBlobDescriptorMaker ItDescriptorMaker;
 
 
 class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobWriter : public IWriter
@@ -100,7 +104,7 @@ public:
     typedef int TFlags;
 
     CBlobWriter(CDB_Connection* con,
-                ItDescriptorMaker*    desc_func,
+                IBlobDescriptorMaker* desc_func,
                 size_t          image_limit= 0x7FFFFFFF,
                 TFlags          flags= 0);
     /// Write up to count bytes from the buffer pointed to by
@@ -121,7 +125,7 @@ private:
     CBlobWriter();
     bool storeBlob(void);
     CDB_Image m_Blob;
-    ItDescriptorMaker *m_dMaker;
+    IBlobDescriptorMaker *m_dMaker;
     size_t m_Limit;
     CDB_Connection* m_Con;
     bool m_LogIt;
@@ -160,7 +164,7 @@ public:
                 const string& server,
                 const string& user,
                 const string& passwd,
-                ItDescriptorMaker* d_maker
+                IBlobDescriptorMaker* d_maker
                 );
     bool IsReady() const {
         return m_IsGood;
@@ -174,13 +178,13 @@ public:
 private:
     CBlobLoader();
     CDB_Connection* m_Conn;
-    ItDescriptorMaker* m_dMaker;
+    IBlobDescriptorMaker* m_dMaker;
     bool m_IsGood;
 };
 
 
 /***************************************************************************************
- * The SimpleBlobStore is a ready to use implementation of ItDescriptorMaker
+ * The SimpleBlobStore is a ready to use implementation of IBlobDescriptorMaker
  * it uses a table of the form:
  * create table TABLE_NAME (
  * ID varchar(n),
@@ -190,7 +194,7 @@ private:
  */
 
 class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CSimpleBlobStore
-    : public ItDescriptorMaker
+    : public IBlobDescriptorMaker
 {
 public:
     CSimpleBlobStore(const string& table_name,
@@ -203,7 +207,7 @@ public:
             m_Key= key;
     }
     virtual bool Init(CDB_Connection* con);
-    virtual I_ITDescriptor& ItDescriptor(void);
+    virtual I_BlobDescriptor& BlobDescriptor(void);
     virtual bool Fini(void);
     virtual ~CSimpleBlobStore();
 
@@ -219,13 +223,13 @@ protected:
     int m_ImageNum;
     CDB_VarChar m_Key;
     CDB_Int m_RowNum;
-    CDB_ITDescriptor m_Desc;
+    CDB_BlobDescriptor m_Desc;
 };
 
 
 /***************************************************************************************
  * CBlobStoreBase - the abstract base interface to deal with reading and writing
- * the image/text data from a C++ application.
+ * the BLOB data from a C++ application.
  */
 
 class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobStoreBase
@@ -293,7 +297,7 @@ private:
 
 /***************************************************************************************
  * CBlobStoreStatic - the simple interface to deal with reading and writing
- * the image/text data from a C++ application.
+ * the BLOB data from a C++ application.
  * It uses connection to DB from an external pool.
  */
 
@@ -331,7 +335,7 @@ private:
 
 /***************************************************************************************
  * CBlobStoreDynamic - the simple interface to deal with reading and writing
- * the image/text data from a C++ application.
+ * the BLOB data from a C++ application.
  * It uses an internal connections pool and ask pool for a connection each time before
  * connection use.
  */

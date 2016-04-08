@@ -144,7 +144,9 @@ public:
     virtual ~CDriverContext(void);
 
 public:
-    virtual bool SetMaxTextImageSize(size_t nof_bytes);
+    virtual bool SetMaxBlobSize(size_t nof_bytes);
+    bool SetMaxTextImageSize(size_t nof_bytes)
+        { return SetMaxBlobSize(nof_bytes); }
 
     virtual bool SetLoginTimeout(unsigned int nof_secs = 0);
     virtual unsigned int GetLoginTimeout(void) const;
@@ -214,10 +216,11 @@ public:
         return (GetClientEncoding() == eEncoding_UTF8);
     }
 
-    size_t GetMaxTextImageSize(void) const
+    size_t GetMaxBlobSize(void) const
     {
-        return m_MaxTextImageSize;
+        return m_MaxBlobSize;
     }
+    size_t GetMaxTextImageSize(void) const { return GetMaxBlobSize(); }
 
     static void ResetEnvSybase(void);
 
@@ -249,7 +252,7 @@ protected:
         return m_CntxHandlers;
     }
 
-    void UpdateConnMaxTextImageSize(void) const;
+    void UpdateConnMaxBlobSize(void) const;
     void UpdateConnTimeout(void) const;
 
     void SetExtraMsg(const string& msg) const
@@ -290,7 +293,7 @@ private:
     mutable string  m_ExtraMsg;
 
     string          m_ClientCharset;
-    size_t          m_MaxTextImageSize;
+    size_t          m_MaxBlobSize;
     EEncoding       m_ClientEncoding;
 
     /// Return unused connection "conn" to the driver context for future

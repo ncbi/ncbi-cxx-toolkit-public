@@ -2626,8 +2626,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
             }
             // Modify the table ...
             {
-                CDB_ITDescriptor desc(table_name, "vc_max", "1 = 1",
-                                      CDB_ITDescriptor::eText);
+                CDB_BlobDescriptor desc(table_name, "vc_max", "1 = 1",
+                                      CDB_BlobDescriptor::eText);
                 auto_stmt->GetBlobOStream(desc, long_msg.size()) << long_msg
                                                                  << flush;
             }
@@ -2690,8 +2690,8 @@ BOOST_AUTO_TEST_CASE(Test_NVARCHAR_MAX_Stream)
             }
             // Modify the table ...
             {
-                CDB_ITDescriptor desc(table_name, "vc_max", "1 = 1",
-                                      CDB_ITDescriptor::eText);
+                CDB_BlobDescriptor desc(table_name, "vc_max", "1 = 1",
+                                      CDB_BlobDescriptor::eText);
                 auto_stmt->GetBlobOStream(desc, long_msg.size()) << long_msg
                                                                  << flush;
             }

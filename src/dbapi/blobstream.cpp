@@ -57,7 +57,7 @@ CBlobIStream::~CBlobIStream()
 }
 
 CBlobOStream::CBlobOStream(CDB_Connection* connAux,
-                           I_ITDescriptor* desc,
+                           I_BlobDescriptor* desc,
                            size_t datasize, 
                            streamsize bufsize,
                            TBlobOStreamFlags flags,

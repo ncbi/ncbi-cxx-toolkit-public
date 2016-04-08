@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(Test_SetMaxTextImageSize)
+BOOST_AUTO_TEST_CASE(Test_SetMaxBlobSize)
 {
     try {
         auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(Test_SetMaxTextImageSize)
             DumpResults(auto_stmt.get());
         }
 
-        // Call SetMaxTextImageSize ...
+        // Call SetMaxBlobSize ...
         {
             I_DriverContext* drv_context = GetDS().GetDriverContext();
 
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(Test_SetMaxTextImageSize)
                         GetArgs().GetDriverName());
             }
 
-            drv_context->SetMaxTextImageSize(expected_max_text_size);
+            drv_context->SetMaxBlobSize(expected_max_text_size);
         }
 
         // Check what we've got ...

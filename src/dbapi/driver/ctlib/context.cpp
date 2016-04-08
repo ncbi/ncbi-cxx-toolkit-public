@@ -764,13 +764,13 @@ bool CTLibContext::SetTimeout(unsigned int nof_secs)
 }
 
 
-bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
+bool CTLibContext::SetMaxBlobSize(size_t nof_bytes)
 {
-    impl::CDriverContext::SetMaxTextImageSize(nof_bytes);
+    impl::CDriverContext::SetMaxBlobSize(nof_bytes);
 
     CMutexGuard mg(s_CTLCtxMtx);
 
-    CS_INT ti_size = (CS_INT) GetMaxTextImageSize();
+    CS_INT ti_size = (CS_INT) GetMaxBlobSize();
     return Check(ct_config(CTLIB_GetContext(),
                            CS_SET,
                            CS_TEXTLIMIT,
@@ -881,7 +881,7 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
 {
     switch(cpb) {
     case eBcp:
-    case eReturnITDescriptors:
+    case eReturnBlobDescriptors:
     case eReturnComputeResults:
         return true;
     default:

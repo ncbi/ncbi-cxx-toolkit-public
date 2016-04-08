@@ -782,14 +782,13 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
 }
 
 
-I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
+I_BlobDescriptor* CTL_RowResult::GetBlobDescriptor()
 {
-    return GetImageOrTextDescriptor(GetCurrentItemNum());
+    return GetBlobDescriptor(GetCurrentItemNum());
 }
 
 
-I_ITDescriptor*
-CTL_RowResult::GetImageOrTextDescriptor(int item_num)
+I_BlobDescriptor* CTL_RowResult::GetBlobDescriptor(int item_num)
 {
     bool is_null = false;
 
@@ -806,7 +805,7 @@ CTL_RowResult::GetImageOrTextDescriptor(int item_num)
     if (is_null)
         m_NullValue[item_num] = eIsNull;
 
-    auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
+    auto_ptr<CTL_BlobDescriptor> desc(new CTL_BlobDescriptor);
     desc->m_Desc.textptrlen = 0;
 
     bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
@@ -930,7 +929,7 @@ bool CTL_CursorResult::Fetch(void)
 
 void CTL_CursorResult::x_InvalidateDescriptors(void)
 {
-    ITERATE (set<CTL_CursorITDescriptor*>, it, m_Descriptors) {
+    ITERATE (set<CTL_CursorBlobDescriptor*>, it, m_Descriptors) {
         (*it)->Invalidate();
     }
     m_Descriptors.clear();
@@ -955,16 +954,17 @@ CTL_CursorResult::~CTL_CursorResult()
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CTL_ITDescriptor::
+//  CTL_BlobDescriptor::
 //
 
-CTL_ITDescriptor::CTL_ITDescriptor()
+CTL_BlobDescriptor::CTL_BlobDescriptor()
 {
     memset(&m_Desc, 0xDB, sizeof(m_Desc));
     return;
 }
 
-CTL_ITDescriptor& CTL_ITDescriptor::operator=(const CTL_ITDescriptor& desc)
+CTL_BlobDescriptor& CTL_BlobDescriptor::operator=
+(const CTL_BlobDescriptor& desc)
 {
     m_Desc = desc.m_Desc;
     if (desc.m_Context.get() != NULL) {
@@ -973,13 +973,13 @@ CTL_ITDescriptor& CTL_ITDescriptor::operator=(const CTL_ITDescriptor& desc)
     return *this;
 }
 
-int CTL_ITDescriptor::DescriptorType() const
+int CTL_BlobDescriptor::DescriptorType() const
 {
-    return CTL_ITDESCRIPTOR_TYPE_MAGNUM;
+    return CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM;
 }
 
 
-CTL_ITDescriptor::~CTL_ITDescriptor()
+CTL_BlobDescriptor::~CTL_BlobDescriptor()
 {
     return;
 }
@@ -987,14 +987,15 @@ CTL_ITDescriptor::~CTL_ITDescriptor()
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CTL_CursorITDescriptor::
+//  CTL_CursorBlobDescriptor::
 //
 
-CTL_CursorITDescriptor::CTL_CursorITDescriptor(CTL_CursorResult& cursor_result,
-                                               const string& table_name,
-                                               const string& column_name,
-                                               CS_INT datatype)
-    : CDB_ITDescriptor(table_name, column_name,
+CTL_CursorBlobDescriptor::CTL_CursorBlobDescriptor
+(CTL_CursorResult& cursor_result,
+ const string& table_name,
+ const string& column_name,
+ CS_INT datatype)
+    : CDB_BlobDescriptor(table_name, column_name,
                        "CURRENT OF " + cursor_result.GetCursorName()),
       m_CursorResult(&cursor_result)
 {
@@ -1011,12 +1012,12 @@ CTL_CursorITDescriptor::CTL_CursorITDescriptor(CTL_CursorResult& cursor_result,
     m_CursorResult->RegisterDescriptor(*this);
 }
 
-int CTL_CursorITDescriptor::DescriptorType() const
+int CTL_CursorBlobDescriptor::DescriptorType() const
 {
-    return CTL_ITDESCRIPTOR_TYPE_CURSOR;
+    return CTL_BLOB_DESCRIPTOR_TYPE_CURSOR;
 }
 
-CTL_CursorITDescriptor::~CTL_CursorITDescriptor()
+CTL_CursorBlobDescriptor::~CTL_CursorBlobDescriptor()
 {
     m_CursorResult->UnregisterDescriptor(*this);
 }
@@ -1041,11 +1042,11 @@ CTL_CursorResultExpl::ClearFields(void)
     ITERATE(vector<CDB_Object*>, it, m_Fields) {
         delete *it;
     }
-    ITERATE(vector<I_ITDescriptor*>, it, m_ITDescrs) {
+    ITERATE(vector<I_BlobDescriptor*>, it, m_BlobDescrs) {
         delete *it;
     }
     m_Fields.clear();
-    m_ITDescrs.clear();
+    m_BlobDescrs.clear();
 
     if (m_ReadBuffer) {
         free(m_ReadBuffer);
@@ -1096,14 +1097,14 @@ bool CTL_CursorResultExpl::Fetch()
         int col_cnt = m_Res->GetColumnNum();
         bool need_textptrs = false;
         m_Fields.resize(col_cnt, NULL);
-        m_ITDescrs.resize(col_cnt, NULL);
+        m_BlobDescrs.resize(col_cnt, NULL);
         for (int i = 0; i < col_cnt; ++i) {
             EDB_Type item_type = m_Res->ItemDataType(m_Res->CurrentItemNo());
             if (item_type == eDB_Text || item_type == eDB_Image) {
-                m_ITDescrs[i] = m_Res->GetImageOrTextDescriptor();
-                if ((m_ITDescrs[i]->DescriptorType()
-                     == CTL_ITDESCRIPTOR_TYPE_MAGNUM)
-                    &&  (static_cast<CTL_ITDescriptor*>(m_ITDescrs[i])
+                m_BlobDescrs[i] = m_Res->GetBlobDescriptor();
+                if ((m_BlobDescrs[i]->DescriptorType()
+                     == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM)
+                    &&  (static_cast<CTL_BlobDescriptor*>(m_BlobDescrs[i])
                          ->m_Desc.textptrlen <= 0)) {
                     need_textptrs = true;
                 }
@@ -1128,7 +1129,7 @@ bool CTL_CursorResultExpl::Fetch()
         }
 
         if (need_textptrs) {
-            GetConnection().CompleteITDescriptors(m_ITDescrs, m_CursorName);
+            GetConnection().CompleteBlobDescriptors(m_BlobDescrs, m_CursorName);
         }
 
         return true;
@@ -1343,13 +1344,13 @@ size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
 }
 
 
-I_ITDescriptor* CTL_CursorResultExpl::GetImageOrTextDescriptor(int item_num)
+I_BlobDescriptor* CTL_CursorResultExpl::GetBlobDescriptor(int item_num)
 {
     if (item_num >= GetColumnNum() || item_num < 0)
         return NULL;
 
-    CTL_ITDescriptor* result = new CTL_ITDescriptor;
-    *result = *static_cast<CTL_ITDescriptor*>(m_ITDescrs[item_num]);
+    CTL_BlobDescriptor* result = new CTL_BlobDescriptor;
+    *result = *static_cast<CTL_BlobDescriptor*>(m_BlobDescrs[item_num]);
 
     return result;
 }

@@ -105,7 +105,7 @@ CMySQL_Connection::SetCancelTimeout(size_t nof_secs)
 }
 
 
-CDB_SendDataCmd* CMySQL_Connection::SendDataCmd(I_ITDescriptor& /*descr_in*/,
+CDB_SendDataCmd* CMySQL_Connection::SendDataCmd(I_BlobDescriptor& /*descr_in*/,
                                                 size_t          /*data_size*/,
                                                 bool            /*log_it*/,
                                                 bool            /*dump_results*/)
@@ -114,7 +114,7 @@ CDB_SendDataCmd* CMySQL_Connection::SendDataCmd(I_ITDescriptor& /*descr_in*/,
 }
 
 
-bool CMySQL_Connection::SendData(I_ITDescriptor& /*desc*/,
+bool CMySQL_Connection::SendData(I_BlobDescriptor& /*desc*/,
                                  CDB_Stream&      /*img*/,
                                  bool            /*log_it*/)
 {

@@ -78,9 +78,13 @@
 #    define CTL_CursorResult        CTDS_CursorResult
 #    define CTL_CursorResultExpl    CTDS_CursorResultExpl
 #    define CTL_BlobResult          CTDS_BlobResult
+#    define CTL_BlobDescriptor      CTDS_BlobDescriptor
+#    define CTL_CursorBlobDescriptor CTDS_CursorBlobDescriptor
+#    define CTLibContextRegistry    CTDSContextRegistry
+
+// historical names
 #    define CTL_ITDescriptor        CTDS_ITDescriptor
 #    define CTL_CursorITDescriptor  CTDS_CursorITDescriptor
-#    define CTLibContextRegistry    CTDSContextRegistry
 
 #    define CTLIB_SetApplicationName    TDS_SetApplicationName
 #    define CTLIB_SetHostName           TDS_SetHostName
@@ -122,7 +126,7 @@ class CTL_ComputeResult;
 class CTL_StatusResult;
 class CTL_CursorResult;
 class CTL_CursorResultExpl;
-class CTL_CursorITDescriptor;
+class CTL_CursorBlobDescriptor;
 class CTLibContextRegistry;
 
 
@@ -262,7 +266,7 @@ public:
 
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
-    virtual bool SetMaxTextImageSize(size_t nof_bytes);
+    virtual bool SetMaxBlobSize  (size_t nof_bytes);
 
     virtual string GetApplicationName(void) const;
 
@@ -423,12 +427,12 @@ protected:
     virtual CDB_CursorCmd*   Cursor      (const string&   cursor_name,
                                           const string&   query,
                                           unsigned int    batch_size = 1);
-    virtual CDB_SendDataCmd* SendDataCmd (I_ITDescriptor& desc,
+    virtual CDB_SendDataCmd* SendDataCmd (I_BlobDescriptor& desc,
                                           size_t          data_size,
                                           bool            log_it = true,
                                           bool            dump_results = true);
 
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
+    virtual bool SendData(I_BlobDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
 
     virtual bool Refresh(void);
@@ -476,20 +480,22 @@ protected:
 
     virtual TSockHandle GetLowLevelHandle(void) const;
 
-    void CompleteITDescriptor(I_ITDescriptor& desc, const string& cursor_name,
-                              int item_num);
+    void CompleteBlobDescriptor(I_BlobDescriptor& desc,
+                                const string& cursor_name,
+                                int item_num);
 
-    void CompleteITDescriptors(vector<I_ITDescriptor*>& descs,
-                               const string& cursor_name);
+    void CompleteBlobDescriptors(vector<I_BlobDescriptor*>& descs,
+                                 const string& cursor_name);
 
 private:
     void x_LoadTextPtrProcs(void);
     void x_CmdAlloc(CS_COMMAND** cmd);
-    bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
-    bool x_SendUpdateWrite(CDB_ITDescriptor& desc, CDB_Stream& img,
+    bool x_SendData(I_BlobDescriptor& desc, CDB_Stream& img,
+                    bool log_it = true);
+    bool x_SendUpdateWrite(CDB_BlobDescriptor& desc, CDB_Stream& img,
                            size_t size);
 
-    I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
+    I_BlobDescriptor* x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& d);
     CS_CONNECTION* x_GetSybaseConn(void) const { return m_Handle.GetNativeHandle(); }
     bool x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type);
 
@@ -569,10 +575,10 @@ protected:
     inline const CTL_Connection& GetConnection(void) const;
 
     inline void DropCmd(impl::CCommand& cmd);
-    inline bool x_SendData(I_ITDescriptor& desc,
+    inline bool x_SendData(I_BlobDescriptor& desc,
                            CDB_Stream& img,
                            bool log_it = true);
-    inline CDB_SendDataCmd* ConnSendDataCmd (I_ITDescriptor& desc,
+    inline CDB_SendDataCmd* ConnSendDataCmd (I_BlobDescriptor& desc,
                                              size_t          data_size,
                                              bool            log_it = true,
                                              bool            dump_results = true);
@@ -803,8 +809,8 @@ protected:
 protected:
     virtual CDB_Result* OpenCursor(void);
     virtual bool Update(const string& table_name, const string& upd_query);
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                 bool log_it = true);
+    virtual bool UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                            bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,
                                          bool dump_results = true);
@@ -819,7 +825,7 @@ protected:
 
 private:
     bool x_AssignParams(bool just_declare = false);
-    I_ITDescriptor*   x_GetITDescriptor(unsigned int item_num);
+    I_BlobDescriptor* x_GetBlobDescriptor(unsigned int item_num);
 
 private:
     unsigned int      m_FetchSize;
@@ -845,8 +851,8 @@ protected:
 protected:
     virtual CDB_Result* OpenCursor(void);
     virtual bool Update(const string& table_name, const string& upd_query);
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                 bool log_it = true);
+    virtual bool UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                            bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,
                                          bool dump_results = true);
@@ -865,7 +871,7 @@ private:
 
 private:
     bool x_AssignParams(void);
-    I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
+    I_BlobDescriptor* x_GetBlobDescriptor(unsigned int item_num);
 
     auto_ptr<CTL_LangCmd>          m_LCmd;
     auto_ptr<CTL_CursorResultExpl> m_Res;
@@ -957,7 +963,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_SendDataCmd : CTL_LRCmd, public impl::CS
 
 protected:
     CTL_SendDataCmd(CTL_Connection& conn,
-                    I_ITDescriptor& descr_in,
+                    I_BlobDescriptor& descr_in,
                     size_t nof_bytes,
                     bool log_it,
                     bool dump_results);
@@ -973,7 +979,7 @@ protected:
     virtual int  RowCount(void) const;
 
 private:
-    CDB_ITDescriptor::ETDescriptorType m_DescrType;
+    CDB_BlobDescriptor::ETDescriptorType m_DescrType;
 #ifdef FTDS_IN_USE
     string m_SQL;
     string m_UTF8Fragment;
@@ -1012,10 +1018,10 @@ protected:
 							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual I_BlobDescriptor* GetBlobDescriptor(void);
     virtual bool            SkipItem(void);
 
-    I_ITDescriptor*         GetImageOrTextDescriptor(int item_num);
+    I_BlobDescriptor*       GetBlobDescriptor(int item_num);
 
     CS_RETCODE my_ct_get_data(CS_COMMAND* cmd,
                               CS_INT item,
@@ -1174,9 +1180,9 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorResult :  public CTL_RowResult
 
 public:
     const string& GetCursorName(void) const { return m_CursorName; }
-    void RegisterDescriptor(CTL_CursorITDescriptor& desc)
+    void RegisterDescriptor(CTL_CursorBlobDescriptor& desc)
     { m_Descriptors.insert(&desc); }
-    void UnregisterDescriptor(CTL_CursorITDescriptor& desc)
+    void UnregisterDescriptor(CTL_CursorBlobDescriptor& desc)
     { m_Descriptors.erase(&desc); }
 
 protected:
@@ -1195,8 +1201,8 @@ protected:
     void x_InvalidateDescriptors(void);
 
 private:
-    set<CTL_CursorITDescriptor*> m_Descriptors;
-    string                       m_CursorName;
+    set<CTL_CursorBlobDescriptor*> m_Descriptors;
+    string                         m_CursorName;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1218,11 +1224,11 @@ protected:
 							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void)
+    virtual I_BlobDescriptor* GetBlobDescriptor(void)
     {
-        return GetImageOrTextDescriptor(m_CurItemNo);
+        return GetBlobDescriptor(m_CurItemNo);
     }
-    I_ITDescriptor*         GetImageOrTextDescriptor(int item_num);
+    I_BlobDescriptor*       GetBlobDescriptor(int item_num);
     virtual bool            SkipItem(void);
 
 private:
@@ -1251,7 +1257,7 @@ private:
     // CTL_RowResult* m_Res;
     CDB_Result*             m_Res;
     vector<CDB_Object*>     m_Fields;
-    vector<I_ITDescriptor*> m_ITDescrs;
+    vector<I_BlobDescriptor*> m_BlobDescrs;
     int                     m_CurItemNo;
     size_t                  m_ReadBytes;
     void*                   m_ReadBuffer;
@@ -1366,14 +1372,14 @@ CTL_CmdBase::DropCmd(impl::CCommand& cmd)
 
 inline
 bool
-CTL_CmdBase::x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it)
+CTL_CmdBase::x_SendData(I_BlobDescriptor& desc, CDB_Stream& img, bool log_it)
 {
     return GetConnection().x_SendData(desc, img, log_it);
 }
 
 inline
 CDB_SendDataCmd*
-CTL_CmdBase::ConnSendDataCmd (I_ITDescriptor& desc,
+CTL_CmdBase::ConnSendDataCmd (I_BlobDescriptor& desc,
                               size_t          data_size,
                               bool            log_it,
                               bool            dump_results)
@@ -1502,13 +1508,14 @@ CTL_CursorCmdExpl::ClearResultSet(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CTL_ITDescriptor::
+//  CTL_BlobDescriptor::
 //
 
-#define CTL_ITDESCRIPTOR_TYPE_MAGNUM 0xc00
-#define CTL_ITDESCRIPTOR_TYPE_CURSOR 0xc01
+#define CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM 0xc00
+#define CTL_BLOB_DESCRIPTOR_TYPE_CURSOR 0xc01
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ITDescriptor : public I_ITDescriptor
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BlobDescriptor
+    : public I_BlobDescriptor
 {
     friend class CTL_RowResult;
     friend class CTL_CursorResultExpl;
@@ -1519,26 +1526,26 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ITDescriptor : public I_ITDescriptor
 
 public:
     virtual int DescriptorType(void) const;
-    virtual ~CTL_ITDescriptor(void);
+    virtual ~CTL_BlobDescriptor(void);
 
 protected:
-    CTL_ITDescriptor(void);
-    CTL_ITDescriptor& operator=(const CTL_ITDescriptor& desc);
+    CTL_BlobDescriptor(void);
+    CTL_BlobDescriptor& operator=(const CTL_BlobDescriptor& desc);
 
     CS_IODESC               m_Desc;
     /// Set only when m_Desc lacks a valid textptr
     auto_ptr<CDB_Exception> m_Context;
 };
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorITDescriptor
-    : public CDB_ITDescriptor
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorBlobDescriptor
+    : public CDB_BlobDescriptor
 {
 public:
-    CTL_CursorITDescriptor(CTL_CursorResult& cursor_result,
-                           const string& table_name,
-                           const string& column_name,
-                           CS_INT datatype);
-    ~CTL_CursorITDescriptor();
+    CTL_CursorBlobDescriptor(CTL_CursorResult& cursor_result,
+                             const string& table_name,
+                             const string& column_name,
+                             CS_INT datatype);
+    ~CTL_CursorBlobDescriptor();
 
     int DescriptorType(void) const;
 
@@ -1549,6 +1556,12 @@ public:
 private:
     CTL_CursorResult* m_CursorResult;
 };
+
+// historical names
+#define CTL_ITDESCRIPTOR_TYPE_MAGNUM CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM
+#define CTL_ITDESCRIPTOR_TYPE_CURSOR CTL_BLOB_DESCRIPTOR_TYPE_CURSOR
+typedef CTL_BlobDescriptor       CTL_ITDescriptor;
+typedef CTL_CursorBlobDescriptor CTL_CursorITDescriptor;
 
 #ifdef FTDS_IN_USE
 } // namespace NCBI_NS_FTDS_CTLIB

@@ -222,7 +222,7 @@ private:
 class CBlobBookmarkImpl : public CObject
 {
 public:
-    CBlobBookmarkImpl(CDatabaseImpl* db_impl, I_ITDescriptor* descr);
+    CBlobBookmarkImpl(CDatabaseImpl* db_impl, I_BlobDescriptor* descr);
 
     CNcbiOstream& GetOStream(size_t blob_size, TBlobOStreamFlags flags);
 
@@ -230,7 +230,7 @@ private:
     const CDB_Exception::SContext& x_GetContext(void) const;
 
     CRef<CDatabaseImpl> m_DBImpl;
-    auto_ptr<I_ITDescriptor> m_Descr;
+    auto_ptr<I_BlobDescriptor> m_Descr;
     auto_ptr<CWStream> m_OStream;
 };
 

@@ -66,7 +66,7 @@ bool IsBCPCapable(void)
 }
 
 static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
-                                  CDB_ITDescriptor& descr_in,
+                                  CDB_BlobDescriptor& descr_in,
                                   SQLLEN size,
                                   bool is_text,
                                   bool logit,
@@ -399,14 +399,14 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
 }
 
 
-CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
+CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_BlobDescriptor& descr_in,
                                                size_t data_size,
                                                bool log_it,
                                                bool dump_results)
 {
     CODBC_SendDataCmd* sd_cmd =
         new CODBC_SendDataCmd(*this,
-                              (CDB_ITDescriptor&)descr_in,
+                              (CDB_BlobDescriptor&)descr_in,
                               data_size,
                               log_it,
                               dump_results);
@@ -414,7 +414,8 @@ CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 }
 
 
-bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob, bool log_it)
+bool CODBC_Connection::SendData(I_BlobDescriptor& desc, CDB_Stream& lob,
+                                bool log_it)
 {
     CStatementBase stmt(*this, kEmptyStr);
 
@@ -422,19 +423,20 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob, bool log_
     SQLLEN      s = lob.Size();
     SQLLEN      ph;
 
-    CDB_ITDescriptor::ETDescriptorType desc_type = CDB_ITDescriptor::eUnknown;
+    CDB_BlobDescriptor::ETDescriptorType desc_type
+        = CDB_BlobDescriptor::eUnknown;
 
     if (lob.GetType() == eDB_Image) {
-            desc_type = CDB_ITDescriptor::eBinary;
+        desc_type = CDB_BlobDescriptor::eBinary;
     } else {
-            desc_type = CDB_ITDescriptor::eText;
+        desc_type = CDB_BlobDescriptor::eText;
     }
 
     if((!ODBC_xSendDataPrepare(
             stmt,
-            (CDB_ITDescriptor&)desc,
+            (CDB_BlobDescriptor&)desc,
             s,
-            (desc_type == CDB_ITDescriptor::eText),
+            (desc_type == CDB_BlobDescriptor::eText),
             log_it,
             p,
             &ph
@@ -563,7 +565,7 @@ ODBC_xCheckSIE(int rc, CStatementBase& stmt)
 }
 
 static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
-                                  CDB_ITDescriptor& descr_in,
+                                  CDB_BlobDescriptor& descr_in,
                                   SQLLEN size,
                                   bool is_text,
                                   bool logit,
@@ -592,12 +594,12 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
 #endif
 
 
-    CDB_ITDescriptor::ETDescriptorType descr_type = descr_in.GetColumnType();
-    if (descr_type == CDB_ITDescriptor::eUnknown) {
+    CDB_BlobDescriptor::ETDescriptorType descr_type = descr_in.GetColumnType();
+    if (descr_type == CDB_BlobDescriptor::eUnknown) {
         if (is_text) {
-            descr_type = CDB_ITDescriptor::eText;
+            descr_type = CDB_BlobDescriptor::eText;
         } else {
-            descr_type = CDB_ITDescriptor::eBinary;
+            descr_type = CDB_BlobDescriptor::eBinary;
         }
     }
 
@@ -606,7 +608,7 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
     int c_type = 0;
     int sql_type = 0;
 
-    if (descr_type == CDB_ITDescriptor::eText) {
+    if (descr_type == CDB_BlobDescriptor::eText) {
         // New code ...
         if (stmt.IsMultibyteClientEncoding()) {
             c_type = SQL_C_WCHAR;
@@ -680,9 +682,10 @@ static bool ODBC_xSendDataGetId(CStatementBase& stmt,
     }
 }
 
-bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
-                                  CStatementBase& stmt,
-                                  CDB_Stream& stream)
+bool
+CODBC_Connection::x_SendData(CDB_BlobDescriptor::ETDescriptorType descr_type,
+                             CStatementBase& stmt,
+                             CDB_Stream& stream)
 {
     char buff[1800];
 
@@ -697,7 +700,7 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
 //         size_t valid_len = len;
 //
 //         if (stmt.GetClientEncoding() == eEncoding_UTF8 &&
-//             descr_type == CDB_ITDescriptor::eText) {
+//             descr_type == CDB_BlobDescriptor::eText) {
 //
 //             valid_len = CStringUTF8::GetValidBytesCount(buff, len);
 //             invalid_len = len - valid_len;
@@ -715,7 +718,7 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
 //         }
 //
 //         if (stmt.GetClientEncoding() == eEncoding_UTF8 &&
-//             descr_type == CDB_ITDescriptor::eText) {
+//             descr_type == CDB_BlobDescriptor::eText) {
 //
 //             if (valid_len < len) {
 //                 memmove(buff, buff + valid_len, invalid_len);
@@ -726,7 +729,7 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
 
         // Old code ...
         if (stmt.GetClientEncoding() == eEncoding_UTF8 &&
-            descr_type == CDB_ITDescriptor::eText) {
+            descr_type == CDB_BlobDescriptor::eText) {
 
             size_t valid_len = impl::GetValidUTF8Len(CTempString(buff, len));
             invalid_len = len - valid_len;
@@ -1499,14 +1502,14 @@ CStatementBase::Close(void) const
 //
 
 CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection& conn,
-                                     CDB_ITDescriptor& descr,
+                                     CDB_BlobDescriptor& descr,
                                      size_t nof_bytes,
                                      bool logit,
                                      bool dump_results) :
     CStatementBase(conn, kEmptyStr),
     impl::CSendDataCmd(conn, nof_bytes),
-    m_DescrType(descr.GetColumnType() == CDB_ITDescriptor::eText ?
-                CDB_ITDescriptor::eText : CDB_ITDescriptor::eBinary),
+    m_DescrType(descr.GetColumnType() == CDB_BlobDescriptor::eText ?
+                CDB_BlobDescriptor::eText : CDB_BlobDescriptor::eBinary),
     m_Res(NULL),
     m_HasMoreResults(false),
     m_DumpResults(dump_results)
@@ -1533,7 +1536,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 //     size_t valid_len = nof_bytes;
 //
 //     if (GetClientEncoding() == eEncoding_UTF8 &&
-//         m_DescrType == CDB_ITDescriptor::eText) {
+//         m_DescrType == CDB_BlobDescriptor::eText) {
 //
 //         valid_len = CStringUTF8::GetValidBytesCount(static_cast<const char*>(chunk_ptr),
 //                                                     nof_bytes);
@@ -1559,7 +1562,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 
     // Old code ...
     if (GetClientEncoding() == eEncoding_UTF8 &&
-        m_DescrType == CDB_ITDescriptor::eText) {
+        m_DescrType == CDB_BlobDescriptor::eText) {
         size_t valid_len = 0;
 
         valid_len = impl::GetValidUTF8Len(

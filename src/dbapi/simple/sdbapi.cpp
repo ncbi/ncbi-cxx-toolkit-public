@@ -1849,16 +1849,22 @@ CDatabase::NewBookmark(const string& table_name, const string& column_name,
 {
     CONNECT_AS_NEEDED();
 
-    CDB_ITDescriptor::ETDescriptorType desc_type;
+    CDB_BlobDescriptor::ETDescriptorType desc_type;
     switch (column_type) {
-    case CBlobBookmark::eText:   desc_type = CDB_ITDescriptor::eText;    break;
-    case CBlobBookmark::eBinary: desc_type = CDB_ITDescriptor::eBinary;  break;
-    default:                     desc_type = CDB_ITDescriptor::eUnknown; break;
+    case CBlobBookmark::eText:
+        desc_type = CDB_BlobDescriptor::eText;
+        break;
+    case CBlobBookmark::eBinary:
+        desc_type = CDB_BlobDescriptor::eBinary;
+        break;
+    default:
+        desc_type = CDB_BlobDescriptor::eUnknown;
+        break;
     }
 
-    auto_ptr<I_ITDescriptor> desc
-        (new CDB_ITDescriptor(table_name, column_name, search_conditions,
-                              desc_type));
+    auto_ptr<I_BlobDescriptor> desc
+        (new CDB_BlobDescriptor(table_name, column_name, search_conditions,
+                                desc_type));
                                                        
     CRef<CBlobBookmarkImpl> bm(new CBlobBookmarkImpl(m_Impl, desc.release()));
     return CBlobBookmark(bm);
@@ -2972,7 +2978,8 @@ CQueryImpl::GetConnection(void)
 
 
 inline
-CBlobBookmarkImpl::CBlobBookmarkImpl(CDatabaseImpl* db_impl, I_ITDescriptor* descr)
+CBlobBookmarkImpl::CBlobBookmarkImpl(CDatabaseImpl* db_impl,
+                                     I_BlobDescriptor* descr)
     : m_DBImpl(db_impl),
       m_Descr(descr)
 {}
@@ -3270,7 +3277,7 @@ CQuery::CField::GetOStream(size_t blob_size, TBlobOStreamFlags flags) const
         IConnection* conn = m_Query->GetConnection()->CloneConnection();
         CDB_Connection* db_conn = conn->GetCDB_Connection();
         m_OStream.reset(new CWStream
-                        (new CxBlobWriter(db_conn, var_val.GetITDescriptor(),
+                        (new CxBlobWriter(db_conn, var_val.GetBlobDescriptor(),
                                           blob_size, flags, false),
                          0, 0,
                          CRWStreambuf::fOwnWriter
@@ -3297,8 +3304,9 @@ CQuery::CField::GetBookmark(void) const
                      string("Method is unsupported for this type of data: ")
                      + CDB_Object::GetTypeName(var_type, false));
     }
-    CRef<CBlobBookmarkImpl> bm(new CBlobBookmarkImpl(m_Query->GetDatabase(),
-                                                     var_val.ReleaseITDescriptor()));
+    CRef<CBlobBookmarkImpl> bm
+        (new CBlobBookmarkImpl(m_Query->GetDatabase(),
+                               var_val.ReleaseBlobDescriptor()));
     return CBlobBookmark(bm);
 }
 

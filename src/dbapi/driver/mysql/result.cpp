@@ -316,7 +316,7 @@ size_t CMySQL_RowResult::ReadItem(void*  /*buffer*/,
 }
 
 
-I_ITDescriptor* CMySQL_RowResult::GetImageOrTextDescriptor()
+I_BlobDescriptor* CMySQL_RowResult::GetBlobDescriptor()
 {
     return 0;
 }

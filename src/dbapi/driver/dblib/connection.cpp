@@ -233,29 +233,31 @@ CDB_CursorCmd* CDBL_Connection::Cursor(const string& cursor_name,
 }
 
 
-CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
+CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_BlobDescriptor& descr_in,
                                               size_t data_size,
                                               bool log_it,
                                               bool /*dump_results*/)
 {
     CHECK_DRIVER_ERROR( data_size < 1, "Wrong (zero) data size." + GetDbgInfo(), 210092 );
 
-    I_ITDescriptor* p_desc= 0;
+    I_BlobDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM) {
+    if(descr_in.DescriptorType() != CDBL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
         // this is not a native descriptor
-        p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
+        p_desc = x_GetNativeBlobDescriptor
+            (dynamic_cast<CDB_BlobDescriptor&>(descr_in));
         if (p_desc == NULL) {
             return NULL;
         }
     }
 
 
-    auto_ptr<I_ITDescriptor> d_guard(p_desc);
+    auto_ptr<I_BlobDescriptor> d_guard(p_desc);
 
-    CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) :
-    dynamic_cast<CDBL_ITDescriptor&> (descr_in);
+    CDBL_BlobDescriptor& desc
+        = p_desc ? dynamic_cast<CDBL_BlobDescriptor&>(*p_desc) :
+        dynamic_cast<CDBL_BlobDescriptor&>(descr_in);
 
     if (Check(dbwritetext(GetDBLibConnection(),
                     (char*) desc.m_ObjName.c_str(),
@@ -275,7 +277,7 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 }
 
 
-bool CDBL_Connection::SendData(I_ITDescriptor& desc,
+bool CDBL_Connection::SendData(I_BlobDescriptor& desc,
                                CDB_Stream& lob, bool log_it)
 {
     return x_SendData(desc, lob, log_it);
@@ -365,27 +367,29 @@ bool CDBL_Connection::Close(void)
     return false;
 }
 
-bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
+bool CDBL_Connection::x_SendData(I_BlobDescriptor& descr_in,
                                  CDB_Stream& stream, bool log_it)
 {
     size_t size = stream.Size();
     if (size < 1)
         return false;
 
-    I_ITDescriptor* p_desc= 0;
+    I_BlobDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM){
+    if(descr_in.DescriptorType() != CDBL_BLOB_DESCRIPTOR_TYPE_MAGNUM){
         // this is not a native descriptor
-        p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
+        p_desc = x_GetNativeBlobDescriptor
+            (dynamic_cast<CDB_BlobDescriptor&>(descr_in));
         if(p_desc == 0) return false;
     }
 
 
-    auto_ptr<I_ITDescriptor> d_guard(p_desc);
+    auto_ptr<I_BlobDescriptor> d_guard(p_desc);
 
-    CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) :
-    dynamic_cast<CDBL_ITDescriptor&> (descr_in);
+    CDBL_BlobDescriptor& desc
+        = p_desc ? dynamic_cast<CDBL_BlobDescriptor&>(*p_desc) :
+        dynamic_cast<CDBL_BlobDescriptor&>(descr_in);
     char buff[1800]; // maximal page size
 
     if (size <= sizeof(buff)) { // we could write a blob in one chunk
@@ -417,7 +421,8 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
         size_t s = stream.Read(buff, sizeof(buff));
         if (s < 1) {
             Check(dbcancel(GetDBLibConnection()));
-            DATABASE_DRIVER_ERROR( "Text/Image data corrupted." + GetDbgInfo(), 210032 );
+            DATABASE_DRIVER_ERROR("BLOB data corrupted." + GetDbgInfo(),
+                                  210032);
         }
         if (Check(dbmoretext(GetDBLibConnection(), (DBINT) s, (BYTE*) buff)) != SUCCEED) {
             Check(dbcancel(GetDBLibConnection()));
@@ -434,7 +439,8 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     return true;
 }
 
-I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
+I_BlobDescriptor*
+CDBL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
 {
     string q= "set rowcount 1\nupdate ";
     q+= descr_in.TableName();
@@ -455,7 +461,7 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
         DATABASE_DRIVER_ERROR( "Cannot send the language command." + GetDbgInfo(), 210035 );
     }
 
-    I_ITDescriptor* descr = NULL;
+    I_BlobDescriptor* descr = NULL;
     bool i;
 
     while(lcmd->HasMoreResults()) {
@@ -467,8 +473,9 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
                 while(res->Fetch()) {
                     res->ReadItem(&i, 1);
 
-                    descr= new CDBL_ITDescriptor(*this, GetDBLibConnection(), descr_in);
-                    // descr= res->GetImageOrTextDescriptor();
+                    descr = new CDBL_BlobDescriptor
+                        (*this, GetDBLibConnection(), descr_in);
+                    // descr = res->GetBlobDescriptor();
                     if(descr) {
                         break;
                     }

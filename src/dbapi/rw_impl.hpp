@@ -60,14 +60,14 @@ private:
     CResultSet *m_rs;
 };
 
-class I_ITDescriptor;
+class I_BlobDescriptor;
 
 class NCBI_DBAPI_EXPORT CxBlobWriter : public IWriter
 {
 public:
 
     CxBlobWriter(CDB_Connection* conn,
-                I_ITDescriptor &d,
+                I_BlobDescriptor &d,
                 size_t blobsize, 
                 TBlobOStreamFlags flags,
 				bool destroy);

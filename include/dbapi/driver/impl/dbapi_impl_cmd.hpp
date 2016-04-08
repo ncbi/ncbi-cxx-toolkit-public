@@ -250,8 +250,8 @@ protected:
     /// NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query);
 
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                                 bool log_it = true);
+    virtual bool UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                            bool log_it = true);
 
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,

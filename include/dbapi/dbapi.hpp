@@ -314,7 +314,7 @@ public:
 ///
 ///  Interface for a SQL statement
 
-class I_ITDescriptor;
+class I_BlobDescriptor;
 
 class NCBI_DBAPI_EXPORT IStatement
 {
@@ -424,23 +424,23 @@ public:
     virtual int GetRowCount() = 0;
 
     /// Get a writer for writing BLOBs using previously created
-    /// CDB_ITDescriptor
+    /// CDB_BlobDescriptor
     /// @param d
     ///   Descriptor
     /// @param blob_size
     ///   Size of BLOB to write
     /// @param flags
     ///   @see EBlobOStreamFlags.
-    virtual IWriter* GetBlobWriter(I_ITDescriptor &d,
+    virtual IWriter* GetBlobWriter(I_BlobDescriptor &d,
                                    size_t blob_size,
                                    TBlobOStreamFlags flags = 0) = 0;
 
-    virtual IWriter* GetBlobWriter(I_ITDescriptor &d,
+    virtual IWriter* GetBlobWriter(I_BlobDescriptor &d,
                                    size_t blob_size,
                                    EAllowLog log_it);
 
     /// Get an ostream for writing BLOBs using previously created
-    /// CDB_ITDescriptor
+    /// CDB_BlobDescriptor
     /// @param d
     ///   Descriptor
     /// @param blob_size
@@ -449,12 +449,12 @@ public:
     ///   @see EBlobOStreamFlags.
     /// @param buf_size
     ///   Buffer size, default 4096
-    virtual CNcbiOstream& GetBlobOStream(I_ITDescriptor &d,
+    virtual CNcbiOstream& GetBlobOStream(I_BlobDescriptor &d,
                                          size_t blob_size,
                                          TBlobOStreamFlags flags = 0,
                                          size_t buf_size = 0) = 0;
 
-    virtual CNcbiOstream& GetBlobOStream(I_ITDescriptor &d,
+    virtual CNcbiOstream& GetBlobOStream(I_BlobDescriptor &d,
                                          size_t blob_size,
                                          EAllowLog log_it,
                                          size_t buf_size = 0);

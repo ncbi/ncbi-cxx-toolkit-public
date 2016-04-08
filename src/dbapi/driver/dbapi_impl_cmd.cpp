@@ -223,10 +223,10 @@ CBaseCmd::Update(const string& /* table_name */, const string& /* upd_query */)
 
 
 bool
-CBaseCmd::UpdateTextImage(unsigned int /* item_num */,
-                          CDB_Stream& /* data */,
-                          bool /* log_it */
-                          )
+CBaseCmd::UpdateBlob(unsigned int /* item_num */,
+                     CDB_Stream& /* data */,
+                     bool /* log_it */
+                     )
 {
     _ASSERT(false);
     return false;

@@ -302,12 +302,12 @@ bool CDBLibContext::SetTimeout(unsigned int nof_secs)
 }
 
 
-bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
+bool CDBLibContext::SetMaxBlobSize(size_t nof_bytes)
 {
-    impl::CDriverContext::SetMaxTextImageSize(nof_bytes);
+    impl::CDriverContext::SetMaxBlobSize(nof_bytes);
 
     char s[64];
-    sprintf(s, "%lu", (unsigned long) GetMaxTextImageSize());
+    sprintf(s, "%lu", (unsigned long) GetMaxBlobSize());
 
     CMutexGuard ctx_mg(s_CtxMutex);
     return Check(dbsetopt(0, DBTEXTLIMIT, s, -1)) == SUCCEED;
@@ -330,7 +330,7 @@ bool CDBLibContext::IsAbleTo(ECapability cpb) const
 {
     switch(cpb) {
     case eBcp:
-    case eReturnITDescriptors:
+    case eReturnBlobDescriptors:
     case eReturnComputeResults:
         return true;
     default:

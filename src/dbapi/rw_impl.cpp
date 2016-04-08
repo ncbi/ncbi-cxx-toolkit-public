@@ -90,7 +90,7 @@ CxBlobWriter::CxBlobWriter(CDB_CursorCmd* curCmd,
 }
 
 CxBlobWriter::CxBlobWriter(CDB_Connection* conn,
-                         I_ITDescriptor &d,
+                         I_BlobDescriptor &d,
                          size_t blobsize, 
                          TBlobOStreamFlags flags,
                          bool destroy)

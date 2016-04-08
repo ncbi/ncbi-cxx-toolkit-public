@@ -42,7 +42,7 @@ USING_NCBI_SCOPE;
 bool CBlobWriter::storeBlob(void)
 {
     try {
-        m_Con->SendData(m_dMaker->ItDescriptor(), m_Blob, m_LogIt);
+        m_Con->SendData(m_dMaker->BlobDescriptor(), m_Blob, m_LogIt);
         m_Blob.Truncate();
         return true;
     }
@@ -54,7 +54,7 @@ bool CBlobWriter::storeBlob(void)
     }
 }
 
-CBlobWriter::CBlobWriter(CDB_Connection* con, ItDescriptorMaker* d_maker,
+CBlobWriter::CBlobWriter(CDB_Connection* con, IBlobDescriptorMaker* d_maker,
                          size_t image_limit, TFlags flags)
 {
     m_Con= con;
@@ -254,7 +254,7 @@ CBlobLoader::CBlobLoader(I_DriverContext* pCntxt,
                          const string&    server,
                          const string&    user,
                          const string&    passwd,
-                         ItDescriptorMaker* d_maker)
+                         IBlobDescriptorMaker* d_maker)
 {
     m_Conn= 0;
     try {
@@ -373,7 +373,7 @@ end
 else
    insert T(key, n, b1, ...,bn) values(@key, @n, 0x0, ...,0x0)
 */
-I_ITDescriptor& CSimpleBlobStore::ItDescriptor(void)
+I_BlobDescriptor& CSimpleBlobStore::BlobDescriptor(void)
 {
     m_RowNum = (Int4)(m_ImageNum / m_nofDataCols);
     int i = m_ImageNum % m_nofDataCols;
@@ -431,7 +431,7 @@ bool CSimpleBlobStore::Fini(void)
 
 /***************************************************************************************
  * CBlobStoreBase - the abstract base interface to deal with reading and writing
- * the image/text data from a C++ application.
+ * BLOB data from a C++ application.
  */
 
 CBlobStoreBase::CBlobStoreBase(const string& table_name,
@@ -766,7 +766,7 @@ ostream* CBlobStoreBase::OpenForWrite(const string& blob_id)
 
 /***************************************************************************************
  * CBlobStoreStatic - the simple interface to deal with reading and writing
- * the image/text data from a C++ application.
+ * BLOB data from a C++ application.
  * It uses connection to DB from an external pool.
  */
 
@@ -817,7 +817,7 @@ CBlobStoreStatic::~CBlobStoreStatic()
 
 /***************************************************************************************
  * CBlobStoreDynamic - the simple interface to deal with reading and writing
- * the image/text data from a C++ application.
+ * BLOB data from a C++ application.
  * It uses an internal connections pool and ask pool for a connection each time before
  * connection use.
  */
@@ -839,7 +839,7 @@ CBlobStoreDynamic::CBlobStoreDynamic(I_DriverContext* pCntxt,
     {
         DATABASE_DRIVER_ERROR( "Null pointer to driver context", 1000010 );
     }
-    m_Cntxt->SetMaxTextImageSize(image_limit>0 ? image_limit : 0x1FFFFE);
+    m_Cntxt->SetMaxBlobSize(image_limit>0 ? image_limit : 0x1FFFFE);
     ReadTableDescr();
 }
 

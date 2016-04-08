@@ -58,7 +58,7 @@ CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection& conn,
                              DBPROCESS*       cmd,
                              const string&    table_name) :
     CDBL_Cmd(conn, cmd, table_name),
-    m_HasTextImage(false),
+    m_HasBlob(false),
     m_WasBound(false)
 {
     SetExecCntxInfo("BCP table name: " + table_name);
@@ -247,7 +247,7 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 r = Check(bcp_bind(GetCmd(), 0, 0,
                              val.IsNULL() ? 0 : (DBINT) val.Size(),
                              0, 0, SYBTEXT, i + 1));
-                m_HasTextImage = true;
+                m_HasBlob = true;
             }
             break;
             case eDB_Image: {
@@ -255,7 +255,7 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 r = Check(bcp_bind(GetCmd(), 0, 0,
                              val.IsNULL() ? 0 : (DBINT) val.Size(),
                              0, 0, SYBIMAGE, i + 1));
-                m_HasTextImage = true;
+                m_HasBlob = true;
             }
             break;
             default:
@@ -494,8 +494,8 @@ bool CDBL_BCPInCmd::Send(void)
         DATABASE_DRIVER_ERROR( "bcp_sendrow failed." + GetDbgInfo(), 223005 );
     }
 
-    if (m_HasTextImage) { // send text/image data
-        char buff[1800]; // text/image page size
+    if (m_HasBlob) { // send BLOB data
+        char buff[1800]; // BLOB page size
 
         for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); i++) {
             if (GetBindParamsImpl().GetParamStatus(i) == 0)

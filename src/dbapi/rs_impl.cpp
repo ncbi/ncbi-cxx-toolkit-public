@@ -258,7 +258,7 @@ void CResultSet::x_CacheItems(int last_num) {
         CVariant& var = m_data[ind];
         if (type == eDB_Text  ||  type == eDB_Image) {
             ((CDB_Stream*)var.GetNonNullData())->Truncate();
-            var.SetITDescriptor(m_rs->GetImageOrTextDescriptor());
+            var.SetBlobDescriptor(m_rs->GetBlobDescriptor());
         }
         m_rs->GetItem(var.GetNonNullData());
 
@@ -359,14 +359,14 @@ CNcbiOstream& CResultSet::xGetBlobOStream(CDB_Connection *cdb_conn,
 
     // GetConnAux() returns pointer to pooled CDB_Connection.
     // we need to delete it every time we request new one.
-    // The same with ITDescriptor
+    // The same with BlobDescriptor
     delete m_ostr;
 
-    // Call ReadItem(0, 0) before getting text/image descriptor
+    // Call ReadItem(0, 0) before getting BLOB descriptor
     m_rs->ReadItem(0, 0);
 
 
-    auto_ptr<I_ITDescriptor> desc(m_rs->GetImageOrTextDescriptor());
+    auto_ptr<I_BlobDescriptor> desc(m_rs->GetBlobDescriptor());
     if(desc.get() == NULL) {
 #ifdef _DEBUG
         NcbiCerr << "CResultSet::GetBlobOStream(): zero IT Descriptor" << endl;

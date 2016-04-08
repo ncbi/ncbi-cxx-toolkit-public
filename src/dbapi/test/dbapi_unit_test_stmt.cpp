@@ -1786,11 +1786,11 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                             GetArgs().GetDriverName());
                 }
 
-                drv_context->SetMaxTextImageSize( 0x7fffffff );
+                drv_context->SetMaxBlobSize( 0x7fffffff );
             }
 
             // Set text size manually ...
-            // SetMaxTextImageSize() method doesn't work in case of ctlib
+            // SetMaxBlobSize() method doesn't work in case of ctlib
             // driver.
             {
                 auto_stmt->ExecuteQuery("set textsize 2147483647");

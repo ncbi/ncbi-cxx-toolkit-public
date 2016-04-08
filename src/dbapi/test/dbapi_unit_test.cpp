@@ -861,7 +861,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
                     BOOST_FAIL("FATAL: Unable to load context for dbdriver " +
                                sDbDriver);
                 }
-                drv_context->SetMaxTextImageSize( 0x7fffffff );
+                drv_context->SetMaxBlobSize( 0x7fffffff );
                 drv_context->SetLoginTimeout( s_tTimeOut );
                 drv_context->SetTimeout( s_tTimeOut );
 
@@ -3126,7 +3126,7 @@ NCBITEST_INIT_TREE()
     NCBITEST_DEPENDS_ON(Test_ResultsetMetaData,     Test_SelectStmt);
     NCBITEST_DEPENDS_ON(Test_SelectStmtXML,         Test_SelectStmt);
     NCBITEST_DEPENDS_ON(Test_Unicode_Simple,        Test_SelectStmtXML);
-    NCBITEST_DEPENDS_ON(Test_SetMaxTextImageSize,   Test_ResultsetMetaData);
+    NCBITEST_DEPENDS_ON(Test_SetMaxBlobSize,        Test_ResultsetMetaData);
     NCBITEST_DEPENDS_ON(Test_CloneConnection,       Test_ConnParamsDatabase);
 }
 

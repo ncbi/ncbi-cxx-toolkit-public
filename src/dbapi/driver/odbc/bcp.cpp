@@ -71,7 +71,7 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection& conn,
                                const string&     table_name) :
     CStatementBase(conn, table_name),
     m_Cmd(cmd),
-    m_HasTextImage(false),
+    m_HasBlob(false),
     m_WasBound(false)
 {
     string extra_msg = "Table Name: " + table_name;
@@ -260,7 +260,8 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                              x_GetBCPDataType(data_type),
                              i + 1);
 
-                m_HasTextImage = m_HasTextImage || (data_type == eDB_Image || data_type == eDB_Text);
+                m_HasBlob = (m_HasBlob || data_type == eDB_Image
+                             || data_type == eDB_Text);
             }
 
             if (r != SUCCEED) {
@@ -497,8 +498,8 @@ bool CODBC_BCPInCmd::Send(void)
         DATABASE_DRIVER_ERROR( err_message, 423005 );
     }
 
-    if (m_HasTextImage) { // send text/image data
-        char buff[1800]; // text/image page size
+    if (m_HasBlob) { // send BLOB data
+        char buff[1800]; // BLOB page size
 
         for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); ++i) {
             if (GetBindParamsImpl().GetParamStatus(i) == 0)

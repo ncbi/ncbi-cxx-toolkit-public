@@ -306,7 +306,7 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
     return ProcessResults();
 }
 
-I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
+I_BlobDescriptor* CTL_CursorCmd::x_GetBlobDescriptor(unsigned int item_num)
 {
     if(!CursorIsOpen() || !HaveResult()) {
         return 0;
@@ -318,18 +318,18 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
         if(!GetResult().SkipItem()) return 0;
     }
 
-    auto_ptr<I_ITDescriptor> desc
-        (GetResult().GetImageOrTextDescriptor(item_num));
+    auto_ptr<I_BlobDescriptor> desc(GetResult().GetBlobDescriptor(item_num));
     if (desc.get() != NULL) {
         try {
-            GetConnection().CompleteITDescriptor(*desc, GetCmdName(), item_num);
+            GetConnection().CompleteBlobDescriptor(*desc, GetCmdName(),
+                                                   item_num);
         } catch (CDB_Exception &) {
-            if (desc->DescriptorType() == CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
-                CTL_ITDescriptor& ctl_desc
-                    = static_cast<CTL_ITDescriptor&>(*desc);
+            if (desc->DescriptorType() == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
+                CTL_BlobDescriptor& ctl_desc
+                    = static_cast<CTL_BlobDescriptor&>(*desc);
                 string table, column;
                 NStr::SplitInTwo(ctl_desc.m_Desc.name, ".", table, column);
-                desc.reset(new CTL_CursorITDescriptor
+                desc.reset(new CTL_CursorBlobDescriptor
                            (static_cast<CTL_CursorResult&>(GetResult()),
                             table, column, ctl_desc.m_Desc.datatype));
             }
@@ -338,11 +338,11 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     return desc.release();
 }
 
-bool CTL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                    bool log_it)
+bool CTL_CursorCmd::UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                               bool log_it)
 {
-    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    auto_ptr<I_ITDescriptor> d_guard(desc);
+    I_BlobDescriptor* desc= x_GetBlobDescriptor(item_num);
+    auto_ptr<I_BlobDescriptor> d_guard(desc);
 
     return (desc) ? x_SendData(*desc, data, log_it) : false;
 }
@@ -351,8 +351,8 @@ CDB_SendDataCmd* CTL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
                                             bool log_it,
                                             bool dump_results)
 {
-    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    auto_ptr<I_ITDescriptor> d_guard(desc);
+    I_BlobDescriptor* desc= x_GetBlobDescriptor(item_num);
+    auto_ptr<I_BlobDescriptor> d_guard(desc);
 
     return (desc) ? ConnSendDataCmd(*desc, size, log_it, dump_results) : 0;
 }
@@ -658,7 +658,7 @@ bool CTL_CursorCmdExpl::Update(const string&, const string& upd_query)
     return true;
 }
 
-I_ITDescriptor* CTL_CursorCmdExpl::x_GetITDescriptor(unsigned int item_num)
+I_BlobDescriptor* CTL_CursorCmdExpl::x_GetBlobDescriptor(unsigned int item_num)
 {
     if(!CursorIsOpen() || !m_Res.get() || !m_LCmd.get()) {
         return 0;
@@ -668,29 +668,29 @@ I_ITDescriptor* CTL_CursorCmdExpl::x_GetITDescriptor(unsigned int item_num)
         if(!m_Res->SkipItem()) return 0;
     }
 
-    auto_ptr<I_ITDescriptor> desc(m_Res->GetImageOrTextDescriptor(item_num));
+    auto_ptr<I_BlobDescriptor> desc(m_Res->GetBlobDescriptor(item_num));
     // if (desc.get() != NULL) {
-    //     GetConnection().CompleteITDescriptor(*desc, GetCmdName(), item_num);
+    //     GetConnection().CompleteBlobDescriptor(*desc, GetCmdName(), item_num);
     // }
     if (desc.get() != NULL
-        &&  desc->DescriptorType() == CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
-        CTL_ITDescriptor* dsc = static_cast<CTL_ITDescriptor*>(desc.get());
+        &&  desc->DescriptorType() == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
+        CTL_BlobDescriptor* dsc = static_cast<CTL_BlobDescriptor*>(desc.get());
         if (dsc->m_Desc.textptrlen <= 0
             ||  memcmp(dsc->m_Desc.textptr, "dummy textptr\0\0", 16) == 0) {
             string table, column;
             NStr::SplitInTwo(dsc->m_Desc.name, ".", table, column);
-            desc.reset(new CTL_CursorITDescriptor(*m_Res, table, column,
+            desc.reset(new CTL_CursorBlobDescriptor(*m_Res, table, column,
                                                   dsc->m_Desc.datatype));
         }
     }
     return desc.release();
 }
 
-bool CTL_CursorCmdExpl::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-                    bool log_it)
+bool CTL_CursorCmdExpl::UpdateBlob(unsigned int item_num, CDB_Stream& data,
+                                   bool log_it)
 {
-    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    auto_ptr<I_ITDescriptor> d_guard(desc);
+    I_BlobDescriptor* desc= x_GetBlobDescriptor(item_num);
+    auto_ptr<I_BlobDescriptor> d_guard(desc);
 
     if(desc) {
         while(m_LCmd->HasMoreResults()) {
@@ -707,8 +707,8 @@ CDB_SendDataCmd* CTL_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t si
                                                 bool log_it,
                                                 bool dump_results)
 {
-    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    auto_ptr<I_ITDescriptor> d_guard(desc);
+    I_BlobDescriptor* desc= x_GetBlobDescriptor(item_num);
+    auto_ptr<I_BlobDescriptor> d_guard(desc);
 
     if(desc) {
         m_LCmd->DumpResults();

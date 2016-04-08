@@ -154,14 +154,15 @@ public:
                                   const string& query,
                                   unsigned int  batch_size = 1) = 0;
     /// "Send-data" command
-    virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
-                                         size_t          data_size,
-                                         bool            log_it = true,
-                                         bool            dump_results = true) = 0;
+    virtual CDB_SendDataCmd* SendDataCmd(I_BlobDescriptor& desc,
+                                         size_t            data_size,
+                                         bool              log_it = true,
+                                         bool              dump_results = true)
+        = 0;
 
     /// Shortcut to send text and image to the server without using the
     /// "Send-data" command (SendDataCmd)
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
+    virtual bool SendData(I_BlobDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true) = 0;
 
     virtual void SetDatabaseName(const string& name);
@@ -216,7 +217,8 @@ public:
 
     virtual void SetTimeout(size_t nof_secs) = 0;
     virtual void SetCancelTimeout(size_t nof_secs) = 0;
-    virtual void SetTextImageSize(size_t nof_bytes);
+    virtual void SetBlobSize(size_t nof_bytes);
+    void SetTextImageSize(size_t nof_bytes) { SetBlobSize(nof_bytes); }
 
     virtual size_t GetTimeout(void) const;
     virtual size_t GetCancelTimeout(void) const;

@@ -149,7 +149,7 @@ CDbapiCursorApp::RunOneSample(const string& blob_type)
 {
     try {
         // Change a default size of text(image)
-        GetDriverContext().SetMaxTextImageSize(1000000);
+        GetDriverContext().SetMaxBlobSize(1000000);
 
         // Create table in database for the test
         CreateTable(GetTableName(), blob_type);
@@ -190,7 +190,7 @@ CDbapiCursorApp::RunOneSample(const string& blob_type)
             if ( v.Value() == 2 ) {
                 txt.MoveTo(0); // rewind
                 //update text field
-                upd->UpdateTextImage (1, txt);
+                upd->UpdateBlob(1, txt);
             }
         }
         //close cursor
