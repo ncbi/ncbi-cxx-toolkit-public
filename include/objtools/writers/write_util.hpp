@@ -156,6 +156,21 @@ public:
     static bool GetStringForModelEvidence(
         CMappedFeat mf,
         string& mestr);
+
+    static bool IsThreeFeatFormat(
+        const CSeq_annot&);
+
+    static bool GetThreeFeatType(
+        const CSeq_feat&,
+        string&);
+
+    static bool GetThreeFeatScore(
+        const CSeq_feat&,
+        int&);
+
+    static bool GetThreeFeatRgb(
+        const CSeq_feat&,
+        string&);
 };
 
 END_objects_SCOPE

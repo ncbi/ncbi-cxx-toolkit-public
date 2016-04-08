@@ -1070,4 +1070,84 @@ bool CWriteUtil::GetStringForModelEvidence(
     return true;
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetThreeFeatType(
+    const CSeq_feat& feat,
+    string& threeFeatType)
+//  ----------------------------------------------------------------------------
+{
+    if (!feat.IsSetExts()) {
+        return false;
+    }
+    auto pUo = CWriteUtil::GetUserObjectByType(feat.GetExts(), "BED");
+    if (!pUo  ||  !pUo->HasField("location")) {
+        return false;
+    }
+    threeFeatType = pUo->GetField("location").GetString();
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetThreeFeatScore(
+    const CSeq_feat& feat,
+    int& score)
+//  ----------------------------------------------------------------------------
+{
+    if (!feat.IsSetExts()) {
+        return false;
+    }
+    auto pUo = CWriteUtil::GetUserObjectByType(feat.GetExts(), "DisplaySettings");
+    if (!pUo  ||  !pUo->HasField("score")) {
+        return false;
+    }
+    score = pUo->GetField("score").GetInt();
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetThreeFeatRgb(
+    const CSeq_feat& feat,
+    string& color)
+//  ----------------------------------------------------------------------------
+{
+    if (!feat.IsSetExts()) {
+        return false;
+    }
+    auto pUo = CWriteUtil::GetUserObjectByType(feat.GetExts(), "DisplaySettings");
+    if (!pUo  ||  !pUo->HasField("color")) {
+        return false;
+    }
+    color = pUo->GetField("color").GetString();
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::IsThreeFeatFormat(
+    const CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+    using FTABLE = list<CRef<CSeq_feat> >;
+
+    if (!annot.IsFtable()) {
+        return false;
+    }
+    const FTABLE& ftable = annot.GetData().GetFtable();
+    auto remainingTests = 100;
+    for (auto pFeat: ftable) {
+        string dummy;
+        if (!CWriteUtil::GetThreeFeatType(*pFeat, dummy)) {
+            return false;
+        }
+        if (--remainingTests == 0) {
+            break;
+        }
+    }
+    return true;
+}
+
+
 END_NCBI_SCOPE

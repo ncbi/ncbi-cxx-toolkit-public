@@ -53,6 +53,14 @@ public:
     bool AssignDisplayData(const CMappedFeat&, bool);
     bool Write(CNcbiOstream&, unsigned int);
 
+    bool SetLocation(const CSeq_loc&);
+    bool SetName(const CSeqFeatData&);
+    bool SetScore(int);
+    bool SetThick(const CSeq_loc&);
+    bool SetNoThick(const CSeq_loc&);
+    bool SetRgb(const string&);
+    bool SetBlocks(const CSeq_loc&, const CSeq_loc&);
+
     const string& Chrom() const { return m_strChrom; };
     const string& ChromStart() const { return m_strChromStart; };
     const string& ChromEnd() const { return m_strChromEnd; };

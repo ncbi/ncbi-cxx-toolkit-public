@@ -93,6 +93,14 @@ public:
         const string& = "");
 
 protected:
+    bool xWriteAnnotFeatureTable(
+        const CBedTrackRecord&,
+        const CSeq_annot&);
+
+    bool xWriteAnnotThreeFeatData(
+        const CBedTrackRecord&,
+        const CSeq_annot&);
+
     bool xWriteFeature(
         const CBedTrackRecord&, 
         const CMappedFeat&);

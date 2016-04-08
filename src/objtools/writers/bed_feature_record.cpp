@@ -37,6 +37,7 @@
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
 
 #include <objmgr/mapped_feat.hpp>
 
@@ -235,4 +236,134 @@ bool CBedFeatureRecord::Write(
     ostr << '\n';
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool CBedFeatureRecord::SetLocation(
+    const CSeq_loc& loc)
+//  ----------------------------------------------------------------------------
+{
+    if (!loc.IsInt()) {
+        return false;
+    }
+    const CSeq_interval& chromInt = loc.GetInt();
+    m_strChrom = chromInt.GetId().GetSeqIdString();
+    m_strChromStart = NStr::IntToString(chromInt.GetFrom());
+    m_strChromEnd = NStr::IntToString(chromInt.GetTo()+1);
+    m_strStrand = "+";
+    if (chromInt.IsSetStrand()) {
+        ENa_strand strand = chromInt.GetStrand();
+        if (strand == eNa_strand_minus) {
+            m_strStrand = "-";
+        }
+    }
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+bool CBedFeatureRecord::SetName(
+    const CSeqFeatData& data)
+//  -----------------------------------------------------------------------------
+{
+    if (!data.IsRegion()) {
+        return false;
+    }
+    m_strName = data.GetRegion();
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+bool CBedFeatureRecord::SetScore(
+    int score)
+//  -----------------------------------------------------------------------------
+{
+    m_strScore = NStr::IntToString(score);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedFeatureRecord::SetThick(
+    const CSeq_loc& loc)
+//  ----------------------------------------------------------------------------
+{
+    if (loc.IsInt()) {
+        const CSeq_interval& thickInt = loc.GetInt();
+        m_strThickStart = NStr::IntToString(thickInt.GetFrom());
+        m_strThickEnd = NStr::IntToString(thickInt.GetTo());
+        return true;
+    }
+    if (loc.IsPnt()) {
+        const CSeq_point& thickPoint = loc.GetPnt();
+        m_strThickStart = NStr::IntToString(thickPoint.GetPoint());
+        m_strThickEnd = NStr::IntToString(thickPoint.GetPoint());
+        return true;
+    }
+    return false;
+}
+
+//  -----------------------------------------------------------------------------
+bool CBedFeatureRecord::SetBlocks(
+    const CSeq_loc& chrom,
+    const CSeq_loc& blocks)
+//  -----------------------------------------------------------------------------
+{
+    if (blocks.IsInt()) {
+        return true;
+    }
+    if (blocks.IsPacked_int()) {
+        const list<CRef<CSeq_interval> >& intervals = blocks.GetPacked_int().Get();
+        ENa_strand strand = blocks.GetStrand();
+        int offset = chrom.GetStart(eExtreme_Positional);
+        list<string> blockStarts;
+        list<string> blockSizes;
+
+        for (auto pInterval: intervals) {
+            const CSeq_interval& interval = *pInterval;
+            if (strand == eNa_strand_minus) {
+                blockStarts.push_front(NStr::IntToString(interval.GetFrom()-offset));
+                blockSizes.push_front(NStr::IntToString(interval.GetLength()-1));
+            }
+            else {
+                blockStarts.push_back(NStr::IntToString(interval.GetFrom()-offset));
+                blockSizes.push_back(NStr::IntToString(interval.GetLength()-1));
+            }
+        }
+        m_strBlockCount = NStr::IntToString(intervals.size());
+        m_strBlockStarts = NStr::Join(blockStarts, ",");
+        m_strBlockSizes = NStr::Join(blockSizes, ",");
+        return true;
+    }
+    return false;
+}
+
+//  -----------------------------------------------------------------------------
+bool CBedFeatureRecord::SetNoThick(
+    const CSeq_loc& loc)
+//  -----------------------------------------------------------------------------
+{
+    if (!loc.IsInt()) {
+        return false;
+    }
+    const CSeq_interval& chromInt = loc.GetInt();
+    m_strThickStart = NStr::IntToString(chromInt.GetFrom());
+    m_strThickEnd = NStr::IntToString(chromInt.GetFrom());
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+bool CBedFeatureRecord::SetRgb(
+    const string& color)
+//  -----------------------------------------------------------------------------
+{
+    if (color == "0 0 0") {
+        m_strItemRgb = "0";
+        return true;
+    }
+    vector<string> rgb;
+    NStr::Split(color, " ", rgb);
+    m_strItemRgb = NStr::Join(rgb, ",");
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+
 END_NCBI_SCOPE
