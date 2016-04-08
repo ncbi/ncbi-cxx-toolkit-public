@@ -608,6 +608,7 @@ string CLocusItem::GetDivision(const CBioseq_Handle& bsh)
     for (CSeqdesc_CI desc_it(bsh, desc_choices); desc_it;  ++desc_it) {
         if (desc_it->Which() == CSeqdesc::e_Molinfo) {
             tech = desc_it->GetMolinfo().GetTech();
+            break;
         }
     }
 
