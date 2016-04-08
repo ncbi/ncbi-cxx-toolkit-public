@@ -22,3 +22,4 @@ misc/grid_cgi
 misc/netstorage
 app$
 app/grid
+internal/cppcore/grid
