@@ -583,6 +583,10 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
 
     CSeq_feat_EditHandle edh(fh);
     edh.Replace(*new_feat);
+    CRef<CCleanupChange> changes(makeCleanupChange(0));
+    CNewCleanup_imp clean_i(changes, 0);
+    clean_i.SetScope(fh.GetScope());
+    clean_i.BasicCleanupSeqFeat(*new_feat);
 
     CSeq_annot_Handle ah = fh.GetAnnot();
 
