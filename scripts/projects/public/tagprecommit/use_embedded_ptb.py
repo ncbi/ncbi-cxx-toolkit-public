@@ -14,12 +14,12 @@ if not os.path.exists(build_system):
     sys.exit(2)
 
 def patch(path, name):
-    fName = os.path.join(build_system, name)
+    fname = os.path.join(build_system, name)
     if not os.path.exists(fname):
-        print >> sys.stderr, "Can't find ptb_version.txt at %s" % fName
+        print >> sys.stderr, "Can't find ptb_version.txt at %s" % fname
         sys.exit(3)
 
-    f = open( fName, "wb" )
+    f = open( fname, "wb" )
     try:
         f.write("embedded\n")
     finally:
