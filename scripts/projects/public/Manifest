@@ -10,6 +10,7 @@
 #
 
 USE_COMPONENTS
+
 TAG_PRE_COMMIT: tagprecommit/use_embedded_ptb.py
 
 # Each line describes a single configuration
@@ -47,4 +48,3 @@ IntelMAC       : Debug     : GCC.sh --with-debug --with-dll --with-mt --with-uni
 IntelMAC       : Release   : GCC.sh --without-debug --with-dll --with-mt --with-universal=i386,x86_64 --with-flat-makefile
 
 XCode          : plain     : Xcode.sh 30 --without-debug --with-64
-
