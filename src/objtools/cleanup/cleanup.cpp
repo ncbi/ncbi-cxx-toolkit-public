@@ -2167,10 +2167,12 @@ bool CCleanup::ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh)
                     CBioseq_set_EditHandle eh(parent);
                     eh.AddSeqdesc(*d);
                     RemoveDuplicatePubs(eh.SetDescr());
+                    NormalizeDescriptorOrder(eh.SetDescr());
                 } else {
                     CBioseq_EditHandle eh(*b);
                     eh.AddSeqdesc(*d);
                     RemoveDuplicatePubs(eh.SetDescr());
+                    NormalizeDescriptorOrder(eh.SetDescr());
                 }
                 // remove feature
                 CSeq_feat_EditHandle feh(*p);
