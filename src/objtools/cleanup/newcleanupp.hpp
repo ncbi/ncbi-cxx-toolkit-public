@@ -574,6 +574,7 @@ private:
     void x_RemoveOldFeatures(CBioseq & bioseq);
 
     void x_BioseqSetEC( CBioseq_set & bioseq_set );
+    void x_CollapseSet(CBioseq_set& set);
     void x_BioseqSetNucProtEC( CBioseq_set & bioseq_set );
     void x_BioseqSetGenBankEC(CBioseq_set & bioseq_set);
     void x_RemoveNestedGenBankSet(CBioseq_set & bioseq_set);
