@@ -11241,6 +11241,10 @@ bool CNewCleanup_imp::x_IsPubContentBad(const CPubdesc& pub, bool strict)
     }
 
     // remove if only one pub and is gen missing essential information
+    // or no pubs at all
+    if (!pub.IsSetPub() || pub.GetPub().Get().empty()) {
+        return true;
+    }
     if (pub.IsSetPub() && pub.GetPub().Get().size() == 1 &&
         pub.GetPub().Get().front()->IsGen() &&
         IsMinimal(pub.GetPub().Get().front()->GetGen())) {
