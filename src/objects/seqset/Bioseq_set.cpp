@@ -128,15 +128,28 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
     }
 
     // Loop through CBioseqs looking for the best one to use for a label
-    bool best_is_na = false, best_has_gb = false, best_has_accession = false;
+    bool best_is_na = false;
     const CBioseq* best = 0;
+    const CSeq_id* best_seq_id = 0;
+    const CSeq_id* best_seq_id_with_gb = 0;
+    const CSeq_id* best_seq_id_with_accession = 0;
     int max = 0;
     for (CTypeConstIterator<CBioseq> si(ConstBegin(*this)); si && max < 100; ++si, ++max) {
-        bool takeit = false, is_na, has_gb = false, has_accession = false;
+        bool takeit = false, is_na;
+        const CSeq_id* current_seq_id = 0;
+        const CSeq_id* current_seq_id_with_gb = 0;
+        const CSeq_id* current_seq_id_with_accession = 0;
         is_na = s_is_na(*si);
         for (CTypeConstIterator<CSeq_id> ii(ConstBegin(*si)); ii; ++ii) {
-            has_gb = has_gb ? true : s_has_gb(*ii);
-            has_accession = has_accession ? true : s_has_accession(*ii);
+            if (!current_seq_id) {
+                current_seq_id = &(*ii);
+            }
+            if (s_has_gb(*ii)) {
+                current_seq_id_with_gb = &(*ii);
+            }
+            if (s_has_accession(*ii)) {
+                current_seq_id_with_accession = &(*ii);
+            }
         }
 
         if (!best) {
@@ -146,21 +159,21 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
             if (si->GetInst().GetLength() > best->GetInst().GetLength()) {
                 longer = true;
             }
-            if(best_has_accession) {
-                if (has_accession) {
+            if (best_seq_id_with_accession) {
+                if (current_seq_id_with_accession) {
                     if(longer) {
                         takeit = true;
                     }
                 }
-            } else if (has_accession) {
+            } else if (current_seq_id_with_accession) {
                 takeit = true;
-            } else if (best_has_gb) {
-                if (has_gb) {
+            } else if (best_seq_id_with_gb) {
+                if (current_seq_id_with_gb) {
                     if (longer) {
                         takeit = true;
                     }
                 }
-            } else if (has_gb) {
+            } else if (current_seq_id_with_gb) {
                 takeit = true;
             } else if (best_is_na) {
                 if (is_na) {
@@ -177,28 +190,33 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
 
         if (takeit) {
             best = &(*si);
-            best_has_accession = has_accession;
-            best_has_gb = has_gb;
+            best_seq_id = current_seq_id;
+            best_seq_id_with_gb = current_seq_id_with_gb;
+            best_seq_id_with_accession = current_seq_id_with_accession;
             best_is_na = is_na;
         }
     }
 
     // Add content to label.
-    if (!best) {
+    if (best_seq_id_with_accession) {
+        best_seq_id = best_seq_id_with_accession;
+    }
+    else if (best_seq_id_with_gb) {
+        best_seq_id = best_seq_id_with_gb;
+    }
+    if (!best_seq_id) {
         *label += "(No Bioseqs)";
     } else {
         CNcbiOstrstream os;
-        if (best->GetFirstId()) {
-            os << best->GetFirstId()->DumpAsFasta();
-            *label += CNcbiOstrstreamToString(os);
-            if (this->IsSetSeq_set()) {
-                const TSeq_set& sset = this->GetSeq_set();
-                size_t len = sset.size();
-                if (len > 1) {
-                    *label += " (" + NStr::SizetToString(sset.size()) + " components)";
-                } else if (len == 1) {
-                    *label += " (1 component)";
-                }
+        os << best_seq_id->DumpAsFasta();
+        *label += CNcbiOstrstreamToString(os);
+        if (this->IsSetSeq_set()) {
+            const TSeq_set& sset = this->GetSeq_set();
+            size_t len = sset.size();
+            if (len > 1) {
+                *label += " (" + NStr::SizetToString(sset.size()) + " components)";
+            } else if (len == 1) {
+                *label += " (1 component)";
             }
         }
     }
