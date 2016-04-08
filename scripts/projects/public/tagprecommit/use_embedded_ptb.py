@@ -7,7 +7,7 @@ if len(sys.argv) != 1:
                          "use_embedded_ptb.py"
     sys.exit(1)
 
-build_system = os.path.join( [ "c++", "src", "build-system" ] )
+build_system = os.path.join( "c++", "src", "build-system" )
 
 if not os.path.exists(build_system):
     print >> sys.stderr, "Can't find build-system at %s" % build_system
