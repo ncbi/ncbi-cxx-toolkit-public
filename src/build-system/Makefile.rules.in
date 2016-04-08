@@ -113,7 +113,7 @@ clean-common:
 	-$(RMDIR) ii_files
 	-$(RMDIR) ti_files
 	-$(RM) .make.state
-	-$(RM) $(SOURCES:=.d)
+	-$(RM) $(SOURCES:=.d) $(SOURCES:=.gcda) $(SOURCES:=.gcno)
 	-$(RM) ir.out
 ifeq "$(APP)" ""
 	-$(RM) $(status_dir)/.$(LIB).disabled
