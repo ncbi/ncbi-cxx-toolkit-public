@@ -33,7 +33,7 @@ Linux64-Centos : ICC130    : ICC.sh 13.0  --without-debug --with-mt --with-dll
 Linux64-Centos : ICC130d   : ICC.sh 13.0  --with-debug --with-mt --with-3psw=system
 Linux64-Centos : ICC150    : ICC.sh 15.0  --without-debug --with-mt --with-dll
 Linux64-Centos : ICC150d   : ICC.sh 15.0  --with-debug --with-mt --with-3psw=system
-Linux64-Centos : Clang     : Clang.sh --with-debug --with-mt --with-flat-makefile
+Linux64-Centos : Clang     : Clang.sh 3.5.1 --with-debug --with-mt --with-flat-makefile
 
 Linux64-Ubuntu : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile
 Linux32-Ubuntu : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile
