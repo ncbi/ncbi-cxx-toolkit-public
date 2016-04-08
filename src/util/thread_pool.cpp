@@ -788,7 +788,9 @@ CThreadPool_Impl::TaskFinished(void)
 {
     m_ExecutingTasks.Add(-1);
     m_TotalTasks.Add(-1);
-    m_RoomWait.Post();
+    if ( !m_IsQueueAllowed ) {
+        m_RoomWait.Post();
+    }
     CallControllerOther();
 }
 
@@ -1349,12 +1351,16 @@ CThreadPool_ThreadImpl::Main(void)
                 x_TaskFinished(status);
             }
             catch (exception& e) {
-                ERR_POST_X(7, "Exception from task in ThreadPool: "
-                              << e.what());
-                x_TaskFinished(CThreadPool_Task::eFailed);
+                ERR_POST_X(7, "Exception from task in ThreadPool: " << e);
+                if (m_CurrentTask.NotEmpty()) {
+                    x_TaskFinished(CThreadPool_Task::eFailed);
+                }
             }
             catch (...) {
-                x_TaskFinished(CThreadPool_Task::eFailed);
+                ERR_POST_X(7, "Non-standard exception from task in ThreadPool");
+                if (m_CurrentTask.NotEmpty()) {
+                    x_TaskFinished(CThreadPool_Task::eFailed);
+                }
                 throw;
             }
         }
@@ -1603,7 +1609,13 @@ CThreadPool_Impl::x_WaitForPredicate(TWaitPredicate      wait_func,
                                      const CTimeSpan*    timeout,
                                      const CStopWatch*   timer)
 {
-    while (!(this->*wait_func)()) {
+    bool done = (this->*wait_func)();
+    if (done) {
+        wait_sema->TryWait();
+        return true;
+    }
+
+    while ( !done ) {
         pool_guard->Release();
 
         if (timeout) {
@@ -1620,6 +1632,7 @@ CThreadPool_Impl::x_WaitForPredicate(TWaitPredicate      wait_func,
         }
 
         pool_guard->Guard();
+        done = (this->*wait_func)();
     }
 
     return true;
