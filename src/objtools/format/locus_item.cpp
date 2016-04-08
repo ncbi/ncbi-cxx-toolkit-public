@@ -599,6 +599,19 @@ static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
 string CLocusItem::GetDivision(const CBioseq_Handle& bsh)
 
 {
+    if ( bsh.IsSetInst_Repr() && bsh.GetInst_Repr() == CSeq_inst::eRepr_delta) {
+        if (bsh.IsSetInst_Ext()) {
+            const CBioseq_Handle::TInst_Ext& ext = bsh.GetInst_Ext();
+            if ( ext.IsDelta() ) {
+                ITERATE (CDelta_ext::Tdata, it, ext.GetDelta().Get()) {
+                    if ( (*it)->IsLoc() ) {
+                        return "CON";
+                    }
+                }
+            }
+        }
+    }
+
     CMolInfo::TTech tech = 0;
 
     CSeqdesc_CI::TDescChoices desc_choices;
