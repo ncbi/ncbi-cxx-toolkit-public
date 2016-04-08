@@ -6901,14 +6901,15 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
             ITERATE(CGeneModel::TExons, e, i->Exons()) {
                 if(e->Limits().NotEmpty()) {
                     int a = e->GetFrom();
-                    if(a > 0 && !sv.IsInGap(a-1)) --a;
-                    if(a > 0 && !sv.IsInGap(a-1)) --a;
+                    //                    if(a > 0 && !sv.IsInGap(a-1)) --a;
+                    //                    if(a > 0 && !sv.IsInGap(a-1)) --a;
                     int b = e->GetTo();
-                    if(b < length-1 && !sv.IsInGap(b+1)) ++b;
-                    if(b < length-1 && !sv.IsInGap(b+1)) ++b;
-                    for(int p = a; p <= b; ++p) {  // block all exons and their splices if not in gap
-                        exons[p] = 1;
-                    }
+                    //                    if(b < length-1 && !sv.IsInGap(b+1)) ++b;
+                    //                    if(b < length-1 && !sv.IsInGap(b+1)) ++b;
+                    //                    for(int p = a; p <= b; ++p) {  // block all exons and splices
+                    for(int p = a+1; p <= b; ++p) {  // block all exons except first base (can't keep splices after all)
+                        exons[p] = 1;                // mark positions which cannot be used for deletions
+                    }                                // !!!!!!!!it is still a problem if gapfilled models are exactly next to each other!!!!!!!!!!!!!!
                 }
             }
         }
@@ -6943,7 +6944,8 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
                         for(pos = i->Exons()[ie-1].GetTo()+1; pos < length && exons[pos] > 0; ++pos);
                     } else {
                         _ASSERT((int)i->Exons().size() > 1 && i->Exons()[1].Limits().NotEmpty());
-                        for(pos = i->Exons()[1].GetFrom(); pos > 0 && exons[pos-1] > 0; --pos);
+                        //                        for(pos = i->Exons()[1].GetFrom(); pos > 0 && exons[pos-1] > 0; --pos);
+                        for(pos = i->Exons()[1].GetFrom(); pos > 0 && exons[pos] > 0; --pos);
                     }
                     string seq = e.m_seq;
                     CInDelInfo::SSource source = e.m_source;
@@ -6960,11 +6962,11 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
         ERASE_ITERATE(TInDels, indl, correction_data.m_correction_indels) {  // remove 'partial' indels
             TInDels::iterator next = indl;
             if(++next != correction_data.m_correction_indels.end() && indl->Loc() == next->Loc()) {
-                _ASSERT(indl->IsDeletion());
-                _ASSERT(next->IsDeletion());
-                _ASSERT(indl->GetSource().m_range.Empty());
-                _ASSERT(next->GetSource().m_range.Empty());
-                VECTOR_ERASE(indl, correction_data.m_correction_indels);
+                if(indl->GetSource().m_range.Empty() && next->GetSource().m_range.Empty()) {
+                    _ASSERT(indl->IsDeletion());
+                    _ASSERT(next->IsDeletion());
+                    VECTOR_ERASE(indl, correction_data.m_correction_indels);
+                }
             }
         }
 
