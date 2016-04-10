@@ -528,6 +528,7 @@ namespace DeBruijn {
 
         int KmerLen() const { return m_graph_kmers.KmerLen(); }
         size_t GraphSize() const { return m_graph_kmers.Size(); }
+        size_t ElementSize() const { return m_graph_kmers.ElementSize(); }
         bool GraphIsStranded() const { return m_is_stranded; }
 
         int HistogramMinimum() const {
@@ -1097,7 +1098,7 @@ public:
                                 connections.push_back(storage.back()); 
                             }                           
                         }
-
+                        
                         pair<TElementMap::iterator, bool> rslt = new_elements.insert(make_pair(suc.m_node, &storage.back()));
                         if(!rslt.second || !GoodNode(suc.m_node))
                             rslt.first->second = 0;
