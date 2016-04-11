@@ -439,7 +439,7 @@ CBlastServices::GetDatabaseInfoLegacy(const string& dbname, bool is_protein,
 {
     vector<CRef<objects::CBlast4_database_info> > retval;
     vector<string> dbs;
-    NStr::Tokenize(dbname, " \n\t", dbs);
+    NStr::Split(dbname, " \n\t", dbs);
 
     if (dbs.empty())
       *found_all = false; // Loop did not run.
@@ -484,7 +484,7 @@ CBlastServices::GetDatabaseInfo(const string& dbname, bool is_protein,
     if( found_all ){
 	*found_all = false;
     }
-    NStr::Tokenize(local_db_name, " \n\t", all_db_names);
+    NStr::Split(local_db_name, " \n\t", all_db_names);
     l_multiple_db = ( all_db_names.size() > 1 );
 
     request.Reset(new CBlast4_request);

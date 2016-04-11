@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(TestRequestSeqId)
     in.getline(buffer, sizeof(buffer));
 
     vector<string> tokens;
-    NStr::Tokenize(string(buffer), " ", tokens);
+    NStr::Split(string(buffer), " ", tokens);
 
     BOOST_REQUIRE_EQUAL(tokens[0], kSeqId);
 }

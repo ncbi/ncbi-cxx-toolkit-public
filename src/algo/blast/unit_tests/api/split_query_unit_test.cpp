@@ -913,7 +913,7 @@ return; // FIXME
     {
         retval.clear();
         vector<string> tokens;
-        NStr::Tokenize(input, ",", tokens);
+        NStr::Split(input, ",", tokens);
         retval.reserve(tokens.size());
         ITERATE(vector<string>, token, tokens) {
             retval.push_back(NStr::StringToInt(NStr::TruncateSpaces(*token)));
