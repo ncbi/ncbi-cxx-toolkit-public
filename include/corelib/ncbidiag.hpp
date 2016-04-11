@@ -274,7 +274,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
             };                                                  \
         };                                                      \
     }                                                           \
-    extern void err_code_x__dummy_for_semicolon(void)
+    NCBI_EAT_SEMICOLON(err_code)
 
 /// Define maximum value of subcode for the error code currently in use.
 /// Currently used error code is defined by macro NCBI_USE_ERRCODE_X. This
