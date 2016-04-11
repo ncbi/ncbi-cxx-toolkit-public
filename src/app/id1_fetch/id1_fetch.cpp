@@ -486,9 +486,9 @@ bool CId1FetchApp::LookUpGI(TGi gi)
             }
             if ( args["extfeat"] ) {
                 int ff = 0;
-                list<string> extfeat;
+                vector<string> extfeat;
                 NStr::Split(args["extfeat"].AsString(), ",", extfeat);
-                ITERATE ( list<string>, it, extfeat ) {
+                ITERATE ( vector<string>, it, extfeat ) {
                     if ( *it == "SNP" ) {
                         ff |= 1 << 0;
                     }
