@@ -97,6 +97,7 @@ use m_NewCleanup.ProtRefEC
 
 use m_NewCleanup.x_BondEC { Seq-feat }
  
+use m_NewCleanup.x_tRNAEC { Seq-feat }
 
 use m_NewCleanup.x_RemoveRedundantComment
 {
