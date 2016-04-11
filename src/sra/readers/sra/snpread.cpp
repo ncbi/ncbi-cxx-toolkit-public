@@ -53,7 +53,7 @@ BEGIN_STD_NAMESPACE;
 template<>
 struct hash<ncbi::CTempString>
 {
-    size_t operator()(ncbi::CTempString val) const noexcept
+    size_t operator()(ncbi::CTempString val) const
         {
             unsigned long __h = 5381;
             for ( auto c : val ) {
