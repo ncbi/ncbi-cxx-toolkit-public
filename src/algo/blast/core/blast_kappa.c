@@ -2998,7 +2998,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
 
     BlastHSPResults* local_results = NULL;
 
-    BlastCompo_QueryInfo* query_info = NULL;
+    BlastCompo_QueryInfo** query_info_tld = NULL;
     Blast_RedoAlignParams** redo_align_params_tld = NULL;
     Boolean positionBased = (Boolean) (sbp->psi_matrix != NULL);
     ECompoAdjustModes compo_adjust_mode =
@@ -3045,8 +3045,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
 
     int actual_num_threads = 1;
 #ifdef _OPENMP
-    // Temporary workaround
-    actual_num_threads = (program_number == eBlastTypeBlastx) ? 1 : num_threads;
+    actual_num_threads = num_threads;
 #endif
 
     /* Initialize savedParams */
@@ -3082,12 +3081,6 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                                 sbp, &gapAlign);
     if (status_code != 0) {
         return (Int2) status_code;
-    }
-    query_info = s_GetQueryInfo(queryBlk->sequence, queryInfo,
-                                (program_number == eBlastTypeBlastx));
-    if (query_info == NULL) {
-        status_code = -1;
-        goto function_cleanup;
     }
 
     if(smithWaterman) {
@@ -3189,9 +3182,24 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                     actual_num_threads,
                     sizeof(BlastHSPResults*)
             );
+    query_info_tld =
+            (BlastCompo_QueryInfo**) calloc(
+                    actual_num_threads,
+                    sizeof(BlastCompo_QueryInfo*)
+            );
 
     int i;
     for (i = 0; i < actual_num_threads; ++i) {
+        query_info_tld[i] = s_GetQueryInfo(
+                queryBlk->sequence,
+                queryInfo,
+                (program_number == eBlastTypeBlastx)
+        );
+        if (query_info_tld[i] == NULL) {
+            status_code = -1;
+            goto function_cleanup;
+        }
+
         sbp_tld[i] = s_BlastScoreBlk_Copy(
                 program_number,
                 sbp,
@@ -3365,7 +3373,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
         default_db_genetic_code, localScalingFactor, queryInfo, \
         sbp, smithWaterman, compositionTestIndex, forbidden, \
         NRrecord_tld, actual_num_threads, sbp_tld, \
-        matrix_tld, query_info, numContexts, \
+        matrix_tld, query_info_tld, numContexts, \
         genetic_code_string, queryBlk, compo_adjust_mode, \
         alignments_tld, incoming_align_set_tld, savedParams_tld, \
         scoringParams, redo_align_params_tld, \
@@ -3376,6 +3384,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
             BlastCompo_Alignment** alignments = NULL;
             BlastCompo_Alignment** incoming_align_set = NULL;
             Blast_CompositionWorkspace* NRrecord = NULL;
+            BlastCompo_QueryInfo* query_info = NULL;
 
             int numAligns[6];
             Blast_KarlinBlk* kbp = NULL;
@@ -3417,6 +3426,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
             redo_align_params  = redo_align_params_tld[tid];
             matrix             = matrix_tld[tid];
             pStatusCode        = &status_code_tld[tid];
+            query_info         = query_info_tld[tid];
 
             BlastHSPList* localMatch = theseMatches[b];
 
@@ -3534,7 +3544,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                                     kbp->Lambda,            // thread-local
                                     &matchingSeq,           // local
                                     -1,                     // const
-                                    query_info,             // shared
+                                    query_info,             // thread-local
                                     numContexts,            // shared
                                     matrix,                 // thread-local
                                     BLASTAA_SIZE,           // const
@@ -3759,13 +3769,13 @@ function_cleanup:
             sfree(thread_data->tld[i]->results);
             thread_data->tld[i] = SThreadLocalDataFree(thread_data->tld[i]);
             results_tld[i] = Blast_HSPResultsFree(results_tld[i]);
+            s_FreeBlastCompo_QueryInfoArray(&query_info_tld[i], numContexts);
         }
         sfree(thread_data->tld);
         sfree(thread_data);
         Blast_HSPResultsFree(local_results);
     }
 
-    s_FreeBlastCompo_QueryInfoArray(&query_info, numContexts);
     if (redoneMatches != NULL) {
         for (query_index = 0;  query_index < numQueries;  query_index++) {
             BlastCompo_HeapRelease(&redoneMatches[query_index]);
@@ -3809,6 +3819,7 @@ function_cleanup:
     sfree(redo_align_params_tld);
     sfree(redoneMatches_tld);
     sfree(status_code_tld);
+    sfree(query_info_tld);
 
     return (Int2) status_code;
 }
