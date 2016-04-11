@@ -326,6 +326,7 @@ private:
     void x_SetPartialsForProtein(CBioseq& prot, bool partial5, bool partial3);
     void RemoveBadProteinTitle(CBioseq& seq);
     void MoveCitationQuals(CBioseq& seq);
+    void x_RemoveUnseenTitles(CBioseq& seq);
     void KeepLatestDateDesc(CSeq_descr & seq_descr);
     void x_RemoveOrphanedProteins(CBioseq_set& set);
     void x_SingleSeqSetToSeq(CBioseq_set& set);

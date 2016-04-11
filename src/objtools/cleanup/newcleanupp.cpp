@@ -13038,6 +13038,25 @@ void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
 }
 
 
+void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq& seq)
+{
+    if (seq.IsSetDescr()) {
+        CRef<CSeqdesc> last_title(NULL);
+        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, d, seq.SetDescr().Set()) {
+            if ((*d)->IsTitle()) {
+                if (last_title) {
+                    CBioseq_Handle bh = m_Scope->GetBioseqHandle(seq);
+                    CBioseq_EditHandle eh(bh);
+                    eh.RemoveSeqdesc(*last_title);
+                    ChangeMade(CCleanupChange::eRemoveDescriptor);
+                }
+                last_title.Reset(d->GetPointer());
+            }
+        }
+    }
+}
+
+
 void CNewCleanup_imp::KeepLatestDateDesc(CSeq_descr & seq_descr)
 {
     const CSeqdesc::TCreate_date * best_create_date = NULL;
