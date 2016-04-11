@@ -11439,6 +11439,11 @@ bool IsMinimal(const CCit_gen& gen)
 
 bool CNewCleanup_imp::x_IsPubContentBad(const CPubdesc& pub, bool strict)
 {
+    // remove if no pubs at all
+    if (!pub.IsSetPub() || pub.GetPub().Get().empty()) {
+        return true;
+    }
+
     // keep anything with a figure - backbone entry
     if (pub.IsSetFig() && !NStr::IsBlank(pub.GetFig())) {
         return false;
@@ -11450,10 +11455,6 @@ bool CNewCleanup_imp::x_IsPubContentBad(const CPubdesc& pub, bool strict)
     }
 
     // remove if only one pub and is gen missing essential information
-    // or no pubs at all
-    if (!pub.IsSetPub() || pub.GetPub().Get().empty()) {
-        return true;
-    }
     if (pub.IsSetPub() && pub.GetPub().Get().size() == 1 &&
         pub.GetPub().Get().front()->IsGen() &&
         IsMinimal(pub.GetPub().Get().front()->GetGen())) {
@@ -12285,7 +12286,7 @@ void CNewCleanup_imp::x_MoveNpPub(CBioseq_set& set)
                 if ((*it)->SetSeq().SetDescr().Set().empty()) {
                     (*it)->SetSeq().ResetDescr();
                 }
-            } else if ((*it)->IsSet() && (*it)->GetSeq().IsSetDescr()) {
+            } else if ((*it)->IsSet() && (*it)->GetSet().IsSetDescr()) {
                 x_MoveNpPub(set, (*it)->SetSet().SetDescr());
                 if ((*it)->SetSet().SetDescr().Set().empty()) {
                     (*it)->SetSet().ResetDescr();
