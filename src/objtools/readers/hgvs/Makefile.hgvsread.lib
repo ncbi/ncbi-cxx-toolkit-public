@@ -1,4 +1,4 @@
-LIB = hgvs_reader
+LIB = hgvsread
 SRC = hgvs_lexer hgvs_parser hgvs_protein_parser \
       hgvs_nucleic_acid_parser semantic_actions \
       hgvs_validator id_resolver irep_to_seqfeat_common \
