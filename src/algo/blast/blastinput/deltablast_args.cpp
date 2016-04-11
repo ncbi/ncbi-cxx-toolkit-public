@@ -31,6 +31,10 @@
  * Implementation of the DELTA-BLAST command line arguments
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif
+
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/deltablast_args.hpp>
 #include <algo/blast/api/deltablast_options.hpp>

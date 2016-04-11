@@ -32,6 +32,10 @@
  * PSI-BLAST.
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif
+
 #include <ncbi_pch.hpp>
 
 // BLAST includes

@@ -31,6 +31,10 @@
  * Implementation of CDeltaBlast.
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif
+
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/psiblast.hpp>
 #include <algo/blast/api/psibl2seq.hpp>
