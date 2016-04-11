@@ -117,6 +117,9 @@ void CSNPTestApp::Init(void)
     arg_desc->AddFlag("verbose", "Print info about found data");
 
     arg_desc->AddFlag("make_feat", "Make feature object");
+    arg_desc->AddDefaultKey("chunk", "ChunkSize",
+                            "chunk size in sequence coordinates",
+                            CArgDescriptions::eInteger, "2000000000");
     arg_desc->AddFlag("make_feat_annot", "Make feature annot");
     arg_desc->AddFlag("make_table_feat_annot", "Make feature Seq-table annot");
     arg_desc->AddFlag("make_packed_feat_annot", "Make packed feature annot");
@@ -129,6 +132,7 @@ void CSNPTestApp::Init(void)
                             "Output file of ASN.1",
                             CArgDescriptions::eOutputFile,
                             "-");
+    arg_desc->AddFlag("b", "Binary ASN.1");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -259,7 +263,16 @@ int CSNPTestApp::Run(void)
     bool print = args["print_objects"];
     size_t limit_count = args["limit_count"].AsInteger();
 
-    CNcbiOstream& out = args["o"].AsOutputFile();
+    CNcbiOstream* out;
+    if ( print ) {
+        out = &args["o"].AsOutputFile();
+        if ( args["b"] ) {
+            *out << MSerial_AsnBinary;
+        }
+        else {
+            *out << MSerial_AsnText;
+        }
+    }
 
     string query_id;
     CRange<TSeqPos> query_range = CRange<TSeqPos>::GetWhole();
@@ -326,20 +339,20 @@ int CSNPTestApp::Run(void)
 
     CSNPDb snp_db(mgr, path);
     if ( verbose ) {
-        out << "Opened SNP in "<<sw.Restart()
-            << NcbiEndl;
+        cout << "Opened SNP in "<<sw.Restart()
+             << NcbiEndl;
     }
     
     if ( args["seq_table"] ) {
         sw.Restart();
         for ( CSNPDbSeqIterator it(snp_db); it; ++it ) {
-            out << it->m_Name << " " << it->m_SeqId
-                << " range: "<<it.GetSNPRange()
-                << " @(" << it.GetVDBRowRange() << ")"
-                << NcbiEndl;
+            cout << it->m_Name << " " << it->m_SeqId
+                 << " range: "<<it.GetSNPRange()
+                 << " @(" << it.GetVDBRowRange() << ")"
+                 << NcbiEndl;
         }
-        out << "Scanned reftable in "<<sw.Elapsed()
-            << NcbiEndl;
+        cout << "Scanned reftable in "<<sw.Elapsed()
+             << NcbiEndl;
         sw.Restart();
     }
     
@@ -356,7 +369,21 @@ int CSNPTestApp::Run(void)
                 filter.SetFilter(args["filter"].AsInt8());
             }
         }
-
+        
+        vector< CRange<TSeqPos> > chunk_ranges;
+        {
+            CSNPDbSeqIterator it(snp_db, query_idh);
+            TSeqPos end = min(it.GetSNPRange().GetToOpen(),
+                              query_range.GetToOpen());
+            TSeqPos chunk = args["chunk"].AsInteger();
+            for ( TSeqPos p = query_range.GetFrom(); p < end; p += chunk ) {
+                CRange<TSeqPos> range;
+                range.SetFrom(p);
+                range.SetToOpen(min(p+chunk, end));
+                chunk_ranges.push_back(range);
+            }
+        }
+        
         size_t count = 0;
         CSNPDbFeatIterator::TFlags flags = CSNPDbFeatIterator::fDefaultFlags;
         if ( args["no_shared_objects"] ) {
@@ -364,61 +391,74 @@ int CSNPTestApp::Run(void)
         }
         if ( args["make_cov_graph"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
-            CRef<CSeq_graph> graph = it.GetCoverageGraph(query_range, filter);
-            if ( graph && print ) {
-                out << MSerial_AsnText << *graph;
+            for ( const auto& query_range : chunk_ranges ) {
+                CRef<CSeq_graph> graph =
+                    it.GetCoverageGraph(query_range, filter);
+                if ( graph && print ) {
+                    *out << *graph;
+                }
             }
         }
         if ( args["make_cov_annot"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
-            CRef<CSeq_annot> annot = it.GetCoverageAnnot(query_range, filter);
-            if ( annot && print ) {
-                out << MSerial_AsnText << *annot;
+            for ( const auto& query_range : chunk_ranges ) {
+                CRef<CSeq_annot> annot =
+                    it.GetCoverageAnnot(query_range, filter);
+                if ( annot && print ) {
+                    *out << *annot;
+                }
             }
         }
         if ( args["make_feat_annot"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
-            CRef<CSeq_annot> annot = it.GetFeatAnnot(query_range, filter);
-            if ( annot && print ) {
-                out << MSerial_AsnText << *annot;
+            for ( const auto& query_range : chunk_ranges ) {
+                CRef<CSeq_annot> annot =
+                    it.GetFeatAnnot(query_range, filter);
+                if ( annot && print ) {
+                    *out << *annot;
+                }
             }
         }
         if ( args["make_table_feat_annot"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
-            CSNPDbSeqIterator::TAnnotSet annots =
-                it.GetTableFeatAnnots(query_range, filter);
-            if ( print ) {
-                ITERATE ( CSNPDbSeqIterator::TAnnotSet, it, annots ) {
-                    out << MSerial_AsnText << **it;
+            for ( const auto& query_range : chunk_ranges ) {
+                CSNPDbSeqIterator::TAnnotSet annots =
+                    it.GetTableFeatAnnots(query_range, filter);
+                if ( print ) {
+                    ITERATE ( CSNPDbSeqIterator::TAnnotSet, it, annots ) {
+                        *out << **it;
+                    }
                 }
             }
         }
         if ( args["make_packed_feat_annot"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
-            pair<CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > annot =
-                it.GetPackedFeatAnnot(query_range, filter);
-            if ( annot.second ) {
-                CSeq_annot::TData::TFtable& feats =
-                    annot.first->SetData().SetFtable();
-                ITERATE ( CSeq_annot_SNP_Info, it, *annot.second ) {
-                    feats.push_back(it->CreateSeq_feat(*annot.second));
+            for ( const auto& query_range : chunk_ranges ) {
+                pair<CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > annot =
+                    it.GetPackedFeatAnnot(query_range, filter);
+                if ( annot.second ) {
+                    CSeq_annot::TData::TFtable& feats =
+                        annot.first->SetData().SetFtable();
+                    ITERATE ( CSeq_annot_SNP_Info, it, *annot.second ) {
+                        feats.push_back(it->CreateSeq_feat(*annot.second));
+                    }
                 }
-            }
-            if ( annot.first && print ) {
-                out << MSerial_AsnText << *annot.first;
+                if ( annot.first && print ) {
+                    *out << *annot.first;
+                }
             }
         }
         for ( CSNPDbFeatIterator it(snp_db, query_idh, query_range, filter); it; ++it ) {
             if ( verbose ) {
-                out << it.GetAccession();
-                out << " pos: "<<it.GetSNPPosition();
-                out << " len: "<<it.GetSNPLength();
-                out << '\n';
+                cout << it.GetAccession();
+                cout << " pos: "<<it.GetSNPPosition();
+                cout << " len: "<<it.GetSNPLength();
+                cout << '\n';
             }
             if ( make_feat ) {
                 CRef<CSeq_feat> feat = it.GetSeq_feat(flags);
                 if ( print ) {
-                    out << MSerial_AsnText << *feat;
+                    *out << *feat;
                 }
             }
             if ( limit_count && ++count >= limit_count ) {
@@ -426,12 +466,12 @@ int CSNPTestApp::Run(void)
             }
         }
 
-        out << "Found "<<count<<" SNPs in "<<sw.Elapsed()
-            << NcbiEndl;
+        cout << "Found "<<count<<" SNPs in "<<sw.Elapsed()
+             << NcbiEndl;
         sw.Restart();
     }
 
-    out << "Success." << NcbiEndl;
+    cout << "Success." << NcbiEndl;
     return error_count? 1: 0;
 }
 

@@ -48,6 +48,23 @@
 
 #include <sra/readers/sra/kdbread.hpp>
 
+BEGIN_STD_NAMESPACE;
+
+template<>
+struct hash<ncbi::CTempString>
+{
+    size_t operator()(ncbi::CTempString val) const noexcept
+        {
+            unsigned long __h = 5381;
+            for ( auto c : val ) {
+                __h = __h*17 + c;
+            }
+            return size_t(__h);
+        }
+};
+
+END_STD_NAMESPACE;
+
 BEGIN_NCBI_NAMESPACE;
 
 #define NCBI_USE_ERRCODE_X   SNPReader
@@ -63,6 +80,7 @@ static const TSeqPos kMaxSNPLength = 256;
 static const size_t kFlagsSize = 8;
 static const TSeqPos kCoverageZoom = 100;
 static const size_t kMax_AlleleLength  = 32;
+static const char kAlleleSeparator = '|';
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -570,170 +588,410 @@ CSNPDbSeqIterator::GetFeatAnnot(CRange<TSeqPos> range,
 BEGIN_LOCAL_NAMESPACE;
 
 
-struct SSeqTableConverter {
-    SSeqTableConverter(const CSNPDbSeqIterator& it);
-    
-    bool AddToTable(const CSNPDbFeatIterator& it);
-
-    void Add(const CSNPDbFeatIterator& it);
-
-    vector< CRef<CSeq_annot> > GetAnnots(void);
-
-    CRef<CSeq_id> m_Seq_id;
-    int m_TableSize;
-    CRef<CSeq_annot> m_RegularAnnot;
-
-    // columns
-    CRef<CSeqTable_column> col_from;
-    CRef<CSeqTable_column> col_to;
-    
-    CRef<CSeqTable_column> col_alleles;
-    CCommonString_table::TStrings* val_alleles;
-    CCommonString_table::TIndexes* arr_alleles;
-    typedef unordered_map<string, size_t> TIndex_alleles;
-    TIndex_alleles index_alleles;
-
-    CRef<CSeqTable_column> col_qa;
-    CCommonBytes_table::TBytes* val_qa;
-    CCommonBytes_table::TIndexes* arr_qa;
-    typedef unordered_map<Uint8, size_t> TIndex_qa;
-    TIndex_qa index_qa;
-
-    CRef<CSeqTable_column> col_dbxref;
-    CSeqTable_multi_data::TInt* arr_dbxref;
-    CSeqTable_multi_data::TInt8* arr_dbxref8;
-
-    CSeqTable_multi_data::TInt* arr_from;
-    CSeqTable_sparse_index::TIndexes* ind_to;
-    CSeqTable_multi_data::TInt* arr_to;
-};
-
-
 CRef<CSeqTable_column> x_MakeColumn(CSeqTable_column_info::EField_id id,
-                                    const string& name = kEmptyStr)
+                                    const char* name = 0)
 {
     CRef<CSeqTable_column> col(new CSeqTable_column);
     col->SetHeader().SetField_id(id);
-    if ( !name.empty() ) {
+    if ( name ) {
         col->SetHeader().SetField_name(name);
     }
     return col;
 }
 
 
-SSeqTableConverter::SSeqTableConverter(const CSNPDbSeqIterator& it)
+struct SColumn
 {
-    m_Seq_id = it.GetSeqId();
-    m_TableSize = 0;
+    int id;
+    const char* name;
 
-    col_from = x_MakeColumn(CSeqTable_column_info::eField_id_location_from);
-    arr_from = &col_from->SetData().SetInt();
+    CRef<CSeqTable_column> column;
 
-    col_to = x_MakeColumn(CSeqTable_column_info::eField_id_location_to);
-    ind_to = &col_to->SetSparse().SetIndexes();
-    arr_to = &col_to->SetData().SetInt();
+    SColumn(void)
+        : id(-1),
+          name(0)
+        {
+        }
+    explicit
+    SColumn(CSeqTable_column_info::EField_id id,
+            const char* name = 0)
+        : id(id),
+          name(name)
+        {
+        }
 
-    col_alleles = x_MakeColumn(CSeqTable_column_info::eField_id_qual,
-                               "Q.alleles");
-    val_alleles = &col_alleles->SetData().SetCommon_string().SetStrings();
-    arr_alleles = &col_alleles->SetData().SetCommon_string().SetIndexes();
+    void Init(CSeqTable_column_info::EField_id id,
+              const char* name = 0)
+        {
+            this->id = id;
+            this->name = name;
+        }
 
-    col_qa = x_MakeColumn(CSeqTable_column_info::eField_id_ext,
-                          "E.QualityCodes");
-    val_qa = &col_qa->SetData().SetCommon_bytes().SetBytes();
-    arr_qa = &col_qa->SetData().SetCommon_bytes().SetIndexes();
+    CSeqTable_column* x_GetColumn(void)
+        {
+            if ( !column ) {
+                _ASSERT(id >= 0);
+                column =
+                    x_MakeColumn(CSeqTable_column_info::EField_id(id), name);
+            }
+            return column;
+        }
+    CRef<CSeqTable_column> GetColumn(void)
+        {
+            return Ref(x_GetColumn());
+        }
 
-    col_dbxref = x_MakeColumn(CSeqTable_column_info::eField_id_dbxref,
-                              "D.dbSNP");
-    arr_dbxref = &col_dbxref->SetData().SetInt();
-    arr_dbxref8 = 0;
+    void Attach(CSeq_table& table)
+        {
+            if ( column ) {
+                table.SetColumns().push_back(column);
+            }
+        }
 
+    DECLARE_OPERATOR_BOOL_REF(column);
+};
+
+struct SIntColumn : public SColumn
+{
+    CSeqTable_multi_data::TInt* values;
+
+    explicit
+    SIntColumn(CSeqTable_column_info::EField_id id, const char* name = 0)
+        : SColumn(id, name),
+          values(0)
+        {
+        }
+
+    void Add(int value)
+        {
+            if ( !values ) {
+                values = &x_GetColumn()->SetData().SetInt();
+            }
+            values->push_back(value);
+        }
+};
+
+
+struct SInt8Column : public SIntColumn
+{
+    CSeqTable_multi_data::TInt8* values8;
+
+    explicit
+    SInt8Column(CSeqTable_column_info::EField_id id, const char* name = 0)
+        : SIntColumn(id, name),
+          values8(0)
+        {
+        }
+
+    void Add(Int8 value)
+        {
+            if ( !values8 && int(value) == value ) {
+                SIntColumn::Add(int(value));
+            }
+            else {
+                if ( !values8 ) {
+                    CSeqTable_column* col = x_GetColumn();
+                    if ( col->IsSetData() ) {
+                        col->SetData().ChangeToInt8();
+                    }
+                    values8 = &col->SetData().SetInt8();
+                }
+                values8->push_back(value);
+            }
+        }
+};
+
+
+struct SSparseIndex
+{
+    SColumn& column;
+    CSeqTable_sparse_index::TIndexes* indexes;
+    int size;
+
+    SSparseIndex(SColumn& column)
+        : column(column),
+          indexes(0),
+          size(0)
+        {
+        }
+    
+    void Add(int index)
+        {
+            if ( index != size ) {
+                indexes = &column.x_GetColumn()->SetSparse().SetIndexes();
+                for ( int i = 0; i < size; ++i ) {
+                    indexes->push_back(i);
+                }
+            }
+            if ( indexes ) {
+                indexes->push_back(index);
+            }
+            ++size;
+        }
+};
+
+
+struct SCommonStrings : public SColumn
+{
+    CCommonString_table::TStrings* values;
+    CCommonString_table::TIndexes* indexes;
+    typedef unordered_map<CTempString, int> TIndex;
+    TIndex index;
+
+    SCommonStrings(void)
+        : values(0),
+          indexes(0)
+        {
+        }
+
+    void Add(CTempString val)
+        {
+            if ( !values ) {
+                CSeqTable_column* col = x_GetColumn();
+                values = &col->SetData().SetCommon_string().SetStrings();
+                indexes = &col->SetData().SetCommon_string().SetIndexes();
+            }
+            int ind;
+            TIndex::const_iterator it = index.find(val);
+            if ( it == index.end() ) {
+                ind = int(values->size());
+                values->push_back(val);
+                val = values->back();
+                index.insert(TIndex::value_type(val, ind));
+            }
+            else {
+                ind = it->second;
+            }
+            indexes->push_back(ind);
+        }
+
+    void Attach(CSeq_table& table)
+        {
+            if ( values && values->size() == 1 ) {
+                CSeqTable_column* col = x_GetColumn();
+                col->SetDefault().SetString().swap(values->front());
+                col->ResetData();
+                values = 0;
+                indexes = 0;
+            }
+            SColumn::Attach(table);
+        }
+};
+
+
+struct SCommon8Bytes : public SColumn
+{
+    CCommonBytes_table::TBytes* values;
+    CCommonBytes_table::TIndexes* indexes;
+    typedef map<Uint8, size_t> TIndex;
+    TIndex index;
+
+    explicit
+    SCommon8Bytes(CSeqTable_column_info::EField_id id,
+                  const char* name = 0)
+        : SColumn(id, name),
+          values(0),
+          indexes(0)
+        {
+        }
+
+    void Add(Uint8 val)
+        {
+            if ( !values ) {
+                CSeqTable_column* col = x_GetColumn();
+                values = &col->SetData().SetCommon_bytes().SetBytes();
+                indexes = &col->SetData().SetCommon_bytes().SetIndexes();
+            }
+            pair<TIndex::iterator, bool> ins =
+                index.insert(TIndex::value_type(val, 0));
+            if ( ins.second ) {
+                ins.first->second = values->size();
+                vector<char>* data = 
+                    new vector<char>(reinterpret_cast<const char*>(&val),
+                                     reinterpret_cast<const char*>(&val+1));
+                values->push_back(data);
+            }
+            indexes->push_back(ins.first->second);
+        }
+
+    void Attach(CSeq_table& table)
+        {
+            if ( values && values->size() == 1 ) {
+                CSeqTable_column* col = x_GetColumn();
+                col->SetDefault().SetBytes().swap(*values->front());
+                col->ResetData();
+                values = 0;
+                indexes = 0;
+            }
+            SColumn::Attach(table);
+        }
+};
+
+
+static const int kMaxTableAlleles = 4;
+
+
+struct SSeqTableContent
+{
+    SSeqTableContent(void);
+
+    void Add(const CSNPDbFeatIterator& it);
+
+    CRef<CSeq_annot> GetAnnot(CSeq_id& seq_id);
+
+    int m_TableSize;
+
+    // columns
+    SIntColumn col_from;
+    SIntColumn col_to;
+    SSparseIndex ind_to;
+
+    SCommonStrings col_alleles[kMaxTableAlleles];
+
+    SCommon8Bytes col_qa;
+
+    SInt8Column col_dbxref;
+
+    static void AddFixedString(CSeq_table& table,
+                               CSeqTable_column_info::EField_id id,
+                               const string& value)
+        {
+            CRef<CSeqTable_column> col = x_MakeColumn(id);
+            col->SetDefault().SetString(value);
+            table.SetColumns().push_back(col);
+        }
+
+    static void AddFixedSeq_id(CSeq_table& table,
+                               CSeqTable_column_info::EField_id id,
+                               CSeq_id& value)
+        {
+            CRef<CSeqTable_column> col = x_MakeColumn(id);
+            col->SetDefault().SetId(value);
+            table.SetColumns().push_back(col);
+        }
+};
+
+
+SSeqTableContent::SSeqTableContent(void)
+    : m_TableSize(0),
+      col_from(CSeqTable_column_info::eField_id_location_from),
+      col_to(CSeqTable_column_info::eField_id_location_to),
+      ind_to(col_to),
+      col_qa(CSeqTable_column_info::eField_id_ext, "E.QualityCodes"),
+      col_dbxref(CSeqTable_column_info::eField_id_dbxref, "D.dbSNP")
+{
+    for ( int i = 0; i < kMaxTableAlleles; ++i ) {
+        col_alleles[i].Init(CSeqTable_column_info::eField_id_qual,
+                            "Q.replace");
+    }
 }
 
 
-bool SSeqTableConverter::AddToTable(const CSNPDbFeatIterator& it)
+inline
+void SSeqTableContent::Add(const CSNPDbFeatIterator& it)
 {
     TSeqPos from = it.GetSNPPosition();
-    arr_from->push_back(from);
-
     TSeqPos len = it.GetSNPLength();
+    CTempString alleles = it.GetAlleles();
+
+    col_from.Add(from);
     if ( len != 1 ) {
-        TSeqPos to = from + len - 1;
-        ind_to->push_back(m_TableSize);
-        arr_to->push_back(to);
+        col_to.Add(from + len - 1);
+        ind_to.Add(m_TableSize);
     }
 
-    string alleles = it.GetAlleles();
-    pair<TIndex_alleles::iterator, bool> ins_alleles =
-        index_alleles.insert(TIndex_alleles::value_type(alleles,
-                                                        index_alleles.size()));
-    if ( ins_alleles.second ) {
-        val_alleles->push_back(alleles);
-    }
-    arr_alleles->push_back(ins_alleles.first->second);
-
-    Uint8 qa = it.GetQualityCodes();
-    pair<TIndex_qa::iterator, bool> ins_qa =
-        index_qa.insert(TIndex_qa::value_type(qa, index_qa.size()));
-    if ( ins_qa.second ) {
-        val_qa->push_back(new vector<char>(reinterpret_cast<const char*>(&qa),
-                                           reinterpret_cast<const char*>(&qa+1)));
-    }
-    arr_qa->push_back(ins_qa.first->second);
-
-    Uint8 id = it.GetFeatId();
-    if ( arr_dbxref && id < kMax_Int ) {
-        arr_dbxref->push_back(id);
-    }
-    else {
-        if ( !arr_dbxref8 ) {
-            col_dbxref->SetData().ChangeToInt8();
-            arr_dbxref = 0;
-            arr_dbxref8 = &col_dbxref->SetData().SetInt8();
+    SIZE_TYPE pos = 0;
+    for ( int i = 0; ; ++i ) {
+        _ASSERT(i < kMaxTableAlleles);
+        SIZE_TYPE end = alleles.find(kAlleleSeparator, pos);
+        SIZE_TYPE len = (end == NPOS? alleles.size(): end) - pos;
+        col_alleles[i].Add(alleles.substr(pos, len));
+        if ( end == NPOS ) {
+            break;
         }
-        arr_dbxref8->push_back(id);
+        pos = end+1;
     }
+
+    col_qa.Add(it.GetQualityCodes());
+
+    col_dbxref.Add(it.GetFeatId());
 
     ++m_TableSize;
-    return true;
+}
+
+
+CRef<CSeq_annot> SSeqTableContent::GetAnnot(CSeq_id& seq_id)
+{
+    if ( !m_TableSize ) {
+        return null;
+    }
+    
+    CRef<CSeq_annot> table_annot = x_NewAnnot();
+    
+    CSeq_table& table = table_annot->SetData().SetSeq_table();
+    table.SetFeat_type(CSeqFeatData::e_Imp);
+    table.SetFeat_subtype(CSeqFeatData::eSubtype_variation);
+    table.SetNum_rows(m_TableSize);
+
+    AddFixedString(table,
+                   CSeqTable_column_info::eField_id_data_imp_key,
+                   "variation");
+
+    AddFixedSeq_id(table,
+               CSeqTable_column_info::eField_id_location_id,
+               seq_id);
+
+    col_from.Attach(table);
+    col_to.Attach(table);
+    for ( int i = 0; i < kMaxTableAlleles; ++i ) {
+        col_alleles[i].Attach(table);
+    }
+
+    if ( col_qa ) {
+        AddFixedString(table,
+                       CSeqTable_column_info::eField_id_ext_type,
+                       "dbSnpQAdata");
+        col_qa.Attach(table);
+    }
+
+    col_dbxref.Attach(table);
+
+    return table_annot;
+}
+
+
+struct SSeqTableConverter
+{
+    SSeqTableConverter(const CSNPDbSeqIterator& it);
+    
+    bool AddToTable(const CSNPDbFeatIterator& it);
+
+    SSeqTableContent m_Tables[2][kMaxTableAlleles];
+
+    void Add(const CSNPDbFeatIterator& it);
+
+    vector< CRef<CSeq_annot> > GetAnnots(void);
+
+    CRef<CSeq_id> m_Seq_id;
+    CRef<CSeq_annot> m_RegularAnnot;
+};
+
+
+SSeqTableConverter::SSeqTableConverter(const CSNPDbSeqIterator& it)
+    : m_Seq_id(it.GetSeqId())
+{
 }
 
 
 vector< CRef<CSeq_annot> > SSeqTableConverter::GetAnnots(void)
 {
     vector< CRef<CSeq_annot> > ret;
-    if ( m_TableSize ) {
-        CRef<CSeq_annot> table_annot = x_NewAnnot();
-
-        CSeq_table& table = table_annot->SetData().SetSeq_table();
-        table.SetFeat_type(CSeqFeatData::e_Imp);
-        table.SetFeat_subtype(CSeqFeatData::eSubtype_variation);
-        table.SetNum_rows(m_TableSize);
-
-        // single-value columns
-        CRef<CSeqTable_column> col_imp =
-            x_MakeColumn(CSeqTable_column_info::eField_id_data_imp_key);
-        col_imp->SetDefault().SetString("variation");
-        CRef<CSeqTable_column> col_id =
-            x_MakeColumn(CSeqTable_column_info::eField_id_location_id);
-        col_id->SetDefault().SetId(*m_Seq_id);
-
-        CRef<CSeqTable_column> col_qa_type =
-            x_MakeColumn(CSeqTable_column_info::eField_id_ext_type);
-        col_qa_type->SetDefault().SetString("dbSnpQAdata");
-
-        table.SetColumns().push_back(col_imp);
-        table.SetColumns().push_back(col_id);
-        table.SetColumns().push_back(col_from);
-        if ( !arr_to->empty() ) {
-            table.SetColumns().push_back(col_to);
+    for ( int k = 0; k < 2; ++k ) {
+        for ( int i = 0; i < kMaxTableAlleles; ++i ) {
+            if ( CRef<CSeq_annot> annot = m_Tables[k][i].GetAnnot(*m_Seq_id) ) {
+                ret.push_back(annot);
+            }
         }
-        table.SetColumns().push_back(col_alleles);
-        table.SetColumns().push_back(col_qa_type);
-        table.SetColumns().push_back(col_qa);
-        table.SetColumns().push_back(col_dbxref);
-
-        ret.push_back(table_annot);
     }
     if ( m_RegularAnnot ) {
         ret.push_back(m_RegularAnnot);
@@ -742,6 +1000,20 @@ vector< CRef<CSeq_annot> > SSeqTableConverter::GetAnnots(void)
 }
 
 
+inline
+bool SSeqTableConverter::AddToTable(const CSNPDbFeatIterator& it)
+{
+    CTempString alleles = it.GetAlleles();
+    int last_allele = count(alleles.begin(), alleles.end(), kAlleleSeparator);
+    if ( last_allele >= kMaxTableAlleles ) {
+        return false;
+    }
+    m_Tables[it.GetSNPLength() != 1][last_allele].Add(it);
+    return true;
+}
+
+
+inline
 void SSeqTableConverter::Add(const CSNPDbFeatIterator& it)
 {
     if ( AddToTable(it) ) {
@@ -805,7 +1077,7 @@ bool x_ParseSNP_Info(SSNP_Info& info,
         }
 
         CTempString allele;
-        SIZE_TYPE div = all_alleles.find('|');
+        SIZE_TYPE div = all_alleles.find(kAlleleSeparator);
         if ( div == NPOS ) {
             allele = all_alleles;
             all_alleles.clear();
@@ -1452,7 +1724,7 @@ CRef<CSeq_feat> CSNPDbFeatIterator::GetSeq_feat(TFlags flags) const
         size_t index = 0;
         while ( !all_alleles.empty() ) {
             CTempString allele;
-            SIZE_TYPE div = all_alleles.find('|');
+            SIZE_TYPE div = all_alleles.find(kAlleleSeparator);
             if ( div == NPOS ) {
                 allele = all_alleles;
                 all_alleles.clear();
