@@ -30,8 +30,6 @@ Linux64-Centos : GCC481    : GCC.sh 4.8.1 --without-debug --without-flat-makefil
 Linux64-Centos : GCC493d   : GCC.sh 4.9.3 --with-debug --with-mt --with-flat-makefile
 Linux64-Centos : GCC510    : GCC.sh 5.1.0 --without-debug --with-mt --with-flat-makefile
 Linux64-Centos : GCC530    : GCC.sh 5.3.0 --without-debug --with-mt --with-flat-makefile
-Linux64-Centos : ICC130    : ICC.sh 13.0  --without-debug --with-mt --with-dll
-Linux64-Centos : ICC130d   : ICC.sh 13.0  --with-debug --with-mt --with-3psw=system
 Linux64-Centos : ICC150    : ICC.sh 15.0  --without-debug --with-mt --with-dll
 Linux64-Centos : ICC150d   : ICC.sh 15.0  --with-debug --with-mt --with-3psw=system
 Linux64-Centos : Clang     : Clang.sh 3.5.1 --with-debug --with-mt --with-flat-makefile
