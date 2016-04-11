@@ -11866,7 +11866,6 @@ void CNewCleanup_imp::x_BioseqSetNucProtEC(CBioseq_set & bioseq_set)
     x_MoveNpSrc(bioseq_set);
     x_MoveNpPub(bioseq_set);
     x_MoveNpDBlinks(bioseq_set);
-    x_CollapseSet(bioseq_set);
 }
 
 
