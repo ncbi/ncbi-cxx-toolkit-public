@@ -105,6 +105,10 @@ public:
     static vector<string> RecreateInputArgs(const CArgs& args,
                                             const string &prefix = "input");
 
+    /// Check whether the arguments for a specific prefix have been set up in
+    /// this application
+    static bool HaveArgsForPrefix(const string &prefix = "input");
+
     /// Default ctor
     /// This ctor leaves the stream source empty
     ///

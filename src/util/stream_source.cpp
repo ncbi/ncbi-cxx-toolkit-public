@@ -36,6 +36,7 @@
 
 BEGIN_NCBI_SCOPE
 
+static set<string> s_InputStreamSourcePrefixes;
 
 void CInputStreamSource::SetStandardInputArgs(CArgDescriptions& arg_desc,
                                               const string &prefix,
@@ -91,6 +92,8 @@ void CInputStreamSource::SetStandardInputArgs(CArgDescriptions& arg_desc,
     if (prefix == "input") {
         arg_desc.AddAlias("I", "input-manifest");
     }
+
+    s_InputStreamSourcePrefixes.insert(prefix);
 }
 
 vector<string> CInputStreamSource::RecreateInputArgs(const CArgs& args, const string &prefix)
@@ -115,6 +118,10 @@ vector<string> CInputStreamSource::RecreateInputArgs(const CArgs& args, const st
     return result;
 }
 
+bool CInputStreamSource::HaveArgsForPrefix(const string &prefix)
+{
+    return s_InputStreamSourcePrefixes.count(prefix);
+}
 
 CInputStreamSource::CInputStreamSource()
     : m_Istr(NULL), m_CurrIndex(0)
