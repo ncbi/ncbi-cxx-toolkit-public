@@ -371,17 +371,17 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
     }
     
     // Adjust back to whole path component.
-    while(common && (first[common] != CFile::GetPathSeparator())) {
+    while(common && (first[common-1] != CFile::GetPathSeparator())) {
         --common;
     }
     
-    if (common) {
+    if (common > 1) {
         // Factor out common path components.
         m_DBPath.Assign( CSeqDB_Substring(first.data(), first.data() + common) );
         
         for(i = 0; i < m_DBList.size(); i++) {
             CSeqDB_Substring sub(m_DBList[i].GetBasePathS());
-            sub.EraseFront((int) common + 1);
+            sub.EraseFront((int) common);
             
             m_DBList[i].Assign(sub);
         }
