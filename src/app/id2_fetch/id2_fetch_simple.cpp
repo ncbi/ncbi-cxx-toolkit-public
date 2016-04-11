@@ -109,6 +109,7 @@ private:
     bool                          m_ParseData;
     bool                          m_CopyData;
     bool                          m_PipeData;
+    bool                          m_Verbose;
     int                           m_SerialNumber;
 };
 
@@ -150,6 +151,7 @@ void CId2FetchApp::Init(void)
          "File to read request(s) from",
          CArgDescriptions::eInputFile);
 
+    arg_desc->AddFlag("verbose", "Verbose output");
     // Skip blob data
     arg_desc->AddFlag("skip_data", "Skip blob data");
     // Copy blob data
@@ -336,6 +338,9 @@ namespace {
 
 void CId2FetchApp::x_SendRequestPacket(CID2_Request_Packet& packet)
 {
+    if ( m_Verbose ) {
+        cout << "Sending: " << MSerial_AsnText << packet;
+    }
     // Open connection to ID1 server
     if ( m_ID2Conn ) {
         CObjectOStreamAsnBinary id2_server_output(*m_ID2Conn);
@@ -641,6 +646,9 @@ void CId2FetchApp::x_ReadReply(CID2_Reply& reply)
         CObjectIStreamAsnBinary id2_server_input(*m_PubSeqOSReply);
         id2_server_input >> reply;
     }
+    if ( m_Verbose ) {
+        cout << "Received: " << MSerial_AsnText << reply;
+    }
 }
 
 
@@ -658,6 +666,9 @@ void CId2FetchApp::x_ReadReply(CID2_Reply& reply, CObjectInfo& object)
         id2_server_input >> reply;
     }
     object = hook->m_Object;
+    if ( m_Verbose ) {
+        cout << "Received: " << MSerial_AsnText << reply;
+    }
 }
 
 
@@ -865,6 +876,7 @@ int CId2FetchApp::Run(void)
     } else if (fmt == "xml") {
         m_Format = eSerial_Xml;
     }
+    m_Verbose = args["verbose"];
     m_SkipData = args["skip_data"];
     m_CopyData = args["copy_data"];
     m_ParseData = args["parse_data"];
@@ -906,7 +918,7 @@ int CId2FetchApp::Run(void)
     }
     else if ( args["blob_id"] ) {
         vector<string> vv;
-        NStr::Tokenize(args["blob_id"].AsString(), ",", vv);
+        NStr::Split(args["blob_id"].AsString(), ",", vv);
         if ( vv.size() != 2 ) {
             ERR_FATAL("Bad blob_id format: "<<args["blob_id"]);
         }
