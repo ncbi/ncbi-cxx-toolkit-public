@@ -1487,7 +1487,7 @@ void s_Match_id(size_t num_ids,
             }
             CSeq_id_Handle id = CSeq_id_Handle::GetHandle(fasta_ids[i]);
             vector<string> ids;
-            NStr::Tokenize(match_to_ids[i], ",", ids);
+            NStr::Split(match_to_ids[i], ",", ids);
             ITERATE ( vector<string>, it, ids ) {
                 if ( !strs.count(*it) ) {
                     continue;
@@ -1503,7 +1503,7 @@ void s_Match_id(size_t num_ids,
             }
             CSeq_id_Handle id = CSeq_id_Handle::GetHandle(fasta_ids[i]);
             vector<string> ids;
-            NStr::Tokenize(weak_match_to_ids[i], ",", ids);
+            NStr::Split(weak_match_to_ids[i], ",", ids);
             ITERATE ( vector<string>, it, ids ) {
                 if ( !strs.count(*it) ) {
                     continue;
