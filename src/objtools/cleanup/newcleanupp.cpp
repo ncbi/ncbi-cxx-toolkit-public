@@ -5173,7 +5173,8 @@ CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQua
 
     // labels to leave alone
     static const char * const ignored_quals[] = 
-        { "label", "allele", "experiment", "inference", "UniProtKB_evidence" };
+        { "label", "allele", "experiment", "inference", "UniProtKB_evidence",
+          "dbxref", "replace", "rpt_unit_seq", "rpt_unit_range"};
     static set<string, PNocase> ignored_quals_raw; 
 
     // the mutex is just there in the unlikely event that two separate

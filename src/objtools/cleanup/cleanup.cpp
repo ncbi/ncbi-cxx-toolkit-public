@@ -575,6 +575,17 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         // unable to map to protein location
         return false;
     }
+    if (!cds_h.GetLocation().IsPartialStart(eExtreme_Biological)) {
+        if (new_loc->IsPartialStart(eExtreme_Biological)) {
+            new_loc->SetPartialStart(false, eExtreme_Biological);
+        }
+    }
+    if (!cds_h.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        if (new_loc->IsPartialStop(eExtreme_Biological)) {
+            new_loc->SetPartialStop(false, eExtreme_Biological);
+        }
+    }
+
     new_loc->ResetStrand();
     // change location to protein
     new_feat->ResetLocation();
