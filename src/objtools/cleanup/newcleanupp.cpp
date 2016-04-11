@@ -13057,6 +13057,25 @@ void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq& seq)
 }
 
 
+void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq_set& set)
+{
+    if (set.IsSetDescr()) {
+        CRef<CSeqdesc> last_title(NULL);
+        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, d, set.SetDescr().Set()) {
+            if ((*d)->IsTitle()) {
+                if (last_title) {
+                    CBioseq_set_Handle bh = m_Scope->GetBioseq_setHandle(set);
+                    CBioseq_set_EditHandle eh(bh);
+                    eh.RemoveSeqdesc(*last_title);
+                    ChangeMade(CCleanupChange::eRemoveDescriptor);
+                }
+                last_title.Reset(d->GetPointer());
+            }
+        }
+    }
+}
+
+
 void CNewCleanup_imp::KeepLatestDateDesc(CSeq_descr & seq_descr)
 {
     const CSeqdesc::TCreate_date * best_create_date = NULL;
