@@ -1,4 +1,4 @@
-LIB_PROJ = hgvsread
+APP_PROJ = hgvsreader
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

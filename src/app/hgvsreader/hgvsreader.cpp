@@ -2,45 +2,26 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <corelib/ncbiexpt.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/readers/hgvs/protein_irep_to_seqfeat.hpp>
+#include <objtools/readers/hgvs/na_irep_to_seqfeat.hpp>
+#include <objtools/readers/hgvs/hgvs_validator.hpp>
 #include <objtools/readers/hgvs/hgvs_parser.hpp>
+#include <objtools/readers/hgvs/post_process.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-class CHgvsToIrepException : public CException
-{
-public:
-    enum EErrCode {
-        eParseError
-    };
-
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CHgvsToIrepException, CException);
-};
-
-
-const char* CHgvsToIrepException::GetErrCodeString(void) const
-{
-    switch( GetErrCode() ) {
-        
-        case eParseError:  return "eParserError";
-
-        default: return CException::GetErrCodeString();
-    }
-};
-
-
-class CHgvsToIrepConverter : public CNcbiApplication
+class CHgvsToSeqfeatConverter : public CNcbiApplication
 {
 public:
     virtual void Init(void);
     virtual int Run(void);
 };
 
-void CHgvsToIrepConverter::Init(void)
+void CHgvsToSeqfeatConverter::Init(void)
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -60,6 +41,9 @@ void CHgvsToIrepConverter::Init(void)
          "-",
          CArgDescriptions::fPreOpen);
 
+    arg_desc->AddFlag("return-irep", 
+                      "Return intermediate representation as output");
+
     // Program description
     string prog_description = "Convert hgvs expression to a Seq-feat\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -72,10 +56,12 @@ void CHgvsToIrepConverter::Init(void)
     return;
 }
 
-int CHgvsToIrepConverter::Run(void) 
+
+int CHgvsToSeqfeatConverter::Run(void) 
 {
     const CArgs& args = GetArgs();
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*obj_mgr);
     CRef<CScope> scope(new CScope(*obj_mgr));
     scope->AddDefaults();
 
@@ -92,18 +78,40 @@ int CHgvsToIrepConverter::Run(void)
     CHgvsParser hgvs_parser;
     CRef<CVariantExpression> irep;
     bool success = hgvs_parser.Apply(hgvs_expression, irep);
-
+   
     if (!success) {
-        NCBI_THROW(CHgvsToIrepException, eParseError, "Failed to parse " + hgvs_expression);
+        NCBI_THROW(CHgvsVariantException, eParseError, "Failed to parse " + hgvs_expression);
     }
 
-    ostr << MSerial_AsnText << *irep;
 
+    CHgvsVariantValidator::Validate(*irep);
+
+    if (args["return-irep"]) {
+        ostr << MSerial_AsnText << *irep;
+        return 0;
+    }
+
+    CRef<CSeq_feat> seq_feat;
+    auto ml = Ref(new CVariationIrepMessageListener());
+    auto seq_type = (*irep->GetSeqvars().begin())->GetSeqtype();
+    if (seq_type == eVariantSeqType_p) {
+        CHgvsProtIrepReader irep_reader(*scope, *ml);
+        seq_feat = irep_reader.CreateSeqfeat(irep);
+    } else {
+        CHgvsNaIrepReader irep_reader(*scope, *ml);
+        seq_feat = irep_reader.CreateSeqfeat(irep);
+    }
+
+
+
+    CNormalizeVariant normalizer(*scope);
+    CRef<CSeq_feat> nsf = normalizer.GetNormalizedIdentity(*seq_feat);
+    ostr << MSerial_AsnText << *nsf;
     return 0;
 }
 
 
 int main(int argc, const char* argv[])
 {
-    return CHgvsToIrepConverter().AppMain(argc, argv);
+    return CHgvsToSeqfeatConverter().AppMain(argc, argv);
 }
