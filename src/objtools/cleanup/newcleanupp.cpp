@@ -10459,6 +10459,214 @@ void CNewCleanup_imp::x_ExceptTextEC(string& except_text)
     }
 }
 
+
+bool CNewCleanup_imp::x_IsCodonCorrect(int codon_index, int gcode, unsigned char aa)
+{
+    if (codon_index > 63) {
+        return false;
+    }
+    const string& ncbieaa = CGen_code_table::GetNcbieaa(gcode);
+    if (ncbieaa.length() != 64) {
+        return false;
+    }
+    unsigned char taa = ncbieaa[codon_index];
+
+    if (taa == aa) {
+        return true;
+    } else if ((aa == 'U') && (taa == '*') && (codon_index == 14)) {
+        // selenocysteine normally uses TGA (14), so ignore without requiring exception in record
+        // TAG (11) is used for pyrrolysine in archaebacteria
+        // TAA (10) is not yet known to be used for an exceptional amino acid
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+int s_LegalNcbieaaValues[] = { 42, 65, 66, 67, 68, 69, 70, 71, 72, 73,
+    74, 75, 76, 77, 78, 79, 80, 81, 82, 83,
+    84, 85, 86, 87, 88, 89, 90 };
+
+unsigned char s_GetAaAsChar(const CTrna_ext& trna)
+{
+    unsigned char aa = 0;
+    vector<char> seqData;
+    string str = "";
+
+    switch (trna.GetAa().Which()) {
+    case CTrna_ext::C_Aa::e_Iupacaa:
+        str = trna.GetAa().GetIupacaa();
+        CSeqConvert::Convert(str, CSeqUtil::e_Iupacaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+        aa = seqData[0];
+        break;
+    case CTrna_ext::C_Aa::e_Ncbi8aa:
+        str = trna.GetAa().GetNcbi8aa();
+        CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+        aa = seqData[0];
+        break;
+    case CTrna_ext::C_Aa::e_Ncbistdaa:
+        str = trna.GetAa().GetNcbi8aa();
+        CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+        aa = seqData[0];
+        break;
+    case CTrna_ext::C_Aa::e_Ncbieaa:
+        seqData.push_back(trna.GetAa().GetNcbieaa());
+        aa = seqData[0];
+        break;
+    default:
+        return ' ';
+        break;
+    }
+
+    // make sure the amino acid is valid
+    bool found = false;
+    for (unsigned int i = 0; i < sizeof(s_LegalNcbieaaValues) / sizeof(int); ++i) {
+        if (aa == s_LegalNcbieaaValues[i]) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        aa = ' ';
+    }
+    return aa;
+}
+
+
+char s_Complement(char s)
+{
+    char c = s;
+    if (s == 'A') {
+        c = 'T';
+    } else if (s == 'C') {
+        c = 'G';
+    } else if (s == 'G') {
+        c = 'C';
+    } else if (s == 'T') {
+        c = 'A';
+    }
+    return c;
+}
+
+static string s_Complement(const string& str)
+{
+    string complement = "";
+    ITERATE(string, s, str) {
+        complement += s_Complement(*s);
+    }
+    return complement;
+}
+
+static string s_ReverseComplement(const string& str)
+{
+    string revcomp = "";
+    ITERATE(string, s, str) {
+        revcomp = s_Complement(*s) + revcomp;
+    }
+    return revcomp;
+}
+
+static string s_Reverse(const string& str)
+{
+    string reverse = "";
+    ITERATE(string, s, str) {
+        reverse = *s + reverse;
+    }
+    return reverse;
+}
+
+
+void CNewCleanup_imp::x_tRNACodonEC(CSeq_feat& seq_feat)
+{
+    if (!seq_feat.IsSetData() ||
+        seq_feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA ||
+        !seq_feat.GetData().GetRna().IsSetExt() ||
+        !seq_feat.GetData().GetRna().GetExt().IsTRNA()) {
+        return;
+    }
+    CTrna_ext& trna = seq_feat.SetData().SetRna().SetExt().SetTRNA();
+    if (!trna.IsSetAa() || !trna.IsSetCodon()) {
+        return;
+    }
+    // Retrive the Genetic code id for the tRNA
+    int gcode = 1;
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq_feat.GetLocation());
+    if (bsh) {
+        // need only the closest biosoure.
+        CSeqdesc_CI diter(bsh, CSeqdesc::e_Source);
+        if (diter) {
+            gcode = diter->GetSource().GetGenCode();
+        }
+    }
+
+    unsigned char aa = s_GetAaAsChar(trna);
+    if (aa == ' ') {
+        return;
+    }
+
+    NON_CONST_ITERATE(CTrna_ext::TCodon, c, trna.SetCodon()) {
+        if (*c == 255) continue; //universal
+        if (*c > 63) continue; //invalid, cannot correct
+
+        if (x_IsCodonCorrect(*c, gcode, aa)) continue; //already correct
+        string codon = CGen_code_table::IndexToCodon(*c);
+
+        // try reverse complement
+        string revcomp = s_ReverseComplement(codon);
+        int new_codon = CGen_code_table::CodonToIndex(revcomp);
+        if (x_IsCodonCorrect(new_codon, gcode, aa)) {
+            *c = new_codon;
+            ChangeMade(CCleanupChange::eChange_tRna);
+            continue;
+        }
+
+        // try complement
+        string comp = s_Complement(codon);
+        new_codon = CGen_code_table::CodonToIndex(comp);
+        if (x_IsCodonCorrect(new_codon, gcode, aa)) {
+            *c = new_codon;
+            ChangeMade(CCleanupChange::eChange_tRna);
+            continue;
+        }
+
+        // try reverse
+        string reverse = s_Reverse(codon);
+        new_codon = CGen_code_table::CodonToIndex(reverse);
+        if (x_IsCodonCorrect(new_codon, gcode, aa)) {
+            *c = new_codon;
+            ChangeMade(CCleanupChange::eChange_tRna);
+            continue;
+        }
+    }
+
+    if (!CODON_ON_TRNAEXT_IS_SORTED(trna, s_CodonCompare)) {
+        SORT_CODON_ON_TRNAEXT(trna, s_CodonCompare);
+        ChangeMade(CCleanupChange::eChange_tRna);
+    }
+
+    if (!CODON_ON_TRNAEXT_IS_UNIQUE(trna, s_CodonEqual)) {
+        UNIQUE_CODON_ON_TRNAEXT(trna, s_CodonEqual);
+        ChangeMade(CCleanupChange::eChange_tRna);
+    }
+
+    REMOVE_IF_EMPTY_CODON_ON_TRNAEXT(trna);
+}
+
+
+void CNewCleanup_imp::x_tRNAEC(CSeq_feat& seq_feat)
+{
+    if (!seq_feat.IsSetData() || 
+        seq_feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA ||
+        !seq_feat.GetData().GetRna().IsSetExt() ||
+        !seq_feat.GetData().GetRna().GetExt().IsTRNA()) {
+        return;
+    }
+
+    x_tRNACodonEC(seq_feat);
+
+}
+
 void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
 {
     EDIT_EACH_SEQDESC_ON_SEQDESCR( descr_iter, seq_descr ) {

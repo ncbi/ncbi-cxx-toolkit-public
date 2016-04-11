@@ -543,6 +543,10 @@ private:
     void x_RemoveRedundantComment( CGene_ref& gene, CSeq_feat& seq_feat );
     void x_ExceptTextEC(string& except_text);
 
+    void x_tRNAEC(CSeq_feat& seq_feat);
+    void x_tRNACodonEC(CSeq_feat& seq_feat);
+    static bool x_IsCodonCorrect(int codon_index, int gcode, unsigned char aa);
+
     void x_RemoveEmptyUserObject( CSeq_descr & seq_descr );
     void x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr, CGB_block& block);
     void x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr);
