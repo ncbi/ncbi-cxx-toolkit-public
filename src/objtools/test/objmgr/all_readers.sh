@@ -86,13 +86,9 @@ init_cache() {
         echo MT is not enabled
         return 1
     fi
-    if disabled DLL_BUILD; then
-        if disabled MSVC; then
-            :
-        else
-            echo Static MSVC build
-            return 1
-        fi
+    if disabled DLL; then
+        echo No DLL plugins
+        return 1
     fi
     echo "Init BDB cache"
     rm -rf .genbank_cache
