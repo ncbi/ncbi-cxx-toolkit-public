@@ -86,10 +86,20 @@ init_cache() {
         unset NCBI_CONFIG_OVERRIDES
     fi
     if disabled BerkeleyDB; then
+        echo BerkeleyDB is not enabled
         return 1
     fi
     if disabled MT; then
+        echo MT is not enabled
         return 1
+    fi
+    if disabled DLL_BUILD; then
+        if disabled MSVC; then
+            :
+        else
+            echo Static MSVC build
+            return 1
+        fi
     fi
     echo "Init BDB cache"
     rm -rf .genbank_cache
