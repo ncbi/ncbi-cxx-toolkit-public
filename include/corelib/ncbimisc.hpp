@@ -1099,7 +1099,7 @@ typedef Uint4 TUintId;
 #endif
 
 /// TEntrezId type for entrez ids which require the same strictness as TGi.
-typedef TGi TEntrezId;
+typedef TIntId TEntrezId;
 
 /// a helper template to enforce constness of argument to GI_CONST macro
 template<TIntId gi>
