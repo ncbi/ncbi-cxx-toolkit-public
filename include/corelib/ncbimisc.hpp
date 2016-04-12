@@ -988,41 +988,41 @@ typedef Uint8 TUintId;
 
 // Strict mode can be enabled only for Int8 GIs.
 
-class CStrictGi
+class CStrictId64
 {
 public:
-    CStrictGi(void) : m_Gi(0) {}
+    CStrictId64(void) : m_Gi(0) {}
 
-    bool operator==(const CStrictGi& gi) const { return m_Gi == gi.m_Gi; }
-    bool operator!=(const CStrictGi& gi) const { return m_Gi != gi.m_Gi; }
-    bool operator<(const CStrictGi& gi) const { return m_Gi < gi.m_Gi; }
-    bool operator<=(const CStrictGi& gi) const { return m_Gi <= gi.m_Gi; }
-    bool operator>(const CStrictGi& gi) const { return m_Gi > gi.m_Gi; }
-    bool operator>=(const CStrictGi& gi) const { return m_Gi >= gi.m_Gi; }
+    bool operator==(const CStrictId64& gi) const { return m_Gi == gi.m_Gi; }
+    bool operator!=(const CStrictId64& gi) const { return m_Gi != gi.m_Gi; }
+    bool operator<(const CStrictId64& gi) const { return m_Gi < gi.m_Gi; }
+    bool operator<=(const CStrictId64& gi) const { return m_Gi <= gi.m_Gi; }
+    bool operator>(const CStrictId64& gi) const { return m_Gi > gi.m_Gi; }
+    bool operator>=(const CStrictId64& gi) const { return m_Gi >= gi.m_Gi; }
 
-    CStrictGi& operator++(void) { m_Gi++; return *this; }
-    CStrictGi operator++(int) { CStrictGi tmp = *this; m_Gi++; return tmp; }
-    CStrictGi& operator--(void) { m_Gi--; return *this; }
-    CStrictGi operator--(int) { CStrictGi tmp = *this; m_Gi--; return tmp; }
+    CStrictId64& operator++(void) { m_Gi++; return *this; }
+    CStrictId64 operator++(int) { CStrictId64 tmp = *this; m_Gi++; return tmp; }
+    CStrictId64& operator--(void) { m_Gi--; return *this; }
+    CStrictId64 operator--(int) { CStrictId64 tmp = *this; m_Gi--; return tmp; }
 
-    TIntId operator+(const CStrictGi& gi) const { return m_Gi + gi.m_Gi; }
-    TIntId operator-(const CStrictGi& gi) const { return m_Gi - gi.m_Gi; }
+    TIntId operator+(const CStrictId64& gi) const { return m_Gi + gi.m_Gi; }
+    TIntId operator-(const CStrictId64& gi) const { return m_Gi - gi.m_Gi; }
 
-    CStrictGi operator+(TIntId offset) const { return m_Gi + offset; }
-    CStrictGi operator-(TIntId offset) const { return m_Gi - offset; }
+    CStrictId64 operator+(TIntId offset) const { return m_Gi + offset; }
+    CStrictId64 operator-(TIntId offset) const { return m_Gi - offset; }
 #if defined(NCBI_INT8_GI)
-    CStrictGi operator+(Int4 offset) const { return m_Gi + offset; }
-    CStrictGi operator-(Int4 offset) const { return m_Gi - offset; }
+    CStrictId64 operator+(Int4 offset) const { return m_Gi + offset; }
+    CStrictId64 operator-(Int4 offset) const { return m_Gi - offset; }
 #endif
 
-    CStrictGi(TIntId value) : m_Gi(value) {}
-    CStrictGi& operator=(TIntId value) { m_Gi = value; return *this; }
+    CStrictId64(TIntId value) : m_Gi(value) {}
+    CStrictId64& operator=(TIntId value) { m_Gi = value; return *this; }
     operator TIntId(void) const { return m_Gi; }
     bool operator==(TIntId value) const { return m_Gi == value; }
 
 #if defined(NCBI_INT8_GI) && defined(NCBI_TEST_APPLICATION)
-    CStrictGi(Int4 value) : m_Gi(value) {}
-    CStrictGi& operator=(Int4 value) { m_Gi = value; return *this; }
+    CStrictId64(Int4 value) : m_Gi(value) {}
+    CStrictId64& operator=(Int4 value) { m_Gi = value; return *this; }
     bool operator==(Int4 value) const { return m_Gi == value; }
 #endif
 
@@ -1030,26 +1030,26 @@ public:
 
 private:
 #if defined(NCBI_INT8_GI) && !defined(NCBI_TEST_APPLICATION)
-    CStrictGi(Int4);
-    CStrictGi& operator=(Int4);
+    CStrictId64(Int4);
+    CStrictId64& operator=(Int4);
     operator Int4(void) const;
 #endif
-    CStrictGi(Int1);
-    CStrictGi(Uint1);
-    CStrictGi(Int2);
-    CStrictGi(Uint2);
-    CStrictGi(Uint4);
-    CStrictGi(Uint8);
-    CStrictGi(float);
-    CStrictGi(double);
-    CStrictGi& operator=(Int1);
-    CStrictGi& operator=(Uint1);
-    CStrictGi& operator=(Int2);
-    CStrictGi& operator=(Uint2);
-    CStrictGi& operator=(Uint4);
-    CStrictGi& operator=(Uint8);
-    CStrictGi& operator=(float);
-    CStrictGi& operator=(double);
+    CStrictId64(Int1);
+    CStrictId64(Uint1);
+    CStrictId64(Int2);
+    CStrictId64(Uint2);
+    CStrictId64(Uint4);
+    CStrictId64(Uint8);
+    CStrictId64(float);
+    CStrictId64(double);
+    CStrictId64& operator=(Int1);
+    CStrictId64& operator=(Uint1);
+    CStrictId64& operator=(Int2);
+    CStrictId64& operator=(Uint2);
+    CStrictId64& operator=(Uint4);
+    CStrictId64& operator=(Uint8);
+    CStrictId64& operator=(float);
+    CStrictId64& operator=(double);
     operator Int1(void) const;
     operator Uint1(void) const;
     operator Int2(void) const;
@@ -1063,15 +1063,18 @@ private:
     TIntId m_Gi;
 };
 
+/// @deprecated: Use CStrictId64 instead of CStrictGi, or TGi/TEntrezId typedefs.
+NCBI_DEPRECATED typedef CStrictId64 CStrictGi;
+
 
 inline
-CNcbiOstream& operator<<(CNcbiOstream& out, const CStrictGi& gi)
+CNcbiOstream& operator<<(CNcbiOstream& out, const CStrictId64& gi)
 {
     return out << TIntId(gi);
 }
 
 inline
-CNcbiIstream& operator>>(CNcbiIstream& in, CStrictGi& gi)
+CNcbiIstream& operator>>(CNcbiIstream& in, CStrictId64& gi)
 {
     TIntId id;
     in >> id;
@@ -1079,7 +1082,7 @@ CNcbiIstream& operator>>(CNcbiIstream& in, CStrictGi& gi)
     return in;
 }
 
-typedef CStrictGi TGi;
+typedef CStrictId64 TGi;
 
 #else // NCBI_STRICT_GI
 
@@ -1095,8 +1098,8 @@ typedef Uint4 TUintId;
 
 #endif
 
-/// TUid type for UIDs which require the same strictness as TGi.
-typedef TGi TUid;
+/// TEntrezId type for entrez ids which require the same strictness as TGi.
+typedef TGi TEntrezId;
 
 /// a helper template to enforce constness of argument to GI_CONST macro
 template<TIntId gi>
@@ -1246,9 +1249,9 @@ size_t ArraySize(const Element (&)[Size])
 }
 
 #ifdef NCBI_STRICT_GI
-template <> struct hash<ncbi::CStrictGi>
+template <> struct hash<ncbi::CStrictId64>
 {
-    size_t operator()(const ncbi::CStrictGi & x) const
+    size_t operator()(const ncbi::CStrictId64 & x) const
     {
         return hash<ncbi::TIntId>()((ncbi::TIntId)x);
     }
