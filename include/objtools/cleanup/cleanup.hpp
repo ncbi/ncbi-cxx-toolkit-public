@@ -321,10 +321,18 @@ public:
 
     static bool PubAlreadyInSet(const CPubdesc& pd, const CSeq_descr& descr);
 
-/// Convert full-length publication features to publication descriptors
+/// Convert full-length publication features to publication descriptors.
 /// @param seh Seq-entry to edit
 /// @return bool indicates whether any changes were made
     static bool ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh);
+    
+/// Rescue pubs from Site-ref features
+/// @param seh Seq-entry to edit
+/// @return bool indicates whether any changes were made
+    static bool RescueSiteRefPubs(CSeq_entry_Handle seh);
+
+    //helper function for moving feature to pubdesc descriptor
+    static void MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBioseq_Handle b);
 
     static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope);
 

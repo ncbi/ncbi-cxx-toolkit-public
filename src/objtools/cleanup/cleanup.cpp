@@ -2164,6 +2164,33 @@ bool CCleanup::OkToPromoteNpPub(const CPubdesc& pd)
 }
 
 
+void CCleanup::MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBioseq_Handle b)
+{
+    // add descriptor to nuc-prot parent or sequence itself
+    CBioseq_set_Handle parent = b.GetParentBioseq_set();
+    if (parent && parent.IsSetClass() &&
+        parent.GetClass() == CBioseq_set::eClass_nuc_prot &&
+        parent.IsSetDescr() && PubAlreadyInSet(d->GetPub(), parent.GetDescr())) {
+        // don't add descriptor, just delete feature 
+    } else if (OkToPromoteNpPub((d)->GetPub()) &&
+        parent && parent.IsSetClass() &&
+        parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
+        CBioseq_set_EditHandle eh(parent);
+        eh.AddSeqdesc(*d);
+        RemoveDuplicatePubs(eh.SetDescr());
+        NormalizeDescriptorOrder(eh.SetDescr());
+    } else {
+        CBioseq_EditHandle eh(b);
+        eh.AddSeqdesc(*d);
+        RemoveDuplicatePubs(eh.SetDescr());
+        NormalizeDescriptorOrder(eh.SetDescr());
+    }
+    // remove feature
+    CSeq_feat_EditHandle feh(feat);
+    feh.Remove();
+}
+
+
 bool CCleanup::ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh)
 {
     bool any_change = false;
@@ -2181,30 +2208,50 @@ bool CCleanup::ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh)
                         d->SetPub().SetComment();
                     }
                 }
-                // add descriptor to nuc-prot parent or sequence itself
-                CBioseq_set_Handle parent = b->GetParentBioseq_set();
-                if (parent && parent.IsSetClass() &&
-                    parent.GetClass() == CBioseq_set::eClass_nuc_prot &&
-                    parent.IsSetDescr() && PubAlreadyInSet(d->GetPub(), parent.GetDescr())) {
-                    // don't add descriptor, just delete feature 
-                } else if (OkToPromoteNpPub((d)->GetPub()) &&
-                    parent && parent.IsSetClass() && 
-                    parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
-                    CBioseq_set_EditHandle eh(parent);
-                    eh.AddSeqdesc(*d);
-                    RemoveDuplicatePubs(eh.SetDescr());
-                    NormalizeDescriptorOrder(eh.SetDescr());
-                } else {
-                    CBioseq_EditHandle eh(*b);
-                    eh.AddSeqdesc(*d);
-                    RemoveDuplicatePubs(eh.SetDescr());
-                    NormalizeDescriptorOrder(eh.SetDescr());
-                }
-                // remove feature
-                CSeq_feat_EditHandle feh(*p);
-                feh.Remove();
+                MoveOneFeatToPubdesc(*p, d, *b);
                 any_change = true;
             }
+        }
+    }
+    return any_change;
+}
+
+
+bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
+{
+    bool found_site_ref = false;
+    CFeat_CI f(seh, CSeqFeatData::e_Imp);
+    while (f && !found_site_ref) {
+        if (f->GetData().GetImp().IsSetKey() && 
+            NStr::Equal(f->GetData().GetImp().GetKey(), "Site-ref")) {
+            found_site_ref = true;
+        }
+        ++f;
+    }
+    if (!found_site_ref) {
+        return false;
+    }
+
+    bool any_change = false;
+    for (CBioseq_CI b(seh); b; ++b) {
+        for (CFeat_CI p(*b); p; ++p) {
+            if (!p->IsSetCit() || p->GetCit().Which() != CPub_set::e_Pub) {
+                continue;
+            }
+            CRef<CSeqdesc> d(new CSeqdesc());
+            ITERATE(CSeq_feat::TCit::TPub, c, p->GetCit().GetPub()) {      
+                CRef<CPub> pub_copy(new CPub());
+                pub_copy->Assign(**c);
+                d->SetPub().SetPub().Set().push_back(pub_copy);
+            }
+            
+            if (p->GetData().GetSubtype() == CSeqFeatData::eSubtype_site_ref) {                
+                d->SetPub().SetReftype(CPubdesc::eReftype_sites);
+            } else {
+                d->SetPub().SetReftype(CPubdesc::eReftype_feats);
+            }
+            MoveOneFeatToPubdesc(*p, d, *b);
+            any_change = true;
         }
     }
     return any_change;

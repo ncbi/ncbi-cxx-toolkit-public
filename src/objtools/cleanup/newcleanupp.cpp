@@ -13491,6 +13491,10 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
         ChangeMade(CCleanupChange::eAddDescriptor);
         ChangeMade(CCleanupChange::eRemoveFeat);
     }
+    if (CCleanup::RescueSiteRefPubs(seh)) {
+        ChangeMade(CCleanupChange::eAddDescriptor);
+        ChangeMade(CCleanupChange::eRemoveFeat);
+    }
 }
 
 
