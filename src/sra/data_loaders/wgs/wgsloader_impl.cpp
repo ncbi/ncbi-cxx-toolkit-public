@@ -541,10 +541,57 @@ CWGSDataLoader_Impl::GetFileInfo(const CWGSBlobId& blob_id)
 }
 
 
+CWGSFileInfo::SAccFileInfo
+CWGSFileInfo::SAccFileInfo::GetRootFileInfo(void) const
+{
+    SAccFileInfo root_info;
+    if ( seq_type != 'P' ) {
+        return root_info;
+    }
+    
+    // may belong to a contig prot-set
+    // proteins can be located in nuc-prot set
+    TVDBRowId cds_row_id = GetProteinIterator().GetBestProductFeatRowId();
+    if ( !cds_row_id ) {
+        return root_info;
+    }
+
+    CWGSFeatureIterator cds_it(file->GetDb(), cds_row_id);
+    if ( !cds_it ) {
+        return root_info;
+    }
+
+    switch ( cds_it.GetLocSeqType() ) {
+    case NCBI_WGS_seqtype_contig:
+    {
+        // switch to contig
+        root_info.file = file;
+        root_info.row_id = cds_it.GetLocRowId();
+        root_info.seq_type = '\0';
+        break;
+    }
+    case NCBI_WGS_seqtype_scaffold:
+    {
+        // switch to scaffold
+        root_info.file = file;
+        root_info.row_id = cds_it.GetLocRowId();
+        root_info.seq_type = 'S';
+        break;
+    }
+    default:
+        break;
+    }
+    return root_info;
+}
+
+
 CRef<CWGSBlobId> CWGSDataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
 {
     // return blob-id of blob with sequence
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        if ( CWGSFileInfo::SAccFileInfo root_info = info.GetRootFileInfo() ) {
+            info = root_info;
+        }
         return Ref(new CWGSBlobId(info));
     }
     return null;

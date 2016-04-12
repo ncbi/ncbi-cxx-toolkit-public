@@ -84,6 +84,7 @@ public:
         CWGSSeqIterator GetContigIterator(void) const;
         CWGSScaffoldIterator GetScaffoldIterator(void) const;
         CWGSProteinIterator GetProteinIterator(void) const;
+        SAccFileInfo GetRootFileInfo(void) const;
 
         bool IsValidRowId(void) const;
 
