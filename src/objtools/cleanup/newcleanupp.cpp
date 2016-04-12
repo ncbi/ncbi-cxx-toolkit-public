@@ -12258,7 +12258,10 @@ void CNewCleanup_imp::x_MoveNpPub(CBioseq_set& np_set, CSeq_descr& descr)
 {
     CSeq_descr::Tdata::iterator d = descr.Set().begin();
     while (d != descr.Set().end()) {
-        if ((*d)->IsPub() && CCleanup::OkToPromoteNpPub((*d)->GetPub())) {
+        if ((*d)->IsPub() && CCleanup::PubAlreadyInSet((*d)->GetPub(), descr)) {
+            d = descr.Set().erase(d);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        } else if ((*d)->IsPub() && CCleanup::OkToPromoteNpPub((*d)->GetPub())) {
             CRef<CSeqdesc> new_desc(new CSeqdesc());
             new_desc->Assign(**d);
             np_set.SetDescr().Set().push_back(new_desc);

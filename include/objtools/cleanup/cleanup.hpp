@@ -319,6 +319,8 @@ public:
     /// Some pubs should not be promoted to nuc-prot set from sequence
     static bool OkToPromoteNpPub(const CPubdesc& pd);
 
+    static bool PubAlreadyInSet(const CPubdesc& pd, const CSeq_descr& descr);
+
 /// Convert full-length publication features to publication descriptors
 /// @param seh Seq-entry to edit
 /// @return bool indicates whether any changes were made

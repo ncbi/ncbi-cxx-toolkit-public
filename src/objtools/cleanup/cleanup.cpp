@@ -2143,6 +2143,17 @@ bool CCleanup::RemoveDuplicatePubs(CSeq_descr& descr)
 }
 
 
+bool CCleanup::PubAlreadyInSet(const CPubdesc& pd, const CSeq_descr& descr)
+{
+    ITERATE(CSeq_descr::Tdata, d, descr.Get()) {
+        if ((*d)->IsPub() && (*d)->GetPub().Equals(pd)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool CCleanup::OkToPromoteNpPub(const CPubdesc& pd)
 {
     if (pd.IsSetNum() || pd.IsSetName() || pd.IsSetFig() || pd.IsSetComment()) {
@@ -2172,7 +2183,11 @@ bool CCleanup::ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh)
                 }
                 // add descriptor to nuc-prot parent or sequence itself
                 CBioseq_set_Handle parent = b->GetParentBioseq_set();
-                if (OkToPromoteNpPub((d)->GetPub()) &&
+                if (parent && parent.IsSetClass() &&
+                    parent.GetClass() == CBioseq_set::eClass_nuc_prot &&
+                    parent.IsSetDescr() && PubAlreadyInSet(d->GetPub(), parent.GetDescr())) {
+                    // don't add descriptor, just delete feature 
+                } else if (OkToPromoteNpPub((d)->GetPub()) &&
                     parent && parent.IsSetClass() && 
                     parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
                     CBioseq_set_EditHandle eh(parent);
