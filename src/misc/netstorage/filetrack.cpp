@@ -196,6 +196,13 @@ SFileTrackRequest::SFileTrackRequest(
     SetTimeout();
 }
 
+string s_GetUploadURL(const SFileTrackConfig& config,
+        const CNetStorageObjectLoc& object_loc)
+{
+    auto path = config.chunked_upload ? "/api/2.0/uploads/" : "/ft/upload/";
+    return s_GetURL(object_loc, path);
+}
+
 SFileTrackPostRequest::SFileTrackPostRequest(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
@@ -204,7 +211,7 @@ SFileTrackPostRequest::SFileTrackPostRequest(
         const string& user_header,
         FHTTP_ParseHeader parse_header) :
     SFileTrackRequest(config, object_loc,
-            s_GetURL(object_loc, "/ft/upload/"), user_header, parse_header),
+            s_GetUploadURL(config, object_loc), user_header, parse_header),
     m_Boundary(boundary),
     m_Cookie(cookie)
 {
