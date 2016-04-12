@@ -12,3 +12,7 @@ length._type = TSeqPos
 
 [Seq-literal]
 length._type = TSeqPos
+
+[Annot-id]
+ncbi._type = ncbi::TEntrezId
+ncbi._storage_type = ncbi::TIntId

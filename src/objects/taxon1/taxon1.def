@@ -7,3 +7,15 @@ id4gi._storage_type = ncbi::TIntId
 
 [Taxon1-name]
 taxid._type = ncbi::TTaxId
+
+[Taxon1-info]
+ival1._type = ncbi::TEntrezId
+ival1._storage_type = ncbi::TIntId
+ival2._type = ncbi::TEntrezId
+ival2._storage_type = ncbi::TIntId
+
+[Taxon1-name]
+taxid._type = ncbi::TEntrezId
+taxid._storage_type = ncbi::TIntId
+cde._type = ncbi::TEntrezId
+cde._storage_type = ncbi::TIntId

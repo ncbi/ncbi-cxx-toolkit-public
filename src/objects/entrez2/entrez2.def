@@ -7,3 +7,19 @@ class   = CEntrez2Client
 service = ENTREZ2
 request = Entrez2-request.request
 reply   = Entrez2-reply.reply
+
+[Entrez2-id]
+uid._type = ncbi::TEntrezId
+uid._storage_type = ncbi::TIntId
+
+[Entrez2-hier-query]
+txid._type = ncbi::TEntrezId
+txid._storage_type = ncbi::TIntId
+
+[Entrez2-docsum]
+uid._type = ncbi::TEntrezId
+uid._storage_type = ncbi::TIntId
+
+[Entrez2-term]
+txid._type = ncbi::TEntrezId
+txid._storage_type = ncbi::TIntId

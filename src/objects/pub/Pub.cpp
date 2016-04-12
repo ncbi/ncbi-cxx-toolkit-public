@@ -116,10 +116,10 @@ bool CPub::GetLabel(string*        label,
 
     switch (Which()) {
     case e_Muid:
-        *label += "NLM" + NStr::IntToString(GetMuid());
+        *label += "NLM" + NStr::NumericToString(GetMuid());
         return true;
     case e_Pmid:
-        *label += "PM" + NStr::IntToString(GetPmid().Get());
+        *label += "PM" + NStr::NumericToString(GetPmid().Get());
         return true;
     case e_Equiv:
         return GetEquiv().GetLabel(label, flags, version);

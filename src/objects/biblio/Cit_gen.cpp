@@ -61,7 +61,7 @@ bool CCit_gen::GetLabelV1(string* label, TLabelFlags flags) const
         *label += "[" + NStr::IntToString(GetSerial_number()) + "]";
     }
     if (IsSetMuid()) {
-        *label += "NLM" + NStr::IntToString(GetMuid());
+        *label += "NLM" + NStr::NumericToString(GetMuid());
     }
 
     string date;
