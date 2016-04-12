@@ -10701,17 +10701,6 @@ void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
 }
 
 
-string s_GetDiv(const CBioSource& src)
-{
-    if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() &&
-        src.GetOrg().GetOrgname().IsSetDiv()) {
-        return src.GetOrg().GetOrgname().GetDiv();
-    } else {
-        return kEmptyCStr;
-    }
-}
-
-
 bool CNewCleanup_imp::s_ShouldRemoveKeyword(const string& keyword, CMolInfo::TTech tech)
 {
     if (NStr::Equal(keyword, "HTG")) {
@@ -10824,12 +10813,12 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq_set& set)
         return;
     }
 
-    string div = kEmptyStr;
+    CConstRef<CBioSource> biosrc(NULL);
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
 
     ITERATE(CBioseq_set::TDescr::Tdata, it, set.GetDescr().Get()) {
         if ((*it)->IsSource()) {
-            div = s_GetDiv((*it)->GetSource());
+            biosrc.Reset(&((*it)->GetSource()));
         } else if ((*it)->IsMolinfo() &&
                    (*it)->GetMolinfo().IsSetTech()) {
             tech = (*it)->GetMolinfo().GetTech();
@@ -10843,16 +10832,65 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq_set& set)
         }
 
         CGB_block& gb = desc.SetGenbank();
-        x_CleanupGenbankBlock(gb, false, div, tech);
+        x_CleanupGenbankBlock(gb, false, biosrc, tech);
     }
 
 }
 
 
-void CNewCleanup_imp::x_CleanupGenbankBlock(CGB_block& gb, bool is_patent, const string& div, CMolInfo::TTech tech)
+const string& s_GetDiv(const CBioSource& src)
+{
+    if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() &&
+        src.GetOrg().GetOrgname().IsSetDiv()) {
+        return src.GetOrg().GetOrgname().GetDiv();
+    } else {
+        return kEmptyCStr;
+    }
+}
+
+
+bool CNewCleanup_imp::x_CanRemoveGenbankBlockSource(const string& src, const CBioSource& biosrc)
+{
+    string compare = src;
+    if (NStr::EndsWith(compare, " DNA.")) {
+        compare = compare.substr(0, compare.length() - 5);
+    } else if (NStr::EndsWith(compare, " rRNA.")) {
+        compare = compare.substr(0, compare.length() - 6);
+    }
+    if (NStr::EndsWith(compare, ".")) {
+        compare = compare.substr(0, compare.length() - 1);
+        NStr::TruncateSpacesInPlace(compare);
+    }
+
+    if (biosrc.IsSetOrg()) {
+        if (biosrc.GetOrg().IsSetTaxname() &&
+            NStr::Equal(compare, biosrc.GetOrg().GetTaxname())) {
+            return true;
+        }
+        if (biosrc.GetOrg().IsSetCommon() &&
+            NStr::Equal(compare, biosrc.GetOrg().GetCommon())) {
+            return true;
+        }
+        if (biosrc.GetOrg().IsSetOrgname() &&
+            biosrc.GetOrg().GetOrgname().IsSetMod()) {
+            ITERATE(COrgName::TMod, m, biosrc.GetOrg().GetOrgname().GetMod()) {
+                if ((*m)->IsSetSubtype() &&
+                    (*m)->GetSubtype() == COrgMod::eSubtype_old_name &&
+                    (*m)->IsSetSubname() &&
+                    NStr::Equal((*m)->GetSubname(), compare)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
+void CNewCleanup_imp::x_CleanupGenbankBlock(CGB_block& gb, bool is_patent, CConstRef<CBioSource> biosrc, CMolInfo::TTech tech)
 {
     if (gb.IsSetDiv()) {
-        if (NStr::Equal(gb.GetDiv(), div)) {
+        if (biosrc && NStr::Equal(gb.GetDiv(), s_GetDiv(*biosrc))) {
             gb.ResetDiv();
             ChangeMade(CCleanupChange::eChangeOther);
         } else if (is_patent && NStr::Equal(gb.GetDiv(), "PAT")) {
@@ -10870,6 +10908,10 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CGB_block& gb, bool is_patent, const
             gb.ResetDiv();
             ChangeMade(CCleanupChange::eChangeOther);
         }
+    }
+    if (gb.IsSetSource() && biosrc && x_CanRemoveGenbankBlockSource(gb.GetSource(), *biosrc)) {
+        gb.ResetSource();
+        ChangeMade(CCleanupChange::eChangeOther);
     }
     if (x_CleanGenbankKeywords(gb, tech)) {
         ChangeMade(CCleanupChange::eChangeKeywords);
@@ -10890,10 +10932,10 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
         }
     }
     CBioseq_Handle b = m_Scope->GetBioseqHandle(seq);
-    string div = kEmptyCStr;
+    CConstRef<CBioSource> biosrc(NULL);
     CSeqdesc_CI src(b, CSeqdesc::e_Source);
     if (src) {
-        div = s_GetDiv(src->GetSource());
+        biosrc.Reset(&(src->GetSource()));
     }
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
     CSeqdesc_CI molinfo(b, CSeqdesc::e_Molinfo);
@@ -10908,7 +10950,7 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
         }
 
         CGB_block& gb = desc.SetGenbank();
-        x_CleanupGenbankBlock(gb, is_patent, div, tech);
+        x_CleanupGenbankBlock(gb, is_patent, biosrc, tech);
     }
 }
 

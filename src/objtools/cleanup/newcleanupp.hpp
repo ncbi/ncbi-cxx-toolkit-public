@@ -557,7 +557,8 @@ private:
     void x_CleanupGenbankBlock(CBioseq& seq);
     void x_CleanupGenbankBlock(CBioseq_set& set);
     void x_CleanupGenbankBlock( CSeq_descr & seq_descr );
-    void x_CleanupGenbankBlock(CGB_block& block, bool is_patent, const string& div, CMolInfo::TTech tech);
+    void x_CleanupGenbankBlock(CGB_block& block, bool is_patent, CConstRef<CBioSource> biosrc, CMolInfo::TTech tech);
+    static bool x_CanRemoveGenbankBlockSource(const string& src, const CBioSource& biosrc);
     void x_RescueMolInfo(CBioseq& seq);
     void x_RemoveOldDescriptors( CSeq_descr & seq_descr );
     void x_RemoveEmptyDescriptors(CSeq_descr& seq_descr);
