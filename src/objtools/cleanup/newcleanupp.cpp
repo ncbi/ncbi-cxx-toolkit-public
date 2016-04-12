@@ -5119,7 +5119,7 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_ParseCodeBreak(const CSeq_feat& feat
     }
 
     break_loc = ReadLocFromText (pos, feat_loc_seq_id, m_Scope);
-    if( FIELD_IS_SET(feat.GetLocation(), Strand) && GET_FIELD(feat.GetLocation(), Strand) != eNa_strand_unknown ) {
+    if( FIELD_IS_SET(feat.GetLocation(), Strand) && GET_FIELD(feat.GetLocation(), Strand) == eNa_strand_minus ) {
         break_loc->SetStrand( GET_FIELD( feat.GetLocation(), Strand) );
     } else {
         RESET_FIELD( *break_loc, Strand );
