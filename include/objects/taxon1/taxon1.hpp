@@ -607,6 +607,11 @@ public:
     //          false otherwise
     virtual bool             IsRoot() const = 0;
 
+    //-------------------------------------------------
+    // Returns: true if node is hidden in the GenBank lineage,
+    //          false otherwise
+    virtual bool             IsGenBankHidden() const = 0;
+   
 };
 
 //-------------------------------------------------
