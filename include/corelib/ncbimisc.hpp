@@ -973,6 +973,7 @@ typedef int TTaxId;
 
 //#define NCBI_STRICT_GI
 //#define NCBI_INT8_GI
+//#define NCBI_STRICT_ENTREZ_ID
 
 #ifdef NCBI_STRICT_GI
 # define NCBI_INT8_GI
@@ -1099,7 +1100,14 @@ typedef Uint4 TUintId;
 #endif
 
 /// TEntrezId type for entrez ids which require the same strictness as TGi.
+#ifdef NCBI_STRICT_ENTREZ_ID
+# ifndef NCBI_STRICT_GI
+#  undef NCBI_STRICT_ENTREZ_ID
+# endif
+typedef TGi TEntrezId;
+#else
 typedef TIntId TEntrezId;
+#endif
 
 /// a helper template to enforce constness of argument to GI_CONST macro
 template<TIntId gi>

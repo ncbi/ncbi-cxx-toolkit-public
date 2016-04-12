@@ -60,7 +60,7 @@ public:
     explicit CPubMedId(const ncbi::TEntrezId& data)
         : Tparent(data) {}
 
-#ifdef NCBI_STRICT_GI
+#ifdef NCBI_STRICT_ENTREZ_ID
     /// Explicit constructor from zero.
     explicit CPubMedId(std::nullptr_t zero)
         : Tparent((TIntId)0) {}
