@@ -329,19 +329,19 @@ public:
             return this;
         }
 
-    bool operator<(const TPrim& value) const
+    template<class T> bool operator<(const T& value) const
         {
             return m_Data < value;
         }
-    bool operator>(const TPrim& value) const
+    template<class T> bool operator>(const T& value) const
         {
             return m_Data > value;
         }
-    bool operator==(const TPrim& value) const
+    template<class T> bool operator==(const T& value) const
         {
             return m_Data == value;
         }
-    bool operator!=(const TPrim& value) const
+    template<class T> bool operator!=(const T& value) const
         {
             return m_Data != value;
         }
@@ -380,6 +380,21 @@ public:
     explicit CStringAliasBase(const TString& value)
         : TParent(value) {}
 };
+
+
+#ifdef NCBI_STRICT_GI
+template <>
+class NCBI_XSERIAL_EXPORT CStdAliasBase<CStrictId64> : public CAliasBase<CStrictId64>
+{
+    typedef CAliasBase<CStrictId64> TParent;
+    typedef CStdAliasBase<CStrictId64> TThis;
+public:
+    CStdAliasBase(void)
+        : TParent(CStrictId64()) {}
+    explicit CStdAliasBase(const CStrictId64& value)
+        : TParent(value) {}
+};
+#endif
 
 
 template<typename T>

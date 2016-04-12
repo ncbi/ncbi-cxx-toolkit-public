@@ -228,4 +228,14 @@ template class NCBI_XSERIAL_EXPORT CStringAliasBase<string>;
 template class NCBI_XSERIAL_EXPORT CAliasBase< vector<char> >;
 template class NCBI_XSERIAL_EXPORT CStringAliasBase< vector<char> >;
 
+#ifdef NCBI_INT8_GI
+template class NCBI_XSERIAL_EXPORT CAliasBase<TIntId>;
+template class NCBI_XSERIAL_EXPORT CStdAliasBase<TIntId>;
+#endif
+
+#ifdef NCBI_STRICT_GI
+template class NCBI_XSERIAL_EXPORT CAliasBase<CStrictId64>;
+template class NCBI_XSERIAL_EXPORT CStdAliasBase<CStrictId64>;
+#endif
+
 END_NCBI_SCOPE
