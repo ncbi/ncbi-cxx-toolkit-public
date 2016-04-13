@@ -12604,23 +12604,29 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
     if (cdr.IsSetConflict() && 
         cdr.GetConflict() &&
         sf.IsSetProduct()) {
-        CBioseq_Handle prot = m_Scope->GetBioseqHandle(sf.GetProduct());
-        string expected;
-        CSeqTranslator::Translate(sf, *m_Scope, expected, false);
-        CSeqVector vec(prot, CBioseq_Handle::eCoding_Iupac);
-        CSeqVector_CI vi = vec.begin();
-        string::iterator si = expected.begin();
-        while (vi != vec.end() && si != expected.end() && *vi == *si) {
-            ++vi; 
-            ++si;
-        }
-        if (vi != vec.end() || si != expected.end()) {
-            if (CCleanup::SetMolinfoTech(prot, CMolInfo::eTech_concept_trans_a)) {
-                ChangeMade(CCleanupChange::eChangeMolInfo);
+        CBioseq_Handle nuc = m_Scope->GetBioseqHandle(sf.GetLocation());
+        if (nuc) {
+            CSeqdesc_CI src(nuc, CSeqdesc::e_Source);
+            if (src && src->GetSource().IsSetGcode()) {
+                CBioseq_Handle prot = m_Scope->GetBioseqHandle(sf.GetProduct());
+                string expected;
+                CSeqTranslator::Translate(sf, *m_Scope, expected, false);
+                CSeqVector vec(prot, CBioseq_Handle::eCoding_Iupac);
+                CSeqVector_CI vi = vec.begin();
+                string::iterator si = expected.begin();
+                while (vi != vec.end() && si != expected.end() && *vi == *si) {
+                    ++vi;
+                    ++si;
+                }
+                if (vi != vec.end() || si != expected.end()) {
+                    if (CCleanup::SetMolinfoTech(prot, CMolInfo::eTech_concept_trans_a)) {
+                        ChangeMade(CCleanupChange::eChangeMolInfo);
+                    }
+                } else {
+                    cdr.ResetConflict();
+                    ChangeMade(CCleanupChange::eChangeOther);
+                }
             }
-        } else {
-            cdr.ResetConflict();
-            ChangeMade(CCleanupChange::eChangeOther);
         }
     }
 
