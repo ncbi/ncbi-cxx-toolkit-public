@@ -85,12 +85,12 @@ bool IsConsistent(const pair<TSeqRange, TSeqRange>& r1,
 {
     bool is_consistent = false;
     if (s1 == s2) {
-        is_consistent = (r1.first < r2.first  &&  r1.second < r2.second)  ||
-                        (r2.first < r1.first  &&  r2.second < r1.second);
+        is_consistent = (r1.first <= r2.first  &&  r1.second <= r2.second)  ||
+                        (r2.first <= r1.first  &&  r2.second <= r1.second);
     }
     else {
-        is_consistent = (r1.first < r2.first  &&  r2.second < r1.second)  ||
-                        (r2.first < r1.first  &&  r1.second < r2.second);
+        is_consistent = (r1.first <= r2.first  &&  r2.second <= r1.second)  ||
+                        (r2.first <= r1.first  &&  r1.second <= r2.second);
     }
 
 #ifdef _VERBOSE_DEBUG
@@ -357,6 +357,12 @@ struct SCompartScore {
             return false;
         }
         return total_range < o.total_range;
+    }
+
+    void Reset()
+    {
+        total_size = 0;
+        total_range = TRange();
     }
 };
 
@@ -635,15 +641,13 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 #endif
 
                 if ( ((is_consistent  &&  !is_intersecting_query && !is_intersecting_subject)  ||
-                      ( (options & fCompart_AllowIntersectionsQuery)  &&
+                      (((options & fCompart_AllowInconsistentIntersection) || is_consistent) &&
+                      (((options & fCompart_AllowIntersectionsQuery)  &&
                         is_intersecting_query ) ||
                       ( (options & fCompart_AllowIntersectionsSubject)  &&
                         is_intersecting_subject ) ||
                       ( (options & fCompart_AllowIntersectionsBoth)  &&
-                        is_intersecting_query && is_intersecting_subject ))  &&
-                     ( ( (options & fCompart_FilterByDiffLen) &&
-                         (diff_len_ratio <= diff_len_filter) ) ||
-                       !(options & fCompart_FilterByDiffLen) ) &&
+                        is_intersecting_query && is_intersecting_subject ))))  &&
                     diff < best_diff) {
                     best_compart = compart_it;
                     best_diff = diff;
@@ -704,7 +708,126 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
         ITERATE (list<TAlignRangeMultiSet>, it, compartments) {
             CRef<CSeq_align_set> sas(new CSeq_align_set);
             SCompartScore score;
-            ITERATE (TAlignRangeMultiSet, i, *it) {
+            set<TSeqPos> break_positions;
+            if ((options & fCompart_FilterByDiffLen) && it->size() > 1) {
+                /// Find large gaps that require breaking the compartments.
+                /// Go over the compartment forward and then backwards, and mark
+                /// positions at which the gap/alignment-lengt ratio is over the
+                /// threahols; break positions are those that we fing in both
+                /// passes.  We need to make the check here, not
+                /// when forming the compartments, because you can have two
+                /// alignments that are far away later joined through other
+                /// alignments in the middle
+                TAlignRangeMultiSet::const_iterator second_subject_range
+                    = it->begin();
+                for (; second_subject_range != it->end()
+                    && second_subject_range->first.second
+                        == it->begin()->first.second; ++second_subject_range);
+                bool reverse_subject = second_subject_range != it->end() &&
+                                       second_subject_range->first.second
+                                           < it->begin()->first.second;
+                TSeqPos subject_end = reverse_subject
+                                    ? it->begin()->first.second.GetTo()
+                                    : it->begin()->first.second.GetFrom();
+                set<TSeqPos> forward_breaks, backward_breaks;
+                TSeqPos current_end_point = 0;
+                TSeqPos current_potential_break = 0;
+                TSeqPos count = 1, last_break = 0;;
+                ITERATE (TAlignRangeMultiSet, i, *it) {
+#ifdef _VERBOSE_DEBUG
+                     cerr << "    ("
+                         << i->first.first << ", "
+                         << i->first.second << ")"
+                         << " [" << i->first.first.GetLength()
+                         << ", " << i->first.second.GetLength() << "]"
+                         << " (0x" << std::hex << ((intptr_t)i->second.GetPointer()) << std::dec << ")"
+                         << endl;
+#endif
+                    TSeqPos start_point = i->first.first.GetFrom() +
+                      (reverse_subject ? subject_end - i->first.second.GetFrom()
+                                       : i->first.second.GetFrom());
+                    TSeqPos end_point = i->first.first.GetTo() +
+                      (reverse_subject ? subject_end - i->first.second.GetTo()
+                                       : i->first.second.GetTo());
+#ifdef _VERBOSE_DEBUG
+                    if (i != it->begin()) {
+                        cerr << "At " << ++count << " Gap " << int(start_point - current_end_point) << " on length " << (current_potential_break - current_end_point) << endl;
+                    }
+#endif
+                    if (i != it->begin() &&
+                        start_point > current_potential_break)
+                    {
+                        /// gap since last alignment is over threshold; mark
+                        /// this is a breakpoint
+                        forward_breaks.insert(i->first.first.GetFrom());
+#ifdef _VERBOSE_DEBUG
+			cerr << "Break! " << (count - last_break) << " members" << endl;
+#endif
+			last_break = count;
+                    }
+                    current_end_point = max(current_potential_break, end_point);
+                    current_potential_break =
+                        max(current_potential_break, end_point) +
+                           diff_len_filter * i->second->GetAlignLength(false);
+                }
+                current_potential_break = current_end_point = UINT_MAX;
+                count = 1;
+                last_break = 0;
+                TSeqPos last_double_break = 0;
+                REVERSE_ITERATE (TAlignRangeMultiSet, i, *it) {
+#ifdef _VERBOSE_DEBUG
+                     cerr << "    ("
+                         << i->first.first << ", "
+                         << i->first.second << ")"
+                         << " [" << i->first.first.GetLength()
+                         << ", " << i->first.second.GetLength() << "]"
+                         << " (0x" << std::hex << ((intptr_t)i->second.GetPointer()) << std::dec << ")"
+                         << endl;
+#endif
+                    TSeqPos start_point = i->first.first.GetFrom() +
+                      (reverse_subject ? subject_end - i->first.second.GetFrom()
+                                       : i->first.second.GetFrom());
+                    TSeqPos end_point = i->first.first.GetTo() +
+                      (reverse_subject ? subject_end - i->first.second.GetTo()
+                                       : i->first.second.GetTo());
+#ifdef _VERBOSE_DEBUG
+                    if (i != it->rbegin()) {
+                        cerr << "At " << ++count << " Gap " << int(current_end_point - end_point) << " on length " << (current_end_point - current_potential_break) << endl;
+                    }
+#endif
+                    if (i != it->rbegin() &&
+                        end_point < current_potential_break)
+                    {
+                        /// gap since last alignment is over threshold; mark
+                        /// this is a breakpoint
+                        TSeqPos breakpoint;
+                        backward_breaks.insert(breakpoint = (--i)->first.first.GetFrom());
+                        ++i;
+#ifdef _VERBOSE_DEBUG
+                        if (forward_breaks.count(breakpoint)) {
+                            cerr << "Double after " << (count - last_double_break) << ' ';
+                            last_double_break = count;
+                        }
+			cerr << "Break! " << (count - last_break) << " members" << endl;
+#endif
+			last_break = count;
+                    }
+                    current_end_point = min(current_potential_break, start_point);
+                    current_potential_break =
+                        min(current_potential_break, start_point) -
+                           diff_len_filter * i->second->GetAlignLength(false);
+                }
+                set_intersection(forward_breaks.begin(), forward_breaks.end(),
+                             backward_breaks.begin(), backward_breaks.end(),
+                             inserter(break_positions, break_positions.end()));
+             }
+             ITERATE (TAlignRangeMultiSet, i, *it) {
+                if (break_positions.count(i->first.first.GetFrom())) {
+                    TCompartScore sc(score, sas);
+                    scored_compartments.push_back(sc);
+                    score.Reset();
+                    sas.Reset(new CSeq_align_set);
+                }
                 sas->Set().push_back(i->second);
                 score.total_size += i->second->GetAlignLength();
                 score.total_range.first += i->first.first;

@@ -47,6 +47,7 @@ enum ECompartOptions {
     fCompart_AllowIntersectionsQuery = 0x10,
     fCompart_AllowIntersectionsSubject = 0x20,
     fCompart_AllowIntersectionsBoth = 0x40,
+    fCompart_AllowInconsistentIntersection = 0x80,
 
     fCompart_AllowIntersections = fCompart_AllowIntersectionsQuery
                                 | fCompart_AllowIntersectionsSubject,
