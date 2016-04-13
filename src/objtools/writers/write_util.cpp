@@ -791,14 +791,14 @@ CMappedFeat CGffFeatureContext::FindBestGeneParent(const CMappedFeat& mf)
         m_mfLastOut = feature::GetBestGeneForMrna(mf, &m_ft);
         if (!m_mfLastOut) {
             m_mfLastOut = feature::GetBestGeneForMrna(mf, &m_ft, 0,
-                feature::CFeatTree::eBestGene_AllowOverlapped);
+                feature::CFeatTree::eBestGene_TreeOnly);
         }
     }
     else {
         m_mfLastOut = feature::GetBestGeneForFeat(mf, &m_ft);
         if (!m_mfLastOut) {
             m_mfLastOut = feature::GetBestGeneForFeat(mf, &m_ft, 0,
-                feature::CFeatTree::eBestGene_AllowOverlapped);
+                feature::CFeatTree::eBestGene_TreeOnly);
         }
     }
     if (!m_mfLastOut) {
