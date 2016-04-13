@@ -760,6 +760,13 @@ BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldProcess)
 }
 
 
+BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldShuffle)
+{
+    CHECK_LBOS_VERSION();
+    ResolveViaLBOS::FakeMassiveInput__ShouldShuffle();
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

@@ -1705,6 +1705,12 @@ void TryMultiThread(); /* namespace MultiThreading */
 
 namespace ExtraResolveData
 {
+struct SHostCheck
+{
+    unsigned int host;
+    bool check;
+};
+
 static void s_FakeInputTest(int servers_num)
 {
     CLBOSStatus lbos_status(true, true);
@@ -1724,20 +1730,31 @@ static void s_FakeInputTest(int servers_num)
                                    "Problem with fake massive input, "
                                    "no servers found. ");
     ostringstream temp_host;
+    map<unsigned short, SHostCheck> hosts;
+    for (i = 0;  i < 200;  i++) {
+        temp_host.str("");
+        temp_host << i+1 << "." <<  i+2 << "." <<  i+3 << "." << i+4
+                    << ":" << (i+1)*215;
+        SOCK_StringToHostPort(temp_host.str().c_str(), 
+                                &temp_ip, 
+                                &temp_port);
+        hosts[temp_port] = SHostCheck{ temp_ip, false };
+    }
     if (*hostports) {
         for (i = 0;  hostports[i] != NULL;  i++) {
-            temp_host.str("");
-            temp_host << i+1 << "." <<  i+2 << "." <<  i+3 << "." << i+4
-                      << ":" << (i+1)*215;
-            SOCK_StringToHostPort(temp_host.str().c_str(), 
-                                  &temp_ip, 
-                                  &temp_port);
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->host == temp_ip,
-                                           "Problem with recognizing IP"
-                                           " in massive input");
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->port == temp_port,
-                                           "Problem with recognizing IP "
-                                           "in massive input");
+            SHostCheck& host_check = hosts[hostports[i]->port];
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(
+                host_check.host == hostports[i]->host,
+                "Problem with recognizing port or IP in massive input");
+            if (host_check.host == hostports[i]->host) {
+                host_check.check = true;
+            }
+        }
+        i = 0;
+        auto iter = hosts.begin();
+        for (; iter != hosts.end(); iter++) {
+            if (iter->second.check)
+                i++;
         }
         NCBITEST_CHECK_MESSAGE_MT_SAFE(i == servers_num,
                                        "Mapper should find 200 hosts, but "
@@ -2158,7 +2175,9 @@ void TryFindTwice__SecondTimeNoOp()
                 break; 
         }
     );
-    sstream << "TryFind does return consistent answers (iteration " << i << ")";
+    sstream << "TryFind does not return consistent answers (iteration " << i  
+            << "), original value: " << resolved_ip << ", outlying value: " 
+            << IP;
     NCBITEST_CHECK_MESSAGE_MT_SAFE(resolved_ip == IP, sstream.str().c_str());
     /* Cleanup */
     CLBOSIpCache::HostnameDelete(node_name, host, "1.0.0", port);
@@ -2397,11 +2416,12 @@ void Multiple_AfterGetNextInfo__ShouldNotCrash()
     SLBOS_Data* data;
     CConnNetInfo net_info;
     CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                   *net_info, 0/*skip*/, 0/*n_skip*/,
+                   0/*external*/, 0/*arg*/, 0/*val*/));
     if (*iter == NULL) {
-        NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL, "LBOS not found when should be");
+        NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL, 
+                                       "LBOS not found when should be");
         return;
     }
     /*
@@ -2419,7 +2439,7 @@ void Multiple_AfterGetNextInfo__ShouldNotCrash()
             continue;//If nothing found, and reset does not crash - good enough
         data = static_cast<SLBOS_Data*>(iter->data);
         NCBITEST_CHECK_MESSAGE_MT_SAFE(data->n_cand == 0,
-            "Reset did not set n_cand to 0");
+                                       "Reset did not set n_cand to 0");
         NCBITEST_CHECK_MESSAGE_MT_SAFE(data->pos_cand == 0,
             "Reset did not set pos_cand "
             "to 0");
@@ -2934,6 +2954,13 @@ void NoLBOS__ReturnNULL()
 }
 
 
+struct SHostCheck
+{
+    unsigned int host;
+    bool check;
+};
+
+
 void FakeMassiveInput__ShouldProcess()
 {
     CLBOSStatus lbos_status(true, true);
@@ -2957,23 +2984,115 @@ void FakeMassiveInput__ShouldProcess()
                            "no servers found. "
                            "Most likely, problem with test.");
     ostringstream temp_host;
+    map<unsigned short, SHostCheck> hosts;
+    for (i = 0;  i < 200;  i++) {
+        temp_host.str("");
+        temp_host << i+1 << "." <<  i+2 << "." <<  i+3 << "." << i+4
+                    << ":" << (i+1)*215;
+        SOCK_StringToHostPort(temp_host.str().c_str(), 
+                                &temp_ip, 
+                                &temp_port);
+        hosts[temp_port] = SHostCheck{ temp_ip, false };
+    }
     if (*hostports) {
         for (i = 0;  hostports[i] != NULL;  i++) {
-            temp_host.str("");
-            temp_host << i+1 << "." <<  i+2 << "." <<  i+3 << "." << i+4
-                      << ":" << (i+1)*215;
-            SOCK_StringToHostPort(temp_host.str().c_str(), 
-                                  &temp_ip, 
-                                  &temp_port);
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->host == temp_ip,
-                                   "Problem with recognizing IP"
-                                   " in massive input");
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->port == temp_port,
-                                   "Problem with recognizing IP "
-                                   "in massive input");
+            SHostCheck& host_check = hosts[hostports[i]->port];
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(
+                host_check.host == hostports[i]->host,
+                "Problem with recognizing port or IP in massive input");
+            if (host_check.host == hostports[i]->host) {
+                host_check.check = true;
+            }
         }
-        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 200, "Mapper should find 200 hosts, but "
-                               "did not.");
+        i = 0;
+        auto iter = hosts.begin();
+        for (; iter != hosts.end(); iter++) {
+            if (iter->second.check)
+                i++;
+        }
+        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 200,
+                                       "Mapper should find 200 hosts, but "
+                                       "did not.");
+    }
+}
+
+
+/** Check that LBOS client shuffles input from LBOS. Check occurence of different
+ * combinations when there are just 3 elements in array*/
+void FakeMassiveInput__ShouldShuffle()
+{
+    CLBOSStatus lbos_status(true, true);
+    string service = "/service/doesnotexist";    
+    unsigned int temp_ip;
+    CCounterResetter resetter(s_CallCounter);
+    CConnNetInfo net_info;
+    size_t n_retries = 30000;
+    /*
+     * We know that iter is LBOS's.
+     */
+    CMockFunction<FLBOS_ConnReadMethod*> mock(
+                                    g_LBOS_UnitTesting_GetLBOSFuncs()->Read, 
+                                    s_FakeReadDiscovery<3>);
+    CCObjArrayHolder<SSERV_Info> hostports(
+                     g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(
+                            "lbosdevacvancbinlmnih.gov", "/lbos", *net_info));
+    int i = 0;
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(*hostports != NULL,
+                                   "Problem with fake massive input, "
+                                   "no servers found. "
+                                   "Most likely, problem with test.");
+    /* First, prepare examples for each group */
+    unsigned short port1, port2, port3; /* we compare only ports, for speed */
+    /* Combinations:
+     * 1) 1, 2, 3
+     * 2) 1, 3, 2
+     * 3) 2, 1, 3
+     * 4) 2, 3, 1
+     * 5) 3, 1, 2
+     * 6) 3, 2, 1
+     */
+    size_t n[6]; /* For 6 different combinations we count occurrence*/
+    memset(n, 0, sizeof(n));
+    SOCK_StringToHostPort("1.2.3.4:215", &temp_ip, &port1);
+    SOCK_StringToHostPort("2.3.4.5:430", &temp_ip, &port2);
+    SOCK_StringToHostPort("3.4.5.6:645", &temp_ip, &port3);
+    /* we do 30 thousand retries */
+    for ( size_t retries = 0;  retries < n_retries;  retries++ ) {
+        hostports =
+            g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(
+            "lbosdevacvancbinlmnih.gov", "/lbos", *net_info);
+        NCBITEST_CHECK_MESSAGE(*hostports != NULL, "ResolveIPPort return NULL "
+                               "instead of SSERV_Info array");
+        if (hostports[0]->port == port1) {
+            if (hostports[1]->port == port2) {
+                n[0]++;
+            } else if (hostports[1]->port == port3) {
+                n[1]++;
+            }
+        } else if (hostports[0]->port == port2) {
+            if (hostports[1]->port == port1) {
+                n[2]++;
+            } else if (hostports[1]->port == port3) {
+                n[3]++;
+            }
+        } else if (hostports[0]->port == port3) {
+            if (hostports[1]->port == port1) {
+                n[4]++;
+            } else if (hostports[1]->port == port2) {
+                n[5]++;
+            }
+        }
+    }
+    /** Not any combination should occur more than with n_retries/50 deviation  
+     * from average (n_retries/6)  */
+    for (size_t j = 0; j < 6; j++) {
+        ostringstream message;
+        message << "Combination " << j << " has " << n[j] << " occurrences (too"
+                   " much deviation from average of " << n_retries / 6 << ")";
+        NCBITEST_CHECK_MESSAGE(n[j] >= n_retries / 6 - n_retries / 50, 
+                               message.str().c_str());
+        NCBITEST_CHECK_MESSAGE(n[j] <= n_retries / 6 + n_retries / 50, 
+                               message.str().c_str());
     }
 }
 
@@ -3000,33 +3119,43 @@ void FakeErrorInput__ShouldNotCrash()
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*hostports != NULL,
                            "Problem with fake error input, no servers found. "
                            "Most likely, problem with test.");
-    if (*hostports) {
-        for (i = 0;  hostports[j] != NULL;  i++) {
-            /* We need to check which combination is supposed to be failure*/
-
-            stringstream ss;
-            ss << 0 << i + 1 << "." 
-               << 0 << i + 2 << "." 
-               << 0 << i + 3 << "." 
-               << 0 << i + 4;
-            if (
-                        ss.str().find('8') != string::npos 
-                        ||
-                        ss.str().find('9') != string::npos
-                ) 
-            {
-                WRITE_LOG(ss.str() << " Has 8 or 9, skipping");
-                continue;
-            }
-
-            ss << ":" << (i + 1) * 215;
-            SOCK_StringToHostPort(ss.str().c_str(), &temp_ip, &temp_port);            
-            NCBITEST_CHECK_EQUAL_MT_SAFE(hostports[j]->host, temp_ip);
-            NCBITEST_CHECK_EQUAL_MT_SAFE(hostports[j]->port, temp_port);
-            j++;
+    map<unsigned short, SHostCheck> hosts;
+    for (i = 0;  i < 200;  i++) {
+        stringstream ss;
+        ss << 0 << i + 1 << "." 
+           << 0 << i + 2 << "." 
+           << 0 << i + 3 << "." 
+           << 0 << i + 4;
+        if ( ss.str().find('8') != string::npos ||
+             ss.str().find('9') != string::npos ) 
+        {
+            WRITE_LOG(ss.str() << " Has 8 or 9, skipping");
+            continue;
         }
-        NCBITEST_CHECK_EQUAL_MT_SAFE(j, 80);
-   }
+        ss << ":" << (i + 1) * 215;
+        SOCK_StringToHostPort(ss.str().c_str(), &temp_ip, &temp_port);
+        hosts[temp_port] = SHostCheck{ temp_ip, false };
+    }
+    if (*hostports) {
+        for (i = 0;  hostports[i] != NULL;  i++) {
+            SHostCheck& host_check = hosts[hostports[i]->port];
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(
+                host_check.host == hostports[i]->host,
+                "Problem with recognizing port or IP in massive input");
+            if (host_check.host == hostports[i]->host) {
+                host_check.check = true;
+            }
+        }
+        i = 0;
+        auto iter = hosts.begin();
+        for (; iter != hosts.end(); iter++) {
+            if (iter->second.check)
+                i++;
+        }
+        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 80,
+                                       "Mapper should find 80 hosts, but "
+                                       "did not.");
+    }
 }
 } /* namespace ResolveViaLBOS */
 

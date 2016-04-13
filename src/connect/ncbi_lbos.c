@@ -1303,6 +1303,16 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         CORE_LOGF(eLOG_Note, ("Resolved [%s] to [%s]", serviceName, hostport));
 #endif
     }
+    /* Shuffle list with */
+    if (infos_count > 1) {
+        size_t i;
+        for (i = 0; i < infos_count - 1; i++) {
+            size_t j = i + rand() % (infos_count - i);
+            SSERV_Info* t = infos[j];
+            infos[j] = infos[i];
+            infos[i] = t;
+        }
+    }
     free(lbos_answer);
     /* Set last element this NULL, finalizing the array ...*/
     infos[infos_count] = NULL;

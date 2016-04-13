@@ -977,7 +977,7 @@ EIO_Status s_FakeReadDiscoveryExtra(CONN            conn,
     static string buf = "";
     if (buf == "") {
         stringstream oss;
-        unsigned int localscope_lines = lines;
+        unsigned int localscope_lines = lines; // to see value in debugger
         for (unsigned int i = 0; i < localscope_lines; i++) {
             oss << "STANDALONE " << i + 1 << "." << i + 2 << "." <<
                                     i + 3 << "." << i + 4 << ":" <<
