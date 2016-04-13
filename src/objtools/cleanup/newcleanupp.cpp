@@ -11977,6 +11977,15 @@ void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
             break;
         case CBioseq_set::eClass_genbank:
             x_BioseqSetGenBankEC(bioseq_set);
+            x_RemovePopPhyBioSource(bioseq_set);
+            break;
+        case CBioseq_set::eClass_mut_set:
+        case CBioseq_set::eClass_pop_set:
+        case CBioseq_set::eClass_phy_set:
+        case CBioseq_set::eClass_eco_set:
+        case CBioseq_set::eClass_wgs_set:
+        case CBioseq_set::eClass_small_genome_set:
+            x_RemovePopPhyBioSource(bioseq_set);
             break;
         default:
             // no special logic for other bioseq-set classes
@@ -12154,6 +12163,67 @@ void CNewCleanup_imp::x_CollapseSet(CBioseq_set& bioseq_set)
         ech.Remove();
         ChangeMade(CCleanupChange::eCollapseSet);
     }
+}
+
+
+void CNewCleanup_imp::x_RemovePopPhyBioSource(CBioseq_set& set)
+{
+    if (!set.IsSetDescr()) {
+        return;
+    }
+    NON_CONST_ITERATE(CBioseq_set::TDescr::Tdata, d, set.SetDescr().Set()) {
+        if ((*d)->IsSource()) {
+            //propagate down
+            if ((*d)->GetSource().IsSetOrg() && set.IsSetSeq_set()) {
+                NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, set.SetSeq_set()) {
+                    if ((*s)->IsSet()) {
+                        x_RemovePopPhyBioSource((*s)->SetSet(), (*d)->GetSource().GetOrg());
+                    } else if ((*s)->IsSeq()) {
+                        x_RemovePopPhyBioSource((*s)->SetSeq(), (*d)->GetSource().GetOrg());
+                    }
+                }
+            }
+            d = set.SetDescr().Set().erase(d);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        } else {
+            ++d;
+        }
+    }
+
+}
+
+
+void CNewCleanup_imp::x_RemovePopPhyBioSource(CBioseq_set& set, const COrg_ref& org)
+{
+    // bail if already have source descriptor
+    if (set.IsSetDescr()) {
+        ITERATE(CBioseq_set::TDescr::Tdata, d, set.GetDescr().Get()) {
+            if ((*d)->IsSource()) {
+                return;
+            }
+        }
+    }
+    CRef<CSeqdesc> src(new CSeqdesc());
+    src->SetSource().SetOrg().Assign(org);
+    set.SetDescr().Set().push_back(src);
+    ChangeMade(CCleanupChange::eAddDescriptor);
+}
+
+
+void CNewCleanup_imp::x_RemovePopPhyBioSource(CBioseq& seq, const COrg_ref& org)
+{
+    // bail if already have source descriptor
+    if (seq.IsSetDescr()) {
+        ITERATE(CBioseq_set::TDescr::Tdata, d, seq.GetDescr().Get()) {
+            if ((*d)->IsSource()) {
+                return;
+            }
+        }
+    }
+    CRef<CSeqdesc> src(new CSeqdesc());
+    src->SetSource().SetOrg().Assign(org);
+    seq.SetDescr().Set().push_back(src);
+    ChangeMade(CCleanupChange::eAddDescriptor);
 }
 
 
