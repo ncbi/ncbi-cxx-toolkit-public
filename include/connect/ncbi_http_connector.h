@@ -235,8 +235,8 @@ typedef void        (*FHTTP_Cleanup)
  *
  * If "net_info" does not explicitly specify an HTTP request method (i.e. it
  * has it as "eReqMethod_Any"), then the actual method sent to the HTTP server
- * depends on whether any data have been written to the connection with
- * CONN_Write():  the presense of pending data will cause a POST request (with
+ * depends on whether any data has been written to the connection with
+ * CONN_Write():  the presence of pending data will cause a POST request (with
  * a "Content-Length:" tag supplied automatically and reflecting the total
  * pending data size), and GET request method will result in the absence of any
  * data.  An explicit value for the request method will cause the specified
