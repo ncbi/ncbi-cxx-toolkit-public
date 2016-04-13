@@ -402,12 +402,11 @@ int CTbl2AsnApp::Run(void)
     if (args["M"])
     {
         m_context.m_master_genome_flag = args["M"].AsString();
-        m_context.m_remove_unnec_xref = true;
         m_context.m_delay_genprodset = true;
         m_context.m_GenomicProductSet = false;
         m_context.m_HandleAsSet = true;
         m_context.m_feature_links = 'p';
-        m_context.m_cleanup += 'f';
+        m_context.m_cleanup += "fU";
     }
 
     m_reader.reset(new CMultiReader(m_context));
@@ -447,7 +446,9 @@ int CTbl2AsnApp::Run(void)
     m_context.m_NucProtSet = args["u"].AsBoolean();
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
 
-    m_context.m_remove_unnec_xref = args["U"].AsBoolean();
+    if (args["U"] && args["U"].AsBoolean())
+      m_context.m_cleanup += 'U';
+
     m_context.m_delay_genprodset = args["J"].AsBoolean();
     if (args["X"])
     {
@@ -927,7 +928,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (!m_context.m_cleanup.empty())
     {
-        validator.Cleanup(*entry, m_context.m_cleanup);
+        validator.Cleanup(entry_edit_handle, m_context.m_cleanup);
     }
 
     if (!IsDryRun())

@@ -58,7 +58,6 @@ public:
     bool   R;
     bool   S;
     string Q;
-    bool   m_remove_unnec_xref;
     bool   L;
     bool   W;
     bool   m_save_bioseq_set;

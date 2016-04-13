@@ -110,7 +110,6 @@ CTable2AsnContext::CTable2AsnContext():
     m_output(0),
     m_delay_genprodset(false),
     m_copy_genid_to_note(false),
-    m_remove_unnec_xref(false),
     m_save_bioseq_set(false),
     m_discrepancy_file(0),
     m_flipped_struc_cmt(false),
@@ -430,12 +429,6 @@ void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const
            }
         }
     }
-}
-
-void CTable2AsnContext::RemoveUnnecessaryXRef(CSeq_entry& entry) const
-{
-    CScope scope(*CObjectManager::GetInstance());
-    CSeq_entry_Handle h_entry = scope.AddTopLevelSeqEntry(entry);
 }
 
 void CTable2AsnContext::SmartFeatureAnnotation(CSeq_entry& entry) const

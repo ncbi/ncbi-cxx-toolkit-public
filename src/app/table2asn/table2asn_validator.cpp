@@ -36,16 +36,23 @@ static const string& s_GetSeverityLabel (EDiagSev sev)
 
 } // end anonymous namespace
 
-void CTable2AsnValidator::Cleanup(CSeq_entry& entry, const string& flags)
+void CTable2AsnValidator::Cleanup(CSeq_entry_Handle h_entry, const string& flags)
 {
+    CRef<CSeq_entry> entry((CSeq_entry*)(h_entry.GetEditHandle().GetCompleteSeq_entry().GetPointer()));
+
     CCleanup cleanup;
     if (flags.find('e') != string::npos)
     {
-        cleanup.ExtendedCleanup(entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+        cleanup.ExtendedCleanup(*entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
     }
     else
     {
-        cleanup.BasicCleanup(entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+        cleanup.BasicCleanup(*entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+    }
+
+    if (flags.find('U') != string::npos)
+    {
+        cleanup.RemoveUnnecessaryGeneXrefs(h_entry);
     }
 }
 
