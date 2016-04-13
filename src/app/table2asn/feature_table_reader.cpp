@@ -549,6 +549,7 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
         protein = CSeqTranslator::TranslateToProtein(cd_feature, scope);
         if (protein.Empty())
             return CRef<CSeq_entry>();
+        CSeqTranslator::ChangeDeltaProteinToRawProtein(protein);
     }
     else
     {
