@@ -2362,7 +2362,7 @@ redo_align_callbacks = {
 
 /* Bit score per alignment position threshold for preliminaru near identical
    test */
-#define NEAR_IDENTICAL_BITS_PER_POSITION (1.8)
+#define NEAR_IDENTICAL_BITS_PER_POSITION (1.75)
 
 /**
  * Read the parameters required for the Blast_RedoOneMatch* functions from
