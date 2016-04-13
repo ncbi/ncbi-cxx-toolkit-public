@@ -310,6 +310,7 @@ void LBOS::Deannounce(const string&         service,
     /* Then remove resolution result from cache */
     if (host != "" /* invalid input */ &&
         host != "0.0.0.0" /* not handled by cache */) {
+        CFastMutexGuard spawn_guard(s_GlobalLock);
         CLBOSIpCache::HostnameDelete(service, host, version, port);
     }
 }
