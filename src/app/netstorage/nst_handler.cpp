@@ -1862,6 +1862,9 @@ CNetStorageHandler::x_ProcessGetAttr(
         NCBI_THROW(CNetStorageServerException, eInvalidArgument,
                    "Attribute name must not be empty");
 
+    // CXX-7977: the names are lowercased...
+    attr_name = NStr::ToLower(attr_name);
+
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
                    "GETATTR message must have ObjectLoc or UserKey. "
@@ -1931,6 +1934,9 @@ CNetStorageHandler::x_ProcessSetAttr(
 
     string      attr_name = message.GetString("AttrName");
     SNetStorage::SLimits::Check<SNetStorage::SLimits::SAttrName>(attr_name);
+
+    // CXX-7977: the names are lowercased...
+    attr_name = NStr::ToLower(attr_name);
 
     if (!message.HasKey("AttrValue"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
