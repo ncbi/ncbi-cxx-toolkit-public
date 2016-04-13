@@ -12441,7 +12441,7 @@ void CNewCleanup_imp::x_MoveNpPub(CBioseq_set& set)
 
     NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, set.SetSeq_set()) {
         if ((*it)->IsSetDescr()) {
-            if ((*it)->IsSeq() && (*it)->GetSeq().IsSetDescr()) {
+            if ((*it)->IsSeq() && (*it)->GetSeq().IsSetDescr() && CCleanup::OkToPromoteNpPub((*it)->GetSeq())) {
                 x_MoveNpPub(set, (*it)->SetSeq().SetDescr());
                 if ((*it)->SetSeq().SetDescr().Set().empty()) {
                     (*it)->SetSeq().ResetDescr();

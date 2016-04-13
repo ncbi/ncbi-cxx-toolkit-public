@@ -2154,6 +2154,19 @@ bool CCleanup::PubAlreadyInSet(const CPubdesc& pd, const CSeq_descr& descr)
 }
 
 
+bool CCleanup::OkToPromoteNpPub(const CBioseq& b)
+{
+    bool is_embl_or_ddbj = false;
+    ITERATE(CBioseq::TId, id, b.GetId()) {
+        if ((*id)->IsEmbl() || (*id)->IsDdbj()) {
+            is_embl_or_ddbj = true;
+            break;
+        }
+    }
+    return !is_embl_or_ddbj;
+}
+
+
 bool CCleanup::OkToPromoteNpPub(const CPubdesc& pd)
 {
     if (pd.IsSetNum() || pd.IsSetName() || pd.IsSetFig() || pd.IsSetComment()) {
@@ -2168,7 +2181,13 @@ void CCleanup::MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBi
 {
     // add descriptor to nuc-prot parent or sequence itself
     CBioseq_set_Handle parent = b.GetParentBioseq_set();
-    if (parent && parent.IsSetClass() &&
+    if (!CCleanup::OkToPromoteNpPub(*(b.GetCompleteBioseq()))) {
+        // add to sequence
+        CBioseq_EditHandle eh(b);
+        eh.AddSeqdesc(*d);
+        RemoveDuplicatePubs(eh.SetDescr());
+        NormalizeDescriptorOrder(eh.SetDescr());
+    } else if (parent && parent.IsSetClass() &&
         parent.GetClass() == CBioseq_set::eClass_nuc_prot &&
         parent.IsSetDescr() && PubAlreadyInSet(d->GetPub(), parent.GetDescr())) {
         // don't add descriptor, just delete feature 
@@ -2247,7 +2266,9 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
                 }
             }
             
-            if (p->GetData().GetSubtype() == CSeqFeatData::eSubtype_site_ref) {                
+            if (p->GetData().IsImp() &&
+                p->GetData().GetImp().IsSetKey() &&
+                NStr::Equal(p->GetData().GetImp().GetKey(), "Site-ref")) {
                 d->SetPub().SetReftype(CPubdesc::eReftype_sites);
             } else {
                 d->SetPub().SetReftype(CPubdesc::eReftype_feats);
