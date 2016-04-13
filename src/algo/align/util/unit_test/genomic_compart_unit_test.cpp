@@ -140,6 +140,7 @@ BOOST_AUTO_TEST_CASE(Test_Align_Filter)
                        "Intersection option not recognized: " +
                        intersections);
         }
+        opts |= fCompart_AllowInconsistentIntersection;
 
         cerr << "input=" << input_name
             << "  intersections=" << intersections
