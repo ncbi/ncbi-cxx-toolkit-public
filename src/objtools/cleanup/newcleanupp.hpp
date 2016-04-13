@@ -586,6 +586,9 @@ private:
     void x_RemovePopPhyBioSource(CBioseq_set& set);
     void x_RemovePopPhyBioSource(CBioseq_set& set, const COrg_ref& org);
     void x_RemovePopPhyBioSource(CBioseq& seq, const COrg_ref& org);
+    void x_RemovePopPhyMolInfo(CBioseq_set& set);
+    void x_RemovePopPhyMolInfo(CBioseq_set& set, const CMolInfo& mol);
+    void x_RemovePopPhyMolInfo(CBioseq& seq, const CMolInfo& mol);
     void x_BioseqSetNucProtEC( CBioseq_set & bioseq_set );
     void x_BioseqSetGenBankEC(CBioseq_set & bioseq_set);
     void x_RemoveNestedGenBankSet(CBioseq_set & bioseq_set);

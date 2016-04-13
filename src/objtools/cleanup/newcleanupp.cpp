@@ -10883,7 +10883,7 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq_set& set)
 }
 
 
-const string& s_GetDiv(const CBioSource& src)
+string s_GetDiv(const CBioSource& src)
 {
     if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() &&
         src.GetOrg().GetOrgname().IsSetDiv()) {
@@ -11978,6 +11978,7 @@ void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
         case CBioseq_set::eClass_genbank:
             x_BioseqSetGenBankEC(bioseq_set);
             x_RemovePopPhyBioSource(bioseq_set);
+            x_RemovePopPhyMolInfo(bioseq_set);
             break;
         case CBioseq_set::eClass_mut_set:
         case CBioseq_set::eClass_pop_set:
@@ -11986,6 +11987,7 @@ void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
         case CBioseq_set::eClass_wgs_set:
         case CBioseq_set::eClass_small_genome_set:
             x_RemovePopPhyBioSource(bioseq_set);
+            x_RemovePopPhyMolInfo(bioseq_set);
             break;
         default:
             // no special logic for other bioseq-set classes
@@ -12171,7 +12173,8 @@ void CNewCleanup_imp::x_RemovePopPhyBioSource(CBioseq_set& set)
     if (!set.IsSetDescr()) {
         return;
     }
-    NON_CONST_ITERATE(CBioseq_set::TDescr::Tdata, d, set.SetDescr().Set()) {
+    CBioseq_set::TDescr::Tdata::iterator d = set.SetDescr().Set().begin();
+    while (d != set.SetDescr().Set().end()) {
         if ((*d)->IsSource()) {
             //propagate down
             if ((*d)->GetSource().IsSetOrg() && set.IsSetSeq_set()) {
@@ -12223,6 +12226,66 @@ void CNewCleanup_imp::x_RemovePopPhyBioSource(CBioseq& seq, const COrg_ref& org)
     CRef<CSeqdesc> src(new CSeqdesc());
     src->SetSource().SetOrg().Assign(org);
     seq.SetDescr().Set().push_back(src);
+    ChangeMade(CCleanupChange::eAddDescriptor);
+}
+
+
+void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq_set& set)
+{
+    if (!set.IsSetDescr()) {
+        return;
+    }
+    CBioseq_set::TDescr::Tdata::iterator d = set.SetDescr().Set().begin();
+    while (d != set.SetDescr().Set().end()) {
+        if ((*d)->IsMolinfo()) {
+            //propagate down
+            NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, set.SetSeq_set()) {
+                if ((*s)->IsSet()) {
+                    x_RemovePopPhyMolInfo((*s)->SetSet(), (*d)->GetMolinfo());
+                } else if ((*s)->IsSeq()) {
+                    x_RemovePopPhyMolInfo((*s)->SetSeq(), (*d)->GetMolinfo());
+                }
+            }
+            d = set.SetDescr().Set().erase(d);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        } else {
+            ++d;
+        }
+    }
+
+}
+
+
+void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq_set& set, const CMolInfo& mol)
+{
+    // bail if already have source descriptor
+    if (set.IsSetDescr()) {
+        ITERATE(CBioseq_set::TDescr::Tdata, d, set.GetDescr().Get()) {
+            if ((*d)->IsMolinfo()) {
+                return;
+            }
+        }
+    }
+    CRef<CSeqdesc> mi(new CSeqdesc());
+    mi->SetMolinfo().Assign(mol);
+    set.SetDescr().Set().push_back(mi);
+    ChangeMade(CCleanupChange::eAddDescriptor);
+}
+
+
+void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq& seq, const CMolInfo& mol)
+{
+    // bail if already have MolInfo descriptor
+    if (seq.IsSetDescr()) {
+        ITERATE(CBioseq_set::TDescr::Tdata, d, seq.GetDescr().Get()) {
+            if ((*d)->IsMolinfo()) {
+                return;
+            }
+        }
+    }
+    CRef<CSeqdesc> mi(new CSeqdesc());
+    mi->SetMolinfo().Assign(mol);
+    seq.SetDescr().Set().push_back(mi);
     ChangeMade(CCleanupChange::eAddDescriptor);
 }
 
