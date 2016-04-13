@@ -865,13 +865,7 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
             query.SetParameter("@attr_name", attr_name);
             query.SetParameter("@need_update", need_update,
                                eSDB_Int4);
-
-            // The MS SQL DB has the datatype of this field as VARBINARY(900)
-            // However, in order to get the real length of that field another
-            // data type must be used here: eSDB_Image.
-            // An alternative SetParameter(..., eSP_InOut) does not work here
-            // either.
-            query.SetOutputParameter("@attr_value", eSDB_Image);
+            query.SetOutputParameter("@attr_value", eSDB_Binary);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
