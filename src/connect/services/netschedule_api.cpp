@@ -710,6 +710,8 @@ void CNetScheduleServerListener::OnInit(
     SCfgReader<string> client_node(ns_impl->m_ClientNode,
             config, module, "client_node", ns_impl->m_ClientNode);
 
+    SCfgReader<string> scope(m_Scope, config, module, "scope");
+
     // There are two phases of OnInit in case we need to load config from server
     // 1) Setup as much as possible and try to get config from server
     // 2) Setup everything using received config from server
@@ -764,6 +766,7 @@ void CNetScheduleServerListener::OnInit(
             job_group.ReadOnce();
             job_ttl.ReadOnce();
             client_node.ReadOnce();
+            scope.ReadOnce();
         }
 
         if (!ns_impl->m_ClientNode.empty()) {
@@ -823,6 +826,12 @@ void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
                 m_ServerByNode[ns_node] = connection->m_Server->m_ServerInPool;
                 server_props->affs_synced = false;
             }
+        }
+
+        if (!m_Scope.empty()) {
+            string cmd("SETSCOPE " + m_Scope);
+            g_AppendClientIPSessionIDHitID(cmd);
+            connection.Exec(cmd, false);
         }
     } else
         connection->WriteLine(m_Auth);

@@ -198,6 +198,7 @@ public:
 
 private:
     const TMode m_Mode;
+    string m_Scope;
 };
 
 // Structure that governs NetSchedule server notifications.
