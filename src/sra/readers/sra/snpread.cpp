@@ -567,6 +567,14 @@ CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
 
 
 CRef<CSeq_annot>
+CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
+                                    TFlags flags) const
+{
+    return GetCoverageAnnot(range, SFilter(), flags);
+}
+
+
+CRef<CSeq_annot>
 CSNPDbSeqIterator::GetFeatAnnot(CRange<TSeqPos> range,
                                 const SFilter& filter,
                                 TFlags flags) const
@@ -582,6 +590,14 @@ CSNPDbSeqIterator::GetFeatAnnot(CRange<TSeqPos> range,
         return null;
     }
     return annot;
+}
+
+
+CRef<CSeq_annot>
+CSNPDbSeqIterator::GetFeatAnnot(CRange<TSeqPos> range,
+                                TFlags flags) const
+{
+    return GetFeatAnnot(range, SFilter(), flags);
 }
 
 
@@ -1044,6 +1060,14 @@ CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
 }
 
 
+CSNPDbSeqIterator::TAnnotSet
+CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
+                                      TFlags flags) const
+{
+    return GetTableFeatAnnots(range, SFilter(), flags);
+}
+
+
 BEGIN_LOCAL_NAMESPACE;
 
 
@@ -1144,6 +1168,14 @@ CSNPDbSeqIterator::GetPackedFeatAnnot(CRange<TSeqPos> range,
         packed->SetSeq_id(*GetSeqId());
     }
     return TPackedAnnot(annot, packed);
+}
+
+
+CSNPDbSeqIterator::TPackedAnnot
+CSNPDbSeqIterator::GetPackedFeatAnnot(CRange<TSeqPos> range,
+                                      TFlags flags) const
+{
+    return GetPackedFeatAnnot(range, SFilter(), flags);
 }
 
 

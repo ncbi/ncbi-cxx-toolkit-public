@@ -357,33 +357,25 @@ public:
                                       const SFilter& filter,
                                       TFlags flags = fDefaultFlags) const;
     CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
-                                      TFlags flags = fDefaultFlags) const {
-        return GetCoverageAnnot(range, SFilter(), flags);
-    }
+                                      TFlags flags = fDefaultFlags) const;
 
     CRef<CSeq_annot> GetFeatAnnot(CRange<TSeqPos> range,
                                   const SFilter& filter,
                                   TFlags flags = fDefaultFlags) const;
     CRef<CSeq_annot> GetFeatAnnot(CRange<TSeqPos> range,
-                                  TFlags flags = fDefaultFlags) const {
-        return GetFeatAnnot(range, SFilter(), flags);
-    }
+                                  TFlags flags = fDefaultFlags) const;
     typedef vector< CRef<CSeq_annot> > TAnnotSet;
     TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
                                  const SFilter& filter,
                                  TFlags flags = fDefaultFlags) const;
     TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
-                                 TFlags flags = fDefaultFlags) const {
-        return GetTableFeatAnnots(range, SFilter(), flags);
-    }
+                                 TFlags flags = fDefaultFlags) const;
     typedef pair< CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > TPackedAnnot;
     TPackedAnnot GetPackedFeatAnnot(CRange<TSeqPos> range,
                                     const SFilter& filter,
                                     TFlags flags = fDefaultFlags) const;
     TPackedAnnot GetPackedFeatAnnot(CRange<TSeqPos> range,
-                                    TFlags flags = fDefaultFlags) const {
-        return GetPackedFeatAnnot(range, SFilter(), flags);
-    }
+                                    TFlags flags = fDefaultFlags) const;
 
 protected:
     friend class CSNPDbPageIterator;
