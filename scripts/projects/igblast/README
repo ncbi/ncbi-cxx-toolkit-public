@@ -7,9 +7,12 @@ igblastn:
 1).       Blast database files for searching germline V, D, and J genes.  You can specify any germline 
 databases you like (using -germline_db_V, -germline_db_J and -germline_db_D options).   
 The NCBI mouse germline gene databases (i.e., mouse_gl_V, etc.) are supplied with igblastn program 
-(see http://www.ncbi.nlm.nih.gov/igblast/ about database details).  
+(see http://www.ncbi.nlm.nih.gov/igblast/ about database details).
+  
 To search IMGT germline sequences, you need to download them from IMGT web site 
-(http://www.imgt.org/IMGT_vquest/share/textes/ ).   After you have downloaded the sequences, 
+(http://www.imgt.org/IMGT_vquest/share/textes/ ).  You need to download all V, D and J sequences for whatever 
+organisms you are interested in.  Combine all V and all J sequences, respectively, into a separate file (i.e., 
+one file for all V sequences and one file all for J sequences).  After you have downloaded the sequences, 
 invoke our utility tool edit_imgt_file.pl (download from the release/ directory) to process the sequences (to change 
  the long IMGT definition lines to germline gene names only).  For example:
 
