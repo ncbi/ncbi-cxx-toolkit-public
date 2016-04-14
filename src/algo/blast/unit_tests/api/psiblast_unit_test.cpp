@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBS) {
 
     // HSP # 4
     expected_results[3].score = 50;
-    expected_results[3].evalue = 7.15763;
+    expected_results[3].evalue = 6.81719;
     expected_results[3].bit_score = 23.8682;
     expected_results[3].starts.push_back(295);
     expected_results[3].starts.push_back(23);
@@ -468,12 +468,12 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSUniversal) {
     CSearchResultSet results(*psiblast.Run());
     BOOST_REQUIRE(results[0].GetErrors().empty());
 
-    const int kNumExpectedMatchingSeqs = 5;
+    const int kNumExpectedMatchingSeqs = 6;
     CConstRef<CSeq_align_set> sas = results[0].GetSeqAlign();
 
     BOOST_REQUIRE_EQUAL(kNumExpectedMatchingSeqs, s_CountNumberUniqueGIs(sas));
 
-    const size_t kNumExpectedHSPs = 5;
+    const size_t kNumExpectedHSPs = 6;
     qa::TSeqAlignSet expected_results(kNumExpectedHSPs);
 
     // HSP # 1
@@ -625,7 +625,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_PssmAsQuery_NoCBS) {
         int starts[] = { 0, 154, -1, 308, 154, 309 };
         int lengths[] = { 154, 1, 24 };
         expected_results[1].score = 424;
-        expected_results[1].evalue = 5.17079e-48;
+        expected_results[1].evalue = 6.54598e-49;
         expected_results[1].bit_score = 167754171e-6;
         expected_results[1].num_ident = 73;
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
@@ -643,7 +643,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_PssmAsQuery_NoCBS) {
         int lengths[] = 
             { 65, 2, 24, 1, 19, 2, 6, 1, 32, 1, 11, 1, 26, 6, 10, 2, 30 };
         expected_results[2].score = 372;
-        expected_results[2].evalue = 1.34154e-42;
+        expected_results[2].evalue = 1.67386e-43;
         expected_results[2].bit_score = 147723793e-6;
         expected_results[2].num_ident = 87;
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
@@ -730,7 +730,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_PssmAsQuery_CBS) {
         int starts[] = { 0, 941, -1, 1093, 152, 1094 };
         int lengths[] = { 152, 1, 80 };
         expected_results[0].score = 593;
-        expected_results[0].evalue = 5.81663e-71;
+        expected_results[0].evalue = 1.15934e-71;
         expected_results[0].bit_score = 232843196e-6;
         expected_results[0].sequence_gis.SetQuery(129295);
         expected_results[0].sequence_gis.SetSubject(34878800);
@@ -746,7 +746,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_PssmAsQuery_CBS) {
         int starts[] = { 0, 154, -1, 308, 154, 309 };
         int lengths[] = { 154, 1, 24 };
         expected_results[1].score = 417;
-        expected_results[1].evalue = 4.07856e-47;
+        expected_results[1].evalue = 5.13954e-48;
         expected_results[1].bit_score = 165048071e-6;
         expected_results[1].sequence_gis.SetQuery(129295);
         expected_results[1].sequence_gis.SetSubject(34878800);
@@ -766,7 +766,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_PssmAsQuery_CBS) {
         int lengths[] = 
             { 65, 2, 26, 1, 17, 2, 6, 1, 34, 1, 10, 1, 29, 4, 38 };
         expected_results[2].score = 359;
-        expected_results[2].evalue = 8.35828e-41;
+        expected_results[2].evalue = 1.18595e-41;
         expected_results[2].bit_score = 142706496e-6;
         expected_results[2].sequence_gis.SetQuery(129295);
         expected_results[2].sequence_gis.SetSubject(20092202);

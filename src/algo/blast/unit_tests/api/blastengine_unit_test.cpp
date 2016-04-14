@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(testTBLASTNLongMatchBlastEngine) {
         { 368, 199, 160, 104, 99, 95, 94, 92, 94, 89, 108, 
           101, 97, 95, 89, 86, 84, 84, 83, 79, 75, 74, 74};
     const double kEvalueFinal[kNumHspsEnd] = 
-        {1.90868e-35, 4.47098e-34, 4.47098e-34, 4.47098e-34, 
+        {1.84467e-35, 4.47098e-34, 4.47098e-34, 4.47098e-34, 
          4.23245e-08, 4.23245e-08, 3.29958e-07, 3.29958e-07, 
          7.11395e-07, 7.11395e-07, 8.64076e-05, 0.000570668, 
          0.001678, 0.00287725, 0.0145032, 0.0325588, 
@@ -414,7 +414,7 @@ BOOST_AUTO_TEST_CASE(testBlastpPrelimSearch)
     const string kDbName("data/seqp");
     const TGi kQueryGi1 = GI_FROM(TIntId, 21282798);
     const TGi kQueryGi2 = GI_FROM(TIntId, 129295);
-    const int kNumHits = 28;
+    const int kNumHits = 31;
     const int kNumHitsToCheck = 3;
     const int kIndices[kNumHitsToCheck] = { 1, 4, 8 };
     const int kScores[kNumHitsToCheck] = { 519, 56, 54 };
