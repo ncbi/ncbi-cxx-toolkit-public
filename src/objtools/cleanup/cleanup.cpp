@@ -571,7 +571,8 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         return false;
     }
     const CSeq_id* sid = new_loc->GetId();
-    if (!sid || sid->Equals(*(orig_feat->GetLocation().GetId()))) {
+    const CSeq_id* orig_id = orig_feat->GetLocation().GetId();
+    if (!sid || (orig_id && sid->Equals(*orig_id))) {
         // unable to map to protein location
         return false;
     }
