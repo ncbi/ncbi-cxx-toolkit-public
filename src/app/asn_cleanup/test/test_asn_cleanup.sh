@@ -2,7 +2,7 @@
 
 set -o errexit
 set -o pipefail
-set -x
+#set -x
 
 TEST_TOOL_NAME="$1"
 TEST_TOOL_PATH="$2"
@@ -32,7 +32,7 @@ if [ -z $diff_folder ]; then
 fi
 
 script_folder=${self_script%/*}
-if [ -z "$script_folder" ]; then
+if [ -z "$script_folder" -o "x$script_folder" == "x." ]; then
    script_folder=`pwd`
 fi
 
@@ -44,5 +44,5 @@ input_folder=$script_folder
 mkdir -p "$tmp_folder"
 mkdir -p "$diff_folder"
 
-unit_test_compare_to_previous . test_cases
+unit_test_compare_to_previous $script_folder test_cases
 #unit_test_compare_to_old_tool test-cases test-case1

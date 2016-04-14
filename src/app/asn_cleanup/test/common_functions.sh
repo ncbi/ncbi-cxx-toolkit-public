@@ -118,13 +118,13 @@ do
     local fname=`make_test_name "$tool_args"`
     local test_name=$fname
 
-    local golden_file=$fname.golden
+    local golden_file=$script_folder/golden/$fname.golden
     local current_file=$tmp_folder/$fname.new
     local cerr_file=$tmp_folder/$fname.cerr
 
-    if [ -f test-cases/$golden_file ]
+    if [ -f $golden_file ]
     then
-       compare_with_golden_file test-cases/$golden_file $current_file $cerr_file "$tool_args" $test_name "unit_test_compare_to_previous"
+       compare_with_golden_file $golden_file $current_file $cerr_file "$tool_args" $test_name "unit_test_compare_to_previous"
     else
        create_output_file "$tool_args" $golden_file $cerr_file
     fi

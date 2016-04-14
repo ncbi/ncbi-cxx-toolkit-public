@@ -8,7 +8,7 @@ function create_output_file()
    local result=$2
    local cerr=$3
 
-   (echo "$TEST_TOOL_PATH $args -Q 0 -o $result "| bash  \
+   (cd original && echo "$TEST_TOOL_PATH $args -o $result "| bash  \
     > $cerr  2>&1 && echo "end-of-file" >> $result ) || echo "$TEST_TOOL_PATH" "returned non-zero exit code"
 }
 
@@ -22,6 +22,6 @@ function run_old_tool()
    local args=$1
    local result=$2
    local cerr=$3
-   (echo "$OLD_TOOL_PATH $args -Q 0 -o $result "| bash  \
+   (cd original && echo "$OLD_TOOL_PATH $args -o $result "| bash  \
     > $cerr  2>&1 && echo "end-of-file" >> $result ) || echo "$OLD_TOOL_PATH" "returned non-zero exit code"
 }
