@@ -1106,10 +1106,13 @@ void CNetICacheClient::SetEventHandler(INetEventHandler* event_handler)
 }
 
 void CNetICacheClientExt::ProlongBlobLifetime(const string& key,
-        const CTimeout& ttl)
+        const CTimeout& ttl, const CNamedParameterList* optional)
 {
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
+    parameters.LoadNamedParameters(optional);
+
     string cmd("PROLONG \"");
-    cmd += GetCacheName();
+    cmd += NStr::PrintableString(parameters.GetCacheName());
     cmd += "\" \"";
     cmd += key;
     cmd += "\" \"\" ttl=";

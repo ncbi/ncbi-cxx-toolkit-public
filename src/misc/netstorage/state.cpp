@@ -655,20 +655,22 @@ ENetStorageRemoveResult CNetCache::RemoveImpl()
 }
 
 
-void CNetCache::SetExpirationImpl(const CTimeout& ttl)
+void CNetCache::SetExpirationImpl(const CTimeout& requested_ttl)
 {
     TObjLoc& object_loc(Locator());
 
     try {
         NC_EXISTS_IMPL(object_loc);
 
-        if (ttl.IsFinite()) {
-            m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), ttl);
-        } else {
+        CTimeout ttl(requested_ttl);
+
+        if (!ttl.IsFinite()) {
             // NetCache does not support infinite TTL, use max possible instead
-            const CTimeout max(numeric_limits<unsigned>::max(), 0);
-            m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), max);
+            ttl.Set(numeric_limits<unsigned>::max(), 0);
         }
+
+        m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), ttl,
+                nc_cache_name = object_loc.GetAppDomain());
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
 }

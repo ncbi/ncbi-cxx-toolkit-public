@@ -53,7 +53,8 @@ struct NCBI_NET_CACHE_EXPORT CNetICacheClientExt : CNetICacheClient
         return *this;
     }
 
-    void ProlongBlobLifetime(const string&, const CTimeout&);
+    void ProlongBlobLifetime(const string&, const CTimeout&,
+            const CNamedParameterList* optional = NULL);
 };
 
 
