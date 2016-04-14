@@ -167,8 +167,6 @@ use m_NewCleanup.x_RemoveUnseenTitles { Bioseq, Bioseq-set }
 use m_NewCleanup.x_MoveSeqdescOrgToSourceOrg { Seqdesc }
 use m_NewCleanup.x_MoveSeqfeatOrgToSourceOrg { Seq-feat }
 
-use m_NewCleanup.x_RemoveUnnecessaryGeneXrefs { Seq-feat }
-
 use m_NewCleanup.BioSourceEC { BioSource }
 
 use m_NewCleanup.x_RemoveEmptyFeatures
