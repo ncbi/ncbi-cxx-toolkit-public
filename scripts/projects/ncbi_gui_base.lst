@@ -32,6 +32,7 @@ misc/xmlwrapp
 misc/eutils_client$
 misc/discrepancy$
 misc/discrepancy_report$
+misc/biosample_util$
 objects
 objmgr
 objtools
