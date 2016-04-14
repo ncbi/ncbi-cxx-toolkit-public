@@ -191,6 +191,8 @@ public:
         CSeq_feat_Handle& sfh
     );
 
+    void BasicCleanup(CPubdesc& pd, bool strip_serial);
+
     /// Extended Cleanup methods
 
     void ExtendedCleanupSeqEntry (

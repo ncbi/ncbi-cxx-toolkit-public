@@ -2285,6 +2285,10 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
             } else {
                 d->SetPub().SetReftype(CPubdesc::eReftype_feats);
             }
+
+            CRef<CCleanupChange> changes(makeCleanupChange(0));
+            CNewCleanup_imp pubclean(changes, 0);
+            pubclean.BasicCleanup(d->SetPub(), ShouldStripPubSerial(*(b->GetCompleteBioseq())));
             MoveOneFeatToPubdesc(*p, d, *b);
             any_change = true;
         }
@@ -2391,6 +2395,53 @@ bool CCleanup::FixGeneXrefSkew(CSeq_entry_Handle seh)
         }
     }
     return any_change;
+}
+
+
+bool CCleanup::ShouldStripPubSerial(const CBioseq& bs)
+{
+    bool strip_serial = true;
+    ITERATE(CBioseq::TId, id, bs.GetId()) {
+        const CSeq_id& sid = **id;
+        switch (sid.Which()) {
+        case NCBI_SEQID(Genbank):
+        case NCBI_SEQID(Tpg):
+        {
+            const CTextseq_id& tsid = *GET_FIELD(sid, Textseq_Id);
+            if (FIELD_IS_SET(tsid, Accession)) {
+                const string& acc = GET_FIELD(tsid, Accession);
+                if (acc.length() == 6) {
+                    strip_serial = false;
+                }
+            }
+        }
+        break;
+        case NCBI_SEQID(Embl):
+        case NCBI_SEQID(Ddbj):
+            strip_serial = false;
+            break;
+        case NCBI_SEQID(not_set):
+        case NCBI_SEQID(Local):
+        case NCBI_SEQID(Other):
+        case NCBI_SEQID(General):
+            break;
+        case NCBI_SEQID(Gibbsq):
+        case NCBI_SEQID(Gibbmt):
+        case NCBI_SEQID(Pir):
+        case NCBI_SEQID(Swissprot):
+        case NCBI_SEQID(Patent):
+        case NCBI_SEQID(Prf):
+        case NCBI_SEQID(Pdb):
+        case NCBI_SEQID(Gpipe):
+        case NCBI_SEQID(Tpe):
+        case NCBI_SEQID(Tpd):
+            strip_serial = false;
+            break;
+        default:
+            break;
+        }
+    }
+    return strip_serial;
 }
 
 

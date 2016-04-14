@@ -448,6 +448,16 @@ void CNewCleanup_imp::BasicCleanupSeqFeatHandle (
     edit_handle.Replace( *new_seq_feat );
 }
 
+
+void CNewCleanup_imp::BasicCleanup(CPubdesc& pd, bool strip_serial)
+{
+    bool was_strip_serial = m_StripSerial;
+    m_StripSerial = strip_serial;
+    PubdescBC(pd);
+    m_StripSerial = was_strip_serial;
+}
+
+
 // Implementation methods
 
 void CNewCleanup_imp::SetGeneticCode (
@@ -2461,20 +2471,6 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
         ChangeMade(CCleanupChange::eChangePublication);
     }
 
-    /*
-    last_article_pubmed_id = 0;
-    int article_pubmed_id = 0;
-    EDIT_EACH_ARTICLEID_ON_CITART( id_iter, *last_article ) {
-        const CArticleId &article_id = **id_iter;
-        if( article_id.IsPubmed() ) {
-            article_pubmed_id = article_id.GetPubmed().Get();
-            if (last_article_pubmed_id > 0 && last_article_pubmed_id == article_pubmed_id) {
-                ERASE_ARTICLEID_ON_CITART( id_iter, *last_article );
-            }
-            last_article_pubmed_id = article_pubmed_id;
-        }
-    }
-    */
 }
 
 CNewCleanup_imp::EAction CNewCleanup_imp::PubBC(CPub& pub, bool fix_initials)
@@ -13798,42 +13794,16 @@ void CNewCleanup_imp::SetGlobalFlags(const CBioseq& bs, bool reset)
         ResetGlobalFlags();
     }
 
+    if (!CCleanup::ShouldStripPubSerial(bs)) {
+        m_StripSerial = false;
+    }
+
     ITERATE(CBioseq::TId, id, bs.GetId()) {
         const CSeq_id& sid = **id;
         switch (sid.Which()) {
-            case NCBI_SEQID(Genbank):
-            case NCBI_SEQID(Tpg):
-            {
-                const CTextseq_id& tsid = *GET_FIELD(sid, Textseq_Id);
-                if (FIELD_IS_SET(tsid, Accession)) {
-                    const string& acc = GET_FIELD(tsid, Accession);
-                    if (acc.length() == 6) {
-                        m_StripSerial = false;
-                    }
-                }
-            }
-            break;
             case NCBI_SEQID(Embl):
             case NCBI_SEQID(Ddbj):
-                m_StripSerial = false;
                 m_IsEmblOrDdbj = true;
-                break;
-            case NCBI_SEQID(not_set):
-            case NCBI_SEQID(Local):
-            case NCBI_SEQID(Other):
-            case NCBI_SEQID(General):
-                break;
-            case NCBI_SEQID(Gibbsq):
-            case NCBI_SEQID(Gibbmt):
-            case NCBI_SEQID(Pir):
-            case NCBI_SEQID(Swissprot):
-            case NCBI_SEQID(Patent):
-            case NCBI_SEQID(Prf):
-            case NCBI_SEQID(Pdb):
-            case NCBI_SEQID(Gpipe):
-            case NCBI_SEQID(Tpe):
-            case NCBI_SEQID(Tpd):
-                m_StripSerial = false;
                 break;
             default:
                 break;

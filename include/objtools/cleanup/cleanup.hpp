@@ -112,6 +112,9 @@ public:
 
     // Useful cleanup functions
 
+    static bool ShouldStripPubSerial(const CBioseq& bs);
+
+
 /// Moves protein-specific features from nucleotide sequences in the Seq-entry to
 /// the appropriate protein sequence.
 /// @param seh Seq-entry Handle to edit [in]
