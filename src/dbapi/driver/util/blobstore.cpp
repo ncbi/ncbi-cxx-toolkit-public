@@ -498,9 +498,14 @@ CBlobStoreBase::ReadTableDescr()
                     m_NumColName= r->ItemName(j);
                     break;
 
-                case eDB_Text: m_IsText= true;
+                case eDB_Text:
+                case eDB_VarCharMax:
+                    m_IsText= true;
+                    // fall through
                 case eDB_Image:
+                case eDB_VarBinaryMax:
                     m_BlobColumn[m_NofBC++]= r->ItemName(j);
+                    break;
                 default:;
                 }
             }

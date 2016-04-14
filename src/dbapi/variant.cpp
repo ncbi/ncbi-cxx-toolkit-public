@@ -117,6 +117,17 @@ CVariant CVariant::VarChar(const TStringUCS2 &s, size_t len)
     return CVariant(len ? new CDB_VarChar(s, len) : new CDB_VarChar(s));
 }
 
+CVariant CVariant::VarCharMax(const char *p, size_t len)
+{
+    return CVariant(p ? (len ? new CDB_VarCharMax(p, len)
+                         : new CDB_VarCharMax(p))
+                    : new CDB_VarCharMax());
+}
+CVariant CVariant::VarCharMax(const TStringUCS2 &s, size_t len)
+{
+    return CVariant(len ? new CDB_VarCharMax(s, len) : new CDB_VarCharMax(s));
+}
+
 CVariant CVariant::Char(size_t size, const char *p)
 {
     return CVariant(p ? new CDB_Char(size, p) : new CDB_Char(size));
@@ -135,6 +146,11 @@ CVariant CVariant::LongBinary(size_t maxSize, const void *p, size_t len)
 CVariant CVariant::VarBinary(const void *p, size_t len)
 {
     return CVariant(p ? new CDB_VarBinary(p, len) : new CDB_VarBinary());
+}
+
+CVariant CVariant::VarBinaryMax(const void *p, size_t len)
+{
+    return CVariant(p ? new CDB_VarBinaryMax(p, len) : new CDB_VarBinaryMax());
 }
 
 CVariant CVariant::Binary(size_t size, const void *p, size_t len)
@@ -228,6 +244,12 @@ CVariant::CVariant(EDB_Type type, size_t size)
         return;
     case eDB_Image:
         m_data = new CDB_Image();
+        return;
+    case eDB_VarCharMax:
+        m_data = new CDB_VarCharMax();
+        return;
+    case eDB_VarBinaryMax:
+        m_data = new CDB_VarBinaryMax();
         return;
     case eDB_Bit:
         m_data = new CDB_Bit();
@@ -423,19 +445,15 @@ string CVariant::GetString(void) const
                 break;
             case eDB_Text:
             case eDB_Image:
+            case eDB_VarCharMax:
+            case eDB_VarBinaryMax:
                 {
                     CDB_Stream* stream = (CDB_Stream*)GetData();
-                    char* buff[4096];
-                    size_t read_bytes = 0;
-                
-                    s.reserve(stream->Size());
-                    while ((read_bytes = stream->Read(buff, sizeof(buff))) != 0) {
-                        s.append((const char*) buff, read_bytes);
-
-                        if (read_bytes < sizeof(buff)) {
-                            break;
-                        }
-                    }
+                    size_t n = stream->Size();
+                    s.resize(n);
+                    size_t n2 = stream->PeekAt(&s[0], 0, n);
+                    _ASSERT(n2 == n);
+                    s.resize(n2);
                 }
                 break;
             default:
@@ -618,11 +636,9 @@ size_t CVariant::Read(void* buf, size_t len) const
 {
     if( !IsNull() )
     {
-        switch(GetType()) {
-        case eDB_Image:
-        case eDB_Text:
+        if (CDB_Object::IsBlobType(GetType())) {
             return ((CDB_Stream*)GetData())->Read(buf, len);
-        default:
+        } else {
             x_Inapplicable_Method("Read()");
         }
     }
@@ -631,12 +647,9 @@ size_t CVariant::Read(void* buf, size_t len) const
 
 size_t CVariant::Append(const void* buf, size_t len)
 {
-    switch(GetType()) {
-    case eDB_Image:
-    case eDB_Text:
+    if (CDB_Object::IsBlobType(GetType())) {
         return ((CDB_Stream*)GetData())->Append(buf, len);
-
-    default:
+    } else {
         x_Inapplicable_Method("Append()");
     }
     return 0;
@@ -647,6 +660,9 @@ size_t CVariant::Append(const string& str)
     switch(GetType()) {
     case eDB_Text:
         return ((CDB_Text*)GetData())->Append(str);
+
+    case eDB_VarCharMax:
+        return ((CDB_VarCharMax*)GetData())->Append(str);
 
     default:
         x_Inapplicable_Method("Append()");
@@ -660,6 +676,9 @@ size_t CVariant::Append(const TStringUCS2& str)
     case eDB_Text:
         return ((CDB_Text*)GetData())->Append(str);
 
+    case eDB_VarCharMax:
+        return ((CDB_VarCharMax*)GetData())->Append(str);
+
     default:
         x_Inapplicable_Method("Append()");
     }
@@ -668,11 +687,9 @@ size_t CVariant::Append(const TStringUCS2& str)
 
 size_t CVariant::GetBlobSize() const
 {
-    switch(GetType()) {
-    case eDB_Image:
-    case eDB_Text:
+    if (CDB_Object::IsBlobType(GetType())) {
         return ((CDB_Stream*)GetData())->Size();
-    default:
+    } else {
         x_Inapplicable_Method("GetBlobSize()");
     }
     return 0;
@@ -680,14 +697,9 @@ size_t CVariant::GetBlobSize() const
 
 void CVariant::Truncate(size_t len)
 {
-    switch(GetType()) {
-    case eDB_Image:
-        ((CDB_Image*)GetData())->Truncate(len);
-        break;
-    case eDB_Text:
-        ((CDB_Text*)GetData())->Truncate(len);
-        break;
-    default:
+    if (CDB_Object::IsBlobType(GetType())) {
+        ((CDB_Stream*)GetData())->Truncate(len);
+    } else {
         x_Inapplicable_Method("Truncate()");
     }
     return;
@@ -695,12 +707,9 @@ void CVariant::Truncate(size_t len)
 
 bool CVariant::MoveTo(size_t pos) const
 {
-    switch(GetType()) {
-    case eDB_Image:
-        return ((CDB_Image*)GetData())->MoveTo(pos);
-    case eDB_Text:
-        return ((CDB_Text*)GetData())->MoveTo(pos);
-    default:
+    if (CDB_Object::IsBlobType(GetType())) {
+        return ((CDB_Stream*)GetData())->MoveTo(pos);
+    } else {
         x_Inapplicable_Method("MoveTo()");
     }
     return false;
@@ -951,6 +960,8 @@ EBulkEnc CVariant::GetBulkInsertionEnc(void) const
         return ((const CDB_String*)GetData())->GetBulkInsertionEnc();
     case eDB_Text:
         return ((const CDB_Text*)GetData())->GetEncoding();
+    case eDB_VarCharMax:
+        return ((const CDB_VarCharMax*)GetData())->GetEncoding();
     default:
         return eBulkEnc_RawBytes;
     }
@@ -970,6 +981,9 @@ void CVariant::SetBulkInsertionEnc(EBulkEnc e)
         break;
     case eDB_Text:
         ((CDB_Text*)GetData())->SetEncoding(e);
+        break;
+    case eDB_VarCharMax:
+        ((CDB_VarCharMax*)GetData())->SetEncoding(e);
         break;
     default:
         break;

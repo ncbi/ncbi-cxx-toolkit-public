@@ -1056,6 +1056,18 @@ BOOST_AUTO_TEST_CASE(Test_Variant)
                 BOOST_CHECK( value_variant.IsNull() );
             }
             {
+                CVariant value_variant( eDB_VarCharMax );
+
+                BOOST_CHECK_EQUAL( eDB_VarCharMax, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_VarBinaryMax );
+
+                BOOST_CHECK_EQUAL( eDB_VarBinaryMax, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
                 CVariant value_variant( eDB_Bit );
 
                 BOOST_CHECK_EQUAL( eDB_Bit, value_variant.GetType() );
@@ -2581,7 +2593,7 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
         // Parameters ...
         {
             const string msg(4000, 'Z');
-            const CVariant vc_max_value = CVariant::LongChar(msg.data());
+            const CVariant vc_max_value = CVariant::VarCharMax(msg.data());
 
             // Clean table ...
             {
@@ -2756,7 +2768,7 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX_BCP)
                     );
                 CVariant col1(eDB_Int);
                 // CVariant col2(eDB_VarChar);
-                CVariant col2(eDB_Text);
+                CVariant col2(eDB_VarCharMax);
 
                 bi->Bind(1, &col1);
                 bi->Bind(2, &col2);

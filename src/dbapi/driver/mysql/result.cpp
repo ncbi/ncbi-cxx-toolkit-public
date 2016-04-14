@@ -152,33 +152,16 @@ static CDB_Object* s_GetItem(I_Result::EGetItem policy,
         return item_buff;
     }
 
-    if (b_type == eDB_Image) {
+    if (CDB_Object::IsBlobType(b_type)) {
         if ( !item_buff ) {
-            item_buff = new CDB_Image;
+            item_buff = CDB_Object::Create(b_type);
         } else if (policy == I_Result::eAssignLOB) {
             // Explicitly truncate previous value ...
             static_cast<CDB_Image*>(item_buff)->Truncate();
         }
 
         if ( d_len ) {
-            ((CDB_Image*) item_buff)->Append(d_ptr, d_len);
-        } else {
-            item_buff->AssignNULL();
-        }
-
-        return item_buff;
-    }
-
-    if (b_type == eDB_Text) {
-        if ( !item_buff ) {
-            item_buff = new CDB_Text;
-        } else if (policy == I_Result::eAssignLOB) {
-            // Explicitly truncate previous value ...
-            static_cast<CDB_Text*>(item_buff)->Truncate();
-        }
-
-        if ( d_len ) {
-            ((CDB_Text*) item_buff)->Append(d_ptr, d_len);
+            ((CDB_Stream*) item_buff)->Append(d_ptr, d_len);
         } else {
             item_buff->AssignNULL();
         }

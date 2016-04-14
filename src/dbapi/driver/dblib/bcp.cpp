@@ -242,16 +242,18 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 pb = (void*) (dt + 1);
             }
             break;
-            case eDB_Text: {
-                CDB_Text& val = dynamic_cast<CDB_Text&> (param);
+            case eDB_Text:
+            case eDB_VarCharMax: {
+                CDB_Stream& val = dynamic_cast<CDB_Stream&> (param);
                 r = Check(bcp_bind(GetCmd(), 0, 0,
                              val.IsNULL() ? 0 : (DBINT) val.Size(),
                              0, 0, SYBTEXT, i + 1));
                 m_HasBlob = true;
             }
             break;
-            case eDB_Image: {
-                CDB_Image& val = dynamic_cast<CDB_Image&> (param);
+            case eDB_Image:
+            case eDB_VarBinaryMax: {
+                CDB_Stream& val = dynamic_cast<CDB_Stream&> (param);
                 r = Check(bcp_bind(GetCmd(), 0, 0,
                              val.IsNULL() ? 0 : (DBINT) val.Size(),
                              0, 0, SYBIMAGE, i + 1));
@@ -457,13 +459,11 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 pb = (void*) (dt + 1);
             }
             break;
-            case eDB_Text: {
-                CDB_Text& val = dynamic_cast<CDB_Text&> (param);
-                r = Check(bcp_collen(GetCmd(), (DBINT) val.Size(), i + 1));
-            }
-            break;
-            case eDB_Image: {
-                CDB_Image& val = dynamic_cast<CDB_Image&> (param);
+            case eDB_Text:
+            case eDB_Image:
+            case eDB_VarCharMax:
+            case eDB_VarBinaryMax: {
+                CDB_Stream& val = dynamic_cast<CDB_Stream&> (param);
                 r = Check(bcp_collen(GetCmd(), (DBINT) val.Size(), i + 1));
             }
             break;
@@ -503,8 +503,7 @@ bool CDBL_BCPInCmd::Send(void)
 
             CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
-            if (param.GetType() != eDB_Text &&
-                param.GetType() != eDB_Image)
+            if ( !CDB_Object::IsBlobType(param.GetType()) )
                 continue;
 
             CDB_Stream& val = dynamic_cast<CDB_Stream&> (param);
@@ -515,14 +514,12 @@ bool CDBL_BCPInCmd::Send(void)
                     l = s;
                 if (Check(bcp_moretext(GetCmd(), (DBINT) l, (BYTE*) buff)) != SUCCEED) {
                     SetHasFailed();
-                    string error;
 
-                    if (param.GetType() == eDB_Text) {
-                        error = "bcp_moretext for text failed.";
-                    } else {
-                        error = "bcp_moretext for image failed.";
-                    }
-                    DATABASE_DRIVER_ERROR( error + GetDbgInfo(), 223006 );
+                    DATABASE_DRIVER_ERROR(
+                        string("bcp_moretext for ")
+                        + CDB_Object::GetTypeName(param.GetType())
+                        + " failed." + GetDbgInfo(),
+                        223006);
                 }
                 if (!l)
                     break;

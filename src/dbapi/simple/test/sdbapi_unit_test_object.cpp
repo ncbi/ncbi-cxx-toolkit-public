@@ -462,7 +462,7 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX_BCP)
                 CBulkInsert bi = GetDatabase().NewBulkInsert(table_name, 1);
 
                 bi.Bind(1, eSDB_Int4);
-                bi.Bind(2, eSDB_Text);
+                bi.Bind(2, eSDB_StringMax);
 
                 bi << 1 << msg << EndRow;
                 bi.Complete();

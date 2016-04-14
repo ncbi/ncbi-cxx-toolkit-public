@@ -491,10 +491,12 @@ CDbapiSampleApp::ShowResults (const string& query)
                         } else {
                             cout << v.Value();
                         }
-                    } else if ( rt == eDB_Text ) {
-                        CDB_Text v;
-                        r->GetItem(&v);
-                        cout << "{text (" << v.Size() << " bytes)}";
+                    } else if ( CDB_Object::IsBlobType(rt) ) {
+                        unique_ptr<CDB_Stream> v
+                            (static_cast<CDB_Stream*>(CDB_Object::Create(rt)));
+                        r->GetItem(v.get());
+                        cout << '{' << CDB_Object::GetTypeName(rt) << " ("
+                             << v->Size() << " bytes)}";
                     } else if ( rt == eDB_Image ) {
                         CDB_Image v;
                         r->GetItem(&v);

@@ -209,7 +209,7 @@ bool CResultSet::Next()
     if( more && !IsDisableBind() ) {
         for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
             EDB_Type type = m_rs->ItemDataType(i);
-            if( type == eDB_Text || type == eDB_Image )  {
+            if (CDB_Object::IsBlobType(type)) {
                 break;
             }
             ++m_column;
@@ -256,7 +256,7 @@ void CResultSet::x_CacheItems(int last_num) {
         EDB_Type type = m_rs->ItemDataType(ind);
 
         CVariant& var = m_data[ind];
-        if (type == eDB_Text  ||  type == eDB_Image) {
+        if (CDB_Object::IsBlobType(type)) {
             ((CDB_Stream*)var.GetNonNullData())->Truncate();
             var.SetBlobDescriptor(m_rs->GetBlobDescriptor());
         }

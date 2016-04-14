@@ -145,6 +145,11 @@ s_ConvertType(ESDB_Type type)
         return eDB_Text;
     case eSDB_Image:
         return eDB_Image;
+    case eSDB_StringMax:
+    case eSDB_StringMaxUCS2:
+        return eDB_VarCharMax;
+    case eSDB_BinaryMax:
+        return eDB_VarBinaryMax;
     case eSDB_Bit:
         return eDB_Bit;
     }
@@ -183,6 +188,10 @@ s_ConvertType(EDB_Type type)
         return eSDB_Text;
     case eDB_Image:
         return eSDB_Image;
+    case eDB_VarCharMax:
+        return eSDB_StringMax;
+    case eDB_VarBinaryMax:
+        return eSDB_BinaryMax;
     case eDB_Bit:
         return eSDB_Bit;
     case eDB_UnsupportedType:
@@ -244,6 +253,7 @@ s_ConvertValue(const CTime& from_val, CVariant& to_var)
         to_var = from_val.AsString();
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
         {
             string str_val = from_val.AsString();
             to_var.Truncate();
@@ -268,6 +278,7 @@ s_ConvertValue(Int8 from_val, CVariant& to_var)
         to_var = NStr::Int8ToString(from_val);
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
         {
             string str_val = NStr::Int8ToString(from_val);
             to_var.Truncate();
@@ -295,6 +306,7 @@ s_ConvertValue(Int4 from_val, CVariant& to_var)
         to_var = NStr::IntToString(from_val);
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
         {
             string str_val = NStr::IntToString(from_val);
             to_var.Truncate();
@@ -325,6 +337,7 @@ s_ConvertValue(short from_val, CVariant& to_var)
         to_var = NStr::IntToString(from_val);
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
         {
             string str_val = NStr::IntToString(from_val);
             to_var.Truncate();
@@ -358,6 +371,7 @@ s_ConvertValue(unsigned char from_val, CVariant& to_var)
         to_var = NStr::IntToString(from_val);
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
         {
             string str_val = NStr::IntToString(from_val);
             to_var.Truncate();
@@ -394,6 +408,7 @@ s_ConvertValue(bool from_val, CVariant& to_var)
         to_var = NStr::BoolToString(from_val);
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
         {
             string str_val = NStr::BoolToString(from_val);
             to_var.Truncate();
@@ -421,6 +436,7 @@ s_ConvertValue(const float& from_val, CVariant& to_var)
         to_var = NStr::DoubleToString(from_val);
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
         {
             string str_val = NStr::DoubleToString(from_val);
             to_var.Truncate();
@@ -445,6 +461,7 @@ s_ConvertValue(const double& from_val, CVariant& to_var)
         to_var = NStr::DoubleToString(from_val);
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
         {
             string str_val = NStr::DoubleToString(from_val);
             to_var.Truncate();
@@ -471,10 +488,12 @@ s_ConvertValue(const string& from_val, CVariant& to_var)
         to_var = CVariant::VarBinary(from_val.data(), from_val.size());
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
         to_var.Truncate();
         to_var.Append(from_val);
         break;
     case eDB_Image:
+    case eDB_VarBinaryMax:
         to_var.Truncate();
         to_var.Append(from_val.data(), from_val.size());
         break;
@@ -528,10 +547,12 @@ s_ConvertValue(const TStringUCS2& from_val, CVariant& to_var)
                        to_var);
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
         to_var.Truncate();
         to_var.Append(from_val);
         break;
     case eDB_Image:
+    case eDB_VarBinaryMax:
         to_var.Truncate();
         to_var.Append(reinterpret_cast<const char*>(from_val.data()),
                       from_val.size() * sizeof(TCharUCS2));
@@ -562,8 +583,9 @@ s_ConvertValue(const CVariant& from_var, CTime& to_val)
     case eDB_VarChar:
     case eDB_Char:
     case eDB_LongChar:
-    case eDB_Text:
-        to_val = CTime(from_var.GetString());
+    case eDB_Text: 
+    case eDB_VarCharMax:
+       to_val = CTime(from_var.GetString());
         break;
     default:
         s_ConvertionNotSupported("CTime", from_var.GetType());
@@ -587,6 +609,7 @@ s_ConvertValue(const CVariant& from_var, Int8& to_val)
     case eDB_Char:
     case eDB_LongChar:
     case eDB_Text:
+    case eDB_VarCharMax:
         to_val = NStr::StringToInt8(from_var.GetString());
         break;
     default:
@@ -614,6 +637,7 @@ s_ConvertValue(const CVariant& from_var, Int4& to_val)
     case eDB_Char:
     case eDB_LongChar:
     case eDB_Text:
+    case eDB_VarCharMax:
         temp_val = NStr::StringToInt8(from_var.GetString());
         break;
     default:
@@ -650,6 +674,7 @@ s_ConvertValue(const CVariant& from_var, short& to_val)
     case eDB_Char:
     case eDB_LongChar:
     case eDB_Text:
+    case eDB_VarCharMax:
         temp_val = NStr::StringToInt8(from_var.GetString());
         break;
     default:
@@ -686,6 +711,7 @@ s_ConvertValue(const CVariant& from_var, unsigned char& to_val)
     case eDB_Char:
     case eDB_LongChar:
     case eDB_Text:
+    case eDB_VarCharMax:
         temp_val = NStr::StringToInt8(from_var.GetString());
         break;
     default:
@@ -720,6 +746,7 @@ s_ConvertValue(const CVariant& from_var, bool& to_val)
     case eDB_Char:
     case eDB_LongChar:
     case eDB_Text:
+    case eDB_VarCharMax:
         temp_val = NStr::StringToInt8(from_var.GetString());
         break;
     default:
@@ -746,6 +773,7 @@ s_ConvertValue(const CVariant& from_var, float& to_val)
     case eDB_Char:
     case eDB_LongChar:
     case eDB_Text:
+    case eDB_VarCharMax:
         to_val = float(NStr::StringToDouble(from_var.GetString()));
         break;
     default:
@@ -765,6 +793,7 @@ s_ConvertValue(const CVariant& from_var, double& to_val)
     case eDB_Char:
     case eDB_LongChar:
     case eDB_Text:
+    case eDB_VarCharMax:
         to_val = NStr::StringToDouble(from_var.GetString());
         break;
     default:
@@ -802,6 +831,8 @@ s_ConvertValue(const CVariant& from_var, string& to_val)
     case eDB_LongBinary:
     case eDB_Image:
     case eDB_Numeric:
+    case eDB_VarCharMax:
+    case eDB_VarBinaryMax:
         to_val = from_var.GetString();
         break;
     default:
@@ -1972,7 +2003,8 @@ CBulkInsertImpl::Bind(int col, ESDB_Type type)
                      "Cannot bind columns in CBulkInsert randomly");
     }
     m_Cols.push_back(CVariant(s_ConvertType(type)));
-    if (type == eSDB_StringUCS2  ||  type == eSDB_TextUCS2) {
+    if (type == eSDB_StringUCS2  ||  type == eSDB_TextUCS2
+        ||  type == eSDB_StringMaxUCS2) {
         m_Cols.back().SetBulkInsertionEnc(eBulkEnc_UCS2FromChar);
     }
 }
@@ -3225,7 +3257,7 @@ CQuery::CField::AsVector(void) const
 {
     const CVariant& var_val = m_Query->GetFieldValue(*this);
     EDB_Type var_type = var_val.GetType();
-    if (var_type != eDB_Image  &&  var_type != eDB_Text) {
+    if ( !CDB_Object::IsBlobType(var_type) ) {
         SDBAPI_THROW(eUnsupported,
                      string("Method is unsupported for this type of data: ")
                      + CDB_Object::GetTypeName(var_type, false));
@@ -3246,7 +3278,7 @@ CQuery::CField::AsIStream(void) const
 {
     const CVariant& var_val = m_Query->GetFieldValue(*this);
     EDB_Type var_type = var_val.GetType();
-    if (var_type != eDB_Image  &&  var_type != eDB_Text) {
+    if ( !CDB_Object::IsBlobType(var_type) ) {
         SDBAPI_THROW(eUnsupported,
                      string("Method is unsupported for this type of data: ")
                      + CDB_Object::GetTypeName(var_type, false));
@@ -3268,7 +3300,7 @@ CQuery::CField::GetOStream(size_t blob_size, TBlobOStreamFlags flags) const
 {
     const CVariant& var_val = m_Query->GetFieldValue(*this);
     EDB_Type var_type = var_val.GetType();
-    if (m_IsParam  ||  (var_type != eDB_Image  &&  var_type != eDB_Text)) {
+    if (m_IsParam  ||  !CDB_Object::IsBlobType(var_type) ) {
         SDBAPI_THROW(eUnsupported,
                      string("Method is unsupported for this type of data: ")
                      + CDB_Object::GetTypeName(var_type, false));
@@ -3299,7 +3331,7 @@ CQuery::CField::GetBookmark(void) const
 {
     const CVariant& var_val = m_Query->GetFieldValue(*this);
     EDB_Type var_type = var_val.GetType();
-    if (m_IsParam  ||  (var_type != eDB_Image  &&  var_type != eDB_Text)) {
+    if (m_IsParam  ||  !CDB_Object::IsBlobType(var_type) ) {
         SDBAPI_THROW(eUnsupported,
                      string("Method is unsupported for this type of data: ")
                      + CDB_Object::GetTypeName(var_type, false));

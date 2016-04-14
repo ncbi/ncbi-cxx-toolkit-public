@@ -157,9 +157,12 @@ enum ESDB_Type {
     eSDB_StringUCS2, ///< Like Transact-SQL NVARCHAR(N)
     eSDB_Binary,     ///< Like Transact-SQL VARBINARY(N)
     eSDB_DateTime,   ///< Like Transact-SQL DATETIME
-    eSDB_Text,       ///< Like Transact-SQL TEXT or VARCHAR(MAX)
-    eSDB_TextUCS2,   ///< Like Transact-SQL NTEXT or NVARCHAR(MAX)
-    eSDB_Image,      ///< Like Transact-SQL IMAGE or VARBINARY(MAX)
+    eSDB_Text,       ///< Like Transact-SQL TEXT
+    eSDB_TextUCS2,   ///< Like Transact-SQL NTEXT
+    eSDB_Image,      ///< Like Transact-SQL IMAGE
+    eSDB_StringMax,  ///< Like Transact-SQL VARCHAR(MAX)
+    eSDB_StringMaxUCS2, ///< Like Transact-SQL NVARCHAR(MAX)
+    eSDB_BinaryMax,  ///< Like Transact-SQL VARBINARY(MAX)
     eSDB_Bit         ///< Like Transact-SQL BIT
 };
 

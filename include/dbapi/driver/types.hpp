@@ -68,8 +68,16 @@ enum EDB_Type {
     eDB_Numeric,
     eDB_LongChar,
     eDB_LongBinary,
+    eDB_VarCharMax,
+    eDB_VarBinaryMax,
 
     eDB_UnsupportedType
+};
+
+enum EBlobType {
+    eBlobType_none,
+    eBlobType_Text,
+    eBlobType_Binary
 };
 
 
@@ -306,6 +314,10 @@ public:
     // Get human-readable type name for db_type
     static const char* GetTypeName(EDB_Type db_type,
                                    bool throw_on_unknown = true);
+
+    static EBlobType GetBlobType(EDB_Type db_type);
+    static bool      IsBlobType (EDB_Type db_type)
+        { return GetBlobType(db_type) != eBlobType_none; }
 
     string GetLogString(void) const;
 
@@ -851,6 +863,8 @@ class CMemStore;
 class NCBI_DBAPIDRIVER_EXPORT CDB_Stream : public CDB_Object
 {
 public:
+    virtual ~CDB_Stream();
+
     // assignment
     virtual void AssignNULL();
     CDB_Stream&  Assign(const CDB_Stream& v);
@@ -858,6 +872,7 @@ public:
     // data manipulations
     virtual size_t Read     (void* buff, size_t nof_bytes);
     virtual size_t Peek     (void* buff, size_t nof_bytes) const;
+    virtual size_t PeekAt   (void* buff, size_t start, size_t nof_bytes) const;
     virtual size_t Append   (const void* buff, size_t nof_bytes);
     virtual void   Truncate (size_t nof_bytes = kMax_Int);
     virtual bool   MoveTo   (size_t byte_number);
@@ -867,10 +882,17 @@ public:
     virtual void AssignValue(const CDB_Object& v);
 
 protected:
-    // 'ctors
+    // constructors (destructor is public for compatibility with smart ptrs)
     CDB_Stream();
     CDB_Stream(const CDB_Stream& s, bool share_data = false);
-    virtual ~CDB_Stream();
+
+    // common CDB_Text and CDB_VarCharMax functionality
+    void   x_SetEncoding(EBulkEnc e);
+    size_t x_Append(const void* buff, size_t nof_bytes);
+    size_t x_Append(const CTempString& s, EEncoding enc);
+    size_t x_Append(const TStringUCS2& s);
+
+    EBulkEnc m_Encoding;
 
 private:
     // data storage
@@ -889,6 +911,26 @@ public:
 
 public:
     CDB_Image& operator= (const CDB_Image& image);
+
+    virtual EDB_Type    GetType() const;
+    virtual CDB_Object* Clone()   const;
+    virtual CDB_Object* ShallowClone() const;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDB_VarBinaryMax : public CDB_Stream
+{
+public:
+    CDB_VarBinaryMax(void);
+    CDB_VarBinaryMax(const CDB_VarBinaryMax& v, bool share_data = false);
+    CDB_VarBinaryMax(const void* v, size_t l);
+    virtual ~CDB_VarBinaryMax(void);
+
+public:
+    void SetValue(const void* v, size_t l) { Truncate(); Append(v, l); }
+
+    CDB_VarBinaryMax& operator= (const CDB_VarBinaryMax& v);
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
@@ -920,9 +962,51 @@ public:
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
     virtual CDB_Object* ShallowClone() const;
+};
 
-private:
-    EBulkEnc m_Encoding;
+
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDB_VarCharMax : public CDB_Stream
+{
+public:
+    CDB_VarCharMax(void);
+    CDB_VarCharMax(const CDB_VarCharMax& v, bool share_data = false);
+    CDB_VarCharMax(const string& s,         EEncoding enc = eEncoding_Unknown);
+    CDB_VarCharMax(const char* s,           EEncoding enc = eEncoding_Unknown);
+    CDB_VarCharMax(const char* s, size_t l, EEncoding enc = eEncoding_Unknown);
+    CDB_VarCharMax(const TStringUCS2& s);
+    virtual ~CDB_VarCharMax(void);
+
+public:
+    // Get and set the encoding to be used by subsequent Append operations.
+    EBulkEnc GetEncoding(void) const { return m_Encoding; }
+    void     SetEncoding(EBulkEnc e);
+
+    virtual size_t Append(const void* buff, size_t nof_bytes);
+    virtual size_t Append(const CTempString& s,
+                          EEncoding enc = eEncoding_Unknown);
+    virtual size_t Append(const TStringUCS2& s);
+
+    CDB_VarCharMax& SetValue(const string& s,
+                             EEncoding enc = eEncoding_Unknown)
+        { Truncate(); Append(s, enc); return *this; }
+    CDB_VarCharMax& SetValue(const char* s,
+                             EEncoding enc = eEncoding_Unknown)
+        { Truncate(); Append(s, enc); return *this; }
+    CDB_VarCharMax& SetValue(const char* s, size_t l,
+                             EEncoding enc = eEncoding_Unknown)
+        { Truncate(); Append(CTempString(s, l), enc); return *this; }
+    CDB_VarCharMax& SetValue(const TStringUCS2& s)
+        { Truncate(); Append(s); return *this; }
+
+    CDB_VarCharMax& operator= (const string& s)      { return SetValue(s); }
+    CDB_VarCharMax& operator= (const char*   s)      { return SetValue(s); }
+    CDB_VarCharMax& operator= (const TStringUCS2& s) { return SetValue(s); }
+    CDB_VarCharMax& operator= (const CDB_VarCharMax& v);
+
+    virtual EDB_Type    GetType() const;
+    virtual CDB_Object* Clone()   const;
+    virtual CDB_Object* ShallowClone() const;
 };
 
 
@@ -1064,10 +1148,27 @@ protected:
     unsigned char m_Body[33];
 };
 
+/////////////////////////////////////////////////////////////////////////////
 
 NCBI_PARAM_DECL_EXPORT(NCBI_DBAPIDRIVER_EXPORT, unsigned int, dbapi, max_logged_param_length);
 typedef NCBI_PARAM_TYPE(dbapi, max_logged_param_length) TDbapi_MaxLoggedParamLength;
 
+/////////////////////////////////////////////////////////////////////////////
+
+inline
+EBlobType CDB_Object::GetBlobType(EDB_Type db_type)
+{
+    switch (db_type) {
+    case eDB_Text:
+    case eDB_VarCharMax:
+        return eBlobType_Text;
+    case eDB_Image:
+    case eDB_VarBinaryMax:
+        return eBlobType_Binary;
+    default:
+        return eBlobType_none;
+    }
+}
 
 END_NCBI_SCOPE
 

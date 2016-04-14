@@ -1054,10 +1054,23 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_BlobDescriptor& desc,
     // for best performance, but that would require using a FreeTDS
     // version new enough to support TDS 7.2 or higher.
     char buff[4000];
-    CDB_Text* text = dynamic_cast<CDB_Text*>(&img);
-    EBulkEnc encoding = ((text == NULL) ? eBulkEnc_RawBytes
-                         : text->GetEncoding());
     string utf8_fragment;
+    EBulkEnc encoding = eBulkEnc_RawBytes;
+    bool may_be_utf8 = false;
+    if (desc.GetColumnType() != CDB_BlobDescriptor::eBinary) {
+        switch (img.GetType()) {
+        case eDB_Text:
+            encoding = static_cast<CDB_Text&>(img).GetEncoding();
+            may_be_utf8 = encoding != eBulkEnc_RawUCS2;
+            break;
+        case eDB_VarCharMax:
+            encoding = static_cast<CDB_VarCharMax&>(img).GetEncoding();
+            may_be_utf8 = encoding != eBulkEnc_RawUCS2;
+            break;
+        default:
+            _ASSERT(CDB_Object::GetBlobType(img.GetType()) != eBlobType_Text);
+        }
+    }
 
     while (size > 0) {
         char* p  = buff;
@@ -1077,8 +1090,7 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_BlobDescriptor& desc,
         // Avoid accidentally splitting up multi-byte UTF-8 sequences,
         // while taking care not to interfere with binary data or
         // non-UTF-8 text.
-        if (desc.GetColumnType() != CDB_BlobDescriptor::eBinary
-            &&  text != NULL  &&  encoding != eBulkEnc_RawUCS2) {
+        if (may_be_utf8) {
             SIZE_TYPE l = impl::GetValidUTF8Len(CTempString(buff, len));
             if (l < len) {
                 utf8_fragment.assign(buff + l, len - l);

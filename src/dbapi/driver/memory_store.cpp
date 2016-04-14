@@ -166,6 +166,29 @@ size_t CMemStore::Peek(void* buff, size_t size) const
 }
 
 
+size_t CMemStore::PeekAt(void* buff, size_t start, size_t size) const
+{
+    // Work with a shallow copy to avoid code duplication.
+    CMemStore ms2(m_BlockSize);
+    ms2.m_First    = m_First;
+    ms2.m_Current  = m_Current;
+    ms2.m_Pos      = m_Pos;
+    ms2.m_BlockPos = m_BlockPos;
+    ms2.m_Size     = m_Size;
+    // Set m_Last for the sake of Seek, but make sure it winds up NULL
+    // to avoid premature cleanup.
+    try {
+        ms2.m_Last = m_Last;
+        ms2.Seek(start, eHead);
+    } catch (...) {
+        ms2.m_Last = NULL;
+        throw;
+    }
+    ms2.m_Last = NULL;
+    return ms2.Read(buff, size);
+}
+
+
 CMemStore::TSize CMemStore::x_SeekCURR(CMemStore::TSize offset)
 {
     if ( !m_Current )

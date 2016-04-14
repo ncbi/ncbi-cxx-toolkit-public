@@ -489,32 +489,29 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         break;
     }
 	case eDB_Text:
-    {
-        CDB_Text& par = dynamic_cast<CDB_Text&> (param);
-        param_fmt.datatype = CS_TEXT_TYPE;
-        if (declare_only) {
-            break;
-        } else if ( !par.IsNULL() ) {
-            ret_code = CS_FAIL;
-            return false;
-        } else {
-            ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt, NULL, 0,
-                                      indicator));
-        }
-        break;
-    }
 	case eDB_Image:
+    case eDB_VarCharMax:
+    case eDB_VarBinaryMax:
     {
-        CDB_Image& par = dynamic_cast<CDB_Image&> (param);
-        param_fmt.datatype = CS_IMAGE_TYPE;
+        CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
+        switch (CDB_Object::GetBlobType(param.GetType())) {
+        case eBlobType_Text:    param_fmt.datatype = CS_TEXT_TYPE;   break;
+        case eBlobType_Binary:  param_fmt.datatype = CS_IMAGE_TYPE;  break;
+        default:                _TROUBLE;
+        }
         if (declare_only) {
             break;
-        } else if ( !par.IsNULL() ) {
-            ret_code = CS_FAIL;
-            return false;
-        } else {
+        } else if (par.IsNULL()) {
             ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt, NULL, 0,
                                       indicator));
+        } else {
+            size_t n = par.Size();
+            AutoArray<char> buf(n);
+            par.MoveTo(0);
+            size_t n2 = par.Read(buf.get(), n);
+            _ASSERT(n2 == n);
+            ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
+                                      buf.get(), n2, indicator));
         }
         break;
     }

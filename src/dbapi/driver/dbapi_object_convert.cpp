@@ -310,6 +310,8 @@ CValueConvert<SSafeCP, CDB_Object>::operator string(void) const
             ));
         case eDB_Text:
         case eDB_Image: 
+        case eDB_VarCharMax:
+        case eDB_VarBinaryMax:            
             {
                 CDB_Stream& strm = const_cast<CDB_Stream&>(static_cast<const CDB_Stream&>(m_Value));
                 result.resize(strm.Size());
@@ -573,6 +575,8 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator string(void) const
             ));
         case eDB_Text:
         case eDB_Image: 
+        case eDB_VarCharMax:
+        case eDB_VarBinaryMax:            
             {
                 CDB_Stream& strm = const_cast<CDB_Stream&>(static_cast<const CDB_Stream&>(m_Value));
                 result.resize(strm.Size());
@@ -668,6 +672,8 @@ TO Convert_CDB_Object(const CDB_Object& value)
             ));
         case eDB_Text:
         case eDB_Image: 
+        case eDB_VarCharMax:
+        case eDB_VarBinaryMax:            
             {
                 string result;
                 CDB_Stream& strm = const_cast<CDB_Stream&>(static_cast<const CDB_Stream&>(value));
@@ -833,7 +839,9 @@ TO Convert_CDB_ObjectSql(const CDB_Object& value)
                 static_cast<const CDB_LongBinary&>(value).DataSize()
             ));
         case eDB_Text:
-        case eDB_Image: 
+        case eDB_Image:
+        case eDB_VarCharMax:
+        case eDB_VarBinaryMax:            
             {
                 string result;
                 CDB_Stream& strm = const_cast<CDB_Stream&>(static_cast<const CDB_Stream&>(value));

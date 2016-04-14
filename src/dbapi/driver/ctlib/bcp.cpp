@@ -404,8 +404,9 @@ bool CTL_BCPInCmd::x_AssignParams()
                                       &bind.indicator));
             break;
         }
-        case eDB_Text: {
-            CDB_Text& par = dynamic_cast<CDB_Text&> (param);
+        case eDB_Text:
+        case eDB_VarCharMax: {
+            CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
             param_fmt.datatype  = CS_TEXT_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size();
             bind.datalen   = (CS_INT) par.Size();
@@ -414,8 +415,9 @@ bool CTL_BCPInCmd::x_AssignParams()
                                       &bind.indicator));
             break;
         }
-        case eDB_Image: {
-            CDB_Image& par = dynamic_cast<CDB_Image&> (param);
+        case eDB_Image:
+        case eDB_VarBinaryMax: {
+            CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
             param_fmt.datatype  = CS_IMAGE_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size();
             bind.datalen   = (CS_INT) par.Size();
@@ -551,7 +553,7 @@ bool CTL_BCPInCmd::Send(void)
             if (param.IsNULL()) {
                 continue;
             }
-            else if (param.GetType() == eDB_Text  ||  param.GetType() == eDB_Image) {
+            else if (CDB_Object::IsBlobType(param.GetType())) {
                 CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
                 datalen = (CS_INT) par.Size();
 

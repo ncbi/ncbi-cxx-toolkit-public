@@ -516,7 +516,8 @@ private:
     const obj_type& m_Value; 
 };
 
-// Still missing CDB_VarBinary, CDB_Binary, CDB_LongBinary, CDB_Stream, CDB_Text, CDB_Text, 
+// Still missing CDB_VarBinary, CDB_Binary, CDB_LongBinary, CDB_Stream,
+// CDB_Text, CDB_Image, CDB_VarCharMax, CDB_VarBinaryMax
 
 } // namespace value_slice
 

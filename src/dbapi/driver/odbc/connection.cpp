@@ -426,7 +426,7 @@ bool CODBC_Connection::SendData(I_BlobDescriptor& desc, CDB_Stream& lob,
     CDB_BlobDescriptor::ETDescriptorType desc_type
         = CDB_BlobDescriptor::eUnknown;
 
-    if (lob.GetType() == eDB_Image) {
+    if (CDB_Object::GetBlobType(lob.GetType()) == eBlobType_Binary) {
         desc_type = CDB_BlobDescriptor::eBinary;
     } else {
         desc_type = CDB_BlobDescriptor::eText;
@@ -1055,6 +1055,16 @@ CStatementBase::Type2String(const CDB_Object& param) const
     case eDB_Image:
         type_str = "image";
         break;
+    case eDB_VarCharMax:
+        if (IsMultibyteClientEncoding()) {
+            type_str = "nvarchar(max)";
+        } else {
+            type_str = "varchar(max)";
+        }
+        break;
+    case eDB_VarBinaryMax:
+        type_str = "varbinary(max)";
+        break;
     default:
         break;
     }
@@ -1123,6 +1133,7 @@ CStatementBase::x_GetCType(const CDB_Object& param) const
     case eDB_Char:
     case eDB_VarChar:
     case eDB_LongChar:
+    case eDB_VarCharMax:
         // New code ...
         if (IsMultibyteClientEncoding()) {
             type = SQL_C_WCHAR;
@@ -1140,6 +1151,7 @@ CStatementBase::x_GetCType(const CDB_Object& param) const
     case eDB_Binary:
     case eDB_VarBinary:
     case eDB_LongBinary:
+    case eDB_VarBinaryMax:
         type = SQL_C_BINARY;
         break;
     case eDB_Float:
@@ -1195,6 +1207,7 @@ CStatementBase::x_GetSQLType(const CDB_Object& param) const
 // #endif
         break;
     case eDB_LongChar:
+    case eDB_VarCharMax:
         // New code ...
         if (IsMultibyteClientEncoding()) {
             type = SQL_WLONGVARCHAR;
@@ -1213,6 +1226,9 @@ CStatementBase::x_GetSQLType(const CDB_Object& param) const
     case eDB_VarBinary:
     case eDB_LongBinary:
         type = SQL_VARBINARY;
+        break;
+    case eDB_VarBinaryMax:
+        type = SQL_LONGVARBINARY;
         break;
     case eDB_Float:
         type = SQL_REAL;
@@ -1294,6 +1310,30 @@ CStatementBase::x_GetMaxDataSize(const CDB_Object& param) const
     case eDB_DateTime:
         size = 23;
         break;
+    case eDB_VarCharMax:
+#if 0
+        if (IsMultibyteClientEncoding()) {
+            size = kMax_UInt / sizeof(odbc::TChar);
+        } else {
+            size = kMax_UInt;
+        }
+#else
+        size = static_cast<const CDB_VarCharMax&>(param).Size();
+        if (size == 0) {
+            size = 1;
+        }
+#endif
+        break;
+    case eDB_VarBinaryMax:
+#if 0
+        size = kMax_UInt;
+#else
+        size = static_cast<const CDB_VarBinaryMax&>(param).Size();
+        if (size == 0) {
+            size = 1;
+        }
+#endif
+        break;
     default:
         break;
     }
@@ -1330,6 +1370,13 @@ CStatementBase::x_GetCurDataSize(const CDB_Object& param) const
     case eDB_DateTime:
         size = sizeof(SQL_TIMESTAMP_STRUCT);
         break;
+    case eDB_VarCharMax:
+        size = dynamic_cast<const CDB_VarCharMax&>(param).Size()
+            * sizeof(odbc::TChar);
+        break;
+    case eDB_VarBinaryMax:
+        size = dynamic_cast<const CDB_VarBinaryMax&>(param).Size();
+        break;
     default:
         break;
     }
@@ -1361,6 +1408,11 @@ CStatementBase::x_GetIndicator(const CDB_Object& param) const
     case eDB_DateTime:
         return sizeof(SQL_TIMESTAMP_STRUCT);
         break;
+    case eDB_VarCharMax:
+        return dynamic_cast<const CDB_VarCharMax&>(param).Size()
+            * sizeof(TSqlChar);
+    case eDB_VarBinaryMax:
+        return dynamic_cast<const CDB_VarBinaryMax&>(param).Size();
     default:
         break;
     }
@@ -1449,6 +1501,17 @@ CStatementBase::x_GetData(const CDB_Object& param,
             ts->fraction *= 1000000; /* MSSQL has a bug - it cannot handle fraction of msecs */
 
             data = ts;
+        }
+        break;
+    case eDB_VarCharMax:
+    case eDB_VarBinaryMax:
+        if( !param.IsNULL() ) {
+            CDB_Stream& par = static_cast<CDB_Stream&>
+                (const_cast<CDB_Object&>(param));
+            size_t n = par.Size();
+            data = bind_guard.Alloc(n);
+            par.MoveTo(0);
+            _VERIFY(par.Read(data, n) == n);
         }
         break;
     default:

@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 
 // Aux. for s_*GetItem()
-// CDB_Image and CDB_Text are not handled by this function ...
+// BLOB types are not handled by this function ...
 static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                                     EDB_Type b_type, const BYTE* d_ptr, DBINT d_len)
 {
@@ -619,7 +619,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem p
 
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
 
-    if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
+    if (item_buff  &&  !CDB_Object::IsBlobType(b_type) ) {
         DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 230020 );
     }
 
@@ -632,10 +632,8 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem p
                     // Explicitly truncate previous value ...
                     val->Truncate();
             }
-    } else if (m_ColFmt.data_type == eDB_Text) {
-            val = new CDB_Text;
     } else {
-            val = new CDB_Image;
+        val = static_cast<CDB_Stream*>(CDB_Object::Create(m_ColFmt.data_type));
     }
 
     _ASSERT(val);
@@ -1469,51 +1467,30 @@ CDBL_Result::GetItemInternal(
                             (unsigned char*) DBNUMERIC_val(v)) : new CDB_Numeric;
     }
 
-    case eDB_Text: {
-        if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
+    case eDB_Text:
+    case eDB_Image:
+    case eDB_VarCharMax:
+    case eDB_VarBinaryMax: {
+        if (item_buff  &&  !CDB_Object::IsBlobType(b_type) ) {
             DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
-        CDB_Text* v = NULL;
+        CDB_Stream* v = NULL;
 
         if (item_buff) {
-                v = static_cast<CDB_Text*>(item_buff);
+            v = static_cast<CDB_Stream*>(item_buff);
 
-                if (policy == I_Result::eAssignLOB) {
-                        // Explicitly truncate previous value ...
-                        v->Truncate();
-                }
+            if (policy == I_Result::eAssignLOB) {
+                // Explicitly truncate previous value ...
+                v->Truncate();
+            }
         } else {
-                v = new CDB_Text;
+            v = static_cast<CDB_Stream*>(CDB_Object::Create(fmt->data_type));
         }
 
         _ASSERT(v);
 
         v->Append((char*) d_ptr, (int) d_len);
-        return v;
-    }
-
-    case eDB_Image: {
-        if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
-        CDB_Image* v = NULL;
-
-        if (item_buff) {
-                v = static_cast<CDB_Image*>(item_buff);
-
-                if (policy == I_Result::eAssignLOB) {
-                        // Explicitly truncate previous value ...
-                        v->Truncate();
-                }
-        } else {
-                v = new CDB_Image;
-        }
-
-        _ASSERT(v);
-
-        v->Append((void*) d_ptr, (int) d_len);
         return v;
     }
 
@@ -1544,7 +1521,7 @@ EDB_Type CDBL_Result::RetGetDataType(int n)
 
 
 // Aux. for CDBL_ParamResult::GetItem()
-// CDB_Image and CDB_Text are not handled by this function ...
+// BLOB types are not handled by this function ...
 CDB_Object* CDBL_Result::RetGetItem(int item_no,
                                     SDBL_ColDescr* fmt,
                                     CDB_Object* item_buff)
@@ -1582,7 +1559,7 @@ EDB_Type CDBL_Result::AltGetDataType(int id, int n)
 
 
 // Aux. for CDBL_ComputeResult::GetItem()
-// CDB_Image and CDB_Text are not handled by this function ...
+// BLOB types are not handled by this function ...
 CDB_Object* CDBL_Result::AltGetItem(int id,
                                     int item_no,
                                     SDBL_ColDescr* fmt,

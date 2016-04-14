@@ -197,8 +197,12 @@ CValueConvert<SRunTimeCP, CDB_Result>::operator string(void) const
     //     return ConvertFrom<TO, CDB_SmallDateTime>();
     case eDB_Text:
         return ConvertFromLOB<TO, CDB_Text>();
+    case eDB_VarCharMax:
+        return ConvertFromLOB<TO, CDB_VarCharMax>();
     case eDB_Image:
         return ConvertFromLOB<TO, CDB_Image>();
+    case eDB_VarBinaryMax:
+        return ConvertFromLOB<TO, CDB_VarBinaryMax>();
     case eDB_Bit: 
         return ConvertFrom<TO, CDB_Bit>();
     case eDB_Numeric:
@@ -259,8 +263,12 @@ CValueConvert<SRunTimeCP, CDB_Result>::operator CTime(void) const
     //     return Convert2CTime<TO, CDB_SmallDateTime>();
     case eDB_Text:
         return ConvertFromLOB<TO, CDB_Text>();
+    case eDB_VarCharMax:
+        return ConvertFromLOB<TO, CDB_VarCharMax>();
     case eDB_Image:
         return ConvertFromLOB<TO, CDB_Image>();
+    case eDB_VarBinaryMax:
+        return ConvertFromLOB<TO, CDB_VarBinaryMax>();
     case eDB_Bit: 
         return Convert2CTime<TO, CDB_Bit>();
     case eDB_Numeric:
@@ -458,8 +466,12 @@ CValueConvert<SRunTimeSqlCP, CDB_Result>::operator string(void) const
     //     return ConvertFrom<TO, CDB_SmallDateTime>();
     case eDB_Text:
         return ConvertFromLOB<TO, CDB_Text>();
+    case eDB_VarCharMax:
+        return ConvertFromLOB<TO, CDB_VarCharMax>();
     case eDB_Image:
         return ConvertFromLOB<TO, CDB_Image>();
+    case eDB_VarBinaryMax:
+        return ConvertFromLOB<TO, CDB_VarBinaryMax>();
     case eDB_Bit: 
         return ConvertFrom<TO, CDB_Bit>();
     case eDB_Numeric:
@@ -522,6 +534,10 @@ CValueConvert<SRunTimeSqlCP, CDB_Result>::operator CTime(void) const
         return ConvertFromLOB<TO, CDB_Text>();
     case eDB_Image:
         return ConvertFromLOB<TO, CDB_Image>();
+    case eDB_VarCharMax:
+        return ConvertFromLOB<TO, CDB_VarCharMax>();
+    case eDB_VarBinaryMax:
+        return ConvertFromLOB<TO, CDB_VarBinaryMax>();
     case eDB_Bit: 
         return Convert2CTime<TO, CDB_Bit>();
     case eDB_Numeric:

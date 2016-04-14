@@ -574,6 +574,8 @@ CDB_Object* CDB_Object::Create(EDB_Type type, size_t size)
     case eDB_Numeric         : return new CDB_Numeric       ();
     case eDB_LongBinary      : return new CDB_LongBinary(size);
     case eDB_LongChar        : return new CDB_LongChar  (size);
+    case eDB_VarCharMax      : return new CDB_VarCharMax    ();
+    case eDB_VarBinaryMax    : return new CDB_VarBinaryMax  ();
     case eDB_UnsupportedType : break;
     }
     DATABASE_DRIVER_ERROR("unknown type " + NStr::IntToString(type), 2);
@@ -601,6 +603,8 @@ const char* CDB_Object::GetTypeName(EDB_Type db_type, bool throw_on_unknown)
     case eDB_Numeric         : return "DB_Numeric";
     case eDB_LongBinary      : return "DB_LongBinary";
     case eDB_LongChar        : return "DB_LongChar";
+    case eDB_VarCharMax      : return "DB_VarCharMax";
+    case eDB_VarBinaryMax    : return "DB_VarBinaryMax";
     case eDB_UnsupportedType : return "DB_UnsupportedType";
     }
 
@@ -624,16 +628,11 @@ string CDB_Object::GetLogString(void) const
     unsigned int max_length = TDbapi_MaxLoggedParamLength::GetDefault();
     string       result;
 
-    switch (GetType()) {
-    case eDB_Image:
-    case eDB_Text:
-    {
+    if (IsBlobType(GetType())) {
         const CDB_Stream& s = static_cast<const CDB_Stream&>(*this);
         AutoArray<char> buff(max_length + 1);
-        result.assign(buff.get(), s.Peek(buff.get(), max_length + 1));
-        break;
-    }
-    default:
+        result.assign(buff.get(), s.PeekAt(buff.get(), 0, max_length + 1));
+    } else {
         try {
             result = (string)ConvertSQL(*this);
         } catch (exception& e) {
@@ -641,7 +640,6 @@ string CDB_Object::GetLogString(void) const
                      << GetTypeName(GetType()) << ": " << e.what());
             return "???";
         }
-        break;
     }
 
     if (result.length() > max_length) {
@@ -1939,14 +1937,15 @@ void CDB_Double::AssignValue(const CDB_Object& v)
 //
 
 CDB_Stream::CDB_Stream()
-    : CDB_Object(true)
+    : CDB_Object(true), m_Encoding(eBulkEnc_RawBytes)
+
 {
     m_Store = new CMemStore;
     m_Store->AddReference();
 }
 
 CDB_Stream::CDB_Stream(const CDB_Stream& s, bool share_data)
-    : CDB_Object(s), m_Store(s.m_Store)
+    : CDB_Object(s), m_Encoding(s.m_Encoding), m_Store(s.m_Store)
 {
     if (share_data) {
         m_Store->AddReference();
@@ -1961,6 +1960,7 @@ CDB_Stream& CDB_Stream::Assign(const CDB_Stream& v)
 {
     SetNULL(v.IsNULL());
     m_Store->Truncate();
+    m_Encoding = v.m_Encoding;
     if ( !IsNULL() ) {
         char buff[1024];
         CMemStore* s = const_cast<CMemStore*>(&*v.m_Store);
@@ -1992,6 +1992,11 @@ size_t CDB_Stream::Peek(void* buff, size_t nof_bytes) const
     return m_Store->Peek(buff, nof_bytes);
 }
 
+size_t CDB_Stream::PeekAt(void* buff, size_t start, size_t nof_bytes) const
+{
+    return m_Store->PeekAt(buff, start, nof_bytes);
+}
+
 size_t CDB_Stream::Append(const void* buff, size_t nof_bytes)
 {
     /* if (buff && (nof_bytes > 0)) */ SetNULL(false);
@@ -2017,8 +2022,7 @@ void CDB_Stream::Truncate(size_t nof_bytes)
 
 void CDB_Stream::AssignValue(const CDB_Object& v)
 {
-    CHECK_DRIVER_ERROR(
-        (v.GetType() != eDB_Image) && (v.GetType() != eDB_Text),
+    CHECK_DRIVER_ERROR( !IsBlobType(v.GetType()),
         string("wrong type of CDB_Object: ") + GetTypeName(v.GetType(), false),
         2
         );
@@ -2033,6 +2037,59 @@ CDB_Stream::~CDB_Stream()
     NCBI_CATCH_ALL_X( 7, NCBI_CURRENT_FUNCTION )
 }
 
+void CDB_Stream::x_SetEncoding(EBulkEnc e)
+{
+    if (e == eBulkEnc_UCS2FromChar) {
+        e = eBulkEnc_RawUCS2;
+    }
+    if (e != m_Encoding  &&  Size() > 0) {
+        // Alternatively, arrange to recode existing text?
+        ERR_POST_X(8, string("Creating a mixed-encoding C")
+                   + GetTypeName(GetType()) + " object.");
+    }
+    m_Encoding = e;
+}
+
+size_t CDB_Stream::x_Append(const void* buff, size_t nof_bytes)
+{
+    if (buff == NULL) {
+        // return 0;
+        buff = kEmptyCStr;
+    }
+    // Warn if nof_bytes == 0?
+    return CDB_Stream::Append
+        (buff, nof_bytes ? nof_bytes : strlen((const char*) buff));
+}
+
+size_t CDB_Stream::x_Append(const CTempString& s, EEncoding enc)
+{
+    switch (m_Encoding) {
+    case eBulkEnc_RawBytes:
+        return Append(s.data(), s.size());
+    case eBulkEnc_RawUCS2:
+    {
+        TStringUCS2 s2 = CUtf8::AsBasicString<TCharUCS2>
+            (CUtf8::AsUTF8(s, enc));
+        s_MakeLittleEndian(s2);
+        return Append(s2.data(), s2.size() * sizeof(TCharUCS2));
+    }
+    default:
+        _TROUBLE;
+        return 0;
+    }
+}
+
+size_t CDB_Stream::x_Append(const TStringUCS2& s)
+{
+    x_SetEncoding(eBulkEnc_RawUCS2);
+#ifdef WORDS_BIGENDIAN
+    TStringUCS2 s2(s);
+    s_MakeLittleEndian(s2);
+    return Append(s2.data(), s2.size() * sizeof(TCharUCS2));
+#else
+    return Append(s.data(), s.size() * sizeof(TCharUCS2));
+#endif
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Image::
@@ -2073,16 +2130,58 @@ CDB_Object* CDB_Image::ShallowClone() const
 
 
 /////////////////////////////////////////////////////////////////////////////
+//  CDB_VarBinaryMax::
+//
+
+CDB_VarBinaryMax::CDB_VarBinaryMax(void)
+{
+}
+
+CDB_VarBinaryMax::CDB_VarBinaryMax(const CDB_VarBinaryMax& v, bool share_data)
+    : CDB_Stream(v, share_data)
+{
+}
+
+CDB_VarBinaryMax::CDB_VarBinaryMax(const void* v, size_t l)
+{
+    Append(v, l);
+}
+
+CDB_VarBinaryMax::~CDB_VarBinaryMax(void)
+{
+}
+
+CDB_VarBinaryMax& CDB_VarBinaryMax::operator= (const CDB_VarBinaryMax& v)
+{
+    return dynamic_cast<CDB_VarBinaryMax&>(Assign(v));
+}
+
+EDB_Type CDB_VarBinaryMax::GetType() const
+{
+    return eDB_VarBinaryMax;
+}
+
+CDB_Object* CDB_VarBinaryMax::Clone() const
+{
+    return new CDB_VarBinaryMax(*this);
+}
+
+CDB_Object* CDB_VarBinaryMax::ShallowClone() const
+{
+    return new CDB_VarBinaryMax(*this, true);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  CDB_Text::
 //
 
 CDB_Text::CDB_Text(void)
-    : m_Encoding(eBulkEnc_RawBytes)
 {
 }
 
 CDB_Text::CDB_Text(const CDB_Text& text, bool share_data)
-    : CDB_Stream(text, share_data), m_Encoding(text.m_Encoding)
+    : CDB_Stream(text, share_data)
 {
 }
 
@@ -2092,58 +2191,24 @@ CDB_Text::~CDB_Text(void)
 
 void CDB_Text::SetEncoding(EBulkEnc e)
 {
-    if (e == eBulkEnc_UCS2FromChar) {
-        e = eBulkEnc_RawUCS2;
-    }
-    if (e != m_Encoding  &&  Size() > 0) {
-        // Alternatively, arrange to recode existing text?
-        ERR_POST_X(8, "Creating a mixed-encoding CDB_Text object.");
-    }
-    m_Encoding = e;
+    x_SetEncoding(e);
 }
 
 size_t CDB_Text::Append(const void* buff, size_t nof_bytes)
 {
-    if (buff == NULL) {
-        // return 0;
-        buff = kEmptyCStr;
-    }
-    // Warn if nof_bytes == 0?
-    return CDB_Stream::Append
-        (buff, nof_bytes ? nof_bytes : strlen((const char*) buff));
+    return x_Append(buff, nof_bytes);
 }
 
 size_t CDB_Text::Append(const CTempString& s, EEncoding enc)
 {
-    switch (m_Encoding) {
-    case eBulkEnc_RawBytes:
-        return CDB_Stream::Append(s.data(), s.size());
-    case eBulkEnc_RawUCS2:
-    {
-        TStringUCS2 s2 = CUtf8::AsBasicString<TCharUCS2>
-            (CUtf8::AsUTF8(s, enc));
-        s_MakeLittleEndian(s2);
-        return CDB_Stream::Append(s2.data(), s2.size() * sizeof(TCharUCS2));
-    }
-    default:
-        _TROUBLE;
-        return 0;
-    }
+    return x_Append(s, enc);
 }
 
 
 size_t CDB_Text::Append(const TStringUCS2& s)
 {
-    SetEncoding(eBulkEnc_RawUCS2);
-#ifdef WORDS_BIGENDIAN
-    TStringUCS2 s2(s);
-    s_MakeLittleEndian(s2);
-    return CDB_Stream::Append(s2.data(), s2.size() * sizeof(TCharUCS2));
-#else
-    return CDB_Stream::Append(s.data(), s.size() * sizeof(TCharUCS2));
-#endif
+    return x_Append(s);
 }
-
 
 CDB_Text& CDB_Text::operator= (const CDB_Text& text)
 {
@@ -2165,6 +2230,86 @@ CDB_Object* CDB_Text::ShallowClone() const
 {
     return new CDB_Text(*this, true);
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CDB_VarCharMax::
+//
+
+CDB_VarCharMax::CDB_VarCharMax(void)
+{
+}
+
+CDB_VarCharMax::CDB_VarCharMax(const CDB_VarCharMax& v, bool share_data)
+    : CDB_Stream(v, share_data)
+{
+}
+
+CDB_VarCharMax::CDB_VarCharMax(const string& s, EEncoding enc)
+{
+    SetValue(s, enc);
+}
+
+CDB_VarCharMax::CDB_VarCharMax(const char* s, EEncoding enc)
+{
+    SetValue(s, enc);
+}
+
+CDB_VarCharMax::CDB_VarCharMax(const char* s, size_t l, EEncoding enc)
+{
+    SetValue(s, l, enc);
+}
+
+CDB_VarCharMax::CDB_VarCharMax(const TStringUCS2& s)
+{
+    SetValue(s);
+}
+
+CDB_VarCharMax::~CDB_VarCharMax(void)
+{
+}
+
+void CDB_VarCharMax::SetEncoding(EBulkEnc e)
+{
+    x_SetEncoding(e);
+}
+
+size_t CDB_VarCharMax::Append(const void* buff, size_t nof_bytes)
+{
+    return x_Append(buff, nof_bytes);
+}
+
+size_t CDB_VarCharMax::Append(const CTempString& s, EEncoding enc)
+{
+    return x_Append(s, enc);
+}
+
+size_t CDB_VarCharMax::Append(const TStringUCS2& s)
+{
+    return x_Append(s);
+}
+
+CDB_VarCharMax& CDB_VarCharMax::operator= (const CDB_VarCharMax& v)
+{
+    m_Encoding = v.m_Encoding;
+    return dynamic_cast<CDB_VarCharMax&>(Assign(v));
+}
+
+EDB_Type CDB_VarCharMax::GetType() const
+{
+    return eDB_VarCharMax;
+}
+
+CDB_Object* CDB_VarCharMax::Clone() const
+{
+    return new CDB_VarCharMax(*this);
+}
+
+CDB_Object* CDB_VarCharMax::ShallowClone() const
+{
+    return new CDB_VarCharMax(*this, true);
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////

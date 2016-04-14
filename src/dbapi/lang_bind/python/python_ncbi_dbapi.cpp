@@ -2077,12 +2077,14 @@ s_FillDescription(pythonpp::CList& descr, const IResultSetMetaData* data)
         case eDB_Char:
         case eDB_LongChar:
         case eDB_Text:
+        case eDB_VarCharMax:
             col_list.Append((PyObject*) &python::CStringType::GetType());
             break;
         case eDB_VarBinary:
         case eDB_Binary:
         case eDB_LongBinary:
         case eDB_Image:
+        case eDB_VarBinaryMax:            
             col_list.Append((PyObject*) &python::CBinary::GetType());
             break;
         case eDB_DateTime:
@@ -2447,6 +2449,8 @@ ConvertCVariant2PCObject(const CVariant& value)
         return pythonpp::CString( value.GetString() );
     case eDB_Text :
     case eDB_Image :
+    case eDB_VarCharMax:
+    case eDB_VarBinaryMax:            
         {
         size_t lob_size = value.GetBlobSize();
         string tmp_str;

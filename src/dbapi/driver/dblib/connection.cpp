@@ -469,7 +469,7 @@ CDBL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
         if(res.get() == 0) continue;
         if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
             EDB_Type tt= res->ItemDataType(0);
-            if(tt == eDB_Text || tt == eDB_Image) {
+            if (CDB_Object::IsBlobType(tt)) {
                 while(res->Fetch()) {
                     res->ReadItem(&i, 1);
 

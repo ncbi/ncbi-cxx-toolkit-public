@@ -202,6 +202,8 @@ int main(int argc, char* argv[])
 
                         case eDB_Text:
                         case eDB_Image:
+                        case eDB_VarCharMax:
+                        case eDB_VarBinaryMax:
                             if(k++) query+= ",";
                             query+= r->ItemName(j);
                         default:

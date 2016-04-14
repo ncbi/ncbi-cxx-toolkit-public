@@ -282,10 +282,10 @@ bool CODBC_RowResult::CheckSIENoD_Text(CDB_Stream* val)
         ReportErrors();
     default:
         {
-            string err_message
-                = "SQLGetData failed while retrieving BLOB into CDB_Text." +
-                GetDbgInfo();
-            DATABASE_DRIVER_ERROR( err_message, 430021 );
+            DATABASE_DRIVER_ERROR(
+                string("SQLGetData failed while retrieving BLOB into C") +
+                CDB_Object::GetTypeName(val->GetType()) + '.',
+                430021);
         }
     }
 
@@ -327,10 +327,10 @@ bool CODBC_RowResult::CheckSIENoD_WText(CDB_Stream* val)
         ReportErrors();
     default:
         {
-            string err_message
-                = "SQLGetData failed while retrieving BLOB into CDB_Text." +
-                GetDbgInfo();
-            DATABASE_DRIVER_ERROR( err_message, 430021 );
+            DATABASE_DRIVER_ERROR(
+                string("SQLGetData failed while retrieving BLOB into C") +
+                CDB_Object::GetTypeName(val->GetType()) + '.',
+                430021);
         }
     }
 
@@ -359,10 +359,10 @@ bool CODBC_RowResult::CheckSIENoD_Binary(CDB_Stream* val)
         ReportErrors();
     default:
         {
-            string err_message
-                = "SQLGetData failed while retrieving BLOB into CDB_Image." +
-                GetDbgInfo();
-            DATABASE_DRIVER_ERROR( err_message, 430022 );
+            DATABASE_DRIVER_ERROR(
+                string("SQLGetData failed while retrieving BLOB into C") +
+                CDB_Object::GetTypeName(val->GetType()) + '.',
+                430022);
         }
     }
 
@@ -741,7 +741,8 @@ CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* i
     case SQL_LONGVARBINARY:
     case SQL_LONGVARCHAR:
         switch(item_buf->GetType()) {
-        case eDB_Text: {
+        case eDB_Text:
+        case eDB_VarCharMax: {
 			if (policy == I_Result::eAssignLOB) {
 				static_cast<CDB_Stream*>(item_buf)->Truncate();
 			}
@@ -751,7 +752,8 @@ CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* i
             }
             break;
         }
-        case eDB_Image: {
+        case eDB_Image:
+        case eDB_VarBinaryMax: {
 			if (policy == I_Result::eAssignLOB) {
 				static_cast<CDB_Stream*>(item_buf)->Truncate();
 			}

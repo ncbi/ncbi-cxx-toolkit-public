@@ -695,15 +695,16 @@ public:
     ///   If "item_buf" is not NULL, then use "*item_buf" (its type should be
     ///   compatible with the type of retrieved item!) to retrieve the item to;
     ///   otherwise allocate new "CDB_Object".
-    ///   In case of "CDB_Image" and "CDB_Text" data types value will be *appended*
+    ///   If the existing "item_buf" has a BLOB type (CDB_Image, CDB_Text,
+    ///   CDB_VarBinaryMax, or CDB_VarCharMax), the value will be *appended*
     ///   to the "item_buf" by default (policy == eAppendLOB).
     /// 
     /// @param policy
-    ///   Data retrieval policy. If policy == eAppendLOB and "item_buf" is an
-    ///   object of CDB_Image or CDB_Text type, then data will be *appended* to
-    ///   the end of previously assigned data. If policy == eAssignLOB and "item_buf" is an
-    ///   object of CDB_Image or CDB_Text type, then new value will be *assigned*
-    ///   to the "item_buf" object.
+    ///   Data retrieval policy. If policy == eAppendLOB *and* "item_buf" has a
+    ///   BLOB type (CDB_Image, CDB_Text, CDB_VarBinaryMax, or CDB_VarCharMax),
+    ///   data will be *appended* to the end of previously assigned data.
+    ///   Otherwise (policy == eAssignLOB or "item_buf" has some other type),
+    ///   the new value will be *assigned* to the "item_buf" object.
     /// 
     /// @return 
     ///   a result item

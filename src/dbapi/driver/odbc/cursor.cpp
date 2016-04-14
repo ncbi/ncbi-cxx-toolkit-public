@@ -166,9 +166,7 @@ bool CODBC_CursorCmd::UpdateBlob(unsigned int item_num, CDB_Stream& data,
     if(desc == 0) return false;
     auto_ptr<I_BlobDescriptor> g((I_BlobDescriptor*)desc);
 
-    return (data.GetType() == eDB_Text)?
-        GetConnection().SendData(*desc, (CDB_Text&)data, log_it) :
-        GetConnection().SendData(*desc, (CDB_Image&)data, log_it);
+    return GetConnection().SendData(*desc, data, log_it);
 }
 
 CDB_SendDataCmd* CODBC_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
@@ -338,9 +336,7 @@ bool CODBC_CursorCmdExpl::UpdateBlob(unsigned int item_num, CDB_Stream& data,
 
     m_LCmd->Cancel();
 
-    return (data.GetType() == eDB_Text)?
-        GetConnection().SendData(*desc, (CDB_Text&)data, log_it) :
-        GetConnection().SendData(*desc, (CDB_Image&)data, log_it);
+    return GetConnection().SendData(*desc, data, log_it);
 }
 
 CDB_SendDataCmd* CODBC_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t size,

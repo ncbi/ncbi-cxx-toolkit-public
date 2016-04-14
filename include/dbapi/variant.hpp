@@ -120,10 +120,13 @@ public:
     static CVariant LongChar     (const TStringUCS2 &s, size_t len = 0);
     static CVariant VarChar      (const char *p, size_t len = 0);
     static CVariant VarChar      (const TStringUCS2 &s, size_t len = 0);
+    static CVariant VarCharMax   (const char *p, size_t len = 0);
+    static CVariant VarCharMax   (const TStringUCS2 &s, size_t len = 0);
     static CVariant Char         (size_t size, const char *p);
     static CVariant Char         (size_t size, const TStringUCS2& s);
     static CVariant LongBinary   (size_t maxSize, const void *p, size_t len);
     static CVariant VarBinary    (const void *p, size_t len);
+    static CVariant VarBinaryMax (const void *p, size_t len);
     static CVariant Binary       (size_t size, const void *p, size_t len);
     static CVariant SmallDateTime(CTime *p);
     static CVariant DateTime     (CTime *p);

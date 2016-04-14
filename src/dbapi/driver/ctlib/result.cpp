@@ -167,20 +167,27 @@ CTL_RowResult::ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt)
 
     switch ( fmt.datatype ) {
     case CS_VARBINARY_TYPE:
-    case CS_BINARY_TYPE:        return is_blob ? eDB_Image : eDB_VarBinary;
+    case CS_BINARY_TYPE:
+        return is_blob ? eDB_VarBinaryMax : eDB_VarBinary;
+
     case CS_BIT_TYPE:           return eDB_Bit;
+
     case CS_LONGCHAR_TYPE:
     case CS_VARCHAR_TYPE:
-    case CS_CHAR_TYPE:          return is_blob ? eDB_Text : eDB_VarChar;
+    case CS_CHAR_TYPE:
+        return is_blob ? eDB_VarCharMax : eDB_VarChar;
+
     case CS_DATETIME_TYPE:      return eDB_DateTime;
     case CS_DATETIME4_TYPE:     return eDB_SmallDateTime;
     case CS_TINYINT_TYPE:       return eDB_TinyInt;
     case CS_SMALLINT_TYPE:      return eDB_SmallInt;
     case CS_INT_TYPE:           return eDB_Int;
+
 #ifdef CS_BIGINT_TYPE
     case CS_BIGINT_TYPE:
 #endif
     case CS_LONG_TYPE:          return eDB_BigInt;
+
     case CS_DECIMAL_TYPE:
     case CS_NUMERIC_TYPE:
         // 2**63 ~= 9.2e18; however, Sybase returns (U)BIGINT as
@@ -197,10 +204,13 @@ CTL_RowResult::ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt)
     case CS_REAL_TYPE:          return eDB_Float;
     case CS_TEXT_TYPE:          return eDB_Text;
     case CS_IMAGE_TYPE:         return eDB_Image;
-    case CS_LONGBINARY_TYPE:    return is_blob ? eDB_Image : eDB_LongBinary;
+
+    case CS_LONGBINARY_TYPE:
+        return is_blob ? eDB_VarBinaryMax : eDB_LongBinary;
 
 #ifdef FTDS_IN_USE
-    case CS_UNIQUE_TYPE:        return is_blob ? eDB_Image : eDB_VarBinary;
+    case CS_UNIQUE_TYPE:
+        return is_blob ? eDB_VarBinaryMax : eDB_VarBinary;
 #endif
 
 //     case CS_MONEY_TYPE:
@@ -363,11 +373,12 @@ static bool s_CanStore(CS_INT src, EDB_Type dst)
         }
         // else fall through
     case CS_LONGBINARY_TYPE:
-        return dst == eDB_LongChar  ||  dst == eDB_LongBinary;
+        return dst == eDB_LongChar  ||  dst == eDB_LongBinary
+            ||  dst == eDB_VarCharMax   ||  dst == eDB_VarBinaryMax;
 
     case CS_TEXT_TYPE:
     case CS_IMAGE_TYPE:
-        return dst == eDB_Text  ||  dst == eDB_Image;
+        return CDB_Object::IsBlobType(dst);
 
     case CS_BIT_TYPE:      if (dst == eDB_Bit)      { return true; }
     case CS_TINYINT_TYPE:  if (dst == eDB_TinyInt)  { return true; }
@@ -414,28 +425,32 @@ CDB_Object* CTL_RowResult::GetItemInternal(
                        + NStr::NumericToString(datatype),
                        130004);
 
-    if ((maxlength >= kMax_Int >> 1  ||  maxlength == -1)
-        &&  datatype != CS_TEXT_TYPE  &&  datatype != CS_IMAGE_TYPE) {
-        // True (TDS 7.2+) VARCHAR(MAX) or the like; determine actual length
-        // and pass off as text or image as appropriate.
+#ifdef FTDS_IN_USE
+    if (maxlength >= kMax_Int >> 1  ||  maxlength == -1) {
+        // VARCHAR(MAX) or the like; determine actual length and
+        // characterize appropriately.
         CS_IODESC iodesc;
         Check(ct_get_data(cmd, item_no, buffer, 0, &outlen));
         Check(ct_data_info(cmd, CS_GET, item_no, &iodesc));
         maxlength = max((CS_INT)0, iodesc.total_txtlen);
+        if (item_buf != NULL) {
+            b_type = item_buf->GetType();
+        }
+        bool treat_as_blob = CDB_Object::IsBlobType(b_type);
         switch (b_type) {
         case eDB_Char:
         case eDB_LongChar:
         case eDB_VarChar:
+        case eDB_VarCharMax:
         case eDB_Text:
-            datatype = CS_TEXT_TYPE;
-            b_type   = eDB_Text;
+            datatype = treat_as_blob ? CS_TEXT_TYPE : CS_VARCHAR_TYPE;
             break;
         default:
-            datatype = CS_IMAGE_TYPE;
-            b_type   = eDB_Image;
+            datatype = treat_as_blob ? CS_IMAGE_TYPE : CS_VARBINARY_TYPE;
             break;
         }
     }
+#endif
 
     if (item_buf == NULL) {
         _ASSERT(s_CanStore(datatype, b_type));
@@ -1100,7 +1115,7 @@ bool CTL_CursorResultExpl::Fetch()
         m_BlobDescrs.resize(col_cnt, NULL);
         for (int i = 0; i < col_cnt; ++i) {
             EDB_Type item_type = m_Res->ItemDataType(m_Res->CurrentItemNo());
-            if (item_type == eDB_Text || item_type == eDB_Image) {
+            if (CDB_Object::IsBlobType(item_type)) {
                 m_BlobDescrs[i] = m_Res->GetBlobDescriptor();
                 if ((m_BlobDescrs[i]->DescriptorType()
                      == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM)
@@ -1159,8 +1174,8 @@ CDB_Object* CTL_CursorResultExpl::GetItem(CDB_Object* item_buff, I_Result::EGetI
 
     if (item_buff) {
         EDB_Type type = m_Fields[m_CurItemNo]->GetType();
-        if (policy == I_Result::eAppendLOB  &&  (type == eDB_Image  ||  type == eDB_Text)) {
-            if (item_buff->GetType() != eDB_Text  &&  item_buff->GetType() != eDB_Image) {
+        if (policy == I_Result::eAppendLOB  &&  CDB_Object::IsBlobType(type)) {
+            if ( !CDB_Object::IsBlobType(item_buff->GetType()) ) {
                 DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130120 );
 		    }
 
@@ -1284,7 +1299,9 @@ size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
         break;
     }
     case eDB_Text:
-    case eDB_Image: {
+    case eDB_Image:
+    case eDB_VarCharMax:
+    case eDB_VarBinaryMax: {
         CDB_Stream* str_field = static_cast<CDB_Stream*>(field);
         max_size = str_field->Size();
         if (!m_ReadBuffer) {

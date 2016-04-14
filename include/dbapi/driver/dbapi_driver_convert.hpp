@@ -436,6 +436,12 @@ private:
             case eDB_Image:
                 value = ConvertFromLOB<TO, CDB_Image>();
                 break;
+            case eDB_VarCharMax:
+                value = ConvertFromLOB<TO, CDB_VarCharMax>();
+                break;
+            case eDB_VarBinaryMax:
+                value = ConvertFromLOB<TO, CDB_VarBinaryMax>();
+                break;
             case eDB_Bit:
                 value = ConvertFrom<TO, CDB_Bit>();
                 break;

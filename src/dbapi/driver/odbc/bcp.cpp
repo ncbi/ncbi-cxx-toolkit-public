@@ -151,6 +151,7 @@ CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
         bcp_datatype = SQLDATETIME;
         break;
     case eDB_Text:
+    case eDB_VarCharMax:
 //TODO: Make different type depending on type of underlying column
 /*#ifdef UNICODE
         bcp_datatype = SQLNTEXT;
@@ -159,6 +160,7 @@ CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
 //#endif
         break;
     case eDB_Image:
+    case eDB_VarBinaryMax:
         bcp_datatype = SQLIMAGE;
         break;
     case eDB_Bit:
@@ -180,6 +182,7 @@ CODBC_BCPInCmd::x_GetDataTermSize(EDB_Type type)
     case eDB_VarChar:
     case eDB_LongChar:
     case eDB_Text:
+    case eDB_VarCharMax:
         return sizeof(odbc::TChar);
     default:
         break;
@@ -197,6 +200,7 @@ CODBC_BCPInCmd::x_GetDataTerminator(EDB_Type type)
     case eDB_VarChar:
     case eDB_LongChar:
     case eDB_Text:
+    case eDB_VarCharMax:
         return _T_NCBI_ODBC("");
     default:
         break;
@@ -206,18 +210,11 @@ CODBC_BCPInCmd::x_GetDataTerminator(EDB_Type type)
 }
 
 
+inline
 const void*
 CODBC_BCPInCmd::x_GetDataPtr(EDB_Type type, void* pb)
 {
-    switch (type) {
-    case eDB_Text:
-    case eDB_Image:
-        return NULL;
-    default:
-        break;
-    }
-
-    return pb;
+    return CDB_Object::IsBlobType(type) ? NULL : pb;
 }
 
 
@@ -229,6 +226,7 @@ CODBC_BCPInCmd::x_GetBCPDataSize(EDB_Type type)
     case eDB_Binary:
     case eDB_VarBinary:
     case eDB_LongBinary:
+    case eDB_VarBinaryMax:
         return 1;
     default:
         break;
@@ -260,8 +258,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                              x_GetBCPDataType(data_type),
                              i + 1);
 
-                m_HasBlob = (m_HasBlob || data_type == eDB_Image
-                             || data_type == eDB_Text);
+                m_HasBlob = m_HasBlob || CDB_Object::IsBlobType(data_type);
             }
 
             if (r != SUCCEED) {
@@ -440,8 +437,9 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 pb = (void*) (dt + 1);
             }
             break;
-            case eDB_Text: {
-                CDB_Text& val = dynamic_cast<CDB_Text&> (param);
+            case eDB_Text:
+            case eDB_VarCharMax: {
+                CDB_Stream& val = dynamic_cast<CDB_Stream&> (param);
                 if (val.IsNULL()) {
                     r = bcp_colptr(GetHandle(), (BYTE*) pb, i + 1)
                         == SUCCEED &&
@@ -450,15 +448,18 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 }
                 else {
                     r = bcp_bind(GetHandle(), (BYTE*) NULL, 0, (DBINT) val.Size(),
-                                 static_cast<LPCBYTE>(x_GetDataTerminator(eDB_Text)),
-                                 static_cast<INT>(x_GetDataTermSize(eDB_Text)),
-                                 x_GetBCPDataType(eDB_Text),
+                                 static_cast<LPCBYTE>(x_GetDataTerminator
+                                                      (param.GetType())),
+                                 static_cast<INT>(x_GetDataTermSize
+                                                  (param.GetType())),
+                                 x_GetBCPDataType(param.GetType()),
                                  i + 1);
                 }
             }
             break;
-            case eDB_Image: {
-                CDB_Image& val = dynamic_cast<CDB_Image&> (param);
+            case eDB_Image:
+            case eDB_VarBinaryMax: {
+                CDB_Stream& val = dynamic_cast<CDB_Stream&> (param);
                 // Null images doesn't work in odbc
                 // (at least in those tests that exists in dbapi_unit_test)
                 r = bcp_collen(GetHandle(),  (DBINT) val.Size(), i + 1);
@@ -506,9 +507,11 @@ bool CODBC_BCPInCmd::Send(void)
                 continue;
 
             CDB_Object& param = *GetBindParamsImpl().GetParam(i);
+            EBlobType   blob_type = CDB_Object::GetBlobType(param.GetType());
 
-            if (param.GetType() != eDB_Image &&
-                (param.GetType() != eDB_Text  ||  param.IsNULL()))
+            // x_AssignParams would have already rejected any NULL binary blobs
+            if (blob_type == eBlobType_none
+                ||  (blob_type == eBlobType_Text  &&  param.IsNULL()))
                 continue;
 
             CDB_Stream& val = dynamic_cast<CDB_Stream&> (param);
@@ -543,13 +546,10 @@ bool CODBC_BCPInCmd::Send(void)
                     SetHasFailed();
                     ReportErrors();
 
-                    string err_text;
-                    if (param.GetType() == eDB_Text) {
-                        err_text = "bcp_moretext for text failed.";
-                    } else {
-                        err_text = "bcp_moretext for image failed.";
-                    }
-                    DATABASE_DRIVER_ERROR( err_text, 423006 );
+                    DATABASE_DRIVER_ERROR(
+                        string("bcp_moretext for ")
+                        + CDB_Object::GetTypeName(param.GetType()) + " failed",
+                        423006);
                 }
 
                 if (!valid_len) {

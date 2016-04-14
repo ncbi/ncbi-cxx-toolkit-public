@@ -192,9 +192,14 @@ int main(int argc, char* argv[])
                         num_col_name= r->ItemName(j);
                         break;
 
-                    case eDB_Text: is_text= true;
+                    case eDB_Text:
+                    case eDB_VarCharMax:
+                        is_text = true;
+                        // fall through
                     case eDB_Image:
+                    case eDB_VarBinaryMax:
                         blob_column[k++]= r->ItemName(j);
+                        break;
                     default:
                         break;
                     }
