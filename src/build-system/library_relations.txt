@@ -208,7 +208,6 @@ com_err needs3party $(ORIG_LIBS)
 composition_adjustment needs3party $(ORIG_LIBS)
 config_access needs gpinit_obj
 config_access needs gpipe_common
-configure_ctl needs gpipe_common
 connect needs3party $(NETWORK_LIBS)
 connect needs3party $(ORIG_LIBS)
 connext needs connect
