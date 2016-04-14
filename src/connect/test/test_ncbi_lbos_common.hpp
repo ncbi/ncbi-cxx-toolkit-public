@@ -1037,6 +1037,9 @@ public:
     {
         WRITE_LOG("AnswerHealthcheck() started, m_ListeningSockets has " 
                   << s_ListeningPorts->size() << " open listening sockets");
+        /* Keeping number of open sockets under control at all times! */
+        while (m_SocketPool.size() > 150)
+            CollectGarbage();
         struct timeval  accept_time_stop;
         STimeout        rw_timeout           = { 1, 20000 };
         STimeout        accept_timeout       = { 0, 20000 };
@@ -1153,6 +1156,7 @@ protected:
         for (unsigned int i = 0; i < 100 /* random number */; ++i) {
             if (!HasGarbage()) break;
             CollectGarbage();
+            SleepMilliSec(20);
         }
         m_ListeningSockets.clear();
         WRITE_LOG("~CHealthcheckThread() ended");
