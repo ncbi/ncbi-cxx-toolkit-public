@@ -519,7 +519,7 @@ CNcbiOstream& CVDB::PrintFullName(CNcbiOstream& out) const
 
 
 static inline
-CNcbiOstream& operator<<(CNcbiOstream& out, const CVDB& obj)
+CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBTable& obj)
 {
     return obj.PrintFullName(out);
 }
@@ -620,7 +620,7 @@ CNcbiOstream& CVDBTable::PrintFullName(CNcbiOstream& out) const
 
 
 static inline
-CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBTable& obj)
+CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBTableIndex& obj)
 {
     return obj.PrintFullName(out);
 }
@@ -660,13 +660,6 @@ string CVDBTableIndex::GetFullName(void) const
 CNcbiOstream& CVDBTableIndex::PrintFullName(CNcbiOstream& out) const
 {
     return GetTable().PrintFullName(out) << '.' << GetName();
-}
-
-
-static inline
-CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBTableIndex& obj)
-{
-    return obj.PrintFullName(out);
 }
 
 
