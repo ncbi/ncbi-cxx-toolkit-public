@@ -1,0 +1,6 @@
+#list of smoke tests for asn_cleanup
+#always starts with -i and never contains -o argument
+
+#from GPIPE
+-i Vibrio_cholerae_IEC224-359928-DENOVO-20160412-0010.83464.asn -K s -serial binary 
+
