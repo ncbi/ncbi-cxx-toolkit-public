@@ -52,7 +52,9 @@ SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) : SHgvsN
     conv = (nucleotide_site_interval >> tok.con >> remote_nucleotide_interval) ACTION2(AssignNtConversion); 
 
     inv = (nucleotide_site_interval >> tok.inv >> nucleotide_seq) ACTION2(AssignNtInv) |
-          (nucleotide_site_interval >> tok.inv) ACTION1(AssignNtInv); // What about expressions specifying the size of the inversion?
+          (nucleotide_site_interval >> tok.inv >> tok.pos_int) ACTION2(AssignNtInvSize) | // Assign interval with size
+          (nucleotide_site_interval >> tok.inv) ACTION1(AssignNtInv); 
+
 
     ssr = (nucleotide_location >> "[" >> count >> "]") ACTION2(AssignNtSSR) |
           (nucleotide_location >> nucleotide_seq >> "[" >> count >> "]") ACTION3(AssignNtSSR) |

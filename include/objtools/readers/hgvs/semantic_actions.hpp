@@ -131,6 +131,8 @@ void AssignNtInv(CRef<CNtLocation>& nt_int, CRef<CSimpleVariant>& result);
 
 void AssignNtInv(CRef<CNtLocation>& nt_int, const CInversion::TRaw_seq& raw_seq, CRef<CSimpleVariant>& result);
 
+void AssignNtInvSize(CRef<CNtLocation>& nt_int, string size, CRef<CSimpleVariant>& result);
+
 void AssignNtConversion(CRef<CNtLocation>& src_int, CRef<CNtLocation>& dest_int, CRef<CSimpleVariant>& result);
 
 void AssignNtConversion(CRef<CNtLocation>& src_int, const string& seq_id, CRef<CNtLocation>& dest_int, CRef<CSimpleVariant>& result);

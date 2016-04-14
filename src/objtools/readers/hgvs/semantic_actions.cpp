@@ -597,10 +597,18 @@ void AssignNtInv(CRef<CNtLocation>& nt_loc, const CInversion::TRaw_seq& raw_seq,
     result->SetType().SetInv().SetRaw_seq(raw_seq);
 }
 
+
 void AssignNtInv(CRef<CNtLocation>& nt_loc, CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
     result->SetType().SetInv().SetNtint(nt_loc->SetInt());
+}
+
+
+void AssignNtInvSize(CRef<CNtLocation>& nt_loc,  string size,  CRef<CSimpleVariant>& result)
+{
+    AssignNtInv(nt_loc, result);
+    result->SetType().SetInv().SetSize(NStr::StringToNumeric<CInversion::TSize>(size));
 }
 
 
