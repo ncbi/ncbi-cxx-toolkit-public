@@ -659,12 +659,33 @@ bool CCleanup::IsGeneXrefUnnecessary(const CSeq_feat& sf, CScope& scope, const C
     if (gene_xref.IsSuppressed()) {
         return false;
     }
-    CConstRef<CSeq_feat> gene = sequence::GetOverlappingGene(sf.GetLocation(), scope);
+
+    CConstRef<CSeq_feat> gene = sequence::GetOverlappingGene(sf.GetLocation(), scope);    
     if (!gene || !gene->IsSetData() || !gene->GetData().IsGene()) {
         return false;
     }
 
-    return gene->GetData().GetGene().RefersToSameGene(gene_xref);    
+    if (!gene->GetData().GetGene().RefersToSameGene(gene_xref)) {
+        return false;
+    }
+
+    // see if other gene might also match
+    sequence::TFeatScores scores;
+    sequence::GetOverlappingFeatures(sf.GetLocation(), CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_gene,
+        sequence::eOverlap_Contained, scores, scope);
+    if (scores.size() == 1) {
+        return true;
+    } else if (scores.size() == 0) {
+        return false;
+    }
+
+    ITERATE(sequence::TFeatScores, g, scores) {
+        if (g->second.GetPointer() != gene.GetPointer() && 
+            sequence::Compare(g->second->GetLocation(), gene->GetLocation(), &scope) == sequence::eSame) {
+            return false;
+        }
+    }
+    return true;
 }
 
 
