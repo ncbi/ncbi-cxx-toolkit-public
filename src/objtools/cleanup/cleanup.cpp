@@ -2025,6 +2025,17 @@ vector<string>& unpublished_labels)
             } else {
                 need_label = true;
             }
+        } else if ((*it)->IsArticle() && (*it)->GetArticle().IsSetIds()) {
+            is_published = true;
+            ITERATE(CArticleIdSet::Tdata, id, (*it)->GetArticle().GetIds().Get()) {
+                if ((*id)->IsPubmed()) {
+                    pmids.push_back((*id)->GetPubmed());
+                    is_published = true;
+                } else if ((*id)->IsMedline()) {
+                    muids.push_back((*id)->GetMedline());
+                }
+            }
+            need_label = true;
         } else {
             need_label = true;
         }
