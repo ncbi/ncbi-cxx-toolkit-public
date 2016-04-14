@@ -9443,6 +9443,10 @@ void CNewCleanup_imp::CdregionFeatBC (CCdregion& cds, CSeq_feat& seqfeat)
         UNIQUE_CODEBREAK_ON_CDREGION(cds, code_break_equal);
         ChangeMade(CCleanupChange::eChangeCodeBreak);
     }
+    if (cds.IsSetCode_break() && cds.GetCode_break().empty()) {
+        cds.ResetCode_break();
+        ChangeMade(CCleanupChange::eChangeCodeBreak);
+    }
 
     // check if comment is redundant due to selenocysteine or pyrrolysine
     if( GET_STRING_FLD_OR_BLANK(seqfeat, Comment) == "selenocysteine" || 
