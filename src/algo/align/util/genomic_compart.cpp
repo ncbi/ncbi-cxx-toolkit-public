@@ -732,7 +732,10 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                 set<TSeqPos> forward_breaks, backward_breaks;
                 TSeqPos current_end_point = 0;
                 TSeqPos current_potential_break = 0;
-                TSeqPos count = 1, last_break = 0;;
+                TSeqPos count = 1;
+#ifdef _VERBOSE_DEBUG
+                TSeqPos last_break = 0;
+#endif
                 ITERATE (TAlignRangeMultiSet, i, *it) {
 #ifdef _VERBOSE_DEBUG
                      cerr << "    ("
@@ -762,8 +765,8 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                         forward_breaks.insert(i->first.first.GetFrom());
 #ifdef _VERBOSE_DEBUG
 			cerr << "Break! " << (count - last_break) << " members" << endl;
-#endif
 			last_break = count;
+#endif
                     }
                     current_end_point = max(current_potential_break, end_point);
                     current_potential_break =
@@ -772,8 +775,10 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                 }
                 current_potential_break = current_end_point = UINT_MAX;
                 count = 1;
+#ifdef _VERBOSE_DEBUG
                 last_break = 0;
                 TSeqPos last_double_break = 0;
+#endif
                 REVERSE_ITERATE (TAlignRangeMultiSet, i, *it) {
 #ifdef _VERBOSE_DEBUG
                      cerr << "    ("
@@ -809,8 +814,8 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                             last_double_break = count;
                         }
 			cerr << "Break! " << (count - last_break) << " members" << endl;
-#endif
 			last_break = count;
+#endif
                     }
                     current_end_point = min(current_potential_break, start_point);
                     current_potential_break =
