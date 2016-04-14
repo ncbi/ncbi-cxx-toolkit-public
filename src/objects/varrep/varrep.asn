@@ -157,7 +157,8 @@ Duplication ::= SEQUENCE {
 
 Inversion ::= SEQUENCE {
     ntint NtInterval,
-    raw-seq VisibleString OPTIONAL
+    raw-seq VisibleString OPTIONAL,
+    size  INTEGER OPTIONAL -- optionall specify the size of the inverted sequence
 }
 
 
