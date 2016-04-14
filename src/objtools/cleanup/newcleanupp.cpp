@@ -2445,8 +2445,7 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
         }
         if( pub.IsArticle() ) {
             last_article.Reset( &pub.SetArticle());
-            if( FIELD_IS_SET_AND_IS(*last_article, From, Journal) && 
-                FIELD_IS_SET(*last_article, Ids) ) 
+            if( FIELD_IS_SET(*last_article, Ids) ) 
             {
                 FOR_EACH_ARTICLEID_ON_CITART( id_iter, *last_article ) {
                     const CArticleId &article_id = **id_iter;
