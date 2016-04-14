@@ -427,7 +427,7 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                        const STimeout*     timeout)
 {
     size_t len;
-    AutoPtr<SConnNetInfo>
+    AutoPtr<SConnNetInfo, CDeleter<SConnNetInfo> >
         x_net_info(net_info
                    ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0));
     if (!x_net_info.get()) {
@@ -710,7 +710,7 @@ s_ServiceConnectorBuilder(const char*                           service,
                           FSERVICE_GetNextInfo                  get_next_info,
                           const STimeout*                       timeout)
 {
-    AutoPtr<SConnNetInfo>
+    AutoPtr<SConnNetInfo, CDeleter<SConnNetInfo> >
         x_net_info(net_info ?
                    ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(service));
     if (!x_net_info.get()) {
@@ -1269,7 +1269,8 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
     }
     bool svc = s_IsIdentifier(url);
 
-    AutoPtr<SConnNetInfo> net_info = ConnNetInfo_Create(svc ? url.c_str() : 0);
+    AutoPtr<SConnNetInfo, CDeleter<SConnNetInfo> > net_info
+        (ConnNetInfo_Create(svc ? url.c_str() : 0));
 
     if (svc)
         return new CConn_ServiceStream(url, fSERV_Any, net_info.get());
