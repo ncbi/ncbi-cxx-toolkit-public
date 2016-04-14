@@ -2064,19 +2064,40 @@ void CGenbankFormatter::FormatTSA
 
     string tag;
 
-    switch ( tsa.GetType() ) {
-    case CTSAItem::eTSA_Projects:
-        tag = "TSA";
-        break;
-    case CTSAItem::eTLS_Projects:
-        tag = "TLS";
-        break;
+    const bool bHtml = tsa.GetContext()->Config().DoHTML();
 
-    default:
+   if ( tsa.GetType() == CTSAItem::eTLS_Projects ) {
+
+        list<string> l;
+        string first_id = tsa.GetFirstID();
+        if( bHtml ) {
+            TryToSanitizeHtml( first_id );
+        }
+        string id_range;
+        if ( tsa.GetFirstID() == tsa.GetLastID() ) {
+            id_range = first_id;
+        } else {
+            string last_id = tsa.GetLastID();
+            id_range = first_id + "-" + last_id;
+        }
+
+        if( bHtml ) {
+            TryToSanitizeHtml( id_range );
+
+            string tls_master = tsa.GetContext()->GetTLSMasterName();
+            tls_master = tls_master.substr(0, 6);
+            TryToSanitizeHtml(tls_master);
+            if( ! tls_master.empty() ) {
+                id_range = "<a href=\"https://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + tls_master + "#contigs\">" + id_range + "</a>";
+            }
+        }
+
+        Wrap(l, "TLS", id_range, ePara, bHtml);
+
+        text_os.AddParagraph(l, tsa.GetObject());
+
         return;
     }
-
-    const bool bHtml = tsa.GetContext()->Config().DoHTML();
 
     list<string> l;
     string first_id = tsa.GetFirstID();
@@ -2106,7 +2127,7 @@ void CGenbankFormatter::FormatTSA
         }
     }
 
-    Wrap(l, tag, id_range, ePara, bHtml);
+    Wrap(l, "TSA", id_range, ePara, bHtml);
 
     text_os.AddParagraph(l, tsa.GetObject());
 }
