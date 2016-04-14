@@ -23,7 +23,10 @@ disabled() {
 if test "$GENBANK_LOADER_METHOD" = pubseqos; then
     # special checks and settings for PubSeqOS reader
     if disabled PubSeqOS; then
-        echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
+        echo "Skipping PUBSEQOS loader test (loader unavailable)"
+        exit 0
+    elif disabled in-house-resources; then
+        echo "Skipping PUBSEQOS loader test (in-house resources unavailable)"
         exit 0
     fi
     if grep "^signature = GCC_295-.*-linux" ../../../Makefile.mk > /dev/null 2>&1; then

@@ -4441,8 +4441,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(curl,
 ## SYBASE libraries
 
 NETWORK_PURE_LIBS="$NETWORK_LIBS"
-ncbi_xreader_pubseqos=
-UNLESS_PUBSEQOS=
 if test "$with_sybase" != "no" ; then
    resolve_sybase=true
    default_pointer=default-${NCBI_PLATFORM_BITS}bit
@@ -4663,22 +4661,6 @@ if test "$with_sybase" != "no" ; then
       if test "$with_mt" = "yes" -a "$ncbi_cv_lib_sybase_r" = "yes"; then
          AC_DEFINE(HAVE_SYBASE_REENTRANT, 1,
                    [Define to 1 if SYBASE has reentrant libraries.])
-      fi
-      if test "$with_dbapi" != no -a -f ${real_srcdir}/src/objtools/data_loaders/genbank/pubseq/Makefile.ncbi_xreader_pubseqos.lib ; then
-         AC_CACHE_CHECK([for PubSeq service availability], ncbi_cv_db_pubseq,
-            [if grep PUBSEQ_OS $SYBASE_PATH/interfaces >/dev/null; then
-                ncbi_cv_db_pubseq=yes
-             else
-                ncbi_cv_db_pubseq=no
-             fi])
-         if test "$ncbi_cv_db_pubseq" = yes; then
-            AC_DEFINE(HAVE_PUBSEQ_OS, 1,
-                      [Define to 1 if the PUBSEQ service is available.])
-            NCBI_FEATURE(PubSeqOS)
-            ncbi_xreader_pubseqos=ncbi_xreader_pubseqos
-            ncbi_xreader_pubseqos2=ncbi_xreader_pubseqos2
-            UNLESS_PUBSEQOS=\#
-         fi
       fi
 
       SYBASE_DBLIBS="$SYBASE_LPATH -lsybdb${bit64_sfx} $sybunic"
@@ -7387,6 +7369,23 @@ else
    NCBI_PROJECT(ncbi_crypt)
    AC_DEFINE(HAVE_NCBI_CRYPT, 1,
       [Define to 1 if the real version of ncbi_crypt support is available.])
+fi
+
+
+## direct PubSeqOS data loaders
+
+if test "$with_dbapi" != no -a \
+   -f ${real_srcdir}/src/objtools/data_loaders/genbank/pubseq/Makefile.ncbi_xreader_pubseqos.lib ; then
+   AC_DEFINE(HAVE_PUBSEQ_OS, 1,
+      [Define to 1 if the PUBSEQ service is available.])
+   NCBI_FEATURE(PubSeqOS)
+   ncbi_xreader_pubseqos=ncbi_xreader_pubseqos
+   ncbi_xreader_pubseqos2=ncbi_xreader_pubseqos2
+   UNLESS_PUBSEQOS=\#
+else
+   ncbi_xreader_pubseqos=
+   ncbi_xreader_pubseqos2=
+   UNLESS_PUBSEQOS=
 fi
 
 

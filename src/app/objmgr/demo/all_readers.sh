@@ -9,11 +9,14 @@ fi
 if test "$1" = "-id2"; then
     shift
     methods="ID2"
-elif test -f "$status_dir/PubSeqOS.enabled"; then
-    methods="PUBSEQOS ID1 ID2"
-else
-    echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
+elif test ! -f "$status_dir/PubSeqOS.enabled"; then
+    echo "Skipping PUBSEQOS loader test (loader unavailable)"
     methods="ID1 ID2"
+elif test ! -f "$status_dir/in-house-resources.enabled"; then
+    echo "Skipping PUBSEQOS loader test (in-house resources unavailable)"
+    methods="ID1 ID2"
+else
+    methods="PUBSEQOS ID1 ID2"
 fi
 if test ! -f "$status_dir/DLL_BUILD.enabled"; then
     # enable dll plugins for ftds and bdb

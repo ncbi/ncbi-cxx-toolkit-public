@@ -17,7 +17,10 @@ disabled() {
 }
 
 if disabled PubSeqOS; then
-    echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
+    echo "Skipping PUBSEQOS loader test (loader unavailable)"
+    methods="ID1 ID2"
+elif disabled in-house-resources; then
+    echo "Skipping PUBSEQOS loader test (in-house resources unavailable)"
     methods="ID1 ID2"
 else
     methods="PUBSEQOS ID1 ID2"

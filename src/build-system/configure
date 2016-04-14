@@ -30281,8 +30281,6 @@ _ACEOF
 ## SYBASE libraries
 
 NETWORK_PURE_LIBS="$NETWORK_LIBS"
-ncbi_xreader_pubseqos=
-UNLESS_PUBSEQOS=
 if test "$with_sybase" != "no" ; then
    resolve_sybase=true
    default_pointer=default-${NCBI_PLATFORM_BITS}bit
@@ -30637,32 +30635,6 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_SYBASE_REENTRANT 1
 _ACEOF
 
-      fi
-      if test "$with_dbapi" != no -a -f ${real_srcdir}/src/objtools/data_loaders/genbank/pubseq/Makefile.ncbi_xreader_pubseqos.lib ; then
-         { echo "$as_me:$LINENO: checking for PubSeq service availability" >&5
-echo $ECHO_N "checking for PubSeq service availability... $ECHO_C" >&6; }
-if test "${ncbi_cv_db_pubseq+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if grep PUBSEQ_OS $SYBASE_PATH/interfaces >/dev/null; then
-                ncbi_cv_db_pubseq=yes
-             else
-                ncbi_cv_db_pubseq=no
-             fi
-fi
-{ echo "$as_me:$LINENO: result: $ncbi_cv_db_pubseq" >&5
-echo "${ECHO_T}$ncbi_cv_db_pubseq" >&6; }
-         if test "$ncbi_cv_db_pubseq" = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_PUBSEQ_OS 1
-_ACEOF
-
-                      WithFeatures="$WithFeatures${WithFeaturesSep}PubSeqOS"; WithFeaturesSep=" "
-            ncbi_xreader_pubseqos=ncbi_xreader_pubseqos
-            ncbi_xreader_pubseqos2=ncbi_xreader_pubseqos2
-            UNLESS_PUBSEQOS=\#
-         fi
       fi
 
       SYBASE_DBLIBS="$SYBASE_LPATH -lsybdb${bit64_sfx} $sybunic"
@@ -45441,6 +45413,26 @@ _ACEOF
 fi
 
 
+## direct PubSeqOS data loaders
+
+if test "$with_dbapi" != no -a \
+   -f ${real_srcdir}/src/objtools/data_loaders/genbank/pubseq/Makefile.ncbi_xreader_pubseqos.lib ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PUBSEQ_OS 1
+_ACEOF
+
+             WithFeatures="$WithFeatures${WithFeaturesSep}PubSeqOS"; WithFeaturesSep=" "
+   ncbi_xreader_pubseqos=ncbi_xreader_pubseqos
+   ncbi_xreader_pubseqos2=ncbi_xreader_pubseqos2
+   UNLESS_PUBSEQOS=\#
+else
+   ncbi_xreader_pubseqos=
+   ncbi_xreader_pubseqos2=
+   UNLESS_PUBSEQOS=
+fi
+
+
 ## `serial' projects
 
 if test "$with_serial" = "no" ; then
@@ -45727,7 +45719,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind LimitedLinker; do
+for x in Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources JDK Ncbi-JNI PubSeqOS check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
