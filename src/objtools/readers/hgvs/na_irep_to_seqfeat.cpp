@@ -294,7 +294,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateInversionVarref(const CInversion
 
     auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_int);
 
-    if (inv.IsSetRaw_seq()) {
+    if (inv.IsSetRaw_seq() || inv.IsSetSize()) {
         auto var_ref = Ref(new CVariation_ref());
         auto& var_set = var_ref->SetData().SetSet();
         var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
@@ -306,9 +306,13 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateInversionVarref(const CInversion
             }
             var_set.SetVariations().push_back(subvar_ref);
         }
-        {
+        if (inv.IsSetRaw_seq()) {
             auto inverted_seq = x_CreateNtSeqLiteral(inv.GetRaw_seq());
             auto subvar_ref = g_CreateIdentity(inverted_seq, start_offset, stop_offset);
+            var_set.SetVariations().push_back(subvar_ref);
+        } else if (inv.IsSetSize()) {
+            auto inversion_size = x_CreateNtSeqLiteral(inv.GetSize());
+            auto subvar_ref = g_CreateIdentity(inversion_size, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         }
         return var_ref;

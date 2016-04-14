@@ -130,7 +130,8 @@ CRef<CVariation_ref> g_CreateIdentity(CRef<CSeq_literal> seq_literal,
 
     auto& inst = var_ref->SetData().SetInstance();
     inst.SetType(CVariation_inst::eType_identity);
-    if (seq_literal->IsSetSeq_data()) {
+    if (seq_literal->IsSetSeq_data() || 
+        seq_literal->IsSetLength()) {
         inst.SetObservation(CVariation_inst::eObservation_asserted);
     }
     inst.SetDelta().clear();
