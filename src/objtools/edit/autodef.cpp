@@ -846,41 +846,43 @@ static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
 	SAnnotSelector sel(CSeqFeatData::eSubtype_cdregion);
     CFeat_CI feat_ci(bh, sel);
 	while (feat_ci && product_flag == CBioSource::eGenome_unknown) {
-		string label;
-        CConstRef<CSeq_feat> prot
-            = sequence::GetBestOverlappingFeat(feat_ci->GetProduct(),
-                                               CSeqFeatData::e_Prot,
-                                               sequence::eOverlap_Simple,
-                                               bh.GetScope());
-        if (prot) {
-            feature::GetLabel(*prot, &label, feature::fFGL_Content);
-			if (NStr::Find (label, "macronuclear") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_macronuclear;
-			} else if (NStr::Find (label, "nucleomorph") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_nucleomorph;
-			} else if (NStr::Find (label, "mitochondrion") != NCBI_NS_STD::string::npos
-				       || NStr::Find (label, "mitochondrial") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_mitochondrion;
-			} else if (NStr::Find (label, "apicoplast") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_apicoplast;
-			} else if (NStr::Find (label, "chloroplast") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_chloroplast;
-			} else if (NStr::Find (label, "chromoplast") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_chromoplast;
-			} else if (NStr::Find (label, "kinetoplast") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_kinetoplast;
-			} else if (NStr::Find (label, "proplastid") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_proplastid;
-			} else if ((pos = NStr::Find (label, "plastid")) != NCBI_NS_STD::string::npos
-				       && (pos == 0 || isspace (label.c_str()[pos]))) {
-              product_flag = CBioSource::eGenome_plastid;
-			} else if (NStr::Find (label, "cyanelle") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_cyanelle;
-			} else if (NStr::Find (label, "leucoplast") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_leucoplast;
-			} else if (NStr::Find (label, "hydrogenosome") != NCBI_NS_STD::string::npos) {
-              product_flag = CBioSource::eGenome_hydrogenosome;
-			} 
+        if (feat_ci->IsSetProduct()) {
+            string label;
+            CConstRef<CSeq_feat> prot
+                = sequence::GetBestOverlappingFeat(feat_ci->GetProduct(),
+                CSeqFeatData::e_Prot,
+                sequence::eOverlap_Simple,
+                bh.GetScope());
+            if (prot) {
+                feature::GetLabel(*prot, &label, feature::fFGL_Content);
+                if (NStr::Find(label, "macronuclear") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_macronuclear;
+                } else if (NStr::Find(label, "nucleomorph") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_nucleomorph;
+                } else if (NStr::Find(label, "mitochondrion") != NCBI_NS_STD::string::npos
+                    || NStr::Find(label, "mitochondrial") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_mitochondrion;
+                } else if (NStr::Find(label, "apicoplast") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_apicoplast;
+                } else if (NStr::Find(label, "chloroplast") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_chloroplast;
+                } else if (NStr::Find(label, "chromoplast") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_chromoplast;
+                } else if (NStr::Find(label, "kinetoplast") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_kinetoplast;
+                } else if (NStr::Find(label, "proplastid") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_proplastid;
+                } else if ((pos = NStr::Find(label, "plastid")) != NCBI_NS_STD::string::npos
+                    && (pos == 0 || isspace(label.c_str()[pos]))) {
+                    product_flag = CBioSource::eGenome_plastid;
+                } else if (NStr::Find(label, "cyanelle") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_cyanelle;
+                } else if (NStr::Find(label, "leucoplast") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_leucoplast;
+                } else if (NStr::Find(label, "hydrogenosome") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_hydrogenosome;
+                }
+            }
         }
 		++feat_ci;
 	}
