@@ -314,7 +314,6 @@ int/*bool*/ s_LBOS_AddAnnouncedServer(const char*            service,
         if (realloc_result != NULL) {
             *arr = realloc_result;
             *alloc = new_size;
-            memset(&(*arr)[*count], 0, sizeof(char) * (alloc - count));
         } else {
             free(handle.version);
             free(handle.service);
