@@ -449,6 +449,12 @@ CCSRADataLoader::GetSequenceTypeFound(const CSeq_id_Handle& idh)
 }
 
 
+CObjectManager::TPriority CCSRADataLoader::GetDefaultPriority(void) const
+{
+    return CObjectManager::kPriority_Replace;
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================

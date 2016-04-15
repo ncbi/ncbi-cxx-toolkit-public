@@ -972,7 +972,7 @@ int CDemoApp::Run(void)
     // Add default loaders (GB loader in this demo) to the scope.
     scope.AddDefaults();
     ITERATE ( vector<string>, it, other_loaders ) {
-        scope.AddDataLoader(*it, 88);
+        scope.AddDataLoader(*it);
     }
 
     CSeq_entry_Handle added_entry;

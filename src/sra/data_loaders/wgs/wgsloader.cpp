@@ -314,6 +314,12 @@ void CWGSDataLoader::SetAddWGSMasterDescr(bool flag)
 }
 
 
+CObjectManager::TPriority CWGSDataLoader::GetDefaultPriority(void) const
+{
+    return CObjectManager::kPriority_Replace;
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================

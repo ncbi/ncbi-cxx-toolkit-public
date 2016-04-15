@@ -112,6 +112,8 @@ public:
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     virtual STypeFound GetSequenceTypeFound(const CSeq_id_Handle& idh);
 
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const;
+
 private:
     typedef CParamLoaderMaker<CSRADataLoader, SLoaderParams> TMaker;
     friend class CParamLoaderMaker<CSRADataLoader, SLoaderParams>;

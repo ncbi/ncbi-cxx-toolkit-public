@@ -88,7 +88,7 @@ NCBI_DEFINE_ERR_SUBCODE_X(3);
 BEGIN_SCOPE(objects)
 
 CDataSource::CDataSource(void)
-    : m_DefaultPriority(9),
+    : m_DefaultPriority(CObjectManager::kPriority_Entry),
       m_Blob_Cache_Size(0)
 {
 }
@@ -96,7 +96,7 @@ CDataSource::CDataSource(void)
 
 CDataSource::CDataSource(CDataLoader& loader)
     : m_Loader(&loader),
-      m_DefaultPriority(99),
+      m_DefaultPriority(loader.GetDefaultPriority()),
       m_Blob_Cache_Size(0)
 {
     m_Loader->SetTargetDataSource(*this);
@@ -105,7 +105,7 @@ CDataSource::CDataSource(CDataLoader& loader)
 
 CDataSource::CDataSource(const CObject& shared_object, const CSeq_entry& entry)
     : m_SharedObject(&shared_object),
-      m_DefaultPriority(9),
+      m_DefaultPriority(CObjectManager::kPriority_Entry),
       m_Blob_Cache_Size(0)
 {
     CTSE_Lock tse_lock = AddTSE(const_cast<CSeq_entry&>(entry));

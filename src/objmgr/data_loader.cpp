@@ -836,6 +836,13 @@ CDataLoader::TEditSaver CDataLoader::GetEditSaver() const
     return TEditSaver();
 }
 
+
+CObjectManager::TPriority CDataLoader::GetDefaultPriority(void) const
+{
+    return CObjectManager::kPriority_Loader;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBlobId
 

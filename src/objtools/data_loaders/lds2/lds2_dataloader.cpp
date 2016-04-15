@@ -672,6 +672,12 @@ void CLDS2_DataLoader::GetChunk(TChunk chunk_info)
 }
 
 
+CObjectManager::TPriority CLDS2_DataLoader::GetDefaultPriority(void) const
+{
+    return CObjectManager::kPriority_Local;
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================

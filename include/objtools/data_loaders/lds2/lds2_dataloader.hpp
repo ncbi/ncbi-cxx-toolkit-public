@@ -138,6 +138,8 @@ public:
     /// for local files are registered automatically.
     void RegisterUrlHandler(CLDS2_UrlHandler_Base* handler);
 
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const;
+
 private:
     class CLDS2_LoaderMaker : public TSimpleMaker
     {

@@ -432,6 +432,8 @@ public:
     typedef CRef<IEditSaver> TEditSaver;
     virtual TEditSaver GetEditSaver() const;
 
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const;
+
 protected:
     /// Register the loader only if the name is not yet
     /// registered in the object manager
@@ -462,7 +464,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 4, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 4, 2, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

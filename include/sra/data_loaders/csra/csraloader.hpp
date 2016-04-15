@@ -154,6 +154,8 @@ public:
     static int GetSpotGroupsParamDefault(void);
     static void SetSpotGroupsParamDefault(int param);
 
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const;
+
 private:
     typedef CParamLoaderMaker<CCSRADataLoader, SLoaderParams> TMaker;
     friend class CParamLoaderMaker<CCSRADataLoader, SLoaderParams>;

@@ -110,6 +110,8 @@ public:
     bool GetAddWGSMasterDescr(void) const;
     void SetAddWGSMasterDescr(bool flag);
 
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const;
+
 private:
     typedef CParamLoaderMaker<CWGSDataLoader, SLoaderParams> TMaker;
     friend class CParamLoaderMaker<CWGSDataLoader, SLoaderParams>;

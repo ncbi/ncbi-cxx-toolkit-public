@@ -151,6 +151,11 @@ public:
     typedef int TPriority;
     /// Default data source priority.
     enum EPriority {
+        kPriority_Entry = 9,    ///< Default priority for explicit entries
+        kPriority_Local = 44,   ///< Default priority for local data storage
+        kPriority_Replace = 88, ///< Default priority for replacement loaders
+        kPriority_Loader = 99,  ///< Default priority for main loaders
+
         kPriority_Default = -1, ///< Use default priority for added data
         kPriority_NotSet = -1   ///< Deprecated: use kPriority_Default instead
     };
