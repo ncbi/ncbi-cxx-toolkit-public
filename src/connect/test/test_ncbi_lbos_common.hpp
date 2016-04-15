@@ -1036,7 +1036,8 @@ public:
     void AnswerHealthcheck() 
     {
         WRITE_LOG("AnswerHealthcheck() started, m_ListeningSockets has " 
-                  << s_ListeningPorts->size() << " open listening sockets");
+                  << s_ListeningPorts->size() << " open listening sockets"
+                  << " and " << m_SocketPool.size() << " open connections");
         /* Keeping number of open sockets under control at all times! */
         while (m_SocketPool.size() > 150)
             CollectGarbage();
