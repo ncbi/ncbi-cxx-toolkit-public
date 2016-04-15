@@ -3040,7 +3040,6 @@ void FakeMassiveInput__ShouldShuffle()
     CCObjArrayHolder<SSERV_Info> hostports(
                      g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(
                             "lbosdevacvancbinlmnih.gov", "/lbos", *net_info));
-    int i = 0;
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*hostports != NULL,
                                    "Problem with fake massive input, "
                                    "no servers found. "
@@ -3118,8 +3117,7 @@ void FakeErrorInput__ShouldNotCrash()
     CCObjArrayHolder<SSERV_Info> hostports(
                         g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(
                             "lbosdevacvancbinlmnih.gov", "/lbos", *net_info));
-    int i=0, /* iterate test numbers*/
-        j=0; /*iterate hostports from ResolveIPPort */
+    int i=0; /* iterate test numbers*/
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*hostports != NULL,
                            "Problem with fake error input, no servers found. "
                            "Most likely, problem with test.");
