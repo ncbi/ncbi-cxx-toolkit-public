@@ -2445,12 +2445,19 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
         }
         if( pub.IsArticle() ) {
             last_article.Reset( &pub.SetArticle());
-            if( FIELD_IS_SET(*last_article, Ids) ) 
-            {
-                FOR_EACH_ARTICLEID_ON_CITART( id_iter, *last_article ) {
-                    const CArticleId &article_id = **id_iter;
-                    if( article_id.IsPubmed() ) {
-                        last_article_pubmed_id = article_id.GetPubmed().Get();
+            if (last_article->IsSetIds()) {
+                CArticleIdSet::Tdata::iterator id_it = last_article->SetIds().Set().begin();
+                while (id_it != last_article->SetIds().Set().end()) {
+                    if ((*id_it)->IsPubmed() && last_article_pubmed_id != 0 &&
+                        last_article_pubmed_id == (*id_it)->GetPubmed()) {
+                        // erase duplicate
+                        id_it = last_article->SetIds().Set().erase(id_it);
+                        ChangeMade(CCleanupChange::eChangePublication);
+                    } else {
+                        if ((*id_it)->IsPubmed()) {
+                            last_article_pubmed_id = (*id_it)->GetPubmed();
+                        }
+                        ++id_it;
                     }
                 }
             }
@@ -2464,9 +2471,9 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
         pub_equiv.Set().push_back( new_pub );
         ChangeMade(CCleanupChange::eChangePublication);
     } else if (last_pmid > 0 && last_article_pubmed_id == 0 && last_article ) {
-        CRef<CArticleId> new_article_id( new CArticleId );
-        new_article_id->SetPubmed().Set( last_pmid );
-        last_article->SetIds().Set().push_back( new_article_id );
+        CRef<CArticleId> new_article_id(new CArticleId);
+        new_article_id->SetPubmed().Set(last_pmid);
+        last_article->SetIds().Set().push_back(new_article_id);
         ChangeMade(CCleanupChange::eChangePublication);
     }
 
