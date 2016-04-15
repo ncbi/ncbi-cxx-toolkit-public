@@ -1,0 +1,684 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Shigella dysenteriae 1012",
+        db {
+          {
+            db "taxon",
+            tag id 358708
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Shigella",
+            species "sp. SF-2015"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "1012"
+            }
+          },
+          lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Enterobacteriales; Enterobacteriaceae; Shigella",
+          gcode 11,
+          div "BCT"
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Rasko",
+                  first "David",
+                  initials "D.A."
+                }
+              },
+              {
+                name name {
+                  last "Rosovitz",
+                  first "MJ",
+                  initials "M.J."
+                }
+              },
+              {
+                name name {
+                  last "Brinkley",
+                  first "Carl",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Myers",
+                  first "Garry",
+                  initials "G.S.A."
+                }
+              },
+              {
+                name name {
+                  last "Sheshadri",
+                  first "Rekha",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Cer",
+                  first "Regina",
+                  initials "R.Z."
+                }
+              },
+              {
+                name name {
+                  last "Jiang",
+                  first "Lingxia",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Ravel",
+                  first "Jacques",
+                  initials "J."
+                }
+              }
+            },
+            affil std {
+              affil "The Institute for Genomic Research",
+              city "Rockville",
+              sub "MD",
+              country "USA",
+              street "9712 Medical Center Drive",
+              postal-code "20850"
+            }
+          },
+          date std {
+            year 2005,
+            month 12,
+            day 8
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Rasko",
+                  first "David",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Rosovitz",
+                  first "MJ",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Myers",
+                  first "Garry",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Seshadri",
+                  first "Rekha",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Cer",
+                  first "Regina",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Jiang",
+                  first "Lingxia",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Ravel",
+                  first "Jacques",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Fricke",
+                  first "W",
+                  initials "W.F."
+                }
+              },
+              {
+                name name {
+                  last "Sebastian",
+                  first "Yinong",
+                  initials "Y."
+                }
+              }
+            },
+            affil std {
+              affil "J. Craig Venter Institute",
+              city "Rockville",
+              sub "MD",
+              country "USA",
+              street "9704 Medical Center Drive",
+              postal-code "20850"
+            }
+          },
+          date std {
+            year 2008,
+            month 7,
+            day 17
+          }
+        }
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA16194"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMN02435888"
+          }
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 4
+        },
+        {
+          label str "day",
+          data int 15
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        genbank {
+          accession "AAMJ02000189",
+          version 1
+        },
+        general {
+          db "WGS:AAMJ",
+          tag str "gcontig_1112603762603"
+        },
+        gi 194416199
+      },
+      descr {
+        molinfo {
+          biomol genomic,
+          tech wgs
+        },
+        comment "Shigella dysenteriae 1012 was isolated in Bangledesh and
+ provided by Maj. Carl Brinkley (Walter Reed Army Institute of Research). 
+ This strain is representative of the Type 4 group of S. dysenteriae that is
+ becoming more prevalent in human infections. There has been a temporal shift
+ in dominance from 1999-2002 of S. dysenteriae towards type 4 and type 2
+ strains from other types previously identified.  Pathogenicity has been
+ confirmed in human challenge experiments and S. dysenteriae 1012 has been
+ shown to be one of the most virulent S. dysenteriae strains identified by
+ WRAIR/NMRC to date. This strain contains multiple plasmids thought to be
+ involved in virulence.",
+        user {
+          type str "WGSProjects",
+          data {
+            {
+              label str "WGS_accession_first",
+              data str "AAMJ02000001"
+            },
+            {
+              label str "WGS_accession_last",
+              data str "AAMJ02000189"
+            }
+          }
+        },
+        create-date std {
+          year 2005,
+          month 12,
+          day 9
+        },
+        update-date std {
+          year 2008,
+          month 7,
+          day 24
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 1012,
+        seq-data ncbi2na 'D83396A89839DDD136F9624698714A61603E49A070E9827B3964
+DE2815797DE57DD58D6A367F927FBF49A9998E340192BED01E1C6D46698F3258D038E24397681E
+6EA713A637934E004D3BDD4B669E9EB8C8D5B6B7ADAE0BA9FE99650CEF718D69E122185FEDD8D7
+2193E448E9A193DDDB99E86D8D66D979D8529B19F3AB97F5927E819A3A208A24198DC9CD9A598D
+092B98486D31C8CD0987DD7355EA044D0DD16883367A5025F26CA3D655F5640615404A01927806
+A09D04547864EAFBD292C7D341490A691FDA535966551276A48059867C49E02614AE769BA421D9
+26056C8094E75259593E880F7D03D5BE44C95A43D7F579DE53099260E5AB0C76'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 1,
+              data gene {
+                locus-tag "SD1012_RS27940"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 598,
+                strand plus,
+                id gi 194416199,
+                fuzz-from lim lt
+              },
+              qual {
+                {
+                  qual "old_locus_tag",
+                  val "Sd1012_0017"
+                }
+              },
+              xref {
+                {
+                  id local id 2
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "GENEMARK_000001",
+        general {
+          db "WGS:AAMJ",
+          tag str "SD1012_RS27940"
+        }
+      },
+      descr {
+        title "3'-kinase, partial [Shigella dysenteriae 1012]",
+        molinfo {
+          biomol peptide,
+          completeness no-left
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 198,
+        seq-data iupacaa "EYAGERMLSHIVAEHGDYQATEIAAELMAKLYAASEEPLPSALLPIRDRFAA
+LFQRARDDQNAGCQTDYVHAAIIADQMMSNASELRGLHGDLHHENIMFSSRGWLVIDPVGLVGEVGFGAANMFYDPAD
+RDDLCLDPRRIAQMADAFSRALDVDPRRLLDQAYAYGCLSAAWNADGEEEQRDLAIAAAIKQVRQTSY",
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              score {
+                {
+                  id str "num_positives",
+                  value int 594
+                },
+                {
+                  id str "num_negatives",
+                  value int 0
+                },
+                {
+                  id str "product_gap_length",
+                  value int 0
+                },
+                {
+                  id str "genomic_gap_length",
+                  value int 0
+                },
+                {
+                  id str "align_length",
+                  value int 594
+                },
+                {
+                  id str "product_internal_gap_length",
+                  value int 0
+                },
+                {
+                  id str "score",
+                  value int 1024
+                },
+                {
+                  id str "rank",
+                  value int 1
+                }
+              },
+              segs spliced {
+                product-id gi 446403113,
+                genomic-id gi 194416199,
+                genomic-strand plus,
+                product-type protein,
+                exons {
+                  {
+                    product-start protpos {
+                      amin 0,
+                      frame 1
+                    },
+                    product-end protpos {
+                      amin 197,
+                      frame 3
+                    },
+                    genomic-start 2,
+                    genomic-end 595,
+                    parts {
+                      diag 594
+                    },
+                    partial TRUE
+                  }
+                },
+                product-length 198,
+                modifiers {
+                  stop-codon-found TRUE
+                }
+              },
+              bounds {
+                whole gi 446403113,
+                int {
+                  from 0,
+                  to 695,
+                  strand plus,
+                  id gi 194416199
+                }
+              },
+              id {
+                str "b54fba28-7c3b-4ebf-be84-e2a57b85129b"
+              },
+              ext {
+                {
+                  type str "placement_data",
+                  data {
+                    {
+                      label str "gc_asm_id",
+                      data str "GCA_000168075.1"
+                    },
+                    {
+                      label str "gc_asm_chain_id",
+                      data int 168085
+                    },
+                    {
+                      label str "placement_id",
+                      data str "b54fba28-7c3b-4ebf-be84-e2a57b85129b"
+                    },
+                    {
+                      label str "Export region key",
+                      data str "c"
+                    },
+                    {
+                      label str "Export region from",
+                      data int 2
+                    },
+                    {
+                      label str "Export region to",
+                      data int 595
+                    }
+                  }
+                },
+                {
+                  class "bact_best_evidence_alignments",
+                  type str "best_cds",
+                  data {
+                    {
+                      label str "range",
+                      num 2,
+                      data ints {
+                        0,
+                        595
+                      }
+                    },
+                    {
+                      label str "start_found",
+                      data bool FALSE
+                    },
+                    {
+                      label str "stop_found",
+                      data bool TRUE
+                    },
+                    {
+                      label str "5' ends",
+                      num 1,
+                      data ints {
+                        2
+                      }
+                    },
+                    {
+                      label str "5' support",
+                      num 1,
+                      data reals {
+                        { 657984848484848, 10, -12 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 3,
+              data prot {
+                name {
+                  "3'-kinase"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 197,
+                id local str "GENEMARK_000001",
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          id local id 2,
+          data cdregion {
+            frame three,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole local str "GENEMARK_000001",
+          location int {
+            from 0,
+            to 598,
+            strand plus,
+            id gi 194416199,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_000480968.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "SeedProtein",
+                      data str "gi|446403113"
+                    },
+                    {
+                      label str "SeedAlignPlacement",
+                      num 2,
+                      data ints {
+                        2,
+                        595
+                      }
+                    },
+                    {
+                      label str "SeedCluster",
+                      data str "861696"
+                    },
+                    {
+                      label str "SeedProteinSource",
+                      data str "Reference"
+                    },
+                    {
+                      label str "phages_in_seed_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|485661358"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "861696"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Reference"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "best_naming_subject_coverage",
+                      data real { 704626, 10, -4 }
+                    },
+                    {
+                      label str "Cluster",
+                      data str "861696"
+                    },
+                    {
+                      label str "ClusterName",
+                      data str "3'-kinase"
+                    },
+                    {
+                      label str "NamingEvidence",
+                      num 13,
+                      data strs {
+                        "query=lcl|GENEMARK_000001&query_self_score==1024&quer
+y_length==198",
+                        "query=lcl|GENEMARK_000001&subject=gi|485661358&cluste
+r=861696&subject_self_score=1463&score=1024&distance=0&symmetric_coverage=70.4
+626",
+                        "query=lcl|GENEMARK_000001&subject=gi|485763325&cluste
+r=861696&subject_self_score=1437&score=1024&distance=0&symmetric_coverage=71.7
+391",
+                        "query=lcl|GENEMARK_000001&subject=gi|487675610&cluste
+r=861696&subject_self_score=1493&score=1024&distance=0&symmetric_coverage=69.2
+308",
+                        "query=lcl|GENEMARK_000001&subject=gi|491261541&cluste
+r=861696&subject_self_score=1569&score=1024&distance=0&symmetric_coverage=65.5
+629",
+                        "query=lcl|GENEMARK_000001&subject=gi|515967030&cluste
+r=861696&subject_self_score=1449&score=1020&distance=0.00390625&symmetric_cove
+rage=71.223",
+                        "query=lcl|GENEMARK_000001&subject=gi|487835679&cluste
+r=861696&subject_self_score=1615&score=996&distance=0.0273438&symmetric_covera
+ge=64.918",
+                        "query=lcl|GENEMARK_000001&subject=gi|446403116&cluste
+r=861696&subject_self_score=1345&score=994&distance=0.0292969&symmetric_covera
+ge=75.2896",
+                        "query=lcl|GENEMARK_000001&subject=gi|446403115&cluste
+r=861696&subject_self_score=1359&score=867&distance=0.15332&symmetric_coverage
+=64.2308",
+                        "query=lcl|GENEMARK_000001&subject=gi|446403119&cluste
+r=861696&subject_self_score=1336&score=867&distance=0.15332&symmetric_coverage
+=65.4902",
+                        "query=lcl|GENEMARK_000001&subject=gi|497052128&cluste
+r=861696&subject_self_score=1329&score=867&distance=0.15332&symmetric_coverage
+=65.4902",
+                        "query=lcl|GENEMARK_000001&automatic_cluster_histogram
+=1000000000",
+                        "query=lcl|GENEMARK_000001&cluster=861696&protname=3
+'-kinase"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
+end-of-file

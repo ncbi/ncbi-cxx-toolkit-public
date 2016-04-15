@@ -1,0 +1,1665 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Leptospira interrogans serovar Pyrogenes str. 200701872",
+        db {
+          {
+            db "taxon",
+            tag id 1193029
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Leptospira",
+            species "interrogans"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "200701872"
+            },
+            {
+              subtype serovar,
+              subname "Pyrogenes"
+            }
+          },
+          lineage "Bacteria; Spirochaetes; Leptospirales; Leptospiraceae;
+ Leptospira",
+          gcode 11,
+          div "BCT"
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Picardeau",
+                  first "Mathieu",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Werts",
+                  first "Catherine",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Goarant",
+                  first "Cyrille",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Harkins",
+                  first "Derek",
+                  initials "D.M."
+                }
+              },
+              {
+                name name {
+                  last "Hostetler",
+                  first "Jessica",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Madupu",
+                  first "Ramana",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Purushe",
+                  first "Janaki",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Sanka",
+                  first "Ravi",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Selengut",
+                  first "Jeremy",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Sutton",
+                  first "Granger",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Vinetz",
+                  first "Joseph",
+                  initials "J.M."
+                }
+              },
+              {
+                name name {
+                  last "Fouts",
+                  first "Derrick",
+                  initials "D.E."
+                }
+              }
+            },
+            affil std {
+              affil "The J. Craig Venter Institute",
+              city "Rockville",
+              sub "MD",
+              country "USA",
+              street "9704 Medical Center Dr.",
+              email "rsanka@jcvi.org",
+              phone "301-795-7743",
+              postal-code "20850"
+            }
+          },
+          date std {
+            year 2012,
+            month 6,
+            day 18
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Harkins",
+                  first "Derek",
+                  initials "D.M."
+                }
+              },
+              {
+                name name {
+                  last "Durkin",
+                  first "Anthony",
+                  initials "A.S."
+                }
+              },
+              {
+                name name {
+                  last "Brinkac",
+                  first "Lauren",
+                  initials "L.M."
+                }
+              },
+              {
+                name name {
+                  last "Haft",
+                  first "Daniel",
+                  initials "D.H."
+                }
+              },
+              {
+                name name {
+                  last "Selengut",
+                  first "Jeremy",
+                  initials "J.D."
+                }
+              },
+              {
+                name name {
+                  last "Sanka",
+                  first "Ravi",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "DePew",
+                  first "Jessica",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Purushe",
+                  first "Janaki",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Picardeau",
+                  first "Mathieu",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Werts",
+                  first "Catherine",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Goarant",
+                  first "Cyrille",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Vinetz",
+                  first "Joseph",
+                  initials "J.M."
+                }
+              },
+              {
+                name name {
+                  last "Sutton",
+                  first "Granger",
+                  initials "G.G."
+                }
+              },
+              {
+                name name {
+                  last "Nierman",
+                  first "William",
+                  initials "W.C."
+                }
+              },
+              {
+                name name {
+                  last "Fouts",
+                  first "Derrick",
+                  initials "D.E."
+                }
+              }
+            },
+            affil std {
+              affil "J. Craig Venter Institute",
+              city "Rockville",
+              sub "MD",
+              country "USA",
+              street "9704 Medical Center Drive",
+              email "dfouts@jcvi.org",
+              phone "301-795-7500",
+              postal-code "20850"
+            }
+          },
+          date std {
+            year 2013,
+            month 1,
+            day 7
+          }
+        }
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA167246"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMN01036700"
+          }
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 4
+        },
+        {
+          label str "day",
+          data int 15
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        genbank {
+          accession "AKWN02000527",
+          version 1
+        },
+        general {
+          db "WGS:AKWN02",
+          tag str "ctg1130286789666"
+        },
+        gi 464475971
+      },
+      descr {
+        molinfo {
+          biomol genomic,
+          tech wgs
+        },
+        comment "This strain is part of the Leptospira Genomics and Human
+ Health project as part of the Genome Sequencing Centers for Infectious
+ Diseases contract. 
+ http://gsc.jcvi.org/projects/gsc/leptospira/index.shtml.~~Source DNA and/or
+ bacteria are available from the BEI Resource repository. 
+ http://beiresources.org~~This project has been funded in whole or in part
+ with federal funds from the National Institute of Allergy and Infectious
+ Diseases, National Institutes of Health, Department of Health and Human
+ Services through the Genomic Sequencing Centers for Infectious Diseases under
+ contract number HHSN272200900007C.",
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Genome-Assembly-Data-START##"
+            },
+            {
+              label str "Finishing Goal",
+              data str "High-Quality Draft"
+            },
+            {
+              label str "Current Finishing Status",
+              data str "High-Quality Draft"
+            },
+            {
+              label str "Assembly Method",
+              data str "Celera Assembler v. 6.1"
+            },
+            {
+              label str "Assembly Name",
+              data str "gls454124v02"
+            },
+            {
+              label str "Long Assembly Name",
+              data str "Leptospira interrogans serovar Pyrogenes str.
+ 200701872 v02"
+            },
+            {
+              label str "Genome Coverage",
+              data str "14.8x"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "454 GS-FLX Titanium"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Genome-Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "WGSProjects",
+          data {
+            {
+              label str "WGS_accession_first",
+              data str "AKWN02000001"
+            },
+            {
+              label str "WGS_accession_last",
+              data str "AKWN02000527"
+            }
+          }
+        },
+        create-date std {
+          year 2012,
+          month 10,
+          day 17
+        },
+        update-date std {
+          year 2013,
+          month 3,
+          day 16
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 3099,
+        seq-data ncbi2na '2FF58F6B73015E0003D7C835BFD037F061030140E21FF20FCB00
+4F7FF833D016CF7A020FF4373FC3DF7BEAD8FFE7DBFFF3FF85DFF73FFF6B3EAC82BDFDEA3FC0DA
+42CE80ECFFFE8F58FF31B0FFCD5E77F63937FAD208206F5A05F203DFF777D7F0084C83E9BDA00F
+FC987E8BFFCA3FBDFDBF1FFF0F5E518FFF3FA88FC8DCA061BFB2BC7CA0FFDFF2BAA50DF9FCA0BF
+ECDF7F850A340F2F5CFCF2874DFF97FDFFFCFAACC053F750FFCA05AD03F7FFFD5FD404DF816FDB
+7683FC8E8220BFDFFFB49FCFBFCF6CCC40EFF0FF0AD40638DD403481BC70F6FF0F70D7F3FF2FDD
+29FF7CCFFCFFC0FC36EDC0FC1E400A3FF5637ADBF6014980B1DB22CFD003C4F751FCCC864CF3DF
+700F52C83102E65C8CC14083EF0380D9F77280C00EF33C6FFCE35CB837B2032000298D824A8F19
+440DF20002022BD7740F010BFFF28385F07F2816008018F53F93FC64820320CD03DC1077C800E3
+DB016821B003683DFD1F5A02FED45B3DDEBFE00E802318DA0FFC58D23FC020831A0DBD680F4CD8
+A08203568F43EB1DF7FA32BA2817CD60337DF121C8D0FFC398A280FC3DF7FF0353A1F5BF245F60
+DA001A0D20C87434B568364017177CCD8224036CFF60CF3AFF22E0C48FCB7C8D40D3DDF54C2F7F
+8682C816A0C3280319715DFE8F7EDA0BDE140EF0982E250F442D6FD00FC7DE57A33525C11FFD68
+C04170AC00E8043DFD77D6082680D6B7DAE32436B80040D7E60D43D026AA100036FFAB906F20A0
+3FC2DDBD8F53D4004FC04360F7FDF0101FC82B0051C03DFB0FA355F1F2CD6173C9DF5A010800CC
+D08360CF53FF3C0F770333582A8468DE32035BA000379FFF007435BFDE012000333D0FF30333FA
+0F5A77FCA1FCC6FFC20C41B203D54001001FFC53807FE8003FF1C43F307D3000A0165F4970FF04
+0EC3FCEF73F33DF1768D7F68FFF4081B3F8192153FF57F40006036328D40DAC80284621AF7C000
+42A8DEBFB10BDA80D8042158FC8001FFDFFC0443FC28D008F4700FDD41478D7000F6BFC1A2083C
+03E80F405834A2036803C8CCA0FDE006817FB02814047A2037A36C8200FC0F77FCA1BA81803FFD
+FF76FFF3CDE004C8'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 3,
+              data gene {
+                locus-tag "LEP1GSC124_RS20360"
+              },
+              location int {
+                from 79,
+                to 823,
+                strand plus,
+                id gi 464475971
+              },
+              xref {
+                {
+                  id local id 4
+                }
+              }
+            },
+            {
+              id local id 5,
+              data gene {
+                locus-tag "LEP1GSC124_RS20365"
+              },
+              location int {
+                from 820,
+                to 2525,
+                strand plus,
+                id gi 464475971
+              },
+              xref {
+                {
+                  id local id 6
+                }
+              }
+            },
+            {
+              id local id 7,
+              data gene {
+                locus-tag "LEP1GSC124_RS20370"
+              },
+              partial TRUE,
+              location int {
+                from 2611,
+                to 3098,
+                strand plus,
+                id gi 464475971,
+                fuzz-to lim gt
+              },
+              qual {
+                {
+                  qual "old_locus_tag",
+                  val "LEP1GSC124_0641"
+                }
+              },
+              xref {
+                {
+                  id local id 8
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "GENEMARK_000002",
+        general {
+          db "WGS:AKWN",
+          tag str "LEP1GSC124_RS20360"
+        }
+      },
+      descr {
+        title "gliding motility ABC transporter [Leptospira interrogans
+ serovar Pyrogenes str. 200701872]",
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 248,
+        seq-data iupacaa "MRLLEFSKTFFLNIQTVFWKEFSIYFNSSVGSIFASFFYFXPLFYFFRYWVE
+GSFWDFKSASMEMYFXWIPILYVIFIPALSMHLWSEEERSGTLEILFSLPLKDIELAFGKFLATWSFLGFVLSFTFLI
+PATIFYLGDLDLGTTFVGYLGIFLLGGANLALGSFVSSLTKDQISSYLLGLIFCLFFFXLGYKPFLQFLGTGQISFFS
+LSKHLEPFRLGILDGREVFFFVSFIVLFVYTNVLILRSKR",
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              score {
+                {
+                  id str "num_positives",
+                  value int 651
+                },
+                {
+                  id str "num_negatives",
+                  value int 93
+                },
+                {
+                  id str "product_gap_length",
+                  value int 0
+                },
+                {
+                  id str "genomic_gap_length",
+                  value int 11
+                },
+                {
+                  id str "align_length",
+                  value int 753
+                },
+                {
+                  id str "product_internal_gap_length",
+                  value int 0
+                },
+                {
+                  id str "score",
+                  value int 999
+                },
+                {
+                  id str "rank",
+                  value int 1
+                }
+              },
+              segs spliced {
+                product-id gi 490632853,
+                genomic-id gi 464475971,
+                genomic-strand plus,
+                product-type protein,
+                exons {
+                  {
+                    product-start protpos {
+                      amin 0,
+                      frame 1
+                    },
+                    product-end protpos {
+                      amin 247,
+                      frame 3
+                    },
+                    genomic-start 79,
+                    genomic-end 820,
+                    parts {
+                      match 3,
+                      diag 198,
+                      product-ins 1,
+                      diag 362,
+                      product-ins 1,
+                      diag 38,
+                      diag 141
+                    },
+                    partial FALSE
+                  }
+                },
+                product-length 248,
+                modifiers {
+                  start-codon-found TRUE,
+                  stop-codon-found TRUE
+                }
+              },
+              bounds {
+                whole gi 490632853,
+                int {
+                  from 0,
+                  to 920,
+                  strand plus,
+                  id gi 464475971
+                }
+              },
+              id {
+                str "776bf22c-2410-40ce-be6d-a24ccf51d047"
+              },
+              ext {
+                {
+                  type str "placement_data",
+                  data {
+                    {
+                      label str "gc_asm_id",
+                      data str "GCA_000306535.2"
+                    },
+                    {
+                      label str "gc_asm_chain_id",
+                      data int 306545
+                    },
+                    {
+                      label str "placement_id",
+                      data str "776bf22c-2410-40ce-be6d-a24ccf51d047"
+                    },
+                    {
+                      label str "Export region key",
+                      data str "c"
+                    },
+                    {
+                      label str "Export region from",
+                      data int 79
+                    },
+                    {
+                      label str "Export region to",
+                      data int 820
+                    }
+                  }
+                },
+                {
+                  class "bact_best_evidence_alignments",
+                  type str "best_cds",
+                  data {
+                    {
+                      label str "range",
+                      num 2,
+                      data ints {
+                        79,
+                        820
+                      }
+                    },
+                    {
+                      label str "start_found",
+                      data bool TRUE
+                    },
+                    {
+                      label str "stop_found",
+                      data bool TRUE
+                    },
+                    {
+                      label str "5' ends",
+                      num 2,
+                      data ints {
+                        79,
+                        115
+                      }
+                    },
+                    {
+                      label str "5' support",
+                      num 2,
+                      data reals {
+                        { 487852686030073, 10, -12 },
+                        { 556485355648536, 10, -15 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 10,
+              data prot {
+                name {
+                  "gliding motility ABC transporter"
+                }
+              },
+              location int {
+                from 0,
+                to 247,
+                id local str "GENEMARK_000002"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "GENEMARK_000003",
+        general {
+          db "WGS:AKWN",
+          tag str "LEP1GSC124_RS20365"
+        }
+      },
+      descr {
+        title "gliding motility ABC transporter [Leptospira interrogans
+ serovar Pyrogenes str. 200701872]",
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 568,
+        seq-data iupacaa "MISKIRTLLIRFNSNPLFLVSQAFLIFLFLNLIVSKFNCKKDFSRSGRFETS
+ESTRRVFQKLHSPLYIDAYYSSKIPVEYKVRLDITKELLNEIASLGNKNVILRFYDPSESVEIEKKAIEAGITPQILX
+KKERGSSQIKQVFLGMTLTLGTEKKTIPFAFYAEEIEYQILTTLRKMIRKPEDVKIGILSLPESLSTVFSGFENGKDT
+IGIFTDQILKEEYGIVPEIHIEEEEIPDSIGTLLWIGGGTLSEISSYRLDQFLMRGGNLILLFKSMDFRLAPSNRKNG
+IRIDSISPGIAKPTSYIEEQNRIFEYYGFRVNTDLVLDPNHSLPISSLTEVEPGIIGKYAYPLWILVGSSDQMLSEVS
+QFTSPFQNLLLPWISSLTLFPDKQPKVKMETILSSSEEAEIRSSVIAIGEKQILANPIQSGGQKNRFGCNVRRKFXVS
+FDSIPKTFKQSNSFLKQTLEGKTTKILVIGSPYLVSDLLALPETRKIYQESNIPFLLNSLNISEGDTDLIEIRGKKSA
+FLKLNPFSETEKNIFNFINIFGIPALLGLYTFLRIQRRNSPKNKNFLP",
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              score {
+                {
+                  id str "num_positives",
+                  value int 1593
+                },
+                {
+                  id str "num_negatives",
+                  value int 108
+                },
+                {
+                  id str "product_gap_length",
+                  value int 0
+                },
+                {
+                  id str "genomic_gap_length",
+                  value int 1
+                },
+                {
+                  id str "align_length",
+                  value int 1701
+                },
+                {
+                  id str "product_internal_gap_length",
+                  value int 0
+                },
+                {
+                  id str "score",
+                  value int 2545
+                },
+                {
+                  id str "pct_identity_gap",
+                  value real { 888888888888889, 10, -13 }
+                },
+                {
+                  id str "num_ident",
+                  value int 1512
+                },
+                {
+                  id str "num_mismatch",
+                  value int 188
+                },
+                {
+                  id str "pct_identity_ungap",
+                  value real { 889411764705882, 10, -13 }
+                },
+                {
+                  id str "gap_count",
+                  value int 1
+                },
+                {
+                  id str "pct_coverage",
+                  value real { 997652582159624, 10, -13 }
+                },
+                {
+                  id str "pct_coverage_hiqual",
+                  value real { 997652582159624, 10, -13 }
+                },
+                {
+                  id str "weighted_identity",
+                  value real { 888888888888889, 10, -15 }
+                },
+                {
+                  id str "rank",
+                  value int 1
+                }
+              },
+              segs spliced {
+                product-id gi 490584255,
+                genomic-id gi 464475971,
+                genomic-strand plus,
+                product-type protein,
+                exons {
+                  {
+                    product-start protpos {
+                      amin 0,
+                      frame 1
+                    },
+                    product-end protpos {
+                      amin 566,
+                      frame 3
+                    },
+                    genomic-start 820,
+                    genomic-end 2519,
+                    parts {
+                      match 3,
+                      diag 384,
+                      product-ins 1,
+                      diag 1313
+                    },
+                    partial TRUE
+                  }
+                },
+                product-length 567,
+                modifiers {
+                  start-codon-found TRUE
+                }
+              },
+              bounds {
+                whole gi 490584255,
+                int {
+                  from 720,
+                  to 2619,
+                  strand plus,
+                  id gi 464475971
+                }
+              },
+              id {
+                str "9142e7ef-fb52-4130-afcc-7ed2d984ccbd"
+              },
+              ext {
+                {
+                  type str "placement_data",
+                  data {
+                    {
+                      label str "gc_asm_id",
+                      data str "GCA_000306535.2"
+                    },
+                    {
+                      label str "gc_asm_chain_id",
+                      data int 306545
+                    },
+                    {
+                      label str "placement_id",
+                      data str "9142e7ef-fb52-4130-afcc-7ed2d984ccbd"
+                    },
+                    {
+                      label str "Export region key",
+                      data str "c"
+                    },
+                    {
+                      label str "Export region from",
+                      data int 820
+                    },
+                    {
+                      label str "Export region to",
+                      data int 2522
+                    }
+                  }
+                },
+                {
+                  class "bact_best_evidence_alignments",
+                  type str "best_cds",
+                  data {
+                    {
+                      label str "range",
+                      num 2,
+                      data ints {
+                        820,
+                        2522
+                      }
+                    },
+                    {
+                      label str "start_found",
+                      data bool TRUE
+                    },
+                    {
+                      label str "stop_found",
+                      data bool TRUE
+                    },
+                    {
+                      label str "5' ends",
+                      num 3,
+                      data ints {
+                        820,
+                        844,
+                        850
+                      }
+                    },
+                    {
+                      label str "5' support",
+                      num 3,
+                      data reals {
+                        { 282267101630007, 10, -12 },
+                        { 885509838998211, 10, -15 },
+                        { 254774774774775, 10, -13 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 11,
+              data prot {
+                name {
+                  "gliding motility ABC transporter"
+                }
+              },
+              location int {
+                from 0,
+                to 567,
+                id local str "GENEMARK_000003"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "GENEMARK_000004",
+        general {
+          db "WGS:AKWN",
+          tag str "LEP1GSC124_RS20370"
+        }
+      },
+      descr {
+        title "hypothetical protein LEP1GSC124_RS20370, partial [Leptospira
+ interrogans serovar Pyrogenes str. 200701872]",
+        molinfo {
+          biomol peptide,
+          completeness no-right
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 163,
+        seq-data iupacaa "MFYLYSYLGSFRIFSKNVFERRPIFPFQKNEIDRIQIGRKGHETVLXKNKGI
+WFVQVREIETRPDLEKTFXFLNTILRIKRFTKISPTTDPKKFGFNGEELKLEIQTESGEIGKLDIGISENGTFVKEPN
+TGEIWIVEENLNSLLGRGNENFFFSRFLLSENI",
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              score {
+                {
+                  id str "num_positives",
+                  value int 483
+                },
+                {
+                  id str "num_negatives",
+                  value int 6
+                },
+                {
+                  id str "product_gap_length",
+                  value int 0
+                },
+                {
+                  id str "genomic_gap_length",
+                  value int 2
+                },
+                {
+                  id str "align_length",
+                  value int 489
+                },
+                {
+                  id str "product_internal_gap_length",
+                  value int 0
+                },
+                {
+                  id str "score",
+                  value int 813
+                },
+                {
+                  id str "pct_identity_gap",
+                  value real { 98159509202454, 10, -12 }
+                },
+                {
+                  id str "num_ident",
+                  value int 480
+                },
+                {
+                  id str "num_mismatch",
+                  value int 7
+                },
+                {
+                  id str "pct_identity_ungap",
+                  value real { 985626283367557, 10, -13 }
+                },
+                {
+                  id str "gap_count",
+                  value int 2
+                },
+                {
+                  id str "pct_coverage",
+                  value real { 530501089324619, 10, -13 }
+                },
+                {
+                  id str "pct_coverage_hiqual",
+                  value real { 530501089324619, 10, -13 }
+                },
+                {
+                  id str "weighted_identity",
+                  value real { 98159509202454, 10, -14 }
+                },
+                {
+                  id str "rank",
+                  value int 1
+                }
+              },
+              segs spliced {
+                product-id gi 488019745,
+                genomic-id gi 464475971,
+                genomic-strand plus,
+                product-type protein,
+                exons {
+                  {
+                    product-start protpos {
+                      amin 0,
+                      frame 1
+                    },
+                    product-end protpos {
+                      amin 162,
+                      frame 3
+                    },
+                    genomic-start 2611,
+                    genomic-end 3097,
+                    parts {
+                      match 3,
+                      diag 135,
+                      product-ins 1,
+                      diag 71,
+                      product-ins 1,
+                      diag 278
+                    },
+                    partial TRUE
+                  }
+                },
+                product-length 163,
+                modifiers {
+                  start-codon-found TRUE
+                }
+              },
+              bounds {
+                whole gi 488019745,
+                int {
+                  from 2511,
+                  to 3098,
+                  strand plus,
+                  id gi 464475971
+                }
+              },
+              id {
+                str "c85ce2f5-02e2-4539-ac4f-c7017f92b500"
+              },
+              ext {
+                {
+                  type str "placement_data",
+                  data {
+                    {
+                      label str "gc_asm_id",
+                      data str "GCA_000306535.2"
+                    },
+                    {
+                      label str "gc_asm_chain_id",
+                      data int 306545
+                    },
+                    {
+                      label str "placement_id",
+                      data str "c85ce2f5-02e2-4539-ac4f-c7017f92b500"
+                    },
+                    {
+                      label str "Export region key",
+                      data str "c"
+                    },
+                    {
+                      label str "Export region from",
+                      data int 2611
+                    },
+                    {
+                      label str "Export region to",
+                      data int 3097
+                    }
+                  }
+                },
+                {
+                  class "bact_best_evidence_alignments",
+                  type str "best_cds",
+                  data {
+                    {
+                      label str "range",
+                      num 2,
+                      data ints {
+                        2611,
+                        3098
+                      }
+                    },
+                    {
+                      label str "start_found",
+                      data bool TRUE
+                    },
+                    {
+                      label str "stop_found",
+                      data bool FALSE
+                    },
+                    {
+                      label str "5' ends",
+                      num 2,
+                      data ints {
+                        2611,
+                        2677
+                      }
+                    },
+                    {
+                      label str "5' support",
+                      num 2,
+                      data reals {
+                        { 196319018404908, 10, -14 },
+                        { 957446808510638, 10, -15 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 12,
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 162,
+                id local str "GENEMARK_000004",
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          id local id 4,
+          data cdregion {
+            code {
+              id 11
+            },
+            code-break {
+              {
+                loc int {
+                  from 199,
+                  to 201,
+                  strand plus,
+                  id gi 464475971
+                },
+                aa ncbieaa 88
+              }
+            }
+          },
+          except TRUE,
+          product whole local str "GENEMARK_000002",
+          location int {
+            from 79,
+            to 823,
+            strand plus,
+            id gi 464475971
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_004497853.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "SeedProtein",
+                      data str "gi|490632853"
+                    },
+                    {
+                      label str "SeedAlignPlacement",
+                      num 2,
+                      data ints {
+                        79,
+                        820
+                      }
+                    },
+                    {
+                      label str "SeedCluster",
+                      data str "574427"
+                    },
+                    {
+                      label str "SeedProteinSource",
+                      data str "Core"
+                    },
+                    {
+                      label str "phages_in_seed_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|488116111"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "574427"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Core"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "best_naming_subject_coverage",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "Cluster",
+                      data str "574427"
+                    },
+                    {
+                      label str "ClusterName",
+                      data str "gliding motility ABC transporter"
+                    },
+                    {
+                      label str "NamingEvidence",
+                      num 13,
+                      data strs {
+                        "query=lcl|GENEMARK_000002&query_self_score==1275&quer
+y_length==248",
+                        "query=lcl|GENEMARK_000002&subject=gi|488116111&cluste
+r=574427&subject_self_score=1276&score=1189&distance=0.0681818&symmetric_cover
+age=100",
+                        "query=lcl|GENEMARK_000002&subject=gi|488032993&cluste
+r=574427&subject_self_score=1281&score=1186&distance=0.0741608&symmetric_cover
+age=100",
+                        "query=lcl|GENEMARK_000002&subject=gi|490571604&cluste
+r=574427&subject_self_score=1270&score=1101&distance=0.136471&symmetric_covera
+ge=100",
+                        "query=lcl|GENEMARK_000002&subject=gi|490560716&cluste
+r=574427&subject_self_score=1271&score=1099&distance=0.138039&symmetric_covera
+ge=100",
+                        "query=lcl|GENEMARK_000002&subject=gi|490632853&cluste
+r=574427&subject_self_score=1293&score=1024&distance=0.208043&symmetric_covera
+ge=98.8048",
+                        "query=lcl|GENEMARK_000002&subject=gi|523638029&cluste
+r=574427&subject_self_score=1292&score=987&distance=0.236068&symmetric_coverag
+e=98.8048",
+                        "query=lcl|GENEMARK_000002&subject=gi|490609581&cluste
+r=574427&subject_self_score=1292&score=979&distance=0.24226&symmetric_coverage
+=98.8048",
+                        "query=lcl|GENEMARK_000002&subject=gi|490642126&cluste
+r=574427&subject_self_score=1142&score=842&distance=0.339608&symmetric_coverag
+e=87.0968",
+                        "query=lcl|GENEMARK_000002&subject=gi|488838913&cluste
+r=574427&subject_self_score=1148&score=834&distance=0.345882&symmetric_coverag
+e=87.0968",
+                        "query=lcl|GENEMARK_000002&subject=gi|514356585&cluste
+r=574427&subject_self_score=1296&score=703&distance=0.457562&symmetric_coverag
+e=94.8413",
+                        "query=lcl|GENEMARK_000002&automatic_cluster_histogram
+=1000000000",
+                        "query=lcl|GENEMARK_000002&cluster=574427&protname=gli
+ding motility ABC transporter"
+                      }
+                    },
+                    {
+                      label str "Frameshift",
+                      data bool TRUE
+                    },
+                    {
+                      label str "FrameshiftOnMonomerRun",
+                      data bool TRUE
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 3
+            }
+          },
+          except-text "unclassified translation discrepancy"
+        },
+        {
+          id local id 6,
+          data cdregion {
+            code {
+              id 11
+            },
+            code-break {
+              {
+                loc int {
+                  from 2136,
+                  to 2138,
+                  strand plus,
+                  id gi 464475971
+                },
+                aa ncbieaa 88
+              }
+            }
+          },
+          except TRUE,
+          product whole local str "GENEMARK_000003",
+          location int {
+            from 820,
+            to 2525,
+            strand plus,
+            id gi 464475971
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_004449275.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "SeedProtein",
+                      data str "gi|490584255"
+                    },
+                    {
+                      label str "SeedAlignPlacement",
+                      num 2,
+                      data ints {
+                        820,
+                        2519
+                      }
+                    },
+                    {
+                      label str "SeedCluster",
+                      data str "574428"
+                    },
+                    {
+                      label str "SeedProteinSource",
+                      data str "Core"
+                    },
+                    {
+                      label str "phages_in_seed_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|488057573"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "574428"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Core"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "best_naming_subject_coverage",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "Cluster",
+                      data str "574428"
+                    },
+                    {
+                      label str "ClusterName",
+                      data str "gliding motility ABC transporter"
+                    },
+                    {
+                      label str "NamingEvidence",
+                      num 13,
+                      data strs {
+                        "query=lcl|GENEMARK_000003&query_self_score==2854&quer
+y_length==568",
+                        "query=lcl|GENEMARK_000003&subject=gi|488057573&cluste
+r=574428&subject_self_score=2854&score=2775&distance=0.0276804&symmetric_cover
+age=100",
+                        "query=lcl|GENEMARK_000003&subject=gi|446017725&cluste
+r=574428&subject_self_score=2857&score=2747&distance=0.0385019&symmetric_cover
+age=100",
+                        "query=lcl|GENEMARK_000003&subject=gi|490584255&cluste
+r=574428&subject_self_score=2870&score=2559&distance=0.108362&symmetric_covera
+ge=99.8239",
+                        "query=lcl|GENEMARK_000003&subject=gi|523643263&cluste
+r=574428&subject_self_score=2859&score=2540&distance=0.111577&symmetric_covera
+ge=99.6479",
+                        "query=lcl|GENEMARK_000003&subject=gi|490560708&cluste
+r=574428&subject_self_score=2826&score=2520&distance=0.117029&symmetric_covera
+ge=98.4155",
+                        "query=lcl|GENEMARK_000003&subject=gi|488827729&cluste
+r=574428&subject_self_score=2865&score=2046&distance=0.285864&symmetric_covera
+ge=98.7676",
+                        "query=lcl|GENEMARK_000003&subject=gi|515120607&cluste
+r=574428&subject_self_score=2872&score=2049&distance=0.28656&symmetric_coverag
+e=99.4718",
+                        "query=lcl|GENEMARK_000003&subject=gi|490635389&cluste
+r=574428&subject_self_score=2862&score=2036&distance=0.288609&symmetric_covera
+ge=99.1197",
+                        "query=lcl|GENEMARK_000003&subject=gi|499989559&cluste
+r=574428&subject_self_score=2875&score=2037&distance=0.291478&symmetric_covera
+ge=99.4718",
+                        "query=lcl|GENEMARK_000003&subject=gi|490406609&cluste
+r=574428&subject_self_score=2868&score=2032&distance=0.291492&symmetric_covera
+ge=99.4718",
+                        "query=lcl|GENEMARK_000003&automatic_cluster_histogram
+=1000000000",
+                        "query=lcl|GENEMARK_000003&cluster=574428&protname=gli
+ding motility ABC transporter"
+                      }
+                    },
+                    {
+                      label str "Frameshift",
+                      data bool TRUE
+                    },
+                    {
+                      label str "FrameshiftNotOnMonomerRun",
+                      data bool TRUE
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 5
+            }
+          },
+          except-text "unclassified translation discrepancy"
+        },
+        {
+          id local id 8,
+          data cdregion {
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          product whole local str "GENEMARK_000004",
+          location int {
+            from 2611,
+            to 3098,
+            strand plus,
+            id gi 464475971,
+            fuzz-to lim gt
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_002091144.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "SeedProtein",
+                      data str "gi|488019745"
+                    },
+                    {
+                      label str "SeedAlignPlacement",
+                      num 2,
+                      data ints {
+                        2611,
+                        3097
+                      }
+                    },
+                    {
+                      label str "SeedCluster",
+                      data str "574429"
+                    },
+                    {
+                      label str "SeedProteinSource",
+                      data str "Core"
+                    },
+                    {
+                      label str "phages_in_seed_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|488019745"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "574429"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Core"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "best_naming_subject_coverage",
+                      data real { 53268, 10, -3 }
+                    },
+                    {
+                      label str "Cluster",
+                      data str "574429"
+                    },
+                    {
+                      label str "ClusterName",
+                      data str "hypothetical protein"
+                    },
+                    {
+                      label str "NamingEvidence",
+                      num 13,
+                      data strs {
+                        "query=lcl|GENEMARK_000004&query_self_score==838&query
+_length==163",
+                        "query=lcl|GENEMARK_000004&subject=gi|488019745&cluste
+r=574429&subject_self_score=1600&score=835&distance=0.00357995&symmetric_cover
+age=53.268",
+                        "query=lcl|GENEMARK_000004&subject=gi|446693140&cluste
+r=574429&subject_self_score=1747&score=720&distance=0.140811&symmetric_coverag
+e=45.5357",
+                        "query=lcl|GENEMARK_000004&subject=gi|446913394&cluste
+r=574429&subject_self_score=1504&score=701&distance=0.163484&symmetric_coverag
+e=48.9583",
+                        "query=lcl|GENEMARK_000004&subject=gi|523627820&cluste
+r=574429&subject_self_score=1749&score=655&distance=0.218377&symmetric_coverag
+e=45.5357",
+                        "query=lcl|GENEMARK_000004&subject=gi|490897121&cluste
+r=574429&subject_self_score=1763&score=649&distance=0.225537&symmetric_coverag
+e=45.1327",
+                        "query=lcl|GENEMARK_000004&subject=gi|515781726&cluste
+r=574429&subject_self_score=1749&score=636&distance=0.24105&symmetric_coverage
+=45.5357",
+                        "query=lcl|GENEMARK_000004&subject=gi|523638022&cluste
+r=574429&subject_self_score=1743&score=529&distance=0.368735&symmetric_coverag
+e=44.8071",
+                        "query=lcl|GENEMARK_000004&subject=gi|498260479&cluste
+r=574429&subject_self_score=1744&score=509&distance=0.392601&symmetric_coverag
+e=45.1327",
+                        "query=lcl|GENEMARK_000004&subject=gi|488823419&cluste
+r=574429&subject_self_score=1758&score=505&distance=0.397375&symmetric_coverag
+e=41.9643",
+                        "query=lcl|GENEMARK_000004&subject=gi|488690188&cluste
+r=574429&subject_self_score=1741&score=488&distance=0.417661&symmetric_coverag
+e=41.9643",
+                        "query=lcl|GENEMARK_000004&automatic_cluster_histogram
+=1000000000",
+                        "query=lcl|GENEMARK_000004&cluster=574429&protname=hyp
+othetical protein"
+                      }
+                    },
+                    {
+                      label str "Frameshift",
+                      data bool TRUE
+                    },
+                    {
+                      label str "FrameshiftOnMonomerRun",
+                      data bool TRUE
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 7
+            }
+          },
+          except-text "unclassified translation discrepancy"
+        }
+      }
+    }
+  }
+}
+end-of-file

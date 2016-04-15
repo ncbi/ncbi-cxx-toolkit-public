@@ -1,0 +1,432 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        taxname "Rhodococcus erythropolis",
+        db {
+          {
+            db "taxon",
+            tag id 1833
+          }
+        },
+        syn {
+          "Arthrobacter hydrocarboglutamicus",
+          "Arthrobacter oxamicetus",
+          "Arthrobacter oxamicetus subsp. propiophenicolus",
+          "Arthrobacter paraffineus",
+          "Arthrobacter picolinophilus",
+          "Brevibacterium healii",
+          "Brevibacterium ketoglutamicum",
+          "Brevibacterium paraffinoliticum",
+          "Corynebacterium alkanum",
+          "Corynebacterium aurantiacum",
+          "Corynebacterium humiferum",
+          "Mycobacterium erythropolis",
+          "Nocardia calcarea"
+        },
+        orgname {
+          name binomial {
+            genus "Rhodococcus",
+            species "erythropolis"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "S-43"
+            }
+          },
+          lineage "Bacteria; Actinobacteria; Corynebacteriales; Nocardiaceae;
+ Rhodococcus",
+          gcode 11,
+          div "BCT"
+        }
+      },
+      subtype {
+        {
+          subtype country,
+          name "Germany: Muldenhuetten"
+        },
+        {
+          subtype isolation-source,
+          name "Upper soil horizon of the area ""Rauchbloesse"""
+        },
+        {
+          subtype collection-date,
+          name "10-Oct-2006"
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Rivera",
+                  first "Javier",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Retamal",
+                  first "Gerardo",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Valdes",
+                  first "Natalia",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Schloemann",
+                  first "Michael",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Levican",
+                  first "Gloria",
+                  initials "G."
+                }
+              }
+            }
+          },
+          title "Draft genome sequence of Rhodococcus erythropolis sp. strain
+ S-43, an arsenite-oxidizing bacteria "
+        }
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA268657"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMN03222825"
+          }
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 4
+        },
+        {
+          label str "day",
+          data int 15
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "Contig537"
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Genome-Assembly-Data-START##"
+            },
+            {
+              label str "Assembly Method",
+              data str "Celera v. 8.1; Cap3 v. 08/06/13"
+            },
+            {
+              label str "Genome Representation",
+              data str "Full"
+            },
+            {
+              label str "Expected Final Version",
+              data str "No"
+            },
+            {
+              label str "Genome Coverage",
+              data str "40.0x"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "IonTorrent"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Genome-Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          class "Interim Storage",
+          type str "Input Seq-ids",
+          data {
+            {
+              label str "Input Seq-ids",
+              num 1,
+              data strs {
+                "lcl|Contig537"
+              }
+            }
+          }
+        },
+        create-date std {
+          year 2014,
+          month 11,
+          day 27
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 632,
+        seq-data ncbi2na '05964566365B65A0584186DB6DD44D45A25A35806B45B7896196
+281D1015E45A4B82D65B04778914904D81839819B66BD45A016D169816365B96F61F81E45B1512
+4FBDA2416C92D034165915B8D96D968161061B6DB75135168968D6016D16DE258E586278605791
+492E0B49AC11FEE45249360A0E6126D904561B85B45A6050D96E5BD87E07916C54493EF68905B6
+4B48D0596C56E365B65A0584986DBA'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 1,
+              data gene {
+                locus-tag "QV65_33510"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 631,
+                strand minus,
+                id local str "Contig537",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              },
+              xref {
+                {
+                  id local id 2
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "GENEMARK_006089",
+        general {
+          db "PRJNA268657",
+          tag str "QV65_33510"
+        }
+      },
+      descr {
+        title "hypothetical protein QV65_33510, partial [Rhodococcus
+ erythropolis]",
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 210,
+        seq-data iupacaa "TTSLSVPATAITGTAVDLTATVAPNNAVGTVQFKSNGTAIGSPVTVTSGVAT
+LSHSFDAAGAQSVTADFTAGAGFVSSSASAQTVTVSDPAPVDVETTTSLSVPATAITGAAVDLTATVAPNNAVGTVQF
+KSNGTAIGSPVTVSGGTATRSHSFDVAGAQSVTADFTAGAGFVSSSASAQTVTVSDPAPVDVETTTSLSVPATAIAGA
+AV"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 3,
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 209,
+                id local str "GENEMARK_006089",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          id local id 2,
+          data cdregion {
+            frame three,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole local str "GENEMARK_006089",
+          location int {
+            from 0,
+            to 631,
+            strand minus,
+            id local str "Contig537",
+            fuzz-from lim lt,
+            fuzz-to lim gt
+          },
+          qual {
+            {
+              qual "inference",
+              val "COORDINATES: ab initio prediction:GeneMarkS+"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "GeneMarkS+"
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|518576185"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "2483661"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "best_naming_subject_coverage",
+                      data real { 228758, 10, -4 }
+                    },
+                    {
+                      label str "Cluster",
+                      data str "2483661"
+                    },
+                    {
+                      label str "ClusterName",
+                      data str "hypothetical protein"
+                    },
+                    {
+                      label str "NamingEvidence",
+                      num 13,
+                      data strs {
+                        "query=lcl|GENEMARK_006089&query_self_score==1012&quer
+y_length==210",
+                        "query=lcl|GENEMARK_006089&subject=gi|518576185&cluste
+r=2483661&subject_self_score=4553&score=961&distance=0.0503953&symmetric_cover
+age=22.8758",
+                        "query=lcl|GENEMARK_006089&subject=gi|491659631&cluste
+r=2483661&subject_self_score=5368&score=673&distance=0.33498&symmetric_coverag
+e=19.6445",
+                        "query=lcl|GENEMARK_006089&subject=gi|503179837&cluste
+r=2483661&subject_self_score=5299&score=672&distance=0.335968&symmetric_covera
+ge=19.8675",
+                        "query=lcl|GENEMARK_006089&subject=gi|491659615&cluste
+r=3297051&subject_self_score=2504&score=519&distance=0.487154&symmetric_covera
+ge=41.9028",
+                        "query=lcl|GENEMARK_006089&subject=gi|503179841&cluste
+r=3297051&subject_self_score=2584&score=515&distance=0.491107&symmetric_covera
+ge=40.5088",
+                        "query=lcl|GENEMARK_006089&subject=gi|491659629&cluste
+r=3287346&subject_self_score=4896&score=513&distance=0.493083&symmetric_covera
+ge=21.4212",
+                        "query=lcl|GENEMARK_006089&subject=gi|494802200&cluste
+r=3320128&subject_self_score=2938&score=482&distance=0.523715&symmetric_covera
+ge=34.7751",
+                        "query=lcl|GENEMARK_006089&subject=gi|490038464&cluste
+r=3320128&subject_self_score=2983&score=446&distance=0.559289&symmetric_covera
+ge=35.1443",
+                        "query=lcl|GENEMARK_006089&subject=gi|518577385&cluste
+r=3320128&subject_self_score=2917&score=435&distance=0.570158&symmetric_covera
+ge=36",
+                        "query=lcl|GENEMARK_006089&subject=gi|503179838&cluste
+r=3287346&subject_self_score=5258&score=392&distance=0.612648&symmetric_covera
+ge=19.7531",
+                        "query=lcl|GENEMARK_006089&automatic_cluster_histogram
+=1000210000",
+                        "query=lcl|GENEMARK_006089&cluster=2483661&protname=hy
+pothetical protein"
+                      }
+                    },
+                    {
+                      label str "AbInitioEnds",
+                      data bool TRUE
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
+end-of-file

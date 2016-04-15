@@ -1,0 +1,444 @@
+Seq-entry ::= seq {
+  id {
+    genbank {
+      accession "AFCK01001762",
+      version 1
+    },
+    general {
+      db "WGS:AFCK01",
+      tag str "Contig1762"
+    },
+    gi 357952301
+  },
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Salmonella enterica subsp. enterica serovar Baildon str.
+ R6-199",
+        db {
+          {
+            db "taxon",
+            tag id 913069
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Salmonella",
+            species "enterica",
+            subspecies "enterica"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "R6-199"
+            },
+            {
+              subtype serovar,
+              subname "Baildon"
+            },
+            {
+              subtype sub-species,
+              subname "enterica"
+            }
+          },
+          lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Enterobacteriales; Enterobacteriaceae; Salmonella",
+          gcode 11,
+          div "BCT"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic,
+      tech wgs
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "den Bakker",
+                  first "Henk",
+                  initials "H.C."
+                }
+              },
+              {
+                name name {
+                  last "Cummings",
+                  first "Craig",
+                  initials "C.A."
+                }
+              },
+              {
+                name name {
+                  last "Moreno Switt",
+                  first "Andrea",
+                  initials "A.I."
+                }
+              },
+              {
+                name name {
+                  last "Govoni",
+                  first "Gregory",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Raineri",
+                  first "Matthew",
+                  initials "M.L."
+                }
+              },
+              {
+                name name {
+                  last "Degoricija",
+                  first "Lovorka",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Hoelzer",
+                  first "Karin",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Rodriguez-Rivera",
+                  first "Lorraine",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Brown",
+                  first "Stephanie",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Bolchacova",
+                  first "Elena",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Furtado",
+                  first "Manohar",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Wiedmann",
+                  first "Martin",
+                  initials "M."
+                }
+              }
+            },
+            affil std {
+              affil "Life Technologies",
+              city "Foster City",
+              sub "CA",
+              country "USA",
+              street "850 Lincoln Centre Drive",
+              postal-code "94404"
+            }
+          },
+          date std {
+            year 2011,
+            month 11,
+            day 21
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 21859443,
+        article {
+          title {
+            name "Genome sequencing reveals diversification of virulence
+ factor content and possible host adaptation in distinct subpopulations of
+ Salmonella enterica."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "den Bakker",
+                  initials "H.C."
+                }
+              },
+              {
+                name name {
+                  last "Moreno Switt",
+                  initials "A.I."
+                }
+              },
+              {
+                name name {
+                  last "Govoni",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Cummings",
+                  initials "C.A."
+                }
+              },
+              {
+                name name {
+                  last "Ranieri",
+                  initials "M.L."
+                }
+              },
+              {
+                name name {
+                  last "Degoricija",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Hoelzer",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Rodriguez-Rivera",
+                  initials "L.D."
+                }
+              },
+              {
+                name name {
+                  last "Brown",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Bolchacova",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Furtado",
+                  initials "M.R."
+                }
+              },
+              {
+                name name {
+                  last "Wiedmann",
+                  initials "M."
+                }
+              }
+            },
+            affil str "Department of Food Science, Cornell University, Ithaca,
+ NY 14853, USA. hcd5@cornell.edu"
+          },
+          from journal {
+            title {
+              iso-jta "BMC Genomics",
+              ml-jta "BMC Genomics",
+              issn "1471-2164",
+              name "BMC genomics"
+            },
+            imp {
+              date std {
+                year 2011
+              },
+              volume "12",
+              pages "425",
+              language "eng",
+              pubstatus epublish,
+              history {
+                {
+                  pubstatus received,
+                  date std {
+                    year 2011,
+                    month 5,
+                    day 19
+                  }
+                },
+                {
+                  pubstatus accepted,
+                  date std {
+                    year 2011,
+                    month 8,
+                    day 22
+                  }
+                },
+                {
+                  pubstatus aheadofprint,
+                  date std {
+                    year 2011,
+                    month 8,
+                    day 22
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2011,
+                    month 8,
+                    day 24,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2011,
+                    month 8,
+                    day 24,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2012,
+                    month 1,
+                    day 12,
+                    hour 6,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pii "1471-2164-12-425",
+            doi "10.1186/1471-2164-12-425",
+            pubmed 21859443,
+            other {
+              db "pmc",
+              tag str "PMC3176500"
+            },
+            other {
+              db "ELocationID doi",
+              tag str "10.1186/1471-2164-12-425"
+            }
+          }
+        }
+      }
+    },
+    comment "Bacterial strain is available from the collection of Dr. Martin
+ Wiedmann at the Department of Food Science, Cornell University, 116 Stocking
+ Hall, Ithaca, NY, USA 14853.",
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Assembly-Data-START##"
+        },
+        {
+          label str "Assembly Method",
+          data str "SOLiD System de novo Accessory tools version 2.0
+ (incorporates Velvet v. 0.7.55)"
+        },
+        {
+          label str "Genome Coverage",
+          data str "156x"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Applied Biosystems SOLiD 3.0"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "WGSProjects",
+      data {
+        {
+          label str "WGS_accession_first",
+          data str "AFCK01000001"
+        },
+        {
+          label str "WGS_accession_last",
+          data str "AFCK01001762"
+        }
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA59699"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMN01112399"
+          }
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 4
+        },
+        {
+          label str "day",
+          data int 15
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    },
+    create-date std {
+      year 2011,
+      month 11,
+      day 22
+    },
+    update-date std {
+      year 2011,
+      month 11,
+      day 22
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 186,
+    seq-data ncbi2na '8C1996665ACB982F8E82C7A14DF064021A82A867B1F65A92A8ED904B
+A9CE09880E7F65DACC5159CE085E7D2BC2E120'H
+  }
+}
+end-of-file
