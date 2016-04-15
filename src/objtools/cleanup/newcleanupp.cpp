@@ -12138,31 +12138,33 @@ void CNewCleanup_imp::x_CollapseSet(CBioseq_set& bioseq_set)
     if (bioseq_set.IsSetSeq_set() && bioseq_set.GetSeq_set().size() == 1) {
         CBioseq_set_EditHandle p = m_Scope->GetBioseq_setEditHandle(bioseq_set);
         CSeq_entry_Handle ch = m_Scope->GetSeq_entryHandle(*(bioseq_set.GetSeq_set().front()));
-        const CBioseq_set& child = bioseq_set.GetSeq_set().front()->GetSet();
-        if (child.IsSetAnnot()) {
-            while (!child.GetAnnot().empty()) {
-                CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(*(child.GetAnnot().front()));
-                CSeq_annot_EditHandle eh = ah.GetEditHandle();
-                p.TakeAnnot(eh);
+        if (bioseq_set.GetSeq_set().front()->IsSet()) {
+            const CBioseq_set& child = bioseq_set.GetSeq_set().front()->GetSet();
+            if (child.IsSetAnnot()) {
+                while (!child.GetAnnot().empty()) {
+                    CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(*(child.GetAnnot().front()));
+                    CSeq_annot_EditHandle eh = ah.GetEditHandle();
+                    p.TakeAnnot(eh);
+                }
             }
-        }
-        if (child.IsSetDescr()) {
-            ITERATE(CBioseq_set::TDescr::Tdata, it, child.GetDescr().Get()) {
-                CRef<CSeqdesc> cpy(new CSeqdesc());
-                cpy->Assign(**it);
-                p.AddSeqdesc(*cpy);
+            if (child.IsSetDescr()) {
+                ITERATE(CBioseq_set::TDescr::Tdata, it, child.GetDescr().Get()) {
+                    CRef<CSeqdesc> cpy(new CSeqdesc());
+                    cpy->Assign(**it);
+                    p.AddSeqdesc(*cpy);
+                }
             }
-        }
-        if (child.IsSetSeq_set()) {
-            while (!child.GetSeq_set().empty()) {
-                CSeq_entry_Handle h = m_Scope->GetSeq_entryHandle(*(child.GetSeq_set().front()));
-                CSeq_entry_EditHandle eh = h.GetEditHandle();
-                p.TakeEntry(eh);
+            if (child.IsSetSeq_set()) {
+                while (!child.GetSeq_set().empty()) {
+                    CSeq_entry_Handle h = m_Scope->GetSeq_entryHandle(*(child.GetSeq_set().front()));
+                    CSeq_entry_EditHandle eh = h.GetEditHandle();
+                    p.TakeEntry(eh);
+                }
             }
+            CSeq_entry_EditHandle ech = ch.GetEditHandle();
+            ech.Remove();
+            ChangeMade(CCleanupChange::eCollapseSet);
         }
-        CSeq_entry_EditHandle ech = ch.GetEditHandle();
-        ech.Remove();
-        ChangeMade(CCleanupChange::eCollapseSet);
     }
 }
 
@@ -13677,6 +13679,9 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
     if (CCleanup::RescueSiteRefPubs(seh)) {
         ChangeMade(CCleanupChange::eAddDescriptor);
         ChangeMade(CCleanupChange::eRemoveFeat);
+    }
+    if (CCleanup::RenormalizeNucProtSets(seh)) {
+        ChangeMade(CCleanupChange::eCollapseSet);
     }
 }
 

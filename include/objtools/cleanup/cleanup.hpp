@@ -351,6 +351,12 @@ public:
 /// @return bool indicates whether any changes were made
     static bool FixGeneXrefSkew(CSeq_entry_Handle seh);
 
+/// Convert nuc-prot sets with just one sequence to just the sequence
+/// can't be done during the explore phase because it changes a seq to a set
+/// @param seh Seq-entry to edit
+/// @return bool indicates whether any changes were made
+    static bool RenormalizeNucProtSets(CSeq_entry_Handle seh);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

@@ -2467,5 +2467,35 @@ bool CCleanup::ShouldStripPubSerial(const CBioseq& bs)
 }
 
 
+bool CCleanup::RenormalizeNucProtSets(CSeq_entry_Handle seh)
+{
+    bool change_made = false;
+    CConstRef<CSeq_entry> entry = seh.GetCompleteSeq_entry();
+    if (seh.IsSet() && seh.GetSet().IsSetClass() &&
+        entry->GetSet().IsSetSeq_set()) {
+        CBioseq_set::TClass set_class = seh.GetSet().GetClass();        
+        if (set_class == CBioseq_set::eClass_nuc_prot) {
+            if (entry->GetSet().GetSeq_set().size() == 1 &&
+                entry->GetSet().GetSeq_set().front()->IsSeq()) {
+                CSeq_entry_EditHandle eh = seh.GetEditHandle();
+                eh.ConvertSetToSeq();
+                change_made = true;
+            }
+        } else if (set_class == CBioseq_set::eClass_genbank ||
+            set_class == CBioseq_set::eClass_mut_set ||
+            set_class == CBioseq_set::eClass_pop_set ||
+            set_class == CBioseq_set::eClass_phy_set ||
+            set_class == CBioseq_set::eClass_eco_set ||
+            set_class == CBioseq_set::eClass_wgs_set ||
+            set_class == CBioseq_set::eClass_gen_prod_set ||
+            set_class == CBioseq_set::eClass_small_genome_set) {
+            ITERATE(CBioseq_set::TSeq_set, s, entry->GetSet().GetSeq_set()) {
+                CSeq_entry_Handle ch = seh.GetScope().GetSeq_entryHandle(**s);
+                change_made |= RenormalizeNucProtSets(ch);
+            }
+        }
+    }
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
