@@ -84,12 +84,12 @@ CTestThread::CTestThread(unsigned id, CScope& scope,
       m_Start(start), m_Stop(stop),
       m_Verbose(false)
 {
-    LOG_POST("Thread " << start << " - " << stop << " - started");
+    _TRACE("Thread " << start << " - " << stop << " - started");
 }
 
 CTestThread::~CTestThread()
 {
-    LOG_POST("Thread " << m_Start << " - " << m_Stop << " - completed");
+    _TRACE("Thread " << m_Start << " - " << m_Stop << " - completed");
 }
 
 void* CTestThread::Main(void)
@@ -100,7 +100,7 @@ void* CTestThread::Main(void)
     CScope scope1(*pom);
     scope1.AddDefaults();
 
-    LOG_POST(" Processing gis from "<< m_Start << " to " << m_Stop);
+    LOG_POST(" Processing gis from "<< m_Start << " to " << m_Stop << " mode: "<<m_mode);
   
     for (TIntId i = m_Start;  i < m_Stop;  i++) {
         CScope scope2(*pom);
@@ -217,14 +217,14 @@ int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
         }
     
     for (unsigned i=0; i<thread_count; i++) {
-        LOG_POST("Thread " << i << " @join");
+        _TRACE("Thread " << i << " @join");
         thr[i]->Join();
     }
     
 #if 0 
     // Destroy all threads : has already been destroyed by join
     for (unsigned i=0; i<thread_count; i++) {
-        LOG_POST("Thread " << i << " @delete");
+        _TRACE("Thread " << i << " @delete");
         delete thr[i];
     }
 #endif
@@ -265,14 +265,14 @@ int CTestApplication::Run()
             for(unsigned global_scope=0;global_scope<=(thr==1U?1U:(global_om==0U?1U:2U)); ++global_scope)
                 {
                     unsigned mode = (global_om<<2) + global_scope ;
-                    LOG_POST("TEST: threads:" << thr <<
+                    _TRACE("TEST: threads:" << thr <<
                              ", om=" << kGlobalOMTags[global_om] <<
                              ", scope=" << kGlobalScopeTags[global_scope]);
                     time_t start=time(0);
                     Test(mode,thr);
                     timing[thr-1][global_om][global_scope] = time(0)-start ;
-                    LOG_POST("==================================================");
-                    LOG_POST("Test(" << i++ << ") completed  ===============");
+                    _TRACE("==================================================");
+                    _TRACE("Test(" << i++ << ") completed  ===============");
                 }
   
     for(unsigned global_om=0;global_om<=1; ++global_om)
