@@ -30,6 +30,7 @@ internal/mapview/objects
 misc/grid_cgi$
 misc/xmlwrapp
 misc/eutils_client$
+misc/hydra_client$
 misc/discrepancy$
 misc/discrepancy_report$
 misc/biosample_util$
