@@ -437,7 +437,8 @@ gpipe_an_base needs gpipe_type_verifier
 gpipe_an_base needs gpxlib
 gpipe_an_base needs grid_wrapper
 gpipe_asn_cleanup needs xvalidate
-gpipe_asn_proc needs gpipe_alnutil
+gpipe_asn_proc needs $(SDBAPI_LIB)
+gpipe_asn_proc needs eutils_client
 gpipe_asn_proc needs xalgoalignutil
 gpipe_asn_proc needs xalgognomon
 gpipe_asn_proc needs xmergetree
@@ -445,7 +446,7 @@ gpipe_attr needs gpipe_property
 gpipe_best_placement needs gpipe_alnutil
 gpipe_best_placement needs xalgoalignutil
 gpipe_blast needs $(BLAST_INPUT_LIBS)
-gpipe_blast needs gpipe_alnutil
+gpipe_blast needs $(BLAST_LIBS)
 gpipe_clean_prot_names needs $(SDBAPI_LIB)
 gpipe_clean_prot_names needs xdiscrepancy_report
 gpipe_common needs $(SDBAPI_LIB)
