@@ -397,5 +397,5 @@ CAlignDepthFilter::FilterBothRows(const list<CRef<CSeq_align> >& Input,
     }
 }
 
-END_NCBI_SCOPE;
+END_NCBI_SCOPE
 
