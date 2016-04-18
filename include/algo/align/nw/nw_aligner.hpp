@@ -282,9 +282,11 @@ protected:
     // termination flag
     mutable  bool             m_terminate;
 
-    // Source sequences
+    //sequences
+    vector<char>              m_Seq1Vec;
     const char*               m_Seq1;
     size_t                    m_SeqLen1;
+    vector<char>              m_Seq2Vec;
     const char*               m_Seq2;
     size_t                    m_SeqLen2;
     size_t x_CheckSequence(const char* seq, size_t len) const;

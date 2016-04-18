@@ -64,7 +64,9 @@ CNWAligner::CNWAligner()
       m_ScoreMatrixInvalid(true),
       m_prg_callback(0),
       m_terminate(false),
+      m_Seq1Vec(),
       m_Seq1(0), m_SeqLen1(0),
+      m_Seq2Vec(),
       m_Seq2(0), m_SeqLen2(0),
       m_PositivesAsMatches(false),
       m_score(kInfMinus),
@@ -91,8 +93,10 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
       m_ScoreMatrixInvalid(true),
       m_prg_callback(0),
       m_terminate(false),
-      m_Seq1(seq1), m_SeqLen1(len1),
-      m_Seq2(seq2), m_SeqLen2(len2),
+      m_Seq1Vec(&seq1[0], &seq1[0]+len1),
+      m_Seq1(&m_Seq1Vec[0]), m_SeqLen1(len1),
+      m_Seq2Vec(&seq2[0], &seq2[0]+len2),
+      m_Seq2(&m_Seq2Vec[0]), m_SeqLen2(len2),
       m_PositivesAsMatches(false),
       m_score(kInfMinus),
       m_mt(false),
@@ -118,8 +122,10 @@ CNWAligner::CNWAligner(const string& seq1,
       m_ScoreMatrixInvalid(true),
       m_prg_callback(0),
       m_terminate(false),
-      m_Seq1(seq1.data()), m_SeqLen1(seq1.size()),
-      m_Seq2(seq2.data()), m_SeqLen2(seq2.size()),
+      m_Seq1Vec(seq1.begin(), seq1.end()),
+      m_Seq1(&m_Seq1Vec[0]), m_SeqLen1(seq1.size()),
+      m_Seq2Vec(seq2.begin(), seq2.end()),
+      m_Seq2(&m_Seq2Vec[0]), m_SeqLen2(seq2.size()),
       m_score(kInfMinus),
       m_mt(false),
       m_maxthreads(1),
@@ -164,10 +170,11 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 	    NCBI_THROW(CAlgoAlignException, eInvalidCharacter, message);
 	}
     }
-
-    m_Seq1 = seq1;
+    m_Seq1Vec.assign(&seq1[0], &seq1[0]+len1);
+    m_Seq2Vec.assign(&seq2[0], &seq2[0]+len2);
+    m_Seq1 = &m_Seq1Vec[0];
     m_SeqLen1 = len1;
-    m_Seq2 = seq2;
+    m_Seq2 = &m_Seq2Vec[0];
     m_SeqLen2 = len2;
     m_Transcript.clear();
 }
