@@ -8,7 +8,7 @@ function create_output_file()
    local result=$2
    local cerr=$3
 
-   (cd original && echo "$TEST_TOOL_PATH $args -o $result "| bash  \
+   (cd original && echo "$TEST_TOOL_PATH $args -o $result -noobj "| bash  \
     > $cerr  2>&1 && echo "end-of-file" >> $result ) || echo "$TEST_TOOL_PATH" "returned non-zero exit code"
 }
 

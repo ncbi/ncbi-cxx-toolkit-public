@@ -256,31 +256,6 @@ Seq-entry ::= set {
           }
         }
       }
-    },
-    user {
-      type str "NcbiCleanup",
-      data {
-        {
-          label str "method",
-          data str "ExtendedSeqEntryCleanup"
-        },
-        {
-          label str "version",
-          data int 1
-        },
-        {
-          label str "month",
-          data int 4
-        },
-        {
-          label str "day",
-          data int 15
-        },
-        {
-          label str "year",
-          data int 2016
-        }
-      }
     }
   },
   seq-set {
