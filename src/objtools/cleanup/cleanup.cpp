@@ -1938,7 +1938,7 @@ bool CCleanup::NormalizeDescriptorOrder(CSeq_entry_Handle seh)
 }
 
 
-bool CCleanup::RemoveUnseenTitles(CBioseq_Handle& seq)
+bool CCleanup::RemoveUnseenTitles(CBioseq_EditHandle& seq)
 {
     bool removed = false;
     if (seq.IsSetDescr()) {
@@ -1946,8 +1946,7 @@ bool CCleanup::RemoveUnseenTitles(CBioseq_Handle& seq)
         ITERATE(CBioseq::TDescr::Tdata, d, seq.GetDescr().Get()) {
             if ((*d)->IsTitle()) {
                 if (last_title) {
-                    CBioseq_EditHandle eh(seq);
-                    eh.RemoveSeqdesc(*last_title);
+                    seq.RemoveSeqdesc(*last_title);
                     removed = true;
                 }
                 last_title.Reset(d->GetPointer());
@@ -1958,7 +1957,7 @@ bool CCleanup::RemoveUnseenTitles(CBioseq_Handle& seq)
 }
 
 
-bool CCleanup::RemoveUnseenTitles(CBioseq_set_Handle& set)
+bool CCleanup::RemoveUnseenTitles(CBioseq_set_EditHandle& set)
 {
     bool removed = false;
     if (set.IsSetDescr()) {
@@ -1966,8 +1965,7 @@ bool CCleanup::RemoveUnseenTitles(CBioseq_set_Handle& set)
         ITERATE(CBioseq::TDescr::Tdata, d, set.GetDescr().Get()) {
             if ((*d)->IsTitle()) {
                 if (last_title) {
-                    CBioseq_set_EditHandle eh(set);
-                    eh.RemoveSeqdesc(*last_title);
+                    set.RemoveSeqdesc(*last_title);
                     removed = true;
                 }
                 last_title.Reset(d->GetPointer());

@@ -13335,7 +13335,8 @@ void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
 void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq& seq)
 {
     CBioseq_Handle b = m_Scope->GetBioseqHandle(seq);
-    if (CCleanup::RemoveUnseenTitles(b)) {
+    CBioseq_EditHandle beh(b);
+    if (CCleanup::RemoveUnseenTitles(beh)) {
         ChangeMade(CCleanupChange::eRemoveDescriptor);
     }
 }
@@ -13344,7 +13345,8 @@ void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq& seq)
 void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq_set& set)
 {
     CBioseq_set_Handle bh = m_Scope->GetBioseq_setHandle(set);
-    if (CCleanup::RemoveUnseenTitles(bh)) {
+    CBioseq_set_EditHandle beh(bh);
+    if (CCleanup::RemoveUnseenTitles(beh)) {
         ChangeMade(CCleanupChange::eRemoveDescriptor);
     }
 }
