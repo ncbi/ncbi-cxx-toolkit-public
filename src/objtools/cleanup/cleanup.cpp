@@ -2218,10 +2218,25 @@ bool CCleanup::RemoveDuplicatePubs(CSeq_descr& descr)
 }
 
 
+bool s_FirstPubMatchesSecond(const CPubdesc& pd1, const CPubdesc& pd2)
+{
+    if (pd1.Equals(pd2)) {
+        return true;
+    } else if (pd1.IsSetPub() && pd2.IsSetPub() && pd1.GetPub().Get().size() == 1) {
+        ITERATE(CPubdesc::TPub::Tdata, it, pd2.GetPub().Get()) {
+            if (pd1.GetPub().Get().front()->Equals(**it)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 bool CCleanup::PubAlreadyInSet(const CPubdesc& pd, const CSeq_descr& descr)
 {
     ITERATE(CSeq_descr::Tdata, d, descr.Get()) {
-        if ((*d)->IsPub() && (*d)->GetPub().Equals(pd)) {
+        if ((*d)->IsPub() && s_FirstPubMatchesSecond(pd, (*d)->GetPub())) {
             return true;
         }
     }
@@ -2252,7 +2267,7 @@ bool CCleanup::OkToPromoteNpPub(const CPubdesc& pd)
 }
 
 
-void CCleanup::MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBioseq_Handle b)
+void CCleanup::MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBioseq_Handle b, bool remove_feat)
 {
     // add descriptor to nuc-prot parent or sequence itself
     CBioseq_set_Handle parent = b.GetParentBioseq_set();
@@ -2279,9 +2294,11 @@ void CCleanup::MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBi
         RemoveDuplicatePubs(eh.SetDescr());
         NormalizeDescriptorOrder(eh.SetDescr());
     }
-    // remove feature
-    CSeq_feat_EditHandle feh(feat);
-    feh.Remove();
+    if (remove_feat) {
+        // remove feature
+        CSeq_feat_EditHandle feh(feat);
+        feh.Remove();
+    }
 }
 
 
@@ -2347,10 +2364,12 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
                 }
             }
             
+            bool remove_feat = false;
             if (p->GetData().IsImp() &&
                 p->GetData().GetImp().IsSetKey() &&
                 NStr::Equal(p->GetData().GetImp().GetKey(), "Site-ref")) {
                 d->SetPub().SetReftype(CPubdesc::eReftype_sites);
+                remove_feat = true;
             } else {
                 d->SetPub().SetReftype(CPubdesc::eReftype_feats);
             }
@@ -2358,7 +2377,7 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
             CRef<CCleanupChange> changes(makeCleanupChange(0));
             CNewCleanup_imp pubclean(changes, 0);
             pubclean.BasicCleanup(d->SetPub(), ShouldStripPubSerial(*(b->GetCompleteBioseq())));
-            MoveOneFeatToPubdesc(*p, d, *b);
+            MoveOneFeatToPubdesc(*p, d, *b, remove_feat);
             any_change = true;
         }
     }

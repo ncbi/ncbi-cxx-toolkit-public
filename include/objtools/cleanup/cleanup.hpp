@@ -350,7 +350,7 @@ public:
     static bool RescueSiteRefPubs(CSeq_entry_Handle seh);
 
     //helper function for moving feature to pubdesc descriptor
-    static void MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBioseq_Handle b);
+    static void MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBioseq_Handle b, bool remove_feat = true);
 
     static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope);
 
