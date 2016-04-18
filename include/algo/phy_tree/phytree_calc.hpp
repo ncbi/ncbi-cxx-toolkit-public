@@ -43,7 +43,7 @@
 /// Class used in unit tests
 class CTestPhyTreeCalc;
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 

@@ -308,7 +308,7 @@ void CDepthCollection::CalcStats() const
 
 }
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 typedef list<CRef<CSeq_align> > TAlignList;
 
