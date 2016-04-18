@@ -2840,7 +2840,8 @@ CQueryImpl::PurgeResults(void)
     }
 }
 
-inline int
+inline
+unsigned int
 CQueryImpl::GetTotalColumns(void) const
 {
     x_CheckCanWork(true);
@@ -3122,7 +3123,7 @@ CQuery::CRowIterator::GetRowNo(void) const
     return m_Query->GetRowNo();
 }
 
-int
+unsigned int
 CQuery::CRowIterator::GetTotalColumns(void) const
 {
     return m_Query->GetTotalColumns();
@@ -3163,7 +3164,7 @@ CQuery::CRowIterator::operator++ (void)
 }
 
 const CQuery::CField&
-CQuery::CRowIterator::operator[](int col) const
+CQuery::CRowIterator::operator[](unsigned int col) const
 {
     return m_Query->GetColumn(col);
 }
@@ -3573,7 +3574,7 @@ CQuery::VerifyDone(EHowMuch how_much)
     m_Impl->VerifyDone(how_much);
 }
 
-int
+unsigned int
 CQuery::GetTotalColumns(void) const
 {
     return m_Impl->GetTotalColumns();

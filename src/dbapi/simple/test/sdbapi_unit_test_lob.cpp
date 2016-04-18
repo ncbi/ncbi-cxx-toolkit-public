@@ -734,7 +734,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
             query.Execute();
             query.RequireRowCount(1);
             ITERATE(CQuery, it, query.SingleSet()) {
-                for (int pos = 1; pos <= 4; ++pos) {
+                for (unsigned int pos = 1; pos <= 4; ++pos) {
                     BOOST_CHECK( !it[pos].IsNull() );
                     string value = it[pos].AsString();
                     size_t blob_size = value.size();
@@ -811,7 +811,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
                 query.RequireRowCount(1);
 
                 ITERATE(CQuery, it, query.SingleSet()) {
-                    for (int pos = 1; pos <= 4; ++pos) {
+                    for (unsigned int pos = 1; pos <= 4; ++pos) {
                         ostream& out = it[pos].GetOStream(clob_value.size(),
                                                           kBOSFlags);
                         out.write(clob_value.data(), clob_value.size());
@@ -832,7 +832,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
             query.Execute();
             query.RequireRowCount(1);
             ITERATE(CQuery, it, query.SingleSet()) {
-                for (int pos = 1; pos <= 4; ++pos) {
+                for (unsigned int pos = 1; pos <= 4; ++pos) {
                     BOOST_CHECK( !it[pos].IsNull() );
                     string value = it[pos].AsString();
                     size_t blob_size = value.size();

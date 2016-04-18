@@ -377,12 +377,12 @@ public:
 
         /// Get column value by its number.
         /// All columns are numbered starting with 1.
-        const CField& operator[](int col) const;
+        const CField& operator[](unsigned int col) const;
         /// Get column value by its name.
         const CField& operator[](CTempString col) const;
 
         /// Get number of columns in the current result set.
-        int GetTotalColumns(void) const;
+        unsigned int GetTotalColumns(void) const;
         /// Get name of the column with given number in the current result set.
         /// All columns are numbered starting with 1.
         string GetColumnName(unsigned int col) const;
@@ -602,7 +602,7 @@ public:
     void VerifyDone(EHowMuch how_much = eThisResultSet);
 
     /// Get total number of columns in the current result set
-    int GetTotalColumns(void) const;
+    unsigned int GetTotalColumns(void) const;
     /// Get name of the column with given number in the current result set.
     /// All columns are numbered starting with 1.
     string GetColumnName(unsigned int col) const;

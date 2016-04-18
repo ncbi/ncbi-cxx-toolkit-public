@@ -168,7 +168,7 @@ public:
     unsigned int GetRowNo(CQuery::EHowMuch how_much = CQuery::eAllResultSets) const;
     int GetRowCount(void) const;
     int GetStatus(void) const;
-    int GetTotalColumns(void) const;
+    unsigned int GetTotalColumns(void) const;
     string GetColumnName(unsigned int col) const;
     ESDB_Type GetColumnType(unsigned int col) const;
 

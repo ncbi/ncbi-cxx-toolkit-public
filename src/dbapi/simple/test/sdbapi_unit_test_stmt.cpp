@@ -1405,7 +1405,7 @@ BOOST_AUTO_TEST_CASE(Test_GetTotalColumns)
             query.RequireRowCount(1);
             while( query.HasMoreResultSets() ) {
                 query.begin();
-                int col_num = query.GetTotalColumns();
+                unsigned int col_num = query.GetTotalColumns();
                 BOOST_CHECK_EQUAL( 14, col_num );
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
