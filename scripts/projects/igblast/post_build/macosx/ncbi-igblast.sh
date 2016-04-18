@@ -1,102 +1,87 @@
-#!/bin/sh
+#!/bin/sh -xe
 
 INSTALLDIR=$1
 SCRIPTDIR=$2
 BLAST_VERSION=$3
-PRODUCT="ncbi-igblast-$BLAST_VERSION"
+PRODUCT="ncbi-igblast-$BLAST_VERSION+"
+
+INSTALL_LOCATION1=/usr/local/ncbi/blast
+INSTALL_LOCATION2=/etc/paths.d
+STAGE_DIR1=_stage1
+STAGE_DIR2=_stage2
+RESOURCES_DIR=Resources
+ID=gov.nlm.nih.ncbi.blast
 
 if [ $# -ne 3 ] ; then
     echo "Usage: ncbi-igblast.sh [installation directory] [MacOSX post-build script directory] [BLAST version]";
     exit 1;
 fi
 
-BLAST_BINS="igblastn igblastp"
-DATA_DIRS="optional_file internal_data"
-ALL_BINS="$BLAST_BINS"
+setup()
+{
+    rm -rf $PRODUCT.dmg $PRODUCT $STAGE_DIR1 $STAGE_DIR2 $INSTALLDIR/installer $RESOURCES_DIR
+    mkdir -p $STAGE_DIR1/bin $STAGE_DIR1/doc $STAGE_DIR2 $PRODUCT
+}
 
-rm -rf $PRODUCT.dmg $PRODUCT _stage $INSTALLDIR/installer
-mkdir -p _stage/usr/local/ncbi/igblast/bin _stage/usr/local/ncbi/igblast/doc \
-         _stage/usr/local/ncbi/igblast/data _stage/private/etc/paths.d
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+prep_binary_component_package() 
+{
+    BLAST_BINS="igblastn igblastp"
+    DATA_DIRS="optional_file internal_data"
+    ALL_BINS="$BLAST_BINS"
 
-cp $INSTALLDIR/README _stage/usr/local/ncbi/igblast/doc/README.txt
-if [ $? -ne 0 ]; then
-    echo "FAILED to copy $INSTALLDIR/README"
-    exit 1;
-fi
+    cp $INSTALLDIR/README $STAGE_DIR1/doc/README.txt
 
-cp -p $SCRIPTDIR/ncbi_igblast _stage/private/etc/paths.d
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+    for bin in $ALL_BINS; do
+        cp -p $INSTALLDIR/bin/$bin $STAGE_DIR1/bin
+    done
 
-# This is needed because the binary ncbi-blast.pmproj has this string hard
-# coded
-cp -p $INSTALLDIR/LICENSE ./license.txt
-for f in uninstall_ncbi_igblast.zip large-Blue_ncbi_logo.tiff ncbi-igblast.pmdoc welcome.txt; do
-    echo copying $f to local directory
-    cp -rp $SCRIPTDIR/$f .
-    if [ $? -ne 0 ]; then
-        echo FAILURE
-        exit 1;
-    fi
-done
+    /usr/bin/pkgbuild --root $STAGE_DIR1 --identifier $ID.binaries --version \
+        $BLAST_VERSION --install-location $INSTALL_LOCATION1 binaries.pkg
+}
 
-for bin in $ALL_BINS; do
-    echo copying $bin
-    cp -p $INSTALLDIR/bin/$bin _stage/usr/local/ncbi/igblast/bin
-    if [ $? -ne 0 ]; then
-        echo FAILURE
-        exit 1;
-    fi
-done
+prep_paths_component_package()
+{
+    echo /usr/local/ncbi/igblast/bin > $STAGE_DIR2/ncbi_blast
+    /usr/bin/pkgbuild --root $STAGE_DIR2 --identifier $ID.paths --version \
+        $BLAST_VERSION --install-location $INSTALL_LOCATION2 paths.pkg
+}
 
-for dir in $DATA_DIRS; do
-    echo copying $SCRIPTDIR/../../../../../src/app/igblast/$dir
-    cp -R $SCRIPTDIR/../../../../../src/app/igblast/$dir _stage/usr/local/ncbi/igblast/data
-    if [ $? -ne 0 ]; then
-        echo FAILURE
-        exit 1;
-    fi
-done
+customize_distribution_xml()
+{
+    sed -i.bak '/options/i\
+    <title>NCBI IgBLAST+ Command Line Applications</title> \
+    <welcome file="welcome.txt" mime-type="text/plain"/> \
+    <license file="LICENSE" mime-type="text/plain"/> \
+    <background scaling="proportional" alignment="left" file="large-Blue_ncbi_logo.tiff" mime-type="image/tiff"/> \
+' Distribution.xml 
+}
 
-echo building package
-mkdir $PRODUCT
-/Developer/usr/bin/packagemaker --id gov.nih.nlm.ncbi.blast --doc ncbi-igblast.pmdoc --out $PRODUCT/$PRODUCT.pkg
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+create_product_archive()
+{
+	/usr/bin/productbuild --synthesize --identifier $ID --version \
+    $BLAST_VERSION --package binaries.pkg --package paths.pkg Distribution.xml
 
-echo copying uninstaller
-cp -p uninstall_ncbi_igblast.zip $PRODUCT
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+    customize_distribution_xml
 
-echo creating disk image
-/usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+    mkdir $RESOURCES_DIR
+    cp -p $INSTALLDIR/LICENSE $RESOURCES_DIR
+    for f in welcome.txt large-Blue_ncbi_logo.tiff ; do
+        cp -p $SCRIPTDIR/$f $RESOURCES_DIR
+    done
 
-echo moving disk image
-mkdir $INSTALLDIR/installer
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
-mv $PRODUCT.dmg $INSTALLDIR/installer
-if [ $? -ne 0 ]; then
-    echo FAILURE
-    exit 1;
-fi
+	/usr/bin/productbuild --resources Resources --distribution Distribution.xml $PRODUCT/$PRODUCT.pkg
+    cp -p $SCRIPTDIR/uninstall_ncbi_igblast.zip $PRODUCT
+}
 
-echo done
-rm -rf _stage $PRODUCT
+create_disk_image()
+{
+	/usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT
+    mkdir $INSTALLDIR/installer
+    mv $PRODUCT.dmg $INSTALLDIR/installer
+}
+
+setup
+prep_binary_component_package
+prep_paths_component_package
+create_product_archive
+create_disk_image
