@@ -57,6 +57,7 @@ END_SCOPE(objects)
 
 using namespace ncbi::objects;
 
+#define NCBI_MODULE NETBLAST
 
 /// RemoteServicesException
 ///
@@ -277,6 +278,8 @@ private:
     /// Display verbose output to stdout?
     bool m_Verbose;
 };
+
+#undef NCBI_MODULE
 
 END_NCBI_SCOPE
 

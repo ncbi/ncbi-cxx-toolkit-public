@@ -11,7 +11,8 @@ LIB = blast_services
 DLL_LIB = xnetblastcli xnetblast
 
 CFLAGS   = $(FAST_CFLAGS)
-CPPFLAGS = -DNCBI_MODULE=NETBLAST $(ORIG_CPPFLAGS)
+# -DNCBI_MODULE=NETBLAST moved to blast_services.*pp to avoid misnamed modules in DLL configurations
+CPPFLAGS = $(ORIG_CPPFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 

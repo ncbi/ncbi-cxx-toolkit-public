@@ -54,6 +54,8 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+#define NCBI_MODULE NETBLAST
+
 /// Process error messages from a reply object.
 ///
 /// Every reply object from blast4 has a space for error and warning
@@ -670,6 +672,8 @@ CBlastServices::GetTaxIdWithWindowMaskerSupport()
     }
     return m_WindowMaskedTaxIds;
 }
+
+#undef NCBI_MODULE
 
 END_NCBI_SCOPE
 
