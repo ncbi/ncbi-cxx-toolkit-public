@@ -917,7 +917,7 @@ private:
 // Random attributes set
 struct SAttrApiBase
 {
-    typedef map<string, string> TAttrs;
+    typedef map<string, string, PNocase> TAttrs;
     TAttrs attrs;
     typedef vector<pair<const string*, const string*> > TData;
     TData data;
@@ -1017,10 +1017,18 @@ struct SAttrApiBase
         Shuffle();
 
         try {
+            auto uc = [](char& c) { c = ::toupper(c); };
+
             NON_CONST_ITERATE(TData, i, data) {
-                object.SetAttribute(*i->first, *i->first);
-                BOOST_CHECK_CTX(object.GetAttribute(*i->first) == *i->first, ctx);
-                object.SetAttribute(*i->first, *i->second);
+                const string& name(*i->first);
+
+                // Testing case-insensitity of attribute names
+                string uc_name(name); // Attribute name in upper case
+                for_each(uc_name.begin(), uc_name.end(), uc);
+
+                object.SetAttribute(name, name);
+                BOOST_CHECK_CTX(object.GetAttribute(uc_name) == name, ctx);
+                object.SetAttribute(uc_name, *i->second);
             }
         }
         catch (...) {
