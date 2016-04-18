@@ -597,6 +597,7 @@ private:
     void x_MoveNpDBlinks(CBioseq_set& bioseq_set);
     void x_MoveNpSrc(CBioseq_set& bioseq_set);
     void x_MoveNpSrc(CRef<CSeqdesc>& srcdesc, CSeq_descr& descr);
+    void x_MoveNPTitle(CBioseq_set& set);
 
     void x_MoveNpPub(CBioseq_set& bioseq_set);
     void x_MoveNpPub(CBioseq_set& np_set, CSeq_descr& descr);

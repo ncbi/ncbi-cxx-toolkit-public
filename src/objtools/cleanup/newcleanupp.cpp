@@ -2574,7 +2574,7 @@ CNewCleanup_imp::EAction CNewCleanup_imp::CitGenBC(CCit_gen& cg, bool fix_initia
         x_StripSpacesMarkChanged( GET_MUTABLE(cg, Title) );
     }
 
-    if( m_StripSerial ) {
+    if( m_StripSerial && cg.IsSetSerial_number() ) {
         RESET_FIELD( cg, Serial_number );
         ChangeMade(CCleanupChange::eStripSerial);
     }
@@ -8262,9 +8262,9 @@ void CNewCleanup_imp::PostProtFeatfBC (
         ChangeMade (CCleanupChange::eCleanDbxrefs);
     }
 
-    if( RAW_FIELD_IS_EMPTY_OR_UNSET(prot_ref, Desc) ) {
-        RESET_FIELD(prot_ref, Desc);
-        ChangeMade (CCleanupChange::eCleanDbxrefs);
+    if( prot_ref.IsSetDesc() && NStr::IsBlank(prot_ref.GetDesc()) ) {
+        prot_ref.ResetDesc();
+        ChangeMade (CCleanupChange::eChangeProtNames);
     }
 }
 
@@ -12298,11 +12298,67 @@ void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq& seq, const CMolInfo& mol)
 }
 
 
+void CNewCleanup_imp::x_MoveNPTitle(CBioseq_set& set)
+{
+    if (!set.IsSetDescr() || !set.IsSetSeq_set()) {
+        return;
+    }
+    CConstRef<CSeqdesc> set_title(NULL);
+    ITERATE(CSeq_descr::Tdata, d, set.GetDescr().Get()) {
+        if ((*d)->IsTitle()) {
+            set_title = *d;
+        }
+    }
+    if (!set_title) {
+        return;
+    }
+    bool have_nuc_title = false;
+    ITERATE(CBioseq_set::TSeq_set, it, set.GetSeq_set()) {
+        if ((*it)->IsSeq() && (*it)->GetSeq().IsNa()) {
+            ITERATE(CSeq_descr::Tdata, d, (*it)->GetSeq().GetDescr().Get()) {
+                if ((*d)->IsTitle()) {
+                    have_nuc_title = true;
+                    break;
+                }
+            }
+            if (!have_nuc_title) {
+                CRef<CSeqdesc> new_title(new CSeqdesc());
+                new_title->Assign(*set_title);
+                CBioseq_Handle b = m_Scope->GetBioseqHandle((*it)->GetSeq());
+                CBioseq_EditHandle eh = b.GetEditHandle();
+                eh.AddSeqdesc(*new_title);
+                ChangeMade(CCleanupChange::eAddDescriptor);
+                have_nuc_title = true;
+            }
+        }
+    }
+    if (have_nuc_title) {
+        //either we already had a nuc title or we copied the one from the set
+        //now remove set title
+        CBioseq_set_Handle b = m_Scope->GetBioseq_setHandle(set);
+        CBioseq_set_EditHandle eh = b.GetEditHandle();
+        CSeq_descr::Tdata::iterator d = eh.SetDescr().Set().begin();
+        while (d != eh.SetDescr().Set().end()) {
+            if ((*d)->IsTitle()) {
+                d = eh.SetDescr().Set().erase(d);
+                ChangeMade(CCleanupChange::eRemoveDescriptor);
+            } else {
+                ++d;
+            }
+        }
+        if (eh.SetDescr().Set().empty()) {
+            eh.ResetDescr();
+        }
+    }
+}
+
+
 void CNewCleanup_imp::x_BioseqSetNucProtEC(CBioseq_set & bioseq_set)
 {
     x_MoveNpSrc(bioseq_set);
     x_MoveNpPub(bioseq_set);
     x_MoveNpDBlinks(bioseq_set);
+    x_MoveNPTitle(bioseq_set);
 }
 
 
@@ -13278,38 +13334,18 @@ void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
 
 void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq& seq)
 {
-    if (seq.IsSetDescr()) {
-        CRef<CSeqdesc> last_title(NULL);
-        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, d, seq.SetDescr().Set()) {
-            if ((*d)->IsTitle()) {
-                if (last_title) {
-                    CBioseq_Handle bh = m_Scope->GetBioseqHandle(seq);
-                    CBioseq_EditHandle eh(bh);
-                    eh.RemoveSeqdesc(*last_title);
-                    ChangeMade(CCleanupChange::eRemoveDescriptor);
-                }
-                last_title.Reset(d->GetPointer());
-            }
-        }
+    CBioseq_Handle b = m_Scope->GetBioseqHandle(seq);
+    if (CCleanup::RemoveUnseenTitles(b)) {
+        ChangeMade(CCleanupChange::eRemoveDescriptor);
     }
 }
 
 
 void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq_set& set)
 {
-    if (set.IsSetDescr()) {
-        CRef<CSeqdesc> last_title(NULL);
-        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, d, set.SetDescr().Set()) {
-            if ((*d)->IsTitle()) {
-                if (last_title) {
-                    CBioseq_set_Handle bh = m_Scope->GetBioseq_setHandle(set);
-                    CBioseq_set_EditHandle eh(bh);
-                    eh.RemoveSeqdesc(*last_title);
-                    ChangeMade(CCleanupChange::eRemoveDescriptor);
-                }
-                last_title.Reset(d->GetPointer());
-            }
-        }
+    CBioseq_set_Handle bh = m_Scope->GetBioseq_setHandle(set);
+    if (CCleanup::RemoveUnseenTitles(bh)) {
+        ChangeMade(CCleanupChange::eRemoveDescriptor);
     }
 }
 

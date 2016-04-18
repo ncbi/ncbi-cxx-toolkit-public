@@ -1938,6 +1938,46 @@ bool CCleanup::NormalizeDescriptorOrder(CSeq_entry_Handle seh)
 }
 
 
+bool CCleanup::RemoveUnseenTitles(CBioseq_Handle& seq)
+{
+    bool removed = false;
+    if (seq.IsSetDescr()) {
+        CConstRef<CSeqdesc> last_title(NULL);
+        ITERATE(CBioseq::TDescr::Tdata, d, seq.GetDescr().Get()) {
+            if ((*d)->IsTitle()) {
+                if (last_title) {
+                    CBioseq_EditHandle eh(seq);
+                    eh.RemoveSeqdesc(*last_title);
+                    removed = true;
+                }
+                last_title.Reset(d->GetPointer());
+            }
+        }
+    }
+    return removed;
+}
+
+
+bool CCleanup::RemoveUnseenTitles(CBioseq_set_Handle& set)
+{
+    bool removed = false;
+    if (set.IsSetDescr()) {
+        CConstRef<CSeqdesc> last_title(NULL);
+        ITERATE(CBioseq::TDescr::Tdata, d, set.GetDescr().Get()) {
+            if ((*d)->IsTitle()) {
+                if (last_title) {
+                    CBioseq_set_EditHandle eh(set);
+                    eh.RemoveSeqdesc(*last_title);
+                    removed = true;
+                }
+                last_title.Reset(d->GetPointer());
+            }
+        }
+    }
+    return removed;
+}
+
+
 bool CCleanup::AddGenBankWrapper(CSeq_entry_Handle seh)
 {
     if (seh.IsSet() && seh.GetSet().IsSetClass() &&
@@ -2479,6 +2519,10 @@ bool CCleanup::RenormalizeNucProtSets(CSeq_entry_Handle seh)
                 entry->GetSet().GetSeq_set().front()->IsSeq()) {
                 CSeq_entry_EditHandle eh = seh.GetEditHandle();
                 eh.ConvertSetToSeq();
+                if (eh.GetSeq().IsSetDescr()) {
+                    RemoveUnseenTitles(eh.SetSeq());
+                    NormalizeDescriptorOrder(eh.SetSeq().SetDescr());
+                }
                 change_made = true;
             }
         } else if (set_class == CBioseq_set::eClass_genbank ||
