@@ -237,7 +237,7 @@ CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
         Uint8 file_size, CJsonNode::TInstance storage_specific_info);
 
 NCBI_XCONNECT_EXPORT
-CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
+CNetStorageObjectInfo g_CreateNetStorageObjectInfo(
         const CJsonNode& object_info_node);
 
 END_NCBI_SCOPE
