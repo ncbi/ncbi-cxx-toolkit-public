@@ -40,7 +40,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objtools/edit/gene_utils.hpp>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

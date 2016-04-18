@@ -44,7 +44,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

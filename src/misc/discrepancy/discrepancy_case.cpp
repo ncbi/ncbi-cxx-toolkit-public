@@ -49,7 +49,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <sstream>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 

@@ -79,7 +79,7 @@
 #include <misc/discrepancy_report/hchecking_class.hpp>
 #include <misc/discrepancy_report/hUtilib.hpp>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

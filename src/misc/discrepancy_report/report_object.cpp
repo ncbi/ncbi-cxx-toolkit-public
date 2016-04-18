@@ -55,7 +55,7 @@
 #include <objtools/edit/apply_object.hpp>
 
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

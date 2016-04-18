@@ -35,7 +35,7 @@
 
 #include <misc/discrepancy_report/tag_policy.hpp>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

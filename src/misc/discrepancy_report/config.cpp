@@ -36,7 +36,7 @@
 #include <misc/discrepancy_report/config.hpp>
 #include <misc/discrepancy_report/analysis_process.hpp>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
