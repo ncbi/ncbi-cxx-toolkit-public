@@ -1938,7 +1938,7 @@ bool CCleanup::NormalizeDescriptorOrder(CSeq_entry_Handle seh)
 }
 
 
-bool CCleanup::RemoveUnseenTitles(CBioseq_EditHandle& seq)
+bool CCleanup::RemoveUnseenTitles(CSeq_entry_EditHandle::TSeq seq)
 {
     bool removed = false;
     if (seq.IsSetDescr()) {
@@ -1957,7 +1957,7 @@ bool CCleanup::RemoveUnseenTitles(CBioseq_EditHandle& seq)
 }
 
 
-bool CCleanup::RemoveUnseenTitles(CBioseq_set_EditHandle& set)
+bool CCleanup::RemoveUnseenTitles(CSeq_entry_EditHandle::TSet set)
 {
     bool removed = false;
     if (set.IsSetDescr()) {
@@ -2537,6 +2537,7 @@ bool CCleanup::RenormalizeNucProtSets(CSeq_entry_Handle seh)
             }
         }
     }
+    return change_made;
 }
 
 END_SCOPE(objects)

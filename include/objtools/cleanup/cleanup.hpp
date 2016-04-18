@@ -300,13 +300,13 @@ public:
 /// only one that would be displayed in the flatfile
 /// @param seq Bioseq-Handle to edit
 /// @return Boolean return value indicates whether any titles were removed
-    static bool RemoveUnseenTitles(CBioseq_EditHandle& seq);
+    static bool RemoveUnseenTitles(CSeq_entry_EditHandle::TSeq seq);
 
 /// Remove all titles in Seqdescr except the last, because it is the
 /// only one that would be displayed in the flatfile
 /// @param set Bioseq-set-Handle to edit
 /// @return Boolean return value indicates whether any titles were removed
-    static bool RemoveUnseenTitles(CBioseq_set_EditHandle& set);
+    static bool RemoveUnseenTitles(CSeq_entry_EditHandle::TSet set);
 
 /// Add GenBank Wrapper Set
 /// @param entry Seq-entry to edit
