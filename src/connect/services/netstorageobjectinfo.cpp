@@ -41,8 +41,8 @@ typedef ENetStorageObjectLocation TLocation;
 
 struct SData
 {
-    TLocation loc;
-    CJsonNode loc_info;
+    TLocation location;
+    CJsonNode location_info;
     Uint8 file_size;
     CJsonNode st_info;
 
@@ -51,8 +51,8 @@ struct SData
             CJsonNode::TInstance li,
             Uint8 fs,
             CJsonNode::TInstance si)
-        : loc(l),
-          loc_info(li),
+        : location(l),
+          location_info(li),
           file_size(fs),
           st_info(si)
     {}
@@ -104,16 +104,16 @@ private:
 
 struct SNetStorageObjectInfoImpl : CObject
 {
-    SNetStorageObjectInfoImpl(const string& loc, const SData& data)
-        : m_Data(data), m_Loc(loc)
+    SNetStorageObjectInfoImpl(const string& locator, const SData& data)
+        : m_Data(data), m_Locator(locator)
     {}
 
-    SNetStorageObjectInfoImpl(const string& loc, const CJsonNode& json)
-        : m_Data(json), m_Loc(loc)
+    SNetStorageObjectInfoImpl(const string& locator, const CJsonNode& json)
+        : m_Data(json), m_Locator(locator)
     {}
 
-    TLocation GetLocation()            const { Check(); return m_Data.loc; }
-    CJsonNode GetObjectLocInfo()       const { Check(); return m_Data.loc_info; }
+    TLocation GetLocation()            const { Check(); return m_Data.location; }
+    CJsonNode GetObjectLocInfo()       const { Check(); return m_Data.location_info; }
     CTime     GetCreationTime()        const { Check(); return m_Data.time; }
     Uint8     GetSize()                const { Check(); return m_Data.file_size; }
     CJsonNode GetStorageSpecificInfo() const { Check(); return m_Data.st_info; }
@@ -123,7 +123,7 @@ private:
     void Check() const { m_Data.Check(); }
 
     mutable SLazyInitData m_Data;
-    string m_Loc;
+    string m_Locator;
 };
 
 
@@ -162,11 +162,11 @@ void SLazyInitData::InitData()
     const string l(json.GetString("Location"));
     CJsonNode size(json.GetByKeyOrNull("Size"));
 
-    loc =
+    location =
         l == "NetCache"  ? eNFL_NetCache :
         l == "FileTrack" ? eNFL_FileTrack :
         l == "NotFound"  ? eNFL_NotFound : eNFL_Unknown;
-    loc_info = json.GetByKey("ObjectLocInfo");
+    location_info = json.GetByKey("ObjectLocInfo");
     file_size = size ? (Uint8) size.AsInteger() : 0;
     st_info = json.GetByKeyOrNull("StorageSpecificInfo");
     InitExtra();
@@ -174,9 +174,9 @@ void SLazyInitData::InitData()
 
 void SLazyInitData::InitExtra()
 {
-    if (loc == eNFL_FileTrack) {
+    if (location == eNFL_FileTrack) {
         time = GetTime<eNFL_FileTrack>();
-    } else if (loc == eNFL_NetCache) {
+    } else if (location == eNFL_NetCache) {
         time = GetTime<eNFL_NetCache>();
     }
 }
@@ -196,7 +196,7 @@ void SLazyInitData::InitJson()
     const char* const kOutputTimeFormat = "M/D/Y h:m:s";
     json = CJsonNode::NewObjectNode();
 
-    switch (loc) {
+    switch (location) {
     case eNFL_NetCache:
         json.SetByKey("CreationTime", CJsonNode::NewStringNode(
                 GetTime<eNFL_NetCache>().AsString(kOutputTimeFormat)));
@@ -213,8 +213,8 @@ void SLazyInitData::InitJson()
         json.SetString("Location", "NotFound");
     }
 
-    if (loc_info)
-        json.SetByKey("ObjectLocInfo", loc_info);
+    if (location_info)
+        json.SetByKey("ObjectLocInfo", location_info);
 
     if (st_info)
         json.SetByKey("StorageSpecificInfo", st_info);
