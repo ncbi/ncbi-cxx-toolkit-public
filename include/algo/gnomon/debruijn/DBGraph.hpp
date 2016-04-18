@@ -120,7 +120,7 @@ namespace DeBruijn {
         struct container_size : public static_visitor<size_t> { template <typename T> size_t operator()(const T& v) const { return v.size();} };
         struct container_capacity : public static_visitor<size_t> { template <typename T> size_t operator()(const T& v) const { return v.capacity();} };
         struct element_size : public static_visitor<size_t> { template <typename T> size_t operator()(const T& v) const { return sizeof(typename  T::value_type);} };
-        struct clear : public static_visitor<> { template <typename T> void operator()(const T& v) const { v.clear();} };
+        struct clear : public static_visitor<> { template <typename T> void operator()(T& v) const { v.clear();} };
         struct push_back : public static_visitor<> { 
             push_back(const TKmer& k, size_t c) : kmer(k), count(c) {}
             template <typename T> void operator() (T& v) const {
@@ -244,13 +244,13 @@ namespace DeBruijn {
     };
     typedef CKmerCountTemplate <INTEGER_TYPES> TKmerCount;
 
-    template <typename T1, typename T2, typename T3, typename T4, typename T5> class CKmerMapTemplate {
+    template <typename T1, typename T2, typename T3, typename T4, typename T5, typename V> class CKmerMapTemplate {
     public:
         struct kmer_hash {
             template<typename T> 
             size_t operator() (const T& kmer) const { return kmer.oahash(); }
         };
-        typedef variant<unordered_map<T1,size_t,kmer_hash>, unordered_map<T2,size_t,kmer_hash>, unordered_map<T3,size_t,kmer_hash>, unordered_map<T4,size_t,kmer_hash>, unordered_map<T5,size_t,kmer_hash>> Type;
+        typedef variant<unordered_map<T1,V,kmer_hash>, unordered_map<T2,V,kmer_hash>, unordered_map<T3,V,kmer_hash>, unordered_map<T4,V,kmer_hash>, unordered_map<T5,V,kmer_hash>> Type;
         CKmerMapTemplate(int kmer_len = 0) : m_kmer_len(kmer_len) {
             if(m_kmer_len > 0) {
                 init_container();
@@ -260,31 +260,29 @@ namespace DeBruijn {
             return apply_visitor(container_size(), m_container);
         }
         void Reserve(size_t rsrv) { apply_visitor(reserve(rsrv), m_container); }
-        size_t& operator[] (const TKmer& kmer) { 
+        V& operator[] (const TKmer& kmer) { 
             if(m_kmer_len == 0) {
                 cerr << "Can't insert in not initialized container" << endl;
                 exit(1);
             }
             return apply_visitor(mapper(kmer), m_container);
         }
-        void DumpKmers(TKmerCount& kmer_count, int mincount) {
-            kmer_count = TKmerCount(m_kmer_len);
-            apply_visitor(dump_kmers(kmer_count,mincount), m_container);
-        }
+        V* Find(const TKmer& kmer) { return apply_visitor(find(kmer), m_container); }
+        int KmerLen() const { return m_kmer_len; }
 
     private:
         void init_container() {
             int p = (m_kmer_len+31)/32;
             if(p <= PREC_1)
-                m_container = unordered_map<T1,size_t,kmer_hash>();
+                m_container = unordered_map<T1,V,kmer_hash>();
             else if(p <= PREC_2)
-                m_container = unordered_map<T2,size_t,kmer_hash>();
+                m_container = unordered_map<T2,V,kmer_hash>();
             else if(p <= PREC_3)
-                m_container = unordered_map<T3,size_t,kmer_hash>();
+                m_container = unordered_map<T3,V,kmer_hash>();
             else if(p <= PREC_4)
-                m_container = unordered_map<T4,size_t,kmer_hash>();
+                m_container = unordered_map<T4,V,kmer_hash>();
             else if(p <= PREC_5)
-                m_container = unordered_map<T5,size_t,kmer_hash>();
+                m_container = unordered_map<T5,V,kmer_hash>();
             else
                 throw runtime_error("Not supported kmer length");
         }
@@ -294,38 +292,32 @@ namespace DeBruijn {
             template <typename T> void operator() (T& v) const { v.reserve(rsrv); }
             size_t rsrv;
         };
-        struct mapper : public static_visitor<size_t&> { 
+        struct mapper : public static_visitor<V&> { 
             mapper(const TKmer& k) : kmer(k) {}
-            template <typename T> size_t& operator()(T& v) const { 
+            template <typename T> V& operator()(T& v) const { 
                 typedef typename  T::key_type large_t;
                 return v[kmer.get<large_t>()];
             } 
             const TKmer& kmer;
         };
-        struct dump_kmers : public static_visitor<> { 
-            dump_kmers(TKmerCount& kc, int mc) : kmer_count(kc), mincount(mc) {}
-            template <typename T> void operator()(T& v) const { 
-                size_t num = 0;
-                for(auto& e : v) {
-                    if(int(e.second) >= mincount)  // ignore 'upper' count
-                        ++num;
-                }
-                kmer_count.Reserve(num);
-                for(auto& e : v) {
-                    if(int(e.second) >= mincount)
-                        kmer_count.PushBack(TKmer(e.first), e.second); 
-                }
-            }
-
-            TKmerCount& kmer_count;
-            int mincount;
+        struct find : public static_visitor<V*> {
+            find(const TKmer& k) : kmer(k) {}
+            template <typename T> V* operator()(T& v) const { 
+                typedef typename  T::key_type large_t;
+                typename T::iterator it = v.find(kmer.get<large_t>());
+                if(it != v.end())
+                    return &(it->second);
+                else
+                    return 0;
+            } 
+            const TKmer& kmer;
         };
-
 
         Type m_container;
         int m_kmer_len;
     };
-    typedef CKmerMapTemplate <INTEGER_TYPES> TKmerMap;
+    template <typename V>
+    using  TKmerMap = CKmerMapTemplate<INTEGER_TYPES, V>;
 
     typedef vector<pair<int,size_t>> TBins;
     int FindValleyAndPeak(const TBins& bins, int rlimit) {
@@ -561,6 +553,12 @@ namespace DeBruijn {
             m_read_length.push_back(read.size());
             m_total_seq += read.size();
         }
+        void Swap(CReadHolder& other) {
+            swap(m_storage, other.m_storage);
+            swap(m_read_length, other.m_read_length);
+            swap(m_total_seq, other.m_total_seq);
+        }
+        void Clear() { CReadHolder().Swap(*this); }
         size_t TotalSeq() const { return m_total_seq; }
         size_t MaxLength() const { 
             if(m_read_length.empty())
@@ -580,18 +578,19 @@ namespace DeBruijn {
         }
         size_t ReadNum() const { return m_read_length.size(); }
 
-        size_t N50() const {
+        size_t NXX(double xx) const {
             vector<uint32_t> read_length(m_read_length.begin(), m_read_length.end());
             sort(read_length.begin(), read_length.end());
-            size_t n50 = 0;
+            size_t nxx = 0;
             size_t len = 0;
-            for(int j = (int)read_length.size()-1; j >= 0 && len < 0.5*m_total_seq; --j) {
-                n50 = read_length[j];
+            for(int j = (int)read_length.size()-1; j >= 0 && len < xx*m_total_seq; --j) {
+                nxx = read_length[j];
                 len += read_length[j];
             }
             
-            return n50;
+            return nxx;
         }
+        size_t N50() const { return NXX(0.5); }
 
         class kmer_iterator {
         public:
@@ -717,8 +716,7 @@ private:
     typedef tuple<TStrList::iterator,int> TContigEnd;
 
 public:
-    void ImproveContigs(TStrList& contigs) {
-        int SCAN_WINDOW = 50;  // 0 - no scan
+    void ImproveContigs(TStrList& contigs, int SCAN_WINDOW) { // 0 - no scan
         int kmer_len = m_graph.KmerLen();
 
         TStrList new_contigs;
@@ -753,7 +751,8 @@ public:
         }
         cerr << "Kmers in contigs: " << kmers << " Not in graph: " << kmers-kmers_in_graph << endl;
 
-        if(m_hist_min > 0 || contigs.empty()) {
+        //!!!!!!!!!!!!        if(m_hist_min > 0 || contigs.empty()) {
+
             size_t num = 0;
             for(size_t index = 0; index < m_graph.GraphSize(); ++index) {
                 CDBGraph::Node node = 2*(index+1);
@@ -764,7 +763,7 @@ public:
                 }
             }
             cerr << "New seeds: " << num << endl;
-        }
+            //        }           
 
         //create landing spots
         unordered_map<CDBGraph::Node, TContigEnd> landing_spots;
@@ -997,6 +996,8 @@ public:
         }
         
         if(m_graph.GraphIsStranded() && successors.size() > 1) {
+
+            double fraction = 0.1*m_fraction;
             
             int target = -1;
             for(int j = 0; target < 0 && j < (int)successors.size(); ++j) {
@@ -1006,7 +1007,7 @@ public:
             if(target >= 0 && GoodNode(successors[target].m_node)) {
                 double am = m_graph.Abundance(successors[target].m_node)*(1-m_graph.PlusFraction(successors[target].m_node));
                 for(int j = 0; j < (int)successors.size(); ) {
-                    if(m_graph.Abundance(successors[j].m_node)*(1-m_graph.PlusFraction(successors[j].m_node)) < m_fraction*am)
+                    if(m_graph.Abundance(successors[j].m_node)*(1-m_graph.PlusFraction(successors[j].m_node)) < fraction*am)
                         successors.erase(successors.begin()+j);
                     else
                         ++j;
@@ -1021,7 +1022,7 @@ public:
             if(target >= 0 && GoodNode(successors[target].m_node)) {
                 double ap = m_graph.Abundance(successors[target].m_node)*m_graph.PlusFraction(successors[target].m_node);
                 for(int j = 0; j < (int)successors.size(); ) {
-                    if(m_graph.Abundance(successors[j].m_node)*m_graph.PlusFraction(successors[j].m_node) < m_fraction*ap)
+                    if(m_graph.Abundance(successors[j].m_node)*m_graph.PlusFraction(successors[j].m_node) < fraction*ap)
                         successors.erase(successors.begin()+j);
                     else
                         ++j;
@@ -1033,7 +1034,6 @@ public:
             for(int j = 0; !has_both && j < (int)successors.size(); ++j) {
                 double plusf = m_graph.PlusFraction(successors[j].m_node);
                 double minusf = 1.- plusf;
-                //has_both = (min(plusf,minusf) > 0.25);
                 has_both = GoodNode(successors[j].m_node) && (min(plusf,minusf) > 0.25);
             }
 
@@ -1041,7 +1041,7 @@ public:
                 for(int j = 0; j < (int)successors.size(); ) {
                     double plusf = m_graph.PlusFraction(successors[j].m_node);
                     double minusf = 1.- plusf;
-                    if(min(plusf,minusf) < m_fraction*max(plusf,minusf))
+                    if(min(plusf,minusf) < fraction*max(plusf,minusf))
                         successors.erase(successors.begin()+j);
                     else
                         ++j;
@@ -1176,8 +1176,8 @@ private:
     }
 
     TBases JumpOver(vector<CDBGraph::Successor>& successors, int max_extent, int min_extent) {
-        //        if(max_extent == 0 || m_hist_min < 4)
-        if(max_extent == 0 || m_hist_min == 0)
+        //if(max_extent == 0 || m_hist_min == 0)
+        if(max_extent == 0)
             return TBases();
 
         TBranch extensions;
