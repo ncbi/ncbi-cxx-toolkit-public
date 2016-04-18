@@ -213,6 +213,11 @@ void g_AllowXSiteConnections(CNetStorage& netstorage)
 {
     netstorage->AllowXSiteConnections();
 }
+
+void g_AllowXSiteConnections(CNetStorageByKey& netstorage)
+{
+    netstorage->AllowXSiteConnections();
+}
 #endif
 
 inline 

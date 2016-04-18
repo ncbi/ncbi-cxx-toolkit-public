@@ -96,6 +96,7 @@ struct SNetStorageRPC : public SNetStorageImpl
 private:
     map<string, CNetService> m_ServiceMap;
 
+public:
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections()
     {

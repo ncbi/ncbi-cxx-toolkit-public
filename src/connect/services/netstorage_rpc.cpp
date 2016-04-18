@@ -1423,6 +1423,10 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
     virtual ENetStorageRemoveResult Remove(const string& key,
             TNetStorageFlags flags = 0);
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    void AllowXSiteConnections() { m_NetStorageRPC->AllowXSiteConnections(); }
+#endif
+
     CRef<SNetStorageRPC,
             CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
 };

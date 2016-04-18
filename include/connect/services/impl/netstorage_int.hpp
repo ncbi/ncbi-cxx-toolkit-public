@@ -281,6 +281,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageAdmin
 /// @internal
 NCBI_XCONNECT_EXPORT
 void g_AllowXSiteConnections(CNetStorage&);
+void g_AllowXSiteConnections(CNetStorageByKey&);
 #endif
 
 END_NCBI_SCOPE
