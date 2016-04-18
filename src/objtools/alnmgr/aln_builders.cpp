@@ -337,12 +337,16 @@ SortAnchoredAlnVecByScore(TAnchoredAlnVec& anchored_aln_vec)
 
 
 void
-s_TranslateAnchorToAlnCoords(CPairwiseAln& out_anchor_pw, ///< output must be empty
+s_TranslateAnchorToAlnCoords(CPairwiseAln& out_anchor_pw, // output must be empty
                              const CPairwiseAln& anchor_pw)
 {
     if ( anchor_pw.empty() ) return;
-    CPairwiseAln::TPos aln_pos = 0; /// Start at 0
-    CPairwiseAln::TPos aln_len = anchor_pw.GetFirstLength();
+    CPairwiseAln::TPos aln_pos = 0; // Start at 0
+    CPairwiseAln::TPos aln_len = 0;
+    ITERATE (CPairwiseAln::TAlnRngColl, it, anchor_pw) {
+        aln_len += it->GetLength();
+    }
+
     bool direct = anchor_pw.begin()->IsFirstDirect();
 
     // There should be no gaps on anchor
@@ -692,7 +696,8 @@ BuildAln(TAnchoredAlnVec& in_alns,
     out_aln.SetAnchorRow(anchor_first ? 0 : out_aln.GetPairwiseAlns().size() - 1);
     if ( !(options.m_MergeFlags & CAlnUserOptions::fUseAnchorAsAlnSeq) ) {
         if ( !pseudo_seqid ) {
-            CRef<CSeq_id> seq_id (new CSeq_id("lcl|pseudo [timestamp: " + CTime(CTime::eCurrent).AsString() + "]"));
+            CRef<CSeq_id> seq_id (new CSeq_id("lcl|pseudo [timestamp " +
+                CTime(CTime::eCurrent).AsString("YMDhms") + "]"));
             CRef<CAlnSeqId> aln_seq_id(new CAlnSeqId(*seq_id));
             pseudo_seqid.Reset(aln_seq_id);
         }

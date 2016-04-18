@@ -67,12 +67,19 @@ USING_SCOPE(objects);
 NCBITEST_INIT_CMDLINE(descrs)
 {
     descrs->AddFlag("print_exp", "Print expected values instead of testing");
+    descrs->AddFlag("verbose", "Print detailed test progress");
 }
 
 
 bool DumpExpected(void)
 {
     return CNcbiApplication::Instance()->GetArgs()["print_exp"];
+}
+
+
+bool Verbose(void)
+{
+    return CNcbiApplication::Instance()->GetArgs()["verbose"];
 }
 
 
@@ -166,6 +173,9 @@ void CheckPairwiseAln(CNcbiIstream&       in_exp,
             << MSerial_AsnText << pw.GetSecondId()->GetSeqId();
     }
     else {
+        if ( Verbose() ) {
+            cout << "  aln=" << aln_idx << ", anchor=" << anchor << ", row=" << row << endl;
+        }
         size_t expected_aln_idx;
         int expected_row, expected_anchor;
         int first_width, second_width;
@@ -333,6 +343,9 @@ void CheckSparseAln(CNcbiIstream&     in_exp,
                 cout << row_sequence << endl;
             }
             else {
+                if ( Verbose() ) {
+                    cout << "  whole row=" << row << endl;
+                }
                 string expected_aln_sequence, expected_row_sequence;
                 in_exp >> ws;
                 getline(in_exp, expected_aln_sequence);
@@ -355,6 +368,10 @@ void CheckSparseAln(CNcbiIstream&     in_exp,
                     << seq_rg.GetFrom() << " " << seq_rg.GetTo() << endl;
             }
             else {
+                if ( Verbose() ) {
+                    cout << "  segment: row=" << row << ", range=" <<
+                        aln_rg.GetFrom() << ".." << aln_rg.GetTo() << endl;
+                }
                 unsigned expected_seg_type;
                 TSignedSeqPos expected_seq_from, expected_seq_to;
 
@@ -413,7 +430,7 @@ void CheckSparseAln(CNcbiIstream&     in_exp,
 
 BOOST_AUTO_TEST_CASE(s_TestLoadAlign)
 {
-    cout << "Test CAlnContainer and CAlnStats..." << endl;
+    cout << "Test CAlnContainer and CAlnStats... (aligns1.asn / expected01.txt)" << endl;
 
     CNcbiIfstream in_data("data/aligns1.asn");
     CNcbiIfstream in_exp("data/expected01.txt");
@@ -461,7 +478,7 @@ BOOST_AUTO_TEST_CASE(s_TestLoadAlign)
 
 BOOST_AUTO_TEST_CASE(s_TestPairwiseAln)
 {
-    cout << "Test CPairwiseAln..." << endl;
+    cout << "Test CPairwiseAln... (aligns1.asn / expected02.txt)" << endl;
 
     CNcbiIfstream in_data("data/aligns1.asn");
     CNcbiIfstream in_exp("data/expected02.txt");
@@ -538,7 +555,7 @@ BOOST_AUTO_TEST_CASE(s_TestPairwiseAln)
 
 BOOST_AUTO_TEST_CASE(s_TestPairwiseAlnRanged)
 {
-    cout << "Test ranged CPairwise_CI..." << endl;
+    cout << "Test ranged CPairwise_CI... (aligns1.asn / expected03.txt)" << endl;
 
     CNcbiIfstream in_data("data/aligns1.asn");
     CNcbiIfstream in_exp("data/expected03.txt");
@@ -605,6 +622,9 @@ BOOST_AUTO_TEST_CASE(s_TestPairwiseAlnRanged)
                         << MSerial_AsnText << pw.GetSecondId()->GetSeqId();
                 }
                 else {
+                    if ( Verbose() ) {
+                        cout << "  aln=" << aln_idx << ", anchor=" << anchor << ", row=" << row << endl;
+                    }
                     size_t expected_aln_idx;
                     int expected_row, expected_anchor;
                     int first_width, second_width, flags;
@@ -667,7 +687,7 @@ BOOST_AUTO_TEST_CASE(s_TestPairwiseAlnRanged)
 
 BOOST_AUTO_TEST_CASE(s_TestAnchoredAln)
 {
-    cout << "Test CAnchoredAln..." << endl;
+    cout << "Test CAnchoredAln... (aligns1.asn / expected04.txt)" << endl;
 
     CNcbiIfstream in_data("data/aligns1.asn");
     CNcbiIfstream in_exp("data/expected04.txt");
@@ -714,12 +734,14 @@ BOOST_AUTO_TEST_CASE(s_TestAnchoredAlnBuilt)
         CAlnUserOptions::fIgnoreInsertions
     };
 
-    cout << "Test built CAnchoredAln..." << endl;
+    cout << "Test built CAnchoredAln... (aligns2.asn / expected05.txt)" << endl;
 
     CNcbiIfstream in_data("data/aligns2.asn");
     CNcbiIfstream in_exp("data/expected05.txt");
 
+    int setnum = 0;
     while (!in_data.eof()  &&  in_data.good()) {
+        ++setnum;
         size_t num_to_merge;
         in_data >> num_to_merge;
         if (num_to_merge == 0  ||  !in_data.good()) break;
@@ -753,6 +775,11 @@ BOOST_AUTO_TEST_CASE(s_TestAnchoredAlnBuilt)
                         << user_options.m_MergeFlags << endl;
                 }
                 else {
+                    if ( Verbose() ) {
+                        cout << "  set=" << setnum << ", anchor=" << anchor_idx << " (" <<
+                            anchor_id->GetSeqId().AsFastaString() << ")" <<
+                            ", flags_idx=" << flags_idx << endl;
+                    }
                     size_t expected_anchor_idx;
                     int expected_flags;
                     in_exp >> expected_anchor_idx >> expected_flags;
@@ -783,12 +810,14 @@ BOOST_AUTO_TEST_CASE(s_TestAnchoredAlnBuilt)
 
 BOOST_AUTO_TEST_CASE(s_TestSparseAlnCoords)
 {
-    cout << "Test CSparseAln coordinates..." << endl;
+    cout << "Test CSparseAln coordinates... (aligns2.asn / expected06.txt)" << endl;
 
     CNcbiIfstream in_data("data/aligns2.asn");
     CNcbiIfstream in_exp("data/expected06.txt");
 
+    int setnum = 0;
     while (!in_data.eof()  &&  in_data.good()) {
+        ++setnum;
         size_t num_to_merge;
         in_data >> num_to_merge;
         if (num_to_merge == 0  ||  !in_data.good()) break;
@@ -820,6 +849,10 @@ BOOST_AUTO_TEST_CASE(s_TestSparseAlnCoords)
                     << MSerial_AsnText << anchor_id->GetSeqId();
             }
             else {
+                if ( Verbose() ) {
+                    cout << "  set=" << setnum << ", anchor=" << anchor_idx << " (" <<
+                        anchor_id->GetSeqId().AsFastaString() << ")" << endl;
+                }
                 size_t expected_anchor_idx;
                 in_exp >> expected_anchor_idx;
                 CSeq_id expected_anchor_id;
@@ -848,12 +881,14 @@ BOOST_AUTO_TEST_CASE(s_TestSparseAlnCoords)
 
 BOOST_AUTO_TEST_CASE(s_TestSparseAlnData)
 {
-    cout << "Test CSparseAln sequence..." << endl;
+    cout << "Test CSparseAln sequence... (aligns3.asn / expected07.txt)" << endl;
 
     CNcbiIfstream in_data("data/aligns3.asn");
     CNcbiIfstream in_exp("data/expected07.txt");
 
+    int setnum = 0;
     while (!in_data.eof()  &&  in_data.good()) {
+        ++setnum;
         size_t num_to_merge;
         in_data >> num_to_merge;
         if (num_to_merge == 0  ||  !in_data.good()) break;
@@ -885,6 +920,10 @@ BOOST_AUTO_TEST_CASE(s_TestSparseAlnData)
                     << MSerial_AsnText << anchor_id->GetSeqId();
             }
             else {
+                if ( Verbose() ) {
+                    cout << "  set=" << setnum << ", anchor=" << anchor_idx << " (" <<
+                        anchor_id->GetSeqId().AsFastaString() << ")" << endl;
+                }
                 size_t expected_anchor_idx;
                 in_exp >> expected_anchor_idx;
                 CSeq_id expected_anchor_id;
@@ -924,7 +963,7 @@ BOOST_AUTO_TEST_CASE(s_TestSparseAlnData)
 
 BOOST_AUTO_TEST_CASE(s_TestAlnTypes)
 {
-    cout << "Test seq-align types..." << endl;
+    cout << "Test seq-align types... (aligns4.asn / expected08.txt)" << endl;
 
     CNcbiIfstream in_data("data/aligns4.asn");
     CNcbiIfstream in_exp("data/expected08.txt");

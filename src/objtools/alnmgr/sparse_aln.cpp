@@ -35,9 +35,12 @@
 #include <objtools/alnmgr/sparse_ci.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
 #include <objtools/error_codes.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objects/seqalign/Sparse_align.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+
 
 #define NCBI_USE_ERRCODE_X   Objtools_Aln_Sparse
 
@@ -440,6 +443,20 @@ CSeqVector& CSparseAln::x_GetSeqVector(TNumrow row) const
 }
 
 
+int CSparseAln::x_GetGenCode(TNumrow row) const
+{
+    int gencode = kDefaultGenCode;
+    try {
+        CBioseq_Handle h = GetBioseqHandle(row);
+        if ( h ) {
+            gencode = sequence::GetOrg_ref(h).GetGcode();
+        }
+    }
+    catch (...) {}
+    return gencode;
+}
+
+
 void CSparseAln::TranslateNAToAA(const string& na,
                                  string& aa,
                                  int gencode)
@@ -478,33 +495,7 @@ string& CSparseAln::GetSeqString(TNumrow row,
                                  TSeqPos seq_from, TSeqPos seq_to,
                                  bool force_translation) const
 {
-    _ASSERT(row >= 0  &&  row < GetDim());
-
-    buffer.erase();
-    int width = m_Aln->GetPairwiseAlns()[row]->GetSecondBaseWidth();
-    if (width > 1) {
-        seq_from /= 3;
-        seq_to /= 3;
-        force_translation = false; // do not translate AAs.
-    }
-    if (seq_to >= seq_from) {
-        CSeqVector& seq_vector = x_GetSeqVector(row);
-
-        size_t size = seq_to - seq_from + 1;
-        buffer.resize(size, m_GapChar);
-
-        if (IsPositiveStrand(row)) {
-            seq_vector.GetSeqData(seq_from, seq_to + 1, buffer);
-        } else {
-            TSeqPos vec_size = seq_vector.size();
-            seq_vector.GetSeqData(vec_size - seq_to - 1, vec_size - seq_from, buffer);
-        }
-
-        if ( force_translation ) {
-            TranslateNAToAA(buffer, buffer);
-        }
-    }
-    return buffer;
+    return GetSeqString(row, buffer, TRange(seq_from, seq_to), force_translation);
 }
 
 
@@ -520,10 +511,38 @@ string& CSparseAln::GetSeqString(TNumrow row,
         seq_range = GetSeqRange(row);
     }
 
-    return GetSeqString(row,
-                        buffer,
-                        seq_range.GetFrom(), seq_range.GetTo(),
-                        force_translation);
+    buffer.erase();
+    int width = m_Aln->GetPairwiseAlns()[row]->GetSecondBaseWidth();
+    TSeqPos tr_from = seq_range.GetFrom();
+    TSeqPos tr_to = seq_range.GetToOpen();
+    if (width > 1) {
+        // It's a protein sequence. Protein coordinates were multiplied by 3,
+        // any fractions (incomplete AAs) must be discarded.
+        tr_from /= 3;
+        if (seq_range.GetFrom() % 3 > 0) {
+            tr_from++; // skip incomplete AA
+        }
+        tr_to /= 3;
+        force_translation = false; // do not translate AAs.
+    }
+    if (tr_to > tr_from) {
+        CSeqVector& seq_vector = x_GetSeqVector(row);
+
+        TSeqPos size = tr_to - tr_from;
+        buffer.resize(size, m_GapChar);
+
+        if (IsPositiveStrand(row)) {
+            seq_vector.GetSeqData(tr_from, tr_to, buffer);
+        } else {
+            TSeqPos vec_size = seq_vector.size();
+            seq_vector.GetSeqData(vec_size - tr_to, vec_size - tr_from, buffer);
+        }
+
+        if ( force_translation ) {
+            TranslateNAToAA(buffer, buffer, x_GetGenCode(row));
+        }
+    }
+    return buffer;
 }
 
 
@@ -555,71 +574,130 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
     TSeqPos vec_size = seq_vector.size();
 
     const int base_width = pairwise_aln.GetSecondBaseWidth();
+    int gencode = 0;
     bool translate = force_translation  ||  pairwise_aln.GetSecondId()->IsProtein();
 
     // buffer holds sequence for "aln_range", 0 index corresonds to aln_range.GetFrom()
-    size_t size = aln_range.GetLength();
+    size_t buf_size = aln_range.GetLength();
     if (translate) {
-        size /= 3;
+        gencode = x_GetGenCode(row);
+        buf_size /= 3;
     }
-    buffer.resize(size, m_GapChar);
+    buffer.resize(buf_size, m_GapChar);
 
     string s; // current segment sequence
     CSparse_CI it(*this, row, IAlnSegmentIterator::eSkipInserts, aln_range);
 
+    // Store last incomplete codon's position and length. If the next
+    // segment includes the rest of the same codon, it should be included
+    // in the results. Otherwise incomplete codons are removed from protein
+    // sequences.
+    TSeqPos split_codon_pos = kInvalidSeqPos;
+    // When trimming one or more codons, future offsets must be adjusted.
+    bool direct = IsPositiveStrand(row);
+    bool is_first_seg = true;
+    size_t trim_from = 0;
+    size_t trim_to = 0;
     while ( it )   {
+        trim_to = 0;
         const IAlnSegment::TSignedRange& aln_r = it->GetAlnRange(); // in alignment
         const IAlnSegment::TSignedRange& row_r = it->GetRange(); // on sequence
         if ( row_r.Empty() ) {
             ++it;
+            is_first_seg = false;
             continue;
         }
 
-        size_t off;
+        size_t off = aln_r.GetFrom() - aln_range.GetFrom();
         if (base_width == 1) {
             // TODO performance issue - waiting for better API
-            if (IsPositiveStrand(row)) {
+            if ( direct ) {
                 seq_vector.GetSeqData(row_r.GetFrom(), row_r.GetToOpen(), s);
             } else {
                 seq_vector.GetSeqData(vec_size - row_r.GetToOpen(),
-                                        vec_size - row_r.GetFrom(), s);
+                    vec_size - row_r.GetFrom(), s);
             }
-            if (translate) {
-                TranslateNAToAA(s, s);
-            }
-            off = aln_r.GetFrom() - aln_range.GetFrom();
-            if (translate) {
+            if ( translate ) {
+                TranslateNAToAA(s, s, gencode);
                 off /= 3;
             }
         }
         else {
             _ASSERT(base_width == 3);
-            IAlnSegment::TSignedRange prot_r = row_r;
-            if (prot_r.GetLength() > 0) {
-                prot_r.SetFrom(row_r.GetFrom() / 3);
-                prot_r.SetLength(row_r.GetLength() < 3 ? 1 : row_r.GetLength() / 3);
-                if (IsPositiveStrand(row)) {
-                    seq_vector.GetSeqData(prot_r.GetFrom(),
-                                            prot_r.GetToOpen(), s);
+            TSeqPos tr_from = row_r.GetFrom();
+            TSeqPos tr_to = row_r.GetToOpen();
+            if ( direct ) {
+                if (tr_from % 3 > 0) {
+                    if (tr_from == split_codon_pos) {
+                        // Include incomplete codon from the last range.
+                        _ASSERT(off > 0);
+                        if ( is_first_seg ) trim_from = tr_from % 3;
+                        off -= tr_from % 3;
+                        tr_from -= tr_from % 3;
+                    }
+                    else {
+                        // Trim incomplete codon at range start.
+                        off += 3 - (tr_from % 3);
+                        tr_from += 3 - (tr_from % 3);
+                    }
                 }
-                else {
-                    seq_vector.GetSeqData(vec_size - prot_r.GetToOpen(),
-                                          vec_size - prot_r.GetFrom(), s);
+                if (tr_to % 3 > 0) {
+                    split_codon_pos = tr_to;
+                    trim_to = tr_to % 3;
+                    tr_to -= tr_to % 3;
                 }
             }
-            off = (aln_r.GetFrom() - aln_range.GetFrom()) / 3;
+            else /* reverse */ {
+                if (tr_to % 3 > 0) {
+                    if (tr_to == split_codon_pos) {
+                        // Include incomplete codon from the last range.
+                        _ASSERT(off > 0);
+                        if ( is_first_seg ) trim_from = 3 - (tr_to % 3);
+                        off -= 3 - (tr_to % 3);
+                        tr_to += 3 - (tr_to % 3);
+                    }
+                    else {
+                        off += tr_to % 3;
+                        tr_to -= tr_to % 3;
+                    }
+                }
+                if (tr_from % 3 > 0) {
+                    split_codon_pos = tr_from;
+                    trim_to = 3 - (tr_from % 3);
+                    tr_from += 3 - (tr_from % 3);
+                }
+            }
+            off /= 3;
+            _ASSERT(tr_from % 3 == 0);
+            _ASSERT(tr_to % 3 == 0);
+            IAlnSegment::TSignedRange prot_r;
+            prot_r.SetOpen(tr_from / 3, tr_to / 3);
+            if ( direct ) {
+                seq_vector.GetSeqData(prot_r.GetFrom(),
+                                        prot_r.GetToOpen(), s);
+            }
+            else {
+                seq_vector.GetSeqData(vec_size - prot_r.GetToOpen(),
+                                        vec_size - prot_r.GetFrom(), s);
+            }
         }
 
-        size_t len = min(size - off, s.size());
-        _ASSERT(off + len <= size);
+        size_t len = min(buf_size - off, s.size());
+        _ASSERT(off + len <= buf_size);
 
-        if ( m_AnchorDirect ) {
-            buffer.replace(off, len, s, 0, len);
-        }
-        else {
-            buffer.replace(size - off - len, len, s, 0, len);
+        if (len > 0) {
+            if ( m_AnchorDirect ) {
+                buffer.replace(off, len, s, 0, len);
+            }
+            else {
+                buffer.replace(buf_size - off - len, len, s, 0, len);
+            }
         }
         ++it;
+        is_first_seg = false;
+    }
+    if ( translate ) {
+        buffer.resize((aln_range.GetLength() - trim_from - trim_to) / 3);
     }
     return buffer;
 }

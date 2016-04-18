@@ -284,6 +284,7 @@ protected:
 
     void x_Build(const CAnchoredAln& src_align);
     CSeqVector& x_GetSeqVector(TNumrow row) const;
+    int x_GetGenCode(TNumrow row) const;
 
     typedef CAnchoredAln::TPairwiseAlnVector TPairwiseAlnVector;
 
