@@ -2330,10 +2330,16 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
                 continue;
             }
             CRef<CSeqdesc> d(new CSeqdesc());
-            ITERATE(CSeq_feat::TCit::TPub, c, p->GetCit().GetPub()) {  
-                ITERATE(CPub_equiv::Tdata, t, (*c)->GetEquiv().Get()) {
+            ITERATE(CSeq_feat::TCit::TPub, c, p->GetCit().GetPub()) { 
+                if ((*c)->IsEquiv()) {
+                    ITERATE(CPub_equiv::Tdata, t, (*c)->GetEquiv().Get()) {
+                        CRef<CPub> pub_copy(new CPub());
+                        pub_copy->Assign(**t);
+                        d->SetPub().SetPub().Set().push_back(pub_copy);
+                    }
+                } else {
                     CRef<CPub> pub_copy(new CPub());
-                    pub_copy->Assign(**t);
+                    pub_copy->Assign(**c);
                     d->SetPub().SetPub().Set().push_back(pub_copy);
                 }
             }
