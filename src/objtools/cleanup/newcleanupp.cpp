@@ -12185,7 +12185,9 @@ void CNewCleanup_imp::x_RemovePopPhyBioSource(CBioseq_set& set)
     while (d != set.SetDescr().Set().end()) {
         if ((*d)->IsSource()) {
             //propagate down
-            if ((*d)->GetSource().IsSetOrg() && set.IsSetSeq_set()) {
+            if ((*d)->GetSource().IsSetOrg() && 
+                ((*d)->GetSource().GetOrg().IsSetTaxname() || (*d)->GetSource().GetOrg().IsSetCommon()) &&
+                set.IsSetSeq_set()) {
                 NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, set.SetSeq_set()) {
                     if ((*s)->IsSet()) {
                         x_RemovePopPhyBioSource((*s)->SetSet(), (*d)->GetSource().GetOrg());
@@ -12215,7 +12217,12 @@ void CNewCleanup_imp::x_RemovePopPhyBioSource(CBioseq_set& set, const COrg_ref& 
         }
     }
     CRef<CSeqdesc> src(new CSeqdesc());
-    src->SetSource().SetOrg().Assign(org);
+    if (org.IsSetTaxname()) {
+        src->SetSource().SetOrg().SetTaxname(org.GetTaxname());
+    }
+    if (org.IsSetCommon()) {
+        src->SetSource().SetOrg().SetCommon(org.GetCommon());
+    }
     set.SetDescr().Set().push_back(src);
     ChangeMade(CCleanupChange::eAddDescriptor);
 }
@@ -12232,7 +12239,12 @@ void CNewCleanup_imp::x_RemovePopPhyBioSource(CBioseq& seq, const COrg_ref& org)
         }
     }
     CRef<CSeqdesc> src(new CSeqdesc());
-    src->SetSource().SetOrg().Assign(org);
+    if (org.IsSetTaxname()) {
+        src->SetSource().SetOrg().SetTaxname(org.GetTaxname());
+    }
+    if (org.IsSetCommon()) {
+        src->SetSource().SetOrg().SetCommon(org.GetCommon());
+    }
     seq.SetDescr().Set().push_back(src);
     ChangeMade(CCleanupChange::eAddDescriptor);
 }
