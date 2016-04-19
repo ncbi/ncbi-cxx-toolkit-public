@@ -6637,22 +6637,25 @@ static SIZE_TYPE s_TitleEndsInOrganism (
     }
 
     // find organelle prefix
-    static const string kOrganellePrefixes[] = {
-        " (chloroplast)",
-        " (mitochondrion)"
-    };
     if( out_piOrganellePos ) {
+        for (unsigned int genome = CBioSource::eGenome_chloroplast;
+             genome <= CBioSource::eGenome_chromatophore;
+             genome++) {
+            if (genome != CBioSource::eGenome_extrachrom &&
+                genome != CBioSource::eGenome_transposon &&
+                genome != CBioSource::eGenome_insertion_seq &&
+                genome != CBioSource::eGenome_proviral &&
+                genome != CBioSource::eGenome_virion &&
+                genome != CBioSource::eGenome_chromosome)
+            {
+                string organelle = " (" + CBioSource::GetOrganelleByGenome(genome) + ")";
+                SIZE_TYPE possible_organelle_start_pos = NStr::Find(sTitle, organelle);
+                if (possible_organelle_start_pos != NPOS &&
+                    NStr::EndsWith(CTempString(sTitle, 0, answer), organelle)) {
+                    *out_piOrganellePos = possible_organelle_start_pos;
+                    break;
+                }
 
-        static const unsigned int kOrganellePrefixes_len = 
-            (sizeof(kOrganellePrefixes)/sizeof(kOrganellePrefixes[0]));
-        for( unsigned int ii = 0; ii < kOrganellePrefixes_len; ++ii ) {
-            const string & organelle_prefix = kOrganellePrefixes[ii];
-
-            SIZE_TYPE possible_organelle_start_pos = NStr::Find (sTitle, organelle_prefix);
-            if ( possible_organelle_start_pos != NPOS &&
-                 NStr::EndsWith(CTempString(sTitle, 0, answer), organelle_prefix) ) {
-                *out_piOrganellePos = possible_organelle_start_pos;
-                break;
             }
         }
     }
