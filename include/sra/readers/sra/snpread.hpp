@@ -287,6 +287,93 @@ public:
 };
 
 
+template<class Enum>
+class CSafeFlags {
+public:
+    typedef Enum enum_type;
+    typedef typename underlying_type<enum_type>::type storage_type;
+
+    CSafeFlags()
+        : m_Flags(0)
+        {
+        }
+    CSafeFlags(enum_type flags)
+        : m_Flags(flags)
+        {
+        }
+
+    storage_type get() const
+        {
+            return m_Flags;
+        }
+
+    DECLARE_OPERATOR_BOOL(m_Flags != 0);
+
+    bool operator==(const CSafeFlags& b) const
+        {
+            return get() == b.get();
+        }
+    bool operator!=(const CSafeFlags& b) const
+        {
+            return get() != b.get();
+        }
+
+    CSafeFlags operator&(const CSafeFlags& b) const
+        {
+            return get() & b.get();
+        }
+    CSafeFlags operator|(const CSafeFlags& b) const
+        {
+            return get() | b.get();
+        }
+    CSafeFlags operator^(const CSafeFlags& b) const
+        {
+            return get() ^ b.get();
+        }
+    CSafeFlags& operator&=(const CSafeFlags& b)
+        {
+            m_Flags &= b.get();
+            return *this;
+        }
+    CSafeFlags& operator|(const CSafeFlags& b)
+        {
+            m_Flags |= b.get();
+            return *this;
+        }
+    CSafeFlags& operator^(const CSafeFlags& b)
+        {
+            m_Flags ^= b.get();
+            return *this;
+        }
+    CSafeFlags without(const CSafeFlags& b) const
+        {
+            return CSafeFlags(get()&~b.get());
+        }
+    CSafeFlags& reset(const CSafeFlags& b)
+        {
+            m_Flags &= ~b.get();
+            return *this;
+        }
+
+    CSafeFlags operator~() const
+        {
+            return CSafeFlags(~get());
+        }
+
+private:
+    CSafeFlags(storage_type flags)
+        : m_Flags(flags)
+        {
+        }
+
+    storage_type m_Flags;
+};
+template<class Enum> inline CSafeFlags<Enum> ToFlags(Enum v)
+{
+    return CSafeFlags<Enum>(v);
+}
+
+
 class NCBI_SRAREAD_EXPORT CSNPDbSeqIterator : public SSNPDb_Defs
 {
 public:
@@ -349,7 +436,7 @@ public:
         fSingleGraph    = 1<<0,
         fDefaultFlags   = 0
     };
-    typedef int TFlags;
+    typedef CSafeFlags<EFlags> TFlags;
 
     CRef<CSeq_graph> GetCoverageGraph(CRange<TSeqPos> range,
                                       const SFilter& filter = SFilter()) const;
@@ -586,7 +673,7 @@ public:
                           fIncludeNeighbors |
                           fUseSharedObjects )
     };
-    typedef int TFlags;
+    typedef CSafeFlags<EFlags> TFlags;
     
     CRef<CSeq_feat> GetSeq_feat(TFlags flags = fDefaultFlags) const;
 

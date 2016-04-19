@@ -1804,7 +1804,7 @@ CRef<CSeq_feat> CSNPDbFeatIterator::GetSeq_feat(TFlags flags) const
         feat.ResetDbxref();
     }
     feat.ResetExt();
-    if ( flags & (fIncludeQualityCodes|fIncludeNeighbors) ) {
+    if ( flags & (ToFlags(fIncludeQualityCodes)|fIncludeNeighbors) ) {
         CUser_object& ext = x_GetPrivate(cache.m_Ext);
         ext.SetType(x_GetObject_id(cache.m_ObjectIdQAdata,
                                    "dbSnpQAdata"));

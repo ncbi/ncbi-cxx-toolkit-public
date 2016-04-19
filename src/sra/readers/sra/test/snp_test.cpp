@@ -263,7 +263,7 @@ int CSNPTestApp::Run(void)
     bool print = args["print_objects"];
     size_t limit_count = args["limit_count"].AsInteger();
 
-    CNcbiOstream* out;
+    CNcbiOstream* out = 0;
     if ( print ) {
         out = &args["o"].AsOutputFile();
         if ( args["b"] ) {
@@ -387,7 +387,7 @@ int CSNPTestApp::Run(void)
         size_t count = 0;
         CSNPDbFeatIterator::TFlags flags = CSNPDbFeatIterator::fDefaultFlags;
         if ( args["no_shared_objects"] ) {
-            flags &= ~CSNPDbFeatIterator::fUseSharedObjects;
+            flags &= ~ToFlags(CSNPDbFeatIterator::fUseSharedObjects);
         }
         if ( args["make_cov_graph"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
