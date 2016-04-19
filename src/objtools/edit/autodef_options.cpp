@@ -89,7 +89,7 @@ CRef<CUser_object> CAutoDefOptions::MakeUserObject() const
 void CAutoDefOptions::InitFromUserObject(const CUser_object& obj)
 {
     x_Reset();
-
+    m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = false;
     ITERATE(CUser_object::TData, it, obj.GetData()) {
         if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr()) {}
         TFieldType field_type = GetFieldType((*it)->GetLabel().GetStr());
@@ -101,6 +101,9 @@ void CAutoDefOptions::InitFromUserObject(const CUser_object& obj)
                 if ((*it)->IsSetData() && (*it)->GetData().IsBool() && (*it)->GetData().GetBool()) {
                     m_BooleanFlags[field_type] = true;
                 }
+            } else if (field_type == eOptionFieldType_SpecifyNuclearProduct &&
+                       (*it)->GetData().IsBool() && (*it)->GetData().GetBool()) {
+                m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = true;
             } else if (field_type == eOptionFieldType_ProductFlag) {
                 if ((*it)->IsSetData() && (*it)->GetData().IsStr()) { 
                     m_ProductFlag = GetProductFlag((*it)->GetData().GetStr());

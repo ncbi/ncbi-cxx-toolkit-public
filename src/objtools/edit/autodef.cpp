@@ -1273,6 +1273,23 @@ void CAutoDef::SetOptionsObject(const CUser_object& user)
 }
 
 
+CConstRef<CUser_object> GetOptionsForSet(CBioseq_set_Handle set)
+{
+    CConstRef<CUser_object> options(NULL);
+    CBioseq_CI b(set, CSeq_inst::eMol_na);
+    while (b && !options) {
+        CSeqdesc_CI desc(*b, CSeqdesc::e_User);
+        while (desc && desc->GetUser().GetObjectType() != CUser_object::eObjectType_AutodefOptions) {
+            ++desc;
+        }
+        if (desc) {
+            options.Reset(&(desc->GetUser()));
+        }
+    }
+    return options;
+}
+
+
 bool CAutoDef::RegenerateDefLines(CSeq_entry_Handle se)
 {
     bool any = false;
@@ -1319,6 +1336,10 @@ bool CAutoDef::RegenerateDefLines(CSeq_entry_Handle se)
     for (CSeq_entry_CI si(se, CSeq_entry_CI::fRecursive | CSeq_entry_CI::fIncludeGivenEntry, CSeq_entry::e_Set); si; ++si) {
         if (si->IsSet() && CAutoDef::NeedsDocsumDefline(*(si->GetSet().GetCompleteBioseq_set()))) {
             CAutoDef autodef;
+            CConstRef<CUser_object> options = GetOptionsForSet(si->GetSet());
+            if (options) {
+                autodef.SetOptionsObject(*options);
+            }
             autodef.AddSources(se);
             string defline = autodef.GetDocsumDefLine(*si);
 
