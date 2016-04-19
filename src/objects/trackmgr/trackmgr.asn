@@ -185,7 +185,7 @@ TMgr-DisplayTrack ::= SEQUENCE {
     name UTF8String,
     attrs SET OF TMgr-Attribute OPTIONAL,
     seqs SET OF TMgr-DatasetItemSeq OPTIONAL,
-    items SET OF TMgr-TrackItems OPTIONAL
+    items SET OF TMgr-DatasetItem OPTIONAL
 }
 
 TMgr-DatasetItem ::= SEQUENCE {
