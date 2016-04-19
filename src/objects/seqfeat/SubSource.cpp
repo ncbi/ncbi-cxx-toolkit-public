@@ -2290,6 +2290,7 @@ const char* sm_ValidSexQualifierTokens[] = {
   "female",
   "gelding",
   "hermaphrodite",
+  "intersex",
   "m",
   "male",
   "mixed",
