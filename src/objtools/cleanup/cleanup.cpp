@@ -1160,10 +1160,6 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
         // not coding region
         return false;
     }
-    if (f.GetLocation().IsPartialStop(eExtreme_Biological)) {
-        // is 3' partial
-        return false;
-    }
     if (IsPseudo(f, bsh.GetScope())) {
         return false;
     }
@@ -1185,7 +1181,7 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
         }
     }
 
-    return ExtendToStopCodon(f, bsh, 3);
+    return ExtendToStopCodon(f, bsh, 50);
 }
 
 

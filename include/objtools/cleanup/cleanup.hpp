@@ -179,11 +179,10 @@ public:
 /// @return Boolean return value indicates whether gene-xrefs were removed
     static bool RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh);
 
-/// Extends a coding region 1-3 nt. if the coding region:
-/// 1. is not partial
-/// 2. does not end with a stop codon
-/// 3. is adjacent to a stop codon
-/// 4. is pseudo
+/// Extends a coding region up to 50 nt. if the coding region:
+/// 1. does not end with a stop codon
+/// 2. is adjacent to a stop codon
+/// 3. is not pseudo
 /// @param f Seq-feat to edit
 /// @param bsh CBioseq_Handle on which the feature is located
 /// @return Boolean return value indicates whether the feature was extended
