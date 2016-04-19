@@ -49,6 +49,8 @@ class CBioseq_set;
 class CSeq_annot;
 class CSeq_feat;
 class CSeq_submit;
+class COrgName;
+
 
 class CSeq_entry_Handle;
 class CBioseq_Handle;
