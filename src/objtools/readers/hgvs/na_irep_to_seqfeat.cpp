@@ -312,7 +312,8 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateInversionVarref(const CInversion
             var_set.SetVariations().push_back(subvar_ref);
         } else if (inv.IsSetSize()) {
             auto inversion_size = x_CreateNtSeqLiteral(inv.GetSize());
-            auto subvar_ref = g_CreateIdentity(inversion_size, start_offset, stop_offset);
+            const bool enforce_assert = true;
+            auto subvar_ref = g_CreateIdentity(inversion_size, start_offset, stop_offset, enforce_assert);
             var_set.SetVariations().push_back(subvar_ref);
         }
         return var_ref;

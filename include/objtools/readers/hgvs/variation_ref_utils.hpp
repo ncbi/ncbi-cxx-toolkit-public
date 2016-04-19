@@ -27,7 +27,8 @@ CRef<CVariation_ref> g_CreateDuplication(CRef<CDelta_item> start_offset=null,
 
 CRef<CVariation_ref> g_CreateIdentity(CRef<CSeq_literal> seq_literal,
                                       CRef<CDelta_item> start_offset=null,
-                                      CRef<CDelta_item> stop_offset=null);
+                                      CRef<CDelta_item> stop_offset=null,
+                                      bool enforce_assert=false);
 
 
 CRef<CVariation_ref> g_CreateDelins(CSeq_literal& insertion, 

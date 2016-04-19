@@ -124,14 +124,15 @@ CRef<CVariation_ref> g_CreateDuplication(CRef<CDelta_item> start_offset,
 
 CRef<CVariation_ref> g_CreateIdentity(CRef<CSeq_literal> seq_literal,
                                       const CRef<CDelta_item> start_offset,
-                                      const CRef<CDelta_item> stop_offset)
+                                      const CRef<CDelta_item> stop_offset,
+                                      const bool enforce_assert)
 {
     auto var_ref = Ref(new CVariation_ref());
 
     auto& inst = var_ref->SetData().SetInstance();
     inst.SetType(CVariation_inst::eType_identity);
     if (seq_literal->IsSetSeq_data() || 
-        seq_literal->IsSetLength()) {
+        enforce_assert) {
         inst.SetObservation(CVariation_inst::eObservation_asserted);
     }
     inst.SetDelta().clear();
