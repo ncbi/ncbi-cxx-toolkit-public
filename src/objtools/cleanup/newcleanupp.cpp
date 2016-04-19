@@ -6705,39 +6705,13 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
         }
     }
 
-    static const char *kProteinOrganellePrefixes[] = {
-        NULL, // unknown
-        NULL, // genomic
-        "chloroplast", // chloroplast
-        NULL, // chromoplast
-        NULL, // kinetoplast
-        "mitochondrion", // mitochondrion
-        NULL, // plastid
-        NULL, // macronuclear
-        NULL, // extrachrom
-        NULL, // plasmid
-        NULL, // transposon
-        NULL, // insertion-seq
-        NULL, // cyanelle
-        NULL, // proviral
-        NULL, // virion
-        NULL, // nucleomorph
-        NULL, // apicoplast
-        NULL, // leucoplast
-        NULL, // proplastid
-        NULL, // endogenous-virus
-        NULL, // hydrogenosome
-        NULL, // chromosome
-        NULL // chromatophore
-    };
-
     // gather some info from the Seqdesc's on the bioseq, into
     // the following variables
     bool bPartial = false;
     string sTaxname;
     string sOldName;
     string *psTitle = NULL;
-    const char *organelle = NULL;
+    string organelle = kEmptyStr;
 
     // iterate for title
     EDIT_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
@@ -6787,11 +6761,17 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
         if( descr.IsSource() ) {
             const TBIOSOURCE_GENOME genome = ( descr.GetSource().CanGetGenome() ?
                 descr.GetSource().GetGenome() :
-                NCBI_GENOME(unknown) );
-            if (genome >= NCBI_GENOME(chloroplast) &&
-                genome <= NCBI_GENOME(chromatophore) ) 
+                CBioSource::eGenome_unknown );
+            if (genome >= CBioSource::eGenome_chloroplast &&
+                genome <= CBioSource::eGenome_chromatophore &&
+                genome != CBioSource::eGenome_extrachrom &&
+                genome != CBioSource::eGenome_transposon &&
+                genome != CBioSource::eGenome_insertion_seq &&
+                genome != CBioSource::eGenome_proviral &&
+                genome != CBioSource::eGenome_virion &&
+                genome != CBioSource::eGenome_chromosome) 
             {
-                organelle = kProteinOrganellePrefixes[genome];
+                organelle = CBioSource::GetOrganelleByGenome(genome);
             }
 
             if( FIELD_IS_SET(descr.GetSource(), Org) ) {
@@ -6800,7 +6780,7 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
                     sTaxname = GET_FIELD(org, Taxname);
                 }
                 if ( NStr::StartsWith(sTaxname, organelle, NStr::eNocase) ) {
-                    organelle = NULL;
+                    organelle = kEmptyStr;
                 }
                 FOR_EACH_ORGMOD_ON_ORGREF(mod_iter, org) {
                     const COrgMod & orgmod = **mod_iter;
@@ -6842,8 +6822,8 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
     if ( suffixPos == NPOS && ! sTaxname.empty() ) {
         suffixPos = s_TitleEndsInOrganism (sTitle, sTaxname, &penult);
         if (suffixPos != NPOS) {
-            if (organelle == NULL && penult != NPOS) {
-            } else if (organelle != NULL && penult == NPOS) {
+            if (NStr::IsBlank(organelle) && penult != NPOS) {
+            } else if (!NStr::IsBlank(organelle) && penult == NPOS) {
             } else if ( penult != NPOS && sTitle.substr(penult) == organelle ) {
             } else {
                 // bail if no need to change partial text or [organism name]
@@ -6880,7 +6860,7 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
     if( bPartial && partialPos == NPOS ) {
         sTitle += ", partial";
     }
-    if (organelle != NULL) {
+    if (!NStr::IsBlank(organelle)) {
         sTitle += " (" + string(organelle) + ")";
     }
     if ( ! sTaxname.empty() ) {
