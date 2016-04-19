@@ -79,7 +79,8 @@ TMgr-DisplayTrackRequest ::= SEQUENCE {
     authorization TMgr-TrackACL-Authorization OPTIONAL,
     flags SEQUENCE {
         include-stats BOOLEAN DEFAULT FALSE,
-        include-default-tracks BOOLEAN OPTIONAL
+        include-default-tracks BOOLEAN OPTIONAL,
+        include-track-items BOOLEAN DEFAULT FALSE
     } OPTIONAL
 }
 
@@ -381,7 +382,10 @@ TMgr-RetrieveTracksetRequest ::= SEQUENCE {
 
 TMgr-RetrieveTracksetReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
-    tracksets SET OF TMgr-TrackSet OPTIONAL
+    tracksets SET OF TMgr-TrackSet OPTIONAL,
+    flags SEQUENCE {
+        include-track-items BOOLEAN DEFAULT FALSE
+    } OPTIONAL
 }
 
 TMgr-CreateTracksetRequest ::= SEQUENCE {
