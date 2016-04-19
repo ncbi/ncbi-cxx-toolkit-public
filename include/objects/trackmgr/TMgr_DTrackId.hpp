@@ -51,14 +51,17 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class NCBI_TRACKMGR_EXPORT CTMgr_DTrackId : public CTMgr_DTrackId_Base
 {
     typedef CTMgr_DTrackId_Base Tparent;
-public:
-    CTMgr_DTrackId(void) {}
 
-    static CRef<CTMgr_DTrackId> FromTrackIdString(const string& track_id)
+public:
+    CTMgr_DTrackId(void)
     {
-        CRef<CTMgr_DTrackId> id(new CTMgr_DTrackId());
+    }
+
+    static CRef<CTMgr_DTrackId> FromTrackIdString(const string& track_id, const string& db = "TMS")
+    {
+        auto id = Ref(new CTMgr_DTrackId());
         CDbtag& tag = id->Set();
-        tag.SetDb("TMS");
+        tag.SetDb(db);
         tag.SetTag().SetStr(track_id);
         return id;
     }
