@@ -11530,6 +11530,42 @@ bool IsMinimal(const CCit_gen& gen)
         break;
 
 
+bool CNewCleanup_imp::x_IsPubContentBad(const CId_pat& pat)
+{
+    if (pat.IsSetCountry() && !NStr::IsBlank(pat.GetCountry())) {
+        return false;
+    }
+    if (pat.IsSetDoc_type() && !NStr::IsBlank(pat.GetDoc_type())) {
+        return false;
+    }
+    if (!pat.IsSetId()) {
+        return false;
+    } else if (pat.GetId().IsApp_number() && !NStr::IsBlank(pat.GetId().GetApp_number())) {
+        return false;
+    } else if (pat.GetId().IsNumber() && !NStr::IsBlank(pat.GetId().GetNumber())) {
+        return false;
+    }
+
+    return true;
+}
+
+
+bool CNewCleanup_imp::x_IsPubContentBad(const CPub& pub)
+{
+    if (pub.IsGen() && IsMinimal(pub.GetGen())) {
+        return true;
+    } else if (pub.IsMuid() && pub.GetMuid() == 0) {
+        return true;
+    } else if (pub.IsPmid() && pub.GetPmid() == 0) {
+        return true;
+    } else if (pub.IsPat_id() && x_IsPubContentBad(pub.GetPat_id())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool CNewCleanup_imp::x_IsPubContentBad(const CPubdesc& pub, bool strict)
 {
     // remove if no pubs at all
@@ -11547,12 +11583,12 @@ bool CNewCleanup_imp::x_IsPubContentBad(const CPubdesc& pub, bool strict)
         return true;
     }
 
-    // remove if only one pub and is gen missing essential information
+    // remove if only one pub and that pub is bad
     if (pub.IsSetPub() && pub.GetPub().Get().size() == 1 &&
-        pub.GetPub().Get().front()->IsGen() &&
-        IsMinimal(pub.GetPub().Get().front()->GetGen())) {
+        x_IsPubContentBad(*(pub.GetPub().Get().front()))) {
         return true;
     }
+
     ITERATE(CPubdesc::TPub::Tdata, it, pub.GetPub().Get()) {
         if ((*it)->IsArticle()) {
             // all CitArt from journal must have journal title and imprint

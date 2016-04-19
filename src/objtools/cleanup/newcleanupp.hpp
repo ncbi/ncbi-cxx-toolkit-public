@@ -579,6 +579,8 @@ private:
     bool x_ShouldRemoveEmptyProt(const CProt_ref& prot );
     void x_BondEC(CSeq_feat& feat);
     static bool x_IsPubContentBad(const CPubdesc& pub, bool strict);
+    static bool x_IsPubContentBad(const CPub& pub);
+    static bool x_IsPubContentBad(const CId_pat& pat);
     bool x_ShouldRemoveEmptyPub(const CPubdesc& pubdesc );
     static bool x_IsGenbankBlockEmpty(const CGB_block& gbk);
     void x_RemoveOldFeatures(CBioseq & bioseq);
