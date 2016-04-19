@@ -39,6 +39,20 @@
 
 BEGIN_NCBI_SCOPE
 
+class CConnHolder;
+
+class CSDB_UserHandler : public CDB_UserHandler_Exception
+{
+public:
+    CSDB_UserHandler(CConnHolder& conn)
+        : m_Conn(conn)
+        { }
+    bool HandleMessage(int severity, int msgnum, const string& message);
+    
+private:
+    CConnHolder& m_Conn;
+};
+
 class CConnHolder : public CObject
 {
 public:
@@ -52,6 +66,8 @@ public:
     const CDB_Exception::SContext& GetContext(void) const;
     void SetTimeout(const CTimeout& timeout);
     void ResetTimeout(void);
+    const list<string>& GetPrintOutput(void) const;
+    void ResetPrintOutput();
 
 private:
     CConnHolder(const CConnHolder&);
@@ -61,7 +77,10 @@ private:
     size_t       m_DefaultTimeout;
     bool         m_HasCustomTimeout;
     Uint4        m_CntOpen;
+    list<string> m_PrintOutput;
     CRef<CDB_Exception::SContext> m_Context;
+
+    friend class CSDB_UserHandler;
 };
 
 class CDatabaseImpl : public CObject
@@ -79,6 +98,8 @@ public:
     IConnection* GetConnection(void);
     void SetTimeout(const CTimeout& timeout);
     void ResetTimeout(void);
+    const list<string>& GetPrintOutput(void) const;
+    void ResetPrintOutput();
 
     const CDB_Exception::SContext& GetContext(void) const;
 
@@ -175,6 +196,7 @@ public:
     CDatabaseImpl* GetDatabase(void) const;
     IConnection* GetConnection(void);
 
+    const list<string>& GetPrintOutput(void) const;
     // Historically private, but useful for CQuery's inner classes too.
     const CDB_Exception::SContext& x_GetContext(void) const;
 

@@ -1600,6 +1600,18 @@ CSDBAPI::UpdateMirror(const string& dbservice,
 
 
 
+bool CSDB_UserHandler::HandleMessage(int severity, int msgnum,
+                                     const string& message)
+{
+    if (severity == 0) {
+        m_Conn.m_PrintOutput.push_back(message);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 inline
 CConnHolder::CConnHolder(IConnection* conn)
     : m_Conn(conn),
@@ -1613,6 +1625,8 @@ CConnHolder::CConnHolder(IConnection* conn)
         m_Context->server_name   = conn->GetCDB_Connection()->ServerName();
         m_Context->username      = conn->GetCDB_Connection()->UserName();
         m_Context->database_name = conn->GetDatabase();
+        conn->GetCDB_Connection()->PushMsgHandler
+            (new CSDB_UserHandler(*this), eTakeOwnership);
     }
 }
 
@@ -1662,6 +1676,18 @@ void CConnHolder::ResetTimeout(void)
         m_Conn->SetTimeout(m_DefaultTimeout);
     }
     m_HasCustomTimeout = false;
+}
+
+inline
+const list<string>& CConnHolder::GetPrintOutput(void) const
+{
+    return m_PrintOutput;
+}
+
+inline
+void CConnHolder::ResetPrintOutput(void)
+{
+    m_PrintOutput.clear();
 }
 
 inline
@@ -1745,6 +1771,18 @@ inline void
 CDatabaseImpl::ResetTimeout(void)
 {
     m_Conn->ResetTimeout();
+}
+
+inline
+const list<string>& CDatabaseImpl::GetPrintOutput(void) const
+{
+    return m_Conn->GetPrintOutput();
+}
+
+inline
+void CDatabaseImpl::ResetPrintOutput(void)
+{
+    m_Conn->ResetPrintOutput();
 }
 
 inline
@@ -2511,6 +2549,7 @@ CQueryImpl::x_InitBeforeExec(void)
     m_MinRowCount = 0;
     m_MaxRowCount = kMax_Auto;
     m_Status = -1;
+    m_DBImpl->ResetPrintOutput();
 }
 
 inline void
@@ -3007,6 +3046,12 @@ inline IConnection*
 CQueryImpl::GetConnection(void)
 {
     return m_DBImpl->GetConnection();
+}
+
+inline
+const list<string>& CQueryImpl::GetPrintOutput(void) const
+{
+    return m_DBImpl->GetPrintOutput();
 }
 
 
@@ -3542,6 +3587,12 @@ int
 CQuery::GetStatus(void) const
 {
     return m_Impl->GetStatus();
+}
+
+const list<string>&
+CQuery::GetPrintOutput(void) const
+{
+    return m_Impl->GetPrintOutput();
 }
 
 bool

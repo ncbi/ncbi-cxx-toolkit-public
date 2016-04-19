@@ -562,6 +562,14 @@ public:
     /// ExecuteSP() method and all result sets returned from the procedure are
     /// read or purged by call to PurgeResults().
     int GetStatus(void) const;
+    /// Get any PRINT output from the latest procedure call (or statement).
+    /// This output may be incomplete until the caller has explicitly read
+    /// or purged all result sets.
+    ///
+    /// @note Many actions can invalidate this output, even working with
+    /// other CQuery objects associated with the same CDatabase object or a
+    /// normal (non-clone) copy thereof.
+    const list<string>& GetPrintOutput(void) const;
 
     /// Check if any more result sets are available for reading.
     /// Advances to the next result set purging all remaining rows in current
