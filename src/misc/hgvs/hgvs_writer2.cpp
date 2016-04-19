@@ -987,7 +987,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
                     // instead of "G>G"          report "G=", but not "1=", 
                     // since "1" will coalesce into prefixed position.
                     //instead of "delACTinsACT" report "ACT="
-                    inst_str = (isdigit(variant_str.at(0)) ? "" : variant_str) + "=";
+                    inst_str = (!variant_str.empty() && isdigit(variant_str.at(0)) ? "" : variant_str) + "=";
                 } else {
                     inst_str += variant_str;
                 }
