@@ -147,7 +147,7 @@ CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSeqfeat(const string& var_name,
     seq_feat->SetData().SetVariation(*var_ref);
 
 
-    auto seq_id = m_IdResolver->GetAccessionVersion(identifier).GetSeqId();
+    const auto seq_id = m_IdResolver->GetAccessionVersion(identifier).GetSeqId();
 
     auto seq_loc = CAaSeqlocHelper::CreateSeqloc(*seq_id, 
             var_desc, 
@@ -160,10 +160,8 @@ CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSeqfeat(const string& var_name,
 
 CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(CRef<CVariantExpression>& variant_expr) const 
 {
-
-
-    auto& simple_variant = (*variant_expr->GetSeqvars().begin())->GetVariants().GetSimple_variant();
-    auto seq_type = (*variant_expr->GetSeqvars().begin())->GetSeqtype();
+    const auto& simple_variant = (*variant_expr->GetSeqvars().begin())->GetVariants().front()->GetSimple();
+    const auto seq_type = (*variant_expr->GetSeqvars().begin())->GetSeqtype();
 
     if (seq_type != eVariantSeqType_p) {
         NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Protein sequence expected");
@@ -175,9 +173,34 @@ CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(CRef<CVariantExpression>& var
 }
 
 
+list<CRef<CSeq_feat>> CHgvsProtIrepReader::CreateSeqfeats(CRef<CVariantExpression>& variant_expr) const 
+{
+    list<CRef<CSeq_feat>> feat_list;
+
+    for (const auto& seq_var : variant_expr->GetSeqvars()) {
+
+        const auto seq_type = seq_var->GetSeqtype();
+        if (seq_type != eVariantSeqType_p) {
+            NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Protein sequence expected");
+        }
+
+        for (const auto& variant : seq_var->GetVariants()) {
+            const auto& simple_variant = variant->GetSimple();
+
+            auto seq_feat = x_CreateSeqfeat(variant_expr->GetInput_expr(),
+                                            variant_expr->GetReference_id(),
+                                            simple_variant);
+            if (seq_feat.NotNull()) {
+                feat_list.push_back(seq_feat);
+            }
+        }
+    }
+
+    return feat_list;
+}
+
+
 // Need to add support for special variants
-
-
 
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarref(const string& var_name,
@@ -499,9 +522,6 @@ CRef<CSeq_loc> CAaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         NCBI_THROW(CVariationIrepException, eInvalidLocation, "Invalid sequence index");
     }
 
-//    auto seq_id = Ref(new CSeq_id(identifier));
-
-   // auto seq_id = m_IdResolver->GetAccessionVersion(identifier).GetSeqId();
     auto seq_loc = Ref(new CSeq_loc());
 
     seq_loc->SetPnt().SetPoint(site_index);

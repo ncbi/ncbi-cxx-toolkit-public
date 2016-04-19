@@ -15,6 +15,15 @@ CRef<T> CreateResultIfNull(CRef<T> result)
     return result.IsNull() ? Ref(new T()) : result;    
 }
 
+void TagChimera(CRef<CSeqVariants>& seq_var)
+{
+    seq_var->SetTag().SetChimera();
+}
+
+void TagMosaic(CRef<CSeqVariants>& seq_var)
+{
+    seq_var->SetTag().SetMosaic();
+}
 
 void AssignRefSeqIdentifier(const string& identifier, CRef<CVariantExpression>& result)
 {
@@ -300,45 +309,47 @@ void AssignFuzzyLocalVariantSeq(CRef<CSimpleVariantSeq>& input, CRef<CSimpleVari
 }
 
 
-void AssignSingleLocalVariation(CRef<CSimpleVariant>& local_var, CRef<CSeqVariants>& result)
+void AssignSingleLocalVariation(CRef<CSimpleVariant>& simple_var, CRef<CSeqVariants>& result)
 {
     result = CreateResultIfNull(result);
-    result->SetVariants().SetSimple_variant(*local_var);
+    CRef<CVariant> variant = Ref(new CVariant());
+    variant->SetSimple(*simple_var);
+    result->SetVariants().push_back(variant);
 }
 
 
 void AssignUnknownChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSeqVariants>& result)
 {
     result = CreateResultIfNull(result);
-    result->SetVariants().SetUnknownChromosomeVariant(*variant_seq);
+//    result->SetVariants().SetUnknownChromosomeVariant(*variant_seq);
 }
 
 
 void AssignSecondChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSeqVariants>& result)
 {
     result = CreateResultIfNull(result);
-    result->SetVariants().SetKnownChromosomeVariant().SetChrom2_variant().SetType().SetSimple_variant_seq(*variant_seq);
+//    result->SetVariants().SetKnownChromosomeVariant().SetChrom2_variant().SetType().SetSimple_variant_seq(*variant_seq);
 }
 
 
 void AssignSecondChromosomeSpecialVariant(const ESpecialVariant& special_variant, CRef<CSeqVariants>& result)
 {
     result = CreateResultIfNull(result);
-    result->SetVariants().SetKnownChromosomeVariant().SetChrom2_variant().SetType().SetSpecial_variant(special_variant);
+//    result->SetVariants().SetKnownChromosomeVariant().SetChrom2_variant().SetType().SetSpecial_variant(special_variant);
 }
 
 
 void AssignChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSeqVariants>& result)
 {
     result = CreateResultIfNull(result);
-    result->SetVariants().SetKnownChromosomeVariant().SetChrom1_variant().SetSimple_variant_seq(*variant_seq);
+//    result->SetVariants().SetKnownChromosomeVariant().SetChrom1_variant().SetSimple_variant_seq(*variant_seq);
 }
 
 
 void AssignSpecialVariant(const ESpecialVariant& special_variant, CRef<CSeqVariants>& result)
 {
     result = CreateResultIfNull(result);
-    result->SetVariants().SetKnownChromosomeVariant().SetChrom1_variant().SetSpecial_variant(special_variant);
+//    result->SetVariants().SetKnownChromosomeVariant().SetChrom1_variant().SetSpecial_variant(special_variant);
 }
 
 

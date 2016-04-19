@@ -24,11 +24,13 @@ SHgvsLexer::SHgvsLexer()
     unknown_chrom_separator("(;)"),
     protein_tag("p."),
     na_tag("g.|c.|m.|n.|r."),
-    identifier("o?([A-Z]|rs|ss|chr)([a-zA-Z0-9_.]+):")
+    identifier("o?([A-Z]|rs|ss|chr)([a-zA-Z0-9_.]+):"),
+    //slash("\\/")
+    double_slash("\\/\\/")
 {
 
     this->self = lex::token_def<>( '(' ) | ')' | '{' | '}' | '[' | ']' | ';' | ':' | ',' | '_' |
-        '-'| '+' | '>';
+        '-'| '+' | '>' | '/';
 
 
     this->self.add

@@ -13,24 +13,17 @@ VariantExpression ::= SEQUENCE {
 
 SeqVariants ::= SEQUENCE {
     seqtype VariantSeqType,
-    variants CHOICE {
-        simple-variant SimpleVariant,
-        knownChromosomeVariant SEQUENCE {
-            chrom1-variant CHOICE { 
-                simple-variant-seq SimpleVariantSeq,
-                special-variant SpecialVariant
-            },
+    variants SEQUENCE OF Variant,
+    tag CHOICE {
+        mosaic NULL, 
+        chimera NULL
+    } OPTIONAL
+}
 
-            chrom2-variant SEQUENCE {
-                type CHOICE {
-                    simple-variant-seq SimpleVariantSeq,
-                    special-variant SpecialVariant
-                },
-                single-gene BOOLEAN
-            } OPTIONAL
-        },
-        unknownChromosomeVariant SimpleVariantSeq
-    }
+
+Variant ::= CHOICE {
+    simple SimpleVariant, 
+    special SpecialVariant
 }
 
 
@@ -57,7 +50,8 @@ SpecialVariant ::= INTEGER {
 }
 
 
-SimpleVariantSeq ::= SEQUENCE {
+-- SimpleVarSeq is deprecated and should go
+SimpleVariantSeq ::= SEQUENCE { 
     variants SEQUENCE OF SimpleVariant,  
     sisters BOOLEAN DEFAULT FALSE,
     fuzzy BOOLEAN DEFAULT FALSE

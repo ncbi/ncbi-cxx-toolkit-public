@@ -31,37 +31,22 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) : SHgvsProteinGr
 {
  // Also need to account for variants involving different genes on different chromosomes. 
     protein_expression = tok.identifier ACTION1(AssignRefSeqIdentifier) 
-                      >> protein_seq_variants ACTION1(AppendSeqVariant);
+                       >> protein_seq_variants ACTION1(AppendSeqVariant);
 
-    protein_seq_variants = tok.protein_tag ACTION0(AssignSequenceType) >> 
-                           ( protein_simple_variation ACTION1(AssignSingleLocalVariation) |  
-                           ( (protein_special_variant ACTION1(AssignSpecialVariant) | 
-                           protein_chrom_variant ACTION1(AssignChromosomeVariant)) >>
-                           -(";" >> (protein_special_variant ACTION1(AssignSecondChromosomeSpecialVariant) |
-                           protein_chrom_variant ACTION1(AssignSecondChromosomeVariant)) ) ) |
-                           protein_unknown_chrom_variant ACTION1(AssignUnknownChromosomeVariant) );
+    protein_seq_variants = protein_simple_seq_variant | protein_mosaic | protein_chimera;
+    //protein_seq_variants = protein_simple_seq_variant | protein_mosaic;
 
-    protein_special_variant = tok.unknown_val [_val = eSpecialVariant_unknown] |
-                              ( "(" >> tok.unknown_val >> ")" ) [_val = eSpecialVariant_not_analyzed] |
-                              tok.nochange [_val = eSpecialVariant_no_change] |
-                              ( "(" >> tok.nochange >> ")" ) [_val = eSpecialVariant_no_change_expected] |
-                              tok.zero [_val = eSpecialVariant_no_seq] |
-                              ( "(" >> tok.zero >> ")" ) [_val = eSpecialVariant_no_seq_expected];
+    protein_simple_seq_variant = tok.protein_tag ACTION0(AssignSequenceType) >>
+                                 protein_simple_variation ACTION1(AssignSingleLocalVariation);
 
-    protein_chrom_variant = "[" >> (protein_confirmed_chrom_variant | protein_fuzzy_chrom_variant) >> "]";
+    protein_mosaic = ( (tok.protein_tag ACTION0(AssignSequenceType) >>
+                     ( "[" >> protein_simple_variation ACTION1(AssignSingleLocalVariation)
+                     >> ("/" >> protein_simple_variation) ACTION1(AssignSingleLocalVariation) >> "]" ) ) ACTION0(TagMosaic));
 
-    protein_fuzzy_chrom_variant = ("(" >> protein_confirmed_chrom_variant >> ")") ACTION1(AssignFuzzyLocalVariantSeq);
-
-    protein_confirmed_chrom_variant = protein_simple_variation ACTION1(AppendToLocalVariantSeq) 
-                                      >> *( ";" >> protein_simple_variation ACTION1(AppendToLocalVariantSeq) );
-
-    protein_unknown_chrom_variant = "[" >> (protein_confirmed_unknown_chrom_variant | protein_fuzzy_unknown_chrom_variant) >> "]";
-
-    protein_fuzzy_unknown_chrom_variant  = ("(" >> protein_confirmed_unknown_chrom_variant >> ")");
-    
-    protein_confirmed_unknown_chrom_variant = protein_simple_variation ACTION1(AppendToLocalVariantSeq) 
-                                              >> +( tok.unknown_chrom_separator >> protein_simple_variation ACTION1(AppendToLocalVariantSeq) );
-
+    protein_chimera =  ( (tok.protein_tag ACTION0(AssignSequenceType) >>
+                       ( "[" >> (protein_simple_variation ACTION1(AssignSingleLocalVariation))
+                        >>  tok.double_slash  >> (protein_simple_variation ACTION1(AssignSingleLocalVariation)) >> "]" ) ) ACTION0(TagChimera));
+                     
     protein_simple_variation = protein_confirmed_simple_variation | protein_fuzzy_simple_variation;
 
     protein_fuzzy_simple_variation = ("(" >> protein_confirmed_simple_variation >> ")") ACTION1(AssignFuzzyLocalVariation);

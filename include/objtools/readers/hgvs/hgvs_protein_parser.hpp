@@ -30,6 +30,9 @@ struct SHgvsProteinGrammar : boost::spirit::qi::grammar<TParseIterator, CRef<CVa
  
     TRule<CVariantExpression> protein_expression;
     TRule<CSeqVariants> protein_seq_variants; 
+    TRule<CSeqVariants> protein_mosaic;
+    TRule<CSeqVariants> protein_chimera;
+    TRule<CSeqVariants> protein_simple_seq_variant;
     TRule<CSimpleVariantSeq> protein_unknown_chrom_variant;
     TRule<CSimpleVariantSeq> protein_confirmed_unknown_chrom_variant;
     TRule<CSimpleVariantSeq> protein_fuzzy_unknown_chrom_variant;

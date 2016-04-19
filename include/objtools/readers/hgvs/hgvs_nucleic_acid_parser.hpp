@@ -21,10 +21,13 @@ struct SHgvsNucleicAcidGrammar : boost::spirit::qi::grammar<TParseIterator, CRef
     using TTerminal = boost::spirit::qi::rule<TParseIterator, std::string()>;
     template<typename T> using TRule = boost::spirit::qi::rule<TParseIterator, CRef<T>()>;
 
-    TRule<CSimpleVariantSeq> start;
+//    TRule<CSimpleVariantSeq> start;
 
     TRule<CVariantExpression> dna_expression;
     TRule<CSeqVariants> dna_seq_variants;
+    TRule<CSeqVariants> dna_simple_seq_variant;
+    TRule<CSeqVariants> dna_mosaic;
+    TRule<CSeqVariants> dna_chimera;
     TRule<CSimpleVariant> simple_variation;
     TRule<CSimpleVariant> fuzzy_simple_variation;
     TRule<CSimpleVariant> confirmed_simple_variation;

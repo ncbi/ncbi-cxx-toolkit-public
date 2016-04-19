@@ -40,14 +40,10 @@ struct SHgvsLexer : lex::lexer<TLexer>
     TSimpleToken zero;
     TSimpleToken unknown_chrom_separator; // (;)
     TSimpleToken protein_tag;
-//    TSimpleToken coding_tag;
-//    TSimpleToken genomic_tag;
-//    TSimpleToken rna_tag;
-//    TSimpleToken nrna_tag;
-//    TSimpleToken mitochon_tag;
-//    TAttributedToken dna_tag;
     TAttributedToken na_tag;
     TAttributedToken identifier;
+//  TSimpleToken slash;
+    TSimpleToken double_slash;
 };
 
 #endif // _HGVS_LEXER_HPP_

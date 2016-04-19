@@ -474,8 +474,8 @@ CRef<CSeq_feat> CHgvsNaIrepReader::x_CreateSeqfeat(const string& var_name,
 
 CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(CRef<CVariantExpression>& variant_expr) const 
 {
-    auto& simple_variant = (*variant_expr->GetSeqvars().begin())->GetVariants().GetSimple_variant();
-    auto seq_type = (*variant_expr->GetSeqvars().begin())->GetSeqtype();
+    const auto& simple_variant = (*variant_expr->GetSeqvars().begin())->GetVariants().front()->GetSimple();
+    const auto seq_type = (*variant_expr->GetSeqvars().begin())->GetSeqtype();
 
     if (seq_type == eVariantSeqType_p || 
         seq_type == eVariantSeqType_u) {
@@ -486,6 +486,30 @@ CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(CRef<CVariantExpression>& varia
                            variant_expr->GetReference_id(),
                            seq_type,
                            simple_variant);
+}
+
+list<CRef<CSeq_feat>> CHgvsNaIrepReader::CreateSeqfeats(CRef<CVariantExpression>& variant_expr) const 
+{
+    list<CRef<CSeq_feat>> feat_list;
+
+    for (const auto& seq_var : variant_expr->GetSeqvars()) {
+
+        const auto seq_type = seq_var->GetSeqtype();
+
+        for (const auto& variant : seq_var->GetVariants()) {
+            const auto& simple_variant = variant->GetSimple();
+
+            auto seq_feat = x_CreateSeqfeat(variant_expr->GetInput_expr(),
+                                            variant_expr->GetReference_id(),
+                                            seq_type,
+                                            simple_variant);
+
+            if (seq_feat.NotNull()) {
+                feat_list.push_back(seq_feat);
+            }
+        }
+    }
+    return feat_list;
 }
 
 

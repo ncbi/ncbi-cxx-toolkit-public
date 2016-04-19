@@ -11,6 +11,10 @@ USING_SCOPE(objects);
 
 void AssignRefSeqIdentifier(const string& identifier, CRef<CVariantExpression>& result);
 
+void TagChimera(CRef<CSeqVariants>& seq_var);
+
+void TagMosaic(CRef<CSeqVariants>& seq_var);
+
 void AppendSeqVariant(CRef<CSeqVariants>& variant, CRef<CVariantExpression>& result);
 
 void AppendToLocalVariantSeq(CRef<CSimpleVariant>& var_desc, CRef<CSimpleVariantSeq>& result);

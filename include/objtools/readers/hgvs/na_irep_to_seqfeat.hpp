@@ -171,6 +171,7 @@ public:
 
 public:
         CRef<CSeq_feat> CreateSeqfeat(CRef<CVariantExpression>& variant_expr) const;
+        list<CRef<CSeq_feat>> CreateSeqfeats(CRef<CVariantExpression>& variant_expr) const;
 }; // CHgvsNaIrepReader
 
 END_objects_SCOPE

@@ -19,8 +19,18 @@ SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) : SHgvsN
     dna_expression = tok.identifier ACTION1(AssignRefSeqIdentifier) >>
                      dna_seq_variants ACTION1(AppendSeqVariant);
 
-    dna_seq_variants = tok.na_tag ACTION1(AssignSequenceType) >>
-                       simple_variation ACTION1(AssignSingleLocalVariation);
+    dna_seq_variants = dna_simple_seq_variant | dna_mosaic | dna_chimera;
+
+    dna_simple_seq_variant = tok.na_tag ACTION1(AssignSequenceType) >> 
+                             simple_variation ACTION1(AssignSingleLocalVariation);
+
+    dna_mosaic = ( (tok.na_tag ACTION1(AssignSequenceType) >> 
+                 ( "[" >> (simple_variation ACTION1(AssignSingleLocalVariation)) 
+                 >> "/" >> simple_variation ACTION1(AssignSingleLocalVariation) >> "]" ) ) ) ACTION0(TagMosaic);
+
+    dna_chimera = ( (tok.na_tag ACTION1(AssignSequenceType) >> 
+                 ( "[" >> (simple_variation ACTION1(AssignSingleLocalVariation)) 
+                 >> tok.double_slash >> simple_variation ACTION1(AssignSingleLocalVariation) >> "]" ) ) ) ACTION0(TagChimera);
 
     simple_variation = fuzzy_simple_variation | confirmed_simple_variation;
 
