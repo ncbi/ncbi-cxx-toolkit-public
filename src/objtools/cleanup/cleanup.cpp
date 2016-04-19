@@ -2385,6 +2385,283 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
 }
 
 
+bool CCleanup::AreBioSourcesMergeable(const CBioSource& src1, const CBioSource& src2)
+{
+    if (src1.IsSetOrg() && src1.GetOrg().IsSetTaxname() &&
+        src2.IsSetOrg() && src2.GetOrg().IsSetTaxname() &&
+        NStr::Equal(src1.GetOrg().GetTaxname(), src2.GetOrg().GetTaxname())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CCleanup::MergeDupBioSources(CBioSource& src1, const CBioSource& add)
+{
+    bool any_change = false;
+    // genome
+    if ((!src1.IsSetGenome() || src1.GetGenome() == CBioSource::eGenome_unknown) &&
+        add.IsSetGenome() && add.GetGenome() != CBioSource::eGenome_unknown) {
+        src1.SetGenome(add.GetGenome());
+        any_change = true;
+    }
+    // origin
+    if ((!src1.IsSetOrigin() || src1.GetOrigin() == CBioSource::eOrigin_unknown) &&
+        add.IsSetOrigin() && add.GetOrigin() != CBioSource::eOrigin_unknown) {
+        src1.SetOrigin(add.GetOrigin());
+        any_change = true;
+    }
+    // focus
+    if (!src1.IsSetIs_focus() && add.IsSetIs_focus()) {
+        src1.SetIs_focus();
+        any_change = true;
+    }
+
+    // merge subtypes
+    if (add.IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, it, add.GetSubtype()) {
+            CRef<CSubSource> a(new CSubSource());
+            a->Assign(**it);
+            src1.SetSubtype().push_back(a);
+        }
+        any_change = true;
+    }
+
+    x_MergeDupOrgRefs(src1.SetOrg(), add.GetOrg());
+
+    return any_change;
+}
+
+
+bool CCleanup::x_MergeDupOrgNames(COrgName& on1, const COrgName& add)
+{
+    bool any_change = false;
+
+    // OrgMods
+    if (add.IsSetMod()) {
+        ITERATE(COrgName::TMod, it, add.GetMod()) {
+            CRef<COrgMod> a(new COrgMod());
+            a->Assign(**it);
+            on1.SetMod().push_back(a);
+        }
+        any_change = true;
+    }
+
+    // gcode
+    if ((!on1.IsSetGcode() || on1.GetGcode() == 0) && add.IsSetGcode() && add.GetGcode() != 0) {
+        on1.SetGcode(add.GetGcode());
+        any_change = true;
+    }
+
+    // mgcode
+    if ((!on1.IsSetMgcode() || on1.GetMgcode() == 0) && add.IsSetMgcode() && add.GetMgcode() != 0) {
+        on1.SetMgcode(add.GetMgcode());
+        any_change = true;
+    }
+
+    // lineage
+    if (!on1.IsSetLineage() && add.IsSetLineage()) {
+        on1.SetLineage(add.GetLineage());
+        any_change = true;
+    }
+
+    // div
+    if (!on1.IsSetDiv() && add.IsSetDiv()) {
+        on1.SetDiv(add.GetDiv());
+        any_change = true;
+    }
+
+    return any_change;
+}
+
+
+bool HasMod(const COrg_ref& org, const string& mod)
+{
+    if (!org.IsSetMod()) {
+        return false;
+    }
+    ITERATE(COrg_ref::TMod, it, org.GetMod()) {
+        if (NStr::Equal(*it, mod)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CCleanup::x_MergeDupOrgRefs(COrg_ref& org1, const COrg_ref& add)
+{
+    bool any_change = false;
+    // mods
+    if (add.IsSetMod()) {
+        ITERATE(COrg_ref::TMod, it, add.GetMod()) {
+            if (!HasMod(org1, *it)) {
+                org1.SetMod().push_back(*it);
+                any_change = true;
+            }
+        }
+    }
+
+    // dbxrefs
+    if (add.IsSetDb()) {
+        ITERATE(COrg_ref::TDb, it, add.GetDb()) {
+            CRef<CDbtag> a(new CDbtag());
+            a->Assign(**it);
+            org1.SetDb().push_back(a);
+        }
+        any_change = true;
+    }
+
+    // synonyms
+    if (add.IsSetSyn()) {
+        ITERATE(COrg_ref::TSyn, it, add.GetSyn()) {
+            org1.SetSyn().push_back(*it);
+        }
+        any_change = true;
+    }
+
+    if (add.IsSetOrgname()) {
+        any_change |= x_MergeDupOrgNames(org1.SetOrgname(), add.GetOrgname());
+    }
+
+    return any_change;
+}
+
+
+bool CCleanup::MergeDupBioSources(CSeq_descr & seq_descr)
+{
+    bool any_change = false;
+    CSeq_descr::Tdata::iterator src1 = seq_descr.Set().begin();
+    while (src1 != seq_descr.Set().end()) {
+        if ((*src1)->IsSource() && (*src1)->GetSource().IsSetOrg() && (*src1)->GetSource().GetOrg().IsSetTaxname()) {
+            CSeq_descr::Tdata::iterator src2 = src1;
+            ++src2;
+            while (src2 != seq_descr.Set().end()) {
+                if ((*src2)->IsSource() &&
+                    AreBioSourcesMergeable((*src1)->GetSource(), (*src2)->GetSource())) {
+                    MergeDupBioSources((*src1)->SetSource(), (*src2)->GetSource());
+
+                    CRef<CCleanupChange> changes(makeCleanupChange(0));
+                    CNewCleanup_imp srcclean(changes, 0);
+                    srcclean.ExtendedCleanup((*src1)->SetSource());
+                    src2 = seq_descr.Set().erase(src2);
+                    any_change = true;
+                } else {
+                    ++src2;
+                }
+            }
+        }
+        ++src1;
+    }
+    return any_change;
+}
+
+/// Remove duplicate biosource descriptors
+bool CCleanup::RemoveDupBioSource(CSeq_descr& descr)
+{
+    bool any_change = false;
+    vector<CConstRef<CBioSource> > src_list;
+    CSeq_descr::Tdata::iterator d = descr.Set().begin();
+    while (d != descr.Set().end()) {
+        if ((*d)->IsSource()) {
+            bool found = false;
+            ITERATE(vector<CConstRef<CBioSource> >, s, src_list) {
+                if ((*d)->GetSource().Equals(**s)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                d = descr.Set().erase(d);
+                any_change = true;
+            } else {
+                CConstRef<CBioSource> src(&((*d)->GetSource()));
+                src_list.push_back(src);
+                ++d;
+            }
+        } else {
+            ++d;
+        }
+    }
+    return any_change;
+}
+
+
+CRef<CBioSource> CCleanup::BioSrcFromFeat(const CSeq_feat& f)
+{
+    if (!f.IsSetData() || !f.GetData().IsBiosrc()) {
+        return CRef<CBioSource>(NULL);
+    }
+    CRef<CBioSource> src(new CBioSource());
+    src->Assign(f.GetData().GetBiosrc());
+
+    // move comment to subsource note
+    if (f.IsSetComment()) {
+        CRef<CSubSource> s(new CSubSource());
+        s->SetSubtype(CSubSource::eSubtype_other);
+        s->SetName(f.GetComment());
+        src->SetSubtype().push_back(s);
+
+    }
+
+    // move dbxrefs on feature to source
+    if (f.IsSetDbxref()) {
+        ITERATE(CSeq_feat::TDbxref, it, f.GetDbxref()) {
+            CRef<CDbtag> a(new CDbtag());
+            a->Assign(**it);
+            src->SetOrg().SetDb().push_back(a);
+        }
+    }
+    CRef<CCleanupChange> changes(makeCleanupChange(0));
+    CNewCleanup_imp srcclean(changes, 0);
+    srcclean.ExtendedCleanup(*src);
+
+    return src;
+}
+
+
+bool CCleanup::ConvertSrcFeatsToSrcDescs(CSeq_entry_Handle seh)
+{
+    bool any_change = false;
+    for (CBioseq_CI b(seh); b; ++b) {
+        for (CFeat_CI p(*b, CSeqFeatData::e_Biosrc); p; ++p) {
+            if (p->GetLocation().IsInt() &&
+                p->GetLocation().GetStart(eExtreme_Biological) == 0 &&
+                p->GetLocation().GetStop(eExtreme_Biological) == b->GetBioseqLength() - 1) {
+                CRef<CSeqdesc> d(new CSeqdesc());
+                d->SetSource().Assign(*(BioSrcFromFeat(*(p->GetSeq_feat()))));
+
+                // add descriptor to nuc-prot parent or sequence itself
+                CBioseq_set_Handle parent = b->GetParentBioseq_set();
+                if (parent && parent.IsSetClass() &&
+                    parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
+                    CBioseq_set_EditHandle eh(parent);
+                    eh.AddSeqdesc(*d);
+                    MergeDupBioSources(eh.SetDescr());
+                    RemoveDupBioSource(eh.SetDescr());
+                    NormalizeDescriptorOrder(eh.SetDescr());
+                } else {
+                    CBioseq_EditHandle eh(*b);
+                    eh.AddSeqdesc(*d);
+                    MergeDupBioSources(eh.SetDescr());
+                    RemoveDupBioSource(eh.SetDescr());
+                    NormalizeDescriptorOrder(eh.SetDescr());
+                }
+
+                // remove feature
+                CSeq_feat_EditHandle feh(*p);
+                feh.Remove();
+
+                any_change = true;
+            }
+        }
+    }
+    return any_change;
+}
+
+
+
 bool CCleanup::FixGeneXrefSkew(CSeq_entry_Handle seh)
 {
     CFeat_CI fi(seh);

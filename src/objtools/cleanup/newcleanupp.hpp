@@ -212,6 +212,8 @@ public:
         CSeq_entry_Handle& seh
     );
 
+    void ExtendedCleanup(CBioSource& biosrc);
+
     static bool ShouldRemoveAnnot(const CSeq_annot& annot);
 
 private:
@@ -334,14 +336,7 @@ private:
     void KeepLatestDateDesc(CSeq_descr & seq_descr);
     void x_RemoveOrphanedProteins(CBioseq_set& set);
     void x_SingleSeqSetToSeq(CBioseq_set& set);
-    static bool IsFullLength(const CSeq_loc& loc, const CBioseq& seq);
-    static CRef<CBioSource> BioSrcFromFeat(const CSeq_feat& f);
-    void x_ConvertSrcFeatToSrcDesc(CBioseq& seq);
-    static bool x_AreBioSourcesMergeable(const CBioSource& src1, const CBioSource& src2);
     void x_MergeDupBioSources(CSeq_descr & seq_descr);
-    static bool x_MergeDupOrgNames(COrgName& on1, const COrgName& add);
-    static bool x_MergeDupOrgRefs(COrg_ref& org1, const COrg_ref& add);
-    static bool x_MergeDupBioSources(CBioSource& src1, const CBioSource& add);
 
     // void XxxxxxBC (Cxxxxx& xxx);
 

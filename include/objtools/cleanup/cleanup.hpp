@@ -352,6 +352,22 @@ public:
     //helper function for moving feature to pubdesc descriptor
     static void MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBioseq_Handle b, bool remove_feat = true);
 
+/// Remove duplicate biosource descriptors
+    static bool RemoveDupBioSource(CSeq_descr& descr);
+
+/// Get BioSource from feature to use for source descriptor
+    static CRef<CBioSource> BioSrcFromFeat(const CSeq_feat& f);
+
+    static bool AreBioSourcesMergeable(const CBioSource& src1, const CBioSource& src2);
+    static bool MergeDupBioSources(CSeq_descr& descr);
+    static bool MergeDupBioSources(CBioSource& src1, const CBioSource& add);
+
+
+/// Convert full-length source features to source descriptors
+/// @param seh Seq-entry to edit
+/// @return bool indicates whether any changes were made
+    static bool ConvertSrcFeatsToSrcDescs(CSeq_entry_Handle seh);
+
     static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope);
 
 /// Examine all genes and gene xrefs in the Seq-entry.
@@ -375,6 +391,10 @@ private:
     CCleanup& operator= (const CCleanup&);
 
     CRef<CScope>            m_Scope;
+
+    static bool x_MergeDupOrgNames(COrgName& on1, const COrgName& add);
+    static bool x_MergeDupOrgRefs(COrg_ref& org1, const COrg_ref& add);
+
 };
 
 
