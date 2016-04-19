@@ -131,9 +131,9 @@ NtermExtension ::= SEQUENCE {
 
 
 CtermExtension ::= SEQUENCE {
-    initialStop Count, 
-    newStop Count, 
-    newAa VisibleString
+    refStop INTEGER, 
+    newAa VisibleString,
+    length Count 
 }
 
 
@@ -224,79 +224,79 @@ AaSiteRange ::= SEQUENCE {
 }
 
 
-AaSite ::= SEQUENCE {
-    index INTEGER,
-    aa VisibleString
-}
+    AaSite ::= SEQUENCE {
+        index INTEGER,
+        aa VisibleString
+    }
 
 
-NtLocation ::= CHOICE {
-    site NtSite,
-    range NtSiteRange,
-    int NtInterval
-}
+    NtLocation ::= CHOICE {
+        site NtSite,
+        range NtSiteRange,
+        int NtInterval
+    }
 
 
-NtIntLimit ::= CHOICE {
-    site NtSite,
-    range NtSiteRange
-}
+    NtIntLimit ::= CHOICE {
+        site NtSite,
+        range NtSiteRange
+    }
 
-NtInterval ::= SEQUENCE {
-    start NtIntLimit,
-    stop NtIntLimit
-}
-
-
-NtSiteRange ::= SEQUENCE {
-    start NtSite,
-    stop  NtSite
-}
+    NtInterval ::= SEQUENCE {
+        start NtIntLimit,
+        stop NtIntLimit
+    }
 
 
-NtSite ::= SEQUENCE {
-    seqid VisibleString OPTIONAL,
-    seqtype VariantSeqType OPTIONAL,
-
-    base CHOICE {
-        val INTEGER,
-        unknown NULL 
-    },
-
-    offset CHOICE {
-        val INTEGER,
-        plus-unknown NULL,
-        minus-unknown NULL
-    } OPTIONAL,
-
-    utr CHOICE {
-        five-prime NULL,
-        three-prime NULL
-    } OPTIONAL,
+    NtSiteRange ::= SEQUENCE {
+        start NtSite,
+        stop  NtSite
+    }
 
 
-    strand-minus BOOLEAN DEFAULT FALSE, -- TRUE implies opposite transcriptional orientation to 
-                                            -- to the reference sequence
-    fuzzy BOOLEAN DEFAULT FALSE, -- TRUE implies HGVS subexpression of the form (base + offset),
-    fuzzy-offset BOOLEAN DEFAULT FALSE -- TRUE implies HGVS subexpression of the form base+(offset)
-}
+    NtSite ::= SEQUENCE {
+        seqid VisibleString OPTIONAL,
+        seqtype VariantSeqType OPTIONAL,
 
-
-Count ::= CHOICE {
-    unknown NULL,
-    val INTEGER,
-    fuzzy-val INTEGER,
-    range SEQUENCE { 
-        start CHOICE {
+        base CHOICE {
             val INTEGER,
-            unknown NULL   
+            unknown NULL 
         },
-        stop CHOICE {
+
+        offset CHOICE {
             val INTEGER,
-            unknown NULL
+            plus-unknown NULL,
+            minus-unknown NULL
+        } OPTIONAL,
+
+        utr CHOICE {
+            five-prime NULL,
+            three-prime NULL
+        } OPTIONAL,
+
+
+        strand-minus BOOLEAN DEFAULT FALSE, -- TRUE implies opposite transcriptional orientation to 
+                                                -- to the reference sequence
+        fuzzy BOOLEAN DEFAULT FALSE, -- TRUE implies HGVS subexpression of the form (base + offset),
+        fuzzy-offset BOOLEAN DEFAULT FALSE -- TRUE implies HGVS subexpression of the form base+(offset)
+    }
+
+
+    Count ::= CHOICE {
+        unknown NULL,
+        val INTEGER,
+        fuzzy-val INTEGER,
+        range SEQUENCE { 
+            start CHOICE {
+                val INTEGER,
+                unknown NULL   
+            },
+            stop CHOICE {
+                val INTEGER,
+                unknown NULL
+            }
         }
     }
-}
 
-END
+    END
 

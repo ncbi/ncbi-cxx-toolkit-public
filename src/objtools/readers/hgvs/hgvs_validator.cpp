@@ -202,6 +202,8 @@ void CHgvsVariantValidator::x_ValidateSimpleProteinVariant(const CSimpleVariant&
                 x_ValidateProteinLocation(var_type.GetFrameshift().GetAasite());
             }
             break;
+        case CSimpleVariant::TType::e_Prot_ext:
+            break;
     }
 }
 

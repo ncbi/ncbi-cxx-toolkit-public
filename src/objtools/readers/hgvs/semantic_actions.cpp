@@ -102,17 +102,16 @@ void AssignNtermExtension(CRef<CAaSite>& initial_start_site, const string& new_a
 } 
 
 
-void AssignCtermExtension(const string& initial_stop_site, const string& aa, CRef<CCount>& new_stop_site, CRef<CSimpleVariant>& result) 
+void AssignCtermExtension(const string& reference_stop, const string& aa, CRef<CCount>& length, CRef<CSimpleVariant>& result) 
 {
-    CRef<CCount> initial_stop;
-    AssignCount(initial_stop_site, initial_stop);
 
+    const auto index = NStr::StringToNumeric<TSeqPos>(reference_stop);    
     result = CreateResultIfNull(result);
 
     auto& cterm_ext = result->SetType().SetProt_ext().SetCterm_ext();
-    cterm_ext.SetInitialStop(*initial_stop);
-    cterm_ext.SetNewStop(*new_stop_site);
+    cterm_ext.SetRefStop(index);
     cterm_ext.SetNewAa(aa);
+    cterm_ext.SetLength(*length);
 }
 
 
