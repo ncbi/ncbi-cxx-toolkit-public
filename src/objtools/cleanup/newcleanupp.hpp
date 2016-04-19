@@ -78,6 +78,7 @@ class CCit_art;
 class CCit_book;
 class CCit_pat;
 class CCit_let;
+class CId_pat;
 class CCit_proc;
 class CCit_jour;
 class CPubMedId;
