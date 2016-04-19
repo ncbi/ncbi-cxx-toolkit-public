@@ -272,6 +272,7 @@ void CFlatFileGenerator::Generate
 
     if (forceOnlyNear) {
         onlyNearFeats = true;
+    /*
     } else if (isNc) {
         nearFeatsSuppress = true;
     } else if (isNgNtNwNz) {
@@ -280,18 +281,22 @@ void CFlatFileGenerator::Generate
         onlyNearFeats = true;
     } else if (isGED) {
         nearFeatsSuppress = true;
+    */
     }
 
     if (onlyNearFeats) {
         m_Ctx->SetAnnotSelector().SetResolveDepth(0);
+    /*
     } else if (nearFeatsSuppress) {
         if (hasLocalFeat) {
             m_Ctx->SetAnnotSelector().SetResolveDepth(0);
         } else {
             m_Ctx->SetAnnotSelector().SetResolveDepth(1);
         }
+    */
     } else {
-        m_Ctx->SetAnnotSelector().SetResolveDepth(1);
+        // m_Ctx->SetAnnotSelector().SetResolveDepth(1);
+        m_Ctx->SetAnnotSelector().SetAdaptiveDepth(true);
     }
 
 
