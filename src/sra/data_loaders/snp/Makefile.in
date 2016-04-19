@@ -1,0 +1,27 @@
+# $Id$
+
+# Example meta-makefile; uncomment and fill out whichever of these
+# apply.  (Built in the following order.)
+
+## User projects (totally custom makefiles).
+# USR_PROJ =
+# UNIX_USR_PROJ =
+# EXPENDABLE_USR_PROJ =
+
+## Libraries to be built as usual.
+# ASN_PROJ =
+# DTD_PROJ =
+LIB_PROJ = 
+EXPENDABLE_LIB_PROJ = ncbi_xloader_snp
+
+## Applications to be built as usual.
+# APP_PROJ =
+# EXPENDABLE_APP_PROJ =
+
+## Subdirectories to traverse.
+SUB_PROJ = test
+# POTENTIAL_SUB_PROJ =
+# EXPENDABLE_SUB_PROJ =
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
