@@ -123,7 +123,7 @@ CRef<CObjectManager> sx_InitOM(EMasterDescrType master_descr_type)
     CRef<CObjectManager> om = sx_GetEmptyOM();
     s_master_descr_type = master_descr_type;
     CWGSDataLoader* wgsloader = dynamic_cast<CWGSDataLoader*>
-        (CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault, 88).GetLoader());
+        (CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault).GetLoader());
     wgsloader->SetAddWGSMasterDescr(s_master_descr_type == eWithMasterDescr);
     if ( master_descr_type == eWithMasterDescr ) {
         sx_InitGBLoader(*om);
@@ -140,7 +140,7 @@ CRef<CObjectManager> sx_InitOM(EMasterDescrType master_descr_type,
         (CWGSDataLoader::RegisterInObjectManager(*om,
                                                  "",
                                                  vector<string>(1, wgs_file),
-                                                 CObjectManager::eDefault, 88).GetLoader());
+                                                 CObjectManager::eDefault).GetLoader());
     wgsloader->SetAddWGSMasterDescr(s_master_descr_type == eWithMasterDescr);
     return om;
 }

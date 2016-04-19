@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq1)
 
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
 
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq3)
 
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq4)
     CStopWatch sw(CStopWatch::eStart);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -505,7 +505,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq4l)
     CStopWatch sw(CStopWatch::eStart);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
 
@@ -546,7 +546,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq4sx)
     CStopWatch sw(CStopWatch::eStart);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
 
@@ -588,7 +588,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq4sd)
     CStopWatch sw(CStopWatch::eStart);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
 
@@ -627,7 +627,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq4s)
     CStopWatch sw(CStopWatch::eStart);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     for ( int t = 0; t < 2; ++t ) {
@@ -664,7 +664,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
     }
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
 #else
     {
@@ -676,7 +676,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
     }
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, csra_name,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
 #endif
     sx_ReportCSraLoaderName(loader_name);
@@ -750,7 +750,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq6)
     }
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -827,7 +827,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq7)
     }
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -906,7 +906,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq8)
     CGBDataLoader::RegisterInObjectManager(*om);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -1076,7 +1076,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq9)
     CGBDataLoader::RegisterInObjectManager(*om);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -1240,7 +1240,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq10)
     CGBDataLoader::RegisterInObjectManager(*om);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -1447,7 +1447,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq11)
     CGBDataLoader::RegisterInObjectManager(*om);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -1635,7 +1635,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq8)
     CGBDataLoader::RegisterInObjectManager(*om);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     NcbiCout << "Registered cSRA loader in " << sw.Restart() << NcbiEndl;
     sx_ReportCSraLoaderName(loader_name);
@@ -2051,7 +2051,7 @@ BOOST_AUTO_TEST_CASE(MultipleIds1)
     params.m_CSRAFiles.push_back(csra_name);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CScope scope(*om);
@@ -2129,7 +2129,7 @@ BOOST_AUTO_TEST_CASE(MultipleIds2)
     params.m_CSRAFiles.push_back(csra_name);
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eDefault, 88)
+                                                 CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportCSraLoaderName(loader_name);
     CGBDataLoader::RegisterInObjectManager(*om);

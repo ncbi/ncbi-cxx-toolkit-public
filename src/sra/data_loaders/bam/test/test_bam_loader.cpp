@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq1)
 
     string loader_name =
         CBAMDataLoader::RegisterInObjectManager(*om, params,
-                                                CObjectManager::eDefault, 88)
+                                                CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportBamLoaderName(loader_name);
     CScope scope(*om);
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
 
     string loader_name =
         CBAMDataLoader::RegisterInObjectManager(*om, params,
-                                                CObjectManager::eDefault, 88)
+                                                CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportBamLoaderName(loader_name);
     CScope scope(*om);
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq1_WithGenBank)
 
     string loader_name =
         CBAMDataLoader::RegisterInObjectManager(*om, params,
-                                                CObjectManager::eDefault, 88)
+                                                CObjectManager::eDefault)
         .GetLoader()->GetName();
     string gbloader_name =
         CGBDataLoader::RegisterInObjectManager(*om).GetLoader()->GetName();
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqSRZ1)
 
     string loader_name =
         CBAMDataLoader::RegisterInObjectManager(*om, params,
-                                                CObjectManager::eDefault, 88)
+                                                CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportBamLoaderName(loader_name);
     string gbloader_name =
@@ -403,7 +403,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqSRZ2)
 
     string loader_name =
         CBAMDataLoader::RegisterInObjectManager(*om, params,
-                                                CObjectManager::eDefault, 88)
+                                                CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportBamLoaderName(loader_name);
     CScope scope(*om);
@@ -463,7 +463,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqSRZ3)
 
     string loader_name =
         CBAMDataLoader::RegisterInObjectManager(*om, srz_acc,
-                                                CObjectManager::eDefault, 88)
+                                                CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportBamLoaderName(loader_name);
     CScope scope(*om);
@@ -545,7 +545,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq4)
 
     string loader_name =
         CBAMDataLoader::RegisterInObjectManager(*om, params,
-                                                CObjectManager::eDefault, 88)
+                                                CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportBamLoaderName(loader_name);
     string gbloader_name =
@@ -634,7 +634,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
 
     string loader_name =
         CBAMDataLoader::RegisterInObjectManager(*om, params,
-                                                CObjectManager::eDefault, 88)
+                                                CObjectManager::eDefault)
         .GetLoader()->GetName();
     sx_ReportBamLoaderName(loader_name);
     string gbloader_name =
