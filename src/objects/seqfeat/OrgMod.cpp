@@ -203,7 +203,7 @@ DEFINE_STATIC_FAST_MUTEX(s_InstitutionCollectionCodeMutex);
 static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
 {
     vector<string> tokens;
-    NStr::Tokenize(line, "\t", tokens);
+    NStr::Split(line, "\t", tokens, NStr::fSplit_NoMergeDelims);
     if (tokens.size() != 3) {
 //        ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
 //                   << "; disregarding");
@@ -652,7 +652,7 @@ string COrgMod::FixStrain( const string& strain)
     string new_val = strain;
     vector<string> words;
     vector<string> results;
-    NStr::Tokenize(strain, ";", words);
+    NStr::Split(strain, ";", words, NStr::fSplit_NoMergeDelims);
     FOR_EACH_STRING_IN_VECTOR(itr, words) {
         string str = *itr;
         NStr::TruncateSpacesInPlace(str);

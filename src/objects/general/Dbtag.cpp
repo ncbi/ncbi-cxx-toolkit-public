@@ -737,7 +737,7 @@ string CDbtag::GetUrl(const string & taxname_arg ) const
     // extract genus, species, subspeces
 
     vector<string> taxname_parts;
-    NStr::Tokenize( taxname, " ", taxname_parts, NStr::eMergeDelims );
+    NStr::Split(taxname, " ", taxname_parts, NStr::fSplit_Tokenize);
 
     if( taxname_parts.size() == 2 || taxname_parts.size() == 3 ) {
         string genus;

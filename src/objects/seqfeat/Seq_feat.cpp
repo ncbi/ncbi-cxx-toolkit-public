@@ -352,7 +352,7 @@ void CSeq_feat::RemoveExceptText(const string & exception_text)
     }
 
     list<CTempString> list_of_except_texts;
-    NStr::Split(GetExcept_text(), ",", list_of_except_texts);
+    NStr::Split(GetExcept_text(), ",", list_of_except_texts, NStr::fSplit_Tokenize);
 
     // remove occurrences of exception_text (case-insensitive)
     string new_except_texts; // build answer in this variable
@@ -414,8 +414,7 @@ CSeq_feat::GetTempExceptionTextSet(void) const
     const string & raw_exception_texts = GetExcept_text();
 
     vector<CTempStringEx> exception_parts;
-    NStr::Tokenize (raw_exception_texts, ",", exception_parts, 
-        NStr::eMergeDelims);
+    NStr::Split(raw_exception_texts, ",", exception_parts, NStr::fSplit_Tokenize);
 
     ITERATE( vector<CTempStringEx>, part_it, exception_parts ) {
         pAnswerSet->insert( NStr::TruncateSpaces_Unsafe(*part_it) );

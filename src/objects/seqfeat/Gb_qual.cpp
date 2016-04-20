@@ -58,13 +58,13 @@ CGb_qual::~CGb_qual(void)
 }
 
 
-static const char * const valid_inf_categories [] = {
+static const char * valid_inf_categories [] = {
     "EXISTENCE",
     "COORDINATES",
     "DESCRIPTION"
 };
 
-static const char * const valid_inf_prefixes [] = {
+static const char * valid_inf_prefixes [] = {
     "ab initio prediction",
     "nucleotide motif",
     "profile",
@@ -177,7 +177,7 @@ bool CGb_qual::CleanupRptUnitRange(string& val)
 const CGb_qual::TLegalRepeatTypeSet &
 CGb_qual::GetSetOfLegalRepeatTypes(void)
 {
-    static char * const repeat_types[] = {
+    static const char * repeat_types[] = {
         "centromeric_repeat",
         "direct",
         "dispersed",
@@ -210,7 +210,7 @@ bool CGb_qual::IsValidRptTypeValue(const string& val)
 
     // look for list of values
     vector<string> rpt_types;
-    NStr::Tokenize(val, ",", rpt_types);
+    NStr::Split(val, ",", rpt_types, NStr::fSplit_NoMergeDelims);
     ITERATE(vector<string>, it, rpt_types) {
         string v = (*it);
         NStr::TruncateSpacesInPlace(v);
@@ -234,7 +234,7 @@ bool CGb_qual::IsValidRptTypeValue(const string& val)
 const CGb_qual::TLegalPseudogeneSet &
 CGb_qual::GetSetOfLegalPseudogenes(void)
 {
-    static char * const pseudogenes[] = {
+    static const char * pseudogenes[] = {
         "allelic",
         "processed",
         "unitary",

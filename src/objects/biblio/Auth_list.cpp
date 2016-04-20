@@ -223,7 +223,7 @@ void CAuth_list::ConvertMlToStandard(void)
         if (!NStr::IsBlank(*it)) {
             CRef<CAuthor> new_auth(new CAuthor());
             vector<string> tokens;
-            NStr::Tokenize(*it, " ", tokens);
+            NStr::Split(*it, " ", tokens, NStr::fSplit_NoMergeDelims);
             string suffix = "";
             string init = s_GetInitials(tokens);
             if (NStr::IsBlank(init) && tokens.size() > 1) {
@@ -239,7 +239,7 @@ void CAuth_list::ConvertMlToStandard(void)
             if (!NStr::IsBlank(init)) {                
                 new_auth->SetName().SetName().SetFirst(init.substr(0, 1));
                 vector<string> letters;
-                NStr::Tokenize(init, "", letters);
+                NStr::Split(init, "", letters, NStr::fSplit_NoMergeDelims);
                 string initials = NStr::Join(letters, ".");
                 new_auth->SetName().SetName().SetInitials(initials);
             }

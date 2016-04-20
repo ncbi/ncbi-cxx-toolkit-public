@@ -82,7 +82,7 @@ CConstRef<CUser_field> CUser_object::GetFieldRef(const string& str,
                                                  NStr::ECase use_case) const
 {
     list<string> toks;
-    NStr::Split(str, delim, toks);
+    NStr::Split(str, delim, toks, NStr::fSplit_Tokenize);
     if ( !toks.size() ) {
         return CConstRef<CUser_field>();
     }
@@ -158,7 +158,7 @@ CRef<CUser_field> CUser_object::SetFieldRef(const string& str,
                                             NStr::ECase use_case)
 {
     list<string> toks;
-    NStr::Split(str, delim, toks);
+    NStr::Split(str, delim, toks, NStr::fSplit_Tokenize);
 
     CRef<CUser_field>  field_ref;
 

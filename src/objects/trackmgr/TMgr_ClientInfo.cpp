@@ -66,7 +66,7 @@ void CTMgr_ClientInfo::SetContext(const CTMgr_ClientInfo::TContext& value)
     TContext context = value;
 
     TTokens major_tokens;
-    NStr::Tokenize(value, major_delim, major_tokens, NStr::fSplit_ByPattern);
+    NStr::Split(value, major_delim, major_tokens, NStr::fSplit_ByPattern);
     bool is_context = true;
 
     ITERATE (TTokens, it, major_tokens) {

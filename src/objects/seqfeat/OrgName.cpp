@@ -128,21 +128,21 @@ void COrgName::x_SetAttribFlag( const string& name )
 void COrgName::x_ResetAttribFlag( const string& name )
 {
     if( !name.empty() && IsSetAttrib() ) {
-	const string& attr = GetAttrib();
-	list< CTempString > lVals;
-	NStr::Split( attr, s_flagDelim, lVals );
-	for( list< CTempString >::iterator i = lVals.begin(), li = lVals.end(); i != li; ) {
-	    NStr::TruncateSpacesInPlace( *i );
-	    if( NStr::EqualNocase( *i, name ) ) {
-		i = lVals.erase( i );
-	    } else {
-		++i;
-	    }
-	}
-	SetAttrib( NStr::Join( lVals, s_flagDelim ) );
-	if( SetAttrib().empty() ) {
-	    ResetAttrib();
-	}
+        const string& attr = GetAttrib();
+        list< CTempString > lVals;
+        NStr::Split(attr, s_flagDelim, lVals, NStr::fSplit_Tokenize);
+        for( list< CTempString >::iterator i = lVals.begin(), li = lVals.end(); i != li; ) {
+            NStr::TruncateSpacesInPlace( *i );
+            if( NStr::EqualNocase( *i, name ) ) {
+                i = lVals.erase( i );
+            } else {
+                ++i;
+            }
+        }
+        SetAttrib( NStr::Join( lVals, s_flagDelim ) );
+        if( SetAttrib().empty() ) {
+            ResetAttrib();
+        }
     }
 }
 
@@ -151,7 +151,7 @@ bool COrgName::x_GetAttribFlag( const string& name ) const
     if( !name.empty() && IsSetAttrib() ) {
 	const string& attr = GetAttrib();
 	list< CTempString > lVals;
-	NStr::Split( attr, s_flagDelim, lVals );
+	NStr::Split(attr, s_flagDelim, lVals, NStr::fSplit_Tokenize);
 	NON_CONST_ITERATE( list< CTempString >, i, lVals ) {
 	    NStr::TruncateSpacesInPlace( *i );
 	    if( NStr::EqualNocase( *i, name ) ) {

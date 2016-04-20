@@ -159,7 +159,7 @@ void CDistanceMatrix::Read(istream &istr, EFormat format) {
                 line = line.substr(10);
             }
             list<string> fields;
-            NStr::Split(line, " \t\n\r", fields);
+            NStr::Split(line, " \t\n\r", fields, NStr::fSplit_Tokenize);
             ITERATE (list<string>, field, fields) {
                 line_values.push_back(NStr::StringToDouble(*field));
             }

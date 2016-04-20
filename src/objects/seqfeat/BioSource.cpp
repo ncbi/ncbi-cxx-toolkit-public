@@ -1332,7 +1332,7 @@ static void s_GetWordListFromText(string& str, TWordList& word_list)
         return;
     }
     std::replace_if(str.begin(), str.end(), s_IsPunct, ' ');
-    NStr::Tokenize(str, " ", word_list, NStr::eMergeDelims);
+    NStr::Split(str, " ", word_list, NStr::fSplit_Tokenize);
 }
 
 

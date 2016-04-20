@@ -228,7 +228,7 @@ CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
                                                 NStr::ECase use_case) const
 {
     list<string> toks;
-    NStr::Split(str, delim, toks);
+    NStr::Split(str, delim, toks, NStr::fSplit_Tokenize);
 
     CConstRef<CUser_field> f(this);
     if ( !f->GetData().IsFields() ) {
@@ -344,7 +344,7 @@ CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
                                            NStr::ECase use_case)
 {
     list<string> toks;
-    NStr::Split(str, delim, toks);
+    NStr::Split(str, delim, toks, NStr::fSplit_Tokenize);
 
     CRef<CUser_field> f(this);
     if ( ! f->GetData().IsFields()  &&  f->GetData().Which() != CUser_field::TData::e_not_set ) {
@@ -403,7 +403,7 @@ bool CUser_field::DeleteField(const string& str,
                               NStr::ECase use_case)
 {
     list<string> toks;
-    NStr::Split(str, delim, toks);
+    NStr::Split(str, delim, toks, NStr::fSplit_Tokenize);
 
     CRef<CUser_field> f(this);
     list<string>::const_iterator last = toks.end();

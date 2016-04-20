@@ -348,7 +348,7 @@ bool CSubSource::IsCollectionDateAfterTime(const string& collection_date, time_t
     bad_format = false;
     bool in_future = false;
     vector<string> pieces;
-    NStr::Tokenize(collection_date, "/", pieces);
+    NStr::Split(collection_date, "/", pieces, NStr::fSplit_NoMergeDelims);
     if (pieces.size() > 2) {
         bad_format = true;
     } else {
@@ -401,7 +401,7 @@ void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format
     in_future = false;
 
     vector<string> pieces;
-    NStr::Tokenize(date_string, "/", pieces);
+    NStr::Split(date_string, "/", pieces, NStr::fSplit_NoMergeDelims);
     if (pieces.size() > 2) {
         bad_format = true;
         return;
@@ -450,7 +450,7 @@ size_t CSubSource::CheckDateFormat(const string& date_string)
 {
     size_t rval = eDateFormatFlag_ok;
     vector<string> pieces;
-    NStr::Tokenize(date_string, "/", pieces);
+    NStr::Split(date_string, "/", pieces, NStr::fSplit_NoMergeDelims);
     if (pieces.size() > 2) {
         rval |= eDateFormatFlag_bad_format;
     } else if (pieces.size() == 2) {
@@ -1148,9 +1148,9 @@ void CSubSource::IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bo
             lon_value = 0.0 - ew;
         }
 
-    // make sure format is correct
+        // make sure format is correct
         vector<string> pieces;
-        NStr::Tokenize(lat_lon, " ", pieces);
+        NStr::Split(lat_lon, " ", pieces, NStr::fSplit_NoMergeDelims);
         if (pieces.size() > 3) {
             int precision_lat = x_GetPrecision(pieces[0]);
             int precision_lon = x_GetPrecision(pieces[2]);
@@ -2333,7 +2333,7 @@ bool CSubSource::IsValidSexQualifierValue (const string& value)
     }
 
     vector<string> words;
-    NStr::Tokenize(str," ,/",words);
+    NStr::Split(str, " ,/", words, NStr::fSplit_NoMergeDelims);
     if (words.size() == 0) {
         return false;
     }
@@ -2371,7 +2371,7 @@ string CSubSource::FixSexQualifierValue (const string& value)
     }
 
     vector<string> words;
-    NStr::Tokenize(str," ,/",words);
+    NStr::Split(str, " ,/", words, NStr::fSplit_NoMergeDelims);
 
     if (words.size() == 0) {
         return kEmptyStr;
@@ -2557,7 +2557,7 @@ DEFINE_STATIC_FAST_MUTEX(s_CellLineContaminationMutex);
 static void s_ProcessCellLineLine(const CTempString& line)
 {
     vector<string> tokens;
-    NStr::Tokenize(line, "\t", tokens);
+    NStr::Split(line, "\t", tokens, NStr::fSplit_NoMergeDelims);
     if (tokens.size() < 4) {
         ERR_POST_X(1, Warning << "Not enough columns in cell_line entry " << line
                    << "; disregarding");
@@ -3384,7 +3384,7 @@ DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_country_name_fixes, s_map_country_nam
 string CCountries::CapitalizeFirstLetterOfEveryWord (const string &phrase)
 {
     vector<string> words;
-    NStr::Tokenize(phrase," \t\r\n",words);
+    NStr::Split(phrase, " \t\r\n", words, NStr::fSplit_NoMergeDelims);
     for(vector<string>::iterator word = words.begin(); word != words.end(); ++word)
         if (!word->empty() && isalpha(word->at(0)))
             word->at(0) = toupper(word->at(0));
@@ -3505,7 +3505,7 @@ void CCountries::x_RemoveDelimitersFromEnds(string& val, bool except_paren)
 vector<string> CCountries::x_Tokenize(const string& val)
 {
     vector<string> tokens;
-    NStr::Tokenize(val,",:()",tokens);
+    NStr::Split(val, ",:()", tokens, NStr::fSplit_NoMergeDelims);
     // special tokenizing - if tokens contain periods but resulting token is at least four characters long
     vector<string>::iterator it = tokens.begin();
     while (it != tokens.end()) {
@@ -4619,7 +4619,7 @@ void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
             m_Scale = NStr::StringToDouble(line);
         } else {          
             vector<string> tokens;
-             NStr::Tokenize(line, "\t", tokens);
+             NStr::Split(line, "\t", tokens, NStr::fSplit_NoMergeDelims);
             if (tokens.size() > 3) {
                 double x = NStr::StringToDouble(tokens[1]);
                 for (size_t j = 2; j < tokens.size() - 1; j+=2) {

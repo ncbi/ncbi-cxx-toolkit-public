@@ -178,7 +178,7 @@ list<string> CComment_set::GetKeywords(const CUser_object& user)
             CComment_rule::TErrorList errors = rule.IsValid(user);
             if (errors.size() == 0) {
                 string kywd = CComment_rule::KeywordForPrefix( prefix );
-                NStr::Split(kywd, ";", keywords);
+                NStr::Split(kywd, ";", keywords, NStr::fSplit_Tokenize);
             }
         } catch (CException& ) {
             // no rule for this prefix, can't list fields
