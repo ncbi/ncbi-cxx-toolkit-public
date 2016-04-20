@@ -75,5 +75,5 @@ void MarkOverlappingCDSs(vector <CRef <CObject> >& objs, vector <string>& msgs, 
   if (has_title) msgs.push_back("\n");
 };
 
-END_SCOPE(DiscRepNmSpc);
+END_SCOPE(DiscRepNmSpc)
 END_NCBI_SCOPE

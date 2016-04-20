@@ -265,7 +265,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void TraverseAndRunTestCases(
     TTraverseAndRunTestCasesFlags fFlags = 0 );
 
 END_SCOPE(unit_test_util)
-END_SCOPE(objects);
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif  /* OBJMGR__TEST__UNIT_TEST_UTIL__HPP */

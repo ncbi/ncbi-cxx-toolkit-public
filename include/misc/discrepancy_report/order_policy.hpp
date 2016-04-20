@@ -73,7 +73,7 @@ public:
 };
 
 
-END_SCOPE(DiscRepNmSpc);
+END_SCOPE(DiscRepNmSpc)
 END_NCBI_SCOPE
 
 #endif 

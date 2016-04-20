@@ -117,7 +117,7 @@ bool s_SortEquivBySubjt(const CEquivRange& A, const CEquivRange& B) {
 
 
 
-END_SCOPE(ncbi);
+END_SCOPE(ncbi)
 
 
 
