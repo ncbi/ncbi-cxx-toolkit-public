@@ -48,12 +48,10 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle h_entry, const string& flags
     else
     {
         cleanup.BasicCleanup(*entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+        if (flags.find('U') != string::npos)
+          cleanup.RemoveUnnecessaryGeneXrefs(h_entry); //remove unnec gen xref included in extended cleanup
     }
 
-    if (flags.find('U') != string::npos)
-    {
-        cleanup.RemoveUnnecessaryGeneXrefs(h_entry);
-    }
 }
 
 CConstRef<CValidError> CTable2AsnValidator::Validate(const CSerialObject& object, Uint4 opts)

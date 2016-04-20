@@ -493,44 +493,7 @@ namespace
             return 0;
 
         const CBioSource & bsrc = closest_biosource->GetSource();
-
-        // use "genome" to determine if we're a plastid or what
-        CBioSource::EGenome eGenome = (bsrc.IsSetGenome() ?
-            static_cast<CBioSource::EGenome>(bsrc.GetGenome()) :
-            CBioSource::eGenome_unknown);
-
-        switch (eGenome)
-        {
-        case CBioSource::eGenome_chloroplast:
-        case CBioSource::eGenome_chromoplast:
-        case CBioSource::eGenome_plastid:
-        case CBioSource::eGenome_cyanelle:
-        case CBioSource::eGenome_apicoplast:
-        case CBioSource::eGenome_leucoplast:
-        case CBioSource::eGenome_proplastid:
-        case CBioSource::eGenome_chromatophore: {
-            // plastid
-            const int iPlastidCode = (
-                FIELD_CHAIN_OF_2_IS_SET(bsrc, Org, Pgcode) ?
-                bsrc.GetOrg().GetPgcode() : 0);
-            return (iPlastidCode > 0 ? iPlastidCode : 11);
-            break;
-        }
-        case CBioSource::eGenome_kinetoplast:
-        case CBioSource::eGenome_mitochondrion:
-        case CBioSource::eGenome_hydrogenosome:
-            return (
-                FIELD_CHAIN_OF_2_IS_SET(bsrc, Org, Mgcode) ?
-                bsrc.GetOrg().GetMgcode() : 0);
-            break;
-        default:
-            // usually we want the nuc code
-            return (
-                FIELD_CHAIN_OF_2_IS_SET(bsrc, Org, Gcode) ?
-                bsrc.GetOrg().GetGcode() : 0);
-            break;
-        }
-        return 0;
+        return bsrc.GetGenCode();
     }
 
 }

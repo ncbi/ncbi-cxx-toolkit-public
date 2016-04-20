@@ -2064,7 +2064,7 @@ YSLTYHRLASFSIFV*SPFAQLRFVFLKIHL"
               data cdregion {
                 frame three,
                 code {
-                  id 1
+                  id 0
                 }
               },
               product whole local str "WS1030",
