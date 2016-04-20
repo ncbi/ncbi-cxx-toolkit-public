@@ -260,16 +260,18 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
                     CTimeSpan(max_span).AsSmartString());
             }
         }
-        // Do not try to force reconnect in recursive calls.
-        if ( !(m_RetryCount & 1)  ||  m_RetryCtx.NeedReconnect() ) {
-            // reset on every other attempt in case we're out of sync
-            try {
-                Reset();
-            } STD_CATCH_ALL_XX(Serial_RPCClient, 1 ,"CRPCClient_Base::Reset()");
-        }
+        // Always reconnect on retry.
+        try {
+            Reset();
+        } STD_CATCH_ALL_XX(Serial_RPCClient, 1 ,"CRPCClient_Base::Reset()");
     }
     // Reset retry context when done.
     m_RetryCtx.Reset();
+    // If there were any retries, force disconnect to prevent using old
+    // retry url, args etc. with the next request.
+    if ( m_RetryCount > 0) {
+        Disconnect();
+    }
 }
 
 

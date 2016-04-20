@@ -150,6 +150,13 @@ public:
 
     NCBI_EXCEPTION_DEFAULT(CRPCClientException, CException);
 
+protected:
+    virtual void x_Assign(const CException& src)
+    {
+        CException::x_Assign(src);
+        m_RetryCtx = dynamic_cast<const CRPCClientException&>(src).m_RetryCtx;
+    }
+
 private:
     CRef<CRetryContext> m_RetryCtx;
 };

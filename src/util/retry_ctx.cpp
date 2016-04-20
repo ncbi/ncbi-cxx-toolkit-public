@@ -88,25 +88,21 @@ void CHttpRetryContext::ParseHeader(const char* http_header)
 
         if ( NStr::EqualNocase(name, kHeader_Stop) ) {
             SetStop(value);
+            continue; // Do not set NeedRetry flag.
         }
-        if ( NStr::EqualNocase(name, kHeader_Delay) ) {
+        else if ( NStr::EqualNocase(name, kHeader_Delay) ) {
             double val = NStr::StringToDouble(value);
             if (errno == 0) {
                 SetDelay(val);
             }
-            SetNeedRetry(); // Even if the value was wrong.
         }
-        if ( NStr::EqualNocase(name, kHeader_Args) ) {
+        else if ( NStr::EqualNocase(name, kHeader_Args) ) {
             SetArgs(value);
-            SetNeedReconnect();
-            SetNeedRetry();
         }
-        if ( NStr::EqualNocase(name, kHeader_Url) ) {
+        else if ( NStr::EqualNocase(name, kHeader_Url) ) {
             SetUrl(value);
-            SetNeedReconnect();
-            SetNeedRetry();
         }
-        if ( NStr::EqualNocase(name, kHeader_Content) ) {
+        else if ( NStr::EqualNocase(name, kHeader_Content) ) {
             string content = value;
             if ( NStr::EqualNocase(content, kContent_None) ) {
                 SetContentOverride(eNoContent);
@@ -118,8 +114,13 @@ void CHttpRetryContext::ParseHeader(const char* http_header)
                 SetContentOverride(eData);
                 SetContent(NStr::URLDecode(content.substr(strlen(kContent_Value))));
             }
-            SetNeedRetry();
         }
+        else {
+            continue;
+        }
+        SetNeedRetry();
+        // Any retry must force reconnecting.
+        SetNeedReconnect();
     }
 }
 
