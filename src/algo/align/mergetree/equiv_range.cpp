@@ -47,7 +47,7 @@ USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 
 
-BEGIN_SCOPE(ncbi);
+BEGIN_SCOPE(ncbi)
 CNcbiOstream& operator<<(CNcbiOstream& out, const CEquivRange& range)
 {
 	return out << range.Query 

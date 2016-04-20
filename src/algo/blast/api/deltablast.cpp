@@ -55,7 +55,7 @@ static char const rcsid[] = "$Id$";
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-BEGIN_SCOPE(blast);
+BEGIN_SCOPE(blast)
 
 CDeltaBlast::CDeltaBlast(CRef<IQueryFactory> query_factory,
                          CRef<CLocalDbAdapter> blastdb,

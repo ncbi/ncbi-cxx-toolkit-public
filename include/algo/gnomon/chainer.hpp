@@ -35,12 +35,12 @@
 #include <algo/gnomon/gnomon_model.hpp>
 #include <algo/gnomon/aligncollapser.hpp>
 
-BEGIN_SCOPE(ncbi);
+BEGIN_SCOPE(ncbi)
 
 class CArgDescriptions;
 class CArgs;
 
-BEGIN_SCOPE(gnomon);
+BEGIN_SCOPE(gnomon)
 
 class CHMMParameters;
 

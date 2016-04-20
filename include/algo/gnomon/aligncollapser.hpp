@@ -34,8 +34,8 @@
 
 #include <algo/gnomon/gnomon_model.hpp>
 
-BEGIN_SCOPE(ncbi);
-BEGIN_SCOPE(gnomon);
+BEGIN_SCOPE(ncbi)
+BEGIN_SCOPE(gnomon)
 
 struct SAlignIndividual {
     SAlignIndividual() : m_weight(0) {};
