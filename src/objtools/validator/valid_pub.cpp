@@ -517,6 +517,9 @@ void CValidError_imp::x_ValidatePages
     
     string start, stop;
     if (!NStr::SplitInTwo(pages, "-", start, stop) || start.empty() || stop.empty()) {
+        if (!isalpha(pages.c_str()[0])) {
+            PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering start looks strange", obj, ctx);
+        }
         return;
     }
 
