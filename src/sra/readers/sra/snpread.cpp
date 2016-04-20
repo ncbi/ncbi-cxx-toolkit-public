@@ -616,6 +616,14 @@ CRef<CSeqTable_column> x_MakeColumn(CSeqTable_column_info::EField_id id,
 }
 
 
+CRef<CSeqTable_column> x_MakeColumn(const char* name)
+{
+    CRef<CSeqTable_column> col(new CSeqTable_column);
+    col->SetHeader().SetField_name(name);
+    return col;
+}
+
+
 struct SColumn
 {
     int id;
@@ -733,7 +741,7 @@ struct SSparseIndex
     
     void Add(int index)
         {
-            if ( index != size ) {
+            if ( index != size && !indexes ) {
                 indexes = &column.x_GetColumn()->SetSparse().SetIndexes();
                 for ( int i = 0; i < size; ++i ) {
                     indexes->push_back(i);
@@ -743,6 +751,37 @@ struct SSparseIndex
                 indexes->push_back(index);
             }
             ++size;
+        }
+
+    void Optimize(SIntColumn& column, const SIntColumn& backup_column)
+        {
+            _ASSERT(&column == &this->column);
+            if ( !indexes ) {
+                return;
+            }
+
+            size_t sparse_size = column.values->size();
+            _ASSERT(sparse_size == indexes->size());
+            size_t total_size = backup_column.values->size();
+            _ASSERT(indexes->back() < total_size);
+            if ( sparse_size >= total_size/3 ) {
+                // sparse index is too big, replace with plain column
+                CSeqTable_multi_data::TInt values;
+                values.reserve(total_size);
+                for ( size_t i = 0, j = 0; i < total_size; ++i ) {
+                    TSeqPos to;
+                    if ( j < indexes->size() && i == (*indexes)[j] ) {
+                        to = (*column.values)[j++];
+                    }
+                    else {
+                        to = (*backup_column.values)[i];
+                    }
+                    values.push_back(to);                
+                }
+                swap(values, *column.values);
+                indexes = 0;
+                column.x_GetColumn()->ResetSparse();
+            }
         }
 };
 
@@ -885,6 +924,24 @@ struct SSeqTableContent
             col->SetDefault().SetId(value);
             table.SetColumns().push_back(col);
         }
+
+    static void AddFixedSeq_loc(CSeq_table& table,
+                                const char* name,
+                                CSeq_loc& value)
+        {
+            CRef<CSeqTable_column> col = x_MakeColumn(name);
+            col->SetDefault().SetLoc(value);
+            table.SetColumns().push_back(col);
+        }
+
+    static void AddFixedInt(CSeq_table& table,
+                            const char* name,
+                            int value)
+        {
+            CRef<CSeqTable_column> col = x_MakeColumn(name);
+            col->SetDefault().SetInt(value);
+            table.SetColumns().push_back(col);
+        }
 };
 
 
@@ -953,11 +1010,33 @@ CRef<CSeq_annot> SSeqTableContent::GetAnnot(CSeq_id& seq_id)
                    CSeqTable_column_info::eField_id_data_imp_key,
                    "variation");
 
-    AddFixedSeq_id(table,
-               CSeqTable_column_info::eField_id_location_id,
-               seq_id);
+    if ( 1 ) {
+        TSeqPos total_from = col_from.values->front();
+        TSeqPos total_to = col_from.values->back();
+        TSeqPos max_len = 1;
+        if ( col_to.values ) {
+            max_len = kMaxSNPLength;
+            total_to += max_len-1; 
+        }
+        CRef<CSeq_loc> total_loc(new CSeq_loc);
+        total_loc->SetInt().SetId(seq_id);
+        total_loc->SetInt().SetFrom(total_from);
+        total_loc->SetInt().SetTo(total_to);
+        AddFixedSeq_loc(table,
+                        "Seq-table location",
+                        *total_loc);
+
+        AddFixedInt(table,
+                    "Sorted, max length",
+                    max_len);
+
+        AddFixedSeq_id(table,
+                       CSeqTable_column_info::eField_id_location_id,
+                       seq_id);
+    }
 
     col_from.Attach(table);
+    ind_to.Optimize(col_to, col_from);
     col_to.Attach(table);
     for ( int i = 0; i < kMaxTableAlleles; ++i ) {
         col_alleles[i].Attach(table);
