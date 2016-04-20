@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
-BEGIN_SCOPE(DiscRepNmSpc);
+BEGIN_SCOPE(DiscRepNmSpc)
 
 
 class CMissingGenes : public CAnalysisProcess

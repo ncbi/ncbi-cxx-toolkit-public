@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
-BEGIN_SCOPE(DiscRepNmSpc);
+BEGIN_SCOPE(DiscRepNmSpc)
 
 
 class NCBI_DISCREPANCY_REPORT_EXPORT CTagPolicy : public CObject

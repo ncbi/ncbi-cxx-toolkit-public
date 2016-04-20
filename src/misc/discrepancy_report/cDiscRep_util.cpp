@@ -68,7 +68,7 @@
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(DiscRepNmSpc);
+BEGIN_SCOPE(DiscRepNmSpc)
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

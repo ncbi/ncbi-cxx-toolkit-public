@@ -42,7 +42,7 @@
 #include <misc/discrepancy_report/hDiscRep_tests.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(DiscRepNmSpc);
+BEGIN_SCOPE(DiscRepNmSpc)
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

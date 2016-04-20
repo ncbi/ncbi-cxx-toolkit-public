@@ -43,7 +43,7 @@
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
-BEGIN_SCOPE(DiscRepNmSpc);
+BEGIN_SCOPE(DiscRepNmSpc)
 
 
 // The CAnalysisWorkflow class is used to tie together various pieces of the 
