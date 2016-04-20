@@ -1651,8 +1651,13 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     m_Cdr3SeqTrans = NcbiEmptyString;
    
     if (m_Cdr3Start > 0 && m_Cdr3End > m_Cdr3Start) {
+       
         m_Cdr3Seq = m_Query.substr(m_Cdr3Start, m_Cdr3End - m_Cdr3Start + 1);
-        CSeqTranslator::Translate(m_Cdr3Seq, 
+        int coding_frame_offset = (m_Cdr3Start - annot->m_FrameInfo[0])%3; 
+        
+        string cdr3_seq_for_translatioin = m_Cdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+
+        CSeqTranslator::Translate(cdr3_seq_for_translatioin, 
                                   m_Cdr3SeqTrans, 
                                   CSeqTranslator::fIs5PrimePartial, NULL, NULL);
     }
