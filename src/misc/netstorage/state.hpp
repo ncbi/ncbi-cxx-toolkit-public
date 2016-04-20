@@ -133,6 +133,7 @@ struct SContext : CObject
     ISelector* Create(TNetStorageFlags);
     ISelector* Create(TNetStorageFlags, const string&);
     ISelector* Create(TNetStorageFlags, const string&, Int8);
+    ISelector* Create(TNetStorageFlags, const string&, const string&);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections()

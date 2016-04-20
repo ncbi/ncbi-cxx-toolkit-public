@@ -125,6 +125,7 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
     bool Exists(const string&);
     ENetStorageRemoveResult Remove(const string&);
 
+    // For direct NetStorage API only
     CObj* Create(TNetStorageFlags, const string&, Int8 = 0);
     CJsonNode ReportConfig() const;
 
@@ -215,13 +216,14 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
     {
     }
 
-
-    SDirectNetStorageByKeyImpl(const string& app_domain,
+    SDirectNetStorageByKeyImpl(const string& service_name,
+            const string& app_domain,
             CNetICacheClient::TInstance icache_client,
             CCompoundIDPool::TInstance compound_id_pool,
             const SFileTrackConfig& ft_config)
         : m_Context(new SContext(app_domain, icache_client,
-                    compound_id_pool, ft_config))
+                    compound_id_pool, ft_config)),
+          m_ServiceName(service_name)
     {
         if (app_domain.empty()) {
             NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
@@ -236,8 +238,12 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
     bool Exists(const string&, TNetStorageFlags = 0);
     ENetStorageRemoveResult Remove(const string&, TNetStorageFlags = 0);
 
+    // For direct NetStorage API only
+    CObj* Open(TNetStorageFlags, const string&);
+
 private:
     CRef<SContext> m_Context;
+    const string m_ServiceName;
 };
 
 
@@ -279,6 +285,14 @@ ENetStorageRemoveResult SDirectNetStorageByKeyImpl::Remove(const string& key,
     ISelector::Ptr selector(m_Context->Create(flags, key));
     CRef<CObj> net_file(new CObj(selector));
     return net_file->Remove();
+}
+
+
+CObj* SDirectNetStorageByKeyImpl::Open(TNetStorageFlags flags,
+        const string& key)
+{
+    ISelector::Ptr selector(m_Context->Create(flags, m_ServiceName, key));
+    return new CObj(selector);
 }
 
 
@@ -355,7 +369,7 @@ CDirectNetStorageByKey::CDirectNetStorageByKey(
         CCompoundIDPool::TInstance compound_id_pool,
         const string& app_domain)
     : CNetStorageByKey(
-            new SDirectNetStorageByKeyImpl(app_domain,
+            new SDirectNetStorageByKeyImpl(service_name, app_domain,
                 s_GetICClient(registry, service_name),
                 compound_id_pool, s_GetFTConfig(registry, service_name)))
 {
@@ -366,7 +380,7 @@ CDirectNetStorageObject CDirectNetStorageByKey::Open(const string& key,
         TNetStorageFlags flags)
 {
     SNetStorage::SLimits::Check<SNetStorage::SLimits::SUserKey>(key);
-    return Impl<SDirectNetStorageByKeyImpl>(m_Impl)->OpenImpl(key, flags);
+    return Impl<SDirectNetStorageByKeyImpl>(m_Impl)->Open(flags, key);
 }
 
 
