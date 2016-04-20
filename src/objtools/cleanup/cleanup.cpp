@@ -1704,17 +1704,11 @@ bool CCleanup::SetGeneticCodes(CBioseq_Handle bsh)
         return false;
     }
 
+    int bioseqGenCode = 0;
     CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
-    if (!src) {
-        return false;
-    }
-
-    const CBioSource & bsrc = src->GetSource();
-    int bioseqGenCode = bsrc.GetGenCode();
-
-    if (bioseqGenCode == 0) {
-        return false;
-    }
+    if (src) {
+        bioseqGenCode = src->GetSource().GetGenCode();
+    }    
 
     bool any_changed = false;
     // set Cdregion's gcode from BioSource (unless except-text)
@@ -1753,6 +1747,9 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
 
     SAnnotSelector sel(CSeqFeatData::e_Cdregion);
     for (CFeat_CI cds_it(entry, sel); cds_it; ++cds_it) {
+        if (IsPseudo(*(cds_it->GetSeq_feat()), entry.GetScope())) {
+            continue;
+        }
         bool change_this_cds;
         CRef<CSeq_feat> new_cds(new CSeq_feat());
         new_cds->Assign(*(cds_it->GetSeq_feat()));
@@ -1809,7 +1806,9 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
             new_mrna->Assign(*mrna);
             // Make mRNA name match coding region protein
             string mrna_name = new_mrna->GetData().GetRna().GetRnaProductName();
-            if (!NStr::Equal(mrna_name, current_name)) {
+            if (NStr::IsBlank(mrna_name) 
+                || (!NStr::Equal(current_name, "hypothetical protein") &&
+                    !NStr::Equal(current_name, mrna_name))) {
                 string remainder;
                 new_mrna->SetData().SetRna().SetRnaProductName(current_name, remainder);
                 change_mrna = true;
@@ -1829,6 +1828,8 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
             
             cds_h.Replace(*new_cds);
             any_changes = true;
+
+            //also need to redo protein title
         }
 
     }
