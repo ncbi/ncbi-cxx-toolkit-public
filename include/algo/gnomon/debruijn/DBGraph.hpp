@@ -541,9 +541,9 @@ namespace DeBruijn {
 
     class CReadHolder {
     public:
-        CReadHolder() :  m_total_seq(0) {};
-        void InsertRead(const string& read) {
-            int shift = (m_total_seq*2)%64;
+        CReadHolder() :  m_total_seq(0), m_front_shift(0) {};
+        void PushBack(const string& read) {
+            int shift = (m_total_seq*2 + m_front_shift)%64;
             for(int i = (int)read.size()-1; i >= 0; --i) {  // put backward for kmer compatibility
                 if(shift == 0)
                     m_storage.push_back(0);
@@ -553,10 +553,23 @@ namespace DeBruijn {
             m_read_length.push_back(read.size());
             m_total_seq += read.size();
         }
+        void PopFront() {
+            m_total_seq -= m_read_length.front();
+            if(m_total_seq == 0) {
+                Clear();
+            } else {
+                int nextp = m_front_shift+2*m_read_length.front();
+                m_read_length.pop_front();
+                m_front_shift = nextp%64;
+                for(int num = nextp/64; num > 0; --num)
+                    m_storage.pop_front();
+            }
+        }
         void Swap(CReadHolder& other) {
             swap(m_storage, other.m_storage);
             swap(m_read_length, other.m_read_length);
             swap(m_total_seq, other.m_total_seq);
+            swap(m_front_shift, other. m_front_shift);
         }
         void Clear() { CReadHolder().Swap(*this); }
         size_t TotalSeq() const { return m_total_seq; }
@@ -602,10 +615,11 @@ namespace DeBruijn {
                 TKmer kmer(m_kmer_len, 0);
                 uint64_t* guts = (uint64_t*)kmer.getPointer();
                 unsigned precision = kmer.getSize()/64;
+                int front_shift = m_readholder.m_front_shift;
 
-                size_t first_word = m_position/64;               // first, maybe partial, word in deque
-                size_t end_word = (m_position+2*m_kmer_len-1)/64+1; // word after last
-                int shift = m_position%64;
+                size_t first_word = (m_position+front_shift)/64;                // first, maybe partial, word in deque
+                size_t end_word = (m_position+front_shift+2*m_kmer_len-1)/64+1; // word after last
+                int shift = (m_position+front_shift)%64;
                 if(shift == 0) {
                     copy(m_readholder.m_storage.begin()+first_word, m_readholder.m_storage.begin()+end_word, guts);
                 } else {
@@ -656,9 +670,9 @@ namespace DeBruijn {
             }
             uint32_t m_kmer_len;
             const CReadHolder& m_readholder;
-            size_t m_position;      // BIT num in deque
+            size_t m_position;           // BIT num in concatenated sequence
             uint32_t m_position_in_read; // SYMBOL in read
-            size_t m_read;          // read number
+            size_t m_read;               // read number
         };
         kmer_iterator kend() const { return kmer_iterator(0, *this, 2*m_total_seq); }
         kmer_iterator kbegin(int kmer_len) const { return kmer_iterator(kmer_len, *this); }
@@ -670,7 +684,7 @@ namespace DeBruijn {
             string operator*() const {
                 string read;
                 int read_length = m_readholder.m_read_length[m_read];
-                size_t position = m_position;
+                size_t position = m_position+m_readholder.m_front_shift;
                 for(int i = 0; i < read_length; ++i) {
                     read.push_back(bin2NT[(m_readholder.m_storage[position/64] >> position%64) & 3]);
                     position += 2;
@@ -700,6 +714,7 @@ namespace DeBruijn {
         deque<uint64_t> m_storage;
         deque<uint32_t> m_read_length;
         size_t m_total_seq;
+        int m_front_shift;
     };
 
 class CDBGraphDigger {
@@ -739,7 +754,7 @@ public:
         //mark already used kmers
         for(string& contig : contigs) {
             CReadHolder rh;
-            rh.InsertRead(contig);
+            rh.PushBack(contig);
             for(CReadHolder::kmer_iterator itk = rh.kbegin(kmer_len); itk != rh.kend(); ++itk) {
                 ++kmers;
                 CDBGraph::Node node = m_graph.GetNode(*itk);
@@ -751,20 +766,17 @@ public:
         }
         cerr << "Kmers in contigs: " << kmers << " Not in graph: " << kmers-kmers_in_graph << endl;
 
-        //!!!!!!!!!!!!        if(m_hist_min > 0 || contigs.empty()) {
-
-            size_t num = 0;
-            for(size_t index = 0; index < m_graph.GraphSize(); ++index) {
-                CDBGraph::Node node = 2*(index+1);
-                string contig = GetContigForKmer(node, kmer_len);
-                if(!contig.empty()) {
-                    ++num;
-                    contigs.push_back(contig);                                                    
-                }
+        size_t num = 0;
+        for(size_t index = 0; index < m_graph.GraphSize(); ++index) {
+            CDBGraph::Node node = 2*(index+1);
+            string contig = GetContigForKmer(node, kmer_len);
+            if(!contig.empty()) {
+                ++num;
+                contigs.push_back(contig);                                                    
             }
-            cerr << "New seeds: " << num << endl;
-            //        }           
-
+        }
+        cerr << "New seeds: " << num << endl;
+        
         //create landing spots
         unordered_map<CDBGraph::Node, TContigEnd> landing_spots;
         landing_spots.reserve(2*(SCAN_WINDOW+1)*contigs.size());
@@ -780,7 +792,7 @@ public:
             
             CReadHolder lrh;
             string lchunk = contig.substr(0,kmer_len+scan_window);
-            lrh.InsertRead(lchunk);
+            lrh.PushBack(lchunk);
             int shift = scan_window+1;
             for(CReadHolder::kmer_iterator itk = lrh.kbegin(kmer_len); itk != lrh.kend(); ++itk) { // gives kmers in reverse order!
                 CDBGraph::Node node = m_graph.GetNode(*itk);
@@ -793,7 +805,7 @@ public:
             CReadHolder rrh;
             string rchunk = contig.substr(contig.size()-kmer_len-scan_window, kmer_len+scan_window);
             ReverseComplement(rchunk.begin(), rchunk.end());
-            rrh.InsertRead(rchunk);
+            rrh.PushBack(rchunk);
             shift = scan_window+1;
             for(CReadHolder::kmer_iterator itk = rrh.kbegin(kmer_len); itk != rrh.kend(); ++itk) { // gives kmers in reverse order!
                 CDBGraph::Node node = m_graph.GetNode(*itk);
