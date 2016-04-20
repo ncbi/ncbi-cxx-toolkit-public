@@ -63,6 +63,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
 #include <objtools/cleanup/cleanup.hpp>
+#include "cleanup_utils.hpp"
 #include <objtools/edit/cds_fix.hpp>
 
 #include "newcleanupp.hpp"
@@ -1163,6 +1164,9 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
     if (IsPseudo(f, bsh.GetScope())) {
         return false;
     }
+    if (f.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        return false;
+    }
 
     if (check_for_stop) {
         string translation;
@@ -1181,7 +1185,7 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
         }
     }
 
-    return ExtendToStopCodon(f, bsh, 50);
+    return ExtendToStopCodon(f, bsh, 3);
 }
 
 
@@ -1738,6 +1742,284 @@ bool CCleanup::SetGeneticCodes(CBioseq_Handle bsh)
         }
     }
     return any_changed;
+}
+
+
+// return position of " [" + sOrganism + "]", but only if it's
+// at the end and there are characters before it.
+// Also, returns the position of the organelle prefix in the title.
+static SIZE_TYPE s_TitleEndsInOrganism(
+    const string & sTitle,
+    const string & sOrganism,
+    SIZE_TYPE * out_piOrganellePos)
+{
+    if (out_piOrganellePos) {
+        *out_piOrganellePos = NPOS;
+    }
+
+    SIZE_TYPE answer = NPOS;
+
+    const string sPattern = " [" + sOrganism + "]";
+    if (NStr::EndsWith(sTitle, sPattern, NStr::eNocase)) {
+        answer = sTitle.length() - sPattern.length();
+        if (answer < 1) {
+            // title must have something before the pattern
+            answer = NPOS;
+        }
+    } else {
+        answer = NStr::FindNoCase(sTitle, sPattern, 0, NPOS, NStr::eLast);
+        if (answer < 1 || answer == NPOS) {
+            // pattern not found
+            answer = NPOS;
+        }
+    }
+
+    // find organelle prefix
+    if (out_piOrganellePos) {
+        for (unsigned int genome = CBioSource::eGenome_chloroplast;
+            genome <= CBioSource::eGenome_chromatophore;
+            genome++) {
+            if (genome != CBioSource::eGenome_extrachrom &&
+                genome != CBioSource::eGenome_transposon &&
+                genome != CBioSource::eGenome_insertion_seq &&
+                genome != CBioSource::eGenome_proviral &&
+                genome != CBioSource::eGenome_virion &&
+                genome != CBioSource::eGenome_chromosome)
+            {
+                string organelle = " (" + CBioSource::GetOrganelleByGenome(genome) + ")";
+                SIZE_TYPE possible_organelle_start_pos = NStr::Find(sTitle, organelle);
+                if (possible_organelle_start_pos != NPOS &&
+                    NStr::EndsWith(CTempString(sTitle, 0, answer), organelle)) {
+                    *out_piOrganellePos = possible_organelle_start_pos;
+                    break;
+                }
+
+            }
+        }
+    }
+
+    return answer;
+}
+
+static void s_RemoveOrgFromEndOfProtein(CBioseq& seq, string taxname)
+
+{
+    if (taxname.empty()) return;
+    SIZE_TYPE taxlen = taxname.length();
+
+    EDIT_EACH_SEQANNOT_ON_BIOSEQ(annot_it, seq) {
+        CSeq_annot& annot = **annot_it;
+        if (!annot.IsFtable()) continue;
+        EDIT_EACH_FEATURE_ON_ANNOT(feat_it, annot) {
+            CSeq_feat& feat = **feat_it;
+            CSeqFeatData& data = feat.SetData();
+            if (!data.IsProt()) continue;
+            CProt_ref& prot_ref = data.SetProt();
+            EDIT_EACH_NAME_ON_PROTREF(it, prot_ref) {
+                string str = *it;
+                if (str.empty()) continue;
+                int len = str.length();
+                if (len < 5) continue;
+                if (str[len - 1] != ']') continue;
+                SIZE_TYPE cp = NStr::Find(str, "[", 0, NPOS, NStr::eLast);
+                if (cp == NPOS) continue;
+                string suffix = str.substr(cp + 1);
+                if (NStr::StartsWith(suffix, "NAD")) continue;
+                if (suffix.length() != taxlen + 1) continue;
+                if (NStr::StartsWith(suffix, taxname)) {
+                    str.erase(cp);
+                    Asn2gnbkCompressSpaces(str);
+                    *it = str;
+                }
+            }
+        }
+    }
+}
+
+bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
+{
+    // Bail if not protein
+    if (!FIELD_CHAIN_OF_2_IS_SET(bioseq, Inst, Mol) ||
+        bioseq.GetInst().GetMol() != NCBI_SEQMOL(aa))
+    {
+        return false;
+    }
+
+    // Bail if record is swissprot
+    FOR_EACH_SEQID_ON_BIOSEQ(seqid_itr, bioseq) {
+        const CSeq_id& seqid = **seqid_itr;
+        if (FIELD_IS(seqid, Swissprot)) {
+            return false;
+        }
+    }
+
+    // gather some info from the Seqdesc's on the bioseq, into
+    // the following variables
+    bool bPartial = false;
+    string sTaxname;
+    string sOldName;
+    string *psTitle = NULL;
+    string organelle = kEmptyStr;
+
+    // iterate for title
+    EDIT_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
+        CSeqdesc &descr = **descr_iter;
+        if (descr.IsTitle()) {
+            psTitle = &GET_MUTABLE(descr, Title);
+        }
+    }
+
+    // iterate Seqdescs from bottom to top
+    // accumulate seqdescs into here
+    typedef vector< CConstRef<CSeqdesc> > TSeqdescVec;
+    TSeqdescVec vecSeqdesc;
+    {
+        FOR_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
+            vecSeqdesc.push_back(CConstRef<CSeqdesc>(&**descr_iter));
+        }
+        // climb up to get parent Seqdescs
+        CConstRef<CBioseq_set> bioseq_set(bioseq.GetParentSet());
+        for (; bioseq_set; bioseq_set = bioseq_set->GetParentSet()) {
+            FOR_EACH_SEQDESC_ON_SEQSET(descr_iter, *bioseq_set) {
+                vecSeqdesc.push_back(CConstRef<CSeqdesc>(&**descr_iter));
+            }
+        }
+    }
+
+    ITERATE(TSeqdescVec, descr_iter, vecSeqdesc) {
+        const CSeqdesc &descr = **descr_iter;
+        if (descr.IsMolinfo() && FIELD_IS_SET(descr.GetMolinfo(), Completeness)) {
+            switch (GET_FIELD(descr.GetMolinfo(), Completeness)) {
+            case NCBI_COMPLETENESS(partial):
+            case NCBI_COMPLETENESS(no_left):
+            case NCBI_COMPLETENESS(no_right):
+            case NCBI_COMPLETENESS(no_ends):
+                bPartial = true;
+                break;
+            default:
+                break;
+            }
+            // stop at first molinfo
+            break;
+        }
+    }
+
+    ITERATE(TSeqdescVec, descr_iter, vecSeqdesc) {
+        const CSeqdesc &descr = **descr_iter;
+        if (descr.IsSource()) {
+            const TBIOSOURCE_GENOME genome = (descr.GetSource().CanGetGenome() ?
+                descr.GetSource().GetGenome() :
+                CBioSource::eGenome_unknown);
+            if (genome >= CBioSource::eGenome_chloroplast &&
+                genome <= CBioSource::eGenome_chromatophore &&
+                genome != CBioSource::eGenome_extrachrom &&
+                genome != CBioSource::eGenome_transposon &&
+                genome != CBioSource::eGenome_insertion_seq &&
+                genome != CBioSource::eGenome_proviral &&
+                genome != CBioSource::eGenome_virion &&
+                genome != CBioSource::eGenome_chromosome)
+            {
+                organelle = CBioSource::GetOrganelleByGenome(genome);
+            }
+
+            if (FIELD_IS_SET(descr.GetSource(), Org)) {
+                const COrg_ref & org = GET_FIELD(descr.GetSource(), Org);
+                if (!RAW_FIELD_IS_EMPTY_OR_UNSET(org, Taxname)) {
+                    sTaxname = GET_FIELD(org, Taxname);
+                }
+                if (NStr::StartsWith(sTaxname, organelle, NStr::eNocase)) {
+                    organelle = kEmptyStr;
+                }
+                FOR_EACH_ORGMOD_ON_ORGREF(mod_iter, org) {
+                    const COrgMod & orgmod = **mod_iter;
+                    if (FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(old_name))) {
+                        sOldName = GET_FIELD(orgmod, Subname);
+                    }
+                }
+            }
+            // stop at first source
+            break;
+        }
+    }
+
+    s_RemoveOrgFromEndOfProtein(bioseq, sTaxname);
+
+    // bail if no title
+    if ((NULL == psTitle) || psTitle->empty()) {
+        return false;
+    }
+
+    // put title into a reference,
+    // just because it's more convenient than a pointer
+    string & sTitle = *psTitle;
+    // remember original so we can see if we changed it
+    const string sOriginalTitle = sTitle;
+
+    // search for partial, must be just before bracketed organism
+    SIZE_TYPE partialPos = NStr::Find(sTitle, ", partial [");
+    if (partialPos == NPOS) {
+        partialPos = NStr::Find(sTitle, ", partial (");
+    }
+
+    // find oldname or taxname in brackets at end of protein title
+    SIZE_TYPE penult = NPOS;
+    SIZE_TYPE suffixPos = NPOS; // will point to " [${organism name}]" at end
+    if (!sOldName.empty() && !sTaxname.empty()) {
+        suffixPos = s_TitleEndsInOrganism(sTitle, sOldName, &penult);
+    }
+    if (suffixPos == NPOS && !sTaxname.empty()) {
+        suffixPos = s_TitleEndsInOrganism(sTitle, sTaxname, &penult);
+        if (suffixPos != NPOS) {
+            if (NStr::IsBlank(organelle) && penult != NPOS) {
+            } else if (!NStr::IsBlank(organelle) && penult == NPOS) {
+            } else if (penult != NPOS && sTitle.substr(penult) == organelle) {
+            } else {
+                // bail if no need to change partial text or [organism name]
+                if (bPartial && partialPos != NPOS) {
+                    return false;
+                } else if (!bPartial && partialPos == NPOS){
+                    return false;
+                }
+            }
+        }
+    }
+    // do not change unless [genus species] was at the end
+    if (suffixPos == NPOS) {
+        return false;
+    }
+
+    // truncate bracketed info from end of title, will replace with current taxname
+    sTitle.resize(suffixPos);
+    if (penult != NPOS) {
+        sTitle.resize(penult);
+    }
+
+    // if ", partial [" was indeed just before the [genus species], it will now be ", partial"
+    // Note: 9 is length of ", partial"
+    if (!bPartial  &&
+        partialPos != string::npos &&
+        (partialPos == (sTitle.length() - 9)))
+    {
+        sTitle.resize(partialPos);
+    }
+    NStr::TruncateSpacesInPlace(sTitle);
+
+    //
+    if (bPartial && partialPos == NPOS) {
+        sTitle += ", partial";
+    }
+    if (!NStr::IsBlank(organelle)) {
+        sTitle += " (" + string(organelle) + ")";
+    }
+    if (!sTaxname.empty()) {
+        sTitle += " [" + sTaxname + "]";
+    }
+
+    if (sTitle != sOriginalTitle) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 

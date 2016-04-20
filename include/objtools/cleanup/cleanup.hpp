@@ -282,6 +282,11 @@ public:
 /// @return Boolean indicates whether any coding regions were updated
     static bool SetGeneticCodes(CBioseq_Handle bsh);
 
+/// Adjusts protein title to reflect partialness
+/// @param Bioseq to adjust
+/// @return Boolean indicates whether title was updated
+    static bool AddPartialToProteinTitle(CBioseq &bioseq);
+
 /// Performs WGS specific cleanup
 /// @param entry Seq-entry to edit
 /// @return Boolean return value indicates whether object was updated
