@@ -1420,6 +1420,41 @@ bool CValidError_imp::Validate
 }
 
 
+bool s_IsDateInPast(const CDate& date)
+{
+    time_t t;
+    time(&t);
+    struct tm *tm;
+    tm = localtime(&t);
+
+    bool in_past = false;
+    if (date.GetStd().GetYear() < tm->tm_year + 1900) {
+        in_past = true;
+    } else if (date.GetStd().GetYear() == tm->tm_year + 1900
+        && date.GetStd().IsSetMonth()) {
+        if (date.GetStd().GetMonth() < tm->tm_mon + 1) {
+            in_past = true;
+        } else if (date.GetStd().GetMonth() == tm->tm_mon + 1
+            && date.GetStd().IsSetDay()) {
+            if (date.GetStd().GetDay() < tm->tm_mday) {
+                in_past = true;
+            }
+        }
+    }
+    return in_past;
+}
+
+
+void CValidError_imp::ValidateSubmitBlock(const CSubmit_block& block, const CSeq_submit& ss)
+{
+    if (block.IsSetHup() && block.GetHup() && block.IsSetReldate() &&
+        s_IsDateInPast(block.GetReldate())) {
+        PostErr(eDiag_Warning, eErr_GENERIC_PastReleaseDate,
+            "Record release date has already passed", ss);
+    }
+}
+
+
 void CValidError_imp::Validate(
     const CSeq_submit& ss, CScope* scope)
 {
@@ -1429,6 +1464,7 @@ void CValidError_imp::Validate(
     }
 
     m_IsSeqSubmit = true;
+    ValidateSubmitBlock(ss.GetSub(), ss);
 
     // Get CCit_sub pointer
     const CCit_sub* cs = &ss.GetSub().GetCit();

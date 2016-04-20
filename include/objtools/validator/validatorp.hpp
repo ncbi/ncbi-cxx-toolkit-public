@@ -694,6 +694,8 @@ private:
     CSeq_entry_Handle Setup(const CBioseq& seq);
     void SetScope(const CSeq_entry& se);
 
+    void ValidateSubmitBlock(const CSubmit_block& block, const CSeq_submit& ss);
+
     void InitializeSourceQualTags();
     void ValidateSourceQualTags(const string& str, const CSerialObject& obj, const CSeq_entry *ctx = 0);
 
