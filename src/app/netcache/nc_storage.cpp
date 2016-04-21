@@ -1326,6 +1326,62 @@ void CNCBlobStorage::WriteBlobStat(CSrvSocketTask& task)
     }
 }
 
+void CNCBlobStorage::WriteBlobList(TNCBufferType& sendBuff, const CTempString& mask)
+{
+    string eol("\n{\""), more(",");
+
+    sendBuff.reserve_mem(s_CurBlobsCnt * 250);
+    sendBuff.append(",\n\"", 3).append("blobs",5).append("\": [",4);
+
+    bool is_first = true;
+
+    ITERATE( TBucketCacheMap, bkt, s_BucketsCache) {
+        SBucketCache* cache = bkt->second;
+        cache->lock.Lock();
+
+        ITERATE(TKeyMap, it, cache->key_map) {
+#if __NC_CACHEDATA_INTR_SET
+            const SNCCacheData& data = *it;
+#else
+            const SNCCacheData& data = **it;
+#endif
+            CNCBlobKeyLight key(data.key);
+            if (!mask.empty() && mask != key.Cache()) {
+                continue;
+            }
+
+            if (is_first) {
+                is_first = false;
+            } else {
+                sendBuff.append(",", 1);
+            }
+
+            sendBuff.append(eol.data(), eol.size());
+            sendBuff.append(key.Cache().data(),  key.Cache().size()).append(":", 1);
+            sendBuff.append(key.RawKey().data(), key.RawKey().size()).append(":", 1);
+            sendBuff.append(key.SubKey().data(), key.SubKey().size()).append("\": [",4);
+            string tmp;
+            tmp = NStr::NumericToString(data.size);            sendBuff.append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.create_time / kUSecsPerSecond);
+                                                               sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.create_server);   sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.create_id);       sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.dead_time);       sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.expire);          sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.ver_expire);      sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.coord.file_id);   sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.coord.rec_num);   sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.saved_dead_time); sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.time_bucket);     sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.map_size);        sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            tmp = NStr::NumericToString(data.chunk_size);      sendBuff.append(more.data(), more.size()).append(tmp.data(), tmp.size());
+            sendBuff.append("]}", 2);
+        }
+        cache->lock.Unlock();
+    }
+    sendBuff.append("\n]",2);
+}
+
 void CNCBlobStorage::WriteDbInfo(CSrvSocketTask& task, const CTempString& mask)
 {
     Uint4 id = 0;

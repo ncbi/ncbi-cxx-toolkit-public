@@ -481,6 +481,8 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     //self
     task.WriteText(eol).WriteText(kNCReg_NCServerPrefix).WriteNumber(0).WriteText(iss);
     task.WriteText(s_SelfName).WriteText("\"");
+    task.WriteText(eol).WriteText(kNCReg_NCServerPrefix).WriteText("id_").WriteNumber(0).WriteText(is);
+    task.WriteNumber(s_SelfID);
     task.WriteText(eol).WriteText(kNCReg_NCServerSlotsPrefix).WriteNumber(0).WriteText(is).WriteText("[");
     ITERATE( vector<Uint2>, s, s_SelfSlots) {
         if (s != s_SelfSlots.begin()) {
@@ -496,6 +498,8 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     ITERATE( TNCPeerList, p, mirrorConf->s_Peers) {
         task.WriteText(eol).WriteText(kNCReg_NCServerPrefix).WriteNumber(idx).WriteText(iss);
         task.WriteText(p->second).WriteText("\"");
+        task.WriteText(eol).WriteText(kNCReg_NCServerPrefix).WriteText("id_").WriteNumber(idx).WriteText(is);
+        task.WriteNumber(p->first);
 
         Uint8 srv_id = p->first;
         vector<Uint2> slots;

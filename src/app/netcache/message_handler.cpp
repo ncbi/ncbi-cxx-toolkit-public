@@ -276,7 +276,6 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
         } },
     // Mark the given blob version as "valid" and do that only if this version
     // is still current and wasn't rewritten with another version.
-    // For NC blobs - PROLONG is used instead
     { "SETVALID",
         {&CNCMessageHandler::x_DoCmd_SetValid,
             "IC_SETVALID",
@@ -1196,7 +1195,6 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     // Command provides a minimum time this blob should be still available for.
     // If blob's expiration time was already later than that this command is
     // a no-op.
-    // For IC blobs - SETVALID is used instead
     { "PROLONG",
         {&CNCMessageHandler::x_DoCmd_Prolong,
             "PROLONG",
@@ -3697,6 +3695,16 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
             CNCBlobStorage::WriteDbInfo(*this, mask);
         } else if (section == "blobs") {
             CNCBlobStorage::WriteBlobStat(*this);
+        } else if (section == "blist") {
+            CTempString mask = params.find("port") != params.end() ? params.at("port") : CTempString(kEmptyStr);
+            Flush();
+            m_SendBuff.reset(new TNCBufferType());
+            CNCBlobStorage::WriteBlobList(*m_SendBuff, mask);
+            m_SendBuff->append("\n}}",3);
+            m_SendBuff->append("\nOK:END\n",8);
+            x_SetFlag(fNoReplyOnFinish);
+            m_SendPos = 0;
+            return &CNCMessageHandler::x_WriteSendBuff;
         } else {
             WriteText(",\n\"error\": \"Unknown section name, valid names: ");
 #if __NC_TASKS_MONITOR

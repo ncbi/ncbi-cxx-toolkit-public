@@ -105,6 +105,7 @@ public:
     static void WriteSetup(CSrvSocketTask& task);
     static void WriteEnvInfo(CSrvSocketTask& task);
     static void WriteBlobStat(CSrvSocketTask& task);
+    static void WriteBlobList(TNCBufferType& buffer, const CTempString& mask);
     static void WriteDbInfo(CSrvSocketTask& task, const CTempString& mask);
 
     static bool IsCleanStart(void);
