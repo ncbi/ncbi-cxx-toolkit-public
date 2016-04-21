@@ -688,6 +688,13 @@ struct SCommandDefinition {
             NETSTORAGE_DIRECT_OPTIONS,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttrList,
+        "getattrlist", "Get list of all attributes set on a NetStorage object.",
+        "",
+        {eID, NETSTORAGE_COMMON_OPTIONS,
+            eOutputFile,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttr,
         "getattr", "Get a NetStorage object attribute value.",
         "",

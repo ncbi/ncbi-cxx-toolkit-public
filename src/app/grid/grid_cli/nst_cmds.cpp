@@ -352,6 +352,18 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveNetStorageObject()
     return 0;
 }
 
+int CGridCommandLineInterfaceApp::Cmd_GetAttrList()
+{
+    CNetStorageObject netstorage_object(GetNetStorageObject());
+
+    for(const string& name : netstorage_object.GetAttributeList()) {
+        fwrite(name.data(), name.size(), 1, m_Opts.output_stream);
+        fwrite("\n", 1, 1, m_Opts.output_stream);
+    }
+
+    return 0;
+}
+
 int CGridCommandLineInterfaceApp::Cmd_GetAttr()
 {
     CNetStorageObject netstorage_object(GetNetStorageObject());
