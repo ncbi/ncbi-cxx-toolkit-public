@@ -2022,6 +2022,39 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
     }
 }
 
+bool CCleanup::RemovePseudoProduct(CSeq_feat& cds, CScope& scope)
+{
+    if (!IsPseudo(cds, scope) ||
+        !cds.IsSetData() || !cds.GetData().IsCdregion() ||
+        !cds.IsSetProduct()) {
+        return false;
+    }
+    CBioseq_Handle pseq = scope.GetBioseqHandle(cds.GetProduct());
+    if (pseq) {
+        CFeat_CI prot(pseq, CSeqFeatData::eSubtype_prot);
+        if (prot) {
+            string label;
+            if (prot->GetData().GetProt().IsSetName() &&
+                !prot->GetData().GetProt().GetName().empty()) {
+                label = prot->GetData().GetProt().GetName().front();
+            } else if (prot->GetData().GetProt().IsSetDesc()) {
+                label = prot->GetData().GetProt().GetDesc();
+            }
+            if (!NStr::IsBlank(label)) {
+                if (cds.IsSetComment() && !NStr::IsBlank(cds.GetComment())) {
+                    cds.SetComment(cds.GetComment() + "; " + label);
+                } else {
+                    cds.SetComment(label);
+                }
+            }
+        }
+        CBioseq_EditHandle pseq_e(pseq);
+        pseq_e.Remove();
+    }
+    cds.ResetProduct();
+    return true;
+}
+
 
 bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
 {
@@ -2029,79 +2062,79 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
 
     SAnnotSelector sel(CSeqFeatData::e_Cdregion);
     for (CFeat_CI cds_it(entry, sel); cds_it; ++cds_it) {
-        if (IsPseudo(*(cds_it->GetSeq_feat()), entry.GetScope())) {
-            continue;
-        }
-        bool change_this_cds;
+        bool change_this_cds = false;
         CRef<CSeq_feat> new_cds(new CSeq_feat());
         new_cds->Assign(*(cds_it->GetSeq_feat()));
-
-        change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
-
-        change_this_cds |= SetCDSPartialsByFrameAndTranslation(*new_cds, entry.GetScope());
-
-        // retranslate
-        if (new_cds->IsSetProduct() && entry.GetScope().GetBioseqHandle(new_cds->GetProduct())) {
-            any_changes |= feature::RetranslateCDS(*new_cds, entry.GetScope());
+        if (IsPseudo(*(cds_it->GetSeq_feat()), entry.GetScope())) {
+            change_this_cds = RemovePseudoProduct(*new_cds, entry.GetScope());
         } else {
-            // need to set product if not set
-            if (!new_cds->IsSetProduct() && !IsPseudo(*new_cds, entry.GetScope())) {
-                CRef<CSeq_id> new_id = GetNewProteinId(entry, entry.GetScope().GetBioseqHandle(new_cds->GetLocation()));
-                if (new_id) {
-                    new_cds->SetProduct().SetWhole().Assign(*new_id);
-                    change_this_cds = true;
+            change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
+
+            change_this_cds |= SetCDSPartialsByFrameAndTranslation(*new_cds, entry.GetScope());
+
+            // retranslate
+            if (new_cds->IsSetProduct() && entry.GetScope().GetBioseqHandle(new_cds->GetProduct())) {
+                any_changes |= feature::RetranslateCDS(*new_cds, entry.GetScope());
+            } else {
+                // need to set product if not set
+                if (!new_cds->IsSetProduct() && !IsPseudo(*new_cds, entry.GetScope())) {
+                    CRef<CSeq_id> new_id = GetNewProteinId(entry, entry.GetScope().GetBioseqHandle(new_cds->GetLocation()));
+                    if (new_id) {
+                        new_cds->SetProduct().SetWhole().Assign(*new_id);
+                        change_this_cds = true;
+                    }
                 }
+                if (new_cds->IsSetProduct()) {
+                    CRef<CSeq_entry> prot = AddProtein(*new_cds, entry.GetScope());
+                    if (prot) {
+                        any_changes = true;
+                    }
+                }
+                any_changes |= feature::AdjustForCDSPartials(*new_cds, entry);
             }
+            //prefer ncbieaa
             if (new_cds->IsSetProduct()) {
-                CRef<CSeq_entry> prot = AddProtein(*new_cds, entry.GetScope());
-                if (prot) {
+                CBioseq_Handle p = entry.GetScope().GetBioseqHandle(new_cds->GetProduct());
+                if (p.GetInst().IsSetSeq_data() && p.GetInst().GetSeq_data().IsIupacaa()) {
+                    CBioseq_EditHandle peh(p);
+                    string current = p.GetInst().GetSeq_data().GetIupacaa().Get();
+                    CRef<CSeq_inst> new_inst(new CSeq_inst());
+                    new_inst->Assign(p.GetInst());
+                    new_inst->SetSeq_data().SetNcbieaa().Set(current);
+                    peh.SetInst(*new_inst);
                     any_changes = true;
                 }
             }
-            any_changes |= feature::AdjustForCDSPartials(*new_cds, entry);
-        }
-        //prefer ncbieaa
-        if (new_cds->IsSetProduct()) {
-            CBioseq_Handle p = entry.GetScope().GetBioseqHandle(new_cds->GetProduct());
-            if (p.GetInst().IsSetSeq_data() && p.GetInst().GetSeq_data().IsIupacaa()) {
-                CBioseq_EditHandle peh(p);
-                string current = p.GetInst().GetSeq_data().GetIupacaa().Get();
-                CRef<CSeq_inst> new_inst(new CSeq_inst());
-                new_inst->Assign(p.GetInst());
-                new_inst->SetSeq_data().SetNcbieaa().Set(current);
-                peh.SetInst(*new_inst);
-                any_changes = true;
+
+            string current_name = GetProteinName(*new_cds, entry.GetScope());
+            if (NStr::IsBlank(current_name)) {
+                SetProteinName(*new_cds, "hypothetical protein", false, entry.GetScope());
+                current_name = "hypothetical protein";
+                change_this_cds = true;
             }
-        }
 
-        string current_name = GetProteinName(*new_cds, entry.GetScope());
-        if (NStr::IsBlank(current_name)) {
-            SetProteinName(*new_cds, "hypothetical protein", false, entry.GetScope());
-            current_name = "hypothetical protein";
-            change_this_cds = true;
-        }
-
-        CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*(cds_it->GetSeq_feat()), entry.GetScope());
-        if (mrna) {
-            bool change_mrna = false;
-            CRef<CSeq_feat> new_mrna(new CSeq_feat());
-            new_mrna->Assign(*mrna);
-            // Make mRNA name match coding region protein
-            string mrna_name = new_mrna->GetData().GetRna().GetRnaProductName();
-            if (NStr::IsBlank(mrna_name) 
-                || (!NStr::Equal(current_name, "hypothetical protein") &&
+            CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*(cds_it->GetSeq_feat()), entry.GetScope());
+            if (mrna) {
+                bool change_mrna = false;
+                CRef<CSeq_feat> new_mrna(new CSeq_feat());
+                new_mrna->Assign(*mrna);
+                // Make mRNA name match coding region protein
+                string mrna_name = new_mrna->GetData().GetRna().GetRnaProductName();
+                if (NStr::IsBlank(mrna_name)
+                    || (!NStr::Equal(current_name, "hypothetical protein") &&
                     !NStr::Equal(current_name, mrna_name))) {
-                string remainder;
-                new_mrna->SetData().SetRna().SetRnaProductName(current_name, remainder);
-                change_mrna = true;
-            }
-            // Adjust mRNA partials to match coding region
-            change_mrna |= feature::CopyFeaturePartials(*new_mrna, *new_cds);
-            if (change_mrna) {
-                CSeq_feat_Handle fh = entry.GetScope().GetSeq_featHandle(*mrna);
-                CSeq_feat_EditHandle feh(fh);
-                feh.Replace(*new_mrna);
-                any_changes = true;
+                    string remainder;
+                    new_mrna->SetData().SetRna().SetRnaProductName(current_name, remainder);
+                    change_mrna = true;
+                }
+                // Adjust mRNA partials to match coding region
+                change_mrna |= feature::CopyFeaturePartials(*new_mrna, *new_cds);
+                if (change_mrna) {
+                    CSeq_feat_Handle fh = entry.GetScope().GetSeq_featHandle(*mrna);
+                    CSeq_feat_EditHandle feh(fh);
+                    feh.Replace(*new_mrna);
+                    any_changes = true;
+                }
             }
         }
 

@@ -287,6 +287,12 @@ public:
 /// @return Boolean indicates whether title was updated
     static bool AddPartialToProteinTitle(CBioseq &bioseq);
 
+/// Removes protein product from pseudo coding region
+/// @param cds Seq-feat to adjust
+/// @param scope Scope in which to find protein sequence and remove it
+/// @return Boolean indicates whether anything changed
+    static bool RemovePseudoProduct(CSeq_feat& cds, CScope& scope);
+
 /// Performs WGS specific cleanup
 /// @param entry Seq-entry to edit
 /// @return Boolean return value indicates whether object was updated
