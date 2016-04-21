@@ -456,11 +456,18 @@ CNCPeriodicSync::Initiate(Uint8  server_id,
                                                        local_start_rec_no,
                                                        remote_start_rec_no,
                                                        events);
+#if 0
     if (CSrvTime::CurSecs() - slot_srv->last_success_time
                 > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) {
         slot_srv->is_by_blobs = true;
         return eProceedWithBlobs;
     }
+#else
+    if (slot_srv->last_success_time == 0) {
+        slot_srv->is_by_blobs = true;
+        return eProceedWithBlobs;
+    }
+#endif
     if (records_available
         ||  (CNCSyncLog::GetLogSize(slot) == 0  &&  slot_srv->was_blobs_sync))
     {
