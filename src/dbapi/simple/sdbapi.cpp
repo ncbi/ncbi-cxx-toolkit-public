@@ -1607,7 +1607,8 @@ bool CSDB_UserHandler::HandleMessage(int severity, int msgnum,
         m_Conn.m_PrintOutput.push_back(message);
         return true;
     } else {
-        return false;
+        return CDB_UserHandler_Exception::HandleMessage
+            (severity, msgnum, message);
     }
 }
 
@@ -1618,15 +1619,15 @@ CConnHolder::CConnHolder(IConnection* conn)
       m_DefaultTimeout(0),
       m_HasCustomTimeout(false),
       m_CntOpen(0),
-      m_Context(new CDB_Exception::SContext)
+      m_Context(new CDB_Exception::SContext),
+      m_Handler(new CSDB_UserHandler(*this))
 {
     if (conn != NULL) {
         m_DefaultTimeout         = conn->GetTimeout();
         m_Context->server_name   = conn->GetCDB_Connection()->ServerName();
         m_Context->username      = conn->GetCDB_Connection()->UserName();
         m_Context->database_name = conn->GetDatabase();
-        conn->GetCDB_Connection()->PushMsgHandler
-            (new CSDB_UserHandler(*this), eTakeOwnership);
+        conn->GetCDB_Connection()->PushMsgHandler(&*m_Handler, eNoOwnership);
     }
 }
 
@@ -1651,6 +1652,7 @@ inline void
 CConnHolder::CloseRef(void)
 {
     if (--m_CntOpen == 0) {
+        m_Conn->GetCDB_Connection()->PopMsgHandler(&*m_Handler);
         m_Conn->Close();
     }
 }

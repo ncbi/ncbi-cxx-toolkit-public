@@ -79,6 +79,7 @@ private:
     Uint4        m_CntOpen;
     list<string> m_PrintOutput;
     CRef<CDB_Exception::SContext> m_Context;
+    CRef<CSDB_UserHandler> m_Handler;
 
     friend class CSDB_UserHandler;
 };
