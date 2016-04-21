@@ -404,7 +404,7 @@ void SGridWorkerNodeImpl::x_WNCoreInit()
     const IRegistry& reg = m_App.GetConfig();
 
     if (!m_SingleThreadForced) {
-        string max_threads = reg.GetString(kServerSec, "max_threads", "auto");
+        string max_threads = reg.GetString(kServerSec, "max_threads", "8");
         if (NStr::CompareNocase(max_threads, "auto") == 0)
             m_MaxThreads = GetCpuCount();
         else {
