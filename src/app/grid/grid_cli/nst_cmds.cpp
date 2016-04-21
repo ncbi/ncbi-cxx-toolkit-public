@@ -309,42 +309,6 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
     return 0;
 }
 
-int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
-{
-    const string init_string = SetUp_NetStorageCmd(eNetStorageAPI);
-
-    CNetStorageObject netstorage_object;
-
-    switch (IsOptionSet(eObjectKey, OPTION_N(1)) |
-            IsOptionSet(eNamespace, OPTION_N(2))) {
-    case OPTION_N(1) + OPTION_N(2):
-    {
-        CCombinedNetStorageByKey nst(init_string, m_Opts.netstorage_flags);
-        netstorage_object = nst.Open(m_Opts.id, m_Opts.netstorage_flags);
-        break;
-    }
-
-    case OPTION_N(1):
-        fprintf(stderr, GRID_APP_NAME " mkobjectloc: '--" OBJECT_KEY_OPTION
-                "' requires '--" NAMESPACE_OPTION "'.\n");
-        return 2;
-
-    case OPTION_N(2):
-        fprintf(stderr, GRID_APP_NAME " mkobjectloc: '--" NAMESPACE_OPTION
-                "' requires '--" OBJECT_KEY_OPTION "'.\n");
-        return 2;
-
-    default:
-        netstorage_object = m_NetStorage.Create(m_Opts.netstorage_flags);
-    }
-
-    netstorage_object.Close();
-
-    PrintLine(netstorage_object.GetLoc());
-
-    return 0;
-}
-
 int CGridCommandLineInterfaceApp::Cmd_NetStorageObjectInfo()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);

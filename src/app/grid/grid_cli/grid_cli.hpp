@@ -463,7 +463,6 @@ public:
     int Cmd_Upload();
     int Cmd_Download();
     int Cmd_Relocate();
-    int Cmd_MkObjectLoc();
     int Cmd_NetStorageObjectInfo();
     int Cmd_RemoveNetStorageObject();
     int Cmd_GetAttr();

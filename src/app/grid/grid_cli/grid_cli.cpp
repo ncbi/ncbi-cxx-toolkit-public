@@ -84,10 +84,10 @@ struct SOptionDefinition {
 
     {OPT_DEF(ePositionalArgument, eAppUID), "APP_UID", NULL, {-1}},
 
-    {OPT_DEF(ePositionalArgument, eObjectLoc), "OBJECT_LOC", NULL, {-1}},
+    {OPT_DEF(ePositionalArgument, eObjectLoc), "ID", NULL, {-1}},
 
     {OPT_DEF(eOptionalPositional, eOptionalObjectLoc),
-        "OBJECT_LOC", NULL, {-1}},
+        "ID", NULL, {-1}},
 
     {OPT_DEF(ePositionalArgument, eAttrName), "ATTR_NAME", NULL, {-1}},
 
@@ -172,8 +172,8 @@ struct SOptionDefinition {
         NETSTORAGE_OPTION, "NetStorage service name "
             "or server address.", {-1}},
 
-    {OPT_DEF(eOptionWithParameter, eObjectKey),
-        OBJECT_KEY_OPTION, "Uniqie user-defined key to address the object. "
+    {OPT_DEF(eSwitch, eObjectKey),
+        OBJECT_KEY_OPTION, "Enable user-defined keys mode. "
             "Requires '--" NAMESPACE_OPTION "'.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eNamespace),
@@ -665,19 +665,6 @@ struct SCommandDefinition {
         {eObjectLoc, eNetStorage, ePersistent, eFastStorage, eNetCache, eNamespace,
             eMovable, eCacheable, eNoMetaData, eLoginToken, eAuth,
             eFileTrackSite, eFileTrackAPIKey, eDirectMode,
-            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
-
-    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkObjectLoc,
-        "mkobjectloc", "Turn a user-defined key into an object locator.",
-        "Take a unique user-defined key/namespace pair "
-        "and make an object locator. "
-        "The resulting object locator will reflect storage preferences "
-        "specified by the '--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION
-        "', '--" MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
-        {eObjectKey, eNamespace, ePersistent, eFastStorage,
-            eNetStorage, eNetCache, eNamespace,
-            eMovable, eCacheable, eNoMetaData,
-            eLoginToken, eAuth, eFileTrackSite,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand,
@@ -1384,7 +1371,6 @@ int CGridCommandLineInterfaceApp::Run()
                 /* FALL THROUGH */
             case eID:
             case eObjectLoc:
-            case eObjectKey:
             case eJobId:
             case eTargetQueueArg:
                 m_Opts.id = opt_value;
