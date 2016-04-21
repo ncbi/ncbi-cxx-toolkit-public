@@ -84,11 +84,6 @@ struct SOptionDefinition {
 
     {OPT_DEF(ePositionalArgument, eAppUID), "APP_UID", NULL, {-1}},
 
-    {OPT_DEF(ePositionalArgument, eObjectLoc), "ID", NULL, {-1}},
-
-    {OPT_DEF(eOptionalPositional, eOptionalObjectLoc),
-        "ID", NULL, {-1}},
-
     {OPT_DEF(ePositionalArgument, eAttrName), "ATTR_NAME", NULL, {-1}},
 
     {OPT_DEF(eOptionalPositional, eAttrValue), ATTR_VALUE_ARG, NULL, {-1}},
@@ -638,7 +633,7 @@ struct SCommandDefinition {
         CACHEABLE_OPTION "' options. After the data has been written, "
         "the generated object locator is printed to the standard output."
         ABOUT_NETSTORAGE_OPTION,
-        {eOptionalObjectLoc, eNetStorage, ePersistent, eFastStorage,
+        {eOptionalID, eNetStorage, ePersistent, eFastStorage,
             eNetCache, eNamespace, eTTL, eMovable, eCacheable, eNoMetaData,
             eInput, eInputFile, eLoginToken, eAuth,
             eFileTrackSite, eFileTrackAPIKey, eDirectMode,
@@ -649,7 +644,7 @@ struct SCommandDefinition {
         "Read the object pointed to by the specified locator and "
         "send its contents to the standard output or a file."
         ABOUT_NETSTORAGE_OPTION,
-        {eObjectLoc, eNetStorage, eNetCache, eOffset, eSize,
+        {eID, eNetStorage, eNetCache, eOffset, eSize,
             eOutputFile, eLoginToken, eAuth, eDirectMode,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -662,7 +657,7 @@ struct SCommandDefinition {
         "will be generated, which can be used instead of the old "
         "one for faster object access."
         ABOUT_NETSTORAGE_OPTION,
-        {eObjectLoc, eNetStorage, ePersistent, eFastStorage, eNetCache, eNamespace,
+        {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eNamespace,
             eMovable, eCacheable, eNoMetaData, eLoginToken, eAuth,
             eFileTrackSite, eFileTrackAPIKey, eDirectMode,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -672,7 +667,7 @@ struct SCommandDefinition {
         "objectinfo", "Print information about a NetStorage object.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eObjectLoc, eNetStorage, eNetCache, eLoginToken, eAuth, eDirectMode,
+        {eID, eNetStorage, eNetCache, eLoginToken, eAuth, eDirectMode,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand,
@@ -680,20 +675,20 @@ struct SCommandDefinition {
         "rmobject", "Remove a NetStorage object by its locator.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eObjectLoc, eNetStorage, eNetCache, eLoginToken, eAuth, eDirectMode,
+        {eID, eNetStorage, eNetCache, eLoginToken, eAuth, eDirectMode,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttr,
         "getattr", "Get a NetStorage object attribute value.",
         "",
-        {eObjectLoc, eAttrName, eNetStorage,
+        {eID, eAttrName, eNetStorage,
             eLoginToken, eAuth, eOutputFile,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_SetAttr,
         "setattr", "Set a NetStorage object attribute value.",
         "",
-        {eObjectLoc, eAttrName, eAttrValue, eNetStorage,
+        {eID, eAttrName, eAttrValue, eNetStorage,
             eLoginToken, eAuth, eInput, eInputFile,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -1363,14 +1358,10 @@ int CGridCommandLineInterfaceApp::Run()
             case eUntypedArg:
                 /* FALL THROUGH */
             case eOptionalID:
-            case eOptionalObjectLoc:
                 MarkOptionAsExplicitlySet(eID);
                 MarkOptionAsExplicitlySet(eOptionalID);
-                MarkOptionAsExplicitlySet(eObjectLoc);
-                MarkOptionAsExplicitlySet(eOptionalObjectLoc);
                 /* FALL THROUGH */
             case eID:
-            case eObjectLoc:
             case eJobId:
             case eTargetQueueArg:
                 m_Opts.id = opt_value;

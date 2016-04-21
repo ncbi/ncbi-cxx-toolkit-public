@@ -148,8 +148,6 @@ enum EOption {
     eOptionalID,
     eID,
     eAppUID,
-    eObjectLoc,
-    eOptionalObjectLoc,
     eAttrName,
     eAttrValue,
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT

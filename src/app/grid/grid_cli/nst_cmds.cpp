@@ -61,7 +61,7 @@ string CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         init_string += NStr::URLEncode(m_Opts.nst_service);
     } else if (!IsOptionExplicitlySet(eDirectMode)) {
 
-        if (IsOptionSet(eOptionalObjectLoc) || IsOptionSet(eObjectLoc)) {
+        if (IsOptionSet(eOptionalID) || IsOptionSet(eID)) {
             CNetStorageObjectLoc locator(CCompoundIDPool(), m_Opts.id);
 
             if (locator.HasServiceName()) {
@@ -247,7 +247,7 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    CNetStorageObject netstorage_object(IsOptionSet(eOptionalObjectLoc) ?
+    CNetStorageObject netstorage_object(IsOptionSet(eOptionalID) ?
             m_NetStorage.Open(m_Opts.id) :
             m_NetStorage.Create(m_Opts.netstorage_flags));
 
@@ -275,7 +275,7 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
         netstorage_object.SetExpiration(CTimeout(m_Opts.ttl, 0));
     }
 
-    if (!IsOptionSet(eOptionalObjectLoc))
+    if (!IsOptionSet(eOptionalID))
         PrintLine(netstorage_object.GetLoc());
 
     return 0;
