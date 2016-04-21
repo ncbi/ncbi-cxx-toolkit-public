@@ -698,6 +698,13 @@ namespace DeBruijn {
                 m_position +=  2*m_readholder.m_read_length[m_read++]; 
                 return *this;
             }
+            size_t ReadLen() const { return m_readholder.m_read_length[m_read]; }
+            kmer_iterator KmersForRead(int kmer_len) const {
+                if(kmer_len <= (int)m_readholder.m_read_length[m_read])
+                    return kmer_iterator(kmer_len, m_readholder, m_position, 0, m_read); 
+                else
+                    return m_readholder.kend();
+            }
             friend bool operator==(string_iterator const& li, string_iterator const& ri) { return li.m_position == ri.m_position; }
             friend bool operator!=(string_iterator const& li, string_iterator const& ri) { return li.m_position != ri.m_position; }
         
