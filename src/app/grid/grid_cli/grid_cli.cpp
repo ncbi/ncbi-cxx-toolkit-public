@@ -543,6 +543,14 @@ struct SCommandCategoryDefinition {
 #define ALLOW_XSITE_CONN_IF_SUPPORTED
 #endif
 
+#define NETSTORAGE_COMMON_OPTIONS                                   \
+    eNetStorage, eNamespace, eObjectKey,                            \
+    eFastStorage, ePersistent, eMovable, eCacheable, eNoMetaData,   \
+    eAuth, eLoginToken
+
+#define NETSTORAGE_DIRECT_OPTIONS                                   \
+    eDirectMode, eNetCache, eFileTrackSite
+
 struct SCommandDefinition {
     int cat_id;
     int (CGridCommandLineInterfaceApp::*cmd_proc)();
@@ -628,38 +636,37 @@ struct SCommandDefinition {
         "upload", "Create or rewrite a NetStorage object.",
         "Save the data coming from the standard input (or an input file) "
         "to a network storage. The choice of the storage is based on the "
-        "specified combination of the '--" PERSISTENT_OPTION "', '--"
-        FAST_STORAGE_OPTION "', '--" MOVABLE_OPTION "', and '--"
-        CACHEABLE_OPTION "' options. After the data has been written, "
+        "specified options and/or NetStorage server settings "
+        "(if NetStorage service is used). After the data has been written, "
+        "if new object is created and no locator/user key is provided, "
         "the generated object locator is printed to the standard output."
         ABOUT_NETSTORAGE_OPTION,
-        {eOptionalID, eNetStorage, ePersistent, eFastStorage,
-            eNetCache, eNamespace, eTTL, eMovable, eCacheable, eNoMetaData,
-            eInput, eInputFile, eLoginToken, eAuth,
-            eFileTrackSite, eFileTrackAPIKey, eDirectMode,
+        {eOptionalID, NETSTORAGE_COMMON_OPTIONS,
+            NETSTORAGE_DIRECT_OPTIONS, eFileTrackAPIKey,
+            eInput, eInputFile, eTTL,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Download,
         "download", "Retrieve a NetStorage object.",
-        "Read the object pointed to by the specified locator and "
+        "Read the object pointed to by the specified locator or user key and "
         "send its contents to the standard output or a file."
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, eNetCache, eOffset, eSize,
-            eOutputFile, eLoginToken, eAuth, eDirectMode,
+        {eID, NETSTORAGE_COMMON_OPTIONS,
+            NETSTORAGE_DIRECT_OPTIONS,
+            eOutputFile,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Relocate,
         "relocate", "Move a NetStorage object to a different storage.",
         "Transfer object contents to the new location hinted by "
-        "a combination of the '--" PERSISTENT_OPTION "', '--"
-        FAST_STORAGE_OPTION "', and '--" CACHEABLE_OPTION "' options. "
+        "a combination of the specified options and/or "
+        "NetStorage server settings (if NetStorage service is used). "
         "After the data has been transferred, a new object locator "
-        "will be generated, which can be used instead of the old "
-        "one for faster object access."
+        "will be generated and printed to the standard output, "
+        "unless user key is provided to specify the original object."
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eNamespace,
-            eMovable, eCacheable, eNoMetaData, eLoginToken, eAuth,
-            eFileTrackSite, eFileTrackAPIKey, eDirectMode,
+        {eID, NETSTORAGE_COMMON_OPTIONS,
+            NETSTORAGE_DIRECT_OPTIONS, eFileTrackAPIKey,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand,
@@ -667,29 +674,31 @@ struct SCommandDefinition {
         "objectinfo", "Print information about a NetStorage object.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, eNetCache, eLoginToken, eAuth, eDirectMode,
+        {eID, NETSTORAGE_COMMON_OPTIONS,
+            NETSTORAGE_DIRECT_OPTIONS,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand,
             &CGridCommandLineInterfaceApp::Cmd_RemoveNetStorageObject,
-        "rmobject", "Remove a NetStorage object by its locator.",
+        "rmobject", "Remove a NetStorage object.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, eNetCache, eLoginToken, eAuth, eDirectMode,
+        {eID, NETSTORAGE_COMMON_OPTIONS,
+            NETSTORAGE_DIRECT_OPTIONS,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttr,
         "getattr", "Get a NetStorage object attribute value.",
         "",
-        {eID, eAttrName, eNetStorage,
-            eLoginToken, eAuth, eOutputFile,
+        {eID, eAttrName, NETSTORAGE_COMMON_OPTIONS,
+            eOutputFile,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_SetAttr,
         "setattr", "Set a NetStorage object attribute value.",
         "",
-        {eID, eAttrName, eAttrValue, eNetStorage,
-            eLoginToken, eAuth, eInput, eInputFile,
+        {eID, eAttrName, eAttrValue, NETSTORAGE_COMMON_OPTIONS,
+            eInput, eInputFile,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
