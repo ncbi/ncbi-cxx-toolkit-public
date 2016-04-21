@@ -4983,7 +4983,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PPL	s	Agricultural Development and Advisory Service, Harpenden Laboratory",
 "PPNP	s	Point Pelee National Park",
 "PPPO	s	Pusat Penelitian dan Pengembangan Oseanologi",
-"PPPPB	c	South African Plant Pathogenic and Plant Protecting Bacteria",
+"PPPPB	c	ARC-Plant Protection Research Institute, Plant Pathogenic and Plant Protecting Bacteria",
 "PPRI	c	ARC-Plant Protection Research Institute, National Collection of Fungi: Culture Collection",
 "PPRZ	s	Plant Protection Research Institute",
 "PPSIO	s	P. P. Shirshov Institute of Oceanology",
