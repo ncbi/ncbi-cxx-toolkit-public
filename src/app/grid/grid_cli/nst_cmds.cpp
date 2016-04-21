@@ -59,7 +59,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         init_string = "nst=";
         init_string += NStr::URLEncode(m_Opts.nst_service);
 
-    } else if (!IsOptionSet(eDirectMode) &&
+    } else if (!IsOptionSet(eDirectMode) && !IsOptionSet(eObjectKey) &&
             (IsOptionSet(eOptionalID) || IsOptionSet(eID))) {
 
         CNetStorageObjectLoc locator(CCompoundIDPool(), m_Opts.id);
@@ -101,15 +101,35 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     init_string += "&client=";
     init_string += NStr::URLEncode(auth);
 
-    m_NetStorage = CCombinedNetStorage(init_string, m_Opts.netstorage_flags);
+    if (IsOptionSet(eObjectKey)) {
+        m_NetStorageByKey = CCombinedNetStorageByKey(init_string,
+                m_Opts.netstorage_flags);
+    } else {
+        m_NetStorage = CCombinedNetStorage(init_string, m_Opts.netstorage_flags);
 
-    if (api_class == eNetStorageAdmin)
-        m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
+        if (api_class == eNetStorageAdmin)
+            m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
+    }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     if (IsOptionSet(eAllowXSiteConn))
         g_AllowXSiteConnections(m_NetStorage);
 #endif
+}
+
+CNetStorageObject CGridCommandLineInterfaceApp::GetNetStorageObject()
+{
+    SetUp_NetStorageCmd(eNetStorageAPI);
+
+    if (IsOptionSet(eID) || IsOptionSet(eOptionalID)) {
+        if (IsOptionSet(eObjectKey)) {
+            return m_NetStorageByKey.Open(m_Opts.id);
+        } else {
+            return m_NetStorage.Open(m_Opts.id);
+        }
+    } else {
+        return m_NetStorage.Create(m_Opts.netstorage_flags);
+    }
 }
 
 static void s_NetStorage_RemoveStdReplyFields(CJsonNode& server_reply)
@@ -242,11 +262,7 @@ int CGridCommandLineInterfaceApp::ReconfigureNetStorageServer()
 
 int CGridCommandLineInterfaceApp::Cmd_Upload()
 {
-    SetUp_NetStorageCmd(eNetStorageAPI);
-
-    CNetStorageObject netstorage_object(IsOptionSet(eOptionalID) ?
-            m_NetStorage.Open(m_Opts.id) :
-            m_NetStorage.Create(m_Opts.netstorage_flags));
+    CNetStorageObject netstorage_object(GetNetStorageObject());
 
     if (IsOptionSet(eInput))
         netstorage_object.Write(m_Opts.input);
@@ -272,17 +288,17 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
         netstorage_object.SetExpiration(CTimeout(m_Opts.ttl, 0));
     }
 
-    if (!IsOptionSet(eOptionalID))
-        PrintLine(netstorage_object.GetLoc());
+    const string new_loc(netstorage_object.GetLoc());
+
+    if (!IsOptionSet(eOptionalID) || new_loc != m_Opts.id)
+        PrintLine(new_loc);
 
     return 0;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Download()
 {
-    SetUp_NetStorageCmd(eNetStorageAPI);
-
-    CNetStorageObject netstorage_object(m_NetStorage.Open(m_Opts.id));
+    CNetStorageObject netstorage_object(GetNetStorageObject());
 
     char buffer[IO_BUFFER_SIZE];
     size_t bytes_read;
@@ -301,16 +317,22 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    PrintLine(m_NetStorage.Relocate(m_Opts.id, m_Opts.netstorage_flags));
+    string new_loc;
+
+    if (IsOptionSet(eObjectKey)) {
+        new_loc = m_NetStorageByKey.Relocate(m_Opts.id, m_Opts.netstorage_flags);
+    } else {
+        new_loc = m_NetStorage.Relocate(m_Opts.id, m_Opts.netstorage_flags);
+    }
+
+    PrintLine(new_loc);
 
     return 0;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_NetStorageObjectInfo()
 {
-    SetUp_NetStorageCmd(eNetStorageAPI);
-
-    CNetStorageObject netstorage_object(m_NetStorage.Open(m_Opts.id));
+    CNetStorageObject netstorage_object(GetNetStorageObject());
 
     g_PrintJSON(stdout, netstorage_object.GetInfo().ToJSON());
 
@@ -321,17 +343,19 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveNetStorageObject()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    m_NetStorage.Remove(m_Opts.id);
+    if (IsOptionSet(eObjectKey)) {
+        m_NetStorageByKey.Remove(m_Opts.id, m_Opts.netstorage_flags);
+    } else {
+        m_NetStorage.Remove(m_Opts.id);
+    }
 
     return 0;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_GetAttr()
 {
-    SetUp_NetStorageCmd(eNetStorageAPI);
-
-    CNetStorageObject object(m_NetStorage.Open(m_Opts.id));
-    const string value(object.GetAttribute(m_Opts.attr_name));
+    CNetStorageObject netstorage_object(GetNetStorageObject());
+    const string value(netstorage_object.GetAttribute(m_Opts.attr_name));
 
     // Either output file or cout
     fwrite(value.data(), value.size(), 1, m_Opts.output_stream);
@@ -341,7 +365,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetAttr()
 
 int CGridCommandLineInterfaceApp::Cmd_SetAttr()
 {
-    SetUp_NetStorageCmd(eNetStorageAPI);
+    CNetStorageObject netstorage_object(GetNetStorageObject());
 
     string value;
 
@@ -370,8 +394,7 @@ int CGridCommandLineInterfaceApp::Cmd_SetAttr()
         value = ostr.str();
     }
 
-    m_NetStorage.Open(m_Opts.id).
-            SetAttribute(m_Opts.attr_name, value);
+    netstorage_object.SetAttribute(m_Opts.attr_name, value);
 
     return 0;
 }

@@ -56,7 +56,8 @@ CGridCommandLineInterfaceApp::CGridCommandLineInterfaceApp(
     m_ArgV(argv),
     m_AdminMode(false),
     m_NetICacheClient(eVoid),
-    m_NetStorage(eVoid)
+    m_NetStorage(eVoid),
+    m_NetStorageByKey(eVoid)
 {
 }
 
