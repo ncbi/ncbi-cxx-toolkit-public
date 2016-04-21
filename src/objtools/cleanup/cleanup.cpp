@@ -888,7 +888,7 @@ bool SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
 }
 
 
-bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
+bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit, CCdregion::TFrame frame)
 {
     const CSeq_loc& loc = f.GetLocation();
     CRef<CSeq_loc> new_loc;
@@ -902,14 +902,17 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
     // figure out if we have a partial codon at the end
     size_t orig_len = sequence::GetLength(loc, &(bsh.GetScope()));
     size_t len = orig_len;
-    if (f.IsSetData() && f.GetData().IsCdregion() && f.GetData().GetCdregion().IsSetFrame()) {
-        CCdregion::EFrame frame = f.GetData().GetCdregion().GetFrame();
-        if (frame == CCdregion::eFrame_two) {
-            len -= 1;
-        } else if (frame == CCdregion::eFrame_three) {
-            len -= 2;
-        }
+    if (frame == CCdregion::eFrame_not_set &&
+        f.IsSetData() && f.GetData().IsCdregion() &&
+        f.GetData().GetCdregion().IsSetFrame()) {
+        frame = f.GetData().GetCdregion().GetFrame();
     }
+    if (frame == CCdregion::eFrame_two) {
+        len -= 1;
+    } else if (frame == CCdregion::eFrame_three) {
+        len -= 2;
+    }
+    
     size_t mod = len % 3;
     CRef<CSeq_loc> vector_loc(new CSeq_loc());
     vector_loc->SetInt().SetId().Assign(*(loc.GetId()));

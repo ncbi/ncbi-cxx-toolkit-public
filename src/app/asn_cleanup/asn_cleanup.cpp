@@ -115,6 +115,7 @@ private:
     const Uint4 kGFF3CDSFixOptions = eFixCDS_FrameFromLoc | eFixCDS_Retranslate | eFixCDS_ExtendToStop;
 
     bool x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& missing_prot_name);
+    bool x_BatchExtendCDS(CSeq_feat& sf, CBioseq_Handle b);
     bool x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, bool do_basic = true, bool do_extended = false, Uint4 options = 0);
 
     template<typename T> void x_WriteToFile(const T& s);
@@ -663,6 +664,50 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh)
 }
 
 
+bool CCleanupApp::x_BatchExtendCDS(CSeq_feat& sf, CBioseq_Handle b)
+{
+    if (!sf.GetData().IsCdregion()) {
+        // not coding region
+        return false;
+    }
+    if (CCleanup::IsPseudo(sf, b.GetScope())) {
+        return false;
+    }
+
+    // check for existing stop codon
+    string translation;
+    try {
+        CSeqTranslator::Translate(sf, b.GetScope(), translation, true);
+    } catch (CSeqMapException& e) {
+        cout << e.what() << endl;
+        return false;
+    } catch (CSeqVectorException& e) {
+        cout << e.what() << endl;
+        return false;
+    }
+    if (NStr::EndsWith(translation, "*")) {
+        //already has stop codon
+        return false;
+    }
+    
+
+    return CCleanup::ExtendToStopCodon(sf, b, 50);
+}
+
+
+bool s_LocationShouldBeExtendedToMatch(const CSeq_loc& orig, const CSeq_loc& improved)
+{
+    if ((orig.GetStrand() == eNa_strand_minus &&
+        orig.GetStop(eExtreme_Biological) > improved.GetStop(eExtreme_Biological)) ||
+        (orig.GetStrand() != eNa_strand_minus &&
+        orig.GetStop(eExtreme_Biological) < improved.GetStop(eExtreme_Biological))) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& missing_prot_name)
 {
     bool any_changes = false;
@@ -681,20 +726,27 @@ bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& m
                 feat_change |= feature::RetranslateCDS(*sf, bi.GetScope());
             }
             if ((options & eFixCDS_ExtendToStop) &&
-                CCleanup::ExtendToStopIfShortAndNotPartial(*sf, *bi)) {
+                x_BatchExtendCDS(*sf, *bi)) {
+                CCdregion::TFrame frame = sf->GetData().GetCdregion().IsSetFrame() ? sf->GetData().GetCdregion().GetFrame() : CCdregion::eFrame_not_set;
                 CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*orig, seh.GetScope());
-                if (mrna &&
-                    ((mrna->GetLocation().GetStrand() == eNa_strand_minus &&
-                    mrna->GetLocation().GetStop(eExtreme_Biological) > sf->GetLocation().GetStop(eExtreme_Biological)) ||
-                    (mrna->GetLocation().GetStrand() != eNa_strand_minus &&
-                    mrna->GetLocation().GetStop(eExtreme_Biological) < sf->GetLocation().GetStop(eExtreme_Biological)))) {
+                if (mrna && s_LocationShouldBeExtendedToMatch(mrna->GetLocation(), sf->GetLocation())) {
                     CRef<CSeq_feat> new_mrna(new CSeq_feat());
                     new_mrna->Assign(*mrna);
-                    if (CCleanup::ExtendToStopCodon(*new_mrna, *bi, 3)) {
+                    if (CCleanup::ExtendToStopCodon(*new_mrna, *bi, 50, frame)) {
                         CSeq_feat_EditHandle efh(seh.GetScope().GetSeq_featHandle(*mrna));
                         efh.Replace(*new_mrna);
                     }
                 }
+                CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(*orig, seh.GetScope());
+                if (gene && s_LocationShouldBeExtendedToMatch(gene->GetLocation(), sf->GetLocation())) {
+                    CRef<CSeq_feat> new_gene(new CSeq_feat());
+                    new_gene->Assign(*gene);
+                    if (CCleanup::ExtendToStopCodon(*new_gene, *bi, 50, frame)) {
+                        CSeq_feat_EditHandle efh(seh.GetScope().GetSeq_featHandle(*gene));
+                        efh.Replace(*new_gene);
+                    }
+                }
+
                 feat_change = true;
             }
             if (feat_change) {
