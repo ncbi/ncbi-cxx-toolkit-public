@@ -2558,16 +2558,21 @@ int CValidError_bioseq::PctNs(CBioseq_Handle bsh)
 {
     int pct_n = 0;
     try {
-        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
         TSeqPos num_ns = 0;
         for (size_t i = 0; i < vec.size(); i++) {
-            if (vec[i] == 'N' && !vec.IsInGap(i)) {
+            try {
+                if (vec[i] == 'N' || vec.IsInGap(i)) {
+                    num_ns++;
+                }
+            } catch (CException& e2) {
+                //bad character
                 num_ns++;
             }
         }
         pct_n = (num_ns * 100) / bsh.GetBioseqLength();
     } catch (CException& e) {
-
+        pct_n = 100;
     }
     return pct_n;
 }
