@@ -38,18 +38,17 @@
 
 USING_NCBI_SCOPE;
 
-string CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
+void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity /*cmd_severity*/)
 {
-    if (IsOptionExplicitlySet(eNetStorage) &&
-            IsOptionExplicitlySet(eDirectMode)) {
+    if (IsOptionSet(eNetStorage) && IsOptionSet(eDirectMode)) {
         NCBI_THROW(CArgException, eExcludedValue, "'--" DIRECT_MODE_OPTION "' "
             "cannot be used together with '--" NETSTORAGE_OPTION "'");
     }
 
     m_APIClass = api_class;
 
-    if (api_class == eNetStorageAdmin && !IsOptionExplicitlySet(eNetStorage)) {
+    if (api_class == eNetStorageAdmin && !IsOptionSet(eNetStorage)) {
         NCBI_THROW(CArgException, eNoValue, "'--" NETSTORAGE_OPTION "' "
             "must be explicitly specified.");
     }
@@ -59,29 +58,29 @@ string CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     if (IsOptionSet(eNetStorage)) {
         init_string = "nst=";
         init_string += NStr::URLEncode(m_Opts.nst_service);
-    } else if (!IsOptionExplicitlySet(eDirectMode)) {
 
-        if (IsOptionSet(eOptionalID) || IsOptionSet(eID)) {
-            CNetStorageObjectLoc locator(CCompoundIDPool(), m_Opts.id);
+    } else if (!IsOptionSet(eDirectMode) &&
+            (IsOptionSet(eOptionalID) || IsOptionSet(eID))) {
 
-            if (locator.HasServiceName()) {
-                init_string = "nst=";
-                init_string += NStr::URLEncode(locator.GetServiceName());
-            }
+        CNetStorageObjectLoc locator(CCompoundIDPool(), m_Opts.id);
+
+        if (locator.HasServiceName()) {
+            init_string = "nst=";
+            init_string += NStr::URLEncode(locator.GetServiceName());
         }
     }
 
-    if (IsOptionExplicitlySet(eFileTrackSite)) {
+    if (IsOptionSet(eFileTrackSite)) {
         init_string += "&ft_site=";
         init_string += m_Opts.ft_site;
     }
 
-    if (IsOptionExplicitlySet(eFileTrackAPIKey)) {
+    if (IsOptionSet(eFileTrackAPIKey)) {
         init_string += "&ft_key=";
         init_string += NStr::URLEncode(m_Opts.ft_key);
     }
 
-    if (IsOptionExplicitlySet(eNetCache)) {
+    if (IsOptionSet(eNetCache)) {
         init_string += "&nc=";
         init_string += NStr::URLEncode(m_Opts.nc_service);
     }
@@ -108,11 +107,9 @@ string CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    if (IsOptionExplicitlySet(eAllowXSiteConn))
+    if (IsOptionSet(eAllowXSiteConn))
         g_AllowXSiteConnections(m_NetStorage);
 #endif
-
-    return init_string;
 }
 
 static void s_NetStorage_RemoveStdReplyFields(CJsonNode& server_reply)

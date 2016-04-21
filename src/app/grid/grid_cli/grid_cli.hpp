@@ -573,7 +573,7 @@ private:
     int PrintNetScheduleStats();
     void PrintNetScheduleStats_Generic(ENetScheduleStatTopic topic);
 
-    string SetUp_NetStorageCmd(EAPIClass api_class,
+    void SetUp_NetStorageCmd(EAPIClass api_class,
             EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
     void NetStorage_PrintServerReply(CJsonNode& server_reply);
     int PrintNetStorageServerInfo();
