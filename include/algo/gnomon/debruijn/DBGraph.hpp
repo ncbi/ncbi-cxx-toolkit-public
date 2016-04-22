@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <algo/gnomon/gnomon_model.hpp>
+#include <atomic>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(gnomon);
@@ -399,6 +400,25 @@ namespace DeBruijn {
         return make_pair(valley, rlimit);
     }
 
+    template <typename T>
+    struct SAtomic {
+        typedef T Type;
+        SAtomic(T t = 0) : m_atomic(t) {}
+        SAtomic(const atomic<T> &a) : m_atomic(a.load()) {}
+        SAtomic(const SAtomic &other) : m_atomic(other.m_atomic.load()) {}
+        SAtomic& operator=(const SAtomic &other) { 
+            m_atomic.store(other.m_atomic.load());
+            return *this;
+        }        
+        SAtomic& operator=(T t) { 
+            m_atomic = t; 
+            return *this;
+        }        
+
+        atomic<T> m_atomic;
+    };
+
+
     class CDBGraph {
     public:
 
@@ -413,6 +433,7 @@ namespace DeBruijn {
             m_graph_kmers.PushBackElementsFrom(kmers);
             string max_kmer(m_graph_kmers.KmerLen(), bin2NT[3]);
             m_max_kmer = TKmer(max_kmer);
+            m_visited.resize(GraphSize(), 0);
         }
 
         CDBGraph(istream& in) {
@@ -429,6 +450,7 @@ namespace DeBruijn {
             }
 
             in.read(reinterpret_cast<char*>(&m_is_stranded), sizeof m_is_stranded);
+            m_visited.resize(GraphSize(), 0);
         }
 
         // 0 for not contained kmers    
@@ -479,16 +501,21 @@ namespace DeBruijn {
             return GetNodeKmer(node).toString(KmerLen());
         }
 
-        void SetVisited(const Node& node) {
-            m_graph_kmers.UpdateCount(m_graph_kmers.GetCount(node/2-1) | (uint64_t(1) << 40), node/2-1);
+        bool SetVisited(const Node& node) {
+            uint8_t expected = 0;
+            return m_visited[node/2-1].m_atomic.compare_exchange_strong(expected, 1);
+            //            m_graph_kmers.UpdateCount(m_graph_kmers.GetCount(node/2-1) | (uint64_t(1) << 40), node/2-1);
         }
 
-        void ClearVisited(const Node& node) {
-            m_graph_kmers.UpdateCount(m_graph_kmers.GetCount(node/2-1) & ~(uint64_t(1) << 40), node/2-1);
+        bool ClearVisited(const Node& node) {
+            uint8_t expected = 1;
+            return m_visited[node/2-1].m_atomic.compare_exchange_strong(expected, 0);
+            //            m_graph_kmers.UpdateCount(m_graph_kmers.GetCount(node/2-1) & ~(uint64_t(1) << 40), node/2-1);
         }
 
         bool IsVisited(const Node& node) const {
-            return (m_graph_kmers.GetCount(node/2-1) & (uint64_t(1) << 40));
+            //            return (m_graph_kmers.GetCount(node/2-1) & (uint64_t(1) << 40));
+            return m_visited[node/2-1].m_atomic;
         }
         
         vector<Successor> GetNodeSuccessors(const Node& node) const {
@@ -536,6 +563,7 @@ namespace DeBruijn {
         TKmerCount m_graph_kmers;     // only the minimal kmers are stored  
         TKmer m_max_kmer;             // contains 1 in all kmer_len bit positions  
         TBins m_bins;
+        vector<SAtomic<uint8_t>> m_visited;
         bool m_is_stranded;
     };
 
@@ -1069,6 +1097,8 @@ public:
         }
     }
 
+    CDBGraph& Graph() { return m_graph; }
+
     enum EConnectionStatus {eSuccess, eNoConnection, eAmbiguousConnection};
 
     struct SElement {
@@ -1143,8 +1173,6 @@ public:
         bases.second = eSuccess;
         return bases;
     }
-
-private:
 
     typedef tuple<TBases,size_t> TSequence;
     typedef list<TSequence> TSeqList;
@@ -1339,6 +1367,104 @@ private:
         return extension;
     }
 
+    pair<TBases, CDBGraph::Node> ExtendToRightMT(const CDBGraph::Node& initial_node, vector<atomic<bool>*>& used_nodes) { // must own initial_node
+        CDBGraph::Node node = initial_node;
+        TBases extension;
+        int max_extent = m_jump;
+
+        while(true) {
+            int extension_size = extension.size();
+            vector<CDBGraph::Successor> successors = m_graph.GetNodeSuccessors(node);
+            FilterNeighbors(successors);
+            if(successors.empty())                    // no extensions
+                break;             
+
+            TBases step;
+            if(successors.size() > 1) {                // test for dead end   
+                step = JumpOver(successors, max_extent, 0);
+            } else {                                   // simple extension  
+                step.push_back(successors.front());
+            }
+            if(step.empty())                    // multiple extensions
+                break;
+
+            bool all_good = true;
+            for(auto& s : step) {
+                if(!GoodNode(s.m_node)) {
+                    all_good = false;
+                    break;
+                }
+            }
+            if(!all_good)
+                break;
+
+            int step_size = step.size();
+        
+            CDBGraph::Node rev_node = CDBGraph::ReverseComplement(step.back().m_node);
+            vector<CDBGraph::Successor> predecessors = m_graph.GetNodeSuccessors(rev_node);
+            FilterNeighbors(predecessors);
+            if(predecessors.empty())                     // no extensions
+                break; 
+
+            TBases step_back;
+            if(predecessors.size() > 1 || step_size > 1)
+                step_back = JumpOver(predecessors, max_extent, step_size);
+            else
+                step_back.push_back(predecessors.front());
+
+            int step_back_size = step_back.size();
+            if(step_back_size < step_size)
+                break;
+
+            bool good = true;
+            for(int i = 0; i <= step_size-2 && good; ++i)
+                good = (CDBGraph::ReverseComplement(step_back[i].m_node) == step[step_size-2-i].m_node);
+            for(int i = step_size-1; i < min(step_back_size, extension_size-1+step_size) && good; ++i)
+                good = (CDBGraph::ReverseComplement(step_back[i].m_node) == extension[extension_size-1+step_size-1-i].m_node);
+            if(!good)
+                break;
+       
+            int overshoot = step_back_size-step_size-extension_size;
+            if(overshoot >= 0 && CDBGraph::ReverseComplement(step_back[step_back_size-1-overshoot].m_node) != initial_node) 
+                break;
+
+            if(overshoot > 0) { // overshoot
+                CDBGraph::Node over_node = CDBGraph::ReverseComplement(step_back.back().m_node);
+                vector<CDBGraph::Successor> oversuc = m_graph.GetNodeSuccessors(over_node);
+                FilterNeighbors(oversuc);
+                if(oversuc.empty())
+                    break;
+                TBases step_over;
+                if(oversuc.size() > 1 || overshoot > 1)
+                    step_over = JumpOver(oversuc, max_extent, overshoot);
+                else
+                    step_over.push_back(oversuc.front());
+
+                if((int)step_over.size() < overshoot)
+                    break;
+                for(int i = 0; i < overshoot && good; ++i)
+                    good = (CDBGraph::ReverseComplement(step_over[i].m_node) == step_back[step_back_size-2-i].m_node);
+                if(!good)
+                    break;
+            }
+
+            for(auto& s : step) {
+                size_t index = s.m_node/2-1;
+                bool is_visited = *used_nodes[index];
+                if(is_visited || !used_nodes[index]->compare_exchange_strong(is_visited, true))
+                    return make_pair(extension, s.m_node);
+
+                extension.push_back(s);
+            }
+
+            node = extension.back().m_node;
+        }
+
+        return make_pair(extension, 0);
+    }
+
+
+private:
 
     CDBGraph& m_graph;
     double m_fraction;
