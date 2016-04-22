@@ -498,7 +498,7 @@ namespace
 
 }
 
-CFeatureTableReader::CFeatureTableReader(CTable2AsnContext& context) : m_context(context), m_local_id_counter(0)
+CFeatureTableReader::CFeatureTableReader(CTable2AsnContext& context) : m_local_id_counter(0), m_context(context)
 {
 }
 
@@ -540,7 +540,7 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     }
     string protein_name = NewProteinName(cd_feature, m_context.m_use_hypothetic_protein);
     string title = protein_name;
-    if (protein_name == "hypothetical protein" && !locustag.empty())
+    if (NStr::CompareNocase(protein_name, "hypothetical protein") == 0 && !locustag.empty())
     {
         // find locus
         title += " ";
@@ -762,10 +762,6 @@ void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_
             annot->GetData().GetFtable().empty()) {
             continue;
         }
-
-        // otherwise, take the first feature, which should be representative
-        const CSeq_annot::TData::TFtable* ftable = &annot->GetData().GetFtable();
-        const CSeq_feat* feature = ftable->front();
 
         const CSeq_feat& feat = *annot->GetData().GetFtable().front();
         CConstRef<CSeq_id> feat_id(feat.GetLocation().GetId());
