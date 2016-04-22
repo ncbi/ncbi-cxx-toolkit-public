@@ -1019,8 +1019,9 @@ public:
         }
         if (s_ListeningPorts->size() < kPortsNeeded) {
             throw CLBOSException(CDiagCompileInfo(), NULL, 
-                             CLBOSException::EErrCode::e_LBOSUnknown,
-                             "Not enough vacant ports to start listening", 0);
+                                 CLBOSException::EErrCode::e_LBOSUnknown,
+                                 "Not enough vacant ports to start listening", 
+                                 0);
         }
     }
     void Stop() 
@@ -2226,10 +2227,10 @@ void NoLBOSAddress__DoesNotCrash()
     CConnNetInfo net_info;
     CServIter iter((SERV_ITER)NULL);
     BOOST_CHECK_NO_THROW(
-         iter = SERV_OpenP(service.c_str(), fSERV_All,
-                           SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                           *net_info, 0/*skip*/, 0/*n_skip*/,
-                           0/*external*/, 0/*arg*/, 0/*val*/));
+        SERV_OpenP(service.c_str(), fSERV_All,
+                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                       *net_info, 0/*skip*/, 0/*n_skip*/,
+                       0/*external*/, 0/*arg*/, 0/*val*/));
     
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*g_LBOS_UnitTesting_Instance() == NULL,
                                    "LBOS has working instances when it "
@@ -3734,6 +3735,9 @@ void ServerExists__ReturnLbosOperations()
         return;
     }
     iter->name = service.c_str();
+    iter->ismask = 0;
+    iter->arg = NULL;
+    iter->val = NULL;
     CConnNetInfo net_info;
 
     iter->op = SERV_LBOS_Open(iter.get(), *net_info, NULL);
@@ -3743,23 +3747,24 @@ void ServerExists__ReturnLbosOperations()
         return;
     }
 
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(iter->op != NULL,
-                           "Mapper returned NULL when it should return s_op");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(iter->op != NULL, 
+                                   "Mapper returned NULL when it should "
+                                   "return s_op");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(strcmp(iter->op->mapper, "lbos") == 0,
-                           "Name of mapper that returned "
-                           "answer is not \"LBOS\"");
+                                   "Name of mapper that returned "
+                                   "answer is not \"LBOS\"");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(iter->op->Close != NULL,
-                           "Close operation pointer is null");
+                                   "Close operation pointer is null");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(iter->op->Feedback != NULL,
-                           "Feedback operation pointer is null");
+                                   "Feedback operation pointer is null");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(iter->op->GetNextInfo != NULL,
-                           "GetNextInfo operation pointer is null");
+                                   "GetNextInfo operation pointer is null");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(iter->op->Reset != NULL,
-                           "Reset operation pointer is null");
+                                   "Reset operation pointer is null");
 
     /* Cleanup */
-    g_LBOS_UnitTesting_GetLBOSFuncs()->DestroyData(
-                                          static_cast<SLBOS_Data*>(iter->data));
+    g_LBOS_UnitTesting_GetLBOSFuncs()->
+        DestroyData(static_cast<SLBOS_Data*>(iter->data));
 }
 
 
@@ -3769,24 +3774,28 @@ void InfoPointerProvided__WriteNull()
     string service = "/lbos";    
     auto_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
     iter->name = service.c_str();
+    iter->ismask = 0;
+    iter->arg = NULL;
+    iter->val = NULL;
     SSERV_Info* info;
     CConnNetInfo net_info;
     
     iter->op = SERV_LBOS_Open(iter.get(), *net_info, &info);
     if (iter->op == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(iter->op != NULL,
-                               "LBOS not found when it should be");
+                                       "LBOS not found when it should be");
         return;
     }
     NCBITEST_CHECK_MESSAGE_MT_SAFE(strcmp(iter->op->mapper, "lbos") == 0,
-                           "Name of mapper that returned answer "
-                           "is not \"LBOS\"");
+                                   "Name of mapper that returned answer "
+                                   "is not \"LBOS\"");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(info == NULL, "LBOS mapper provided "
-            "something in host info, when it should not");
+                                                 "something in host info, "
+                                                 "when it should not");
 
     /* Cleanup */
-    g_LBOS_UnitTesting_GetLBOSFuncs()->DestroyData(
-                                          static_cast<SLBOS_Data*>(iter->data));
+    g_LBOS_UnitTesting_GetLBOSFuncs()->
+        DestroyData(static_cast<SLBOS_Data*>(iter->data));
 }
 
 void NoSuchService__ReturnNull()
@@ -3795,21 +3804,64 @@ void NoSuchService__ReturnNull()
     string service = "/service/donotexist";
     
     auto_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
-    if (iter.get() == NULL) {
-        NCBITEST_CHECK_MESSAGE_MT_SAFE(iter.get() == NULL,
-                               "Problem with memory allocation, "
-                               "calloc failed. Not enough RAM?");
-        return;
-    }
-    iter->name = service.c_str();    
+    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(iter.get() != NULL,
+                                     "Problem with memory allocation, "
+                                     "calloc failed. Not enough RAM?");
+    iter->name = service.c_str();
+    iter->ismask = 0;
+    iter->arg = NULL;
+    iter->val = NULL;
     CConnNetInfo net_info;
     iter->op = SERV_LBOS_Open(iter.get(), *net_info, NULL);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(iter->op == NULL,
-                           "Mapper returned s_op when it "
-                           "should return NULL");
-    /* Cleanup */
-    /*ConnNetInfo_Destroy(*net_info);*/
+                                   "Mapper returned s_op when it "
+                                   "should return NULL");
 }
+
+void Dbaf__AppendDBNameToServiceName()
+{
+    CLBOSStatus lbos_status(true, true);
+    CMockFunction<FLBOS_FillCandidatesMethod*> mock(
+                            g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates,
+                            s_FakeFillCandidates<1>);
+    string service = "dbinfo";    
+    auto_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
+    iter->name = service.c_str();
+    iter->ismask = 0;
+    iter->arg = "dbaf";
+    iter->val = "pubmed";
+    SSERV_Info* info;
+    CConnNetInfo net_info;
+    
+    iter->op = SERV_LBOS_Open(iter.get(), *net_info, &info);
+    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(iter->op != NULL,
+                                     "LBOS not found when it should be");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(s_LBOS_servicename, string("dbinfo/pubmed"));
+    /* Cleanup */
+    g_LBOS_UnitTesting_GetLBOSFuncs()->
+        DestroyData(static_cast<SLBOS_Data*>(iter->data));
+}
+
+void NameIsMask__ReturnNull()
+{
+    CLBOSStatus lbos_status(true, true);
+    string service = "/lbos";
+    
+    auto_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
+    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(iter.get() != NULL,
+                                     "Problem with memory allocation, "
+                                     "calloc failed. Not enough RAM?");
+    iter->name = service.c_str();
+    iter->ismask = 1;
+    iter->arg = NULL;
+    iter->val = NULL;
+    CConnNetInfo net_info;
+    iter->op = SERV_LBOS_Open(iter.get(), *net_info, NULL);
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(iter->op == NULL,
+                                   "Mapper returned s_op when it "
+                                   "should return NULL");
+}
+
 } /* namespace Open */
 
 
@@ -3817,7 +3869,7 @@ void NoSuchService__ReturnNull()
 namespace GeneralLBOS
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
-void ServerExists__ShouldReturnLbosOperations()
+void ServerExists__ServOpenPReturnsLbosOperations()
 {
     CLBOSStatus lbos_status(true, true);
     string service = "/lbos";    
@@ -3829,7 +3881,7 @@ void ServerExists__ShouldReturnLbosOperations()
                       0/*external*/, 0/*arg*/, 0/*val*/));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
-            "LBOS not found when it should be");
+                                       "LBOS not found when it should be");
         return;
     }
     NCBITEST_CHECK_MESSAGE_MT_SAFE(iter->op != NULL,
@@ -3852,19 +3904,6 @@ void ServerExists__ShouldReturnLbosOperations()
                            "is null");
 }
 
-void ServerDoesNotExist__ShouldReturnNull()
-{
-    CLBOSStatus lbos_status(true, true);
-    string service = "/asdf/idonotexist";
-    CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
-                           "Mapper should not find service, but "
-                           "it somehow found.");
-}
 
 void LbosExist__ShouldWork()
 {
@@ -3882,6 +3921,74 @@ void LbosExist__ShouldWork()
         s_TestFindMethod(find_methods_arr[method_iter]);
     }
 }
+
+
+void ServerDoesNotExist__ShouldReturnNull()
+{
+    CLBOSStatus lbos_status(true, true);
+    string service = "/asdf/idonotexist";
+    CConnNetInfo net_info;
+    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
+                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                   *net_info, 0/*skip*/, 0/*n_skip*/,
+                   0/*external*/, 0/*arg*/, 0/*val*/));
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
+                                   "Mapper should not find service, but "
+                                   "it somehow found.");
+}
+
+
+void DbafUnknownDB__ReturnNull()
+{
+    CLBOSStatus lbos_status(true, true);
+    string service = "dbinfo";
+    CConnNetInfo net_info;
+    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
+                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                   *net_info, 0/*skip*/, 0/*n_skip*/,
+                   0/*external*/, "dbaf"/*arg*/, "mypubmed"/*val*/));
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
+                                   "Mapper should not find service, but "
+                                   "it somehow found.");
+}
+
+
+void DbafKnownDB__ShouldWork()
+{
+    CLBOSStatus lbos_status(true, true);
+    string service = "dbinfo";
+    CConnNetInfo net_info;
+    const SSERV_Info* info = NULL;
+    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
+                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                   *net_info, 0/*skip*/, 0/*n_skip*/,
+                   0/*external*/, "dbaf"/*arg*/, "pubmed"/*val*/));
+    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter != NULL,
+                                   "LBOS did not find dbinfo/pubmed");
+    int servers = -1;
+    do {
+        servers++;
+        info = SERV_GetNextInfoEx(*iter, NULL);
+    } while (info != NULL);
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(servers > 0,
+                                   "Mapper should find services dbinfo/pubmed, "
+                                   "but nothing was found.");
+}
+
+void NameIsMask__ReturnNull()
+{
+    CLBOSStatus lbos_status(true, true);
+    string service = "/lbos*";
+    CConnNetInfo net_info;
+    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
+                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                   *net_info, 0/*skip*/, 0/*n_skip*/,
+                   0/*external*/, 0/*arg*/, 0/*val*/));
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
+                                   "Mapper should not find service, but "
+                                   "it somehow found.");
+}
+
 } /* namespace GeneralLBOS */
 
 

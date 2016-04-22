@@ -54,6 +54,7 @@ EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN              conn,
 
 static string s_LBOS_hostport;
 static string s_LBOS_header;
+static string s_LBOS_servicename;
 
 static
 unsigned short s_FakeAnnounceEx(const char*     service,
@@ -364,6 +365,7 @@ public:
     {    }
     ~CLBOSRoleDomainResolver()
     {    
+        CORE_LOCK_WRITE;
         free(*g_LBOS_UnitTesting_CurrentRole());
         free(*g_LBOS_UnitTesting_CurrentDomain());
         free(*g_LBOS_UnitTesting_Lbosresolver());
@@ -382,18 +384,22 @@ public:
                                                          "/etc/ncbi/domain",
                                                      "/etc/ncbi/lbosresolver");
 #endif
+        CORE_UNLOCK;
     }
     void setRole(string roleFile) 
     {
+        CORE_LOCK_WRITE;
         free(*g_LBOS_UnitTesting_CurrentRole());
         *g_LBOS_UnitTesting_CurrentRole() = NULL;
         free(m_MockRoleFile);
         m_MockRoleFile = strdup(roleFile.c_str());
         g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(m_MockRoleFile, NULL, 
                                                          NULL);
+        CORE_UNLOCK;
     }
     void setDomain(string domainFile) 
     {
+        CORE_LOCK_WRITE;
         free(*g_LBOS_UnitTesting_CurrentDomain());
         *g_LBOS_UnitTesting_CurrentDomain() = NULL;
         free(m_MockDomainFile);
@@ -401,15 +407,18 @@ public:
         g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(NULL,
                                                          m_MockDomainFile, 
                                                          NULL);
+        CORE_UNLOCK;
     }
     void setLbosresolver(string lbosresolver) 
     {
+        CORE_LOCK_WRITE;
         free(*g_LBOS_UnitTesting_Lbosresolver());
         *g_LBOS_UnitTesting_Lbosresolver() = NULL;
         free(m_MockLbosresolver);
         m_MockLbosresolver = strdup(lbosresolver.c_str());
         g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(NULL, NULL, 
                                                          m_MockLbosresolver);
+        CORE_UNLOCK;
     }
 private:
     char* m_Role;              /* pointer to static variable       */
@@ -1057,9 +1066,10 @@ EIO_Status s_FakeReadEmpty(CONN conn,
 
 template<size_t count>
 static void s_FakeFillCandidates (SLBOS_Data* data,
-                           const char* service)
+                                  const char* service)
 {
     s_CallCounter++;
+    s_LBOS_servicename = service;
     size_t localscope_count = count; /* for debugging */
     unsigned int host = 0;
     unsigned short int port = 0;
@@ -1093,7 +1103,7 @@ static void s_FakeFillCandidates (SLBOS_Data* data,
 
 
 static void s_FakeFillCandidatesCheckInstances(SLBOS_Data* data,
-    const char* service)
+                                               const char* service)
 {
     NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_Instance() != NULL,
                            "s_LBOS_InstancesList is empty at a critical place");

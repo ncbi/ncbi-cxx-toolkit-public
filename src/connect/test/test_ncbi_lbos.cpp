@@ -110,6 +110,12 @@ NCBITEST_AUTO_INIT()
     s_ReadLBOSVersion();
 }
 
+BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldShuffle)
+{
+    CHECK_LBOS_VERSION();
+    ResolveViaLBOS::FakeMassiveInput__ShouldShuffle();
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( SelfTest ) /////////////////////////////////////////////
@@ -771,7 +777,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( Get_LBOS_address_suite )////////////////////////////////
+BOOST_AUTO_TEST_SUITE( Get_LBOS_address )//////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*
  * 1. Should try only one current zone
@@ -910,6 +916,8 @@ BOOST_AUTO_TEST_SUITE( Open )//////////////////////////////////////////////////
  * 3. If read from lbos successful and host info pointer != NULL, write NULL
  *    to host info
  * 4. If read from lbos unsuccessful or no such service, return 0
+ * 5. Open with dbaf - should append DB name to service name
+ * 6. Name is a mask - return NULL
  */
 
 BOOST_AUTO_TEST_CASE(SERV_LBOS_Open__NetInfoNull__ConstructNetInfo)
@@ -936,6 +944,19 @@ BOOST_AUTO_TEST_CASE(SERV_LBOS_Open__NoSuchService__ReturnNull)
     Open::NoSuchService__ReturnNull();
 }
 
+BOOST_AUTO_TEST_CASE(SERV_LBOS_Open__Dbaf__AppendDBNameToServiceName)
+{
+    CHECK_LBOS_VERSION();
+    Open::Dbaf__AppendDBNameToServiceName();
+}
+
+BOOST_AUTO_TEST_CASE(SERV_LBOS_Open__NameIsMask__ReturnNull)
+{
+    CHECK_LBOS_VERSION();
+    Open::NameIsMask__ReturnNull();
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -947,22 +968,43 @@ BOOST_AUTO_TEST_SUITE( GeneralLBOS )///////////////////////////////////////////
  * We check that it finds service and returns non-NULL list of
  * operations
  */
-BOOST_AUTO_TEST_CASE(SERV_OpenP__ServerExists__ShouldReturnLbosOperations)
+BOOST_AUTO_TEST_CASE(GeneralTest__ServerExists__ServOpenPReturnsLbosOperations)
 {
     CHECK_LBOS_VERSION();
-    GeneralLBOS::ServerExists__ShouldReturnLbosOperations();
+    GeneralLBOS::ServerExists__ServOpenPReturnsLbosOperations();
 }
 
-BOOST_AUTO_TEST_CASE(TestLbos_OpenP__ServerDoesNotExist__ShouldReturnNull)
+BOOST_AUTO_TEST_CASE(GeneralTest__ServerDoesNotExist__ShouldReturnNull)
 {
     CHECK_LBOS_VERSION();
     GeneralLBOS::ServerDoesNotExist__ShouldReturnNull();
 }
 
-BOOST_AUTO_TEST_CASE(TestLbos_FindMethod__LbosExist__ShouldWork)
+BOOST_AUTO_TEST_CASE(GeneralTest__LbosExist__ShouldWork)
 {
     CHECK_LBOS_VERSION();
     GeneralLBOS::LbosExist__ShouldWork();
+}
+
+
+BOOST_AUTO_TEST_CASE(GeneralTest__DbafUnknownDB__ReturnNull)
+{
+    CHECK_LBOS_VERSION();
+    GeneralLBOS::DbafUnknownDB__ReturnNull();
+}
+
+
+BOOST_AUTO_TEST_CASE(GeneralTest__DbafKnownDB__ShouldWork)
+{
+    CHECK_LBOS_VERSION();
+    GeneralLBOS::DbafKnownDB__ShouldWork();
+}
+
+
+BOOST_AUTO_TEST_CASE(GeneralTest__NameIsMask__ReturnNull)
+{
+    CHECK_LBOS_VERSION();
+    GeneralLBOS::NameIsMask__ReturnNull();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
