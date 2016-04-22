@@ -53,9 +53,6 @@
 //                         STATIC VARIABLES                                  //
 /////////////////////////////////////////////////////////////////////////////*/
 
-static const size_t kLBOSAddresses            = 7; /**< Max addresses of
-                                                        LBOS to expect,
-                                                        plus one for NULL.   */
 static const char* kRoleFile                  = "/etc/ncbi/role";
 static const char* kDomainFile                = "/etc/ncbi/domain";
 #ifdef NCBI_OS_MSWIN
@@ -392,9 +389,9 @@ const char* g_LBOS_strcasestr(const char* dest, const char* lookup)
 
 /**  Concatenate two C-strings and assign result to the left
  *  @param dest[in, out]
- *   Address of string to which we will append another string. 
- *   This string will not be accessible in any case, success or error. 
- *   You can safely pass result of function like strdup("my string").
+ *   Address of string to which you want to append another string. 
+ *   This address will be realloc()'ed and returned, so dest should point to 
+ *   heap and can be a result of function like strdup("my string").
  *   If it is NULL, a new string will be created.
  *  @param to_append[in]
  *   String that will be copied to the end of dest. 
@@ -2053,7 +2050,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
                                     SSERV_Info**         info     )
 {
     SLBOS_Data* data;
-
+    const char* orig_serv_name = iter->name; /* we may modify name with dbaf */
     if (s_LBOS_Init == 0) {
         s_LBOS_funcs.Initialize();
     }
@@ -2065,10 +2062,37 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
      */
     assert(iter != NULL);  /* we can do nothing if this happens */
 
+    /* Check that iter is not a mask - LBOS cannot work with masks */
+    if (iter->ismask) {
+        CORE_LOG(eLOG_Warning, "Mask was provided instead of service name. "
+            "Masks are not supported in LBOS.");
+        return NULL;
+    }
+
+    /* Check that service name is provided - otherwise there is nothing to 
+     * search for */
     if (iter->name == NULL) {
         CORE_LOG(eLOG_Warning, "\"iter->name\" is null, not able "
                                "to continue SERV_LBOS_Open");
         return NULL;
+    }
+
+    /* If dbaf is defined, we construct new service name and assign it 
+     * to iter */
+    if ( iter->arg  &&  (strcmp(iter->arg, "dbaf") == 0)  &&  iter->val ) {
+        size_t length = 0;
+        char* new_name = 
+            g_LBOS_StringConcat(g_LBOS_StringConcat(g_LBOS_StringConcat(
+                                NULL, iter->name, &length),
+                                      "/",        &length),
+                                      iter->val,  &length);
+        if (new_name == NULL) {
+            CORE_LOG(eLOG_Warning, "Could not concatenate dbaf with service "
+                                   "name, probably not enough RAM. Searching "
+                                   "for service without dbaf");
+        } else {
+            iter->name = new_name;
+        }
     }
     /*
      * Arguments OK, start work
@@ -2095,6 +2119,10 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
                  "CONNECT_Init(&config);\n"
                  "LBOS::Announce(...);");
         s_LBOS_DestroyData(data);
+        if (iter->name != orig_serv_name) {
+            free(iter->name);
+            iter->name = orig_serv_name;
+        }
         return NULL;
     }
     const char* request_dtab = g_CORE_GetRequestDtab();
@@ -2108,13 +2136,20 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
      */
     if (!data->n_cand) {
         s_LBOS_DestroyData(data);
+        if (iter->name != orig_serv_name) {
+            free(iter->name);
+            iter->name = orig_serv_name;
+        }
         return NULL;
     }
     /* Something was found, now we can use iter */
 
     /*Just explicitly mention here to do something with it*/
     iter->data = data;
-
+    if (iter->name != orig_serv_name) {
+        free(iter->name);
+        iter->name = orig_serv_name;
+    }
     return &s_lbos_op;
 }
 
