@@ -691,7 +691,12 @@ bool CCleanupApp::x_BatchExtendCDS(CSeq_feat& sf, CBioseq_Handle b)
     }
     
 
-    return CCleanup::ExtendToStopCodon(sf, b, 50);
+    if (CCleanup::ExtendToStopCodon(sf, b, 50)) {
+        feature::RetranslateCDS(sf, b.GetScope());
+        return true;
+    } else {
+        return false;
+    }
 }
 
 

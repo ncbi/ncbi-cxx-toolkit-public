@@ -2172,6 +2172,10 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
         any_changes |= SetGeneticCodes(*bi);
     }
 
+    CRef<CCleanupChange> changes(makeCleanupChange(0));
+    CNewCleanup_imp exclean(changes, 0);
+    exclean.ExtendedCleanup(entry);
+
     return any_changes;
 }
 

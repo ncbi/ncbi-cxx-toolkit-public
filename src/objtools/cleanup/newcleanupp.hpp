@@ -212,6 +212,8 @@ public:
         CSeq_entry_Handle& seh
     );
 
+    void ExtendedCleanup(CSeq_entry_Handle& seh) { ExtendedCleanupSeqEntryHandle(seh);  }
+
     void ExtendedCleanup(CBioSource& biosrc);
 
     static bool ShouldRemoveAnnot(const CSeq_annot& annot);
