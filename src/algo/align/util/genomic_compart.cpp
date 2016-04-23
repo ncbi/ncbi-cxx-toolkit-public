@@ -732,8 +732,8 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                 set<TSeqPos> forward_breaks, backward_breaks;
                 TSeqPos current_end_point = 0;
                 TSeqPos current_potential_break = 0;
-                TSeqPos count = 1;
 #ifdef _VERBOSE_DEBUG
+                TSeqPos count = 1;
                 TSeqPos last_break = 0;
 #endif
                 ITERATE (TAlignRangeMultiSet, i, *it) {
@@ -774,8 +774,8 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                            diff_len_filter * i->second->GetAlignLength(false);
                 }
                 current_potential_break = current_end_point = UINT_MAX;
-                count = 1;
 #ifdef _VERBOSE_DEBUG
+                count = 1;
                 last_break = 0;
                 TSeqPos last_double_break = 0;
 #endif
