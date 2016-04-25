@@ -86,6 +86,10 @@ SplitQuery_GetChunkSize(EProgram program)
             // then each of these chunks is translated
             retval = 10002;
             break;
+        case eVecScreen:
+        	// Disable query splitting for vecscreen
+        	retval =1;
+        	break;
         case eBlastp:
         default:
             retval = 10000;
