@@ -186,7 +186,7 @@ CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
 
 
 int
-CNSTDatabase::ExecSP_CreateClient(const string &  client, Int8 &  client_id)
+CNSTDatabase::ExecSP_CreateClient(const CClientKey &  client, Int8 &  client_id)
 {
     const string        proc_name = "CreateClient";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -199,8 +199,9 @@ CNSTDatabase::ExecSP_CreateClient(const string &  client, Int8 &  client_id)
             CQuery      query = db.NewQuery();
 
             client_id = k_UndefinedClientID;
-            query.SetParameter("@client_name", client);
+            query.SetParameter("@client_name", client.GetName());
             query.SetParameter("@client_id", client_id, eSDB_Int8, eSP_InOut);
+            query.SetParameter("@client_namespace", client.GetNamespace());
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -471,7 +472,7 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
 int
 CNSTDatabase::ExecSP_UpdateObjectOnRead(
             const string &  object_key,
-            const string &  object_loc, Int8  size, Int8  client_id,
+            const string &  object_loc, Int8  size,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_read,
             const TNSTDBValue<CTime> &  object_expiration,
@@ -505,8 +506,13 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@object_size", size);
-            query.SetParameter("@client_id", client_id);
             query.SetParameter("@current_time", current_time);
+
+            // It was decided as a part of CXX-8023 that if a record is created
+            // in update-on-read then the client_id should be set to NULL.
+            // The stored procedure on the other hand is preferably stay as it
+            // is, so we just set @client_id to NULL below.
+            query.SetNullParameter("@client_id", eSDB_Int8);
 
             // To be on the safe side
             query.SetParameter("@size_was_null", db_size_was_null,
@@ -608,6 +614,48 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
+    } catch (...) {
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
+        throw;
+    }
+}
+
+
+int
+CNSTDatabase::ExecSP_UpdateClientIDForObject(const string &  object_key,
+                                             Int8  client_id)
+{
+    const string        proc_name = "UpdateClientIDForObject";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        x_PreCheckConnection();
+
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
+
+            query.SetParameter("@object_key", object_key);
+            query.SetParameter("@client_id", client_id);
+
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
+            query.VerifyDone();
+
+            int     status = x_CheckStatus(query, proc_name);
             g_DoPerfLogging("MS_SQL_" + proc_name,
                             CNSTPreciseTime::Current() - start,
                             CRequestStatus::e200_Ok);
@@ -941,16 +989,18 @@ CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
 
 
 int
-CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
-                                              TNSTDBValue<CTime> &  expiration,
-                                              TNSTDBValue<CTime> &  creation,
-                                              TNSTDBValue<CTime> &  obj_read,
-                                              TNSTDBValue<CTime> &  obj_write,
-                                              TNSTDBValue<CTime> &  attr_read,
-                                              TNSTDBValue<CTime> &  attr_write,
-                                              TNSTDBValue<Int8> &   read_count,
-                                              TNSTDBValue<Int8> &   write_count,
-                                              TNSTDBValue<string> & client_name
+CNSTDatabase::ExecSP_GetObjectFixedAttributes(
+                                const string &          object_key,
+                                TNSTDBValue<CTime> &    expiration,
+                                TNSTDBValue<CTime> &    creation,
+                                TNSTDBValue<CTime> &    obj_read,
+                                TNSTDBValue<CTime> &    obj_write,
+                                TNSTDBValue<CTime> &    attr_read,
+                                TNSTDBValue<CTime> &    attr_write,
+                                TNSTDBValue<Int8> &     read_count,
+                                TNSTDBValue<Int8> &     write_count,
+                                TNSTDBValue<string> &   client_namespace,
+                                TNSTDBValue<string> &   client_name
                                               )
 {
     const string        proc_name = "GetObjectFixedAttributes";
@@ -980,6 +1030,8 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                             eSDB_Int8, eSP_InOut);
             query.SetParameter("@write_cnt", write_count.m_Value,
                                              eSDB_Int8, eSP_InOut);
+            query.SetParameter("@client_namespace", client_namespace.m_Value,
+                                                    eSDB_String, eSP_InOut);
             query.SetParameter("@client_name", client_name.m_Value,
                                                eSDB_String, eSP_InOut);
 
@@ -1025,6 +1077,10 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
                                                                 AsInt8();
                 client_name.m_IsNull = query.GetParameter("@client_name").
                                                                 IsNull();
+                if (!client_namespace.m_IsNull)
+                    client_namespace.m_Value = query.GetParameter(
+                                                        "@client_namespace").
+                                                        AsString();
                 if (!client_name.m_IsNull)
                     client_name.m_Value = query.GetParameter("@client_name").
                                                                 AsString();
@@ -1196,7 +1252,8 @@ CNSTDatabase::ExecSP_GetStatDBInfo(void)
 
 
 int
-CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
+CNSTDatabase::ExecSP_GetClientObjects(const string &  client_namespace,
+                                      const string &  client_name,
                                       TNSTDBValue<Int8>  limit,
                                       Int8 &  total,
                                       vector<string> &  locators)
@@ -1212,6 +1269,7 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
             CQuery                  query = db.NewQuery();
 
             query.SetParameter("@client_name", client_name);
+            query.SetParameter("@client_namespace", client_namespace);
             if (limit.m_IsNull)
                 query.SetNullParameter("@limit", eSDB_Int8);
             else
@@ -1254,7 +1312,7 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
 
 
 int
-CNSTDatabase::ExecSP_GetClients(vector<string> &  names)
+CNSTDatabase::ExecSP_GetClients(vector< pair<string, string> > &  clients)
 {
     const string            proc_name = "GetClients";
     CNSTPreciseTime         start = CNSTPreciseTime::Current();
@@ -1272,7 +1330,9 @@ CNSTDatabase::ExecSP_GetClients(vector<string> &  names)
             //       status code. And it is safe to iterate over a recordset
             //       even if there is no one.
             ITERATE(CQuery, qit, query.SingleSet()) {
-                names.push_back(qit["name"].AsString());
+                clients.push_back(pair<string, string>(
+                                    qit["name_space"].AsString(),
+                                    qit["name"].AsString()));
             }
             query.VerifyDone();
 

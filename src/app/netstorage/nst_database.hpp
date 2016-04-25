@@ -34,6 +34,7 @@
 #include <dbapi/simple/sdbapi.hpp>
 
 #include "nst_dbconnection_thread.hpp"
+#include "nst_clients.hpp"
 
 
 
@@ -92,7 +93,7 @@ public:
 
     int  ExecSP_GetNextObjectID(Int8 &  object_id,
                                 Int8    count);
-    int  ExecSP_CreateClient(const string &  client,
+    int  ExecSP_CreateClient(const CClientKey &  client,
                              Int8 &  client_id);
     int  ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
@@ -114,7 +115,7 @@ public:
             const TNSTDBValue<CTime> &  object_expiration);
     int  ExecSP_UpdateObjectOnRead(
             const string &  object_key,
-            const string &  object_loc, Int8  size, Int8  client_id,
+            const string &  object_loc, Int8  size,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_read,
             const TNSTDBValue<CTime> &  object_expiration,
@@ -125,6 +126,8 @@ public:
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_relocate,
             const TNSTDBValue<CTime> &  object_expiration);
+    int  ExecSP_UpdateClientIDForObject(
+            const string &  object_key, Int8  client_id);
     int  ExecSP_RemoveObject(const string &  object_key);
     int  ExecSP_SetExpiration(const string &  object_key,
                               const TNSTDBValue<CTimeSpan> &  ttl,
@@ -156,16 +159,18 @@ public:
                                          TNSTDBValue<CTime> &  attr_write,
                                          TNSTDBValue<Int8> &   read_count,
                                          TNSTDBValue<Int8> &   write_count,
+                                         TNSTDBValue<string> & client_namespace,
                                          TNSTDBValue<string> & client_name);
     int  ExecSP_GetObjectExpiration(const string &        object_key,
                                     TNSTDBValue<CTime> &  expiration);
     map<string, string>  ExecSP_GetGeneralDBInfo(void);
     map<string, string>  ExecSP_GetStatDBInfo(void);
-    int  ExecSP_GetClientObjects(const string &  client_name,
+    int  ExecSP_GetClientObjects(const string &  client_namespace,
+                                 const string &  client_name,
                                  TNSTDBValue<Int8>  limit,
                                  Int8 &  total,
                                  vector<string> &  locators);
-    int  ExecSP_GetClients(vector<string> &  names);
+    int  ExecSP_GetClients(vector< pair<string, string> > &  clients);
     int  ExecSP_DoesObjectExist(const string &  object_key);
     int  ExecSP_GetObjectSize(const string &  object_key,
                               TNSTDBValue<Int8> &  object_size);

@@ -64,6 +64,10 @@ const double            default_execute_sp_timeout = 20.0;
 const size_t            max_attr_value = 900;
 
 
+// Client name namespaces; see CXX-8023
+const string            kMyNcbiIdNamespace = "my_ncbi_id";
+const string            kDefaultNamespace = "";
+
 END_NCBI_SCOPE
 
 #endif /* NETSTORAGE_CONSTANTS__HPP */

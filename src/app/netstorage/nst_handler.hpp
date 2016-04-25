@@ -152,8 +152,13 @@ private:
     CRef<CRequestContext>       m_CmdContext;
 
     // The client identification. It appears after HELLO.
-    string                      m_Client;
     string                      m_Service;
+    CClientKey                  m_HelloClient;
+    CClientKey                  m_HelloMyNcbiId;
+
+    // Considers the priority order as described in CXX-8023
+    CClientKey x_GetClient(void) const;
+    void x_CheckClientIdentification(void) const;
 
 private:
     enum EReadMode {
@@ -258,7 +263,6 @@ private:
 
 private:
     CDirectNetStorageObject x_GetObject(const CJsonNode &  message);
-    void x_CheckNonAnonymousClient(void) const;
     void x_CheckObjectLoc(const string &  object_loc) const;
     void x_CheckICacheSettings(const SICacheSettings &  icache_settings);
     void x_CheckUserKey(const SUserKey &  user_key);
@@ -277,6 +281,7 @@ private:
     bool x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags);
     bool x_DetectMetaDBNeedOnGetObjectInfo(const CJsonNode & message) const;
     void x_CreateClient(void);
+    Int8 x_GetClientID(const CClientKey &  client_key);
     void x_FillObjectInfo(CJsonNode &  reply, const string &  val);
     void x_SetObjectInfoReply(CJsonNode &  reply, const string &  name,
                               const TNSTDBValue<CTime> &  value);

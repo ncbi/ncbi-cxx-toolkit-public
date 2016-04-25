@@ -123,7 +123,8 @@ string  CNSTClient::x_TypeAsString(void) const
 
 
 
-CNSTClientRegistry::CNSTClientRegistry()
+CNSTClientRegistry::CNSTClientRegistry() :
+    m_UnknownClientDBID(k_UndefinedClientID)
 {}
 
 
@@ -134,19 +135,19 @@ size_t CNSTClientRegistry::Size(void) const
 }
 
 
-void  CNSTClientRegistry::Touch(const string &  client,
-                                const string &  applications,
-                                const string &  ticket,
-                                const string &  service,
-                                const string &  protocol_version,
-                                EMetadataOption metadata_option,
-                                unsigned int    peer_address)
+void  CNSTClientRegistry::Touch(const CClientKey &  client,
+                                const string &      applications,
+                                const string &      ticket,
+                                const string &      service,
+                                const string &      protocol_version,
+                                EMetadataOption     metadata_option,
+                                unsigned int        peer_address)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
 
     if (found != m_Clients.end()) {
         // Client with this name existed before. Update the information.
@@ -186,154 +187,168 @@ void  CNSTClientRegistry::Touch(const string &  client,
 }
 
 
-void  CNSTClientRegistry::Touch(const string &  client)
+void  CNSTClientRegistry::Touch(const CClientKey &  client)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.Touch();
 }
 
 
-void  CNSTClientRegistry::RegisterSocketWriteError(const string &  client)
+void  CNSTClientRegistry::RegisterSocketWriteError(const CClientKey &  client)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.RegisterSocketWriteError();
 }
 
 
-void  CNSTClientRegistry::AppendType(const string &  client,
-                                     unsigned int    type_to_append)
+void  CNSTClientRegistry::AppendType(const CClientKey &  client,
+                                     unsigned int        type_to_append)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.AppendType(type_to_append);
 }
 
 
-void  CNSTClientRegistry::AddBytesWritten(const string &  client,
-                                          size_t          count)
+void  CNSTClientRegistry::AddBytesWritten(const CClientKey &  client,
+                                          size_t              count)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.AddBytesWritten(count);
 }
 
 
-void  CNSTClientRegistry::AddBytesRead(const string &  client,
-                                       size_t          count)
+void  CNSTClientRegistry::AddBytesRead(const CClientKey &  client,
+                                       size_t              count)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.AddBytesRead(count);
 }
 
 
-void  CNSTClientRegistry::AddBytesRelocated(const string &  client,
-                                            size_t          count)
+void  CNSTClientRegistry::AddBytesRelocated(const CClientKey &  client,
+                                            size_t              count)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.AddBytesRelocated(count);
 }
 
 
-void  CNSTClientRegistry::AddObjectsWritten(const string &  client,
-                                            size_t          count)
+void  CNSTClientRegistry::AddObjectsWritten(const CClientKey &  client,
+                                            size_t              count)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.AddObjectsWritten(count);
 }
 
 
-void  CNSTClientRegistry::AddObjectsRead(const string &  client,
-                                         size_t          count)
+void  CNSTClientRegistry::AddObjectsRead(const CClientKey &  client,
+                                         size_t              count)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.AddObjectsRead(count);
 }
 
 
-void  CNSTClientRegistry::AddObjectsRelocated(const string &  client,
-                                              size_t          count)
+void  CNSTClientRegistry::AddObjectsRelocated(const CClientKey &  client,
+                                              size_t              count)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.AddObjectsRelocated(count);
 }
 
 
-void  CNSTClientRegistry::AddObjectsDeleted(const string &  client,
-                                            size_t          count)
+void  CNSTClientRegistry::AddObjectsDeleted(const CClientKey &  client,
+                                            size_t              count)
 {
-    if (client.empty())
+    if (client.GetName().empty())
         return;
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.AddObjectsDeleted(count);
 }
 
 
-Int8  CNSTClientRegistry::GetDBClientID(const string &  client) const
+// Note: the CNetStorageHandler::x_GetClientID() may be called at the end of the
+//       GETOBJECTINFO handling: the ClientID might need to be updated but the
+//       client could actually be unknown, i.e. both name and namespace are
+//       empty. This makes a special case for the client.
+Int8  CNSTClientRegistry::GetDBClientID(const CClientKey &  client) const
 {
-    if (client.empty())
+    if (client.GetName().empty()) {
+        if (client.GetNamespace().empty())
+            return m_UnknownClientDBID;     // special case
         return k_UndefinedClientID;
+    }
 
-    CMutexGuard                              guard(m_Lock);
-    map<string, CNSTClient>::const_iterator  found = m_Clients.find(client);
+    CMutexGuard                                  guard(m_Lock);
+    map<CClientKey, CNSTClient>::const_iterator  found = m_Clients.find(client);
     if (found != m_Clients.end())
         return found->second.GetDBClientID();
     return k_UndefinedClientID;
 }
 
 
-void  CNSTClientRegistry::SetDBClientID(const string &  client, Int8  id)
+// Note: the CNetStorageHandler::x_GetClientID() may be called at the end of the
+//       GETOBJECTINFO handling: the ClientID might need to be updated but the
+//       client could actually be unknown, i.e. both name and namespace are
+//       empty. This makes a special case for the client.
+void  CNSTClientRegistry::SetDBClientID(const CClientKey &  client, Int8  id)
 {
-    if (client.empty())
+    if (client.GetName().empty()) {
+        if (client.GetNamespace().empty())
+            m_UnknownClientDBID = id;       // special case
         return;
+    }
 
-    CMutexGuard                         guard(m_Lock);
-    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    CMutexGuard                             guard(m_Lock);
+    map<CClientKey, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.SetDBClientID(id);
 }
@@ -344,11 +359,12 @@ CJsonNode  CNSTClientRegistry::Serialize(void) const
     CJsonNode       clients(CJsonNode::NewArrayNode());
     CMutexGuard     guard(m_Lock);
 
-    for (map<string, CNSTClient>::const_iterator  k = m_Clients.begin();
+    for (map<CClientKey, CNSTClient>::const_iterator  k = m_Clients.begin();
          k != m_Clients.end(); ++k) {
         CJsonNode   single_client(k->second.Serialize());
 
-        single_client.SetString("Name", k->first);
+        single_client.SetString("Name", k->first.GetName());
+        single_client.SetString("Namespace", k->first.GetNamespace());
         clients.Append(single_client);
     }
 

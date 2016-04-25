@@ -148,40 +148,77 @@ class CNSTClient
 
 
 
+// CXX-8023: now the client identification includes a name and a namespace
+class CClientKey
+{
+    public:
+        CClientKey()
+        {}
+
+        CClientKey(const string &  _ns, const string &  _name) :
+            ns(_ns), name(_name)
+        {}
+
+        bool operator<(const CClientKey &  other) const
+        { return (ns + name) < (other.ns + other.name); }
+
+        string  GetName(void) const
+        { return name; }
+        string  GetNamespace(void) const
+        { return ns; }
+
+        void  SetName(const string &  _name)
+        { name = _name; }
+        void  SetNamespace(const string &  _ns)
+        { ns = _ns; }
+
+        void Clear(void)
+        { ns.clear(); name.clear(); }
+
+    private:
+        string  ns;
+        string  name;
+};
+
+
 class CNSTClientRegistry
 {
     public:
         CNSTClientRegistry();
 
         size_t  Size(void) const;
-        void  Touch(const string &  client,
+        void  Touch(const CClientKey &  client,
                     const string &  applications,
                     const string &  ticket,
                     const string &  service,
                     const string &  protocol_version,
                     EMetadataOption metadataOption,
                     unsigned int    peer_address);
-        void  Touch(const string &  client);
-        void  RegisterSocketWriteError(const string &  client);
-        void  AppendType(const string &  client,
+        void  Touch(const CClientKey &  client);
+        void  RegisterSocketWriteError(const CClientKey &  client);
+        void  AppendType(const CClientKey &  client,
                          unsigned int    type_to_append);
-        void  AddBytesWritten(const string &  client, size_t  count);
-        void  AddBytesRead(const string &  client, size_t  count);
-        void  AddBytesRelocated(const string &  client, size_t  count);
-        void  AddObjectsWritten(const string &  client, size_t  count);
-        void  AddObjectsRead(const string &  client, size_t  count);
-        void  AddObjectsRelocated(const string &  client, size_t  count);
-        void  AddObjectsDeleted(const string &  client, size_t  count);
+        void  AddBytesWritten(const CClientKey &  client, size_t  count);
+        void  AddBytesRead(const CClientKey &  client, size_t  count);
+        void  AddBytesRelocated(const CClientKey &  client, size_t  count);
+        void  AddObjectsWritten(const CClientKey &  client, size_t  count);
+        void  AddObjectsRead(const CClientKey &  client, size_t  count);
+        void  AddObjectsRelocated(const CClientKey &  client, size_t  count);
+        void  AddObjectsDeleted(const CClientKey &  client, size_t  count);
 
         CJsonNode Serialize(void) const;
 
-        Int8  GetDBClientID(const string &  client) const;
-        void  SetDBClientID(const string &  client, Int8  id);
+        Int8  GetDBClientID(const CClientKey &  client) const;
+        void  SetDBClientID(const CClientKey &  client, Int8  id);
 
     private:
-        map< string, CNSTClient >   m_Clients;  // All the server clients
-                                                // netstorage knows about
-        mutable CMutex              m_Lock;     // Lock for the map
+        // Special case: unknown client DB ID
+        Int8    m_UnknownClientDBID;
+
+    private:
+        map< CClientKey, CNSTClient >   m_Clients;  // All the server clients
+                                                    // netstorage knows about
+        mutable CMutex                  m_Lock;     // Lock for the map
 };
 
 
