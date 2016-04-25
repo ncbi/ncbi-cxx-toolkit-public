@@ -61,15 +61,111 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+
+class CGenollService : public CGenomicCollectionsService
+{
+public:
+    CGenollService(const string& cgi_url, bool nocache)
+    : cgiUrl(cgi_url + (nocache ? "?nocache=true" :""))
+    {
+    }
+
+    CGenollService(bool nocache)
+    {
+        if(nocache)
+        {
+            string service_name(GetService());
+            CNcbiApplication::Instance()->SetEnvironment().Set((NStr::ToUpper(service_name) + "_CONN_ARGS").c_str(), "nocache=true");
+        }
+    }
+
+private:
+    virtual string x_GetURL() { return cgiUrl; }
+
+    virtual void x_Connect()
+    {
+#ifdef _DEBUG
+        LOG_POST(Info << "Connecting to url:" << x_GetURL().c_str());
+#endif
+        if(x_GetURL().empty())
+            CGenomicCollectionsService::x_Connect();
+        else
+            x_ConnectURL(x_GetURL());
+    }
+
+    const string cgiUrl;
+};
+
+class CDirectCGIExec : public CGenomicCollectionsService
+{
+public:
+    CDirectCGIExec(const string& cgi_path, bool nocache)
+    : cgiPath(cgi_path)
+    {
+        if(nocache)
+        {
+            cgiArgs.push_back("-nocache");
+            cgiArgs.push_back("true");
+        }
+    }
+
+    virtual void Ask(const CGCClientRequest& request, CGCClientResponse& reply)
+    {
+        cout << "\nDirectly invoking CGI with following post request :\n" << MSerial_AsnText << request << endl;
+
+        ostringstream errStr;
+        stringstream  outStr(ios::in|ios::out|ios::binary);
+        stringstream  inStr (ios::in|ios::out|ios::binary);
+        inStr << MSerial_AsnBinary << request;
+
+        int exitCode = -1;
+        const char* env[] = {"REQUEST_METHOD=POST", 0};
+
+        CPipe::EFinish retVal = CPipe::ExecWait(cgiPath, cgiArgs, inStr, outStr, errStr, exitCode, kEmptyStr, env);
+
+        if(retVal != CPipe::eDone || exitCode != 0)
+        {
+            cout << "Process Killed or Aborted. CPipe::ExecWait return value " << retVal
+                << ".  Process Exit code: " << exitCode << endl;
+            exit(exitCode);
+        }
+
+        cout << "OutStream size = " << outStr.str().size() << endl;
+
+        cout << "ErrStream >>>>>>>>>" << endl
+            << errStr.str() << endl
+            << "<<<<<<<<< ErrStream" << endl;
+
+        SkipHeader(outStr);
+
+        outStr >> MSerial_AsnBinary >> reply;
+    }
+
+private:
+    const string cgiPath;
+    vector<string> cgiArgs;
+
+    void SkipHeader(istream& is)
+    {
+        char buffer[1000];
+        bool discarding = true; int linesDiscarded = 0;
+        while(discarding)
+        {
+            is.getline(buffer, sizeof(buffer)-1);
+            discarding = !( (strlen(buffer) == 0) || (strlen(buffer) == 1 && buffer[0] == 13));
+            if(discarding)
+                cout << "Discarding header line " << ++linesDiscarded << " : " << buffer << endl;
+        }
+    }
+};
+
 class CTestGenomicCollectionsSvcApplication : public CNcbiApplication
 {
 private:
     virtual void Init(void);
     virtual int  Run(void);
 
-    void PrepareRequest(CGCClientRequest& request, const CArgs& args);
-    int RunServerDirect(const CArgs& args, CNcbiOstream& ostr);
-    int RunUsingClient(const CArgs& args, CNcbiOstream& ostr);
+    int RunWithService(CGenomicCollectionsService& service, const CArgs& args, CNcbiOstream& ostr);
 };
 
 void CTestGenomicCollectionsSvcApplication::Init(void)
@@ -192,161 +288,13 @@ int CTestGenomicCollectionsSvcApplication::Run(void)
     else
         ostr << MSerial_AsnText;
 
-    int retVal = 1;
-    if(!args["cgi"]) {
-        retVal = RunUsingClient(args, ostr);
-    } else {
-        retVal = RunServerDirect(args, ostr);
-    }
-    return retVal;
-}
+    CRef<CGenomicCollectionsService> service;
 
-template <typename TReq> void SetRequestId(TReq& req, const CArgs& args)
-{
-    if(args["acc"]) {
-        req.SetAccession(args["acc"].AsString());
-    } else {
-        req.SetRelease_id(args["rel_id"].AsInteger());
-    }
-}
+    if(args["cgi"])      service.Reset(new CDirectCGIExec(args["cgi"].AsString(), args["nocache"]));
+    else if(args["url"]) service.Reset(new CGenollService(args["url"].AsString(), args["nocache"]));
+    else                 service.Reset(new CGenollService(args["nocache"]));
 
-void CTestGenomicCollectionsSvcApplication::PrepareRequest(CGCClientRequest& gc_request, const CArgs& args)
-{
-    string request = args["request"].AsString();
-
-    if(request == "get-chrtype-valid")
-    {
-        CGCClient_ValidateChrTypeLocRequest& req = gc_request.SetGet_chrtype_valid();
-        req.SetType(args["type"].AsString());
-        req.SetLocation(args["loc"].AsString());
-    }
-    else if(request == "get-assembly")
-    {
-        CGCClient_GetAssemblyRequest& req = gc_request.SetGet_assembly();
-        SetRequestId(req, args);
-
-        if(args["-mode"])
-        {
-            CGCClient_GetAssemblyRequest::SRequestParam params;
-            if(!params.SetMode(CGCClient_GetAssemblyRequest::EAssemblyMode(args["-mode"].AsInteger())))
-                ERR_POST(Error << "Invalid get-assembly mode: " << args["-mode"].AsInteger());
-
-            req.SetLevel(params.level);
-            req.SetAssm_flags(params.assembly_flags);
-            req.SetChrom_flags(params.chromosome_flags);
-            req.SetScaf_flags(params.scaffold_flags);
-            req.SetComponent_flags(params.component_flags);
-        }
-        else
-        {
-            req.SetLevel(args["-level"] ? args["-level"].AsInteger():CGCClient_GetAssemblyRequest::eLevel_scaffold);
-            req.SetAssm_flags(args["-asm_flags"] ? args["-asm_flags"].AsInteger():eGCClient_AttributeFlags_none);
-            req.SetChrom_flags(args["-chr_flags"] ? args["-chr_flags"].AsInteger():eGCClient_AttributeFlags_biosource);
-            req.SetScaf_flags(args["-scf_flags"] ? args["-scf_flags"].AsInteger():eGCClient_AttributeFlags_none);
-            req.SetComponent_flags(args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none);
-        }
-    }
-    else if(request == "get-assembly-blob")
-    {
-        CGCClient_GetAssemblyBlobRequest& req = gc_request.SetGet_assembly_blob();
-        SetRequestId(req, args);
-
-        if(!args["-smode"] || args["-smode"].AsString().empty()) {
-            ERR_POST(Error << "Invalid get-assembly-blob string mode");
-        }
-        req.SetMode(args["-smode"].AsString());
-    }
-    else if(request == "get-best-assembly" || request == "get-all-assemblies")
-    {
-        CGCClient_FindBestAssemblyRequest& req = gc_request.SetGet_best_assembly();
-        NStr::Split(args["acc"].AsString(), ",", req.SetSeq_id_acc());
-        if(args["-filter"])   req.SetFilter(args["-filter"].AsInteger());
-        if(args["-sort"]  )   req.SetSort(args["-sort"].AsInteger());
-        if(args["-limit"] )   req.SetAssembly_return_limit(args["-limit"].AsInteger());
-        else if(request == "get-best-assembly")   req.SetAssembly_return_limit(1);
-    }
-    else if(request == "get-equivalent-assemblies")
-    {
-        CGCClient_GetEquivalentAssembliesRequest& req = gc_request.SetGet_equivalent_assemblies();
-        req.SetAccession(args["acc"].AsString());
-        req.SetEquivalency(args["equiv"].AsInteger());
-    }
-}
-
-int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CNcbiOstream& ostr)
-{
-    string cmd = args["cgi"].AsString();
-    
-    CGCClientRequest request;
-    PrepareRequest(request, args);
-    
-    cout << "\nDirectly invoking CGI with following post request :\n" << MSerial_AsnText << request << endl;
-
-    std::ostringstream  objStream;
-    objStream << MSerial_AsnBinary << request;
-    string reqString = objStream.str();
-    CNcbiIstrstream inStr(reqString.c_str(), reqString.size());
-    
-    ostringstream outStr(ios::out|ios::binary);
-    ostringstream errStr;
-    int exitCode = -1;
-    const char* env[] = {"REQUEST_METHOD=POST", 0};
-
-    vector<string> cgiArgs;
-    if(args["nocache"])
-    {
-        cgiArgs.push_back("-nocache");
-        cgiArgs.push_back("true");
-    }
-    CPipe::EFinish retVal = CPipe::ExecWait (cmd,cgiArgs, inStr, outStr, errStr, exitCode, kEmptyStr, env);
-    
-    string output;
-    char buffer[1000];
-    if(retVal != CPipe::eDone || exitCode != 0) {
-        cout << "Process Killed or Aborted. CPipe::ExecWait return value " << retVal
-            << ".  Process Exit code: " << exitCode << endl;
-    } else {
-        output = outStr.str();
-        cout << "OutStream size = " << output.size() << endl;
-        
-        CNcbiIstrstream  objOutStream(output.c_str(), output.size());
-        
-        bool discarding = true; int linesDiscarded = 0;
-        while(discarding) {
-            objOutStream.getline(buffer, sizeof(buffer)-1);
-            discarding = !( (strlen(buffer) == 0) || (strlen(buffer) == 1 && buffer[0] == 13));
-            if(discarding) {
-                cout << "Discarding header line " << ++linesDiscarded << " : " << buffer << endl;
-            }
-        }
-
-        CGCClientResponse reply;
-        objOutStream >> MSerial_AsnBinary >> reply;
-
-        if(reply.IsGet_assembly())
-            ostr << reply.GetGet_assembly();
-        else if(reply.IsGet_best_assembly())
-        {
-            if(args["request"].AsString() == "get-best-assembly")
-            {
-                if(request.GetGet_best_assembly().GetSeq_id_acc().size() > 1)
-                    ostr << *reply.GetGet_best_assembly().GetAssemblies().front();
-                else
-                    ostr << reply.GetGet_best_assembly().GetAssemblies().front()->GetAssembly();
-            }
-            else
-                ostr << reply.GetGet_best_assembly();
-        }
-        else if(reply.IsGet_chrtype_valid())
-            ostr << reply.GetGet_chrtype_valid();
-        else if(reply.IsGet_assembly_blob())
-            ostr << *CCachedAssembly(reply.GetGet_assembly_blob()).Assembly();
-        else
-            ostr << reply;
-    }
-    cout << "ErrStream>>>\n" << errStr.str() << "\n<<< end ErrStream" << endl;
-    
-    return exitCode;
+    return RunWithService(*service, args, ostr);
 }
 
 static
@@ -362,13 +310,13 @@ static
 bool isVersionsObject(CRef<CSeqdesc> desc)
 {
     return desc->IsUser() &&
-           desc->GetUser().IsSetType() &&
-           desc->GetUser().GetType().IsStr() &&
-           desc->GetUser().GetType().GetStr() == "versions";
+        desc->GetUser().IsSetType() &&
+        desc->GetUser().GetType().IsStr() &&
+        desc->GetUser().GetType().GetStr() == "versions";
 }
 
 static
-void RemoveVersions(CRef<CGC_Assembly>& assembly)
+CRef<CGC_Assembly> RemoveVersions(CRef<CGC_Assembly> assembly)
 {
     CGC_AssemblyDesc* desc = GetAssebmlyDesc(assembly);
     if (desc && desc->CanGetDescr())
@@ -378,28 +326,23 @@ void RemoveVersions(CRef<CGC_Assembly>& assembly)
                           isVersionsObject),
                 l.end());
     }
+
+    return assembly;
 }
 
-int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNcbiOstream& ostr)
+template<typename FUNC>
+void ForEachID(const string& ids, FUNC func)
 {
-    string sss = GetConfig().Get("genomic_collections_cli", "service");
-    list<string> sect;    GetConfig().EnumerateSections(&sect);
-    CConstRef< IRegistry > r1(GetConfig().FindByName("genomic_collections_cli"));
-    CConstRef< IRegistry > r2(GetConfig().FindByContents("genomic_collections_cli"));
+    list<string> id;
+    NStr::Split(ids, ";,", id);
+    for_each(id.begin(), id.end(), func);
+}
 
-    CRef<CGenomicCollectionsService> cli(args["url"] ?
-                    new CGenomicCollectionsService(args["url"].AsString() + (args["nocache"] ? "?nocache=true" :"")) : 
-                    new CGenomicCollectionsService());
-
-    if(args["nocache"] && !args["url"])
-    {
-        string service(cli->GetService());
-        SetEnvironment().Set((NStr::ToUpper(service) + "_CONN_ARGS").c_str(), "nocache=true");
-    }
-
+int CTestGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsService& service, const CArgs& args, CNcbiOstream& ostr)
+{
     LOG_POST("testing genomic collections cgi.");
 
-    string request = args["request"].AsString();
+    const string request = args["request"].AsString();
     
     try {
         if(request == "get-chrtype-valid")
@@ -407,18 +350,18 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
             string type = args["type"].AsString();
             string loc  = args["loc"].AsString();
 
-            ostr << cli->ValidateChrType(type, loc);
+            ostr << service.ValidateChrType(type, loc);
         }
         else if(request == "get-assembly")
         {
-            CRef<CGC_Assembly> reply;
-
             if(args["-mode"])
             {
                 if (args["acc"])
-                    reply.Reset(cli->GetAssembly(args["acc"].AsString(), args["-mode"].AsInteger()));
+                    ForEachID(args["acc"].AsString(), [&](const string& acc) { ostr << *RemoveVersions(service.GetAssembly(acc, args["-mode"].AsInteger())); });
                 else if (args["rel_id"])
-                    reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), args["-mode"].AsInteger()));
+                    ForEachID(args["rel_id"].AsString(), [&](const string& rel_id) { ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), args["-mode"].AsInteger())); });
+                else
+                    ERR_POST(Error << "Either accession or release id should be provided");
             }
             else
             {
@@ -429,30 +372,24 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
                 int compAttrFlags = args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none;
 
                 if (args["acc"])
-                    reply.Reset(cli->GetAssembly(args["acc"].AsString(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
+                    ForEachID(args["acc"].AsString(), [&](const string& acc) { ostr << *RemoveVersions(service.GetAssembly(acc, levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags)); });
                 else if (args["rel_id"])
-                    reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
+                    ForEachID(args["rel_id"].AsString(), [&](const string& rel_id) { ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags)); });
+                else
+                    ERR_POST(Error << "Either accession or release id should be provided");
             }
-
-            RemoveVersions(reply);
-            ostr << *reply;
         }
         else if(request == "get-assembly-blob")
         {
-            if(!args["-smode"] || args["-smode"].AsString().empty()) {
+            if(!args["-smode"] || args["-smode"].AsString().empty())
                 ERR_POST(Error << "Invalid get-assembly-blob string mode");
-            }
 
-            CRef<CGC_Assembly> reply;
             if (args["acc"])
-                reply.Reset(cli->GetAssembly(args["acc"].AsString(), args["-smode"].AsString()));
+                ForEachID(args["acc"].AsString(), [&](const string& acc) { ostr << *RemoveVersions(service.GetAssembly(acc, args["-smode"].AsString())); });
             else if (args["rel_id"])
-                reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), args["-smode"].AsString()));
+                ForEachID(args["rel_id"].AsString(), [&](const string& rel_id) { ostr << *RemoveVersions(service.GetAssembly(NStr::StringToInt(rel_id), args["-smode"].AsString())); });
             else
                 ERR_POST(Error << "Either accession or release id should be provided");
-
-            RemoveVersions(reply);
-            ostr << *reply;
         }
         else if(request == "get-best-assembly")
         {
@@ -464,12 +401,12 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
 
             if(acc.size() == 1)
             {
-                CRef<CGCClient_AssemblyInfo> reply(cli->FindBestAssembly(acc.front(), filter, sort));
+                CRef<CGCClient_AssemblyInfo> reply(service.FindBestAssembly(acc.front(), filter, sort));
                 ostr << *reply;
             }
             else
             {
-                CRef<CGCClient_AssemblySequenceInfo> reply(cli->FindBestAssembly(acc, filter, sort));
+                CRef<CGCClient_AssemblySequenceInfo> reply(service.FindBestAssembly(acc, filter, sort));
                 ostr << *reply;
             }
         }
@@ -481,7 +418,7 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
             int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_all;
             int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
 
-            CRef<CGCClient_AssembliesForSequences> reply(cli->FindAllAssemblies(acc, filter, sort));
+            CRef<CGCClient_AssembliesForSequences> reply(service.FindAllAssemblies(acc, filter, sort));
             ostr << *reply;
         }
         else if(request == "get-equivalent-assemblies")
@@ -489,7 +426,7 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
             string acc = args["acc"].AsString();
             int equiv = args["equiv"].AsInteger();
 
-            CRef<CGCClient_EquivalentAssemblies> reply(cli->GetEquivalentAssemblies(acc, equiv));
+            CRef<CGCClient_EquivalentAssemblies> reply(service.GetEquivalentAssemblies(acc, equiv));
             ostr << *reply;
         }
     } catch (CException& ex) {
