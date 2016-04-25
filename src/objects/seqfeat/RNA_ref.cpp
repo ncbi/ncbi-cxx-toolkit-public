@@ -159,6 +159,7 @@ string CRNA_ref::GetRnaProductName(void) const
     return kEmptyStr;
 }
 
+
 static void s_SetTrnaProduct(CTrna_ext& trna, const string& product, string& remainder)
 {
     remainder = kEmptyStr;
@@ -181,12 +182,41 @@ static void s_SetTrnaProduct(CTrna_ext& trna, const string& product, string& rem
         }
     } else {
         remainder = product;
+        bool found_three_letter_code = false;
         for (size_t i = 0; i < ArraySize(sc_TrnaList); ++i) {
             if (NStr::StartsWith(test, sc_TrnaList[i], NStr::eNocase)) {
                 trna.SetAa().SetNcbieaa(i + 64);
                 remainder = test.substr(CTempString(sc_TrnaList[i]).length());
+                found_three_letter_code = true;
                 break;
             }
+        }
+        if (!found_three_letter_code && test.length() > 5) {
+            int ch = test.c_str()[5];
+            int after = test.c_str()[6];
+            if (!isalpha(after)) {
+                if (isalpha(ch)) {
+                    int aa = 65 + ch - 'A';
+                    trna.SetAa().SetNcbieaa(aa);
+                    remainder = test.substr(6);
+                } else if (ch == '*') {
+                    trna.SetAa().SetNcbieaa(42);
+                    remainder = test.substr(6);
+                }
+            }
+        }
+    }
+    if (remainder.length() == 5 && NStr::StartsWith(remainder, "(") && NStr::EndsWith(remainder, ")")) {
+        string codon = NStr::ToUpper(remainder.substr(1, 3));
+        NStr::ReplaceInPlace(codon, "U", "T");
+        // will parse a single codon recognized
+        CRef<CTrna_ext> ext(new CTrna_ext());
+        if (CTrna_ext::ParseDegenerateCodon(*ext, codon)) {
+            trna.ResetCodon();
+            ITERATE(CTrna_ext::TCodon, c, ext->GetCodon()) {
+                trna.SetCodon().push_back(*c);
+            }
+            remainder = kEmptyStr;
         }
     }
 }

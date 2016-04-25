@@ -1314,6 +1314,20 @@ BOOST_AUTO_TEST_CASE(Test_SetRnaProductName)
     BOOST_CHECK_EQUAL(rna->GetExt().IsTRNA(), true);
     BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().GetAa().GetNcbieaa(), 88);
     BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    // also take single-letter codes
+    product.assign("tRNA-A(gct)");
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->GetExt().IsTRNA(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().GetAa().GetNcbieaa(), 65);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    product.assign("tRNA-*(gct)");
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->GetExt().IsTRNA(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().GetAa().GetNcbieaa(), 42);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
 }
 
 

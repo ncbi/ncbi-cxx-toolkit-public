@@ -4620,51 +4620,6 @@ void s_TokenizeTRnaString (const string &tRNA_string, list<string> &out_string_l
     }
 }
 
-static const char *codonLetterExpand [] =
-{
-  "?", "A", "C", "AC",
-  "G", "AG", "CG", "ACG",
-  "T", "AT", "CT", "ACT",
-  "GT", "AGT", "CGT", "ACGT",
-  NULL
-};
-
-static
-bool s_ParseDegenerateCodon( CTrna_ext & tRNA, string & codon )
-{
-  const static string intToChr = "?ACMGRSVTWYHKDBN";
-
-  if( codon.length() < 3 ) {
-      return false;
-  }
-
-  // the first two have to be real nucleotides
-  const string::size_type first_bad_char = codon.find_first_not_of("ACGT");
-  if( first_bad_char != string::npos && first_bad_char < 2 ) {
-      return false;
-  }
-
-  int idx = intToChr.find( codon [2] );
-  if (idx == (int)string::npos ) return false;
-
-  const char *expanded_codon_letter = codonLetterExpand [idx];
-  const char *iter = expanded_codon_letter;
-  char ch = *iter;
-  int tRNA_codon_idx = 0;
-  codon.erase(3);
-  tRNA.SetCodon().clear();
-  while ( *iter != '\0' && tRNA_codon_idx < 6 ) {
-    codon [2] = ch;
-    tRNA.SetCodon().push_back( CGen_code_table::CodonToIndex(codon) ); // TODO: make sure Seq_code_iupacna
-
-    // prepare for next iteration
-    iter++;
-    ch = *iter;
-    tRNA_codon_idx++;
-  }
-
-  return true;
-}
 
 // based on C's ParseTRnaString
 static 
@@ -4708,7 +4663,7 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
             if ( str.length() == 3) {
                 tRNA_codon = str;
                 NStr::ReplaceInPlace( tRNA_codon, "U", "T" );
-                if (s_ParseDegenerateCodon ( *tr, tRNA_codon)) {
+                if (CTrna_ext::ParseDegenerateCodon ( *tr, tRNA_codon)) {
                     tRNA_codon.clear();
                     copy( tr->GetCodon().begin(), tr->GetCodon().end(), back_inserter(tRNA_codon) );
                     justt = false;
