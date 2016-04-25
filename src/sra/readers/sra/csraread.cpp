@@ -134,7 +134,7 @@ CCSraDb_Impl::SRefTableCursor::SRefTableCursor(const CVDBTable& table)
     : m_Cursor(table),
       INIT_VDB_COLUMN(CGRAPH_HIGH),
       INIT_VDB_COLUMN(PRIMARY_ALIGNMENT_IDS),
-      INIT_VDB_COLUMN(SECONDARY_ALIGNMENT_IDS),
+      INIT_OPTIONAL_VDB_COLUMN(SECONDARY_ALIGNMENT_IDS),
       INIT_VDB_COLUMN(NAME),
       INIT_VDB_COLUMN(NAME_RANGE),
       INIT_VDB_COLUMN(SEQ_ID),
@@ -587,7 +587,7 @@ size_t CCSraRefSeqIterator::GetAlignCountAtPos(TSeqPos pos,
     if ( type & fPrimaryAlign ) {
         ret += ref->PRIMARY_ALIGNMENT_IDS(row).size();
     }
-    if ( type & fSecondaryAlign ) {
+    if ( (type & fSecondaryAlign) && ref->m_SECONDARY_ALIGNMENT_IDS ) {
         ret += ref->SECONDARY_ALIGNMENT_IDS(row).size();
     }
     GetDb().Put(ref);
@@ -937,12 +937,17 @@ void CCSraAlignIterator::x_Settle(void)
                 m_AlnRowCur = ids.data();
                 m_AlnRowEnd = m_AlnRowCur + ids.size();
             }
-            else {
+            else if ( m_Ref->m_SECONDARY_ALIGNMENT_IDS ) {
                 m_AlnRowIsSecondary = true;
                 CVDBValueFor<TVDBRowId> ids =
                     m_Ref->SECONDARY_ALIGNMENT_IDS(m_RefRowNext);
                 m_AlnRowCur = ids.data();
                 m_AlnRowEnd = m_AlnRowCur + ids.size();
+                ++m_RefRowNext;
+            }
+            else {
+                m_AlnRowIsSecondary = true;
+                m_AlnRowCur = m_AlnRowEnd = 0;
                 ++m_RefRowNext;
             }
             if ( m_AlnRowCur != m_AlnRowEnd ) {
