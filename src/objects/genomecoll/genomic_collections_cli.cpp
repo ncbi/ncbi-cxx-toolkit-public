@@ -64,29 +64,6 @@ CGenomicCollectionsService::CGenomicCollectionsService()
     SetRetryLimit(20);
 }
 
-CGenomicCollectionsService::CGenomicCollectionsService(const string& url)
-: m_url(url)
-{
-    SetTimeout(&kTimeout);
-    SetRetryLimit(20);
-}
-
-string CGenomicCollectionsService::x_GetURL()
-{
-    return m_url;
-}
-
-void CGenomicCollectionsService::x_Connect()
-{
-#ifdef _DEBUG
-    LOG_POST(Info << "Connecting to url:" << x_GetURL().c_str());
-#endif
-    if(x_GetURL().empty())
-        CGenomicCollectionsService_Base::x_Connect();
-    else
-        x_ConnectURL(x_GetURL());
-}
-
 template<typename TReq>
 void LogRequest(const TReq& req)
 {

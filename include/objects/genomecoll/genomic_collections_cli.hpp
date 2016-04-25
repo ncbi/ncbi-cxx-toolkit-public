@@ -59,16 +59,9 @@ class CGCClient_EquivalentAssemblies;
 /////////////////////////////////////////////////////////////////////////////
 class CGenomicCollectionsService : public CGenomicCollectionsService_Base
 {
-    string m_url;
-
 public:
     CGenomicCollectionsService();
-    CGenomicCollectionsService(const string& url);
 
-    virtual void x_Connect();
-
-    // Override this to supply your own URL.
-    virtual string x_GetURL();
 
     typedef CGCClient_GetAssemblyRequest::ELevel ELevel;
 
