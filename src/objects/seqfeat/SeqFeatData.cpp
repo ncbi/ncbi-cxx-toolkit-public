@@ -875,13 +875,13 @@ START_SUBTYPE(cdregion)
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
-    ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(number);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
+    ADD_QUAL(partial);
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
@@ -1065,12 +1065,12 @@ START_SUBTYPE(mRNA)
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
-    ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
+    ADD_QUAL(partial);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(pseudogene);
@@ -1482,7 +1482,6 @@ START_SUBTYPE(exon)
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
-    ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
