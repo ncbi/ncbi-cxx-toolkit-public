@@ -1520,7 +1520,7 @@ BOOST_AUTO_TEST_CASE(Test_BioseqSetDescriptorPropagateUp)
     CSeqdesc_CI::TDescChoices desc_choices_to_erase;
     edit::BioseqSetDescriptorPropagateDown(seh.GetSet(), desc_choices_to_erase);
 
-    BOOST_CHECK_EQUAL(seh.IsSetDescr(), FALSE);
+    BOOST_CHECK_EQUAL(seh.IsSetDescr(), false);
 
     edit::BioseqSetDescriptorPropagateUp(seh.GetSet());
     // should now have the comment, plus the two pubs that were on each member
