@@ -1506,5 +1506,28 @@ BOOST_AUTO_TEST_CASE(Test_GetTargetedLocusName)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_BioseqSetDescriptorPropagateUp)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
+    CRef<CSeqdesc> comment(new CSeqdesc());
+    comment->SetComment("A comment");
+    entry->SetSet().SetDescr().Set().push_back(comment);
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CSeqdesc_CI::TDescChoices desc_choices_to_erase;
+    edit::BioseqSetDescriptorPropagateDown(seh.GetSet(), desc_choices_to_erase);
+
+    BOOST_CHECK_EQUAL(seh.IsSetDescr(), FALSE);
+
+    edit::BioseqSetDescriptorPropagateUp(seh.GetSet());
+    // should now have the comment, plus the two pubs that were on each member
+    BOOST_CHECK_EQUAL(seh.GetDescr().Get().size(), 3);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

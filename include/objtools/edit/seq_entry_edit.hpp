@@ -141,6 +141,16 @@ void BioseqSetDescriptorPropagateDown(
     const vector<CSeqdesc::E_Choice> &choices_to_delete = 
         vector<CSeqdesc::E_Choice>() );
 
+/// Moves descriptors up from children of the given bioseq-set if each child
+/// has an identical copy of the descriptor.  It does NOT check for 
+/// duplicate Seqdescs. Will not move molinfo, title, or source descriptors.
+///
+/// @param bioseq_set_h
+///   This is the bioseq_set whose descriptors we're moving.
+NCBI_XOBJEDIT_EXPORT
+void BioseqSetDescriptorPropagateUp(CBioseq_set_Handle set);
+
+
 /// Creates a User-object descriptor on every sequence that has a local ID
 /// Contains the original local ID
 NCBI_XOBJEDIT_EXPORT

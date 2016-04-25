@@ -1374,6 +1374,74 @@ void DivvyUpAlignments(const TVecOfSeqEntryHandles & vecOfSeqEntryHandles)
     }
 }
 
+
+void BioseqSetDescriptorPropagateUp(CBioseq_set_Handle set)
+{
+    if (set.IsEmptySeq_set()) {
+        return;
+    }
+    CConstRef<CBioseq_set> top_set = set.GetCompleteBioseq_set();
+    CRef<CSeq_descr> master(new CSeq_descr());
+    bool first = true;
+    ITERATE(CBioseq_set::TSeq_set, it, top_set->GetSeq_set()) {
+        if ((*it)->IsSetDescr()) {
+            if (first) {
+                ITERATE(CSeq_descr::Tdata, d, (*it)->GetDescr().Get()) {
+                    if (!(*d)->IsTitle() && !(*d)->IsMolinfo() && !(*d)->IsSource()) {
+                        // add to master list
+                        CRef<CSeqdesc> cpy(new CSeqdesc());
+                        cpy->Assign(**d);
+                        master->Set().push_back(cpy);
+                    }
+                }
+                first = false;
+            } else {
+                // remove from master any descriptor not on member
+                CSeq_descr::Tdata::iterator d = master->Set().begin();
+                while (d != master->Set().end()) {
+                    bool found = false;
+                    ITERATE(CSeq_descr::Tdata, s, (*it)->GetDescr().Get()) {
+                        if ((*d)->Equals(**s)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        ++d;
+                    } else {
+                        d = master->Set().erase(d);
+                    }
+                }
+            }
+        } else {
+            master->Reset();
+            break;
+        }
+    }
+    if (master->IsSet() && !master->Set().empty()) {
+        // copy each descriptor to master, remove from member
+        CBioseq_set_EditHandle etop(set);
+        ITERATE(CSeq_descr::Tdata, d, master->Get()) {
+            // remove from components
+            ITERATE(CBioseq_set::TSeq_set, it, top_set->GetSeq_set()) {
+                if ((*it)->IsSeq()) {
+                    CBioseq_Handle bs = set.GetScope().GetBioseqHandle((*it)->GetSeq());
+                    CBioseq_EditHandle bse(bs);
+                    bse.RemoveSeqdesc(**d);
+                } else  if ((*it)->IsSet()) {
+                    CBioseq_set_Handle bss = set.GetScope().GetBioseq_setHandle((*it)->GetSet());
+                    CBioseq_set_EditHandle bsse(bss);
+                    bsse.RemoveSeqdesc(**d);
+                }
+            }
+            CRef<CSeqdesc> cpy(new CSeqdesc());
+            cpy->Assign(**d);
+            etop.AddSeqdesc(*cpy);
+        }        
+    }
+}
+
+
 void BioseqSetDescriptorPropagateDown(
     const CBioseq_set_Handle & bioseq_set_h,
     const vector<CSeqdesc::E_Choice> &choices_to_delete )
