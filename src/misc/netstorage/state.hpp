@@ -94,6 +94,9 @@ public:
     virtual void SetExpirationImpl(const CTimeout&) = 0;
 
     virtual string FileTrack_PathImpl() = 0;
+
+    typedef pair<string, string> TUserInfo;
+    virtual TUserInfo GetUserInfoImpl() = 0;
 };
 
 class ISelector

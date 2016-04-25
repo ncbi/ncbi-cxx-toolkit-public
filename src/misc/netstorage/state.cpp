@@ -216,6 +216,7 @@ public:
     ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
     string FileTrack_PathImpl();
+    TUserInfo GetUserInfoImpl();
 
 private:
     CLocatorHolding<CRWNotFound> m_RW;
@@ -242,6 +243,7 @@ public:
     ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
     string FileTrack_PathImpl();
+    TUserInfo GetUserInfoImpl();
 
 private:
     CRef<SContext> m_Context;
@@ -270,6 +272,7 @@ public:
     ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
     string FileTrack_PathImpl();
+    TUserInfo GetUserInfoImpl();
 
 private:
     CRef<SContext> m_Context;
@@ -486,6 +489,15 @@ string CNotFound::FileTrack_PathImpl()
 }
 
 
+ILocation::TUserInfo CNotFound::GetUserInfoImpl()
+{
+    NCBI_THROW_FMT(CNetStorageException, eNotExists,
+            "NetStorageObject \"" << LocatorToStr() <<
+            "\" could not be found in any of the designated locations.");
+    return TUserInfo(kEmptyStr, kEmptyStr); // Not reached
+}
+
+
 bool CNetCache::Init()
 {
     if (!m_Client) {
@@ -685,6 +697,13 @@ string CNetCache::FileTrack_PathImpl()
 }
 
 
+ILocation::TUserInfo CNetCache::GetUserInfoImpl()
+{
+    // Not supported
+    return TUserInfo(kEmptyStr, kEmptyStr);
+}
+
+
 void CFileTrack::SetLocator()
 {
     Locator().SetLocation_FileTrack(m_Context->filetrack_api.config.site);
@@ -795,6 +814,15 @@ void CFileTrack::SetExpirationImpl(const CTimeout&)
 string CFileTrack::FileTrack_PathImpl()
 {
     return m_Context->filetrack_api.GetPath(Locator());
+}
+
+
+ILocation::TUserInfo CFileTrack::GetUserInfoImpl()
+{
+    // TODO:
+    // Get My NCBI ID from FileTrack (CXX-8031),
+    // return it as a pair("my_ncbi_id", value).
+    return TUserInfo(kEmptyStr, kEmptyStr);
 }
 
 

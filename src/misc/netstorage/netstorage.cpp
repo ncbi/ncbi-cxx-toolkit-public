@@ -83,6 +83,12 @@ string CDirectNetStorageObject::FileTrack_Path()
 }
 
 
+pair<string, string> CDirectNetStorageObject::GetUserInfo()
+{
+    return Impl<CObj>(m_Impl)->GetUserInfo();
+}
+
+
 CDirectNetStorageObject::CDirectNetStorageObject(SNetStorageObjectImpl* impl)
     : CNetStorageObject(impl)
 {}

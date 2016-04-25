@@ -68,6 +68,7 @@ public:
     void SetExpiration(const CTimeout&);
 
     string FileTrack_Path();
+    TUserInfo GetUserInfo();
 
     const TObjLoc& Locator() const;
     string Relocate(TNetStorageFlags);
@@ -92,6 +93,7 @@ private:
     ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
     string FileTrack_PathImpl();
+    TUserInfo GetUserInfoImpl();
 
     ISelector::Ptr m_Selector;
     IState* m_State;

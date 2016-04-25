@@ -111,6 +111,12 @@ string CObj::FileTrack_Path()
 }
 
 
+ILocation::TUserInfo CObj::GetUserInfo()
+{
+    return m_Location->GetUserInfoImpl();
+}
+
+
 const TObjLoc& CObj::Locator() const
 {
     return m_Selector->Locator();
@@ -317,6 +323,12 @@ void CObj::SetExpirationImpl(const CTimeout& ttl)
 string CObj::FileTrack_PathImpl()
 {
     return MetaMethod(TCaller<string, &ILocation::FileTrack_PathImpl>());
+}
+
+
+ILocation::TUserInfo CObj::GetUserInfoImpl()
+{
+    return MetaMethod(TCaller<TUserInfo, &ILocation::GetUserInfoImpl>());
 }
 
 

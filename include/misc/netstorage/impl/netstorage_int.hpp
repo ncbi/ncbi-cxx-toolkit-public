@@ -46,6 +46,7 @@ public:
     ENetStorageRemoveResult Remove();
     const CNetStorageObjectLoc& Locator();
     string FileTrack_Path();
+    pair<string, string> GetUserInfo();
 
 private:
     CDirectNetStorageObject(SNetStorageObjectImpl* impl);
