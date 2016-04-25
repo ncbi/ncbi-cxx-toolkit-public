@@ -186,6 +186,7 @@ struct SConvertUsingRunTimeCP<true, true>
         const bool same_sign      = from_is_signed == to_is_signed; 
 
         const TO min_allowed = kMin_Auto, max_allowed = kMax_Auto;
+        if (max_allowed == 1) {return value != 0;}
 
         if (SLessThanTypeMin<from_is_signed, to_is_signed>::Check(
                 value, min_allowed)
@@ -245,10 +246,21 @@ public:
     {
         return m_Value ? 1 : 0;
     }
+    operator long(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+#if NCBI_INT8_IS_LONG
+    operator long long(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+#else
     operator Int8(void) const
     {
         return m_Value ? 1 : 0;
     }
+#endif
 
     operator Uint1(void) const
     {
@@ -262,10 +274,21 @@ public:
     {
         return m_Value ? 1 : 0;
     }
+    operator unsigned long(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+#if NCBI_INT8_IS_LONG
+    operator unsigned long long(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+#else
     operator Uint8(void) const
     {
         return m_Value ? 1 : 0;
     }
+#endif
 
     operator float(void) const
     {
@@ -416,7 +439,6 @@ private:
     obj_type m_Value;
 };
 
-#ifndef NCBI_INT8_IS_LONG
 template <>
 class CConvPolicy<SRunTimeCP, long>
 {
@@ -438,8 +460,73 @@ public:
 private:
     obj_type m_Value;
 };
-#endif
 
+template <>
+class CConvPolicy<SRunTimeCP, unsigned long>
+{
+public:
+    typedef unsigned long obj_type;
+
+    CConvPolicy(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    template <typename TO>
+    operator TO(void) const
+    {
+        return ConvertUsingRunTimeCP<TO>(m_Value);
+    }
+
+private:
+    obj_type m_Value;
+};
+
+#if NCBI_INT8_IS_LONG
+template <>
+class CConvPolicy<SRunTimeCP, long long>
+{
+public:
+    typedef long long obj_type;
+
+    CConvPolicy(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    template <typename TO>
+    operator TO(void) const
+    {
+        return ConvertUsingRunTimeCP<TO>(m_Value);
+    }
+
+private:
+    obj_type m_Value;
+};
+template <>
+class CConvPolicy<SRunTimeCP, unsigned long long>
+{
+public:
+    typedef unsigned long long obj_type;
+
+    CConvPolicy(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    template <typename TO>
+    operator TO(void) const
+    {
+        return ConvertUsingRunTimeCP<TO>(m_Value);
+    }
+
+private:
+    obj_type m_Value;
+};
+#else
 template <>
 class CConvPolicy<SRunTimeCP, Int8>
 {
@@ -483,6 +570,7 @@ public:
 private:
     obj_type m_Value;
 };
+#endif
 
 template <>
 class CConvPolicy<SRunTimeCP, string>
@@ -628,10 +716,21 @@ public:
     {
         return m_Value ? 1 : 0;
     }
+    operator long(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+#if NCBI_INT8_IS_LONG
+    operator long long(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+#else
     operator Int8(void) const
     {
         return m_Value ? 1 : 0;
     }
+#endif
 
     // Unsigned to unsigned ...
 
@@ -647,10 +746,21 @@ public:
     {
         return m_Value ? 1 : 0;
     }
+    operator unsigned long(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+#if NCBI_INT8_IS_LONG
+    operator unsigned long long(void) const
+    {
+        return m_Value ? 1 : 0;
+    }
+#else
     operator Uint8(void) const
     {
         return m_Value ? 1 : 0;
     }
+#endif
 
 
 private:
@@ -685,10 +795,21 @@ public:
     {
         return m_Value;
     }
+    operator long(void) const
+    {
+        return m_Value;
+    }
+#if NCBI_INT8_IS_LONG
+    operator long long(void) const
+    {
+        return m_Value;
+    }
+#else
     operator Int8(void) const
     {
         return m_Value;
     }
+#endif
 
     //
     operator float(void) const
@@ -736,10 +857,21 @@ public:
     {
         return m_Value;
     }
+    operator long(void) const
+    {
+        return m_Value;
+    }
+#if NCBI_INT8_IS_LONG
+    operator long long(void) const
+    {
+        return m_Value;
+    }
+#else
     operator Int8(void) const
     {
         return m_Value;
     }
+#endif
 
     // Unsigned to unsigned ...
 
@@ -751,10 +883,21 @@ public:
     {
         return m_Value;
     }
+    operator unsigned long(void) const
+    {
+        return m_Value;
+    }
+#if NCBI_INT8_IS_LONG
+    operator unsigned long long(void) const
+    {
+        return m_Value;
+    }
+#else
     operator Uint8(void) const
     {
         return m_Value;
     }
+#endif
 
     //
     operator float(void) const
@@ -798,10 +941,21 @@ public:
     {
         return m_Value;
     }
+    operator long(void) const
+    {
+        return m_Value;
+    }
+#if NCBI_INT8_IS_LONG
+    operator long long(void) const
+    {
+        return m_Value;
+    }
+#else
     operator Int8(void) const
     {
         return m_Value;
     }
+#endif
 
     //
     operator float(void) const
@@ -845,10 +999,21 @@ public:
     {
         return m_Value;
     }
+    operator long(void) const
+    {
+        return m_Value;
+    }
+#if NCBI_INT8_IS_LONG
+    operator long long(void) const
+    {
+        return m_Value;
+    }
+#else
     operator Int8(void) const
     {
         return m_Value;
     }
+#endif
 
     // Unsigned to unsigned ...
 
@@ -856,10 +1021,21 @@ public:
     {
         return m_Value;
     }
+    operator unsigned long(void) const
+    {
+        return m_Value;
+    }
+#if NCBI_INT8_IS_LONG
+    operator unsigned long long(void) const
+    {
+        return m_Value;
+    }
+#else
     operator Uint8(void) const
     {
         return m_Value;
     }
+#endif
 
     //
     operator float(void) const
@@ -896,13 +1072,24 @@ public:
     {
         return m_Value;
     }
+    operator long(void) const
+    {
+        return m_Value;
+    }
 
     // Signed to signed ...
 
+#if NCBI_INT8_IS_LONG
+    operator long long(void) const
+    {
+        return m_Value;
+    }
+#else
     operator Int8(void) const
     {
         return m_Value;
     }
+#endif
 
     //
     operator float(void) const
@@ -911,11 +1098,11 @@ public:
     }
     operator double(void) const
     {
-        return m_Value;
+        return static_cast<double>(m_Value);
     }
     operator long double(void) const
     {
-        return m_Value;
+        return static_cast<long double>(m_Value);
     }
 
 private:
@@ -939,17 +1126,198 @@ public:
     {
         return m_Value;
     }
-
-    // Unsigned to signed ...
-
-    operator Int8(void) const
+    operator long(void) const
     {
         return m_Value;
     }
 
+    // Unsigned to signed ...
+
+#if NCBI_INT8_IS_LONG
+    operator long long(void) const
+    {
+        return m_Value;
+    }
+#else
+    operator Int8(void) const
+    {
+        return m_Value;
+    }
+#endif
+
+    // Unsigned to unsigned ...
+    operator unsigned long(void) const
+    {
+        return m_Value;
+    }
+
+#if NCBI_INT8_IS_LONG
+    operator unsigned long long(void) const
+    {
+        return m_Value;
+    }
+#else
+    operator Uint8(void) const
+    {
+        return m_Value;
+    }
+#endif
+
+    //
+    operator float(void) const
+    {
+        return static_cast<float>(m_Value);
+    }
+    operator double(void) const
+    {
+        return static_cast<double>(m_Value);
+    }
+    operator long double(void) const
+    {
+        return static_cast<long double>(m_Value);
+    }
+
+private:
+    obj_type m_Value;
+};
+
+template <>
+class CConvPolicy<SSafeCP, long>
+{
+public:
+    typedef long obj_type;
+
+    CConvPolicy(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    // Convert to itself.
+    operator obj_type(void) const
+    {
+        return m_Value;
+    }
+
+    // Signed to signed ...
+
+#if NCBI_INT8_IS_LONG
+    operator long long(void) const
+    {
+        return m_Value;
+    }
+#else
+    operator Int8(void) const
+    {
+        return m_Value;
+    }
+#endif
+
+    //
+    operator bool(void) const
+    {
+        return m_Value != 0;
+    }
+    operator float(void) const
+    {
+        return static_cast<float>(m_Value);
+    }
+    operator double(void) const
+    {
+        return static_cast<double>(m_Value);
+    }
+    operator long double(void) const
+    {
+        return static_cast<long double>(m_Value);
+    }
+
+private:
+    obj_type m_Value;
+};
+
+template <>
+class CConvPolicy<SSafeCP, unsigned long>
+{
+public:
+    typedef unsigned long obj_type;
+
+    CConvPolicy(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    // Convert to itself.
+    operator obj_type(void) const
+    {
+        return m_Value;
+    }
+
+    // Unsigned to signed ...
+
+#if NCBI_INT8_IS_LONG
+    operator long long(void) const
+    {
+        return m_Value;
+    }
+#else
+    operator Int8(void) const
+    {
+        return m_Value;
+    }
+#endif
+
     // Unsigned to unsigned ...
 
+#if NCBI_INT8_IS_LONG
+    operator unsigned long long(void) const
+    {
+        return m_Value;
+    }
+#else
     operator Uint8(void) const
+    {
+        return m_Value;
+    }
+#endif
+
+    //
+    operator bool(void) const
+    {
+        return m_Value != 0;
+    }
+    operator float(void) const
+    {
+        return static_cast<float>(m_Value);
+    }
+    operator double(void) const
+    {
+        return static_cast<double>(m_Value);
+    }
+    operator long double(void) const
+    {
+        return static_cast<long double>(m_Value);
+    }
+
+private:
+    obj_type m_Value;
+};
+
+#if NCBI_INT8_IS_LONG
+template <>
+class CConvPolicy<SSafeCP, long long>
+{
+public:
+    typedef long long obj_type;
+
+    CConvPolicy(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    // Convert only to itself.
+    operator obj_type(void) const
     {
         return m_Value;
     }
@@ -961,17 +1329,53 @@ public:
     }
     operator double(void) const
     {
-        return m_Value;
+        return static_cast<double>(m_Value);
     }
     operator long double(void) const
     {
-        return m_Value;
+        return static_cast<long double>(m_Value);
     }
 
 private:
     obj_type m_Value;
 };
 
+template <>
+class CConvPolicy<SSafeCP, unsigned long long>
+{
+public:
+    typedef unsigned long long obj_type;
+
+    CConvPolicy(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    // Convert only to itself.
+    operator obj_type(void) const
+    {
+        return m_Value;
+    }
+
+    //
+    operator float(void) const
+    {
+        return static_cast<float>(m_Value);
+    }
+    operator double(void) const
+    {
+        return static_cast<double>(m_Value);
+    }
+    operator long double(void) const
+    {
+        return static_cast<long double>(m_Value);
+    }
+
+private:
+    obj_type m_Value;
+};
+#else
 template <>
 class CConvPolicy<SSafeCP, Int8>
 {
@@ -1043,6 +1447,7 @@ public:
 private:
     obj_type m_Value;
 };
+#endif
 
 template <>
 class CConvPolicy<SSafeCP, string>

@@ -77,6 +77,130 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
     const string str_double("42.8");
 
     try {
+        // long long
+        {
+            long long value;
+
+            value = ConvertSafe(value_Int8);
+            BOOST_CHECK_EQUAL(value, value_Int8);
+
+            value = ConvertSafe(value_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = ConvertSafe(value_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = ConvertSafe(value_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = ConvertSafe(value_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = ConvertSafe(value_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = ConvertSafe(value_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            value = ConvertSafe(value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
+
+            // Doesn't compile ...
+            // value = ConvertSafe(value_float);
+            // BOOST_CHECK_EQUAL(value, Uint8(value_float));
+
+            // Doesn't compile ...
+            // value = ConvertSafe(value_double);
+            // BOOST_CHECK_EQUAL(value, Uint8(value_double));
+
+            // Doesn't compile ...
+            // value = ConvertSafe(value_CTime);
+            // BOOST_CHECK_EQUAL(value, value_CTime);
+
+            value = ConvertSafe(str_Int8);
+            BOOST_CHECK_EQUAL(value, value_Int8);
+
+            value = ConvertSafe(str_Int4);
+            BOOST_CHECK_EQUAL(value, value_Int4);
+
+            value = ConvertSafe(str_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = ConvertSafe(str_Int2);
+            BOOST_CHECK_EQUAL(value, value_Int2);
+
+            value = ConvertSafe(str_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = ConvertSafe(str_Int1);
+            BOOST_CHECK_EQUAL(value, value_Int1);
+
+            value = ConvertSafe(str_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            // Requires more than one conversion ...
+            BOOST_CHECK_THROW(value = ConvertSafe(str_bool), CException);
+
+            value = ConvertSafe(str_float);
+            BOOST_CHECK_EQUAL(value, Int8(value_float));
+
+            value = ConvertSafe(str_double);
+            BOOST_CHECK_EQUAL(value, Int8(value_double));
+        }
+
+        // unsigned long long
+        {
+            unsigned long long value;
+
+            value = ConvertSafe(value_Uint8);
+            BOOST_CHECK_EQUAL(value, value_Uint8);
+
+            value = ConvertSafe(value_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = ConvertSafe(value_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = ConvertSafe(value_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            value = ConvertSafe(value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
+
+            // Doesn't compile ...
+            // value = ConvertSafe(value_float);
+            // BOOST_CHECK_EQUAL(value, Uint8(value_float));
+
+            // Doesn't compile ...
+            // value = ConvertSafe(value_double);
+            // BOOST_CHECK_EQUAL(value, Uint8(value_double));
+
+            // Doesn't compile ...
+            // value = ConvertSafe(value_CTime);
+            // BOOST_CHECK_EQUAL(value, value_CTime);
+
+            value = ConvertSafe(str_Uint8);
+            BOOST_CHECK_EQUAL(value, value_Uint8);
+
+            value = ConvertSafe(str_Uint4);
+            BOOST_CHECK_EQUAL(value, value_Uint4);
+
+            value = ConvertSafe(str_Uint2);
+            BOOST_CHECK_EQUAL(value, value_Uint2);
+
+            value = ConvertSafe(str_Uint1);
+            BOOST_CHECK_EQUAL(value, value_Uint1);
+
+            // Won't convert at run-time ...
+            BOOST_CHECK_THROW(value = ConvertSafe(str_bool), CException);
+
+            value = ConvertSafe(str_float);
+            BOOST_CHECK_EQUAL(value, Uint8(value_float));
+
+            value = ConvertSafe(str_double);
+            BOOST_CHECK_EQUAL(value, Uint8(value_double));
+        }
+
         // Int8
         {
             Int8 value;

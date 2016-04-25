@@ -107,14 +107,24 @@ public:
     {
         return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
-#if !defined(NCBI_INT8_IS_LONG)  &&  \
-    (defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ICC)  ||  \
-     defined(NCBI_COMPILER_WORKSHOP)  ||  defined(NCBI_COMPILER_MSVC))
+    operator unsigned long(void) const
+    {
+        return MakeCP<CP>(NStr::StringToULong(m_Value, NStr::fAllowTrailingSymbols));
+    }
     operator long(void) const
     {
         return MakeCP<CP>(NStr::StringToLong(m_Value, NStr::fAllowTrailingSymbols));
     }
-#endif
+#if NCBI_INT8_IS_LONG
+    operator unsigned long long(void) const
+    {
+        return MakeCP<CP>(NStr::StringToUInt8(m_Value, NStr::fAllowTrailingSymbols));
+    }
+    operator long long(void) const
+    {
+        return MakeCP<CP>(NStr::StringToInt8(m_Value, NStr::fAllowTrailingSymbols));
+    }
+#else
     operator Uint8(void) const
     {
         return MakeCP<CP>(NStr::StringToUInt8(m_Value, NStr::fAllowTrailingSymbols));
@@ -123,6 +133,7 @@ public:
     {
         return MakeCP<CP>(NStr::StringToInt8(m_Value, NStr::fAllowTrailingSymbols));
     }
+#endif
     operator float(void) const
     {
         return MakeCP<CP>(NStr::StringToDouble(m_Value));
@@ -228,15 +239,24 @@ public:
     {
         return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
-#if !defined(NCBI_INT8_IS_LONG)  &&  \
-    ((defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 400)  ||  \
-     defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_WORKSHOP) || \
-     defined(NCBI_COMPILER_MSVC))
+    operator unsigned long(void) const
+    {
+        return MakeCP<CP>(NStr::StringToULong(m_Value, NStr::fAllowTrailingSymbols));
+    }
     operator long(void) const
     {
         return MakeCP<CP>(NStr::StringToLong(m_Value, NStr::fAllowTrailingSymbols));
     }
-#endif
+#if NCBI_INT8_IS_LONG
+    operator unsigned long long(void) const
+    {
+        return MakeCP<CP>(NStr::StringToUInt8(m_Value, NStr::fAllowTrailingSymbols));
+    }
+    operator long long(void) const
+    {
+        return MakeCP<CP>(NStr::StringToInt8(m_Value, NStr::fAllowTrailingSymbols));
+    }
+#else
     operator Uint8(void) const
     {
         return MakeCP<CP>(NStr::StringToUInt8(m_Value, NStr::fAllowTrailingSymbols));
@@ -245,6 +265,7 @@ public:
     {
         return MakeCP<CP>(NStr::StringToInt8(m_Value, NStr::fAllowTrailingSymbols));
     }
+#endif
     operator float(void) const
     {
         return MakeCP<CP>(NStr::StringToDouble(m_Value));
@@ -877,7 +898,6 @@ private:
     const obj_type  m_Value;
 };
 
-#if SIZEOF_LONG == 8  &&  !defined(NCBI_INT8_IS_LONG)
 template <typename CP>
 class CValueConvert<CP, unsigned long>
 {
@@ -937,8 +957,176 @@ public:
 private:
     const obj_type m_Value;
 };
-#endif
 
+#if NCBI_INT8_IS_LONG
+template <typename CP>
+class CValueConvert<CP, unsigned long long>
+{
+public:
+    typedef unsigned long long obj_type;
+
+    CValueConvert(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
+    operator bool(void) const
+    { 
+        return m_Value != 0;
+    }
+    operator Uint1(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int1(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Uint2(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int2(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Uint4(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int4(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Uint8(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int8(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator float(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator long double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+#else
+    template <typename TO>
+    operator TO(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+#endif
+    operator string(void) const
+    {
+        return NStr::UInt8ToString(m_Value);
+    }
+    operator CTime(void) const
+    {
+        return CTime(MakeCP<CP>(m_Value));
+    }
+
+private:
+    const obj_type m_Value;
+};
+
+template <typename CP>
+class CValueConvert<CP, long long>
+{
+public:
+    typedef long long obj_type;
+
+    CValueConvert(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
+    operator bool(void) const
+    { 
+        return m_Value != 0;
+    }
+    operator Uint1(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int1(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Uint2(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int2(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Uint4(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int4(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+#if NCBI_PLATFORM_BITS == 32
+    operator time_t(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+#endif
+    operator Uint8(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator Int8(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator float(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator long double(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+#else
+    template <typename TO>
+    operator TO(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+#endif
+    operator string(void) const
+    {
+        return NStr::Int8ToString(m_Value);
+    }
+    operator CTime(void) const
+    {
+        return CTime(MakeCP<CP>(m_Value));
+    }
+
+private:
+    const obj_type  m_Value;
+};
+#else
 template <typename CP>
 class CValueConvert<CP, Uint8>
 {
@@ -1106,6 +1294,7 @@ public:
 private:
     const obj_type  m_Value;
 };
+#endif
 
 template <typename CP>
 class CValueConvert<CP, float>
@@ -1530,6 +1719,35 @@ CValueConvert<SRunTimeCP, Int4>::operator bool(void) const
         return m_Value != 0;
 }
 
+#if NCBI_INT8_IS_LONG
+template <> template <>
+inline
+CValueConvert<SSafeCP, unsigned long long>::operator bool(void) const
+{   
+        return m_Value != 0;
+}
+
+template <> template <>
+inline
+CValueConvert<SRunTimeCP, unsigned long long>::operator bool(void) const
+{   
+        return m_Value != 0;
+}
+
+template <> template <>
+inline
+CValueConvert<SSafeCP, long long>::operator bool(void) const
+{   
+        return m_Value != 0;
+}
+
+template <> template <>
+inline
+CValueConvert<SRunTimeCP, long long>::operator bool(void) const
+{   
+        return m_Value != 0;
+}
+#else
 template <> template <>
 inline
 CValueConvert<SSafeCP, Uint8>::operator bool(void) const
@@ -1557,6 +1775,7 @@ CValueConvert<SRunTimeCP, Int8>::operator bool(void) const
 {   
         return m_Value != 0;
 }
+#endif
 
 // CTime has "empty" value semantic.
 template <> template <>
