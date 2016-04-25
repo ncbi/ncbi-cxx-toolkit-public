@@ -1241,10 +1241,24 @@ CConstRef<CSeq_feat> GetOverlappingGene(
     const CSeq_loc& loc, CScope& scope,
     ETransSplicing eTransSplicing )
 {
-    return GetBestOverlappingFeat(
-        loc, CSeqFeatData::eSubtype_gene,
-        eOverlap_Contained, scope,
-        ( eTransSplicing == eTransSplicing_Yes ? fBestFeat_IgnoreStrand : 0 ) );
+    int opt = 0;
+    switch ( eTransSplicing ) {
+    case eTransSplicing_Auto:
+        {
+            ENa_strand strand = loc.GetStrand();
+            if (strand == eNa_strand_both  ||  strand == eNa_strand_other) {
+                opt = fBestFeat_IgnoreStrand;
+            }
+        }
+        break;
+    case eTransSplicing_Yes:
+        opt = fBestFeat_IgnoreStrand;
+        break;
+    default:
+        break;
+    }
+    return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene,
+        eOverlap_Contained, scope, opt);
 }
 
 

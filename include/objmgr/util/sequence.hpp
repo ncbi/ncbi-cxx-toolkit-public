@@ -574,11 +574,13 @@ CConstRef<CSeq_feat> GetBestOverlapForSNP(const CSeq_feat& snp_feat,
 /// Convenience functions for popular overlapping types
 enum ETransSplicing {
     eTransSplicing_No = 0,
-    eTransSplicing_Yes
+    eTransSplicing_Yes,
+    eTransSplicing_Auto ///< Ignore overlap strand if the source location
+                        ///< has mixed/both strand.
 };
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetOverlappingGene(
-    const CSeq_loc& loc, CScope& scope, 
+    const CSeq_loc& loc, CScope& scope,
     ETransSplicing eTransSplicing = eTransSplicing_No);
 
 
