@@ -2500,17 +2500,24 @@ string CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags flag) const
             string phid = CRequestContext::SelectLastHitID(
                 TParamHitId::GetDefault());
             if ( !phid.empty() ) {
-                const char* env_job_id = getenv("JOB_ID");
-                const char* env_task_id = getenv("SGE_TASK_ID");
-                if (env_job_id  &&  env_task_id) {
+                const char* c_env_job_id = getenv("JOB_ID");
+                string env_job_id = c_env_job_id ? string(c_env_job_id): "";
+                const char* c_env_task_id = getenv("SGE_TASK_ID");
+                string env_task_id = c_env_task_id ? string(c_env_task_id) : "";
+                if (env_task_id.find_first_not_of("0123456789") != NPOS) {
+                    // If task id is 'undefined', set it to 1 - it's a job with
+                    // just one task.
+                    env_task_id = "1";
+                }
+                if (!env_job_id.empty()  &&  !env_task_id.empty()) {
                     // FIX LATER: It's better to use J and T prefix
                     // to indicate job/task, but currently CRequestContext
                     // logs errors if sub-hit id contains non-digits.
                     // Using leading 0s is a temporary solution. Later,
                     // when most apps are recompiled with the new
                     // CRequestContext, we can reconsider using J/T.
-                    string jid = ".000" + string(env_job_id);
-                    string tid = ".00" + string(env_task_id);
+                    string jid = ".000" + env_job_id;
+                    string tid = ".00" + env_task_id;
                     size_t jid_pos = phid.find(jid);
                     if (jid_pos == NPOS) {
                         // No current job id in the phid.
