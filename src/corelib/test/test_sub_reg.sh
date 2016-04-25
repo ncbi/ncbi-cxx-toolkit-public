@@ -18,6 +18,12 @@ export NCBI_CONFIG_PATH=`dirname $0`/test_sub_reg_data
 unamestr=`uname -s`
 if [[ "$unamestr" == MINGW* ]] || [[ "$unamestr" == CYGWIN* ]]; then
     echo "Operating system is Windows"
+    if [[ $PWD == *GCC* ]];
+    then
+        echo "compiler is GCC"
+    else
+        echo "compiler is MSVC"
+    fi
     export NCBI_CONFIG_OVERRIDES=$NCBI_CONFIG_PATH/indirect_env.win.ini
     export NCBI_CONFIG_E__TEST=env
     export NCBI_CONFIG__TEST__E=env
@@ -27,7 +33,7 @@ if [[ "$unamestr" == MINGW* ]] || [[ "$unamestr" == CYGWIN* ]]; then
     export NCBI_CONFIG__OVERRIDESBASE_DOT_ENVIRONMENT__OB_E=env
     export NCBI_CONFIG__OVERRIDESBASE_DOT_ENVIRONMENT__OBX_E=env
     export NCBI_CONFIG__A_DOT_B__C_DOT_D=e.f
-    $CHECK_EXEC test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
+    ./test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
                              -overrides "$NCBI_CONFIG_PATH/overrides.win.ini" \
                              -out test_sub_reg_1strun.out.ini
 else
@@ -41,14 +47,19 @@ else
     export NCBI_CONFIG__overridesbase_DOT_environment__ob_e=env
     export NCBI_CONFIG__overridesbase_DOT_environment__obx_e=env
     export NCBI_CONFIG__a_DOT_b__c_DOT_d=e.f
-    $CHECK_EXEC test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
+    ./test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
                              -overrides "$NCBI_CONFIG_PATH/overrides.ini" \
                              -out test_sub_reg_1strun.out.ini
 fi
 
 echo "Comparing first run and expected output"
 if [[ "$unamestr" == MINGW* ]] || [[ "$unamestr" == CYGWIN* ]]; then
-    diff $flags $NCBI_CONFIG_PATH/expected_win.ini test_sub_reg_1strun.out.ini
+    if [[ $PWD == *GCC* ]];
+    then
+        diff $flags $NCBI_CONFIG_PATH/expected_win_gcc.ini test_sub_reg_1strun.out.ini
+    else
+        diff $flags $NCBI_CONFIG_PATH/expected_win_msvc.ini test_sub_reg_1strun.out.ini
+    fi
 else
     diff $flags $NCBI_CONFIG_PATH/expected.ini test_sub_reg_1strun.out.ini
 fi
@@ -67,7 +78,7 @@ fi
 
 cp test_sub_reg_1strun.out.ini test_sub_reg.ini
 
-$CHECK_EXEC test_sub_reg -out test_sub_reg_2ndrun.out.ini
+./test_sub_reg -out test_sub_reg_2ndrun.out.ini
 sort test_sub_reg_1strun.out.ini -o test_sub_reg_1strun.sorted.out.ini
 sort test_sub_reg_2ndrun.out.ini -o test_sub_reg_2ndrun.sorted.out.ini
 echo "Comparing second run and first run"
