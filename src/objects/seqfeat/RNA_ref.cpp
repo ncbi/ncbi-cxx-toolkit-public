@@ -207,7 +207,8 @@ static void s_SetTrnaProduct(CTrna_ext& trna, const string& product, string& rem
         }
     }
     if (remainder.length() == 5 && NStr::StartsWith(remainder, "(") && NStr::EndsWith(remainder, ")")) {
-        string codon = NStr::ToUpper(remainder.substr(1, 3));
+        string codon = remainder.substr(1, 3);
+        codong = NStr::ToUpper(codon);
         NStr::ReplaceInPlace(codon, "U", "T");
         // will parse a single codon recognized
         CRef<CTrna_ext> ext(new CTrna_ext());
