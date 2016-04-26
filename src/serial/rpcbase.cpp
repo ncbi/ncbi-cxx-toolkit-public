@@ -153,7 +153,6 @@ public:
     CCounterGuard(int* counter)
         : m_Counter(*counter)
     {
-
         m_Counter++;
     }
 
