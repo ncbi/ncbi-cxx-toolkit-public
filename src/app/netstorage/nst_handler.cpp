@@ -1549,8 +1549,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
     bool        need_db_access = true;
     if (m_MetadataOption != eMetadataMonitoring)
         need_db_access = x_DetectMetaDBNeedOnGetObjectInfo(message);
-    CDirectNetStorageObject     direct_object = x_GetObject(message);
-
+    CDirectNetStorageObject     direct_object = x_GetObject(message); 
     // First source of data - MS SQL database at hand
     TNSTDBValue<string> client_namespace;
     TNSTDBValue<string> client_name;
@@ -2217,6 +2216,12 @@ CNetStorageHandler::x_ProcessWrite(
     CJsonNode           reply = CreateResponseMessage(
                                                 common_args.m_SerialNumber);
     m_ObjectBeingWritten = x_GetObject(message);
+
+    // This 'fake' call needs to be done to have the locator properly formed.
+    // See JIRA: CXX-8041
+    // The call needs to be done for both cases of the object identification.
+    m_ObjectBeingWritten.Write(kEmptyStr);
+
     const CNetStorageObjectLoc &    object_locator =
                                                 m_ObjectBeingWritten.Locator();
     string              object_key = object_locator.GetUniqueKey();
