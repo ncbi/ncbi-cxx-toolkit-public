@@ -92,10 +92,18 @@ class CNSClientsRegistry
                                  ECommandGroup        cmd_group);
         void  MoveJobToBlacklist(unsigned int   job_id,
                                  ECommandGroup  cmd_group);
-        TNSBitVector  GetBlacklistedJobs(const CNSClientId &  client,
-                                         ECommandGroup        cmd_group) const;
-        TNSBitVector  GetBlacklistedJobs(const string &  client_node,
-                                         ECommandGroup   cmd_group) const;
+        void  SubtractBlacklistedJobs(const CNSClientId &  client,
+                                      ECommandGroup        cmd_group,
+                                      TNSBitVector &       bv) const;
+        void  SubtractBlacklistedJobs(const string &  client_node,
+                                      ECommandGroup   cmd_group,
+                                      TNSBitVector &  bv) const;
+        void  AddBlacklistedJobs(const CNSClientId &  client,
+                                 ECommandGroup        cmd_group,
+                                 TNSBitVector &       bv) const;
+        void  AddBlacklistedJobs(const string &  client_node,
+                                 ECommandGroup   cmd_group,
+                                 TNSBitVector &  bv) const;
         string  PrintClientsList(const CQueue *               queue,
                                  size_t                       batch_size,
                                  bool                         verbose) const;

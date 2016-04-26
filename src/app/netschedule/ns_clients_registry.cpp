@@ -584,28 +584,55 @@ CNSClientsRegistry::CancelWaiting(const string &  node_name,
 }
 
 
-
-TNSBitVector
-CNSClientsRegistry::GetBlacklistedJobs(const CNSClientId &  client,
-                                       ECommandGroup        cmd_group) const
+void
+CNSClientsRegistry::SubtractBlacklistedJobs(
+                                const CNSClientId &  client,
+                                ECommandGroup        cmd_group,
+                                TNSBitVector &       bv) const
 {
-    if (!client.IsComplete())
-        return kEmptyBitVector;
-    return GetBlacklistedJobs(client.GetNode(), cmd_group);
+    if (client.IsComplete())
+        SubtractBlacklistedJobs(client.GetNode(), cmd_group, bv);
 }
 
 
-TNSBitVector
-CNSClientsRegistry::GetBlacklistedJobs(const string &  client_node,
-                                       ECommandGroup   cmd_group) const
+void
+CNSClientsRegistry::SubtractBlacklistedJobs(
+                                const string &  client_node,
+                                ECommandGroup   cmd_group,
+                                TNSBitVector &  bv) const
 {
     CMutexGuard                         guard(m_Lock);
     map< string,
          CNSClient >::const_iterator    found = m_Clients.find(client_node);
 
-    if (found == m_Clients.end())
-        return kEmptyBitVector;
-    return found->second.GetBlacklistedJobs(cmd_group);
+    if (found != m_Clients.end())
+        found->second.SubtractBlacklistedJobs(cmd_group, bv);
+}
+
+
+void
+CNSClientsRegistry::AddBlacklistedJobs(
+                                const CNSClientId &  client,
+                                ECommandGroup        cmd_group,
+                                TNSBitVector &       bv) const
+{
+    if (client.IsComplete())
+        AddBlacklistedJobs(client.GetNode(), cmd_group, bv);
+}
+
+
+void
+CNSClientsRegistry::AddBlacklistedJobs(
+                                const string &  client_node,
+                                ECommandGroup   cmd_group,
+                                TNSBitVector &  bv) const
+{
+    CMutexGuard                         guard(m_Lock);
+    map< string,
+         CNSClient >::const_iterator    found = m_Clients.find(client_node);
+
+    if (found != m_Clients.end())
+        found->second.AddBlacklistedJobs(cmd_group, bv);
 }
 
 

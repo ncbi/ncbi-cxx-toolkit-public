@@ -113,7 +113,7 @@ TNSBitVector  CNSGroupsRegistry::GetJobs(const string &  group,
         if (allow_exception)
             NCBI_THROW(CNetScheduleException, eGroupNotFound,
                        "Group " + group + " is unknown");
-        return TNSBitVector();
+        return kEmptyBitVector;
     }
 
     return found->second->m_Jobs;
@@ -134,6 +134,38 @@ CNSGroupsRegistry::GetJobs(const TNSBitVector &  group_ids) const
             jobs |= found->second->m_Jobs;
     }
     return jobs;
+}
+
+
+void  CNSGroupsRegistry::RestrictByGroup(const string &  group,
+                                         TNSBitVector &  bv) const
+{
+    CMutexGuard                             guard(m_Lock);
+    TGroupTokenToAttrMap::const_iterator    found = m_TokenToAttr.find(&group);
+
+    if (found == m_TokenToAttr.end()) {
+        NCBI_THROW(CNetScheduleException, eGroupNotFound,
+                   "Group " + group + " is unknown");
+    }
+
+    bv &= found->second->m_Jobs;
+}
+
+
+void  CNSGroupsRegistry::RestrictByGroup(const TNSBitVector &  group_ids,
+                                         TNSBitVector &  bv) const
+{
+    TNSBitVector                            jobs_in_groups;
+    TGroupIDToAttrMap::const_iterator       found;
+    TNSBitVector::enumerator                en;
+    CMutexGuard                             guard(m_Lock);
+
+    for (en = group_ids.first(); en.valid(); ++en) {
+        found = m_IDToAttr.find(*en);
+        if (found != m_IDToAttr.end())
+            jobs_in_groups |= found->second->m_Jobs;
+    }
+    bv &= jobs_in_groups;
 }
 
 
@@ -176,16 +208,16 @@ string  CNSGroupsRegistry::ResolveGroup(unsigned int  group_id) const
 }
 
 
-vector<unsigned int>
-CNSGroupsRegistry::ResolveGroups(const list< string > &  tokens)
+void
+CNSGroupsRegistry::ResolveGroups(const list< string > &  tokens,
+                                 TNSBitVector &  group_ids_vector)
 {
-    vector<unsigned int>    result;
-
     for (list<string>::const_iterator  k(tokens.begin());
-            k != tokens.end(); ++k)
-        if (!k->empty())
-            result.push_back(ResolveGroup(*k));
-    return result;
+            k != tokens.end(); ++k) {
+        if (!k->empty()) {
+            group_ids_vector.set_bit(ResolveGroup(*k), true);
+        }
+    }
 }
 
 

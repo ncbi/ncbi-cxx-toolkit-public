@@ -236,22 +236,9 @@ void CJobStatusTracker::ClearAll(TNSBitVector *  bv)
     for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
         TNSBitVector &      bv1 = *m_StatusStor[g_ValidJobStatuses[k]];
 
-        if (bv)
-            *bv |= bv1;
-
+        *bv |= bv1;
         bv1.clear(true);
     }
-}
-
-
-void CJobStatusTracker::ClearStatus(TJobStatus  status, TNSBitVector *  bv)
-{
-    CWriteLockGuard     guard(m_Lock);
-    TNSBitVector &      bv1 = *m_StatusStor[(int)status];
-
-    if (bv)
-        *bv |= bv1;
-    bv1.clear(true);
 }
 
 
@@ -291,23 +278,22 @@ CJobStatusTracker::GetJobByStatus(TJobStatus            status,
                                   const TNSBitVector &  restrict_jobs,
                                   bool                  restricted) const
 {
-    TNSBitVector &      bv = *m_StatusStor[(int)status];
-    CReadLockGuard      guard(m_Lock);
+    TNSBitVector &              bv = *m_StatusStor[(int)status];
+    TNSBitVector::enumerator    en;
+    CReadLockGuard              guard(m_Lock);
 
-    if (!bv.any())
-        return 0;
-
-    TNSBitVector        candidates(bv);
-
-    candidates -= unwanted_jobs;
-    if (restricted)
-        // Restriction is provided: could be a group and/or a scope
-        candidates &= restrict_jobs;
-
-    if (!candidates.any())
-        return 0;
-
-    return *candidates.first();
+    for (en = bv.first(); en.valid(); ++en) {
+        unsigned int    job_id = *en;
+        if (unwanted_jobs.get_bit(job_id))
+            continue;
+        if (restricted) {
+            if (restrict_jobs.get_bit(job_id))
+                return job_id;
+        } else {
+            return job_id;
+        }
+    }
+    return 0;
 }
 
 
@@ -317,47 +303,47 @@ CJobStatusTracker::GetJobByStatus(const vector<TJobStatus> &   statuses,
                                   const TNSBitVector &         restrict_jobs,
                                   bool                         restricted) const
 {
-    TNSBitVector        jobs;
-    CReadLockGuard      guard(m_Lock);
+    TNSBitVector                jobs;
+    TNSBitVector::enumerator    en;
+    CReadLockGuard              guard(m_Lock);
 
     for (vector<TJobStatus>::const_iterator  k = statuses.begin();
          k != statuses.end(); ++k)
         jobs |= *m_StatusStor[(int)(*k)];
 
-    if (!jobs.any())
-        return 0;
-
-    jobs -= unwanted_jobs;
-    if (restricted)
-        // Restriction is provided: could be a group and/or a scope
-        jobs &= restrict_jobs;
-
-    if (!jobs.any())
-        return 0;
-
-    return *jobs.first();
+    for (en = jobs.first(); en.valid(); ++en) {
+        unsigned int    job_id = *en;
+        if (unwanted_jobs.get_bit(job_id))
+            continue;
+        if (restricted) {
+            if (restrict_jobs.get_bit(job_id))
+                return job_id;
+        } else {
+            return job_id;
+        }
+    }
+    return 0;
 }
 
 
-TNSBitVector
-CJobStatusTracker::GetJobs(const vector<TJobStatus> &  statuses) const
+void
+CJobStatusTracker::GetJobs(const vector<TJobStatus> &  statuses,
+                           TNSBitVector &  jobs) const
 {
-    TNSBitVector        jobs;
     CReadLockGuard      guard(m_Lock);
 
     for (vector<TJobStatus>::const_iterator  k = statuses.begin();
          k != statuses.end(); ++k)
         jobs |= *m_StatusStor[(int)(*k)];
-
-    return jobs;
 }
 
 
-TNSBitVector
-CJobStatusTracker::GetJobs(CNetScheduleAPI::EJobStatus  status) const
+void
+CJobStatusTracker::GetJobs(CNetScheduleAPI::EJobStatus  status,
+                           TNSBitVector &  jobs) const
 {
     CReadLockGuard      guard(m_Lock);
-    return *m_StatusStor[(int)status];
+    jobs = *m_StatusStor[(int)status];
 }
 
 

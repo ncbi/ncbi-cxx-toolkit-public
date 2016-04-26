@@ -215,7 +215,9 @@ unsigned int
 CJobInfoCache::x_RemoveJobsInStates(const TNSBitVector &        all_jobs,
                                     const vector<TJobStatus> &  statuses)
 {
-    TNSBitVector        jobs_in_state = m_StatusTracker.GetJobs(statuses);
+    TNSBitVector        jobs_in_state;
+    m_StatusTracker.GetJobs(statuses, jobs_in_state);
+
     TNSBitVector        candidates = all_jobs & jobs_in_state;
     unsigned int        count = candidates.count();
 

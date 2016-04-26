@@ -503,16 +503,25 @@ private:
         unsigned int    job_id;
         bool            exclusive;
         unsigned int    aff_id;
+
+        x_SJobPick() :
+            job_id(0), exclusive(false), aff_id(0)
+        {}
+        x_SJobPick(unsigned int  jid, bool  excl, unsigned int  aid) :
+            job_id(jid), exclusive(excl), aff_id(aid)
+        {}
     };
 
     x_SJobPick
     x_FindVacantJob(const CNSClientId &           client,
+                    const TNSBitVector &          explicit_affs,
                     const vector<unsigned int> &  aff_ids,
                     bool                          use_pref_affinity,
                     bool                          any_affinity,
                     bool                          exclusive_new_affinity,
                     bool                          prioritized_aff,
                     const TNSBitVector &          group_ids,
+                    bool                          has_groups,
                     ECommandGroup                 cmd_group);
     x_SJobPick
     x_FindOutdatedPendingJob(const CNSClientId &  client,
@@ -735,6 +744,10 @@ private:
     CNSScopeRegistry            m_ScopeRegistry;
 
     bool                        m_ShouldPerfLogTransitions;
+
+    // States from which the jobs could be taken for the READ[2] commands
+    vector<CNetScheduleAPI::EJobStatus>
+                                m_StatesForRead;
 };
 
 

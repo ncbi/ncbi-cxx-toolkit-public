@@ -177,9 +177,23 @@ struct SRemoteNodeData
         SRemoteNodeData();
         SRemoteNodeData(CNSPreciseTime *  timeout);
 
-        TNSBitVector GetBlacklistedJobs(void) const
+        const TNSBitVector &  GetBlacklistedJobsRef(void) const
         { x_UpdateBlacklist();
           return m_BlacklistedJobs; }
+
+        void SubtractBlacklistedJobs(TNSBitVector &  bv) const
+        {
+            x_UpdateBlacklist();
+            if (m_BlacklistLimits.empty()) return;
+            bv -= m_BlacklistedJobs;
+        }
+
+        void AddBlacklistedJobs(TNSBitVector &  bv) const
+        {
+            x_UpdateBlacklist();
+            if (m_BlacklistLimits.empty()) return;
+            bv |= m_BlacklistedJobs;
+        }
 
         void ClearJobs(void)
         { m_Jobs.clear();
@@ -237,7 +251,6 @@ struct SRemoteNodeData
         mutable
         map<unsigned int,
             CNSPreciseTime>         m_BlacklistLimits;
-
 
         // GET2/WGET or READ wait port
         unsigned short              m_WaitPort;
@@ -309,9 +322,15 @@ class CNSClient
           else                   m_ReaderData.ClearJobs();
         }
 
-        TNSBitVector GetBlacklistedJobs(ECommandGroup  cmd_group) const
-        { if (cmd_group == eGet) return m_WNData.GetBlacklistedJobs();
-          return m_ReaderData.GetBlacklistedJobs(); }
+        void SubtractBlacklistedJobs(ECommandGroup  cmd_group,
+                                     TNSBitVector &  bv) const
+        { if (cmd_group == eGet) m_WNData.SubtractBlacklistedJobs(bv);
+          else                   m_ReaderData.SubtractBlacklistedJobs(bv); }
+
+        void AddBlacklistedJobs(ECommandGroup  cmd_group,
+                                TNSBitVector &  bv) const
+        { if (cmd_group == eGet) m_WNData.AddBlacklistedJobs(bv);
+          else                   m_ReaderData.AddBlacklistedJobs(bv); }
 
         void SetWaitPort(unsigned short  port, ECommandGroup  cmd_group)
         { if (cmd_group == eGet) m_WNData.m_WaitPort = port;
@@ -372,8 +391,11 @@ class CNSClient
         { m_State = new_state; }
 
         TNSBitVector GetPreferredAffinities(ECommandGroup  cmd_group) const
-        { if (cmd_group == eGet) return m_WNData.m_PrefAffinities;
-          return m_ReaderData.m_PrefAffinities; }
+        {
+            if (cmd_group == eGet)
+                return m_WNData.m_PrefAffinities;
+            return m_ReaderData.m_PrefAffinities;
+        }
 
         bool HasPreferredAffinities(ECommandGroup  cmd_group) const
         { if (cmd_group == eGet) return m_WNData.m_PrefAffinities.any();

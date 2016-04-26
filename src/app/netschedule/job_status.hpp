@@ -93,8 +93,9 @@ public:
                                  const TNSBitVector &         restrict_jobs,
                                  bool                         restricted) const;
 
-    TNSBitVector  GetJobs(const vector<TJobStatus> &  statuses) const;
-    TNSBitVector  GetJobs(TJobStatus  status) const;
+    void  GetJobs(const vector<TJobStatus> &  statuses,
+                  TNSBitVector & jobs) const;
+    void  GetJobs(TJobStatus  status, TNSBitVector &  jobs) const;
     TNSBitVector  GetOutdatedPendingJobs(
                             CNSPreciseTime          timeout,
                             const CJobGCRegistry &  gc_registry) const;
@@ -142,11 +143,7 @@ public:
                           TNSBitVector::statistics* st) const;
 
     // Clear status storage
-    //
-    // If not NULL all ids from the matrix are OR-ed with this vector
-    // (bv is not cleared)
-    void ClearAll(TNSBitVector* bv = NULL);
-    void ClearStatus(TJobStatus  status, TNSBitVector* bv = NULL);
+    void ClearAll(TNSBitVector* bv);
 
     // Optimize bitvectors memory
     void OptimizeMem();

@@ -93,10 +93,18 @@ class CNSGroupsRegistry
         TNSBitVector  GetJobs(const string &  group,
                               bool  allow_exception = true) const;
         TNSBitVector  GetJobs(const TNSBitVector &  group_ids) const;
+
+        // Optimization to avoid expensive temporary TNSBitVector
+        void  RestrictByGroup(const string &  group,
+                              TNSBitVector &  bv) const;
+        void  RestrictByGroup(const TNSBitVector &  group_ids,
+                              TNSBitVector &  bv) const;
+
         TNSBitVector  GetRegisteredGroups(void) const;
         unsigned int  ResolveGroup(const string &  group);
         string        ResolveGroup(unsigned int  group) const;
-        vector<unsigned int>  ResolveGroups(const list< string > &  tokens);
+        void  ResolveGroups(const list< string > &  tokens,
+                            TNSBitVector &  group_ids_vector);
         unsigned int  AddJobs(unsigned int    group_id,
                               unsigned int    first_job_id,
                               unsigned int    count);

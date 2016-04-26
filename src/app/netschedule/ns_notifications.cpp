@@ -422,19 +422,23 @@ CNSNotificationList::CheckOutdatedJobs(
                                 const CNSPreciseTime &  notif_highfreq_period,
                                 ECommandGroup           cmd_group)
 {
-    CNSPreciseTime                              current_time = CNSPreciseTime::Current();
-    CMutexGuard                                 guard(m_ListenersLock);
+    TNSBitVector        candidates;
+    CNSPreciseTime      current_time = CNSPreciseTime::Current();
+    CMutexGuard         guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   k = m_PassiveListeners.begin();
 
     while (k != m_PassiveListeners.end()) {
         if (k->m_ExclusiveNewAff) {
-            if ((outdated_jobs -
-                 clients_registry.GetBlacklistedJobs(k->m_ClientNode, cmd_group)).any()) {
+            candidates = outdated_jobs;
+            clients_registry.SubtractBlacklistedJobs(k->m_ClientNode, cmd_group,
+                                                     candidates);
+            if (candidates.any()) {
                 x_SendNotificationPacket(k->m_Address, k->m_Port,
                                          k->m_NewFormat, k->m_Reason);
 
                 // Move from passive list to the active one
-                k->m_HifreqNotifyLifetime = current_time + notif_highfreq_period;
+                k->m_HifreqNotifyLifetime = current_time +
+                                            notif_highfreq_period;
                 m_ActiveListeners.push_back(SNSNotificationAttributes(*k));
                 k = m_PassiveListeners.erase(k);
                 continue;
@@ -486,7 +490,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
     CNSPreciseTime  current_time = CNSPreciseTime::Current();
     TNSBitVector    all_preferred_affs =
                                 clients_registry.GetAllPreferredAffinities(reason);
-    TNSBitVector    group_jobs;
+    TNSBitVector    candidates;
 
 
     // Support randomized UDP notifications
@@ -512,25 +516,28 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
         bool        should_send = false;
 
         // Check if all the jobs are in in its blacklist
-        TNSBitVector    blacklisted_jobs = clients_registry.
-                                    GetBlacklistedJobs(k->m_ClientNode, reason);
-        if ((jobs - blacklisted_jobs).any() == false) {
+        candidates = jobs;
+        clients_registry.SubtractBlacklistedJobs(k->m_ClientNode, reason,
+                                                 candidates);
+
+        if (candidates.any() == false) {
             ++k;
             continue;
         }
 
         // Check if the group restriction is applicable
         if (k->m_Groups.any()) {
-            group_jobs = group_registry.GetJobs(k->m_Groups);
-            if ((jobs & group_jobs).any() == false) {
+            group_registry.RestrictByGroup(k->m_Groups, candidates);
+            if (candidates.any() == false) {
                 ++k;
                 continue;
             }
         }
 
-        if (k->m_AnyJob)
+        if (k->m_AnyJob) {
             should_send = true;
-        else
+        }
+        else {
             // Here: the client is new because old clients always have
             //       m_AnyJob set to true
             if (affinities.any())
@@ -538,6 +545,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                                                     k->m_ClientNode,
                                                     affinities,
                                                     k->m_WnodeAff, reason);
+        }
         if (should_send == false) {
             if (k->m_ExclusiveNewAff) {
                 if (no_aff_jobs)

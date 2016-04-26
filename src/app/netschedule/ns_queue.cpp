@@ -148,6 +148,10 @@ CQueue::CQueue(CRequestExecutor&     executor,
     _ASSERT(!queue_name.empty());
     m_ClientsRegistry.SetRegistries(&m_AffinityRegistry,
                                     &m_NotificationsList);
+
+    m_StatesForRead.push_back(CNetScheduleAPI::eDone);
+    m_StatesForRead.push_back(CNetScheduleAPI::eFailed);
+    m_StatesForRead.push_back(CNetScheduleAPI::eCanceled);
 }
 
 
@@ -368,13 +372,9 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
 
     from_state.push_back(CNetScheduleAPI::ePending);
     from_state.push_back(CNetScheduleAPI::eRunning);
-    pending_running_jobs = m_StatusTracker.GetJobs(from_state);
+    m_StatusTracker.GetJobs(from_state, pending_running_jobs);
 
-    from_state.clear();
-    from_state.push_back(CNetScheduleAPI::eDone);
-    from_state.push_back(CNetScheduleAPI::eFailed);
-    from_state.push_back(CNetScheduleAPI::eCanceled);
-    other_jobs = m_StatusTracker.GetJobs(from_state);
+    m_StatusTracker.GetJobs(m_StatesForRead, other_jobs);
 
     // Remove those which have been read or in process of reading. This cannot
     // affect the pending and running jobs
@@ -384,8 +384,8 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
     // both jobs which have been read and jobs which are in a process of
     // reading. When calculating 'no_more_jobs' the only already read jobs must
     // be excluded.
-    TNSBitVector        reading_jobs =
-                            m_StatusTracker.GetJobs(CNetScheduleAPI::eReading);
+    TNSBitVector        reading_jobs;
+    m_StatusTracker.GetJobs(CNetScheduleAPI::eReading, reading_jobs);
 
     // Apply scope limitations to all participant jobs
     if (scope.empty() || scope == kNoScopeOnly) {
@@ -407,14 +407,12 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
     if (group_ids.any()) {
         // The pending and running jobs may change their group and or affinity
         // later via the RESCHEDULE command
-        TNSBitVector                            group_jobs;
-        group_jobs = m_GroupRegistry.GetJobs(group_ids);
         if (!group_may_change)
-            pending_running_jobs &= group_jobs;
+            m_GroupRegistry.RestrictByGroup(group_ids, pending_running_jobs);
 
         // The job group cannot be changed for the other job states
         other_jobs |= reading_jobs;
-        other_jobs &= group_jobs;
+        m_GroupRegistry.RestrictByGroup(group_ids, other_jobs);
     } else
         other_jobs |= reading_jobs;
 
@@ -445,8 +443,8 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
     if (exclusive_new_affinity)
         suitable_affinities = all_aff - all_pref_affs;
     if (reader_affinity)
-        suitable_affinities |= m_ClientsRegistry.GetPreferredAffinities(client,
-                                                                        eRead);
+        suitable_affinities |= m_ClientsRegistry.
+                                    GetPreferredAffinities(client, eRead);
     suitable_affinities |= aff_ids;
 
     TNSBitVector    suitable_aff_jobs =
@@ -852,8 +850,8 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
 
     vector<unsigned int>    aff_ids;
     TNSBitVector            aff_ids_vector;
-    vector<unsigned int>    group_ids;
     TNSBitVector            group_ids_vector;
+    bool                    has_groups = false;
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
@@ -871,30 +869,28 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
         // Resolve affinities and groups. It is supposed that the client knows
         // better what affinities and groups to expect i.e. even if they do not
         // exist yet, they may appear soon.
-        if (group_list != NULL)
-            group_ids = m_GroupRegistry.ResolveGroups(*group_list);
+        if (group_list != NULL) {
+            m_GroupRegistry.ResolveGroups(*group_list, group_ids_vector);
+            has_groups = !group_list->empty();
+        }
         if (aff_list != NULL)
-            aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
+            m_AffinityRegistry.ResolveAffinities(*aff_list, aff_ids_vector,
+                                                 aff_ids);
 
         x_UnregisterGetListener(client, port);
     }}
 
-    for (vector<unsigned int>::const_iterator k = aff_ids.begin();
-            k != aff_ids.end(); ++k)
-        aff_ids_vector.set(*k, true);
-    for (vector<unsigned int>::const_iterator k = group_ids.begin();
-            k != group_ids.end(); ++k)
-        group_ids_vector.set(*k, true);
-
     for (;;) {
         // No lock here to make it possible to pick a job
         // simultaneously from many threads
-        x_SJobPick  job_pick = x_FindVacantJob(client, aff_ids,
+        x_SJobPick  job_pick = x_FindVacantJob(client,
+                                               aff_ids_vector, aff_ids,
                                                wnode_affinity,
                                                any_affinity,
                                                exclusive_new_affinity,
                                                prioritized_aff,
-                                               group_ids_vector, eGet);
+                                               group_ids_vector, has_groups,
+                                               eGet);
         {{
             bool                outdated_job = false;
             CFastMutexGuard     guard(m_OperationLock);
@@ -1107,7 +1103,7 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
     SNSRegistryParameters       aff_reg_settings =
                                         m_Server->GetAffRegistrySettings();
     if (current_affinities.count() + aff_to_add.size()
-                                   - aff_id_to_del.count() >
+                                    - aff_id_to_del.count() >
                                          aff_reg_settings.max_records) {
         NCBI_THROW(CNetScheduleException, eTooManyPreferredAffinities,
                    "The client '" + client.GetNode() +
@@ -1917,9 +1913,10 @@ unsigned int  CQueue::CancelAllJobs(const CNSClientId &  client,
     statuses.push_back(CNetScheduleAPI::eConfirmed);
     statuses.push_back(CNetScheduleAPI::eReadFailed);
 
+    TNSBitVector        jobs;
     CFastMutexGuard     guard(m_OperationLock);
-    return x_CancelJobs(client, m_StatusTracker.GetJobs(statuses),
-                        logging);
+    m_StatusTracker.GetJobs(statuses, jobs);
+    return x_CancelJobs(client, jobs, logging);
 }
 
 
@@ -2074,7 +2071,7 @@ CQueue::CancelSelectedJobs(const CNSClientId &         client,
     }
 
     CFastMutexGuard     guard(m_OperationLock);
-    jobs_to_cancel = m_StatusTracker.GetJobs(statuses);
+    m_StatusTracker.GetJobs(statuses, jobs_to_cancel);
 
     if (!group.empty()) {
         try {
@@ -2189,8 +2186,10 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                string &                  added_pref_aff)
 {
     CNSPreciseTime          curr = CNSPreciseTime::Current();
+    TNSBitVector            group_ids_vector;
+    bool                    has_groups = false;
+    TNSBitVector            aff_ids_vector;
     vector<unsigned int>    aff_ids;
-    vector<unsigned int>    group_ids;
 
     // This is a reader command, so mark the node type as a reader
     m_ClientsRegistry.AppendType(client, CNSClient::eReader);
@@ -2213,31 +2212,28 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
         // Resolve affinities and groups. It is supposed that the client knows
         // better what affinities and groups to expect i.e. even if they do not
         // exist yet, they may appear soon.
-        if (group_list != NULL)
-            group_ids = m_GroupRegistry.ResolveGroups(*group_list);
+        if (group_list != NULL) {
+            m_GroupRegistry.ResolveGroups(*group_list, group_ids_vector);
+            has_groups = !group_list->empty();
+        }
         if (aff_list != NULL)
-            aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
+            m_AffinityRegistry.ResolveAffinities(*aff_list, aff_ids_vector,
+                                                 aff_ids);
 
         m_ClientsRegistry.CancelWaiting(client, eRead);
     }}
 
-    TNSBitVector    aff_ids_vector;
-    for (vector<unsigned int>::const_iterator  k = aff_ids.begin();
-            k != aff_ids.end(); ++k)
-        aff_ids_vector.set(*k, true);
-    TNSBitVector    group_ids_vector;
-    for (vector<unsigned int>::const_iterator  k = group_ids.begin();
-            k != group_ids.end(); ++k)
-        group_ids_vector.set(*k, true);
-
     for (;;) {
         // No lock here to make it possible to pick a job
         // simultaneously from many threads
-        x_SJobPick  job_pick = x_FindVacantJob(client, aff_ids, reader_affinity,
+        x_SJobPick  job_pick = x_FindVacantJob(client,
+                                               aff_ids_vector, aff_ids,
+                                               reader_affinity,
                                                any_affinity,
                                                exclusive_new_affinity,
                                                prioritized_aff,
-                                               group_ids_vector, eRead);
+                                               group_ids_vector, has_groups,
+                                               eRead);
 
         {{
             bool                outdated_job = false;
@@ -2596,48 +2592,35 @@ void CQueue::OptimizeMem()
 
 CQueue::x_SJobPick
 CQueue::x_FindVacantJob(const CNSClientId  &          client,
+                        const TNSBitVector &          explicit_affs,
                         const vector<unsigned int> &  aff_ids,
                         bool                          use_pref_affinity,
                         bool                          any_affinity,
                         bool                          exclusive_new_affinity,
                         bool                          prioritized_aff,
-                        const TNSBitVector&           group_ids,
+                        const TNSBitVector &          group_ids,
+                        bool                          has_groups,
                         ECommandGroup                 cmd_group)
 {
-    x_SJobPick      job_pick = { 0, false, 0 };
     bool            explicit_aff = !aff_ids.empty();
     bool            effective_use_pref_affinity = use_pref_affinity;
     unsigned int    pref_aff_candidate_job_id = 0;
     unsigned int    exclusive_aff_candidate = 0;
-    TNSBitVector    group_jobs = m_GroupRegistry.GetJobs(group_ids);
-    TNSBitVector    blacklisted_jobs =
-                    m_ClientsRegistry.GetBlacklistedJobs(client, cmd_group);
     string          scope = client.GetScope();
 
-    TNSBitVector    pref_aff;
-    if (use_pref_affinity) {
-        pref_aff = m_ClientsRegistry.GetPreferredAffinities(client, cmd_group);
+    TNSBitVector    pref_aff = m_ClientsRegistry.GetPreferredAffinities(
+                                                    client, cmd_group);
+    if (use_pref_affinity)
         effective_use_pref_affinity = use_pref_affinity && pref_aff.any();
-    }
-
-    TNSBitVector    all_pref_aff;
-    if (exclusive_new_affinity)
-        all_pref_aff = m_ClientsRegistry.GetAllPreferredAffinities(cmd_group);
 
     if (explicit_aff || effective_use_pref_affinity || exclusive_new_affinity) {
         // Check all vacant jobs: pending jobs for eGet,
         //                        done/failed/cancel jobs for eRead
         TNSBitVector    vacant_jobs;
-        if (cmd_group == eGet) {
-            vacant_jobs = m_StatusTracker.GetJobs(CNetScheduleAPI::ePending);
-        }
-        else {
-            vector<CNetScheduleAPI::EJobStatus>     from_state;
-            from_state.push_back(CNetScheduleAPI::eDone);
-            from_state.push_back(CNetScheduleAPI::eFailed);
-            from_state.push_back(CNetScheduleAPI::eCanceled);
-            vacant_jobs = m_StatusTracker.GetJobs(from_state);
-        }
+        if (cmd_group == eGet)
+            m_StatusTracker.GetJobs(CNetScheduleAPI::ePending, vacant_jobs);
+        else
+            m_StatusTracker.GetJobs(m_StatesForRead, vacant_jobs);
 
         if (scope.empty() || scope == kNoScopeOnly) {
             // Both these cases should consider only the non-scope jobs
@@ -2648,10 +2631,11 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
         }
 
         // Exclude blacklisted jobs
-        vacant_jobs -= blacklisted_jobs;
+        m_ClientsRegistry.SubtractBlacklistedJobs(client, cmd_group,
+                                                  vacant_jobs);
         // Keep only the group jobs if the groups are provided
-        if (group_ids.any())
-            vacant_jobs &= group_jobs;
+        if (has_groups)
+            m_GroupRegistry.RestrictByGroup(group_ids, vacant_jobs);
 
         // Exclude jobs which have been read or in a process of reading
         if (cmd_group == eRead)
@@ -2665,21 +2649,17 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
                 TNSBitVector    aff_jobs = m_AffinityRegistry.
                                                     GetJobsWithAffinity(*k);
                 TNSBitVector    candidates = vacant_jobs & aff_jobs;
-                if (candidates.any()) {
-                    job_pick.job_id = *(candidates.first());
-                    job_pick.exclusive = false;
-                    job_pick.aff_id = *k;
-                    return job_pick;
-                }
+                if (candidates.any())
+                    return x_SJobPick(*(candidates.first()), false, *k);
             }
-            return job_pick;
+            return x_SJobPick();
         }
 
         // HERE: no prioritized affinities
-        TNSBitVector    explicit_aff_vector;
-        for (vector<unsigned int>::const_iterator  k = aff_ids.begin();
-                k != aff_ids.end(); ++k)
-            explicit_aff_vector.set(*k, true);
+        TNSBitVector    all_pref_aff;
+        if (exclusive_new_affinity)
+            all_pref_aff = m_ClientsRegistry.GetAllPreferredAffinities(
+                                                                    cmd_group);
 
         TNSBitVector::enumerator    en(vacant_jobs.first());
         for (; en.valid(); ++en) {
@@ -2687,22 +2667,14 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
 
             unsigned int    aff_id = m_GCRegistry.GetAffinityID(job_id);
             if (aff_id != 0 && explicit_aff) {
-                if (explicit_aff_vector.get_bit(aff_id)) {
-                    job_pick.job_id = job_id;
-                    job_pick.exclusive = false;
-                    job_pick.aff_id = aff_id;
-                    return job_pick;
-                }
+                if (explicit_affs.get_bit(aff_id))
+                    return x_SJobPick(job_id, false, aff_id);
             }
 
             if (aff_id != 0 && effective_use_pref_affinity) {
                 if (pref_aff.get_bit(aff_id)) {
-                    if (explicit_aff == false) {
-                        job_pick.job_id = job_id;
-                        job_pick.exclusive = false;
-                        job_pick.aff_id = aff_id;
-                        return job_pick;
-                    }
+                    if (explicit_aff == false)
+                        return x_SJobPick(job_id, false, aff_id);
                     if (pref_aff_candidate_job_id == 0)
                         pref_aff_candidate_job_id = job_id;
                     continue;
@@ -2712,34 +2684,22 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
             if (exclusive_new_affinity) {
                 if (aff_id == 0 || all_pref_aff.get_bit(aff_id) == false) {
                     if (explicit_aff == false &&
-                        effective_use_pref_affinity == false) {
-                        job_pick.job_id = job_id;
-                        job_pick.exclusive = true;
-                        job_pick.aff_id = aff_id;
-                        return job_pick;
-                    }
+                        effective_use_pref_affinity == false)
+                        return x_SJobPick(job_id, true, aff_id);
                     if (exclusive_aff_candidate == 0)
                         exclusive_aff_candidate = job_id;
                 }
             }
         } // end for
 
-        if (pref_aff_candidate_job_id != 0) {
-            job_pick.job_id = pref_aff_candidate_job_id;
-            job_pick.exclusive = false;
-            job_pick.aff_id = 0;
-            return job_pick;
-        }
+        if (pref_aff_candidate_job_id != 0)
+            return x_SJobPick(pref_aff_candidate_job_id, false, 0);
 
-        if (exclusive_aff_candidate != 0) {
-            job_pick.job_id = exclusive_aff_candidate;
-            job_pick.exclusive = true;
-            job_pick.aff_id = m_GCRegistry.GetAffinityID(
-                                                exclusive_aff_candidate);
-            return job_pick;
-        }
+        if (exclusive_aff_candidate != 0)
+            return x_SJobPick(exclusive_aff_candidate, true,
+                              m_GCRegistry.GetAffinityID(
+                                                    exclusive_aff_candidate));
     }
-
 
     // The second condition looks strange and it covers a very specific
     // scenario: some (older) worker nodes may originally come with the only
@@ -2756,51 +2716,81 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
         TNSBitVector    restricted_jobs;
         bool            no_scope_only = scope.empty() ||
                                         scope == kNoScopeOnly;
+        unsigned int    job_id = 0;
 
         if (no_scope_only)
             jobs_in_scope = m_ScopeRegistry.GetAllJobsInScopes();
         else {
             restricted_jobs = m_ScopeRegistry.GetJobs(scope);
-            if (group_ids.any())
-                restricted_jobs &= group_jobs;
+            if (has_groups)
+                m_GroupRegistry.RestrictByGroup(group_ids, restricted_jobs);
         }
 
         if (cmd_group == eGet) {
-            if (no_scope_only)  // only the jobs which are not in the scope
-                job_pick.job_id = m_StatusTracker.GetJobByStatus(
-                                            CNetScheduleAPI::ePending,
-                                            blacklisted_jobs | jobs_in_scope,
-                                            group_jobs, group_ids.any());
+            if (no_scope_only) {
+                // only the jobs which are not in the scope
 
-            else    // only the specific scope jobs
-                job_pick.job_id = m_StatusTracker.GetJobByStatus(
+                // NOTE: this only to avoid an expensive temporary bvector
+                m_ClientsRegistry.AddBlacklistedJobs(client, cmd_group,
+                                                     jobs_in_scope);
+                if (has_groups)
+                    job_id = m_StatusTracker.GetJobByStatus(
+                                                CNetScheduleAPI::ePending,
+                                                jobs_in_scope,
+                                                m_GroupRegistry.GetJobs(group_ids),
+                                                has_groups);
+                else
+                    job_id = m_StatusTracker.GetJobByStatus(
+                                                CNetScheduleAPI::ePending,
+                                                jobs_in_scope,
+                                                kEmptyBitVector,
+                                                false);
+            } else {
+                // only the specific scope jobs
+                m_ClientsRegistry.AddBlacklistedJobs(client, cmd_group,
+                                                     jobs_in_scope);
+                job_id = m_StatusTracker.GetJobByStatus(
                                             CNetScheduleAPI::ePending,
-                                            blacklisted_jobs,
+                                            jobs_in_scope,
                                             restricted_jobs, true);
-        }
-        else {
-            vector<CNetScheduleAPI::EJobStatus>     from_state;
-            from_state.push_back(CNetScheduleAPI::eDone);
-            from_state.push_back(CNetScheduleAPI::eFailed);
-            from_state.push_back(CNetScheduleAPI::eCanceled);
+            }
+        } else {
+            if (no_scope_only) {
+                // only the jobs which are not in the scope
 
-            if (no_scope_only)  // only the jobs which are not in the scope
-                job_pick.job_id = m_StatusTracker.GetJobByStatus(
-                                from_state,
-                                blacklisted_jobs | m_ReadJobs | jobs_in_scope,
-                                group_jobs, group_ids.any());
-            else    // only the specific scope jobs
-                job_pick.job_id = m_StatusTracker.GetJobByStatus(
-                                            from_state,
-                                            blacklisted_jobs | m_ReadJobs,
+                // NOTE: this only to avoid an expensive temporary bvector
+                jobs_in_scope |= m_ReadJobs;
+                m_ClientsRegistry.AddBlacklistedJobs(client, cmd_group,
+                                                     jobs_in_scope);
+                if (has_groups)
+                    job_id = m_StatusTracker.GetJobByStatus(
+                                    m_StatesForRead,
+                                    jobs_in_scope,
+                                    m_GroupRegistry.GetJobs(group_ids),
+                                    has_groups);
+                else
+                    job_id = m_StatusTracker.GetJobByStatus(
+                                    m_StatesForRead,
+                                    jobs_in_scope,
+                                    kEmptyBitVector,
+                                    false);
+            } else {
+                // only the specific scope jobs
+
+                // NOTE: this only to avoid an expensive temporary bvector
+                jobs_in_scope = m_ReadJobs;
+                m_ClientsRegistry.AddBlacklistedJobs(client, cmd_group,
+                                                     jobs_in_scope);
+                job_id = m_StatusTracker.GetJobByStatus(
+                                            m_StatesForRead,
+                                            jobs_in_scope,
                                             restricted_jobs, true);
+            }
         }
-        job_pick.exclusive = false;
-        job_pick.aff_id = 0;
-        return job_pick;
+        return x_SJobPick(job_id, false, 0);
     }
 
-    return job_pick;
+    return x_SJobPick();
 }
 
 
@@ -2821,7 +2811,7 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &   client,
     if (picked_earlier != 0)
         outdated_pending.set_bit(picked_earlier, false);
 
-    outdated_pending -= m_ClientsRegistry.GetBlacklistedJobs(client, eGet);
+    m_ClientsRegistry.SubtractBlacklistedJobs(client, eGet, outdated_pending);
 
     string      scope = client.GetScope();
     if (scope.empty() || scope == kNoScopeOnly)
@@ -2830,7 +2820,7 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &   client,
         outdated_pending &= m_ScopeRegistry.GetJobs(scope);
 
     if (group_ids.any())
-        outdated_pending &= m_GroupRegistry.GetJobs(group_ids);
+        m_GroupRegistry.RestrictByGroup(group_ids, outdated_pending);
 
     if (!outdated_pending.any())
         return job_pick;
@@ -2844,13 +2834,11 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &   client,
 
 CQueue::x_SJobPick
 CQueue::x_FindOutdatedJobForReading(const CNSClientId &  client,
-                                   unsigned int          picked_earlier,
-                                   const TNSBitVector &  group_ids)
+                                    unsigned int  picked_earlier,
+                                    const TNSBitVector &  group_ids)
 {
-    x_SJobPick      job_pick = { 0, false, 0 };
-
     if (m_MaxPendingReadWaitTimeout == kTimeZero)
-        return job_pick;    // Not configured
+        return x_SJobPick();    // Not configured
 
     TNSBitVector    outdated_read_jobs =
                         m_StatusTracker.GetOutdatedReadVacantJobs(
@@ -2859,7 +2847,8 @@ CQueue::x_FindOutdatedJobForReading(const CNSClientId &  client,
     if (picked_earlier != 0)
         outdated_read_jobs.set_bit(picked_earlier, false);
 
-    outdated_read_jobs -= m_ClientsRegistry.GetBlacklistedJobs(client, eRead);
+    m_ClientsRegistry.SubtractBlacklistedJobs(client, eRead,
+                                              outdated_read_jobs);
 
     string      scope = client.GetScope();
     if (scope.empty() || scope == kNoScopeOnly)
@@ -2868,15 +2857,14 @@ CQueue::x_FindOutdatedJobForReading(const CNSClientId &  client,
         outdated_read_jobs &= m_ScopeRegistry.GetJobs(scope);
 
     if (group_ids.any())
-        outdated_read_jobs &= m_GroupRegistry.GetJobs(group_ids);
+        m_GroupRegistry.RestrictByGroup(group_ids, outdated_read_jobs);
 
     if (!outdated_read_jobs.any())
-        return job_pick;
+        return x_SJobPick();
 
-    job_pick.job_id = *outdated_read_jobs.first();
-    job_pick.aff_id = m_GCRegistry.GetAffinityID(job_pick.job_id);
-    job_pick.exclusive = job_pick.aff_id != 0;
-    return job_pick;
+    unsigned int    job_id = *outdated_read_jobs.first();
+    unsigned int    aff_id = m_GCRegistry.GetAffinityID(job_id);
+    return x_SJobPick(job_id, aff_id != 0, aff_id);
 }
 
 
@@ -3932,7 +3920,7 @@ string CQueue::PrintAllJobDbStat(const CNSClientId &         client,
     {{
         string              scope = client.GetScope();
         CFastMutexGuard     guard(m_OperationLock);
-        jobs_to_dump = m_StatusTracker.GetJobs(statuses);
+        m_StatusTracker.GetJobs(statuses, jobs_to_dump);
 
         // Check if a certain group has been specified
         if (!group.empty()) {
@@ -4470,10 +4458,11 @@ void CQueue::GetJobsPerState(const CNSClientId &  client,
         return;
 
 
-    string      scope = client.GetScope();
+    string          scope = client.GetScope();
+    TNSBitVector    candidates;
     for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
-        TNSBitVector  candidates =
-                        m_StatusTracker.GetJobs(g_ValidJobStatuses[index]);
+        candidates.clear();
+        m_StatusTracker.GetJobs(g_ValidJobStatuses[index], candidates);
 
         if (!group_token.empty())
             candidates &= group_jobs;
@@ -4664,7 +4653,7 @@ void CQueue::Dump(const string &  dump_dname)
     statuses.push_back(CNetScheduleAPI::eConfirmed);
     statuses.push_back(CNetScheduleAPI::eReadFailed);
 
-    jobs_to_dump = m_StatusTracker.GetJobs(statuses);
+    m_StatusTracker.GetJobs(statuses, jobs_to_dump);
 
     // Exclude all the jobs which belong to a certain scope. There is no
     // need to save them

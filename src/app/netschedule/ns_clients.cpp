@@ -747,13 +747,16 @@ string CNSClient::Print(const string &               node_name,
     buffer += "OK:  NUMBER OF SUBMITTED JOBS: " +
               NStr::NumericToString(m_NumberOfSubmitted) + "\n";
 
-    TNSBitVector    blacklist = m_WNData.GetBlacklistedJobs();
+    // The Print() member is called under a lock in the client registry so it
+    // is safe here to get access to a const reference of the blacklisted jobs
+    // vector
+    const TNSBitVector &    wn_blacklist = m_WNData.GetBlacklistedJobsRef();
     buffer += "OK:  NUMBER OF BLACKLISTED JOBS: " +
-              NStr::NumericToString(blacklist.count()) + "\n";
-    if (verbose && blacklist.any()) {
+              NStr::NumericToString(wn_blacklist.count()) + "\n";
+    if (verbose && wn_blacklist.any()) {
         buffer += "OK:  BLACKLISTED JOBS:\n";
 
-        TNSBitVector::enumerator    en(blacklist.first());
+        TNSBitVector::enumerator    en(wn_blacklist.first());
         for ( ; en.valid(); ++en) {
             unsigned int    job_id = *en;
             TJobStatus      status = queue->GetJobStatus(job_id);
@@ -763,13 +766,16 @@ string CNSClient::Print(const string &               node_name,
         }
     }
 
-    blacklist = m_ReaderData.GetBlacklistedJobs();
+    // The Print() member is called under a lock in the client registry so it
+    // is safe here to get access to a const reference of the blacklisted jobs
+    // vector
+    const TNSBitVector &  rd_blacklist = m_ReaderData.GetBlacklistedJobsRef();
     buffer += "OK:  NUMBER OF READ BLACKLISTED JOBS: " +
-              NStr::NumericToString(blacklist.count()) + "\n";
-    if (verbose && blacklist.any()) {
+              NStr::NumericToString(rd_blacklist.count()) + "\n";
+    if (verbose && rd_blacklist.any()) {
         buffer += "OK:  READ BLACKLISTED JOBS:\n";
 
-        TNSBitVector::enumerator    en(blacklist.first());
+        TNSBitVector::enumerator    en(rd_blacklist.first());
         for ( ; en.valid(); ++en) {
             unsigned int    job_id = *en;
             TJobStatus      status = queue->GetJobStatus(job_id);

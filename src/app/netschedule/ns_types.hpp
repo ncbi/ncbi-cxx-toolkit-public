@@ -58,15 +58,12 @@ enum ECommandGroup {
 };
 
 
-typedef CBV_PoolBlockAlloc<bm::block_allocator, CFastMutex> TBlockAlloc;
-typedef bm::mem_alloc<TBlockAlloc, bm::ptr_allocator>       TMemAlloc;
-typedef bm::bvector<TMemAlloc>                              TNSBitVector;
-
-typedef CNetScheduleAPI::EJobStatus                         TJobStatus;
+typedef bm::bvector<>                           TNSBitVector;
+typedef CNetScheduleAPI::EJobStatus             TJobStatus;
 
 // Holds all the queue parameters - used for queue classes
 // and for reading from DB and ini files
-typedef map<string, SQueueParameters, PNocase>              TQueueParams;
+typedef map<string, SQueueParameters, PNocase>  TQueueParams;
 
 
 

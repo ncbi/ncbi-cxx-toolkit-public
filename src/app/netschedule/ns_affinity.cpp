@@ -260,16 +260,25 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
 // The function is used when a WGET is received and there were no jobs for this
 // client. In this case non-existed affinities must be resolved and the client
 // must be memorized as a referencer of the affinities.
-vector<unsigned int>
-CNSAffinityRegistry::ResolveAffinities(const list< string > &  tokens)
+// Both a bit vector of affinity IDs and a vector of uint are required because
+// the TNSBitVector is not prioritizing affinities but the std::vector will have
+// them in the priority order.
+void
+CNSAffinityRegistry::ResolveAffinities(const list< string > &  tokens,
+                                       TNSBitVector &  resolved_affs,
+                                       vector<unsigned int> &  aff_ids)
 {
-    vector<unsigned int>    result;
-
-    for (list<string>::const_iterator  k(tokens.begin());
-         k != tokens.end(); ++k)
-        if (!k->empty())
-            result.push_back(ResolveAffinity(*k));
-    return result;
+    if (!tokens.empty()) {
+        aff_ids.reserve(tokens.size());
+        for (list<string>::const_iterator  k(tokens.begin());
+             k != tokens.end(); ++k) {
+            if (!k->empty()) {
+                unsigned int        aff_id = ResolveAffinity(*k);
+                resolved_affs.set_bit(aff_id, true);
+                aff_ids.push_back(aff_id);
+            }
+        }
+    }
 }
 
 
@@ -350,7 +359,7 @@ TNSBitVector
 CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
 {
     if (aff_id == 0)
-        return TNSBitVector();
+        return kEmptyBitVector;
 
     CMutexGuard                             guard(m_Lock);
     map< unsigned int,
@@ -358,7 +367,7 @@ CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
 
     if (found != m_JobsAffinity.end())
         return found->second.m_Jobs;
-    return TNSBitVector();
+    return kEmptyBitVector;
 }
 
 

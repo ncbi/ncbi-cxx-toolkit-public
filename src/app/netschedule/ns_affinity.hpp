@@ -180,7 +180,9 @@ class CNSAffinityRegistry
                                            unsigned int    job_id,
                                            unsigned int    client_id,
                                            ECommandGroup   command_group);
-        vector<unsigned int>  ResolveAffinities(const list< string > &  tokens);
+        void  ResolveAffinities(const list< string > &  tokens,
+                                TNSBitVector &  resolved_affs,
+                                vector<unsigned int> &  aff_ids);
         unsigned int  ResolveAffinity(const string &  token);
         list< SAffinityStatistics >
         GetAffinityStatistics(const CJobStatusTracker &  status_tracker) const;
