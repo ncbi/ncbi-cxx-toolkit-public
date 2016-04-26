@@ -2972,7 +2972,7 @@ void CValidError_bioseq::ValidateRawConst(
                 try {
                     const CSeq_feat* cds = GetCDSForProduct(bsh);
                     if (cds) {
-                        CConstRef<CSeq_feat> gene = GetOverlappingGene (cds->GetLocation(), *m_Scope);
+                        CConstRef<CSeq_feat> gene = GetGeneForFeature(*cds, m_Scope);
                         if (gene && gene->IsSetData() && gene->GetData().IsGene()) {
                             gene->GetData().GetGene().GetLabel(&gene_label);
                         }
@@ -4435,7 +4435,7 @@ void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
 
     const CSeq_loc& loc = feat.GetLocation();
 
-    CConstRef<CSeq_feat> gene = GetOverlappingGene(loc, *m_Scope);
+    CConstRef<CSeq_feat> gene = GetOverlappingGene(loc, *m_Scope, sequence::eTransSplicing_Auto);
     if (gene) return;
 
     gene = GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene, eOverlap_Simple, *m_Scope);
@@ -5300,8 +5300,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     } else if (feat.IsSetPseudo() && feat.GetPseudo()) {
                             num_pseudocds++;
                     } else {
-                        CConstRef<CSeq_feat> gene = 
-                            GetOverlappingGene(feat.GetLocation(), *m_Scope);
+                        CConstRef<CSeq_feat> gene = GetGeneForFeature(feat, m_Scope);
                         if (gene != 0 && gene->IsSetPseudo() && gene->GetPseudo()) {
                             num_pseudocds++;
                         } else if (feat.IsSetExcept_text() 
@@ -5360,8 +5359,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     } else if (feat.IsSetPseudo() && feat.GetPseudo()) {
                             num_pseudomrna++;
                     } else {
-                        CConstRef<CSeq_feat> gene = 
-                            GetOverlappingGene(feat.GetLocation(), *m_Scope);
+                        CConstRef<CSeq_feat> gene = GetGeneForFeature(feat, m_Scope);
                         if (gene != 0 && gene->IsSetPseudo() && gene->GetPseudo()) {
                             num_pseudomrna++;
                         }
@@ -5703,15 +5701,14 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
         
         // obtain the gene-ref from the feature or the overlapping gene
         const CGene_ref* grp = feat.GetGeneXref();
-        if (grp == NULL  ||  grp->IsSuppressed()) {
-            CConstRef<CSeq_feat> gene = 
-                GetOverlappingGene(feat.GetLocation(), *m_Scope);
+        if (grp == NULL) {
+            CConstRef<CSeq_feat> gene = GetGeneForFeature(feat, m_Scope);
             if (gene) {
                 grp = &gene->GetData().GetGene();
             }
         }
 
-        if (grp == NULL  ||  !grp->IsSetLocus_tag()  ||  grp->GetLocus_tag().empty()) {
+        if (grp == NULL || grp->IsSuppressed() || !grp->IsSetLocus_tag() || grp->GetLocus_tag().empty()) {
             continue;
         }
         const string& locus_tag = grp->GetLocus_tag();
@@ -6287,7 +6284,7 @@ void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
                 gene.Reset();
 
                 if (gref == NULL) {
-                    gene = GetOverlappingGene(it->GetLocation(), seq.GetScope());
+                    gene = GetOverlappingGene(it->GetLocation(), seq.GetScope(), sequence::eTransSplicing_Auto);
                 } else if (!gref->IsSuppressed()) {
                     // find gene by locus tag or label
                     if (gene_labels.empty()) {
@@ -6459,7 +6456,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(
                     bool unique_products = false;
                     int num_mrna = (*cds_it)->GetNummRNA(unique_products);
                     if (num_mrna == 0) {
-                        CConstRef<CSeq_feat> gene = GetOverlappingGene((*cds_it)->m_Cds->GetLocation(), *m_Scope);
+                        CConstRef<CSeq_feat> gene = GetOverlappingGene((*cds_it)->m_Cds->GetLocation(), *m_Scope, sequence::eTransSplicing_Auto);
                         if (gene != 0 && gene->IsSetPseudo() && gene->GetPseudo()) {
                             // pseudo, don't report
                         } else if (!(*cds_it)->m_Cds->IsSetExcept_text() 
@@ -8274,7 +8271,7 @@ CConstRef <CSeq_feat> CValidError_bioseq::GetGeneForFeature (
         return gene;
     }
 
-    return sequence::GetOverlappingGene (f1.GetLocation(), *scope);
+    return sequence::GetOverlappingGene(f1.GetLocation(), *scope, sequence::eTransSplicing_Auto);
 }
 
 

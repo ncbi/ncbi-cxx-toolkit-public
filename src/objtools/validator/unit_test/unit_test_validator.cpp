@@ -12424,12 +12424,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
     feat->SetExcept(true);
     feat->SetExcept_text("trans-splicing");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "mRNAgeneRange", 
-                      "gene overlaps mRNA but does not completely contain it"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusDonor", 
-                      "Splice donor consensus (GT) not found after exon ending at position 16 of lcl|good"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
-                      "Splice acceptor consensus (AG) not found before exon starting at position 47 of lcl|good"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BothStrands", 
                       "mRNA may not be on both (forward and reverse) strands"));
     eval = validator.Validate(seh, options);

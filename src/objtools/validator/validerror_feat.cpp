@@ -579,8 +579,7 @@ void CValidError_feat::ValidateSeqFeatData
             const CGene_ref* grp = feat.GetGeneXref();
             if ( !grp) {
                 // check overlapping gene
-                CConstRef<CSeq_feat> overlap = 
-                    GetOverlappingGene(feat.GetLocation(), *m_Scope);
+                CConstRef<CSeq_feat> overlap = CValidError_bioseq::GetGeneForFeature(feat, m_Scope);
                 if ( overlap ) {
                     if (overlap->IsSetPseudo() && overlap->GetPseudo()) {
                         pseudo = true;
@@ -605,7 +604,7 @@ void CValidError_feat::ValidateSeqFeatData
                 }
                 if (! NStr::IsBlank (feat_old_locus_tag)) {
                     if ( grp == 0 ) {
-                        const CSeq_feat* gene = GetOverlappingGene(feat.GetLocation(), *m_Scope);
+                        const CSeq_feat* gene = CValidError_bioseq::GetGeneForFeature(feat, m_Scope);
                         if ( gene != 0 ) {
                             grp = &gene->GetData().GetGene();
                         }
@@ -949,8 +948,7 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
     }
 
     // check overlapping gene
-    CConstRef<CSeq_feat> overlap = 
-        GetOverlappingGene(feat.GetLocation(), *m_Scope);
+    CConstRef<CSeq_feat> overlap = CValidError_bioseq::GetGeneForFeature(feat, m_Scope);
     if ( overlap ) {
         if ( (overlap->CanGetPseudo()  &&  overlap->GetPseudo())  ||
              (overlap->GetData().GetGene().CanGetPseudo()  &&
@@ -5544,8 +5542,8 @@ void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
         // get gene ref for mRNA feature
         const CGene_ref* genomicgrp = feat.GetGeneXref();
         if ( genomicgrp == 0 ) {
-            const CSeq_feat* gene = 
-                GetOverlappingGene(feat.GetLocation(), *m_Scope);
+            const CSeq_feat* gene =
+                CValidError_bioseq::GetGeneForFeature(feat, m_Scope);
             if ( gene != 0 ) {
                 genomicgrp = &gene->GetData().GetGene();
             }
