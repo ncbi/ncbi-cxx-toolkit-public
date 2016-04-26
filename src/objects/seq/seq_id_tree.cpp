@@ -763,6 +763,14 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
 }
 
 
+void CSeq_id_Textseq_Info::RestoreAccession(string& acc, TPacked param) const
+{
+    acc = GetAccPrefix();
+    acc.resize(acc.size() + GetAccDigits(), '0');
+    s_RestoreNumber(acc, GetAccPrefix().size(), GetAccDigits(), param);
+}
+
+
 void CSeq_id_Textseq_Info::Restore(CTextseq_id& id, TPacked param) const
 {
     if ( !id.IsSetAccession() ) {
@@ -1072,9 +1080,10 @@ void CSeq_id_Textseq_Tree::x_FindMatchByAcc(TSeq_id_MatchList& id_list,
 }
 
 
-void CSeq_id_Textseq_Tree::x_FindRevMatchByAcc(TSeq_id_MatchList& id_list,
-                                               const string& acc,
-                                               const TVersion* ver) const
+void
+CSeq_id_Textseq_Tree::x_FindRevMatchByAccPacked(TSeq_id_MatchList& id_list,
+                                                const string& acc,
+                                                const TVersion* ver) const
 {
     if ( !m_PackedMap.empty() ) {
         if ( TPackedKey key = CSeq_id_Textseq_Info::ParseAcc(acc, ver) ) {
@@ -1094,7 +1103,14 @@ void CSeq_id_Textseq_Tree::x_FindRevMatchByAcc(TSeq_id_MatchList& id_list,
             }
         }
     }
+}
 
+
+void
+CSeq_id_Textseq_Tree::x_FindRevMatchByAccNonPacked(TSeq_id_MatchList& id_list,
+                                                   const string& acc,
+                                                   const TVersion* ver) const
+{
     for ( TStringMapCI vit = m_ByAcc.find(acc);
           vit != m_ByAcc.end() && NStr::EqualNocase(vit->first, acc);
           ++vit ) {
@@ -1106,6 +1122,17 @@ void CSeq_id_Textseq_Tree::x_FindRevMatchByAcc(TSeq_id_MatchList& id_list,
         }
         id_list.insert(CSeq_id_Handle(vit->second));
     }
+}
+
+
+inline
+void
+CSeq_id_Textseq_Tree::x_FindRevMatchByAcc(TSeq_id_MatchList& id_list,
+                                          const string& acc,
+                                          const TVersion* ver) const
+{
+    x_FindRevMatchByAccPacked(id_list, acc, ver);
+    x_FindRevMatchByAccNonPacked(id_list, acc, ver);
 }
 
 
@@ -1333,13 +1360,20 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
                 id_list.insert(CSeq_id_Handle(it->second, id.GetPacked()));
             }
         }
+        if ( !m_ByAcc.empty() ) {
+            // look for non-packed variants that may have set name or revision
+            string acc;
+            info->RestoreAccession(acc, id.GetPacked());
+            x_FindRevMatchByAccNonPacked
+                (id_list, acc, info->IsSetVersion()? &info->GetVersion(): 0);
+        }
         return;
     }
 
     CConstRef<CSeq_id> orig_id = id.GetSeqId();
     const CTextseq_id& orig_tid = x_Get(*orig_id);
 
-    if ( !mine ) {
+    if ( true || !mine ) { // this code should be enough
         TReadLockGuard guard(m_TreeLock);
         // search only existing accessions
         if ( orig_tid.IsSetAccession() ) {
@@ -1349,85 +1383,6 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
             x_FindRevMatchByName(id_list, orig_tid.GetName(), &orig_tid);
         }
         return;
-    }
-
-    // mine -> full search and create (TODO: do we really need this?)
-    CRef<CSeq_id> tmp(new CSeq_id);
-    tmp->Assign(*orig_id);
-    CTextseq_id& tid = const_cast<CTextseq_id&>(x_Get(*tmp));
-    bool A = orig_tid.IsSetAccession();
-    bool N = orig_tid.IsSetName();
-    bool v = orig_tid.IsSetVersion();
-    bool r = orig_tid.IsSetRelease();
-
-    if ( A  &&  (N  ||  v  ||  r) ) {
-        // A only
-        tid.Reset();
-        tid.SetAccession(orig_tid.GetAccession());
-        if ( CSeq_id_Handle h = FindInfo(*tmp) ) {
-            id_list.insert(h);
-        }
-        if ( v  &&  (N  ||  r) ) {
-            // A.v
-            tid.SetVersion(orig_tid.GetVersion());
-            if ( CSeq_id_Handle h = FindInfo(*tmp) ) {
-                id_list.insert(h);
-            }
-        }
-        if ( N ) {
-            // Collect all alternative names
-            set<string> alt_names;
-            TSeq_id_MatchList name_matches;
-            FindMatch(id, name_matches);
-            ITERATE(TSeq_id_MatchList, mit, name_matches) {
-                CConstRef<CSeq_id> mid = mit->GetSeqId();
-                const CTextseq_id& tmid = x_Get(*mid);
-                if ( tmid.IsSetName() ) {
-                    alt_names.insert(tmid.GetName());
-                }
-            }
-
-            ITERATE(set<string>, name_it, alt_names) {
-                // N only
-                tid.Reset();
-                tid.SetName(*name_it);
-                id_list.insert(FindOrCreate(*tmp));
-                if ( v  ||  r ) {
-                    if ( r ) {
-                        // N.r
-                        tid.SetRelease(orig_tid.GetRelease());
-                        id_list.insert(FindOrCreate(*tmp));
-                        tid.ResetRelease();
-                    }
-                    // A + N
-                    tid.SetAccession(orig_tid.GetAccession());
-                    id_list.insert(FindOrCreate(*tmp));
-                    if ( v  &&  r ) {
-                        // A.v + N
-                        tid.SetVersion(orig_tid.GetVersion());
-                        id_list.insert(FindOrCreate(*tmp));
-                        // A + N.r
-                        tid.ResetVersion();
-                        tid.SetRelease(orig_tid.GetRelease());
-                        id_list.insert(FindOrCreate(*tmp));
-                    }
-                    else if ( v  &&  *name_it != orig_tid.GetName() ) {
-                        tid.SetVersion(orig_tid.GetVersion());
-                        id_list.insert(FindOrCreate(*tmp));
-                    }
-                }
-            }
-        }
-    }
-    else if ( N  &&  (v  ||  r) ) {
-        // N only
-        tid.Reset();
-        tid.SetName(orig_tid.GetName());
-        id_list.insert(FindOrCreate(*tmp));
-        if ( v  &&  r ) {
-            tid.SetRelease(orig_tid.GetRelease());
-            id_list.insert(FindOrCreate(*tmp));
-        }
     }
 }
 

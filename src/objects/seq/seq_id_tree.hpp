@@ -341,7 +341,7 @@ public:
         bool IsSetVersion(void) const {
             return (m_Hash & 1) != 0;
         }
-        TVersion GetVersion(void) const {
+        const TVersion& GetVersion(void) const {
             _ASSERT(IsSetVersion());
             return m_Version;
         }
@@ -377,9 +377,10 @@ public:
     bool IsSetVersion(void) const {
         return m_Key.IsSetVersion();
     }
-    TVersion GetVersion(void) const {
+    const TVersion& GetVersion(void) const {
         return m_Key.GetVersion();
     }
+    void RestoreAccession(string& acc, TPacked param) const;
     void Restore(CTextseq_id& id, TPacked param) const;
 
     static TKey ParseAcc(const string& acc, const TVersion* ver);
@@ -484,6 +485,12 @@ private:
                            const string& name,
                            const CTextseq_id* tid = 0) const;
 
+    void x_FindRevMatchByAccPacked(TSeq_id_MatchList& id_list,
+                                   const string& acc,
+                                   const TVersion* ver = 0) const;
+    void x_FindRevMatchByAccNonPacked(TSeq_id_MatchList& id_list,
+                                      const string& acc,
+                                      const TVersion* ver = 0) const;
     void x_FindRevMatchByAcc(TSeq_id_MatchList& id_list,
                              const string& acc,
                              const TVersion* ver = 0) const;

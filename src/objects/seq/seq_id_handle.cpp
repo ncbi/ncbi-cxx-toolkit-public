@@ -149,7 +149,6 @@ void CSeq_id_Handle::GetMatchingHandles(TMatches& matches) const
 
 void CSeq_id_Handle::GetReverseMatchingHandles(TMatches& matches) const
 {
-    GetMatchingHandles(matches);
     GetMapper().GetReverseMatchingHandles(*this, matches);
 }
 
@@ -164,7 +163,6 @@ void CSeq_id_Handle::GetMatchingHandles(TMatches& matches,
 void CSeq_id_Handle::GetReverseMatchingHandles(TMatches& matches,
                                                EAllowWeakMatch allow_weak_match) const
 {
-    GetMatchingHandles(matches, allow_weak_match);
     GetMapper().GetReverseMatchingHandles(*this, matches, allow_weak_match);
 }
 

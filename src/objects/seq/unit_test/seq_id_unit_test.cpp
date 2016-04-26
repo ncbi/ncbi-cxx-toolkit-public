@@ -1462,9 +1462,9 @@ void s_Match_id(size_t num_ids,
                 const char* const weak_match_to_ids[],
                 bool strict = true)
 {
-    ERR_POST("num_ids="<<num_ids);
+    LOG_POST(Info << "num_ids="<<num_ids);
     for ( size_t xi = 0; xi < num_ids; ++xi ) {
-        ERR_POST("id["<<xi<<"]="<<CSeq_id_Handle::GetHandle(fasta_ids[xi]));
+        LOG_POST(Info << "id["<<xi<<"]="<<CSeq_id_Handle::GetHandle(fasta_ids[xi]));
     }
     for ( size_t xi = 0; xi <= num_ids; ++xi ) {
         set<string> strs;
@@ -1534,11 +1534,9 @@ void s_Match_id(size_t num_ids,
             ids[i].GetReverseMatchingHandles(matches);
             CSeq_id_Handle::TMatches exp_matches = match_to_map[ids[i]];
             exp_matches.insert(ids[i]);
-            const CSeq_id_Handle::TMatches& more_matches = matching_map[ids[i]];
-            exp_matches.insert(more_matches.begin(), more_matches.end());
             s_CheckMatches(ids[i], ids, matches, exp_matches, strict, "rev");
             ITERATE ( CSeq_id_Handle::TMatches, it, matches ) {
-                BOOST_CHECK(ids[i].MatchesTo(*it)||it->MatchesTo(ids[i]));
+                BOOST_CHECK(it->MatchesTo(ids[i]));
             }
         }
         for ( size_t i = 0; i < ids.size(); ++i ) {
@@ -1564,8 +1562,6 @@ void s_Match_id(size_t num_ids,
             ids[i].GetReverseMatchingHandles(matches, eAllowWeakMatch);
             CSeq_id_Handle::TMatches exp_matches = weak_match_to_map[ids[i]];
             exp_matches.insert(ids[i]);
-            const CSeq_id_Handle::TMatches& more_matches = weak_matching_map[ids[i]];
-            exp_matches.insert(more_matches.begin(), more_matches.end());
             s_CheckMatches(ids[i], ids, matches, exp_matches, strict, "weak rev");
             ITERATE ( CSeq_id_Handle::TMatches, it, matches ) {
                 CSeq_id_Handle id2 = *it;
@@ -1576,7 +1572,7 @@ void s_Match_id(size_t num_ids,
                         .Assign(*id2.GetSeqId()->GetTextseq_Id());
                     id2 = CSeq_id_Handle::GetHandle(id);
                 }
-                BOOST_CHECK(ids[i].MatchesTo(id2)||id2.MatchesTo(ids[i]));
+                BOOST_CHECK(id2.MatchesTo(ids[i]));
             }
         }
     }
@@ -1678,6 +1674,15 @@ BOOST_AUTO_TEST_CASE(Match_id3)
         "tpg|A000002.2",
         "tpg|A000002.5",
         "tpg|A000002.5|name2",
+        "ref|NT_025975.2",
+        "ref|NT_025975.2|HsY_2613",
+        "ref|NT_025975.2|HsY_2614",
+        "ref|NT_025975.3",
+        "ref|NT_025975.3|HsY_2613",
+        "ref|NT_025975.3|HsY_2614",
+        "ref|NT_025975",
+        "ref|NT_025975|HsY_2613",
+        "ref|NT_025975|HsY_2614",
     };
     const char* const match_to_ids[] = {
         "",
@@ -1693,6 +1698,15 @@ BOOST_AUTO_TEST_CASE(Match_id3)
         "tpg|A000002",
         "tpg|A000002,tpg|A000002.5|name2",
         "tpg|A000002,tpg|A000002.5",
+        "ref|NT_025975.2|HsY_2613,ref|NT_025975.2|HsY_2614,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975.2,ref|NT_025975.2|HsY_2614,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975.2,ref|NT_025975.2|HsY_2613,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975.3|HsY_2613,ref|NT_025975.3|HsY_2614,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975.3,ref|NT_025975.3|HsY_2614,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975.3,ref|NT_025975.3|HsY_2613,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975,ref|NT_025975|HsY_2614",
+        "ref|NT_025975,ref|NT_025975|HsY_2613",
     };
     const char* const weak_match_to_ids[] = {
         "tpg|A000001",
@@ -1708,6 +1722,15 @@ BOOST_AUTO_TEST_CASE(Match_id3)
         "gb|A000002,gb|A000002.2,tpg|A000002",
         "gb|A000002,tpg|A000002,tpg|A000002.5|name2",
         "gb|A000002,tpg|A000002,tpg|A000002.5",
+        "ref|NT_025975.2|HsY_2613,ref|NT_025975.2|HsY_2614,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975.2,ref|NT_025975.2|HsY_2614,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975.2,ref|NT_025975.2|HsY_2613,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975.3|HsY_2613,ref|NT_025975.3|HsY_2614,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975.3,ref|NT_025975.3|HsY_2614,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975.3,ref|NT_025975.3|HsY_2613,ref|NT_025975,ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975|HsY_2613,ref|NT_025975|HsY_2614",
+        "ref|NT_025975,ref|NT_025975|HsY_2614",
+        "ref|NT_025975,ref|NT_025975|HsY_2613",
     };
     s_Match_id(ArraySize(fasta_ids),
                fasta_ids, match_to_ids, weak_match_to_ids, false);
