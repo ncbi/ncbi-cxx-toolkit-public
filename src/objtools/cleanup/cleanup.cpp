@@ -1319,6 +1319,31 @@ bool CCleanup::SetCDSPartialsByFrameAndTranslation(CSeq_feat& cds, CScope& scope
 }
 
 
+bool CCleanup::UpdateECNumbers(CProt_ref::TEc & ec_num_list)
+{
+    bool changed = false;
+    // CProt_ref::TEc is a list, so the iterator stays valid even if we 
+    // add new entries after the current one
+    NON_CONST_ITERATE(CProt_ref::TEc, ec_num_iter, ec_num_list) {
+        string & ec_num = *ec_num_iter;
+        size_t tlen = ec_num.length();
+        CleanVisStringJunk(ec_num);
+        if (tlen != ec_num.length()) {
+            changed = true;
+        }
+        if (CProt_ref::GetECNumberStatus(ec_num) == CProt_ref::eEC_replaced &&
+            !CProt_ref::IsECNumberSplit(ec_num)) {
+            string new_val = CProt_ref::GetECNumberReplacement(ec_num);
+            if (!NStr::IsBlank(new_val)) {
+                ec_num = new_val;
+                changed = true;
+            }
+        }
+
+    }
+    return changed;
+}
+
 bool CCleanup::SetGenePartialByLongestContainedFeature(CSeq_feat& gene, CScope& scope)
 {
     CBioseq_Handle bh = scope.GetBioseqHandle(gene.GetLocation());
