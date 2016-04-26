@@ -133,8 +133,9 @@ typedef struct {
     unsigned    proxy_auth_done:1;    /* proxy authorization sent            */
     unsigned          skip_host:1;    /* do *not* add the "Host:" header tag */
     unsigned          keepalive:1;    /* connection keep-alive               */
-    unsigned          chunked:1;      /* if reading chunked                  */
-    unsigned          unused:6;
+    unsigned          chunked:1;      /* if writing/reading chunked, HTTP/1.1*/
+    unsigned          entity:1;       /* if there's entity payload (body)/1.1*/
+    unsigned          unused:5;
     unsigned          minor_fault:3;  /* incr each minor failure since majo  */
     unsigned short    major_fault;    /* incr each major failure since open  */
     unsigned short    http_code;      /* last http code response             */
@@ -265,8 +266,6 @@ static int/*bool tri-state inverted*/ x_RetryAuth(SHttpConnector* uuu,
 {
     int result;
 
-    assert(retry  &&  retry->data);
-    assert(strncasecmp(retry->data, "basic", strcspn(retry->data," \t")) == 0);
     switch (retry->mode) {
     case eRetry_Authenticate:
         if (uuu->net_info->scheme != eURL_Https
@@ -316,10 +315,13 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
         int   fail = 0;
         switch (retry->mode) {
         case eRetry_Redirect:
+            if (uuu->entity)
+                fail = -2;
+            /*FALLTHRU*/
         case eRetry_Redirect303:
-            if (uuu->net_info->req_method == eReqMethod_Connect)
+            if (!fail &&  uuu->net_info->req_method == eReqMethod_Connect)
                 fail = 2;
-            else if (retry->data  &&  *retry->data != '?') {
+            else if (!fail  &&  retry->data  &&  *retry->data != '?') {
                 if (uuu->net_info->req_method != eReqMethod_Post
                     ||  retry->mode == eRetry_Redirect303
                     ||  x_UnsafeRedirectOK(uuu)
@@ -359,7 +361,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                     }
                 } else
                     fail = -1 - x_IsWriteThru(uuu);
-            } else
+            } else if (!fail)
                 fail = 1;
             if (fail) {
                 CORE_LOGF_X(2, eLOG_Error,
@@ -389,15 +391,17 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
             break;
         case eRetry_Authenticate:
             if (uuu->net_info->req_method == eReqMethod_Connect)
-                fail = 2;
+                fail = 3;
             /*FALLTHRU*/
         case eRetry_ProxyAuthenticate:
             if (!fail) {
-                if (!retry->data || strncasecmp(retry->data, "basic ", 6) != 0)
+                if (!retry->data
+                    ||  strncasecmp(retry->data, "basic",
+                                    strcspn(retry->data, " \t")) != 0) {
                     fail = -2;
-                else if (!(fail = x_RetryAuth(uuu, retry))
-                         &&  x_IsWriteThru(uuu)) {
-                    fail =  3;
+                } else if (!(fail = x_RetryAuth(uuu, retry))
+                           &&  x_IsWriteThru(uuu)) {
+                    fail =  2;
                 }
             }
             if (fail) {
@@ -407,10 +411,10 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                              url ? url  : "",
                              retry->mode == eRetry_Authenticate
                              ? "Authorization" : "Proxy authorization",
-                             fail >  2 ? "must be pushed with write-through" :
-                             fail >  1 ? "not allowed with CONNECT" :
+                             fail >  2 ? "not allowed with CONNECT" :
                              fail < -1 ? "not implemented" :
-                             fail >  0 ? "failed" : "prohibited",
+                             fail >  1 ? "must be pushed with write-through" :
+                             fail <  0 ? "prohibited" : "failed",
                              "(["[!retry->data],
                              retry->data ? retry->data : "NULL",
                              ")]"[!retry->data]));
@@ -563,6 +567,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
         return eIO_Closed;
     }
 
+    uuu->entity = 0;
     /* the re-try loop... */
     for (;;) {
         TSOCK_Flags flags
@@ -570,6 +575,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                ? fSOCK_KeepAlive | fSOCK_LogOn
                : fSOCK_KeepAlive | fSOCK_LogDefault);
         sock = 0;
+        uuu->chunked = 0;
         if (uuu->net_info->req_method != eReqMethod_Connect
             &&  uuu->net_info->scheme == eURL_Https
             &&  uuu->net_info->http_proxy_host[0]
@@ -579,12 +585,12 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 status = eIO_Unknown;
                 break;
             }
-            net_info->scheme   = eURL_Http;
-            net_info->user[0]  = '\0';
-            net_info->pass[0]  = '\0';
-            if (!net_info->port)
-                net_info->port = CONN_PORT_HTTPS;
-            net_info->firewall = 0/*false*/;
+            net_info->scheme    = eURL_Http;
+            net_info->user[0]   = '\0';
+            net_info->pass[0]   = '\0';
+            if (net_info->port == 0)
+                net_info->port  = CONN_PORT_HTTPS;
+            net_info->firewall  = 0/*false*/;
             ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
             status = HTTP_CreateTunnel(net_info, fHTTP_NoUpread, &sock);
             assert((status == eIO_Success) ^ !sock);
@@ -592,6 +598,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
         } else
             status  = eIO_Success;
         if (status == eIO_Success) {
+            EReqMethod     req_method = uuu->net_info->req_method;
             int/*bool*/    reset_user_header;
             char*          http_user_header;
             const char*    host;
@@ -607,17 +614,23 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 break;
             }
             if (x_IsWriteThru(uuu)) {
-                assert(uuu->net_info->req_method != eReqMethod_Connect);
-                if (!ConnNetInfo_OverrideUserHeader
-                    (uuu->net_info, "Transfer-Encoding: chunked")) {
-                    status = eIO_Unknown;
-                    break;
+                assert(req_method != eReqMethod_Connect);
+                if (req_method == eReqMethod_Any)
+                    req_method  = BUF_Size(uuu->w_buf)
+                        ? eReqMethod_Post : eReqMethod_Get;
+                if (req_method != eReqMethod_Head  &&
+                    req_method != eReqMethod_Get) {
+                    if (!ConnNetInfo_OverrideUserHeader
+                        (uuu->net_info, "Transfer-Encoding: chunked")) {
+                        status = eIO_Unknown;
+                        break;
+                    }
+                    uuu->chunked = 1;
                 }
-                BUF_Erase(uuu->w_buf);
                 len = 0;
             } else
                 len = BUF_Size(uuu->w_buf);
-            if (uuu->net_info->req_method == eReqMethod_Connect
+            if (req_method == eReqMethod_Connect
                 ||  (uuu->net_info->scheme != eURL_Https
                      &&  uuu->net_info->http_proxy_host[0]
                      &&  uuu->net_info->http_proxy_port)) {
@@ -633,7 +646,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                     status = eIO_Unknown;
                     break;
                 }
-                if (uuu->net_info->req_method == eReqMethod_Connect) {
+                if (req_method == eReqMethod_Connect) {
                     /* Tunnel */
                     assert(!uuu->net_info->version);
                     if (!len) {
@@ -674,7 +687,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             }
 
             /* encode args (obsolete feature) */
-            if (uuu->net_info->req_method != eReqMethod_Connect
+            if (req_method != eReqMethod_Connect
                 &&  args  &&  (uuu->flags & fHCC_UrlEncodeArgs)) {
                 size_t args_len = strcspn(args, "#");
                 assert(args == uuu->net_info->args);
@@ -737,10 +750,9 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 flags |= fSOCK_ReadOnWrite;
 
             status = URL_ConnectEx(host, port, path, args,
-                                   uuu->net_info->req_method
-                                   | (uuu->net_info->version
-                                      ? eReqMethod_v1
-                                      : 0), len,
+                                   req_method | (uuu->net_info->version
+                                                 ? eReqMethod_v1
+                                                 : 0), len,
                                    uuu->o_timeout, timeout,
                                    uuu->net_info->http_user_header,
                                    uuu->net_info->credentials,
@@ -758,8 +770,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
             if (sock) {
                 assert(status == eIO_Success);
-                uuu->w_len = (uuu->net_info->req_method != eReqMethod_Connect
-                              ? len : 0);
+                uuu->w_len = req_method != eReqMethod_Connect
+                    ? BUF_Size(uuu->w_buf) : 0;
                 break;
             }
         } else
@@ -857,7 +869,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
                 continue;
             if (uuu->conn_state  > eCS_FlushRequest)
                 break;
-            if (!x_IsWriteThru(uuu))
+            if (!uuu->chunked)
                 uuu->conn_state  = eCS_FlushRequest;
             if (uuu->conn_state == eCS_FlushRequest) {
                 /* "flush" */
@@ -1685,7 +1697,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         assert(!uuu->w_len);
 
         if (uuu->conn_state == eCS_WriteRequest) {
-            assert(x_IsWriteThru(uuu));
+            assert(x_IsWriteThru(uuu)  &&  uuu->chunked);
             BUF_Erase(uuu->w_buf);
             if (!BUF_Write(&uuu->w_buf, "0\r\n\r\n", 5)) {
                 status = eIO_Unknown;
@@ -1703,7 +1715,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         if (extract == eEM_Flush)
             return eIO_Success;
 
-        assert(uuu->sock  &&  uuu->conn_state > eCS_WriteRequest);
+        assert(uuu->sock  &&  uuu->conn_state > eCS_FlushRequest);
 
         if (extract == eEM_Wait
             &&  (uuu->conn_state & eCS_DoneBody) == eCS_DoneBody) {
@@ -2040,15 +2052,19 @@ static EIO_Status s_VT_Wait
             return uuu->sock  &&  uuu->can_connect == fCC_Once
                 ? eIO_Closed : eIO_Success;
         }
-        if (uuu->conn_state < eCS_ReadHeader) {
+        if (!uuu->sock  &&  !BUF_Size(uuu->w_buf))
+            return eIO_Success;
+        if (!uuu->sock  ||  uuu->conn_state < eCS_ReadHeader) {
             status = s_ConnectAndSend(uuu, timeout, eEM_Flush);
             if (status != eIO_Success)
                 return status;
         } else
-            return eIO_Success;
-        assert(uuu->conn_state == eCS_WriteRequest  &&  !uuu->w_len);
+            return uuu->can_connect == fCC_Once ? eIO_Closed : eIO_Success;
         assert(uuu->sock);
-        return SOCK_Wait(uuu->sock, eIO_Write, timeout);
+        assert(uuu->conn_state < eCS_ReadHeader  &&  !uuu->w_len);
+        return uuu->conn_state < eCS_FlushRequest
+            ? SOCK_Wait(uuu->sock, eIO_Write, timeout)
+            : eIO_Success;
     default:
         assert(0);
         break;
@@ -2067,6 +2083,15 @@ static EIO_Status s_VT_Write
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
     EIO_Status status;
 
+    assert(!*n_written);
+
+    /* store the write timeout */
+    if (timeout) {
+        uuu->ww_timeout = *timeout;
+        uuu->w_timeout  = &uuu->ww_timeout;
+    } else
+        uuu->w_timeout  = kInfiniteTimeout;
+
     /* if trying to write after a request then close the socket,
      * and so return to "IDLE" */
     if (uuu->sock  &&  uuu->conn_state > eCS_WriteRequest) {
@@ -2080,20 +2105,21 @@ static EIO_Status s_VT_Write
         return eIO_Closed; /* no more connects permitted */
     uuu->can_connect |= fCC_Once;
 
+    /* check if writing is at all legitimate */
+    if (size  &&  (uuu->net_info->req_method == eReqMethod_Head  ||
+                   uuu->net_info->req_method == eReqMethod_Get)) {
+        return eIO_Closed;
+    }
+
     /* write-through with HTTP/1.1 */
     if (x_IsWriteThru(uuu)) {
-        int reset_req_method;
-        if (uuu->net_info->req_method == eReqMethod_Any) {
-            uuu->net_info->req_method  = eReqMethod_Post;
-            reset_req_method = 1;
-        } else
-            reset_req_method = 0;
-        status = s_ConnectAndSend(uuu, timeout, eEM_Flush);
-        if (reset_req_method)
-            uuu->net_info->req_method  = eReqMethod_Any;
-        if (status != eIO_Success)
-            return status;
-        assert(uuu->conn_state == eCS_WriteRequest  &&  !uuu->w_len);
+        if (BUF_Size(uuu->w_buf)) {
+            status = s_ConnectAndSend(uuu, timeout, eEM_Flush);
+            if (status != eIO_Success)
+                return status;
+        }
+        assert((!uuu->sock  ||  uuu->conn_state == eCS_WriteRequest)
+               &&  !uuu->w_len);
         if (size) {
             char prefix[80];
             int  n = sprintf(prefix, "%" NCBI_BIGCOUNT_FORMAT_SPEC_HEX "\r\n",
@@ -2103,12 +2129,12 @@ static EIO_Status s_VT_Write
                 !BUF_Write(&uuu->w_buf, buf,    size)        ||
                 !BUF_Write(&uuu->w_buf, "\r\n", 2)) {
                 BUF_Erase(uuu->w_buf);
-                assert(!*n_written);
                 return eIO_Unknown;
             }
             *n_written = size;
             size += n + 2;
             uuu->w_len = size;
+            uuu->entity = 1;
         }
         return eIO_Success;
     }
@@ -2131,13 +2157,6 @@ static EIO_Status s_VT_Write
             return eIO_Unknown;
         *n_written = size;
     }
-
-    /* store the write timeout */
-    if (timeout) {
-        uuu->ww_timeout = *timeout;
-        uuu->w_timeout  = &uuu->ww_timeout;
-    } else
-        uuu->w_timeout  = kInfiniteTimeout;
     return eIO_Success;
 }
 
@@ -2149,31 +2168,26 @@ static EIO_Status s_VT_Flush
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
     EIO_Status status;
 
-    if (uuu->flags & fHTTP_Flushable) {
-        if (!uuu->sock) {
-            if (uuu->can_connect == fCC_None)
-                return eIO_Closed;
-        }
-        if (x_IsWriteThru(uuu)) {
-            if (uuu->conn_state < eCS_ReadHeader)
-                return s_ConnectAndSend(uuu, timeout, eEM_Flush);
-            assert(!uuu->w_len);
-        } else if (!uuu->sock) {
-            status = s_PreRead(uuu, timeout, eEM_Flush);
-            return BUF_Size(uuu->r_buf) ? eIO_Success : status;
-        }
-    }
+    if (!uuu->sock  &&  uuu->can_connect == fCC_None)
+        return eIO_Closed;
 
-    /* The real flush will be performed on the first "READ" (or "CLOSE"),
-     * or on "WAIT". Here, we just store the write timeout, that's all...
-     * NOTE: fHTTP_Flushable connectors are able to actually flush data.
-     */
     if (timeout) {
         uuu->ww_timeout = *timeout;
         uuu->w_timeout  = &uuu->ww_timeout;
     } else
         uuu->w_timeout  = timeout;
-    return eIO_Success;
+
+    if (!(uuu->flags & fHTTP_Flushable))
+        return eIO_Success;
+
+    if (uuu->sock
+        &&  !(x_IsWriteThru(uuu)  &&  uuu->conn_state < eCS_ReadHeader)) {
+        return eIO_Success;
+    }
+    status = x_IsWriteThru(uuu)
+        ? s_ConnectAndSend(uuu, timeout, eEM_Flush)
+        : s_PreRead       (uuu, timeout, eEM_Flush); 
+    return BUF_Size(uuu->r_buf) ? eIO_Success : status;
 }
 
 
@@ -2401,7 +2415,8 @@ static EIO_Status s_CreateHttpConnector
 
     uuu->unsafe_redir = flags & fHTTP_UnsafeRedirects ? eOn : eOff;
     uuu->error_header = eDefault;
-    uuu->can_connect  = fCC_None;         /* will be properly set at open */
+    uuu->can_connect  = fCC_None;         /* will be properly set at open    */
+    uuu->unused       = 0;
 
     uuu->sock         = 0;
     uuu->o_timeout    = kDefaultTimeout;  /* deliberately bad values here... */
