@@ -1650,6 +1650,11 @@ CRef<CSeq_entry> AddProtein(const CSeq_feat& cds, CScope& scope)
     }
 
     CRef<CBioseq> new_product = CSeqTranslator::TranslateToProtein(cds, scope);
+    CRef<CSeqdesc> molinfo(new CSeqdesc());
+    molinfo->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+    molinfo->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans_a);
+    new_product->SetDescr().Set().push_back(molinfo);
+
     if (cds.IsSetProduct()) {
         CRef<CSeq_id> prot_id(new CSeq_id());
         prot_id->Assign(*(cds.GetProduct().GetId()));
