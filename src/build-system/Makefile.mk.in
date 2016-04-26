@@ -669,7 +669,7 @@ GENBANK_READER_LIBS = ncbi_xreader $(GENBANK_READER_LDEP)
 # In-house-only PubSeqOS loader (not always built)
 ncbi_xreader_pubseqos = @ncbi_xreader_pubseqos@
 ncbi_xreader_pubseqos2 = @ncbi_xreader_pubseqos2@
-GENBANK_READER_PUBSEQOS_LDEP = $(XCONNEXT) xconnect $(DBAPI_DRIVER) $(GENBANK_READER_LIBS)
+GENBANK_READER_PUBSEQOS_LDEP = $(DBAPI_DRIVER) $(GENBANK_READER_LIBS)
 # @UNLESS_PUBSEQOS@ GENBANK_READER_PUBSEQOS_LDEP = xconnect $(GENBANK_READER_LIBS)
 GENBANK_READER_PUBSEQOS_LIBS = $(ncbi_xreader_pubseqos) $(GENBANK_READER_PUBSEQOS_LDEP)
 
