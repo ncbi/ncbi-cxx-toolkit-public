@@ -1177,7 +1177,7 @@ CNSTDatabase::ExecSP_GetGeneralDBInfo(void)
             // NETSTORAGE   224.88 MB   98.34 MB
             // 1696 KB   752 KB  736 KB  208 KB
             ITERATE(CQuery, qit, query.SingleSet()) {
-                for (int  k = 1; k <= qit.GetTotalColumns(); ++k) {
+                for (size_t  k = 1; k <= qit.GetTotalColumns(); ++k) {
                     string  columnName = qit.GetColumnName(k);
                     result[columnName] = qit[k].AsString();
                 }
@@ -1222,7 +1222,7 @@ CNSTDatabase::ExecSP_GetStatDBInfo(void)
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
 
             ITERATE(CQuery, qit, query.SingleSet()) {
-                for (int  k = 1; k <= qit.GetTotalColumns(); ++k) {
+                for (size_t  k = 1; k <= qit.GetTotalColumns(); ++k) {
                     string  columnName = qit.GetColumnName(k);
                     result[columnName] = qit[k].AsString();
                 }
