@@ -581,7 +581,7 @@ enum ETransSplicing {
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetOverlappingGene(
     const CSeq_loc& loc, CScope& scope,
-    ETransSplicing eTransSplicing = eTransSplicing_No);
+    ETransSplicing eTransSplicing = eTransSplicing_Auto);
 
 
 NCBI_XOBJUTIL_EXPORT
