@@ -1642,7 +1642,7 @@ CRef<CSeq_entry> AddProtein(const CSeq_feat& cds, CScope& scope)
     }
     if (!eh.IsSet()) {
         eh.ConvertSeqToSet();
-        // move all descriptors on nucleotide sequence except molinfo and title to set
+        // move all descriptors on nucleotide sequence except molinfo, title, and create-date to set
         eh.SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
         CConstRef<CBioseq_set> set = eh.GetSet().GetCompleteBioseq_set();
         if (set && set->IsSetSeq_set()) {
@@ -1650,7 +1650,7 @@ CRef<CSeq_entry> AddProtein(const CSeq_feat& cds, CScope& scope)
             CSeq_entry_EditHandle neh = eh.GetScope().GetSeq_entryEditHandle(*nuc);
             CBioseq_set::TDescr::Tdata::const_iterator it = nuc->GetDescr().Get().begin();
             while (it != nuc->GetDescr().Get().end()) {
-                if (!(*it)->IsMolinfo() && !(*it)->IsTitle()) {
+                if (!(*it)->IsMolinfo() && !(*it)->IsTitle() && !(*it)->IsCreate_date()) {
                     CRef<CSeqdesc> copy(new CSeqdesc());
                     copy->Assign(**it);
                     eh.AddSeqdesc(*copy);
