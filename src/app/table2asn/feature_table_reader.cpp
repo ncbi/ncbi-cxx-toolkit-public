@@ -1657,7 +1657,10 @@ void CFeatureTableReader::GenerateECNumbers(objects::CSeq_entry_Handle seh, cons
                 case CProt_ref::eEC_replaced:
                 {
                     const string& newvalue = CProt_ref::GetECNumberReplacement(*val);
-                    InitOstream(ostream, fname) << label << "\tEC number changed\t" << *val << '\t' << newvalue << endl;
+                    bool is_split = newvalue.find('\t') != string::npos;
+                    InitOstream(ostream, fname) << label << 
+                        (is_split?"\tEC number split\t":"\tEC number changed\t")
+                        << *val << '\t' << newvalue << endl;
                 }
                 break;
                 case CProt_ref::eEC_unknown:
