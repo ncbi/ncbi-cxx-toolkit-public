@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(COUNT_NUCLEOTIDES)
 
     CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
     Set->AddTest("COUNT_NUCLEOTIDES");
-    Set->Parse(CRef<CSerialObject>(entry));
+    Set->Parse(*entry);
     Set->Summarize();
     const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(COUNT_PROTEINS)
 
     CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
     Set->AddTest("COUNT_PROTEINS");
-    Set->Parse(CRef<CSerialObject>(entry));
+    Set->Parse(*entry);
     Set->Summarize();
     const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(SHORT_SEQUENCES)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("SHORT_SEQUENCES");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(PERCENT_N_INCLUDE_GAPS_IN_LENGTH)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("PERCENT_N");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(PERCENT_N)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("PERCENT_N");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("PARTIAL_CDS_COMPLETE_SEQUENCE");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -307,7 +307,7 @@ BOOST_AUTO_TEST_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA)
 
     CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
     Set->AddTest("INTERNAL_TRANSCRIBED_SPACER_RRNA");
-    Set->Parse(CRef<CSerialObject>(entry));
+    Set->Parse(*entry);
     Set->Summarize();
     const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -570,7 +570,7 @@ A3AA9EC14782E93FA5EBBB904EE248F9E1D5244ADD32923AC90414353C3004E20483AFFA524712\
 
     CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
     Set->AddTest("DIVISION_CODE_CONFLICTS");
-    Set->Parse(CRef<CSerialObject>(entry));
+    Set->Parse(*entry);
     Set->Summarize();
     const TDiscrepancyCaseMap& tst = Set->GetTests();
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -589,7 +589,7 @@ BOOST_AUTO_TEST_CASE(ZERO_BASECOUNT)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("ZERO_BASECOUNT");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
 
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -616,7 +616,7 @@ BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("NO_ANNOTATION");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -636,7 +636,7 @@ BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("NO_ANNOTATION");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -658,7 +658,7 @@ BOOST_AUTO_TEST_CASE(CDS_TRNA_OVERLAP)
 
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("CDS_TRNA_OVERLAP");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
 
     const TDiscrepancyCaseMap& tests = set->GetTests();
@@ -684,7 +684,7 @@ BOOST_AUTO_TEST_CASE(LONG_NO_ANNOTATION)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("LONG_NO_ANNOTATION");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -704,7 +704,7 @@ BOOST_AUTO_TEST_CASE(LONG_NO_ANNOTATION)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("LONG_NO_ANNOTATION");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -726,7 +726,7 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
 
         CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
         Set->AddTest("POSSIBLE_LINKER");
-        Set->Parse(CRef<CSerialObject>(entry));
+        Set->Parse(*entry);
         Set->Summarize();
         const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -743,7 +743,7 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
 
         CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
         Set->AddTest("POSSIBLE_LINKER");
-        Set->Parse(CRef<CSerialObject>(entry));
+        Set->Parse(*entry);
         Set->Summarize();
         const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -760,7 +760,7 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
 
         CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
         Set->AddTest("POSSIBLE_LINKER");
-        Set->Parse(CRef<CSerialObject>(entry));
+        Set->Parse(*entry);
         Set->Summarize();
         const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -779,7 +779,7 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
 
         CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
         Set->AddTest("POSSIBLE_LINKER");
-        Set->Parse(CRef<CSerialObject>(entry));
+        Set->Parse(*entry);
         Set->Summarize();
         const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -797,7 +797,7 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
 
         CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
         Set->AddTest("POSSIBLE_LINKER");
-        Set->Parse(CRef<CSerialObject>(entry));
+        Set->Parse(*entry);
         Set->Summarize();
         const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -821,7 +821,7 @@ BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("MISSING_LOCUS_TAGS");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -845,7 +845,7 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("INCONSISTENT_LOCUS_TAG_PREFIX");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -869,7 +869,7 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("INCONSISTENT_LOCUS_TAG_PREFIX");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -891,7 +891,7 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("INCONSISTENT_LOCUS_TAG_PREFIX");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -912,7 +912,7 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("INCONSISTENT_LOCUS_TAG_PREFIX");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -935,7 +935,7 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_MOLTYPES)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("INCONSISTENT_MOLTYPES");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -959,7 +959,7 @@ BOOST_AUTO_TEST_CASE(BAD_LOCUS_TAG_FORMAT)
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
     set->AddTest("BAD_LOCUS_TAG_FORMAT");
-    set->Parse(CRef<CSerialObject>(entry));
+    set->Parse(*entry);
     set->Summarize();
     
     const TDiscrepancyCaseMap& tst = set->GetTests();
@@ -983,7 +983,7 @@ BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
 
         CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
         Set->AddTest("QUALITY_SCORES");
-        Set->Parse(CRef<CSerialObject>(entry));
+        Set->Parse(*entry);
         Set->Summarize();
         const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -1003,7 +1003,7 @@ BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
 
         CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
         Set->AddTest("QUALITY_SCORES");
-        Set->Parse(CRef<CSerialObject>(entry));
+        Set->Parse(*entry);
         Set->Summarize();
         const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -1022,7 +1022,7 @@ BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
 
         CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
         Set->AddTest("QUALITY_SCORES");
-        Set->Parse(CRef<CSerialObject>(entry));
+        Set->Parse(*entry);
         Set->Summarize();
         const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -1042,7 +1042,7 @@ BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
 
         CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
         Set->AddTest("QUALITY_SCORES");
-        Set->Parse(CRef<CSerialObject>(entry));
+        Set->Parse(*entry);
         Set->Summarize();
         const TDiscrepancyCaseMap& tst = Set->GetTests();
         BOOST_REQUIRE_EQUAL(tst.size(), 1);
@@ -1063,7 +1063,7 @@ BOOST_AUTO_TEST_CASE(ORDERED_LOCATION_Autofix)
 
     CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
     Set->AddTest("ORDERED_LOCATION");
-    Set->Parse(CRef<CSerialObject>(entry));
+    Set->Parse(*entry);
     Set->Summarize();
 
     const TDiscrepancyCaseMap& tst = Set->GetTests();

@@ -278,7 +278,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
     Tests->SetSuspectRules(m_SuspectRules);
     Tests->SetLineage(m_Lineage);
 
-    Tests->Parse(x_ReadFile(fname));
+    Tests->Parse(*x_ReadFile(fname));
     Tests->Summarize();
     if (m_Macro) {
         x_OutputMacro(x_ConstructMacroName(fname), Tests->GetTests());
@@ -300,7 +300,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
     ITERATE (vector<string>, fname, m_Files) {
         Tests->SetFile(*fname);
         //m_Scope.RemoveTopLevelSeqEntry(*sh);
-        Tests->Parse(x_ReadFile(*fname));
+        Tests->Parse(*x_ReadFile(*fname));
     }
     Tests->Summarize();
     if (m_Macro) {

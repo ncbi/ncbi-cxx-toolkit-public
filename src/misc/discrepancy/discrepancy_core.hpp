@@ -303,7 +303,8 @@ public:
         {}
     bool AddTest(const string& name);
     bool SetAutofixHook(const string& name, TAutofixHook func);
-    void Parse(CConstRef<CSerialObject> obj);
+    void Parse(CConstRef<CSerialObject> root);
+    void Parse(const CSerialObject& root);
     void Summarize(void);
     const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
 

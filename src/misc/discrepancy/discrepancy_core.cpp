@@ -291,7 +291,12 @@ void CDiscrepancyContext::Update_Bioseq_set_Stack(CTypesConstIterator& it)
 }
 
 
-void CDiscrepancyContext::Parse(CConstRef<CSerialObject> obj)
+void CDiscrepancyContext::Parse(CConstRef<CSerialObject> root)
+{
+    Parse(*root);
+}
+
+void CDiscrepancyContext::Parse(const CSerialObject& root)
 {
     CTypesConstIterator i;
     CType<CBioseq>::AddTo(i);
@@ -311,7 +316,7 @@ void CDiscrepancyContext::Parse(CConstRef<CSerialObject> obj)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_annot), it is handled separately!
     // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
 
-    for (i = CConstBeginInfo(*obj); i; ++i) {
+    for (i = CConstBeginInfo(root); i; ++i) {
         CTypesConstIterator::TIteratorContext ctx = i.GetContextData();
         if (CType<CBioseq>::Match(i)) {
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i));

@@ -99,7 +99,8 @@ public:
     virtual ~CDiscrepancySet(void){}
     virtual bool AddTest(const string& name) = 0;
     virtual bool SetAutofixHook(const string& name, TAutofixHook func) = 0;
-    virtual void Parse(CConstRef<CSerialObject> obj) = 0;
+    virtual void Parse(CConstRef<CSerialObject> root) = 0; // remove after the propagation
+    virtual void Parse(const CSerialObject& root) = 0;
     virtual void Summarize(void) = 0;
     virtual const TDiscrepancyCaseMap& GetTests(void) = 0;
 
