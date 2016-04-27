@@ -863,7 +863,7 @@ void CNetScheduleHandler::x_PrepareWriteBuffer(const string &  msg,
         if (err_emul.IsActive()) {
             if (err_emul.as_bool) {
                 m_Server->CloseConnection(&GetSocket());
-                return eIO_Closed;
+                return /* eIO_Closed */;
             }
         }
 
