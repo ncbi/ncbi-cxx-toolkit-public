@@ -43,10 +43,11 @@ namespace NDirectNetStorageImpl
 class CObj : public SNetStorageObjectImpl, private IState, private ILocation
 {
 public:
-    CObj(ISelector::Ptr selector)
+    CObj(ISelector::Ptr selector, bool relocating = false)
         : m_Selector(selector),
           m_State(this),
-          m_Location(this)
+          m_Location(this),
+          m_Relocating(relocating)
     {
         _ASSERT(m_Selector.get());
     }
@@ -95,9 +96,12 @@ private:
     string FileTrack_PathImpl();
     TUserInfo GetUserInfoImpl();
 
+    void RemoveOldCopyIfExists() const;
+
     ISelector::Ptr m_Selector;
     IState* m_State;
     ILocation* m_Location;
+    const bool m_Relocating;
 };
 
 }

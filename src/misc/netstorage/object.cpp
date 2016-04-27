@@ -141,7 +141,7 @@ string CObj::Relocate(TNetStorageFlags flags)
     }
 
     LOG_POST(Trace << "locations are different");
-    CRef<CObj> new_file(new CObj(selector));
+    CRef<CObj> new_file(new CObj(selector, true));
 
     for (;;) {
         new_file->Write(buffer, bytes_read, NULL);
@@ -222,6 +222,7 @@ ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
         if (rw_state) {
             m_Location = l;
             m_State = rw_state;
+            if (!m_Relocating) RemoveOldCopyIfExists();
             return result;
         }
     }
@@ -329,6 +330,22 @@ string CObj::FileTrack_PathImpl()
 ILocation::TUserInfo CObj::GetUserInfoImpl()
 {
     return MetaMethod(TCaller<TUserInfo, &ILocation::GetUserInfoImpl>());
+}
+
+
+void CObj::RemoveOldCopyIfExists() const
+{
+    ISelector::Ptr selector(m_Selector->Clone(fNST_Movable));
+
+    // Skipping first location (as it is where the object is being written to)
+    while (ILocation* l = selector->Next()) {
+        try {
+            if (l->RemoveImpl() == eNSTRR_Removed) return;
+        }
+        catch (CNetStorageException& e) {
+            if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
+        }
+    }
 }
 
 
