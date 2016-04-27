@@ -80,11 +80,12 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_S_region ) ]     = SofaType( 1836, "S_region" );
     m_Map[ GT( e_Imp, eSubtype_TATA_signal ) ]  = SofaType( 174, "TATA_box" );
     m_Map[ GT( e_Imp, eSubtype_V_region ) ]     = SofaType( 1833, "V_region");
-    m_Map[ GT( e_Imp, eSubtype_attenuator)]     = SofaType(140, "attenuator");
-    m_Map[ GT( e_Imp, eSubtype_centromere)]       = SofaType( 577, "centromere");
-    m_Map[ GT( e_Imp, eSubtype_conflict)]       = SofaType( 1085, "sequence_conflict");
-    m_Map[ GT( e_Imp, eSubtype_enhancer)]        = SofaType( 165, "enhancer");
     m_Map[ GT( e_Imp, eSubtype_assembly_gap ) ] = SofaType( 730, "gap" );
+    m_Map[ GT( e_Imp, eSubtype_attenuator)]     = SofaType(140, "attenuator");
+    m_Map[ GT( e_Imp, eSubtype_centromere)]     = SofaType( 577, "centromere");
+    m_Map[ GT( e_Imp, eSubtype_conflict)]       = SofaType( 1085, "sequence_conflict");
+    m_Map[ GT( e_Imp, eSubtype_enhancer)]       = SofaType( 165, "enhancer");
+    m_Map[ GT( e_Imp, eSubtype_gap ) ]          = SofaType( 730, "gap" );
     m_Map[ GT( e_Imp, eSubtype_iDNA ) ]         = SofaType( 723, "iDNA" );
     m_Map[ GT( e_Imp, eSubtype_intron ) ]       = SofaType( 188, "intron" );
     m_Map[ GT( e_Imp, eSubtype_mat_peptide ) ]  = SofaType( 419, "mature_peptide" );
