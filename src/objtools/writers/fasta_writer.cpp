@@ -292,45 +292,6 @@ string CFastaOstreamEx::x_GetGeneIdString(const CSeq_feat& gene,
     return id_string;
 }
 
-
-void CFastaOstreamEx::x_AddGeneAttributes(const CSeq_feat& feat,
-                                          CScope& scope,
-                                          string& defline)
-{
-    if (!feat.IsSetData()) {
-        return;
-    }
-
-    auto gene = Ref(new CGene_ref());
-
-    if (feat.GetData().IsCdregion()) {
-        auto gene_feat = sequence::GetBestGeneForCds(feat, scope);
-        if (gene_feat.Empty() ||
-            !gene_feat->IsSetData() ||
-            !gene_feat->GetData().IsGene()) {
-            return;
-        }
-        gene->Assign(gene_feat->GetData().GetGene());
-    } 
-    else if (feat.GetData().IsGene()) {
-        gene->Assign(feat.GetData().GetGene());
-    }
-
-    if (gene->IsSetLocus()) {
-        auto gene_locus = gene->GetLocus();
-        if (!gene_locus.empty()) {
-            defline += " [gene=" + gene_locus + "]";
-        }
-    }
-
-    if (gene->IsSetLocus_tag()) {
-        auto gene_locus_tag = gene->GetLocus_tag();
-        if (!gene_locus_tag.empty()) {
-            defline += " [locus_tag=" + gene_locus_tag + "]";
-        }
-    }
-}
-
 CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
                                            CScope& scope)
 {
@@ -350,6 +311,45 @@ CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
 
     return no_gene;
 }
+
+
+void CFastaOstreamEx::x_AddGeneAttributes(const CSeq_feat& feat,
+                                          CScope& scope,
+                                          string& defline)
+{
+    if (!feat.IsSetData()) {
+        return;
+    }
+
+    auto gene = Ref(new CGene_ref());
+
+    if (feat.GetData().IsGene()) {
+        gene->Assign(feat.GetData().GetGene());
+    } else {
+        auto gene_feat = s_GetBestGeneForFeat(feat, scope);
+        if (gene_feat.Empty() ||
+            !gene_feat->IsSetData() ||
+            !gene_feat->GetData().IsGene()) {
+            return;
+        }
+        gene->Assign(gene_feat->GetData().GetGene());
+    } 
+
+    if (gene->IsSetLocus()) {
+        auto gene_locus = gene->GetLocus();
+        if (!gene_locus.empty()) {
+            defline += " [gene=" + gene_locus + "]";
+        }
+    }
+
+    if (gene->IsSetLocus_tag()) {
+        auto gene_locus_tag = gene->GetLocus_tag();
+        if (!gene_locus_tag.empty()) {
+            defline += " [locus_tag=" + gene_locus_tag + "]";
+        }
+    }
+}
+
 
 
 void CFastaOstreamEx::x_AddPseudoAttribute(const CSeq_feat& feat,
