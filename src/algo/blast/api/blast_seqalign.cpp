@@ -1374,11 +1374,24 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                                                gi_list,
                                                hit_align);
         }
-        
-        NON_CONST_ITERATE(vector<CRef<CSeq_align > >, iter, hit_align) {
-           RemapToQueryLoc(*iter, query_loc);
-           seq_aligns->Set().push_back(*iter);
+
+	if (seqinfo_src->CanReturnPartialSequence() == true)
+	{
+        	CConstRef<CSeq_loc> subj_loc = seqinfo_src->GetSeqLoc(kOid);
+        	NON_CONST_ITERATE(vector<CRef<CSeq_align > >, iter, hit_align) {
+             	   RemapToQueryLoc(*iter, query_loc);
+             	   if ( !is_ooframe )
+                   	s_RemapToSubjectLoc(*iter, *subj_loc); 
+             	   seq_aligns->Set().push_back(*iter);
+		}
         }
+	else
+	{
+		NON_CONST_ITERATE(vector<CRef<CSeq_align > >, iter, hit_align) {
+           	    RemapToQueryLoc(*iter, query_loc);
+           	    seq_aligns->Set().push_back(*iter);
+		}
+	}
     }
     return seq_aligns;
 }

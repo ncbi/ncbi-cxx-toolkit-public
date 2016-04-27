@@ -96,6 +96,11 @@ public:
     virtual bool GetMasks(Uint4 index, 
                           const vector<TSeqRange>& target_ranges,
                           TMaskedSubjRegions& retval) const;
+
+    /// Return true if the implementation can return anything besides a seq-loc
+    /// for the entire sequence.  If in doubt, the implementation must
+    /// return true.
+    virtual bool CanReturnPartialSequence() const {return true;}
 private:
     TSeqLocVector m_SeqVec; ///< Vector of subject sequence locations to get 
                             /// information from

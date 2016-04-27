@@ -108,6 +108,13 @@ public:
     virtual bool GetMasks(Uint4 index, 
                           const vector<TSeqRange>& target_ranges,
                           TMaskedSubjRegions& retval) const;
+
+    /// Return true if the implementation can return anything besides a seq-loc
+    /// for the entire sequence.  If in doubt, the implementation must
+    /// return true.
+    /// GetSeqLoc use CreateWholeSeqLocFromIds, so false is returned for this implementation.
+    virtual bool CanReturnPartialSequence() const {return false;}
+
 private:
     CBlastQuerySourceBioseqSet m_DataSource;
 };

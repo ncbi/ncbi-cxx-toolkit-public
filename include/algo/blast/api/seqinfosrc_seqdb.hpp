@@ -108,6 +108,11 @@ public:
                           const vector<TSeqRange> & target_ranges,
                           TMaskedSubjRegions& retval) const;
 
+    /// Return true if the implementation can return anything besides a seq-loc
+    /// for the entire sequence.  If in doubt, the implementation must
+    /// return true.
+    virtual bool CanReturnPartialSequence() const {return false;}
+
     /// Invoke CSeqDB's garbage collector
     virtual void GarbageCollect();
 

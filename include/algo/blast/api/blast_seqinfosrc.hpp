@@ -100,6 +100,11 @@ public:
                           const vector<TSeqRange>& target_ranges,
                           TMaskedSubjRegions& retval) const = 0;
 
+    /// Return true if the implementation can return anything besides a seq-loc
+    /// for the entire sequence.  If in doubt, the implementation must
+    /// return true.
+    virtual bool CanReturnPartialSequence() const = 0;
+
     /// Allow implementations to provide a facility to release memory
     virtual void GarbageCollect() {};
 };
