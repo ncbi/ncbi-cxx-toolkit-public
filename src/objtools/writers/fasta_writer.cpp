@@ -331,6 +331,86 @@ void CFastaOstreamEx::x_AddGeneAttributes(const CSeq_feat& feat,
     }
 }
 
+CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
+                                           CScope& scope)
+{
+    CConstRef<CSeq_feat> no_gene;
+    if (!feat.IsSetData()) {
+        return no_gene;
+    }
+
+
+    if (feat.GetData().IsCdregion()) {
+        return sequence::GetBestGeneForCds(feat, scope);
+    }
+
+    if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+        return sequence::GetBestGeneForMrna(feat, scope);
+    }
+
+    return no_gene;
+}
+
+
+void CFastaOstreamEx::x_AddPseudoAttribute(const CSeq_feat& feat,
+                                           CScope& scope, 
+                                           string& defline)
+{
+    if (!feat.IsSetData()) {
+        return;
+    }
+
+    bool is_pseudo = false;
+
+    if (feat.IsSetPseudo() &&
+        feat.GetPseudo()) {
+        is_pseudo = true;
+    }
+
+    if (!is_pseudo ) {
+        auto gene_feat = s_GetBestGeneForFeat(feat, scope);
+        if (!gene_feat.Empty() &&
+            gene_feat->IsSetPseudo() &&
+            gene_feat->GetPseudo()) {
+            is_pseudo = true;
+        } else if (!gene_feat.Empty() &&
+                   gene_feat->GetData().IsGene() &&
+                   gene_feat->GetData().GetGene().GetPseudo()) {
+            is_pseudo = true; 
+        }
+    } 
+
+    if (is_pseudo) {
+       defline += " [pseudo=true]";
+    }
+}
+
+
+void CFastaOstreamEx::x_AddPseudoGeneAttribute(const CSeq_feat& feat,
+                                              CScope& scope,
+                                              string& defline)
+{
+    if (!feat.IsSetData()) {
+        return;
+    }
+    auto pseudogene = feat.GetNamedQual("pseudogene");
+
+    if (pseudogene.empty()) {
+        if (!feat.GetData().IsLegalQualifier(CSeqFeatData::eQual_pseudogene)) {
+            return;
+        }
+        auto gene_feat = s_GetBestGeneForFeat(feat, scope);
+        if (gene_feat.Empty()) {
+            return;
+        }
+        pseudogene = gene_feat->GetNamedQual("pseudogene");
+    }
+       
+    if (!pseudogene.empty()) {
+        defline += " [pseudogene=" + pseudogene + "]";
+    }
+}
+
 
 void CFastaOstreamEx::x_AddDbxrefAttribute(const CSeq_feat& feat,
                                            string& defline)
@@ -640,25 +720,15 @@ void CFastaOstreamEx::x_AddRNAProductAttribute(const CSeq_feat& feat,
         product_string = rna.GetExt().GetGen().GetProduct();
     }
 
-    if (product_string.empty() &&
-        feat.IsSetQual()) {
 
-        const auto& quals = feat.GetQual();
-
-        for (const auto& qual : feat.GetQual()) 
-        {
-            if (qual->IsSetQual() && 
-                qual->IsSetVal() &&
-                qual->GetQual() == "product") {
-                product_string = qual->GetVal();
-                if (!product_string.empty()) {
-                    break;
-                }
-            }
-        }
+    if (product_string.empty()) {
+        product_string = feat.GetNamedQual("product");
     }
 
-    defline += " [product=" + product_string + "]"; 
+
+    if (!product_string.empty()) {
+        defline += " [product=" + product_string + "]"; 
+    }
 }
 
 
@@ -672,7 +742,6 @@ void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
         return;
     }
 
-
     x_AddGeneAttributes(feat, scope, defline);
 
     x_AddDbxrefAttribute(feat, defline);
@@ -681,7 +750,11 @@ void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
 
     x_AddRNAProductAttribute(feat, defline);
 
-    x_AddncRNAClassAttribute(feat,defline);
+    x_AddncRNAClassAttribute(feat, defline);
+
+    x_AddPseudoAttribute(feat, scope, defline);
+
+    x_AddPseudoGeneAttribute(feat, scope, defline);
 
     x_AddReadingFrameAttribute(feat, defline);
 

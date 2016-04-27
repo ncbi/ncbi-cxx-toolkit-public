@@ -83,6 +83,14 @@ protected:
     virtual void x_AddncRNAClassAttribute(const CSeq_feat& feat,
                                           string& defline);
 
+    virtual void x_AddPseudoAttribute(const CSeq_feat& feat,
+                                      CScope& scope,
+                                      string& defline);
+
+    virtual void x_AddPseudoGeneAttribute(const CSeq_feat& feat,
+                                          CScope& scope,
+                                          string& defline);
+
     virtual void x_AddRNAProductAttribute(const CSeq_feat& feat,
                                           string& defline);
 
