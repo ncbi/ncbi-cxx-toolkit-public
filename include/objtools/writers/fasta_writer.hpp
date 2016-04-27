@@ -75,6 +75,7 @@ protected:
                                            string& defline);
 
     virtual void x_AddDbxrefAttribute(const CSeq_feat& feat,
+                                      CScope& scope,
                                       string& defline);
 
     virtual void x_AddReadingFrameAttribute(const CSeq_feat& feat, 

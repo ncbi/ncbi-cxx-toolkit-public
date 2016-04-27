@@ -413,10 +413,12 @@ void CFastaOstreamEx::x_AddPseudoGeneAttribute(const CSeq_feat& feat,
 
 
 void CFastaOstreamEx::x_AddDbxrefAttribute(const CSeq_feat& feat,
+                                           CScope& scope,
                                            string& defline)
 {
+    string dbxref_string = "";
+
     if (feat.IsSetDbxref()) {
-        string dbxref_string = "";
         for (auto&& pDbtag : feat.GetDbxref()) {
 
             const CDbtag& dbtag = *pDbtag;
@@ -435,6 +437,17 @@ void CFastaOstreamEx::x_AddDbxrefAttribute(const CSeq_feat& feat,
         if (!dbxref_string.empty()) {
             defline += " [db_xref=" + dbxref_string  + "]";
         }
+    }
+
+    // Attempt to get dbxref from parent gene
+    if (dbxref_string.empty() &&
+        feat.IsSetData() &&
+        !feat.GetData().IsGene()) {
+        auto gene_feat = s_GetBestGeneForFeat(feat, scope);   
+        if (gene_feat.Empty()) {
+            return;
+        }
+        x_AddDbxrefAttribute(*gene_feat, scope, defline);
     }
 }
 
@@ -744,7 +757,7 @@ void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
 
     x_AddGeneAttributes(feat, scope, defline);
 
-    x_AddDbxrefAttribute(feat, defline);
+    x_AddDbxrefAttribute(feat, scope, defline);
 
     x_AddProteinNameAttribute(feat, scope, defline);
 
