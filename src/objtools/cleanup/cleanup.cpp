@@ -2677,6 +2677,18 @@ bool CCleanup::ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh)
 }
 
 
+bool IsSiteRef(const CSeq_feat& sf)
+{
+    if (sf.GetData().IsImp() &&
+        sf.GetData().GetImp().IsSetKey() &&
+        NStr::Equal(sf.GetData().GetImp().GetKey(), "Site-ref")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
 {
     bool found_site_ref = false;
@@ -2697,36 +2709,37 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
         for (CFeat_CI p(*b); p; ++p) {
             if (!p->IsSetCit() || p->GetCit().Which() != CPub_set::e_Pub) {
                 continue;
-            }
-            CRef<CSeqdesc> d(new CSeqdesc());
+            }            
+
+            bool is_site_ref = IsSiteRef(*(p->GetSeq_feat()));
             ITERATE(CSeq_feat::TCit::TPub, c, p->GetCit().GetPub()) { 
+                CRef<CSeqdesc> d(new CSeqdesc());
                 if ((*c)->IsEquiv()) {
                     ITERATE(CPub_equiv::Tdata, t, (*c)->GetEquiv().Get()) {
                         CRef<CPub> pub_copy(new CPub());
                         pub_copy->Assign(**t);
                         d->SetPub().SetPub().Set().push_back(pub_copy);
                     }
+
                 } else {
                     CRef<CPub> pub_copy(new CPub());
                     pub_copy->Assign(**c);
                     d->SetPub().SetPub().Set().push_back(pub_copy);
                 }
+                if (is_site_ref) {
+                    d->SetPub().SetReftype(CPubdesc::eReftype_sites);
+                } else {
+                    d->SetPub().SetReftype(CPubdesc::eReftype_feats);
+                }
+                CRef<CCleanupChange> changes(makeCleanupChange(0));
+                CNewCleanup_imp pubclean(changes, 0);
+                pubclean.BasicCleanup(d->SetPub(), ShouldStripPubSerial(*(b->GetCompleteBioseq())));
+                MoveOneFeatToPubdesc(*p, d, *b, false);
             }
-            
-            bool remove_feat = false;
-            if (p->GetData().IsImp() &&
-                p->GetData().GetImp().IsSetKey() &&
-                NStr::Equal(p->GetData().GetImp().GetKey(), "Site-ref")) {
-                d->SetPub().SetReftype(CPubdesc::eReftype_sites);
-                remove_feat = true;
-            } else {
-                d->SetPub().SetReftype(CPubdesc::eReftype_feats);
+            if (is_site_ref) {
+                CSeq_feat_EditHandle feh(*p);
+                feh.Remove();
             }
-
-            CRef<CCleanupChange> changes(makeCleanupChange(0));
-            CNewCleanup_imp pubclean(changes, 0);
-            pubclean.BasicCleanup(d->SetPub(), ShouldStripPubSerial(*(b->GetCompleteBioseq())));
-            MoveOneFeatToPubdesc(*p, d, *b, remove_feat);
             any_change = true;
         }
     }
