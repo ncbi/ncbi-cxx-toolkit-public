@@ -81,8 +81,10 @@ TAlignResultsRef CMergeAligner::GenerateAlignments(objects::CScope& Scope,
             CRef<CSeq_align_set> Results;
             Results = x_MergeAlignments(*QueryIter->second, Scope);
 
-            if(!Results->Get().empty())
+            if(!Results->Get().empty()) {
+                ERR_POST(Info << "Merge created " << Results->Get().size() << " aligns");
                 NewResults->Insert(CRef<CQuerySet>(new CQuerySet(*Results)));
+            }
         }
     }
 

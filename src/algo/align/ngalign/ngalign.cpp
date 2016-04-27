@@ -141,8 +141,11 @@ TAlignSetRef CNgAligner::x_Align_Impl()
     }
 
     TAlignSetRef Results;
-    Results = AccumResults->ToBestSeqAlignSet();
-    //Results = AccumResults->ToSeqAlignSet();
+    if(m_AllowDupes) {
+        Results = AccumResults->ToSeqAlignSet();
+    } else {
+        Results = AccumResults->ToBestSeqAlignSet();
+    }
 
     if(!Results.IsNull()) {
         CDiagContext_Extra extra = GetDiagContext().Extra();

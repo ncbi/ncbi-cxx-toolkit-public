@@ -54,7 +54,6 @@ BEGIN_SCOPE(ncbi)
 USING_SCOPE(objects);
 USING_SCOPE(blast);
 
-static bool s_AllowDupes;
 
 CQuerySet::CQuerySet(const CSearchResults& Results)
 {
@@ -86,20 +85,22 @@ CQuerySet::CQuerySet(const CRef<CSeq_align> Alignment)
 }
 
 
-CQuerySet::CQuerySet(const CSearchResults& Results, CRef<CGC_Assembly> GenColl)
+CQuerySet::CQuerySet(const CSearchResults& Results, CRef<CGC_Assembly> GenColl, bool AllowDupes)
 {
-	m_GenColl = GenColl;
+	m_AllowDupes = AllowDupes;
+    m_GenColl = GenColl;
     m_QueryId.Reset(new CSeq_id);
     m_QueryId->Assign(*Results.GetSeqId());
     Insert(*Results.GetSeqAlign());
 }
 
 
-CQuerySet::CQuerySet(const objects::CSeq_align_set& Results, CRef<CGC_Assembly> GenColl)
+CQuerySet::CQuerySet(const objects::CSeq_align_set& Results, CRef<CGC_Assembly> GenColl, bool AllowDupes)
 {
 	if(Results.Get().empty()) {
 		cerr << __FILE__<<":"<<__LINE__<<" : "<<"Inserting Empty Seq-align-set?"<<endl;
 	}
+	m_AllowDupes = AllowDupes;
 	m_GenColl = GenColl;
     m_QueryId.Reset(new CSeq_id);
     m_QueryId->Assign(Results.Get().front()->GetSeq_id(0));
@@ -107,11 +108,12 @@ CQuerySet::CQuerySet(const objects::CSeq_align_set& Results, CRef<CGC_Assembly> 
 }
 
 
-CQuerySet::CQuerySet(const CRef<CSeq_align> Alignment, CRef<CGC_Assembly> GenColl)
+CQuerySet::CQuerySet(const CRef<CSeq_align> Alignment, CRef<CGC_Assembly> GenColl, bool AllowDupes)
 {
 	if(Alignment.IsNull()) {
 		cerr << __FILE__<<":"<<__LINE__<<" : "<<"Inserting Null Alignment?"<<endl;
 	}
+	m_AllowDupes = AllowDupes;
 	m_GenColl = GenColl;
     m_QueryId.Reset(new CSeq_id);
     m_QueryId->Assign(Alignment->GetSeq_id(0));
@@ -230,7 +232,7 @@ void CQuerySet::Insert(const CRef<CSeq_align> Alignment)
     }
 
     // do not allow self-alignments into the result set
-    if(!s_AllowDupes) {
+    if(!m_AllowDupes) {
 		if(Alignment->GetSeq_id(0).Equals(Alignment->GetSeq_id(1)) &&
            Alignment->GetSeqStart(0) == Alignment->GetSeqStart(1) &&
            Alignment->GetSeqStop(0) == Alignment->GetSeqStop(1) &&
@@ -330,7 +332,7 @@ int CQuerySet::GetBestRank(const string AssemblyAcc) const
 
 bool CQuerySet::x_AlreadyContains(const CSeq_align_set& Set, const CSeq_align& New) const
 {
-    if(s_AllowDupes)
+    if(m_AllowDupes)
         return false;
     
     ITERATE(CSeq_align_set::Tdata, AlignIter, Set.Get()) {
@@ -344,7 +346,6 @@ bool CQuerySet::x_AlreadyContains(const CSeq_align_set& Set, const CSeq_align& N
         } else if( (*AlignIter)->GetSegs().Equals(New.GetSegs()) ) {
             return true;
         }
-
     }
 
     return false;
@@ -353,7 +354,7 @@ bool CQuerySet::x_AlreadyContains(const CSeq_align_set& Set, const CSeq_align& N
 
 void CQuerySet::x_FilterStrictSubAligns(CSeq_align_set& Source) const
 {
-    if(s_AllowDupes)
+    if(m_AllowDupes)
         return;
 
 //  Later alignments are likely to contain earlier alignments. But the iterators
@@ -376,25 +377,25 @@ void CQuerySet::x_FilterStrictSubAligns(CSeq_align_set& Source) const
             bool IsInnerContained = x_ContainsAlignment(**Outer, **Inner);
             if(IsInnerContained) {
                 //ERR_POST(Info << "Filtering Strict Sub Alignment");
-                int OI, II;
-				(*Outer)->GetNamedScore("num_ident", OI);
-				(*Inner)->GetNamedScore("num_ident", II);
-
+                //int OI, II;
+				//(*Outer)->GetNamedScore("num_ident", OI);
+				//(*Inner)->GetNamedScore("num_ident", II);
 				//ERR_POST(Info << (*Outer)->GetSegs().Which() << " : " << (*Inner)->GetSegs().Which() );
 				//ERR_POST(Info << OI << " : " << II );
 				Inner = Source.Set().erase(Inner);
             }
-            else
+            else {
                 ++Inner;
-        }
-    }
+            }
+        } // end Inner
+    } // end Outer
 }
 
 
 bool CQuerySet::x_ContainsAlignment(const CSeq_align& Outer,
                                     const CSeq_align& Inner) const
 {
-    if(s_AllowDupes)
+    if(m_AllowDupes)
         return false;
 
     // Recurse over any Disc alignments
@@ -485,7 +486,6 @@ CAlignResultsSet::CAlignResultsSet()
 CAlignResultsSet::CAlignResultsSet(bool AllowDupes) 
 {
     m_AllowDupes = AllowDupes;
-    s_AllowDupes = AllowDupes;
 }
 
 
@@ -494,13 +494,11 @@ CAlignResultsSet::CAlignResultsSet(CRef<CGC_Assembly> Gencoll, bool AllowDupes)
 	m_GenColl = Gencoll;
 
     m_AllowDupes = AllowDupes;
-    s_AllowDupes = AllowDupes;
 }
 
 CAlignResultsSet::CAlignResultsSet(const blast::CSearchResultSet& BlastResults)
 {
     //m_AllowDupes = false;
-    //s_AllowDupes = m_AllowDupes;
     Insert(BlastResults);
 }
 
@@ -554,12 +552,6 @@ CRef<CSeq_align_set> CAlignResultsSet::ToSeqAlignSet() const
                 }
             }
         }
-
-        /*ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
-            ITERATE(CSeq_align_set::Tdata, AlignIter, SubjectIter->second->Get()) {
-                Out->Set().push_back( *AlignIter );
-            }
-        }*/ 
     }
     return Out;
 }
@@ -598,7 +590,7 @@ void CAlignResultsSet::Insert(CRef<CQuerySet> QuerySet)
 		if (Alignments && 
 			Alignments->CanGet() && 
 			!Alignments->Get().empty()) {
-			CRef<CQuerySet> Set(new CQuerySet(*Alignments, m_GenColl));
+			CRef<CQuerySet> Set(new CQuerySet(*Alignments, m_GenColl, m_AllowDupes));
 			m_QueryMap[IdString] = Set;
     	}
 	}
@@ -616,7 +608,7 @@ void CAlignResultsSet::Insert(CRef<CAlignResultsSet> AlignSet)
 void CAlignResultsSet::Insert(const blast::CSearchResultSet& BlastResults)
 {
     ITERATE(CSearchResultSet, Iter, BlastResults) {
-        CRef<CQuerySet> Set(new CQuerySet(**Iter, m_GenColl));
+        CRef<CQuerySet> Set(new CQuerySet(**Iter, m_GenColl, m_AllowDupes));
         string IdString = (*Iter)->GetSeqId()->AsFastaString();
         if(m_QueryMap.find(IdString) != m_QueryMap.end()) {
             m_QueryMap[IdString]->Insert(Set);
@@ -633,7 +625,7 @@ void CAlignResultsSet::Insert(CRef<CSeq_align> Alignment)
     if(m_QueryMap.find(IdString) != m_QueryMap.end()) {
         m_QueryMap[IdString]->Insert(Alignment);
     } else {
-        CRef<CQuerySet> Set(new CQuerySet(Alignment, m_GenColl));
+        CRef<CQuerySet> Set(new CQuerySet(Alignment, m_GenColl, m_AllowDupes));
         m_QueryMap[IdString] = Set;
     }
 }
