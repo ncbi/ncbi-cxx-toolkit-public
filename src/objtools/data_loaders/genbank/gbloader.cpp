@@ -1522,8 +1522,10 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
 
     CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
     if ( (blob_ids.GetState() & CBioseq_Handle::fState_no_data) != 0 ) {
-        if ( blob_ids.GetState() == CBioseq_Handle::fState_no_data ) {
-            // default state - return empty lock set
+        if ( (mask & fBlobHasAllLocal) == 0 ||
+             blob_ids.GetState() == CBioseq_Handle::fState_no_data ) {
+            // only external annotatsions are requested,
+            // or default state - return empty lock set
             return locks;
         }
         NCBI_THROW2(CBlobStateException, eBlobStateError,
