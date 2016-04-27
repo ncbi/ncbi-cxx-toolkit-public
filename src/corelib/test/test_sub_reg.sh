@@ -33,7 +33,7 @@ if [[ "$unamestr" == MINGW* ]] || [[ "$unamestr" == CYGWIN* ]]; then
     export NCBI_CONFIG__OVERRIDESBASE_DOT_ENVIRONMENT__OB_E=env
     export NCBI_CONFIG__OVERRIDESBASE_DOT_ENVIRONMENT__OBX_E=env
     export NCBI_CONFIG__A_DOT_B__C_DOT_D=e.f
-    ./test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
+    $CHECK_EXEC test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
                              -overrides "$NCBI_CONFIG_PATH/overrides.win.ini" \
                              -out test_sub_reg_1strun.out.ini
 else
@@ -47,7 +47,7 @@ else
     export NCBI_CONFIG__overridesbase_DOT_environment__ob_e=env
     export NCBI_CONFIG__overridesbase_DOT_environment__obx_e=env
     export NCBI_CONFIG__a_DOT_b__c_DOT_d=e.f
-    ./test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
+    $CHECK_EXEC test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
                              -overrides "$NCBI_CONFIG_PATH/overrides.ini" \
                              -out test_sub_reg_1strun.out.ini
 fi
@@ -78,7 +78,7 @@ fi
 
 cp test_sub_reg_1strun.out.ini test_sub_reg.ini
 
-./test_sub_reg -out test_sub_reg_2ndrun.out.ini
+$CHECK_EXEC test_sub_reg -out test_sub_reg_2ndrun.out.ini
 sort test_sub_reg_1strun.out.ini -o test_sub_reg_1strun.sorted.out.ini
 sort test_sub_reg_2ndrun.out.ini -o test_sub_reg_2ndrun.sorted.out.ini
 echo "Comparing second run and first run"
