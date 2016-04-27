@@ -932,7 +932,8 @@ void CBlastAppDiagHandler::ResetMessages()
 CBlastAppDiagHandler::~CBlastAppDiagHandler()
 {
 	if(m_handler) {
-		delete m_handler;
+		SetDiagHandler(m_handler);
+		m_handler = NULL;
 	}
 }
 
