@@ -269,9 +269,43 @@ typedef NCBI_PARAM_TYPE(Diag, Log_Size_Limit) TLogSizeLimitParam;
 ///////////////////////////////////////////////////////
 //  Output rate control parameters
 
+class CLogRateLimit
+{
+public:
+    typedef unsigned int TValue;
+    CLogRateLimit(void) : m_Value(kMax_UInt) {}
+    CLogRateLimit(TValue val) : m_Value(val) {}
+
+    operator TValue(void) const
+    {
+        return m_Value;
+    }
+
+    void Set(TValue val)
+    {
+        m_Value = val;
+    }
+
+private:
+    TValue m_Value;
+};
+
+
+CNcbiIstream& operator>>(CNcbiIstream& in, CLogRateLimit& lim)
+{
+    lim.Set(kMax_UInt);
+    string s;
+    getline(in, s);
+    if ( !NStr::EqualNocase(s, "off") ) {
+        lim.Set(NStr::StringToNumeric<CLogRateLimit::TValue>(s));
+    }
+    return in;
+}
+
+
 // AppLog limit per period
-NCBI_PARAM_DECL(unsigned int, Diag, AppLog_Rate_Limit);
-NCBI_PARAM_DEF_EX(unsigned int, Diag, AppLog_Rate_Limit, 50000,
+NCBI_PARAM_DECL(CLogRateLimit, Diag, AppLog_Rate_Limit);
+NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, AppLog_Rate_Limit, CLogRateLimit(50000),
                   eParam_NoThread, DIAG_APPLOG_RATE_LIMIT);
 typedef NCBI_PARAM_TYPE(Diag, AppLog_Rate_Limit) TAppLogRateLimitParam;
 
@@ -282,8 +316,8 @@ NCBI_PARAM_DEF_EX(unsigned int, Diag, AppLog_Rate_Period, 10, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(Diag, AppLog_Rate_Period) TAppLogRatePeriodParam;
 
 // ErrLog limit per period
-NCBI_PARAM_DECL(unsigned int, Diag, ErrLog_Rate_Limit);
-NCBI_PARAM_DEF_EX(unsigned int, Diag, ErrLog_Rate_Limit, 5000,
+NCBI_PARAM_DECL(CLogRateLimit, Diag, ErrLog_Rate_Limit);
+NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, ErrLog_Rate_Limit, CLogRateLimit(5000),
                   eParam_NoThread, DIAG_ERRLOG_RATE_LIMIT);
 typedef NCBI_PARAM_TYPE(Diag, ErrLog_Rate_Limit) TErrLogRateLimitParam;
 
@@ -294,8 +328,8 @@ NCBI_PARAM_DEF_EX(unsigned int, Diag, ErrLog_Rate_Period, 1, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(Diag, ErrLog_Rate_Period) TErrLogRatePeriodParam;
 
 // TraceLog limit per period
-NCBI_PARAM_DECL(unsigned int, Diag, TraceLog_Rate_Limit);
-NCBI_PARAM_DEF_EX(unsigned int, Diag, TraceLog_Rate_Limit, 5000,
+NCBI_PARAM_DECL(CLogRateLimit, Diag, TraceLog_Rate_Limit);
+NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, TraceLog_Rate_Limit, CLogRateLimit(5000),
                   eParam_NoThread, DIAG_TRACELOG_RATE_LIMIT);
 typedef NCBI_PARAM_TYPE(Diag, TraceLog_Rate_Limit) TTraceLogRateLimitParam;
 
