@@ -74,9 +74,9 @@ public:
     CQuerySet(const objects::CSeq_align_set& Results);
     CQuerySet(CRef<objects::CSeq_align> Alignment);
 
-  	CQuerySet(const blast::CSearchResults& Results, CRef<objects::CGC_Assembly> GenColl);
-    CQuerySet(const objects::CSeq_align_set& Results, CRef<objects::CGC_Assembly> GenColl);
-    CQuerySet(CRef<objects::CSeq_align> Alignment, CRef<objects::CGC_Assembly> GenColl);
+  	CQuerySet(const blast::CSearchResults& Results, CRef<objects::CGC_Assembly> GenColl, bool AllowDupes=false);
+    CQuerySet(const objects::CSeq_align_set& Results, CRef<objects::CGC_Assembly> GenColl, bool AllowDupes=false);
+    CQuerySet(CRef<objects::CSeq_align> Alignment, CRef<objects::CGC_Assembly> GenColl, bool AllowDupes=false);
 
 
 	TAssemblyToSubjectSet& Get() { return m_AssemblyMap; }
@@ -103,6 +103,7 @@ private:
     CRef<objects::CSeq_id> m_QueryId;
 
 	CRef<objects::CGC_Assembly> m_GenColl;
+    bool m_AllowDupes;
 
 	TAssemblyToSubjectSet m_AssemblyMap;
 
