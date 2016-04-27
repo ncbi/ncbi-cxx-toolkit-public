@@ -4660,19 +4660,7 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
             ! NStr::EqualNocase ("RNA", str) &&
             ! NStr::EqualNocase ("product", str) ) 
         {
-            if ( str.length() == 3) {
-                tRNA_codon = str;
-                NStr::ReplaceInPlace( tRNA_codon, "U", "T" );
-                if (CTrna_ext::ParseDegenerateCodon ( *tr, tRNA_codon)) {
-                    tRNA_codon.clear();
-                    copy( tr->GetCodon().begin(), tr->GetCodon().end(), back_inserter(tRNA_codon) );
-                    justt = false;
-                } else {
-                    justt = false;
-                }
-            } else {
-                justt = false;
-            }
+            justt = false;
         }
     }
     if( is_ambig ) {
@@ -4768,7 +4756,7 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
     if (rna_type == NCBI_RNAREF(tRNA) && rna.IsSetExt() && rna.GetExt().IsTRNA()) {
         CRNA_ref_Base::C_Ext::TTRNA& trp = rna.SetExt().SetTRNA();
         if (trp.IsSetAa() && trp.GetAa().IsNcbieaa()) {
-            string ignored;
+            string ignored = kEmptyStr;
             if (trp.GetAa().GetNcbieaa() == s_ParseSeqFeatTRnaString(product, NULL, ignored, false) &&
                 NStr::IsBlank(ignored)) {
             } else {
