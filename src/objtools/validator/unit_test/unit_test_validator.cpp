@@ -18732,6 +18732,7 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Greenland: Saqqaq Culture site Qeqertasussuk, north-western Greenland"), "Greenland: Saqqaq Culture site Qeqertasussuk, north-western Greenland");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Guadaloupe Island"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Hawaii"), "USA: Hawaii");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Hamoa Bay, Maui, Hawaii, USA"), "USA: Hamoa Bay, Maui, Hawaii");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Hortus Leiden, the Netherlands"), "Netherlands: Hortus Leiden");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Hortus, Leiden, the Netherlands"), "Netherlands: Hortus, Leiden");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Joffreville"), "");

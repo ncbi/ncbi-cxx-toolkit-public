@@ -3153,7 +3153,6 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"HRV", "Croatia"},
 {"HTI", "Haiti"},
 {"HUN", "Hungary"},
-{"Hawaii", "USA: Hawaii"},
 {"Heard Island", "Heard Island and McDonald Islands: Heard Island"},
 {"Heard Island & McDonald Islands", "Heard Island and McDonald Islands"},
 {"IDN", "Indonesia"},
@@ -3381,6 +3380,11 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 
 DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_country_name_fixes, s_map_country_name_fixes);
 
+// to be expanded to include other states
+static const char* s_USAStates[] = {
+    "Hawaii"
+};
+
 string CCountries::CapitalizeFirstLetterOfEveryWord (const string &phrase)
 {
     vector<string> words;
@@ -3395,8 +3399,19 @@ string CCountries::WholeCountryFix(string country)
 {
     string new_country;
     TCStringPairsMap::const_iterator found = k_whole_country_fixes.find(NStr::ToLower(country).c_str());
-    if (found != k_whole_country_fixes.end())
+    if (found != k_whole_country_fixes.end()) {
         new_country = found->second;
+        return new_country;
+    }
+
+    const size_t num_states = sizeof(s_USAStates) / sizeof(s_USAStates[0]);
+    for (size_t i = 0; i < num_states; ++i) {
+        if (NStr::EqualNocase(s_USAStates[i], country)) {
+            new_country = "USA: " + CTempString(s_USAStates[i]);
+            break;
+        }
+    }
+
     return new_country;
 }
 
