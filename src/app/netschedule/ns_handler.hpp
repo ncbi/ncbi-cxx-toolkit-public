@@ -133,9 +133,9 @@ private:
     // Writes a message to the socket
     // It closes the connection if there were socket writing errors
     EIO_Status  x_WriteMessage(const string & msg);
-    void  x_PrepareWriteBuffer(const string &  msg,
-                               size_t          msg_size,
-                               size_t          required_size);
+    EIO_Status  x_PrepareWriteBuffer(const string &  msg,
+                                     size_t          msg_size,
+                                     size_t          required_size);
     void  x_HandleSocketErrorOnResponse(const string &  msg,
                                         EIO_Status      write_result,
                                         size_t          written_bytes);

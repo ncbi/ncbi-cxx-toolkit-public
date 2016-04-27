@@ -833,9 +833,10 @@ void CNetScheduleHandler::x_SetQuickAcknowledge(void)
 
 
 
-void CNetScheduleHandler::x_PrepareWriteBuffer(const string &  msg,
-                                               size_t          msg_size,
-                                               size_t          required_size)
+EIO_Status
+CNetScheduleHandler::x_PrepareWriteBuffer(const string &  msg,
+                                          size_t          msg_size,
+                                          size_t          required_size)
 {
     if (required_size > m_MsgBufferSize) {
         delete [] m_MsgBuffer;
@@ -863,7 +864,7 @@ void CNetScheduleHandler::x_PrepareWriteBuffer(const string &  msg,
         if (err_emul.IsActive()) {
             if (err_emul.as_bool) {
                 m_Server->CloseConnection(&GetSocket());
-                return /* eIO_Closed */;
+                return eIO_Closed;
             }
         }
 
@@ -890,6 +891,8 @@ void CNetScheduleHandler::x_PrepareWriteBuffer(const string &  msg,
         }
     }
     #endif
+
+    return eIO_Success;
 }
 
 
@@ -909,7 +912,9 @@ EIO_Status CNetScheduleHandler::x_WriteMessage(const string &  msg)
     if (has_eom)
         msg_buf = msg.data();
     else {
-        x_PrepareWriteBuffer(msg, msg_size, required_size);
+        EIO_Status  status = x_PrepareWriteBuffer(msg, msg_size, required_size);
+        if (status != eIO_Success)
+            return status;
         msg_buf = m_MsgBuffer;
     }
 
