@@ -1040,7 +1040,8 @@ public:
                   << s_ListeningPorts->size() << " open listening sockets"
                   << " and " << m_SocketPool.size() << " open connections");
         /* Keeping number of open sockets under control at all times! */
-        while (m_SocketPool.size() > 150)
+        int collect_grbg_retries = 0;
+        while ((m_SocketPool.size() > 150) && (++collect_grbg_retries < 10))
             CollectGarbage();
         struct timeval  accept_time_stop;
         STimeout        rw_timeout           = { 1, 20000 };
@@ -1172,7 +1173,37 @@ private:
                   "m_SocketPool is " << m_SocketPool.size());
         size_t   n_ready;
         STimeout rw_timeout = { 1, 20000 };
-        CSocketAPI::Poll(m_SocketPool, &rw_timeout, &n_ready);
+        /* 
+         * Divide polls in parts if there are more that 60 sockets 
+         */
+        size_t polls_size = m_SocketPool.size();
+        SIZE_T chunk_size = 60;
+        size_t j = 0;
+        // do we have more than one chunk?
+        if (polls_size > chunk_size) {
+            // handle all but the last chunk
+            for (; j < polls_size - chunk_size; j += chunk_size) {
+                auto begin = m_SocketPool.begin() + j;
+                auto end = m_SocketPool.begin() + j + chunk_size;
+                vector<CSocketAPI::SPoll> polls(begin, end);
+                CSocketAPI::Poll(polls, &rw_timeout, &n_ready);
+                /* save result of poll */
+                for (size_t k = 0; k < chunk_size; ++k) {
+                    m_SocketPool[j + k].m_REvent = polls[k].m_REvent;
+                }
+            }
+        }
+        // if we still have a part of a chunk left, handle it
+        if (polls_size - j > 0) {
+            auto begin = m_SocketPool.begin() + j;
+            auto end = m_SocketPool.end();
+            vector<CSocketAPI::SPoll> polls(begin, end);
+            CSocketAPI::Poll(polls, &rw_timeout, &n_ready);
+            for (size_t k = 0; k < polls_size - j; ++k) {
+                m_SocketPool[j + k].m_REvent = polls[k].m_REvent;
+            }
+        }
+    
         /* We check sockets that have some events */
         unsigned int i;
 
