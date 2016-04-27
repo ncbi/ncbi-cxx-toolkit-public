@@ -45,6 +45,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/seq__.hpp>
 #include <objtools/readers/agp_read.hpp>
 #include <objtools/readers/agp_seq_entry.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
@@ -67,6 +68,7 @@
 
 #include <algo/align/ngalign/merge_tree_aligner.hpp>
 
+#include <algo/align/ngalign/ngalign_interface.hpp>
 
 #include <asn_cache/lib/Cache_blob.hpp>
 #include <asn_cache/lib/asn_index.hpp>
@@ -78,6 +80,65 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+class CFileLoadAligner : public IAlignmentFactory
+{
+public:
+    
+    CFileLoadAligner(const string& name) : FileName(name) { ; } 
+private:
+    string FileName;
+
+public: 
+
+    string GetName() const { return "file_load_aligner"; }
+    
+    TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
+                                            ISequenceSet* QuerySet,
+                                            ISequenceSet* SubjectSet,
+                                            TAlignResultsRef AccumResults)
+    {
+        TAlignResultsRef NewResults(new CAlignResultsSet);
+        
+        CNcbiIfstream In(FileName.c_str());
+        while(In) {
+            size_t Pos = In.tellg();
+            try {
+                CRef<CSeq_align> Temp(new CSeq_align);
+                In >> MSerial_AsnText >> *Temp;
+                NewResults->Insert(Temp);
+                cerr << "FileLoad Aligner: 1 Seq-align" << endl;
+                continue;
+            } catch(...) {
+                In.seekg(Pos);
+            }
+            try {
+                CRef<CSeq_align_set> Temp(new CSeq_align_set);
+                In >> MSerial_AsnText >> *Temp;
+                NewResults->Insert(*Temp);
+                cerr << "FileLoad Aligner: " << Temp->Get().size() << " Seq-align-set" << endl;
+                continue;
+            } catch(...) {
+                In.seekg(Pos);
+            }
+            try {
+                CRef<CSeq_annot> Temp(new CSeq_annot);
+                In >> MSerial_AsnText >> *Temp;
+                CRef<CSeq_align_set> TempSet(new CSeq_align_set);
+                TempSet->Set().insert(TempSet->Set().end(), Temp->SetData().SetAlign().begin(), Temp->SetData().SetAlign().end());
+                NewResults->Insert(*TempSet);
+                
+                cerr << "FileLoad Aligner: " << TempSet->Get().size() << " Seq-annot" << endl;
+                continue;
+            } catch(...) {
+                In.seekg(Pos);
+            }
+            break;  
+        }
+
+        return NewResults;
+    }
+};
 
 
 
@@ -113,9 +174,11 @@ private:
 	CRef<CRemoteBlastAligner> x_CreateRemoteBlastAligner(IRegistry* RunRegistry, const string& Name);
 	CRef<CMergeAligner> x_CreateMergeAligner(IRegistry* RunRegistry, const string& Name);
 //	CRef<CCoverageAligner> x_CreateCoverageAligner(IRegistry* RunRegistry, const string& Name);
-	CRef<CMergeTreeAligner> x_CreateMergeTreeAligner(IRegistry* RunRegistry, const string& Name);
+//	CRef<CMergeTreeAligner> x_CreateMergeTreeAligner(IRegistry* RunRegistry, const string& Name);
 	CRef<CInversionMergeAligner> x_CreateInversionMergeAligner(IRegistry* RunRegistry, const string& Name);
 	CRef<CSplitSeqAlignMerger> x_CreateSplitSeqMergeAligner(IRegistry* RunRegistry, const string& Name);
+	
+    CRef<CFileLoadAligner> x_CreateFileLoadAligner(IRegistry* RunRegistry, const string& Name);
 
 
 	void x_RecurseSeqEntry(CRef<CSeq_entry> Top, list<CRef<CSeq_id> >& SeqIdList);
@@ -176,7 +239,7 @@ void CNgAlignApp::Init()
 	arg_desc->AddOptionalKey("agp", "file", "agp file",
 					CArgDescriptions::eInputFile);
 
-	arg_desc->AddOptionalKey("gc", "file", "gencoll asn.1 Assembly",
+	arg_desc->AddOptionalKey("gc", "file", "gencoll asn.1 Assembly, for subject side. Allows for seperate ranking by assembly-unit.",
 					CArgDescriptions::eInputFile);
 
 	arg_desc->AddDefaultKey("batch", "int", "batch size for loaded ids", 
@@ -469,7 +532,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 				string Line = QueryString;
 				if(!Line.empty() && Line[0] != '#') {
 					vector<string> Tokens;
-                    NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
+                    NStr::Tokenize(Line, "\t -.", Tokens, NStr::eMergeDelims);
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     
                     Loc->SetInt().SetId().Set(Tokens[0]);
@@ -491,7 +554,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 				string Line = *Reader;
 				if(!Line.empty() && Line[0] != '#') {
 					vector<string> Tokens;
-                    NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
+                    NStr::Tokenize(Line, "\t -.", Tokens, NStr::eMergeDelims);
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     
                     Loc->SetInt().SetId().Set(Tokens[0]);
@@ -514,7 +577,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 				string Line = SubjectString;
 				if(!Line.empty() && Line[0] != '#') {
 					vector<string> Tokens;
-                    NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
+                    NStr::Tokenize(Line, "\t -.", Tokens, NStr::eMergeDelims);
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     Loc->SetInt().SetId().Set(Tokens[0]);
                     if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_CONST(50)) {
@@ -536,7 +599,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 				string Line = *Reader;
 				if(!Line.empty() && Line[0] != '#') {
 					vector<string> Tokens;
-                    NStr::Tokenize(Line, "\t _.", Tokens, NStr::eMergeDelims);
+                    NStr::Tokenize(Line, "\t -.", Tokens, NStr::eMergeDelims);
                     CRef<CSeq_loc> Loc(new CSeq_loc);
                     Loc->SetInt().SetId().Set(Tokens[0]);
                     if(Loc->GetInt().GetId().IsGi() && Loc->GetInt().GetId().GetGi() < GI_CONST(50)) {
@@ -917,12 +980,12 @@ void CNgAlignApp::x_AddAligners(CNgAligner& NgAligner, IRegistry* RunRegistry)
 			Aligner = x_CreateMergeAligner(RunRegistry, *NameIter);
 		//else if(Type == "coverage")
 		//	Aligner = x_CreateCoverageAligner(RunRegistry, *NameIter);
-		else if(Type == "mergetree")
-			Aligner = x_CreateMergeTreeAligner(RunRegistry, *NameIter);
 		else if(Type == "inversion")
 			Aligner = x_CreateInversionMergeAligner(RunRegistry, *NameIter);
 		else if(Type == "split")
 			Aligner = x_CreateSplitSeqMergeAligner(RunRegistry, *NameIter);
+		else if(Type == "file")
+			Aligner = x_CreateFileLoadAligner(RunRegistry, *NameIter);
 
 		if(!Aligner.IsNull())
 			NgAligner.AddAligner(Aligner);
@@ -1000,27 +1063,6 @@ CNgAlignApp::x_CreateCoverageAligner(IRegistry* RunRegistry, const string& Name)
 	return CRef<CCoverageAligner>(new CCoverageAligner(Threshold));
 }*/
 
-CRef<CMergeTreeAligner> 
-CNgAlignApp::x_CreateMergeTreeAligner(IRegistry* RunRegistry, const string& Name)
-{
-	int Threshold = RunRegistry->GetInt(Name, "threshold", 0);
-	
-    CMergeTree::SScoring Scoring; 
-    string ScoringStr = RunRegistry->GetString(Name, "scoring", "");
-    if(!ScoringStr.empty()) {
-        vector<string> Tokens;
-        NStr::Tokenize(ScoringStr, ",", Tokens);
-        if(Tokens.size() == 4) {
-            Scoring.Match     = NStr::StringToInt(Tokens[0]);
-            Scoring.MisMatch  = NStr::StringToInt(Tokens[1]);
-            Scoring.GapOpen   = NStr::StringToInt(Tokens[2]);
-            Scoring.GapExtend = NStr::StringToInt(Tokens[3]);
-        }
-    }
-	
-    return CRef<CMergeTreeAligner>(new CMergeTreeAligner(Threshold, Scoring));
-}
-
 
 CRef<CInversionMergeAligner> 
 CNgAlignApp::x_CreateInversionMergeAligner(IRegistry* RunRegistry, const string& Name)
@@ -1036,6 +1078,15 @@ CNgAlignApp::x_CreateSplitSeqMergeAligner(IRegistry* RunRegistry, const string& 
 	return CRef<CSplitSeqAlignMerger>(new CSplitSeqAlignMerger(m_Splitter.get()));
 }
 
+
+CRef<CFileLoadAligner> 
+CNgAlignApp::x_CreateFileLoadAligner(IRegistry* RunRegistry, const string& Name)
+{
+	//int Threshold = RunRegistry->GetInt(Name, "threshold", 0);
+	string FileNameStr = RunRegistry->Get(Name, "filename");
+  cerr << "x_CreateFileLoadAligner : " << FileNameStr << endl;  
+    return CRef<CFileLoadAligner>(new CFileLoadAligner(FileNameStr));
+}
 
 
 CRef<CGC_Assembly> CNgAlignApp::x_LoadAssembly(CNcbiIstream& In)
