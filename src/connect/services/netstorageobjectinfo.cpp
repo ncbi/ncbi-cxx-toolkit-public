@@ -43,6 +43,7 @@ struct SData
 {
     TLocation location;
     string object_loc;
+    string object_key;
     CJsonNode object_loc_info;
     Uint8 file_size;
     CJsonNode st_info;
@@ -50,11 +51,13 @@ struct SData
     SData() {}
     SData(TLocation l,
             const string& ol,
+            const string& ok,
             CJsonNode::TInstance li,
             Uint8 fs,
             CJsonNode::TInstance si)
         : location(l),
           object_loc(ol),
+          object_key(ok),
           object_loc_info(li),
           file_size(fs),
           st_info(si)
@@ -157,6 +160,7 @@ void SLazyInitData::InitData()
 
     const string l(json.GetString("Location"));
     CJsonNode ol(json.GetByKeyOrNull("ObjectLoc"));
+    CJsonNode ok(json.GetByKeyOrNull("ObjectKey"));
     CJsonNode size(json.GetByKeyOrNull("Size"));
 
     location =
@@ -164,6 +168,7 @@ void SLazyInitData::InitData()
         l == "FileTrack" ? eNFL_FileTrack :
         l == "NotFound"  ? eNFL_NotFound : eNFL_Unknown;
     object_loc = ol ? ol.AsString() : kEmptyStr;
+    object_key = ok ? ol.AsString() : kEmptyStr;
     object_loc_info = json.GetByKey("ObjectLocInfo");
     file_size = size ? (Uint8) size.AsInteger() : 0;
     st_info = json.GetByKeyOrNull("StorageSpecificInfo");
@@ -213,6 +218,9 @@ void SLazyInitData::InitJson()
 
     json.SetString("ObjectLoc", object_loc);
 
+    if (!object_key.empty())
+        json.SetString("ObjectKey", object_key);
+
     if (object_loc_info)
         json.SetByKey("ObjectLocInfo", object_loc_info);
 
@@ -226,6 +234,7 @@ CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
         Uint8 file_size, CJsonNode::TInstance storage_specific_info)
 {
     return new SNetStorageObjectInfoImpl(SData(location, object_loc,
+            object_loc_struct ? object_loc_struct->GetUniqueKey() : kEmptyStr,
             object_loc_struct ? object_loc_struct->ToJSON() : NULL,
             file_size, storage_specific_info));
 }

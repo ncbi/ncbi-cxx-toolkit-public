@@ -416,8 +416,6 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
             (m_LocatorFlags & fLF_NoMetaData) != 0);
 
     root.SetByKey("StorageFlags", storage_flags);
-    root.SetString("Namespace", m_AppDomain);
-    root.SetString("ShortUniqueKey", m_ShortUniqueKey);
 
     if (!m_LocationCode.empty())
         root.SetString("DefaultLocation", m_LocationCode);
