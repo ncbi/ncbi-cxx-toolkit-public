@@ -172,6 +172,27 @@ struct NCBI_XCONNECT_EXPORT SNetStorage::SLimits
         static bool     IsValid(char c) { return true; };
     };
 
+    struct SClientName
+    {
+        static string   Name()          { return "Client name"; }
+        static size_t   MaxLength()     { return 256; }
+        static bool     IsValid(char c) { return ::isprint(c); };
+    };
+
+    struct SUserNamespace
+    {
+        static string   Name()          { return "User namespace"; }
+        static size_t   MaxLength()     { return 64; }
+        static bool     IsValid(char c) { return isalnum(c) || c == '_'; };
+    };
+
+    struct SUserName
+    {
+        static string   Name()          { return "User name"; }
+        static size_t   MaxLength()     { return 64; }
+        static bool     IsValid(char c) { return isalnum(c) || c == '_'; };
+    };
+
     template <class TValue>
     static void Check(const string& value)
     {
