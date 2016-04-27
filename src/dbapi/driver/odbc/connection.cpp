@@ -1504,6 +1504,27 @@ CStatementBase::x_GetData(const CDB_Object& param,
         }
         break;
     case eDB_VarCharMax:
+#ifdef UNICODE
+        if( !param.IsNULL() ) {
+            CDB_Stream& par = static_cast<CDB_Stream&>
+                (const_cast<CDB_Object&>(param));
+            size_t n = par.Size();
+            AutoArray<char> raw_data(n);
+            par.MoveTo(0);
+            _VERIFY(par.Read(raw_data.get(), n) == n);
+            CStringUTF8 utf_data
+                = CUtf8::AsUTF8(CTempString(raw_data.get(), n),
+                                GetClientEncoding());
+            raw_data.reset();
+            wstring wdata = CUtf8::AsBasicString<TSqlChar>(utf_data);
+            utf_data.clear();
+            n = wdata.size() * sizeof(TSqlChar);
+            data = bind_guard.Alloc(n);
+            memcpy(data, wdata.data(), n);
+        }
+        break;
+// else fall through
+#endif
     case eDB_VarBinaryMax:
         if( !param.IsNULL() ) {
             CDB_Stream& par = static_cast<CDB_Stream&>
