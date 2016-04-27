@@ -1177,7 +1177,7 @@ private:
          * Divide polls in parts if there are more that 60 sockets 
          */
         size_t polls_size = m_SocketPool.size();
-        SIZE_T chunk_size = 60;
+        size_t chunk_size = 60;
         size_t j = 0;
         // do we have more than one chunk?
         if (polls_size > chunk_size) {
