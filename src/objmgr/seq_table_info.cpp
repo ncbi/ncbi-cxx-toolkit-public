@@ -70,6 +70,13 @@ bool CSeqTableColumnInfo::x_ThrowUnsetValue(void) const
 }
 
 
+bool CSeqTableColumnInfo::IsSingular(void) const
+{
+    const CSeqTable_column& col = *m_Column;
+    return col.IsSetDefault() && !col.IsSetData() && !col.IsSetSparse();
+}
+
+
 const string* CSeqTableColumnInfo::GetStringPtr(size_t row,
                                                 bool force) const
 {
@@ -555,6 +562,18 @@ CSeq_id_Handle CSeqTableLocColumns::GetIdHandle(size_t row) const
 }
 
 
+TSeqPos CSeqTableLocColumns::GetFrom(size_t row) const
+{
+    _ASSERT(!m_Loc);
+    _ASSERT(m_From);
+    int from;
+    if ( !m_From || !m_From.GetValue(row, from) ) {
+        return 0;
+    }
+    return from;
+}
+
+
 CRange<TSeqPos> CSeqTableLocColumns::GetRange(size_t row) const
 {
     _ASSERT(!m_Loc);
@@ -764,6 +783,9 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
 
 void CSeqTableInfo::x_Initialize(const CSeq_table& feat_table)
 {
+    m_Seq_table = &feat_table;
+    m_IsSorted = false;
+    m_SortedMaxLength = 0;
     ITERATE ( CSeq_table::TColumns, it, feat_table.GetColumns() ) {
         const CSeqTable_column& col = **it;
         const CSeqTable_column_info& type = col.GetHeader();
@@ -785,6 +807,16 @@ void CSeqTableInfo::x_Initialize(const CSeq_table& feat_table)
                 if ( id >= 0 ) {
                     m_ColumnsById.insert(TColumnsById::value_type(id, col));
                 }
+            }
+            if ( name == "Seq-table location" ) {
+                if ( m_TableLocation ) {
+                    ERR_POST("Duplicate 'Seq-table location' column");
+                }
+                try {
+                    CSeqTableColumnInfo info(col);
+                    m_TableLocation = info.GetSeq_loc(0);
+                }
+                NCBI_CATCH("Bad 'Seq-table location' column");
             }
         }
         if ( !IsFeatTable() ) {
@@ -865,9 +897,27 @@ void CSeqTableInfo::x_Initialize(const CSeq_table& feat_table)
             else if ( name == "disabled" ) {
                 if ( m_Disabled ) {
                     NCBI_THROW_FMT(CAnnotException, eOtherError,
-                                   "Duplicate disabled column");
+                                   "Duplicate disabled column ");
                 }
                 m_Disabled = CSeqTableColumnInfo(col);
+                continue;
+            }
+            else if ( name == "Seq-table location" ) {
+                // already processed above
+                continue;
+            }
+            else if ( name == "Sorted, max length" ) {
+                if ( m_SortedMaxLength ) {
+                    ERR_POST("Duplicate 'Sorted, max length' column");
+                }
+                try {
+                    CSeqTableColumnInfo info(col);
+                    int value;
+                    if ( info.GetValue(0, value) ) {
+                        m_SortedMaxLength = value;
+                    }
+                }
+                NCBI_CATCH("Bad 'Sorted, max length' column");
                 continue;
             }
             if ( !setter ) {
@@ -888,6 +938,11 @@ void CSeqTableInfo::x_Initialize(const CSeq_table& feat_table)
         m_Location.ParseDefaults();
         m_Product.ParseDefaults();
     }
+
+    m_IsSorted = x_IsSorted();
+    if ( !m_IsSorted ) {
+        m_SortedMaxLength = 0;
+    }
 }
 
 
@@ -896,14 +951,58 @@ CSeqTableInfo::~CSeqTableInfo()
 }
 
 
+SAnnotTypeSelector CSeqTableInfo::GetType(void) const
+{
+    _ASSERT(IsFeatTable());
+    const CSeq_table& table = *m_Seq_table;
+    SAnnotTypeSelector type(CSeqFeatData::E_Choice(table.GetFeat_type()));
+    if ( table.IsSetFeat_subtype() ) {
+        type.SetFeatSubtype(CSeqFeatData::ESubtype(table.GetFeat_subtype()));
+    }
+    return type;
+}
+
+
 CConstRef<CSeq_loc> CSeqTableInfo::GetTableLocation(void) const
 {
-    try {
-        return GetColumn("Seq-table location").GetSeq_loc(0);
+    return m_TableLocation;
+}
+
+
+TSeqPos CSeqTableInfo::GetSortedMaxLength(void) const
+{
+    return m_SortedMaxLength;
+}
+
+
+bool CSeqTableInfo::x_IsSorted(void) const
+{
+    // 1. no product
+    // 2. location has singular Seq-id
+    // 3. location is either simple interval or simple point
+    // 4. has whole table location that is Seq-interval
+    // 5. sorted max length information is present, and has suitable value
+    if ( m_Product.IsSet() ) {
+        return false;
     }
-    catch ( exception& /*ignored*/ ) {
-        return null;
+    if ( !m_Location.IsSet() || m_Location.IsRealLoc() || !m_Location.m_Id ) {
+        return false;
     }
+    if ( !m_Location.m_Id.IsSingular() ) {
+        return false;
+    }
+    if ( !m_Location.m_Is_simple ||
+         !(m_Location.m_Is_simple_point || m_Location.m_Is_simple_point) ) {
+        return false;
+    }
+    if ( !m_TableLocation || !m_TableLocation->IsInt() ) {
+        return false;
+    }
+    if ( !m_SortedMaxLength ||
+         m_SortedMaxLength > m_TableLocation->GetInt().GetLength()/16 ) {
+        return false;
+    }
+    return true;
 }
 
 

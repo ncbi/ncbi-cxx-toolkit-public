@@ -103,6 +103,9 @@ public:
     /// Check if this is non-SNP table feature
     bool IsTableFeat(void) const;
 
+    /// Check if this is a simple feature from sorted Seq-table
+    bool IsSortedTableFeat(void) const;
+
     /// Check if this is SNP table feature
     bool IsTableSNP(void) const;
 
@@ -224,10 +227,11 @@ protected:
     friend class CScope_Impl;
     typedef Int4 TFeatIndex;
     enum {
-        kSNPTableBit   = 0x80000000,
+        kNoAnnotObjectInfo = 0x80000000,
         kFeatIndexMask = 0x7fffffff
     };
 
+    bool x_HasAnnotObjectInfo() const;
     TFeatIndex x_GetFeatIndex() const;
 
     // Seq-annot retrieval
@@ -281,6 +285,13 @@ inline
 CScope& CSeq_feat_Handle::GetScope(void) const
 {
     return GetAnnot().GetScope();
+}
+
+
+inline
+bool CSeq_feat_Handle::x_HasAnnotObjectInfo(void) const
+{
+    return (m_FeatIndex & kNoAnnotObjectInfo) == 0;
 }
 
 
@@ -416,7 +427,7 @@ inline
 bool CSeq_feat_Handle::IsSetProduct(void) const
 {
     // table SNP features do not have product
-    return !IsTableSNP() && GetSeq_feat()->IsSetProduct();
+    return x_HasAnnotObjectInfo() && GetSeq_feat()->IsSetProduct();
 }
 
 
@@ -582,24 +593,6 @@ inline
 const CSeq_feat::TExts& CSeq_feat_Handle::GetExts(void) const
 {
     return GetSeq_feat()->GetExts();
-}
-
-
-inline
-CSeqFeatData::E_Choice CSeq_feat_Handle::GetFeatType(void) const
-{
-    return IsTableSNP()?
-        CSeqFeatData::e_Imp:
-        x_GetAnnotObject_Info().GetFeatType();
-}
-
-
-inline
-CSeqFeatData::ESubtype CSeq_feat_Handle::GetFeatSubtype(void) const
-{
-    return IsTableSNP()?
-        CSeqFeatData::eSubtype_variation:
-        x_GetAnnotObject_Info().GetFeatSubtype();
 }
 
 
@@ -801,8 +794,8 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_ftable_I
 {
 public:
     enum EFlags {
-        fIncludeTable    = 1<<0,
-        fOnlyTable       = 1<<1
+        fIncludeTable    = 1<<0, // include SNP table into iteration
+        fOnlyTable       = 1<<1  // only SNP table features
     };
     typedef int TFlags;
 

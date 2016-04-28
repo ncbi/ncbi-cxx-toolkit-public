@@ -37,6 +37,7 @@
 #include <objmgr/impl/seq_table_setter.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqtable/Seq_table.hpp>
 #include <objects/seqtable/SeqTable_column.hpp>
 #include <objects/seqtable/SeqTable_column_info.hpp>
 #include <util/range.hpp>
@@ -53,6 +54,7 @@ class CSeq_point;
 class CSeq_feat;
 struct SAnnotObject_Key;
 struct SAnnotObject_Index;
+struct SAnnotTypeSelector;
 
 /////////////////////////////////////////////////////////////////////////////
 // information about Seq-table column
@@ -82,6 +84,8 @@ public:
         {
             return m_Column.GetPointer();
         }
+
+    bool IsSingular(void) const;
 
     bool IsSet(size_t row) const;
 
@@ -152,6 +156,7 @@ public:
     CConstRef<CSeq_loc> GetLoc(size_t row) const;
     CConstRef<CSeq_id> GetId(size_t row) const;
     CSeq_id_Handle GetIdHandle(size_t row) const;
+    TSeqPos GetFrom(size_t row) const;
     CRange<TSeqPos> GetRange(size_t row) const;
     ENa_strand GetStrand(size_t row) const;
 
@@ -162,11 +167,14 @@ public:
         return m_Is_real_loc;
     }
 
+
     void SetTableKeyAndIndex(size_t row,
                              SAnnotObject_Key& key,
                              SAnnotObject_Index& index) const;
 
 private:
+    friend class CSeqTableInfo;
+
     CTempString m_FieldName;
     CSeqTable_column_info::EField_id m_BaseValue;
 
@@ -205,12 +213,23 @@ public:
         return m_IsFeatTable;
     }
 
+    size_t GetNumRows(void) const {
+        return m_Seq_table->GetNum_rows();
+    }
+
     void UpdateSeq_feat(size_t row,
                         CRef<CSeq_feat>& seq_feat,
                         CRef<CSeq_point>& seq_pnt,
                         CRef<CSeq_interval>& seq_int) const;
 
     CConstRef<CSeq_loc> GetTableLocation(void) const;
+    TSeqPos GetSortedMaxLength(void) const;
+
+    bool IsSorted(void) const {
+        return m_IsSorted;
+    }
+
+    SAnnotTypeSelector GetType(void) const;
 
     const CSeqTableLocColumns& GetLocation(void) const {
         return m_Location;
@@ -223,6 +242,19 @@ public:
     }
     bool IsPartial(size_t row) const {
         return m_Partial.GetBool(row);
+    }
+    
+    CConstRef<CSeq_id> GetLocationId(size_t row) const {
+        return GetLocation().GetId(row);
+    }
+    TSeqPos GetLocationFrom(size_t row) const {
+        return GetLocation().GetFrom(row);
+    }
+    CRange<TSeqPos> GetLocationRange(size_t row) const {
+        return GetLocation().GetRange(row);
+    }
+    ENa_strand GetLocationStrand(size_t row) const {
+        return GetLocation().GetStrand(row);
     }
 
     // returns null if column not found
@@ -240,13 +272,19 @@ private:
     typedef vector<TColumnInfo> TExtraColumns;
 
     void x_Initialize(const CSeq_table& table);
+    bool x_IsSorted(void) const;
 
+    CConstRef<CSeq_table> m_Seq_table;
     bool m_IsFeatTable;
+    bool m_IsSorted;
     CSeqTableColumnInfo m_Disabled;
     CSeqTableLocColumns m_Location;
     CSeqTableLocColumns m_Product;
     CSeqTableColumnInfo m_Partial;
     TExtraColumns m_ExtraColumns;
+
+    CConstRef<CSeq_loc> m_TableLocation;
+    TSeqPos m_SortedMaxLength;
 
     typedef map<int, CSeqTableColumnInfo> TColumnsById;
     typedef map<string, CSeqTableColumnInfo> TColumnsByName;

@@ -414,7 +414,8 @@ const CSeq_id* CAnnotMapping_Info::GetProductId(void) const
 CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object,
                                    const CSeq_annot_Handle& annot_handle)
     : m_Seq_annot(annot_handle),
-      m_AnnotIndex(object.GetAnnotIndex())
+      m_AnnotIndex(object.GetAnnotIndex()),
+      m_AnnotType(eAnnot_Regular)
 {
     if ( object.IsFeat() ) {
         if ( object.IsRegular() ) {
@@ -424,6 +425,7 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object,
             }
         }
         else {
+            m_AnnotType = eAnnot_SeqTable;
             m_MappingInfo.SetPartial(GetSeq_annot_Info().IsTableFeatPartial(object));
         }
     }
@@ -447,9 +449,10 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
                                    const SSNP_Info& snp,
                                    CSeq_loc_Conversion* cvt)
     : m_Seq_annot(annot_handle),
-      m_AnnotIndex(TAnnotIndex(snp_annot.GetIndex(snp)) | kSNPTableBit)
+      m_AnnotIndex(snp_annot.GetIndex(snp)),
+      m_AnnotType(eAnnot_SNPTable)
 {
-    _ASSERT(IsSNPFeat());
+    _ASSERT(IsSNPTableFeat());
     TSeqPos src_from = snp.GetFrom(), src_to = snp.GetTo();
     ENa_strand src_strand = eNa_strand_unknown;
     if ( snp.MinusStrand() ) {
@@ -461,8 +464,7 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
     if ( !cvt ) {
         m_MappingInfo.SetTotalRange(TRange(src_from, src_to));
         m_MappingInfo.SetMappedSeq_id(
-            const_cast<CSeq_id&>(GetSeq_annot_SNP_Info().
-            GetSeq_id()),
+            const_cast<CSeq_id&>(snp_annot.GetSeq_id()),
             src_from == src_to);
         m_MappingInfo.SetMappedStrand(src_strand);
         return;
@@ -481,10 +483,46 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
 }
 
 
+CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_Handle& annot_handle,
+                                   const CSeq_annot_SortedIter& iter,
+                                   CSeq_loc_Conversion* cvt)
+    : m_Seq_annot(annot_handle),
+      m_AnnotIndex(iter.GetRow()),
+      m_AnnotType(eAnnot_SortedSeqTable)
+{
+    _ASSERT(IsSortedSeqTableFeat());
+    const CSeqTableInfo& annot_table = GetSeqTableInfo();
+    TRange src_range = iter.GetRange();
+    ENa_strand src_strand = annot_table.GetLocationStrand(m_AnnotIndex);
+    if ( !cvt ) {
+        m_MappingInfo.SetTotalRange(src_range);
+        m_MappingInfo.SetMappedSeq_id(
+            const_cast<CSeq_id&>(*annot_table.GetLocationId(m_AnnotIndex)),
+            src_range.GetLength() == 1);
+        m_MappingInfo.SetMappedStrand(src_strand);
+        return;
+    }
+
+    cvt->Reset();
+    if ( src_range.GetLength() == 1 ) {
+        // point
+        _VERIFY(cvt->ConvertPoint(src_range.GetFrom(),
+                                  src_strand));
+    }
+    else {
+        // interval
+        _VERIFY(cvt->ConvertInterval(src_range.GetFrom(),
+                                     src_range.GetTo(),
+                                     src_strand));
+    }
+    cvt->SetMappedLocation(*this, CSeq_loc_Conversion::eLocation);
+}
+
+
 void CAnnotObject_Ref::ResetLocation(void)
 {
     m_MappingInfo.Reset();
-    if ( !IsSNPFeat() ) {
+    if ( HasAnnotObject_Info() ) {
         const CAnnotObject_Info& object = GetAnnotObject_Info();
         if ( object.IsFeat() ) {
             const CSeq_feat& feat = *object.GetFeatFast();
@@ -498,8 +536,15 @@ void CAnnotObject_Ref::ResetLocation(void)
 
 const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
 {
-    _ASSERT(IsSNPFeat());
+    _ASSERT(IsSNPTableFeat());
     return GetSeq_annot_Info().x_GetSNP_annot_Info();
+}
+
+
+const CSeqTableInfo& CAnnotObject_Ref::GetSeqTableInfo(void) const
+{
+    _ASSERT(IsAnySeqTableFeat());
+    return GetSeq_annot_Info().GetTableInfo();
 }
 
 
@@ -512,14 +557,14 @@ const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
 
 const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
 {
-    _ASSERT(IsSNPFeat());
+    _ASSERT(IsSNPTableFeat());
     return GetSeq_annot_SNP_Info().GetInfo(GetAnnotIndex());
 }
 
 
 bool CAnnotObject_Ref::IsFeat(void) const
 {
-    return IsSNPFeat() || GetAnnotObject_Info().IsFeat();
+    return !HasAnnotObject_Info() || GetAnnotObject_Info().IsFeat();
 }
 
 
@@ -653,19 +698,23 @@ const CSeq_feat& CCreateFeat::GetOriginalFeat(void)
         if ( !m_CreatedOriginalFeat ) {
             CRef<CSeq_point> seq_pnt;
             CRef<CSeq_interval> seq_int;
-            if ( !m_Info ) {
+            if ( m_Ref.IsSNPTableFeat() ) {
                 // SNP table feature
-                const CSeq_annot_SNP_Info& annot_snp_info =
+                const CSeq_annot_SNP_Info& snp_info =
                     m_Ref.GetSeq_annot_SNP_Info();
-                m_Ref.GetSNP_Info().UpdateSeq_feat(m_CreatedOriginalFeat,
-                                                   seq_pnt, seq_int,
-                                                   annot_snp_info);
+                snp_info.GetInfo(m_Ref.GetAnnotIndex())
+                    .UpdateSeq_feat(m_CreatedOriginalFeat,
+                                    seq_pnt, seq_int,
+                                    snp_info);
             }
             else {
-                _ASSERT(m_Ref.IsTableFeat());
-                m_Ref.GetSeq_annot_Info().GetTableInfo().
-                    UpdateSeq_feat(m_Ref.GetAnnotIndex(),
-                                   m_CreatedOriginalFeat, seq_pnt, seq_int);
+                _ASSERT(m_Ref.IsAnySeqTableFeat());
+                const CSeqTableInfo& table_info =
+                    m_Ref.GetSeqTableInfo();
+                table_info
+                    .UpdateSeq_feat(m_Ref.GetAnnotIndex(),
+                                    m_CreatedOriginalFeat,
+                                    seq_pnt, seq_int);
             }
             _ASSERT(m_CreatedOriginalFeat);
         }
@@ -825,7 +874,7 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
     // gather x annotation type
     const CAnnotObject_Info* x_info;
     CSeq_annot::C_Data::E_Choice x_annot_type;
-    if ( !x.IsSNPFeat() ) {
+    if ( x.HasAnnotObject_Info() ) {
         x_info = &x.GetAnnotObject_Info();
         x_annot_type = x_info->GetAnnotType();
     }
@@ -837,7 +886,7 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
     // gather y annotation type
     const CAnnotObject_Info* y_info;
     CSeq_annot::C_Data::E_Choice y_annot_type;
-    if ( !y.IsSNPFeat() ) {
+    if ( y.HasAnnotObject_Info() ) {
         y_info = &y.GetAnnotObject_Info();
         y_annot_type = y_info->GetAnnotType();
     }
@@ -861,9 +910,14 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
             x_feat_type = x_info->GetFeatType();
             x_feat_subtype = x_info->GetFeatSubtype();
         }
-        else {
+        else if ( x.IsSNPTableFeat() ) {
             x_feat_type = CSeqFeatData::e_Imp;
             x_feat_subtype = CSeqFeatData::eSubtype_variation;
+        }
+        else {
+            SAnnotTypeSelector type = x.GetSeqTableInfo().GetType();
+            x_feat_type = type.GetFeatType();
+            x_feat_subtype = type.GetFeatSubtype();
         }
 
         // get y feature type
@@ -873,9 +927,14 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
             y_feat_type = y_info->GetFeatType();
             y_feat_subtype = y_info->GetFeatSubtype();
         }
-        else {
+        else if ( y.IsSNPTableFeat() ) {
             y_feat_type = CSeqFeatData::e_Imp;
             y_feat_subtype = CSeqFeatData::eSubtype_variation;
+        }
+        else {
+            SAnnotTypeSelector type = y.GetSeqTableInfo().GetType();
+            y_feat_type = type.GetFeatType();
+            y_feat_subtype = type.GetFeatSubtype();
         }
 
         // order by feature type
@@ -1110,7 +1169,7 @@ struct CAnnotObject_Less
         }
     }
 
-    static
+    static inline
     void GetRangeOpen(TSeqPos &out_from, TSeqPos &out_to, 
                       const CAnnotObject_Ref& obj_ref)
     {
@@ -1135,10 +1194,6 @@ struct CAnnotObject_Less
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const
         {
-            if ( x == y ) { // small speedup
-                return false;
-            }
-
             TSeqPos x_from = kInvalidSeqPos;
             TSeqPos y_from = kInvalidSeqPos;
             TSeqPos x_to = kInvalidSeqPos;
@@ -1168,6 +1223,11 @@ struct CAnnotObject_Less
             if ( x_to != y_to ) {
                 return x_to > y_to;
             }
+
+            if ( x == y ) { // small speedup
+                return false;
+            }
+
             return type_less(x, y);
         }
     CAnnotObjectType_Less type_less;
@@ -1315,10 +1375,10 @@ CCreatedFeat_Ref::GetOriginalFeature(const CSeq_feat_Handle& feat_h)
             CRef<CSeq_point> created_point;
             CRef<CSeq_interval> created_interval;
             //ReleaseRefsTo(&orig_feat, 0, &created_point, &created_interval);
-            annot.UpdateTableFeat(orig_feat,
-                                  created_point,
-                                  created_interval,
-                                  feat_h.x_GetAnnotObject_Info());
+            annot.GetTableInfo().UpdateSeq_feat(feat_h.x_GetFeatIndex(),
+                                                orig_feat,
+                                                created_point,
+                                                created_interval);
             ret = orig_feat;
             //ResetRefsFrom(&orig_feat, 0, &created_point, &created_interval);
             feat_h.m_CreatedOriginalFeat = ret;
@@ -2323,6 +2383,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector)
 
 void CAnnot_Collector::x_Sort(void)
 {
+    //CStopWatch sw(CStopWatch::eStart);
     _ASSERT(!m_MappingCollector.get());
     switch ( m_Selector->m_SortOrder ) {
     case SAnnotSelector::eSortOrder_Normal:
@@ -2337,9 +2398,11 @@ void CAnnot_Collector::x_Sort(void)
         // do nothing
         break;
     }
+    //LOG_POST(Info<<"Sorted in "<<sw.Elapsed());
 }
 
 
+inline
 bool
 CAnnot_Collector::x_MatchLimitObject(const CAnnotObject_Info& object) const
 {
@@ -2514,6 +2577,8 @@ bool CAnnot_Collector::x_SearchTSE2(const CTSE_Handle&    tseh,
     tse.UpdateAnnotIndex(id);
     CTSE_Info::TAnnotLockReadGuard guard(tse.GetAnnotLock());
 
+    //CStopWatch sw(CStopWatch::eStart);
+
     if (cvt) {
         cvt->SetSrcId(id);
     }
@@ -2599,6 +2664,8 @@ bool CAnnot_Collector::x_SearchTSE2(const CTSE_Handle&    tseh,
             }
         }
     }
+
+    //LOG_POST(Info<<"Collected annots in "<<sw.Elapsed());
     return found;
 }
 
@@ -2791,14 +2858,16 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
             size_t start_size = m_AnnotSet.size(); // for rollback
 
+            // Same annotations may appear more than once if circular.
+            // In this case duplicated annotation entries need to be removed.
             bool need_unique = false;
 
             ITERATE(CHandleRange, rg_it, hr) {
                 CHandleRange::TRange range = rg_it->first;
 
                 for ( CTSE_Info::TRangeMap::const_iterator
-                    aoit(rmap.begin(range));
-                    aoit; ++aoit ) {
+                          aoit(rmap.begin(range));
+                      aoit; ++aoit ) {
                     const CAnnotObject_Info& annot_info =
                         *aoit->second.m_AnnotObject_Info;
 
@@ -2890,14 +2959,14 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                         CHandleRange::TRange ref_search_range;
                         if ( !ref_minus ) {
                             ref_search_range.Set(ref_from + (loc_view_from - loc_from),
-                                                ref_to + (loc_view_to - loc_to));
+                                                 ref_to + (loc_view_to - loc_to));
                         }
                         else {
                             ref_search_range.Set(ref_from - (loc_view_to - loc_to),
-                                                ref_to - (loc_view_from - loc_from));
+                                                 ref_to - (loc_view_from - loc_from));
                         }
                         ref_rmap.AddRanges(ref_idh).AddRange(ref_search_range,
-                                                            eNa_strand_unknown);
+                                                             eNa_strand_unknown);
 
                         if (m_Selector->m_NoMapping) {
                             x_SearchLoc(ref_rmap, 0, &tseh);
@@ -2907,13 +2976,13 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                             master_loc_empty->SetEmpty(
                                 const_cast<CSeq_id&>(*id.GetSeqId()));
                             CRef<CSeq_loc_Conversion> locs_cvt(new CSeq_loc_Conversion(
-                                    *master_loc_empty,
-                                    id,
-                                    aoit->first,
-                                    ref_idh,
-                                    ref_from,
-                                    ref_minus,
-                                    m_Scope));
+                                                                   *master_loc_empty,
+                                                                   id,
+                                                                   aoit->first,
+                                                                   ref_idh,
+                                                                   ref_from,
+                                                                   ref_minus,
+                                                                   m_Scope));
                             if ( cvt ) {
                                 locs_cvt->CombineWith(*cvt);
                             }
@@ -2934,6 +3003,44 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     }
                         
                     if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
+                        continue;
+                    }
+
+                    if ( annot_info.GetAnnotIndex() == CSeq_annot_Info::kWholeAnnotIndex ) {
+                        const CSeq_annot_Info& seq_annot =
+                            annot_info.GetSeq_annot_Info();
+                        if ( seq_annot.IsSortedTable() ) {
+                            sah.x_Set(seq_annot, tseh);
+                            CHandleRange::TRange range =
+                                hr.GetOverlappingRange();
+                            for ( CSeq_annot_SortedIter iter =
+                                      seq_annot.StartSortedIterator(range);
+                                  iter; ++iter ) {
+                                
+                                if (m_Selector->m_CollectTypes) {
+                                    m_AnnotTypes.set(index);
+                                    break;
+                                }
+                                
+                                if (m_Selector->m_CollectNames) {
+                                    m_AnnotNames->insert(annot_name);
+                                    break;
+                                }
+                                
+                                CAnnotObject_Ref annot_ref(sah, iter, cvt);
+                                x_AddObject(annot_ref);
+                                if ( x_NoMoreObjects() ) {
+                                    _ASSERT(!restart);
+                                    enough = true;
+                                    break;
+                                }
+                                
+                                if ( m_Selector->m_CollectSeq_annots ) {
+                                    // Ignore multiple feats from the same seq-annot
+                                    break;
+                                }
+                            }
+                        }
                         continue;
                     }
 
@@ -2958,7 +3065,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                             ref_rg = CHandleRange::TRange(from, to);
                         }
                         annot_ref.GetMappingInfo().SetAnnotObjectRange(ref_rg,
-                                m_Selector->m_FeatProduct);
+                                                                       m_Selector->m_FeatProduct);
                         x_AddObjectMapping(annot_ref, 0,
                                            aoit->second.m_AnnotLocationIndex);
                     }
@@ -2982,7 +3089,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                                 ref_rg = CHandleRange::TRange(from, to);
                             }
                             annot_ref.GetMappingInfo().SetAnnotObjectRange(ref_rg,
-                                m_Selector->m_FeatProduct);
+                                                                           m_Selector->m_FeatProduct);
                         }
                         x_AddObject(annot_ref, cvt,
                                     aoit->second.m_AnnotLocationIndex);
@@ -3010,7 +3117,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                 TAnnotSet::iterator first_added = m_AnnotSet.begin() + start_size;
                 stable_sort(first_added, m_AnnotSet.end());
                 m_AnnotSet.erase(unique(first_added, m_AnnotSet.end()),
-                                m_AnnotSet.end());
+                                 m_AnnotSet.end());
             }
             if ( enough ) {
                 _ASSERT(!restart);

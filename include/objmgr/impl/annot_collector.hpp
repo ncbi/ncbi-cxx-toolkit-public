@@ -61,6 +61,8 @@ struct SAnnotObject_Index;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CSeq_annot_SNP_Info;
+class CSeq_annot_SortedIter;
+class CSeqTableInfo;
 struct SSNP_Info;
 struct SIdAnnotObjs;
 class CSeq_loc_Conversion;
@@ -177,9 +179,15 @@ class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 public:
     typedef CRange<TSeqPos> TRange;
     typedef Int4           TAnnotIndex;
-    enum {
-        kSNPTableBit    = 0x80000000,
-        kAnnotIndexMask = 0x7fffffff
+    enum EAnnotType {
+        fAnnot_NoAnnotInfo    = 1<<0,
+        fAnnot_SNPTable       = 1<<1,
+        fAnnot_SeqTable       = 1<<2,
+
+        eAnnot_Regular        = 0,
+        eAnnot_SNPTable       = fAnnot_NoAnnotInfo | fAnnot_SNPTable,
+        eAnnot_SeqTable       = fAnnot_SeqTable,
+        eAnnot_SortedSeqTable = fAnnot_NoAnnotInfo | fAnnot_SeqTable,
     };
 
     CAnnotObject_Ref(void);
@@ -189,15 +197,34 @@ public:
                      const CSeq_annot_Handle& annot_handle,
                      const SSNP_Info& snp_info,
                      CSeq_loc_Conversion* cvt);
+    CAnnotObject_Ref(const CSeq_annot_Handle& annot_handle,
+                     const CSeq_annot_SortedIter& iter,
+                     CSeq_loc_Conversion* cvt);
 
+    // the annotation has CAnnotObject_Info object and entry in annot index
     bool HasAnnotObject_Info(void) const;
+    // the annotation has CSeq_feat, CAnnotObject_Info, and annot index
     bool IsPlainFeat(void) const;
-    bool IsSNPFeat(void) const;
-    bool IsTableFeat(void) const;
+
+    // the feature is from parsed SNP table (GenBank SNP external annotations)
+    // it doesn't have corresponding CAnnotObject_Info and entry in annot index
+    bool IsSNPTableFeat(void) const;
+    // the feature is from Seq-table
+    // it may or may not have corresponding CAnnotObject_Info and annot index
+    bool IsAnySeqTableFeat(void) const;
+    // the feature is from pre-sorted Seq-table
+    // it doesn't have corresponding CAnnotObject_Info and entry in annot index
+    bool IsSortedSeqTableFeat(void) const;
+
+    // replaced with IsSNPTableFeat() and IsSortedSeqTableFeat()
+    NCBI_DEPRECATED bool IsSNPFeat(void) const;
+    // replaced with IsAnySeqTableFeat() and IsSortedSeqTableFeat()
+    NCBI_DEPRECATED bool IsTableFeat(void) const;
 
     const CSeq_annot_Handle& GetSeq_annot_Handle(void) const;
     const CSeq_annot_Info& GetSeq_annot_Info(void) const;
     const CSeq_annot_SNP_Info& GetSeq_annot_SNP_Info(void) const;
+    const CSeqTableInfo& GetSeqTableInfo(void) const;
     TAnnotIndex GetAnnotIndex(void) const;
 
     const CAnnotObject_Info& GetAnnotObject_Info(void) const;
@@ -226,8 +253,12 @@ private:
     friend class CAnnot_Collector;
 
     CSeq_annot_Handle          m_Seq_annot;   //  4 or  8
+    mutable CAnnotMapping_Info m_MappingInfo; // 20 or 32
     TAnnotIndex                m_AnnotIndex;  //  4 or  4
-    mutable CAnnotMapping_Info m_MappingInfo; // 16 or 20
+    EAnnotType                 m_AnnotType;   //  4 or  4
+    // total size:
+    //   32 B on 32-bit system (can be packed into 28 B)
+    //   48 B on 64-bit system (can be packed into 40 B)
 };
 
 
@@ -792,7 +823,7 @@ void CAnnotMapping_Info::Swap(CAnnotMapping_Info& info)
 
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(void)
-    : m_AnnotIndex(0)
+    : m_AnnotIndex(0), m_AnnotType(eAnnot_Regular)
 {
 }
 
@@ -800,37 +831,56 @@ CAnnotObject_Ref::CAnnotObject_Ref(void)
 inline
 CAnnotObject_Ref::TAnnotIndex CAnnotObject_Ref::GetAnnotIndex(void) const
 {
-    return m_AnnotIndex & kAnnotIndexMask;
+    return m_AnnotIndex;
 }
 
 
 inline
 bool CAnnotObject_Ref::HasAnnotObject_Info(void) const
 {
-    return (m_AnnotIndex & kSNPTableBit) == 0;
+    return (m_AnnotType & fAnnot_NoAnnotInfo) == 0;
 }
 
 
 inline
 bool CAnnotObject_Ref::IsPlainFeat(void) const
 {
-    return (m_AnnotIndex & kSNPTableBit) == 0 &&
-        GetAnnotObject_Info().IsRegular();
+    return m_AnnotType == eAnnot_Regular;
+}
+
+
+inline
+bool CAnnotObject_Ref::IsSNPTableFeat(void) const
+{
+    return m_AnnotType == eAnnot_SNPTable;
+}
+
+
+inline
+bool CAnnotObject_Ref::IsSortedSeqTableFeat(void) const
+{
+    return m_AnnotType == eAnnot_SortedSeqTable;
+}
+
+
+inline
+bool CAnnotObject_Ref::IsAnySeqTableFeat(void) const
+{
+    return (m_AnnotType & fAnnot_SeqTable) != 0;
 }
 
 
 inline
 bool CAnnotObject_Ref::IsSNPFeat(void) const
 {
-    return (m_AnnotIndex & kSNPTableBit) != 0;
+    return IsSNPTableFeat();
 }
 
 
 inline
 bool CAnnotObject_Ref::IsTableFeat(void) const
 {
-    return (m_AnnotIndex & kSNPTableBit) == 0 &&
-        !GetAnnotObject_Info().IsRegular();
+    return IsAnySeqTableFeat();
 }
 
 
@@ -854,6 +904,9 @@ bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
     if ( m_Seq_annot != ref.m_Seq_annot ) {
         return m_Seq_annot.OrderedBefore(ref.m_Seq_annot);
     }
+    if ( m_AnnotType != ref.m_AnnotType ) {
+        return m_AnnotType < ref.m_AnnotType;
+    }
     return m_AnnotIndex < ref.m_AnnotIndex;
 }
 
@@ -861,16 +914,16 @@ bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
 inline
 bool CAnnotObject_Ref::operator==(const CAnnotObject_Ref& ref) const
 {
-    return (m_Seq_annot == ref.m_Seq_annot &&
-            m_AnnotIndex == ref.m_AnnotIndex);
+    return (m_AnnotIndex == ref.m_AnnotIndex &&
+            m_AnnotType == ref.m_AnnotType &&
+            m_Seq_annot == ref.m_Seq_annot);
 }
 
 
 inline
 bool CAnnotObject_Ref::operator!=(const CAnnotObject_Ref& ref) const
 {
-    return (m_Seq_annot != ref.m_Seq_annot ||
-            m_AnnotIndex != ref.m_AnnotIndex);
+    return !(*this == ref);
 }
 
 

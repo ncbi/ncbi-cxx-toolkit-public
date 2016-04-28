@@ -61,6 +61,7 @@ class CSeqTableInfo;
 class CFeat_id;
 class CGene_ref;
 class CSeq_feat_Handle;
+class CSeq_annot_SortedIter;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
 {
@@ -73,7 +74,11 @@ public:
     typedef C_Data::TGraph      TGraph;
     typedef C_Data::TLocs       TLocs;
     typedef C_Data::TSeq_table  TSeq_table;
-    typedef Uint4               TAnnotIndex;
+    typedef Int4               TAnnotIndex;
+
+    // annotation index marking the Seq-annot as a whole
+    static const TAnnotIndex kWholeAnnotIndex =
+        numeric_limits<TAnnotIndex>::max();
 
     explicit CSeq_annot_Info(CSeq_annot& annot, int chunk_id = 0);
     explicit CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
@@ -159,6 +164,8 @@ public:
     const CAnnotObject_Info& GetInfo(TAnnotIndex index) const;
 
     const CSeqTableInfo& GetTableInfo(void) const;
+    bool IsSortedTable(void) const;
+    CSeq_annot_SortedIter StartSortedIterator(CRange<TSeqPos> range) const;
 
     void UpdateTableFeat(CRef<CSeq_feat>& seq_feat,
                          CRef<CSeq_point>& seq_point,
@@ -260,6 +267,43 @@ private:
 };
 
 
+class NCBI_XOBJMGR_EXPORT CSeq_annot_SortedIter
+{
+public:
+
+    DECLARE_OPERATOR_BOOL(m_ObjectRow < m_NumRows);
+
+    CSeq_annot_SortedIter& operator++(void)
+        {
+            ++m_ObjectRow;
+            x_Settle();
+            return *this;
+        }
+
+    size_t GetRow(void) const
+        {
+            return m_ObjectRow;
+        }
+
+    const CRange<TSeqPos>& GetRange(void) const
+        {
+            return m_ObjectRange;
+        }
+
+protected:
+    void x_Settle(void);
+    bool x_Valid(void);
+
+private:
+    friend class CSeq_annot_Info;
+
+    CRange<TSeqPos> m_RequestRange;
+    CRef<CSeqTableInfo> m_Table_Info;
+    size_t m_ObjectRow, m_NumRows;
+    CRange<TSeqPos> m_ObjectRange;
+};
+
+
 /////////////////////////////////////////////////////////////////////
 //
 //  Inline methods
@@ -326,7 +370,7 @@ CConstRef<CSeq_annot> CSeq_annot_Info::GetSeq_annotSkeleton(void) const
 inline
 const CAnnotObject_Info& CSeq_annot_Info::GetInfo(TAnnotIndex index) const
 {
-    _ASSERT(index < GetAnnotObjectInfos().size());
+    _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
     return GetAnnotObjectInfos()[index];
 }
 

@@ -36,6 +36,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <objmgr/impl/seq_table_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/annot_collector.hpp>
 
@@ -69,7 +70,7 @@ CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                                    CCreatedFeat_Ref& created_ref)
     : m_Seq_annot(annot),
       m_FeatIndex(TFeatIndex(annot.x_GetInfo().x_GetSNP_annot_Info().GetIndex(snp_info))
-                  | kSNPTableBit),
+                  | kNoAnnotObjectInfo),
       m_CreatedFeat(&created_ref)
 {
     _ASSERT(IsTableSNP());
@@ -108,27 +109,39 @@ const CSeq_annot_SNP_Info& CSeq_feat_Handle::x_GetSNP_annot_Info(void) const
 
 bool CSeq_feat_Handle::IsTableSNP(void) const
 {
-    return (m_FeatIndex & kSNPTableBit) != 0;
+    return !x_HasAnnotObjectInfo() &&
+        x_GetSeq_annot_Info().x_HasSNP_annot_Info();
+}
+
+
+bool CSeq_feat_Handle::IsSortedTableFeat(void) const
+{
+    return !x_HasAnnotObjectInfo() &&
+        x_GetSeq_annot_Info().IsSortedTable();
 }
 
 
 bool CSeq_feat_Handle::IsPlainFeat(void) const
 {
-    return (m_FeatIndex & kSNPTableBit) == 0 &&
+    return x_HasAnnotObjectInfo() &&
         x_GetAnnotObject_InfoAny().IsRegular();
 }
 
 
 bool CSeq_feat_Handle::IsTableFeat(void) const
 {
-    return (m_FeatIndex & kSNPTableBit) == 0 &&
-        !x_GetAnnotObject_InfoAny().IsRegular();
+    if ( x_HasAnnotObjectInfo() ) {
+        return !x_GetAnnotObject_InfoAny().IsRegular();
+    }
+    else {
+        return x_GetSeq_annot_Info().IsSortedTable();
+    }
 }
 
 
 const CAnnotObject_Info& CSeq_feat_Handle::x_GetAnnotObject_InfoAny(void) const
 {
-    if ( IsTableSNP() ) {
+    if ( !x_HasAnnotObjectInfo() ) {
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_Handle::x_GetAnnotObject: not Seq-feat info");
     }
@@ -200,15 +213,33 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
 
 bool CSeq_feat_Handle::IsSetPartial(void) const
 {
-    // table SNP features do not have partial
-    return !IsTableSNP() && GetSeq_feat()->IsSetPartial();
+    if ( x_HasAnnotObjectInfo() ) {
+        return GetSeq_feat()->IsSetPartial();
+    }
+    else if ( IsTableSNP() ) {
+        // table SNP features do not have partial
+        return false;
+    }
+    else {
+        // TODO
+        return GetSeq_feat()->IsSetPartial();
+    }
 }
 
 
 bool CSeq_feat_Handle::GetPartial(void) const
 {
-    // table SNP features do not have partial
-    return !IsTableSNP() && GetSeq_feat()->GetPartial();
+    if ( x_HasAnnotObjectInfo() ) {
+        return GetSeq_feat()->GetPartial();
+    }
+    else if ( IsTableSNP() ) {
+        // table SNP features do not have partial
+        return false;
+    }
+    else {
+        // TODO
+        return GetSeq_feat()->GetPartial();
+    }
 }
 
 
@@ -229,10 +260,11 @@ bool CSeq_feat_Handle::IsSetData(void) const
     if ( !*this ) {
         return false;
     }
-    if ( !IsTableSNP() ) {
+    if ( x_HasAnnotObjectInfo() ) {
         return GetSeq_feat()->IsSetData();
     }
     else {
+        // SNP table or sorted Seq-table features have data
         return true;
     }
 }
@@ -240,26 +272,39 @@ bool CSeq_feat_Handle::IsSetData(void) const
 
 CSeq_id_Handle CSeq_feat_Handle::GetLocationId(void) const
 {
-    if ( IsTableSNP() ) {
+    if ( x_HasAnnotObjectInfo() ) {
+        CConstRef<CSeq_loc> loc(&GetLocation());
+        if ( const CSeq_id* id = loc->GetId() ) {
+            return CSeq_id_Handle::GetHandle(*id);
+        }
+        return CSeq_id_Handle();
+    }
+    else if ( IsTableSNP() ) {
         return CSeq_id_Handle::GetHandle(GetSNPSeq_id());
     }
-    CConstRef<CSeq_loc> loc(&GetLocation());
-    const CSeq_id* id = loc->GetId();
-    if ( id ) {
-        return CSeq_id_Handle::GetHandle(*id);
+    else {
+        // TODO
+        CConstRef<CSeq_loc> loc(&GetLocation());
+        if ( const CSeq_id* id = loc->GetId() ) {
+            return CSeq_id_Handle::GetHandle(*id);
+        }
+        return CSeq_id_Handle();
     }
-    return CSeq_id_Handle();
 }
 
 
 CSeq_feat_Handle::TRange CSeq_feat_Handle::GetRange(void) const
 {
-    if ( !IsTableSNP() ) {
+    if ( x_HasAnnotObjectInfo() ) {
         return GetSeq_feat()->GetLocation().GetTotalRange();
     }
-    else {
+    else if ( IsTableSNP() ) {
         const SSNP_Info& info = x_GetSNP_Info();
         return TRange(info.GetFrom(), info.GetTo());
+    }
+    else {
+        // TODO
+        return GetSeq_feat()->GetLocation().GetTotalRange();
     }
 }
 
@@ -345,11 +390,14 @@ void CSeq_feat_Handle::GetSNPQualityCodeOs(vector<char>& os) const
 
 bool CSeq_feat_Handle::IsRemoved(void) const
 {
-    if ( IsTableSNP() ) {
+    if ( x_HasAnnotObjectInfo() ) {
+        return x_GetAnnotObject_InfoAny().IsRemoved();
+    }
+    else if ( IsTableSNP() ) {
         return x_GetSNP_InfoAny().IsRemoved();
     }
     else {
-        return x_GetAnnotObject_InfoAny().IsRemoved();
+        return false;
     }
 }
 
@@ -369,6 +417,34 @@ void CSeq_feat_Handle::Replace(const CSeq_feat& new_feat) const
 /////////////////////////////////////////////////////////////////////////////
 // Methods redirected to corresponding Seq-feat object
 /////////////////////////////////////////////////////////////////////////////
+
+CSeqFeatData::E_Choice CSeq_feat_Handle::GetFeatType(void) const
+{
+    if ( x_HasAnnotObjectInfo() ) {
+        return x_GetAnnotObject_Info().GetFeatType();
+    }
+    else if ( IsTableSNP() ) {
+        return CSeqFeatData::e_Imp;
+    }
+    else {
+        return x_GetSeq_annot_Info().GetTableInfo().GetType().GetFeatType();
+    }
+}
+
+
+CSeqFeatData::ESubtype CSeq_feat_Handle::GetFeatSubtype(void) const
+{
+    if ( x_HasAnnotObjectInfo() ) {
+        return x_GetAnnotObject_Info().GetFeatSubtype();
+    }
+    else if ( IsTableSNP() ) {
+        return CSeqFeatData::eSubtype_variation;
+    }
+    else {
+        return x_GetSeq_annot_Info().GetTableInfo().GetType().GetFeatSubtype();
+    }
+}
+
 
 const CGene_ref* CSeq_feat_Handle::GetGeneXref(void) const
 {
@@ -698,8 +774,9 @@ CSeq_annot_ftable_CI::CSeq_annot_ftable_CI(const CSeq_annot_Handle& annot,
     }
     m_Feat.m_Seq_annot = annot;
     m_Feat.m_FeatIndex = 0;
-    if ( m_Flags & fIncludeTable && annot.x_GetInfo().x_HasSNP_annot_Info() ) {
-        m_Feat.m_FeatIndex |= m_Feat.kSNPTableBit;
+    if ( (m_Flags & fIncludeTable) &&
+         annot.x_GetInfo().x_HasSNP_annot_Info() ) {
+        m_Feat.m_FeatIndex |= m_Feat.kNoAnnotObjectInfo;
     }
     x_Settle();
 }
@@ -726,7 +803,7 @@ void CSeq_annot_ftable_CI::x_Settle(void)
         bool is_snp_table = m_Feat.IsTableSNP();
         if ( is_snp_table ) {
             end = GetAnnot().x_GetInfo().x_GetSNPFeatCount()
-                | m_Feat.kSNPTableBit;
+                | m_Feat.kNoAnnotObjectInfo;
         }
         else {
             end = GetAnnot().x_GetInfo().x_GetAnnotCount();
@@ -759,8 +836,9 @@ CSeq_annot_ftable_I::CSeq_annot_ftable_I(const CSeq_annot_EditHandle& annot,
     }
     m_Feat.m_Seq_annot = annot;
     m_Feat.m_FeatIndex = 0;
-    if ( m_Flags & fIncludeTable && annot.x_GetInfo().x_HasSNP_annot_Info() ) {
-        m_Feat.m_FeatIndex |= m_Feat.kSNPTableBit;
+    if ( (m_Flags & fIncludeTable) &&
+         annot.x_GetInfo().x_HasSNP_annot_Info() ) {
+        m_Feat.m_FeatIndex |= m_Feat.kNoAnnotObjectInfo;
     }
     x_Settle();
 }
@@ -787,7 +865,7 @@ void CSeq_annot_ftable_I::x_Settle(void)
         bool is_snp_table = m_Feat.IsTableSNP();
         if ( is_snp_table ) {
             end = GetAnnot().x_GetInfo().x_GetSNPFeatCount()
-                | m_Feat.kSNPTableBit;
+                | m_Feat.kNoAnnotObjectInfo;
         }
         else {
             end = GetAnnot().x_GetInfo().x_GetAnnotCount();

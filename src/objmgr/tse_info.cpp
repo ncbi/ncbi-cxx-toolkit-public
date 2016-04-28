@@ -1011,8 +1011,10 @@ void CTSE_Info::UpdateAnnotIndex(CTSE_Info_Object& object)
         if (HasDataSource())
             guard.Guard(GetDataSource());
         TAnnotLockWriteGuard guard2(GetAnnotLock());
+        //CStopWatch sw(CStopWatch::eStart);
         object.x_UpdateAnnotIndex(*this);
         _ASSERT(!object.x_DirtyAnnotIndex());
+        //LOG_POST(Info<<"Updated annot index in "<<sw.Elapsed());
     }
 }
 

@@ -463,6 +463,8 @@ void CSeq_annot_Info::x_InitLocsList(TLocs& objs)
 
 void CSeq_annot_Info::x_InitFeatTable(TSeq_table& table)
 {
+    m_Table_Info = new CSeqTableInfo(table);
+
     _ASSERT(m_ObjectIndex.GetInfos().empty());
     if ( !CSeqTableInfo::IsGoodFeatTable(table) ) {
         // index whole Seq-table
@@ -471,14 +473,18 @@ void CSeq_annot_Info::x_InitFeatTable(TSeq_table& table)
         _ASSERT(m_ObjectIndex.GetInfos().size() == 1u);
     }
     else {
+        SAnnotTypeSelector type = m_Table_Info->GetType();
+
+        if ( IsSortedTable() ) {
+            // sorted table of small elements,
+            // index it as a single entry,
+            // then use sorted position for lookup
+            m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, kWholeAnnotIndex, type));
+            return;
+        }
+
         // index each row separately
         TAnnotIndex rows = table.GetNum_rows();
-        SAnnotTypeSelector type
-            (SAnnotTypeSelector::TFeatType(table.GetFeat_type()));
-        if ( table.IsSetFeat_subtype() ) {
-            type.SetFeatSubtype
-                (SAnnotTypeSelector::TFeatSubtype(table.GetFeat_subtype()));
-        }
         for ( TAnnotIndex index = 0; index < rows; ++index ) {
             m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index, type));
         }
@@ -512,7 +518,6 @@ void CSeq_annot_Info::x_InitAnnotList(const CSeq_annot_Info& info)
         data.SetIds() = src_data.GetIds();
         break;
     case C_Data::e_Seq_table:
-        //data.SetSeq_table(src_data.S
         x_InitFeatTable(data.SetSeq_table());
         break;
     default:
@@ -989,9 +994,6 @@ bool CSeq_annot_Info::IsTableFeatPartial(const CAnnotObject_Info& info) const
 
 void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
 {
-    const CSeq_table& feat_table = m_Object->GetData().GetSeq_table();
-    m_Table_Info = new CSeqTableInfo(feat_table);
-    
     CConstRef<CMasterSeqSegments> master = tse.GetMasterSeqSegments();
 
     if ( !m_Table_Info->IsFeatTable() ) {
@@ -1047,7 +1049,6 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
     }
 
     size_t object_count = m_ObjectIndex.GetInfos().size();
-    _ASSERT(object_count == size_t(feat_table.GetNum_rows()));
     m_ObjectIndex.ReserveMapSize(object_count);
 
     SAnnotObject_Key key;
@@ -1059,6 +1060,21 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
         m_ObjectIndex.GetInfos().begin();
     for ( size_t row = 0; row < object_count; ++row, ++it ) {
         CAnnotObject_Info& info = *it;
+        if ( info.GetAnnotIndex() == kWholeAnnotIndex ) {
+            size_t keys_begin = m_ObjectIndex.GetKeys().size();
+            index.m_AnnotObject_Info = &info;
+            index.m_AnnotLocationIndex = 0;
+            index.m_Flags = index.fStrand_both;
+            index.m_HandleRange.Reset();
+            CConstRef<CSeq_loc> loc = m_Table_Info->GetTableLocation();
+            _ASSERT(loc && loc->IsInt()); // checked in x_InitFeatTable()
+            key.m_Handle = CSeq_id_Handle::GetHandle(loc->GetInt().GetId());
+            key.m_Range = loc->GetTotalRange();
+            x_Map(mapper, key, index);
+            x_UpdateObjectKeys(info, keys_begin);
+            continue;
+        }
+
         if ( info.IsRemoved() ) {
             continue;
         }
@@ -1927,6 +1943,64 @@ void CSeq_annot_Info::ClearFeatIds(TAnnotIndex index,
             }
             feat->ResetIds();
         }
+    }
+}
+
+
+bool CSeq_annot_Info::IsSortedTable(void) const
+{
+    return m_Table_Info && m_Table_Info->IsSorted();
+}
+
+
+CSeq_annot_SortedIter
+CSeq_annot_Info::StartSortedIterator(CRange<TSeqPos> range) const
+{
+    CSeq_annot_SortedIter iter;
+    _ASSERT(IsSortedTable());
+    TSeqPos max_len = m_Table_Info->GetSortedMaxLength();
+    _ASSERT(max_len > 0);
+    TSeqPos min_pos = max(range.GetFrom(), max_len-1) - (max_len-1);
+    size_t num_rows = m_Table_Info->GetNumRows();
+    size_t a = 0, b = num_rows;
+    while ( b-a > 1 ) {
+        size_t m = a + (b-a)/2;
+        TSeqPos pos = m_Table_Info->GetLocationFrom(m);
+        if ( pos < min_pos ) {
+            a = m;
+        }
+        else {
+            b = m;
+        }
+    }
+    iter.m_Table_Info = m_Table_Info;
+    iter.m_RequestRange = range;
+    iter.m_ObjectRow = a;
+    iter.m_NumRows = num_rows;
+    iter.x_Settle();
+    return iter;
+}
+
+
+inline
+bool CSeq_annot_SortedIter::x_Valid(void)
+{
+    if ( m_Table_Info->RowIsDisabled(m_ObjectRow) ) {
+        return false;
+    }
+    m_ObjectRange = m_Table_Info->GetLocationRange(m_ObjectRow);
+    if ( m_ObjectRange.GetFrom() >= m_RequestRange.GetToOpen() ) {
+        m_NumRows = m_ObjectRow;
+        return true;
+    }
+    return m_ObjectRange.GetToOpen() > m_RequestRange.GetFrom();
+}
+
+
+void CSeq_annot_SortedIter::x_Settle(void)
+{
+    while ( *this && !x_Valid() ) {
+        ++m_ObjectRow;
     }
 }
 
