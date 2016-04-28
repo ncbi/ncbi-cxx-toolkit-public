@@ -1932,6 +1932,9 @@ void CDiagContext::PrintProperties(void)
 void CDiagContext::PrintStart(const string& message)
 {
     x_PrintMessage(SDiagMessage::eEvent_Start, message);
+    // Print extra message. If ncbi_role and/or ncbi_location are set,
+    // they will be logged by this extra. Otherwise nothing will be printed.
+    Extra().PrintNcbiRoleAndLocation().Flush();
     // Log hit id if already available.
     x_GetDefaultHitID(eHitID_NoCreate);
 }
@@ -2021,6 +2024,21 @@ CDiagContext_Extra& CDiagContext_Extra::AllowBadSymbolsInArgNames(void)
 const TDiagPostFlags kApplogDiagPostFlags =
         eDPF_OmitInfoSev | eDPF_OmitSeparator | eDPF_AppLog;
 
+
+CDiagContext_Extra& CDiagContext_Extra::PrintNcbiRoleAndLocation(void)
+{
+    const string& role = CDiagContext::GetHostRole();
+    const string& loc = CDiagContext::GetHostLocation();
+    if ( !role.empty() ) {
+        Print("ncbi_role", role);
+    }
+    if ( !loc.empty() ) {
+        Print("ncbi_location", loc);
+    }
+    return *this;
+}
+
+
 void CDiagContext_Extra::Flush(void)
 {
     if (m_Flushed  ||  CDiagContext::IsSetOldPostFormat()) {
@@ -2029,21 +2047,16 @@ void CDiagContext_Extra::Flush(void)
 
     // Add ncbi-role and ncbi-location just before setting m_Flushed flag.
     if (m_EventType == SDiagMessage::eEvent_RequestStart) {
-        const string& role = CDiagContext::GetHostRole();
-        const string& loc = CDiagContext::GetHostLocation();
-        if ( !role.empty() ) {
-            Print("ncbi_role", role);
-        }
-        if ( !loc.empty() ) {
-            Print("ncbi_location", loc);
-        }
+        PrintNcbiRoleAndLocation();
     }
     // Prevent double-flush
     m_Flushed = true;
 
-    // Ignore extra messages without arguments. Allow start/stop,
-    // request-start/request-stop without arguments.
-    if (m_EventType == SDiagMessage::eEvent_Extra  &&
+    // Ignore extra messages without arguments. Allow request-start/request-stop
+    // and stop without arguments. Empty start messages are printed only if
+    // ncbi_role/ncbi_location are available (see above).
+    if ((m_EventType == SDiagMessage::eEvent_Extra  ||
+        m_EventType == SDiagMessage::eEvent_Start)  &&
         (!m_Args  ||  m_Args->empty()) ) {
         return;
     }

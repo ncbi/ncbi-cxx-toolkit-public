@@ -1938,6 +1938,9 @@ private:
                        double      timespan,
                        TExtraArgs& args);
 
+    // If available, add ncbi_role/ncbi_location to the arguments.
+    CDiagContext_Extra& PrintNcbiRoleAndLocation(void);
+
     friend class CDiagContext;
     friend NCBI_XNCBI_EXPORT
         CDiagContext_Extra g_PostPerf(int                       status,
