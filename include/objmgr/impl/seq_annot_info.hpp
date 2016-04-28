@@ -42,6 +42,7 @@
 #include <objmgr/annot_name.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
+#include <objmgr/impl/seq_table_info.hpp>
 
 #include <vector>
 
@@ -77,8 +78,7 @@ public:
     typedef Int4               TAnnotIndex;
 
     // annotation index marking the Seq-annot as a whole
-    static const TAnnotIndex kWholeAnnotIndex =
-        numeric_limits<TAnnotIndex>::max();
+    static const TAnnotIndex kWholeAnnotIndex = kMax_I4;
 
     explicit CSeq_annot_Info(CSeq_annot& annot, int chunk_id = 0);
     explicit CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
