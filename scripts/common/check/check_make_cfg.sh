@@ -636,6 +636,10 @@ for x_row in $x_tests; do
    if test ! -z "$x_files" ; then
       x_path="$x_check_dir/$x_rel_dir"
       mkdir -p "$x_path"
+      # Automatically copy .ini file if exists
+      x_copy="$x_src_dir/$x_app.ini"
+      test -f $x_copy  &&  cp -f "$x_copy" "$x_path"
+      # Copy specified CHECK_COPY files/dirs
       for i in $x_files ; do
          x_copy="$x_src_dir/$i"
          if test -f "$x_copy"  -o  -d "$x_copy" ; then

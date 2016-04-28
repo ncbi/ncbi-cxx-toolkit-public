@@ -825,6 +825,10 @@ for x_row in $x_tests; do
    # Copy specified files to the build directory
 
    if test "$x_import_prj" = "no"; then
+      # Automatically copy .ini file if exists
+      x_copy="$x_src_dir/$x_app.ini"
+      test -f $x_copy  &&  cp -pf "$x_copy" "$x_work_dir"
+      # Copy specified CHECK_COPY files/dirs
       if test ! -z "$x_files"; then
          for i in $x_files ; do
             x_copy="$x_src_dir/$i"
