@@ -49,11 +49,12 @@
 #include <objmgr/scope.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/sequtil/sequtil.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_SCOPE(objects)
 
+USING_SCOPE(sequence);
 
 CFastaOstreamEx::CFastaOstreamEx(CNcbiOstream& out) : CFastaOstream(out), m_FeatCount(0)
 {
@@ -307,6 +308,14 @@ CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
 
     if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
         return sequence::GetBestGeneForMrna(feat, scope);
+    }
+
+    // Non-messenger RNA
+    if (feat.GetData().IsRna()) {
+        return GetBestOverlappingFeat(feat.GetLocation(),
+                                      CSeqFeatData::eSubtype_gene,
+                                      eOverlap_Simple,
+                                      scope);
     }
 
     return no_gene;
