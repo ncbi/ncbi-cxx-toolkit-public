@@ -2050,6 +2050,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
                                     SSERV_Info**         info     )
 {
     SLBOS_Data* data;
+    char* new_name = NULL; /* if we need to add dbaf */
     const char* orig_serv_name = iter->name; /* we may modify name with dbaf */
     if (s_LBOS_Init == 0) {
         s_LBOS_funcs.Initialize();
@@ -2081,7 +2082,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
      * to iter */
     if ( iter->arg  &&  (strcmp(iter->arg, "dbaf") == 0)  &&  iter->val ) {
         size_t length = 0;
-        char* new_name = 
+        new_name = 
             g_LBOS_StringConcat(g_LBOS_StringConcat(g_LBOS_StringConcat(
                                 NULL, iter->name, &length),
                                       "/",        &length),
@@ -2120,7 +2121,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
                  "LBOS::Announce(...);");
         s_LBOS_DestroyData(data);
         if (iter->name != orig_serv_name) {
-            free(iter->name);
+            free(new_name);
             iter->name = orig_serv_name;
         }
         return NULL;
@@ -2137,7 +2138,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
     if (!data->n_cand) {
         s_LBOS_DestroyData(data);
         if (iter->name != orig_serv_name) {
-            free(iter->name);
+            free(new_name);
             iter->name = orig_serv_name;
         }
         return NULL;
@@ -2147,7 +2148,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
     /*Just explicitly mention here to do something with it*/
     iter->data = data;
     if (iter->name != orig_serv_name) {
-        free(iter->name);
+        free(new_name);
         iter->name = orig_serv_name;
     }
     return &s_lbos_op;
