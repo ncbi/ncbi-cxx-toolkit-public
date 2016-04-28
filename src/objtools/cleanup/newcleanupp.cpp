@@ -12559,8 +12559,9 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
         CBioseq_Handle prot = m_Scope->GetBioseqHandle(sf.GetProduct());
         if (prot) {
             bool partial5 = sf.GetLocation().IsPartialStart(eExtreme_Biological);
-            bool partial3 = sf.GetLocation().IsPartialStop(eExtreme_Biological);            
-            x_SetPartialsForProtein(*(const_cast<CBioseq *>(prot.GetCompleteBioseq().GetPointer())), partial5, partial3);
+            bool partial3 = sf.GetLocation().IsPartialStop(eExtreme_Biological);     
+            bool feat_partial = sf.IsSetPartial() ? sf.GetPartial() : false;
+            x_SetPartialsForProtein(*(const_cast<CBioseq *>(prot.GetCompleteBioseq().GetPointer())), partial5, partial3, feat_partial);
         }
     }
 }
@@ -12829,8 +12830,9 @@ void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
 
     bool cds_partial5 = cds->GetLocation().IsPartialStart(eExtreme_Biological);
     bool cds_partial3 = cds->GetLocation().IsPartialStop(eExtreme_Biological);
+    bool cds_partial_feat = cds->IsSetPartial() ? cds->GetPartial() : false;
     bool prot_partial = feat.IsSetPartial() && feat.GetPartial();
-    bool new_prot_partial = cds_partial5 || cds_partial3;
+    bool new_prot_partial = cds_partial5 || cds_partial3 || cds_partial_feat;
 
     if (cds_partial5 != feat.GetLocation().IsPartialStart(eExtreme_Biological)) {
         feat.SetLocation().SetPartialStart(cds_partial5, eExtreme_Biological);
@@ -12847,9 +12849,9 @@ void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
 }
 
 
-void CNewCleanup_imp::x_SetPartialsForProtein(CBioseq& seq, bool partial5, bool partial3)
+void CNewCleanup_imp::x_SetPartialsForProtein(CBioseq& seq, bool partial5, bool partial3, bool feat_partial)
 {
-    CMolInfo::TCompleteness desired = GetCompletenessFromFlags(partial5, partial3, partial5 || partial3);
+    CMolInfo::TCompleteness desired = GetCompletenessFromFlags(partial5, partial3, partial5 || partial3 || feat_partial);
 
     bool found = false;
     bool changed = false;
@@ -12914,8 +12916,8 @@ void CNewCleanup_imp::ResynchPeptidePartials (
 
     bool partial5 = feat_ci->GetLocation().IsPartialStart(eExtreme_Biological);
     bool partial3 = feat_ci->GetLocation().IsPartialStop(eExtreme_Biological);
-
-    x_SetPartialsForProtein(seq, partial5, partial3);
+    bool feat_partial = feat_ci->IsSetPartial() ? feat_ci->GetPartial() : false;
+    x_SetPartialsForProtein(seq, partial5, partial3, feat_partial);
 }
 
 
