@@ -980,6 +980,7 @@ void CAnnotObject_Ref::Swap(CAnnotObject_Ref& ref)
 {
     m_Seq_annot.Swap(ref.m_Seq_annot);
     swap(m_AnnotIndex, ref.m_AnnotIndex);
+    swap(m_AnnotType, ref.m_AnnotType);
     m_MappingInfo.Swap(ref.m_MappingInfo);
 }
 
