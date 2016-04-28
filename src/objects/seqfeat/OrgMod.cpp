@@ -350,6 +350,9 @@ COrgMod::IsBiomaterialValid(const string& biomaterial)
 }
 
 
+const string kMissingInst = "Voucher is missing institution code";
+const string kMissingId = "Voucher is missing specific identifier";
+
 string 
 COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
 {
@@ -359,13 +362,14 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
     string id;
 
     if (!ParseStructuredVoucher(val, inst_code, coll_code, id)) {
+        string rval = kEmptyStr;
         if (NStr::IsBlank(inst_code)) {
-            return "Voucher is missing institution code";
+            rval = kMissingInst;
         }
         if (NStr::IsBlank(id)) {
-             return "Voucher is missing specific identifier";
+            rval = NStr::IsBlank(rval) ? kMissingId : rval = "\n" + kMissingId;
         }
-        return kEmptyStr;
+        return rval;
     }
 
     if (NStr::IsBlank (coll_code)) {
