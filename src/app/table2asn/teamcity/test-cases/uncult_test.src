@@ -1,8 +1,0 @@
-Sequence-id	strain	clone	host	isolate	organism
-Seq1	andromeda	abc	ia io	a1	homo sapiens
-Seq2	andromeda	efg	ia io	a2	ia io
-Seq3	andromeda	hij	ia io	a3	rickettsia bellii
-Seq4	andromeda	klm	ia io	a4	rickettsia bellii
-Seq5	andromeda	nop	ia io	a5	escherichia coli
-Seq6	andromeda	qrs	ia io	a6	escherichia coli
-Seq7	andromeda	tuv	ia io	a7	uncultured bacterium

@@ -1,8 +1,0 @@
-StructuredCommentPrefix	##Genome-Assembly-Data-START##
-Assembly Method	Celera Assembler v. 7.0
-Genome Coverage	35.0x
-Sequencing Technology	454
-Assembly Date	2014-02-10
-Expected Final Version	Yes
-Genome Representation	Full 
-StructuredCommentSuffix	##Genome-Assembly-Data-END##
