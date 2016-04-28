@@ -792,6 +792,7 @@ struct SCommonStrings : public SColumn
     CCommonString_table::TIndexes* indexes;
     typedef unordered_map<CTempString, int> TIndex;
     TIndex index;
+    list<string> index_strings;
 
     SCommonStrings(void)
         : values(0),
@@ -811,7 +812,8 @@ struct SCommonStrings : public SColumn
             if ( it == index.end() ) {
                 ind = int(values->size());
                 values->push_back(val);
-                val = values->back();
+                index_strings.push_back(val);
+                val = index_strings.back();
                 index.insert(TIndex::value_type(val, ind));
             }
             else {
