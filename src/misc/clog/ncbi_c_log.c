@@ -1947,6 +1947,22 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
 }
 
 
+/** Add parameters pair to the list if not empty. Update and return index.
+ *  Because this method is for internal usage only, to print automatically
+ *  logged extra parameters, neither key or value can be empty here.
+ */
+static int s_AddParamsPair(SNcbiLog_Param params[], int index, const char* key, const char* value)
+{
+    assert(key || key[0]);
+    if (!value || !value[0]) {
+        return index;
+    }
+    params[index].key   = key;
+    params[index].value = value;
+    return ++index;
+}
+
+
 /** Print one parameter's pair (key, value) to message buffer.
  *  Automatically URL encode each key and value.
  *  Return new position in the buffer, or zero on error.
@@ -2607,11 +2623,9 @@ static void s_LogHitID(TNcbiLog_Context ctx, const char* hit_id)
 {
     SNcbiLog_Param params[2];
     assert(hit_id  &&  hit_id[0]);
-
-    params[0].key   = "ncbi_phid";
-    params[0].value = hit_id;
-    params[1].key   = NULL;
-    params[1].value = NULL;
+    int i = s_AddParamsPair(params, 0, "ncbi_phid", hit_id);
+    params[i].key   = NULL;
+    params[i].value = NULL;
     s_Extra(ctx, params);
 }
 
@@ -2886,9 +2900,24 @@ extern void NcbiLog_AppRun(void)
     CHECK_APP_START(ctx);
     s_SetState(ctx, eNcbiLog_AppRun);
 
-    /* Log app-wide hit ID */
+    /* Log extra parameters: app-wide PHID, host role and location */
+
+    SNcbiLog_Param params[4];
+    int i = 0;
     VERIFY(sx_Info->phid[0]);
-    s_LogHitID(ctx, (char*)sx_Info->phid);
+
+    if (!sx_Info->host_role  &&  !sx_Info->remote_logging) {
+        sx_Info->host_role = NcbiLog_GetHostRole();
+    }
+    if (!sx_Info->host_location  &&  !sx_Info->remote_logging) {
+        sx_Info->host_location = NcbiLog_GetHostLocation();
+    }
+    i = s_AddParamsPair(params, i, "ncbi_phid", (char*)sx_Info->phid);
+    i = s_AddParamsPair(params, i, "ncbi_role",        sx_Info->host_role);
+    i = s_AddParamsPair(params, i, "ncbi_location",    sx_Info->host_location);
+    params[i].key   = NULL;
+    params[i].value = NULL;
+    s_Extra(ctx, params);
 
     MT_UNLOCK;
 }
