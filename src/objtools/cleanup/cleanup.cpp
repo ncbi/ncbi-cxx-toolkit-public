@@ -1176,10 +1176,10 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
         try {
             CSeqTranslator::Translate(f, bsh.GetScope(), translation, true);
         } catch (CSeqMapException& e) {
-            cout << e.what() << endl;
+            //unable to translate
             return false;
         } catch (CSeqVectorException& e) {
-            cout << e.what() << endl;
+            //unable to translate
             return false;
         }
         if (NStr::EndsWith(translation, "*")) {
