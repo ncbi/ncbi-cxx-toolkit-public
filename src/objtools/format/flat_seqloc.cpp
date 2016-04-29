@@ -88,6 +88,63 @@ static bool s_IsVirtualLocation(const CSeq_loc& loc, const CBioseq_Handle& seq)
 }
 
 
+static bool s_NeedsFlattening (const CSeq_loc &loc)
+
+{
+    if (! loc.IsMix()) return false;
+
+    ITERATE (CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
+        if ((*it)->IsPacked_int()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+static CConstRef<CSeq_loc> s_FlattenLoc (const CSeq_loc &loc)
+
+{
+    bool any_nulls_seen = false;
+    CRef<CSeq_loc_mix> new_mix(new CSeq_loc_mix);
+    CSeq_loc_mix::Tdata & new_mix_pieces = new_mix->Set();
+
+    ITERATE (CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
+        const CSeq_loc& curr = **it;
+        if (curr.IsNull()) {
+            any_nulls_seen = true;
+        } else if (curr.IsPacked_int()) {
+            ITERATE (CPacked_seqint::Tdata, pit, curr.GetPacked_int().Get()) {
+                if( any_nulls_seen && ! new_mix_pieces.empty() ) {
+                    CRef<CSeq_loc> null_piece( new CSeq_loc );
+                    null_piece->SetNull();
+                    new_mix_pieces.push_back( null_piece );
+                }
+                CRef<CSeq_loc> old_piece(new CSeq_loc);
+                const CSeq_interval& seqint = **pit;
+                old_piece->SetInt().Assign(seqint);
+                new_mix_pieces.push_back( old_piece );
+            }
+        } else {
+            if( any_nulls_seen && ! new_mix_pieces.empty() ) {
+                CRef<CSeq_loc> null_piece( new CSeq_loc );
+                null_piece->SetNull();
+                new_mix_pieces.push_back( null_piece );
+            }
+            CRef<CSeq_loc> old_piece(new CSeq_loc);
+            old_piece->Assign(curr);
+            new_mix_pieces.push_back( old_piece );
+        }
+    }
+
+    CRef<CSeq_loc> new_loc(new CSeq_loc);
+    new_loc->SetMix(*new_mix);
+
+    return new_loc;
+}
+
+
 CFlatSeqLoc::CFlatSeqLoc
 (const CSeq_loc& loc,
  CBioseqContext& ctx,
@@ -145,7 +202,12 @@ CFlatSeqLoc::CFlatSeqLoc
     }
 
     CNcbiOstrstream oss;
-    x_Add(loc, oss, ctx, type, true);
+    if (s_NeedsFlattening (loc)) {
+        CConstRef<CSeq_loc> flat = s_FlattenLoc (loc);
+        x_Add(*flat, oss, ctx, type, true);
+    } else {
+        x_Add(loc, oss, ctx, type, true);
+    }
     ((string)CNcbiOstrstreamToString(oss)).swap( m_String );
 }
 
