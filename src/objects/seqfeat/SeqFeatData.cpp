@@ -868,6 +868,7 @@ START_SUBTYPE(cdregion)
     ADD_QUAL(codon);
     ADD_QUAL(codon_start);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
@@ -956,6 +957,7 @@ START_SUBTYPE(mat_peptide_aa)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(derived_from);
+    ADD_QUAL(evidence);
     ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
@@ -1487,6 +1489,7 @@ START_SUBTYPE(exon)
     ADD_QUAL(note);
     ADD_QUAL(number);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(partial);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(pseudogene);
@@ -1551,12 +1554,12 @@ START_SUBTYPE(intron)
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
-    ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(number);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(partial);
     ADD_QUAL(pseudo);
     ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
@@ -2040,6 +2043,7 @@ START_SUBTYPE(repeat_region)
     ADD_QUAL(mobile_element);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(partial);
     ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
@@ -2297,6 +2301,7 @@ START_SUBTYPE(terminator)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
@@ -2802,8 +2807,76 @@ START_SUBTYPE(mobile_element)
     ADD_QUAL(usedin);
 END_SUBTYPE
 
-//START_SUBTYPE(biosrc)
-//END_SUBTYPE
+START_SUBTYPE(biosrc)
+ADD_QUAL(PCR_primers);
+ADD_QUAL(altitude);
+ADD_QUAL(bio_material);
+ADD_QUAL(cell_line);
+ADD_QUAL(cell_type);
+ADD_QUAL(chloroplast);
+ADD_QUAL(chromoplast);
+ADD_QUAL(chromosome);
+ADD_QUAL(citation);
+ADD_QUAL(clone);
+ADD_QUAL(clone_lib);
+ADD_QUAL(collected_by);
+ADD_QUAL(collection_date);
+ADD_QUAL(country);
+ADD_QUAL(cultivar);
+ADD_QUAL(culture_collection);
+ADD_QUAL(cyanelle);
+ADD_QUAL(db_xref);
+ADD_QUAL(dev_stage);
+ADD_QUAL(ecotype);
+ADD_QUAL(environmental_sample);
+ADD_QUAL(exception);
+ADD_QUAL(focus);
+ADD_QUAL(frequency);
+ADD_QUAL(germline);
+ADD_QUAL(haplogroup);
+ADD_QUAL(haplotype);
+ADD_QUAL(host);
+ADD_QUAL(identified_by);
+ADD_QUAL(isolate);
+ADD_QUAL(isolation_source);
+ADD_QUAL(kinetoplast);
+ADD_QUAL(lab_host);
+ADD_QUAL(label);
+ADD_QUAL(lat_lon);
+ADD_QUAL(linkage_group);
+ADD_QUAL(macronuclear);
+ADD_QUAL(map);
+ADD_QUAL(mating_type);
+ADD_QUAL(metagenomic);
+ADD_QUAL(mitochondrion);
+ADD_QUAL(mol_type);
+ADD_QUAL(note);
+ADD_QUAL(organelle);
+ADD_QUAL(organism);
+ADD_QUAL(plasmid);
+ADD_QUAL(pop_variant);
+ADD_QUAL(proviral);
+ADD_QUAL(rearranged);
+ADD_QUAL(segment);
+ADD_QUAL(sequenced_mol);
+ADD_QUAL(serotype);
+ADD_QUAL(serovar);
+ADD_QUAL(sex);
+ADD_QUAL(specimen_voucher);
+ADD_QUAL(strain);
+ADD_QUAL(sub_clone);
+ADD_QUAL(sub_species);
+ADD_QUAL(sub_strain);
+ADD_QUAL(tissue_lib);
+ADD_QUAL(tissue_type);
+ADD_QUAL(transgenic);
+ADD_QUAL(transposon);
+ADD_QUAL(type_material);
+ADD_QUAL(usedin);
+ADD_QUAL(variety);
+ADD_QUAL(virion);
+ADD_QUAL(whole_replicon);
+END_SUBTYPE
 
 //START_SUBTYPE(clone)
 //END_SUBTYPE
