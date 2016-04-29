@@ -609,31 +609,6 @@ Seq-align ::= { \
 Seq-align ::= { \
       type partial, \
       dim 2, \
-      segs denseg { \
-        dim 2, \
-        numseg 3, \
-        ids { \
-          gi 446828913, \
-          gi 16763390 \
-        }, \
-        starts { \
-          0, 5755, \
-          44, -1, \
-          56, 5116 \
-        }, \
-        lens { \
-          44, \
-          12, \
-          213 \
-        }, \
-        strands { \
-          unknown, minus, \
-          unknown, minus, \
-          unknown, minus \
-    } } } \
-Seq-align ::= { \
-      type partial, \
-      dim 2, \
       segs std { \
         { \
           dim 2, \
@@ -781,14 +756,6 @@ Seq-align ::= { \
     CScoreBuilder score_builder(blast::eBlastp);
     int dense_seg_score = score_builder.GetBlastScore(*scope, align);
     BOOST_CHECK_EQUAL(dense_seg_score, expected_score);
-    }}
-
-    //dense-seg protein-to-nucleotide
-    *istr >> align;
-    {{
-    CScoreBuilder score_builder(blast::eBlastp);
-    int dense_seg_p2n_score = score_builder.GetBlastScore(*scope, align);
-    BOOST_CHECK_EQUAL(dense_seg_p2n_score, expected_score);
     }}
 
     //std-seg protein-to-protein

@@ -319,30 +319,6 @@ int CScoreBuilder::GetBlastScoreDenseg(CScope& scope,
         if (scaled_up)
             computed_score /= 2;
     }
-    else {
-        const CSeq_align* align_ptr = &align;
-
-        auto_ptr<CSeq_align> swapped_align_ptr;
-        if (mol2 == CSeq_inst::eMol_aa) {
-            swapped_align_ptr.reset(new CSeq_align);
-            swapped_align_ptr->Assign(align);
-            swapped_align_ptr->SwapRows(0,1);
-            align_ptr = swapped_align_ptr.get();
-        }
-        list<CRef<CPairwiseAln> > pairs;
-
-        TAlnSeqIdIRef id1(new CAlnSeqId(align_ptr->GetSeq_id(0)));
-        id1->SetBaseWidth(3);
-        TAlnSeqIdIRef id2(new CAlnSeqId(align_ptr->GetSeq_id(1)));
-        CRef<CPairwiseAln> pairwise(new CPairwiseAln(id1, id2));
-        TAlnSeqIdVec ids;
-        ids.push_back(id1); ids.push_back(id2);
-        ConvertSeqAlignToPairwiseAln(*pairwise, *align_ptr, 0, 1, CAlnUserOptions::eBothDirections, &ids);
-
-        pairs.push_back(pairwise);
-
-        return GetBlastScoreProtToNucl(scope, *align_ptr, pairs);
-    }
 
     computed_score = max(0, computed_score);
     return computed_score;
