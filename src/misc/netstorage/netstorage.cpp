@@ -332,18 +332,30 @@ CNetICacheClient s_GetICClient(const IRegistry& registry, const string& service)
 }
 
 
+CNetStorage s_GetNetStorage(
+        const IRegistry& registry,
+        const string& service_name,
+        CCompoundIDPool::TInstance compound_id_pool)
+{
+    // In general, NetStorage server cannot get app_domain from client.
+    // Instead of introducing new configuration parameter
+    // (with a value not actually affecting anything),
+    // we just use cache name from CNetICacheClient.
+    // If that is not avaiable, service_name value is used instead.
+    CNetICacheClient nc_client(s_GetICClient(registry, service_name));
+    const string cache_name(nc_client ? nc_client.GetCacheName() : kEmptyStr);
+    const string app_domain(cache_name.empty() ? service_name : cache_name);
+
+    return new SDirectNetStorageImpl(app_domain, nc_client,
+                compound_id_pool, s_GetFTConfig(registry, service_name));
+}
+
+
 CDirectNetStorage::CDirectNetStorage(
         const IRegistry& registry,
         const string& service_name,
         CCompoundIDPool::TInstance compound_id_pool)
-    : CNetStorage(
-            // In general, NetStorage server cannot get app_domain from client.
-            // Instead of introducing new configuration parameter
-            // (with a value not actually affecting anything),
-            // we just use service_name value instead.
-            new SDirectNetStorageImpl(service_name,
-                s_GetICClient(registry, service_name),
-                compound_id_pool, s_GetFTConfig(registry, service_name)))
+    : CNetStorage(s_GetNetStorage(registry, service_name, compound_id_pool))
 {
 }
 
