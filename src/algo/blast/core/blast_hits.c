@@ -1375,6 +1375,9 @@ s_BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Boolean allow_gap)
                         hsp1->subject.offset, hsp1->subject.end,
                         hsp2->subject.end)) {
 
+	  double score_density =  (hsp1->score + hsp2->score) *(1.0) /
+			                  ((hsp1->query.end - hsp1->query.offset) +
+			                   (hsp2->query.end - hsp2->query.offset));
       hsp1->query.offset = MIN(hsp1->query.offset, hsp2->query.offset);
       hsp1->subject.offset = MIN(hsp1->subject.offset, hsp2->subject.offset);
       hsp1->query.end = MAX(hsp1->query.end, hsp2->query.end);
@@ -1382,8 +1385,10 @@ s_BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Boolean allow_gap)
       if (hsp2->score > hsp1->score) {
           hsp1->query.gapped_start = hsp2->query.gapped_start;
           hsp1->subject.gapped_start = hsp2->subject.gapped_start;
-          hsp1->score = hsp2->score;
+	  hsp1->score = hsp2->score;
       }
+
+      hsp1->score = MAX((int) (score_density *(hsp1->query.end - hsp1->query.offset)), hsp1->score);
       return TRUE;
    }
 

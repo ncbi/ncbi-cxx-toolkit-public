@@ -223,9 +223,9 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         const int kOffsetIncrement = 9900;
         const int kTotalNumHsps = 12;
         const int kFinalScores[kTotalNumHsps] = 
-            { 120, 111, 80, 77, 75, 72, 70, 65, 62, 60, 44, 40 };
+            { 120, 111, 80, 77, 75, 72, 70, 70, 65, 60, 44, 40 };
         const int kFinalOffsets[kTotalNumHsps] = 
-            { 25000, 22000, 9950, 10400, 9850, 19750, 5000, 3000, 9970, 100, 
+            { 25000, 22000, 9950, 10400, 9850, 19750, 5000, 9970, 3000, 100, 
               19820, 9902 };
         const int kFinalLengths[kTotalNumHsps] = 
             { 200, 200, 100, 100, 100, 100, 100, 100, 100, 100, 60, 48 };
