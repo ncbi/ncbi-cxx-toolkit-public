@@ -104,6 +104,7 @@ asngendefs needs xser
 asnmuxdblb needs dbloadb_asn
 asnmuxdblb needs generic_db_asn
 asnmuxdblb needs mux
+attr_cd needs3party $(ORIG_LIBS)
 auxcomm_g needs muxex-C_g
 auxcomm_g needs splitdbasncpp_g
 auxcomm_g needs tea_crypt
@@ -1375,6 +1376,7 @@ xformat needs gbseq
 xformat needs mlacli
 xformat needs xalnmgr
 xformat needs xcleanup
+xgencoll needs $(GPIPE_COMMON_LIBS)
 xgencoll needs aligndb_reader
 xgencoll needs gencoll_client
 xgencoll needs gpipe_objutil
