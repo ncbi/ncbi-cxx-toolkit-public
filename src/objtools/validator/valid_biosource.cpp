@@ -3269,24 +3269,24 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
         if (NStr::IsBlank(*err)) {
             // do nothing
         } else if (NStr::FindNoCase(*err, "should be structured") != string::npos) {
-            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnstructuredVoucher, error, obj, ctx);
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnstructuredVoucher, *err, obj, ctx);
         } else if (NStr::FindNoCase(*err, "missing institution code") != string::npos) {
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, error, obj, ctx);
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, *err, obj, ctx);
         } else if (NStr::FindNoCase(*err, "missing specific identifier") != string::npos) {
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadVoucherID, error, obj, ctx);
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadVoucherID, *err, obj, ctx);
         } else if (NStr::FindNoCase(*err, "should be") != string::npos) {
             EDiagSev level = eDiag_Info;
             if (NStr::StartsWith(*err, "DNA")) {
                 level = eDiag_Warning;
             }
-            PostObjErr(level, eErr_SEQ_DESCR_WrongVoucherType, error, obj, ctx);
+            PostObjErr(level, eErr_SEQ_DESCR_WrongVoucherType, *err, obj, ctx);
         } else if (NStr::StartsWith(*err, "Personal")) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MissingPersonalCollectionName,
-                error, obj, ctx);
+                *err, obj, ctx);
         } else if (NStr::FindNoCase(*err, "should not be qualified with a <COUNTRY> designation") != string::npos) {
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCountry, error, obj, ctx);
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCountry, *err, obj, ctx);
         } else if (NStr::FindNoCase(*err, "needs to be qualified with a <COUNTRY> designation") != string::npos) {
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, error, obj, ctx);
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, *err, obj, ctx);
         } else if (NStr::FindNoCase(*err, " exists, but collection ") != string::npos) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionCode, *err, obj, ctx);
         } else {

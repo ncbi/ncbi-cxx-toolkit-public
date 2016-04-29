@@ -8328,15 +8328,29 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                             int pos = 0;
                             string::iterator it = vec_data.begin();
                             while (it != vec_data.end()) {
-                                CSeqMap_CI map_iter(ph, SSeqMapSelector(), 
-                                    strand == eNa_strand_minus ? stop - pos : start + pos);
-                                if (map_iter.GetType() == CSeqMap::eSeqGap) {
+                                bool is_gap = false;
+                                bool unknown_length = false;
+                                try {
+                                    CSeqMap_CI map_iter(ph, SSeqMapSelector(),
+                                        strand == eNa_strand_minus ? stop - pos : start + pos);
+                                    if (map_iter.GetType() == CSeqMap::eSeqGap) {
+                                        is_gap = true;
+                                        if (map_iter.IsUnknownLength()) {
+                                            unknown_length = true;
+                                        }
+                                    }
+                                } catch (CException& ex) {
+                                    PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+                                        string("Exeption while checking for intervals in gaps. EXCEPTION: ") +
+                                        ex.what(), feat);
+                                }
+                                if (is_gap) {
                                     if (pos == 0) {
                                         local_first_gap = true;
                                     } else if (pos == len - 1) {
                                         local_last_gap = true;
                                     }
-                                    if (map_iter.IsUnknownLength()) {
+                                    if (unknown_length) {
                                         num_unknown_gap++;
                                     } else {
                                         num_gap++;

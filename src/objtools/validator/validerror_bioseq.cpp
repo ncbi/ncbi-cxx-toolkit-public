@@ -4056,7 +4056,7 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
         return;
     }
 
-    if ( !CSeqdesc_CI( m_CurrentHandle, CSeqdesc::e_Pub)) {
+    if ( !CSeqdesc_CI( m_CurrentHandle, CSeqdesc::e_Pub) && m_AllFeatIt) {
         // look for pub or feat with cit
         ITERATE(CCacheImpl::TFeatValue, all_feat_it, *m_AllFeatIt) {
             if (all_feat_it->IsSetCit() || all_feat_it->GetData().IsPub()) {
