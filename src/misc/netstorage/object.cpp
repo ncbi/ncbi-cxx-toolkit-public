@@ -133,9 +133,7 @@ string CObj::Relocate(TNetStorageFlags flags)
     // Selector can only be cloned after location is detected
     ISelector::Ptr selector(m_Selector->Clone(flags));
 
-    // TODO: typeid is not good, needs reconsidering
-    // (maybe, location from object locator will do)
-    if (typeid(*m_Location) == typeid(*selector->First())) {
+    if (m_Location->IsSame(selector->First())) {
         LOG_POST(Trace << "locations are the same");
         return selector->Locator().GetLocator();
     }
@@ -337,8 +335,9 @@ void CObj::RemoveOldCopyIfExists() const
 {
     ISelector::Ptr selector(m_Selector->Clone(fNST_Movable));
 
-    // Skipping first location (as it is where the object is being written to)
-    while (ILocation* l = selector->Next()) {
+    for (ILocation* l = selector->First(); l; l = selector->Next()) {
+        if (l->IsSame(m_Location)) continue;
+
         try {
             if (l->RemoveImpl() == eNSTRR_Removed) return;
         }

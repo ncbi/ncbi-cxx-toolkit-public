@@ -97,6 +97,15 @@ public:
 
     typedef pair<string, string> TUserInfo;
     virtual TUserInfo GetUserInfoImpl() = 0;
+
+    virtual bool IsSame(const ILocation* other) const = 0;
+
+protected:
+    template <class TLocation>
+    static const TLocation* To(const ILocation* location)
+    {
+        return dynamic_cast<const TLocation*>(location);
+    }
 };
 
 class ISelector

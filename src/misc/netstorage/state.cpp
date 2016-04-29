@@ -219,6 +219,8 @@ public:
     TUserInfo GetUserInfoImpl();
 
 private:
+    bool IsSame(const ILocation* other) const { return To<CNotFound>(other); }
+
     CLocatorHolding<CRWNotFound> m_RW;
 };
 
@@ -246,6 +248,8 @@ public:
     TUserInfo GetUserInfoImpl();
 
 private:
+    bool IsSame(const ILocation* other) const { return To<CNetCache>(other); }
+
     CRef<SContext> m_Context;
     CNetICacheClientExt m_Client;
     CLocatorHolding<CRONetCache> m_Read;
@@ -275,6 +279,8 @@ public:
     TUserInfo GetUserInfoImpl();
 
 private:
+    bool IsSame(const ILocation* other) const { return To<CFileTrack>(other); }
+
     CRef<SContext> m_Context;
     CLocatorHolding<CROFileTrack> m_Read;
     CLocatorHolding<CWOFileTrack> m_Write;

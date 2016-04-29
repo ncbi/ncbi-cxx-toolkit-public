@@ -96,6 +96,8 @@ private:
     string FileTrack_PathImpl();
     TUserInfo GetUserInfoImpl();
 
+    bool IsSame(const ILocation* other) const { return To<CObj>(other); }
+
     void RemoveOldCopyIfExists() const;
 
     ISelector::Ptr m_Selector;
