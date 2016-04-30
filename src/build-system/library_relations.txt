@@ -115,7 +115,6 @@ backendcommon needs txxmldoc
 backendcommon needs xconnect
 bacterial_pipeline_proc needs gencoll_client
 bacterial_pipeline_proc needs gpipe_objutil
-bacterial_pipeline_proc needs prok_align_monomer
 bacterial_pipeline_proc needs xalgoalignutil
 bag_access needs $(SEQ_LIBS)
 bag_access needs gpipe_common
