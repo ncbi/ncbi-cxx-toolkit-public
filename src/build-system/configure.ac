@@ -3924,6 +3924,10 @@ AC_CACHE_CHECK([whether $CC supports -maes], ncbi_cv_cc_aes,
            }], [])],
        [ncbi_cv_cc_aes=yes], [ncbi_cv_cc_aes=no])])
 
+if test "$compiler" = ICC; then
+   # ICC noisily ignores this flag, so explicitly blacklist it.
+   ncbi_cv_cc_fdiagnostics_color_always=no
+fi
 AC_CACHE_CHECK([whether $CC supports -fdiagnostics-color=always],
    ncbi_cv_cc_fdiagnostics_color_always,
    [CFLAGS="$orig_CFLAGS -fdiagnostics-color=always"

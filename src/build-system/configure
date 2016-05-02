@@ -25608,6 +25608,10 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_cc_aes" >&5
 echo "${ECHO_T}$ncbi_cv_cc_aes" >&6; }
 
+if test "$compiler" = ICC; then
+   # ICC noisily ignores this flag, so explicitly blacklist it.
+   ncbi_cv_cc_fdiagnostics_color_always=no
+fi
 { echo "$as_me:$LINENO: checking whether $CC supports -fdiagnostics-color=always" >&5
 echo $ECHO_N "checking whether $CC supports -fdiagnostics-color=always... $ECHO_C" >&6; }
 if test "${ncbi_cv_cc_fdiagnostics_color_always+set}" = set; then
