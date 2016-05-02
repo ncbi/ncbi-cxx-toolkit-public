@@ -6884,7 +6884,9 @@ const CSeq_id* CValidError_feat::x_GetCDSProduct
 
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure, 
                           "Unable to fetch CDS product '" + label + "'", feat);
-                    m_Imp.SetFarFetchFailure();
+                    if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
+                        m_Imp.SetFarFetchFailure();
+                    }
                     return protid;
                 }
             }
