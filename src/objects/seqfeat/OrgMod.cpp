@@ -367,7 +367,7 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
             rval = kMissingInst;
         }
         if (NStr::IsBlank(id)) {
-            rval = NStr::IsBlank(rval) ? kMissingId : rval = "\n" + kMissingId;
+            rval = NStr::IsBlank(rval) ? kMissingId : rval + "\n" + kMissingId;
         }
         return rval;
     }
