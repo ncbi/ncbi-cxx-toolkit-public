@@ -122,6 +122,7 @@ TGi GetGIForSeqId(const CSeq_id& id)
 {
     TGi gi = ZERO_GI;
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    scope->AddDefaults();
 
     try {
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
