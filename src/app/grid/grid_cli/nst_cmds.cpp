@@ -374,7 +374,7 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveNetStorageObject()
     SetUp_NetStorageCmd(eNetStorageAPI);
 
     if (IsOptionSet(eUserKey)) {
-        m_NetStorageByKey.Remove(m_Opts.id, m_Opts.netstorage_flags);
+        m_NetStorageByKey.Remove(m_Opts.id);
     } else {
         m_NetStorage.Remove(m_Opts.id);
     }
