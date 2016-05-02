@@ -115,7 +115,6 @@ backendcommon needs txxmldoc
 backendcommon needs xconnect
 bacterial_pipeline_proc needs gencoll_client
 bacterial_pipeline_proc needs gpipe_objutil
-bacterial_pipeline_proc needs xalgoalignutil
 bag_access needs $(SEQ_LIBS)
 bag_access needs gpipe_common
 bag_access needs pub
@@ -340,6 +339,7 @@ gene_info_writer needs gene_info
 gene_info_writer needs seqdb
 genemark_proc needs bacterial_pipeline_proc
 genemark_proc needs genomic_repeat_region
+genemark_proc needs xalgoseq
 general needs xser
 generic_db_asn needs xser
 generic_db_core needs $(CONNEXT)
@@ -904,6 +904,8 @@ proj needs pubmed
 proj needs seqset
 prok_align_monomer needs $(SOBJMGR_LIBS)
 prok_align_monomer needs align_part_ci
+prok_cluster_data needs bacterial_pipeline_proc
+prok_cluster_data needs xalgoalignutil
 prosplign needs xalgoalignutil
 proxsort needs taxoscli
 pstub needs3party $(ORIG_LIBS)
