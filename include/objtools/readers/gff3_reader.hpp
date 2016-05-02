@@ -150,7 +150,7 @@ protected:
 
     string xNextGenericId();
 
-    void xVerifyExonLocation(
+    bool xVerifyExonLocation(
         const string&,
         const CGff2Record&,
         ILineErrorListener*);

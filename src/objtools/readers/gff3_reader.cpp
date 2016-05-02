@@ -215,7 +215,7 @@ bool CGff3Reader::x_UpdateAnnotFeature(
 }
 
 //  ----------------------------------------------------------------------------
-void CGff3Reader::xVerifyExonLocation(
+bool CGff3Reader::xVerifyExonLocation(
     const string& mrnaId,
     const CGff2Record& exon,
     ILineErrorListener* pEC)
@@ -223,36 +223,27 @@ void CGff3Reader::xVerifyExonLocation(
 {
     map<string,CRef<CSeq_interval> >::const_iterator cit = mMrnaLocs.find(mrnaId);
     if (cit == mMrnaLocs.end()) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Bad data line: Exon record referring to non-existing mRNA parent.",
-            ILineError::eProblem_FeatureBadStartAndOrStop));
-        ProcessError(*pErr, pEC);
-        return; // can not continue without cit being valid, regardless of ProcessError() 
+        return false;
     }
     const CSeq_interval& containingInt = cit->second.GetObject();
     const CRef<CSeq_loc> pContainedLoc = exon.GetSeqLoc(m_iFlags);
     const CSeq_interval& containedInt = pContainedLoc->GetInt();
     bool failed = (containedInt.GetFrom() < containingInt.GetFrom())  ||
         (containedInt.GetTo() > containingInt.GetTo());
-    if (failed) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Bad data line: Exon record that lies outside its parent location.",
-            ILineError::eProblem_FeatureBadStartAndOrStop));
-        ProcessError(*pErr, pEC);
+    if (containedInt.GetFrom() < containingInt.GetFrom()) {
+        return false;
     }
+    if (containedInt.GetTo() > containingInt.GetTo()) {
+        return false;
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotExon(
     const CGff2Record& record,
-    CRef<CSeq_feat>,
-    CRef<CSeq_annot>,
+    CRef<CSeq_feat> pFeature,
+    CRef<CSeq_annot> pAnnot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -261,7 +252,16 @@ bool CGff3Reader::xUpdateAnnotExon(
         for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
                 ++it) {
             const string& parentId = *it; 
-            xVerifyExonLocation(parentId, record, pEC);
+            if (!xVerifyExonLocation(parentId, record, pEC)) {
+                //create a free agent "exon" feature
+                if (!record.InitializeFeature(m_iFlags, pFeature)) {
+                    return false;
+                }
+                if (! xAddFeatureToAnnot(pFeature, pAnnot)) {
+                    return false;
+                }
+                return true;
+            }
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
                 if (!record.UpdateFeature(m_iFlags, fit->second)) {
@@ -272,6 +272,7 @@ bool CGff3Reader::xUpdateAnnotExon(
     }
     return true;
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotCds(
