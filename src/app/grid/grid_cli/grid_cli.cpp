@@ -169,7 +169,11 @@ struct SOptionDefinition {
             "or server address.", {-1}},
 
     {OPT_DEF(eSwitch, eObjectKey),
-        OBJECT_KEY_OPTION, "Enable user-defined keys mode. "
+        OBJECT_KEY_OPTION, "Enable object keys mode. "
+            "Cannot be used together with '--" NAMESPACE_OPTION "'.", {-1}},
+
+    {OPT_DEF(eSwitch, eUserKey),
+        USER_KEY_OPTION, "Enable user-defined keys mode. "
             "Requires '--" NAMESPACE_OPTION "'.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eNamespace),
@@ -545,7 +549,7 @@ struct SCommandCategoryDefinition {
 #endif
 
 #define NETSTORAGE_COMMON_OPTIONS                                   \
-    eNetStorage, eNamespace, eObjectKey,                            \
+    eNetStorage, eObjectKey, eUserKey, eNamespace,                  \
     eFastStorage, ePersistent, eMovable, eCacheable, eNoMetaData,   \
     eAuth, eLoginToken
 

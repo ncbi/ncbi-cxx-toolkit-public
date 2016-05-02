@@ -72,6 +72,7 @@
 #define TRY_ALL_SERVERS_OPTION "try-all-servers"
 #define NETSTORAGE_OPTION "nst|netstorage"
 #define OBJECT_KEY_OPTION "object-key"
+#define USER_KEY_OPTION "user-key"
 #define NAMESPACE_OPTION "namespace"
 #define PERSISTENT_OPTION "persistent"
 #define FAST_STORAGE_OPTION "fast-storage"
@@ -175,6 +176,7 @@ enum EOption {
     eUseCompoundID,
     eNetStorage,
     eObjectKey,
+    eUserKey,
     eNamespace,
     ePersistent,
     eFastStorage,

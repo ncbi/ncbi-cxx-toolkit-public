@@ -46,6 +46,36 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             "cannot be used together with '--" NETSTORAGE_OPTION "'");
     }
 
+    if (IsOptionSet(eObjectKey)) {
+        if (IsOptionSet(eUserKey)) {
+            NCBI_THROW(CArgException, eExcludedValue, "'--" USER_KEY_OPTION "' "
+                "cannot be used together with '--" OBJECT_KEY_OPTION "'");
+        }
+
+        if (IsOptionSet(eNamespace)) {
+            NCBI_THROW(CArgException, eExcludedValue, "'--" NAMESPACE_OPTION "' "
+                "cannot be used together with '--" OBJECT_KEY_OPTION "'");
+        }
+
+        size_t separator = m_Opts.id.find('-');
+
+        if (separator == string::npos) {
+            NCBI_THROW_FMT(CArgException, eInvalidArg, "Could not find "
+                "namespace separator in object key: " << m_Opts.id);
+        }
+
+        MarkOptionAsSet(eUserKey);
+        MarkOptionAsSet(eNamespace);
+        m_Opts.app_domain = m_Opts.id.substr(0, separator);
+        m_Opts.id.erase(0, separator + 1);
+
+    } else if (IsOptionSet(eUserKey)) {
+        if (!IsOptionSet(eNamespace)) {
+            NCBI_THROW(CArgException, eNoArg, "'--" USER_KEY_OPTION "' "
+                "requires '--" NAMESPACE_OPTION "'");
+        }
+    }
+
     m_APIClass = api_class;
 
     if (api_class == eNetStorageAdmin && !IsOptionSet(eNetStorage)) {
@@ -59,7 +89,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         init_string = "nst=";
         init_string += NStr::URLEncode(m_Opts.nst_service);
 
-    } else if (!IsOptionSet(eDirectMode) && !IsOptionSet(eObjectKey) &&
+    } else if (!IsOptionSet(eDirectMode) && !IsOptionSet(eUserKey) &&
             (IsOptionSet(eOptionalID) || IsOptionSet(eID))) {
 
         CNetStorageObjectLoc locator(CCompoundIDPool(), m_Opts.id);
@@ -101,7 +131,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     init_string += "&client=";
     init_string += NStr::URLEncode(auth);
 
-    if (IsOptionSet(eObjectKey)) {
+    if (IsOptionSet(eUserKey)) {
         m_NetStorageByKey = CCombinedNetStorageByKey(init_string,
                 m_Opts.netstorage_flags);
     } else {
@@ -122,7 +152,7 @@ CNetStorageObject CGridCommandLineInterfaceApp::GetNetStorageObject()
     SetUp_NetStorageCmd(eNetStorageAPI);
 
     if (IsOptionSet(eID) || IsOptionSet(eOptionalID)) {
-        if (IsOptionSet(eObjectKey)) {
+        if (IsOptionSet(eUserKey)) {
             return m_NetStorageByKey.Open(m_Opts.id);
         } else {
             return m_NetStorage.Open(m_Opts.id);
@@ -319,7 +349,7 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
 
     string new_loc;
 
-    if (IsOptionSet(eObjectKey)) {
+    if (IsOptionSet(eUserKey)) {
         new_loc = m_NetStorageByKey.Relocate(m_Opts.id, m_Opts.netstorage_flags);
     } else {
         new_loc = m_NetStorage.Relocate(m_Opts.id, m_Opts.netstorage_flags);
@@ -343,7 +373,7 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveNetStorageObject()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    if (IsOptionSet(eObjectKey)) {
+    if (IsOptionSet(eUserKey)) {
         m_NetStorageByKey.Remove(m_Opts.id, m_Opts.netstorage_flags);
     } else {
         m_NetStorage.Remove(m_Opts.id);
