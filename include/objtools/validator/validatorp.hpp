@@ -984,6 +984,8 @@ private:
     typedef CSeq_align::C_Segs::TDisc       TDisc;
 
     void x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps);
+    static bool AlignmentScorePercentIdOk(const CSeq_align& align);
+    static bool IsTpaAlignment(const CSeq_align& align, CScope& scope);
     void x_ValidateDendiag(const TDendiag& dendiags, const CSeq_align& align);
     void x_ValidateDenseg(const TDenseg& denseg, const CSeq_align& align);
     void x_ValidateStd(const TStd& stdsegs, const CSeq_align& align);

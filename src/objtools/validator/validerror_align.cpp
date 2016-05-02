@@ -216,6 +216,58 @@ static size_t s_GetNumIdsToUse (const CDense_seg& denseg)
 }
 
 
+bool CValidError_align::AlignmentScorePercentIdOk(const CSeq_align& align)
+{
+    if (!align.IsSetScore()) {
+        return false;
+    }
+    ITERATE(CSeq_align::TScore, it, align.GetScore()) {
+        if ((*it)->IsSetId() && (*it)->GetId().IsStr() &&
+            NStr::EqualNocase((*it)->GetId().GetStr(), "pct_identity_ungap") &&
+            (*it)->IsSetValue() && (*it)->GetValue().IsReal()) {
+            if ((*it)->GetValue().GetReal() > 50.0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool CValidError_align::IsTpaAlignment(const CSeq_align& align, CScope& scope)
+{
+    if (!align.IsSetSegs() || !align.GetSegs().IsDenseg()) {
+        return false;
+    }
+
+    const CDense_seg& denseg = align.GetSegs().GetDenseg();
+    int dim = denseg.GetDim();
+    if (dim != s_GetNumIdsToUse(denseg)) {
+        return false;
+    }
+
+    bool is_tpa = false;
+    for (CDense_seg::TDim row = 0; row < dim && !is_tpa; ++row) {
+        CRef<CSeq_id> id = denseg.GetIds()[row];
+        CBioseq_Handle bsh = scope.GetBioseqHandle(*id);
+        if (bsh) {
+            CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User);
+            while (desc_ci && !is_tpa) {
+                if (desc_ci->GetUser().IsSetType() && desc_ci->GetUser().GetType().IsStr()
+                    && NStr::EqualNocase(desc_ci->GetUser().GetType().GetStr(), "TpaAssembly")) {
+                    is_tpa = true;
+                }
+                ++desc_ci;
+            }
+        }
+    }
+
+    return is_tpa;
+}
+
+
 void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps)
 {
     TSeqPos col = 0;
@@ -228,6 +280,10 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
         return;
     } else if (align.GetSegs().IsDendiag()) {
         return;
+    } else if (AlignmentScorePercentIdOk(align)) {
+        return;
+    } else if (IsTpaAlignment(align, *m_Scope)) {
+        return;
     } else if (align.GetSegs().IsDenseg()) {
         const CDense_seg& denseg = align.GetSegs().GetDenseg();
         // first, make sure this isn't a TPA alignment
@@ -237,23 +293,6 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
             return;
         }
 
-        for (CDense_seg::TDim row = 0; row < dim && !is_tpa; ++row) {
-            CRef<CSeq_id> id = denseg.GetIds()[row];
-            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
-            if (bsh) {
-                CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User);
-                while (desc_ci && !is_tpa) {
-                    if (desc_ci->GetUser().IsSetType() && desc_ci->GetUser().GetType().IsStr()
-                        && NStr::EqualNocase(desc_ci->GetUser().GetType().GetStr(), "TpaAssembly")) {
-                        is_tpa = true;
-                    }
-                    ++desc_ci;
-                }
-            }
-        }
-        if (is_tpa) {
-            return;
-        }
 
         try {
             CRef<CAlnVec> av(new CAlnVec(denseg, *m_Scope));
