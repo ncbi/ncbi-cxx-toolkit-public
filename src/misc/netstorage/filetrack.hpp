@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 
 struct SFileTrackConfig
 {
+    bool enabled = false;
     CNetStorageObjectLoc::EFileTrackSite site;
     string key;
     const bool chunked_upload = false;
@@ -147,7 +148,7 @@ struct SFileTrackAPI
 
     Uint8 GetRandUint8(void) { return m_Random.GetRandUint8(); }
 
-    DECLARE_OPERATOR_BOOL(!config.key.empty());
+    DECLARE_OPERATOR_BOOL(config.enabled);
 
     const SFileTrackConfig config;
 

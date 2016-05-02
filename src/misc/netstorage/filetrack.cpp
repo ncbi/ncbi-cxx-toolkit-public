@@ -568,6 +568,13 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetSID(const char* http_header,
 string SFileTrackAPI::LoginAndGetSessionKey(const CNetStorageObjectLoc& object_loc)
 {
     string api_key(config.key);
+
+    // Nocreate mode
+    if (api_key.empty()) {
+        NCBI_THROW_FMT(CNetStorageException, eAuthError,
+                "Not allowed in nocreate mode (no FT API key provided).");
+    }
+
     const string url(s_GetURL(object_loc, "/accounts/api_login?key=") + api_key);
     string session_key;
 
