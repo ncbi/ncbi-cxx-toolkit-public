@@ -1584,12 +1584,11 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
                             : seq->sequence;
     for (idx = 0;  idx < seqData->length;  idx++) {
         /* Copy the sequence data, replacing occurrences of amino acid
-         * number 24 (Selenocysteine) with number 21 (Undetermined or
-         * atypical). */
+         * number 24 (Selenocysteine) with number 3 (Cysteine). */
         if (origData[idx] != 24) {
             seqData->data[idx] = origData[idx];
         } else {
-            seqData->data[idx] = 21;
+            seqData->data[idx] = 3;
         }
     }
 
@@ -1662,9 +1661,8 @@ s_SequenceGetRange(const BlastCompo_MatchingSequence * self,
 
     for (idx = 0;  idx < queryData->length;  idx++) {
         /* Copy the sequence data, replacing occurrences of amino acid
-         * number 24 (Selenocysteine) with number 21 (Undetermined or
-         * atypical). */
-        queryData->data[idx] = (origData[idx] != 24) ? origData[idx] : 21;
+         * number 24 (Selenocysteine) with number 3 (Cysteine). */
+        queryData->data[idx] = (origData[idx] != 24) ? origData[idx] : 3;
     }
     if (seq_info && seq_info->prog_number ==  eBlastTypeTblastn) {
         /* The sequence must be translated. */

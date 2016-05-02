@@ -693,11 +693,12 @@ s_SetXUOScores(double ** M, int alphsize,
         M[eXchar][eJchar] =
             s_CalcXScore(&M[0][eJchar], alphsize, cols, row_probs);
     }
-    /* Copy X scores to U and O */
-    memcpy(M[eSelenocysteine], M[eXchar], alphsize * sizeof(double));
+    /* Copy C scores to U */
+    memcpy(M[eSelenocysteine], M[eCchar], alphsize * sizeof(double));
     for (i = 0;  i < alphsize;  i++) {
-        M[i][eSelenocysteine] = M[i][eXchar];
+        M[i][eSelenocysteine] = M[i][eCchar];
     }
+    /* Copy X scores to O */
     if (alphsize > eOchar) {
         memcpy(M[eOchar], M[eXchar], alphsize * sizeof(double));
         for (i = 0;  i < alphsize;  i++) {
@@ -1042,7 +1043,8 @@ s_ScalePSSM(int **matrix, int rows, int cols, double ** freq_ratios,
 
         Blast_FreqRatioToScore(row_matrix, 1, cols, Lambda);
         row[eXchar] = Xscore = s_CalcXScore(row, cols, 1, col_prob);
-        row[eSelenocysteine] = Xscore;
+        /* use Cysteine score for Selenocysteine */
+        row[eSelenocysteine] = row[eCchar];
         if (cols > eOchar) {
             row[eOchar] = Xscore;
         }

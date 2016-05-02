@@ -2978,6 +2978,10 @@ CAlignFormatUtil::GetAsciiProteinMatrix(const char* matrix_name,
         retval((size_t)k_PSymbol[i], '*') = retval('*',(size_t)k_PSymbol[i]) = -4;
     }
     retval('*', '*') = 1; 
+    // this is to count Selenocysteine to Cysteine matches as positive
+    retval('U', 'U') = retval('C', 'C');
+    retval('U', 'C') = retval('C', 'C');
+    retval('C', 'U') = retval('C', 'C');
 }
 
 

@@ -738,14 +738,15 @@ BOOST_AUTO_TEST_CASE(GetSequenceProteinWithSelenocysteine) {
     SBlastSequence seq(GetSequence(*seqloc, eBlastEncodingProtein, scope,
                                     eNa_strand_unknown, eSentinels, 
                                     &warnings));
-    BOOST_REQUIRE(!warnings.empty());
+    // Check that there are no warning
+    BOOST_REQUIRE(warnings.empty());
 
     // Check that the sequence has its selenocysteine residues replaced by
-    // X's (positions 10 and 15, without counting sentinels);
+    // C's (positions 10 and 15, without counting sentinels);
     const TSeqPos kReplacedPositions[] = { 10+1, 15+1 };
-    const Uint1 kXresidue = AMINOACID_TO_NCBISTDAA[(int)'X'];
+    const Uint1 kCresidue = AMINOACID_TO_NCBISTDAA[(int)'C'];
     for (TSeqPos i = 0; i < DIM(kReplacedPositions); i++) {
-        BOOST_REQUIRE_EQUAL((int)kXresidue, 
+        BOOST_REQUIRE_EQUAL((int)kCresidue, 
                                 (int)seq.data.get()[kReplacedPositions[i]]);
     }
 

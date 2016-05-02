@@ -863,9 +863,15 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
     safe_buf.reset(buf);
     *buf_var++ = GetSentinelByte(eBlastEncodingProtein);
     for (i = 0; i < sv.size(); i++) {
+        // Silently change Selenocysteine (U) to Cysteine (C)
+        // This is needed because composition based stats works with 20 amino
+        // acids, and computes residue frequencies for a query before
+        // converting U to C.
+        if (sv[i] == AMINOACID_TO_NCBISTDAA[(int)'U']) {
+            *buf_var++ = AMINOACID_TO_NCBISTDAA[(int)'C'];
+
         // Change unsupported residues to X
-        if (sv[i] == AMINOACID_TO_NCBISTDAA[(int)'U'] ||
-            sv[i] == AMINOACID_TO_NCBISTDAA[(int)'O']) {
+        } else if (sv[i] == AMINOACID_TO_NCBISTDAA[(int)'O']) {
             replaced_residues.push_back(i);
             *buf_var++ = AMINOACID_TO_NCBISTDAA[(int)'X'];
         } else if (!s_IsValidResidue(sv[i])) {

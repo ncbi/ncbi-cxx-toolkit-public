@@ -1367,7 +1367,7 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
     long lineno = 0;
     double  xscore;
     register int  index1, index2;
-    int x_index, u_index, o_index;
+    int x_index, u_index, o_index, c_index;
     const char kCommentChar = '#';
     const char* kTokenStr = " \t\n\r";
 
@@ -1479,14 +1479,15 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
         return 2;
     }
 
-    /* Use the X scores for the more exotic ncbistdaa characters;
+    /* Use the C scores for U and X scores for O characters;
        if this is not done then they will never align to non-gap residues */
     x_index = AMINOACID_TO_NCBISTDAA['X'];
     u_index = AMINOACID_TO_NCBISTDAA['U'];
     o_index = AMINOACID_TO_NCBISTDAA['O'];
+    c_index = AMINOACID_TO_NCBISTDAA['C'];
     for (index1 = 0; index1 < sbp->alphabet_size; index1++) {
-        matrix[u_index][index1] = matrix[x_index][index1];
-        matrix[index1][u_index] = matrix[index1][x_index];
+        matrix[u_index][index1] = matrix[c_index][index1];
+        matrix[index1][u_index] = matrix[index1][c_index];
         matrix[o_index][index1] = matrix[x_index][index1];
         matrix[index1][o_index] = matrix[index1][x_index];
     }
@@ -1546,7 +1547,7 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     Int2 status = 0;
     Int4** matrix = NULL;
     int i, j;   /* loop indices */
-    int x_index, u_index, o_index;
+    int x_index, u_index, o_index, c_index;
     const SNCBIPackedScoreMatrix* psm;
 
     ASSERT(sbp);
@@ -1584,14 +1585,15 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
         }
     }
 
-    /* Use the X scores for the more exotic ncbistdaa characters;
+    /* Use the C scores for U and X scores for the O characters;
        if this is not done then they will never align to non-gap residues */
     x_index = AMINOACID_TO_NCBISTDAA['X'];
     u_index = AMINOACID_TO_NCBISTDAA['U'];
     o_index = AMINOACID_TO_NCBISTDAA['O'];
+    c_index = AMINOACID_TO_NCBISTDAA['C'];
     for (i = 0; i < sbp->alphabet_size; i++) {
-        matrix[u_index][i] = matrix[x_index][i];
-        matrix[i][u_index] = matrix[i][x_index];
+        matrix[u_index][i] = matrix[c_index][i];
+        matrix[i][u_index] = matrix[i][c_index];
         matrix[o_index][i] = matrix[x_index][i];
         matrix[i][o_index] = matrix[i][x_index];
     }

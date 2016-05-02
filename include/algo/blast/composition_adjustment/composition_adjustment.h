@@ -43,8 +43,8 @@ extern "C" {
 
 /* Some characters in the NCBIstdaa alphabet, including ambiguity
    characters, selenocysteine and the stop character. */
-enum { eGapChar = 0, eBchar = 2,  eDchar = 4,  eEchar = 5, eIchar = 9,
-       eLchar = 11,  eNchar = 13, eQchar = 15, eXchar = 21,
+enum { eGapChar = 0, eBchar = 2, eCchar = 3,  eDchar = 4,  eEchar = 5,
+       eIchar = 9, eLchar = 11,  eNchar = 13, eQchar = 15, eXchar = 21,
        eZchar = 23,  eSelenocysteine = 24, eStopChar = 25,
        eOchar = 26,  eJchar = 27};
 
