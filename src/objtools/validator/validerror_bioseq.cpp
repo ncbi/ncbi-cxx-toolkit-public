@@ -1217,25 +1217,44 @@ void CValidError_bioseq::ValidateBioseqContext(
         }
     }
 
-    if (!m_Imp.IsNoCitSubPubs() && !x_HasCitCub(bsh)) {
+    if (!m_Imp.IsNoCitSubPubs() && !x_HasCitSub(bsh)) {
         PostErr(m_Imp.IsGenomeSubmission() ? eDiag_Error : eDiag_Info, eErr_GENERIC_MissingPubInfo,
                 "Expected submission citation is missing for this Bioseq", seq);
     }
 
 }
 
-bool CValidError_bioseq::x_HasCitCub(CBioseq_Handle bsh) const
+
+bool CValidError_bioseq::x_HasCitSub(const CPub_equiv& pub)
+{
+    ITERATE(CPub_equiv::Tdata, it, pub.Get()) {
+        if (x_HasCitSub(**it)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CValidError_bioseq::x_HasCitSub(const CPub& pub)
+{
+    if (pub.IsSub()) {
+        return true;
+    } else if (pub.IsEquiv() && x_HasCitSub(pub.GetEquiv())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CValidError_bioseq::x_HasCitSub(CBioseq_Handle bsh) const
 {
     bool has_cit_sub = false;
     CSeqdesc_CI p(bsh, CSeqdesc::e_Pub);
     while (p && !has_cit_sub) {
         if (p->GetPub().IsSetPub()) {
-            ITERATE(CPubdesc::TPub::Tdata, it, p->GetPub().GetPub().Get()) {
-                if ((*it)->IsSub()) {
-                    has_cit_sub = true;
-                    break;
-                }
-            }
+            has_cit_sub = x_HasCitSub(p->GetPub().GetPub());
         }
         ++p;
     }
