@@ -291,11 +291,6 @@ void CDiscrepancyContext::Update_Bioseq_set_Stack(CTypesConstIterator& it)
 }
 
 
-void CDiscrepancyContext::Parse(CConstRef<CSerialObject> root)
-{
-    Parse(*root);
-}
-
 void CDiscrepancyContext::Parse(const CSerialObject& root)
 {
     CTypesConstIterator i;
