@@ -81,6 +81,7 @@ NCBI_PARAM_DECL(int, GENBANK, ID2_DEBUG);
 NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE);
 NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_IDS_REQUEST_SIZE);
 NCBI_PARAM_DECL(string, GENBANK, ID2_PROCESSOR);
+NCBI_PARAM_DECL(bool, GENBANK, VDB_WGS);
 
 #ifdef _DEBUG
 # define DEFAULT_DEBUG_LEVEL CId2ReaderBase::eTraceError
@@ -96,6 +97,8 @@ NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_IDS_REQUEST_SIZE, 100,
                   eParam_NoThread, GENBANK_ID2_MAX_IDS_REQUEST_SIZE);
 NCBI_PARAM_DEF_EX(string, GENBANK, ID2_PROCESSOR, "",
                   eParam_NoThread, GENBANK_ID2_PROCESSOR);
+NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_WGS, true,
+                  eParam_NoThread, GENBANK_VDB_WGS);
 
 int CId2ReaderBase::GetDebugLevel(void)
 {
@@ -1620,8 +1623,10 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
             param->SetName("id2:allow");
             // allow new blob-state field in several ID2 replies
             param->SetValue().push_back("*.blob-state");
-            // enable VDB-based WGS sequences
-            param->SetValue().push_back("vdb-wgs");
+            if ( NCBI_PARAM_TYPE(GENBANK, VDB_WGS)::GetDefault() ) {
+                // enable VDB-based WGS sequences
+                param->SetValue().push_back("vdb-wgs");
+            }
             request.SetParams().Set().push_back(param);
         }
     }
