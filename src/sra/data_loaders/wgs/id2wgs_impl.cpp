@@ -108,7 +108,7 @@ NCBI_PARAM_DEF_EX(int, ID2WGS, DEBUG, eDebug_error,
 
 
 NCBI_PARAM_DECL(bool, ID2WGS, FILTER_ALL);
-NCBI_PARAM_DEF_EX(bool, ID2WGS, FILTER_ALL, true,
+NCBI_PARAM_DEF_EX(bool, ID2WGS, FILTER_ALL, false,
                   eParam_NoThread, ID2WGS_FILTER_ALL);
 
 
@@ -1009,6 +1009,7 @@ CID2WGSProcessor_Impl::Resolve(const CSeq_id& id,
     }
     if ( text_id->IsSetVersion() &&
          !IsCorrectVersion(seq, text_id->GetVersion()) ) {
+        seq.m_ValidWGS = false;
         return seq;
     }
     seq.m_ValidWGS = true;
