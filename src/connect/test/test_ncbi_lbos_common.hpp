@@ -1176,15 +1176,14 @@ private:
         /* 
          * Divide polls in parts if there are more that 60 sockets 
          */
-        size_t polls_size = m_SocketPool.size();
-        size_t chunk_size = 60;
-        size_t j = 0;
+        size_t polls_size = m_SocketPool.size(), chunk_size = 60, j = 0;
         // do we have more than one chunk?
         if (polls_size > chunk_size) {
             // handle all but the last chunk
             for (; j < polls_size - chunk_size; j += chunk_size) {
-                auto begin = m_SocketPool.begin() + j;
-                auto end = m_SocketPool.begin() + j + chunk_size;
+                vector<CSocketAPI::SPoll>::iterator begin, end;
+                begin = m_SocketPool.begin() + j;
+                end = m_SocketPool.begin() + j + chunk_size;
                 vector<CSocketAPI::SPoll> polls(begin, end);
                 CSocketAPI::Poll(polls, &rw_timeout, &n_ready);
                 /* save result of poll */
@@ -1897,17 +1896,19 @@ void CheckErrorCodeStrings()
 
     /* 451 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::e_LBOSDNSResolveError, "",
+                                  CLBOSException::EErrCode::
+                                  e_LBOSDNSResolveError, "",
                                   kLBOSBadRequest).GetErrCodeString();
-    NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "DNS error. Possibly, cannot get IP "
-                                       "of current machine or resolve provided "
-                                       "hostname for the server");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "DNS error. Possibly, cannot "
+                                 "get IP of current machine or resolve "
+                                 "provided hostname for the server");
     /* 452 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSInvalidArgs, "",
                                   kLBOSBadRequest).GetErrCodeString();
-    NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Invalid arguments were provided. No "
-                                       "request to LBOS was sent");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, 
+                                 "Invalid arguments were provided. No "
+                                 "request to LBOS was sent");
 
     /* 453 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
@@ -2200,14 +2201,14 @@ void TryFindTwice__SecondTimeNoOp()
     int count_before;
     SELECT_PORT(count_before, node_name, port);
     string resolved_ip = CLBOSIpCache::HostnameResolve(node_name, host,
-        "1.0.0", port);
+                                                       "1.0.0", port);
     int i;
     stringstream sstream;
     string IP;
     BOOST_CHECK_NO_THROW(
         for (i = 0; i < 100; i++) {
             IP = CLBOSIpCache::HostnameTryFind(node_name, host,
-                "1.0.0", port);
+                                               "1.0.0", port);
             if (resolved_ip != IP)
                 break; 
         }
