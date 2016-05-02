@@ -257,6 +257,18 @@ bool CGff3Reader::xUpdateAnnotExon(
                 if (!record.InitializeFeature(m_iFlags, pFeature)) {
                     return false;
                 }
+                CRef<CSeq_feat> pParent;
+                if (!xGetParentFeature(*pFeature, pParent)  ||  
+                        !pParent->GetData().IsGene()) {
+                    AutoPtr<CObjReaderLineException> pErr(
+                        CObjReaderLineException::Create(
+                        eDiag_Error,
+                        0,
+                        "Bad data line: Exon record referring to non-existing mRNA or gene parent.",
+                        ILineError::eProblem_FeatureBadStartAndOrStop));
+                    ProcessError(*pErr, pEC);
+                    return false;
+                }
                 if (! xAddFeatureToAnnot(pFeature, pAnnot)) {
                     return false;
                 }

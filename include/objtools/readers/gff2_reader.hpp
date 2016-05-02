@@ -226,7 +226,7 @@ public:
         const string&,
         CRef< CSeq_feat >& );
 
-    bool x_GetParentFeature(
+    bool xGetParentFeature(
         const CSeq_feat&,
         CRef< CSeq_feat >& );
 

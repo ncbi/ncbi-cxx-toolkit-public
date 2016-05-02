@@ -1101,7 +1101,7 @@ bool CGff2Reader::xAddFeatureToAnnot(
 {
     if (IsExon(pFeature)) {
         CRef< CSeq_feat > pParent;    
-        if (!x_GetParentFeature(*pFeature, pParent) ) {
+        if (!xGetParentFeature(*pFeature, pParent) ) {
             pAnnot->SetData().SetFtable().push_back(pFeature) ;
             return true;
         }
@@ -1141,7 +1141,7 @@ bool CGff2Reader::xGetExistingFeature(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::x_GetParentFeature(
+bool CGff2Reader::xGetParentFeature(
     const CSeq_feat& feature,
     CRef< CSeq_feat >& pParent )
 //  ----------------------------------------------------------------------------
