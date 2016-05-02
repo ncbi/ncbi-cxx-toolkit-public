@@ -42,7 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
-DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
+DEFINE_STATIC_FAST_MUTEX(s_IPCacheLock);
 static const char* kLBOSAnnounceRegistrySection("LBOS_ANNOUNCEMENT");
 static const char* kLBOSServiceVariable("SERVICE");
 static const char* kLBOSVersionVariable("VERSION");
@@ -72,6 +72,10 @@ struct SLbosConfigure
     string prev_version;
     string current_version;
 };
+
+
+CSafeStatic< map< CLBOSIpCacheKey, string > > CLBOSIpCache::sm_IpCache;
+
 
 bool CLBOSIpCacheKey::operator==(const CLBOSIpCacheKey& rh) const
 {
@@ -110,20 +114,23 @@ bool CLBOSIpCacheKey::operator>(const CLBOSIpCacheKey& rh) const
 
 
 std::string CLBOSIpCache::HostnameTryFind(string service, string hostname, 
-                                      string version, unsigned short port)
+                                          string version, unsigned short port)
 {
     if (hostname == "")
         hostname = CSocketAPI::GetLocalHostAddress();
     map<CLBOSIpCacheKey, string>::iterator pos;
     CLBOSIpCacheKey key(service, hostname, version, port);
-    pos = x_IpCache->find(key);
-    if (pos != x_IpCache->end())
-        return pos->second;
-    else return hostname;
+    {{
+        CFastMutexGuard spawn_guard(s_IPCacheLock);
+        pos = sm_IpCache->find(key);
+        if (pos != sm_IpCache->end())
+            return pos->second;
+        else return hostname;
+    }}
 }
 
 std::string CLBOSIpCache::HostnameResolve(string service, string hostname, 
-                                      string version, unsigned short port)
+                                          string version, unsigned short port)
 {
     /* LBOS behavior - if DNS could not resolve hostname, throw 400 Bad Request.
     * Here we emulate LBOS behavior.
@@ -137,26 +144,33 @@ std::string CLBOSIpCache::HostnameResolve(string service, string hostname,
     }
     map<CLBOSIpCacheKey, string>::iterator pos;
     CLBOSIpCacheKey key(service, hostname, version, port);
-    pos = x_IpCache->find(key);
-    /* If hostname is already in the cache, return previously resolved IP */
-    if (pos != x_IpCache->end())
-        return pos->second;
+    {{
+        CFastMutexGuard spawn_guard(s_IPCacheLock);
+        pos = sm_IpCache->find(key);
+        /* If hostname is already in the cache, return previously resolved IP */
+        if (pos != sm_IpCache->end())
+            return pos->second;
+
+    }}
     /* We did not find IP in the cache. Then we resolve the hostname to IP and
-       save it to the cache. To make sure that our changes do not interfere
-       with changes from another thread, we use 'insert' instead of '[]' (not
-       to rewrite) */
+        save it to the cache. To make sure that our changes do not interfere
+        with changes from another thread, we use 'insert' instead of '[]' (not
+           to rewrite) */
     string host =
         CSocketAPI::HostPortToString(CSocketAPI::gethostbyname(hostname), 0);
     /* If gethostbyname() could not resolve the hostname, it will return ":0".
-       In this case we go back to the original hostname, so that LBOS can try 
-       to resolve it itself. */
+        In this case we go back to the original hostname, so that LBOS can try 
+        to resolve it itself. */
     if (host == ":0") {
         host = hostname; 
     }
-    /* Save pair */
-    std::pair<map<CLBOSIpCacheKey, string>::iterator, bool> res =
-        x_IpCache->insert(std::pair<CLBOSIpCacheKey, string>(key, host));
-    return res.first->second;
+    {{
+        CFastMutexGuard spawn_guard(s_IPCacheLock);
+        /* Save pair */
+        std::pair<map<CLBOSIpCacheKey, string>::iterator, bool> res =
+            sm_IpCache->insert(std::pair<CLBOSIpCacheKey, string>(key, host));
+        return res.first->second;
+    }}
 }
 
 void CLBOSIpCache::HostnameDelete(string service, string hostname, 
@@ -166,13 +180,13 @@ void CLBOSIpCache::HostnameDelete(string service, string hostname,
         hostname = CSocketAPI::GetLocalHostAddress();
     map<CLBOSIpCacheKey, string>::iterator pos;
     CLBOSIpCacheKey key(service, hostname, version, port);
-    pos = x_IpCache->find(key);
-    if (pos != x_IpCache->end())
-        x_IpCache->erase(pos);
+    {{
+        CFastMutexGuard spawn_guard(s_IPCacheLock);
+        pos = sm_IpCache->find(key);
+        if (pos != sm_IpCache->end())
+            sm_IpCache->erase(pos);
+    }}
 }
-
-
-CSafeStatic< map< CLBOSIpCacheKey, string > > CLBOSIpCache::x_IpCache;
 
 
 static void s_ProcessResult(unsigned short result, 
@@ -229,9 +243,6 @@ void LBOS::Announce(const string& service, const string& version,
     if (cur_host == "0.0.0.0") {
         ip = cur_host;
     } else {
-        /* We make a guard here because CLBOSIpCache saves resolution results 
-           to its static storage */
-        CFastMutexGuard spawn_guard(s_GlobalLock);
         ip = CLBOSIpCache::HostnameResolve(service, cur_host, version, port);
     }
     /* If healthcheck is on the same host as server, we try to replace hostname 
@@ -297,7 +308,6 @@ void LBOS::Deannounce(const string&         service,
     if (host == "" || host == "0.0.0.0") {
         ip = host;
     } else {
-        CFastMutexGuard spawn_guard(s_GlobalLock);
         ip = CLBOSIpCache::HostnameTryFind(service, host, version, port);
     }
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
@@ -310,7 +320,6 @@ void LBOS::Deannounce(const string&         service,
     /* Then remove resolution result from cache */
     if (host != "" /* invalid input */ &&
         host != "0.0.0.0" /* not handled by cache */) {
-        CFastMutexGuard spawn_guard(s_GlobalLock);
         CLBOSIpCache::HostnameDelete(service, host, version, port);
     }
 }
