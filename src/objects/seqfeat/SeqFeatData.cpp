@@ -2801,7 +2801,6 @@ START_SUBTYPE(mobile_element)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
-    ADD_QUAL(satellite);
     ADD_QUAL(standard_name);
     ADD_QUAL(transposon);
     ADD_QUAL(usedin);
