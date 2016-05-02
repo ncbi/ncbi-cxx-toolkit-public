@@ -125,7 +125,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     if (IsOptionSet(eAuth)) {
         auth = m_Opts.auth;
     } else {
-        auth = GetDiagContext().GetUsername() + '@' + GetDiagContext().GetHost();
+        auth = DEFAULT_APP_UID "::" + GetDiagContext().GetUsername() + '@' +
+            GetDiagContext().GetHost();
     }
 
     init_string += "&client=";
