@@ -953,6 +953,8 @@ void PrintErrorArchive(const CArgs & a, const list<CRef<CBlast4_error> > & msg)
 			CBlast4_get_request_info_request & info= req.SetBody().SetGet_request_info();
 			info.SetRequest_id("Error");
 			CBlast4_get_search_results_reply & results = archive->SetResults();
+                        // Pacify unused varaible warning, the set above is used to populate mandatory field
+			(void) results;
 			archive->SetMessages() = msg;
 			CBlastFormat::PrintArchive(archive, a[kArgOutput].AsOutputFile());
 		}
