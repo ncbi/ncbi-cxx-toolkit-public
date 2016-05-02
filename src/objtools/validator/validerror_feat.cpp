@@ -5667,6 +5667,13 @@ void CValidError_feat::ValidateCommonCDSProduct
                     prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
                 CSeq_entry_Handle nuc_nps = 
                     nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+                if (!nuc_nps) {
+                    for (CSeq_loc_CI loc_i(feat.GetLocation()); loc_i && !nuc_nps; ++loc_i) {
+                        nuc = m_Scope->GetBioseqHandle(loc_i.GetSeq_id());
+                        nuc_nps =
+                            nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+                    }
+                }
 
                 if ( ! prod_nps || ! nuc_nps || prod_nps != nuc_nps ) {
                     if (m_Imp.IsSmallGenomeSet()) {
@@ -7925,19 +7932,18 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 
         if (num_match_by_locus == 0 && num_match_by_locus_tag == 0) {
             // find gene on bioseq to match genexref
-            if (gene_xref->IsSetLocus() &&
-                !NStr::IsBlank(gene_xref->GetLocus()) &&
-                !FindGeneToMatchGeneXref(*gene_xref, bsh.GetSeq_entry_Handle()) &&
-                !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus())) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
-                    "Feature has gene locus cross-reference but no equivalent gene feature exists", feat);
-            }
             if (gene_xref->IsSetLocus_tag() &&
                 !NStr::IsBlank(gene_xref->GetLocus_tag()) &&
                 !FindGeneToMatchGeneXref(*gene_xref, bsh.GetSeq_entry_Handle()) &&
                 !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus_tag())) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
                     "Feature has gene locus_tag cross-reference but no equivalent gene feature exists", feat);
+            } else if (gene_xref->IsSetLocus() &&
+                !NStr::IsBlank(gene_xref->GetLocus()) &&
+                !FindGeneToMatchGeneXref(*gene_xref, bsh.GetSeq_entry_Handle()) &&
+                !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus())) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
+                    "Feature has gene locus cross-reference but no equivalent gene feature exists", feat);
             }
         }
     }
