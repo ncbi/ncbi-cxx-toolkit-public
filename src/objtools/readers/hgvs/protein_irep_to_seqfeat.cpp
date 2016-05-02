@@ -131,10 +131,6 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateIdentitySubvarref(const string
     seq_literal->SetLength(length);
 
     return g_CreateIdentity(seq_literal);
-
-//    auto var_ref = Ref(new CVariation_ref());
-//    var_ref->SetIdentity(seq_literal);
-//    return var_ref;
 }
 
 
@@ -160,7 +156,7 @@ CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSeqfeat(const string& var_name,
 
 CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(CRef<CVariantExpression>& variant_expr) const 
 {
-    const auto& simple_variant = (*variant_expr->GetSeqvars().begin())->GetVariants().front()->GetSimple();
+    const auto& simple_variant = variant_expr->GetSeqvars().front()->GetVariants().front()->GetSimple();
     const auto seq_type = (*variant_expr->GetSeqvars().begin())->GetSeqtype();
 
     if (seq_type != eVariantSeqType_p) {
@@ -238,6 +234,11 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarref(const string& var_name,
         case CSimpleVariant::TType::e_Frameshift:
             var_ref = x_CreateFrameshiftVarref(identifier, var_type.GetFrameshift(), method);
             break;
+        case CSimpleVariant::TType::e_Prot_ext:
+        {
+            string message = "Protein-extension HGVS-to-Seqfeat conversion is not currently supported. Please report";
+            NCBI_THROW(CVariationIrepException, eUnsupported, message);
+        }
     }
 
 
@@ -402,7 +403,6 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinSubVarref(const string&
         const auto final_ncbieaa = x_ConvertToNcbieaa(final_aa);
         CSeq_data seq_data;
         seq_data.SetNcbieaa().Set(final_ncbieaa);
-        //subvar_ref->SetMissense(seq_data);
         subvar_ref = g_CreateMissense(seq_data);
     }
     if (method != CVariation_ref::eMethod_E_unknown) {
