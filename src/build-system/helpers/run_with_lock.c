@@ -463,9 +463,21 @@ int main(int argc, const char* const* argv)
     sprintf(pid_str, "%ld", (long)getpid());
     sprintf(s_LockName, "%s.lock", options.base);
     for (n = 1;  n <= NSIG;  ++n) {
-        if (n != SIGKILL  &&  n != SIGSTOP  &&  n != SIGTSTP  &&  n != SIGCONT
-            &&  n != SIGSEGV  &&  n != SIGBUS  &&  n != SIGILL
-            &&  n != SIGCHLD  &&  n != SIGPIPE) {
+        switch (n) {
+            /* Blacklist some signals for various reasons. */
+        case SIGQUIT: case SIGILL: case SIGABRT: case SIGFPE: case SIGSEGV:
+        case SIGBUS: case SIGSYS: case SIGTRAP: case SIGXCPU: case SIGXFSZ:
+            /* Don't touch anything severe enough to cause a core dump. */
+        case SIGPIPE:
+            /* Should react immediately here too. */
+        case SIGKILL: case SIGSTOP:
+            /* Uncatchable. */
+        case SIGTSTP: case SIGTTIN: case SIGTTOU:
+            /* Harmless temporary suspension; don't overreact. */
+        case SIGCHLD: case SIGCONT: case SIGURG: case SIGWINCH:
+            /* Totally harmless; don't overreact. */
+            break;
+        default:
             s_OrigHandlers[n] = signal(n, s_OnSignal);
         }
     }
