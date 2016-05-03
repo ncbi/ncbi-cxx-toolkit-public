@@ -300,7 +300,7 @@ enum EOverlapFlags {
     fOverlap_IgnoreTopology = 1 << 2, ///< Ignore sequence topology (circularity)
     fOverlap_Default = 0              ///< Enable multi-id, multi-strand, check topology
 };
-
+typedef int TOverlapFlags;
 
 /// Updated version of TestForOverlap64(). Allows more control over
 /// handling multi-id/multi-strand bioseqs.
@@ -311,7 +311,7 @@ Int8 TestForOverlapEx(const CSeq_loc& loc1,
                       const CSeq_loc& loc2,
                       EOverlapType    type,
                       CScope*         scope = 0,
-                      EOverlapFlags   flags = fOverlap_Default);
+                      TOverlapFlags   flags = fOverlap_Default);
 
 /// Calls TestForOverlap64() and if the result is greater than kMax_Int
 /// truncates it to kMax_Int. To get the exact value use TestForOverlap64().

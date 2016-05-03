@@ -1348,7 +1348,7 @@ typedef map<CSeq_id_Handle, STopologyInfo> TTopologyMap;
 
 STopologyInfo s_GetTopology(CSeq_id_Handle idh,
                             TTopologyMap&  topologies,
-                            EOverlapFlags flags,
+                            TOverlapFlags flags,
                             CScope*       scope)
 {
     TTopologyMap::const_iterator found = topologies.find(idh);
@@ -1379,7 +1379,7 @@ void s_SeqLocToTotalRangesInfoMapByStrand(const CSeq_loc&         loc,
                                           TRangeInfoMapByStrand&  infos,
                                           TSynMap&                syns,
                                           TTopologyMap&           topologies,
-                                          EOverlapFlags           flags,
+                                          TOverlapFlags           flags,
                                           CScope*                 scope)
 {
     CSeq_loc_CI it(loc,
@@ -1650,7 +1650,7 @@ Int8 s_Test_Extremes(const CSeq_loc& loc1,
                      EOverlapType    type,
                      TSynMap&        syns,
                      TTopologyMap&   topologies,
-                     EOverlapFlags   flags,
+                     TOverlapFlags   flags,
                      CScope*         scope)
 {
     // Here we accept only two overlap types.
@@ -1752,7 +1752,7 @@ Int8 s_Test_Interval(const CSeq_loc& loc1,
                      const CSeq_loc& loc2,
                      TSynMap&        syns,
                      TTopologyMap&   topologies,
-                     EOverlapFlags   flags,
+                     TOverlapFlags   flags,
                      CScope*         scope)
 {
     TRangeInfoMapByStrand ranges1, ranges2;
@@ -1808,7 +1808,7 @@ Int8 s_Test_Interval(const CSeq_loc& loc1,
 Int8 s_TestForOverlapEx(const CSeq_loc& loc1,
                         const CSeq_loc& loc2,
                         EOverlapType    type,
-                        EOverlapFlags   flags,
+                        TOverlapFlags   flags,
                         TSeqPos         circular_len,
                         CScope*         scope)
 {
@@ -1955,7 +1955,7 @@ Int8 TestForOverlapEx(const CSeq_loc& loc1,
                       const CSeq_loc& loc2,
                       EOverlapType    type,
                       CScope*         scope,
-                      EOverlapFlags   flags)
+                      TOverlapFlags   flags)
 {
     return s_TestForOverlapEx(loc1, loc2, type, flags, kInvalidSeqPos, scope);
 }

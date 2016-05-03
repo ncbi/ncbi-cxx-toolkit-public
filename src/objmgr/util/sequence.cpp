@@ -892,6 +892,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
     }
 
     CConstRef<CSeq_feat> feat_ref;
+    TOverlapFlags overlap_flags = fOverlap_Default;
 
     CBioseq_Handle bioseq_handle;
     CRange<TSeqPos> range;
@@ -1018,6 +1019,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
         cleaned_loc->Assign( loc );
         if( opts & fBestFeat_IgnoreStrand ) {
             cleaned_loc->SetStrand(eNa_strand_plus);
+            overlap_flags |= fOverlap_IgnoreTopology;
         }
         if( plugin ) {
             plugin->processLoc( bioseq_handle, cleaned_loc, circular_length );
@@ -1052,17 +1054,41 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
 
             try {
                 // treat subset as a special case
-                Int8 cur_diff = ( !revert_locations_this_iteration ) ?
-                    TestForOverlap64(*candidate_feat_loc,
-                    *cleaned_loc_this_iteration,
-                    overlap_type_this_iteration,
-                    circular_length,
-                    &scope) :
-                TestForOverlap64(*cleaned_loc_this_iteration,
-                    *candidate_feat_loc,
-                    overlap_type_this_iteration,
-                    circular_length,
-                    &scope);
+                Int8 cur_diff = -1;
+                if ( !revert_locations_this_iteration ) {
+                    if (overlap_flags == fOverlap_Default) {
+                        cur_diff = TestForOverlap64(*candidate_feat_loc,
+                            *cleaned_loc_this_iteration,
+                            overlap_type_this_iteration,
+                            circular_length,
+                            &scope);
+                    }
+                    else {
+                        cur_diff = TestForOverlapEx(*candidate_feat_loc,
+                            *cleaned_loc_this_iteration,
+                            overlap_type_this_iteration,
+                            &scope,
+                            overlap_flags);
+                    }
+                }
+                else {
+                    if (overlap_flags == fOverlap_Default) {
+                        cur_diff = TestForOverlap64(*cleaned_loc_this_iteration,
+                            *candidate_feat_loc,
+                            overlap_type_this_iteration,
+                            circular_length,
+                            &scope);
+                    }
+                    else {
+                        cur_diff = TestForOverlapEx(*cleaned_loc_this_iteration,
+                            *candidate_feat_loc,
+                            overlap_type_this_iteration,
+                            &scope,
+                            overlap_flags);
+                    }
+                }
+cout << "***** diff = " << cur_diff << endl;
+
                 if( plugin ) {
                     plugin->postProcessDiffAmount( cur_diff, cleaned_loc_this_iteration, 
                         candidate_feat_loc, scope, sel, circular_length );
