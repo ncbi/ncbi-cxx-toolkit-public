@@ -617,6 +617,18 @@ CMultiReaderApp::Run(void)
     string argOutFile = args["output"].AsString();
     string argInDir = args["indir"].AsString();
     string argOutDir = args["outdir"].AsString();
+
+    //typedef CGff3Reader::TAnnotList TAnnotList;
+    //TAnnotList annots;
+    //int m_iFlags = 0;
+    //CGff3Reader reader(m_iFlags, "prodigal", "prodigal");
+    //CRef<CMessageListenerBase> m_pErrors;
+    //CNcbiIfstream istr(argInFile);
+    //cerr << istr.good() << endl;
+    //reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    //cerr << annots.size() << endl;
+    //return 0;
+
     if ((argInFile != "-")  &&  !argInDir.empty()) {
         cerr << "multireader: command line args -input and -indir are incompatible." 
              << endl;

@@ -402,7 +402,9 @@ void CFeatTableEdit::xFeatureAddProteinId(
     if (protein_id.empty()) {
         protein_id = xNextProteinId(mf);
     }
-    xFeatureAddQualifier(mf, "protein_id", protein_id);
+    if (!protein_id.empty()) {
+        xFeatureAddQualifier(mf, "protein_id", protein_id);
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -439,7 +441,9 @@ void CFeatTableEdit::xFeatureAddTranscriptId(
     if (transcript_id.empty()) {
         transcript_id = xNextTranscriptId(mf);
     }
-    xFeatureAddQualifier(mf, "transcript_id", transcript_id);
+    if (!transcript_id.empty()) {
+        xFeatureAddQualifier(mf, "transcript_id", transcript_id);
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -660,6 +664,9 @@ string CFeatTableEdit::xNextProteinId(
     if (!parentGene) {
 		return "";
 	}
+    if (!parentGene.GetData().GetGene().IsSetLocus_tag()) {
+        return "";
+    }
     string locusTag = parentGene.GetData().GetGene().GetLocus_tag();
 	string disAmbig = "";
 	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
@@ -685,6 +692,9 @@ string CFeatTableEdit::xNextTranscriptId(
     if (!parentGene) {
 		return "";
 	}
+    if (!parentGene.GetData().GetGene().IsSetLocus_tag()) {
+        return "";
+    }
     string locusTag = parentGene.GetData().GetGene().GetLocus_tag();
     string disAmbig = "";
 	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
