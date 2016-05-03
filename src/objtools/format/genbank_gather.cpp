@@ -132,6 +132,12 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         }
     }
 
+    if (cfg.IsFormatLite()) {
+        // minimal information for Lite format
+        GATHER_BLOCK(Locus, CLocusItem);
+        return;
+    }
+
     // gather needed blocks
     GATHER_BLOCK(Head, CStartSectionItem);
     GATHER_ANCHOR(Locus, "locus");

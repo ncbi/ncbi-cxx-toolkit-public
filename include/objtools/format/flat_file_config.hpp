@@ -88,7 +88,8 @@ public:
         eFormat_GFF3,
         eFormat_FeaturesOnly,
         eFormat_SAM,
-        eFormat_AGP
+        eFormat_AGP,
+        eFormat_Lite
     };
 
     enum EMode {
@@ -360,6 +361,8 @@ public:
     bool IsFormatGFF    (void) const { return m_Format == eFormat_GFF;     }
     bool IsFormatGFF3   (void) const { return m_Format == eFormat_GFF3;    }
 	bool IsFormatAGP    (void) const { return m_Format == eFormat_AGP;     }
+	bool IsFormatLite   (void) const { return m_Format == eFormat_Lite;    }
+
     // setters
     void SetFormat(const TFormat& format) { m_Format = format; }
     void SetFormatGenbank(void) { m_Format = eFormat_GenBank;  }
@@ -370,6 +373,7 @@ public:
     void SetFormatGFF    (void) { m_Format = eFormat_GFF;      }
     void SetFormatGFF3   (void) { m_Format = eFormat_GFF3;     }
     void SetFormatAGP    (void) { m_Format = eFormat_AGP;      }
+    void SetFormatLite   (void) { m_Format = eFormat_Lite;     }
 
     // -- Mode
     // getters

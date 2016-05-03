@@ -178,6 +178,7 @@ CFlatGatherer* CFlatGatherer::New(CFlatFileConfig::TFormat format)
     switch ( format ) {
     case CFlatFileConfig::eFormat_GenBank:
     case CFlatFileConfig::eFormat_GBSeq:
+    case CFlatFileConfig::eFormat_Lite:
         //case CFlatFileGenerator<>::eFormat_Index:
         return new CGenbankGatherer;
         
