@@ -615,6 +615,8 @@ static const SPreferredQual s_PreferredList[] = {
     { CSubSource::eSubtype_pop_variant, false } ,
     { CSubSource::eSubtype_segment, false } ,
     { CSubSource::eSubtype_subclone, false } ,
+    { CSubSource::eSubtype_other, false } ,
+    { COrgMod::eSubtype_other, true } ,
 };
 
 
@@ -765,22 +767,50 @@ string CAutoDefModifierCombo::GetSourceDescriptionString(const CBioSource& bsrc)
     }
 
     // add maxicircle/minicircle
+    x_AddMinicircle(source_description, bsrc);
+    
+    return source_description;
+}
+
+
+bool CAutoDefModifierCombo::x_AddMinicircle(string& source_description, const string& note_text)
+{
+    bool any_change = false;
+    vector<CTempString> tokens;
+    NStr::Tokenize(note_text, ";", tokens);
+    ITERATE(vector<CTempString>, t, tokens) {
+        if (NStr::Find(*t, "maxicircle") != string::npos ||
+            NStr::Find(*t, "minicircle") != string::npos) {
+            string add = *t;
+            NStr::TruncateSpacesInPlace(add);
+            source_description += " " + add;
+            any_change = true;
+        }
+    }
+    return any_change;
+}
+
+
+bool CAutoDefModifierCombo::x_AddMinicircle(string& source_description, const CBioSource& bsrc)
+{
+    bool any_change = false;
     if (bsrc.IsSetSubtype()) {
         ITERATE(CBioSource::TSubtype, it, bsrc.GetSubtype()) {
             if ((*it)->IsSetSubtype() && (*it)->IsSetName() &&
                 (*it)->GetSubtype() == CSubSource::eSubtype_other) {
-                const string& note = (*it)->GetName();
-                if (NStr::Find(note, "maxicircle") != string::npos) {
-                    source_description += " maxicircle";
-                }
-                if (NStr::Find(note, "minicircle") != string::npos) {
-                    source_description += " minicircle";
-                }
+                any_change |= x_AddMinicircle(source_description, (*it)->GetName());
             }
         }
     }
-    
-    return source_description;
+    if (bsrc.IsSetOrg() && bsrc.GetOrg().IsSetOrgname() && bsrc.GetOrg().GetOrgname().IsSetMod()) {
+        ITERATE(COrgName::TMod, it, bsrc.GetOrg().GetOrgname().GetMod()) {
+            if ((*it)->IsSetSubtype() && (*it)->IsSetSubname() &&
+                (*it)->GetSubtype() == COrgMod::eSubtype_other) {
+                any_change |= x_AddMinicircle(source_description, (*it)->GetSubname());
+            }
+        }
+    }
+    return any_change;
 }
 
 

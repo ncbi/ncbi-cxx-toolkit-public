@@ -168,6 +168,9 @@ private:
     void x_CleanUpTaxName (string &tax_name);
     bool x_AddSubsourceString (string &source_description, const CBioSource& bsrc, CSubSource::ESubtype st);
     bool x_AddOrgModString (string &source_description, const CBioSource& bsrc, COrgMod::ESubtype st);
+
+    static bool x_AddMinicircle(string& source_description, const CBioSource& bsrc);
+    static bool x_AddMinicircle(string& source_description, const string& note_text);
     
     typedef pair<COrgMod::ESubtype, bool> TExtraOrgMod;
     typedef map<COrgMod::ESubtype, bool> TExtraOrgMods;

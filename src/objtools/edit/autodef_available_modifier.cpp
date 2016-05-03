@@ -338,9 +338,6 @@ string CAutoDefAvailableModifier::GetSubSourceLabel (CSubSource::ESubtype st)
         case CSubSource::eSubtype_identified_by:
             label = "identified by";
             break;
-        case CSubSource::eSubtype_other:
-            label = "subsource note";
-            break;
         default:
             label = "";
             break;
@@ -448,9 +445,6 @@ string CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::ESubtype st)
             break;
         case COrgMod::eSubtype_gb_synonym:
             label = "synonym";
-            break;
-        case COrgMod::eSubtype_other:
-            label = "organism note";
             break;
         default:
             label = COrgMod::GetSubtypeName(st);
