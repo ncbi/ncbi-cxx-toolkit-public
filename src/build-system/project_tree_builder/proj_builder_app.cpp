@@ -405,7 +405,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(4,1,3) );
+    SetVersion( CVersionInfo(4,1,4) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -2749,6 +2749,9 @@ void CProjBulderApp::UpdateDepGraph( CProjectTreeBuilder::TFiles& files)
             ITERATE(list<string>, l, libdep) {
                 list<string> dep_list;
                 string dep(*l);
+                if (dep.at(0) == '#') {
+                    break;
+                }
                 if (CSymResolver::IsDefine(dep)) {
                     string resolved;
                     if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {

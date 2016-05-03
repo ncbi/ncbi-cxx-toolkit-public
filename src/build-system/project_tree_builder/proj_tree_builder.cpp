@@ -890,7 +890,11 @@ void  SMakeProjectT::VerifyLibDepends(
             }
             if (!wrong.empty()) {
                 fix=true;
-                warnings.push_back("wrong library order: " + p->Id() + " should precede " + NStr::Join(wrong,","));
+#if 0
+                if (find(missing.begin(), missing.end(), p->Id()) == missing.end()) {
+                    warnings.push_back("wrong library order: " + p->Id() + " should precede " + NStr::Join(wrong,","));
+                }
+#endif
             }
             libsofar.insert(p->Id());
             if (!obsolete) {
@@ -930,9 +934,10 @@ void  SMakeProjectT::VerifyLibDepends(
             for (size_t a= recommend.size(); a!= 0; --a) {
                 advice.insert(advice.end(), recommend[a-1].begin(), recommend[a-1].end());
             }
+#if 0
             warnings.push_back("present     library order: " + NStr::Join(original,","));
             warnings.push_back("recommended library order: " + NStr::Join(advice,","));
-
+#endif
             list<string> advice_full;
             ITERATE( list<string>, a, advice) {
                 for(list<CProjKey>::const_iterator p = depends_ids.begin();
@@ -946,6 +951,7 @@ void  SMakeProjectT::VerifyLibDepends(
             liborder = advice_full;
         }
     }
+#if 0
     if (!warnings.empty() && expected_3party != nullptr) {
         if (libs_3party == nullptr) {
             warnings.push_front("====== Library order warnings (3rd party libs) ======");
@@ -955,6 +961,7 @@ void  SMakeProjectT::VerifyLibDepends(
         PTB_WARNING_EX(mkname,ePTB_InvalidMakefile,
             NStr::Join(warnings,"\n"));
     }
+#endif
 #else
 /*
     this compares dependency rank,
@@ -2395,6 +2402,266 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     return proj_key;
 }
 //-----------------------------------------------------------------------------
+
+void s_AnalyzeLibraryOrder( CSymResolver& resolver, const CProjectItemsTree&  tree)
+{
+    CProjBulderApp& app(GetApp());
+    CProjectItemsTree::TProjects::const_iterator p;
+    for (p = tree.m_Projects.begin(); p != tree.m_Projects.end(); ++p) {
+        if (p->first.Type() != CProjKey::eApp) {
+            continue;
+        }
+        const CProjItem& project = p->second;
+
+        list<string> list_in;
+        if (!project.m_DataSource.GetValue("LIB", list_in)) {
+            continue;
+        }
+        list<string> lib_list_in, lib_list_in0;
+        for( const string& lib : list_in) {
+            if (lib.at(0) == '#') {
+                break;
+            }
+            else if (!CSymResolver::IsDefine(lib) && CSymResolver::HasDefine(lib)) {
+                string def = FilterDefine(lib);
+                string val = CSymResolver::StripDefine(def);
+                list<string> tmp;
+                if (project.m_DataSource.GetValue(val, tmp)) {
+                    copy(tmp.begin(), tmp.end(), back_inserter(lib_list_in));
+                } else {
+                    lib_list_in.push_back(def);
+                }
+            } else {
+                lib_list_in.push_back(lib);
+            }
+        }
+        if (lib_list_in.empty()) {
+            continue;
+        }
+        lib_list_in0 = lib_list_in;
+
+        map< string,  set<string> > lib_contents;
+        map< string,  set<string> > lib_dependencies;
+
+        list<string> lib_list_out[2];
+        size_t pass=0;
+        for (pass=0; pass<4; ++pass) {
+
+            if (pass > 1) {
+                lib_list_out[0] = lib_list_out[1];
+                lib_list_out[1].clear();
+            }
+            list<string>& list_in  = pass == 0 ? lib_list_in     : lib_list_out[0];
+            list<string>& list_out = pass == 0 ? lib_list_out[0] : lib_list_out[1];
+
+            bool failed = false;
+            for (list<string>::const_iterator l = list_in.begin(); ; ++l) {
+
+// list_in may change (grow) during the cycle
+                if (l == list_in.end()) {
+                    break;
+                }
+                const string& lib = *l;
+                if (failed) {
+                    list_out.push_back(lib);
+                    continue;
+                }
+
+// this item contents
+                list<string> resolved;
+                if (!CSymResolver::IsDefine(lib) ||
+                    !project.m_DataSource.GetValue(CSymResolver::StripDefine(lib), resolved)) {
+                    resolver.Resolve(lib, &resolved);
+                }
+                for_each(resolved.begin(), resolved.end(), [&lib_contents, &lib](const string& ce) {
+                    string e(ce);
+                    CSymResolver::StripSuffix(e);
+                    if (!e.empty() && e.at(0) != '@') {
+                        lib_contents[lib].insert(e);
+                    }});
+
+// this item dependencies
+                set<string> alldepends;
+                set<string> allflags;
+                for( const string& lib_item : lib_contents[lib]) {
+                    s_CollectAllLeaves( app.m_GraphDepPrecedes, app.m_GraphDepFlags, lib_item, alldepends, allflags);
+                }
+                for_each(alldepends.begin(), alldepends.end(), [&lib_dependencies, &lib](const string& ce){
+                    string e(ce);
+                    CSymResolver::StripSuffix(e);
+                    if (!e.empty() && e.at(0) != '@') {
+                        lib_dependencies[lib].insert(e);
+                    }});
+
+                list<string>::iterator iout = list_out.begin();
+                bool do_append = true;
+
+// check that this item dependencies do not contain items in 'out' list
+                for (; iout != list_out.end(); ++iout) {
+                    for( const string& lib_dep : lib_dependencies[lib]) {
+                        if (lib_contents[*iout].find(lib_dep) != lib_contents[*iout].end()) {
+                            do_append = false;
+                            break;
+                        }
+                    }
+                    if (!do_append) {
+                        break;
+                    }
+                }
+
+                // good to append
+                if (do_append) {
+                    list_out.push_back(lib);
+                    continue;
+                }
+
+                list<string>::const_iterator i = iout;
+                set<string> already_there;
+                bool do_replace = false;
+
+// maybe we could drop item at iout, because new one includes it
+// compare lib_contents[*iout] with the contents of the new item
+                already_there.clear();
+                for( const string& lib_item : lib_contents[*iout]) {
+                    if (lib_contents[lib].find(lib_item) != lib_contents[lib].end()) {
+                        already_there.insert(lib_item);
+                    }
+                }
+                if (already_there.size() == lib_contents[*iout].size() &&
+                    already_there.size() != lib_contents[lib].size()) {
+                    // it seems that the new item can replace old one
+                    // make a note to check that it indeed may be inserted here
+                    do_replace = true;
+                }
+
+// is there a need to add this item?
+// compare this item contents with what is already there
+                already_there.clear();
+                for (i = iout; i != list_out.end(); ++i) {
+                    for( const string& lib_item : lib_contents[lib]) {
+                        if (lib_contents[*i].find(lib_item) != lib_contents[*i].end()) {
+                            already_there.insert(lib_item);
+                        }
+                    }
+                }
+                if (already_there.size() == lib_contents[lib].size()) {
+                    // this is a duplicate which is already included
+                    continue;
+                }
+                // if this item adds only few new libraries, maybe we would better
+                // add them expicitely instead
+                if (//!do_replace &&
+                    already_there.size() != 0 &&
+                    already_there.size() >= (lib_contents[lib].size() * 3)/4) {
+                    for( const string& lib_item : lib_contents[lib]) {
+                        if (already_there.find(lib_item) == already_there.end()) {
+                            list_in.push_back(lib_item);
+                        }
+                    }
+                    continue;
+                }
+
+// if we insert it at iout, check that items that follow do not depend on it
+                do_append = false;
+                bool do_insert = true;
+                i = iout;
+                if (do_replace) {
+                    ++i;
+                }
+                for (; i != list_out.end(); ++i) {
+                    for( const string& lib_dep : lib_dependencies[*i]) {
+                        if (lib_contents[lib].find(lib_dep) != lib_contents[lib].end()) {
+// maybe both include the same library.
+// if so, that is acceptable
+                            if (lib_contents[*i].find(lib_dep) != lib_contents[*i].end()) {
+                                do_append = true;
+                                continue;
+                            }
+                            do_insert = false;
+                            break;
+                        }
+                    }
+                    if (!do_insert) {
+                        break;
+                    }
+                }
+
+// good to insert
+                if (do_insert) {
+                    i = iout;
+                    if (do_append && ++i == list_out.end()) {
+                        list_out.push_back(lib);
+                    } else {
+                        if (do_replace) {
+                            iout = list_out.erase(iout);
+                        }
+                        list_out.insert(iout, lib);
+                    }
+                    continue;
+                }
+
+// once again, try to append, allowing identical libraries in both
+                do_append = true;
+// check that this item dependencies do not contain items in 'out' list
+                for (i=iout; i != list_out.end(); ++i) {
+                    for( const string& lib_dep : lib_dependencies[lib]) {
+                        if (lib_contents[*i].find(lib_dep) != lib_contents[*i].end()) {
+                            if (lib_contents[lib].find(lib_dep) != lib_contents[lib].end()) {
+                                continue;
+                            }
+                            do_append = false;
+                            break;
+                        }
+                    }
+                    if (!do_append) {
+                        break;
+                    }
+                }
+
+                // not sure about this one
+                if (do_replace) {
+                    list_out.erase(iout);
+                    for( const string& lib_item : already_there) {
+                        list_out.remove(lib_item);
+                    }
+                }
+                // good to append
+                if (do_append) {
+                    list_out.push_back(lib);
+                    continue;
+                }
+// Do not know what to do
+// keep it as is, in a hope that it will work
+//                failed = true;
+                list_out.push_back(lib);
+            }
+            
+            if (list_in.size() == list_out.size() &&
+                equal(list_in.begin(), list_in.end(), list_out.begin())) {
+                break;
+            }
+        }
+        if (pass != 0) {
+            list<string> warnings;
+            warnings.push_back("====== Library order warnings (toolkit libs) ======");
+            warnings.push_back("present     library order: " + NStr::Join(lib_list_in0," "));
+            if (lib_list_out[0].size() == lib_list_out[1].size() &&
+                equal(lib_list_out[0].begin(), lib_list_out[0].end(), lib_list_out[1].begin())) {
+                warnings.push_back("recommended library order: " + NStr::Join(lib_list_out[0]," "));
+            } else {
+                warnings.push_back("Failed to identify recommended library order");
+                if (pass >= 2) {
+                    warnings.push_back("candidate1: " + NStr::Join(lib_list_out[0]," "));
+                    warnings.push_back("candidate2: " + NStr::Join(lib_list_out[1]," "));
+                }
+            }
+            PTB_WARNING_EX(project.m_DataSource.GetFileName(),ePTB_InvalidMakefile, NStr::Join(warnings,"\n"));
+        }
+    }
+}
+//-----------------------------------------------------------------------------
+
+
 void 
 CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
                                          const string&         root_src_path,
@@ -2446,6 +2713,10 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
                                   subtree_makefiles.m_Dll, 
                                   subtree_makefiles.m_App,
                                   subtree_makefiles.m_User, tree);
+
+    if (!GetApp().IsScanningWholeTree()) {
+        s_AnalyzeLibraryOrder(resolver, *tree);
+    }
 }
 
 
