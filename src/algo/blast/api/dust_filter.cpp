@@ -118,6 +118,7 @@ void s_CombineDustMasksWithUserProvidedMasks(CSeqVector& data,
         query_masks->Add(*seq_interval);
     }
 
+    SetDiagFilter(eDiagFilter_Post, "!(1305.31)");
     CRef<CSeq_loc_Mapper> mapper = s_CreateSeqLocMapper(*query_id, seqloc,
                                                         scope);
     query_masks.Reset(mapper->Map(*query_masks));
