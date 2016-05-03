@@ -360,6 +360,11 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
 
    /* Make sure the HSPs in the HSP list are sorted by score, as they should
       be. */
+#ifdef _DEBUG
+   {
+       Blast_HSPListSortByScore(hsp_list);
+   }
+#endif
    ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
 
    /* set up the tree for HSP containment tests. subject_length
@@ -1711,8 +1716,9 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
 
     /* Re-sort the hit lists according to their best e-values, because they
        could have changed. Only do this for a database search. */
-    if (BlastSeqSrcGetTotLen(seq_src) > 0)
+    if (BlastSeqSrcGetTotLen(seq_src) > 0) {
         Blast_HSPResultsSortByEvalue(results);
+    }
 
     if(hit_params->options->query_cov_hsp_perc > 0 || hit_params->options->max_hsps_per_subject > 0) {
     	s_FilterBlastResults(results, hit_params->options, query_info, program_number);

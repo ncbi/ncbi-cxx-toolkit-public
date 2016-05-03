@@ -1247,25 +1247,25 @@ void Blast_HSPListSortByScore(BlastHSPList* hsp_list)
     }
 }
 
-/** Precision to which e-values are compared. */
-#define FUZZY_EVALUE_COMPARE_FACTOR 1e-6
-
-/** Compares 2 real numbers up to a fixed precision.
+/** Compares 2 evalues, consider them equal if both are close enough to zero.
  * @param evalue1 First evalue [in]
  * @param evalue2 Second evalue [in]
  */
 static int
-s_FuzzyEvalueComp(double evalue1, double evalue2)
+s_EvalueComp(double evalue1, double evalue2)
 {
-   if (evalue1 < 1.0e-180 && evalue2 < 1.0e-180)
-	return 0;
+    const double epsilon = 1.0e-180;
+    if (evalue1 < epsilon && evalue2 < epsilon) {
+        return 0;
+    }
 
-   if (evalue1 < (1-FUZZY_EVALUE_COMPARE_FACTOR)*evalue2)
-      return -1;
-   else if (evalue1 > (1+FUZZY_EVALUE_COMPARE_FACTOR)*evalue2)
-      return 1;
-   else
-      return 0;
+    if (evalue1 < evalue2) {
+        return -1;
+    } else if (evalue1 > evalue2) {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 /** Comparison callback function for sorting HSPs by e-value and score, before
@@ -1293,7 +1293,7 @@ s_EvalueCompareHSPs(const void* v1, const void* v2)
    else if (!h2)
       return -1;
 
-   if ((retval = s_FuzzyEvalueComp(h1->evalue, h2->evalue)) != 0)
+   if ((retval = s_EvalueComp(h1->evalue, h2->evalue)) != 0)
       return retval;
 
    return ScoreCompareHSPs(v1, v2);
@@ -2836,8 +2836,8 @@ void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list,
 }
 
 /** Callback for sorting hsp lists by their best evalue/score;
- * Evalues are compared only up to a relative error of
- * FUZZY_EVALUE_COMPARE_FACTOR.
+ * Evalues are compared with the condition that if both are close enough to
+ * zero (currently < 1.0e-180), they are considered equal.
  * It is assumed that the HSP arrays in each hit list are already sorted by
  * e-value/score.
 */
@@ -2859,7 +2859,7 @@ s_EvalueCompareHSPLists(const void* v1, const void* v2)
    else if (h2->hspcnt == 0)
       return -1;
 
-   if ((retval = s_FuzzyEvalueComp(h1->best_evalue,
+   if ((retval = s_EvalueComp(h1->best_evalue,
                                    h2->best_evalue)) != 0)
       return retval;
 
@@ -3038,7 +3038,7 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
          following code assumes hsp_list->hsp_array[0] has the best score. */
       Blast_HSPListSortByEvalue(hsp_list);
       /* Compare e-values only with a certain precision */
-      evalue_order = s_FuzzyEvalueComp(hsp_list->best_evalue,
+      evalue_order = s_EvalueComp(hsp_list->best_evalue,
                                        hit_list->worst_evalue);
       if (evalue_order > 0 ||
           (evalue_order == 0 &&
