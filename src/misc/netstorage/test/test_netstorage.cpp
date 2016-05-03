@@ -35,6 +35,7 @@
 
 #include <misc/netstorage/netstorage.hpp>
 
+#include <corelib/request_ctx.hpp>
 #include <corelib/test_boost.hpp>
 
 #include <util/random_gen.hpp>
@@ -72,6 +73,9 @@ NCBI_PARAM_DEF(string, filetrack, api_key, \
         "bqyMqDEHsQ3foORxBO87FMNhXjv9LxuzF9Rbs4HLuiaf2pHOku7D9jDRxxyiCtp2");
 typedef NCBI_PARAM_TYPE(filetrack, api_key) TFileTrack_Key;
 
+NCBI_PARAM_DECL(string, netstorage_api, my_ncbi_id);
+NCBI_PARAM_DEF(string, netstorage_api, my_ncbi_id, "none");
+typedef NCBI_PARAM_TYPE(netstorage_api, my_ncbi_id) TNetStorage_MyNcbiId;
 
 // ENetStorageObjectLocation to type mapping
 typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_Unknown>
@@ -1553,9 +1557,28 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
         Open(netstorage, id));
 }
 
+void s_MyNcbiID()
+{
+    const string value(TNetStorage_MyNcbiId::GetDefault());
+
+    // If testing this is turned off
+    if (value == "none") return;
+
+    const string name("my_ncbi_id");
+    CRequestContext_PassThrough ctx;
+
+    // Send my_ncbi_id to FileTrack every other time
+    if (ctx.IsSet(name)) {
+        ctx.Reset(name);
+    } else {
+        ctx.Set(name, TNetStorage_MyNcbiId::GetDefault());
+    }
+}
+
 template <class TPolicy>
 void SFixture<TPolicy>::Test(CNetStorage&)
 {
+    s_MyNcbiID();
     data.reset(Create<TExpected>(netstorage, TLoc::source));
 
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
@@ -1598,6 +1621,7 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 template <class TPolicy>
 void SFixture<TPolicy>::Test(CNetStorageByKey&)
 {
+    s_MyNcbiID();
     string unique_key2 = GetUniqueKey();
     string unique_key3 = GetUniqueKey();
     CNstObjectGuard<CNetStorageByKey> guard(netstorage, unique_key3);
