@@ -57,7 +57,7 @@ GO
 
 
 -- NB: change it manually when applying
-IF 1 = 0
+IF 1 = 1
 BEGIN
     RAISERROR( 'Fix the condition manually before running the update script', 11, 1 )
     SET NOEXEC ON
