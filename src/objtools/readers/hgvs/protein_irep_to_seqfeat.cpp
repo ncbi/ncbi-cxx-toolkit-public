@@ -236,7 +236,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarref(const string& var_name,
             break;
         case CSimpleVariant::TType::e_Prot_ext:
         {
-            string message = "Protein-extension HGVS-to-Seqfeat conversion is not currently supported. Please report";
+            string message = "Protein-extension HGVS-to-Seqfeat conversion is not currently supported.\nPlease report to variation-services@ncbi.nlm.nih.gov";
             NCBI_THROW(CVariationIrepException, eUnsupported, message);
         }
     }
