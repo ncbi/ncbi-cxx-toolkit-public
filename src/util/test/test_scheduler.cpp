@@ -318,7 +318,7 @@ class CTestSchedListener : public IScheduler_Listener
 public:
     CTestSchedListener(void) : m_EventFired(false) {}
 
-    virtual void OnNextExecutionTimeChange(IScheduler* scheduler) {
+    virtual void OnNextExecutionTimeChange(IScheduler* /*scheduler*/) {
         m_EventFired = true;
     }
 

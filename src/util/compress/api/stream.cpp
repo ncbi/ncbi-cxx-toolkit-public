@@ -282,7 +282,7 @@ CCompressionProcessor::EStatus CTransparentProcessor::Process(
 }
 
 CCompressionProcessor::EStatus CTransparentProcessor::Flush(
-                      char* out_buf, size_t  out_size,
+                      char* /*out_buf*/, size_t /*out_size*/,
                       /* out */      size_t* out_avail)
 {
     *out_avail = 0;
@@ -290,14 +290,14 @@ CCompressionProcessor::EStatus CTransparentProcessor::Flush(
 }
 
 CCompressionProcessor::EStatus CTransparentProcessor::Finish(
-                      char* out_buf, size_t  out_size,
-                      /* out */      size_t* out_avail)
+                      char* /*out_buf*/, size_t  /*out_size*/,
+                      /* out */          size_t* out_avail)
 {
     *out_avail = 0;
     return eStatus_EndOfData;
 }
 
-CCompressionProcessor::EStatus CTransparentProcessor::End(int abandon)
+CCompressionProcessor::EStatus CTransparentProcessor::End(int /*abandon*/)
 {
     SetBusy(false);
     return eStatus_Success;

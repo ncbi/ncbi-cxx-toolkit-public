@@ -1475,7 +1475,7 @@ void g_GZip_ScanForChunks(CNcbiIstream& is, IChunkHandler& handler)
                     strm.zalloc   = Z_NULL;
                     strm.zfree    = Z_NULL;
                     strm.opaque   = Z_NULL;
-                    ret = inflateInit2(&strm, 15+16 /* max windowbits + automatic gzip header decoding */);
+                    ret = inflateInit2(&strm, 15+16 /* max windowbits + automatic gzip header decoding */); /* NCBI_FAKE_WARNING */
                     if (ret != Z_OK) {
                         throw "inflateInit2() failed: " + string(zError(ret));
                     }

@@ -76,15 +76,15 @@ public:
 
 
     /// Check if this event matches given series id
-    bool IsMatch(TScheduler_SeriesID id) const
+    bool IsMatch(TScheduler_SeriesID match_id) const
     {
-        return this->id == id;
+        return this->id == match_id;
     }
 
     /// Check if this event matches given task
-    bool IsMatch(IScheduler_Task* task) const
+    bool IsMatch(IScheduler_Task* match_task) const
     {
-        return &*this->task == task;
+        return &*this->task == match_task;
     }
 
     /// Dummy function to support code templates and avoid duplication of code

@@ -94,7 +94,7 @@ BEGIN_NCBI_SCOPE
 ///     may specify the buffer location (if 0, an internal storage gets
 ///     allocated and later freed upon stream destruction).
 ///
-/// @param flags
+/// @param stm_flags
 ///     controls whether IReader is destroyed upon stream destruction,
 ///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
@@ -106,10 +106,10 @@ class NCBI_XNCBI_EXPORT CRStream : public CNcbiIstream
 {
 public:
     CRStream(IReader*             r,
-             streamsize           buf_size = 0,
-             CT_CHAR_TYPE*        buf      = 0,
-             CRWStreambuf::TFlags flags    = 0)
-        : CNcbiIstream(0), m_Sb(r, 0, buf_size, buf, flags)
+             streamsize           buf_size  = 0,
+             CT_CHAR_TYPE*        buf       = 0,
+             CRWStreambuf::TFlags stm_flags = 0)
+        : CNcbiIstream(0), m_Sb(r, 0, buf_size, buf, stm_flags)
     {
         init(r ? &m_Sb : 0);
     }
@@ -131,7 +131,7 @@ private:
 ///     may specify the buffer location (if 0, an internal storage gets
 ///     allocated and later freed upon stream destruction).
 ///
-/// @param flags
+/// @param stm_flags
 ///     controls whether IWriter is destroyed upon stream destruction,
 ///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
@@ -143,10 +143,10 @@ class NCBI_XNCBI_EXPORT CWStream : public CNcbiOstream
 {
 public:
     CWStream(IWriter*             w,
-             streamsize           buf_size = 0,
-             CT_CHAR_TYPE*        buf      = 0,
-             CRWStreambuf::TFlags flags    = 0)
-        : CNcbiOstream(0), m_Sb(0, w, buf_size, buf, flags)
+             streamsize           buf_size  = 0,
+             CT_CHAR_TYPE*        buf       = 0,
+             CRWStreambuf::TFlags stm_flags = 0)
+        : CNcbiOstream(0), m_Sb(0, w, buf_size, buf, stm_flags)
     {
         init(w ? &m_Sb : 0);
     }
@@ -169,7 +169,7 @@ private:
 ///     may specify the buffer location (if 0, an internal storage gets
 ///     allocated and later freed upon stream destruction).
 ///
-/// @param flags
+/// @param stm_flags
 ///     controls whether IReaderWriter is destroyed upon stream destruction,
 ///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
@@ -181,20 +181,20 @@ class NCBI_XNCBI_EXPORT CRWStream : public CNcbiIostream
 {
 public:
     CRWStream(IReaderWriter*       rw,
-              streamsize           buf_size = 0,
-              CT_CHAR_TYPE*        buf      = 0,
-              CRWStreambuf::TFlags flags    = 0)
-        : CNcbiIostream(0), m_Sb(rw, buf_size, buf, flags)
+              streamsize           buf_size  = 0,
+              CT_CHAR_TYPE*        buf       = 0,
+              CRWStreambuf::TFlags stm_flags = 0)
+        : CNcbiIostream(0), m_Sb(rw, buf_size, buf, stm_flags)
     {
         init(rw ? &m_Sb : 0);
     }
 
     CRWStream(IReader*             r,
               IWriter*             w,
-              streamsize           buf_size = 0,
-              CT_CHAR_TYPE*        buf      = 0,
-              CRWStreambuf::TFlags flags    = 0)
-        : CNcbiIostream(0), m_Sb(r, w, buf_size, buf, flags)
+              streamsize           buf_size  = 0,
+              CT_CHAR_TYPE*        buf       = 0,
+              CRWStreambuf::TFlags stm_flags = 0)
+        : CNcbiIostream(0), m_Sb(r, w, buf_size, buf, stm_flags)
     {
         init(r  ||  w ? &m_Sb : 0);
     }

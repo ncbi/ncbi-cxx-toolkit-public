@@ -158,16 +158,16 @@ public:
 
         bm::id_t block_count(const bm::word_t* block, unsigned idx)
         {
-            bm::id_t count = 0;
+            bm::id_t cnt = 0;
             bm::id_t first_bit;
             
             if (IS_FULL_BLOCK(block) || (block == 0))
             {
-                count = 1;
+                cnt = 1;
                 if (idx)
                 {
                     first_bit = block ? 1 : 0;
-                    count -= !(prev_block_border_bit_ ^ first_bit);
+                    cnt -= !(prev_block_border_bit_ ^ first_bit);
                 }
                 prev_block_border_bit_ = block ? 1 : 0;
             }
@@ -176,11 +176,11 @@ public:
                 if (BM_IS_GAP(block))
                 {
                     gap_word_t* gap_block = BMGAP_PTR(block);
-                    count = gap_length(gap_block) - 1;
+                    cnt = gap_length(gap_block) - 1;
                     if (idx)
                     {
                         first_bit = gap_test(gap_block, 0);
-                        count -= !(prev_block_border_bit_ ^ first_bit);
+                        cnt -= !(prev_block_border_bit_ ^ first_bit);
                     }
                         
                     prev_block_border_bit_ = 
@@ -189,13 +189,13 @@ public:
                 else // bitset
                 {
                     unsigned bit_count;
-                    count = bit_block_calc_count_change(block,
+                    cnt = bit_block_calc_count_change(block,
                                                 block + bm::set_block_size,
                                                 &bit_count);
                     if (idx)
                     {
                         first_bit = block[0] & 1;
-                        count -= !(prev_block_border_bit_ ^ first_bit);
+                        cnt -= !(prev_block_border_bit_ ^ first_bit);
                     }
                     prev_block_border_bit_ = 
                         block[set_block_size-1] >> ((sizeof(block[0]) * 8) - 1);
@@ -695,10 +695,10 @@ public:
             return bm::set_array_size;
         }
 
-        unsigned top_block_size = (unsigned)
+        unsigned top_blk_size = (unsigned)
             (bits_to_store / (bm::set_block_size * sizeof(bm::word_t) * 
                               bm::set_array_size * 8));
-        return top_block_size + (top_block_size < bm::set_array_size);
+        return top_blk_size + (top_blk_size < bm::set_array_size);
     }
 
     /**
@@ -1374,16 +1374,16 @@ public:
 
     unsigned mem_used() const
     {
-        unsigned mem_used = sizeof(*this);
-        mem_used += temp_block_ ? sizeof(word_t) * bm::set_block_size : 0;
-        mem_used += sizeof(bm::word_t**) * top_block_size_;
+        unsigned used = sizeof(*this);
+        used += temp_block_ ? sizeof(word_t) * bm::set_block_size : 0;
+        used += sizeof(bm::word_t**) * top_block_size_;
 
         for (unsigned i = 0; i < top_block_size_; ++i)
         {
-            mem_used += blocks_[i] ? sizeof(void*) * bm::set_array_size : 0;
+            used += blocks_[i] ? sizeof(void*) * bm::set_array_size : 0;
         }
 
-        return mem_used;
+        return used;
     }
 
     /** Returns true if second level block pointer is 0.

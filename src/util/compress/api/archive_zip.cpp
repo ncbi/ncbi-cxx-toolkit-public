@@ -263,7 +263,7 @@ void CArchiveZip::GetEntryInfo(size_t index, CArchiveEntryInfo* info)
     // is very OS- and creation software dependent. 
     // Try to analyze some common cases for Unix-type attributes:
 
-    char ver = fs.m_version_made_by >> 8;
+    char ver = (char)(fs.m_version_made_by >> 8);
     mode_t mode = (fs.m_external_attr >> 16) & 0xFFFF;
 
     switch (ver) {

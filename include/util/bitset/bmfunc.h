@@ -1372,7 +1372,7 @@ unsigned gap_set_array(T* buf, const T* arr, unsigned len)
 
 	for (i = 1; i < len; ++i)
 	{
-		T curr = arr[i];
+		curr = arr[i];
 		if (curr == prev + 1)
 		{
             ++acc;

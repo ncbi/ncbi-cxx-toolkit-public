@@ -401,8 +401,8 @@ void s_DiffText(void)
         assert(*it == CDiffOperation(DIFF_EQUAL,  ""    )); it++;
     }}
     {{
-        string s1 = "123\nAAA\nBBB\n123\n";
-        string s2 = "CCC\n123\nDDD\n";
+        s1 = "123\nAAA\nBBB\n123\n";
+        s2 = "CCC\n123\nDDD\n";
 
         CDiffText d;
         CDiffList& diffs = d.Diff(s1, s2, CDiffText::fRemoveEOL);

@@ -56,7 +56,7 @@ public:
     {
         delete value;
     }
-    void InsertElement(const Uint8& /*key*/, CElement* value) {}
+    void InsertElement(const Uint8& /*key*/, CElement* /*value*/) {}
     ECache_InsertFlag CanInsertElement(const Uint8& /*key*/, CElement* value)
     {
         if ( !value ) {

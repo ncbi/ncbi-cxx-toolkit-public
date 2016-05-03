@@ -1177,13 +1177,13 @@ SIZE_TYPE CSeqConvert_imp::CPacker::Pack(const char* src, TSeqPos length)
             ++i; // merge when possible
         }
 
-        TSeqPos length  = m_Boundaries[i + 1] - start;
-        char *  segment = m_Target.NewSegment(coding, length);
+        TSeqPos len = m_Boundaries[i + 1] - start;
+        char* segment = m_Target.NewSegment(coding, len);
         if (coding == CSeqUtil::e_not_set) { // gap
             _ASSERT(m_GapsOK);
-            result += length;
+            result += len;
         } else {
-            result += CSeqConvert::Convert(src, m_SrcCoding, start, length,
+            result += CSeqConvert::Convert(src, m_SrcCoding, start, len,
                                            segment, coding);
         }
     }

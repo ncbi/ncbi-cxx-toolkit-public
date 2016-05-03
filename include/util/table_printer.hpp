@@ -257,7 +257,7 @@ private:
     template<>
     inline
     CTablePrinter & operator << <CTablePrinter::SEndOfCell>(
-        CTablePrinter & table_printer, const CTablePrinter::SEndOfCell & end_of_cell ) 
+        CTablePrinter & table_printer, const CTablePrinter::SEndOfCell & /*end_of_cell*/) 
     {
         return table_printer.EndOfCurrentCell();
     }

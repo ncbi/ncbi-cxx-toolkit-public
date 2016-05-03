@@ -385,7 +385,7 @@ public:
                 if (m_Bucket.size() < i) {
                     break;
                 }
-                TResourcePool* rp = m_Bucket[i];
+                rp = m_Bucket[i];
             }}
             if (rp) {
                 rp->FreeAll();

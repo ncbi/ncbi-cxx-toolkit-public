@@ -53,10 +53,10 @@ void CTablePrinter::SColInfoVec::AddCol(
 CTablePrinter::CTablePrinter(
     const SColInfoVec & vecColInfo, 
     ostream & ostrm,
-    const string & m_sColumnSeparator)
+    const string & sColumnSeparator)
     : m_eState(eState_Initial), 
       m_vecColInfo(vecColInfo), m_ostrm(ostrm), m_iNextCol(0),
-      m_sColumnSeparator(m_sColumnSeparator)
+      m_sColumnSeparator(sColumnSeparator)
 {
     // if any column width is less than the length of the name of the column,
     // expand it

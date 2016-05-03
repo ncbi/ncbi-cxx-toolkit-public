@@ -275,7 +275,7 @@ bool CUTTPWriterTest::Test(size_t buffer_size)
     m_Writer.Reset(buffer, buffer_size);
     m_WriterTestStream = s_TestStream;
 
-    int counter = sizeof(s_TestChunkSequence) / sizeof(*s_TestChunkSequence);
+    size_t counter = sizeof(s_TestChunkSequence) / sizeof(*s_TestChunkSequence);
 
     const SChunkData* test_seq = s_TestChunkSequence;
 

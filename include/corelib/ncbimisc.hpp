@@ -1172,9 +1172,9 @@ template <size_t KEmbeddedSize, class TType = char>
 class CFastBuffer
 {
 public:
-    CFastBuffer(size_t size)
-        : m_Size(size),
-          m_Buffer(size <= KEmbeddedSize ? m_EmbeddedBuffer : new TType[size])
+    CFastBuffer(size_t buf_size)
+        : m_Size(buf_size),
+          m_Buffer(buf_size <= KEmbeddedSize ? m_EmbeddedBuffer : new TType[buf_size])
     {}
     ~CFastBuffer() { if (m_Buffer != m_EmbeddedBuffer) delete[] m_Buffer; }
 

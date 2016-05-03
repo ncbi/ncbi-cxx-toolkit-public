@@ -1696,7 +1696,7 @@ bm::id_t bvector<Alloc>::count_range(bm::id_t left,
 {
     BM_ASSERT(left <= right);
 
-    unsigned count = 0;
+    unsigned cnt = 0;
 
     // calculate logical number of start and destination blocks
     unsigned nblock_left  = unsigned(left  >>  bm::set_block_shift);
@@ -1719,7 +1719,7 @@ bm::id_t bvector<Alloc>::count_range(bm::id_t left,
         {
             if (block_count_arr)
             {
-                count += block_count_arr[nblock_left];
+                cnt += block_count_arr[nblock_left];
             }
             else
             {
@@ -1730,20 +1730,20 @@ bm::id_t bvector<Alloc>::count_range(bm::id_t left,
         {
             if (left_gap)
             {
-                count += gap_bit_count_range(BMGAP_PTR(block), 
-                                            (gap_word_t)nbit_left,
-                                            (gap_word_t)r);
+                cnt += gap_bit_count_range(BMGAP_PTR(block), 
+                                          (gap_word_t)nbit_left,
+                                          (gap_word_t)r);
             }
             else
             {
-                count += bit_block_calc_count_range(block, nbit_left, r);
+                cnt += bit_block_calc_count_range(block, nbit_left, r);
             }
         }
     }
 
     if (nblock_left == nblock_right)  // in one block
     {
-        return count + func.count();
+        return cnt + func.count();
     }
 
     for (unsigned nb = nblock_left+1; nb < nblock_right; ++nb)
@@ -1751,7 +1751,7 @@ bm::id_t bvector<Alloc>::count_range(bm::id_t left,
         block = blockman_.get_block(nb);
         if (block_count_arr)
         {
-            count += block_count_arr[nb];
+            cnt += block_count_arr[nb];
         }
         else 
         {
@@ -1759,7 +1759,7 @@ bm::id_t bvector<Alloc>::count_range(bm::id_t left,
                 func(block);
         }
     }
-    count += func.count();
+    cnt += func.count();
 
     block = blockman_.get_block(nblock_right);
     bool right_gap = BM_IS_GAP(block);
@@ -1768,17 +1768,17 @@ bm::id_t bvector<Alloc>::count_range(bm::id_t left,
     {
         if (right_gap)
         {
-            count += gap_bit_count_range(BMGAP_PTR(block),
-                                        (gap_word_t)0,
-                                        (gap_word_t)nbit_right);
+            cnt += gap_bit_count_range(BMGAP_PTR(block),
+                                      (gap_word_t)0,
+                                      (gap_word_t)nbit_right);
         }
         else
         {
-            count += bit_block_calc_count_range(block, 0, nbit_right);
+            cnt += bit_block_calc_count_range(block, 0, nbit_right);
         }
     }
 
-    return count;
+    return cnt;
 }
 
 // -----------------------------------------------------------------------
@@ -2470,9 +2470,7 @@ bm::id_t bvector<Alloc>::check_or_next_extract(bm::id_t prev)
                         }
                         return prev;
                     } else {
-                        if (bm::gap_find_in_block(BMGAP_PTR(block),
-                                                    nbit,
-                                                    &prev))
+                        if (bm::gap_find_in_block(BMGAP_PTR(block), nbit, &prev))
                         {
                             set(prev, false);
                             return prev;
@@ -2485,10 +2483,8 @@ bm::id_t bvector<Alloc>::check_or_next_extract(bm::id_t prev)
                     {
                         BMCOUNT_DEC
 
-                        unsigned nbit = 
-                            unsigned(prev & bm::set_block_mask); 
-                        unsigned nword = 
-                            unsigned(nbit >> bm::set_word_shift);
+                        nbit  = unsigned(prev & bm::set_block_mask); 
+                        unsigned nword = unsigned(nbit >> bm::set_word_shift);
                         nbit &= bm::set_word_mask;
                         bm::word_t* word = block + nword;
                         bm::word_t  mask = ((bm::word_t)1) << nbit;
@@ -2755,7 +2751,6 @@ bvector<Alloc>::combine_operation_with_block(unsigned          nb,
                     unsigned gap_cnt = gap_bit_count(gap_blk);
                     if (gap_cnt < 128)
                     {
-                        gap_word_t tmp_buf[bm::gap_equiv_len * 3];         
                         gap_word_t arr_len = 
                             gap_convert_to_arr(tmp_buf, gap_blk, 
                                                bm::gap_equiv_len-10);
@@ -2772,7 +2767,7 @@ bvector<Alloc>::combine_operation_with_block(unsigned          nb,
                                                            );
                         BM_ASSERT(block_type==1); // GAP
                         gap_blk = BMGAP_PTR(blk);
-                        unsigned threshold = bm::gap_limit(gap_blk, blockman_.glen());
+                        threshold = bm::gap_limit(gap_blk, blockman_.glen());
                         for (; arr_i < arr_len; ++arr_i)
                         {
                             gap_word_t bit_idx = tmp_buf[arr_i];

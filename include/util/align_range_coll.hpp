@@ -493,13 +493,13 @@ public:
         }
 
         vector<bool>* dead = NULL; // vector of indexes for elements that need to be removed
-        size_t size = m_Ranges.size();
+        size_t range_size = m_Ranges.size();
 
-        for (size_t i = size - 1; i > 0; --i) {
+        for (size_t i = range_size - 1; i > 0; --i) {
             if (m_Ranges[i - 1].IsAbutting(m_Ranges[i])) {
                 if (dead == NULL) {   // allocate temp vector
-                    dead = new vector<bool>(size, false);
-                    dead->reserve(size);
+                    dead = new vector<bool>(range_size, false);
+                    dead->reserve(range_size);
                 }
                 m_Ranges[i - 1].CombineWithAbutting(m_Ranges[i]); // merge i into i-1
                 (*dead)[i] = true;
@@ -507,7 +507,7 @@ public:
         }
         if (dead) {   // there are deal elements - need to compress
             size_t shift = 0;
-            for (size_t i = 0; i < size; i++ ) {
+            for (size_t i = 0; i < range_size; i++ ) {
                 if ((*dead)[i]) {
                     ++shift;
                 }
@@ -516,7 +516,7 @@ public:
                 }
             }
             delete dead;
-            m_Ranges.resize(size - shift);
+            m_Ranges.resize(range_size - shift);
         }
         x_ResetFlags(fAbutting);
         x_SetFlags(fNotValidated);

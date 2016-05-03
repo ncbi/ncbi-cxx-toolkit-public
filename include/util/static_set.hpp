@@ -738,18 +738,18 @@ protected:
         using namespace NStaticArray;
         CheckStaticType<value_type>(file, line);
         _ASSERT(array_size % sizeof(value_type) == 0);
-        size_t size = array_size / sizeof(value_type);
+        size_t sz = array_size / sizeof(value_type);
         if ( m_Begin.second() ) {
             _ASSERT(m_Begin.second() == array_ptr);
-            _ASSERT(m_End == array_ptr + size);
+            _ASSERT(m_End == array_ptr + sz);
             _ASSERT(!m_DeallocateFunc);
         }
         else {
-            x_Validate(array_ptr, size, value_comp(), file, line);
+            x_Validate(array_ptr, sz, value_comp(), file, line);
         }
         m_DeallocateFunc = 0;
         m_Begin.second() = array_ptr;
-        m_End = array_ptr + size;
+        m_End = array_ptr + sz;
     }
 
     /// Assign array pointer and end pointer from differently typed array.
@@ -762,10 +762,10 @@ protected:
         using namespace NStaticArray;
         CheckStaticType<Type>(file, line);
         _ASSERT(array2_size % sizeof(Type) == 0);
-        size_t size = array2_size / sizeof(Type);
+        size_t sz = array2_size / sizeof(Type);
         CArrayHolder holder(MakeConverter(static_cast<value_type*>(0),
                                           static_cast<Type*>(0)));
-        holder.Convert(array2_ptr, size, file, line, warn);
+        holder.Convert(array2_ptr, sz, file, line, warn);
         if ( !m_Begin.second() ) {
             x_Validate(static_cast<const value_type*>(holder.GetArrayPtr()),
                        holder.GetElementCount(), value_comp(), file, line);
@@ -775,7 +775,7 @@ protected:
             if ( !m_Begin.second() ) {
                 m_Begin.second() =
                     static_cast<const value_type*>(holder.ReleaseArrayPtr());
-                m_End = m_Begin.second() + size;
+                m_End = m_Begin.second() + sz;
                 m_DeallocateFunc = x_DeallocateFunc;
             }
         }}

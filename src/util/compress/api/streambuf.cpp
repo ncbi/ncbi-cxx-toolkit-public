@@ -254,7 +254,7 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
 
     // Flush stream compressor
     CT_CHAR_TYPE* buf = 0;
-    size_t out_size = 0, out_avail = 0;
+    size_t out_size = 0, out_available = 0;
     do {
         // Get pointer to the free space in the buffer
         if ( dir == CCompressionStream::eRead ) {
@@ -265,16 +265,16 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
         out_size = sp->m_OutBuf + sp->m_OutBufSize - buf;
 
         // Get data from processor
-        out_avail = 0;
+        out_available = 0;
         if ( sp->m_State == CSP::eFinalize ) {
             // State is eFinalize
             sp->m_LastStatus = 
-                sp->m_Processor->Finish(buf, out_size, &out_avail);
+                sp->m_Processor->Finish(buf, out_size, &out_available);
         } else {
             // State is eActive
             _VERIFY(sp->m_State == CSP::eActive);
             sp->m_LastStatus = 
-                sp->m_Processor->Flush(buf, out_size, &out_avail);
+                sp->m_Processor->Flush(buf, out_size, &out_available);
             // No more data -- automatically finalize stream
             if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
                 sp->m_State = CSP::eFinalize;
@@ -286,10 +286,10 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
         }
         if ( dir == CCompressionStream::eRead ) {
             // Update the get's pointers
-            setg(sp->m_OutBuf, gptr(), egptr() + out_avail);
+            setg(sp->m_OutBuf, gptr(), egptr() + out_available);
         } else { // CCompressionStream::eWrite
             // Update the output buffer pointer
-            sp->m_End += out_avail;
+            sp->m_End += out_available;
             // Write data to the underlying stream only if the output buffer
             // is full or an overflow/endofdata occurs.
             if ( !WriteOutBufToStream() ) {
@@ -297,8 +297,8 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
             }
         }
     } while (sp->m_LastStatus == CP::eStatus_Repeat  ||
-            (out_avail  &&  (sp->m_LastStatus == CP::eStatus_Success || 
-                             sp->m_LastStatus == CP::eStatus_Overflow))
+            (out_available  &&  (sp->m_LastStatus == CP::eStatus_Success || 
+                                 sp->m_LastStatus == CP::eStatus_Overflow))
             );
 
     // Flush underlying stream (on write)
@@ -358,7 +358,7 @@ CT_INT_TYPE CCompressionStreambuf::underflow(void)
 
 bool CCompressionStreambuf::ProcessStreamRead()
 {
-    size_t     in_len, in_avail, out_size, out_avail;
+    size_t     in_len, in_available, out_size, out_available;
     streamsize n_read;
 
     // End of stream has been detected
@@ -374,9 +374,9 @@ bool CCompressionStreambuf::ProcessStreamRead()
     // Put data into the (de)compressor until there is something
     // in the output buffer
     do {
-        in_avail  = 0;
-        out_avail = 0;
-        out_size  = m_Reader->m_OutBuf + m_Reader->m_OutBufSize - egptr();
+        in_available  = 0;
+        out_available = 0;
+        out_size      = m_Reader->m_OutBuf + m_Reader->m_OutBufSize - egptr();
 
         // Refill the output buffer if necessary
         if ( m_Reader->m_LastStatus != CP::eStatus_Overflow ) {
@@ -407,7 +407,7 @@ bool CCompressionStreambuf::ProcessStreamRead()
             in_len = m_Reader->m_End - m_Reader->m_Begin;
             m_Reader->m_LastStatus = m_Reader->m_Processor->Process(
                                 m_Reader->m_Begin, in_len, egptr(), out_size,
-                                &in_avail, &out_avail);
+                                &in_available, &out_available);
         } else {
             // Check available space in the output buffer
             if ( !out_size ) {
@@ -415,9 +415,9 @@ bool CCompressionStreambuf::ProcessStreamRead()
             }
             // Get unprocessed data size
             in_len = m_Reader->m_End - m_Reader->m_Begin;
-            in_avail = in_len;
+            in_available = in_len;
             m_Reader->m_LastStatus = 
-                m_Reader->m_Processor->Flush(egptr(), out_size, &out_avail);
+                m_Reader->m_Processor->Flush(egptr(), out_size, &out_available);
         }
         if ( m_Reader->m_LastStatus == CP::eStatus_Error ) {
             return false;
@@ -428,15 +428,15 @@ bool CCompressionStreambuf::ProcessStreamRead()
         }
 
         // Update pointer to an unprocessed data
-        m_Reader->m_Begin += (in_len - in_avail);
+        m_Reader->m_Begin += (in_len - in_available);
         // Update the get's pointers
-        setg(m_Reader->m_OutBuf, gptr(), egptr() + out_avail);
+        setg(m_Reader->m_OutBuf, gptr(), egptr() + out_available);
 
-        if ( m_Reader->m_LastStatus == CP::eStatus_EndOfData   &&  !out_avail ) { 
+        if ( m_Reader->m_LastStatus == CP::eStatus_EndOfData   &&  !out_available ) { 
             return false;
         }
 
-    } while ( !out_avail );
+    } while ( !out_available );
 
     return true;
 }
@@ -444,9 +444,9 @@ bool CCompressionStreambuf::ProcessStreamRead()
 
 bool CCompressionStreambuf::ProcessStreamWrite()
 {
-    const char*  in_buf    = pbase();
-    const size_t count     = pptr() - pbase();
-    size_t       in_avail  = count;
+    const char*  in_buf       = pbase();
+    const size_t count        = pptr() - pbase();
+    size_t       in_available = count;
 
     // Nothing was written into processor yet
     if ( m_Writer->m_State == CSP::eInit ) {
@@ -465,14 +465,14 @@ bool CCompressionStreambuf::ProcessStreamWrite()
     }
 
     // Loop until no data is left
-    while ( in_avail ) {
+    while ( in_available ) {
         // Process next data portion
-        size_t out_avail = 0;
+        size_t out_available = 0;
         size_t out_size = m_Writer->m_OutBuf + 
                           m_Writer->m_OutBufSize - m_Writer->m_End;
         m_Writer->m_LastStatus = m_Writer->m_Processor->Process(
-            in_buf + count - in_avail, in_avail, m_Writer->m_End, out_size,
-            &in_avail, &out_avail);
+            in_buf + count - in_available, in_available, m_Writer->m_End, out_size,
+            &in_available, &out_available);
 
         // Check on error / small output buffer
         if ( m_Writer->m_LastStatus == CP::eStatus_Error ) {
@@ -483,7 +483,7 @@ bool CCompressionStreambuf::ProcessStreamWrite()
             m_Writer->m_State = CSP::eFinalize;
         }
         // Update the output buffer pointer
-        m_Writer->m_End += out_avail;
+        m_Writer->m_End += out_available;
 
         // Write data to the underlying stream only if the output buffer
         // is full or an overflow occurs.

@@ -88,14 +88,14 @@ public:
     typedef T             value_type;
     typedef size_t        size_type;
 public:
-    explicit CSimpleBufferT(size_type size=0)
+    explicit CSimpleBufferT(size_type new_size = 0)
     {
-        if (size) {
-            m_Buffer = x_Allocate(size);
+        if (new_size) {
+            m_Buffer = x_Allocate(new_size);
         } else {
             m_Buffer = 0;
         }
-        m_Size = m_Capacity = size;
+        m_Size = m_Capacity = new_size;
     }
     ~CSimpleBufferT()
     {
@@ -242,12 +242,15 @@ public:
 
 
 private:
+
+#ifdef _DEBUG
     void x_Fill(value_type* buffer, int value, size_t elem)
     {
-#ifdef _DEBUG
         memset(buffer, value, elem * sizeof(value_type));
-#endif
     }
+#else
+    void x_Fill(value_type*, int, size_t) {}
+#endif
 
     void x_Deallocate()
     {

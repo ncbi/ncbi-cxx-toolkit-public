@@ -321,7 +321,7 @@ CFormatGuess::SequenceType(const char* str, unsigned length,
 
 
 //  ----------------------------------------------------------------------------
-CFormatGuess::EFormat CFormatGuess::Format(const string& path, EOnError onerror)
+CFormatGuess::EFormat CFormatGuess::Format(const string& path, EOnError /*onerror*/)
 {
     CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     return Format(input);
