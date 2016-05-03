@@ -5,7 +5,7 @@ SRC = test_ncbi_http_get
 
 CPPFLAGS = $(GNUTLS_INCLUDE) $(ORIG_CPPFLAGS)
 
-LIB = connect connssl $(NCBIATOMIC_LIB)
+LIB = connssl connect $(NCBIATOMIC_LIB)
 LIBS = $(GNUTLS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
 
