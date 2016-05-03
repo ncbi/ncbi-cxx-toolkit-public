@@ -672,7 +672,9 @@ void CValidError_bioseq::ValidateSeqIds
     if (!SeqIsPatent(seq)) {
         if ( is_wgs ) {
             if ( !mi  ||  !mi->IsSetTech()  ||  
-                ( mi->GetTech() != CMolInfo::eTech_wgs  &&  mi->GetTech() != CMolInfo::eTech_tsa ) ) {
+                ( mi->GetTech() != CMolInfo::eTech_wgs  &&
+                  mi->GetTech() != CMolInfo::eTech_tsa &&
+                  mi->GetTech() != CMolInfo::eTech_targeted) ) {
                 PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
                     "WGS accession should have Mol-info.tech of wgs", seq);
             }

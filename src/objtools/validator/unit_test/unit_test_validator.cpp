@@ -19493,4 +19493,24 @@ BOOST_AUTO_TEST_CASE(Test_Empty_Taxon_Reply)
 #endif
 
 
+BOOST_AUTO_TEST_CASE(Test_VR_601)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    string id_str = "ABCD123456789";
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetGenbank().SetAccession(id_str);
 
+    unit_test_util::ChangeNucId(entry, id);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError(id_str, eDiag_Error, "Inconsistent", "WGS accession should have Mol-info.tech of wgs"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // error suppressed for TLS
+    CLEAR_ERRORS
+    unit_test_util::SetTech(entry->SetSet().SetSeq_set().front(), CMolInfo::eTech_targeted);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+}
