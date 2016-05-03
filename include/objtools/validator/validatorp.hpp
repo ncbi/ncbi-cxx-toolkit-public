@@ -55,6 +55,7 @@
 #include <objtools/validator/validator.hpp>
 
 #include <objtools/validator/utilities.hpp>
+#include <objtools/alnmgr/sparse_aln.hpp>
 
 #include <objmgr/util/create_defline.hpp>
 
@@ -985,7 +986,8 @@ private:
 
     void x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps);
     static bool AlignmentScorePercentIdOk(const CSeq_align& align);
-    static bool IsTpaAlignment(const CSeq_align& align, CScope& scope);
+    static bool IsTpaAlignment(const CDense_seg& denseg, CScope& scope);
+    static bool IsTpaAlignment(const CSparseAln& sparse_aln, CScope& scope);
     void x_ValidateDendiag(const TDendiag& dendiags, const CSeq_align& align);
     void x_ValidateDenseg(const TDenseg& denseg, const CSeq_align& align);
     void x_ValidateStd(const TStd& stdsegs, const CSeq_align& align);

@@ -236,13 +236,8 @@ bool CValidError_align::AlignmentScorePercentIdOk(const CSeq_align& align)
 }
 
 
-bool CValidError_align::IsTpaAlignment(const CSeq_align& align, CScope& scope)
+bool CValidError_align::IsTpaAlignment(const CDense_seg& denseg, CScope& scope)
 {
-    if (!align.IsSetSegs() || !align.GetSegs().IsDenseg()) {
-        return false;
-    }
-
-    const CDense_seg& denseg = align.GetSegs().GetDenseg();
     int dim = denseg.GetDim();
     if (dim != s_GetNumIdsToUse(denseg)) {
         return false;
@@ -268,6 +263,27 @@ bool CValidError_align::IsTpaAlignment(const CSeq_align& align, CScope& scope)
 }
 
 
+bool CValidError_align::IsTpaAlignment(const CSparseAln& sparse_aln, CScope& scope)
+{
+    // check to see if alignment is TPA
+    bool is_tpa = false;
+    for (CSparseAln::TDim row = 0; row < sparse_aln.GetDim() && !is_tpa; ++row) {
+        const CSeq_id& id = sparse_aln.GetSeqId(row);
+        CBioseq_Handle bsh = scope.GetBioseqHandle(id);
+        if (bsh) {
+            CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User);
+            while (desc_ci && !is_tpa) {
+                if (desc_ci->GetUser().IsSetType() && desc_ci->GetUser().GetType().IsStr()
+                    && NStr::EqualNocase(desc_ci->GetUser().GetType().GetStr(), "TpaAssembly")) {
+                    is_tpa = true;
+                }
+                ++desc_ci;
+            }
+        }
+    }
+    return is_tpa;
+}
+
 void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps)
 {
     TSeqPos col = 0;
@@ -278,21 +294,19 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
     // Now calculate Percent Identity
     if (!align.IsSetSegs()) {
         return;
-    } else if (align.GetSegs().IsDendiag()) {
-        return;
     } else if (AlignmentScorePercentIdOk(align)) {
-        return;
-    } else if (IsTpaAlignment(align, *m_Scope)) {
         return;
     } else if (align.GetSegs().IsDenseg()) {
         const CDense_seg& denseg = align.GetSegs().GetDenseg();
         // first, make sure this isn't a TPA alignment
-        bool is_tpa = false;
+        if (IsTpaAlignment(denseg, *m_Scope)) {
+            return;
+        }
+
         int dim = denseg.GetDim();
         if (dim != s_GetNumIdsToUse(denseg)) {
             return;
         }
-
 
         try {
             CRef<CAlnVec> av(new CAlnVec(denseg, *m_Scope));
@@ -398,24 +412,9 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
             CSparseAln sparse_aln(out_anchored_aln, *m_Scope);
 
             // check to see if alignment is TPA
-            bool is_tpa = false;
-            for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim() && !is_tpa;  ++row) {
-                const CSeq_id& id = sparse_aln.GetSeqId(row);
-                CBioseq_Handle bsh = m_Scope->GetBioseqHandle (id);
-                if (bsh) {
-                    CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User);
-                    while (desc_ci && !is_tpa) {
-                        if (desc_ci->GetUser().IsSetType() && desc_ci->GetUser().GetType().IsStr()
-                            && NStr::EqualNocase (desc_ci->GetUser().GetType().GetStr(), "TpaAssembly")) {
-                            is_tpa = true;
-                        }
-                        ++desc_ci;
-                    }
-                }
-            }
-            if (is_tpa) {
+            if (IsTpaAlignment(sparse_aln, *m_Scope)) {
                 return;
-            }            
+            }
 
             vector <string> aln_rows;
             vector <TSeqPos> row_starts;
@@ -442,6 +441,7 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                 }
             }
 
+            bool any_data = false;
             if (!ids_missing) {
                 TSeqPos aln_len = sparse_aln.GetAlnRange().GetLength();
                 while (col < aln_len) {
@@ -458,7 +458,11 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                             } else {                    
                                 column += nt;
                             }
+                            any_data = true;
                         }
+                    }
+                    if (!any_data) {
+                        match = false;
                     }
                     if (match) {
                         if (!NStr::IsBlank (column)) {
@@ -1124,7 +1128,9 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TStd& s
                 break;
             } else if (len == 0) {
                 len = GetLength(**loc, scope);
-                (*loc)->GetId()->GetLabel(&label);
+                if (NStr::IsBlank(label)) {
+                    (*loc)->GetId()->GetLabel(&label, CSeq_id::eContent);
+                }
             }
         }
         if (gap) {
@@ -1468,6 +1474,20 @@ void CValidError_align::x_ValidateSeqLength
         ITERATE ( CStd_seg::TLoc, loc_iter, stdseg.GetLoc() ) {
             const CSeq_loc& loc = **loc_iter;
     
+            if (loc.IsEmpty()) {
+                CRef<CSeq_id> id(new CSeq_id());
+                if (stdseg.IsSetIds() && stdseg.GetIds().size() >= seg) {
+                    id->Assign(*(stdseg.GetIds()[seg - 1]));
+                } else {
+                    id->SetLocal().SetStr("?");
+                }
+                x_ReportAlignErr(align, *id, id_context, seg, 0,
+                    eErr_SEQ_ALIGN_EndLessthanZero, eDiag_Error,
+                    "Length", "End point is less than zero in segment");
+                x_ReportAlignErr(align, *id, id_context, seg, 0,
+                    eErr_SEQ_ALIGN_StartLessthanZero, eDiag_Error,
+                    "Start", "Start point is less than zero");
+            }
             if ( loc.IsWhole()  || loc.IsEmpty()  ||  loc.IsNull() ) {
                 continue;
             }
