@@ -202,6 +202,9 @@ ALTER TABLE Users ADD CONSTRAINT
 IX_Users_name_and_namespace UNIQUE NONCLUSTERED ( name, name_space );
 GO
 
+CREATE UNIQUE NONCLUSTERED INDEX IX_Users_user_id
+ON Users ( user_id );
+GO
 
 CREATE PROCEDURE CreateUser
     @user_name          VARCHAR(64),
