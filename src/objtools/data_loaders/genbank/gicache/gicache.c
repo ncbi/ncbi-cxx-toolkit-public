@@ -1790,11 +1790,13 @@ static int x_GICacheInit(const char* prefix, Uint1 readonly, Uint1 is_64bit)
 
     if (readonly) {
         /* Check whether gi cache is available at this location, by trying to
-           map it right away. If local cache isn't found, use default path and
-           try again. */
+         * map it right away. If local cache isn't found, use default path and
+         * try again.
+         * NB: This is only done if nothing was provided in the input argument.
+         */
         Uint1 cache_found = GiDataIndex_ReMap(gi_cache, 0);
 
-        if (!cache_found) {
+        if (!cache_found && !prefix) {
             const char* suffix = (is_64bit ? DEFAULT_64BIT_SUFFIX : "");
             sprintf(prefix_str, "%s/%s%s.", DEFAULT_GI_CACHE_PATH,
                     DEFAULT_GI_CACHE_PREFIX, suffix);
