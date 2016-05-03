@@ -3454,6 +3454,19 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             }
         }
     }
+
+    if ( rna_type == CRNA_ref::eType_tRNA ) {
+        TFeatScores scores;
+        GetOverlappingFeatures(feat.GetLocation(),
+                               CSeqFeatData::e_Rna,
+                               CSeqFeatData::eSubtype_rRNA,
+                               eOverlap_Simple,
+                               scores, *m_Scope);
+        if (scores.size() > 0) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
+                     "tRNA-rRNA overlap", feat);
+        }
+    }
 }
 
 
