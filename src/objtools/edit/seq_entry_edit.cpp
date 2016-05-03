@@ -1427,11 +1427,23 @@ void BioseqSetDescriptorPropagateUp(CBioseq_set_Handle set)
                 if ((*it)->IsSeq()) {
                     CBioseq_Handle bs = set.GetScope().GetBioseqHandle((*it)->GetSeq());
                     CBioseq_EditHandle bse(bs);
-                    bse.RemoveSeqdesc(**d);
+                    CBioseq::TDescr::Tdata::iterator di = bse.SetDescr().Set().begin();
+                    while (di != bse.SetDescr().Set().end() && !(*di)->Equals(**d)) {
+                        ++di;
+                    }
+                    if (di != bse.SetDescr().Set().end()) {
+                        bse.RemoveSeqdesc(**di);
+                    }
                 } else  if ((*it)->IsSet()) {
                     CBioseq_set_Handle bss = set.GetScope().GetBioseq_setHandle((*it)->GetSet());
                     CBioseq_set_EditHandle bsse(bss);
-                    bsse.RemoveSeqdesc(**d);
+                    CBioseq_set::TDescr::Tdata::iterator di = bsse.SetDescr().Set().begin();
+                    while (di != bsse.SetDescr().Set().end() && !(*di)->Equals(**d)) {
+                        ++di;
+                    }
+                    if (di != bsse.SetDescr().Set().end()) {
+                        bsse.RemoveSeqdesc(**di);
+                    }
                 }
             }
             CRef<CSeqdesc> cpy(new CSeqdesc());

@@ -1517,14 +1517,30 @@ BOOST_AUTO_TEST_CASE(Test_BioseqSetDescriptorPropagateUp)
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
+    // before, set should have two descriptors, the pop-set title and the comment
+    BOOST_CHECK_EQUAL(seh.GetDescr().Get().size(), 2);
+    // components should each have source, molinfo, two pubs
+    ITERATE(CBioseq_set::TSeq_set, it, entry->GetSet().GetSeq_set()) {
+        BOOST_CHECK_EQUAL((*it)->GetSeq().GetDescr().Get().size(), 4);
+    }
+
     CSeqdesc_CI::TDescChoices desc_choices_to_erase;
     edit::BioseqSetDescriptorPropagateDown(seh.GetSet(), desc_choices_to_erase);
 
     BOOST_CHECK_EQUAL(seh.IsSetDescr(), false);
+    // components should each have source, molinfo, two pubs, comment, title
+    ITERATE(CBioseq_set::TSeq_set, it, entry->GetSet().GetSeq_set()) {
+        BOOST_CHECK_EQUAL((*it)->GetSeq().GetDescr().Get().size(), 6);
+    }
+
 
     edit::BioseqSetDescriptorPropagateUp(seh.GetSet());
-    // should now have the comment, plus the two pubs that were on each member
+    // should now have comment, plus the two pubs that were on each member
     BOOST_CHECK_EQUAL(seh.GetDescr().Get().size(), 3);
+    // components should have source, molinfo, title
+    ITERATE(CBioseq_set::TSeq_set, it, entry->GetSet().GetSeq_set()) {
+        BOOST_CHECK_EQUAL((*it)->GetSeq().GetDescr().Get().size(), 3);
+    }    
 
 }
 
