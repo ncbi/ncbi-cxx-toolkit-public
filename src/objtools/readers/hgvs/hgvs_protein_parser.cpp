@@ -53,6 +53,7 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) : SHgvsProteinGr
 
     protein_confirmed_simple_variation =
                                          frameshift |
+                                         protein_extension |
                                          missense |
                                          nonsense |
                                          unknown_sub |
@@ -60,8 +61,7 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) : SHgvsProteinGr
                                          aa_delins |
                                          aa_del 	|
                                          aa_ins  |
-                                         aa_ssr  |
-                                         protein_extension;
+                                         aa_ssr;
 							
     missense = (aa3_site >> tok.aa3) ACTION2(AssignMissense) |
                (aa1_site >> aa1) ACTION2(AssignMissense);
@@ -121,11 +121,11 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) : SHgvsProteinGr
     cterm_extension = (tok.stop >> tok.pos_int >> (aa1 | tok.aa3) >> tok.ext >> tok.stop >> end_codon_shift) 
                       ACTION3(AssignCtermExtension);
 
-    nterm_extension = (tok.stop >> aa_site [IsMet1] >> tok.ext >> "-" >> end_codon_shift) 
+    nterm_extension = (aa_site [IsMet1] >> tok.ext >> "-" >> end_codon_shift) 
                       ACTION2(AssignNtermExtension) |
-                      (tok.stop >> aa3_site [IsMet1] >> tok.aa3 >> tok.ext >> "-" >> end_codon_shift) 
+                      (aa3_site [IsMet1] >> tok.aa3 >> tok.ext >> "-" >> end_codon_shift) 
                       ACTION3(AssignNtermExtension) |
-                      (tok.stop >> aa1_site [IsMet1] >> aa1 >> tok.ext >> "-" >> end_codon_shift) 
+                      (aa1_site [IsMet1] >> aa1 >> tok.ext >> "-" >> end_codon_shift) 
                       ACTION3(AssignNtermExtension);
          
     end_codon_shift = tok.pos_int ACTION1(AssignCount) | 
