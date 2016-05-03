@@ -43,6 +43,7 @@
 #include "nst_database.hpp"
 #include "nst_service_parameters.hpp"
 #include "nst_clients.hpp"
+#include "nst_users.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -97,6 +98,8 @@ public:
     { m_RAMConfigFileChecksum = checksum; }
     CNSTClientRegistry &  GetClientRegistry(void)
     { return m_ClientRegistry; }
+    CNSTUserCache &  GetUserCache(void)
+    { return m_UserCache; }
     void SetAnybodyCanReconfigure(bool  val)
     { m_AnybodyCanReconfigure = val; }
     bool AnybodyCanReconfigure(void) const
@@ -175,6 +178,7 @@ private:
                                 m_ServiceThread;
 
     CNSTClientRegistry          m_ClientRegistry;
+    CNSTUserCache               m_UserCache;
 
     bool                        m_AnybodyCanReconfigure;
 

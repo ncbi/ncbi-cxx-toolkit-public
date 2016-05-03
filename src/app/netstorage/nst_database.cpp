@@ -186,7 +186,7 @@ CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
 
 
 int
-CNSTDatabase::ExecSP_CreateClient(const CClientKey &  client, Int8 &  client_id)
+CNSTDatabase::ExecSP_CreateClient(const string &  client, Int8 &  client_id)
 {
     const string        proc_name = "CreateClient";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
@@ -199,9 +199,8 @@ CNSTDatabase::ExecSP_CreateClient(const CClientKey &  client, Int8 &  client_id)
             CQuery      query = db.NewQuery();
 
             client_id = k_UndefinedClientID;
-            query.SetParameter("@client_name", client.GetName());
+            query.SetParameter("@client_name", client);
             query.SetParameter("@client_id", client_id, eSDB_Int8, eSP_InOut);
-            query.SetParameter("@client_namespace", client.GetNamespace());
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -235,10 +234,60 @@ CNSTDatabase::ExecSP_CreateClient(const CClientKey &  client, Int8 &  client_id)
 
 
 int
+CNSTDatabase::ExecSP_CreateUser(const CNSTUserID &  user, Int8 &  user_id)
+{
+    const string        proc_name = "CreateUser";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        x_PreCheckConnection();
+
+        int     status;
+        try {
+            CDatabase   db = m_Db->Clone();
+            CQuery      query = db.NewQuery();
+
+            user_id = k_UndefinedUserID;
+            query.SetParameter("@user_name", user.GetName());
+            query.SetParameter("@user_namespace", user.GetNamespace());
+            query.SetParameter("@user_id", user_id, eSDB_Int8, eSP_InOut);
+
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
+            query.VerifyDone();
+            status = x_CheckStatus(query, proc_name);
+
+            if (status == kSPStatusOK)
+                user_id = query.GetParameter("@user_id").AsInt8();
+            else
+                user_id = k_UndefinedUserID;
+
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
+    } catch (...) {
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
+        throw;
+    }
+}
+
+
+int
 CNSTDatabase::ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
-            Int8  client_id, const TNSTDBValue<CTimeSpan>  ttl,
+            Int8  client_id, Int8  user_id,
+            const TNSTDBValue<CTimeSpan>  ttl,
             bool &  size_was_null)
 {
     const string        proc_name = "CreateObjectWithClientID";
@@ -264,6 +313,7 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@object_size", size);
             query.SetParameter("@client_id", client_id);
+            query.SetParameter("@user_id", user_id);
 
             // To be on the safe side
             query.SetParameter("@size_was_null", db_size_was_null,
@@ -310,7 +360,8 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
 int
 CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             const string &  object_key,
-            const string &  object_loc, Int8  size, Int8  client_id,
+            const string &  object_loc, Int8  size,
+            Int8  client_id, Int8  user_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
             const TNSTDBValue<CTime> &  object_expiration,
@@ -344,6 +395,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@object_size", size);
             query.SetParameter("@client_id", client_id);
+            query.SetParameter("@user_id", user_id);
             query.SetParameter("@current_time", current_time);
 
             // To be on the safe side
@@ -472,7 +524,8 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
 int
 CNSTDatabase::ExecSP_UpdateObjectOnRead(
             const string &  object_key,
-            const string &  object_loc, Int8  size,
+            const string &  object_loc,
+            Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_read,
             const TNSTDBValue<CTime> &  object_expiration,
@@ -506,13 +559,8 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@object_size", size);
+            query.SetParameter("@client_id", client_id);
             query.SetParameter("@current_time", current_time);
-
-            // It was decided as a part of CXX-8023 that if a record is created
-            // in update-on-read then the client_id should be set to NULL.
-            // The stored procedure on the other hand is preferably stay as it
-            // is, so we just set @client_id to NULL below.
-            query.SetNullParameter("@client_id", eSDB_Int8);
 
             // To be on the safe side
             query.SetParameter("@size_was_null", db_size_was_null,
@@ -637,10 +685,10 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
 
 
 int
-CNSTDatabase::ExecSP_UpdateClientIDForObject(const string &  object_key,
-                                             Int8  client_id)
+CNSTDatabase::ExecSP_UpdateUserIDForObject(const string &  object_key,
+                                           Int8  user_id)
 {
-    const string        proc_name = "UpdateClientIDForObject";
+    const string        proc_name = "UpdateUserIDForObject";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         x_PreCheckConnection();
@@ -650,7 +698,7 @@ CNSTDatabase::ExecSP_UpdateClientIDForObject(const string &  object_key,
             CQuery                  query = db.NewQuery();
 
             query.SetParameter("@object_key", object_key);
-            query.SetParameter("@client_id", client_id);
+            query.SetParameter("@u_id", user_id);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -999,8 +1047,9 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(
                                 TNSTDBValue<CTime> &    attr_write,
                                 TNSTDBValue<Int8> &     read_count,
                                 TNSTDBValue<Int8> &     write_count,
-                                TNSTDBValue<string> &   client_namespace,
-                                TNSTDBValue<string> &   client_name
+                                TNSTDBValue<string> &   client_name,
+                                TNSTDBValue<string> &   user_namespace,
+                                TNSTDBValue<string> &   user_name
                                               )
 {
     const string        proc_name = "GetObjectFixedAttributes";
@@ -1014,26 +1063,17 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(
             CQuery                  query = db.NewQuery();
 
             query.SetParameter("@object_key", object_key);
-            query.SetParameter("@expiration", expiration.m_Value,
-                                              eSDB_DateTime, eSP_InOut);
-            query.SetParameter("@creation", creation.m_Value,
-                                            eSDB_DateTime, eSP_InOut);
-            query.SetParameter("@obj_read", obj_read.m_Value,
-                                            eSDB_DateTime, eSP_InOut);
-            query.SetParameter("@obj_write", obj_write.m_Value,
-                                             eSDB_DateTime, eSP_InOut);
-            query.SetParameter("@attr_read", attr_read.m_Value,
-                                             eSDB_DateTime, eSP_InOut);
-            query.SetParameter("@attr_write", attr_write.m_Value,
-                                              eSDB_DateTime, eSP_InOut);
-            query.SetParameter("@read_cnt", read_count.m_Value,
-                                            eSDB_Int8, eSP_InOut);
-            query.SetParameter("@write_cnt", write_count.m_Value,
-                                             eSDB_Int8, eSP_InOut);
-            query.SetParameter("@client_namespace", client_namespace.m_Value,
-                                                    eSDB_String, eSP_InOut);
-            query.SetParameter("@client_name", client_name.m_Value,
-                                               eSDB_String, eSP_InOut);
+            query.SetOutputParameter("@expiration", eSDB_DateTime);
+            query.SetOutputParameter("@creation", eSDB_DateTime);
+            query.SetOutputParameter("@obj_read", eSDB_DateTime);
+            query.SetOutputParameter("@obj_write", eSDB_DateTime);
+            query.SetOutputParameter("@attr_read", eSDB_DateTime);
+            query.SetOutputParameter("@attr_write", eSDB_DateTime);
+            query.SetOutputParameter("@read_cnt", eSDB_Int8);
+            query.SetOutputParameter("@write_cnt", eSDB_Int8);
+            query.SetOutputParameter("@client_name", eSDB_String);
+            query.SetOutputParameter("@user_namespace", eSDB_String);
+            query.SetOutputParameter("@user_name", eSDB_String);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -1077,12 +1117,19 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(
                                                                 AsInt8();
                 client_name.m_IsNull = query.GetParameter("@client_name").
                                                                 IsNull();
-                if (!client_namespace.m_IsNull)
-                    client_namespace.m_Value = query.GetParameter(
-                                                        "@client_namespace").
-                                                        AsString();
                 if (!client_name.m_IsNull)
                     client_name.m_Value = query.GetParameter("@client_name").
+                                                                AsString();
+                user_namespace.m_IsNull = query.GetParameter("@user_namespace").
+                                                                IsNull();
+                if (!user_namespace.m_IsNull)
+                    user_namespace.m_Value = query.
+                                                GetParameter("@user_namespace").
+                                                                AsString();
+                user_name.m_IsNull = query.GetParameter("@user_name").
+                                                                IsNull();
+                if (!user_name.m_IsNull)
+                    user_name.m_Value = query.GetParameter("@user_name").
                                                                 AsString();
             }
             g_DoPerfLogging("MS_SQL_" + proc_name,
@@ -1252,8 +1299,7 @@ CNSTDatabase::ExecSP_GetStatDBInfo(void)
 
 
 int
-CNSTDatabase::ExecSP_GetClientObjects(const string &  client_namespace,
-                                      const string &  client_name,
+CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
                                       TNSTDBValue<Int8>  limit,
                                       Int8 &  total,
                                       vector<string> &  locators)
@@ -1269,7 +1315,6 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_namespace,
             CQuery                  query = db.NewQuery();
 
             query.SetParameter("@client_name", client_name);
-            query.SetParameter("@client_namespace", client_namespace);
             if (limit.m_IsNull)
                 query.SetNullParameter("@limit", eSDB_Int8);
             else

@@ -40,6 +40,7 @@
 #include <misc/netstorage/netstorage.hpp>
 
 #include "nst_clients.hpp"
+#include "nst_users.hpp"
 #include "nst_metadata_options.hpp"
 #include "nst_database.hpp"
 #include "nst_service_parameters.hpp"
@@ -153,12 +154,7 @@ private:
 
     // The client identification. It appears after HELLO.
     string                      m_Service;
-    CClientKey                  m_HelloClient;
-    CClientKey                  m_HelloMyNcbiId;
-
-    // Considers the priority order as described in CXX-8023
-    CClientKey x_GetClient(void) const;
-    void x_CheckClientIdentification(void) const;
+    string                      m_Client;
 
 private:
     enum EReadMode {
@@ -187,6 +183,7 @@ private:
     TNSTDBValue<CTimeSpan>  m_CreateTTL;
     Int8                    m_DBClientID;
     Int8                    m_DBObjectID;
+    Int8                    m_DBUserID;
     Int8                    m_ObjectSize;
     CNSTServiceProperties   m_WriteServiceProps;
 
@@ -262,7 +259,8 @@ private:
                              const SCommonRequestArguments &  common_args);
 
 private:
-    CDirectNetStorageObject x_GetObject(const CJsonNode &  message);
+    CDirectNetStorageObject x_GetObject(const CJsonNode &  message,
+                                        bool  need_fake_write = false);
     void x_CheckObjectLoc(const string &  object_loc) const;
     void x_CheckICacheSettings(const SICacheSettings &  icache_settings);
     void x_CheckUserKey(const SUserKey &  user_key);
@@ -281,7 +279,9 @@ private:
     bool x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags);
     bool x_DetectMetaDBNeedOnGetObjectInfo(const CJsonNode & message) const;
     void x_CreateClient(void);
-    Int8 x_GetClientID(const CClientKey &  client_key);
+    Int8 x_GetClientID(const string &  client);
+    void x_CreateUser(void);
+    Int8 x_GetUserID(const CNSTUserID &  user);
     void x_FillObjectInfo(CJsonNode &  reply, const string &  val);
     void x_SetObjectInfoReply(CJsonNode &  reply, const string &  name,
                               const TNSTDBValue<CTime> &  value);
@@ -297,6 +297,7 @@ private:
                                     const string &  user_message);
     void x_CheckExistanceStatus(int  status);
     void x_CheckExpirationStatus(int  status);
+    void x_CheckNonAnonymousClient(const string &  op) const;
 }; // CNetStorageHandler
 
 

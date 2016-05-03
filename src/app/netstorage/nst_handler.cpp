@@ -492,7 +492,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         // Find the processor
         FProcessor  processor = x_FindProcessor(common_args);
         if (processor != &CNetStorageHandler::x_ProcessHello)
-            m_Server->GetClientRegistry().Touch(x_GetClient());
+            m_Server->GetClientRegistry().Touch(m_Client);
 
         // Call the processor. It returns the number of bytes to expect
         // after this message. If 0 then another message is expected.
@@ -573,7 +573,7 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
             m_Timing.Append("NetStorageAPI write (" +
                             NStr::NumericToString(data_size) + ")", start);
         start = 0.0;
-        m_Server->GetClientRegistry().AddBytesWritten(x_GetClient(), data_size);
+        m_Server->GetClientRegistry().AddBytesWritten(m_Client, data_size);
         m_ObjectSize += data_size;
 
         if (m_CmdContext.NotNull())
@@ -698,8 +698,8 @@ void CNetStorageHandler::x_SendWriteConfirmation()
             try {
                 m_Server->GetDb().ExecSP_CreateObjectWithClientID(
                         m_DBObjectID, object_loc_struct.GetUniqueKey(),
-                        locator, m_ObjectSize, m_DBClientID, m_CreateTTL,
-                        size_was_null);
+                        locator, m_ObjectSize, m_DBClientID, m_DBUserID,
+                        m_CreateTTL, size_was_null);
             } catch (const exception &  ex) {
                 x_SetCmdRequestStatus(eStatus_ServerError);
                 string  message = "Error while updating meta info DB for " +
@@ -750,7 +750,8 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 // The record will be created if it does not exist
                 m_Server->GetDb().ExecSP_UpdateObjectOnWrite(
                                     object_key,
-                                    locator, m_ObjectSize, m_DBClientID,
+                                    locator, m_ObjectSize,
+                                    m_DBClientID, m_DBUserID,
                                     m_WriteServiceProps.GetTTL(),
                                     m_WriteServiceProps.GetProlongOnWrite(),
                                     object_expiration, size_was_null);
@@ -857,7 +858,7 @@ void  CNetStorageHandler::x_OnSocketWriteError(
     }
 
     // Register the socket error with the client
-    m_Server->GetClientRegistry().RegisterSocketWriteError(x_GetClient());
+    m_Server->GetClientRegistry().RegisterSocketWriteError(m_Client);
     m_Server->CloseConnection(&GetSocket());
 }
 
@@ -1047,21 +1048,16 @@ CNetStorageHandler::x_ProcessHello(
                    "Mandatory field 'Client' is missed");
     }
 
-    string  client_name = NStr::TruncateSpaces(message.GetString("Client"));
-    if (client_name.empty()) {
+    string  client = NStr::TruncateSpaces(message.GetString("Client"));
+    if (client.empty()) {
         NCBI_THROW(CNetStorageServerException, eInvalidArgument,
                    "Mandatory field 'Client' is empty");
     }
 
-    // New in NST 2.2.0: optional ClientNamespace
-    string  client_name_namespace = kDefaultNamespace;
-    if (message.HasKey("ClientNamespace"))
-        client_name_namespace = NStr::TruncateSpaces(
-                                        message.GetString("ClientNamespace"));
-    m_HelloClient = CClientKey(client_name_namespace, client_name);
+    // The following will throw an exception if the limit is broken
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SClientName>(client);
+    m_Client = client;
 
-    m_HelloMyNcbiId = CClientKey(kMyNcbiIdNamespace,
-                        CRequestContext_PassThrough().Get("my_ncbi_id"));
 
     if (message.HasKey("Application"))
         application = message.GetString("Application");
@@ -1089,7 +1085,7 @@ CNetStorageHandler::x_ProcessHello(
     m_MetadataOption = x_ConvertMetadataArgument(message);
 
     // Memorize the client in the registry
-    m_Server->GetClientRegistry().Touch(x_GetClient(), application,
+    m_Server->GetClientRegistry().Touch(m_Client, application,
                            ticket, m_Service, protocol_version,
                            m_MetadataOption, x_GetPeerAddress());
 
@@ -1104,8 +1100,8 @@ CNetStorageHandler::x_ProcessInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("server info request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eAdministrator);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -1130,8 +1126,8 @@ CNetStorageHandler::x_ProcessConfiguration(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("configuration request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eAdministrator);
 
     CNcbiOstrstream             conf;
@@ -1157,7 +1153,7 @@ CNetStorageHandler::x_ProcessHealth(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
+    x_CheckNonAnonymousClient("health request");
 
     // GRID dashboard needs this command to be executed regardless of the
     // configuration settings, so the requirement of being an admin is
@@ -1168,7 +1164,7 @@ CNetStorageHandler::x_ProcessHealth(
     //     NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
     // }
 
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eAdministrator);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -1214,10 +1210,9 @@ CNetStorageHandler::x_ProcessAckAlert(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
+    x_CheckNonAnonymousClient("alert acknowledging");
 
-    CClientKey          client = x_GetClient();
-    if (!m_Server->IsAdminClientName(client.GetName())) {
+    if (!m_Server->IsAdminClientName(m_Client)) {
         string      msg = "Only administrators can acknowledge alerts";
         m_Server->RegisterAlert(eAccess, msg);
         NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
@@ -1232,7 +1227,7 @@ CNetStorageHandler::x_ProcessAckAlert(
                    "Mandatory argument User is not supplied "
                    "in ACKALERT command");
 
-    m_Server->GetClientRegistry().AppendType(client,
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eAdministrator);
 
     EAlertAckResult ack_result = m_Server->AcknowledgeAlert(
@@ -1268,19 +1263,18 @@ CNetStorageHandler::x_ProcessReconfigure(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
+    x_CheckNonAnonymousClient("server reconfiguration");
 
-    CClientKey      client = x_GetClient();
     if (!m_Server->AnybodyCanReconfigure()) {
-        if (!m_Server->IsAdminClientName(client.GetName())) {
+        if (!m_Server->IsAdminClientName(m_Client)) {
             string      msg = "Only administrators can reconfigure server "
-                              "(client: " + client.GetName() + ")";
+                              "(client: " + m_Client + ")";
             m_Server->RegisterAlert(eAccess, msg);
             NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
         }
     }
 
-    m_Server->GetClientRegistry().AppendType(client,
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eAdministrator);
 
     // Unconditionally reload the decryptor in case if the key files are
@@ -1421,10 +1415,9 @@ CNetStorageHandler::x_ProcessShutdown(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
+    x_CheckNonAnonymousClient("server shutdown");
 
-    CClientKey      client = x_GetClient();
-    if (!m_Server->IsAdminClientName(client.GetName())) {
+    if (!m_Server->IsAdminClientName(m_Client)) {
         string      msg = "Only administrators can shutdown server";
         m_Server->RegisterAlert(eAccess, msg);
         NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
@@ -1458,8 +1451,8 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("clients info request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eAdministrator);
 
     // First part is always there: in-memory clients
@@ -1524,8 +1517,8 @@ CNetStorageHandler::x_ProcessGetMetadataInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("metadata configuration request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eAdministrator);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -1541,8 +1534,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("object info request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eReader);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -1551,8 +1544,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
         need_db_access = x_DetectMetaDBNeedOnGetObjectInfo(message);
     CDirectNetStorageObject     direct_object = x_GetObject(message); 
     // First source of data - MS SQL database at hand
-    TNSTDBValue<string> client_namespace;
-    TNSTDBValue<string> client_name;
+    TNSTDBValue<string>     user_namespace;
+    TNSTDBValue<string>     user_name;
     if (need_db_access) {
         try {
             TNSTDBValue<CTime>  expiration;
@@ -1563,6 +1556,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             TNSTDBValue<CTime>  attr_write;
             TNSTDBValue<Int8>   read_count;
             TNSTDBValue<Int8>   write_count;
+            TNSTDBValue<string> client_name;
 
             // The parameters are output only (from the SP POV) however the
             // integer values should be initialized to avoid valgrind complains
@@ -1575,7 +1569,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                                         obj_read, obj_write,
                                         attr_read, attr_write,
                                         read_count, write_count,
-                                        client_namespace, client_name);
+                                        client_name,
+                                        user_namespace, user_name);
 
             if (status != kSPStatusOK) {
                 // The record in the meta DB for the object is not found
@@ -1599,8 +1594,9 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                 x_SetObjectInfoReply(reply, "AttrWriteTime", attr_write);
                 x_SetObjectInfoReply(reply, "ObjectReadCount", read_count);
                 x_SetObjectInfoReply(reply, "ObjectWriteCount", write_count);
-                x_SetObjectInfoReply(reply, "ClientNamespace", client_namespace);
                 x_SetObjectInfoReply(reply, "ClientName", client_name);
+                x_SetObjectInfoReply(reply, "UserNamespace", user_namespace);
+                x_SetObjectInfoReply(reply, "UserName", user_name);
             }
         } catch (const CNetStorageServerException &  ex) {
             if (ex.GetErrCode() == CNetStorageServerException::
@@ -1677,8 +1673,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
     }
 
     bool        need_client_update = false;
-    CClientKey  remote_client;
-    if (need_db_access && client_name.m_IsNull && remote_info_error == false) {
+    CNSTUserID  remote_client;
+    if (need_db_access && user_name.m_IsNull && remote_info_error == false) {
         // The object owner is not known in the DB however the
         // remote storage may have it. See CXX-8023
 
@@ -1687,8 +1683,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             remote_client.SetNamespace(ns_and_name.first);
             remote_client.SetName(ns_and_name.second);
 
-            reply.SetString("ClientNamespace", ns_and_name.first);
-            reply.SetString("ClientName", ns_and_name.second);
+            reply.SetString("UserNamespace", ns_and_name.first);
+            reply.SetString("UserName", ns_and_name.second);
 
             need_client_update = true;
         } catch (const exception &  ex) {
@@ -1704,15 +1700,15 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
 
     if (need_client_update) {
         try {
-            Int8    client_id = x_GetClientID(remote_client);
-            m_Server->GetDb().ExecSP_UpdateClientIDForObject(
+            Int8    user_id = x_GetUserID(remote_client);
+            m_Server->GetDb().ExecSP_UpdateUserIDForObject(
                                         direct_object.Locator().GetUniqueKey(),
-                                        client_id);
+                                        user_id);
         } catch (const exception &  ex) {
-            ERR_POST("Error updating the client ID "
+            ERR_POST("Error updating the user ID "
                      "after getting the object info: " << ex);
         } catch (...) {
-            ERR_POST("Unknown error updating the client ID "
+            ERR_POST("Unknown error updating the user ID "
                      "after getting the object info");
         }
     }
@@ -1732,8 +1728,9 @@ void CNetStorageHandler::x_FillObjectInfo(CJsonNode &  reply,
     reply.SetString("AttrWriteTime", val);
     reply.SetString("ObjectReadCount", val);
     reply.SetString("ObjectWriteCount", val);
-    reply.SetString("ClientNamespace", val);
     reply.SetString("ClientName", val);
+    reply.SetString("UserName", val);
+    reply.SetString("UserNamespace", val);
 }
 
 
@@ -1778,8 +1775,8 @@ CNetStorageHandler::x_ProcessGetAttrList(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("attributes list request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eReader);
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
@@ -1832,20 +1829,14 @@ CNetStorageHandler::x_ProcessGetClientObjects(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("client objects request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eReader);
 
     if (!message.HasKey("ClientName"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
                    "GETCLIENTOBJECTS message must have ClientName.");
     string  client_name = NStr::TruncateSpaces(message.GetString("ClientName"));
-
-    // New in NST 2.3.0: optional ClientNamespace
-    string  client_name_namespace = kDefaultNamespace;
-    if (message.HasKey("ClientNamespace"))
-        client_name_namespace = NStr::TruncateSpaces(
-                                        message.GetString("ClientNamespace"));
 
     TNSTDBValue<Int8>  limit;
     limit.m_IsNull = true;
@@ -1881,7 +1872,6 @@ CNetStorageHandler::x_ProcessGetClientObjects(
     vector<string>  locators;
     Int8            total_client_objects;
     int             status = m_Server->GetDb().ExecSP_GetClientObjects(
-                                        client_name_namespace,
                                         client_name, limit,
                                         total_client_objects, locators);
 
@@ -1915,8 +1905,8 @@ CNetStorageHandler::x_ProcessGetAttr(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("attribute value request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eReader);
 
     if (!message.HasKey("AttrName"))
@@ -1991,8 +1981,8 @@ CNetStorageHandler::x_ProcessSetAttr(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("attribute value setting");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eWriter);
 
     if (!message.HasKey("AttrName"))
@@ -2066,8 +2056,8 @@ CNetStorageHandler::x_ProcessDelAttr(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("attribute deletion");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eWriter);
 
     if (!message.HasKey("AttrName"))
@@ -2134,8 +2124,8 @@ CNetStorageHandler::x_ProcessCreate(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("object creation");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eWriter);
 
     if (m_MetadataOption == eMetadataMonitoring)
@@ -2155,6 +2145,10 @@ CNetStorageHandler::x_ProcessCreate(
         // Meta information is required so check the DB
         x_CreateClient();
         m_DBObjectID = x_GetNextObjectID();
+
+        // This call will extract the user info from the context and create the
+        // user in DB if needed
+        x_CreateUser();
     } else {
         m_DBObjectID = 0;
     }
@@ -2179,7 +2173,7 @@ CNetStorageHandler::x_ProcessCreate(
     m_DataMessageSN = common_args.m_SerialNumber;
     m_CreateRequest = true;
     m_ObjectSize = 0;
-    m_Server->GetClientRegistry().AddObjectsWritten(x_GetClient(), 1);
+    m_Server->GetClientRegistry().AddObjectsWritten(m_Client, 1);
 }
 
 
@@ -2188,8 +2182,8 @@ CNetStorageHandler::x_ProcessWrite(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("writing into an object");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eWriter);
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
@@ -2211,16 +2205,14 @@ CNetStorageHandler::x_ProcessWrite(
     if (m_WriteCreateNeedMetaDBUpdate) {
         // Meta information is required so check the DB
         x_CreateClient();
+        x_CreateUser();
     }
 
     CJsonNode           reply = CreateResponseMessage(
                                                 common_args.m_SerialNumber);
-    m_ObjectBeingWritten = x_GetObject(message);
 
-    // This 'fake' call needs to be done to have the locator properly formed.
-    // See JIRA: CXX-8041
-    // The call needs to be done for both cases of the object identification.
-    m_ObjectBeingWritten.Write(kEmptyStr);
+    // This will also log the object key and object locator if needed
+    m_ObjectBeingWritten = x_GetObject(message, true);
 
     const CNetStorageObjectLoc &    object_locator =
                                                 m_ObjectBeingWritten.Locator();
@@ -2245,18 +2237,12 @@ CNetStorageHandler::x_ProcessWrite(
     reply.SetString("ObjectLoc", locator);
     x_SendSyncMessage(reply);
 
-    if (m_ConnContext.NotNull() && !message.HasKey("ObjectLoc")) {
-        GetDiagContext().Extra()
-            .Print("ObjectLoc", locator)
-            .Print("ObjectKey", object_key);
-    }
-
     // Inform the message receiving loop that raw data are to follow
     m_ReadMode = eReadRawData;
     m_DataMessageSN = common_args.m_SerialNumber;
     m_CreateRequest = false;
     m_ObjectSize = 0;
-    m_Server->GetClientRegistry().AddObjectsWritten(x_GetClient(), 1);
+    m_Server->GetClientRegistry().AddObjectsWritten(m_Client, 1);
 }
 
 
@@ -2266,10 +2252,9 @@ CNetStorageHandler::x_ProcessRead(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
+    x_CheckNonAnonymousClient("reading an object");
 
-    CClientKey      eff_client = x_GetClient();
-    m_Server->GetClientRegistry().AppendType(eff_client,
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eReader);
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
@@ -2319,7 +2304,7 @@ CNetStorageHandler::x_ProcessRead(
 
     x_SendSyncMessage(reply);
 
-    m_Server->GetClientRegistry().AddObjectsRead(eff_client, 1);
+    m_Server->GetClientRegistry().AddObjectsRead(m_Client, 1);
 
     char                buffer[kReadBufferSize];
     size_t              bytes_read;
@@ -2339,8 +2324,7 @@ CNetStorageHandler::x_ProcessRead(
             if (x_SendOverUTTP() != eIO_Success)
                 return;
 
-            m_Server->GetClientRegistry().AddBytesRead(eff_client,
-                                                       bytes_read);
+            m_Server->GetClientRegistry().AddBytesRead(m_Client, bytes_read);
             total_bytes += bytes_read;
 
             if (m_CmdContext.NotNull())
@@ -2399,7 +2383,7 @@ CNetStorageHandler::x_ProcessRead(
                                                          object_expiration);
 
             m_Server->GetDb().ExecSP_UpdateObjectOnRead(
-                    object_key, locator, total_bytes,
+                    object_key, locator, total_bytes, m_DBClientID,
                     service_properties.GetTTL(),
                     service_properties.GetProlongOnRead(),
                     object_expiration, size_was_null);
@@ -2440,8 +2424,8 @@ CNetStorageHandler::x_ProcessDelete(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("object deletion");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eWriter);
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
@@ -2510,7 +2494,7 @@ CNetStorageHandler::x_ProcessDelete(
         throw;
     }
 
-    m_Server->GetClientRegistry().AddObjectsDeleted(x_GetClient(), 1);
+    m_Server->GetClientRegistry().AddObjectsDeleted(m_Client, 1);
 
     // Explicitly tell if the object:
     // - was not found in the backend storage
@@ -2527,8 +2511,8 @@ CNetStorageHandler::x_ProcessRelocate(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("object reloacation");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eWriter);
 
     // Take the arguments
@@ -2644,7 +2628,7 @@ CNetStorageHandler::x_ProcessRelocate(
         }
     }
 
-    m_Server->GetClientRegistry().AddObjectsRelocated(x_GetClient(), 1);
+    m_Server->GetClientRegistry().AddObjectsRelocated(m_Client, 1);
 
     reply.SetString("ObjectLoc", new_object_loc);
     x_SendSyncMessage(reply);
@@ -2663,8 +2647,8 @@ CNetStorageHandler::x_ProcessExists(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("object existance request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eReader);
 
     bool        allow_backend_fallback = true;  // default
@@ -2727,8 +2711,8 @@ CNetStorageHandler::x_ProcessGetSize(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("object size request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eReader);
 
     bool        consult_backend_if_no_db_record = true;  // default
@@ -2829,8 +2813,8 @@ CNetStorageHandler::x_ProcessSetExpTime(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("expiration time setting");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eWriter);
 
     if (!message.HasKey("TTL"))
@@ -3004,8 +2988,8 @@ CNetStorageHandler::x_ProcessLockFTPath(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    x_CheckClientIdentification();
-    m_Server->GetClientRegistry().AppendType(x_GetClient(),
+    x_CheckNonAnonymousClient("FileTrack path locking");
+    m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eWriter);
 
     if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
@@ -3069,7 +3053,8 @@ CNetStorageHandler::x_ProcessLockFTPath(
 
 
 CDirectNetStorageObject
-CNetStorageHandler::x_GetObject(const CJsonNode &  message)
+CNetStorageHandler::x_GetObject(const CJsonNode &  message,
+                                bool  need_fake_write)
 {
     CNcbiApplication *  app = CNcbiApplication::Instance();
 
@@ -3088,9 +3073,24 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message)
 
             CDirectNetStorageObject object(storage.Open(object_loc));
 
-            if (m_ConnContext.NotNull())
+            if (need_fake_write) {
+                // This 'fake' call needs to be done to have the locator
+                // properly formed.
+                // See JIRA: CXX-8041
+                m_ObjectBeingWritten.Write(kEmptyStr);
+            }
+
+            if (m_ConnContext.NotNull()) {
                 GetDiagContext().Extra()
                     .Print("ObjectKey", object.Locator().GetUniqueKey());
+
+                // The locator could have been changed duew to the fake write
+                // call above. If it was changed, then log it once again.
+                string  new_loc = object.Locator().GetLocator();
+                if (new_loc != object_loc)
+                    GetDiagContext().Extra()
+                        .Print("ObjectLoc", object.Locator().GetLocator());
+            }
 
             return object;
         } catch (const CRegistryException &  ex) {
@@ -3117,11 +3117,18 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message)
 
         CDirectNetStorageObject   object(storage.Open(user_key.m_UniqueID,
                                                       flags));
+        if (need_fake_write) {
+            // This 'fake' call needs to be done to have the locator
+            // properly formed.
+            // See JIRA: CXX-8041
+            m_ObjectBeingWritten.Write(kEmptyStr);
+        }
 
         // Log if needed
         if (m_ConnContext.NotNull()) {
             GetDiagContext().Extra()
-                .Print("ObjectKey", object.Locator().GetUniqueKey());
+                .Print("ObjectKey", object.Locator().GetUniqueKey())
+                .Print("ObjectLoc", object.Locator().GetLocator());
         }
 
         return object;
@@ -3445,33 +3452,67 @@ CNetStorageHandler::x_DetectMetaDBNeedOnGetObjectInfo(
 }
 
 
-// Checks if the client DB ID is set in the client registry.
-// If it is then sets the m_DBClientID. This case means the DB ID was cached
-// before.
-// If the DB ID is not set then executes the stored procedure which retrieves
-// the ID and saves it in the in-memory registry.
+// Sets the m_DBClientID from in-memory cache or via referring to the DB
 void
 CNetStorageHandler::x_CreateClient(void)
 {
-    m_DBClientID = x_GetClientID(x_GetClient());
+    m_DBClientID = x_GetClientID(m_Client);
 }
 
 
+// Retrieves the client DB ID from the in-memory registry.
+// If the value is not there, then retrieves it (probably via creation) from
+// the DB
 Int8
-CNetStorageHandler::x_GetClientID(const CClientKey &  client_key)
+CNetStorageHandler::x_GetClientID(const string &  client)
 {
     Int8        client_id = m_Server->GetClientRegistry().
-                                                GetDBClientID(client_key);
+                                                GetDBClientID(client);
     if (client_id != k_UndefinedClientID)
         return client_id;   // It is cached and is at hand
 
     // Need to refer to the DB:
     // - create it or
     // - retrieve it
-    m_Server->GetDb().ExecSP_CreateClient(client_key, client_id);
+    m_Server->GetDb().ExecSP_CreateClient(client, client_id);
     if (client_id != k_UndefinedClientID)
-        m_Server->GetClientRegistry().SetDBClientID(client_key, client_id);
+        m_Server->GetClientRegistry().SetDBClientID(client, client_id);
     return client_id;
+}
+
+
+void
+CNetStorageHandler::x_CreateUser(void)
+{
+    // The user comes from the context. The empty user is allowed too.
+    // See CXX-8023 for details
+    CNSTUserID  user;
+    string      user_name = CRequestContext_PassThrough().Get("my_ncbi_id");
+    if (!user_name.empty()) {
+        user.SetNamespace("my_ncbi_id");
+        user.SetName(NStr::ToLower(user_name));
+        user.Validate();
+    }
+
+    m_DBUserID = x_GetUserID(user);
+}
+
+
+
+Int8
+CNetStorageHandler::x_GetUserID(const CNSTUserID &  user)
+{
+    Int8        user_id = m_Server->GetUserCache().GetDBUserID(user);
+    if (user_id != k_UndefinedUserID)
+        return user_id;     // It is cached and is at hand
+
+    // Need to refer to the DB:
+    // - create it or
+    // - retrieve it
+    m_Server->GetDb().ExecSP_CreateUser(user, user_id);
+    if (user_id != k_UndefinedUserID)
+        m_Server->GetUserCache().SetDBUserID(user, user_id);
+    return user_id;
 }
 
 
@@ -3555,30 +3596,11 @@ void CNetStorageHandler::x_CheckExpirationStatus(int  status)
 }
 
 
-CClientKey CNetStorageHandler::x_GetClient(void) const
+void CNetStorageHandler::x_CheckNonAnonymousClient(const string &  op) const
 {
-    // First, get the MyNCBI ID from the current context
-    string  current = CRequestContext_PassThrough().Get("my_ncbi_id");
-    if (!current.empty())
-        return CClientKey(kMyNcbiIdNamespace, current);
-
-    // Second priority: my ncbi id from the last hello
-    if (!m_HelloMyNcbiId.GetName().empty())
-        return m_HelloMyNcbiId;
-
-    // Last priority: client name from the last HELLO
-    return m_HelloClient;
-}
-
-
-// The member checks that at least some client identification is provided.
-// It is supposed that the member is called before executing any of the
-// required actions.
-void CNetStorageHandler::x_CheckClientIdentification(void) const
-{
-    if (x_GetClient().GetName().empty())
-        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
-                   "Client identification is not found. "
-                   "HELLO or MyNcbiID are required.");
+    if (m_Client.empty()) {
+        NCBI_THROW(CNetStorageServerException, eHelloRequired,
+                   "Anonymous client cannot perform " + op);
+    }
 }
 
