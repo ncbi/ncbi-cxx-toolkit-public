@@ -3084,7 +3084,7 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message,
                 GetDiagContext().Extra()
                     .Print("ObjectKey", object.Locator().GetUniqueKey());
 
-                // The locator could have been changed duew to the fake write
+                // The locator could have been changed due to the fake write
                 // call above. If it was changed, then log it once again.
                 string  new_loc = object.Locator().GetLocator();
                 if (new_loc != object_loc)
@@ -3121,7 +3121,7 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message,
             // This 'fake' call needs to be done to have the locator
             // properly formed.
             // See JIRA: CXX-8041
-            m_ObjectBeingWritten.Write(kEmptyStr);
+            object.Write(kEmptyStr);
         }
 
         // Log if needed
