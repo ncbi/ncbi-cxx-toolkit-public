@@ -10,11 +10,9 @@ SRC = unit_test_biosample_util
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xunittestutil xbiosample_util xvalidate xcleanup valerr \
-      $(XFORMAT_LIBS) xalnmgr xobjutil tables \
-      macro xregexp xmlwrapp xser $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
-      test_boost xncbi \
-      $(OBJEDIT_LIBS)
+LIB = xunittestutil xbiosample_util xvalidate xobjedit \
+      $(OBJREAD_LIBS) $(XFORMAT_LIBS) valerr xalnmgr xobjutil tables \
+      macro xregexp xmlwrapp test_boost $(OBJMGR_LIBS) $(PCRE_LIB)
 
 LIBS = $(PCRE_LIBS) \
        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS) $(LIBXML_LIBS) $(LIBXSLT_LIBS)

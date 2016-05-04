@@ -2,7 +2,7 @@
 
 APP = test_ncbi_clog_mt
 SRC = test_ncbi_clog_mt
-LIB = xncbi test_mt clog
+LIB = test_mt xncbi clog
 
 REQUIRES = MT
 

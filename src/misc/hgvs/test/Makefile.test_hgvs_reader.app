@@ -11,7 +11,7 @@ LDFLAGS  = $(ORIG_LDFLAGS)
 
 LIB = hgvs \
       $(OBJREAD_LIBS) xobjutil taxon1 \
-      gencoll_client genome_collection \
+      gencoll_client \
       entrez2cli entrezgene entrez2 xregexp $(PCRE_LIB) \
       test_boost $(OBJMGR_LIBS)
 

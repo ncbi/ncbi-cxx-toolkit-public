@@ -12,12 +12,9 @@ SRC = unit_test_discrepancy
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) $(LIBXML_INCLUDE) $(LIBXSLT_INCLUDE)
 
-LIB = xunittestutil xdiscrepancy xvalidate valerr \
-      xmlwrapp \
-      $(XFORMAT_LIBS) xalnmgr xobjutil tables \
-      macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
-      test_boost xncbi \
-      $(OBJEDIT_LIBS)
+LIB = xunittestutil xdiscrepancy xvalidate valerr xmlwrapp \
+      xobjedit $(OBJREAD_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil tables \
+      macro xregexp $(PCRE_LIB) test_boost $(OBJMGR_LIBS)
 
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
