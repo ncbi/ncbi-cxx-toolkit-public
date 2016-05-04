@@ -48,7 +48,7 @@ filetrack=filetrack
 ; and "dev" (dsubmit.ncbi). Default value: "prod"
 site=dev
 ; FileTrack API key. Required to upload data to FileTrack.
-api_key=1AE09AEE0BC6AE016C5B84B50B8F37F36:66C9966CB153FA26C1FB17EC5C129393529DF105168424A9301066DC02469E5465B620C609B4C74402DCC06C99859A35385530708C7A87BF4D695DDEDC73D2851F87D1A02A4A4A45A158134F3372A0CF
+api_key=bqyMqDEHsQ3foORxBO87FMNhXjv9LxuzF9Rbs4HLuiaf2pHOku7D9jDRxxyiCtp2
 
 [netcache_api]
 ; NetCache service to use by default (that is, if NetCache
