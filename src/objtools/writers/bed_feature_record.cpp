@@ -42,6 +42,7 @@
 #include <objmgr/mapped_feat.hpp>
 
 #include <objtools/writers/bed_feature_record.hpp>
+#include <objtools/writers/write_util.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -168,11 +169,16 @@ bool CBedFeatureRecord::AssignDisplayData(
 
 //  ----------------------------------------------------------------------------
 bool CBedFeatureRecord::AssignLocation(
+    CScope& scope,
     const CSeq_interval& interval )
 //  ----------------------------------------------------------------------------
 {
     if ( interval.CanGetId() ) {
+        string bestId;
         m_strChrom = interval.GetId().GetSeqIdString(true);
+        CWriteUtil::GetBestId(
+            CSeq_id_Handle::GetHandle(m_strChrom), scope, bestId);
+        m_strChrom = bestId;
     }
     if ( interval.IsSetFrom() ) {
         m_strChromStart = NStr::UIntToString( interval.GetFrom() );
