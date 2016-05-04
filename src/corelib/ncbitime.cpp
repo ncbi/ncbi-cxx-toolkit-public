@@ -817,15 +817,15 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             SET_SEC(value);
             if ( *sss == '.' ) {
                 ++sss;
-                char* s = value_str;
+                s = value_str;
                 // Limit fraction of second to 9 digits max,
                 // ignore all other digits in string if any.
-                for (size_t len = 9;
-                    len  &&  *sss  &&  isdigit((unsigned char)(*sss));  --len) {
+                for (size_t n = 9;
+                    n  &&  *sss  &&  isdigit((unsigned char)(*sss));  --n) {
                     *s++ = *sss++;
                 }
                 *s = '\0';
-                long value = NStr::StringToLong(value_str);
+                value = NStr::StringToLong(value_str);
                 size_t n = strlen(value_str);
                 // 'n' cannot have more then 9 (max for nanoseconds) - see above.
                 _ASSERT(n <= 9);
@@ -2433,8 +2433,8 @@ CTimeSpan::CTimeSpan(const string& str, const CTimeFormat& fmt)
         // if global format has not set.
         CTimeFormat* ptr = s_TlsFormatSpan.GetValue();
         if (!ptr) {
-            CTimeFormat fmt(kDefaultFormatSpanIn);
-            x_Init(str, fmt);
+            CTimeFormat default_fmt(kDefaultFormatSpanIn);
+            x_Init(str, default_fmt);
         } else {
             x_Init(str, *ptr);
         }
@@ -3965,7 +3965,7 @@ retry:
         int x_daylight = Daylight();
         {{
             // MT-Safe protect: use CTime locking mutex
-            CFastMutexGuard LOCK(s_TimeMutex);
+            CFastMutexGuard LOCK_TM(s_TimeMutex);
             x_timezone = TimeZone();
             x_daylight = Daylight();
         }}

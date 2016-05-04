@@ -1084,7 +1084,12 @@ extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
         SetUnhandledExceptionFilter(_SEH_Handler);
     }
     s_DoneSuppressSystemMessageBox = true;
-#endif //NCBI_OS_MSWIN
+
+#else
+    // dummy, to avoid compilation warning
+    mode = 0;
+
+#endif
 }
 
 

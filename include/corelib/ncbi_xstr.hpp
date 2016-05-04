@@ -76,18 +76,18 @@ public:
         : m_Data(str), m_Length(NPOS)
     {
     }
-    CTempXStr(const _TChar* str, size_t length)
-        : m_Data(str), m_Length(length)
+    CTempXStr(const _TChar* str, size_t len)
+        : m_Data(str), m_Length(len)
     {
     }
-    CTempXStr(const _TChar* str, size_t pos, size_t length)
+    CTempXStr(const _TChar* str, size_t pos, size_t len)
     {
         if (pos == x_npos()) {
             m_Data = str;
             m_Length = 0;    
         } else {
             m_Data = str+pos;
-            m_Length = length;
+            m_Length = len;
         }
     }
 
@@ -96,22 +96,22 @@ public:
         : m_Data(str.data()), m_Length(str.length())
     {
     }
-    CTempXStr(const basic_string<_TChar>& str, size_t length)
-        : m_Data(str.data()), m_Length(length)
+    CTempXStr(const basic_string<_TChar>& str, size_t len)
+        : m_Data(str.data()), m_Length(len)
     {
     }
-    CTempXStr(const basic_string<_TChar>& str, size_t pos, size_t length)
-        : m_Data(str.data()+pos), m_Length(length)
+    CTempXStr(const basic_string<_TChar>& str, size_t pos, size_t len)
+        : m_Data(str.data()+pos), m_Length(len)
     {
         if (pos == x_npos()) {
             m_Data = str.data();
             m_Length = 0;
         } else {
             m_Data = str.data()+pos;
-            if (length == x_npos()) {
+            if (len == x_npos()) {
                 m_Length = str.length() - pos;
             } else {
-                m_Length = length;
+                m_Length = len;
                 if (m_Length + pos > str.length()) {
                     m_Length = str.length() - pos;
                 }

@@ -105,10 +105,9 @@ static int s_StreamPushback(iostream&   ios,
             i = rand() % nread + 1;
             j = (nread - i) >> 1;
             char savech = data[j + i];
-            data[j + i] = '\0';  // to prevent reading past "i" from strstream
+            data[j+i] = '\0';  // to prevent reading past "i" from strstream
             // We don't actually do any "app", but w/o it we can't read
-            strstream str(data + j, i,
-                          IOS_BASE::in | IOS_BASE::out | IOS_BASE::app);
+            strstream str(data + j, (int)i, IOS_BASE::in | IOS_BASE::out | IOS_BASE::app);
             PushDiagPostPrefix("-");
             ERR_POST(Info << "Sub-streaming "
                      << NStr::UInt8ToString((Uint8) i)
@@ -317,8 +316,8 @@ static int s_StreamPushback(iostream&   ios,
                 slack = rand() & 0x7FF;  // slack space filled with garbage
                 p = new CT_CHAR_TYPE[i + (slack << 1)];
                 for (size_t ii = 0;  ii < slack;  ii++) {
-                    p[            ii] = rand() % 26 + 'A';
-                    p[slack + i + ii] = rand() % 26 + 'a';
+                    p[            ii] = (CT_CHAR_TYPE)(rand() % 26 + 'A');
+                    p[slack + i + ii] = (CT_CHAR_TYPE)(rand() % 26 + 'a');
                 }
                 memcpy(p + slack, data + nread, i);
                 passthru = how & 0x08;

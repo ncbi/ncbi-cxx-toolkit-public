@@ -3996,25 +3996,25 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
         if ((m_Cmd_req & eNoSortGroups)==0) {
             cmdgroups.sort();
         }
-        ITERATE( list<string>, g, cmdgroups) {
+        ITERATE( list<string>, gi, cmdgroups) {
             string grouptitle;
             bool titleprinted = false;
-            if (g->empty()) {
+            if (gi->empty()) {
                 grouptitle = "Commands";
             } else {
-                grouptitle = *g;
+                grouptitle = *gi;
             }
-            size_t group = x_GetCommandGroupIndex(*g);
-            ITERATE( list<string>, d, cmds) {
-                map<string, size_t >::const_iterator j = m_Groups.find(*d);
+            size_t group = x_GetCommandGroupIndex(*gi);
+            ITERATE( list<string>, di, cmds) {
+                map<string, size_t >::const_iterator j = m_Groups.find(*di);
                 if (j != m_Groups.end() && j->second == group) {
                     if (!titleprinted) {
                         arr.push_back(kEmptyStr);
                         arr.push_back(grouptitle + ":");
                         titleprinted = true;
                     }
-                    CPrintUsage y(*(m_Description.lower_bound(*d)->second));
-                    y.AddCommandDescription(arr, *d, &m_Aliases, max_cmd_len, detailed);
+                    CPrintUsage y(*(m_Description.lower_bound(*di)->second));
+                    y.AddCommandDescription(arr, *di, &m_Aliases, max_cmd_len, detailed);
                 }
             }
             ++group;
@@ -4022,9 +4022,9 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
     } else {
         arr.push_back(kEmptyStr);
         arr.push_back("AVAILABLE COMMANDS:");
-        ITERATE( list<string>, d, cmds) {
-            CPrintUsage y(*(m_Description.find(*d)->second));
-            y.AddCommandDescription(arr, *d, &m_Aliases, max_cmd_len, detailed);
+        ITERATE( list<string>, di, cmds) {
+            CPrintUsage y(*(m_Description.find(*di)->second));
+            y.AddCommandDescription(arr, *di, &m_Aliases, max_cmd_len, detailed);
         }
     }
 
@@ -4044,6 +4044,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
     str += "\n";
     return str;
 }
+
 
 void CCommandArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
 {

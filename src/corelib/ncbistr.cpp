@@ -3658,7 +3658,7 @@ string NStr::Join(const set<CTempString>& arr, const CTempString delim)
         out.reset(new CNcbiOstrstream); \
     } \
     SIZE_TYPE n = (flags & fSS_NoMerge) ? n_spaces : 1; \
-    for (SIZE_TYPE i = n; i > 0; i--) { \
+    for (SIZE_TYPE j = n; j > 0; j--) { \
         out->put(' '); \
     } 
 

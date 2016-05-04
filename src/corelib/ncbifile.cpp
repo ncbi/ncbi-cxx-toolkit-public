@@ -1908,6 +1908,10 @@ bool CDirEntry::SetTime(const CTime* modification,
     return true;
 
 #else // NCBI_OS_UNIX
+
+    // Creation time doesn't used on Unix
+    creation = NULL;  /* DUMMY, to avoid warnings */
+
     if ( !modification  &&  !last_access  /*&&  !creation*/ ) {
         return true;
     }
@@ -1917,9 +1921,9 @@ bool CDirEntry::SetTime(const CTime* modification,
     CTime x_modification, x_last_access;
 
     if ( !modification  ||  !last_access ) {
-        if ( !GetTime(modification ? 0 : &x_modification,
-                      last_access  ? 0 : &x_last_access,
-                      0 /* creation */) ) {
+        if ( !GetTime(modification ? NULL : &x_modification,
+                      last_access  ? NULL : &x_last_access,
+                      NULL /* creation */) ) {
             return false;
         }
         if (!modification) {
@@ -1957,7 +1961,7 @@ bool CDirEntry::SetTime(const CTime* modification,
     if ((!modification  ||  !last_access)
         &&  !GetTimeT(&x_modification,
                       &x_last_access,
-                      0 /* creation */)) {
+                      NULL /* creation */)) {
         return false;
     }
 
@@ -2044,6 +2048,10 @@ bool CDirEntry::SetTimeT(const time_t* modification,
     return true;
 
 #else // NCBI_OS_UNIX
+
+    // Creation time doesn't used on Unix
+    creation = NULL;  /* DUMMY, to avoid warnings */
+
     if ( !modification  &&  !last_access  /*&&  !creation*/ )
         return true;
 
@@ -2051,7 +2059,7 @@ bool CDirEntry::SetTimeT(const time_t* modification,
     if ((!modification  ||  !last_access)
         &&  !GetTimeT(&x_modification,
                       &x_last_access,
-                      0 /* creation */)) {
+                      NULL /* creation */) ) {
         return false;
     }
 
@@ -6163,8 +6171,8 @@ void CFileIO::Open(const string& filename,
         default:
             _TROUBLE;
     };
-    // -- Ignore 'share_mode' on UNIX.
-    //share_mode = eShare;
+    // Dummy, ignore 'share_mode' on UNIX
+    share_mode = eShare;
 
     // Try to open/create file
     m_Handle = open(filename.c_str(), flags, mode);

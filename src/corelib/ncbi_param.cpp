@@ -164,10 +164,10 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();
         if ( app  &&  app->HasLoadedConfig() ) {
-            const string& str = app->GetConfig().Get(section, variable);
-            if ( !str.empty() ) {
+            const string& s = app->GetConfig().Get(section, variable);
+            if ( !s.empty() ) {
                 try {
-                    bool value = s_StringToBool(str);
+                    bool value = s_StringToBool(s);
 #ifdef _DEBUG
                     if ( is_config_dump ) {
                         s_ConfigDump = value;
@@ -228,16 +228,16 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
             if ( s_CanDumpConfig() ) {
                 if ( section  &&  *section ) {
                     DUMP_CONFIG(11, "NCBI_CONFIG: int variable"
-                                    " [" << section << "]"
-                                    " " << variable <<
-                                    " = " << value <<
-                                    " from env var " <<
+                                    " ["  << section  << "]"
+                                    " "   << variable <<
+                                    " = " << value    <<
+                                    " from env var "  <<
                                     s_GetEnvVarName(section, variable, env_var_name));
                 }
                 else {
                     DUMP_CONFIG(12, "NCBI_CONFIG: int variable "
-                                    " " << variable <<
-                                    " = " << value <<
+                                    " "   << variable <<
+                                    " = " << value    <<
                                     " from env var");
                 }
             }
@@ -253,16 +253,16 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();
         if ( app  &&  app->HasLoadedConfig() ) {
-            const string& str = app->GetConfig().Get(section, variable);
-            if ( !str.empty() ) {
+            const string& s = app->GetConfig().Get(section, variable);
+            if ( !s.empty() ) {
                 try {
-                    int value = NStr::StringToInt(str);
+                    int value = NStr::StringToInt(s);
 #ifdef _DEBUG
                     if ( s_CanDumpConfig() ) {
                         DUMP_CONFIG(10, "NCBI_CONFIG: int variable"
-                                        " [" << section << "]"
-                                        " " << variable <<
-                                        " = " << value <<
+                                        " ["  << section  << "]"
+                                        " "   << variable <<
+                                        " = " << value    <<
                                         " from registry");
                     }
 #endif
@@ -338,18 +338,18 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();
         if ( app  &&  app->HasLoadedConfig() ) {
-            const string& str = app->GetConfig().Get(section, variable);
-            if ( !str.empty() ) {
+            const string& s = app->GetConfig().Get(section, variable);
+            if ( !s.empty() ) {
                 try {
-                    double value = NStr::StringToDouble(str,
+                    double value = NStr::StringToDouble(s,
                         NStr::fDecimalPosixOrLocal |
                         NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
 #ifdef _DEBUG
                     if ( s_CanDumpConfig() ) {
                         DUMP_CONFIG(10, "NCBI_CONFIG: double variable"
-                                        " [" << section << "]"
-                                        " " << variable <<
-                                        " = " << value <<
+                                        " ["  << section  << "]"
+                                        " "   << variable <<
+                                        " = " << value    <<
                                         " from registry");
                     }
 #endif
@@ -417,18 +417,18 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();
         if ( app  &&  app->HasLoadedConfig() ) {
-            const string& value = app->GetConfig().Get(section, variable);
-            if ( !value.empty() ) {
+            const string& v = app->GetConfig().Get(section, variable);
+            if ( !v.empty() ) {
 #ifdef _DEBUG
                 if ( s_CanDumpConfig() ) {
                     DUMP_CONFIG(15, "NCBI_CONFIG: str variable"
-                                    " [" << section << "]"
-                                    " " << variable <<
+                                    " [" << section  << "]"
+                                    " "  << variable <<
                                     " = \"" << value << "\""
                                     " from registry");
                 }
 #endif
-                return value;
+                return v;
             }
         }
     }

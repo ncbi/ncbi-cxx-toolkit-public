@@ -630,9 +630,9 @@ CNcbiBoostReporter::CNcbiBoostReporter()
 {}
 
 inline void
-CNcbiBoostReporter::SetOutputFormat(but::output_format format)
+CNcbiBoostReporter::SetOutputFormat(but::output_format fmt)
 {
-    if (format == but::OF_XML) {
+    if (fmt == but::OF_XML) {
         m_IsXML = true;
         m_Upper = new but::output::xml_report_formatter();
     }

@@ -119,16 +119,18 @@ CTestCondVarApp::CTestCondVarApp(void)
 
 void CTestCondVarApp::Produce(int idx)
 {
-    int i = 1;
-    bool alt = ((idx+1) % 4) != 0;
+    size_t i = 1;
+    bool   alt = ((idx+1) % 4) != 0;
+    
     __TEST_OUTPUT(" producer started");
     srand((unsigned) time(0));
+    
     for (;;) {
 //        SleepMilliSec( i < 25 ? 5 : (i%10)*20 );
         if (i % 50 < 25) {
-            SleepMilliSec( rand() % 10 );
+            SleepMilliSec(rand() % 10);
         } else {
-            SleepMilliSec( 120 );
+            SleepMilliSec(120);
         }
         m_BufferLock.Lock();
 
@@ -297,7 +299,7 @@ void CTestCondVarApp::Consume(int idx)
 }
 
 
-bool CTestCondVarApp::Thread_Init(int idx)
+bool CTestCondVarApp::Thread_Init(int /*idx*/)
 {
     return true;
 }

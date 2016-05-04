@@ -187,7 +187,7 @@ public:
     virtual void Post(const SDiagMessage& mess);
 
     // Don't post duplicates to console.
-    virtual void PostToConsole(const SDiagMessage& mess) {}
+    virtual void PostToConsole(const SDiagMessage&) {}
 
     virtual string GetLogName(void)
     {
@@ -5925,7 +5925,7 @@ string CFileHandleDiagHandler::ComposeMessage(const SDiagMessage& msg,
 
 void CFileHandleDiagHandler::WriteMessage(const char*   buf,
                                           size_t        len,
-                                          EDiagFileType file_type)
+                                          EDiagFileType /*file_type*/)
 {
     // Period is longer than for CFileDiagHandler to prevent double-reopening
     // In async mode only one thread is writing messages and there's no need

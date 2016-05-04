@@ -247,7 +247,7 @@ bool CEnvironmentRegistry::x_Set(const string& section, const string& name,
 
 
 bool CEnvironmentRegistry::x_Unset(const string& section, const string& name,
-                                   TFlags flags)
+                                   TFlags /*flags*/)
 {
     bool result = false;
     ITERATE (TPriorityMap, it, m_PriorityMap) {

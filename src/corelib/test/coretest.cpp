@@ -1056,8 +1056,8 @@ public:
     typedef const char* const_iterator;
 
     struct const_reverse_iterator {
-        const_reverse_iterator(const char* ptr)
-            : ptr(ptr)
+        const_reverse_iterator(const char* p)
+            : ptr(p)
             {
             }
 

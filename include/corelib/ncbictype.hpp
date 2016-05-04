@@ -49,11 +49,14 @@
 
 BEGIN_STD_NAMESPACE;
 
-#define NCBI_DEFINE_CTYPE_FUNC(name)                                    \
-    inline int name(Uchar c) { return name(int(c)); }                   \
-    inline int name(char c) { return name(Uchar(c)); }                  \
-    template<class C> inline int name(C c)                              \
-    { return See_the_standard_on_proper_argument_type_for_ctype_functions(c); }
+#define NCBI_DEFINE_CTYPE_FUNC(name)                    \
+    inline int name(Uchar c) { return name(int(c)); }   \
+    inline int name(char c) { return name(Uchar(c)); }  \
+    template<class C> inline int name(C c)              \
+    { \
+        return See_the_standard_on_proper_argument_type_for_ctype_functions(c); \
+        return 0; /* to avoid a compilation warning */ \
+    } 
 
 NCBI_DEFINE_CTYPE_FUNC(isalpha)
 NCBI_DEFINE_CTYPE_FUNC(isalnum)

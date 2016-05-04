@@ -74,7 +74,7 @@ static inline void s_assert_equal(const A& a, const B& b,
 //
 //=============================================================================
 
-static void s_TestMisc(int idx)
+static void s_TestMisc(void)
 {
     // AsString()
     {{
@@ -562,7 +562,7 @@ static void s_TestFormats(void)
 //
 //=============================================================================
 
-static void s_TestGMT(int idx)
+static void s_TestGMT(void)
 {
     // Write time in timezone format
     {{   
@@ -728,14 +728,14 @@ protected:
 };
 
 
-bool CTestRegApp::Thread_Run(int idx)
+bool CTestRegApp::Thread_Run(int /*idx*/)
 {
     // Run tests
     try {
         for (int i=0; i<3; i++) {
-            s_TestMisc(idx);
+            s_TestMisc();
             s_TestFormats();
-            s_TestGMT(idx);
+            s_TestGMT();
         }
     } catch (CException& e) {
         ERR_FATAL(e);

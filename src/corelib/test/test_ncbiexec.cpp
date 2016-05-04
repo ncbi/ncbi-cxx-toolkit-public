@@ -289,7 +289,7 @@ int CTest::Run(void)
 // MAIN
 //
 
-int main(int argc, const char* argv[], const char* envp[])
+int main(int argc, const char* argv[], const char* /*envp*/[])
 {
     // Exec from test?
     if ( argc > 1) {
@@ -300,7 +300,7 @@ int main(int argc, const char* argv[], const char* envp[])
             // Check arguments
             const size_t n = sizeof(s_QuoteArgsTest) / sizeof(s_QuoteArgsTest[0]);
             assert(argc == (n-1));
-            for (size_t i=2; i<argc; i++) {
+            for (int i=2; i<argc; i++) {
                 //cout << i << " = '" << argv[i] << "'" << endl;
                 //cout << i << " = '" << s_QuoteArgsTest[i] << "'" << endl;
                 //cout << i << " = '" << NStr::PrintableString(argv[i]) << "'" << endl;

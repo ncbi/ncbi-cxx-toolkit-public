@@ -779,7 +779,7 @@ void CExprParser::Parse(const char* str)
             }
         }
 
-        int n_args = 1;
+        n_args = 1;
 
         while (sm_lpr[m_OStack[m_o_sp-1]] >= sm_rpr[oper]) { 
             int cop = m_OStack[--m_o_sp]; 

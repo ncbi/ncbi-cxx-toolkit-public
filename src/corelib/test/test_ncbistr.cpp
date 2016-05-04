@@ -774,13 +774,13 @@ static const SStringDoublePosixTest s_StrToDoublePosix[] = {
 
 BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
 {
-    char *endptr;
+    char* endptr;
     for (int i = 0; s_StrToDoublePosix[i].str; ++i) {
         const double& result  = s_StrToDoublePosix[i].result;
         double delta   = finite(result)? fabs(result)*2.22e-16: 0;
         const char* str = s_StrToDoublePosix[i].str;
         errno = kTestErrno;
-        char* endptr = 0;
+        endptr = 0;
         double valuep = NStr::StringToDoublePosix(str, &endptr);
         if ( delta == 0 )
             BOOST_CHECK(valuep == result);
@@ -2107,7 +2107,7 @@ struct SSanitizeTest {
 const NStr::TSS_Flags A   = NStr::fSS_alpha;
 const NStr::TSS_Flags D   = NStr::fSS_digit;
 const NStr::TSS_Flags AD  = NStr::fSS_alnum;
-const NStr::TSS_Flags P   = NStr::fSS_print;
+const NStr::TSS_Flags PR  = NStr::fSS_print;
 const NStr::TSS_Flags C   = NStr::fSS_cntrl;
 const NStr::TSS_Flags I   = NStr::fSS_punct;
 const NStr::TSS_Flags RM  = NStr::fSS_Remove;
@@ -2137,7 +2137,7 @@ static const SSanitizeTest s_SanitizeTests[] = {
 
     // Simple filters
     { "A123,BC45\nD6!",   0,   "A123,BC45 D6!", "\n"            },
-    { "A123,BC45\nD6!",   P,   "A123,BC45 D6!", "\n"            },
+    { "A123,BC45\nD6!",   PR,  "A123,BC45 D6!", "\n"            },
     { "A123,BC45\nD6!",   A,   "A BC D",        "123, 45\n 6!"  },
     { "A123,BC45\nD6!",   D,   "123 45 6",      "A ,BC \nD !"   },
     { "A123,BC45\nD6!",   AD,  "A123 BC45 D6",  ", \n !"        },
@@ -2163,7 +2163,7 @@ static const SSanitizeTest s_SanitizeTests[] = {
     { "\n\nA B\nC\n\n",   NM,     "A B C",         "\n\n   \n \n\n"   },
     { "  \nA B\nC\n  ",   NM,     "A B C",         "\n   \n \n"       },
     { "A123,BC45\nD6!",   NM,     "A123,BC45 D6!", "\n"               },
-    { "A123,BC45\nD6!",   NM+P,   "A123,BC45 D6!", "\n"               },
+    { "A123,BC45\nD6!",   NM+PR,  "A123,BC45 D6!", "\n"               },
     { "A123,BC45\nD6!",   NM+A,   "A    BC   D",   "123,  45\n 6!"    },
     { "A123,BC45\nD6!",   NM+D,   "123   45  6",   "A   ,BC  \nD !"   },
     { "A123,BC45\nD6!",   NM+AD,  "A123 BC45 D6",  ",    \n  !"       },
@@ -2189,7 +2189,7 @@ static const SSanitizeTest s_SanitizeTests[] = {
     { "\n\nA B\nC\n\n",   RM,     "A BC",          "\n\n \n\n\n"  },
     { "  \nA B\nC\n  ",   RM,     "A BC",          "\n \n\n"      },
     { "A123,BC45\nD6!",   RM,     "A123,BC45D6!",  "\n"           },
-    { "A123,BC45\nD6!",   RM+P,   "A123,BC45D6!",  "\n"           },
+    { "A123,BC45\nD6!",   RM+PR,  "A123,BC45D6!",  "\n"           },
     { "A123,BC45\nD6!",   RM+A,   "ABCD",          "123,45\n6!"   },
     { "A123,BC45\nD6!",   RM+D,   "123456",        "A,BC\nD!"     },
     { "A123,BC45\nD6!",   RM+AD,  "A123BC45D6",    ",\n!"         },
@@ -2215,7 +2215,7 @@ static const SSanitizeTest s_SanitizeTests[] = {
     { "\n\nA B\nC\n\n",   NM+RM,     "A BC",          "\n\n \n\n\n"    },
     { "  \nA B\nC\n  ",   NM+RM,     "A BC",          "\n \n\n"        },
     { "A123,BC45\nD6!",   NM+RM,     "A123,BC45D6!",  "\n"             },
-    { "A123,BC45\nD6!",   NM+RM+P,   "A123,BC45D6!",  "\n"             },
+    { "A123,BC45\nD6!",   NM+RM+PR,  "A123,BC45D6!",  "\n"             },
     { "A123,BC45\nD6!",   NM+RM+A,   "ABCD",          "123,45\n6!"     },
     { "A123,BC45\nD6!",   NM+RM+D,   "123456",        "A,BC\nD!"       },
     { "A123,BC45\nD6!",   NM+RM+AD,  "A123BC45D6",    ",\n!"           },
