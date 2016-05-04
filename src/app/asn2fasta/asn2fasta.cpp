@@ -120,10 +120,12 @@ private:
     bool                        m_OnlyProts;
     bool                        m_DeflineOnly;
     bool                        m_do_cleanup;
-    bool                        m_FeaturesOnly;
-    bool                        m_CDSFeaturesOnly;
-    bool                        m_GeneFeaturesOnly;
-    bool                        m_RNAFeaturesOnly;
+    bool                        m_AllFeats;
+    bool                        m_CDS;
+    bool                        m_TranslatedCDS;
+    bool                        m_Gene;
+    bool                        m_RNA;
+    CArgValue::TStringArray     m_FeatureSelection;
 };
 
 // constructor
@@ -181,9 +183,9 @@ void CAsn2FastaApp::Init(void)
 
         arg_desc->AddFlag("defline-only",
                           "Only output the defline");
-
+/*
         arg_desc->AddFlag("feats", 
-                          "Only process CDS, gene, prot, and RNA features");
+                          "Only process CDS, gene,  and RNA features");
 
         arg_desc->AddFlag("cds",
                           "Only process CDS features");
@@ -193,6 +195,15 @@ void CAsn2FastaApp::Init(void)
 
         arg_desc->AddFlag("rna", 
                           "Only process rna features");
+*/
+        string feat_desc = "Comma-separated list of feature types.\n";
+        feat_desc += " Allowed types are:\n";
+        feat_desc += "   fasta_cds_na,\n";
+        feat_desc += "   fasta_cds_aa,\n";
+        feat_desc += "   gene_fasta,\n";
+        feat_desc += "   rna_fasta,\n";
+        feat_desc += "   all";
+        arg_desc->AddOptionalKey("feats", "String", feat_desc, CArgDescriptions::eString);
     }}
 
     // output
@@ -410,11 +421,48 @@ int CAsn2FastaApp::Run(void)
         NCBI_THROW(CException, eUnknown, msg);
     }
 
+
     m_DeflineOnly = args["defline-only"];
-    m_FeaturesOnly = args["feats"];
-    m_CDSFeaturesOnly = args["cds"];
-    m_GeneFeaturesOnly = args["gene"];
-    m_RNAFeaturesOnly = args["rna"];
+
+    // Default is not to look at features
+    m_AllFeats = m_CDS 
+               = m_TranslatedCDS 
+               = m_Gene 
+               = m_RNA 
+               = false;
+
+    if ( args["feats"] ) {
+        list<string> feat_list;
+        NStr::Split(args["feats"].AsString(),
+                    ",",
+                    feat_list);
+
+        if (feat_list.empty()) {
+            m_AllFeats = true;
+        } else{
+            for(const auto feat_name : feat_list) {
+                if (feat_name == "fasta_cds_na") {
+                    m_CDS = true;
+                } else
+                if (feat_name == "fasta_cds_aa") {
+                    m_TranslatedCDS = true;
+                } else 
+                if (feat_name == "gene_fasta") {
+                    m_Gene = true;
+                } else 
+                if (feat_name == "rna_fasta") {
+                    m_RNA = true;
+                } else 
+                if (feat_name == "all") {
+                    m_AllFeats = true;
+                }
+            }
+        }
+        m_CDS   |= m_AllFeats;
+        m_TranslatedCDS |= m_AllFeats;
+        m_Gene  |= m_AllFeats;
+        m_RNA   |= m_AllFeats;
+    }
 
     if ( args["batch"] ) {
         CGBReleaseFile in(*is.release());
@@ -902,11 +950,14 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         }
     }
 
+    bool any_feats = m_AllFeats
+                   | m_CDS 
+                   | m_TranslatedCDS
+                   | m_Gene 
+                   | m_RNA;
 
-    if(!m_FeaturesOnly &&
-       !m_CDSFeaturesOnly &&
-       !m_GeneFeaturesOnly &&
-       !m_RNAFeaturesOnly) {
+
+    if(!any_feats) {
         for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
             CBioseq_Handle bsh = *bioseq_it;
             CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
@@ -937,14 +988,12 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         const CSeq_feat& feat = feat_it->GetOriginalFeature();
         auto bsh = scope.GetBioseqHandle(feat.GetLocation());
         CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
-
         if (!feat.IsSetData() ||
-            (!feat.GetData().IsCdregion() && m_CDSFeaturesOnly) ||
-            (!feat.GetData().IsGene() && m_GeneFeaturesOnly) ||
-            (!feat.GetData().IsRna() && m_RNAFeaturesOnly)) {
+            (feat.GetData().IsCdregion() && !m_CDS) ||
+            (feat.GetData().IsGene() && !m_Gene) ||
+            (feat.GetData().IsRna() && !m_RNA)) {
             continue;
         }
-
         if ( m_DeflineOnly ) {
             fasta_os->WriteFeatureTitle(feat, scope);
         } else {
