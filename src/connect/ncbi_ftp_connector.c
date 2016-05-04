@@ -281,7 +281,7 @@ static EIO_Status s_FTPReply(SFTPConnector* xxx, int* code,
             xxx->cntl = 0;
             if (status == eIO_Closed) {
                 CORE_LOGF_X(10, eLOG_Error,
-                            ("[FTP%s%s]  Lost connection @ %s:%hu (%s)",
+                            ("[FTP%s%s]  Lost connection to %s:%hu (%s)",
                              xxx->what ? "; " : "", xxx->what ? xxx->what : "",
                              xxx->info->host, xxx->info->port, reason));
             }
@@ -1109,7 +1109,7 @@ static EIO_Status x_FTPXfer(SFTPConnector*  xxx,
                     assert(!xxx->data);
                     CORE_LOGF_X(5, eLOG_Error,
                                 ("[FTP; %s]  Cannot accept data connection"
-                                 " @ :%hu (%s)", xxx->what,
+                                 " at :%hu (%s)", xxx->what,
                                  LSOCK_GetPort(lsock, eNH_HostByteOrder),
                                  IO_StatusStr(status)));
                     /* NB: data conn may have started at the server end */
@@ -1630,7 +1630,7 @@ static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
         status = s_FTPReply(xxx, &code, buf, sizeof(buf) - 1, 0);
         if (status == eIO_Success) {
             assert(!xxx->data  ||  xxx->send);
-            CORE_LOGF_X(12, eLOG_Error,
+            CORE_LOGF_X(12, xxx->data ? eLOG_Error : eLOG_Warning,
                         ("[FTP%s%s]  %spurious response %d from server%s%s",
                          xxx->what ? "; " : "", xxx->what ? xxx->what : "",
                          xxx->data ? "Aborting upload due to a s" : "S", code,
@@ -1706,7 +1706,7 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
         if (size == 3  ||  size == 4) {
             SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
             if         (size == 3  &&   strncasecmp(s, "REN",  3) == 0) {
-                /* a special-case, non-standard command */
+                /* special-case, non-standard command */
                 status = s_FTPRename(xxx, c + strspn(c, " \t"));
             } else if ((size == 3  ||  toupper((unsigned char) c[-4]) == 'X')
                        &&          (strncasecmp(c - 3, "CWD",  3) == 0  ||
