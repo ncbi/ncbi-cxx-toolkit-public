@@ -4,7 +4,7 @@ APP = test_lds2
 SRC = test_lds2
 
 
-LIB  = ncbi_xloader_lds2 lds2 $(OBJREAD_LIBS) xobjutil sqlitewrapp creaders xcompress $(COMPRESS_LIBS) $(SOBJMGR_LIBS)
+LIB  = ncbi_xloader_lds2 lds2 $(OBJREAD_LIBS) xobjutil sqlitewrapp $(COMPRESS_LIBS) $(SOBJMGR_LIBS)
 LIBS = $(SQLITE3_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = lds2_data

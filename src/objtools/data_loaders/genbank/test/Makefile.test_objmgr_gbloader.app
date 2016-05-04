@@ -6,7 +6,7 @@ REQUIRES = bdb dbapi FreeTDS
 
 APP = test_objmgr_gbloader
 SRC = test_objmgr_gbloader
-LIB = $(BDB_CACHE_LIB) $(BDB_LIB) $(OBJMGR_LIBS) ncbi_xdbapi_ftds $(FTDS_LIB) dbapi_driver$(STATIC)
+LIB = $(BDB_CACHE_LIB) $(BDB_LIB) ncbi_xdbapi_ftds $(OBJMGR_LIBS) $(FTDS_LIB)
 
 LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)
 

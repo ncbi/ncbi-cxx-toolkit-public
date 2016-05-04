@@ -9,8 +9,8 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
 LIB_ = test_boost $(BLAST_DB_DATA_LOADER_LIBS) align_format taxon1 blastdb_format \
-	gene_info xalnmgr xcgi xhtml seqmasks_io seqdb blast_services xobjutil \
-        $(OBJREAD_LIBS) xnetblastcli xnetblast blastdb scoremat tables xalnmgr $(OBJMGR_LIBS)
+        gene_info xalnmgr xcgi xhtml seqmasks_io seqdb blast_services xobjutil \
+	$(OBJREAD_LIBS) xnetblastcli xnetblast blastdb scoremat tables $(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

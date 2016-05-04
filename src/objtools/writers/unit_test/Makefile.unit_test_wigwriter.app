@@ -2,8 +2,8 @@
 
 APP = unit_test_wigwriter
 SRC = unit_test_wigwriter
-LIB = xunittestutil xobjwrite variation_utils $(OBJREAD_LIBS) xobjutil gbseq xalnmgr entrez2cli entrez2 \
-	tables test_boost $(OBJMGR_LIBS)
+LIB = xunittestutil xobjwrite variation_utils $(OBJREAD_LIBS) xalnmgr xobjutil gbseq entrez2cli entrez2 \
+        tables test_boost $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

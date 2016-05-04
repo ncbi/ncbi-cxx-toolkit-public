@@ -12,7 +12,7 @@ SRC = test_uudutil
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = uudutil gbproj submit seqset $(SEQ_LIBS) pub medline biblio general \
-      xser xconnserv xutil xconnect $(COMPRESS_LIBS) test_boost xncbi
+      xser xconnserv $(COMPRESS_LIBS) xutil xconnect test_boost xncbi
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
