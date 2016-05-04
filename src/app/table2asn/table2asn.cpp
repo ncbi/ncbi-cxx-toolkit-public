@@ -348,6 +348,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("map-use-loc", "Optical map: use locations instead of lengths of fragments");
     arg_desc->AddFlag("postprocess-pubs", "Postprocess pubs: convert authors to standard");
     arg_desc->AddOptionalKey("locus-tag-prefix", "String",  "Add prefix to locus tags in annotation files", CArgDescriptions::eString);
+    arg_desc->AddFlag("euk", "Assume eukariote");
 
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);

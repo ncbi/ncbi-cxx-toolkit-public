@@ -1047,7 +1047,8 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
         edit::CFeatTableEdit fte(**it, m_context.m_locus_tag_prefix, startingLocusTagNumber, m_context.m_logger);
         fte.InferPartials();
-        fte.InferParentMrnas();
+        if (m_context.m_eukariote)
+          fte.InferParentMrnas();
         fte.InferParentGenes();
         fte.EliminateBadQualifiers();
         fte.GenerateLocusTags();
