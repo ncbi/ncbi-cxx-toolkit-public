@@ -142,6 +142,9 @@ private:
     bool xTryProcessSeqAlignSet(
         CScope&,
         CObjectIStream&);
+    bool xTryProcessSeqSubmit(
+        CScope&,
+        CObjectIStream&);
         
     unsigned int xGffFlags( 
         const CArgs& );
@@ -363,6 +366,7 @@ bool CAnnotWriterApp::xTryProcessInputFile(
     knownTypes.insert(CBioseq_set::GetTypeInfo());
     knownTypes.insert(CSeq_align::GetTypeInfo());
     knownTypes.insert(CSeq_align_set::GetTypeInfo());
+    knownTypes.insert(CSeq_submit::GetTypeInfo());
 
     while (!pIs->EndOfData()) {
         matchingTypes = pIs->GuessDataType(knownTypes);
@@ -419,10 +423,65 @@ bool CAnnotWriterApp::xTryProcessInputFile(
             }
             continue;
         }
+        if (typeInfo == CSeq_submit::GetTypeInfo()) {
+            if (!xTryProcessSeqSubmit(*m_pScope, *pIs)) {
+               NCBI_THROW(CObjWriterException, eBadInput, 
+                   "xTryProcessInputFile: Unable to process Seq-submit object");
+            }
+            continue;
+        }
     }
     pIs.reset();
     return true;
 }
+
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::xTryProcessSeqSubmit(
+    CScope& scope,
+    CObjectIStream& istr)
+//  -----------------------------------------------------------------------------
+{
+    typedef CSeq_submit::C_Data::TEntrys ENTRIES;
+    typedef CSeq_submit::C_Data::TAnnots ANNOTS;
+
+    CSeq_submit submit;
+    try {
+        istr.Read(ObjectInfo(submit));
+    }
+    catch (CException&) {
+        return false;
+    }
+
+    CSeq_submit::TData& data = submit.SetData();
+    if (data.IsEntrys()) {
+        if (!GetArgs()["skip-headers"]) {
+            m_pWriter->WriteHeader();
+        }
+        ENTRIES& entries = data.SetEntrys();
+        for (ENTRIES::iterator cit = entries.begin(); cit != entries.end(); ++cit) {
+            CSeq_entry& entry = **cit;
+            CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+            m_pWriter->WriteSeqEntryHandle(seh, xAssemblyName(), xAssemblyAccession());
+            m_pWriter->WriteFooter();
+            scope.RemoveEntry(entry);
+        }
+        return true;
+    }
+    if (data.IsAnnots()) {
+        if (!GetArgs()["skip-headers"]) {
+            m_pWriter->WriteHeader();
+        }
+        ANNOTS& annots = data.SetAnnots();
+        for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit) {
+            m_pWriter->WriteAnnot(**cit, xAssemblyName(), xAssemblyAccession());
+            m_pWriter->WriteFooter();
+        }
+        return true;
+    }
+    return true;
+}
+
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::xTryProcessSeqEntry(
