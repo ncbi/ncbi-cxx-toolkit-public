@@ -272,7 +272,6 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDuplicationVarref(const CDuplica
             var_set.SetVariations().push_back(subvar_ref);
         }
         {
-           // CIUPACna duplicated_seq(dup.GetRaw_seq());
             auto duplicated_seq = x_CreateNtSeqLiteral(dup.GetRaw_seq());
             auto subvar_ref = g_CreateIdentity(duplicated_seq, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
@@ -326,11 +325,24 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateInversionVarref(const CInversion
 CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateConversionVarref(const CConversion& conv,
                                                                  const CVariation_ref::EMethod_E method) const
 {
+    {
+        const auto& replacement_int = conv.GetDst();
+        const auto start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(replacement_int);
+        const auto stop_offset  = CHgvsNaDeltaHelper::GetStopIntronOffset(replacement_int);
+
+        if (start_offset || stop_offset) {
+            string message = "Nucleotide conversions with replacement intervals that begin or end in an intron are not currently supported.\n";
+            message += "Please report to variation-services@ncbi.nlm.nih.gov";
+            NCBI_THROW(CVariationIrepException, eUnsupported, message);
+        }
+    }
+
     const auto& nt_int = conv.GetSrc();
 
     auto start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(nt_int);
-
     auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_int);
+
+
 
     auto id_string = conv.GetDst().GetStart().GetSite().GetSeqid(); 
     auto seq_type = conv.GetDst().GetStart().GetSite().GetSeqtype();
@@ -469,6 +481,7 @@ CRef<CSeq_feat> CHgvsNaIrepReader::x_CreateSeqfeat(const string& var_name,
                                                   m_Scope,
                                                   m_MessageListener);
     seq_feat->SetLocation(*seq_loc);
+
     return seq_feat;
 }
 
