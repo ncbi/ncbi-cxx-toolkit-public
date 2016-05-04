@@ -15,6 +15,8 @@
  * $Id$
 */
 
+#include <ncbi_pch.hpp>
+
 #include "teamcity_messages.h"
 
 #include <cstdlib>
