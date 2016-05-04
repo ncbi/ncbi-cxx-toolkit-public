@@ -3455,6 +3455,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         }
     }
 
+    /*
     if ( rna_type == CRNA_ref::eType_tRNA ) {
         TFeatScores scores;
         GetOverlappingFeatures(feat.GetLocation(),
@@ -3467,6 +3468,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                      "tRNA-rRNA overlap", feat);
         }
     }
+    */
 }
 
 
