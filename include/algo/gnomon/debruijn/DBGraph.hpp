@@ -1565,6 +1565,14 @@ public:
             }         
         }
         size_t Len() const { return m_seq.size(); }
+        size_t MinKmerPosition() const {
+            size_t mkp = 0;
+            for(size_t i = 0; i < m_kmers.size(); ++i) {
+                if(m_kmers[i] != 0 && (m_kmers[mkp] == 0 || m_kmers[i] < m_kmers[mkp]))
+                    mkp = i;
+            }
+            return mkp;
+        }
 
         bool operator<(const SContig& other) const { return m_seq < other.m_seq; }
 
