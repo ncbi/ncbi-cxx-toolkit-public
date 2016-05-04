@@ -1087,7 +1087,6 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                             overlap_flags);
                     }
                 }
-cout << "***** diff = " << cur_diff << endl;
 
                 if( plugin ) {
                     plugin->postProcessDiffAmount( cur_diff, cleaned_loc_this_iteration, 
