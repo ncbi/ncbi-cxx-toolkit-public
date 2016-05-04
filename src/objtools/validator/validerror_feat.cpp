@@ -3463,7 +3463,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                                eOverlap_Simple,
                                scores, *m_Scope);
         if (scores.size() > 0) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap,
                      "tRNA-rRNA overlap", feat);
         }
     }
