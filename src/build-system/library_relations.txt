@@ -459,10 +459,7 @@ gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
 gpipe_objutil needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
-gpipe_prodigal needs $(OBJREAD_LIBS)
-gpipe_prodigal needs xconnect
-gpipe_prodigal needs xobjutil
-gpipe_prodigal needs xregexp
+gpipe_prodigal needs prok_cluster_data
 gpipe_prok_clean_prot_names needs gpipe_attr
 gpipe_prok_clean_prot_names needs gpipe_clean_prot_names
 gpipe_property needs gpipe_common
@@ -1395,6 +1392,7 @@ xgpsubmit needs gc_load_utils
 xgpsubmit needs gpinit_access
 xgpsubmit needs gpipe_asn_cleanup
 xgpsubmit needs grid_wrapper
+xgpsubmit needs seqgapscan
 xgpsubmit needs xasmcompare
 xgpsubmit needs xid_utils
 xgraphiccgi needs gui_glmesa
