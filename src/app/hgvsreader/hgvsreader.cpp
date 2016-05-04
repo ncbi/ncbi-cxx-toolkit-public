@@ -102,10 +102,11 @@ int CHgvsToSeqfeatConverter::Run(void)
         seq_feat = irep_reader.CreateSeqfeat(irep);
     }
 
+    auto nsf = g_NormalizeVariationSeqfeat(*seq_feat, scope);
 
+    bool IsCDS = (seq_type == eVariantSeqType_c);
+    g_ValidateVariationSeqfeat(*seq_feat, scope, IsCDS);
 
-    CNormalizeVariant normalizer(*scope);
-    CRef<CSeq_feat> nsf = normalizer.GetNormalizedIdentity(*seq_feat);
     ostr << MSerial_AsnText << *nsf;
     return 0;
 }

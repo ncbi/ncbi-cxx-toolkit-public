@@ -2,9 +2,11 @@
 #include <objmgr/seq_vector.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
 #include <objtools/readers/hgvs/post_process.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
+#include <objtools/readers/hgvs/irep_to_seqfeat_errors.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
+USING_SCOPE(objects);
 
 CRef<CSeq_literal> CPostProcessUtils::GetLiteralAtLoc(const CSeq_loc& loc, CScope& scope) const
 {
@@ -166,8 +168,40 @@ void CNormalizeVariant::NormalizeIdentityInstance(CVariation_inst& identity_inst
 }
 
 
+CRef<CSeq_feat> g_NormalizeVariationSeqfeat(const CSeq_feat& feat,
+                                            CScope* scope)
+{
+    CNormalizeVariant normalizer(*scope);
+    return normalizer.GetNormalizedIdentity(feat);
+}
 
-void CValidateVariant::ValidateNaIdentityInst(CVariation_inst& identity_inst, const CSeq_loc& location) const
+
+void s_ValidateSeqLiteral(const CSeq_literal& literal, const CSeq_loc& location, CScope* scope, bool IsCDS=false)
+{
+    if (IsCDS) {
+        // post a warning here
+        return;
+    }
+
+
+    if (literal.IsSetLength() &&
+        location.IsInt()) {
+        const auto literal_length = literal.GetLength();
+        const auto interval_length = sequence::GetLength(location, scope);
+        if (literal_length != interval_length) {
+            string message = "Literal length (" + NStr::IntToString(literal_length) 
+                             + ") not consistent with interval length (" + NStr::IntToString(interval_length) + ")";
+            NCBI_THROW(CVariationValidateException, 
+                       eSeqliteralIntervalError, 
+                       message);
+        }
+    }
+}
+
+
+// Turn this into a static method maybe. 
+// Just use the class to organise the data
+void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst, const CSeq_loc& location, bool IsCDS) 
 {
     if (!identity_inst.IsSetType() ||
          identity_inst.GetType() != CVariation_inst::eType_identity)
@@ -175,34 +209,100 @@ void CValidateVariant::ValidateNaIdentityInst(CVariation_inst& identity_inst, co
         // Throw an exception
     }
 
-
     if (!identity_inst.IsSetDelta()) {
         // Throw an exception
     }
 
-
     auto& delta_item = *identity_inst.GetDelta().back();
-
     if (!delta_item.IsSetSeq()) {
         // Throw an exception
     }
-
 
     if (!delta_item.GetSeq().IsLiteral()) {
         // Throw an exception
     }
 
-//    ValidateNaSeqLiteral(delta_item.GetSeq().GetLiteral(), location);
+    const auto& literal = delta_item.GetSeq().GetLiteral();
 
+    // Check that the sequence location is consistent with the specified sequence
+    s_ValidateSeqLiteral(literal, location, &m_Scope, IsCDS);
     return;
 }
 
 
 
-void CValidateVariant::ValidateAaIdentityInst(CVariation_inst& identity_inst, const CSeq_loc& location) const
+
+void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS)
 {
+
+    if (!feat.IsSetData() ||
+        !feat.GetData().IsVariation() ||
+        !feat.GetData().GetVariation().IsSetData()) {
+         // Need to throw an exception.
+         // This cannot be a valid variation.
+         // For now, just return
+         return;
+    }
+
+    if (!feat.GetData().GetVariation().GetData().IsSet()) {
+        return;
+    }
+
+    const auto& data_set = feat.GetData().GetVariation().GetData().GetSet();
+
+    // We are only consider package variants from here on
+    if (!data_set.IsSetType() ||
+        data_set.GetType() != CVariation_ref::TData::TSet::eData_set_type_package ||
+        !data_set.IsSetVariations()) {
+        return;
+    }
+
+    // reference to list<CRef<CVariation_ref>> 
+    auto&& variation_list = data_set.GetVariations();
+
+    if (variation_list.size() != 2) {
+        // Need to return an error in the future. 
+        // We expect this to contain the asserted
+        // variation + the reference
+        return;
+    }
+
+    auto&& assertion = variation_list.front();
+    auto&& reference = variation_list.back();
+
+    if (!assertion->IsSetData() ||
+        !assertion->GetData().IsInstance() ||
+        !reference->IsSetData() ||
+        !reference->GetData().IsInstance()) {
+        // Need to return an error here. 
+        // Expect a reference and assertion instances
+        return;
+    }
+
+    const auto& assertion_inst = assertion->GetData().GetInstance();
+    const auto& reference_inst = reference->GetData().GetInstance();
+
+
+    if (!assertion_inst.IsSetType()) {
+        // Need to return an error here
+        return;
+    }
+
+    const auto type = assertion_inst.GetType();
+
+    // Checking for duplications, deletions, inversions, and Indels
+    // Note that duplications have eType_ins
+    if (type != CVariation_inst::eType_ins && 
+        type != CVariation_inst::eType_del &&
+        type != CVariation_inst::eType_delins &&
+        type != CVariation_inst::eType_inv) {
+        return; 
+    } 
+
+    CValidateVariant validator(*scope);
+    validator.ValidateIdentityInst(reference_inst, feat.GetLocation(), IsCDS);
+
+    return;
 }
 
-
-END_SCOPE(objects)
 END_NCBI_SCOPE

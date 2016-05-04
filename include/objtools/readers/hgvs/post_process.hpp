@@ -11,7 +11,7 @@
 #include <objects/valerr/ValidErrItem.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
+USING_SCOPE(objects);
 
 class CPostProcessUtils 
 {
@@ -39,24 +39,30 @@ private:
 };
 
 
+CRef<CSeq_feat> g_NormalizeVariationSeqfeat(const CSeq_feat& feat,
+                                            CScope* scope);
+
 
 class CValidateVariant
 {
 public:
     CValidateVariant(CScope& scope) : m_Scope(scope) {}
-    void ValidateAaIdentityInst(CVariation_inst& identity_inst, const CSeq_loc& location) const;
-    void ValidateNaIdentityInst(CVariation_inst& identity_inst, const CSeq_loc& location) const;
+
+    void ValidateIdentityInst(const CVariation_inst& identity_inst, 
+                              const CSeq_loc& location,
+                              bool IsCDS=false);
 
 private:
     CScope& m_Scope;
-
-
     CPostProcessUtils utils;
 };
 
 
+void g_ValidateVariationSeqfeat(const CSeq_feat& feat,
+                                CScope* scope,
+                                bool IsCDS=false);
 
-END_SCOPE(objects)
+
 END_NCBI_SCOPE
 
 
