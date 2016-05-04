@@ -74,6 +74,7 @@ class CNSScopeRegistry
                               unsigned int  count);
         void          RemoveJob(unsigned int  job_id);
         deque<string> GetScopeNames(void) const;
+        string        GetJobScope(unsigned int  job_id) const;
 
         string  Print(const CQueue *  queue,
                       size_t  batch_size,

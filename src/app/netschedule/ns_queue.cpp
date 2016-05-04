@@ -463,8 +463,7 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
 void CQueue::x_LogSubmit(const CJob &  job)
 {
     CDiagContext_Extra  extra = GetDiagContext().Extra()
-        .Print("job_key", MakeJobKey(job.GetId()))
-        .Print("queue", GetQueueName());
+        .Print("job_key", MakeJobKey(job.GetId()));
 
     extra.Flush();
 }
@@ -3877,7 +3876,10 @@ string CQueue::PrintJobDbStat(const CNSClientId &  client,
         // be suppressed.
         job_dump = job.Print(*this, m_AffinityRegistry, m_GroupRegistry) +
                    "OK:GC erase time: " +
-                   NS_FormatPreciseTime(m_GCRegistry.GetLifetime(job.GetId())) +
+                   NS_FormatPreciseTime(m_GCRegistry.GetLifetime(job_id)) +
+                   "\n"
+                   "OK:scope: '" +
+                   m_ScopeRegistry.GetJobScope(job_id) + "'"
                    "\n";
         return job_dump;
     } catch (...) {}
@@ -4009,13 +4011,16 @@ string CQueue::x_DumpJobs(const TNSBitVector &    jobs_to_dump,
                     // DUMP is in process. If so the job should not be dumped
                     // and the exception from m_GCRegistry.GetLifetime() should
                     // be suppressed.
+                    unsigned int  job_id = buffer[index].GetId();
                     one_job = "\n" + buffer[index].Print(*this,
                                                          m_AffinityRegistry,
                                                          m_GroupRegistry) +
                               "OK:GC erase time: " +
                               NS_FormatPreciseTime(
-                                  m_GCRegistry.GetLifetime(
-                                                buffer[index].GetId())) +
+                                          m_GCRegistry.GetLifetime(job_id)) +
+                              "\n"
+                              "OK:scope: '" +
+                              m_ScopeRegistry.GetJobScope(job_id) + "'"
                               "\n";
                    result += one_job;
                 } catch (...) {}
@@ -4366,7 +4371,7 @@ void CQueue::PrintStatistics(size_t &  aff_count) const
 
     // The member is called only if there is a request context
     extra.Print("_type", "statistics_thread")
-         .Print("queue", GetQueueName())
+         .Print("_queue", GetQueueName())
          .Print("time_interval", NS_FormatPreciseTimeAsSec(delta))
          .Print("affinities", affinities)
          .Print("pending", CountStatus(CNetScheduleAPI::ePending))

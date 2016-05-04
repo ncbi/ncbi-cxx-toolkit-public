@@ -251,6 +251,21 @@ deque<string> CNSScopeRegistry::GetScopeNames(void) const
 }
 
 
+string CNSScopeRegistry::GetJobScope(unsigned int  job_id) const
+{
+    CMutexGuard         guard(m_Lock);
+    if (m_AllScopedJobs[job_id] == false)
+        return kEmptyStr;
+
+    for (TScopeToJobsMap::const_iterator  k = m_ScopeToJobs.begin();
+            k != m_ScopeToJobs.end(); ++k) {
+        if (k->second[job_id])
+            return k->first;
+    }
+    return kEmptyStr;
+}
+
+
 unsigned int  CNSScopeRegistry::CollectGarbage(unsigned int  max_to_del)
 {
     unsigned int                        del_count = 0;
