@@ -11,8 +11,8 @@ APP = test_genomic_collections_svc
 SRC = test_genomic_collections_svc
 # OBJ =
 
-LIB_ = gencoll_client genome_collection $(SEQ_LIBS) pub medline biblio \
-	   general xser xconnect xutil xncbi $(COMPRESS_LIBS)
+LIB_ =  gencoll_client genome_collection $(SEQ_LIBS) pub medline biblio \
+           general xser xconnect $(COMPRESS_LIBS) xutil xncbi
 
 
 LIB = $(LIB_:%=%$(STATIC))

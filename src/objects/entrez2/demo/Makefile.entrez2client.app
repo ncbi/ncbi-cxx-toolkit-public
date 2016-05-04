@@ -7,7 +7,7 @@
 
 APP = entrez2client
 SRC = entrez2client
-LIB = entrez2 entrez2cli xconnect xser xutil xncbi
+LIB = entrez2cli entrez2 xconnect xser xutil xncbi
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects

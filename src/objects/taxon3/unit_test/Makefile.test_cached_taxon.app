@@ -5,8 +5,7 @@ SRC = test_cached_taxon
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = test_boost taxon3 $(OBJMGR_LIBS) \
-       $(OBJEDIT_LIBS)
+LIB  = test_boost $(XFORMAT_LIBS) xalnmgr xobjutil xregexp $(OBJMGR_LIBS) tables
 
 LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

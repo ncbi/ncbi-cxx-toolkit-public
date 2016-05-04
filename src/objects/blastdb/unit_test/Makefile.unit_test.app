@@ -12,7 +12,7 @@ SRC = defline_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I$(srcdir)/..
 
-LIB = test_boost xncbi blastdb $(OBJMGR_LIBS)
+LIB = test_boost blastdb $(OBJMGR_LIBS)
 
 REQUIRES = Boost.Test.Included
 
