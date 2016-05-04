@@ -31,11 +31,6 @@
  *  Utility functions for BLAST command line applications
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include "blast_app_util.hpp"
 

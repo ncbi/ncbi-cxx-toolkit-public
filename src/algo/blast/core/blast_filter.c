@@ -28,11 +28,6 @@
  * All code related to query sequence masking/filtering for BLAST
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/blast_seg.h>

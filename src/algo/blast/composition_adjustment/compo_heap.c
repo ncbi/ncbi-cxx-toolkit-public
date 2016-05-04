@@ -29,11 +29,6 @@
  * @author E. Michael Gertz, Alejandro Schaffer
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <assert.h>
 #include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/composition_adjustment/compo_heap.h>

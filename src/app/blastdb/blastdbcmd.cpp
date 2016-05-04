@@ -32,11 +32,6 @@
  * successor to fastacmd from the C toolkit
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/api/version.hpp>

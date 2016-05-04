@@ -32,11 +32,6 @@
 #include <algo/blast/core/blast_aalookup.h>
 #include "masksubj.inl"
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif                          /* SKIP_DOXYGEN_PROCESSING */
-
 /**
  * Scans the subject sequence from "offset" to the end of the sequence.
  * Copies at most array_size hits.

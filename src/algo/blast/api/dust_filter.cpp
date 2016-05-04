@@ -32,11 +32,6 @@
 
 /// @file dust_filter.cpp
 /// Calls sym dust lib in algo/dustmask and returns CSeq_locs for use by BLAST.
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include "dust_filter.hpp"
 #include <serial/iterator.hpp>

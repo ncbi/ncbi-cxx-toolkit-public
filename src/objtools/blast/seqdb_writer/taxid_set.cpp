@@ -30,11 +30,6 @@
 /** @file taxid_set.cpp
 *     Class which defines sequence id to taxid mapping.
 */
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_writer/taxid_set.hpp>
 #include <objtools/blast/seqdb_writer/multisource_util.hpp>

@@ -31,11 +31,6 @@
  * Implementation of the IGBLASTP command line arguments
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] 
-    = "$Id$";
-#endif
-
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/igblastp_args.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>

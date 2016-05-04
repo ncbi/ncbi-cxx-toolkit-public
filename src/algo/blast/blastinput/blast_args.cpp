@@ -35,11 +35,6 @@ Author: Jason Papadopoulos
  * convert blast-related command line
  * arguments into blast options
 */
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif
-
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>

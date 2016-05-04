@@ -31,11 +31,6 @@
  * Implementation of the genetic code singleton
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/gencode_singleton.h>
 #include "blast_dynarray.h"
 

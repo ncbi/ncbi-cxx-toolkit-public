@@ -32,11 +32,6 @@ Author: Greg Boratyn
 Contents: Printer for standard multiple sequence alignmnet formats
 
 ******************************************************************************/
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif
-
 #include <ncbi_pch.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/sequence.hpp>

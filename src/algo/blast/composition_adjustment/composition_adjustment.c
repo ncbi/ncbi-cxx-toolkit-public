@@ -28,10 +28,6 @@
  *
  * @author Yi-Kuo Yu, Alejandro Schaffer, E. Michael Gertz
  */
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <limits.h>
 #include <assert.h>

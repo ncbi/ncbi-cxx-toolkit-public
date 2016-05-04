@@ -30,11 +30,6 @@
 /// @file seqdbgimask.cpp
 /// This is the implementation file for the CSeqDBGiMask class,
 /// which support read operations on Gi based BlastDB masks.
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include "seqdbgimask.hpp"
 #include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>

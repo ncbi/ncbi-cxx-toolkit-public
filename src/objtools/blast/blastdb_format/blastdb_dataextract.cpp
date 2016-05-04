@@ -30,11 +30,6 @@
 /** @file blastdb_dataextract.cpp
  *  Defines classes which extract data from a BLAST database
  */
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <objtools/blast/blastdb_format/invalid_data_exception.hpp>
 #include <objtools/blast/blastdb_format/blastdb_dataextract.hpp>

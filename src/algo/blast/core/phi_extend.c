@@ -31,11 +31,6 @@
  * Word finder functions for PHI-BLAST
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/phi_lookup.h>
 #include <algo/blast/core/phi_extend.h>
 

@@ -30,11 +30,6 @@
 /** @file blastp_args.cpp
  * Implementation of the BLASTP command line arguments
  */
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif
-
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/blastp_args.hpp>
 #include <algo/blast/api/blast_advprot_options.hpp>

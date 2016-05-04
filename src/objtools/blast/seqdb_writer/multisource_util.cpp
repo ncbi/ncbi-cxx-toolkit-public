@@ -30,11 +30,6 @@
 /** @file multisource_util.cpp
 * Utility functions and classes for multisource app.
 */
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <serial/typeinfo.hpp>
 #include <objects/seqloc/seqloc__.hpp>

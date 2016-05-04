@@ -32,11 +32,6 @@
  * @sa blast_encoding.h
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/blast_encoding.h>
 
 const Uint1 NCBI4NA_TO_BLASTNA[BLASTNA_SIZE] = {

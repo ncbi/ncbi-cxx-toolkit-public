@@ -30,11 +30,6 @@
 
 #include <algo/blast/core/blast_lookup.h>
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif                          /* SKIP_DOXYGEN_PROCESSING */
-
 void BlastLookupAddWordHit(Int4 **backbone, Int4 wordsize,
                            Int4 charsize, Uint1* seq,
                            Int4 query_offset)

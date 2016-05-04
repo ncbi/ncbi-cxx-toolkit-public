@@ -31,11 +31,6 @@
  *  Implementation of the CSeqFormatter class
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <objtools/blast/blastdb_format/seq_writer.hpp>
 #include <objtools/blast/blastdb_format/blastdb_dataextract.hpp>

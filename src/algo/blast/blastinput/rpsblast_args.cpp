@@ -30,11 +30,6 @@
 /** @file rpsblast_args.cpp
  * Implementation of the RPSBLAST command line arguments
  */
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif
-
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/rpsblast_args.hpp>
 #include <algo/blast/api/blast_rps_options.hpp>

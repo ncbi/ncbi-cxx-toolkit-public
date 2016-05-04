@@ -30,11 +30,6 @@
 /// @file seqalignfilter.cpp
 /// Implementation of the alignment filtering class.
 ///
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 
 #include <objtools/align_format/seqalignfilter.hpp>

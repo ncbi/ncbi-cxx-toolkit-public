@@ -28,11 +28,6 @@
  * Functions to iterate over seed hits and perform ungapped extensions.
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif                          /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/aa_ungapped.h>
 #include <algo/blast/core/blast_aalookup.h>
 #include <algo/blast/core/blast_aascan.h>

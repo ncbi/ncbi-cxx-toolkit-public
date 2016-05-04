@@ -32,11 +32,6 @@
  * search
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_results.hpp>
 #include <objects/seqalign/Seq_align.hpp>

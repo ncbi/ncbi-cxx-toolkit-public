@@ -31,10 +31,6 @@
 /** @file local_blastdb_adapter.cpp
  * Defines the CLocalBlastDbAdapter class
  */
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include "local_blastdb_adapter.hpp"
 #include <objects/seq/Seq_inst.hpp>

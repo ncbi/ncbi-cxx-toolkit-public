@@ -29,11 +29,7 @@
 
 /** @file build_db.cpp
   Code to build a database given various sources of sequence data.
-*/
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
+  */
 #include <ncbi_pch.hpp>
 
 // Blast databases

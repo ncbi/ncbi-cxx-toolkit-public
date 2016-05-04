@@ -29,11 +29,6 @@
 
 /// @file writedb.cpp
 /// Implementation for the CWriteDB class, the top level class for WriteDB.
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>

@@ -41,11 +41,6 @@
 ///     CSeqDB_MembBitWalker 
 /// 
 /// Implemented for: UNIX, MS-Windows
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>

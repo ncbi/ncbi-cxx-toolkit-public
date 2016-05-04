@@ -30,11 +30,6 @@
  *  Private interface to support the multi-threaded traceback
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/blast_setup.h>
 #include "blast_traceback_mt_priv.h"
 #include "blast_hspstream_mt_utils.h"

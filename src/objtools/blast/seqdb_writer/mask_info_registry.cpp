@@ -29,11 +29,6 @@
 /** @file mask_info_registry.cpp
  * Implements CMaskInfoRegistry class
  */
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include "mask_info_registry.hpp"
 #include <objtools/blast/seqdb_writer/writedb_error.hpp>

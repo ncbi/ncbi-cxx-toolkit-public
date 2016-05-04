@@ -28,11 +28,6 @@
  * Definitions for functions dealing with BLAST CORE parameter structures.
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/blast_parameters.h>
 #include <algo/blast/core/ncbi_math.h>
 #include <algo/blast/core/blast_nalookup.h>

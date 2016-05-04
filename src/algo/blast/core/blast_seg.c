@@ -34,11 +34,6 @@
  * @todo FIXME needs comments
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/blast_seg.h>
 #include <algo/blast/core/ncbi_math.h>
 #include <algo/blast/core/blast_filter.h>

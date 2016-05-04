@@ -29,11 +29,6 @@
 
 /// @file writedb_gimask.cpp
 /// Implementation for the CWriteDB_GiMask and related classes.
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include "writedb_gimask.hpp"

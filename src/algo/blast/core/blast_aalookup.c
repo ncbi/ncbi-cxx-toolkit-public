@@ -32,11 +32,6 @@
 #include <algo/blast/core/lookup_util.h>
 #include <algo/blast/core/blast_encoding.h>
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif                          /* SKIP_DOXYGEN_PROCESSING */
-
 /** Structure containing information needed for adding neighboring words. 
  */
 typedef struct NeighborInfo {

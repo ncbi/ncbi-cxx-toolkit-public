@@ -39,11 +39,6 @@
  * 10890403.
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 
 #include <algo/blast/core/hspfilter_culling.h>
 #include <algo/blast/core/hspfilter_collector.h>

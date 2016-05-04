@@ -34,11 +34,6 @@
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_filter.h>
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif                          /* SKIP_DOXYGEN_PROCESSING */
-
 /** bitfield used to detect ambiguities in uncompressed
  *  nucleotide letters
  */

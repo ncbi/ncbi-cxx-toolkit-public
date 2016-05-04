@@ -28,11 +28,6 @@
  * Definitions for portable math library
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/ncbi_math.h>
 
 double BLAST_Expm1(double	x)

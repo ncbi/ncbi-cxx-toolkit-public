@@ -32,11 +32,6 @@
 #include <algo/blast/core/blast_nascan.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif                          /* SKIP_DOXYGEN_PROCESSING */
-
 /**
 * Retrieve the number of query offsets associated with this subject word.
 * @param lookup The lookup table to read from. [in]

@@ -29,11 +29,6 @@
 
 /// @file seqdbblob.cpp
 /// Defines BlastDb `Blob' class for SeqDB and WriteDB.
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_reader/seqdbblob.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>

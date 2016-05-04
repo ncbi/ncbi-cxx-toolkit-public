@@ -29,11 +29,6 @@
  *   vector screen graphic (using HTML table) 
  *
  */
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <objtools/align_format/vectorscreen.hpp>
 #include <util/range.hpp>

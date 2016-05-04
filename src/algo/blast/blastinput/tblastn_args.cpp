@@ -31,11 +31,6 @@
  * Implementation of the TBLASTN command line arguments
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] 
-    = "$Id$";
-#endif
-
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/api/tblastn_options.hpp>

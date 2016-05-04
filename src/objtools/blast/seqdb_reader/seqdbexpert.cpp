@@ -29,11 +29,6 @@
 
 /// @file seqdbexpert.cpp
 /// Implementation for the CSeqDBExpert class.
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
 #include "seqdbimpl.hpp"

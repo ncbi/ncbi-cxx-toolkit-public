@@ -30,11 +30,6 @@
  * Authors: Alejandro Schaffer, Yi-Kuo Yu
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/composition_adjustment/composition_adjustment.h>
 #include <algo/blast/composition_adjustment/compo_mode_condition.h>

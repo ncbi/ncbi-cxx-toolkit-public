@@ -31,11 +31,6 @@
  * Implementation of the BLASTN command line arguments
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] 
-    = "$Id$";
-#endif
-
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/blastn_args.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>

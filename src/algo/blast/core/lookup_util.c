@@ -28,11 +28,6 @@
  *  Utility functions for lookup table generation.
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/lookup_util.h>
 
 static void fkm_output(Int4 * a,

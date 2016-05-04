@@ -28,11 +28,6 @@
  * Functions to initialize structures used for BLAST extension
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif                          /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_options.h>
 

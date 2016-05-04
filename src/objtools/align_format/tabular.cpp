@@ -31,11 +31,6 @@
 /// @file: tabular.cpp
 /// Formatting of pairwise sequence alignments in tabular form.
 /// One line is printed for each alignment with tab-delimited fielalnVec. 
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>

@@ -30,11 +30,6 @@
 /// @file seqdbisam.cpp
 /// Implementation for the CSeqDBIsam class, which manages an ISAM
 /// index of some particular kind of identifiers.
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_reader/impl/seqdbisam.hpp>
 #include <objects/seqloc/Seq_id.hpp>

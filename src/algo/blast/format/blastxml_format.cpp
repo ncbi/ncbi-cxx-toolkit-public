@@ -30,11 +30,6 @@
 
 /// @file blastxml_format.cpp
 /// Formatting of BLAST results in XML form, using the BLAST XML specification.
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objects/seqloc/Seq_interval.hpp>

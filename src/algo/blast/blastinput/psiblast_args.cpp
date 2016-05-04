@@ -30,11 +30,6 @@
 /** @file psiblast_args.cpp
  * Implementation of the PSI-BLAST command line arguments
  */
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif
-
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <algo/blast/api/psiblast_options.hpp>

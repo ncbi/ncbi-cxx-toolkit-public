@@ -28,11 +28,6 @@
  * Nucleotide ungapped extension routines
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif                          /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/na_ungapped.h>
 #include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/core/blast_nascan.h>

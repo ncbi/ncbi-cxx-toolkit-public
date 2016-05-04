@@ -35,11 +35,6 @@
  * megablast lookup table, etc.
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_aalookup.h>
 #include <algo/blast/core/blast_nalookup.h>

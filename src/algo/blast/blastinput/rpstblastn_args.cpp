@@ -31,11 +31,6 @@
  * Implementation of the RPSTBLASTN command line arguments
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] 
-    = "$Id$";
-#endif
-
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/rpstblastn_args.hpp>
 #include <algo/blast/api/rpstblastn_options.hpp>

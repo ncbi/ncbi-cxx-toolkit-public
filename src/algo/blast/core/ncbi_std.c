@@ -29,11 +29,6 @@
  * A few utilities needed by code in algo/blast/core but not provided elsewhere.
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/blast_def.h> /* for sfree() macro */
 #include <algo/blast/core/ncbi_std.h>
 

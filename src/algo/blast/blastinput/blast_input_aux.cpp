@@ -31,11 +31,6 @@
  *  Auxiliary functions for BLAST input library
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>

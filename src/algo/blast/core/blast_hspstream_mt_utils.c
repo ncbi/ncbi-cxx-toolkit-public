@@ -32,11 +32,6 @@
  *  with the BlastHSPStream
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] =
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include "blast_hspstream_mt_utils.h"
 
 /** Reset and free the BlastHSPStreamResultBatch structures contained in the

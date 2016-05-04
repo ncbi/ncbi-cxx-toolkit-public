@@ -32,11 +32,6 @@
  */
 
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <algo/blast/core/blast_diagnostics.h>
 #include <algo/blast/core/blast_def.h>
 

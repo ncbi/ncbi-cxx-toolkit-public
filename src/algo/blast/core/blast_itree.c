@@ -31,11 +31,6 @@
  * Functions that implement an interval tree for fast HSP containment tests
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include "blast_itree.h"
 #include "blast_gapalign_priv.h"
 #include "blast_hits_priv.h"

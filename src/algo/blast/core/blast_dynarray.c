@@ -32,11 +32,6 @@
  */
 
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
-    "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include "blast_dynarray.h"
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_message.h>  /* for error codes */
