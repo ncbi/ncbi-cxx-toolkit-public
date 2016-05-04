@@ -676,38 +676,6 @@ bool CWriteUtil::GetBestId(
     const CSeq_loc& loc = mf.GetLocation();
     idh = sequence::GetIdHandle(loc, &mf.GetScope());
     return  GetBestId(idh, mf.GetScope(), best_id);
-
-    /**
-    if (loc.IsInt()) {
-        return  GetBestId( 
-            CSeq_id_Handle::GetHandle(loc.GetInt().GetId()), 
-            mf.GetScope(), best_id);
-    }
-    if (loc.IsMix()) {
-        try {
-            const CSeq_loc& sub = *loc.GetMix().Get().front();
-            if (sub.IsInt()) {
-                return  GetBestId( 
-                    CSeq_id_Handle::GetHandle(sub.GetInt().GetId()), 
-                    mf.GetScope(), best_id);
-            }
-            else
-            if (sub.IsMix())
-            {
-                const CSeq_id* pid = sub.GetMix().GetFirstLoc()->GetId();
-                return GetBestId(CSeq_id_Handle::GetHandle(*pid), mf.GetScope(),
-                    best_id);
-            }
-            const CSeq_id* pid = sub.GetId();
-            return GetBestId(CSeq_id_Handle::GetHandle(*pid), mf.GetScope(),
-                best_id);
-
-        }
-        catch (...) {};
-    }
-    best_id = mf.GetLocationId().AsString();
-    **/
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -786,34 +754,16 @@ CMappedFeat CGffFeatureContext::FindBestGeneParent(const CMappedFeat& mf)
     }
     m_mfLastIn = mf;
 
-    //CMappedFeat gene;
+    CSeqFeatData::ESubtype subType = mf.GetFeatSubtype();
+    if (subType == CSeqFeatData::eSubtype_mobile_element) {
+        cerr << "";
+    }
+
     if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {
         m_mfLastOut = feature::GetBestGeneForMrna(mf, &m_ft);
-        if (!m_mfLastOut) {
-            m_mfLastOut = feature::GetBestGeneForMrna(mf, &m_ft, 0,
-                feature::CFeatTree::eBestGene_TreeOnly);
-        }
     }
     else {
         m_mfLastOut = feature::GetBestGeneForFeat(mf, &m_ft);
-        if (!m_mfLastOut) {
-            m_mfLastOut = feature::GetBestGeneForFeat(mf, &m_ft, 0,
-                feature::CFeatTree::eBestGene_TreeOnly);
-        }
-    }
-    if (!m_mfLastOut) {
-        CSeq_loc loc;
-        loc.Add(mf.GetLocation());
-        loc.SetStrand(objects::eNa_strand_unknown);
-        CConstRef<CSeq_feat> pOverlap = sequence::GetBestOverlappingFeat(
-            loc,
-            CSeqFeatData::eSubtype_gene,
-            sequence::eOverlap_Interval,
-            mf.GetScope());
-        CFeat_CI ci(mf.GetScope(), loc);
-        if (ci) {
-            m_mfLastOut = *ci;
-        }
     }
     return m_mfLastOut;
 }
@@ -822,7 +772,7 @@ CMappedFeat CGffFeatureContext::FindBestGeneParent(const CMappedFeat& mf)
 CConstRef<CUser_object> CWriteUtil::GetUserObjectByType(
     const CUser_object& uo,
     const string& strType)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     if (uo.IsSetType() && uo.GetType().IsStr() &&
         uo.GetType().GetStr() == strType) {

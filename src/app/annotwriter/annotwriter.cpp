@@ -722,8 +722,7 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
         return pWriter;
     }
     if (strFormat == "wiggle"  ||  strFormat == "wig") {
-        //return new CWiggleWriter(*pOs, args["tracksize"].AsInteger());
-        return new CWiggleWriter(*pOs, 0);
+        return new CWiggleWriter(*m_pScope, *pOs, 0);
     }
     if (strFormat == "bed") {
         return new CBedWriter(*m_pScope, *pOs, 12);

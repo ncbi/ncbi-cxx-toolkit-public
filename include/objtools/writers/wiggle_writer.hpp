@@ -47,6 +47,10 @@ class NCBI_XOBJWRITE_EXPORT CWiggleWriter:
 {
 public:
     CWiggleWriter(
+        CScope&,
+        CNcbiOstream&,
+        size_t = 0 );
+    CWiggleWriter(
         CNcbiOstream&,
         size_t = 0 );
     ~CWiggleWriter();
@@ -86,6 +90,7 @@ protected:
     bool xTableGetPosOut(const CSeq_table&, int, int, int&);
     bool xTableGetValue(const CSeq_table&, int, double&);
  
+    CScope* mpScope;
     size_t m_uTrackSize;
 };
 

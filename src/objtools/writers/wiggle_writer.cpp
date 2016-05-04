@@ -49,6 +49,7 @@
 #include <objects/seqtable/SeqTable_column_info.hpp>
 
 //#include <objtools/writers/gff_record.hpp>
+#include <objtools/writers/write_util.hpp>
 #include <objtools/writers/wiggle_writer.hpp>
 
 #include <math.h>
@@ -60,9 +61,22 @@ USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
 CWiggleWriter::CWiggleWriter(
+    CScope& scope,
     CNcbiOstream& ostr,
     size_t uTrackSize ) :
 //  ----------------------------------------------------------------------------
+    mpScope(&scope),
+    CWriterBase( ostr, 0 ),
+    m_uTrackSize( uTrackSize == 0 ? size_t( -1 ) : uTrackSize )
+{
+};
+
+//  ----------------------------------------------------------------------------
+CWiggleWriter::CWiggleWriter(
+    CNcbiOstream& ostr,
+    size_t uTrackSize ) :
+//  ----------------------------------------------------------------------------
+    mpScope(0),
     CWriterBase( ostr, 0 ),
     m_uTrackSize( uTrackSize == 0 ? size_t( -1 ) : uTrackSize )
 {
@@ -248,6 +262,12 @@ bool CWiggleWriter::xWriteSingleGraphFixedStep(
         }
         pId->GetLabel( &strChrom );
         break;
+    }
+    if (mpScope) {
+        string bestId;
+        CWriteUtil::GetBestId(
+            CSeq_id_Handle::GetHandle(strChrom), *mpScope, bestId);
+        strChrom = bestId;
     }
     strFixedStep += strChrom;
 
@@ -546,7 +566,7 @@ bool CWiggleWriter::xIsVariableStepData(
 //  ----------------------------------------------------------------------------
 bool CWiggleWriter::xWriteTableFixedStep(
     const CSeq_table& table,
-    const string& chrom,
+    const string& chromId,
     int span,
     int start,
     int step)
@@ -556,6 +576,14 @@ bool CWiggleWriter::xWriteTableFixedStep(
 //      ...
 //  ----------------------------------------------------------------------------
 {
+    string chrom(chromId);
+    if (mpScope) {
+        string bestId;
+        CWriteUtil::GetBestId(
+            CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
+        chrom = bestId;
+    }
+
     //write fixedStep directive
     m_Os << "fixedStep chrom=" << chrom << " span=" << span << 
         " start=" << (start+1) << " step=" << step << '\n';
@@ -575,7 +603,7 @@ bool CWiggleWriter::xWriteTableFixedStep(
 //  ----------------------------------------------------------------------------
 bool CWiggleWriter::xWriteTableVariableStep(
     const CSeq_table& table,
-    const string& chrom,
+    const string& chromId,
     int span)
 //
 //  Record format is:
@@ -584,6 +612,14 @@ bool CWiggleWriter::xWriteTableVariableStep(
 //      ...
 //  ----------------------------------------------------------------------------
 {
+    string chrom(chromId);
+    if (mpScope) {
+        string bestId;
+        CWriteUtil::GetBestId(
+            CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
+        chrom = bestId;
+    }
+
     //write variableStep directive
     m_Os << "variableStep chrom=" << chrom << " span=" << span << '\n';
 
@@ -655,6 +691,12 @@ bool CWiggleWriter::xTableGetChromName(
             if (fieldName == "Seq-table location") {
                 CConstRef< CSeq_loc > pLoc = columns[u]->GetSeq_loc(index);
                 pLoc->GetId()->GetLabel(&chrom, CSeq_id::eContent);
+                if (mpScope) {
+                    string bestId;
+                    CWriteUtil::GetBestId(
+                        CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
+                    chrom = bestId;
+                }
                 return true;
             }
         }
@@ -663,6 +705,12 @@ bool CWiggleWriter::xTableGetChromName(
             if (fieldId == CSeqTable_column_info::eField_id_location_id) {
                 CConstRef< CSeq_id > pId = columns[u]->GetSeq_id(index);
                 pId->GetLabel(&chrom, CSeq_id::eContent);
+                if (mpScope) {
+                    string bestId;
+                    CWriteUtil::GetBestId(
+                        CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
+                    chrom = bestId;
+                }
                 return true;
             }
         }
