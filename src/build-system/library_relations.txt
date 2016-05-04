@@ -251,7 +251,6 @@ dtd_sample_lib needs xser
 dummy_gpipe needs3party $(ORIG_LIBS)
 edirect needs eueid
 edirect needs ncqhst
-edirect needs txservbase
 egenedb needs $(COMPRESS_LIBS)
 egenedb needs $(CONNEXT)
 egenedb needs dbapi_driver_wrap_s
@@ -978,7 +977,6 @@ softparse needs taxon1
 softparse needs xmlwrapp
 spcgi needs softparse
 spcgi needs xgridcgi
-spellsrvbase needs txservbase
 splitdbasn_g needs gendefasn_g
 splitdbasn_g needs3party ncbiobj
 splitdbasncpp_g needs asngendefs
@@ -1109,13 +1107,10 @@ tvlib needs tv_objects
 tvlib needs uudutil
 tvlib needs w_phylo_tree
 txclient needs xconnect
-txserv includes txservbase
 txserv needs txxmldoc
 txserv14 needs txxmldoc
 txserv14 needs xconnect
 txserv14 needs3party $(RT_LIBS)
-txservbase needs xconnect
-txservbase needs3party $(RT_LIBS)
 txxmldoc needs $(COMPRESS_LIBS)
 txxmldoc needs xutil
 txxmldoc needs3party $(LIBXML_LIBS)
