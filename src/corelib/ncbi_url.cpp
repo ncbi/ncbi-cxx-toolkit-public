@@ -512,21 +512,23 @@ string CUrl::ComposeUrl(CUrlArgs::EAmpEncoding amp_enc,
         url += m_Scheme;
         url += m_IsGeneric ? "://" : ":";
     }
-    bool use_auth = false;
-    if ( !m_User.empty() ) {
-        url += encoder->EncodeUser(m_User);
-        use_auth = true;
-    }
-    if ( !m_Password.empty() ) {
-        url += ":" + encoder->EncodePassword(m_Password);
-        use_auth = true;
-    }
-    if ( use_auth ) {
-        url += "@";
-    }
-    url += m_Host;
-    if ( !m_Port.empty() ) {
-        url += ":" + m_Port;
+    if ( !m_Host.empty() ) {
+        bool use_auth = false;
+        if ( !m_User.empty() ) {
+            url += encoder->EncodeUser(m_User);
+            use_auth = true;
+        }
+        if ( !m_Password.empty() ) {
+            url += ":" + encoder->EncodePassword(m_Password);
+            use_auth = true;
+        }
+        if ( use_auth ) {
+            url += "@";
+        }
+        url += m_Host;
+        if ( !m_Port.empty() ) {
+            url += ":" + m_Port;
+        }
     }
     url += encoder->EncodePath(m_Path);
     if ( HaveArgs() ) {
