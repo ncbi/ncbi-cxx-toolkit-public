@@ -1,3 +1,13 @@
+Release 4.26.0 cloned from 4.25.0 (2016-05-04)
+
+Improvements:
+    * NetSchedule: [server]/wst_cache_size parameter could not be reconfigured
+      (JIRA: CXX-7986)
+    * Scope attribute for jobs (JIRA: CXX-8034)
+    * NetSchedule: performance degradation after millions of jobs
+      (JIRA: CXX-8074)
+
+
 Release 4.25.0 based on SC-17.0 (2016-03-24)
 
 Improvements:
