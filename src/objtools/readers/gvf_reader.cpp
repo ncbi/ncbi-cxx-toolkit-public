@@ -131,6 +131,21 @@ bool CGvfReadRecord::AssignFromGff(
         return false;
     }
     // GVF specific fixup goes here ...
+    TAttrIt idIt = m_Attributes.find("ID");
+    if (idIt == m_Attributes.end()) {
+        string errMessage(
+            "Required attribute ID missing. Import aborted.");
+        xTraceError(eDiag_Critical, errMessage);
+        return false;
+    }
+    TAttrIt variantSeqIt = m_Attributes.find("Variant_seq");
+    TAttrIt referenceSeqIt = m_Attributes.find("Reference_seq");
+    if (variantSeqIt == m_Attributes.end()  ||  referenceSeqIt == m_Attributes.end()) {
+        string errMessage(
+            "Required attribute Reference_seq and/or Variant_seq missing. Import aborted.");
+        xTraceError(eDiag_Critical, errMessage);
+        return false;
+    }
     return true;
 }
 
@@ -190,7 +205,7 @@ void CGvfReadRecord::xTraceError(
         severity,
         mLineNumber,
         msg) );
-    if (!mpMessageListener->PutError(*pErr)) {
+    if (!mpMessageListener  ||  !mpMessageListener->PutError(*pErr)) {
         pErr->Throw();
     }
 }
@@ -913,7 +928,7 @@ bool CGvfReader::xVariationSetDeletions(
                pAllele );
         }
     }
-    return true;
+    return false;
 }
 
 //  ---------------------------------------------------------------------------
