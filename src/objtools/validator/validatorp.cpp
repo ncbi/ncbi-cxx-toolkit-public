@@ -544,11 +544,15 @@ static const EErrType sc_ValidGenomeRaise[] = {
 
 DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<EErrType>, sc_GenomeRaiseArray, sc_ValidGenomeRaise);
 
-static bool RaiseGenomeSeverity (
+bool CValidError_imp::RaiseGenomeSeverity(
     EErrType et
 )
 
 {
+    if (et == eErr_SEQ_INST_CompleteTitleProblem && 
+        (IsEmbl() || IsDdbj())) {
+        return false;
+    }
     if (sc_GenomeRaiseArray.find (et) != sc_GenomeRaiseArray.end()) {
         return true;
     }
