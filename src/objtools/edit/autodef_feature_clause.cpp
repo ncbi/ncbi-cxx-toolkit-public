@@ -860,6 +860,22 @@ bool CAutoDefFeatureClause::IsLTR(const CSeq_feat& feat)
     return false;
 }
 
+/* operons suppress all subfeatures except promoters (see GB-5635) */
+void CAutoDefFeatureClause::x_GetOperonSubfeatures(string &interval)
+{
+    bool has_promoter = false;
+
+    ITERATE(TClauseList, it, m_ClauseList) {
+        if ((*it)->IsPromoter()) {
+            has_promoter = true;
+            break;
+        }
+    }
+    if (has_promoter) {
+        interval += ", promoter region, ";
+    }
+}
+
 
 /* This function calculates the "interval" for a clause in the definition
  * line.  The interval could be an empty string, it could indicate whether
@@ -897,7 +913,10 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval, bool suppres
     
     CAutoDefFeatureClause_Base *utr3 = NULL;
     
-    if (!m_SuppressSubfeatures) {
+    if (subtype == CSeqFeatData::eSubtype_operon) {
+        // suppress subclauses except promoters
+        x_GetOperonSubfeatures(interval);
+    } else if (!m_SuppressSubfeatures) {
         // label subclauses
         // check to see if 3'UTR is present, and whether there are any other features
         for (k = 0; k < m_ClauseList.size(); k++) {

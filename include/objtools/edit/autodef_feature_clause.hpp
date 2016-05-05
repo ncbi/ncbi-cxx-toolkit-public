@@ -97,6 +97,8 @@ protected:
     CAutoDefFeatureClause();
 
     bool x_GetGenericInterval (string &interval, bool suppress_allele);
+    void x_GetOperonSubfeatures(string &interval);
+
     virtual bool x_IsPseudo();
    
     const CSeq_feat& m_MainFeat;
