@@ -1357,7 +1357,7 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
 
 
 int
-CNSTDatabase::ExecSP_GetClients(vector< pair<string, string> > &  clients)
+CNSTDatabase::ExecSP_GetClients(vector<string> &  names)
 {
     const string            proc_name = "GetClients";
     CNSTPreciseTime         start = CNSTPreciseTime::Current();
@@ -1375,9 +1375,7 @@ CNSTDatabase::ExecSP_GetClients(vector< pair<string, string> > &  clients)
             //       status code. And it is safe to iterate over a recordset
             //       even if there is no one.
             ITERATE(CQuery, qit, query.SingleSet()) {
-                clients.push_back(pair<string, string>(
-                                    qit["name_space"].AsString(),
-                                    qit["name"].AsString()));
+                names.push_back(qit["name"].AsString());
             }
             query.VerifyDone();
 

@@ -1464,8 +1464,8 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
                          m_Server->InMetadataServices(m_Service));
     if (db_access) {
         try {
-            vector< pair<string, string> >  clients;
-            int     status = m_Server->GetDb().ExecSP_GetClients(clients);
+            vector<string>      client_names;
+            int     status = m_Server->GetDb().ExecSP_GetClients(client_names);
             if (status != kSPStatusOK) {
                 reply.SetString("DBClients", "MetadataAccessWarning");
                 AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
@@ -1473,12 +1473,9 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
                               kScopeLogic, eDatabaseWarning);
             } else {
                 CJsonNode   db_clients_node(CJsonNode::NewArrayNode());
-                for (vector< pair<string, string> >::const_iterator
-                        k = clients.begin(); k != clients.end(); ++k) {
-                    CJsonNode       a_db_client(CJsonNode::NewObjectNode());
-                    a_db_client.SetString("ClientNamespace", k->first);
-                    a_db_client.SetString("ClientName", k->second);
-                    db_clients_node.Append(a_db_client);
+                for (vector<string>::const_iterator
+                       k = client_names.begin(); k != client_names.end(); ++k) {
+                    db_clients_node.AppendString(*k);
                 }
                 reply.SetByKey("DBClients", db_clients_node);
             }
