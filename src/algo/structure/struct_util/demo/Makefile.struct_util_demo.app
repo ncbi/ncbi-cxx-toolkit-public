@@ -16,10 +16,9 @@ LIB = xstruct_util \
       xstruct_dp \
       ncbimime \
       cdd \
-      scoremat \
+      $(BLAST_LIBS) \
       cn3d \
       mmdb \
-      $(BLAST_LIBS) \
       $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)

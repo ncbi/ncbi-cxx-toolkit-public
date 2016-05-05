@@ -7,9 +7,9 @@ SRC = unit_test_splign
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = xalgoalignsplign xalgoalignutil xalgoalignnw \
-    xqueryparse xalgoseq\
+    xqueryparse xalgoseq \
     $(BLAST_LIBS) \
-    xobjutil test_boost $(OBJMGR_LIBS)
+    test_boost $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 

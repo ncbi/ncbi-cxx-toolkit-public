@@ -6,12 +6,10 @@ APP = ngalign_test
 SRC = ngalign_test
 LIB = xngalign \
       xalgoalignnw xalgoalignutil xalgoseq \
-      blastinput $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) \
-      align_format gene_info xalnmgr \
-      xobjutil $(OBJREAD_LIBS) taxon1  \
+      blastinput $(BLAST_DB_DATA_LOADER_LIBS) \
+      align_format $(BLAST_LIBS) gene_info taxon1 \
       xcgi xhtml xregexp $(PCRE_LIB) xqueryparse \
-	  $(GENBANK_LIBS)  $(QOBJMGR_ONLY_LIBS)  \
-
+      $(GENBANK_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)

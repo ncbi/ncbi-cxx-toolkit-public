@@ -8,7 +8,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 ENTREZ_LIBS = entrez2cli entrez2
 
 LIB_ = test_boost $(ENTREZ_LIBS) $(BLAST_INPUT_LIBS) \
-    ncbi_xloader_blastdb_rmt $(BLAST_LIBS) $(OBJMGR_LIBS)
+       $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)

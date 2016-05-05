@@ -11,16 +11,16 @@ REQUIRES = objects -Cygwin
 
 LIB =   xbma_refiner \
         xcd_utils ncbimime taxon1 \
-        xstruct_util \
-        xstruct_dp \
-        cdd \
-        cn3d \
-        mmdb \
+	xstruct_util \
+	xstruct_dp \
+	cdd \
+	cn3d \
+	mmdb \
 	entrez2cli entrez2 \
-        id1cli id1 \
-        xregexp $(PCRE_LIB) \
-	xalnmgr $(BLAST_LIBS) \
-        $(OBJMGR_LIBS)
+	id1cli \
+	xregexp $(PCRE_LIB) \
+	$(BLAST_LIBS) \
+	$(OBJMGR_LIBS)
 
 CXXFLAGS   = $(FAST_CXXFLAGS)
 

@@ -9,8 +9,8 @@ CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-LIB = test_boost xncbi cobalt xalgoalignnw xalgophytree fastme biotree ncbi_xloader_blastdb \
-      xalnmgr $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB = test_boost cobalt xalgoalignnw xalgophytree biotree ncbi_xloader_blastdb \
+      $(BLAST_LIBS) $(OBJMGR_LIBS) fastme
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

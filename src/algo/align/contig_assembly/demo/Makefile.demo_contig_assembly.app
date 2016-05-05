@@ -6,9 +6,8 @@ ASN_DEP = seq
 
 APP = demo_contig_assembly
 SRC = demo_contig_assembly
-LIB = xalgocontig_assembly xalgoalignnw xalgoseq xregexp $(PCRE_LIB) xalnmgr \
-      taxon1 $(BLAST_LIBS) $(OBJMGR_LIBS) 
-
+LIB = xalgocontig_assembly xalgoalignnw xalgoseq xregexp $(PCRE_LIB) \
+      $(BLAST_LIBS) taxon1 $(OBJMGR_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)

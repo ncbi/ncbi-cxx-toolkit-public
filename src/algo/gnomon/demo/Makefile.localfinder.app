@@ -5,7 +5,7 @@
 SRC = local_finder
 APP = localfinder
 
-LIB  = xalgognomon xalgoseq xalnmgr $(OBJREAD_LIBS) xobjutil taxon1 creaders \
+LIB  = xalgognomon xalgoseq xalnmgr $(OBJREAD_LIBS) xobjutil taxon1 \
        tables xregexp $(PCRE_LIB) xconnect $(SOBJMGR_LIBS)
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

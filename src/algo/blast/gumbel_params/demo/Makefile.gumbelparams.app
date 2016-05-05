@@ -1,7 +1,7 @@
 APP = gumbelparams
 SRC = gumbelparams_app
 
-LIB = gumbelparams xncbi tables xutil
+LIB = gumbelparams xutil xncbi tables
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
