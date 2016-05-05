@@ -8335,7 +8335,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     bool first = true;
 
                     for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
-                        CSeqVector vec = GetSequenceFromLoc (loc_it.GetEmbeddingSeq_loc(), *m_Scope);
+                        CSeqVector vec = GetSequenceFromLoc (loc_it.GetSeq_loc(), *m_Scope);
                         if ( !vec.empty() ) {
                             CBioseq_Handle ph = GetCache().GetBioseqHandleFromLocation(m_Scope, loc_it.GetEmbeddingSeq_loc(), m_Imp.GetTSE_Handle());
                             string vec_data;
@@ -8350,7 +8350,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
 
                             int pos = 0;
                             string::iterator it = vec_data.begin();
-                            while (it != vec_data.end()) {
+                            while (it != vec_data.end() && pos < len) {
                                 bool is_gap = false;
                                 bool unknown_length = false;
                                 try {
