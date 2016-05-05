@@ -2,7 +2,7 @@ WATCHERS = camacho fongah2
 
 APP = makeblastdb
 SRC = makeblastdb masked_range_set
-LIB_ = $(BLAST_INPUT_LIBS) writedb $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ = writedb $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 CFLAGS   = $(FAST_CFLAGS)

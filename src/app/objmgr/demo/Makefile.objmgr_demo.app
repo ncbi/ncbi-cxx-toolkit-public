@@ -12,8 +12,8 @@ APP = objmgr_demo
 SRC = objmgr_demo
 LIB = ncbi_xloader_blastdb seqdb blastdb \
       ncbi_xloader_lds2 lds2 sqlitewrapp \
-      ncbi_xdbapi_ftds $(FTDS_LIB) dbapi_driver$(STATIC) \
-      $(OBJREAD_LIBS) xobjutil submit $(OBJMGR_LIBS)
+      ncbi_xdbapi_ftds $(FTDS_LIB) \
+      $(OBJREAD_LIBS) xobjutil $(OBJMGR_LIBS)
 
 LIBS = $(SQLITE3_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

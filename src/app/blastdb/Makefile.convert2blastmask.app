@@ -5,7 +5,7 @@ REQUIRES = objects
 APP = convert2blastmask
 SRC = convert2blastmask
 
-LIB = seqmasks_io $(BLAST_LIBS) $(OBJMGR_LIBS:%=%$(STATIC))
+LIB = $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)

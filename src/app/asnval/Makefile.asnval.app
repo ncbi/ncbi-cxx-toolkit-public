@@ -8,10 +8,9 @@
 
 APP = asnvalidate
 SRC = asnval
-LIB = xvalidate xcleanup $(XFORMAT_LIBS) xalnmgr xobjutil \
-      xmlwrapp ncbi_xloader_wgs $(SRAREAD_LIBS) valerr submit gbseq \
-      tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS) \
-      $(OBJEDIT_LIBS)
+LIB = xvalidate $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil \
+      xmlwrapp ncbi_xloader_wgs $(SRAREAD_LIBS) valerr \
+      tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
 #LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(LIBXML_LIBS)
 LIBS = $(VDB_LIBS) $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \

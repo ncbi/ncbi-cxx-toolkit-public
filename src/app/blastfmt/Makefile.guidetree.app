@@ -4,8 +4,7 @@ APP = guidetree
 SRC = guide_tree_app
 
 LIB_ = phytree_format xalgoalignnw xalgophytree fastme \
-	   xalgoalignutil xalnmgr biotree taxon1 \
-           $(BLAST_LIBS) xconnect $(OBJMGR_LIBS)
+       xalgoalignutil $(BLAST_LIBS) biotree taxon1 $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

@@ -9,10 +9,9 @@
 APP = tableval
 SRC = tableval tab_table_reader col_validator
 
-
 LIB  = xmlwrapp \
-       xobjreadex taxon3 taxon1 \
-       $(XFORMAT_LIBS) $(BLAST_LIBS) xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
+       xobjreadex $(XFORMAT_LIBS) taxon1 \
+       $(BLAST_LIBS) xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

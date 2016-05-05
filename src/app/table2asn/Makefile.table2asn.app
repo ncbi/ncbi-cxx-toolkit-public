@@ -11,10 +11,10 @@ SRC = table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context fe
       fcs_reader table2asn_validator src_quals
 
 LIB  = xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
-       xcleanup xvalidate xobjreadex valerr biotree \
-       xobjwrite ncbi_xloader_wgs \
+       xvalidate xobjwrite xobjreadex valerr biotree \
+       ncbi_xloader_wgs \
        $(OBJEDIT_LIBS) $(XFORMAT_LIBS) $(BLAST_LIBS) \
-       xregexp $(PCRE_LIB) $(OBJMGR_LIBS) $(SRAREAD_LIBS)
+       xregexp $(PCRE_LIB) $(SRAREAD_LIBS) $(OBJMGR_LIBS)
 
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) \
        $(SRA_SDK_SYSLIBS) \

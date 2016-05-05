@@ -8,13 +8,11 @@ CPPFLAGS = $(OSMESA_INCLUDE) $(WXWIDGETS_INCLUDE) $(GLEW_INCLUDE) $(ORIG_CPPFLAG
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS) 
 
-LIB_ = $(BLAST_FORMATTER_LIBS) w_hit_matrix gui_glmesa w_gl w_wx w_data \
-      gui_graph gui_opengl gui_print gui_objutils gencoll_client gbproj \
-      gui_utils snputil \
-      xalgoalignutil xalnmgr ximage xcgi xhtml \
-	  entrez2cli entrez2 eutils_client valerr biotree gbseq entrezgene \
-	  xconnserv xqueryparse $(EUTILS_LIBS) xser xconnect xutil xmlwrapp \
-          test_boost $(BLAST_LIBS) $(OBJMGR_LIBS) variation
+LIB_ = w_hit_matrix gui_glmesa w_gl w_data w_wx gui_objutils gbproj \
+       xalgoalignutil $(BLAST_FORMATTER_LIBS) gui_graph gui_print gui_opengl \
+       gencoll_client gui_utils snputil ximage entrez2cli entrez2 eutils_client \
+       valerr biotree entrezgene xconnserv xqueryparse $(EUTILS_LIBS) xmlwrapp \
+       test_boost $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(OSMESA_LIBS) $(WXWIDGETS_GL_LIBS) $(WXWIDGETS_LIBS) $(GLEW_LIBS) \

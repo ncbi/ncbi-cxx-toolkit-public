@@ -9,10 +9,9 @@ APP = disc_report
 SRC = cApiDisc
 
 LIB = xdiscrepancy_report xvalidate valerr \
-      xmlwrapp $(XFORMAT_LIBS) xalnmgr xobjutil tables \
-      macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
-      $(ncbi_xreader_pubseqos2) $(OBJMGR_LIBS) \
-      $(OBJEDIT_LIBS)
+      xmlwrapp xobjedit $(OBJREAD_LIBS) $(XFORMAT_LIBS) xalnmgr \
+      xobjutil tables macro xregexp $(PCRE_LIB) \
+      $(ncbi_xreader_pubseqos2) $(OBJMGR_LIBS)
 
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

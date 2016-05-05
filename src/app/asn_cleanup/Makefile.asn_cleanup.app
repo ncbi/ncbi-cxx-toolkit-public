@@ -8,11 +8,10 @@
 
 APP = asn_cleanup
 SRC = asn_cleanup
-LIB = $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xobjutil xalnmgr xcleanup valid valerr xregexp \
-	  entrez2cli entrez2 tables \
-	  ncbi_xdbapi_ftds dbapi dbapi_driver $(FTDS_LIB) \
-	  $(ncbi_xreader_pubseqos2) ncbi_xloader_wgs \
-	  $(OBJMGR_LIBS) $(PCRE_LIB) $(SRAREAD_LIBS)
+LIB = $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil valerr xregexp \
+          entrez2cli entrez2 tables \
+	  ncbi_xdbapi_ftds dbapi $(ncbi_xreader_pubseqos2) $(FTDS_LIB) \
+	  ncbi_xloader_wgs $(SRAREAD_LIBS) $(OBJMGR_LIBS) $(PCRE_LIB)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(FTDS_LIBS) \
        $(SRA_SDK_SYSLIBS) \

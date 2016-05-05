@@ -5,7 +5,7 @@
 APP = compart
 SRC = compart
 
-LIB =  xalgoalignutil xalgoalignsplign xalgoalignnw xqueryparse xalnmgr \
+LIB =  xalgoalignsplign xalgoalignutil xalgoalignnw xqueryparse \
        $(BLAST_LIBS:%=%$(STATIC)) \
        $(OBJMGR_LIBS:%=%$(STATIC))
 

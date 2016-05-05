@@ -2,7 +2,7 @@
 
 APP = ncbi_encrypt
 SRC = ncbi_encrypt
-LIB = xncbi xutil
+LIB = xutil xncbi
 
 
 WATCHERS = grichenk
