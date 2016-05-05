@@ -46,8 +46,6 @@ public:
    CRef<objects::CDelta_seq> MakeGap(objects::CBioseq_Handle bsh, const objects::CSeq_feat& feature_gap);
    static 
    void RemoveEmptyFtable(objects::CBioseq& bioseq);
-   static
-   void GenerateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream);
 private:
     void MergeCDSFeatures_impl(objects::CSeq_entry& entry);
     CRef<objects::CSeq_entry> TranslateProtein(

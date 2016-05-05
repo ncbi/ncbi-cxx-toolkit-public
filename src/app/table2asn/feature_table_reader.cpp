@@ -1624,57 +1624,5 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
 }
 
 
-namespace
-{
-    CNcbiOfstream& InitOstream(auto_ptr<CNcbiOfstream>& ostr, const string& fname)
-    {
-        if (ostr.get() == 0)
-            ostr.reset(new CNcbiOfstream(fname.c_str()));
-
-        return *ostr;
-    }
-}
-void CFeatureTableReader::GenerateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream)
-{   
-    for (CFeat_CI feat_it(seh); feat_it; ++feat_it)
-    {
-        const CSeq_feat& feat = feat_it->GetOriginalFeature();
-        if (feat.IsSetData() && feat.GetData().IsProt())
-        {           
-            ITERATE(CProt_ref::TEc, val, feat.GetData().GetProt().GetEc())
-            {
-                string label;
-                if (feat.GetLocation().IsInt())
-                    feat.GetLocation().GetInt().GetId().GetLabel(&label, CSeq_id::eFasta);
-                else
-                    feat.GetLocation().GetLabel(&label);
-
-                switch (CProt_ref::GetECNumberStatus(*val))
-                {
-                case CProt_ref::eEC_deleted:
-                    InitOstream(ostream, fname) << label << "\tEC number deleted\t" << *val << '\t' << endl;
-                    break;
-                case CProt_ref::eEC_replaced:
-                {
-                    const string& newvalue = CProt_ref::GetECNumberReplacement(*val);
-                    bool is_split = newvalue.find('\t') != string::npos;
-                    InitOstream(ostream, fname) << label << 
-                        (is_split?"\tEC number split\t":"\tEC number changed\t")
-                        << *val << '\t' << newvalue << endl;
-                }
-                break;
-                case CProt_ref::eEC_unknown:
-                    InitOstream(ostream, fname) << label << "\tEC number invalid\t" << *val << '\t' << endl;
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-    }
-}
-
-
-
 END_NCBI_SCOPE
 

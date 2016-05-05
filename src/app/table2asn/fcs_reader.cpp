@@ -101,6 +101,8 @@ CForeignContaminationScreenReportReader::~CForeignContaminationScreenReportReade
 
 void CForeignContaminationScreenReportReader::LoadFile(ILineReader& reader)
 {
+    vector<CTempString> values;
+    values.reserve(5);
     while (!reader.AtEOF())
     {
         reader.ReadLine();
@@ -112,8 +114,8 @@ void CForeignContaminationScreenReportReader::LoadFile(ILineReader& reader)
             continue;
 
         // Each line except first is a set of values, first collumn is a sequence id
-        vector<string> values;
-        NStr::Tokenize(current, "\t", values);
+        values.clear();
+        NStr::Split(current, "\t", values);
         if (values.size() == 5)
         {
             TColumns& new_cols = m_data["lcl|" + values[0]];
@@ -121,7 +123,7 @@ void CForeignContaminationScreenReportReader::LoadFile(ILineReader& reader)
             new_cols.length = NStr::StringToInt(values[1]);
             if (values[2] != "-")
             {
-                string s1, s2;
+                CTempString s1, s2;
                 NStr::SplitInTwo(values[2], "..", s1, s2, NStr::fSplit_ByPattern);
                 int start = NStr::StringToInt(s1) - 1;
                 int len   = NStr::StringToInt(s2) - start;

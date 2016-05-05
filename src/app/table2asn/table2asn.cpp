@@ -929,11 +929,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (!m_context.m_cleanup.empty())
     {
-        validator.Cleanup(entry_edit_handle, m_context.m_cleanup);
+      validator.Cleanup(entry_edit_handle, m_context.m_cleanup);
     }
 
     if (!IsDryRun())
-      CFeatureTableReader::GenerateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"), m_context.m_ecn_numbers_ostream);
+      validator.UpdateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"), m_context.m_ecn_numbers_ostream);
 }
 
 string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
