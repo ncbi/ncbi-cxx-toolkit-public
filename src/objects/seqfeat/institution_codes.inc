@@ -6306,6 +6306,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UIMNH	s	University of Illinois, Museum of Natural History",
 "UIS	s	Universidad Industrial de Santander, Departamento de Biologia",
 "UIS:H	s	Universidad Industrial de Santander, Departamento de Biologia, Collecion Herpetologica",
+"UISMHN	s	Universidad Industrial de Santander, Museo de Historia Natural",
 "UJAT	s	Universidad Juarez Autonoma de Tabasco",
 "UJB	c	University of Jaffna Botany",
 "UJIM	s	University of Jordan Insect Museum",
