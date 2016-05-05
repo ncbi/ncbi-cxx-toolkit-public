@@ -70,12 +70,10 @@ SRC =	aaa_dummy_pch \
 	viewer_base \
 	viewer_window_base
 
-LIB =   wx_tools xcd_utils xbma_refiner xbma_refiner_gui xstruct_util xstruct_dp xstruct_thread \
-	xblast xalgowinmask xalgodustmask xalgoblastdbindex composition_adjustment seqdb $(OBJREAD_LIBS) tables xobjutil \
-	id1cli id1 cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
-	pub medline biblio general taxon1 blastdb xnetblast \
-	xregexp xser xutil xconnect xncbi \
-	$(SOBJMGR_LIBS) $(Z_LIB) $(PCRE_LIB)
+LIB =   xbma_refiner_gui wx_tools xbma_refiner xcd_utils xstruct_util xstruct_dp xstruct_thread \
+        xblast xalgowinmask xalgodustmask xalgoblastdbindex composition_adjustment seqmasks_io seqdb $(OBJREAD_LIBS) \
+	xalnmgr tables xobjutil id1cli id1 ncbimime cdd cn3d mmdb blast_services xnetblastcli xnetblast scoremat \
+	taxon1 blastdb xregexp entrez2cli xconnect entrez2 $(SOBJMGR_LIBS) $(Z_LIB) $(PCRE_LIB)
 
 CPPFLAGS = \
 	$(ORIG_CPPFLAGS) \
