@@ -457,9 +457,17 @@ string CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::ESubtype st)
 string CAutoDefAvailableModifier::Label() const
 {
     if (m_IsOrgMod) {
-        return GetOrgModLabel(m_OrgModType);
+        if (m_OrgModType == COrgMod::eSubtype_other) {
+            return "OrgMod Note";
+        } else {
+            return GetOrgModLabel(m_OrgModType);
+        }
     } else {
-        return GetSubSourceLabel(m_SubSrcType);
+        if (m_SubSrcType == CSubSource::eSubtype_other) {
+            return "SubSource Note";
+        } else {
+            return GetSubSourceLabel(m_SubSrcType);
+        }
     }
 }
 
