@@ -1705,18 +1705,6 @@ if $CXX -v 2>&1 | grep -q clang; then
    test "$ncbi_cv_prog_cxx_stdlib_libcxx" = no  ||  CXX="$CXX -stdlib=libc++"
 fi
 
-AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])
-
-case "$ac_cv_have_decl__LIBCPP_VERSION:$compiler:$compiler_version" in
-   no:GCC:4[[0-6]]? | no:ICC:1[[01]]?? )
-     ncbi_cv_prog_cxx_11=no
-     ncbi_cv_prog_c_99=no
-     ;;
-   *:ICC:* )
-     ncbi_cv_prog_c_99='-std=gnu99 -fgnu89-inline'
-     ;;
-esac
-
 AC_CACHE_CHECK([how to enable C++ '11 features in $CXX],
    ncbi_cv_prog_cxx_11,
    [orig_CXX=$CXX
