@@ -82,6 +82,8 @@ static const TSeqPos kCoverageZoom = 100;
 static const size_t kMax_AlleleLength  = 32;
 static const char kAlleleSeparator = '|';
 
+static const char kDefaultAnnotName[] = "SNP";
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CSNPDb_Impl
@@ -350,6 +352,45 @@ bool CSNPDbSeqIterator::IsCircular(void) const
 }
 
 
+TSeqPos CSNPDbSeqIterator::GetMaxSNPLength(void) const
+{
+    return kMaxSNPLength;
+}
+
+
+Uint8 CSNPDbSeqIterator::GetSNPCount(void) const
+{
+    CRange<TVDBRowId> row_ids = GetVDBRowRange();
+    if ( row_ids.Empty() ) {
+        return 0;
+    }
+    CRef<CSNPDb_Impl::SSNPTableCursor> cur = GetDb().SNP();
+    TVDBRowId extra_first_id = cur->EXTRA_ROW_NUM(row_ids.GetFrom())[0];
+    CVDBValueFor<TVDBRowId> extra_last = cur->EXTRA_ROW_NUM(row_ids.GetTo());
+    TVDBRowId extra_last_id = extra_last[0]+extra_last.size();
+    GetDb().Put(cur);
+    return extra_last_id-extra_first_id;
+}
+
+
+Uint8 CSNPDbSeqIterator::GetSNPCount(CRange<TSeqPos> range) const
+{
+    return GetSNPCount();
+    /*
+    CRange<TVDBRowId> row_ids = GetVDBRowRange();
+    if ( row_ids.Empty() ) {
+        return 0;
+    }
+    CRef<CSNPDb_Impl::SSNPTableCursor> cur = GetDb().SNP();
+    TVDBRowId extra_first_id = cur->EXTRA_ROW_NUM(row_ids.GetFrom())[0];
+    CVDBValueFor<TVDBRowId> extra_last = cur->EXTRA_ROW_NUM(row_ids.GetTo());
+    TVDBRowId extra_last_id = extra_last[0]+extra_last.size();
+    GetDb().Put(cur);
+    return extra_last_id-extra_first_id;
+    */
+}
+
+
 CRange<TSeqPos> CSNPDbSeqIterator::GetSNPRange(void) const
 {
     const CSNPDb_Impl::SSeqInfo::TPageSets& psets = GetInfo().m_PageSets;
@@ -369,12 +410,10 @@ CRange<TVDBRowId> CSNPDbSeqIterator::GetVDBRowRange(void) const
 BEGIN_LOCAL_NAMESPACE;
 
 
-CRef<CSeq_annot> x_NewAnnot(void)
+CRef<CSeq_annot> x_NewAnnot(const string& annot_name = kDefaultAnnotName)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
-    CRef<CAnnotdesc> desc(new CAnnotdesc);
-    desc->SetName("SNP");
-    annot->SetDesc().Set().push_back(desc);
+    annot->SetNameDesc(annot_name);
     return annot;
 }
 
@@ -894,7 +933,8 @@ struct SSeqTableContent
 
     void Add(const CSNPDbFeatIterator& it);
 
-    CRef<CSeq_annot> GetAnnot(CSeq_id& seq_id);
+    CRef<CSeq_annot> GetAnnot(const string& annot_name,
+                              CSeq_id& seq_id);
 
     int m_TableSize;
 
@@ -995,13 +1035,14 @@ void SSeqTableContent::Add(const CSNPDbFeatIterator& it)
 }
 
 
-CRef<CSeq_annot> SSeqTableContent::GetAnnot(CSeq_id& seq_id)
+CRef<CSeq_annot> SSeqTableContent::GetAnnot(const string& annot_name,
+                                            CSeq_id& seq_id)
 {
     if ( !m_TableSize ) {
         return null;
     }
     
-    CRef<CSeq_annot> table_annot = x_NewAnnot();
+    CRef<CSeq_annot> table_annot = x_NewAnnot(annot_name);
     
     CSeq_table& table = table_annot->SetData().SetSeq_table();
     table.SetFeat_type(CSeqFeatData::e_Imp);
@@ -1067,7 +1108,7 @@ struct SSeqTableConverter
 
     void Add(const CSNPDbFeatIterator& it);
 
-    vector< CRef<CSeq_annot> > GetAnnots(void);
+    vector< CRef<CSeq_annot> > GetAnnots(const string& annot_name);
 
     CRef<CSeq_id> m_Seq_id;
     CRef<CSeq_annot> m_RegularAnnot;
@@ -1080,17 +1121,21 @@ SSeqTableConverter::SSeqTableConverter(const CSNPDbSeqIterator& it)
 }
 
 
-vector< CRef<CSeq_annot> > SSeqTableConverter::GetAnnots(void)
+vector< CRef<CSeq_annot> >
+SSeqTableConverter::GetAnnots(const string& annot_name)
 {
     vector< CRef<CSeq_annot> > ret;
     for ( int k = 0; k < 2; ++k ) {
         for ( int i = 0; i < kMaxTableAlleles; ++i ) {
-            if ( CRef<CSeq_annot> annot = m_Tables[k][i].GetAnnot(*m_Seq_id) ) {
+            CRef<CSeq_annot> annot =
+                m_Tables[k][i].GetAnnot(annot_name, *m_Seq_id);
+            if ( annot ) {
                 ret.push_back(annot);
             }
         }
     }
     if ( m_RegularAnnot ) {
+        m_RegularAnnot->SetNameDesc(annot_name);
         ret.push_back(m_RegularAnnot);
     }
     return ret;
@@ -1128,6 +1173,7 @@ END_LOCAL_NAMESPACE;
 
 CSNPDbSeqIterator::TAnnotSet
 CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
+                                      const string& annot_name,
                                       const SFilter& filter,
                                       TFlags flags) const
 {
@@ -1137,7 +1183,25 @@ CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
     for ( CSNPDbFeatIterator it(*this, range, sel); it; ++it ) {
         cvt.Add(it);
     }
-    return cvt.GetAnnots();
+    return cvt.GetAnnots(annot_name);
+}
+
+
+CSNPDbSeqIterator::TAnnotSet
+CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
+                                      const SFilter& filter,
+                                      TFlags flags) const
+{
+    return GetTableFeatAnnots(range, kDefaultAnnotName, filter, flags);
+}
+
+
+CSNPDbSeqIterator::TAnnotSet
+CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
+                                      const string& annot_name,
+                                      TFlags flags) const
+{
+    return GetTableFeatAnnots(range, annot_name, SFilter(), flags);
 }
 
 

@@ -429,6 +429,10 @@ public:
     TSeqPos GetPageSize(void) const {
         return GetDb().GetPageSize();
     }
+    TSeqPos GetMaxSNPLength(void) const;
+
+    Uint8 GetSNPCount(CRange<TSeqPos> range) const;
+    Uint8 GetSNPCount(void) const;
     CRange<TSeqPos> GetSNPRange(void) const;
     CRange<TVDBRowId> GetVDBRowRange(void) const;
 
@@ -453,9 +457,16 @@ public:
                                   TFlags flags = fDefaultFlags) const;
     typedef vector< CRef<CSeq_annot> > TAnnotSet;
     TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
+                                 const string& annot_name,
                                  const SFilter& filter,
                                  TFlags flags = fDefaultFlags) const;
     TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
+                                 const SFilter& filter,
+                                 TFlags flags = fDefaultFlags) const;
+    TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
+                                 TFlags flags = fDefaultFlags) const;
+    TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
+                                 const string& annot_name,
                                  TFlags flags = fDefaultFlags) const;
     typedef pair< CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > TPackedAnnot;
     TPackedAnnot GetPackedFeatAnnot(CRange<TSeqPos> range,

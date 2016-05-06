@@ -152,7 +152,6 @@ public:
             return m_AnnotName;
         }
     string GetSNPAnnotName(void) const;
-    string GetGraphAnnotName(void) const;
 
     CRef<CSNPBlobId> GetAnnotBlobId(const CSeq_id_Handle& id) const;
 
