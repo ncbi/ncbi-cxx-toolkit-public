@@ -3065,48 +3065,8 @@ void CValidError_feat::ValidateProt(
     }
 
     FOR_EACH_NAME_ON_PROTREF (it, prot) {
-        if (NStr::EndsWith (*it, "]")) {
-            bool report_name = true;
-            size_t pos = NStr::Find(*it, "[", 0, string::npos, NStr::eLast);
-            if (pos == string::npos) {
-                // no disqualifying text
-            } else if (it->length() - pos < 5) {
-                // no disqualifying text
-            } else if (NStr::EqualCase(*it, pos, 4, "[NAD")) {
-                report_name = false;
-            }
-            if (! m_Imp.IsEmbl() && ! m_Imp.IsTPE()) {
-                if (report_name) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameEndsInBracket,
-                            "Protein name ends with bracket and may contain organism name",
-                            feat);
-                }
-            }
-        }
-        if (NStr::StartsWith (*it, "hypothetical protein XP_")) {
-            CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
-            if (bsh) {
-                FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
-                    if ((*id_it)->IsOther() 
-                        && (*id_it)->GetOther().IsSetAccession()
-                        && !NStr::EqualNocase ((*id_it)->GetOther().GetAccession(),
-                                               (*it).substr (21))) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_HpotheticalProteinMismatch,
-                                "Hypothetical protein reference does not match accession",
-                                feat);
-                    }
-                }
-            }
-        }
-        if (feat.IsSetComment() && NStr::EqualCase (feat.GetComment(), *it)) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_RedundantFields, 
-                    "Comment has same value as protein name", feat);
-        }
+        x_ValidateProteinName(*it, feat);
 
-        if (s_StringHasPMID(*it)) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameHasPMID, 
-                    "Protein name has internal PMID", feat);
-        }
         if (prot.IsSetEc() && !prot.IsSetProcessed()
             && (NStr::EqualCase (*it, "Hypothetical protein")
                 || NStr::EqualCase (*it, "hypothetical protein")
@@ -3117,29 +3077,6 @@ void CValidError_feat::ValidateProt(
                      feat);
         }
 
-        if (m_Imp.DoRubiscoTest()) {
-            if (NStr::FindCase (*it, "ribulose") != string::npos
-                && NStr::FindCase (*it, "bisphosphate") != string::npos
-                && NStr::FindCase (*it, "methyltransferase") == string::npos
-                && NStr::FindCase (*it, "activase") == string::npos) {
-                if (NStr::EqualNocase (*it, "ribulose-1,5-bisphosphate carboxylase/oxygenase")) {
-                    // allow standard name without large or small subunit designation - later need kingdom test
-                } else if (!NStr::EqualNocase (*it, "ribulose-1,5-bisphosphate carboxylase/oxygenase large subunit")
-                           && !NStr::EqualNocase (*it, "ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit")) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_RubiscoProblem, 
-                             "Nonstandard ribulose bisphosphate protein name", feat);
-                }
-            }
-        }
-
-
-
-        ValidateCharactersInField (*it, "Protein name", feat);
-        if (ContainsSgml(*it)) {
-            PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-                     "protein name " + *it + " has SGML",
-                     feat);
-        }
     }
 
     if (prot.IsSetDesc() && ContainsSgml(prot.GetDesc())) {
@@ -3183,6 +3120,81 @@ void CValidError_feat::ValidateProt(
     }
     
     x_ValidateProtECNumbers (prot, feat);
+}
+
+
+void CValidError_feat::x_ValidateProteinName(const string& prot_name, const CSeq_feat& feat)
+{
+    if (NStr::EndsWith(prot_name, "]")) {
+        bool report_name = true;
+        size_t pos = NStr::Find(prot_name, "[", 0, string::npos, NStr::eLast);
+        if (pos == string::npos) {
+            // no disqualifying text
+        } else if (prot_name.length() - pos < 5) {
+            // no disqualifying text
+        } else if (NStr::EqualCase(prot_name, pos, 4, "[NAD")) {
+            report_name = false;
+        }
+        if (!m_Imp.IsEmbl() && !m_Imp.IsTPE()) {
+            if (report_name) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameEndsInBracket,
+                    "Protein name ends with bracket and may contain organism name",
+                    feat);
+            }
+        }
+    }
+    if (NStr::StartsWith(prot_name, "hypothetical protein XP_")) {
+        CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
+        if (bsh) {
+            FOR_EACH_SEQID_ON_BIOSEQ(id_it, *(bsh.GetCompleteBioseq())) {
+                if ((*id_it)->IsOther()
+                    && (*id_it)->GetOther().IsSetAccession()
+                    && !NStr::EqualNocase((*id_it)->GetOther().GetAccession(),
+                    prot_name.substr(21))) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_HpotheticalProteinMismatch,
+                        "Hypothetical protein reference does not match accession",
+                        feat);
+                }
+            }
+        }
+    }
+    if (NStr::FindNoCase(prot_name, "RefSeq") != string::npos) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_RefSeqInText, "Protein name contains 'RefSeq'", feat);
+    }
+    if (feat.IsSetComment() && NStr::EqualCase(feat.GetComment(), prot_name)) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_RedundantFields,
+            "Comment has same value as protein name", feat);
+    }
+
+    if (s_StringHasPMID(prot_name)) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameHasPMID,
+            "Protein name has internal PMID", feat);
+    }
+
+    if (m_Imp.DoRubiscoTest()) {
+        if (NStr::FindCase(prot_name, "ribulose") != string::npos
+            && NStr::FindCase(prot_name, "bisphosphate") != string::npos
+            && NStr::FindCase(prot_name, "methyltransferase") == string::npos
+            && NStr::FindCase(prot_name, "activase") == string::npos) {
+            if (NStr::EqualNocase(prot_name, "ribulose-1,5-bisphosphate carboxylase/oxygenase")) {
+                // allow standard name without large or small subunit designation - later need kingdom test
+            } else if (!NStr::EqualNocase(prot_name, "ribulose-1,5-bisphosphate carboxylase/oxygenase large subunit")
+                && !NStr::EqualNocase(prot_name, "ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit")) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_RubiscoProblem,
+                    "Nonstandard ribulose bisphosphate protein name", feat);
+            }
+        }
+    }
+
+
+
+    ValidateCharactersInField(prot_name, "Protein name", feat);
+    if (ContainsSgml(prot_name)) {
+        PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+            "protein name " + prot_name + " has SGML",
+            feat);
+    }
+
 }
 
 

@@ -1171,6 +1171,7 @@ private:
     void x_ValidateCdregionCodebreak(const CCdregion& cds, const CSeq_feat& feat);
 
     void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
+    void x_ValidateProteinName(const string& prot_name, const CSeq_feat& feat);
     void x_ReportUninformativeNames(const CProt_ref& prot, const CSeq_feat& feat);
     void x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq_feat& feat);
 
@@ -1280,6 +1281,7 @@ public:
 private:
 
     void ValidateComment(const string& comment, const CSeqdesc& desc);
+    void ValidateTitle(const string& title, const CSeqdesc& desc, const CSeq_entry& ctx);
     bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, const CComment_rule& rule, bool report);
     bool ValidateStructuredCommentGeneric(const CUser_object& usr, const CSeqdesc& desc, bool report);
     void x_ReportStructuredCommentErrors(const CSeqdesc& desc, const CComment_rule::TErrorList& errors);

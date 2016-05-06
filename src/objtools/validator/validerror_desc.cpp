@@ -135,29 +135,7 @@ void CValidError_desc::ValidateSeqDesc
 			}
             break;
         case CSeqdesc::e_Title:
-            if (NStr::IsBlank (desc.GetTitle())) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
-                         "Title descriptor needs text", ctx, desc);
-            } else {
-                string title = desc.GetTitle();
-                if (s_StringHasPMID (desc.GetTitle())) {
-                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TitleHasPMID, 
-                             "Title descriptor has internal PMID", ctx, desc);
-                }
-                NStr::TruncateSpacesInPlace (title);
-                char end = title.c_str()[title.length() - 1];
-                
-                if (end == '.' && title.length() > 4) {
-                    end = title.c_str()[title.length() - 2];
-                }
-                if (end == ','
-                    || end == '.'
-                    || end == ';'
-                    || end == ':') {
-                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadPunctuation, 
-                             "Title descriptor ends in bad punctuation", ctx, desc);
-                }
-            }
+            ValidateTitle(desc.GetTitle(), desc, ctx);
             break;
         case CSeqdesc::e_Org:
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
@@ -233,6 +211,37 @@ void CValidError_desc::ValidateComment
                      "Comment may be formatted to look like a structured comment.", *m_Ctx, desc);  
         }
     }       
+}
+
+
+void CValidError_desc::ValidateTitle(const string& title, const CSeqdesc& desc, const CSeq_entry& ctx)
+{
+    if (NStr::IsBlank(title)) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_MissingText,
+            "Title descriptor needs text", ctx, desc);
+    } else {
+        if (s_StringHasPMID(title)) {
+            PostErr(eDiag_Warning, eErr_SEQ_DESCR_TitleHasPMID,
+                "Title descriptor has internal PMID", ctx, desc);
+        }
+        string cpy = title;
+        NStr::TruncateSpacesInPlace(cpy);
+        char end = cpy.c_str()[cpy.length() - 1];
+
+        if (end == '.' && cpy.length() > 4) {
+            end = cpy.c_str()[cpy.length() - 2];
+        }
+        if (end == ','
+            || end == '.'
+            || end == ';'
+            || end == ':') {
+            PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadPunctuation,
+                "Title descriptor ends in bad punctuation", ctx, desc);
+        }
+        if (NStr::FindNoCase(title, "RefSeq") != string::npos) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_RefSeqInText, "Definition line contains 'RefSeq'", ctx, desc);
+        }
+    }
 }
 
 

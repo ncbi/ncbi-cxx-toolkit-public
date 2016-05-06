@@ -1619,6 +1619,9 @@ same id type" } },
    { eErr_SEQ_FEAT_SeqLocTypeProblem,
    { "SeqLocTypeProblem",
 "A sequence location component is not the expected type." } },
+   { eErr_SEQ_FEAT_RefSeqInText,
+   { "RefSeqInText",
+"The term RefSeq should not appear in a product name or a definition line." } },
 
 /* SEQ_ALIGN */
 

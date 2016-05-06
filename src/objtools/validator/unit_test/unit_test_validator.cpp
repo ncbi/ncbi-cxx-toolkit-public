@@ -19516,3 +19516,23 @@ BOOST_AUTO_TEST_CASE(Test_VR_601)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_612)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::SetNucProtSetProductName(entry, "This product name contains RefSeq");
+    CRef<CSeqdesc> defline(new CSeqdesc());
+    defline->SetTitle("This title contains RefSeq");
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    nuc->SetSeq().SetDescr().Set().push_back(defline);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "RefSeqInText", "Protein name contains 'RefSeq'"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "RefSeqInText", "Definition line contains 'RefSeq'"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}

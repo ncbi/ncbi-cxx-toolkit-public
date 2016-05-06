@@ -521,6 +521,7 @@ enum EErrType {
     eErr_SEQ_FEAT_InconsistentPseudogeneValue,
     eErr_SEQ_FEAT_MultiIntervalIntron,
     eErr_SEQ_FEAT_SeqLocTypeProblem,
+    eErr_SEQ_FEAT_RefSeqInText,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,
