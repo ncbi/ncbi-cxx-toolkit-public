@@ -6178,6 +6178,11 @@ UCLZ	s	University College London
 UCM<ESP>	s	Universidad Complutense Madrid
 UCM<UKR>	c	Ukrainian Collection of Microorganisms, Zabolotny Institute of Microbiology and Virology
 UCM<USA-CO>	s	University of Colorado Museum
+UCM<USA-CO>:	s	University of Colorado Museum, University of Colorado Museum Fish Collection
+UCM<USA-CO>:Bird	s	University of Colorado Museum, University of Colorado Museum Bird Collection
+UCM<USA-CO>:Fish	s	University of Colorado Museum, University of Colorado Museum Fish collection
+UCM<USA-CO>:Herp	s	University of Colorado Museum, University of Colorado Museum Amplibian and Reptile collection
+UCM<USA-CO>:Mamm	s	University of Colorado Museum, University of Colorado Museum Mammal Collection
 UCMC	s	University of Colorado Museum
 UCME	s	Faculdad de Biologia, Departamento de Zoologia
 UCMM	s	Pontificia Universidad Catolica Madre y Maestra
