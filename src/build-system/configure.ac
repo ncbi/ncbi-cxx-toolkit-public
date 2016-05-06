@@ -1705,6 +1705,8 @@ if $CXX -v 2>&1 | grep -q clang; then
    test "$ncbi_cv_prog_cxx_stdlib_libcxx" = no  ||  CXX="$CXX -stdlib=libc++"
 fi
 
+AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])
+
 AC_CACHE_CHECK([how to enable C++ '11 features in $CXX],
    ncbi_cv_prog_cxx_11,
    [orig_CXX=$CXX
