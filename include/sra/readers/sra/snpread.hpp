@@ -445,6 +445,13 @@ public:
     CRef<CSeq_graph> GetCoverageGraph(CRange<TSeqPos> range,
                                       const SFilter& filter = SFilter()) const;
     CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
+                                      const string& annot_name,
+                                      const SFilter& filter,
+                                      TFlags flags = fDefaultFlags) const;
+    CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
+                                      const string& annot_name,
+                                      TFlags flags = fDefaultFlags) const;
+    CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
                                       const SFilter& filter,
                                       TFlags flags = fDefaultFlags) const;
     CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,

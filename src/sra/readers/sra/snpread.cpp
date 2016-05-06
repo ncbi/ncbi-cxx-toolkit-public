@@ -576,10 +576,11 @@ CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range,
 
 CRef<CSeq_annot>
 CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
+                                    const string& annot_name,
                                     const SFilter& /*filter*/,
                                     TFlags flags) const
 {
-    CRef<CSeq_annot> annot = x_NewAnnot();
+    CRef<CSeq_annot> annot = x_NewAnnot(annot_name);
     x_AdjustCoverageGraphRange(range, *this);
     CSeq_annot::TData::TGraph& graphs = annot->SetData().SetGraph();
     CRef<CSeq_graph> graph = x_NewCoverageGraph(*this);
@@ -602,6 +603,24 @@ CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
         return null;
     }
     return annot;
+}
+
+
+CRef<CSeq_annot>
+CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
+                                    const string& annot_name,
+                                    TFlags flags) const
+{
+    return GetCoverageAnnot(range, annot_name, SFilter(), flags);
+}
+
+
+CRef<CSeq_annot>
+CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
+                                    const SFilter& filter,
+                                    TFlags flags) const
+{
+    return GetCoverageAnnot(range, kDefaultAnnotName, filter, flags);
 }
 
 

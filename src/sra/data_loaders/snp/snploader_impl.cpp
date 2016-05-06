@@ -70,14 +70,14 @@ class CDataLoader;
 
 // magic chunk ids
 static const int kTSEId = 1;
-static const int kChunkIdSNPFeat = 0;
-static const int kChunkIdSNPGraph = 1;
+static const int kChunkIdFeat = 0;
+static const int kChunkIdGraph = 1;
 static const int kChunkIdMul = 2;
 
 // algirithm options
 
 // splitter parameters for SNPs and graphs
-static const TSeqPos kSNPChunkSize = 1000000;
+static const TSeqPos kFeatChunkSize = 1000000;
 static const TSeqPos kGraphChunkSize = 1000000;
 
 #define PILEUP_NAME_SUFFIX "pileup graphs"
@@ -122,6 +122,17 @@ NCBI_PARAM_DEF_EX(string, SNP_LOADER, ANNOT_NAME, "SNP",
 static string GetDefaultAnnotName(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(SNP_LOADER, ANNOT_NAME)> s_Value;
+    return s_Value->Get();
+}
+
+
+NCBI_PARAM_DECL(bool, SNP_LOADER, SPLIT);
+NCBI_PARAM_DEF_EX(bool, SNP_LOADER, SPLIT, true,
+                  eParam_NoThread, SNP_LOADER_SPLIT);
+
+static bool IsSplitEnabled(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(SNP_LOADER, SPLIT)> s_Value;
     return s_Value->Get();
 }
 
@@ -478,7 +489,7 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
 {
     CSNPDbSeqIterator it = GetSeqIterator();
     CRange<TSeqPos> total_range = it.GetSNPRange();
-    if ( 1 ) {
+    if ( IsSplitEnabled() ) {
         // split
         CRef<CSeq_entry> entry(new CSeq_entry);
         entry->SetSet().SetId().SetId(kTSEId);
@@ -487,12 +498,23 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
         CTSE_Split_Info& split_info = load_lock->GetSplitInfo();
         CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
         string name = m_File->GetSNPAnnotName();
-        SAnnotTypeSelector type(CSeqFeatData::eSubtype_variation);
-        for ( int i = 0; i*kSNPChunkSize < total_range.GetToOpen(); ++i ) {
+        SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
+        for ( int i = 0; i*kGraphChunkSize < total_range.GetToOpen(); ++i ) {
             CRange<TSeqPos> range;
-            range.SetFrom(i*kSNPChunkSize);
-            range.SetTo((i+1)*kSNPChunkSize+it.GetMaxSNPLength());
-            int chunk_id = i*kChunkIdMul+kChunkIdSNPFeat;
+            range.SetFrom(i*kGraphChunkSize);
+            range.SetToOpen((i+1)*kGraphChunkSize);
+            int chunk_id = i*kChunkIdMul+kChunkIdGraph;
+            CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
+            chunk->x_AddAnnotType(name, type, it.GetSeqIdHandle(), range);
+            chunk->x_AddAnnotPlace(place);
+            split_info.AddChunk(*chunk);
+        }
+        type = CSeqFeatData::eSubtype_variation;
+        for ( int i = 0; i*kFeatChunkSize < total_range.GetToOpen(); ++i ) {
+            CRange<TSeqPos> range;
+            range.SetFrom(i*kFeatChunkSize);
+            range.SetTo((i+1)*kFeatChunkSize+it.GetMaxSNPLength());
+            int chunk_id = i*kChunkIdMul+kChunkIdFeat;
             CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
             chunk->x_AddAnnotType(name, type, it.GetSeqIdHandle(), range);
             chunk->x_AddAnnotPlace(place);
@@ -516,17 +538,25 @@ void CSNPSeqInfo::LoadAnnotChunk(CTSE_Chunk_Info& chunk_info)
     int chunk_type = chunk_id%kChunkIdMul;
     int i = chunk_id/kChunkIdMul;
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
-    if ( chunk_type == kChunkIdSNPFeat ) {
+    if ( chunk_type == kChunkIdFeat ) {
         CRange<TSeqPos> range;
-        range.SetFrom(i*kSNPChunkSize);
-        range.SetToOpen((i+1)*kSNPChunkSize);
+        range.SetFrom(i*kFeatChunkSize);
+        range.SetToOpen((i+1)*kFeatChunkSize);
         string name = m_File->GetSNPAnnotName();
         CSNPDbSeqIterator it = GetSeqIterator();
         for ( auto& annot : it.GetTableFeatAnnots(range, name) ) {
             chunk_info.x_LoadAnnot(place, *annot);
         }
     }
-    else if ( chunk_type == kChunkIdSNPGraph ) {
+    else if ( chunk_type == kChunkIdGraph ) {
+        CRange<TSeqPos> range;
+        range.SetFrom(i*kGraphChunkSize);
+        range.SetToOpen((i+1)*kGraphChunkSize);
+        string name = m_File->GetSNPAnnotName();
+        CSNPDbSeqIterator it = GetSeqIterator();
+        if ( auto annot = it.GetCoverageAnnot(range, name) ) {
+            chunk_info.x_LoadAnnot(place, *annot);
+        }
     }
     chunk_info.SetLoaded();
 }
