@@ -62,7 +62,7 @@ BEGIN_NCBI_SCOPE
 ///         CNcbiIstream& istr = *source;
 ///         ...
 ///     }
-/// \encode
+/// \endcode
 ///
 /// Streams are checked for error conditions at the start (badbit or
 /// failbit before being returned from the iterator) and end (badbit
