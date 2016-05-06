@@ -2413,12 +2413,12 @@ void s_AnalyzeLibraryOrder( CSymResolver& resolver, const CProjectItemsTree&  tr
         }
         const CProjItem& project = p->second;
 
-        list<string> list_in;
-        if (!project.m_DataSource.GetValue("LIB", list_in)) {
+        list<string> list_lib;
+        if (!project.m_DataSource.GetValue("LIB", list_lib)) {
             continue;
         }
         list<string> lib_list_in, lib_list_in0;
-        for( const string& lib : list_in) {
+        for( const string& lib : list_lib) {
             if (lib.at(0) == '#') {
                 break;
             }
@@ -2648,6 +2648,21 @@ void s_AnalyzeLibraryOrder( CSymResolver& resolver, const CProjectItemsTree&  tr
             if (lib_list_out[0].size() == lib_list_out[1].size() &&
                 equal(lib_list_out[0].begin(), lib_list_out[0].end(), lib_list_out[1].begin())) {
                 warnings.push_back("recommended library order: " + NStr::Join(lib_list_out[0]," "));
+
+                set<string> all_libs, all_deps;
+                for(const string& lib_item: lib_list_out[0]) {
+                    all_libs.insert( lib_contents[lib_item].begin(),lib_contents[lib_item].end());
+                    all_deps.insert( lib_dependencies[lib_item].begin(),lib_dependencies[lib_item].end());
+                }
+                set<string> all_missing;
+                for(const string& lib_item: all_deps) {
+                    if (all_libs.find(lib_item) == all_libs.end()) {
+                        all_missing.insert(lib_item);
+                    }
+                }
+                if (!all_missing.empty()) {
+                    warnings.push_back("missing libraries: " + NStr::Join(all_missing," "));
+                }
             } else {
                 warnings.push_back("Failed to identify recommended library order");
                 if (pass >= 2) {
