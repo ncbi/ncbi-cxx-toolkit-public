@@ -20,7 +20,8 @@ GCClientRequest ::= CHOICE {
     get-chrtype-valid  GCClient-ValidateChrTypeLocRequest,
     get-best-assembly GCClient-FindBestAssemblyRequest,
     get-equivalent-assemblies GCClient-GetEquivalentAssembliesRequest,
-    get-assembly-blob GCClient-GetAssemblyBlobRequest
+    get-assembly-blob GCClient-GetAssemblyBlobRequest,
+    get-assembly-by-sequence GCClient-GetAssemblyBySequenceRequest
 }
 
 
@@ -32,7 +33,8 @@ GCClientResponse ::= CHOICE {
     
     --  errors encountered at the server side.
     srvr-error GCClient-Error,
-    get-assembly-blob OCTET STRING
+    get-assembly-blob OCTET STRING,
+    get-assembly-by-sequence GCClient-AssembliesForSequences
 }
 
 GCClient-Error ::= SEQUENCE {
@@ -171,11 +173,39 @@ GCClient-FindBestAssemblyRequest ::= SEQUENCE {
     assembly-return-limit INTEGER OPTIONAL
 }
 
+-- This is a bitfield.  All values are powers of two.
+GCClient-GetAssemblyBySequenceFilter ::= INTEGER {
+    all(0),
+    latest(1),
+    major(2),
+    genbank(4),
+    refseq(8)
+}
+
+GCClient-GetAssemblyBySequenceRequest ::= SEQUENCE {
+    sequence-acc SET OF VisibleString,
+
+    filter GCClient-GetAssemblyBySequenceFilter DEFAULT all,
+
+    sort INTEGER {
+        default(0),
+        latest(1),
+        major(2)
+    } DEFAULT default,
+
+    top-assembly-only INTEGER DEFAULT 0
+}
+
+
 GCClient-AssemblyInfo ::= SEQUENCE {
     accession VisibleString,
     latest    BOOLEAN,
     major     BOOLEAN,
-    annotated BOOLEAN
+    annotated BOOLEAN OPTIONAL,
+    type INTEGER {
+        genbank(1),
+        refseq(2)
+    } OPTIONAL
 }
 
 GCClient-AssemblySequenceInfo ::= SEQUENCE {
