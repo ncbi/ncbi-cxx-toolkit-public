@@ -2598,35 +2598,39 @@ void CValidError_feat::ValidateSpliceExon(const CSeq_feat& feat, const CBioseq_H
             }
 
             if (overlap_feat_exists) {
-                if (stop == overlap_feat_stop ) {
-                    if (overlap_feat_partial_3) {
-                        ValidateDonor (strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                                        label, report_errors, has_errors, feat, true);
+                if (!si.GetSeq_loc().IsPartialStop(eExtreme_Biological)) {
+                    if (stop == overlap_feat_stop) {
+                        if (overlap_feat_partial_3) {
+                            ValidateDonor(strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                label, report_errors, has_errors, feat, true);
+                        }
+                    } else {
+                        ValidateDonor(strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                            label, report_errors, has_errors, feat, false);
                     }
                 }
-                else {
-                    ValidateDonor (strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                                    label, report_errors, has_errors, feat, false);
-                }
 
-                if (start == overlap_feat_start) {
-                    if (overlap_feat_partial_5 ) {
-                        ValidateAcceptor (strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                                        label, report_errors, has_errors, feat, true);
+                if (!si.GetSeq_loc().IsPartialStart(eExtreme_Biological)) {
+                    if (start == overlap_feat_start) {
+                        if (overlap_feat_partial_5) {
+                            ValidateAcceptor(strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                label, report_errors, has_errors, feat, true);
+                        }
+                    } else {
+                        ValidateAcceptor(strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                            label, report_errors, has_errors, feat, false);
                     }
                 }
-                else {
-                    ValidateAcceptor (strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                                    label, report_errors, has_errors, feat, false);
+            } else {
+                // Overlapping feature - mRNA or gene - not found.
+                if (!si.GetSeq_loc().IsPartialStop(eExtreme_Biological)) {
+                    ValidateDonor(strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                        label, report_errors, has_errors, feat, false);
                 }
-            }
-            else {
-                    // Overlapping feature - mRNA or gene - not found.
-                    ValidateDonor (strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                                    label, report_errors, has_errors, feat, false);
-                    ValidateAcceptor (strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                                    label, report_errors, has_errors, feat, false);
-
+                if (!si.GetSeq_loc().IsPartialStart(eExtreme_Biological)) {
+                    ValidateAcceptor(strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                        label, report_errors, has_errors, feat, false);
+                }
             }
         }
     } catch (CException ) {
