@@ -45,9 +45,9 @@
         if (ex.GetPredecessor())                                            \
             to = dynamic_cast<const CDB_TimeoutEx*>(ex.GetPredecessor());   \
         if (to)                                                             \
-            BOOST_TIMEOUT(ex.what());                                       \
+            BOOST_TIMEOUT(string(ex.what()));                               \
         else                                                                \
-            BOOST_FAIL(ex.what());                                          \
+            BOOST_FAIL(string(ex.what()));                                  \
     } while (0)                                                             \
 /**/
 

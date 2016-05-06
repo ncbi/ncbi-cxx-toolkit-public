@@ -49,9 +49,9 @@
     do {                                                                    \
         const CDB_TimeoutEx* to = dynamic_cast<const CDB_TimeoutEx*>(&ex);  \
         if (to)                                                             \
-            BOOST_TIMEOUT(ex.what());                                       \
+            BOOST_TIMEOUT(string(ex.what()));                               \
         else                                                                \
-            BOOST_FAIL(ex.what());                                          \
+            BOOST_FAIL(string(ex.what()));                                  \
     } while (0)                                                             \
 /**/
 
