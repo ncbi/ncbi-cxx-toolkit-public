@@ -32,6 +32,7 @@ GMC needs softparse
 GMC needs xgridcgi
 OSMesa needs3party $(OPENGL_LIBS)
 OSMesa needs3party $(ORIG_LIBS)
+TxPubmedBackend needs txserv
 VDBUtils needs bdbasncli
 VDBUtils needs ncbi_xloader_csra
 VDBUtils needs ncbi_xloader_wgs
@@ -110,9 +111,6 @@ auxcomm_g needs splitdbasncpp_g
 auxcomm_g needs tea_crypt
 auxcommcpp_g needs muxex_g
 auxnet_g needs generic_db_utils
-backendcommon needs $(SDBAPI_LIB)
-backendcommon needs txxmldoc
-backendcommon needs xconnect
 bacterial_pipeline_proc needs gencoll_client
 bacterial_pipeline_proc needs gpipe_objutil
 bag_access needs $(SEQ_LIBS)
@@ -251,6 +249,7 @@ dtd_sample_lib needs xser
 dummy_gpipe needs3party $(ORIG_LIBS)
 edirect needs eueid
 edirect needs ncqhst
+edirect needs txserv
 egenedb needs $(COMPRESS_LIBS)
 egenedb needs $(CONNEXT)
 egenedb needs dbapi_driver_wrap_s
@@ -568,8 +567,10 @@ hogweed needs3party $(GMP_LIBS)
 hogweed needs3party $(ORIG_LIBS)
 homologene needs $(SEQ_LIBS)
 homologene needs pub
-htbcli needs txserv
-htbcon needs txserv
+htbbase needs txxmldoc
+htbcli includes htbcon
+htbcon needs htbbase
+htbcon needs txclient
 hydra_client needs xconnect
 hydra_client needs xmlwrapp
 icudata needs3party $(ORIG_LIBS)
@@ -977,6 +978,7 @@ softparse needs taxon1
 softparse needs xmlwrapp
 spcgi needs softparse
 spcgi needs xgridcgi
+spellsrvbase needs txserv
 splitdbasn_g needs gendefasn_g
 splitdbasn_g needs3party ncbiobj
 splitdbasncpp_g needs asngendefs
@@ -1107,7 +1109,9 @@ tvlib needs tv_objects
 tvlib needs uudutil
 tvlib needs w_phylo_tree
 txclient needs xconnect
-txserv needs txxmldoc
+txserv needs xconnect
+txserv needs xmlwrapp
+txserv needs3party $(RT_LIBS)
 txserv14 needs txxmldoc
 txserv14 needs xconnect
 txserv14 needs3party $(RT_LIBS)
@@ -1115,7 +1119,6 @@ txxmldoc needs $(COMPRESS_LIBS)
 txxmldoc needs xutil
 txxmldoc needs3party $(LIBXML_LIBS)
 txxmldoc needs3party $(LIBXSLT_LIBS)
-txxmltrans needs3party $(ORIG_LIBS)
 u2tl needs $(Z_LIB)
 u2tl needs3party $(NETWORK_LIBS)
 u2tl needs3party $(ORIG_LIBS)
