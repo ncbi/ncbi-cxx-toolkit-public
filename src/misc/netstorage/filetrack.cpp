@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Dmitry Kazimirov
+ * Authors: Dmitry Kazimirov, Rafael Sadyrov
  *
  * File Description:
  *   FileTrack API implementation.
@@ -51,8 +51,6 @@
 #include <sstream>
 
 #define FILETRACK_SIDCOOKIE "SubmissionPortalSID"
-
-#define CONTENT_LENGTH_HEADER "Content-Length: "
 
 BEGIN_NCBI_SCOPE
 
@@ -91,28 +89,6 @@ static EHTTP_HeaderParse s_HTTPParseHeader_SaveStatus(
     return eHTTP_HeaderComplete;
 }
 
-static EHTTP_HeaderParse s_HTTPParseHeader_GetContentLength(
-        const char* http_header, void* user_data, int server_error)
-{
-    SFileTrackRequest* http_request =
-            reinterpret_cast<SFileTrackPostRequest*>(user_data);
-
-    http_request->m_HTTPStatus = server_error;
-
-    const char* content_length_begin =
-        strstr(http_header, CONTENT_LENGTH_HEADER);
-
-    if (content_length_begin != NULL) {
-        size_t content_length = NStr::StringToSizet(
-                content_length_begin + sizeof(CONTENT_LENGTH_HEADER) - 1,
-                NStr::fConvErr_NoThrow | NStr::fAllowTrailingSymbols);
-        if (content_length != 0 || errno == 0)
-            http_request->m_ContentLength = content_length;
-    }
-
-    return eHTTP_HeaderComplete;
-}
-
 const THTTP_Flags kDefaultHttpFlags =
         fHTTP_AutoReconnect |
         fHTTP_SuppressMessages |
@@ -146,10 +122,17 @@ SConnNetInfo* SFileTrackRequest::GetNetInfo() const
     if (m_Config.chunked_upload) {
         SConnNetInfo* net_info(ConnNetInfo_Create(0));
         net_info->version = 1;
+        net_info->req_method = eReqMethod_Post;
         return net_info;
     }
 
     return 0;
+}
+
+string SFileTrackRequest::GetURL() const
+{
+    return s_GetURL(m_ObjectLoc, m_Config.chunked_upload ?
+            "/api/2.0/uploads/binary/" : "/ft/upload/");
 }
 
 THTTP_Flags SFileTrackRequest::GetUploadFlags() const
@@ -167,14 +150,12 @@ void SFileTrackRequest::SetTimeout()
 SFileTrackRequest::SFileTrackRequest(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
-        const string& url,
-        FHTTP_ParseHeader parse_header) :
+        const string& url) :
     m_Config(config),
     m_ObjectLoc(object_loc),
     m_URL(url),
-    m_HTTPStream(url, NULL, kEmptyStr, parse_header, this, NULL,
-            NULL, kDefaultHttpFlags,
-            &m_Config.write_timeout)
+    m_HTTPStream(url, NULL, kEmptyStr, s_HTTPParseHeader_SaveStatus,
+            this, NULL, NULL, kDefaultHttpFlags, &m_Config.write_timeout)
 {
     SetTimeout();
 }
@@ -182,49 +163,49 @@ SFileTrackRequest::SFileTrackRequest(
 SFileTrackRequest::SFileTrackRequest(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
-        const string& url,
         const string& user_header,
-        FHTTP_ParseHeader parse_header) :
+        int) :
     m_Config(config),
     m_NetInfo(GetNetInfo()),
     m_ObjectLoc(object_loc),
-    m_URL(url),
-    m_HTTPStream(url, m_NetInfo.get(), user_header, parse_header, this, NULL,
-            NULL, GetUploadFlags(),
+    m_URL(GetURL()),
+    m_HTTPStream(m_URL, m_NetInfo.get(), user_header,
+            s_HTTPParseHeader_SaveStatus, this, NULL, NULL, GetUploadFlags(),
             &m_Config.write_timeout)
 {
     SetTimeout();
 }
 
-string s_GetUploadURL(const SFileTrackConfig& config,
-        const CNetStorageObjectLoc& object_loc)
-{
-    auto path = config.chunked_upload ? "/api/2.0/uploads/" : "/ft/upload/";
-    return s_GetURL(object_loc, path);
-}
-
 SFileTrackPostRequest::SFileTrackPostRequest(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
-        const string& boundary,
         const string& cookie,
-        const string& user_header,
-        FHTTP_ParseHeader parse_header) :
-    SFileTrackRequest(config, object_loc,
-            s_GetUploadURL(config, object_loc), user_header, parse_header),
-    m_Boundary(boundary),
+        const string& user_header) :
+    SFileTrackRequest(config, object_loc, user_header, 0),
     m_Cookie(cookie)
 {
 }
 
-void SFileTrackPostRequest::SendContentDisposition(const char* input_name)
+SFileTrackPostRequestOld::SFileTrackPostRequestOld(
+        const SFileTrackConfig& config,
+        const CNetStorageObjectLoc& object_loc,
+        const string& boundary,
+        const string& cookie,
+        const string& user_header) :
+    SFileTrackPostRequest(config, object_loc, cookie, user_header),
+    m_Boundary(boundary)
+{
+    SendContentDisposition("file\"; filename=\"contents");
+}
+
+void SFileTrackPostRequestOld::SendContentDisposition(const char* input_name)
 {
     m_HTTPStream << "--" << m_Boundary << "\r\n"
         "Content-Disposition: form-data; name=\"" << input_name << "\"\r\n"
         "\r\n";
 }
 
-void SFileTrackPostRequest::SendFormInput(
+void SFileTrackPostRequestOld::SendFormInput(
         const char* input_name, const string& value)
 {
     SendContentDisposition(input_name);
@@ -232,7 +213,7 @@ void SFileTrackPostRequest::SendFormInput(
     m_HTTPStream << value << "\r\n";
 }
 
-void SFileTrackPostRequest::SendEndOfFormData()
+void SFileTrackPostRequestOld::SendEndOfFormData()
 {
     m_HTTPStream << "--" << m_Boundary << "--\r\n" << NcbiFlush;
 
@@ -298,6 +279,28 @@ static string s_RemoveHTMLTags(const char* text)
 CRef<SFileTrackPostRequest> SFileTrackPostRequest::Create(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
+        const string& cookie)
+{
+    string user_header;
+
+    user_header.append("Content-Type: plain/text\r\nCookie: ").append(cookie);
+    user_header.append("\r\nFile-ID: ").append(object_loc.GetUniqueKey());
+    user_header.append("\r\nFile-Editable: true\r\n");
+
+    const string& my_ncbi_id(CRequestContext_PassThrough().Get("my_ncbi_id"));
+
+    if (!my_ncbi_id.empty()) {
+        user_header.append("Delegated-From-MyNCBI-ID: ").append(my_ncbi_id);
+        user_header.append("\r\n");
+    }
+
+    return CRef<SFileTrackPostRequest>(
+            new SFileTrackPostRequest(config, object_loc, cookie, user_header));
+}
+
+CRef<SFileTrackPostRequest> SFileTrackPostRequestOld::Create(
+        const SFileTrackConfig& config,
+        const CNetStorageObjectLoc& object_loc,
         const string& cookie,
         CRandom& random)
 {
@@ -316,14 +319,9 @@ CRef<SFileTrackPostRequest> SFileTrackPostRequest::Create(
         user_header.append(my_ncbi_id);
     }
 
-    CRef<SFileTrackPostRequest> new_request(
-            new SFileTrackPostRequest(config, object_loc,
-            boundary, cookie, user_header,
-            s_HTTPParseHeader_SaveStatus));
-
-    new_request->SendContentDisposition("file\"; filename=\"contents");
-
-    return new_request;
+    return CRef<SFileTrackPostRequest>(
+            new SFileTrackPostRequestOld(config, object_loc,
+                boundary, cookie, user_header));
 }
 
 CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
@@ -331,7 +329,11 @@ CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
 {
     const string cookie(LoginAndGetSessionKey(object_loc));
 
-    return SFileTrackPostRequest::Create(config, object_loc, cookie, m_Random);
+    if (config.chunked_upload) {
+        return SFileTrackPostRequest::Create(config, object_loc, cookie);
+    }
+
+    return SFileTrackPostRequestOld::Create(config, object_loc, cookie, m_Random);
 }
 
 void SFileTrackPostRequest::Write(const void* buf,
@@ -346,10 +348,23 @@ void SFileTrackPostRequest::Write(const void* buf,
         *bytes_written = count;
 }
 
-static const STimeout kZeroTimeout = {0};
-
 void SFileTrackPostRequest::FinishUpload()
 {
+    string unique_key = m_ObjectLoc.GetUniqueKey();
+
+    CJsonNode upload_result = ReadJsonResponse();
+
+    string filetrack_file_id = upload_result.GetString("key");
+
+    if (filetrack_file_id != unique_key) {
+        RenameFile(filetrack_file_id, unique_key);
+    }
+}
+
+void SFileTrackPostRequestOld::FinishUpload()
+{
+    static const STimeout kZeroTimeout = {0};
+
     m_HTTPStream << "\r\n";
 
     string unique_key = m_ObjectLoc.GetUniqueKey();
@@ -471,7 +486,7 @@ CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(
     const string url(s_GetURL(object_loc, "/ft/byid/", "/contents"));
 
     CRef<SFileTrackRequest> new_request(new SFileTrackRequest(config, object_loc,
-            url, s_HTTPParseHeader_GetContentLength));
+            url));
 
     new_request->m_FirstRead = true;
 
@@ -482,8 +497,7 @@ void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
 {
     const string url(s_GetURL(object_loc, "/ftmeta/files/", "/__delete__"));
 
-    SFileTrackRequest new_request(config, object_loc,
-            url, s_HTTPParseHeader_GetContentLength);
+    SFileTrackRequest new_request(config, object_loc, url);
 
     new_request.m_HTTPStream << NcbiEndl;
 
@@ -614,13 +628,12 @@ CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
 {
     const string url(s_GetURL(object_loc, "/ftmeta/files/", "/"));
 
-    SFileTrackRequest request(config, object_loc, url,
-            s_HTTPParseHeader_SaveStatus);
+    SFileTrackRequest request(config, object_loc, url);
 
     return request.ReadJsonResponse();
 }
 
-string SFileTrackPostRequest::GenerateUniqueBoundary(CRandom& random)
+string SFileTrackPostRequestOld::GenerateUniqueBoundary(CRandom& random)
 {
     string boundary("FileTrack-" + NStr::NumericToString(time(NULL)));
     boundary += '-';
@@ -629,7 +642,7 @@ string SFileTrackPostRequest::GenerateUniqueBoundary(CRandom& random)
     return boundary;
 }
 
-string SFileTrackPostRequest::MakeMutipartFormDataHeader(const string& boundary)
+string SFileTrackPostRequestOld::MakeMutipartFormDataHeader(const string& boundary)
 {
     string header("Content-Type: multipart/form-data; boundary=" + boundary);
 

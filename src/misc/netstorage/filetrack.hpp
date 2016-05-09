@@ -63,8 +63,7 @@ struct SFileTrackRequest : public CObject
 {
     SFileTrackRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
-            const string& url,
-            FHTTP_ParseHeader parse_header = 0);
+            const string& url);
 
     CJsonNode ReadJsonResponse();
 
@@ -76,14 +75,13 @@ struct SFileTrackRequest : public CObject
 protected:
     SFileTrackRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
-            const string& url,
-            const string& user_header,
-            FHTTP_ParseHeader parse_header);
+            const string& user_header, int not_used);
 
     const SFileTrackConfig& m_Config;
 
 private:
     SConnNetInfo* GetNetInfo() const;
+    string GetURL() const;
     THTTP_Flags GetUploadFlags() const;
     void SetTimeout();
 
@@ -94,13 +92,34 @@ public:
     string m_URL;
     CConn_HttpStream m_HTTPStream;
     int m_HTTPStatus = 0;
-    size_t m_ContentLength = (size_t) -1;
     bool m_FirstRead = false;
 };
 
 struct SFileTrackPostRequest : public SFileTrackRequest
 {
     void Write(const void* buf, size_t count, size_t* bytes_written);
+    virtual void FinishUpload();
+
+    static CRef<SFileTrackPostRequest> Create(const SFileTrackConfig& config,
+            const CNetStorageObjectLoc& object_loc,
+            const string& cookie);
+
+protected:
+    SFileTrackPostRequest(const SFileTrackConfig& config,
+            const CNetStorageObjectLoc& object_loc,
+            const string& cookie,
+            const string& user_header);
+
+    void RenameFile(const string& from, const string& to);
+
+private:
+    SFileTrackPostRequest();
+
+    const string m_Cookie;
+};
+
+struct SFileTrackPostRequestOld : public SFileTrackPostRequest
+{
     void FinishUpload();
 
     static CRef<SFileTrackPostRequest> Create(const SFileTrackConfig& config,
@@ -109,25 +128,21 @@ struct SFileTrackPostRequest : public SFileTrackRequest
             CRandom& random);
 
 private:
-    SFileTrackPostRequest();
-    SFileTrackPostRequest(const SFileTrackConfig& config,
+    SFileTrackPostRequestOld();
+    SFileTrackPostRequestOld(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
             const string& boundary,
             const string& cookie,
-            const string& user_header,
-            FHTTP_ParseHeader parse_header);
+            const string& user_header);
 
     void SendContentDisposition(const char* input_name);
     void SendFormInput(const char* input_name, const string& value);
     void SendEndOfFormData();
 
-    void RenameFile(const string& from, const string& to);
-
     static string GenerateUniqueBoundary(CRandom&);
     static string MakeMutipartFormDataHeader(const string&);
 
     string m_Boundary;
-    const string m_Cookie;
 };
 
 struct SFileTrackAPI
