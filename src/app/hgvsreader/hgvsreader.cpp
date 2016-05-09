@@ -93,7 +93,8 @@ int CHgvsToSeqfeatConverter::Run(void)
 
     CRef<CSeq_feat> seq_feat;
     auto ml = Ref(new CVariationIrepMessageListener());
-    auto seq_type = (*irep->GetSeqvars().begin())->GetSeqtype();
+   // auto seq_type = (*irep->GetSeqvars().begin())->GetSeqtype();
+    auto seq_type = irep->GetSequence_variant().GetSeqtype();
     if (seq_type == eVariantSeqType_p) {
         CHgvsProtIrepReader irep_reader(*scope, *ml);
         seq_feat = irep_reader.CreateSeqfeat(irep);
