@@ -10550,6 +10550,36 @@ string s_GetDiv(const CBioSource& src)
 }
 
 
+void RemoveStrain(string& src, const CBioSource& biosrc)
+{
+    if (!biosrc.IsSetOrg() || !biosrc.GetOrg().IsSetOrgname() ||
+        !biosrc.GetOrg().GetOrgname().IsSetMod()) {
+        return;
+    }
+    size_t pos = NStr::Find(src, "(strain ");
+    if (pos == string::npos) {
+        return;
+    }
+
+    ITERATE(COrgName::TMod, it, biosrc.GetOrg().GetOrgname().GetMod()) {
+        if ((*it)->IsSetSubtype() &&
+            (*it)->GetSubtype() == COrgMod::eSubtype_strain &&
+            (*it)->IsSetSubname()) {
+            const string& strain = (*it)->GetSubname();
+            size_t expected_len = 9 + strain.length();
+            if (src.length() >= pos + expected_len) {
+                string compare = src.substr(pos, expected_len);
+                string expected = "(strain " + strain + ")";
+                if (NStr::Equal(compare, expected)) {
+                    src = src.substr(0, pos - 1) + src.substr(pos + expected_len);
+                    NStr::ReplaceInPlace(src, "  ", " ");
+                }
+            }
+        }
+    }
+}
+
+
 bool CNewCleanup_imp::x_CanRemoveGenbankBlockSource(const string& src, const CBioSource& biosrc)
 {
     string compare = src;
@@ -10562,6 +10592,7 @@ bool CNewCleanup_imp::x_CanRemoveGenbankBlockSource(const string& src, const CBi
         compare = compare.substr(0, compare.length() - 1);
         NStr::TruncateSpacesInPlace(compare);
     }
+    RemoveStrain(compare, biosrc);
 
     if (biosrc.IsSetOrg()) {
         if (biosrc.GetOrg().IsSetTaxname() &&
