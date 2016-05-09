@@ -492,9 +492,9 @@ CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(CRef<CVariantExpression>& varia
 
     if (sequence_variant.IsSetComplex()) {
         string message;
-        if (sequence_variant.GetComplex().IsChimera()) {
+        if (sequence_variant.GetComplex() == CSequenceVariant::eComplex_chimera) {
             message = "Chimeras ";
-        } else if (sequence_variant.GetComplex().IsMosaic()) {
+        } else if (sequence_variant.GetComplex() == CSequenceVariant::eComplex_mosaic) {
             message = "Mosaics ";
         }
         message += "are not currently supported.";

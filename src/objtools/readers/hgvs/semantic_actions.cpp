@@ -17,12 +17,12 @@ CRef<T> CreateResultIfNull(CRef<T> result)
 
 void TagAsChimera(CRef<CSequenceVariant>& seq_var)
 {
-    seq_var->SetComplex().SetChimera();
+    seq_var->SetComplex(CSequenceVariant::eComplex_chimera);
 }
 
 void TagAsMosaic(CRef<CSequenceVariant>& seq_var)
 {
-    seq_var->SetComplex().SetMosaic();
+    seq_var->SetComplex(CSequenceVariant::eComplex_mosaic);
 }
 
 void AssignRefSeqIdentifier(const string& identifier, CRef<CVariantExpression>& result)

@@ -14,9 +14,9 @@ VariantExpression ::= SEQUENCE {
 SequenceVariant ::= SEQUENCE {
     seqtype VariantSeqType,
     subvariants SEQUENCE OF Variant,
-    complex CHOICE {
-        mosaic NULL, 
-        chimera NULL
+    complex INTEGER {
+        mosaic  (1), 
+        chimera (2)
     } OPTIONAL
 }
 
