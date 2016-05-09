@@ -1239,6 +1239,32 @@ public:
             }
             return mkp;
         }
+        void RotateCircularToMinKmer() {
+            m_seq.erase(m_seq.end()-m_kmer_len+1, m_seq.end());
+            size_t first_base = MinKmerPosition();
+            if(m_kmers[first_base]%2)
+                first_base = (first_base+m_kmer_len)%m_kmers.size();
+            rotate(m_seq.begin(), m_seq.begin()+first_base, m_seq.end());
+            rotate(m_kmers.begin(), m_kmers.begin()+first_base, m_kmers.end());
+            m_next_left = m_kmers.back();
+            m_next_right = *(m_kmers.end()-m_kmer_len+1);
+
+            //remove extra kmers
+            m_kmers.erase(m_kmers.end()-m_kmer_len+1, m_kmers.end());
+            
+            //clean edges   
+            m_left_link = 0;
+            m_left_shift = 0;
+            m_right_link = 0;
+            m_right_shift = 0;
+            m_left_extend = 0;   // prevents any further clipping    
+            m_right_extend = 0;  // prevents any further clipping    
+        }
+        void SelectMinDirection() {
+            CDBGraph::Node minkmer = m_kmers[MinKmerPosition()];
+            if(minkmer && minkmer%2)
+                ReverseComplement();            
+        }
 
         bool operator<(const SContig& other) const { return m_seq < other.m_seq; }
 
