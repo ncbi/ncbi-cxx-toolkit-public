@@ -8,7 +8,6 @@
 #include <unordered_set>
 #include <algo/gnomon/gnomon_model.hpp>
 #include <atomic>
-#include <memory>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(gnomon);
@@ -1128,7 +1127,7 @@ public:
     struct SContig {
         SContig() : m_next_left(0), m_next_right(0), m_left_extend(0), m_right_extend(0) {}
         SContig(const string& contig, CDBGraph& graph) : 
-            m_seq(contig.begin(), contig.end()), m_next_left(0), m_next_right(0), m_left_shift(0), m_right_shift(0), 
+            m_seq(contig.begin(), contig.end()), m_next_left(0), m_next_right(0), m_left_link(nullptr), m_left_shift(0), m_right_link(nullptr), m_right_shift(0), 
             m_left_extend(0), m_right_extend(0), m_kmer_len(graph.KmerLen()), m_is_taken(0) {
 
             CReadHolder rh;
@@ -1141,7 +1140,7 @@ public:
             }          
         }
         SContig(const TBases& to_left, const TBases& to_right, CDBGraph::Node initial_node, CDBGraph::Node lnode, CDBGraph::Node rnode, const CDBGraph& graph) :  
-            m_next_left(lnode), m_next_right(rnode), m_left_shift(0), m_right_shift(0), m_kmer_len(graph.KmerLen()), m_is_taken(0) {                                                                                                                                                                                                                          
+            m_next_left(lnode), m_next_right(rnode), m_left_link(nullptr), m_left_shift(0), m_right_link(nullptr), m_right_shift(0), m_kmer_len(graph.KmerLen()), m_is_taken(0) {                                                                                                                                                                                                                          
             for(const auto& base : to_left) {
                 m_seq.push_front(Complement(base.m_nt));
                 m_kmers.push_front(CDBGraph::ReverseComplement(base.m_node));
@@ -1156,8 +1155,8 @@ public:
 
             m_left_extend = m_right_extend = m_seq.size();
         }
-        SContig(list<SContig>::iterator link, int shift, CDBGraph::Node takeoff_node, const TBases& extension, CDBGraph::Node rnode, const CDBGraph& graph) :
-            m_next_left(takeoff_node), m_next_right(rnode), m_left_link(new list<SContig>::iterator(link)), m_left_shift(shift), m_right_shift(0), 
+        SContig(SContig* link, int shift, CDBGraph::Node takeoff_node, const TBases& extension, CDBGraph::Node rnode, const CDBGraph& graph) :
+            m_next_left(takeoff_node), m_next_right(rnode), m_left_link(link), m_left_shift(shift), m_right_link(nullptr), m_right_shift(0), 
             m_kmer_len(graph.KmerLen()), m_is_taken(0) {
 
             string kmer = graph.GetNodeSeq(takeoff_node);
@@ -1239,7 +1238,7 @@ public:
             }
             return mkp;
         }
-        void RotateCircularToMinKmer() {
+        void RotateCircularToMinKmer() { // assumes that sequence was extended almost to meet the first kmer (m_next_right == m_kmers.front())
             m_seq.erase(m_seq.end()-m_kmer_len+1, m_seq.end());
             size_t first_base = MinKmerPosition();
             if(m_kmers[first_base]%2)
@@ -1253,9 +1252,9 @@ public:
             m_kmers.erase(m_kmers.end()-m_kmer_len+1, m_kmers.end());
             
             //clean edges   
-            m_left_link = 0;
+            m_left_link = nullptr;
             m_left_shift = 0;
-            m_right_link = 0;
+            m_right_link = nullptr;
             m_right_shift = 0;
             m_left_extend = 0;   // prevents any further clipping    
             m_right_extend = 0;  // prevents any further clipping    
@@ -1270,19 +1269,20 @@ public:
 
         // m_seq.size() == m_kmer.size()+kmer_len-1
         // Extreme case: m_kmer.size() == 0; m_seq.size == kmer_len-1 (represents two connected 'next' kmers)
+        // SContig is not very convinient for 'circular' sequences which should have m_seq.size() == m_kmer.size()
         deque<char> m_seq;               // sequence
         deque<CDBGraph::Node> m_kmers;   // kmers
 
         CDBGraph::Node m_next_left;      // denied left kmer (connection possible but it is already owned)
         CDBGraph::Node m_next_right;     // denied right kmer (connection possible but it is already owned)
 
-        std::shared_ptr<list<SContig>::iterator> m_left_link;  // if set points to 'left' contig
-        int m_left_shift;                                      // shift+1 for m_next_left in this contig (positive for the right end)
-        std::shared_ptr<list<SContig>::iterator> m_right_link; // if set points to 'right' contig
-        int m_right_shift;                                     // shift+1 for m_next_right in this contig (positive for the right end)
+        SContig* m_left_link;  // if set points to 'left' contig
+        int m_left_shift;      // shift+1 for m_next_left in this contig (positive for the right end)
+        SContig* m_right_link; // if set points to 'right' contig
+        int m_right_shift;     // shift+1 for m_next_right in this contig (positive for the right end)
 
-        int m_left_extend;    // number of newly assembled bases which could be clipped
-        int m_right_extend;   // number of newly assembled bases which could be clipped
+        int m_left_extend;     // number of newly assembled bases which could be clipped
+        int m_right_extend;    // number of newly assembled bases which could be clipped
 
         int m_kmer_len;
         SAtomic<uint8_t> m_is_taken;
