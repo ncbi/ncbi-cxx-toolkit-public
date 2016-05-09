@@ -115,7 +115,7 @@ public:
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read = 0);
-    virtual ERW_Result PendingCount(size_t* count)
+    virtual ERW_Result PendingCount(size_t* /*count*/)
     { return eRW_NotImplemented; }
 
 protected:
@@ -1020,8 +1020,8 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
             return -1;
         }
     }
-    catch (exception& e) {
-        NCBI_REPORT_EXCEPTION_X(14, "(CGI) CCgiApplication::Run", e);
+    catch (exception& ex) {
+        NCBI_REPORT_EXCEPTION_X(14, "(CGI) CCgiApplication::Run", ex);
     }
     return 0;
 }
@@ -1370,7 +1370,7 @@ CCgiApplication::GetSessionStorage(CCgiSessionParameters&) const
 }
 
 
-bool CCgiApplication::IsCachingNeeded(const CCgiRequest& request) const
+bool CCgiApplication::IsCachingNeeded(const CCgiRequest& /*request*/) const
 {
     return true;
 }

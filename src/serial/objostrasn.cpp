@@ -119,7 +119,7 @@ void CObjectOStreamAsn::WriteEnum(
     } else {
 // names coming from XML can begin with uppercase char;
 // in ASN, they must begin with lowercase one.
-        m_Output.PutChar(tolower((unsigned char)valueName[0]));
+        m_Output.PutChar((char)tolower((unsigned char)valueName[0]));
         m_Output.PutString(valueName.data()+1, valueName.size()-1);
     }    
 }
@@ -335,7 +335,7 @@ void CObjectOStreamAsn::WriteBitString(const CBitString& obj)
         if (hex) {
             Uint1 data, mask;
             while (i < ilast) {
-                for (data=0, mask=0x8; mask!=0; mask >>= 1, ++i) {
+                for (data=0, mask=0x8; mask!=0; mask = Uint1(mask >> 1), ++i) {
                     if (i == *e) {
                         data |= mask;
                         ++e;
@@ -582,7 +582,7 @@ void CObjectOStreamAsn::WriteMemberId(const CMemberId& id)
     const string& name = id.GetName();
     if ( !name.empty() ) {
         if (id.HaveNoPrefix() && isupper((unsigned char)name[0])) {
-            m_Output.PutChar(tolower((unsigned char)name[0]));
+            m_Output.PutChar((char)tolower((unsigned char)name[0]));
             m_Output.PutString(name.data()+1, name.size()-1);
         } else {
             m_Output.PutString(name);

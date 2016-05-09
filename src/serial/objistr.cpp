@@ -791,17 +791,17 @@ string CObjectIStream::GetPosition(void) const
 }
 
 void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info, 
-                                 TFailFlags fail, const char* message)
+                                 TFailFlags flags, const char* message)
 {
-    ThrowError1(diag_info,fail,string(message));
+    ThrowError1(diag_info, flags, string(message));
 }
 
 void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info, 
-                                 TFailFlags fail, const string& message)
+                                 TFailFlags flags, const string& message)
 {
     CSerialException::EErrCode err;
-    SetFailFlags(fail, message.c_str());
-    switch(fail)
+    SetFailFlags(flags, message.c_str());
+    switch (flags)
     {
     case fNoError:
         CNcbiDiag(diag_info, eDiag_Trace) << ErrCode(NCBI_ERRCODE_X, 6)

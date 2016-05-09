@@ -105,7 +105,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, SPrintIdentifier s)
                 c = '_';
             }
             if ( capitalize ) {
-                c = toupper((unsigned char)c);
+                c = (char)toupper((unsigned char)c);
                 capitalize = false;
             }
             out << c;

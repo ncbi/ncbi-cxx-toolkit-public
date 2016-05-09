@@ -203,7 +203,7 @@ public:
     ///   SCHEME://SERVER_NAME[:SERVER_PORT]/SCRIPT_NAME
     /// @deprecated The flag is ignored, use GetSelfURL(void).
     NCBI_DEPRECATED
-    const string& GetSelfURL(ESelfUrlPort use_port) const
+    const string& GetSelfURL(ESelfUrlPort /*use_port*/) const
         { return GetSelfURL(); }
 
     /// Using HTTP environment variables, compose the CGI's own URL as:

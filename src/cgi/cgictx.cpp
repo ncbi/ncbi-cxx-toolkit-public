@@ -750,11 +750,11 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
 
     // Is this a preflight CORS request?
     if (method == CCgiRequest::eMethod_OPTIONS) {
-        const string& method = request.GetRandomProperty
+        const string& method_str = request.GetRandomProperty
             (s_HeaderToHttp(kAC_RequestMethod));
         const string& headers = request.GetRandomProperty
             (s_HeaderToHttp(kAC_RequestHeaders));
-        if (!s_IsAllowedMethod(method)  ||  !s_IsAllowedHeaderList(headers)) {
+        if (!s_IsAllowedMethod(method_str)  ||  !s_IsAllowedHeaderList(headers)) {
             // This is CORS request, but the method or headers are not allowed.
             response.DisableTrackingCookie();
             response.SetStatus(CRequestStatus::e403_Forbidden);

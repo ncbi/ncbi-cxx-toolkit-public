@@ -652,9 +652,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                 if(caching_needed)
                                     SaveResultToCache(m_Context->GetRequest(), result_copy);
                                 else {
-                                    unique_ptr<CCgiRequest> request(GetSavedRequest(m_RID));
-                                    if (request.get())
-                                        SaveResultToCache(*request, result_copy);
+                                    unique_ptr<CCgiRequest> saved_request(GetSavedRequest(m_RID));
+                                    if (saved_request.get())
+                                        SaveResultToCache(*saved_request, result_copy);
                                 }
                             } else if (caching_needed) {
                                 SaveRequest(m_RID, m_Context->GetRequest());

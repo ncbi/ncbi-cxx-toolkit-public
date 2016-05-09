@@ -39,6 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 // readers
 void CObjectInfo::ReadContainer(CObjectIStream& in,
                                 CReadContainerElementHook& hook)
@@ -154,7 +155,6 @@ void CIStreamClassMemberIterator::BeginClassMember(void)
             GetStream().BeginClassMember(m_ClassType.GetClassTypeInfo(),
                                          m_MemberIndex + 1);
     }
-
     if ( *this )
         GetStream().SetTopMemberId(GetMemberInfo()->GetId());
 }
@@ -412,13 +412,9 @@ void CIStreamContainerIterator::CopyElement(CObjectStreamCopier& copier,
                                             COStreamContainer& out)
 {
     BeginElementData();
-
     out.GetStream().BeginContainerElement(m_ElementTypeInfo);
-
     copier.CopyObject(m_ElementTypeInfo);
-
     out.GetStream().EndContainerElement();
-
     NextElement();
 }
 
@@ -486,20 +482,17 @@ COStreamContainer::~COStreamContainer(void)
 void COStreamContainer::WriteElement(const CConstObjectInfo& element)
 {
     GetStream().BeginContainerElement(m_ElementTypeInfo);
-
     GetStream().WriteSeparateObject(element);
-
     GetStream().EndContainerElement();
 }
 
 void COStreamContainer::WriteElement(CObjectStreamCopier& copier,
-                                     CObjectIStream& in)
+                                     CObjectIStream& /*in*/)
 {
     GetStream().BeginContainerElement(m_ElementTypeInfo);
-
     copier.CopyObject(m_ElementTypeInfo);
-
     GetStream().EndContainerElement();
 }
+
 
 END_NCBI_SCOPE

@@ -220,12 +220,12 @@ void CCgiResponse::x_RestoreOutputExceptions(void)
 }
 
 
-void CCgiResponse::SetOutput(CNcbiOstream* out, int fd)
+void CCgiResponse::SetOutput(CNcbiOstream* output, int fd)
 {
     x_RestoreOutputExceptions();
 
     m_HeaderWritten = false;
-    m_Output        = out;
+    m_Output        = output;
     m_OutputFD      = fd;
 
     // Make the output stream to throw on write if it's in a bad state

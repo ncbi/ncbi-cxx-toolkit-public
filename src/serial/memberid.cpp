@@ -47,7 +47,7 @@ CMemberId::CMemberId(void)
 {
 }
 
-CMemberId::CMemberId(TTag tag, bool explicitTag)
+CMemberId::CMemberId(TTag tag, bool /*explicitTag*/)
     : m_Tag(tag),
     m_TagClass(CAsnBinaryDefs::eContextSpecific),
     m_TagType(CAsnBinaryDefs::eAutomatic),
@@ -67,7 +67,7 @@ CMemberId::CMemberId(const string& name)
 {
 }
 
-CMemberId::CMemberId(const string& name, TTag tag, bool explicitTag)
+CMemberId::CMemberId(const string& name, TTag tag, bool /*explicitTag*/)
     : m_Name(name), m_Tag(tag),
     m_TagClass(CAsnBinaryDefs::eContextSpecific),
     m_TagType(CAsnBinaryDefs::eAutomatic),
@@ -88,7 +88,7 @@ CMemberId::CMemberId(const char* name)
     _ASSERT(name);
 }
 
-CMemberId::CMemberId(const char* name, TTag tag, bool explicitTag)
+CMemberId::CMemberId(const char* name, TTag tag, bool /*explicitTag*/)
     : m_Name(name), m_Tag(tag),
     m_TagClass(CAsnBinaryDefs::eContextSpecific),
     m_TagType(CAsnBinaryDefs::eAutomatic),

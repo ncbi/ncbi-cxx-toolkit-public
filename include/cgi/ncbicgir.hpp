@@ -363,7 +363,7 @@ inline CCgiResponse::EMultipartMode CCgiResponse::GetMultipartMode(void)
 }
 
 inline void CCgiResponse::BeginPart(const string& name, const string& type,
-                                    size_t size)
+                                    size_t /*size*/)
 {
     BeginPart(name, type, out());
 }
