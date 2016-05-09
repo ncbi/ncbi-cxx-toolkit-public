@@ -207,20 +207,43 @@ void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst
     if (!identity_inst.IsSetType() ||
          identity_inst.GetType() != CVariation_inst::eType_identity)
     {
-        // Throw an exception
+
+        string message = "CVariation_inst: ";
+        if (!identity_inst.IsSetType()) {
+            message += "Type not set. ";
+        } else {
+            message += "Invalid type (" 
+                    + NStr::NumericToString(identity_inst.GetType()) 
+                    + ").";
+        }
+        message += "Expected eType_identity"; 
+ //       message += "Expected eType_identity (" 
+ //               + NStr::NumericToString(CVariation_inst::eType_identity)
+ //               + ")";
+        
+
+        NCBI_THROW(CVariationValidateException,
+                   eInvalidType,
+                   message);
     }
 
     if (!identity_inst.IsSetDelta()) {
-        // Throw an exception
+        NCBI_THROW(CVariationValidateException, 
+                   eIncompleteObject,
+                   "Delta-item not set");
     }
 
     auto& delta_item = *identity_inst.GetDelta().back();
     if (!delta_item.IsSetSeq()) {
-        // Throw an exception
+        NCBI_THROW(CVariationValidateException,
+                   eIncompleteObject,
+                   "Seq not set");
     }
 
     if (!delta_item.GetSeq().IsLiteral()) {
-        // Throw an exception
+        NCBI_THROW(CVariationValidateException,
+                   eInvalidType,
+                   "Seq-literal expected");
     }
 
     const auto& literal = delta_item.GetSeq().GetLiteral();

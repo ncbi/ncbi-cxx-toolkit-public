@@ -237,6 +237,8 @@ const char* CVariationValidateException::GetErrCodeString(void) const
     switch( GetErrCode() ) {
     case eIDResolveError: return "eIDResolveError";
     case eSeqliteralIntervalError: return "eSeqliteralIntervalError";
+    case eInvalidType: return "eInvalidType";
+    case eIncompleteObject: return "eIncompleteObject";
     default:              return CException::GetErrCodeString();
     }
 }
