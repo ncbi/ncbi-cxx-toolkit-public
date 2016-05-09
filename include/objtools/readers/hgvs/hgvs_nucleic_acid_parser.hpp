@@ -24,10 +24,10 @@ struct SHgvsNucleicAcidGrammar : boost::spirit::qi::grammar<TParseIterator, CRef
 //    TRule<CSimpleVariantSeq> start;
 
     TRule<CVariantExpression> dna_expression;
-    TRule<CSeqVariants> dna_seq_variants;
-    TRule<CSeqVariants> dna_simple_seq_variant;
-    TRule<CSeqVariants> dna_mosaic;
-    TRule<CSeqVariants> dna_chimera;
+    TRule<CSequenceVariant> dna_seq_variants;
+    TRule<CSequenceVariant> dna_simple_seq_variant;
+    TRule<CSequenceVariant> dna_mosaic;
+    TRule<CSequenceVariant> dna_chimera;
     TRule<CSimpleVariant> simple_variation;
     TRule<CSimpleVariant> fuzzy_simple_variation;
     TRule<CSimpleVariant> confirmed_simple_variation;

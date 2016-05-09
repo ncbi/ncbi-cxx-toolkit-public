@@ -133,7 +133,8 @@ class CVariationValidateException : public CException
 {
 public: 
     enum EErrCode {
-      eIDResolveError
+      eIDResolveError,
+      eSeqliteralIntervalError
     };
 
     virtual const char* GetErrCodeString(void) const;

@@ -11,11 +11,11 @@ USING_SCOPE(objects);
 
 void AssignRefSeqIdentifier(const string& identifier, CRef<CVariantExpression>& result);
 
-void TagChimera(CRef<CSeqVariants>& seq_var);
+void TagAsChimera(CRef<CSequenceVariant>& seq_var);
 
-void TagMosaic(CRef<CSeqVariants>& seq_var);
+void TagAsMosaic(CRef<CSequenceVariant>& seq_var);
 
-void AppendSeqVariant(CRef<CSeqVariants>& variant, CRef<CVariantExpression>& result);
+void AssignSequenceVariant(CRef<CSequenceVariant>& variant, CRef<CVariantExpression>& result);
 
 void AppendToLocalVariantSeq(CRef<CSimpleVariant>& var_desc, CRef<CSimpleVariantSeq>& result);
 
@@ -77,19 +77,19 @@ void AssignFuzzyLocalVariation(CRef<CSimpleVariant>& input, CRef<CSimpleVariant>
 
 void AssignFuzzyLocalVariantSeq(CRef<CSimpleVariantSeq>& in, CRef<CSimpleVariantSeq>& result);
 
-void AssignSingleLocalVariation(CRef<CSimpleVariant>& local_var, CRef<CSeqVariants>& result);
+void AssignSingleLocalVariation(CRef<CSimpleVariant>& local_var, CRef<CSequenceVariant>& result);
 
-void AssignUnknownChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSeqVariants>& result);
+void AssignUnknownChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result);
 
-void AssignSecondChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSeqVariants>& result);
+void AssignSecondChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result);
 
-void AssignSecondChromosomeSpecialVariant(const ESpecialVariant& special_variant, CRef<CSeqVariants>& result);
+void AssignSecondChromosomeSpecialVariant(const ESpecialVariant& special_variant, CRef<CSequenceVariant>& result);
 
-void AssignChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSeqVariants>& result);
+void AssignChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result);
 
-void AssignSpecialVariant(const ESpecialVariant& special_variant, CRef<CSeqVariants>& result);
+void AssignSpecialVariant(const ESpecialVariant& special_variant, CRef<CSequenceVariant>& result);
 
-void AssignSequenceType(CRef<CSeqVariants>& result);
+void AssignSequenceType(CRef<CSequenceVariant>& result);
 
 //void AssignIntronNtSite(CRef<CNtSite>& intron_site, CRef<CNtSite>& result);
 
@@ -170,7 +170,7 @@ void AssignNtIdentity(CRef<CNtLocation>& nt_loc,
 void AssignNtIdentity(CRef<CNtLocation>& nt_loc,
                       CRef<CSimpleVariant>& result);
 
-void AssignSequenceType(const string& type, CRef<CSeqVariants>& result);
+void AssignSequenceType(const string& type, CRef<CSequenceVariant>& result);
 
 END_NCBI_SCOPE
 

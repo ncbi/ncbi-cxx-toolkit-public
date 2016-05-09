@@ -4,6 +4,7 @@
 #include <objtools/readers/hgvs/post_process.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objtools/readers/hgvs/irep_to_seqfeat_errors.hpp>
+#include <corelib/ncbidiag.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -179,7 +180,7 @@ CRef<CSeq_feat> g_NormalizeVariationSeqfeat(const CSeq_feat& feat,
 void s_ValidateSeqLiteral(const CSeq_literal& literal, const CSeq_loc& location, CScope* scope, bool IsCDS=false)
 {
     if (IsCDS) {
-        // post a warning here
+  //      ERR_POST_X(1, Warning << "Cannot validate a CDS-variant Seq-literal");
         return;
     }
 

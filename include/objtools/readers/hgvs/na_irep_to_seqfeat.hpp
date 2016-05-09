@@ -38,62 +38,62 @@ public:
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CSimpleVariant& var_desc,
-                                       const CSeqVariants::TSeqtype& seq_type,
+                                       const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope,
                                        CVariationIrepMessageListener& listener);
 
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtSite& nt_site,
-                                       const CSeqVariants::TSeqtype& seq_type,
+                                       const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope,
                                        CVariationIrepMessageListener& listener);
 
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtSiteRange& nt_range,
-                                       const CSeqVariants::TSeqtype& seq_type,
+                                       const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope,
                                        CVariationIrepMessageListener& listener);
 
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtInterval& nt_int,
-                                       const CSeqVariants::TSeqtype& seq_type,
+                                       const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope,
                                        CVariationIrepMessageListener& listener);
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtLocation& nt_loc,
-                                       const CSeqVariants::TSeqtype& seq_type,
+                                       const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope,
                                        CVariationIrepMessageListener& listener);
 private:
 
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtIntLimit& nt_limit,
-                                   const CSeqVariants::TSeqtype& seq_type,
+                                   const CSequenceVariant::TSeqtype& seq_type,
                                    CScope& scope,
                                    CVariationIrepMessageListener& listener,
                                    TSeqPos& site_index);
 
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtSite& nt_site,
-                                   const CSeqVariants::TSeqtype& seq_type,
+                                   const CSequenceVariant::TSeqtype& seq_type,
                                    CScope& scope,
                                    CVariationIrepMessageListener& listener,
                                    TSeqPos& site_index);
 
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtSiteRange& nt_range,
-                                   const CSeqVariants::TSeqtype& seq_type,
+                                   const CSequenceVariant::TSeqtype& seq_type,
                                    CScope& scope,
                                    CVariationIrepMessageListener& listener,
                                    TSeqPos& site_index);
 
     static CRef<CInt_fuzz> x_CreateIntFuzz(const CSeq_id& seq_id,
                                            const CNtSiteRange& nt_range,
-                                           const CSeqVariants::TSeqtype& seq_type,
+                                           const CSequenceVariant::TSeqtype& seq_type,
                                            CScope& scope,
                                            CVariationIrepMessageListener& listener);
 };
@@ -166,7 +166,7 @@ public:
 
         CRef<CSeq_feat> x_CreateSeqfeat(const string& var_name,
                                         const string& identifier,
-                                        const CSeqVariants::TSeqtype& seq_type,
+                                        const CSequenceVariant::TSeqtype& seq_type,
                                         const CSimpleVariant& var_desc) const;
 
 public:

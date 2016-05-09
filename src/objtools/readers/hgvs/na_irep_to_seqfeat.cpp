@@ -331,8 +331,8 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateConversionVarref(const CConversi
         const auto stop_offset  = CHgvsNaDeltaHelper::GetStopIntronOffset(replacement_int);
 
         if (start_offset || stop_offset) {
-            string message = "Nucleotide conversions with replacement intervals that begin or end in an intron are not currently supported.\n";
-            message += "Please report to variation-services@ncbi.nlm.nih.gov";
+            string message = "Nucleotide conversions with replacement intervals that begin or end in an intron are not currently supported.";
+            message += " Please report to variation-services@ncbi.nlm.nih.gov";
             NCBI_THROW(CVariationIrepException, eUnsupported, message);
         }
     }
@@ -465,7 +465,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
 
 CRef<CSeq_feat> CHgvsNaIrepReader::x_CreateSeqfeat(const string& var_name,
                                                    const string& id_string,
-                                                   const CSeqVariants::TSeqtype& seq_type,
+                                                   const CSequenceVariant::TSeqtype& seq_type,
                                                    const CSimpleVariant& var_desc) const 
 {
     auto seq_feat = Ref(new CSeq_feat());
@@ -488,8 +488,23 @@ CRef<CSeq_feat> CHgvsNaIrepReader::x_CreateSeqfeat(const string& var_name,
 
 CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(CRef<CVariantExpression>& variant_expr) const 
 {
-    const auto& simple_variant = (*variant_expr->GetSeqvars().begin())->GetVariants().front()->GetSimple();
-    const auto seq_type = (*variant_expr->GetSeqvars().begin())->GetSeqtype();
+    const auto& sequence_variant = variant_expr->GetSequence_variant();
+
+    if (sequence_variant.IsSetComplex()) {
+        string message;
+        if (sequence_variant.GetComplex().IsChimera()) {
+            message = "Chimeras ";
+        } else if (sequence_variant.GetComplex().IsMosaic()) {
+            message = "Mosaics ";
+        }
+        message += "are not currently supported.";
+        message += " Please report to variation-services@ncbi.nlm.nih.gov";
+        NCBI_THROW(CVariationIrepException, eUnsupported, message);
+    }
+
+
+    const auto& simple_variant = variant_expr->GetSequence_variant().GetSubvariants().front()->GetSimple();
+    const auto seq_type = variant_expr->GetSequence_variant().GetSeqtype();
 
     if (seq_type == eVariantSeqType_p || 
         seq_type == eVariantSeqType_u) {
@@ -506,11 +521,11 @@ list<CRef<CSeq_feat>> CHgvsNaIrepReader::CreateSeqfeats(CRef<CVariantExpression>
 {
     list<CRef<CSeq_feat>> feat_list;
 
-    for (const auto& seq_var : variant_expr->GetSeqvars()) {
+    const auto& seq_var = variant_expr->GetSequence_variant();
 
-        const auto seq_type = seq_var->GetSeqtype();
+        const auto seq_type = seq_var.GetSeqtype();
 
-        for (const auto& variant : seq_var->GetVariants()) {
+        for (const auto& variant : seq_var.GetSubvariants()) {
             const auto& simple_variant = variant->GetSimple();
 
             auto seq_feat = x_CreateSeqfeat(variant_expr->GetInput_expr(),
@@ -522,7 +537,6 @@ list<CRef<CSeq_feat>> CHgvsNaIrepReader::CreateSeqfeats(CRef<CVariantExpression>
                 feat_list.push_back(seq_feat);
             }
         }
-    }
     return feat_list;
 }
 
@@ -530,7 +544,7 @@ list<CRef<CSeq_feat>> CHgvsNaIrepReader::CreateSeqfeats(CRef<CVariantExpression>
 
 CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CSimpleVariant& var_desc,
-        const CSeqVariants::TSeqtype& seq_type,
+        const CSequenceVariant::TSeqtype& seq_type,
         CScope& scope,
         CVariationIrepMessageListener& listener)
 {
@@ -614,7 +628,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtLocation& nt_loc,
-        const CSeqVariants::TSeqtype& seq_type,
+        const CSequenceVariant::TSeqtype& seq_type,
         CScope& scope,
         CVariationIrepMessageListener& listener)
 {
@@ -650,7 +664,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtSite& nt_site,
-        const CSeqVariants::TSeqtype& seq_type,
+        const CSequenceVariant::TSeqtype& seq_type,
         CScope& scope,
         CVariationIrepMessageListener& listener)
 {
@@ -685,7 +699,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtSiteRange& nt_range,
-        const CSeqVariants::TSeqtype& seq_type,
+        const CSequenceVariant::TSeqtype& seq_type,
         CScope& scope,
         CVariationIrepMessageListener& listener)
 {
@@ -727,7 +741,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtInterval& nt_int,
-        const CSeqVariants::TSeqtype& seq_type,
+        const CSequenceVariant::TSeqtype& seq_type,
         CScope& scope, // cannot be NULL
         CVariationIrepMessageListener& listener) 
 {
@@ -846,7 +860,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 CRef<CInt_fuzz> CNtSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
                                                  const CNtSiteRange& nt_range,
-                                                 const CSeqVariants::TSeqtype& seq_type,
+                                                 const CSequenceVariant::TSeqtype& seq_type,
                                                  CScope& scope,
                                                  CVariationIrepMessageListener& listener)
 {
@@ -890,7 +904,7 @@ CRef<CInt_fuzz> CNtSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
 
 bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          const CNtIntLimit& nt_limit,
-                                         const CSeqVariants::TSeqtype& seq_type,
+                                         const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope,
                                          CVariationIrepMessageListener& listener,
                                          TSeqPos& site_index)
@@ -915,7 +929,7 @@ bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
 
 bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          const CNtSiteRange& nt_range,
-                                         const CSeqVariants::TSeqtype& seq_type,
+                                         const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope,
                                          CVariationIrepMessageListener& listener,
                                          TSeqPos& site_index)
@@ -937,7 +951,7 @@ bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
 
 bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          const CNtSite& nt_site,
-                                         const CSeqVariants::TSeqtype& seq_type,
+                                         const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope,
                                          CVariationIrepMessageListener& listener,
                                          TSeqPos& site_index) 

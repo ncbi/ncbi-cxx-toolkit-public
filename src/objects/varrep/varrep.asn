@@ -7,14 +7,14 @@ BEGIN
 VariantExpression ::= SEQUENCE {
     input-expr VisibleString, -- contains the input expression to be parsed
     reference-id VisibleString, -- contains the accession id or other identifier for the reference sequence
-    seqvars SEQUENCE OF SeqVariants -- an expression can contain a number of sequence variants 
+    sequence-variant SequenceVariant
 }
 
 
-SeqVariants ::= SEQUENCE {
+SequenceVariant ::= SEQUENCE {
     seqtype VariantSeqType,
-    variants SEQUENCE OF Variant,
-    tag CHOICE {
+    subvariants SEQUENCE OF Variant,
+    complex CHOICE {
         mosaic NULL, 
         chimera NULL
     } OPTIONAL

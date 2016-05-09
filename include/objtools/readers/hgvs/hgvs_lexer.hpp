@@ -42,7 +42,7 @@ struct SHgvsLexer : lex::lexer<TLexer>
     TSimpleToken protein_tag;
     TAttributedToken na_tag;
     TAttributedToken identifier;
-//  TSimpleToken slash;
+    TSimpleToken slash;
     TSimpleToken double_slash;
 };
 

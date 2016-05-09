@@ -31,21 +31,20 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) : SHgvsProteinGr
 {
  // Also need to account for variants involving different genes on different chromosomes. 
     protein_expression = tok.identifier ACTION1(AssignRefSeqIdentifier) 
-                       >> protein_seq_variants ACTION1(AppendSeqVariant);
+                       >> protein_seq_variants ACTION1(AssignSequenceVariant);
 
     protein_seq_variants = protein_simple_seq_variant | protein_mosaic | protein_chimera;
-    //protein_seq_variants = protein_simple_seq_variant | protein_mosaic;
 
     protein_simple_seq_variant = tok.protein_tag ACTION0(AssignSequenceType) >>
                                  protein_simple_variation ACTION1(AssignSingleLocalVariation);
 
     protein_mosaic = ( (tok.protein_tag ACTION0(AssignSequenceType) >>
-                     ( "[" >> protein_simple_variation ACTION1(AssignSingleLocalVariation)
-                     >> ("/" >> protein_simple_variation) ACTION1(AssignSingleLocalVariation) >> "]" ) ) ACTION0(TagMosaic));
+                     ( "[" >> (protein_simple_variation >> tok.slash) ACTION1(AssignSingleLocalVariation)
+                     >> (protein_simple_variation ACTION1(AssignSingleLocalVariation)) >> "]" ) ) ACTION0(TagAsMosaic));
 
     protein_chimera =  ( (tok.protein_tag ACTION0(AssignSequenceType) >>
-                       ( "[" >> (protein_simple_variation ACTION1(AssignSingleLocalVariation))
-                        >>  tok.double_slash  >> (protein_simple_variation ACTION1(AssignSingleLocalVariation)) >> "]" ) ) ACTION0(TagChimera));
+                       ( "[" >> (protein_simple_variation >> tok.double_slash) ACTION1(AssignSingleLocalVariation)
+                        >> (protein_simple_variation ACTION1(AssignSingleLocalVariation)) >> "]" ) ) ACTION0(TagAsChimera));
                      
     protein_simple_variation = protein_confirmed_simple_variation | protein_fuzzy_simple_variation;
 

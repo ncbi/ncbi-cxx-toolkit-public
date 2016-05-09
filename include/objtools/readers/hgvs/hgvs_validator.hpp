@@ -39,24 +39,24 @@ public:
 private:
 
     static void x_ValidateSimpleVariant(const CSimpleVariant& simple_variant,
-                                        const CSeqVariants::TSeqtype& seq_type);
+                                        const CSequenceVariant::TSeqtype& seq_type);
 
     static void x_ValidateSimpleNAVariant(const CSimpleVariant& simple_variant,
-                                          const CSeqVariants::TSeqtype& seq_type);
+                                          const CSequenceVariant::TSeqtype& seq_type);
 
     static void x_ValidateSimpleProteinVariant(const CSimpleVariant& simple_variant);
 
     static void x_ValidateNtLocation(const CNtLocation& nt_loc,
-                                     const CSeqVariants::TSeqtype& seq_type);
+                                     const CSequenceVariant::TSeqtype& seq_type);
 
     static void x_ValidateNtLocation(const CNtInterval& nt_int,
-                                     const CSeqVariants::TSeqtype& seq_type);
+                                     const CSequenceVariant::TSeqtype& seq_type);
 
     static void x_ValidateNtLocation(const CNtSiteRange& nt_range,
-                                  const CSeqVariants::TSeqtype& seq_type);
+                                  const CSequenceVariant::TSeqtype& seq_type);
 
     static void x_ValidateNtLocation(const CNtSite& nt_site,
-                                     const CSeqVariants::TSeqtype& seq_type);
+                                     const CSequenceVariant::TSeqtype& seq_type);
 
     static void x_ValidateProteinLocation(const CAaLocation& aa_loc);
 

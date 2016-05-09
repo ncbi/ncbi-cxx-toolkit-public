@@ -25,12 +25,12 @@ SHgvsLexer::SHgvsLexer()
     protein_tag("p."),
     na_tag("g.|c.|m.|n.|r."),
     identifier("o?([A-Z]|rs|ss|chr)([a-zA-Z0-9_.]+):"),
-    //slash("\\/")
+    slash("\\/"),
     double_slash("\\/\\/")
 {
 
     this->self = lex::token_def<>( '(' ) | ')' | '{' | '}' | '[' | ']' | ';' | ':' | ',' | '_' |
-        '-'| '+' | '>' | '/';
+        '-'| '+' | '>';
 
 
     this->self.add
@@ -56,6 +56,8 @@ SHgvsLexer::SHgvsLexer()
         (protein_tag)
         (na_tag)
         (identifier)
+        (slash)
+        (double_slash)
         ;
 }
 

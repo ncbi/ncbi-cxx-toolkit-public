@@ -26,15 +26,15 @@ const char* CHgvsVariantException::GetErrCodeString(void) const
 void CHgvsVariantValidator::Validate(const CVariantExpression& hgvs_variant) 
 {
     // Need to fix this
-    const auto& simple_variant = (*hgvs_variant.GetSeqvars().begin())->GetVariants().front()->GetSimple();
-    auto seq_type = (*hgvs_variant.GetSeqvars().begin())->GetSeqtype();
+    const auto& simple_variant = hgvs_variant.GetSequence_variant().GetSubvariants().front()->GetSimple();
+    auto seq_type = hgvs_variant.GetSequence_variant().GetSeqtype();
 
     x_ValidateSimpleVariant(simple_variant, seq_type);
 }
 
 
 void CHgvsVariantValidator::x_ValidateSimpleVariant(const CSimpleVariant& simple_variant,
-                                                    const CSeqVariants::TSeqtype& seq_type)
+                                                    const CSequenceVariant::TSeqtype& seq_type)
 {
     if (seq_type == eVariantSeqType_p) {
         x_ValidateSimpleProteinVariant(simple_variant);
@@ -45,7 +45,7 @@ void CHgvsVariantValidator::x_ValidateSimpleVariant(const CSimpleVariant& simple
 
 
 void CHgvsVariantValidator::x_ValidateSimpleNAVariant(const CSimpleVariant& simple_variant,
-                                                      const CSeqVariants::TSeqtype& seq_type)
+                                                      const CSequenceVariant::TSeqtype& seq_type)
 {
 
     if (!simple_variant.IsSetType()) {
@@ -238,7 +238,7 @@ void CHgvsVariantValidator::x_CheckNoOffsets(const CNtLocation& nt_loc)
 
 
 void CHgvsVariantValidator::x_ValidateNtLocation(const CNtLocation& nt_loc,
-                                                 const CSeqVariants::TSeqtype& seq_type) 
+                                                 const CSequenceVariant::TSeqtype& seq_type) 
 {
     if (nt_loc.IsSite()) {
         x_ValidateNtLocation(nt_loc.GetSite(), seq_type);
@@ -256,7 +256,7 @@ void CHgvsVariantValidator::x_ValidateNtLocation(const CNtLocation& nt_loc,
 
 
 void CHgvsVariantValidator::x_ValidateNtLocation(const CNtInterval& nt_int,
-                                                 const CSeqVariants::TSeqtype& seq_type)
+                                                 const CSequenceVariant::TSeqtype& seq_type)
 {
     if (!nt_int.IsSetStart()) {
         string error_msg = "Genomic interval start site unspecified";
@@ -283,7 +283,7 @@ void CHgvsVariantValidator::x_ValidateNtLocation(const CNtInterval& nt_int,
 
 
 void CHgvsVariantValidator::x_ValidateNtLocation(const CNtSiteRange& nt_range,
-                                                 const CSeqVariants::TSeqtype& seq_type)
+                                                 const CSequenceVariant::TSeqtype& seq_type)
 {
     if (!nt_range.IsSetStart()) {
         string error_msg = "Genomic range start site unspecified";
@@ -300,7 +300,7 @@ void CHgvsVariantValidator::x_ValidateNtLocation(const CNtSiteRange& nt_range,
 
 
 void CHgvsVariantValidator::x_ValidateNtLocation(const CNtSite & nt_site,
-                                                 const CSeqVariants::TSeqtype& seq_type)
+                                                 const CSequenceVariant::TSeqtype& seq_type)
 {
     if (seq_type == eVariantSeqType_c ||
         seq_type == eVariantSeqType_r) {
@@ -439,6 +439,7 @@ void CHgvsVariantValidator::x_ValidateCount(const CCount& count)
     }
     return;
 }
+
 
 void CHgvsVariantValidator::x_ValidateNtCode(const string& nt_code, const bool is_rna, const bool allow_multiple) 
 {

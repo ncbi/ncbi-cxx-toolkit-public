@@ -156,8 +156,21 @@ CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSeqfeat(const string& var_name,
 
 CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(CRef<CVariantExpression>& variant_expr) const 
 {
-    const auto& simple_variant = variant_expr->GetSeqvars().front()->GetVariants().front()->GetSimple();
-    const auto seq_type = (*variant_expr->GetSeqvars().begin())->GetSeqtype();
+    const auto& sequence_variant = variant_expr->GetSequence_variant();
+    if (sequence_variant.IsSetComplex()) {
+        string message;
+        if (sequence_variant.GetComplex().IsChimera()) {
+            message = "Chimeras ";
+        } else if (sequence_variant.GetComplex().IsMosaic()) {
+            message = "Mosaics ";
+        }    
+        message += "are not currently supported.";
+        message += " Please report to variation-services@ncbi.nlm.nih.gov";
+        NCBI_THROW(CVariationIrepException, eUnsupported, message);
+    }    
+
+    const auto& simple_variant = sequence_variant.GetSubvariants().front()->GetSimple();
+    const auto seq_type = sequence_variant.GetSeqtype();
 
     if (seq_type != eVariantSeqType_p) {
         NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Protein sequence expected");
@@ -173,14 +186,15 @@ list<CRef<CSeq_feat>> CHgvsProtIrepReader::CreateSeqfeats(CRef<CVariantExpressio
 {
     list<CRef<CSeq_feat>> feat_list;
 
-    for (const auto& seq_var : variant_expr->GetSeqvars()) {
+    const auto& seq_var = variant_expr->GetSequence_variant();
+  //  for (const auto& seq_var : variant_expr->GetSeqvars()) {
 
-        const auto seq_type = seq_var->GetSeqtype();
+        const auto seq_type = seq_var.GetSeqtype();
         if (seq_type != eVariantSeqType_p) {
             NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Protein sequence expected");
         }
 
-        for (const auto& variant : seq_var->GetVariants()) {
+        for (const auto& variant : seq_var.GetSubvariants()) {
             const auto& simple_variant = variant->GetSimple();
 
             auto seq_feat = x_CreateSeqfeat(variant_expr->GetInput_expr(),
@@ -190,7 +204,7 @@ list<CRef<CSeq_feat>> CHgvsProtIrepReader::CreateSeqfeats(CRef<CVariantExpressio
                 feat_list.push_back(seq_feat);
             }
         }
-    }
+  //  }
 
     return feat_list;
 }
@@ -236,7 +250,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarref(const string& var_name,
             break;
         case CSimpleVariant::TType::e_Prot_ext:
         {
-            string message = "Protein-extension HGVS-to-Seqfeat conversion is not currently supported.\nPlease report to variation-services@ncbi.nlm.nih.gov";
+            string message = "Protein-extension HGVS-to-Seqfeat conversion is not currently supported. Please report to variation-services@ncbi.nlm.nih.gov";
             NCBI_THROW(CVariationIrepException, eUnsupported, message);
         }
     }
