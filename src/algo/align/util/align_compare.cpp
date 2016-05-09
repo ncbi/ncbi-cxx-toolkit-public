@@ -36,6 +36,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
@@ -351,21 +352,28 @@ static void s_PopulateScoreSet(const CSeq_align &align,
                                CAlignCompare::TIntegerScoreSet &integer_scores,
                                CAlignCompare::TRealScoreSet &real_scores)
 {
-    if (score_set.empty() && !score_set_as_blacklist) {
-        /// Empty set of scores; nothing to do
-        return;
-    }
-    ITERATE (CSeq_align::TScore, score_it, align.GetScore()) {
-        if ((*score_it)->GetId().IsStr() &&
-                (score_set_as_blacklist ? 0: 1) ==
-                score_set.count((*score_it)->GetId().GetStr()))
-        {
-            if ((*score_it)->GetValue().IsInt()) {
-                integer_scores[(*score_it)->GetId().GetStr()] =
-                    (*score_it)->GetValue().GetInt();
+    if (score_set_as_blacklist) {
+        ITERATE (CSeq_align::TScore, score_it, align.GetScore()) {
+            if ((*score_it)->GetId().IsStr() &&
+                !score_set.count((*score_it)->GetId().GetStr()))
+            {
+                if ((*score_it)->GetValue().IsInt()) {
+                    integer_scores[(*score_it)->GetId().GetStr()] =
+                        (*score_it)->GetValue().GetInt();
+                } else {
+                    real_scores[(*score_it)->GetId().GetStr()] =
+                        (*score_it)->GetValue().GetReal();
+                }
+            }
+        }
+    } else {
+        CScoreLookup lookup;
+        ITERATE (set<string>, score_it, score_set) {
+            double value = lookup.GetScore(align, *score_it);
+            if (lookup.IsIntegerScore(align, *score_it)) {
+                integer_scores[*score_it] = static_cast<int>(value);
             } else {
-                real_scores[(*score_it)->GetId().GetStr()] =
-                    (*score_it)->GetValue().GetReal();
+                real_scores[*score_it] = value;
             }
         }
     }
@@ -394,25 +402,37 @@ static bool s_EquivalentScores(const CAlignCompare::TRealScoreSet &scores1,
     return true;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+//
+// SComparison constructor does the hard work of verifying that two sets of alignment
+// span ranges actually overlap, and determines by how much
+//
 struct SComparison
 {
+    SComparison();
+
     SComparison(const CAlignCompare::SAlignment& first,
                 const CAlignCompare::SAlignment& second,
                 double real_score_tolerance);
 
     size_t spans_in_common;
     size_t spans_overlap;
-    size_t spans_unique_first;
-    size_t spans_unique_second;
+    Int8 spans_unique_first;
+    Int8 spans_unique_second;
     bool is_equivalent;
     float overlap;
 };
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// SComparison constructor does the hard work of verifying that two sets of alignment
-// span ranges actually overlap, and determines by how much
-//
+SComparison::SComparison()
+: spans_in_common(0)
+, spans_overlap(0)
+, spans_unique_first(0)
+, spans_unique_second(0)
+, is_equivalent(false)
+, overlap(0)
+{
+}
+
 SComparison::SComparison(const CAlignCompare::SAlignment& first,
                          const CAlignCompare::SAlignment& second,
                          double real_score_tolerance)
@@ -441,51 +461,50 @@ SComparison::SComparison(const CAlignCompare::SAlignment& first,
             sum_a += first_it->first.GetLength() * first_it->first.GetLength();
             sum_b += second_it->first.GetLength() * second_it->first.GetLength();
 
-            ++spans_in_common;
+            spans_in_common += intersecting_len;
             ++first_it;
             ++second_it;
         } else {
             bool overlap =
                 first_it->first.IntersectingWith(second_it->first)  &&
                 first_it->second.IntersectingWith(second_it->second);
+            TSeqPos intersecting_len = 0;
             if (overlap) {
                 TSeqRange r = first_it->first;
                 r.IntersectWith(second_it->first);
 
-                TSeqPos intersecting_len = r.GetLength();
+                intersecting_len = r.GetLength();
                 dot += float(intersecting_len) * float(intersecting_len);
-                sum_a += first_it->first.GetLength() * first_it->first.GetLength();
-                sum_b += second_it->first.GetLength() * second_it->first.GetLength();
 
-                ++spans_overlap;
+                spans_overlap += intersecting_len;
+                spans_unique_first -= intersecting_len;
+                spans_unique_second -= intersecting_len;
             }
             if (*first_it < *second_it) {
                 sum_a += first_it->first.GetLength() * first_it->first.GetLength();
-                if ( !overlap ) {
-                    ++spans_unique_first;
-                }
+                spans_unique_first += first_it->first.GetLength();
                 ++first_it;
             } else {
                 sum_b += second_it->first.GetLength() * second_it->first.GetLength();
-                if ( !overlap ) {
-                    ++spans_unique_second;
-                }
+                spans_unique_second += second_it->first.GetLength();
                 ++second_it;
             }
         }
     }
-    is_equivalent = spans_in_common == first.spans.size() &&
-                    spans_in_common == second.spans.size() &&
+    is_equivalent = spans_in_common == first.length &&
+                    spans_in_common == second.length &&
                     first.query_mismatches == second.query_mismatches &&
                     first.subject_mismatches == second.subject_mismatches &&
                     first.integer_scores == second.integer_scores &&
                     s_EquivalentScores(first.real_scores, second.real_scores,
                                        real_score_tolerance);
-    for ( ;  first_it != first.spans.end();  ++first_it, ++spans_unique_first) {
+    for ( ;  first_it != first.spans.end(); ++first_it) {
         sum_a += first_it->first.GetLength() * first_it->first.GetLength();
+        spans_unique_first += first_it->first.GetLength();
     }
-    for ( ;  second_it != second.spans.end();  ++second_it, ++spans_unique_second) {
+    for ( ;  second_it != second.spans.end(); ++second_it) {
         sum_b += second_it->first.GetLength() * second_it->first.GetLength();
+        spans_unique_second += second_it->first.GetLength();
     }
 
     overlap = dot == 0 ? 0 : dot / ::sqrt(sum_a * sum_b);
@@ -574,58 +593,64 @@ struct SComp_Less
 };
 
 CAlignCompare::SAlignment::
-SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row,
-                  const TDisambiguatingScoreList &score_list,
-                  const vector<string> &quality_score_list,
-                  const set<string> &score_set,
-                  bool score_set_as_blacklist)
+SAlignment(int s, const CRef<CSeq_align> &al, CAlignCompare &compare,
+           bool is_slice)
 : source_set(s)
 , query_strand(eNa_strand_unknown)
 , subject_strand(eNa_strand_unknown)
+, length(0)
 , align(al)
 , match_level(CAlignCompare::e_NoMatch)
+, compare_object(compare)
 {
-    if (row != e_Subject) {
-        query = CSeq_id_Handle::GetHandle(align->GetSeq_id(0));
-        query_strand = align->GetSeqStrand(0);
-        query_range = align->GetSeqRange(0);
-    }
-    if (row != e_Query) {
-        subject = CSeq_id_Handle::GetHandle(align->GetSeq_id(1));
-        subject_strand = align->GetSeqStrand(1);
-        subject_range = align->GetSeqRange(1);
-    }
     try {
-        s_PopulateScores(*align, score_list.first, scores.first);
-        s_PopulateScores(*align, score_list.second, scores.second, false);
-        s_PopulateScores(*align, quality_score_list, quality_scores);
-        s_PopulateScoreSet(*align, score_set, score_set_as_blacklist,
+        if (compare.m_Row != e_Subject) {
+            query = CSeq_id_Handle::GetHandle(align->GetSeq_id(0));
+            query_strand = align->GetSeqStrand(0);
+            query_range = align->GetSeqRange(0);
+        }
+        if (compare.m_Row != e_Query) {
+            subject = CSeq_id_Handle::GetHandle(align->GetSeq_id(1));
+            subject_strand = align->GetSeqStrand(1);
+            subject_range = align->GetSeqRange(1);
+        }
+        s_PopulateScores(*align, compare.m_DisambiguitingScores.first, scores.first);
+        s_PopulateScores(*align, compare.m_DisambiguitingScores.second, scores.second, false);
+        s_PopulateScores(*align, compare.m_QualityScores, quality_scores);
+        s_PopulateScoreSet(*align, compare.m_ScoreSet, compare.m_ScoreSetAsBlacklist,
                            integer_scores, real_scores);
-        switch (mode) {
+        switch (compare.m_Mode) {
         case e_Full:
-            s_GetAlignmentMismatches(*align, *this, row);
+            /// If this alignment was created by slicing an input alignment,
+            /// it doesn't have traceback data so mismatches can't be calculated
+            if (!is_slice) {
+                s_GetAlignmentMismatches(*align, *this, compare.m_Row);
+            }
             // fall through
 
         case e_Interval:
-            s_GetAlignmentSpans_Interval(*align, *this, row);
+            s_GetAlignmentSpans_Interval(*align, *this, compare.m_Row);
             break;
 
         case e_Exon:
-            s_GetAlignmentSpans_Exon(*align, *this, row);
+            s_GetAlignmentSpans_Exon(*align, *this, compare.m_Row);
             break;
 
         case e_Span:
-            s_GetAlignmentSpans_Span(*align, *this, row);
+            s_GetAlignmentSpans_Span(*align, *this, compare.m_Row);
             break;
 
         case e_Intron:
-            s_GetAlignmentSpans_Intron(*align, *this, row);
+            s_GetAlignmentSpans_Intron(*align, *this, compare.m_Row);
             break;
         }
     }
     catch (CException& e) {
-        ERR_POST(Error << "alignment not processed: " << e);
+        ERR_POST(Error << "alignment not processed: " << MSerial_AsnText << *align << e);
         spans.clear();
+    }
+    ITERATE (TAlignmentSpans, it, spans) {
+        length += it->first.GetLength();
     }
 }
 
@@ -702,6 +727,131 @@ void CAlignCompare::x_GetCurrentGroup(int set)
     }
 }
 
+void CAlignCompare::SAlignment::PopulateBoundariesMap() const
+{
+    ITERATE (TAlignmentSpans, it, spans) {
+        if (query) {
+            compare_object.m_BoundariesMap[query].insert(it->second.GetFrom());
+            compare_object.m_BoundariesMap[query].insert(it->second.GetToOpen());
+        }
+        if (subject) {
+            compare_object.m_BoundariesMap[subject].insert(it->first.GetFrom());
+            compare_object.m_BoundariesMap[subject].insert(it->first.GetToOpen());
+        }
+    }
+}
+
+list< AutoPtr<CAlignCompare::SAlignment> > CAlignCompare::SAlignment::
+BreakOnBoundaries(int row) const
+{
+    list< AutoPtr<SAlignment> > align_parts;
+    const set<TSeqPos> &boundaries =
+        compare_object.m_BoundariesMap[row == 0 ? query : subject];
+    TSeqRange range = row == 0 ? query_range : subject_range;
+    TSeqPos last_boundary = range.GetFrom();
+    for (set<TSeqPos>::const_iterator it = boundaries.upper_bound(range.GetFrom());
+         it != boundaries.end() && *it <= range.GetToOpen(); ++it)
+    {
+        /// Extract slice, as long as it's not the the entire alignment
+        if (last_boundary > range.GetFrom() || *it < range.GetToOpen()) {
+            AutoPtr<SAlignment> part = Slice(row, last_boundary, *it-1);
+            if (part.get()) {
+                align_parts.push_back(part);
+            }
+        }
+        last_boundary = *it;
+    }
+    if (!align_parts.empty() && last_boundary < range.GetToOpen()) {
+        AutoPtr<SAlignment> part = Slice(row, last_boundary, range.GetTo());
+        if (part.get()) {
+            align_parts.push_back(part);
+        }
+    }
+    return align_parts;
+}
+
+AutoPtr<CAlignCompare::SAlignment> CAlignCompare::SAlignment::
+Slice(int row, TSeqPos from, TSeqPos to) const
+{
+    if (!align->GetSegs().IsDenseg()) {
+        NCBI_THROW(CException, eUnknown,
+               "Alignment splitting supported only for Dense-seq alignments");
+    }
+    AutoPtr<SAlignment> slice;
+    CRef<CSeq_align> slice_align(new CSeq_align);
+    slice_align->SetType(align->GetType());
+    if (align->IsSetDim()) {
+        slice_align->SetDim(align->GetDim());
+    }
+    CRef<CDense_seg> slice_seg = align->GetSegs().GetDenseg()
+                                      .ExtractSlice(row, from, to);
+    bool all_gaps = true;
+    for (int seg = 0; seg < slice_seg->GetNumseg() && all_gaps; ++seg) {
+        if (slice_seg->GetStarts()[seg*2] >= 0 &&
+            slice_seg->GetStarts()[seg*2+1] >= 0)
+        {
+            all_gaps = false;
+        }
+    }
+    if (all_gaps) {
+        /// Slice is completely within gaps, so no alignment
+        return slice;
+    }
+    slice_align->SetSegs().SetDenseg(*slice_seg);
+    ITERATE (CSeq_align::TScore, score_it, align->GetScore()) {
+        if ((*score_it)->GetId().IsStr() &&
+            compare_object.m_DistributiveScores.count(
+                 (*score_it)->GetId().GetStr()))
+        {
+            slice_align->SetScore().push_back(*score_it);
+        }
+    }
+    slice.reset(new SAlignment(source_set, slice_align, compare_object, true));
+    /// Special case for full mode; extract the mismatches positions from the
+    /// ones calculated for the full alignment
+    if (compare_object.m_Mode == e_Full) {
+	slice->query_mismatches = query_mismatches;
+	slice->query_mismatches &= slice_align->GetSeqRange(0);
+	slice->subject_mismatches = subject_mismatches;
+	slice->subject_mismatches &= slice_align->GetSeqRange(1);
+    }
+    return slice;
+}
+
+void CAlignCompare::x_SplitOnOverlaps(int group, int row)
+{
+    list< AutoPtr<SAlignment> > orig_set;
+    list< AutoPtr<SAlignment> > &transformed_set =
+        group == 1 ? m_CurrentSet1Group : m_CurrentSet2Group;
+    CSeq_id_Handle id = row == 0 ? transformed_set.front()->query
+                                 : transformed_set.front()->subject;
+    if (!id) {
+        return;
+    }
+    orig_set.swap(transformed_set);
+    ITERATE (list< AutoPtr<SAlignment> >, it, orig_set) {
+        list< AutoPtr<CAlignCompare::SAlignment> > parts =
+            (*it)->BreakOnBoundaries(row);
+        if (parts.empty()) {
+            transformed_set.push_back(*it);
+        } else {
+            transformed_set.splice(transformed_set.end(), parts);
+        }
+    }
+}
+
+void CAlignCompare::PopulateBoundariesMap()
+{
+    while (!m_Set1.EndOfData()) {
+        x_NextAlignment(1, false)->PopulateBoundariesMap();
+    }
+    m_Set1.Reset();
+    while (!m_Set2.EndOfData()) {
+        x_NextAlignment(2, false)->PopulateBoundariesMap();
+    }
+    m_Set2.Reset();
+}
+
 vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
 {
     int next_group_set = x_DetermineNextGroupSet();
@@ -717,7 +867,9 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
     case 1:
         if (!m_IgnoreNotPresent) {
             m_CountOnlySet1 += m_CurrentSet1Group.size();
+            m_CountSplitSet1 += m_CurrentSet1Group.size();
             ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet1Group) {
+                m_CountBasesOnlySet1 += (*it)->length;
                 group.push_back(&**it);
             }
         }
@@ -726,7 +878,9 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
     case 2:
         if (!m_IgnoreNotPresent) {
             m_CountOnlySet2 += m_CurrentSet2Group.size();
+            m_CountSplitSet2 += m_CurrentSet2Group.size();
             ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet2Group) {
+                m_CountBasesOnlySet2 += (*it)->length;
                 group.push_back(&**it);
             }
         }
@@ -734,6 +888,14 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
 
     default:
     {{
+        if (!m_BoundariesMap.empty()) {
+            x_SplitOnOverlaps(1, 0);
+            x_SplitOnOverlaps(1, 1);
+            x_SplitOnOverlaps(2, 0);
+            x_SplitOnOverlaps(2, 1);
+            m_CountSplitSet1 += m_CurrentSet1Group.size();
+            m_CountSplitSet2 += m_CurrentSet2Group.size();
+        }
         TAlignPtrSet set1_aligns;
         NON_CONST_ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet1Group)
         {
@@ -807,7 +969,15 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
                     it->first.first->match_level =
                         is_equivalent ? e_Equiv : e_Overlap;
                     group.push_back(it->first.first);
-                    ++(is_equivalent ? m_CountEquivSet1 : m_CountOverlapSet1);
+                    if (is_equivalent) {
+                        ++m_CountEquivSet1;
+                        m_CountBasesEquivSet1 += it->second.spans_in_common;
+                    } else {
+                        ++m_CountOverlapSet1;
+                        m_CountBasesOverlapSet1 += it->second.spans_in_common
+                                                 + it->second.spans_overlap;
+                        m_CountBasesOnlySet1 += it->second.spans_unique_first;
+                    }
                 } else {
                     align1_group = group_map[it->first.first];
                 }
@@ -815,7 +985,15 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
                     it->first.second->match_level =
                         is_equivalent ? e_Equiv : e_Overlap;
                     group.push_back(it->first.second);
-                    ++(is_equivalent ? m_CountEquivSet2 : m_CountOverlapSet2);
+                    if (is_equivalent) {
+                        ++m_CountEquivSet2;
+                        m_CountBasesEquivSet2 += it->second.spans_in_common;
+                    } else {
+                        ++m_CountOverlapSet2;
+                        m_CountBasesOverlapSet2 += it->second.spans_in_common
+                                                 + it->second.spans_overlap;
+                        m_CountBasesOnlySet2 += it->second.spans_unique_second;
+                    }
                 } else {
                     align2_group = group_map[it->first.second];
                 }
@@ -916,11 +1094,21 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
             if (comp_it->second.overlap == 0) {
                 if (set1_aligns.erase(comp_it->first.first)) {
                     group.push_back(comp_it->first.first);
+                    m_CountBasesOnlySet1 += comp_it->first.first->length;
                 }
                 if (set2_aligns.erase(comp_it->first.second)) {
                     group.push_back(comp_it->first.second);
+                    m_CountBasesOnlySet2 += comp_it->first.second->length;
                 }
             }
+        }
+        ITERATE (TAlignPtrSet, set1_it, set1_aligns) {
+            group.push_back(*set1_it);
+            m_CountBasesOnlySet1 += (*set1_it)->length;
+        }
+        ITERATE (TAlignPtrSet, set2_it, set2_aligns) {
+            group.push_back(*set2_it);
+            m_CountBasesOnlySet2 += (*set2_it)->length;
         }
     }}
     }

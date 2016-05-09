@@ -33,6 +33,7 @@
  */
 
 #include <objects/seqalign/Seq_align.hpp>
+#include <corelib/ncbiexpt.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -45,6 +46,10 @@ public:
     virtual bool EndOfData() const = 0;
     virtual CRef<CSeq_align> GetNext() = 0;
     virtual size_t DataSizeSoFar() const = 0;
+    virtual void Reset()
+    {
+        NCBI_THROW(CException, eUnknown, "Reset not supported");
+    }
 };
 
 END_NCBI_SCOPE
