@@ -54,7 +54,8 @@
 #include <algo/cobalt/options.hpp>
 #include "cobalt_test_util.hpp"
 
-#include <corelib/hash_set.hpp>
+//#include <corelib/hash_set.hpp>
+#include <unordered_set>
 
 
 // This macro should be defined before inclusion of test_boost.hpp in all
@@ -750,7 +751,7 @@ static void s_TestResultClusters(int num_queries,
         return;
     }
 
-    hash_set<int> constr_queries;
+    unordered_set<int> constr_queries;
     ITERATE(CMultiAlignerOptions::TConstraints, it, constraints) {
         constr_queries.insert(it->seq1_index);
         constr_queries.insert(it->seq2_index);
@@ -759,7 +760,7 @@ static void s_TestResultClusters(int num_queries,
 
     ITERATE(CClusterer::TClusters, cluster, clusters) {
         ITERATE(CClusterer::TSingleCluster, elem, *cluster) {
-            hash_set<int>::const_iterator it = constr_queries.find(*elem);
+            unordered_set<int>::const_iterator it = constr_queries.find(*elem);
             if (it != constr_queries.end()) {
 
                 // query that appears in a user constraint must be in
