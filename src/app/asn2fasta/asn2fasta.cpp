@@ -435,7 +435,8 @@ int CAsn2FastaApp::Run(void)
         list<string> feat_list;
         NStr::Split(args["feats"].AsString(),
                     ",",
-                    feat_list);
+                    feat_list,
+                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         if (feat_list.empty()) {
             m_AllFeats = true;
