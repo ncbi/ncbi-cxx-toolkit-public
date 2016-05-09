@@ -57,7 +57,9 @@ END_SCOPE(objects)
 
 using namespace ncbi::objects;
 
+#ifndef NCBI_MODULE
 #define NCBI_MODULE NETBLAST
+#endif
 
 /// RemoteServicesException
 ///
