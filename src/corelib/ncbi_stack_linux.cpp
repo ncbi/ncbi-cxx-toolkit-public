@@ -80,7 +80,14 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
         info.offs = 0;
         info.line = 0;
 
-        string::size_type pos = sym.find_first_of("(");
+        string::size_type pos = sym.find_last_of("[");
+        if (pos != string::npos) {
+            string::size_type epos = sym.find_first_of("]", pos + 1);
+            if (epos != string::npos) {
+                info.addr = NStr::StringToPtr(sym.substr(pos + 1, epos - pos - 1));
+            }
+        }
+        pos = sym.find_first_of("(");
         if (pos != string::npos) {
             info.module = sym.substr(0, pos);
             sym.erase(0, pos + 1);

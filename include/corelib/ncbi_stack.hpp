@@ -52,17 +52,22 @@ public:
         string func;
         string file;
         string module;
+        const void* addr;
         size_t offs;
         size_t line;
 
-        SStackFrameInfo()
-            : offs(0), line(0) {}
+        SStackFrameInfo(void)
+            : addr(0), offs(0), line(0) {}
+
+        SStackFrameInfo(const void* address)
+            : addr(address), offs(0), line(0) {}
 
         bool operator ==(const SStackFrameInfo& other) const
         {
             return func == other.func  &&
                 file == other.file  &&
                 module == other.module  &&
+                addr == other.addr  &&
                 offs == other.offs  &&
                 line == other.line;
         }

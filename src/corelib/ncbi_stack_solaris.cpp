@@ -65,7 +65,7 @@ extern "C"
 int s_StackWalker(uintptr_t int_ptr, int, void* data)
 {
     CStackTrace::TStack* stack_trace = (CStackTrace::TStack*)data;
-    CStackTrace::SStackFrameInfo sf_info;
+    CStackTrace::SStackFrameInfo sf_info((void*)int_ptr);
     Dl_info info;
     if (dladdr((void*)int_ptr, &info)) {
         sf_info.func = info.dli_sname;

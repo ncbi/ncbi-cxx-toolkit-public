@@ -58,8 +58,15 @@ BEGIN_NCBI_SCOPE
 
 string CStackTrace::SStackFrameInfo::AsString(void) const
 {
-    return module + " " + file + ":" + NStr::UInt8ToString(line) + " " + func +
-        " offset=0x" + NStr::UInt8ToString(offs, 0, 16);
+    return module + " " + file + ":" + NStr::NumericToString(line) + " " + func +
+        " offset=0x" + NStr::NumericToString(offs, 0, 16) +
+// On Windows PtrToString does not add 0x prefix, while on Linux it does.
+#if defined NCBI_OS_MSWIN
+        " addr=0x" + 
+#else
+        " addr=" + 
+#endif
+        NStr::PtrToString(addr);
 }
 
 

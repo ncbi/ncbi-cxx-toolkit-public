@@ -416,7 +416,7 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
 
     try {
         ITERATE(TStack, it, m_Stack) {
-            CStackTrace::SStackFrameInfo sf_info;
+            CStackTrace::SStackFrameInfo sf_info((void*)it->AddrPC.Offset);
             sf_info.func = "<cannot get function name for this address>";
 
             if ( !SymGetSymFromAddr64(curr_proc, it->AddrPC.Offset, &offs64, pSym) ) {
