@@ -238,7 +238,7 @@ void CValidError_desc::ValidateTitle(const string& title, const CSeqdesc& desc, 
             PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadPunctuation,
                 "Title descriptor ends in bad punctuation", ctx, desc);
         }
-        if (NStr::FindNoCase(title, "RefSeq") != string::npos) {
+        if (!m_Imp.IsRefSeq() && NStr::FindNoCase(title, "RefSeq") != string::npos) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_RefSeqInText, "Definition line contains 'RefSeq'", ctx, desc);
         }
     }

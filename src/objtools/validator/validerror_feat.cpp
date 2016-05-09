@@ -3158,7 +3158,7 @@ void CValidError_feat::x_ValidateProteinName(const string& prot_name, const CSeq
             }
         }
     }
-    if (NStr::FindNoCase(prot_name, "RefSeq") != string::npos) {
+    if (!m_Imp.IsRefSeq() && NStr::FindNoCase(prot_name, "RefSeq") != string::npos) {
         PostErr(eDiag_Error, eErr_SEQ_FEAT_RefSeqInText, "Protein name contains 'RefSeq'", feat);
     }
     if (feat.IsSetComment() && NStr::EqualCase(feat.GetComment(), prot_name)) {
