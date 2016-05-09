@@ -1607,6 +1607,11 @@ CFastaReader::CreateWarningsForSeqDataInTitle(
     // check for nuc or aa sequences at the end of the title
     const static size_t kWarnNumNucCharsAtEnd = 20;
     const static size_t kWarnAminoAcidCharsAtEnd = 50;
+
+    if ((GetFlags() && fAssumeProt))
+    {
+    }
+    else
     if( sLineText.length() > kWarnNumNucCharsAtEnd ) {
 
         // find last non-nuc character, within the last kWarnNumNucCharsAtEnd characters
