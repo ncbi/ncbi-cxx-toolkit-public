@@ -478,10 +478,10 @@ int CSeqDBIsam::x_DiffCharLease(const string   & term_in,
                    ignore_case);
 
     if (dc_result != -1) {
-        result = dc_result;
+        return dc_result;
     }
 
-    return dc_result;
+    return result;
 }
 
 /// Return NUL for nulls or EOL characters
