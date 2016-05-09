@@ -180,7 +180,7 @@ CRef<CSeq_feat> g_NormalizeVariationSeqfeat(const CSeq_feat& feat,
 void s_ValidateSeqLiteral(const CSeq_literal& literal, const CSeq_loc& location, CScope* scope, bool IsCDS=false)
 {
     if (IsCDS) {
-  //      ERR_POST_X(1, Warning << "Cannot validate a CDS-variant Seq-literal");
+        ERR_POST(Warning << "Cannot validate Seq-literal in CDS variant");
         return;
     }
 
