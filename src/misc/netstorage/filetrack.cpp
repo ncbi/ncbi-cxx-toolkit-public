@@ -119,7 +119,7 @@ string s_GetURL(const CNetStorageObjectLoc& object_loc,
 
 SConnNetInfo* SFileTrackRequest::GetNetInfo() const
 {
-    if (m_Config.chunked_upload) {
+    if (m_Config.token.size()) {
         SConnNetInfo* net_info(ConnNetInfo_Create(0));
         net_info->version = 1;
         net_info->req_method = eReqMethod_Post;
@@ -131,13 +131,13 @@ SConnNetInfo* SFileTrackRequest::GetNetInfo() const
 
 string SFileTrackRequest::GetURL() const
 {
-    return s_GetURL(m_ObjectLoc, m_Config.chunked_upload ?
+    return s_GetURL(m_ObjectLoc, m_Config.token.size() ?
             "/api/2.0/uploads/binary/" : "/ft/upload/");
 }
 
 THTTP_Flags SFileTrackRequest::GetUploadFlags() const
 {
-    return m_Config.chunked_upload ? 
+    return m_Config.token.size() ? 
         kDefaultHttpFlags | fHTTP_WriteThru : kDefaultHttpFlags;
 }
 
@@ -179,10 +179,8 @@ SFileTrackRequest::SFileTrackRequest(
 SFileTrackPostRequest::SFileTrackPostRequest(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
-        const string& cookie,
         const string& user_header) :
-    SFileTrackRequest(config, object_loc, user_header, 0),
-    m_Cookie(cookie)
+    SFileTrackRequest(config, object_loc, user_header, 0)
 {
 }
 
@@ -192,8 +190,9 @@ SFileTrackPostRequestOld::SFileTrackPostRequestOld(
         const string& boundary,
         const string& cookie,
         const string& user_header) :
-    SFileTrackPostRequest(config, object_loc, cookie, user_header),
-    m_Boundary(boundary)
+    SFileTrackPostRequest(config, object_loc, user_header),
+    m_Boundary(boundary),
+    m_Cookie(cookie)
 {
     SendContentDisposition("file\"; filename=\"contents");
 }
@@ -276,14 +275,17 @@ static string s_RemoveHTMLTags(const char* text)
     return result;
 }
 
+const auto kAuthHeader = "Authorization";
+const auto kAuthPrefix = "Token ";
+
 CRef<SFileTrackPostRequest> SFileTrackPostRequest::Create(
         const SFileTrackConfig& config,
-        const CNetStorageObjectLoc& object_loc,
-        const string& cookie)
+        const CNetStorageObjectLoc& object_loc)
 {
     string user_header;
 
-    user_header.append("Content-Type: plain/text\r\nCookie: ").append(cookie);
+    user_header.append("Content-Type: plain/text\r\n");
+    user_header.append(kAuthHeader).append(": ").append(config.token);
     user_header.append("\r\nFile-ID: ").append(object_loc.GetUniqueKey());
     user_header.append("\r\nFile-Editable: true\r\n");
 
@@ -295,7 +297,7 @@ CRef<SFileTrackPostRequest> SFileTrackPostRequest::Create(
     }
 
     return CRef<SFileTrackPostRequest>(
-            new SFileTrackPostRequest(config, object_loc, cookie, user_header));
+            new SFileTrackPostRequest(config, object_loc, user_header));
 }
 
 CRef<SFileTrackPostRequest> SFileTrackPostRequestOld::Create(
@@ -327,12 +329,11 @@ CRef<SFileTrackPostRequest> SFileTrackPostRequestOld::Create(
 CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
         const CNetStorageObjectLoc& object_loc)
 {
-    const string cookie(LoginAndGetSessionKey(object_loc));
-
-    if (config.chunked_upload) {
-        return SFileTrackPostRequest::Create(config, object_loc, cookie);
+    if (config.token.size()) {
+        return SFileTrackPostRequest::Create(config, object_loc);
     }
 
+    const string cookie(LoginAndGetSessionKey(object_loc));
     return SFileTrackPostRequestOld::Create(config, object_loc, cookie, m_Random);
 }
 
@@ -357,7 +358,7 @@ void SFileTrackPostRequest::FinishUpload()
     string filetrack_file_id = upload_result.GetString("key");
 
     if (filetrack_file_id != unique_key) {
-        RenameFile(filetrack_file_id, unique_key);
+        RenameFile(filetrack_file_id, unique_key, kAuthHeader, m_Config.token);
     }
 }
 
@@ -399,11 +400,12 @@ void SFileTrackPostRequestOld::FinishUpload()
     string filetrack_file_id = upload_result.GetAt(0).GetString("file_id");
 
     if (filetrack_file_id != unique_key) {
-        RenameFile(filetrack_file_id, unique_key);
+        RenameFile(filetrack_file_id, unique_key, CHttpHeaders::eCookie, m_Cookie);
     }
 }
 
-void SFileTrackPostRequest::RenameFile(const string& from, const string& to)
+void SFileTrackPostRequest::RenameFile(const string& from, const string& to,
+        CHttpHeaders::CHeaderNameConverter header, const string& value)
 {
     string err;
 
@@ -417,8 +419,11 @@ void SFileTrackPostRequest::RenameFile(const string& from, const string& to)
         CHttpRequest req = session.NewRequest(url, CHttpSession::ePut);
         auto& timeout(m_Config.read_timeout);
         req.SetTimeout(CTimeout(timeout.sec, timeout.usec));
-        req.Headers().SetValue(CHttpHeaders::eContentType, "application/json");
-        req.Headers().SetValue(CHttpHeaders::eCookie, m_Cookie);
+
+        CHttpHeaders& headers = req.Headers();
+        headers.SetValue(CHttpHeaders::eContentType, "application/json");
+        headers.SetValue(header, value);
+
         req.ContentStream() << "{\"key\": \"" << to << "\"}";
 
         auto status = req.Execute().GetStatusCode();
@@ -659,9 +664,16 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
     const string url(s_GetURL(object_loc, "/api/2.0/pins/"));
     CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
     req.SetTimeout(CTimeout(config.read_timeout.sec, config.read_timeout.usec));
-    req.Headers().SetValue(CHttpHeaders::eContentType, "application/json");
-    req.Headers().SetValue(CHttpHeaders::eCookie,
-            LoginAndGetSessionKey(object_loc));
+
+    CHttpHeaders& headers = req.Headers();
+    headers.SetValue(CHttpHeaders::eContentType, "application/json");
+
+    if (config.token.size()) {
+        headers.SetValue(kAuthHeader, config.token);
+    } else {
+        headers.SetValue(CHttpHeaders::eCookie,
+                LoginAndGetSessionKey(object_loc));
+    }
 
     req.ContentStream() << "{\"file_key\": \"" <<
             object_loc.GetUniqueKey() << "\"}";
@@ -740,14 +752,16 @@ SFileTrackConfig::SFileTrackConfig(EVoid) :
 }
 
 SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) :
+    enabled(true),
     site(GetSite(reg.GetString(s_GetSection(section), "site", "prod"))),
     key(reg.GetEncryptedString(s_GetSection(section), "api_key",
                 IRegistry::fPlaintextAllowed)),
-    chunked_upload(reg.GetBool(s_GetSection(section), "chunked_upload",
-                false, 0, IRegistry::eReturn)),
+    token(reg.GetEncryptedString(s_GetSection(section), "token",
+                IRegistry::fPlaintextAllowed)),
     read_timeout(s_GetDefaultTimeout()),
     write_timeout(s_GetDefaultTimeout())
 {
+    if (token.size()) token.insert(0, kAuthPrefix);
 }
 
 bool SFileTrackConfig::ParseArg(const string& name, const string& value)
@@ -756,6 +770,8 @@ bool SFileTrackConfig::ParseArg(const string& name, const string& value)
         site = SFileTrackConfig::GetSite(value);
     } else if (name == "ft_key") {
         key = NStr::URLDecode(s_GetDecryptedKey(value));
+    } else if (name == "ft_token") {
+        token = kAuthPrefix + NStr::URLDecode(s_GetDecryptedKey(value));
     } else {
         return false;
     }

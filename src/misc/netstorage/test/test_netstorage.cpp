@@ -77,6 +77,11 @@ NCBI_PARAM_DECL(string, netstorage_api, my_ncbi_id);
 NCBI_PARAM_DEF(string, netstorage_api, my_ncbi_id, "none");
 typedef NCBI_PARAM_TYPE(netstorage_api, my_ncbi_id) TNetStorage_MyNcbiId;
 
+NCBI_PARAM_DECL(string, filetrack, ft_token);
+NCBI_PARAM_DEF(string, filetrack, ft_token, "");
+typedef NCBI_PARAM_TYPE(filetrack, ft_token) TFileTrack_Token;
+
+
 // ENetStorageObjectLocation to type mapping
 typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_Unknown>
     TLocationRelocated;
@@ -1227,12 +1232,14 @@ inline CCombinedNetStorage g_GetNetStorage<CCombinedNetStorage>(const char*)
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     string ft_site(TFileTrack_Site::GetDefault());
+    string ft_token(TFileTrack_Token::GetDefault());
     string ft_key(TFileTrack_Key::GetDefault());
     string init_string(
             "mode=direct&nc="     + nc_service +
             "&domain=" + nst_app_domain +
             "&client="   APP_NAME +
             "&ft_site=" + ft_site +
+            "&ft_token=" + ft_token +
             "&ft_key=" + ft_key);
     return CCombinedNetStorage(init_string);
 }
@@ -1243,12 +1250,14 @@ inline CCombinedNetStorageByKey g_GetNetStorage<CCombinedNetStorageByKey>(const 
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     string ft_site(TFileTrack_Site::GetDefault());
+    string ft_token(TFileTrack_Token::GetDefault());
     string ft_key(TFileTrack_Key::GetDefault());
     string init_string(
             "mode=direct&nc="     + nc_service +
             "&domain=" + nst_app_domain +
             "&client="   APP_NAME +
             "&ft_site=" + ft_site +
+            "&ft_token=" + ft_token +
             "&ft_key=" + ft_key);
     return CCombinedNetStorageByKey(init_string);
 }

@@ -36,6 +36,7 @@
 #include <misc/netstorage/netstorage.hpp>
 
 #include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_http_session.hpp>
 
 #include <corelib/ncbimisc.hpp>
 #include <corelib/reader_writer.hpp>
@@ -49,7 +50,7 @@ struct SFileTrackConfig
     bool enabled = false;
     CNetStorageObjectLoc::EFileTrackSite site;
     string key;
-    const bool chunked_upload = false;
+    string token;
     const STimeout read_timeout;
     const STimeout write_timeout;
 
@@ -103,21 +104,18 @@ struct SFileTrackPostRequest : public SFileTrackRequest
     virtual void FinishUpload();
 
     static CRef<SFileTrackPostRequest> Create(const SFileTrackConfig& config,
-            const CNetStorageObjectLoc& object_loc,
-            const string& cookie);
+            const CNetStorageObjectLoc& object_loc);
 
 protected:
     SFileTrackPostRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
-            const string& cookie,
             const string& user_header);
 
-    void RenameFile(const string& from, const string& to);
+    void RenameFile(const string& from, const string& to,
+            CHttpHeaders::CHeaderNameConverter header, const string& value);
 
 private:
     SFileTrackPostRequest();
-
-    const string m_Cookie;
 };
 
 struct SFileTrackPostRequestOld : public SFileTrackPostRequest
@@ -145,6 +143,7 @@ private:
     static string MakeMutipartFormDataHeader(const string&);
 
     string m_Boundary;
+    const string m_Cookie;
 };
 
 struct SFileTrackAPI
