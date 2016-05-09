@@ -295,12 +295,13 @@ static string s_RemoveHTMLTags(const char* text)
     return result;
 }
 
-CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
-        const CNetStorageObjectLoc& object_loc)
+CRef<SFileTrackPostRequest> SFileTrackPostRequest::Create(
+        const SFileTrackConfig& config,
+        const CNetStorageObjectLoc& object_loc,
+        const string& cookie,
+        CRandom& random)
 {
-    string cookie(FILETRACK_SIDCOOKIE "=" + LoginAndGetSessionKey(object_loc));
-
-    string boundary(GenerateUniqueBoundary());
+    string boundary(GenerateUniqueBoundary(random));
 
     string user_header(MakeMutipartFormDataHeader(boundary));
 
@@ -323,6 +324,14 @@ CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
     new_request->SendContentDisposition("file\"; filename=\"contents");
 
     return new_request;
+}
+
+CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
+        const CNetStorageObjectLoc& object_loc)
+{
+    const string cookie(LoginAndGetSessionKey(object_loc));
+
+    return SFileTrackPostRequest::Create(config, object_loc, cookie, m_Random);
 }
 
 void SFileTrackPostRequest::Write(const void* buf,
@@ -598,7 +607,7 @@ string SFileTrackAPI::LoginAndGetSessionKey(const CNetStorageObjectLoc& object_l
                 ", URL = " << url << ").");
     }
 
-    return session_key;
+    return FILETRACK_SIDCOOKIE "=" + session_key;
 }
 
 CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
@@ -611,16 +620,16 @@ CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
     return request.ReadJsonResponse();
 }
 
-string SFileTrackAPI::GenerateUniqueBoundary()
+string SFileTrackPostRequest::GenerateUniqueBoundary(CRandom& random)
 {
     string boundary("FileTrack-" + NStr::NumericToString(time(NULL)));
     boundary += '-';
-    boundary += NStr::NumericToString(m_Random.GetRandUint8());
+    boundary += NStr::NumericToString(random.GetRandUint8());
 
     return boundary;
 }
 
-string SFileTrackAPI::MakeMutipartFormDataHeader(const string& boundary)
+string SFileTrackPostRequest::MakeMutipartFormDataHeader(const string& boundary)
 {
     string header("Content-Type: multipart/form-data; boundary=" + boundary);
 
@@ -638,7 +647,7 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
     CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
     req.SetTimeout(CTimeout(config.read_timeout.sec, config.read_timeout.usec));
     req.Headers().SetValue(CHttpHeaders::eContentType, "application/json");
-    req.Headers().SetValue(CHttpHeaders::eCookie, FILETRACK_SIDCOOKIE "=" +
+    req.Headers().SetValue(CHttpHeaders::eCookie,
             LoginAndGetSessionKey(object_loc));
 
     req.ContentStream() << "{\"file_key\": \"" <<

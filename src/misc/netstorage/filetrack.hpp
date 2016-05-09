@@ -100,6 +100,16 @@ public:
 
 struct SFileTrackPostRequest : public SFileTrackRequest
 {
+    void Write(const void* buf, size_t count, size_t* bytes_written);
+    void FinishUpload();
+
+    static CRef<SFileTrackPostRequest> Create(const SFileTrackConfig& config,
+            const CNetStorageObjectLoc& object_loc,
+            const string& cookie,
+            CRandom& random);
+
+private:
+    SFileTrackPostRequest();
     SFileTrackPostRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
             const string& boundary,
@@ -111,14 +121,12 @@ struct SFileTrackPostRequest : public SFileTrackRequest
     void SendFormInput(const char* input_name, const string& value);
     void SendEndOfFormData();
 
-    void Write(const void* buf, size_t count, size_t* bytes_written);
-    void FinishUpload();
-
-    string m_Boundary;
-
-private:
     void RenameFile(const string& from, const string& to);
 
+    static string GenerateUniqueBoundary(CRandom&);
+    static string MakeMutipartFormDataHeader(const string&);
+
+    string m_Boundary;
     const string m_Cookie;
 };
 
@@ -135,9 +143,6 @@ struct SFileTrackAPI
 
     void Remove(const CNetStorageObjectLoc& object_loc);
     string GetPath(const CNetStorageObjectLoc& object_loc);
-
-    string GenerateUniqueBoundary();
-    string MakeMutipartFormDataHeader(const string& boundary);
 
     DECLARE_OPERATOR_BOOL(config.enabled);
 
