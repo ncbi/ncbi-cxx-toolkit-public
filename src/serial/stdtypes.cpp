@@ -446,7 +446,14 @@ long double CPrimitiveTypeInfo::GetValueLDouble(TConstObjectPtr objectPtr) const
 void CPrimitiveTypeInfo::SetValueLDouble(TObjectPtr objectPtr,
                                          long double value) const
 {
-    SetValueDouble(objectPtr, value);
+    // TODO: 
+    // - remove conversion to double when CXX-5612 will be implemented
+    // - change ThrowIncompatibleValue() to _Overflow_
+#if defined(DBL_MIN) && defined(DBL_MAX)
+    if ( value < DBL_MIN || value > DBL_MAX )
+        ThrowIncompatibleValue();
+#endif
+    SetValueDouble(objectPtr, (double)value);
 }
 #endif
 
@@ -1018,6 +1025,7 @@ void CPrimitiveTypeInfoFloat::SetValueDouble(TObjectPtr objectPtr,
 {
 #if defined(FLT_MIN) && defined(FLT_MAX)
     if ( value < FLT_MIN || value > FLT_MAX )
+        // TODO: change ThrowIncompatibleValue() to _Overflow_
         ThrowIncompatibleValue();
 #endif
     CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr) = TObjectType(value);
@@ -1045,7 +1053,8 @@ CPrimitiveTypeInfoLongDouble::CPrimitiveTypeInfoLongDouble(void)
 
 double CPrimitiveTypeInfoLongDouble::GetValueDouble(TConstObjectPtr objectPtr) const
 {
-    return CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr);
+    // TODO: remove conversion to double when CXX-5612 will be implemented
+    return (double)CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr);
 }
 
 void CPrimitiveTypeInfoLongDouble::SetValueDouble(TObjectPtr objectPtr,

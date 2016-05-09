@@ -497,14 +497,14 @@ string CObjectOStream::GetPosition(void) const
 }
 
 void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info, 
-                                 TFailFlags fail, const char* message,
+                                 TFailFlags flags, const char* message,
                                  CException* exc)
 {
-    ThrowError1(diag_info,fail,string(message),exc);
+    ThrowError1(diag_info, flags, string(message),exc);
 }
 
 void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info, 
-                                 TFailFlags fail, const string& message,
+                                 TFailFlags flags, const string& message,
                                  CException* exc)
 {
     CSerialException::EErrCode err;
@@ -513,12 +513,12 @@ void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info,
     } catch(...) {
     }
     string msg(message);
-    if (fail == fUnassigned) {
+    if (flags == fUnassigned) {
         msg = "cannot write unassigned member "+message;
     }
-    SetFailFlags(fail, msg.c_str());
+    SetFailFlags(flags, msg.c_str());
     msg.insert(0,GetPosition()+": ");
-    switch(fail)
+    switch (flags)
     {
     case fNoError:
         CNcbiDiag(diag_info, eDiag_Trace) << ErrCode(NCBI_ERRCODE_X, 12)
@@ -710,7 +710,8 @@ void CObjectOStream::WriteFloat(float data)
 #if SIZEOF_LONG_DOUBLE != 0
 void CObjectOStream::WriteLDouble(long double data)
 {
-    WriteDouble(data);
+   // TODO: remove conversion to double when CXX-5612 will be implemented
+   WriteDouble((double)data);
 }
 #endif
 
