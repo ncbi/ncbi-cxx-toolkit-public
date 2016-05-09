@@ -539,9 +539,11 @@ int CMultiApplication::Run(void)
 
         set<int> repr1, repr2;
         size_t num1 = 0, num2 = 0;
+        CTempString delim(",");
         if (args["ind1"]) {
             list<string> tokens;
-            NStr::Split(args["ind1"].AsString(), ",", tokens);
+            NStr::Split((CTempString)args["ind1"].AsString(), delim, tokens,
+                        NStr::fSplit_Tokenize);
             ITERATE (list<string>, it, tokens) {
                 repr1.insert(NStr::StringToInt(*it));
                 num1++;
@@ -549,7 +551,8 @@ int CMultiApplication::Run(void)
         }
         if (args["ind2"]) {
             list<string> tokens;
-            NStr::Split(args["ind2"].AsString(), ",", tokens);
+            NStr::Split((CTempString)args["ind2"].AsString(), delim, tokens,
+                        NStr::fSplit_Tokenize);
             ITERATE (list<string>, it, tokens) {
                 repr2.insert(NStr::StringToInt(*it));
                 num2++;
