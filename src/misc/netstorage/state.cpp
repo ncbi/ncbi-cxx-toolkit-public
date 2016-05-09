@@ -1119,13 +1119,7 @@ void SCombinedNetStorageConfig::ParseArg(const string& name,
 {
     if (name == "mode")
         mode = GetMode(value);
-    if (name == "ft_site") {
-        ft.enabled = true;
-        ft.site = SFileTrackConfig::GetSite(value);
-    } else if (name == "ft_key") {
-        ft.enabled = true;
-        ft.key = NStr::URLDecode(value);
-    } else
+    else if (!ft.ParseArg(name, value))
         SNetStorage::SConfig::ParseArg(name, value);
 }
 

@@ -56,6 +56,8 @@ struct SFileTrackConfig
     SFileTrackConfig(EVoid = eVoid); // Means no FileTrack as a backend storage
     SFileTrackConfig(const IRegistry& registry, const string& section = kEmptyStr);
 
+    bool ParseArg(const string&, const string&);
+
     static CNetStorageObjectLoc::EFileTrackSite GetSite(const string&);
 };
 

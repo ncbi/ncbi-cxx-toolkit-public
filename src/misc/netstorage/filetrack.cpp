@@ -750,6 +750,20 @@ SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) 
 {
 }
 
+bool SFileTrackConfig::ParseArg(const string& name, const string& value)
+{
+    if (name == "ft_site") {
+        site = SFileTrackConfig::GetSite(value);
+    } else if (name == "ft_key") {
+        key = NStr::URLDecode(s_GetDecryptedKey(value));
+    } else {
+        return false;
+    }
+
+    enabled = true;
+    return true;
+}
+
 CNetStorageObjectLoc::EFileTrackSite
 SFileTrackConfig::GetSite(const string& ft_site_name)
 {
