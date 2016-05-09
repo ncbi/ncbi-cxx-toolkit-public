@@ -134,7 +134,6 @@ struct SContext : CObject
     SContext(const SCombinedNetStorageConfig&, TNetStorageFlags);
     SContext(const string&, CNetICacheClient::TInstance,
             CCompoundIDPool::TInstance, const SFileTrackConfig&);
-    Uint8 GetRandomNumber() { return filetrack_api.GetRandUint8(); }
 
     TNetStorageFlags DefaultFlags(TNetStorageFlags flags) const
     {
@@ -156,6 +155,8 @@ struct SContext : CObject
 
 private:
     void Init();
+
+    CRandom m_Random;
 };
 
 }

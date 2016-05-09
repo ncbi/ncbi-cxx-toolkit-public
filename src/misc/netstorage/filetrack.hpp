@@ -139,8 +139,6 @@ struct SFileTrackAPI
     string GenerateUniqueBoundary();
     string MakeMutipartFormDataHeader(const string& boundary);
 
-    Uint8 GetRandUint8(void) { return m_Random.GetRandUint8(); }
-
     DECLARE_OPERATOR_BOOL(config.enabled);
 
     const SFileTrackConfig config;

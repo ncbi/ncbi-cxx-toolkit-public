@@ -1031,6 +1031,8 @@ SContext::SContext(const string& domain, CNetICacheClient::TInstance client,
 
 void SContext::Init()
 {
+    m_Random.Randomize();
+
     const TNetStorageFlags backend_storage =
         (icache_client ? fNST_NetCache  : 0) |
         (filetrack_api ? fNST_FileTrack : 0);
@@ -1056,7 +1058,7 @@ ISelector* SContext::Create(TNetStorageFlags flags)
 {
     flags = DefaultFlags(flags);
     return new CSelector(TObjLoc(compound_id_pool,
-                    flags, app_domain, GetRandomNumber(),
+                    flags, app_domain, m_Random.GetRandUint8(),
                     filetrack_api.config.site), this, flags);
 }
 
@@ -1072,7 +1074,7 @@ ISelector* SContext::Create(TNetStorageFlags flags,
 {
     flags = DefaultFlags(flags);
     TObjLoc loc(compound_id_pool, flags, app_domain,
-            GetRandomNumber(), filetrack_api.config.site);
+            m_Random.GetRandUint8(), filetrack_api.config.site);
     loc.SetServiceName(service);
     if (id) loc.SetObjectID(id);
     return new CSelector(loc, this, flags);
