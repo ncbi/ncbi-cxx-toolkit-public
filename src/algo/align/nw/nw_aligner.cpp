@@ -216,28 +216,37 @@ void CNWAligner::SetGapPreference(EGapPreference p)
 // bit coding (four bits per value): D E Ec Fc
 // D:  1 if diagonal; 0 - otherwise
 // E:  1 if space in 1st sequence; 0 if space in 2nd sequence
-// Start: if all four bits are set, this is start of alignment; used for
-//        Smith-Waterman algorithm
+// Ec: 1 if gap in 1st sequence was extended; 0 if it is was opened
+// Fc: 1 if gap in 2nd sequence was extended; 0 if it is was opened
 //
 
+const unsigned char kMaskFc  = 0x01;
+const unsigned char kMaskEc  = 0x02;
 const unsigned char kMaskE   = 0x04;
 const unsigned char kMaskD   = 0x08;
-const unsigned char kMaskStart   = 0x03;
 
 CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 {
+
+
+    //check data integrity
+
+    if( m_SmithWaterman && ( data->m_offset1 || m_SeqLen1 != data->m_len1 ||
+                             data->m_offset2 || m_SeqLen2 != data->m_len2 ) ) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "Smith-Waterman not compatible with offsets provided");
+    }
+
+    if( m_SmithWaterman && ( !data->m_esf_L1 || !data->m_esf_R1 ||
+                             !data->m_esf_L2 || !data->m_esf_R2 ) ) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "Smith-Waterman not compatible with end gap penalties");
+    }
+
     const size_t N1 = data->m_len1 + 1;
     const size_t N2 = data->m_len2 + 1;
 
     vector<TScore> stl_rowV (N2), stl_rowF(N2);
-
-    TScore * rowV    = &stl_rowV[0];
-    TScore * rowF    = &stl_rowF[0];
-
-    TScore * pV = rowV - 1;
-
-    const char * seq1 = m_Seq1 + data->m_offset1 - 1;
-    const char * seq2 = m_Seq2 + data->m_offset2 - 1;
 
     const TNCBIScore (* sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
@@ -245,8 +254,8 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
         m_prg_info.m_iter_total = N1*N2;
         m_prg_info.m_iter_done = 0;
         if( (m_terminate = m_prg_callback(&m_prg_info)) ) {
-	  return 0;
-	}
+            return 0;
+        }
     }
 
     bool bFreeGapLeft1  = data->m_esf_L1 && data->m_offset1 == 0;
@@ -263,103 +272,127 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 
     // index calculation: [i,j] = i*n2 + j
     CBacktraceMatrix4 backtrace_matrix (N1 * N2);
-    backtrace_matrix.SetAt(0, kMaskStart);
+    backtrace_matrix.SetAt(0, 0);
 
     // first row
+    // note that stl_rowF[0] is not used in the main cycle,
     size_t k;
-    rowV[0] = wgleft1;
+    stl_rowV[0] = wgleft1;
     for (k = 1; k < N2; ++k) {
-        rowV[k] = pV[k] + wsleft1;
-        rowF[k] = kInfMinus;
-        backtrace_matrix.SetAt(k, m_SmithWaterman ? kMaskStart
-                                                  : kMaskE);
+        stl_rowV[k] = stl_rowV[k-1] + wsleft1;
+        stl_rowF[k] = kInfMinus;
+        backtrace_matrix.SetAt(k, kMaskE | kMaskEc);
     }
     backtrace_matrix.Purge(k);
-    rowV[0] = 0;
+    stl_rowV[0] = 0;
 	
     if(m_prg_callback) {
         m_prg_info.m_iter_done = k;
         m_terminate = m_prg_callback(&m_prg_info);
     }
 
-    // recurrences
+    // gap penalties
     TScore wgleft2 (bFreeGapLeft2? 0: m_Wg);
     TScore wsleft2 (bFreeGapLeft2? 0: m_Ws);
-    TScore V  (rowV[N2 - 1]);
-    TScore V0 (wgleft2);
-    TScore E, G, n0;
-    unsigned char tracer;
-    TScore best_V = 0;
 
-    size_t i, j;
-    for(i = 1;  i < N1 && !m_terminate;  ++i) {
-        
-        V = V0 += wsleft2;
-        E = kInfMinus;
-        backtrace_matrix.SetAt(k++, m_SmithWaterman ? kMaskStart : 0);
-        unsigned char ci = seq1[i];
+    const char * seq1 = m_Seq1 + data->m_offset1;
+    const char * seq1_end = seq1 + data->m_len1;
 
-        if(i == N1 - 1 && bFreeGapRight1) {
+    TScore V0 = wgleft2;
+    TScore V = 0;//best score in the current cell. Will be equal to the NW score at the end
+    TScore best_V = 0;//best score in the whole matrix aka score for SW 
+
+    --k;
+
+    for(;  seq1 != seq1_end && !m_terminate;  ++seq1) {
+
+        backtrace_matrix.SetAt(++k, kMaskFc);
+
+        if( seq1 + 1 == seq1_end && bFreeGapRight1) {
                 wg1 = ws1 = 0;
         }
 
+        unsigned char tracer;
+        const TNCBIScore * row_sc = sm[(size_t)*seq1];
+
+        const char * seq2 = m_Seq2 + data->m_offset2;
+        const char * seq2_end = seq2 + data->m_len2;
         TScore wg2 = m_Wg, ws2 = m_Ws;
 
-        for (j = 1; j < N2; ++j, ++k) {
+        //best ending with gap in seq1 open  seq1 X- or extended seq1 X--
+        //                                   seq2 XX             seq2 XXX
+        TScore  E = kInfMinus;
+        //best ending with gap in seq2
+        TScore F;
+        //total best with 
+        //best ending with match    
+        TScore G;
+        //just temporary
+        TScore n0;
+        //total best
+        TScore * rowV    = &stl_rowV[0];//previos row
+        V = V0 += wsleft2;       //current row
+        //best ending with match
+        TScore * rowF    = &stl_rowF[0];
 
-            G = pV[j] + sm[ci][(unsigned char)seq2[j]];
-            pV[j] = V;
+        for (; seq2 != seq2_end;) {
+            
+            G = *rowV + row_sc[(size_t)*seq2++];
+            *rowV = V;
 
             n0 = V + wg1;
-            tracer = 0;
             if(E >= n0) {
                 E += ws1;      // continue the gap
+                tracer = kMaskEc;
             }
             else {
                 E = n0 + ws1;  // open a new gap
+                tracer = 0;
             }
 
-            if(j == N2 - 1 && bFreeGapRight2) {
+            if( bFreeGapRight2 && seq2 == seq2_end ) {
                 wg2 = ws2 = 0;
             }
-            n0 = rowV[j] + wg2;
-            if(rowF[j] >= n0) {
-                rowF[j] += ws2;
+
+            F = *++rowF;
+            n0 = *++rowV + wg2;
+            if(F >= n0) {
+                F += ws2;
+                tracer |= kMaskFc;
             }
             else {
-                rowF[j] = n0 + ws2;
+                F = n0 + ws2;
             }
-
-            if (m_SmithWaterman && G <= 0 && E <= 0 && rowF[j] <= 0) {
-                V = 0;
-                tracer = kMaskStart;
-            } else if (E >= rowF[j]) {
-                if(E > G || (E == G && m_GapPreference == eLater)) {
+            *rowF = F;
+            
+            //best score
+            if( G < F || ( G == F && m_GapPreference == eLater) ) {
+                if( E <= F ) {
+                    V = F;
+                } else {
                     V = E;
                     tracer |= kMaskE;
                 }
-                else {
-                    V = G;
-                    tracer = kMaskD;
-                }
+            } else if( E > G || ( E == G && m_GapPreference == eLater) ) {
+                V = E;
+                tracer |= kMaskE;
             } else {
-                if(rowF[j] > G || (rowF[j] == G && m_GapPreference == eLater)) {
-                    V = rowF[j];
-                }
-                else {
-                    V = G;
-                    tracer = kMaskD;
-                }
+                V = G;
+                tracer |= kMaskD;
+            }
+            
+            if (m_SmithWaterman && V < 0 ) {
+                V = 0;
             }
 
-            backtrace_matrix.SetAt(k, tracer);
-            if (V >= best_V) {
+            backtrace_matrix.SetAt(++k, tracer);
+
+            if (V > best_V) {
                 best_V = V;
                 backtrace_matrix.SetBestPos(k);
             }
         }
-
-        pV[j] = V;
+        *rowV = V;
 
         if(m_prg_callback) {
             m_prg_info.m_iter_done = k;
@@ -369,12 +402,50 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
         }
     }
 
-    backtrace_matrix.Purge(k);
+    backtrace_matrix.Purge(++k);
+    backtrace_matrix.SetBestScore(best_V);
+
+    /*
+    //print the matrix out
+    {{
+    cout<<endl;
+    int kk, ind1, ind2, width = 4;
+    cout<<setw(width)<<" ";
+    cout<<setw(width)<<"-";
+    for(ind2 = 0; ind2 < N2-1; ++ind2) {
+        cout<<setw(width)<<*(m_Seq2 + data->m_offset2 + ind2);
+    }
+    cout<<endl;
+    for(kk = 0,ind1 = 0; ind1 < N1; ++ind1) {        
+        if(ind1) { 
+            cout<<setw(width)<<(m_Seq1 + data->m_offset1)[ind1-1];
+        } else {
+            cout<<setw(width)<<"-";
+        }
+        for(ind2 = 0; ind2 < N2; ++ind2,++kk) {
+            string tstr;
+            unsigned char Key (backtrace_matrix[kk]);
+            if( Key & kMaskD ) tstr += "D";
+            else if ( Key & kMaskE ) tstr += "E";
+            else tstr += "F";
+            if( Key & kMaskEc )  tstr += "-";            
+            if( Key & kMaskFc )  tstr += "|";
+            cout<<setw(width)<<tstr;
+        }
+        cout<<endl<<endl;
+    }
+    cout<<endl;
+    }}
+    //end of print the matrix out
+    */
 
     if(!m_terminate) {
         x_DoBackTrace(backtrace_matrix, data);
     }
 
+    if(m_SmithWaterman) {
+        return best_V;
+    }
     return V;
 }
 
@@ -621,15 +692,17 @@ CNWAligner::TScore CNWAligner::x_Run()
 CNWAligner::ETranscriptSymbol CNWAligner::x_GetDiagTS(size_t i1, size_t i2)
 const
 {
-    const unsigned char c1 = m_Seq1[i1--];
-    const unsigned char c2 = m_Seq2[i2--];
+    const unsigned char c1 = m_Seq1[i1];
+    const unsigned char c2 = m_Seq2[i2];
     
     ETranscriptSymbol ts;
     if(m_PositivesAsMatches) {
         ts = m_ScoreMatrix.s[c1][c2] > 0? eTS_Match: eTS_Replace;
     }
     else {
-        ts = (c1 == c2)? eTS_Match: eTS_Replace;
+        ts = (toupper(c1) == toupper(c2))? eTS_Match: eTS_Replace;
+        // to do: N vs N should be mismatch for nucleotides, 
+        // and X vs X in protein
     }
     return ts;
 }
@@ -641,6 +714,7 @@ void CNWAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
 {
     const size_t N1 (data->m_len1 + 1);
     const size_t N2 (data->m_len2 + 1);
+    const TNCBIScore (* sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
     data->m_transcript.clear();
     data->m_transcript.reserve(N1 + N2);
@@ -649,32 +723,56 @@ void CNWAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
     size_t i1 (data->m_offset1 + data->m_len1 - 1);
     size_t i2 (data->m_offset2 + data->m_len2 - 1);
     if (m_SmithWaterman) {
-        data->FillEdgeGaps(k - backtrace.BestPos());
+        size_t sw_k =  backtrace.BestPos();
+        data->FillEdgeGaps(k - sw_k, true);
+        i1 -= (k - sw_k) / (data->m_len2+1);
+        i2 -= (k - sw_k) % (data->m_len2+1);
         k = backtrace.BestPos();
     }
-    while (k > 0 && backtrace[k] != kMaskStart) {
+
+    //score for SmithWaterman. Stop when score == 0
+    TNCBIScore score = backtrace.BestScore(); 
+
+    while (k > 0 && ( !m_SmithWaterman || score > 0 ) ) {
 
         unsigned char Key (backtrace[k]);
 
         if (Key & kMaskD) {
-
+            score -= sm[(size_t)(m_Seq1[i1])][(size_t)(m_Seq2[i2])];
             data->m_transcript.push_back(x_GetDiagTS(i1--, i2--));
             k -= N2 + 1;
         }
         else if (Key & kMaskE) {
-
+            score -= m_Wg;
             data->m_transcript.push_back(eTS_Insert);
             --k;
             --i2;
-        }
+           while(k > 0 && (Key & kMaskEc)) {
+               score -= m_Ws;
+                data->m_transcript.push_back(eTS_Insert);
+                Key = backtrace[k--];
+                --i2;
+            }
+         }
         else {
-
+            score -= m_Wg;
             data->m_transcript.push_back(eTS_Delete);
             k -= N2;
             --i1;
+            while(k > 0 && (Key & kMaskFc)) {
+               score -= m_Ws;
+                data->m_transcript.push_back(eTS_Delete);
+                Key = backtrace[k];
+                k -= N2;
+                --i1;
+            }
         }
     }
-    data->FillEdgeGaps(k);
+    if( m_SmithWaterman && score < 0 ) {
+        NCBI_THROW(CAlgoAlignException, eInternal,
+                   "negative score in Smith-Waterman back trace");
+    }
+    data->FillEdgeGaps(k, false);
 }
 
 
@@ -731,7 +829,7 @@ void CNWAligner::GetEndSpaceFree(bool* L1, bool* R1, bool* L2, bool* R2) const
     if(R2) *R2 = m_esf_R2;
 }
 
-bool CNWAligner::IsSmithWatermen() const
+bool CNWAligner::IsSmithWaterman() const
 {
     return m_SmithWaterman;
 }

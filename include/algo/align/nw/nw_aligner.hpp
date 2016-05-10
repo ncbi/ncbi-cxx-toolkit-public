@@ -166,7 +166,7 @@ public:
     void          GetEndSpaceFree(bool* L1, bool* R1, bool* L2, bool* R2)
                       const;
 
-    bool          IsSmithWatermen() const;
+    bool          IsSmithWaterman() const;
 
     EGapPreference GetGapPreference() const;
 
@@ -330,6 +330,7 @@ protected:
             m_Buf = new Uint1 [dim / 2 + 1];
             m_Elem = 0;
             m_BestPos = 0;
+            m_BestScore = 0;
         }
 
         ~CBacktraceMatrix4() { delete [] m_Buf; }
@@ -346,9 +347,15 @@ protected:
         void SetBestPos(size_t k) {
             m_BestPos = k;
         }
-
         size_t BestPos() const {
             return m_BestPos;
+        }
+
+        void SetBestScore(TNCBIScore score) {
+            m_BestScore = score;
+        }
+        TNCBIScore BestScore() const {
+            return m_BestScore;
         }
 
         void Purge(size_t i) {
@@ -366,6 +373,7 @@ protected:
         Uint1 * m_Buf;
         Uint1   m_Elem;
         size_t  m_BestPos;
+        TNCBIScore m_BestScore;
     };
 
     void x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
@@ -409,9 +417,14 @@ struct CNWAligner::SAlignInOut {
         return m_space;
     }
 
-    void        FillEdgeGaps(size_t len) {
-        m_transcript.insert(m_transcript.end(), len % (m_len2+1), eTS_Insert);
-        m_transcript.insert(m_transcript.end(), len / (m_len2+1), eTS_Delete);
+    void        FillEdgeGaps(size_t len, bool seq1_gap_fist) {
+        if(seq1_gap_fist) {
+            m_transcript.insert(m_transcript.end(), len % (m_len2+1), eTS_Insert);
+            m_transcript.insert(m_transcript.end(), len / (m_len2+1), eTS_Delete);
+        } else {
+            m_transcript.insert(m_transcript.end(), len / (m_len2+1), eTS_Delete);
+            m_transcript.insert(m_transcript.end(), len % (m_len2+1), eTS_Insert);
+        }
     }
 
     static bool PSpace(const SAlignInOut* p1, const SAlignInOut* p2) {
