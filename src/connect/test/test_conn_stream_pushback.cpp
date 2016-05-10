@@ -31,48 +31,64 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_util.h>
 #include "../../corelib/test/pbacktest.hpp"
 
 #include "test_assert.h"  // This header must go last
 
+USING_NCBI_SCOPE;
+
+class CNCBITestApp : public CNcbiApplication
+{
+private:
+    unsigned int m_Seed;
+
+public:
+    int Run(void)
+    {
+        CONNECT_Init(&CNcbiApplication::Instance()->GetConfig());
+        
+        const CNcbiArguments& app_args = GetArguments();
+        m_Seed = app_args.Size() > 1 ?
+                (unsigned int)atoi(app_args[1].c_str()) : (unsigned int)time(0);
+        // Set error posting and tracing on maximum
+        SetDiagTrace(eDT_Enable);
+        SetDiagPostLevel(eDiag_Info);
+        SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default)
+            | eDPF_All | eDPF_OmitInfoSev);
+        UnsetDiagPostFlag(eDPF_Line);
+        UnsetDiagPostFlag(eDPF_File);
+        UnsetDiagPostFlag(eDPF_Location);
+        UnsetDiagPostFlag(eDPF_LongFilename);
+        SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
+
+        string host = "www.ncbi.nlm.nih.gov";
+        string path = "/Service/bounce.cgi";
+        string args = kEmptyStr;
+        string uhdr = kEmptyStr;
+
+        ERR_POST(Info << "Seed = " << m_Seed);
+        srand(m_Seed);
+
+        ERR_POST(Info << "Creating HTTP connection to "
+            "http://" + host + path + &"?"[args.empty() ? 1 : 0] + args);
+        CConn_HttpStream ios(host, path, args, uhdr);
+
+        int n = TEST_StreamPushback(ios, false/*no rewind*/);
+
+        // Manual CONNECT_UnInit (for implicit CONNECT_Init() by HTTP stream ctor)
+        CORE_SetREG(0);
+        CORE_SetLOG(0);
+        CORE_SetLOCK(0);
+
+        return n;
+    }
+};
+
 
 int main(int argc, char* argv[])
 {
-    USING_NCBI_SCOPE;
-
-    // Set error posting and tracing on maximum
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostLevel(eDiag_Info);
-    SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default)
-                        | eDPF_All | eDPF_OmitInfoSev);
-    UnsetDiagPostFlag(eDPF_Line);
-    UnsetDiagPostFlag(eDPF_File);
-    UnsetDiagPostFlag(eDPF_Location);
-    UnsetDiagPostFlag(eDPF_LongFilename);
-    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
-
-    string host = "www.ncbi.nlm.nih.gov";
-    string path = "/Service/bounce.cgi";
-    string args = kEmptyStr;
-    string uhdr = kEmptyStr;
-
-    unsigned int seed =
-        argc > 1 ? (unsigned int) atoi(argv[1]) : (unsigned int) time(0);
-    ERR_POST(Info << "Seed = " << seed);
-    srand(seed);
-
-    ERR_POST(Info << "Creating HTTP connection to "
-             "http://" + host + path + &"?"[args.empty() ? 1 : 0] + args);
-    CConn_HttpStream ios(host, path, args, uhdr);
-
-    int n = TEST_StreamPushback(ios, false/*no rewind*/);
-
-    // Manual CONNECT_UnInit (for implicit CONNECT_Init() by HTTP stream ctor)
-    CORE_SetREG(0);
-    CORE_SetLOG(0);
-    CORE_SetLOCK(0);
-
-    return n;
+    return CNCBITestApp().AppMain(argc, argv);
 }
