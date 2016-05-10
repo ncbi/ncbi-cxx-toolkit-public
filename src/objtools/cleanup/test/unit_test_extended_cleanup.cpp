@@ -721,3 +721,103 @@ BOOST_AUTO_TEST_CASE(Test_ExtendToStop)
     
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_ClearInternalPartials)
+{
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr("n");
+    CRef<CSeq_interval> a(new CSeq_interval());
+    a->SetId().Assign(*id);
+    a->SetFrom(0);
+    a->SetTo(5);
+    a->SetPartialStart(true, eExtreme_Biological);
+    a->SetPartialStop(true, eExtreme_Biological);
+    CRef<CSeq_loc> l1(new CSeq_loc());
+    l1->SetInt().Assign(*a);
+    CRef<CSeq_interval> b(new CSeq_interval());
+    b->SetId().Assign(*id);
+    b->SetFrom(10);
+    b->SetTo(15);
+    b->SetPartialStart(true, eExtreme_Biological);
+    b->SetPartialStop(true, eExtreme_Biological);
+    CRef<CSeq_loc> l2(new CSeq_loc());
+    l2->SetInt().Assign(*b);
+
+    CRef<CSeq_interval> c(new CSeq_interval());
+    c->SetId().Assign(*id);
+    c->SetFrom(20);
+    c->SetTo(25);
+    c->SetPartialStart(true, eExtreme_Biological);
+    c->SetPartialStop(true, eExtreme_Biological);
+    CRef<CSeq_loc> l3(new CSeq_loc());
+    l3->SetInt().Assign(*c);
+
+    CRef<CSeq_loc> loc_mix(new CSeq_loc());
+    loc_mix->SetMix().Set().push_back(l1);
+    loc_mix->SetMix().Set().push_back(l2);
+    loc_mix->SetMix().Set().push_back(l3);
+
+    BOOST_CHECK_EQUAL(CCleanup::ClearInternalPartials(*loc_mix), true);
+    BOOST_CHECK_EQUAL(l1->IsPartialStart(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(l1->IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(l2->IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(l2->IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(l3->IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(l3->IsPartialStop(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(CCleanup::ClearInternalPartials(*loc_mix), false);
+
+    CRef<CSeq_loc> loc_pint(new CSeq_loc());
+    loc_pint->SetPacked_int().Set().push_back(a);
+    loc_pint->SetPacked_int().Set().push_back(b);
+    loc_pint->SetPacked_int().Set().push_back(c);
+
+    BOOST_CHECK_EQUAL(CCleanup::ClearInternalPartials(*loc_pint), true);
+    BOOST_CHECK_EQUAL(a->IsPartialStart(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(a->IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(b->IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(b->IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(c->IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(c->IsPartialStop(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(CCleanup::ClearInternalPartials(*loc_pint), false);
+
+    // try minus strands
+    a->SetStrand(eNa_strand_minus);
+    a->SetPartialStart(true, eExtreme_Biological);
+    a->SetPartialStop(true, eExtreme_Biological);
+    b->SetStrand(eNa_strand_minus);
+    b->SetPartialStart(true, eExtreme_Biological);
+    b->SetPartialStop(true, eExtreme_Biological);
+    c->SetStrand(eNa_strand_minus);
+    c->SetPartialStart(true, eExtreme_Biological);
+    c->SetPartialStop(true, eExtreme_Biological);
+    l1->SetInt().Assign(*a);
+    l2->SetInt().Assign(*b);
+    l3->SetInt().Assign(*c);
+
+    loc_mix->SetMix().Reset();
+    loc_mix->SetMix().Set().push_back(l3);
+    loc_mix->SetMix().Set().push_back(l2);
+    loc_mix->SetMix().Set().push_back(l1);
+    BOOST_CHECK_EQUAL(CCleanup::ClearInternalPartials(*loc_mix), true);
+    BOOST_CHECK_EQUAL(l1->IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(l1->IsPartialStop(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(l2->IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(l2->IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(l3->IsPartialStart(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(l3->IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(CCleanup::ClearInternalPartials(*loc_mix), false);
+
+    loc_pint->SetPacked_int().Reset();
+    loc_pint->SetPacked_int().Set().push_back(c);
+    loc_pint->SetPacked_int().Set().push_back(b);
+    loc_pint->SetPacked_int().Set().push_back(a);
+    BOOST_CHECK_EQUAL(CCleanup::ClearInternalPartials(*loc_pint), true);
+    BOOST_CHECK_EQUAL(a->IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(a->IsPartialStop(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(b->IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(b->IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(c->IsPartialStart(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(c->IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(CCleanup::ClearInternalPartials(*loc_pint), false);
+
+}

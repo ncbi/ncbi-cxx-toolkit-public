@@ -224,6 +224,13 @@ public:
 /// @return Boolean return value indicates whether the coding region changed
     static bool SetCDSPartialsByFrameAndTranslation(CSeq_feat& cds, CScope& scope);
 
+
+/// Clear internal partials
+    static bool ClearInternalPartials(CSeq_loc& loc, bool is_first = true, bool is_last = true);
+    static bool ClearInternalPartials(CSeq_loc_mix& mix, bool is_first = true, bool is_last = true);
+    static bool ClearInternalPartials(CPacked_seqint& pint, bool is_first = true, bool is_last = true);
+    static bool ClearInternalPartials(CSeq_entry_Handle seh);
+
 /// Update EC numbers
 /// @param ec_num_list Prot-ref ec number list to clean
 /// @return Boolean value indicates whether any changes were made

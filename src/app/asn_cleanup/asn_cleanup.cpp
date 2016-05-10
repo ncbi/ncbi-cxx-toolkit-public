@@ -193,7 +193,10 @@ void CCleanupApp::Init(void)
 
     // extra cleanup options
     {{
-        arg_desc->AddOptionalKey("F", "Feature", "Feature Cleaning Options",
+        arg_desc->AddOptionalKey("F", "Feature", "Feature Cleaning Options\n"
+                                 "\tr Remove Redundant Gene xref\n"
+                                 "\ta Adjust for Missing Stop Codon\n"
+                                 "\tp Clear internal partials\n",
                                   CArgDescriptions::eString);
 
         arg_desc->AddOptionalKey("X", "Miscellaneous", "Other Cleaning Options",
@@ -233,7 +236,7 @@ void CCleanupApp::x_FeatureOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'r' && *s != 'a') {
+            if (*s != 'r' && *s != 'a' && *s != 'p') {
                 unrecognized += *s;
             }
         }
@@ -639,6 +642,9 @@ bool CCleanupApp::x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle s
     }
     if (NStr::Find(opt, "a") != string::npos) {
         any_changes |= x_FixCDS(seh, eFixCDS_ExtendToStop, kEmptyStr);
+    }
+    if (NStr::Find(opt, "p") != string::npos) {
+        any_changes |= CCleanup::ClearInternalPartials(seh);
     }
     return any_changes;
 }

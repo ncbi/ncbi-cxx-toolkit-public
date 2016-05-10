@@ -1324,6 +1324,86 @@ bool CCleanup::SetCDSPartialsByFrameAndTranslation(CSeq_feat& cds, CScope& scope
 }
 
 
+bool CCleanup::ClearInternalPartials(CSeq_loc& loc, bool is_first, bool is_last)
+{
+    bool rval = false;
+    switch (loc.Which()) {
+        case CSeq_loc::e_Mix:
+            rval |= ClearInternalPartials(loc.SetMix(), is_first, is_last);
+            break;
+        case CSeq_loc::e_Packed_int:
+            rval |= ClearInternalPartials(loc.SetPacked_int(), is_first, is_last);
+            break;
+        default:
+            break;
+    }
+    return rval;
+}
+
+
+bool CCleanup::ClearInternalPartials(CSeq_loc_mix& mix, bool is_first, bool is_last)
+{
+    bool rval = false;
+    NON_CONST_ITERATE(CSeq_loc::TMix::Tdata, it, mix.Set()) {
+        bool this_is_last = is_last && (*it == mix.Set().back());
+        if ((*it)->IsMix() || (*it)->IsPacked_int()) {
+            rval |= ClearInternalPartials(**it, is_first, this_is_last);
+        } else {
+            if (!is_first &&
+                (*it)->IsPartialStart(eExtreme_Biological)) {
+                (*it)->SetPartialStart(false, eExtreme_Biological);
+                rval = true;
+            }
+            if (!this_is_last &&
+                (*it)->IsPartialStop(eExtreme_Biological)) {
+                (*it)->SetPartialStop(false, eExtreme_Biological);
+                rval = true;
+            }
+        }
+        is_first = false;
+    }
+    return rval;
+}
+
+
+bool CCleanup::ClearInternalPartials(CPacked_seqint& pint, bool is_first, bool is_last)
+{
+    bool rval = false;
+
+    NON_CONST_ITERATE(CSeq_loc::TPacked_int::Tdata, it, pint.Set()) {
+        bool this_is_last = is_last && (*it == pint.Set().back());
+        if (!is_first && (*it)->IsPartialStart(eExtreme_Biological)) {
+            (*it)->SetPartialStart(false, eExtreme_Biological);
+            rval = true;
+        }
+        if (!this_is_last && (*it)->IsPartialStop(eExtreme_Biological)) {
+            (*it)->SetPartialStop(false, eExtreme_Biological);
+            rval = true;
+        }
+        is_first = false;
+    }
+    return rval;
+}
+
+
+bool CCleanup::ClearInternalPartials(CSeq_entry_Handle seh)
+{
+    bool rval = false;
+    CFeat_CI f(seh);
+    while (f) {
+        CRef<CSeq_feat> new_feat(new CSeq_feat());
+        new_feat->Assign(*(f->GetSeq_feat()));
+        if (ClearInternalPartials(new_feat->SetLocation())) {
+            CSeq_feat_EditHandle eh(f->GetSeq_feat_Handle());
+            eh.Replace(*new_feat);
+        }
+        ++f;
+    }
+
+    return rval;
+}
+
+
 bool CCleanup::UpdateECNumbers(CProt_ref::TEc & ec_num_list)
 {
     bool changed = false;
