@@ -992,7 +992,7 @@ bool CSeqTableInfo::x_IsSorted(void) const
         return false;
     }
     if ( !m_Location.m_Is_simple ||
-         !(m_Location.m_Is_simple_point || m_Location.m_Is_simple_point) ) {
+         !(m_Location.m_Is_simple_point || m_Location.m_Is_simple_interval) ) {
         return false;
     }
     if ( !m_TableLocation || !m_TableLocation->IsInt() ) {
@@ -1045,6 +1045,46 @@ void CSeqTableInfo::UpdateSeq_feat(size_t row,
     ITERATE ( TExtraColumns, it, m_ExtraColumns ) {
         it->first.UpdateSeq_feat(feat, row, *it->second);
     }
+}
+
+
+bool CSeqTableInfo::HasLabel(size_t index) const
+{
+    for ( auto& c : m_ExtraColumns ) {
+        const CSeqTable_column& col = *c.first.Get();
+        const CSeqTable_column_info& col_info = col.GetHeader();
+        if ( col_info.IsSetField_name() ) {
+            const string& name = col_info.GetField_name();
+            if ( !name.empty() && name[0] == 'Q' ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+string CSeqTableInfo::GetLabel(size_t index) const
+{
+    CNcbiOstrstream str;
+    char sep = '/';
+    for ( auto& c : m_ExtraColumns ) {
+        const CSeqTable_column& col = *c.first.Get();
+        const CSeqTable_column_info& col_info = col.GetHeader();
+        if ( col_info.IsSetField_name() ) {
+            const string& name = col_info.GetField_name();
+            if ( !name.empty() && name[0] == 'Q' ) {
+                str << sep;
+                sep = ' ';
+                str << name.substr(2);
+                const string* value_ptr = c.first.GetStringPtr(index);
+                if ( value_ptr && !value_ptr->empty() ) {
+                    str << '=' << *value_ptr;
+                }
+            }
+        }
+    }
+    return CNcbiOstrstreamToString(str);
 }
 
 

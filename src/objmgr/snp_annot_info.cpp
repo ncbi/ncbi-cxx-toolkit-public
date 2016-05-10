@@ -782,6 +782,26 @@ void SSNP_Info::UpdateSeq_feat(CRef<CSeq_feat>& feat_ref,
 }
 
 
+string SSNP_Info::GetLabel(const CSeq_annot_SNP_Info& annot) const
+{
+    CNcbiOstrstream str;
+    size_t count = 0;
+    for (; count < kMax_AllelesCount; ++count) {
+        TAlleleIndex allele_index = m_AllelesIndices[count];
+        if ( allele_index == kNo_AlleleIndex ) {
+            break;
+        }
+        str << (count == 0? '/': ' ');
+        str << "replace";
+        const string& allele = annot.x_GetAllele(allele_index);
+        if ( !allele.empty() ) {
+            str << '=' << allele;
+        }
+    }
+    return CNcbiOstrstreamToString(str);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_annot_SNP_Info
 /////////////////////////////////////////////////////////////////////////////

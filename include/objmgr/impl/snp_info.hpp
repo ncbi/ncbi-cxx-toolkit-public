@@ -167,12 +167,16 @@ public:
         fQualityCodesMask  = fQualityCodesStr | fQualityCodesOs
     };
 
+    bool HasAlleles(void) const;
     size_t GetAllelesCount(void) const;
     TAlleleIndex GetAlleleStrIndex(size_t index) const;
     TExtraIndex GetExtraIndex(void) const;
     CUser_field::TData::E_Choice GetQualityCodesWhich(void) const;
     TQualityCodesIndex GetQualityCodesStrIndex(void) const;
     TQualityCodesIndex GetQualityCodesOsIndex(void) const;
+
+    bool HasLabel(const CSeq_annot_SNP_Info& info) const;
+    string GetLabel(const CSeq_annot_SNP_Info& info) const;
 
     TSeqPos         m_ToPosition;
     TSNPId          m_SNP_Id;
@@ -260,10 +264,24 @@ bool SSNP_Info::NotThis(const TRange& range) const
 
 
 inline
+bool SSNP_Info::HasAlleles(void) const
+{
+    return m_AllelesIndices[0] != kNo_AlleleIndex;
+}
+
+
+inline
 SSNP_Info::TAlleleIndex SSNP_Info::GetAlleleStrIndex(size_t index) const
 {
     _ASSERT(index < GetAllelesCount());
     return m_AllelesIndices[index];
+}
+
+
+inline
+bool SSNP_Info::HasLabel(const CSeq_annot_SNP_Info&) const
+{
+    return HasAlleles();
 }
 
 

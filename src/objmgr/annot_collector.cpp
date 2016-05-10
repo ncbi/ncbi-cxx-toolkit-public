@@ -675,7 +675,10 @@ public:
 
     ENa_strand GetStrand(bool by_product);
 
-    const CSeq_loc* GetLoc(bool by_product);
+    const CSeq_loc* GetComplexLoc(bool by_product);
+
+    bool IsSetProduct(void);
+    CConstRef<CSeq_id> GetProductId(void);
 
     bool HasFeatLabel(void);
     string GetFeatLabel(void);
@@ -784,7 +787,7 @@ ENa_strand CCreateFeat::GetStrand(bool by_product)
         else {
             // location is not mapped - use original
             if ( !m_Info ) {
-                // table SNP without mapping
+                // table SNP or sorted table features have strand in mapping
                 return map.GetMappedStrand();
             }
             else {
@@ -800,10 +803,10 @@ ENa_strand CCreateFeat::GetStrand(bool by_product)
 }
 
 
-const CSeq_loc* CCreateFeat::GetLoc(bool by_product)
+const CSeq_loc* CCreateFeat::GetComplexLoc(bool by_product)
 {
     if ( !m_Info ) {
-        // table SNP -> no mix
+        // table SNP, or sorted feature table -> no mix
         return 0;
     }
     CAnnotMapping_Info& map = m_Ref.GetMappingInfo();
@@ -830,8 +833,29 @@ const CSeq_loc* CCreateFeat::GetLoc(bool by_product)
 }
 
 
+bool CCreateFeat::IsSetProduct(void)
+{
+    if ( !m_Info ) {
+        // table SNP or sorted table features -> no product
+        return false;
+    }
+    return GetOriginalFeat().IsSetProduct();
+}
+
+
+CConstRef<CSeq_id> CCreateFeat::GetProductId(void)
+{
+    _ASSERT(IsSetProduct());
+    return ConstRef(GetOriginalFeat().GetProduct().GetId());
+}
+
+
 bool CCreateFeat::HasFeatLabel(void)
 {
+    if ( !m_Info ) {
+        return m_Ref.GetSeq_annot_Info()
+            .TableFeat_HasLabel(m_Ref.GetAnnotIndex());
+    }
     const CSeq_feat& feat = GetOriginalFeat();
     return (feat.IsSetQual() && !feat.GetQual().empty()) ||
         (feat.IsSetComment() && !feat.GetComment().empty());
@@ -840,6 +864,11 @@ bool CCreateFeat::HasFeatLabel(void)
 
 string CCreateFeat::GetFeatLabel(void)
 {
+    if ( !m_Info ) {
+        return m_Ref.GetSeq_annot_Info()
+            .TableFeat_GetLabel(m_Ref.GetAnnotIndex());
+    }
+
     string label;
 
     const CSeq_feat& feat = GetOriginalFeat();
@@ -960,8 +989,8 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
         }
         
         // compare complex locations (mix or packed intervals)
-        const CSeq_loc* x_loc = x_create.GetLoc(m_ByProduct);
-        const CSeq_loc* y_loc = y_create.GetLoc(m_ByProduct);
+        const CSeq_loc* x_loc = x_create.GetComplexLoc(m_ByProduct);
+        const CSeq_loc* y_loc = y_create.GetComplexLoc(m_ByProduct);
         
         bool x_complex = x_loc && (x_loc->IsMix() || x_loc->IsPacked_int());
         bool y_complex = y_loc && (y_loc->IsMix() || y_loc->IsPacked_int());
@@ -1013,18 +1042,16 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
         
         if ( !m_ByProduct ) {
             // order by product id
-            const CSeq_feat& x_feat = x_create.GetOriginalFeat();
-            const CSeq_feat& y_feat = y_create.GetOriginalFeat();
-            bool x_has_product = x_feat.IsSetProduct();
-            bool y_has_product = y_feat.IsSetProduct();
+            bool x_has_product = x_create.IsSetProduct();
+            bool y_has_product = y_create.IsSetProduct();
             if ( x_has_product != y_has_product ) {
                 return !x_has_product; // without product first
             }
             if ( x_has_product ) {
-                const CSeq_id* x_id = x_feat.GetProduct().GetId();
-                const CSeq_id* y_id = y_feat.GetProduct().GetId();
-                if ( (x_id == NULL) != (y_id == NULL) ) {
-                    return x_id == NULL; // no product id first
+                CConstRef<CSeq_id> x_id = x_create.GetProductId();
+                CConstRef<CSeq_id> y_id = y_create.GetProductId();
+                if ( x_id.IsNull() != y_id.IsNull() ) {
+                    return x_id.IsNull(); // no product id first
                 }
                 if ( x_id ) {
                     string x_id_str = x_id->AsFastaString();

@@ -183,6 +183,10 @@ public:
 
     virtual string GetDescription(void) const;
 
+    // special access to SNP or sorted table features
+    bool TableFeat_HasLabel(TAnnotIndex index) const;
+    string TableFeat_GetLabel(TAnnotIndex index) const;
+
 protected:
     friend class CDataSource;
     friend class CTSE_Info;

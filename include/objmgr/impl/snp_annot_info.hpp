@@ -202,6 +202,9 @@ public:
     CSeq_annot& GetRemainingSeq_annot(void);
     void Reset(void);
 
+    bool HasLabel(size_t index) const;
+    string GetLabel(size_t index) const;
+
     // filling SNP table from parser
     void x_AddSNP(const SSNP_Info& snp_info);
     void x_FinishParsing(void);
@@ -422,6 +425,20 @@ size_t CSeq_annot_SNP_Info::GetIndex(const SSNP_Info& info) const
 {
     _ASSERT(&info >= &m_SNP_Set.front() && &info <= &m_SNP_Set.back());
     return &info - &m_SNP_Set.front();
+}
+
+
+inline
+bool CSeq_annot_SNP_Info::HasLabel(size_t index) const
+{
+    return GetInfo(index).HasLabel(*this);
+}
+
+
+inline
+string CSeq_annot_SNP_Info::GetLabel(size_t index) const
+{
+    return GetInfo(index).GetLabel(*this);
 }
 
 

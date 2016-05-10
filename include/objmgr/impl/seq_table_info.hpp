@@ -257,6 +257,9 @@ public:
         return GetLocation().GetStrand(row);
     }
 
+    bool HasLabel(size_t row) const;
+    string GetLabel(size_t row) const;
+
     // returns null if column not found
     const CSeqTableColumnInfo* FindColumn(int field_id) const;
     const CSeqTableColumnInfo* FindColumn(const string& field_name) const;

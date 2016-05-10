@@ -1953,6 +1953,30 @@ bool CSeq_annot_Info::IsSortedTable(void) const
 }
 
 
+bool CSeq_annot_Info::TableFeat_HasLabel(TAnnotIndex index) const
+{
+    if ( m_SNP_Info ) {
+        return m_SNP_Info->HasLabel(index);
+    }
+    else {
+        _ASSERT(m_Table_Info);
+        return m_Table_Info->HasLabel(index);
+    }
+}
+
+
+string CSeq_annot_Info::TableFeat_GetLabel(TAnnotIndex index) const
+{
+    if ( m_SNP_Info ) {
+        return m_SNP_Info->GetLabel(index);
+    }
+    else {
+        _ASSERT(m_Table_Info);
+        return m_Table_Info->GetLabel(index);
+    }
+}
+
+
 CSeq_annot_SortedIter
 CSeq_annot_Info::StartSortedIterator(CRange<TSeqPos> range) const
 {
