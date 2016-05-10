@@ -1113,7 +1113,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_widt
                 ss << c2;
                 if(c2 != '-' && c2 != '+' && c2 != 'x')
                     i2++;
-                if(c2 != c1 && c2 != '-' && c1 != '-' && c1 != '+' && c1 != 'x')
+                if( c2 != '-' && c1 != '-' && c1 != '+' && c1 != 'x' && ( toupper(c2) != toupper(c1) || m_aligner->GetScoreMatrix().s[c1][c2] <= 0 ))
                     marker_line[jPos] = '^';
             }
             ss << endl << marker_line << endl;
@@ -1145,7 +1145,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_widt
                 char c1 (v1[i0 + jPos]);
                 char c2 (v2[i0 + jPos]);
                 if(c2 != '-' && c2 != '+' && c2 != 'x') i2++;
-                if(c2 == c1) line2[jPos] = '|';
+                if( toupper(c2) == toupper(c1) && m_aligner-> GetScoreMatrix().s[c1][c2] > 0 )  line2[jPos] = '|';
                 line3[jPos] = c2;
             }
             ss << line2 << endl << line3 << endl << endl;

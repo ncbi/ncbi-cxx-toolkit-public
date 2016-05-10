@@ -111,6 +111,7 @@ public:
                       bool verify = true);
   
     void SetScoreMatrix(const SNCBIPackedScoreMatrix* scoremat);
+    const SNCBIFullScoreMatrix & GetScoreMatrix(void) const { return m_ScoreMatrix; }
 
     void SetWm  (TScore value);                      // match (na)
     void SetWms (TScore value);                      // mismatch (na)
