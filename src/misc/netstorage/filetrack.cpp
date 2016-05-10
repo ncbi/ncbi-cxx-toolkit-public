@@ -49,6 +49,7 @@
 
 #include <time.h>
 #include <sstream>
+#include <functional>
 
 #define FILETRACK_SIDCOOKIE "SubmissionPortalSID"
 #define DELEGATED_FROM_MYNCBI_ID_HEADER "Delegated-From-MyNCBI-ID"
