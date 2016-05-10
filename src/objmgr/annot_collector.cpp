@@ -76,6 +76,7 @@
 #include <serial/serial.hpp>
 #include <serial/serialutil.hpp>
 
+#include <util/timsort.hpp>
 #include <algorithm>
 #include <typeinfo>
 
@@ -2414,12 +2415,12 @@ void CAnnot_Collector::x_Sort(void)
     _ASSERT(!m_MappingCollector.get());
     switch ( m_Selector->m_SortOrder ) {
     case SAnnotSelector::eSortOrder_Normal:
-        stable_sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                    CAnnotObject_Less(m_Selector, m_Scope));
+        gfx::timsort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                     CAnnotObject_Less(m_Selector, m_Scope));
         break;
     case SAnnotSelector::eSortOrder_Reverse:
-        stable_sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                    CAnnotObject_LessReverse(m_Selector, m_Scope));
+        gfx::timsort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                     CAnnotObject_LessReverse(m_Selector, m_Scope));
         break;
     default:
         // do nothing
