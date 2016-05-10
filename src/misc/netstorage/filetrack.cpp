@@ -51,6 +51,7 @@
 #include <sstream>
 
 #define FILETRACK_SIDCOOKIE "SubmissionPortalSID"
+#define DELEGATED_FROM_MYNCBI_ID_HEADER "Delegated-From-MyNCBI-ID"
 
 BEGIN_NCBI_SCOPE
 
@@ -278,6 +279,12 @@ static string s_RemoveHTMLTags(const char* text)
 const auto kAuthHeader = "Authorization";
 const auto kAuthPrefix = "Token ";
 
+static void s_ApplyMyNcbiId(function<void(const string&)> apply)
+{
+    auto my_ncbi_id(CRequestContext_PassThrough().Get("my_ncbi_id"));
+    if (!my_ncbi_id.empty()) apply(my_ncbi_id);
+}
+
 CRef<SFileTrackPostRequest> SFileTrackPostRequest::Create(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc)
@@ -289,12 +296,12 @@ CRef<SFileTrackPostRequest> SFileTrackPostRequest::Create(
     user_header.append("\r\nFile-ID: ").append(object_loc.GetUniqueKey());
     user_header.append("\r\nFile-Editable: true\r\n");
 
-    const string& my_ncbi_id(CRequestContext_PassThrough().Get("my_ncbi_id"));
-
-    if (!my_ncbi_id.empty()) {
-        user_header.append("Delegated-From-MyNCBI-ID: ").append(my_ncbi_id);
+    s_ApplyMyNcbiId([&user_header](const string& my_ncbi_id)
+    {
+        user_header.append(DELEGATED_FROM_MYNCBI_ID_HEADER ": ");
+        user_header.append(my_ncbi_id);
         user_header.append("\r\n");
-    }
+    });
 
     return CRef<SFileTrackPostRequest>(
             new SFileTrackPostRequest(config, object_loc, user_header));
@@ -314,12 +321,12 @@ CRef<SFileTrackPostRequest> SFileTrackPostRequestOld::Create(
     user_header.append(cookie);
     user_header.append("\r\n", 2);
 
-    const string& my_ncbi_id(CRequestContext_PassThrough().Get("my_ncbi_id"));
-
-    if (!my_ncbi_id.empty()) {
-        user_header.append("Delegated-From-MyNCBI-ID: ");
+    s_ApplyMyNcbiId([&user_header](const string& my_ncbi_id)
+    {
+        user_header.append(DELEGATED_FROM_MYNCBI_ID_HEADER ": ");
         user_header.append(my_ncbi_id);
-    }
+        user_header.append("\r\n");
+    });
 
     return CRef<SFileTrackPostRequest>(
             new SFileTrackPostRequestOld(config, object_loc,
@@ -423,6 +430,11 @@ void SFileTrackPostRequest::RenameFile(const string& from, const string& to,
         CHttpHeaders& headers = req.Headers();
         headers.SetValue(CHttpHeaders::eContentType, "application/json");
         headers.SetValue(header, value);
+
+        s_ApplyMyNcbiId([&headers](const string& my_ncbi_id)
+        {
+            headers.SetValue(DELEGATED_FROM_MYNCBI_ID_HEADER, my_ncbi_id);
+        });
 
         req.ContentStream() << "{\"key\": \"" << to << "\"}";
 
