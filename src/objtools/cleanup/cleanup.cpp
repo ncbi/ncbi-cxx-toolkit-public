@@ -560,7 +560,12 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     if (new_feat->GetData().Which() == CSeqFeatData::e_Imp) {
         new_feat->SetData().SetProt().SetProcessed(processed);
         if (processed == CProt_ref::eProcessed_mature) {
-            new_feat->SetData().SetProt().SetName().push_back("unnamed");
+            if (orig_feat->IsSetComment() && !NStr::IsBlank(orig_feat->GetComment())) {
+                new_feat->SetData().SetProt().SetName().push_back(orig_feat->GetComment());
+                new_feat->ResetComment();
+            } else {
+                new_feat->SetData().SetProt().SetName().push_back("unnamed");
+            }
         }
     }
 

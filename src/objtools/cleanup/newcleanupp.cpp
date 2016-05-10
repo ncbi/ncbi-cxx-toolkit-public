@@ -3174,6 +3174,10 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
                     if ( bioseq_handle && bioseq_handle.IsAa() ) {
                         CRef<CProt_ref> new_prot_ref( new CProt_ref );
                         new_prot_ref->SetProcessed( processed );
+                        if (feat.IsSetComment() && !NStr::IsBlank(feat.GetComment())) {
+                            new_prot_ref->SetName().push_back(feat.GetComment());
+                            feat.ResetComment();
+                        }
                         feat.SetData().SetProt( *new_prot_ref );
                         ChangeMade(CCleanupChange::eAddProtFeat);
                         x_CleanSeqFeatQuals(feat);
