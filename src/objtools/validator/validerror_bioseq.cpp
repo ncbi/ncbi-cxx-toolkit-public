@@ -6431,11 +6431,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(
                 if ((*cds_it)->HasmRNA()) {
                     unsigned int xrefs_match = x_IdXrefsNotReciprocal (*((*cds_it)->m_Cds),
                                                                         *((*cds_it)->GetmRNA()->m_Mrna));
-                    if (xrefs_match == 1) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefNotReciprocal, 
-                                 "CDS/mRNA unambiguous pair have erroneous cross-references",
-                                 *((*cds_it)->m_Cds));
-                    } else if (xrefs_match == 2) {
+                    if (xrefs_match == 2) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem, 
                                "MrnaProteinLink inconsistent with feature ID cross-references",
                                *((*cds_it)->GetmRNA()->m_Mrna));
