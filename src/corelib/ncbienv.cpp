@@ -100,7 +100,7 @@ void CNcbiEnvironment::Reset(const char* const* envp)
             ERR_POST_X(3, "CNcbiEnvironment: bad string '" << s << "'");
             continue;
         }
-        m_Cache[string(s, eq)] = SEnvValue(eq + 1, kEmptyXCStr);
+        m_Cache[string(s, (size_t)(eq - s))] = SEnvValue(eq + 1, kEmptyXCStr);
     }
 }
 
