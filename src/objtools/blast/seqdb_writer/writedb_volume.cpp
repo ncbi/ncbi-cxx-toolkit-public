@@ -217,7 +217,8 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
     	string id_u;
     	pair<set<string>::iterator, bool > rv;
         ITERATE(TIdList, iter, idlist) {
-            string id = (*iter)->GetSeqIdString(true);
+            string id = kEmptyStr;
+            (*iter)->GetLabel(&id);
             id_u = NStr::ToUpper(id);
             rv = m_IdSet.insert(id_u);
             if((rv.second == false) && (!(*iter)->IsLocal())) {
