@@ -164,6 +164,7 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
     memset(&x_extra, 0, sizeof(x_extra));
     x_extra.data = &m_RetryCtx;
     x_extra.parse_header = sx_ParseHeader;
+    x_extra.flags = fHTTP_NoAutoRetry;
 
     x_SetStream(new CConn_ServiceStream(m_Service, fSERV_Any, net_info,
         &x_extra, m_Timeout));
@@ -195,7 +196,7 @@ void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
         &m_RetryCtx,    // user data for the callback
         0, // adjust callback
         0, // cleanup callback
-        fHTTP_AutoReconnect,
+        fHTTP_AutoReconnect | fHTTP_NoAutoRetry,
         m_Timeout));
 }
 
