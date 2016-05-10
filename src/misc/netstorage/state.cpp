@@ -825,9 +825,11 @@ string CFileTrack::FileTrack_PathImpl()
 
 ILocation::TUserInfo CFileTrack::GetUserInfoImpl()
 {
-    // TODO:
-    // Get My NCBI ID from FileTrack (CXX-8031),
-    // return it as a pair("my_ncbi_id", value).
+    CJsonNode file_info = m_Context->filetrack_api.GetFileInfo(Locator());
+    CJsonNode my_ncbi_id = file_info.GetByKeyOrNull("myncbi_id");
+
+    if (my_ncbi_id) return TUserInfo("my_ncbi_id", my_ncbi_id.AsString());
+
     return TUserInfo(kEmptyStr, kEmptyStr);
 }
 
