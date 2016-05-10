@@ -183,6 +183,10 @@ struct SInfo_tag {
     char*             file_log_name;
     char*             file_perf_name;
     int/*bool*/       reuse_file_names;         /**< File names where not changed, reuse it */
+
+    /* Extras for ncbi_applog */
+
+    const char*       logsite;                  /**< Pointer to logsite name */
 };
 typedef struct SInfo_tag TNcbiLog_Info;
 
@@ -232,11 +236,14 @@ extern int /*bool*/ NcbiLogP_DisableChecks(int /*bool*/ disable);
 /** Variant of NcbiLog_SetDestination. 
  *  Try to force set new destination without additional checks.
  *  The 'port' parameter redefine value of $SERVER_PORT environment variable.
- *  Use 0 if undefined. Can be used only for redirect mode. See for details:
+ *  Use 0 if undefined. Can be used only for redirect mode. 
+ *  The 'logsite' parameter is used specifically by ncbi_applog utility, 
+ *  to allow to check additionally /log/{{logsite}} destination.
+ *  See for details:
  *  http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_core/#ch_core.Where_Diagnostic_Messages_Go
  *  @sa NcbiLog_SetDestination, ENcbiLog_Destination, NcbiLog_Init
  */
-extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port);
+extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port, const char* logsite);
 
 
 /** Redefine value of $SERVER_PORT environment variable.

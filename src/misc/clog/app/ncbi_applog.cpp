@@ -172,8 +172,6 @@ struct SInfo {
     string            logsite;          ///< Application-wide LogSite value (set in "start_app")
     string            host_role;        ///< Host role (CGI mode only, ignored for local host)
     string            host_location;    ///< Host location (CGI mode only, ignored for local host)
-    // The log_site information can be passed in "start_request" also, but it will be used
-    // for that command only, so we don't need to save it.
     STime             app_start_time;   ///< Application start time
     STime             req_start_time;   ///< Request start time
     STime             post_time;        ///< Posting time (defined only for redirect mode)
@@ -631,7 +629,7 @@ static bool s_PeekStdin(const CTimeout& timeout)
     }
 
 #else
-    int timeout_msec = timeout.IsInfinite() ? -1 : timeout.GetAsMilliSeconds();
+    int timeout_msec = timeout.IsInfinite() ? -1 : (int)timeout.GetAsMilliSeconds();
 
     pollfd poll_fd[1];
     poll_fd[0].fd = fileno(stdin);
@@ -669,7 +667,7 @@ int CNcbiApplogApp::Redirect()
     const char* ev;
 
     if ( !m_IsRaw ) {
-        // We need host name, sid and log_site in the command line for 'start_app' command,
+        // We need host name, sid and logsite in the command line for 'start_app' command,
         // only, all other information it should take from the token.
         bool is_start_app   = (GetArgs().GetCommand() == "start_app");
         bool need_hostname  = true;
@@ -739,7 +737,7 @@ int CNcbiApplogApp::Redirect()
                     s_args += string(" \"-phid=") + NStr::URLEncode(ev) + "\"";
                 }
             }
-            // Global log_site information
+            // Global logsite information
             if (need_logsite) {
                 string logsite = GetEnvironment().Get("NCBI_APPLOG_SITE");
                 if (!logsite.empty()) {
@@ -899,13 +897,16 @@ int CNcbiApplogApp::ReadCgiResponse(CConn_HttpStream& cgi)
     if (!cgi.eof()) {
         throw "Failed to read CGI output";
     }
+    int res = cgi.GetStatusCode();
+    if (res != 0   &&  res != 200) {
+        throw "Failed to call CGI, HTTP status code " + NStr::IntToString(res);
+    }
     if (output.empty()) {
         return 0;
     }
     // Check output on errors. CGI prints all errors to stderr.
     if (output.find("error:") != NPOS) {
-        cerr << output;
-        return 2;  // 1 for local errors, 2 for CGI
+        throw "Failed to call CGI: " + output;
     }
     // Printout CGI's output
     cout << output;
@@ -1132,9 +1133,9 @@ void CNcbiApplogApp::SetInfo()
         time_t sec;
         long   ns;
         CTime::GetCurrentTimeT(&sec, &ns);
-        double ts = (sec - m_Info.app_start_time.sec) * kMicroSecondsPerSecond/100 + 
-                    ((double)ns - m_Info.app_start_time.ns) /
-                    (kNanoSecondsPerSecond/kMicroSecondsPerSecond) / 100;
+        double ts = (double)(sec - m_Info.app_start_time.sec) * kMicroSecondsPerSecond/100 + 
+                    (double)((unsigned long)ns - m_Info.app_start_time.ns) /
+                            (kNanoSecondsPerSecond/kMicroSecondsPerSecond) / 100;
         sn = TNcbiLog_Counter(ts) % numeric_limits<Uint4>::max();
         g_info->psn = sn;
     }
@@ -1415,7 +1416,8 @@ int CNcbiApplogApp::Run(void)
         // Special case: redirect all output to specified file.
         // This will be done automatically in the C Logging API,
         // so we should just set default logging here.
-        ENcbiLog_Destination cur_dst = NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port);
+        ENcbiLog_Destination cur_dst = 
+            NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port, m_Info.logsite.c_str());
         if (cur_dst != eNcbiLog_Default  &&  cur_dst != eNcbiLog_Stderr) {
             throw "Failed to set output destination from $NCBI_CONFIG__LOG__FILE";
         }
@@ -1424,7 +1426,8 @@ int CNcbiApplogApp::Run(void)
         string dst_str = NCBI_PARAM_TYPE(NCBI, NcbiApplogDestination)::GetDefault();
         if (dst_str.empty()  ||  dst_str == "default") {
             // Try to set default output destination
-            ENcbiLog_Destination cur_dst = NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port);
+            ENcbiLog_Destination cur_dst = 
+                NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port, m_Info.logsite.c_str());
             if (cur_dst != eNcbiLog_Default) {
                 // The /log is not writable, use external CGI for logging
                 is_api_init = false;
@@ -1453,7 +1456,8 @@ int CNcbiApplogApp::Run(void)
                 throw "Syntax error: NcbiApplogDestination parameter have incorrect value " + dst_str;
             }
             // Try to set output destination
-            ENcbiLog_Destination cur_dst = NcbiLogP_SetDestination(dst, m_Info.server_port);
+            ENcbiLog_Destination cur_dst = 
+                NcbiLogP_SetDestination(dst, m_Info.server_port, m_Info.logsite.c_str());
             if (cur_dst != dst) {
                 throw "Failed to set output destination to " + dst_str;
             }
@@ -1641,18 +1645,18 @@ int CNcbiApplogApp::Run(void)
                         eCmdOther
                     } ECmdType;
 
-                    CTempString cmdstr(CTempString(m_Raw_line), namepos + m_Info.logsite.size() + 1);
-                    ECmdType cmd = eCmdOther;
-                    if (NStr::StartsWith(cmdstr, "start")) {
-                        cmd = eCmdAppStart;
-                    } else if (NStr::StartsWith(cmdstr, "request-start")) {
-                        cmd = eCmdRequestStart;
-                    } else if (NStr::StartsWith(cmdstr, "perf")) {
-                        cmd = eCmdPerf;
+                    CTempString cmd_str(CTempString(m_Raw_line), namepos + m_Info.logsite.size() + 1);
+                    ECmdType cmd_type = eCmdOther;
+                    if (NStr::StartsWith(cmd_str, "start")) {
+                        cmd_type = eCmdAppStart;
+                    } else if (NStr::StartsWith(cmd_str, "request-start")) {
+                        cmd_type = eCmdRequestStart;
+                    } else if (NStr::StartsWith(cmd_str, "perf")) {
+                        cmd_type = eCmdPerf;
                     }
                     size_t param_ofs = 0;
 
-                    switch (cmd)  {
+                    switch (cmd_type)  {
                     case eCmdPerf:
                         {
                             // Find start of the performance parameters, if any
@@ -1688,7 +1692,7 @@ int CNcbiApplogApp::Run(void)
                     case eCmdAppStart:
                         // Post it as is
                         NcbiLogP_Raw2(m_Raw_line.c_str(), m_Raw_line.length());
-                        if (cmd == eCmdAppStart) {
+                        if (cmd_type == eCmdAppStart) {
                             // Add original appname as extra after 'start_app' command,
                             // constructing it from original raw line
                             string s = m_Raw_line.substr(0, namepos + 1 + m_Info.logsite.size())

@@ -132,6 +132,7 @@
 static const char* kBaseLogDir  = "/log/";
 
 
+
 /*****************************************************************************
  *  Global variables 
  */
@@ -1544,6 +1545,16 @@ static void s_InitDestination(const char* logfile_path)
                         return;
                     }
                 }
+                /* /log/{{logsite}} */
+                if (sx_Info->logsite  &&  sx_Info->logsite[0] != '\0') {
+                    dir = s_ConcatPath(kBaseLogDir, sx_Info->logsite, xdir, FILENAME_MAX + 1);
+                    if (dir) {
+                        if (s_SetLogFilesDir(dir)) {
+                            sx_Info->reuse_file_names = 1;
+                            return;
+                        }
+                    }
+                }
             }
             /* Try current directory -- eNcbiLog_Stdlog, eNcbiLog_Cwd */
             if (sx_Info->destination != eNcbiLog_Default) {
@@ -2448,7 +2459,7 @@ extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
 }
 
 
-extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port)
+extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port, const char* logsite)
 {
     char* logfile = NULL;
     MT_LOCK_API;
@@ -2469,6 +2480,7 @@ extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, uns
     /* Set new destination */
     sx_Info->destination = ds;
     sx_Info->server_port = port;
+    sx_Info->logsite     = logsite;
     if (sx_Info->destination != eNcbiLog_Disable) {
         /* and force to initialize it */
         sx_Info->last_reopen_time = 0;
