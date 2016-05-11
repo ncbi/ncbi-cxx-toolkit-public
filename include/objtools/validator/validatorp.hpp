@@ -1363,6 +1363,67 @@ private:
 };
 
 
+class CCdsMatchInfo;
+
+class CMrnaMatchInfo : public CObject {
+public:
+    CMrnaMatchInfo(const CSeq_feat& mrna, CScope* scope);
+    const CSeq_feat& GetSeqfeat(void) const;
+    bool Overlaps(const CSeq_feat& cds) const;
+    void SetMatch(CCdsMatchInfo& match);
+    bool HasMatch(void) const;
+
+private:
+    CConstRef<CSeq_feat> m_Mrna;
+    CRef<CCdsMatchInfo> m_Match;
+
+    CScope* m_Scope;
+    bool m_HasMatch;
+};
+
+
+class CCdsMatchInfo : public CObject {
+public:
+    CCdsMatchInfo(const CSeq_feat& cds, CScope* scope);
+    const CSeq_feat& GetSeqfeat(void) const;
+    bool Overlaps(const CSeq_feat& mrna) const;
+    void AssignMatches(list<CRef<CMrnaMatchInfo>>& mrnas);
+    bool HasMatch(void) const;
+    const CMrnaMatchInfo& GetMatch(void) const;
+    bool IsPseudo(void) const;
+    void SetPseudo(void);
+
+    const list<CRef<CMrnaMatchInfo>>& GetOverlappingmRNAs(void) const;
+    const list<CRef<CMrnaMatchInfo>>& GetXrefmRNAs(void) const;
+
+    enum EMatchType {
+        eMatch_OverlappingXref,
+        eMatch_Overlap,
+        eMatch_XrefOnly,
+        eMatch_None
+    };
+    EMatchType GetMatchType(void) const;
+
+
+private:
+    void x_AssignXrefs(list<CRef<CMrnaMatchInfo>>& mrnas,
+                     list<CRef<CMrnaMatchInfo>>& unmatched);
+
+    void x_AssignOverlappingMrnas(list<CRef<CMrnaMatchInfo>>& mrnas);
+    void x_SelectBestMatch(void);
+
+    CConstRef<CSeq_feat> m_Cds;
+    list<CRef<CMrnaMatchInfo>> m_Xrefs;
+    list<CRef<CMrnaMatchInfo>> m_OtherOverlappingmRNAs;
+    CRef<CMrnaMatchInfo> m_BestMatch;
+
+    sequence::EOverlapType m_OverlapType;
+    CScope* m_Scope;
+    EMatchType m_MatchType;
+    bool m_IsPseudo;
+};
+
+
 class CmRNAAndCDSIndex 
 {
 public:
@@ -1460,6 +1521,8 @@ private:
     void x_ValidateAbuttingRNA(const CBioseq_Handle& seq);
     void x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq);
     void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna);
+    void x_CheckForMultiplemRNAs(const CCdsMatchInfo& cds_match);
+    void x_CheckMrnaProteinLink(const CCdsMatchInfo& cds_match);
     unsigned int x_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     bool x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
