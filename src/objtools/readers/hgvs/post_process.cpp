@@ -254,18 +254,14 @@ void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst
 }
 
 
-
-
 void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS)
 {
-
     if (!feat.IsSetData() ||
         !feat.GetData().IsVariation() ||
         !feat.GetData().GetVariation().IsSetData()) {
-         // Need to throw an exception.
-         // This cannot be a valid variation.
-         // For now, just return
-         return;
+        NCBI_THROW(CVariationValidateException,
+                eIncompleteObject,
+                "Variation feature data not specified" );
     }
 
     if (!feat.GetData().GetVariation().GetData().IsSet()) {
@@ -283,37 +279,53 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
 
     // reference to list<CRef<CVariation_ref>> 
     auto&& variation_list = data_set.GetVariations();
-
     if (variation_list.size() != 2) {
-        // Need to return an error in the future. 
-        // We expect this to contain the asserted
-        // variation + the reference
+        // Should Throw an exception here
         return;
-    }
+     }
 
     auto&& assertion = variation_list.front();
     auto&& reference = variation_list.back();
 
     if (!assertion->IsSetData() ||
-        !assertion->GetData().IsInstance() ||
-        !reference->IsSetData() ||
-        !reference->GetData().IsInstance()) {
-        // Need to return an error here. 
-        // Expect a reference and assertion instances
+        !reference->IsSetData()) {
+        NCBI_THROW(CVariationValidateException,
+                   eIncompleteObject,
+                   "Variation-ref data field not set");
+    }
+    // Check the reference Variation-ref
+    if (!reference->GetData().IsInstance()) {
+         NCBI_THROW(CVariationValidateException,
+                    eInvalidType, 
+                    "Variation-ref does not reference Variation-inst object");
+    }
+    const auto& reference_inst = reference->GetData().GetInstance();
+    if (!reference_inst.IsSetType()) {
+        NCBI_THROW(CVariationValidateException,
+                   eIncompleteObject,
+                   "Variation-inst type not specified");
+    }
+
+
+    // Check the asserted Variation-ref
+    if (assertion->GetData().IsUnknown()) {
         return;
+    }
+    if (!assertion->GetData().IsInstance()) {
+         NCBI_THROW(CVariationValidateException,
+                    eInvalidType, 
+                    "Variation-ref does not reference Variation-inst object");
     }
 
     const auto& assertion_inst = assertion->GetData().GetInstance();
-    const auto& reference_inst = reference->GetData().GetInstance();
-
 
     if (!assertion_inst.IsSetType()) {
-        // Need to return an error here
-        return;
+        NCBI_THROW(CVariationValidateException,
+                   eIncompleteObject,
+                   "Variation-inst type not specified");
     }
 
     const auto type = assertion_inst.GetType();
-
     // Checking for duplications, deletions, inversions, and Indels
     // Note that duplications have eType_ins
     if (type != CVariation_inst::eType_ins && 
@@ -321,7 +333,7 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
         type != CVariation_inst::eType_delins &&
         type != CVariation_inst::eType_inv) {
         return; 
-    } 
+    }
 
     CValidateVariant validator(*scope);
     validator.ValidateIdentityInst(reference_inst, feat.GetLocation(), IsCDS);
