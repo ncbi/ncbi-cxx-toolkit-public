@@ -302,3 +302,7 @@ Added analysis and reporting of cyclic library dependencies.
 March 09, 2016
 version 4.1.3, CXX-7917
 Added support for VS2015
+
+May 11, 2016
+version 4.1.4, CXX-8128
+Implemented library order analysis and generation.
