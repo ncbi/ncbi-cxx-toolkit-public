@@ -353,40 +353,57 @@ void CSeq_align_Mapper_Base::x_Init(const CDense_seg& denseg)
         CopyContainer<CDense_seg::TScores, TScores>(
             denseg.GetScores(), m_SegsScores);
     }
+    // Check sequence types.
+    bool have_nuc = false;
+    bool have_prot = false;
+    set<CSeq_id_Handle> unknown;
+    for (size_t row = 0; row < m_Dim; ++row) {
+        const CSeq_id& seq_id = *denseg.GetIds()[row];
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(seq_id);
+        CSeq_loc_Mapper_Base::ESeqType seq_type =
+            m_LocMapper.GetSeqTypeById(idh);
+        switch ( seq_type ) {
+        case CSeq_loc_Mapper_Base::eSeq_nuc:
+            have_nuc = true;
+            break;
+        case CSeq_loc_Mapper_Base::eSeq_prot:
+            have_prot = true;
+            break;
+        default:
+            // Collect sequences with unknown types.
+            unknown.insert(idh);
+            break;
+        }
+    }
+    if (have_prot  &&  have_nuc) {
+        NCBI_THROW(CAnnotMapperException, eBadAlignment,
+            "Dense-segs with mixed sequence types are not supported");
+    }
+    if ((have_nuc  ||  have_prot)  &&  !unknown.empty()) {
+        CSeq_loc_Mapper_Base::ESeqType seq_type = have_nuc ?
+            CSeq_loc_Mapper_Base::eSeq_nuc : CSeq_loc_Mapper_Base::eSeq_prot;
+        // If there are sequences of unknown types, assume they are the same as
+        // the known ones - dense-seg can not contain mixed types.
+        ITERATE(set<CSeq_id_Handle>, it, unknown) {
+            m_LocMapper.SetSeqTypeById(*it, seq_type);
+        }
+    }
+
+    int width = have_prot ? 3 : 1;
     ENa_strand strand = eNa_strand_unknown;
     for (size_t seg = 0;  seg < numseg;  seg++) {
         // Create new segment.
         SAlignment_Segment& alnseg = x_PushSeg(denseg.GetLens()[seg], m_Dim);
-        bool have_prot = false;
-        bool have_nuc = false;
-        for (unsigned int row = 0;  row < m_Dim;  row++) {
+        for (size_t row = 0; row < m_Dim; ++row) {
             if ( m_HaveStrands ) {
                 strand = denseg.GetStrands()[seg*m_Dim + row];
             }
             const CSeq_id& seq_id = *denseg.GetIds()[row];
-
-            int width = 1;
-            CSeq_loc_Mapper_Base::ESeqType seq_type =
-                m_LocMapper.GetSeqTypeById(seq_id);
-            if (seq_type == CSeq_loc_Mapper_Base::eSeq_prot) {
-                have_prot = true;
-                width = 3;
-            }
-            else /*if (seq_type == CSeq_loc_Mapper_Base::eSeq_nuc)*/ {
-                // Treat unknown type as nuc.
-                have_nuc = true;
-            }
             int start = denseg.GetStarts()[seg*m_Dim + row]*width;
             alnseg.AddRow(row, seq_id, start, m_HaveStrands, strand);
         }
-        if (have_prot  &&  have_nuc) {
-            NCBI_THROW(CAnnotMapperException, eBadAlignment,
-                "Dense-segs with mixed sequence types are not supported");
-        }
         // For proteins segment length needs to be adjusted.
-        if ( have_prot ) {
-            alnseg.m_Len *= 3;
-        }
+        alnseg.m_Len *= width;
     }
 }
 

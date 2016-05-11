@@ -131,11 +131,7 @@ TSeqPos CScope_Mapper_Sequence_Info::GetSequenceLength(const CSeq_id_Handle& idh
         return kInvalidSeqPos;
     }
     h = m_Scope.GetScope().GetBioseqHandle(idh);
-    if ( !h ) {
-        NCBI_THROW(CAnnotMapperException, eUnknownLength,
-                    "Can not get sequence length -- unknown seq-id");
-    }
-    return h.GetBioseqLength();
+    return h ? h.GetBioseqLength() : kInvalidSeqPos;
 }
 
 

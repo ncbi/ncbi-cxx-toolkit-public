@@ -2162,7 +2162,7 @@ bool CSeq_loc_Mapper_Base::x_CheckSeqTypes(const CSeq_loc& loc,
         ESeqType it_type = GetSeqTypeById(idh);
         // Reset ret to false if there are unknown types.
         ret = ret && it_type != eSeq_unknown;
-        if ( !found_type ) {
+        if (!found_type  &&  it_type != eSeq_unknown) {
             seqtype = it_type;
             found_type = true;
         }
