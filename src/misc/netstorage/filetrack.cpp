@@ -85,7 +85,7 @@ ERW_Result CNullWriter::Flush()
 static EHTTP_HeaderParse s_HTTPParseHeader_SaveStatus(
         const char* /*http_header*/, void* user_data, int server_error)
 {
-    reinterpret_cast<SFileTrackRequest*>(
+    static_cast<SFileTrackRequest*>(
             user_data)->m_HTTPStatus = server_error;
 
     return eHTTP_HeaderComplete;
@@ -348,7 +348,7 @@ CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
 void SFileTrackPostRequest::Write(const void* buf,
         size_t count, size_t* bytes_written)
 {
-    if (m_HTTPStream.write(reinterpret_cast<const char*>(buf), count).bad()) {
+    if (!m_HTTPStream.write(static_cast<const char*>(buf), count)) {
         THROW_IO_EXCEPTION(eWrite, "Error while sending data to " << m_URL,
                 m_HTTPStream.Status());
     }
@@ -533,7 +533,7 @@ void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
 
 ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
 {
-    if (m_HTTPStream.read(reinterpret_cast<char*>(buf), count).bad()) {
+    if (!m_HTTPStream.read(static_cast<char*>(buf), count)) {
         THROW_IO_EXCEPTION(eWrite, "Error while reading data from " << m_URL,
                 m_HTTPStream.Status());
     }
@@ -600,7 +600,7 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetSID(const char* http_header,
                 *sid_end != '\r' && *sid_end != '\n' &&
                 *sid_end != ' ' && *sid_end != '\t')
             ++sid_end;
-        reinterpret_cast<string*>(user_data)->assign(sid_begin, sid_end);
+        static_cast<string*>(user_data)->assign(sid_begin, sid_end);
     }
 
     return eHTTP_HeaderComplete;
