@@ -142,6 +142,8 @@ public:
     void RemoveFeaturesByType(unsigned int feature_type, bool except_promoter = false);
     bool IsFeatureTypeLonely(unsigned int feature_type);
     void RemoveFeaturesInmRNAsByType(unsigned int feature_type, bool except_promoter = false);
+    void RemoveFeaturesUnderType(unsigned int feature_type);
+    void RemoveFeaturesInLocation(const CSeq_loc& loc);
     
     virtual bool ShouldRemoveExons();
     

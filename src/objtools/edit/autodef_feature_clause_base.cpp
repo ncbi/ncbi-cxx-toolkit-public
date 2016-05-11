@@ -1226,7 +1226,7 @@ void CAutoDefFeatureClause_Base::GroupAltSplicedExons(CBioseq_Handle bh)
 
 void CAutoDefFeatureClause_Base::ExpandExonLists()
 {
-    unsigned int k = 0;
+    size_t k = 0;
     
     while (k < m_ClauseList.size()) {
         if (m_ClauseList[k]->IsExonList()) {
@@ -1429,6 +1429,28 @@ void CAutoDefFeatureClause_Base::RemoveFeaturesByType(unsigned int feature_type,
             m_ClauseList[k]->MarkForDeletion();
         } else if (!m_ClauseList[k]->IsMarkedForDeletion()) {
             m_ClauseList[k]->RemoveFeaturesByType(feature_type, except_promoters);
+        }        
+    }
+}
+
+
+void CAutoDefFeatureClause_Base::RemoveFeaturesUnderType(unsigned int feature_type)
+{
+    for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
+        if ((unsigned int)m_ClauseList[k]->GetMainFeatureSubtype() == feature_type) {
+            RemoveFeaturesInLocation(*(m_ClauseList[k]->GetLocation()));
+        }
+    }
+}
+
+
+void CAutoDefFeatureClause_Base::RemoveFeaturesInLocation(const CSeq_loc& loc)
+{
+    for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
+        if (m_ClauseList[k]->CompareLocation(loc) == sequence::eContained) {
+            m_ClauseList[k]->MarkForDeletion();
+        } else {
+            m_ClauseList[k]->RemoveFeaturesInLocation(loc);
         }        
     }
 }

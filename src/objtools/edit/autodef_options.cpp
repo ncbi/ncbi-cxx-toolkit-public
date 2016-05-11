@@ -191,6 +191,7 @@ const TNameValPair sc_FieldTypes[] = {
         { "SuppressedFeatures", CAutoDefOptions::eOptionFieldType_SuppressedFeatures },
         { "SuppressFeatureAltSplice", CAutoDefOptions::eOptionFieldType_SuppressFeatureAltSplice },
         { "SuppressLocusTags", CAutoDefOptions::eOptionFieldType_SuppressLocusTags },
+        { "SuppressMiscFeatureSubfeatures", CAutoDefOptions::eOptionFieldType_SuppressMiscFeatureSubfeatures },
         { "SuppressMobileElementSubfeatures", CAutoDefOptions::eOptionFieldType_SuppressMobileElementSubfeatures },
         { "Targeted Locus Name", CAutoDefOptions::eOptionFieldType_TargetedLocusName },
         { "UseFakePromoters", CAutoDefOptions::eOptionFieldType_UseFakePromoters },

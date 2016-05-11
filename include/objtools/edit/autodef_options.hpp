@@ -92,6 +92,7 @@ public:
         eOptionFieldType_SuppressedFeatures,
         eOptionFieldType_ModifierList,
         eOptionFieldType_TargetedLocusName,
+        eOptionFieldType_SuppressMiscFeatureSubfeatures,
         eOptionFieldMax
     };
 
@@ -188,6 +189,7 @@ public:
     AUTODEFBOOLFIELD(KeepPrecursorRNA)
     AUTODEFBOOLFIELD(KeepRepeatRegion)
     AUTODEFBOOLFIELD(UseNcRNAComment)
+    AUTODEFBOOLFIELD(SuppressMiscFeatureSubfeatures)
 
     bool IsFeatureSuppressed(CSeqFeatData::ESubtype subtype) const;
     bool AreAnyFeaturesSuppressed() const { return !m_SuppressedFeatureSubtypes.empty(); }

@@ -726,6 +726,11 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
         }
         ++feat_ci;
     }
+
+    // optionally remove misc_feature subfeatures
+    if (m_Options.GetSuppressMiscFeatureSubfeatures()) {
+        main_clause.RemoveFeaturesUnderType(CSeqFeatData::eSubtype_misc_feature);
+    }
     
     // Group alt-spliced exons first, so that they will be associated with the correct genes and mRNAs
     main_clause.GroupAltSplicedExons(bh);
