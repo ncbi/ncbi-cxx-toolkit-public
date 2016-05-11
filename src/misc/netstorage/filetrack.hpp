@@ -88,7 +88,7 @@ private:
     THTTP_Flags GetUploadFlags() const;
     void SetTimeout();
 
-    AutoPtr<SConnNetInfo> m_NetInfo;
+    AutoPtr<SConnNetInfo, CDeleter<SConnNetInfo> > m_NetInfo;
 
 public:
     const CNetStorageObjectLoc& m_ObjectLoc;
