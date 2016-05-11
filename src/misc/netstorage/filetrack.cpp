@@ -533,7 +533,7 @@ void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
 
 ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
 {
-    if (!m_HTTPStream.read(static_cast<char*>(buf), count)) {
+    if (m_HTTPStream.read(static_cast<char*>(buf), count).bad()) {
         THROW_IO_EXCEPTION(eWrite, "Error while reading data from " << m_URL,
                 m_HTTPStream.Status());
     }
