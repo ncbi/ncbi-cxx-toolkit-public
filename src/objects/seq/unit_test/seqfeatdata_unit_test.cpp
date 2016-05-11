@@ -1353,7 +1353,7 @@ BOOST_AUTO_TEST_CASE(Test_FileTrack)
 {
     CRef<CUser_object> obj(new CUser_object());
 
-    obj->SetFileTrackUploadId("7azalbch", "brev2_motif_summary.csv");
+    obj->SetFileTrackUploadId("7azalbch/brev2_motif_summary.csv");
     BOOST_CHECK_EQUAL(obj->GetObjectType(), CUser_object::eObjectType_FileTrack);
     BOOST_CHECK_EQUAL(obj->GetData().front()->GetLabel().GetStr(), "BaseModification-FileTrackURL");
     BOOST_CHECK_EQUAL(obj->GetData().front()->GetData().GetStr(), "https://submit.ncbi.nlm.nih.gov/ft/byid/7azalbch/brev2_motif_summary.csv");

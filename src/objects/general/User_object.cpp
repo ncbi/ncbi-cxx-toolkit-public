@@ -811,9 +811,9 @@ void CUser_object::SetFileTrackURL(const string& url)
 }
 
 
-void CUser_object::SetFileTrackUploadId(const string& upload_id, const string& filename)
+void CUser_object::SetFileTrackUploadId(const string& upload_id)
 {
-    string url = "https://submit.ncbi.nlm.nih.gov/ft/byid/" + upload_id + "/" + filename;
+    string url = "https://submit.ncbi.nlm.nih.gov/ft/byid/" + upload_id;
     SetFileTrackURL(url);
 }
 

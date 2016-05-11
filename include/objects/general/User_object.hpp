@@ -188,7 +188,7 @@ public:
 
     // Set FileTrack URL
     void SetFileTrackURL(const string& url);
-    void SetFileTrackUploadId(const string& upload_id, const string& filename);
+    void SetFileTrackUploadId(const string& upload_id);
 
 private:
     /// Prohibit copy constructor and assignment operator
