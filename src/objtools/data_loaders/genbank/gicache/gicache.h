@@ -17,7 +17,8 @@ extern "C" {
  */
 int         GICache_PopulateAccessions(char *server, const char *cache_prefix,
                                        const char *sql_gi_cond,
-                                       const char *temptable);
+                                       const char *temptable,
+                                       int log_level);
 
 /* Initializes the cache. If cache_prefix argument is not provided, default name
  * is used. If local cache is not available, use default path and prefix.
