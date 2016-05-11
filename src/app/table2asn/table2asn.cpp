@@ -408,6 +408,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_HandleAsSet = true;
         m_context.m_feature_links = 'p';
         m_context.m_cleanup += "fU";
+        m_context.m_validate = "v";
     }
 
     m_reader.reset(new CMultiReader(m_context));
@@ -933,7 +934,14 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
 
     if (!IsDryRun())
-      validator.UpdateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"), m_context.m_ecn_numbers_ostream);
+    {
+        validator.UpdateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"), m_context.m_ecn_numbers_ostream);
+
+        if (!m_context.m_validate.empty())
+        {
+            validator.Validate(submit, entry, m_context.m_validate, GenerateOutputFilename(".val"));
+        }
+    }
 }
 
 string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
@@ -979,21 +987,6 @@ void CTbl2AsnApp::ProcessOneFile()
     {
         CRef<CSerialObject> obj;
         ProcessOneFile(obj);
-
-        if (!IsDryRun() &&
-            !(m_context.m_master_genome_flag.empty() && m_context.m_validate.empty()))
-        {
-            Uint4 validator_opts = 0;
-            //validator_opts |= validator::CValidator::eVal_indexer_version;
-
-            CTable2AsnValidator val;
-            CConstRef<CValidError> errors = val.Validate(*obj, validator_opts);
-            if (errors.NotEmpty())
-            {
-                CNcbiOfstream file(GenerateOutputFilename(".val").c_str());
-                val.ReportErrors(errors, file);
-            }
-        }
 
         if (!IsDryRun() && obj.NotEmpty())
         {

@@ -75,27 +75,32 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle h_entry, const string& flags
     }
 }
 
-CConstRef<CValidError> CTable2AsnValidator::Validate(const CSerialObject& object, Uint4 opts)
+void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> entry, const string& flags, const string& report_name)
 {
     CScope scope(*CObjectManager::GetInstance());
     validator::CValidator validator(scope.GetObjectManager());
 
-    if (CSeq_entry::GetTypeInfo() == object.GetThisTypeInfo())
+    Uint4 opts = 0;
+    CConstRef<CValidError> errors;
+
+    if (submit.Empty())
     {
-        const CSeq_entry& entry = (const CSeq_entry&)object;
-        CSeq_entry_Handle top_se = scope.AddTopLevelSeqEntry(entry);
-        return validator.Validate(top_se, opts);
+        CSeq_entry_Handle top_se = scope.AddTopLevelSeqEntry(*entry);
+        errors = validator.Validate(top_se, opts);
     }
-    if (CSeq_submit::GetTypeInfo() == object.GetThisTypeInfo())
+    else
     {
-        const CSeq_submit& submit = (const CSeq_submit&)object;
-        ITERATE(CSeq_submit::C_Data::TEntrys, it, submit.GetData().GetEntrys())
+        ITERATE(CSeq_submit::C_Data::TEntrys, it, submit->GetData().GetEntrys())
         {
             scope.AddTopLevelSeqEntry(**it);
         }
-        return validator.Validate(submit, &scope, opts);
+        errors = validator.Validate(*submit, &scope, opts);
     }
-    return CConstRef<CValidError>();
+    if (errors.NotEmpty())
+    {
+        CNcbiOfstream file(report_name.c_str());
+        ReportErrors(errors, file);
+    }
 }
 
 void CTable2AsnValidator::ReportErrors(CConstRef<CValidError> errors, CNcbiOstream& out)
