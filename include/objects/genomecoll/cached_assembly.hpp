@@ -41,10 +41,14 @@ public:
     CCachedAssembly(const vector<char>& blob);
 
     CRef<objects::CGC_Assembly> Assembly();
+    //@deprecated, Blob() will be used in the next release(SC18). This one will be removed in SC19.
     const string& Blob(CCompressStream::EMethod neededCompression);
+    //New assemblies are compressed with CCompressStream::eZip, existing returned as is.
+    const string& Blob();
 
 public:
     static bool ValidBlob(int blobSize);
+    static CCompressStream::EMethod Compression(const string& blob);
 
 private:
     CRef<objects::CGC_Assembly> m_assembly;

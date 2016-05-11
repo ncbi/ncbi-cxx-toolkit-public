@@ -80,8 +80,7 @@ CRef<CGC_Assembly> UncomressAndCreate(const string& blob, CCompressStream::EMeth
 //    LOG_POST(Info << "Assebmly uncomressed in (sec): " << g.Elapsed());
 //}
 
-static
-CCompressStream::EMethod Compression(const string& blob)
+CCompressStream::EMethod CCachedAssembly::Compression(const string& blob)
 {
     if (!CCachedAssembly::ValidBlob(blob.size()))
         NCBI_THROW(CCoreException, eCore, "Invalid blob size detected: " + blob.size());
@@ -167,8 +166,16 @@ const string& CCachedAssembly::Blob(CCompressStream::EMethod neededCompression)
         CompressAssembly(m_blob, m_assembly, neededCompression);
     }
     else if (neededCompression != Compression(m_blob)) {
-        //TODO: remove it once all be switched to new gc_access (conversion will be done inside CGencollCache)
         m_blob = ChangeCompression(m_blob, Compression(m_blob), neededCompression);
+    }
+    return m_blob;
+}
+
+const string& CCachedAssembly::Blob()
+{
+    LOG_POST(Info << "Requested blob");
+    if (m_blob.empty()) {
+        CompressAssembly(m_blob, m_assembly, CCompressStream::eZip);
     }
     return m_blob;
 }
