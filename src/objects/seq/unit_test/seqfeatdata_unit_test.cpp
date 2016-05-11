@@ -35,6 +35,9 @@
 
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
@@ -1343,4 +1346,15 @@ BOOST_AUTO_TEST_CASE(Test_IsECNumberSplit)
     BOOST_CHECK_EQUAL(CProt_ref::IsECNumberSplit("1.1.1.246"), true);
     BOOST_CHECK_EQUAL(CProt_ref::IsECNumberSplit("1.1.1.63"), false);
     BOOST_CHECK_EQUAL(CProt_ref::IsECNumberSplit("1.1.1.128"), false);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FileTrack)
+{
+    CRef<CUser_object> obj(new CUser_object());
+
+    obj->SetFileTrackUploadId("7azalbch", "brev2_motif_summary.csv");
+    BOOST_CHECK_EQUAL(obj->GetObjectType(), CUser_object::eObjectType_FileTrack);
+    BOOST_CHECK_EQUAL(obj->GetData().front()->GetLabel().GetStr(), "BaseModification-FileTrackURL");
+    BOOST_CHECK_EQUAL(obj->GetData().front()->GetData().GetStr(), "https://submit.ncbi.nlm.nih.gov/ft/byid/7azalbch/brev2_motif_summary.csv");
 }

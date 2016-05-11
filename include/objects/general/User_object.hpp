@@ -166,7 +166,8 @@ public:
         eObjectType_Unverified,
         eObjectType_ValidationSuppression,
         eObjectType_Cleanup,
-        eObjectType_AutodefOptions
+        eObjectType_AutodefOptions,
+        eObjectType_FileTrack
     };
 
     EObjectType GetObjectType() const;
@@ -184,6 +185,10 @@ public:
     void RemoveUnverifiedMisassembled();
 
     void UpdateNcbiCleanup(int version);
+
+    // Set FileTrack URL
+    void SetFileTrackURL(const string& url);
+    void SetFileTrackUploadId(const string& upload_id, const string& filename);
 
 private:
     /// Prohibit copy constructor and assignment operator

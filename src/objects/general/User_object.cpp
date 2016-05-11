@@ -597,6 +597,7 @@ static const char* kUnverified            = "Unverified";
 static const char* kValidationSuppression = "ValidationSuppression";
 static const char* kNcbiCleanup           = "NcbiCleanup";
 static const char* kAutoDefOptions        = "AutodefOptions";
+static const char* kFileTrack             = "FileTrack";
 
 CUser_object::EObjectType CUser_object::GetObjectType() const
 {
@@ -622,6 +623,8 @@ CUser_object::EObjectType CUser_object::GetObjectType() const
         rval = eObjectType_Cleanup;
     } else if (NStr::Equal(label, kAutoDefOptions)) {
         rval = eObjectType_AutodefOptions;
+    } else if (NStr::Equal(label, kFileTrack)) {
+        rval = eObjectType_FileTrack;
     }
     return rval;
 }
@@ -650,6 +653,9 @@ void CUser_object::SetObjectType(EObjectType obj_type)
             break;
         case eObjectType_AutodefOptions:
             SetType().SetStr(kAutoDefOptions);
+            break;
+        case eObjectType_FileTrack:
+            SetType().SetStr(kFileTrack);
             break;
         case eObjectType_Unknown:
             ResetType();
@@ -794,6 +800,21 @@ void CUser_object::UpdateNcbiCleanup(int version)
     day->SetData().SetInt(curr_time.Day());
     CRef<CUser_field> year = SetFieldRef("year");
     year->SetData().SetInt(curr_time.Year());
+}
+
+
+void CUser_object::SetFileTrackURL(const string& url)
+{
+    SetObjectType(eObjectType_FileTrack);
+    CRef<CUser_field> fturl = SetFieldRef("BaseModification-FileTrackURL");
+    fturl->SetData().SetStr(url);
+}
+
+
+void CUser_object::SetFileTrackUploadId(const string& upload_id, const string& filename)
+{
+    string url = "https://submit.ncbi.nlm.nih.gov/ft/byid/" + upload_id + "/" + filename;
+    SetFileTrackURL(url);
 }
 
 
