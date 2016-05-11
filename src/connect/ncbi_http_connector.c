@@ -2424,6 +2424,7 @@ static EIO_Status s_CreateHttpConnector
     uuu->http         = 0;
     uuu->r_buf        = 0;
     uuu->w_buf        = 0;
+    uuu->w_len        = 0;
 
     if (tunnel)
         s_OpenHttpConnector(uuu, xxx->timeout);
