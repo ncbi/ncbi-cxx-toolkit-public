@@ -700,9 +700,9 @@ const
         ts = m_ScoreMatrix.s[c1][c2] > 0? eTS_Match: eTS_Replace;
     }
     else {
-        ts = (toupper(c1) == toupper(c2))? eTS_Match: eTS_Replace;
-        // to do: N vs N should be mismatch for nucleotides, 
-        // and X vs X in protein
+        // N vs N should be mismatch for nucleotides, 
+        // and X vs X in protein. Check with matrix
+        ts = (toupper(c1) == toupper(c2) && m_ScoreMatrix.s[c1][c2] > 0)? eTS_Match: eTS_Replace;
     }
     return ts;
 }
