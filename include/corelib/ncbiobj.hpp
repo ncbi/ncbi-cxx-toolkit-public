@@ -662,6 +662,16 @@ public:
             }
         }
 
+    /// Copy constructor from an existing CRef object, 
+    CRef(TThisType&& ref)
+        : m_Data(ref.m_Data)
+        {
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().TransferLock(ptr, ref.m_Data.first());
+            }
+            ref.m_Data.second() = 0;
+        }
+
     /// Destructor.
     ~CRef(void)
         {
@@ -876,6 +886,13 @@ public:
     TThisType& operator=(const TThisType& ref)
         {
             Reset(ref.m_Data.second());
+            return *this;
+        }
+
+    /// Assignment operator for references.
+    TThisType& operator=(TThisType&& ref)
+        {
+            Swap(ref);
             return *this;
         }
 
@@ -1205,6 +1222,16 @@ public:
             }
         }
 
+    /// Constructor from an existing CConstRef object, 
+    CConstRef(TThisType&& ref)
+        : m_Data(ref.m_Data)
+        {
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().TransferLock(ptr, ref.m_Data.first());
+            }
+            ref.m_Data.second() = 0;
+        }
+
     /// Constructor from an existing CRef object, 
     CConstRef(const CRef<C, Locker>& ref)
         : m_Data(ref.GetLocker(), 0)
@@ -1430,6 +1457,13 @@ public:
     TThisType& operator=(const TThisType& ref)
         {
             Reset(ref.m_Data.second());
+            return *this;
+        }
+
+    /// Assignment operator for const references.
+    TThisType& operator=(TThisType&& ref)
+        {
+            Swap(ref);
             return *this;
         }
 
