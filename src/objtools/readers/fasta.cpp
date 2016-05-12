@@ -1608,7 +1608,7 @@ CFastaReader::CreateWarningsForSeqDataInTitle(
     const static size_t kWarnNumNucCharsAtEnd = 20;
     const static size_t kWarnAminoAcidCharsAtEnd = 50;
 
-    if ((GetFlags() && fAssumeProt))
+    if (TestFlag(fAssumeProt))
     {
     }
     else
