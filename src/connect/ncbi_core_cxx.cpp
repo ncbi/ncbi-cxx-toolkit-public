@@ -36,6 +36,7 @@
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
+#include <connect/ncbi_monkey.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/error_codes.hpp>
@@ -309,6 +310,54 @@ static const char* s_GetRequestDTab(void)
 }
 }
 
+/***********************************************************************
+ *                         CRAZY MONKEY CALLS                          *
+ ***********************************************************************/
+#ifdef NCBI_MONKEY
+#   ifndef NCBI_OS_MSWIN
+#       define __stdcall /*empty*/
+#   endif /* NCBI_OS_MSWIN */
+extern "C" {
+    static int __stdcall s_MonkeySend(SOCKET sock, 
+                            const char*  data, 
+                            int    size, 
+                            int    flags)
+    {
+        return CMonkey::Instance()->Send(sock, data, size, flags);
+    }
+    
+    static int __stdcall s_MonkeyRecv(SOCKET sock,
+                            char*  buf,
+                            int    size,
+                            int    flags)
+    {
+        return CMonkey::Instance()->Recv(sock, buf, size, flags);
+    }
+
+    
+    static int __stdcall s_MonkeyConnect(SOCKET                 sock,
+                               const struct sockaddr* name,
+                               int                    namelen)
+    {
+        return CMonkey::Instance()->Connect(sock, name, namelen);
+    }
+
+    
+    static int /*bool*/ s_MonkeyPoll(size_t*                  n,
+                                     void* /* SSOCK_Poll** */ polls,
+                                     EIO_Status*              return_status)
+    {
+        return CMonkey::Instance()->
+            Poll(n, (SSOCK_Poll**)polls, return_status) ? 1 : 0;
+    }
+
+
+    static void s_MonkeyClose(SOCKET  sock)
+    {
+        CMonkey::Instance()->Close(sock);
+    }
+}
+#endif /* NCBI_MONKEY */
 
 /***********************************************************************
  *                                 Init                                *
@@ -350,7 +399,13 @@ static void s_Init(IRWRegistry*      reg  = 0,
 
     /* setup DTab-Local retrieval */
     g_CORE_GetRequestDtab = s_GetRequestDTab;
-    
+
+#ifdef NCBI_MONKEY
+    g_MONKEY_Write   = s_MonkeySend;
+    g_MONKEY_Read    = s_MonkeyRecv;
+    g_MONKEY_Connect = s_MonkeyConnect;
+    g_MONKEY_Poll    = s_MonkeyPoll;
+#endif /* NCBI_MONKEY */
     /* done! */
     s_ConnectInit = how;
 }

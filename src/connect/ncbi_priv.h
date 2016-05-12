@@ -52,13 +52,21 @@
  *
  */
 
+//#define NCBI_MONKEY
+
 #include "ncbi_assert.h"
 #include <connect/ncbi_util.h>
-
-
+#ifdef NCBI_MONKEY
+#   if defined(NCBI_OS_MSWIN)
+#       include <WinSock2.h>
+#   else
+#       define SOCKET int
+#   endif /*NCBI_OS_...*/
+#endif /* NCBI_MONKEY */
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 
 /******************************************************************************
@@ -337,6 +345,47 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetRequestID g_CORE_GetRequestID;
 typedef const char* (*FNcbiGetRequestDtab)(void);
 extern NCBI_XCONNECT_EXPORT FNcbiGetRequestDtab g_CORE_GetRequestDtab;
 
+
+#ifdef NCBI_MONKEY
+/******************************************************************************
+ *  Socket functions via Crazy Monkey
+ */
+#ifdef NCBI_OS_MSWIN
+typedef int(__stdcall *FMonkeyRead)   (SOCKET                 sock,
+                                       char*                  buf,
+                                       int                    size,
+                                       int                    flags);
+typedef int (__stdcall *FMonkeyWrite) (SOCKET                 s, 
+                                       const char*            data, 
+                                       int                    size, 
+                                       int                    flags);
+typedef int(__stdcall *FMonkeyConnect)(SOCKET                 sock,
+                                       const struct sockaddr* name,
+                                       int                    namelen);
+#else
+typedef int(*FMonkeyRead)   (SOCKET                 sock,
+                             char*                  buf,
+                             int                    size,
+                             int                    flags);
+typedef int (*FMonkeyWrite) (SOCKET                 s, 
+                             const char*            data, 
+                             int                    size, 
+                             int                    flags);
+typedef int(*FMonkeyConnect)(SOCKET                 sock,
+                             const struct sockaddr* name,
+                             int                    namelen);
+#endif /* NCBI_OS_MSWIN */ 
+typedef int /* bool */ (*FMonkeyPoll)   (size_t*          n,
+                                         void* /*SSOCK_Poll[]* */polls,
+                                         EIO_Status*      return_status);
+typedef void (*FMonkeyClose) (SOCKET sock);
+
+extern NCBI_XCONNECT_EXPORT FMonkeyWrite    g_MONKEY_Write;
+extern NCBI_XCONNECT_EXPORT FMonkeyRead     g_MONKEY_Read;
+extern NCBI_XCONNECT_EXPORT FMonkeyPoll     g_MONKEY_Poll;
+extern NCBI_XCONNECT_EXPORT FMonkeyConnect  g_MONKEY_Connect;
+extern NCBI_XCONNECT_EXPORT FMonkeyClose    g_MONKEY_Close;
+#endif /* NCBI_MONKEY */
 
 #ifdef __GNUC__
 #  define likely(x)    __builtin_expect(!!(x),1)

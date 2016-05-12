@@ -131,7 +131,11 @@
 #endif /* MAXHOSTNAMELEN */
 
 
-
+#ifdef NCBI_MONKEY
+#define send    g_MONKEY_Write
+#define recv    g_MONKEY_Read
+#define connect g_MONKEY_Connect
+#endif
 /******************************************************************************
  *  TYPEDEFS & MACROS
  */
@@ -2157,7 +2161,7 @@ static EIO_Status s_Select(size_t                n,
                            SSOCK_Poll            polls[],
                            const struct timeval* tv,
                            int/*bool*/           asis)
-{
+{ 
 #if defined(NCBI_OS_MSWIN)  &&  defined(NCBI_CXX_TOOLKIT)
     DWORD  wait = tv ? tv->tv_sec * 1000 + (tv->tv_usec + 500)/1000 : INFINITE;
     HANDLE what[MAXIMUM_WAIT_OBJECTS];
@@ -3961,6 +3965,12 @@ static EIO_Status s_Close_(SOCK sock, int abort)
 
 static EIO_Status s_Close(SOCK sock)
 {
+#if defined NCBI_MONKEY && defined NCBI_CXX_TOOLKIT
+    /* Not interception of close(). 
+       We only tell Monkey to "forget" this socket */
+    if (g_MONKEY_Close != 0)
+        g_MONKEY_Close(sock->sock);
+#endif /* NCBI_MONKEY */
     EIO_Status status = s_Close_(sock, 0/*orderly*/);
     if (s_ErrHook  &&  status != eIO_Success) {
         SSOCK_ErrInfo info;
@@ -6498,42 +6508,70 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
 
 
 extern EIO_Status SOCK_Poll(size_t          n,
-                            SSOCK_Poll      polls[],
-                            const STimeout* timeout,
-                            size_t*         n_ready)
+    SSOCK_Poll      polls[],
+    const STimeout* timeout,
+    size_t*         n_ready)
 {
+    EIO_Status status;
+#if defined NCBI_MONKEY && defined NCBI_CXX_TOOLKIT
+    int/*bool*/ call_intercepted = 0;
+    EIO_Status  mnk_status = 0;
+    size_t      orig_n = n;
+    SSOCK_Poll* orig_polls = polls; /* to know if 'polls' was replaced */
+    call_intercepted = g_MONKEY_Poll(&n, &polls, &mnk_status);
+    /* Even if call was intercepted, s_Select continues as if nothing
+    happened, because what we did is just removed some SSOCK_Poll pointers.
+    The changes made in s_Select will appear in the original array, but only
+    for those SSOCK_Poll's that were left by Monkey */
+#endif /* defined NCBI_MONKEY && defined NCBI_CXX_TOOLKIT */
     struct timeval tv;
     size_t         i;
 
     if (n  &&  !polls) {
-        if ( n_ready )
+        if (n_ready)
             *n_ready = 0;
         return eIO_InvalidArg;
     }
 
-    for (i = 0;  i < n;  i++) {
+    for (i = 0; i < n; i++) {
         SOCK sock = polls[i].sock;
         polls[i].revent =
-            sock  &&  sock->type == eTrigger  &&  ((TRIGGER) sock)->isset.ptr
+            sock  &&  sock->type == eTrigger && ((TRIGGER)sock)->isset.ptr
             ? polls[i].event
             : eIO_Open;
-        if (!sock  ||  !(sock->type & eSocket)  ||  sock->sock == SOCK_INVALID)
+        if (!sock || !(sock->type & eSocket) || sock->sock == SOCK_INVALID)
             continue;
-        if ((polls[i].event & eIO_Read)  &&  BUF_Size(sock->r_buf) != 0) {
+        if ((polls[i].event & eIO_Read) && BUF_Size(sock->r_buf) != 0) {
             polls[i].revent = eIO_Read;
             continue;
         }
         if (sock->type != eSocket)
             continue;
         if ((polls[i].event == eIO_Read
-             &&  (sock->r_status == eIO_Closed  ||  sock->eof))  ||
+            && (sock->r_status == eIO_Closed || sock->eof)) ||
             (polls[i].event == eIO_Write
-             &&   sock->w_status == eIO_Closed)) {
+            &&   sock->w_status == eIO_Closed)) {
             polls[i].revent = eIO_Close;
         }
     }
 
-    return s_SelectStallsafe(n, polls, s_to2tv(timeout, &tv), n_ready);
+    status = s_SelectStallsafe(n, polls, s_to2tv(timeout, &tv), n_ready);
+#if defined NCBI_MONKEY && defined NCBI_CXX_TOOLKIT
+    /* Copy poll results to the original array. Probably Monkey excluded 
+     * some sockets from array, so we need two iterators */
+    size_t orig_iter = 0, new_iter = 0;
+    for (;  new_iter < n;  new_iter++) {
+        while (orig_polls[orig_iter].sock != polls[new_iter].sock && 
+            orig_iter < orig_n) {
+            orig_iter++;
+        }
+        orig_polls[orig_iter].event = polls[new_iter].event;
+        orig_polls[orig_iter].revent = polls[new_iter].revent;
+    }
+    free(polls);
+    polls = orig_polls;
+#endif /* defined NCBI_MONKEY && defined NCBI_CXX_TOOLKIT */
+    return status;
 }
 
 
