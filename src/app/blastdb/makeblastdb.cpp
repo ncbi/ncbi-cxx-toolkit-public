@@ -811,7 +811,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     vector<string> gi_mask_names;
 
     if (! files.HasValue()) return;
-    NStr::Tokenize(NStr::TruncateSpaces(files.AsString()), ",", file_list,
+    NStr::Split(NStr::TruncateSpaces(files.AsString()), ",", file_list,
                    NStr::eNoMergeDelims);
     if (! file_list.size()) {
         NCBI_THROW(CInvalidDataException, eInvalidInput,
@@ -836,7 +836,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     }
 
     if (descs.HasValue()) {
-        NStr::Tokenize(NStr::TruncateSpaces(descs.AsString()), ",", desc_list,
+        NStr::Split(NStr::TruncateSpaces(descs.AsString()), ",", desc_list,
                    NStr::eNoMergeDelims);
         if (file_list.size() != desc_list.size()) {
             NCBI_THROW(CInvalidDataException, eInvalidInput,
@@ -849,7 +849,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     }
 
     if (gi_names.HasValue()) {
-        NStr::Tokenize(NStr::TruncateSpaces(gi_names.AsString()), ",", gi_mask_names,
+        NStr::Split(NStr::TruncateSpaces(gi_names.AsString()), ",", gi_mask_names,
                    NStr::eNoMergeDelims);
         if (file_list.size() != gi_mask_names.size()) {
             NCBI_THROW(CInvalidDataException, eInvalidInput,
