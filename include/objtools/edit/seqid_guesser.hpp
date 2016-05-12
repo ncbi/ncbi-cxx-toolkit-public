@@ -29,7 +29,7 @@
 #define _SEQID_GUESSER_H_
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/hash_map.hpp>
+#include <unordered_map>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objtools/edit/string_constraint.hpp>
@@ -50,7 +50,7 @@ public:
     static bool DoesSeqMatchConstraint(CBioseq_Handle bsh, CRef<CStringConstraint> string_constraint);
     static vector<string> GetIdStrings(CBioseq_Handle bsh);
 
-    typedef hash_map<string, CRef<CSeq_id> > TStringIdHash;
+    typedef unordered_map<string, CRef<CSeq_id> > TStringIdHash;
 
 private:
     CSeq_entry_Handle m_SeqEntry;
