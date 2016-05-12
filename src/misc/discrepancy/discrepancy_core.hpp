@@ -282,6 +282,11 @@ struct CSeqSummary
 
 /// CDiscrepancyContext - manage and run the list of tests
 
+enum EKeepRef {
+    eNoRef = 0,
+    eKeepRef = 1
+};
+
 class CDiscrepancyContext : public CDiscrepancySet
 {
 public:
@@ -338,12 +343,19 @@ public:
     const CSeq_id * GetProteinId(void);
     bool IsRefseq(void);
     bool IsBGPipe(void);
+    const CSeq_feat* GetCurrentGene(void);
+
+    CDiscrepancyObject* NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
+    CDiscrepancyObject* NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
+    CDiscrepancyObject* NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
+    CDiscrepancyObject* NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
 
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);
     CRef<objects::CScope> m_Scope;
     TDiscrepancyCaseMap m_Tests;
     vector<CConstRef<CBioseq_set> > m_Bioseq_set_Stack;
+    CBioseq_Handle m_Current_Bioseq_Handle;
     CConstRef<CBioseq> m_Current_Bioseq;
     CConstRef<CSeqdesc> m_Current_Seqdesc;
     CConstRef<CSeq_feat> m_Current_Seq_feat;

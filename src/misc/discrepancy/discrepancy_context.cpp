@@ -312,7 +312,7 @@ bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag)
     static CRegexp regexp("^[[:alpha:]][[:alnum:]]{2,}_[[:alnum:]]+$");
 
     // Locus tag format documentation:  
-    // http://www.ncbi.nlm.nih.gov/genomes/locustag/Proposal.pdf
+    // https://www.ncbi.nlm.nih.gov/genomes/locustag/Proposal.pdf
 
     return !regexp.IsMatch(locus_tag); 
 }
@@ -421,6 +421,41 @@ bool CDiscrepancyContext::IsBGPipe(void)
 
     return is_bgpipe;
 }
+
+
+const CSeq_feat* CDiscrepancyContext::GetCurrentGene() // todo: optimize
+{
+    const CGene_ref* gene = m_Current_Seq_feat->GetGeneXref();
+    if (gene && gene->IsSuppressed()) {
+        return CConstRef <CSeq_feat>();
+    }
+
+    if (gene) {
+        //CBioseq_Handle bioseq_hl = sequence::GetBioseqFromSeqLoc(feat.GetLocation(), scope);
+        //if (!bioseq_hl) {
+        //    return (CConstRef <CSeq_feat>());
+        //}
+
+        CTSE_Handle tse_hl = m_Current_Bioseq_Handle.GetTSE_Handle();
+        if (gene->CanGetLocus_tag() && !(gene->GetLocus_tag().empty())) {
+            CSeq_feat_Handle seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus_tag(), true);
+            if (seq_feat_hl) {
+                return seq_feat_hl.GetOriginalSeq_feat();
+            }
+        }
+        else if (gene->CanGetLocus() && !(gene->GetLocus().empty())) {
+            CSeq_feat_Handle seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus(), false);
+            if (seq_feat_hl) {
+                return seq_feat_hl.GetOriginalSeq_feat();
+            }
+        }
+        else return CConstRef <CSeq_feat>();
+    }
+    else {
+        return CConstRef <CSeq_feat>(sequence::GetBestOverlappingFeat(m_Current_Seq_feat->GetLocation(), CSeqFeatData::e_Gene, sequence::eOverlap_Contained, *m_Scope));
+    }
+}
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

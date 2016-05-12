@@ -64,7 +64,7 @@ DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eOncaller, "Count nucleotide sequ
     if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) {
         return;
     }
-    m_Objs["[n] nucleotide Bioseq[s] [is] present"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    m_Objs["[n] nucleotide Bioseq[s] [is] present"].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
 }
 
 
@@ -82,7 +82,7 @@ DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst, eDisc, "Count Proteins")
     if (obj.GetMol() != CSeq_inst::eMol_aa) {
         return;
     }
-    m_Objs["[n] protein sequence[s] [is] present"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    m_Objs["[n] protein sequence[s] [is] present"].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
 }
 
 
@@ -103,10 +103,7 @@ DISCREPANCY_CASE(MISSING_PROTEIN_ID, CSeq_inst, eDisc, "Missing Protein ID")
 
     const CSeq_id * protein_id = context.GetProteinId();
     if( ! protein_id ) {
-        m_Objs["[n] protein[s] [has] invalid ID[s]."].Add(
-            *new CDiscrepancyObject(
-                context.GetCurrentBioseq(), context.GetScope(),
-                context.GetFile(), context.GetKeepRef()), false);
+        m_Objs["[n] protein[s] [has] invalid ID[s]."].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
     }
 }
 
@@ -156,10 +153,7 @@ DISCREPANCY_CASE(INCONSISTENT_PROTEIN_ID, CSeq_inst, eDisc,
     }
     _ASSERT(NStr::EqualNocase(protein_id_prefix, canonical_protein_id_prefix));
 
-    m_Objs[kEmptyStr]["[n] sequence[s] [has] protein ID prefix " + canonical_protein_id_prefix].Add(
-        *new CDiscrepancyObject(
-            context.GetCurrentBioseq(), context.GetScope(),
-            context.GetFile(), context.GetKeepRef()), false);
+    m_Objs[kEmptyStr]["[n] sequence[s] [has] protein ID prefix " + canonical_protein_id_prefix].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
 }
 
 DISCREPANCY_SUMMARIZE(INCONSISTENT_PROTEIN_ID)
@@ -182,7 +176,7 @@ DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc, "Find Short Sequences")
         return;
     }
     if (obj.IsSetLength() && obj.GetLength() < 50 && !context.IsCurrentRnaInGenProdSet()) {
-        m_Objs["[n] sequence[s] [is] shorter than 50 nt"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs["[n] sequence[s] [is] shorter than 50 nt"].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
     }
 }
 
@@ -268,7 +262,7 @@ DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc, "More than 10 Ns in a row")
     }
 
     if (found_any) {
-        m_Objs["[n] sequence[s] [has] runs of 10 or more Ns"][sub_key.str()].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef())).Fatal();
+        m_Objs["[n] sequence[s] [has] runs of 10 or more Ns"][sub_key.str()].Ext().Add(*context.NewDiscObj(context.GetCurrentBioseq())).Fatal();
     }
 }
 
@@ -288,7 +282,7 @@ DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eDisc, "More than 5 percent Ns")
     }
     const CSeqSummary& sum = context.GetNucleotideCount();
     if (sum.N * 100. / sum.Len > 5) {
-        m_Objs["[n] sequence[s] [has] more than 5% Ns"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs["[n] sequence[s] [has] more than 5% Ns"].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
     }
 }
 
@@ -314,8 +308,7 @@ DISCREPANCY_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA, CRNA_ref, eOncaller, "Look fo
     const string rna_name = obj.GetRnaProductName();
     for (size_t i = 0; kRRNASpacer[i][0] != '\0'; ++i) {
         if (NStr::FindNoCase(rna_name, kRRNASpacer[i]) != NPOS) {
-            m_Objs["[n] rRNA feature products contain 'internal', 'transcribed', or 'spacer'"].Add(
-                *new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+            m_Objs["[n] rRNA feature products contain 'internal', 'transcribed', or 'spacer'"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
         }
     }
 }
@@ -489,12 +482,12 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eDisc, "Overlapping CDs")
                 continue;
             }
             bool has_note = HasOverlapNote(*sf);
-            m_Objs[kEmptyStr][kOverlap0][has_note ? kOverlap1 : kOverlap2].Add(*new CDiscrepancyObject(sf, context.GetScope(), context.GetFile(), context.GetKeepRef(), !has_note));
+            m_Objs[kEmptyStr][kOverlap0][has_note ? kOverlap1 : kOverlap2].Add(*context.NewDiscObj(sf, eNoRef, !has_note));
             has_note = HasOverlapNote(*context.GetCurrentSeq_feat());
-            m_Objs[kEmptyStr][kOverlap0][has_note ? kOverlap1 : kOverlap2].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), !has_note));
+            m_Objs[kEmptyStr][kOverlap0][has_note ? kOverlap1 : kOverlap2].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, !has_note));
         }
     }
-    m_Objs[product].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true));
+    m_Objs[product].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eKeepRef));
 }
 
 
@@ -548,10 +541,7 @@ DISCREPANCY_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE, CSeq_feat, eDisc, "Partial CDSs 
     }
 
     // record the issue
-    m_Objs["[n] partial CDS[s] in complete sequence[s]"].Add(
-        *new CDiscrepancyObject(
-            context.GetCurrentSeq_feat(), context.GetScope(),
-            context.GetFile(), context.GetKeepRef()));
+    m_Objs["[n] partial CDS[s] in complete sequence[s]"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
 }
 
 
@@ -575,7 +565,7 @@ DISCREPANCY_CASE(OVERLAPPING_RRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Overlapping rRN
     }
 
     // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
-    CRef<CDiscrepancyObject> this_disc_obj(new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj), context.GetScope(), context.GetFile(), true));
+    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef));
     const CSeq_loc& this_location = obj.GetLocation();
 
     NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["rRNAs"].GetObjects())
@@ -680,12 +670,7 @@ DISCREPANCY_CASE(RNA_NO_PRODUCT, CSeq_feat, eOncaller, "Find RNAs without Produc
     }
 
     // could not find a product
-    m_Objs["[n] RNA feature[s] [has] no product and [is] not pseudo"].Add(
-        *new CDiscrepancyObject(
-            context.GetCurrentSeq_feat(),
-            context.GetScope(), context.GetFile(), context.GetKeepRef()),
-        false  // not unique
-        );
+    m_Objs["[n] RNA feature[s] [has] no product and [is] not pseudo"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);  // not unique
 }
 
 
@@ -782,11 +767,11 @@ DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eDisc, "Contained CDs")
         sequence::ECompare compare = sequence::Compare(loc, location, &context.GetScope(), sequence::fCompareOverlapping);
         if (compare == sequence::eContains || compare == sequence::eSame || compare == sequence::eContained) {
             const char* strand = StrandsMatch(loc, location) ? kContainedSame : kContainedOpps;
-            m_Objs[kEmptyStr][kContained][HasContainedNote(*sf) ? kContainedNote : strand].Add(*new CDiscrepancyObject(sf, context.GetScope(), context.GetFile(), context.GetKeepRef(), compare == sequence::eContains));
-            m_Objs[kEmptyStr][kContained][HasContainedNote(*context.GetCurrentSeq_feat()) ? kContainedNote : strand].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), compare == sequence::eContained));
+            m_Objs[kEmptyStr][kContained][HasContainedNote(*sf) ? kContainedNote : strand].Add(*context.NewDiscObj(sf, eNoRef, compare == sequence::eContains));
+            m_Objs[kEmptyStr][kContained][HasContainedNote(*context.GetCurrentSeq_feat()) ? kContainedNote : strand].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, compare == sequence::eContained));
         }
     }
-    m_Objs["tmp"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true));
+    m_Objs["tmp"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eKeepRef));
 }
 
 
@@ -823,16 +808,16 @@ DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eDisc | eOncaller, "Zero Base Counts
     }
     const CSeqSummary& sum = context.GetNucleotideCount();
     if (!sum.A) {
-        m_Objs[kMsg]["[n] sequence[s] [has] no As"].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs[kMsg]["[n] sequence[s] [has] no As"].Ext().Add(*context.NewDiscObj(context.GetCurrentBioseq()));
     }
     if (!sum.C) {
-        m_Objs[kMsg]["[n] sequence[s] [has] no Cs"].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs[kMsg]["[n] sequence[s] [has] no Cs"].Ext().Add(*context.NewDiscObj(context.GetCurrentBioseq()));
     }
     if (!sum.G) {
-        m_Objs[kMsg]["[n] sequence[s] [has] no Gs"].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs[kMsg]["[n] sequence[s] [has] no Gs"].Ext().Add(*context.NewDiscObj(context.GetCurrentBioseq()));
     }
     if (!sum.T) {
-        m_Objs[kMsg]["[n] sequence[s] [has] no Ts"].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs[kMsg]["[n] sequence[s] [has] no Ts"].Ext().Add(*context.NewDiscObj(context.GetCurrentBioseq()));
     }
 }
 
@@ -860,11 +845,7 @@ DISCREPANCY_CASE(NONWGS_SETS_PRESENT, CBioseq_set, eDisc,
     case CBioseq_set::eClass_phy_set:
     case CBioseq_set::eClass_pop_set:
         // non-WGS set found
-        m_Objs["[n] set[s] [is] of type eco, mut, phy or pop"].Add(
-            *new CDiscrepancyObject(
-                context.GetCurrentBioseq_set(), context.GetScope(),
-                context.GetFile(), context.GetKeepRef()),
-            false);
+        m_Objs["[n] set[s] [is] of type eco, mut, phy or pop"].Add(*context.NewDiscObj(context.GetCurrentBioseq_set()), false);
         break;
     default:
         // other types are fine
@@ -884,7 +865,7 @@ DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc | eOncaller, "No annotation")
     if (obj.IsAa() || context.HasFeatures()) {
         return;
     }
-    m_Objs["[n] bioseq[s] [has] no features"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    m_Objs["[n] bioseq[s] [has] no features"].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
 }
 
 
@@ -900,7 +881,7 @@ DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eDisc, "No annotation for LONG s
     if (obj.IsAa() || context.HasFeatures() || !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) {
         return;
     }
-    m_Objs["[n] bioseq[s] [is] longer than 5000nt and [has] no features"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    m_Objs["[n] bioseq[s] [is] longer than 5000nt and [has] no features"].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
 }
 
 
@@ -962,11 +943,7 @@ DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eOncaller, "Detect linker sequence 
     }
 
     if (found_linker) {
-        m_Objs["[n] bioseq[s] may have linker sequence after the poly-A tail"].
-          Add(*new CDiscrepancyObject(context.GetCurrentBioseq(),
-                                      context.GetScope(),
-                                      context.GetFile(),
-                                      context.GetKeepRef()));
+        m_Objs["[n] bioseq[s] may have linker sequence after the poly-A tail"].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
     }
 }
 
@@ -988,7 +965,7 @@ DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eDisc | eOncaller, "Location is or
     for( ; loc_ci; ++loc_ci) {
         if( loc_ci.GetEmbeddingSeq_loc().IsNull() ) {
             CReportNode & message_report_node = m_Objs["[n] feature[s] [has] ordered location[s]"];
-            message_report_node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true, true), false);
+            message_report_node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eKeepRef, true), false);
             return;
         }
     }
@@ -1064,7 +1041,7 @@ DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc | eOncaller, "Missing l
 
     // Report missing or empty locus tags
     if (!gene_ref.CanGetLocus_tag() || NStr::TruncateSpaces(gene_ref.GetLocus_tag()).empty()) {
-        m_Objs["[n] gene[s] [has] no locus tag[s]."].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs["[n] gene[s] [has] no locus tag[s]."].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
     }
 }
 
@@ -1104,7 +1081,7 @@ DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, CSeqFeatData, eDisc, "Inconsiste
 
         stringstream ss;
         ss << "[n] feature[s] [has] locus tag prefix " << prefix << ".";
-        m_Objs[ss.str()].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs[ss.str()].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
     }
 }
 
@@ -1149,12 +1126,12 @@ DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eDisc | eOncaller, "Inconsist
     }
 
     // Add each nuc bioseq, regardless of moltype, to get a total count
-    m_Objs[kInconsistent_Moltype].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    m_Objs[kInconsistent_Moltype].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
 
     // Add each unique moltype as a key to the Extended Output
     stringstream ss;
     ss << "[n] sequence[s] [has] moltype " << moltype;
-    m_Objs[kInconsistent_Moltype][ss.str()].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    m_Objs[kInconsistent_Moltype][ss.str()].Ext().Add(*context.NewDiscObj(context.GetCurrentBioseq()));
 }
 
 
@@ -1188,7 +1165,7 @@ DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eDisc, "Bad locus tag forma
     // Report non-empty, bad-format locus tags
     string locus_tag = gene_ref.GetLocus_tag();
     if (!locus_tag.empty() && context.IsBadLocusTagFormat(locus_tag)) {
-        m_Objs["[n] locus tag[s] [is] incorrectly formatted."].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs["[n] locus tag[s] [is] incorrectly formatted."].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
     }
 }
 
@@ -1208,11 +1185,7 @@ DISCREPANCY_CASE(SEGSETS_PRESENT, CBioseq_set, eDisc, "Segsets present")
         return;
     }
 
-    m_Objs["[n] segset[s] [is] present"].Add(
-        *new CDiscrepancyObject(
-            context.GetCurrentBioseq_set(), context.GetScope(),
-            context.GetFile(), context.GetKeepRef()),
-        false);
+    m_Objs["[n] segset[s] [is] present"].Add(*context.NewDiscObj(context.GetCurrentBioseq_set()), false);
 }
 
 
@@ -1232,8 +1205,7 @@ DISCREPANCY_CASE(QUALITY_SCORES, CSeq_annot, eDisc, "Check for quality scores")
     if (m_Count != context.GetCountBioseq()) { // stepping onto a new sequence
         m_Count = context.GetCountBioseq();
         if (obj.IsGraph()) {
-            m_Objs["has qual scores"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(),
-                context.GetScope(), context.GetFile(), context.GetKeepRef()));
+            m_Objs["has qual scores"].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
         }
     }
 }
@@ -1264,7 +1236,7 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, CSeqFeatData, eDisc | eOncaller,
     if (!context.IsBacterial() || obj.GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
         return;
     }
-    m_Objs["[n] bacterial sequence[s] [has] mRNA features"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    m_Objs["[n] bacterial sequence[s] [has] mRNA features"].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
 }
 
 
@@ -1285,11 +1257,7 @@ DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc, "Bad BGPIPE qualifiers")
         // will see that part as-is.
         "[n] feature[s] contain[S] invalid BGPIPE qualifiers");
     if( STRING_FIELD_NOT_EMPTY(obj, Except_text) ) {
-        m_Objs[kDiscMessage].Add(
-            *new CDiscrepancyObject(
-                context.GetCurrentSeq_feat(), context.GetScope(),
-                context.GetFile(), context.GetKeepRef()),
-            false);
+        m_Objs[kDiscMessage].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
         return;
     } else if ( FIELD_IS_SET_AND_IS(obj, Data, Cdregion) ) {
         const CCdregion & cdregion = obj.GetData().GetCdregion();
@@ -1298,11 +1266,7 @@ DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc, "Bad BGPIPE qualifiers")
         }
         if(GET_STRING_FLD_OR_BLANK(obj, Comment) != "ambiguity in stop codon")
         {
-            m_Objs[kDiscMessage].Add(
-                *new CDiscrepancyObject(
-                    context.GetCurrentSeq_feat(), context.GetScope(),
-                    context.GetFile(), context.GetKeepRef()),
-                false);
+            m_Objs[kDiscMessage].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
             return;
         }
 
@@ -1316,11 +1280,7 @@ DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc, "Bad BGPIPE qualifiers")
                 return;
             }
         }
-        m_Objs[kDiscMessage].Add(
-            *new CDiscrepancyObject(
-                context.GetCurrentSeq_feat(), context.GetScope(),
-                context.GetFile(), context.GetKeepRef()),
-            false);
+        m_Objs[kDiscMessage].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
         return;
     }
 }

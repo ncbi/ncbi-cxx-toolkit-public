@@ -64,15 +64,8 @@ DISCREPANCY_CASE(CDS_TRNA_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS tRNA Overlap
         const CSeq_loc& trnaLocation = obj.GetLocation();
         CRef<CSeq_loc> cdsIntersect = cdsTotal->Intersect(trnaLocation, 0, 0);
         if (!cdsIntersect->IsNull()) {
-            string msg(sFeatureToString(subtype, trnaLocation) +
-                " overlaps with at least one CDS");
-            m_Objs[msg].Add(
-                *new CDiscrepancyObject(
-                CConstRef<CSeq_feat>(&obj),
-                context.GetScope(),
-                context.GetFile(),
-                context.GetKeepRef()),
-                false);
+            string msg(sFeatureToString(subtype, trnaLocation) + " overlaps with at least one CDS");
+            m_Objs[msg].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
         }
         trnaTotal->Add(trnaLocation);
     }  
@@ -80,19 +73,11 @@ DISCREPANCY_CASE(CDS_TRNA_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS tRNA Overlap
         const CSeq_loc& cdsLocation = obj.GetLocation();
         CRef<CSeq_loc> trnaIntersect = trnaTotal->Intersect(cdsLocation, 0, 0);
         if (!trnaIntersect->IsNull()) {
-            string msg(sFeatureToString(subtype, cdsLocation) +
-                " overlaps with at least one tRNA");
-            m_Objs[msg].Add(
-                *new CDiscrepancyObject(
-                    CConstRef<CSeq_feat>(&obj), 
-                    context.GetScope(), 
-                    context.GetFile(), 
-                    context.GetKeepRef()), 
-                    false);
+            string msg(sFeatureToString(subtype, cdsLocation) + " overlaps with at least one tRNA");
+            m_Objs[msg].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
         }
         cdsTotal->Add(cdsLocation);
     }
-    //cerr << "Discrepancy case CDS_TRNA_OVERLAP" << endl;
 }
 
 

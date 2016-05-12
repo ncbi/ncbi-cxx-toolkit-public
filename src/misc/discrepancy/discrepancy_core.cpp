@@ -204,7 +204,7 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepanc
     }
     catch (CException& e) {
         string ss = "EXCEPTION caught: "; ss += e.what();
-        m_Objs[ss].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
+        m_Objs[ss].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
     }
 }
 
@@ -314,20 +314,23 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     for (i = CConstBeginInfo(root); i; ++i) {
         CTypesConstIterator::TIteratorContext ctx = i.GetContextData();
         if (CType<CBioseq>::Match(i)) {
-            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i));
-            m_Current_Bioseq.Reset(bsh.GetCompleteBioseq());
+            m_Current_Bioseq_Handle = m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i));
+            m_Current_Bioseq.Reset(m_Current_Bioseq_Handle.GetCompleteBioseq());
             m_Count_Bioseq++;
             Update_Bioseq_set_Stack(i);
             if (m_Current_Bioseq->GetInst().IsNa()) {
-                m_NaSeqs.push_back(CRef<CReportObj>(new CDiscrepancyObject(m_Current_Bioseq, *m_Scope, m_File, m_KeepRef)));
+                m_NaSeqs.push_back(CRef<CReportObj>(NewDiscObj(m_Current_Bioseq)));
             }
             // CSeq_feat_BY_BIOSEQ cycle
-            CFeat_CI feat_ci(bsh);
+            CFeat_CI feat_ci(m_Current_Bioseq_Handle);
             m_Feat_CI = !!feat_ci;
             if (m_Enable_CSeq_feat_BY_BIOSEQ) {
+                m_Current_Seqdesc.Reset();
                 for (; feat_ci; ++feat_ci) {
                     const CSeq_feat_BY_BIOSEQ& obj = (const CSeq_feat_BY_BIOSEQ&)*feat_ci->GetSeq_feat();
-                    NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSeq_feat_BY_BIOSEQ>* >, it, m_All_CSeq_feat_BY_BIOSEQ) {
+                    m_Current_Seq_feat.Reset(feat_ci->GetSeq_feat());
+                    m_Count_Seq_feat++;
+                    NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeq_feat_BY_BIOSEQ>* >, it, m_All_CSeq_feat_BY_BIOSEQ) {
                         Call(**it, obj);
                     }
                 }

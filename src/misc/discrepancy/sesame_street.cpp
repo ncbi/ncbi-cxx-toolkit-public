@@ -56,7 +56,7 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller, "Some animals are 
     if (desc.IsNull()) {
         return;
     }
-    CRef<CDiscrepancyObject> disc_obj(new CDiscrepancyObject(desc, context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    CRef<CDiscrepancyObject> disc_obj(context.NewDiscObj(desc));
     m_Objs["all"].Add(*disc_obj);
     if (obj.CanGetGenome() && obj.GetGenome() != CBioSource::eGenome_unknown) {
         const string& qual = "location";

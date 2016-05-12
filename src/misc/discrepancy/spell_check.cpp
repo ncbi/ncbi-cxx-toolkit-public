@@ -172,7 +172,7 @@ DISCREPANCY_CASE(SPELL_CHECK, CSeqFeatData, 0, "Spell check")
             for (size_t n = 0; n < w.size(); n++) {
                 msg += " " + w[n] + "?";
             }
-            m_Objs[msg].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), false));
+            m_Objs[msg].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
         }
     }
 }

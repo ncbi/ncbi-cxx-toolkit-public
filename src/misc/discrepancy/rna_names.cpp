@@ -75,12 +75,12 @@ DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc, "rRNA name conflicts"
         }
         else if (NStr::EqualNocase(name, rrna_standard_name[i])) {
             CReportNode& node = m_Objs[rrna_name_conflicts_complain.Get()];
-            node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true)).Fatal();
+            node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true)).Fatal();
             return;
         }
     }
     CReportNode& node = m_Objs[rrna_name_conflicts_complain.Get()];
-    node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), false)).Fatal();
+    node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat())).Fatal();
 }
 
 

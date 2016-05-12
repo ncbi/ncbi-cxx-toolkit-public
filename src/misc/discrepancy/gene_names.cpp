@@ -72,7 +72,7 @@ DISCREPANCY_CASE(BAD_GENE_NAME, CSeqFeatData, eDisc, "Bad gene name")
     string locus = obj.GetGene().GetLocus();
     string word;
     if (locus.size() > 10 || Has4Numbers(locus) || HasBadWord(locus, word)) {
-        m_Objs[word.empty() ? "[n] gene[s] contain[S] suspect phrase or characters" : "[n] gene[s] contain[S] " + word].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true));
+        m_Objs[word.empty() ? "[n] gene[s] contain[S] suspect phrase or characters" : "[n] gene[s] contain[S] " + word].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true));
     }
 }
 
@@ -117,7 +117,7 @@ DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eDisc | eOncaller, "Bad 
     }
     string locus = obj.GetGene().GetLocus();
     if (!isalpha(locus[0]) || !islower(locus[0])) {
-        m_Objs["[n] bacterial gene[s] [does] not start with lowercase letter"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true)); // maybe false
+        m_Objs["[n] bacterial gene[s] [does] not start with lowercase letter"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true)); // maybe false
     }
 }
 
@@ -157,7 +157,7 @@ DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eDisc, "EC number o
     NStr::ToLower(str);
     //if (NStr::FindNoCase(*names.begin(), "hypothetical protein") != string::npos || NStr::FindNoCase(*names.begin(), "unknown protein") != string::npos) {
     if (str == "hypothetical protein" || str == "unknown protein") {
-        m_Objs["[n] protein feature[s] [has] an EC number and a protein name of 'unknown protein' or 'hypothetical protein'"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true));
+        m_Objs["[n] protein feature[s] [has] an EC number and a protein name of 'unknown protein' or 'hypothetical protein'"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true));
     }
 }
 
@@ -211,7 +211,7 @@ DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc, "H
     }
     ITERATE(list <string>, jt, prot.GetName()) {
         if (NStr::FindNoCase(*jt, "hypothetical protein") != string::npos) {
-            m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true, (CObject*)&*gene));
+            m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true, (CObject*)&*gene));
             break;
         }
     }

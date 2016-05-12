@@ -5372,7 +5372,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc|eOncaller, "Suspect 
             if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
         CReportNode& node = m_Objs["[n] product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
-        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
+        node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
     }
 }
 
@@ -5493,7 +5493,7 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle pr
             if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
         CReportNode& node = m_Objs["[n] organelle product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
-        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
+        node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
     }
 }
 
@@ -5644,12 +5644,7 @@ DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, CSeq_feat, eDisc, "rRNA product names sh
             detailed_msg << "[n] rRNA product name[s] ";
             s_SummarizeSuspectRule(detailed_msg, suspect_rule);
 
-            m_Objs[kMsg][(string)CNcbiOstrstreamToString(detailed_msg)]
-                .Ext().Add(
-                    *new CDiscrepancyObject(
-                        context.GetCurrentSeq_feat(), context.GetScope(),
-                        context.GetFile(), context.GetKeepRef()),
-                    false);
+            m_Objs[kMsg][(string)CNcbiOstrstreamToString(detailed_msg)].Ext().Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
         }
     }
 }
