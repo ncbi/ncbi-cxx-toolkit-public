@@ -52,7 +52,6 @@
  *
  */
 
-//#define NCBI_MONKEY
 
 #include "ncbi_assert.h"
 #include <connect/ncbi_util.h>
@@ -66,7 +65,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 
 /******************************************************************************
