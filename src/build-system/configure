@@ -4304,6 +4304,10 @@ USER_LDFLAGS=$LDFLAGS
 if test -n "$with_experimental"; then
    for x in `echo $with_experimental | tr , ' '`; do
       case "$x" in
+         ChaosMonkey )
+            CPPFLAGS="$CPPFLAGS -DNCBI_MONKEY"
+                      WithFeatures="$WithFeatures${WithFeaturesSep}ChaosMonkey"; WithFeaturesSep=" "
+            ;;
          Int8GI )
             CPPFLAGS="$CPPFLAGS -DNCBI_INT8_GI"
                       WithFeatures="$WithFeatures${WithFeaturesSep}Int8GI"; WithFeaturesSep=" "
@@ -45730,7 +45734,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources JDK Ncbi-JNI PubSeqOS check Valgrind LimitedLinker; do
+for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources JDK Ncbi-JNI PubSeqOS check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"

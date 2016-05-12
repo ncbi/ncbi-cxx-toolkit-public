@@ -765,6 +765,10 @@ USER_LDFLAGS=$LDFLAGS
 if test -n "$with_experimental"; then
    for x in `echo $with_experimental | tr , ' '`; do
       case "$x" in
+         ChaosMonkey )
+            CPPFLAGS="$CPPFLAGS -DNCBI_MONKEY"
+            NCBI_FEATURE(ChaosMonkey)
+            ;;
          Int8GI )
             CPPFLAGS="$CPPFLAGS -DNCBI_INT8_GI"
             NCBI_FEATURE(Int8GI)
