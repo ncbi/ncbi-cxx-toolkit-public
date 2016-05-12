@@ -207,7 +207,6 @@ void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst
     if (!identity_inst.IsSetType() ||
          identity_inst.GetType() != CVariation_inst::eType_identity)
     {
-
         string message = "CVariation_inst: ";
         if (!identity_inst.IsSetType()) {
             message += "Type not set. ";
@@ -217,11 +216,7 @@ void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst
                     + ").";
         }
         message += "Expected eType_identity"; 
- //       message += "Expected eType_identity (" 
- //               + NStr::NumericToString(CVariation_inst::eType_identity)
- //               + ")";
         
-
         NCBI_THROW(CVariationValidateException,
                    eInvalidType,
                    message);
@@ -254,6 +249,46 @@ void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst
 }
 
 
+
+void CValidateVariant::ValidateMicrosatelliteInst(const CVariation_inst& ms_inst, const CSeq_loc& location, bool IsCDS)
+{
+    if (!ms_inst.IsSetType())
+    {
+        string message = "CVariation_inst: ";
+        message += "Type not set. ";
+        
+        NCBI_THROW(CVariationValidateException,
+                   eInvalidType,
+                   message);
+    }
+    
+    // Only worry about microsatellites here 
+    if (ms_inst.GetType() != CVariation_inst::eType_microsatellite) {
+        return;
+    }
+
+    if (!ms_inst.IsSetDelta()) {
+        NCBI_THROW(CVariationValidateException, 
+                   eIncompleteObject,
+                   "Delta-item not set");
+    }
+    
+    auto& delta_item = *ms_inst.GetDelta().back();
+    if (!delta_item.IsSetSeq()) {
+        NCBI_THROW(CVariationValidateException,
+                   eIncompleteObject,
+                   "Seq not set");
+    }
+
+    if (delta_item.GetSeq().IsLiteral()) {
+        s_ValidateSeqLiteral(delta_item.GetSeq().GetLiteral(),
+                             location,
+                             & m_Scope,
+                             IsCDS);
+    }
+}
+
+
 void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS)
 {
     if (!feat.IsSetData() ||
@@ -264,6 +299,13 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
                 "Variation feature data not specified" );
     }
 
+    if (feat.GetData().GetVariation().GetData().IsInstance()) {
+        // Attempt to validate microsatellite
+        const auto& var_inst = feat.GetData().GetVariation().GetData().GetInstance();
+        CValidateVariant validator(*scope);
+        validator.ValidateMicrosatelliteInst(var_inst, feat.GetLocation(), IsCDS);
+        return;
+    } else 
     if (!feat.GetData().GetVariation().GetData().IsSet()) {
         return;
     }

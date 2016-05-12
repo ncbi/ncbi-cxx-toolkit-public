@@ -52,6 +52,10 @@ public:
                               const CSeq_loc& location,
                               bool IsCDS=false);
 
+    void ValidateMicrosatelliteInst(const CVariation_inst& identity_inst, 
+                              const CSeq_loc& location,
+                              bool IsCDS=false);
+
 private:
     CScope& m_Scope;
     CPostProcessUtils utils;
