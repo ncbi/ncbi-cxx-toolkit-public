@@ -62,7 +62,8 @@ struct SSeqDB_SeqSrc_Data {
         : seqdb((CSeqDBExpert*) ptr), 
           mask_algo_id(id),
           mask_type(type),
-          copied(false)
+          copied(false),
+          isProtein(seqdb->GetSequenceType() == CSeqDB::eProtein)
     {
     }
     
@@ -93,6 +94,7 @@ struct SSeqDB_SeqSrc_Data {
     int mask_algo_id;
     ESubjectMaskingType mask_type;
     bool copied;
+    bool isProtein;
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
@@ -221,9 +223,9 @@ s_SeqDbGetName(void* seqdb_handle, void*)
 static Boolean 
 s_SeqDbGetIsProt(void* seqdb_handle, void*)
 {
-    CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
+    TSeqDBData * datap = (TSeqDBData *) seqdb_handle;
 
-    return (seqdb.GetSequenceType() == CSeqDB::eProtein);
+    return datap->isProtein;
 }
 
 /// Determine if partial fetching should be enabled
@@ -231,13 +233,15 @@ s_SeqDbGetIsProt(void* seqdb_handle, void*)
 static Boolean
 s_SeqDbGetSupportsPartialFetching(void* seqdb_handle, void*) 
 {
-    CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
+    TSeqDBData * datap = (TSeqDBData *) seqdb_handle;
     
-    if (seqdb.GetSequenceType() != CSeqDB::eNucleotide) {
+    if (datap->isProtein == true) {
        // don't bother doing this for proteins as the sequences are
        // never long enough to cause performance degredation
        return false;
     }
+
+    CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
 
     // If longest sequence is below this we quit
     static const int kMaxLengthCutoff = 5000;
@@ -333,9 +337,8 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     /* This occurs if the pre-selected partial sequence in the traceback stage
      * was too small to perform the traceback. Only do this for nucleotide
      * sequences as proteins are not long enough to be of significance */
-    if (args->reset_ranges && seqdb.GetSequenceType() == CSeqDB::eNucleotide) {
+    if (args->reset_ranges && datap->isProtein == false)
         seqdb.RemoveOffsetRanges(oid);
-    }
     
     const char *buf;
     len = (datap->copied) 
@@ -691,6 +694,7 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
         
         datap->mask_algo_id = seqdb_args->GetMaskAlgoId();
         datap->mask_type = seqdb_args->GetMaskType();
+        datap->isProtein = is_protein;
 
         // Validate that the masking algorithm is supported
         if (datap->mask_algo_id > 0) {
