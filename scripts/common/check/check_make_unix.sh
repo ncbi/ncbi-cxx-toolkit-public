@@ -436,7 +436,7 @@ if test "\$NCBI_CHECK_SETLIMITS" != "0"; then
           ulimit -v 4000000
        else
           # Increase memory limits if run under check tool
-          ulimit -v 8000000
+          ulimit -v 16000000
        fi
    fi
 fi
