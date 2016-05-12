@@ -200,7 +200,7 @@ public:
     size_t CountBasesOnlySet2() const { return m_CountBasesOnlySet2; }
 
 private:
-    friend class SAlignment;
+    friend struct SAlignment;
 
     IAlignSource &m_Set1;
     IAlignSource &m_Set2;
