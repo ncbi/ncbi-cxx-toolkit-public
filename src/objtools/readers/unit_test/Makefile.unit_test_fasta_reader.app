@@ -18,4 +18,4 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 
-WATCHERS = ucko kornbluh
+WATCHERS = ucko kornbluh gotvyans

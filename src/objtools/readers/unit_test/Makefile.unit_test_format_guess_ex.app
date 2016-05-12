@@ -27,4 +27,4 @@ CHECK_CMD = unit_test_format_guess_ex
 # CXXFLAGS = $(FAST_CXXFLAGS)
 # LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = dicuccio kornbluh
+WATCHERS = dicuccio kornbluh gotvyans
