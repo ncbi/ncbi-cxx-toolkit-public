@@ -959,6 +959,10 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit,
         }
 
         if (tbl.GetCodonResidue(state) == '*') {
+            if (loc.IsMix()) {
+                new_loc.Reset(new CSeq_loc());
+                new_loc->SetMix();
+            }
             CSeq_loc_CI it(loc);
             CSeq_loc_CI it_next = it;
             ++it_next;
@@ -986,6 +990,9 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit,
             } else {
                 last_interval->SetInt().SetFrom(this_start);
                 last_interval->SetInt().SetTo(this_stop + extension);
+                if (this_loc->IsSetStrand()) {
+                    last_interval->SetInt().SetStrand(this_loc->GetStrand());
+                }
             }
 
             if (new_loc) {
