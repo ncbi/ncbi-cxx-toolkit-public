@@ -31342,15 +31342,21 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
+cat >/dev/null <<_NCBI_EOF
 #include <db.h>
-ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PATCH
+_NCBI_EOF
+get_DB_VERSION() {
+    grep '^[^#]' <<_NCBI_EOF
+DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PATCH
+_NCBI_EOF
+}
+ncbi_cv_lib_berkeley_db_version=\`get_DB_VERSION | tr -cd 0123456789.\`
 
 _ACEOF
-          eval "$ac_cpp $BERKELEYDB_INCLUDE conftest.$ac_ext" \
-             2>&5 | grep '^ncbi_cv_' \
-             | tr -d "$wschars" > conftest.sh
+          eval "$ac_cpp $BERKELEYDB_INCLUDE conftest.$ac_ext" > conftest.sh \
+             2>&5
           . ./conftest.sh
-          rm -f contest*
+          rm -f conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_berkeley_db_version" >&5
@@ -33559,16 +33565,27 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
+cat >/dev/null <<_NCBI_EOF
 #include <boost/version.hpp>
-ncbi_cv_lib_boost_version_num=BOOST_VERSION
-ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
+_NCBI_EOF
+get_BOOST_VERSION() {
+    grep '^[^#]' <<_NCBI_EOF
+BOOST_VERSION
+_NCBI_EOF
+}
+get_BOOST_LIB_VERSION() {
+    grep '^[^#]' <<_NCBI_EOF
+BOOST_LIB_VERSION
+_NCBI_EOF
+}
+ncbi_cv_lib_boost_version_num=\`get_BOOST_VERSION\`
+ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
 
 _ACEOF
-          eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" \
-             2>&5 | grep '^ncbi_cv_' \
-             | tr -d "$wschars" > conftest.sh
+          eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" > conftest.sh \
+             2>&5
           . ./conftest.sh
-          rm -f contest*
+          rm -f conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_version" >&5

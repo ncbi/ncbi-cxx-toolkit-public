@@ -4895,14 +4895,20 @@ if test "$with_bdb" != "no" ; then
       AC_CACHE_CHECK([Berkeley DB version (4.3 or newer required)],
          ncbi_cv_lib_berkeley_db_version,
          [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
+cat >/dev/null <<_NCBI_EOF
 #include <db.h>
-ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PATCH
+_NCBI_EOF
+get_DB_VERSION() {
+    grep '^[^#]' <<_NCBI_EOF
+DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PATCH
+_NCBI_EOF
+}
+ncbi_cv_lib_berkeley_db_version=\`get_DB_VERSION | tr -cd 0123456789.\`
           ]])])
-          eval "$ac_cpp $BERKELEYDB_INCLUDE conftest.$ac_ext" \
-             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' \
-             | tr -d "$wschars" > conftest.sh
+          eval "$ac_cpp $BERKELEYDB_INCLUDE conftest.$ac_ext" > conftest.sh \
+             2>&AS_MESSAGE_LOG_FD
           . ./conftest.sh
-          rm -f contest*
+          rm -f conftest*
          ])
       case "$ncbi_cv_lib_berkeley_db_version" in
          1.* | 2.* | 3.* | 4.[[0-2]].* )
@@ -5171,15 +5177,26 @@ if test "$with_boost" != "no"; then
       AC_CACHE_CHECK([Boost version],
          ncbi_cv_lib_boost_version,
          [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
+cat >/dev/null <<_NCBI_EOF
 #include <boost/version.hpp>
-ncbi_cv_lib_boost_version_num=BOOST_VERSION
-ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
+_NCBI_EOF
+get_BOOST_VERSION() {
+    grep '^[^#]' <<_NCBI_EOF
+BOOST_VERSION
+_NCBI_EOF
+}
+get_BOOST_LIB_VERSION() {
+    grep '^[^#]' <<_NCBI_EOF
+BOOST_LIB_VERSION
+_NCBI_EOF
+}
+ncbi_cv_lib_boost_version_num=\`get_BOOST_VERSION\`
+ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
           ]])])
-          eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" \
-             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' \
-             | tr -d "$wschars" > conftest.sh
+          eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" > conftest.sh \
+             2>&AS_MESSAGE_LOG_FD
           . ./conftest.sh
-          rm -f contest*
+          rm -f conftest*
          ])
       AC_DEFINE_UNQUOTED(NCBI_EXPECTED_BOOST_VERSION,
          $ncbi_cv_lib_boost_version_num,
