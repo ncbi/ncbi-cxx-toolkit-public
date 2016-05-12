@@ -77,29 +77,31 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
 
     xml::node_set items = root.run_xpath_query("./WebEnv/text()");
     BOOST_CHECK ( 1 == items.size() );
-    string web_env = items.begin()->get_content();
+    string web_env = ( items.size() > 0 ) ? items.begin()->get_content() : "";
 
     items  = root.run_xpath_query("./QueryKey/text()");
     BOOST_CHECK ( 1 == items.size() );
-    int query_key = NStr::StringToNumeric<int>(items.begin()->get_content());
+    int query_key = (items.size() > 0) ? NStr::StringToNumeric<int>(items.begin()->get_content()) : 0;
 
-    int count = NStr::StringToNumeric<int>(root.run_xpath_query("./Count/text()").begin()->get_content());
+    if ( !web_env.empty() && query_key > 0 ) {
+        int count = NStr::StringToNumeric<int>(root.run_xpath_query("./Count/text()").begin()->get_content());
 
-    int retmax = NStr::StringToNumeric<int>(root.run_xpath_query("./RetMax/text()").begin()->get_content());
-    int retstart = NStr::StringToNumeric<int>(root.run_xpath_query("./RetStart/text()").begin()->get_content());
-    BOOST_CHECK ( retstart + retmax <= count );
-
-    // Get next chunk from the history server.
-    if ( retstart + retmax < count ) {
-        int next_start = count - retmax;
-        stringstream next_chunk;
-        BOOST_REQUIRE_NO_THROW(cli.SearchHistory("pubmed", "asthma", web_env, query_key, next_start, next_chunk));
-
-        string body = next_chunk.str();
-        xml::document doc(body.c_str(), body.size(), NULL);
-        const xml::node& root = doc.get_root_node();
+        int retmax = NStr::StringToNumeric<int>(root.run_xpath_query("./RetMax/text()").begin()->get_content());
         int retstart = NStr::StringToNumeric<int>(root.run_xpath_query("./RetStart/text()").begin()->get_content());
-        BOOST_CHECK ( retstart == next_start );
+        BOOST_CHECK ( retstart + retmax <= count );
+
+        // Get next chunk from the history server.
+        if ( retstart + retmax < count ) {
+            int next_start = count - retmax;
+            stringstream next_chunk;
+            BOOST_REQUIRE_NO_THROW(cli.SearchHistory("pubmed", "asthma", web_env, query_key, next_start, next_chunk));
+
+            string body = next_chunk.str();
+            xml::document doc(body.c_str(), body.size(), NULL);
+            const xml::node& root = doc.get_root_node();
+            int retstart = NStr::StringToNumeric<int>(root.run_xpath_query("./RetStart/text()").begin()->get_content());
+            BOOST_CHECK ( retstart == next_start );
+        }
     }
 }
 
@@ -116,25 +118,25 @@ BOOST_AUTO_TEST_CASE(TestSummaryHistory)
 
     xml::node_set items = root.run_xpath_query("./WebEnv/text()");
     BOOST_CHECK ( items.size() != 0 );
-
-    string web_env = items.begin()->get_content();
+    string web_env = ( items.size() > 0) ? items.begin()->get_content(): "";
 
     items  = root.run_xpath_query("./QueryKey/text()");
     BOOST_CHECK ( items.size() != 0 );
+    int query_key = (items.size() > 0) ? NStr::StringToNumeric<int>(items.begin()->get_content()) : 0;
 
-    int query_key = NStr::StringToNumeric<int>(items.begin()->get_content());
+    if ( !web_env.empty() && query_key > 0 ) {
+        stringstream summary;
+        cli.SummaryHistory("pubmed", web_env, query_key, 0, "2.0", summary);
 
-    stringstream summary;
-    cli.SummaryHistory("pubmed", web_env, query_key, 0, "2.0", summary);
-    
-    {{
-        string body = summary.str();
-        xml::document doc(body.c_str(), body.size(), NULL);
-        const xml::node& root = doc.get_root_node();
+        {{
+             string body = summary.str();
+             xml::document doc(body.c_str(), body.size(), NULL);
+             const xml::node& root = doc.get_root_node();
 
-        xml::node_set nodes = root.run_xpath_query("//DocumentSummary");
-        BOOST_CHECK ( 101 == nodes.size() );
-    }}
+             xml::node_set nodes = root.run_xpath_query("//DocumentSummary");
+             BOOST_CHECK ( 101 == nodes.size() );
+         }}
+    }
 }
 
 BOOST_AUTO_TEST_CASE(TestFetchHistory)
@@ -143,35 +145,32 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
     stringstream content;
    
     cli.SetMaxReturn(101); 
-    
     BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
-    
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
-    
     const xml::node& root = doc.get_root_node();
 
     xml::node_set items = root.run_xpath_query("./WebEnv/text()");
     BOOST_CHECK ( items.size() != 0 );
-
-    string web_env = items.begin()->get_content();
+    string web_env = ( 1 == items.size() ) ? items.begin()->get_content() : "";
 
     items  = root.run_xpath_query("./QueryKey/text()");
     BOOST_CHECK ( items.size() != 0 );
+    int query_key = ( items.size() > 0 ) ? NStr::StringToNumeric<int>(items.begin()->get_content()) : 0;
 
-    int query_key = NStr::StringToNumeric<int>(items.begin()->get_content());
+    if ( !web_env.empty() && query_key > 0 ) {
+        stringstream history;
+        BOOST_REQUIRE_NO_THROW(cli.FetchHistory("pubmed", web_env, query_key, 10, CEutilsClient::eContentType_xml, history));
 
-    stringstream history;
-    BOOST_REQUIRE_NO_THROW(cli.FetchHistory("pubmed", web_env, query_key, 10, CEutilsClient::eContentType_xml, history));
-    
-    {{
-        string body = history.str();
-        xml::document doc(body.c_str(), body.size(), NULL);
-        const xml::node& root = doc.get_root_node();
+        {{
+             string body = history.str();
+             xml::document doc(body.c_str(), body.size(), NULL);
+             const xml::node& root = doc.get_root_node();
 
-        xml::node_set nodes = root.run_xpath_query("//PubmedArticle");
-        BOOST_CHECK ( 101 == nodes.size() );
-    }}
+             xml::node_set nodes = root.run_xpath_query("//PubmedArticle");
+             BOOST_CHECK ( 101 == nodes.size() );
+         }}
+    }
 }
 
 BOOST_AUTO_TEST_CASE(TestLinkHistory)
@@ -185,19 +184,13 @@ BOOST_AUTO_TEST_CASE(TestLinkHistory)
 
     cli.SetMaxReturn(101); 
     BOOST_REQUIRE_NO_THROW(cli.Link("protein", "gene", uids, content, "neighbor_history"));
- 
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
-    
     const xml::node& root = doc.get_root_node();
 
-    xml::node_set items = root.run_xpath_query(".//WebEnv/text()");
-    BOOST_CHECK ( 1 == items.size() ) ;
+    xml::node_set items = root.run_xpath_query("//WebEnv/text()");
+    BOOST_CHECK ( 1 == items.size() );
 
-    string web_env = items.begin()->get_content();
-
-    items  = root.run_xpath_query(".//QueryKey/text()");
-    BOOST_CHECK( 1 == items.size() );
-
-    int query_key = NStr::StringToNumeric<int>(items.begin()->get_content());
+    items  = root.run_xpath_query("//QueryKey/text()");
+    BOOST_CHECK ( 1 == items.size() );
 }
