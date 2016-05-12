@@ -1562,7 +1562,7 @@ static char* s_LBOS_Replace0000WithIP(const char* healthcheck_url)
         return NULL;
     }
     SOCK_HostPortToString(local_host_ip, 0, hostname, kMaxLineSize - 1);
-    if (hostname == NULL) {
+    if (strlen(hostname) == 0) {
         CORE_LOG(eLOG_Warning,
                  "Error with announcement, cannot find local IP.");
         free(my_healthcheck_url);
