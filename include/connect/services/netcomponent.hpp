@@ -71,6 +71,13 @@ public:
         CObjectCounterLocker::UnlockRelease(
             reinterpret_cast<const CObject*>(object));
     }
+
+    void TransferLock(const S* object,
+                      const CNetComponentCounterLocker& old_locker) const
+    {
+        CObjectCounterLocker::TransferLock(
+            reinterpret_cast<const CObject*>(object), old_locker);
+    }
 };
 
 #define NCBI_NET_COMPONENT_DEF(Class, Impl)                                 \
