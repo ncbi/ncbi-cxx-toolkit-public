@@ -15,10 +15,16 @@ namespace objects
 class CTable2AsnValidator
 {
 public:
+    CTable2AsnValidator();
     void Validate(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry, const string& flags, const string& report_name);
     void Cleanup(objects::CSeq_entry_Handle entry, const string& flags);
     void UpdateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream);
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
+    void ReportErrorStats(CNcbiOstream& out);
+    size_t TotalErrors() const; 
+protected:
+    typedef map<int, size_t> TErrorStats;
+    vector<TErrorStats> m_stats;
 };
 
 END_NCBI_SCOPE

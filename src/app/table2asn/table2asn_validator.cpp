@@ -22,20 +22,7 @@ USING_SCOPE(objects);
 
 namespace {
 
-static const string str_sev[] = {
-    "INFO", "WARNING", "ERROR", "REJECT", "FATAL", "MAX"
-};
-
-static const string s_none = "NONE";
-
-static const string& s_GetSeverityLabel (EDiagSev sev)
-{
-    if (sev < 0 || sev > eDiagSevMax) {
-        return s_none;
-    }
-
-    return str_sev[sev];
-}
+    static const char* big_separator = "=================================================================";
 
 CNcbiOfstream& InitOstream(auto_ptr<CNcbiOfstream>& ostr, const string& fname)
 {
@@ -57,6 +44,10 @@ void xGetLabel(const CSeq_feat& feat, string& label)
 }
 
 } // end anonymous namespace
+
+CTable2AsnValidator::CTable2AsnValidator() : m_stats(CValidErrItem::eSev_trace)
+{
+}
 
 void CTable2AsnValidator::Cleanup(CSeq_entry_Handle h_entry, const string& flags)
 {
@@ -108,11 +99,46 @@ void CTable2AsnValidator::ReportErrors(CConstRef<CValidError> errors, CNcbiOstre
     ITERATE(CValidError::TErrs, it, errors->GetErrs())
     {
         const CValidErrItem& item = **it;
-        out << s_GetSeverityLabel(item.GetSeverity())
+        out << CValidErrItem::ConvertSeverity(EDiagSev(item.GetSev()))
                << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() <<"] "
                << item.GetMsg() << " " << item.GetObjDesc() << endl;
+
+        m_stats[item.GetSev()][item.GetErrIndex()]++;
     }
     //out << MSerial_AsnText << *errors;
+}
+
+size_t CTable2AsnValidator::TotalErrors() const
+{
+    size_t result = 0;
+    ITERATE(vector<TErrorStats>, stats, m_stats)
+    {
+        result += stats->size();
+    }
+    return result;
+}
+
+void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
+{
+    out << "Total messages:\t\t" << NStr::NumericToString(TotalErrors()) << endl << endl << big_separator << endl;
+    
+    for (size_t sev = 0; sev < m_stats.size(); sev++)
+    {
+        if (m_stats[sev].empty())
+            continue;
+
+        string severity = CValidErrItem::ConvertSeverity(EDiagSev(sev));
+        NStr::ToUpper(severity);
+        out << NStr::NumericToString(m_stats[sev].size()) << " " << severity << "-level messages exist" << endl << endl;
+
+        ITERATE(TErrorStats, it, m_stats[sev])
+        {
+            out <<
+                CValidErrItem::ConvertErrGroup(it->first) << "." <<
+                CValidErrItem::ConvertErrCode(it->first) << ":\t" << NStr::NumericToString(it->second) << endl;
+        }
+        out << endl << big_separator << endl;
+    }
 }
 
 void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream)
