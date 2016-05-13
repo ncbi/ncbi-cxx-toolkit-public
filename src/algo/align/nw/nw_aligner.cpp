@@ -440,7 +440,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
     */
 
     if(!m_terminate) {
-        x_DoBackTrace(backtrace_matrix, data);
+        x_SWDoBackTrace(backtrace_matrix, data);
     }
 
     if(m_SmithWaterman) {
@@ -707,9 +707,60 @@ const
     return ts;
 }
 
-
-// perform backtrace step;
+// perform backtrace step, NW only
 void CNWAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
+                               SAlignInOut* data)
+{
+    const size_t N1 (data->m_len1 + 1);
+    const size_t N2 (data->m_len2 + 1);
+
+    data->m_transcript.clear();
+    data->m_transcript.reserve(N1 + N2);
+
+    size_t k  (N1*N2 - 1);
+    size_t i1 (data->m_offset1 + data->m_len1 - 1);
+    size_t i2 (data->m_offset2 + data->m_len2 - 1);
+    while (k != 0) {
+
+        unsigned char Key (backtrace[k]);
+
+        if (Key & kMaskD) {
+
+            data->m_transcript.push_back(x_GetDiagTS(i1--, i2--));
+            k -= N2 + 1;
+        }
+        else if (Key & kMaskE) {
+
+            data->m_transcript.push_back(eTS_Insert);
+            --k;
+            --i2;
+            while(k > 0 && (Key & kMaskEc)) {
+
+                data->m_transcript.push_back(eTS_Insert);
+                Key = backtrace[k--];
+                --i2;
+            }
+        }
+        else {
+
+            data->m_transcript.push_back(eTS_Delete);
+            k -= N2;
+            --i1;
+            while(k > 0 && (Key & kMaskFc)) {
+
+                data->m_transcript.push_back(eTS_Delete);
+                Key = backtrace[k];
+                k -= N2;
+                --i1;
+            }
+        }
+    }
+}
+
+
+
+// perform backtrace step, NW + SW
+void CNWAligner::x_SWDoBackTrace(const CBacktraceMatrix4 & backtrace,
                                SAlignInOut* data)
 {
     const size_t N1 (data->m_len1 + 1);

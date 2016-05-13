@@ -122,6 +122,8 @@ public:
     //'true' - do not penalize, 'false' - penalize
     void SetEndSpaceFree(bool Left1, bool Right1, bool Left2, bool Right2);
 
+    //note: Smith-Waterman is implemented only for SNWAligner so far.
+    // Not implemented for the derived classes.
     void SetSmithWaterman(bool SW);
 
     /// Control preference for where to place a gap if there is a choice;
@@ -377,11 +379,18 @@ protected:
         TNCBIScore m_BestScore;
     };
 
+    // Needleman-Wunsch only
     void x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
                        SAlignInOut* data);
 
     // retrieve transcript symbol for a one-character diag
     virtual ETranscriptSymbol x_GetDiagTS(size_t i1, size_t i2) const;
+
+private:
+    // Needleman-Wunsch + Smith-Waterman
+    void x_SWDoBackTrace(const CBacktraceMatrix4 & backtrace,
+                       SAlignInOut* data);
+
 
     friend class CNWAlignerThread_Align;
 };
