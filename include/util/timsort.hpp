@@ -521,20 +521,20 @@ template <typename RandomAccessIterator, typename LessFunction> class TimSort {
 
         copy_to_tmp(base2, len2);
 
-        iter_t cursor1 = base1 + (len1 - 1);
-        tmp_iter_t cursor2 = tmp_.begin() + (len2 - 1);
-        iter_t dest = base2 + (len2 - 1);
+        iter_t cursor1 = base1 + len1;
+        tmp_iter_t cursor2 = tmp_.begin() + len2;
+        iter_t dest = base2 + len2;
 
-        *(dest--) = GFX_TIMSORT_MOVE(*(cursor1--));
+        *(--dest) = GFX_TIMSORT_MOVE(*(--cursor1));
         if (--len1 == 0) {
-            GFX_TIMSORT_MOVE_RANGE(tmp_.begin(), tmp_.begin() + len2, dest - (len2 - 1));
+            GFX_TIMSORT_MOVE_RANGE(tmp_.begin(), tmp_.begin() + len2, dest - len2);
             return;
         }
         if (len2 == 1) {
             dest -= len1;
             cursor1 -= len1;
-            GFX_TIMSORT_MOVE_BACKWARD(cursor1 + 1, cursor1 + (1 + len1), dest + (1 + len1));
-            *dest = GFX_TIMSORT_MOVE(*cursor2);
+            GFX_TIMSORT_MOVE_BACKWARD(cursor1, cursor1 + len1, dest + len1);
+            *(--dest) = GFX_TIMSORT_MOVE(*(--cursor2));
             return;
         }
 
@@ -549,8 +549,8 @@ template <typename RandomAccessIterator, typename LessFunction> class TimSort {
             do {
                 assert(len1 > 0 && len2 > 1);
 
-                if (comp_.lt(*cursor2, *cursor1)) {
-                    *(dest--) = GFX_TIMSORT_MOVE(*(cursor1--));
+                if (comp_.lt(*(cursor2-1), *(cursor1-1))) {
+                    *(--dest) = GFX_TIMSORT_MOVE(*(--cursor1));
                     ++count1;
                     count2 = 0;
                     if (--len1 == 0) {
@@ -558,7 +558,7 @@ template <typename RandomAccessIterator, typename LessFunction> class TimSort {
                         break;
                     }
                 } else {
-                    *(dest--) = GFX_TIMSORT_MOVE(*(cursor2--));
+                    *(--dest) = GFX_TIMSORT_MOVE(*(--cursor2));
                     ++count2;
                     count1 = 0;
                     if (--len2 == 1) {
@@ -574,36 +574,36 @@ template <typename RandomAccessIterator, typename LessFunction> class TimSort {
             do {
                 assert(len1 > 0 && len2 > 1);
 
-                count1 = len1 - gallopRight(*cursor2, base1, len1, len1 - 1);
+                count1 = len1 - gallopRight(*(cursor2-1), base1, len1, len1 - 1);
                 if (count1 != 0) {
                     dest -= count1;
                     cursor1 -= count1;
                     len1 -= count1;
-                    GFX_TIMSORT_MOVE_BACKWARD(cursor1 + 1, cursor1 + (1 + count1), dest + (1 + count1));
+                    GFX_TIMSORT_MOVE_BACKWARD(cursor1, cursor1 + count1, dest + count1);
 
                     if (len1 == 0) {
                         break_outer = true;
                         break;
                     }
                 }
-                *(dest--) = GFX_TIMSORT_MOVE(*(cursor2--));
+                *(--dest) = GFX_TIMSORT_MOVE(*(--cursor2));
                 if (--len2 == 1) {
                     break_outer = true;
                     break;
                 }
 
-                count2 = len2 - gallopLeft(*cursor1, tmp_.begin(), len2, len2 - 1);
+                count2 = len2 - gallopLeft(*(cursor1-1), tmp_.begin(), len2, len2 - 1);
                 if (count2 != 0) {
                     dest -= count2;
                     cursor2 -= count2;
                     len2 -= count2;
-                    GFX_TIMSORT_MOVE_RANGE(cursor2 + 1, cursor2 + (1 + count2), dest + 1);
+                    GFX_TIMSORT_MOVE_RANGE(cursor2, cursor2 + count2, dest);
                     if (len2 <= 1) {
                         break_outer = true;
                         break;
                     }
                 }
-                *(dest--) = GFX_TIMSORT_MOVE(*(cursor1--));
+                *(--dest) = GFX_TIMSORT_MOVE(*(--cursor1));
                 if (--len1 == 0) {
                     break_outer = true;
                     break;
@@ -626,13 +626,13 @@ template <typename RandomAccessIterator, typename LessFunction> class TimSort {
         if (len2 == 1) {
             assert(len1 > 0);
             dest -= len1;
-            GFX_TIMSORT_MOVE_BACKWARD(cursor1 + (1 - len1), cursor1 + 1, dest + (1 + len1));
-            *dest = GFX_TIMSORT_MOVE(*cursor2);
+            GFX_TIMSORT_MOVE_BACKWARD(cursor1 - len1, cursor1, dest + len1);
+            *(--dest) = GFX_TIMSORT_MOVE(*(--cursor2));
         } else {
             assert(len2 != 0 && "Comparison function violates its general contract");
             assert(len1 == 0);
             assert(len2 > 1);
-            GFX_TIMSORT_MOVE_RANGE(tmp_.begin(), tmp_.begin() + len2, dest - (len2 - 1));
+            GFX_TIMSORT_MOVE_RANGE(tmp_.begin(), tmp_.begin() + len2, dest - len2);
         }
     }
 
