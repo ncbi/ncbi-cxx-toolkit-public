@@ -36,6 +36,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <util/timsort.hpp>
+#include <util/random_gen.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -49,6 +50,8 @@ public:
 
     template<class V, size_t S>
     void TestArray(const V (&arr0)[S]);
+
+    CRandom m_Rand;
 };
 
 
@@ -230,14 +233,14 @@ int CTestTimSort::Run(void)
     TestArray(arr);
 
     for ( int t = 0; t < 100; ++t ) {
-        size_t size = random()%10000;
+        size_t size = m_Rand.GetRandIndexSize_t(10000);
         vector<int> v0(size);
         for ( size_t i = 0; i < size; ++i )
-            v0[i] = random()%10000;
-        size_t sort_count = random()%5;
+            v0[i] = m_Rand.GetRandIndexSize_t(10000);
+        size_t sort_count = m_Rand.GetRandIndexSize_t(5);
         for ( size_t s = 0; s < sort_count; ++s ) {
-            size_t a = random()%(size+1);
-            size_t b = random()%(size+1);
+            size_t a = m_Rand.GetRandIndexSize_t(size + 1);
+            size_t b = m_Rand.GetRandIndexSize_t(size + 1);
             if ( a > b ) swap(a, b);
             std::sort(v0.begin()+a, v0.begin()+b);
         }
