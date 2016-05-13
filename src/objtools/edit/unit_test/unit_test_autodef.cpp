@@ -1916,5 +1916,16 @@ BOOST_AUTO_TEST_CASE(Test_GB_5758)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_5793)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> m = unit_test_util::AddMiscFeature(entry);
+    m->SetData().SetImp().SetKey("misc_recomb");
+    m->SetComment("GCC2-ALK translocation breakpoint junction; microhomology");
+    AddTitle(entry, "Sebaea microphylla GCC2-ALK translocation breakpoint junction genomic sequence.");
+    CheckDeflineMatches(entry, false, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eCommentFeat);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -692,7 +692,7 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
             } else if ((subtype == CSeqFeatData::eSubtype_misc_feature || subtype == CSeqFeatData::eSubtype_otherRNA) &&
                        (x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause) || x_AddtRNAAndOther(bh, cf, mapped_loc, main_clause))) {
                 // special misc_features and misc_RNA features
-            } else if (subtype == CSeqFeatData::eSubtype_misc_feature) {
+            } else if (subtype == CSeqFeatData::eSubtype_misc_feature || subtype == CSeqFeatData::eSubtype_misc_recomb) {
 				// some misc-features may require more parsing
                 new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
                 if (m_Options.GetMiscFeatRule() == CAutoDefOptions::eDelete
