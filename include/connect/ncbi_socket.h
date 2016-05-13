@@ -297,9 +297,9 @@ extern NCBI_XCONNECT_EXPORT const STimeout*SOCK_SetSelectInternalRestartTimeout
  *  SOCK_SetIOWaitSysAPI
  */
 typedef enum {
-    eSOCK_IOWaitSysAPIAuto,   /** default; use some euristics to choose API */
-    eSOCK_IOWaitSysAPIPoll,   /** always use poll()                         */
-    eSOCK_IOWaitSysAPISelect  /** always use select()                       */
+    eSOCK_IOWaitSysAPIAuto,   /**< default; use some euristics to choose API */
+    eSOCK_IOWaitSysAPIPoll,   /**< always use poll()                         */
+    eSOCK_IOWaitSysAPISelect  /**< always use select()                       */
 } ESOCK_IOWaitSysAPI;
 
 /** This is a helper call that can improve I/O behavior (ignored for Windows).
@@ -1251,9 +1251,9 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetRemotePort
  *  On success, return its "buf" argument; return 0 on error.
  */
 typedef enum {
-    eSAF_Full = 0,  /** address in full, native form                      */
-    eSAF_Port,      /** only numeric port if INET socket, empty otherwise */
-    eSAF_IP         /** only numeric IP if INET socket,   empty otherwise */
+    eSAF_Full = 0,  /**< address in full, native form                      */
+    eSAF_Port,      /**< only numeric port if INET socket, empty otherwise */
+    eSAF_IP         /**< only numeric IP if INET socket,   empty otherwise */
 } ESOCK_AddressFormat;
 
 extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressStringEx
