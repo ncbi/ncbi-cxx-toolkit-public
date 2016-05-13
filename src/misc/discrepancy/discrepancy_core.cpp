@@ -475,7 +475,7 @@ DISCREPANCY_LINK_MODULE(cds_trna_overlap);
 DISCREPANCY_LINK_MODULE(sesame_street);
 DISCREPANCY_LINK_MODULE(transl_note);
 DISCREPANCY_LINK_MODULE(feature_tests);
-
+DISCREPANCY_LINK_MODULE(sequence_tests);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

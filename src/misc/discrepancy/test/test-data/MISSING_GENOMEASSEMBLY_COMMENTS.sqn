@@ -1,0 +1,168 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name
+          name {
+            last "q" ,
+            first "q" ,
+            initials "qq" } ,
+        affil
+          str "q" } } ,
+    cit {
+      authors {
+        names
+          std {
+            {
+              name
+                name {
+                  last "q" ,
+                  first "q" ,
+                  initials "qq." } } } ,
+        affil
+          str "q" } ,
+      date
+        std {
+          year 2016 ,
+          month 5 ,
+          day 13 } } ,
+    subtype new ,
+    tool "Sequin 15.20 - MS WINDOWS VISTA" } ,
+  data
+    entrys {
+      set {
+        class pop-set ,
+        descr {
+          pub {
+            pub {
+              gen {
+                cit "Unpublished" ,
+                authors {
+                  names
+                    std {
+                      {
+                        name
+                          name {
+                            last "q" ,
+                            first "q" ,
+                            initials "qq." } } } ,
+                  affil
+                    str "q" } ,
+                title "q" } } } ,
+          user {
+            type
+              str "NcbiCleanup" ,
+            data {
+              {
+                label
+                  str "method" ,
+                data
+                  str "SequinCleanup" } ,
+              {
+                label
+                  str "version" ,
+                data
+                  int 8 } ,
+              {
+                label
+                  str "month" ,
+                data
+                  int 5 } ,
+              {
+                label
+                  str "day" ,
+                data
+                  int 13 } ,
+              {
+                label
+                  str "year" ,
+                data
+                  int 2016 } } } ,
+          create-date
+            std {
+              year 2016 ,
+              month 5 ,
+              day 13 } } ,
+        seq-set {
+          seq {
+            id {
+              local
+                str "n1" } ,
+            descr {
+              source {
+                genome genomic ,
+                org {
+                  taxname "Acanthamoeba castellanii" ,
+                  orgname {
+                    lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
+                    gcode 1 ,
+                    div "INV" } } } ,
+              molinfo {
+                biomol genomic } ,
+              user {
+                type
+                  str "StructuredComment" ,
+                data {
+                  {
+                    label
+                      str "StructuredCommentPrefix" ,
+                    data
+                      str "##Assembly-Data-START##" } ,
+                  {
+                    label
+                      str "StructuredCommentSuffix" ,
+                    data
+                      str "##Assembly-Data-END##" } ,
+                  {
+                    label
+                      str "Sequencing Technology" ,
+                    data
+                      str "Sanger dideoxy sequencing" } } } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 210 ,
+              seq-data
+                ncbi2na '0000000000000000FFFFFFFFFFFFFFFFFFFFFAAAAAAAAAAAAAAA9
+55555555555555555555555555555555555555555555555555550'H } } ,
+          seq {
+            id {
+              local
+                str "n2" } ,
+            descr {
+              source {
+                genome genomic ,
+                org {
+                  taxname "Acanthamoeba castellanii" ,
+                  orgname {
+                    lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
+                    gcode 1 ,
+                    div "INV" } } } ,
+              molinfo {
+                biomol genomic } ,
+              user {
+                type
+                  str "StructuredComment" ,
+                data {
+                  {
+                    label
+                      str "StructuredCommentPrefix" ,
+                    data
+                      str "##Genome-Assembly-Data-START##" } ,
+                  {
+                    label
+                      str "StructuredCommentSuffix" ,
+                    data
+                      str "##Genome-Assembly-Data-END##" } ,
+                  {
+                    label
+                      str "Sequencing Technology" ,
+                    data
+                      str "Sanger dideoxy sequencing" } } } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 248 ,
+              seq-data
+                ncbi2na 'FFFFFFFFFFFFFFFFFFFFEAAAAAAAAAAAAAAAAAAAAAAAAA9555555
+55555555500000000000000000000000000000000000000000000000000000000000000'H } } } } } }
