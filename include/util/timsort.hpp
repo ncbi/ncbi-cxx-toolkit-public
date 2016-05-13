@@ -423,8 +423,8 @@ template <typename RandomAccessIterator, typename LessFunction> class TimSort {
 
         // outer:
         while (true) {
-            int count1 = 0;
-            int count2 = 0;
+            diff_t count1 = 0;
+            diff_t count2 = 0;
 
             bool break_outer = false;
             do {
@@ -542,8 +542,8 @@ template <typename RandomAccessIterator, typename LessFunction> class TimSort {
 
         // outer:
         while (true) {
-            int count1 = 0;
-            int count2 = 0;
+            diff_t count1 = 0;
+            diff_t count2 = 0;
 
             bool break_outer = false;
             do {
