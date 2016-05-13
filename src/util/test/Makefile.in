@@ -38,6 +38,7 @@ APP_PROJ = example_value_convert \
            test_histogram_binning \
            test_table_printer \
            test_random \
+           test_timsort \
 		   test_metaphone
 
 EXPENDABLE_APP_PROJ = \
