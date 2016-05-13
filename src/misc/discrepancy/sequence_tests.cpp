@@ -29,7 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/valid/comment_rule.hpp>
+#include <objects/valid/Comment_rule.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 
 #include "discrepancy_core.hpp"
