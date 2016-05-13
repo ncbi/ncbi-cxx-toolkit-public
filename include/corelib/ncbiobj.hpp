@@ -666,10 +666,10 @@ public:
     CRef(TThisType&& ref)
         : m_Data(ref.m_Data)
         {
-            if ( TObjectType* ptr = m_Data.second() ) {
+            if ( TObjectType* ptr = ref.m_Data.second() ) {
                 m_Data.first().TransferLock(ptr, ref.m_Data.first());
+                ref.m_Data.second() = 0;
             }
-            ref.m_Data.second() = 0;
         }
 
     /// Destructor.
@@ -892,7 +892,16 @@ public:
     /// Assignment operator for references.
     TThisType& operator=(TThisType&& ref)
         {
-            Swap(ref);
+            TObjectType* oldPtr = m_Data.second();
+            TObjectType* newPtr = ref.m_Data.second();
+            if ( newPtr ) {
+                m_Data.first().TransferLock(newPtr, ref.m_Data.first());
+                ref.m_Data.second() = 0;
+            }
+            m_Data.second() = newPtr;
+            if ( oldPtr ) {
+                m_Data.first().Unlock(oldPtr);
+            }
             return *this;
         }
 
@@ -1226,10 +1235,10 @@ public:
     CConstRef(TThisType&& ref)
         : m_Data(ref.m_Data)
         {
-            if ( TObjectType* ptr = m_Data.second() ) {
+            if ( TObjectType* ptr = ref.m_Data.second() ) {
                 m_Data.first().TransferLock(ptr, ref.m_Data.first());
+                ref.m_Data.second() = 0;
             }
-            ref.m_Data.second() = 0;
         }
 
     /// Constructor from an existing CRef object, 
@@ -1463,7 +1472,16 @@ public:
     /// Assignment operator for const references.
     TThisType& operator=(TThisType&& ref)
         {
-            Swap(ref);
+            TObjectType* oldPtr = m_Data.second();
+            TObjectType* newPtr = ref.m_Data.second();
+            if ( newPtr ) {
+                m_Data.first().TransferLock(newPtr, ref.m_Data.first());
+                ref.m_Data.second() = 0;
+            }
+            m_Data.second() = newPtr;
+            if ( oldPtr ) {
+                m_Data.first().Unlock(oldPtr);
+            }
             return *this;
         }
 
