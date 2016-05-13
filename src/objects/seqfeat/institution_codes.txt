@@ -6180,7 +6180,6 @@ UCLZ	s	University College London
 UCM<ESP>	s	Universidad Complutense Madrid
 UCM<UKR>	c	Ukrainian Collection of Microorganisms, Zabolotny Institute of Microbiology and Virology
 UCM<USA-CO>	s	University of Colorado Museum
-UCM<USA-CO>:	s	University of Colorado Museum, University of Colorado Museum Fish Collection
 UCM<USA-CO>:Bird	s	University of Colorado Museum, University of Colorado Museum Bird Collection
 UCM<USA-CO>:Fish	s	University of Colorado Museum, University of Colorado Museum Fish collection
 UCM<USA-CO>:Herp	s	University of Colorado Museum, University of Colorado Museum Amplibian and Reptile collection
@@ -6922,6 +6921,7 @@ XJNU	s	Xinjiang Normal University, Biology Department
 XJU	s	Xinjiang University, Biology Department
 XJUG	s	Xinjiang University, Geography Department
 XM	s	Xinjiang Medical College, Pharmacy Department
+XMU	s	Xiamen University
 XNC	s	Department of Biology, Xinxiang Normal College
 XOLO	s	Universidad Autonoma Chapingo, Departamento de Fitotecnia
 XTNM	s	Xinjiang Institute of Traditional Chinese and Minorities Medicine
