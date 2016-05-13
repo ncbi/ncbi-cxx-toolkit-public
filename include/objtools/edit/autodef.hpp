@@ -95,6 +95,7 @@ public:
     void SetGeneClusterOppStrand(bool gene_opp_strand);
     void SetSuppressFeatureAltSplice (bool suppress_alt_splice);
     void SuppressMobileElementAndInsertionSequenceSubfeatures(bool suppress);
+    void SuppressMiscFeatSubfeatures(bool suppress);
     void SetKeepExons(bool keep);
     void SetKeepIntrons(bool keep);
     void SetKeepRegulatoryFeatures(bool keep);
@@ -233,6 +234,13 @@ inline
 void CAutoDef::SuppressMobileElementAndInsertionSequenceSubfeatures(bool suppress)
 {
     m_Options.SetSuppressMobileElementSubfeatures(suppress);
+}
+
+
+inline 
+void CAutoDef::SuppressMiscFeatSubfeatures(bool suppress)
+{
+    m_Options.SetSuppressMiscFeatureSubfeatures(suppress);
 }
 
 
