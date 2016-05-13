@@ -132,8 +132,8 @@ typedef enum ENcbiSwitch {
  * For example, specify if a CSocket object owns its underlying SOCK object.
  */
 typedef enum ENcbiOwnership {
-    eNoOwnership,       /** No ownership is assumed                 */
-    eTakeOwnership      /** An object can take ownership of another */
+    eNoOwnership,       /**< No ownership is assumed                 */
+    eTakeOwnership      /**< An object can take ownership of another */
 } EOwnership;
 
 #endif /*!NCBI_EOWNERSHIP_DEFINED*/
