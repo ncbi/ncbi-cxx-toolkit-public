@@ -647,33 +647,10 @@ namespace DeBruijn {
             TKmer operator*() const {
                 TKmer kmer(m_kmer_len, 0);
                 uint64_t* guts = (uint64_t*)kmer.getPointer();
-                unsigned precision = kmer.getSize()/64;
-                int front_shift = m_readholder.m_front_shift;
-
-                size_t first_word = (m_position+front_shift)/64;                // first, maybe partial, word in deque
-                size_t end_word = (m_position+front_shift+2*m_kmer_len-1)/64+1; // word after last
-                int shift = (m_position+front_shift)%64;
-                if(shift == 0) {
-                    copy(m_readholder.m_storage.begin()+first_word, m_readholder.m_storage.begin()+end_word, guts);
-                } else {
-                    if(end_word-first_word <= precision) {
-                        copy(m_readholder.m_storage.begin()+first_word, m_readholder.m_storage.begin()+end_word, guts);
-                        kmer = (kmer >> shift);
-                    } else {
-                        copy(m_readholder.m_storage.begin()+first_word+1, m_readholder.m_storage.begin()+end_word, guts);
-                        kmer = (kmer << 64-shift);                // make space for first partial word
-                        *guts += m_readholder.m_storage[first_word] >> shift;
-                    }
-                }
-                unsigned prc = (m_kmer_len+31)/32;                   // rounded up number of 8-byte words in kmer
-                int partial_part_bits = 2*(m_kmer_len%32);
-                if(partial_part_bits > 0) {
-                    uint64_t mask = (uint64_t(1) << partial_part_bits) - 1;
-                    guts[prc-1] &= mask;
-                }
-                if(precision > prc)
-                    guts[prc] = 0;
-
+                size_t bit_from = m_readholder.m_front_shift+m_position;
+                size_t bit_to = bit_from+2*m_kmer_len;
+                m_readholder.CopyBits(bit_from, bit_to, guts, 0, (2*m_kmer_len+63)/64);
+                
                 return kmer;
             }
 
@@ -740,6 +717,7 @@ namespace DeBruijn {
             }
             friend bool operator==(string_iterator const& li, string_iterator const& ri) { return li.m_position == ri.m_position; }
             friend bool operator!=(string_iterator const& li, string_iterator const& ri) { return li.m_position != ri.m_position; }
+            friend class CReadHolder;
         
 
         private:
@@ -750,7 +728,62 @@ namespace DeBruijn {
         string_iterator send() const { return string_iterator(*this, 2*m_total_seq, m_read_length.size()); }
         string_iterator sbegin() const { return string_iterator(*this); }
 
+        void PushBack(const string_iterator& is) {
+            size_t read_len = is.ReadLen();
+            m_read_length.push_back(read_len);
+            size_t destination_first_bit = m_front_shift+2*m_total_seq;
+            m_total_seq += read_len;
+            m_storage.resize((m_front_shift+2*m_total_seq+63)/64);
+
+            const CReadHolder& other_holder = is.m_readholder;
+            size_t bit_from = is.m_readholder.m_front_shift+is.m_position;
+            size_t bit_to = bit_from+2*read_len;
+            other_holder.CopyBits(bit_from, bit_to, m_storage, destination_first_bit, m_storage.size());
+        }
+
     private:
+        // efficiently copies sequence to destination without converting it to string
+        // assumes that destination is extended properly and filled with 0; destination_size - number of 'used' 8-byte words in destination after copy
+        template <typename Dest>
+        void CopyBits(size_t bit_from, size_t bit_to, Dest& destination, size_t destination_bit_from, size_t destination_size) const {
+            if(bit_to <= bit_from)
+                return;
+
+            size_t word = bit_from/64;
+            size_t last_word = (bit_to-1)/64;
+            unsigned shift = bit_from%64;
+            size_t destination_word = destination_bit_from/64; 
+            unsigned destination_shift = destination_bit_from%64;
+            if(shift > 0) {                                                               // first word partial
+                uint64_t chunk = (m_storage[word++] >> shift);
+                if(destination_shift > 0) {                                               // destination word partial
+                    destination[destination_word] += (chunk << destination_shift);
+                    if(shift <= destination_shift)                                        // we used all remaining destination word
+                        ++destination_word;
+                    if(shift < destination_shift && destination_word < destination_size)  // first word spills out
+                        destination[destination_word] += (chunk >> (64-destination_shift));
+                } else {                                                                  // desination word is not partial - it is bigger than chunk
+                    destination[destination_word] = chunk;
+                }
+                destination_shift = (destination_shift+64-shift)%64;
+            }
+            for( ; word <= last_word; ++word, ++destination_word) {
+                if(destination_shift > 0) {
+                    destination[destination_word] += (m_storage[word] << destination_shift);
+                    if(destination_word+1 < destination_size)
+                        destination[destination_word+1] += (m_storage[word] >> (64-destination_shift));
+                } else {
+                    destination[destination_word] = m_storage[word];
+                }
+            }
+            int partial_bits = (destination_bit_from+bit_to-bit_from)%64;
+            if(partial_bits > 0) {
+                uint64_t mask = (uint64_t(1) << partial_bits) - 1;
+                destination[destination_size-1] &= mask;
+            }
+        }
+
+
         deque<uint64_t> m_storage;
         deque<uint32_t> m_read_length;
         size_t m_total_seq;
@@ -804,7 +837,7 @@ public:
     }
 
 
-    bool GoodNode(const CDBGraph::Node& node) const { return m_graph.Abundance(node) > m_low_count; }
+    bool GoodNode(const CDBGraph::Node& node) const { return m_graph.Abundance(node) >= m_low_count; }
 
     void FilterNeighbors(vector<CDBGraph::Successor>& successors) const {
         if(successors.size() > 1) {
