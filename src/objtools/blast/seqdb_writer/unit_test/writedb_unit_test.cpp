@@ -2662,6 +2662,82 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestBasicDatabaseCreation)
     BOOST_REQUIRE(f1.Exists() == false);
 }
 
+BOOST_AUTO_TEST_CASE(CBuildDatabase_TestQuickDatabaseCreation)
+{
+    CTmpFile tmpfile;
+    CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    const string kOutput("x");
+    const string title("fuwafuwa");     // it's Japanese...
+    CFileDeleteAtExit::Add("x.pin");
+    CFileDeleteAtExit::Add("x.phr");
+    CFileDeleteAtExit::Add("x.psq");
+
+    // FASTA file contains 25 sequences.
+    CNcbiIfstream fasta_file("data/some_prots.fsa");
+    CRef<CBuildDatabase> bd;
+    bd.Reset(new CBuildDatabase(
+            kOutput,
+            title,
+            true,               // is_protein
+            CWriteDB::eNoIndex, // indexing
+            false,              // use_gi_mask
+            &log
+    ));
+    bd->SetSourceDb("swissprot");
+
+    // These two IDs are NOT in the FASTA file.
+    vector<string> ids;
+    ids.push_back("166225656");
+    ids.push_back("259646160");
+
+    bool success = bd->Build(ids, &fasta_file);
+    // Created DB should now contain 27 sequences.
+    BOOST_REQUIRE(success);
+
+    CFile f1(kOutput + ".pin");
+    BOOST_REQUIRE(f1.Exists() == true);
+
+    bd->EndBuild(true);
+    BOOST_REQUIRE(f1.Exists() == false);
+}
+
+BOOST_AUTO_TEST_CASE(CBuildDatabase_TestQuickDatabaseCreation_NoIds)
+{
+    CTmpFile tmpfile;
+    CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    const string kOutput("x1");
+    const string title("fuwafuwa");
+    CFileDeleteAtExit::Add("x1.pin");
+    CFileDeleteAtExit::Add("x1.phr");
+    CFileDeleteAtExit::Add("x1.psq");
+
+    // FASTA file contains 25 sequences.
+    CNcbiIfstream fasta_file("data/some_prots.fsa");
+    CRef<CBuildDatabase> bd;
+    bd.Reset(new CBuildDatabase(
+            kOutput,
+            title,
+            true,               // is_protein
+            CWriteDB::eNoIndex, // indexing
+            false,              // use_gi_mask
+            &log
+    ));
+    bd->SetSourceDb("swissprot");
+
+    // Not adding any IDs.
+    vector<string> ids;     // empty
+
+    bool success = bd->Build(ids, &fasta_file);
+    // Created DB should now contain 25 sequences.
+    BOOST_REQUIRE(success);
+
+    CFile f1(kOutput + ".pin");
+    BOOST_REQUIRE(f1.Exists() == true);
+
+    bd->EndBuild(true);
+    BOOST_REQUIRE(f1.Exists() == false);
+}
+
 class CSeqEntryGetSource : public IBioseqSource {
 public:
 	CSeqEntryGetSource(CRef<CSeq_entry> seq_entry)

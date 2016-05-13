@@ -1199,7 +1199,7 @@ CBuildDatabase::Build(const vector<string> & ids,
 
     bool success2 = EndBuild();
 
-    success = success || success2;
+    success = success && success2;
 
     double t = sw.Elapsed();
 
@@ -1335,7 +1335,7 @@ bool CBuildDatabase::EndBuild(bool erase)
 
 bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
 {
-    bool success = false;
+    bool success = true;
 
     vector<string> vols;
     vector<string> files;
