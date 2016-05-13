@@ -12798,6 +12798,13 @@ void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
     if (!sf.GetData().GetRna().IsSetType() || sf.GetData().GetRna().GetType() == CRNA_ref::eType_tmRNA) {
         return;
     }
+    if (sf.GetData().GetRna().GetType() == CRNA_ref::eType_tRNA &&
+        sf.GetData().GetRna().IsSetExt() &&
+        sf.GetData().GetRna().GetExt().IsTRNA() &&
+        !s_IsEmpty(sf.GetData().GetRna().GetExt().GetTRNA())) {
+        return;
+    }
+
     // not for EMBL or DDBJ
     if (m_IsEmblOrDdbj) {
         return;
@@ -12806,6 +12813,7 @@ void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
     if (!sf.IsSetQual()) {
         return;
     }
+
     CSeq_feat::TQual::iterator it = sf.SetQual().begin();
     while (it != sf.SetQual().end()) {
         if ((*it)->IsSetQual() && (*it)->IsSetVal() && NStr::Equal((*it)->GetQual(), "standard_name")) {
