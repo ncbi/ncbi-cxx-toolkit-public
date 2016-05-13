@@ -236,7 +236,7 @@ int CTestTimSort::Run(void)
         size_t size = m_Rand.GetRandIndexSize_t(10000);
         vector<int> v0(size);
         for ( size_t i = 0; i < size; ++i )
-            v0[i] = m_Rand.GetRandIndexSize_t(10000);
+            v0[i] = m_Rand.GetRand(1, 10000);
         size_t sort_count = m_Rand.GetRandIndexSize_t(5);
         for ( size_t s = 0; s < sort_count; ++s ) {
             size_t a = m_Rand.GetRandIndexSize_t(size + 1);
