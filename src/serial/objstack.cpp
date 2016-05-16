@@ -251,7 +251,7 @@ void CObjectStack::x_PopStackPath(void)
 
 const string& CObjectStack::GetStackPath(void)
 {
-    if (!m_PathValid && GetStackDepth()) {
+    if (GetStackDepth()) {
 //        _ASSERT(FetchFrameFromBottom(0).m_FrameType == TFrame::eFrameNamed);
 //        _ASSERT(FetchFrameFromBottom(0).m_TypeInfo);
 //        m_MemberPath = FetchFrameFromBottom(0).GetTypeInfo()->GetName();

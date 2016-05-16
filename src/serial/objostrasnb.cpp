@@ -1443,6 +1443,7 @@ void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
         const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
         copier.In().SetTopMemberId(memberInfo->GetId());
         SetTopMemberId(memberInfo->GetId());
+        copier.SetPathHooks(*this, true);
 
         if ( read[index] ) {
             copier.DuplicatedMember(memberInfo);
@@ -1468,6 +1469,7 @@ void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
 #endif
         }
         
+        copier.SetPathHooks(*this, false);
         copier.In().EndClassMember();
     }
 
@@ -1519,6 +1521,7 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
             // init missing member
             classType->GetMemberInfo(i)->CopyMissingMember(copier);
         }
+        copier.SetPathHooks(*this, true);
 
 #if USE_OLD_TAGS
         WriteTag(eContextSpecific, eConstructed, memberInfo->GetId().GetTag());
@@ -1537,6 +1540,7 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
         
         pos.SetIndex(index + 1);
 
+        copier.SetPathHooks(*this, false);
         copier.In().EndClassMember();
     }
 

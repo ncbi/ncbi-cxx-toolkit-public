@@ -663,7 +663,7 @@ bool CObjectOStreamAsn::WriteClassMember(const CMemberId& memberId,
 void CObjectOStreamAsn::CopyClassRandom(const CClassTypeInfo* classType,
                                         CObjectStreamCopier& copier)
 {
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameClass, classType);
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameClass, classType);
     copier.In().BeginClass(classType);
 
     StartBlock();
@@ -678,6 +678,7 @@ void CObjectOStreamAsn::CopyClassRandom(const CClassTypeInfo* classType,
         const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
         copier.In().SetTopMemberId(memberInfo->GetId());
         SetTopMemberId(memberInfo->GetId());
+        copier.SetPathHooks(*this, true);
 
         if ( read[index] ) {
             copier.DuplicatedMember(memberInfo);
@@ -690,7 +691,7 @@ void CObjectOStreamAsn::CopyClassRandom(const CClassTypeInfo* classType,
 
             memberInfo->CopyMember(copier);
         }
-        
+        copier.SetPathHooks(*this, false);
         copier.In().EndClassMember();
     }
 
@@ -706,13 +707,13 @@ void CObjectOStreamAsn::CopyClassRandom(const CClassTypeInfo* classType,
     EndBlock();
 
     copier.In().EndClass();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 }
 
 void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
                                             CObjectStreamCopier& copier)
 {
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameClass, classType);
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameClass, classType);
     copier.In().BeginClass(classType);
 
     StartBlock();
@@ -726,6 +727,7 @@ void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
         const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
         copier.In().SetTopMemberId(memberInfo->GetId());
         SetTopMemberId(memberInfo->GetId());
+        copier.SetPathHooks(*this, true);
 
         for ( TMemberIndex i = *pos; i < index; ++i ) {
             // init missing member
@@ -739,6 +741,7 @@ void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
         
         pos.SetIndex(index + 1);
 
+        copier.SetPathHooks(*this, false);
         copier.In().EndClassMember();
     }
 
@@ -752,7 +755,7 @@ void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
     EndBlock();
 
     copier.In().EndClass();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 }
 #endif
 
