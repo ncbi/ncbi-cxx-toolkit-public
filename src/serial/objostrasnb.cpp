@@ -331,7 +331,7 @@ void CObjectOStreamAsnBinary::WriteLongTag(ETagClass tag_class,
     // beginning of tag
     while ( shift != 0 ) {
         shift -= 7;
-        WriteByte((tag_value >> shift) | 0x80);
+        WriteByte(Uint1(tag_value >> shift) | 0x80);
     }
     // write remaining bits
     WriteByte(tag_value & 0x7f);
@@ -371,7 +371,7 @@ void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
         char c = tag[i];
         _ASSERT( (c & 0x80) == 0 );
         if ( i != last )
-            c |= 0x80;
+            c |= (char)0x80;
         WriteByte(c);
     }
 }
@@ -483,7 +483,7 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
 
 #if BITSTRING_AS_VECTOR
     for ( CBitString::const_iterator i = obj.begin(); !done; ) {
-        for (data=0, mask=0x80; mask != 0 && !done; mask >>= 1) {
+        for (data=0, mask=0x80; mask != 0 && !done; mask = Uint1(mask >> 1)) {
             if (*i) {
                 data |= mask;
             }
@@ -505,7 +505,7 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
     CBitString::size_type ilast = obj.size();
     CBitString::enumerator e = obj.first();
     while (!done) {
-        for (data=0, mask=0x80; !done && mask!=0; mask >>= 1) {
+        for (data=0, mask=0x80; !done && mask!=0; mask = Uint1(mask >> 1)) {
             if (i == *e) {
                 data |= mask;
                 ++e;

@@ -371,7 +371,7 @@ TMemberIndex CObjectIStreamAsn::GetAltItemIndex(
     if (!id.empty()) {
         const CItemsInfo& info = classType->GetItems();
         string id_alt = string(id);
-        id_alt[0] = toupper((unsigned char)id_alt[0]);
+        id_alt[0] = (char)toupper((unsigned char)id_alt[0]);
         if (pos != kInvalidMember) {
             idx = info.Find(CTempString(id_alt),pos);
         } else {
@@ -598,7 +598,7 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
         Uint1 byte;
         ITERATE( string, i, data) {
             byte = *i;
-            for (Uint1 mask= 0x8; mask != 0; mask >>= 1) {
+            for (Uint1 mask= 0x8; mask != 0; mask = Uint1(mask >> 1)) {
                 obj.push_back( (byte & mask) != 0 );
             }
         }
@@ -656,7 +656,7 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
         ITERATE( string, i, data) {
             byte = *i;
             if (byte) {
-                for (Uint1 mask= 0x8; mask != 0; mask >>= 1, ++len) {
+                for (Uint1 mask=0x8; mask != 0; mask = Uint1(mask >> 1), ++len) {
                     if ((byte & mask) != 0) {
                         obj.set_bit(len);
                     }
@@ -668,9 +668,9 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
         if (c > 0) {
             for (c= GetHexChar(); c >= 0; c= GetHexChar()) {
                 obj.resize( 4 + obj.size());
-                byte = c;
+                byte = (Uint1)c;
                 if (byte) {
-                    for (Uint1 mask= 0x8; mask != 0; mask >>= 1, ++len) {
+                    for (Uint1 mask= 0x8; mask != 0; mask = Uint1(mask >> 1), ++len) {
                         if ((byte & mask) != 0) {
                             obj.set_bit(len);
                         }
@@ -870,7 +870,7 @@ inline
 void CObjectIStreamAsn::AppendStringData(string& s,
                                          size_t count,
                                          EFixNonPrint fix_method,
-                                         size_t line)
+                                         size_t /*line*/)
 {
     const char* data = m_Input.GetCurrentPos();
     if ( fix_method != eFNP_Allow ) {
@@ -908,7 +908,7 @@ void CObjectIStreamAsn::AppendLongStringData(string& s,
     if ( s.empty() ) {
         s.reserve(count*2);
     }
-    else if ( s.capacity() < (s.size()+1)*1.1 ) {
+    else if ( s.capacity() < double(s.size()+1)*1.1 ) {
         s.reserve(s.size()*2);
     }
     AppendStringData(s, count, fix_method, line);
@@ -1484,13 +1484,13 @@ size_t CObjectIStreamAsn::ReadBytes(ByteBlock& block,
         }
         int c2 = GetHexChar();
         if ( c2 < 0 ) {
-            *dst++ = c1 << 4;
+            *dst++ = char(c1 << 4);
             count++;
             block.EndOfBlock();
             return count;
         }
         else {
-            *dst++ = (c1 << 4) | c2;
+            *dst++ = char((c1 << 4) | c2);
             count++;
         }
     }

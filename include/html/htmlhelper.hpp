@@ -212,11 +212,11 @@ void CIDs::Decode(const string& str)
         pos = 1;        // start of number
     }
 
-    SIZE_TYPE end;      // end of number
-    while ( (end = str.find_first_of(" +_,", pos)) != NPOS ) {
-        id = AddID(cmd, id, GetNumber(str.substr(pos, end - pos)));
-        cmd = str[end];
-        pos = end + 1;
+    SIZE_TYPE end_pos;  // end of number
+    while ( (end_pos = str.find_first_of(" +_,", pos)) != NPOS ) {
+        id = AddID(cmd, id, GetNumber(str.substr(pos, end_pos - pos)));
+        cmd = str[end_pos];
+        pos = end_pos + 1;
     }
     AddID(cmd, id, GetNumber(str.substr(pos)));
 }

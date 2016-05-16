@@ -238,11 +238,11 @@ char CObjectIStreamJson::ReadEncodedChar(
 
     if (enc_in != enc_out && enc_out != eEncoding_Unknown) {
         int c = ReadEscapedChar(encoded);
-        TUnicodeSymbol chU = ReadUtf8Char(c);
-        Uint1 ch = CUtf8::SymbolToChar( chU, enc_out);
+        TUnicodeSymbol chU = ReadUtf8Char((char)c);
+        Uint1 ch = CUtf8::SymbolToChar(chU, enc_out);
         return ch & 0xFF;
     }
-    return ReadEscapedChar(encoded);
+    return (char)ReadEscapedChar(encoded);
 }
 
 TUnicodeSymbol CObjectIStreamJson::ReadUtf8Char(char c)
@@ -275,7 +275,7 @@ string CObjectIStreamJson::x_ReadString(EStringType type)
         }
         str += char(c);
         // pre-allocate memory for long strings
-        if ( str.size() > 128  &&  double(str.capacity())/(str.size()+1.0) < 1.1 ) {
+        if ( str.size() > 128  &&  (double)str.capacity()/((double)str.size()+1.0) < 1.1 ) {
             str.reserve(str.size()*2);
         }
     }
@@ -296,7 +296,7 @@ string CObjectIStreamJson::x_ReadData(EStringType type /*= eStringTypeVisible*/)
         }
         str += char(c);
         // pre-allocate memory for long strings
-        if ( str.size() > 128  &&  double(str.capacity())/(str.size()+1.0) < 1.1 ) {
+        if ( str.size() > 128  &&  (double)str.capacity()/((double)str.size()+1.0) < 1.1 ) {
             str.reserve(str.size()*2);
         }
     }
@@ -492,7 +492,7 @@ void CObjectIStreamJson::ReadString(string& s,
     s = ReadValue(type);
 }
 
-void CObjectIStreamJson::SkipString(EStringType type /*= eStringTypeVisible*/)
+void CObjectIStreamJson::SkipString(EStringType /*type*/)
 {
     x_SkipData();
 }
@@ -668,7 +668,7 @@ void CObjectIStreamJson::SkipClassSequential(const CClassTypeInfo* classType)
 #endif
 
 // container
-void CObjectIStreamJson::BeginContainer(const CContainerTypeInfo* containerType)
+void CObjectIStreamJson::BeginContainer(const CContainerTypeInfo* /*containerType*/)
 {
     StartBlock('[');
 }
@@ -678,7 +678,7 @@ void CObjectIStreamJson::EndContainer(void)
     EndBlock(']');
 }
 
-bool CObjectIStreamJson::BeginContainerElement(TTypeInfo elementType)
+bool CObjectIStreamJson::BeginContainerElement(TTypeInfo /*elementType*/)
 {
     return NextElement();
 }
@@ -687,7 +687,7 @@ void CObjectIStreamJson::EndContainerElement(void)
 }
 
 // class
-void CObjectIStreamJson::BeginClass(const CClassTypeInfo* classInfo)
+void CObjectIStreamJson::BeginClass(const CClassTypeInfo* /*classInfo*/)
 {
     StartBlock((GetStackDepth() > 1 && FetchFrameFromTop(1).GetNotag()) ? 0 : '{');
 }
@@ -869,7 +869,7 @@ void CObjectIStreamJson::UndoClassMember(void)
 }
 
 // choice
-void CObjectIStreamJson::BeginChoice(const CChoiceTypeInfo* choiceType)
+void CObjectIStreamJson::BeginChoice(const CChoiceTypeInfo* /*choiceType*/)
 {
     StartBlock((GetStackDepth() > 1 && FetchFrameFromTop(1).GetNotag()) ? 0 : '{');
 }
@@ -908,7 +908,7 @@ void CObjectIStreamJson::EndChoiceVariant(void)
 }
 
 // byte block
-void CObjectIStreamJson::BeginBytes(ByteBlock& block)
+void CObjectIStreamJson::BeginBytes(ByteBlock& /*block*/)
 {
     char c = SkipWhiteSpaceAndGetChar();
     if (c == '\"') {
@@ -920,7 +920,7 @@ void CObjectIStreamJson::BeginBytes(ByteBlock& block)
     }
 }
 
-void CObjectIStreamJson::EndBytes(const ByteBlock& block)
+void CObjectIStreamJson::EndBytes(const ByteBlock& /*block*/)
 {
     Expect(m_Closing);
     m_Closing = 0;
@@ -984,7 +984,7 @@ size_t CObjectIStreamJson::ReadCustomBytes(
         Uint1 mask=0x80;
         switch (m_BinaryFormat) {
         case eArray_Bool:
-            for (; !end_of_data && mask!=0; mask >>= 1) {
+            for (; !end_of_data && mask!=0; mask = Uint1(mask >> 1)) {
                 if (ReadBool()) {
                     c |= mask;
                 }
@@ -994,7 +994,7 @@ size_t CObjectIStreamJson::ReadCustomBytes(
             *dst++ = c;
             break;
         case eArray_01:
-            for (; !end_of_data && mask!=0; mask >>= 1) {
+            for (; !end_of_data && mask!=0; mask = Uint1(mask >> 1)) {
                 if (ReadChar() != '0') {
                     c |= mask;
                 }
@@ -1012,7 +1012,7 @@ size_t CObjectIStreamJson::ReadCustomBytes(
             break;
         case eString_01:
         case eString_01B:
-            for (; !end_of_data && mask!=0; mask >>= 1) {
+            for (; !end_of_data && mask!=0; mask = Uint1(mask >> 1)) {
                 char t = GetChar();
                 end_of_data = t == '\"' || t == 'B';
                 if (!end_of_data && t != '0') {
@@ -1052,7 +1052,7 @@ size_t CObjectIStreamJson::ReadBase64Bytes(
                 break;
             }
             /*if (c != '=')*/ {
-                src_buf[ src_size++ ] = c;
+                src_buf[ src_size++ ] = (char)c;
             }
             m_Input.SkipChar();
         }
@@ -1083,13 +1083,13 @@ size_t CObjectIStreamJson::ReadHexBytes(
         }
         int c2 = GetHexChar();
         if ( c2 < 0 ) {
-            *dst++ = c1 << 4;
+            *dst++ = char(c1 << 4);
             count++;
             block.EndOfBlock();
             return count;
         }
         else {
-            *dst++ = (c1 << 4) | c2;
+            *dst++ = char((c1 << 4) | c2);
             count++;
         }
     }
@@ -1097,15 +1097,15 @@ size_t CObjectIStreamJson::ReadHexBytes(
 }
 
 // char block
-void CObjectIStreamJson::BeginChars(CharBlock& block)
+void CObjectIStreamJson::BeginChars(CharBlock& /*block*/)
 {
 }
-size_t CObjectIStreamJson::ReadChars(CharBlock& block, char* buffer, size_t count)
+size_t CObjectIStreamJson::ReadChars(CharBlock& /*block*/, char* /*buffer*/, size_t /*count*/)
 {
     ThrowError(fNotImplemented, "Not Implemented");
     return 0;
 }
-void CObjectIStreamJson::EndChars(const CharBlock& block)
+void CObjectIStreamJson::EndChars(const CharBlock& /*block*/)
 {
 }
 

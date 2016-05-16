@@ -55,7 +55,7 @@ CSelection::CSelection(const CCgiRequest& request,
     found = values.find(checkboxName);
     if ( found != values.end() ) {
         for ( TCgiEntriesCI i = values.lower_bound(checkboxName),
-              end = values.upper_bound(checkboxName); i != end; ++i ) {
+              iend = values.upper_bound(checkboxName); i != iend; ++i ) {
             AddID(NStr::StringToInt(string(i->second)));
         }
     }

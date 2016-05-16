@@ -1541,7 +1541,7 @@ void CObjectIStreamAsnBinary::SkipAnyContent(void)
             }
         }
         else {
-            TByte byte = PeekAnyTagFirstByte();
+            byte = PeekAnyTagFirstByte();
             if ( GetTagConstructed(byte) && PeekIndefiniteLength() ) {
                 ExpectIndefiniteLength();
                 ++depth;
@@ -1744,7 +1744,7 @@ void CObjectIStreamAsnBinary::ReadBitString(CBitString& obj)
             }
 #else
             if (byte) {
-                for (Uint1 mask= 0x80; mask != 0; mask >>= 1, ++len) {
+                for (Uint1 mask= 0x80; mask != 0; mask = Uint1(mask >> 1), ++len) {
                     if ((byte & mask) != 0 ) {
                         obj.set_bit(len);
                     }

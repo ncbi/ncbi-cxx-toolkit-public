@@ -190,7 +190,7 @@ CT_INT_TYPE CIndentingStreambuf::uflow(void)
 
 CT_INT_TYPE CIndentingStreambuf::pbackfail(CT_INT_TYPE c)
 {
-    return (CT_EQ_INT_TYPE(c, CT_EOF) ? CT_EOF : m_Buf->sputbackc(c));
+    return (CT_EQ_INT_TYPE(c, CT_EOF) ? CT_EOF : m_Buf->sputbackc((char)c));
 }
 
 

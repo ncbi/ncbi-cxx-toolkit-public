@@ -156,8 +156,8 @@ public:
     };
 
     struct NCBI_DBAPIDRIVER_EXPORT SMessageInContext {
-        SMessageInContext(const string& msg, const SContext& context)
-            :  message(msg), context(&context)
+        SMessageInContext(const string& msg, const SContext& ctx)
+            :  message(msg), context(&ctx)
             { }
         SMessageInContext(const string& msg = kEmptyStr)
             : message(msg)
@@ -166,7 +166,7 @@ public:
             : message(msg)
             { }
 
-        SMessageInContext operator+(const SContext& context) const;
+        SMessageInContext operator+(const SContext& ctx) const;
 
         string              message;
         CConstRef<SContext> context;
@@ -210,8 +210,8 @@ public:
         { return m_Context->database_name; }
 
     const SContext& GetContext(void) const { return *m_Context; }
-    void ApplyContext(const SContext& context)
-        { x_SetContext().UpdateFrom(context); }
+    void ApplyContext(const SContext& ctx)
+        { x_SetContext().UpdateFrom(ctx); }
     void SetFromConnection(const impl::CConnection& connection);
 
     void SetExtraMsg(const string& msg)   { x_SetContext().extra_msg = msg; }

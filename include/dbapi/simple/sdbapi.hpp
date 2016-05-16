@@ -1269,19 +1269,6 @@ const string& CSDB_Exception::GetExtraMsg(void) const
     return m_Context->extra_msg;
 }
 
-inline
-void CSDB_DeadlockException::x_Init(const CDiagCompileInfo&, const string&,
-                                    const CException* prev_exception, EDiagSev)
-{
-    _ASSERT(dynamic_cast<const CDB_DeadlockEx*>(prev_exception));
-}
-
-inline
-void CSDB_DeadlockException::x_InitErrCode(CException::EErrCode err_code)
-{
-    _ASSERT((TErrCode)err_code == (TErrCode)CSDB_Exception::eLowLevel);
-}
-
 
 #if !NCBI_INT8_IS_LONG
 inline

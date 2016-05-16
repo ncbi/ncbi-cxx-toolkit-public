@@ -906,7 +906,7 @@ public:
     virtual void SetTimeout(size_t nof_secs) = 0;
 
     /// Set timeout for command cancellation and connection closing
-    virtual void SetCancelTimeout(size_t nof_secs) {}
+    virtual void SetCancelTimeout(size_t /*nof_secs*/) {}
 
     /// Get connection timeout.
     virtual size_t GetTimeout(void) const;

@@ -465,19 +465,19 @@ ostream& operator<<(ostream& out, const SARange& r)
 
 void AC_AddToCollection(TAlignColl& coll, const SARange* ranges, int count)
 {
-    for( int i = 0; i < count;  i++ )   {
+    for (size_t i = 0; i < count;  ++i)   {
         const SARange& st = ranges[i];
         TAlignRange r(st.m_FirstFrom, st.m_SecondFrom, st.m_Length, st.m_Direct);
         coll.insert(r);
     }
 }
 
-void AC_Collection_Equals(TAlignColl& coll, const SARange* ranges, int count)
+void AC_Collection_Equals(TAlignColl& coll, const SARange* ranges, size_t count)
 {
     TAlignColl::const_iterator it = coll.begin();
-    BOOST_REQUIRE(count == (int) coll.size());
+    BOOST_REQUIRE(count == coll.size());
 
-    for( int i = 0; i < count;  ++i, ++it )   {
+    for (size_t i = 0; i < count;  ++i, ++it)   {
         const SARange& st = ranges[i];
         const TAlignRange& r = *it;
         BOOST_CHECK_EQUAL(st, r);
@@ -490,7 +490,7 @@ ostream& operator<<(ostream& out, const TAlignColl& coll)
     sprintf(s, "%X", (unsigned int) coll.GetFlags());
     out << "CAlignRangeCollection  Flags = " << s << ", : ";
 
-    for ( TAlignColl::const_iterator it = coll.begin();  it != coll.end();  ++it) {
+    for (TAlignColl::const_iterator it = coll.begin();  it != coll.end();  ++it) {
         const TAlignRange& r = *it;
         out << "[" << r.GetFirstFrom() << ", " << r.GetSecondFrom() << ", "
             << r.GetLength() << ", " << (r.IsDirect() ? "true" : "false") << "]";

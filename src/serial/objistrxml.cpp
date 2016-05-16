@@ -796,7 +796,7 @@ inline bool BAD_CHAR(int x) {
 }
 inline int CObjectIStreamXml::x_VerifyChar(int x) {
     return BAD_CHAR(x) ?
-        ReplaceVisibleChar(x, x_FixCharsMethod(), this, kEmptyStr) : x;
+        ReplaceVisibleChar((char)x, x_FixCharsMethod(), this, kEmptyStr) : x;
 }
 inline
 int CObjectIStreamXml::ReadEncodedChar(char endingChar, EStringType type, bool* encoded)
@@ -824,14 +824,14 @@ int CObjectIStreamXml::x_ReadEncodedChar(char endingChar, EStringType type, bool
         }
         if (enc_out != eEncoding_UTF8) {
             TUnicodeSymbol chU = enc_in == eEncoding_UTF8 ?
-                ReadUtf8Char(c) : CUtf8::CharToSymbol( c, enc_in);
+                ReadUtf8Char((char)c) : CUtf8::CharToSymbol((char)c, enc_in);
             Uint1 ch = CUtf8::SymbolToChar( chU, enc_out);
             return ch & 0xFF;
         }
         if ((c & 0x80) == 0) {
             return c;
         }
-        char ch = c;
+        char ch = (char)c;
         m_Utf8Buf = CUtf8::AsUTF8( CTempString(&ch,1), enc_in);
         m_Utf8Pos = m_Utf8Buf.begin();
         return *m_Utf8Pos & 0xFF;
@@ -953,7 +953,7 @@ char CObjectIStreamXml::ReadChar(void)
     int c = ReadEscapedChar('<');
     if ( c < 0 || m_Input.PeekChar() != '<' )
         ThrowError(fFormatError, "one char tag content expected");
-    return c;
+    return (char)c;
 }
 
 Int4 CObjectIStreamXml::ReadInt4(void)
@@ -1287,12 +1287,12 @@ void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
                 CR = true;
                 continue;
             }
-            if (m_Attlist && !encoded && IsWhiteSpace(c)) {
+            if (m_Attlist && !encoded && IsWhiteSpace((char)c)) {
                 c = ' ';
             }
-            str += char(c);
+            str += (char)c;
             // pre-allocate memory for long strings
-            if ( str.size() > 128  &&  double(str.capacity())/(str.size()+1.0) < 1.1 ) {
+            if ( str.size() > 128  &&  (double)str.capacity()/((double)str.size()+1.0) < 1.1 ) {
                 str.reserve(str.size()*2);
             }
         }
@@ -2494,7 +2494,7 @@ size_t CObjectIStreamXml::ReadBytes(ByteBlock& block,
                     break;
                 }
                 /*if (c != '=')*/ {
-                    src_buf[ src_size++ ] = c;
+                    src_buf[ src_size++ ] = (char)c;
                 }
                 m_Input.SkipChar();
             }
@@ -2520,13 +2520,13 @@ size_t CObjectIStreamXml::ReadBytes(ByteBlock& block,
         }
         int c2 = GetHexChar();
         if ( c2 < 0 ) {
-            *dst++ = c1 << 4;
+            *dst++ = char(c1 << 4);
             count++;
             block.EndOfBlock();
             return count;
         }
         else {
-            *dst++ = (c1 << 4) | c2;
+            *dst++ = char((c1 << 4) | c2);
             count++;
         }
     }

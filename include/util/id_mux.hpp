@@ -372,8 +372,8 @@ void CIdDeMux<TBV, TBVFact>::InitDim(size_t i, size_t dim_size)
 
     size_t old_size = dv.size();
     dv.resize(dim_size);
-    for (size_t i = old_size; i < dim_size; ++i) {
-        dv[i] = TBVFactory::Create();
+    for (size_t j = old_size; j < dim_size; ++j) {
+        dv[j] = TBVFactory::Create();
     }
 }
 

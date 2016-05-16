@@ -395,7 +395,7 @@ typename CTextFsm<MatchType>::CState *CTextFsm<MatchType>::GetState(int state)
 
 template <typename MatchType>
 int CTextFsm<MatchType>::GetNextState(const CState& from, char letter) const {
-    char ch = m_CaseSensitive ? letter : toupper((unsigned char) letter);
+    char ch = m_CaseSensitive ? letter : (char)toupper((unsigned char) letter);
     return from.GetNextState(ch);
 }
 

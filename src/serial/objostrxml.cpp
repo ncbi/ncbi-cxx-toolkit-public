@@ -1536,7 +1536,7 @@ bool CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
 }
 
 void CObjectOStreamXml::WriteClassMemberSpecialCase(const CMemberId& memberId,
-    TTypeInfo memberType, TConstObjectPtr memberPtr, ESpecialCaseWrite how)
+    TTypeInfo /*memberType*/, TConstObjectPtr /*memberPtr*/, ESpecialCaseWrite how)
 {
     if (m_Attlist) {
         return;

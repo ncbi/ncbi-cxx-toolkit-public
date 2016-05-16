@@ -34,6 +34,7 @@
 
 #include <serial/impl/stdtypes.hpp>
 #include <serial/enumvalues.hpp>
+#include <limits>
 
 
 /** @addtogroup TypeInfoCPP
@@ -43,6 +44,7 @@
 
 
 BEGIN_NCBI_SCOPE
+
 
 class NCBI_XSERIAL_EXPORT CEnumeratedTypeInfo : public CPrimitiveTypeInfo
 {
@@ -101,8 +103,9 @@ inline
 CEnumeratedTypeInfo* CreateEnumeratedTypeInfo(const T& ,
                                               const CEnumeratedTypeValues* values)
 {
-    return new CEnumeratedTypeInfo(sizeof(T), values, T(-1) < 0);
+    return new CEnumeratedTypeInfo(sizeof(T), values, numeric_limits<T>::is_signed);
 }
+
 
 END_NCBI_SCOPE
 

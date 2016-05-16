@@ -326,7 +326,7 @@ void CObjectOStreamJson::WriteBitString(const CBitString& obj)
     Uint1 data, mask;
     bool done = false;
     for ( CBitString::const_iterator i = obj.begin(); !done; ) {
-        for (data=0, mask=0x8; !done && mask!=0; mask >>= 1) {
+        for (data=0, mask=0x8; !done && mask!=0; mask = Uint1(mask >> 1)) {
             if (*i) {
                 data |= mask;
             }
@@ -490,7 +490,7 @@ void CObjectOStreamJson::EndChoice(void)
 }
 
 void CObjectOStreamJson::BeginChoiceVariant(const CChoiceTypeInfo* /*choiceType*/,
-                                const CMemberId& id)
+                                            const CMemberId& id)
 {
     if (id.HasNotag() || id.IsAttlist()) {
         m_SkippedMemberId = id.GetName();
@@ -524,8 +524,8 @@ void CObjectOStreamJson::BeginBytes(const ByteBlock& )
     }
 }
 
-void CObjectOStreamJson::WriteBytes(const ByteBlock& block,
-                        const char* bytes, size_t length)
+void CObjectOStreamJson::WriteBytes(const ByteBlock& /*block*/,
+                                    const char* bytes, size_t length)
 {
     if (m_BinaryFormat != CObjectOStreamJson::eDefault) {
         WriteCustomBytes(bytes,length);
@@ -608,7 +608,7 @@ void CObjectOStreamJson::WriteCustomBytes(const char* bytes, size_t length)
         Uint1 mask=0x80;
         switch (m_BinaryFormat) {
         case eArray_Bool:
-            for (; mask!=0; mask >>= 1) {
+            for (; mask!=0; mask = Uint1(mask >> 1)) {
                 if (m_WrapAt != 0) {
                     m_Output.WrapAt(m_WrapAt, false);
                 }
@@ -617,7 +617,7 @@ void CObjectOStreamJson::WriteCustomBytes(const char* bytes, size_t length)
             }
             break;
         case eArray_01:
-            for (; mask!=0; mask >>= 1) {
+            for (; mask!=0; mask = Uint1(mask >> 1)) {
                 if (m_WrapAt != 0) {
                     m_Output.WrapAt(m_WrapAt, false);
                 }
@@ -635,7 +635,7 @@ void CObjectOStreamJson::WriteCustomBytes(const char* bytes, size_t length)
             break;
         case eString_01:
         case eString_01B:
-            for (; mask!=0; mask >>= 1) {
+            for (; mask!=0; mask = Uint1(mask >> 1)) {
                 m_Output.PutChar( (mask & c) ? '1' : '0');
             }
             break;

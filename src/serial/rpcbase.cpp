@@ -274,7 +274,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
 }
 
 
-bool CRPCClient_Base::x_ShouldRetry(unsigned int tries)
+bool CRPCClient_Base::x_ShouldRetry(unsigned int tries) /* NCBI_FAKE_WARNING */
 {
     _TRACE("CRPCClient_Base::x_ShouldRetry: retrying after " << tries
            << " failures");

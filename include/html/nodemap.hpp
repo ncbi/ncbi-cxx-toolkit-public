@@ -186,7 +186,7 @@ struct TagMapper : public BaseTagMapper
     TagMapper(CNCBINode* (C::*method)(void))
         : m_Method(method)
         { return; }
-    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& /*name*/) const
         { return (dynamic_cast<C*>(_this)->*m_Method)(); }
 private:
     CNCBINode* (C::*m_Method)(void);

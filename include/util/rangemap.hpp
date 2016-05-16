@@ -433,12 +433,12 @@ public:
         {
             typedef typename TSelectMap::const_iterator TSelectMapCI;
 
-            size_type size = 0;
+            size_type n = 0;
             for ( TSelectMapCI i = m_SelectMap.begin(),
-                      end = m_SelectMap.end(); i != end; ++i ) {
-                size += i->second.size();
+                      iend = m_SelectMap.end(); i != iend; ++i ) {
+                n += i->second.size();
             }
-            return size;
+            return n;
         }
     
     // iterators
