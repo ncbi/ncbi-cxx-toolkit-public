@@ -477,6 +477,18 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
         NCBI_THROW_FMT(CNetStorageException, eNotExists,
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\")");
+
+    } else if (m_HTTPStatus == CRequestStatus::e403_Forbidden) {
+        NCBI_THROW_FMT(CNetStorageException, eAuthError,
+                "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
+                "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\")");
+
+    } else if (m_HTTPStatus >= CRequestStatus::e500_InternalServerError &&
+            m_HTTPStatus <= CRequestStatus::e505_HTTPVerNotSupported) {
+        NCBI_THROW_FMT(CNetStorageException, eUnknown,
+                "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
+                "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\"): " <<
+                " (HTTP status " << m_HTTPStatus << ')');
     }
 
     CJsonNode root;
