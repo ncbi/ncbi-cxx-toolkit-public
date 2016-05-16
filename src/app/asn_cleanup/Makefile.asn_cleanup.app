@@ -7,7 +7,7 @@
 #################################
 
 APP = asn_cleanup
-SRC = asn_cleanup
+SRC = asn_cleanup read_hooks
 LIB = $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil valerr xregexp \
           entrez2cli entrez2 tables \
 	  ncbi_xdbapi_ftds dbapi $(ncbi_xreader_pubseqos2) $(FTDS_LIB) \

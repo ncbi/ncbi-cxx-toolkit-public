@@ -37,6 +37,9 @@
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
 
+#include <serial/objectio.hpp>
+
+
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -68,6 +71,8 @@
 
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
+
+#include "read_hooks.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -289,20 +294,97 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
     }
 }
 
+
+static CObjectOStream* CreateTmpOStream(const std::string& outFileName, const std::string& tmpFileName)
+{
+    if (outFileName.empty()) // cout
+        return CObjectOStream::Open(eSerial_AsnText, std::cout);
+
+    return CObjectOStream::Open(eSerial_AsnText, tmpFileName, eSerial_StdWhenAny);
+}
+
+
+static auto_ptr<CObjectTypeInfo> GetEntryTypeInfo()
+{
+    // 'data' member of CSeq_submit ...
+    CObjectTypeInfo submitTypeInfo = CType<CSeq_submit>();
+    CObjectTypeInfoMI data = submitTypeInfo.FindMember("data");
+
+    // points to a container (pointee may has different types) ...
+    const CPointerTypeInfo* dataPointerType = CTypeConverter<CPointerTypeInfo>::SafeCast(data.GetMemberType().GetTypeInfo());
+    const CChoiceTypeInfo* dataChoiceType = CTypeConverter<CChoiceTypeInfo>::SafeCast(dataPointerType->GetPointedType());
+
+    // that is a list of pointers to 'CSeq_entry' (we process only that case)
+    const CItemInfo* entries = dataChoiceType->GetItemInfo("entrys");
+
+    return auto_ptr<CObjectTypeInfo>(new CObjectTypeInfo(entries->GetTypeInfo()));
+}
+
+
+static CObjectTypeInfoMI GetSubmitBlockTypeInfo()
+{
+    CObjectTypeInfo submitTypeInfo = CType<CSeq_submit>();
+    return submitTypeInfo.FindMember("sub");
+}
+
+
+static void CompleteOutputFile(CObjectOStream& out)
+{
+    out.EndContainer(); // ends the list of entries
+
+    out.EndChoiceVariant(); // ends 'entrys'
+    out.PopFrame();
+    out.EndChoice(); // ends 'data'
+    out.PopFrame();
+
+    out.EndClass(); // ends 'CSeq_submit'
+
+    fflush(NULL);
+}
+
+
+static std::string GetOutputFileName(const CArgs& args)
+{
+    std::string ret = !args["o"] ? "" : args["o"].AsString();
+    return ret;
+}
+
 // returns false if fails to read object of expected type, throws for all other errors
 bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
 {
+    std::string outFileName = GetOutputFileName(GetArgs());
+
     CRef<CSeq_submit> sub(new CSeq_submit);
     if (sub.Empty()) {
         NCBI_THROW(CFlatException, eInternal,
             "Could not allocate Seq-submit object");
     }
     try {
+
+        CTmpFile tmpFile;
+        auto_ptr<CObjectOStream> out(CreateTmpOStream(outFileName, tmpFile.GetFileName()));
+
+        CObjectTypeInfoMI submitBlockObj = GetSubmitBlockTypeInfo();
+        submitBlockObj.SetLocalReadHook(*is, new CReadSubmitBlockHook(*out));
+
+        auto_ptr<CObjectTypeInfo> entryObj = GetEntryTypeInfo();
+        entryObj->SetLocalReadHook(*is, new CReadEntryHook(*this, *out));
+
         *is >> *sub;
+
+        entryObj->ResetLocalReadHook(*is);
+        submitBlockObj.ResetLocalReadHook(*is);
+
+        CompleteOutputFile(*out);
+        out.reset();
+
+        if (!outFileName.empty())
+            CDirEntry(tmpFile.GetFileName()).Rename(outFileName, CDirEntry::fRF_Overwrite);
     }
     catch (...) {
         return false;
     }
+
     if (!sub->IsSetSub() || !sub->IsSetData()) {
         NCBI_THROW(CFlatException, eInternal, "No data in Seq-submit");
     }
@@ -310,15 +392,6 @@ bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
         NCBI_THROW(CFlatException, eInternal, "Wrong data in Seq-submit");
     }
     
-    CRef<CScope> scope(new CScope(*m_Objmgr));
-    if (!scope) {
-        NCBI_THROW(CFlatException, eInternal, "Could not create scope");
-    }
-    scope->AddDefaults();
-    NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, sub->SetData().SetEntrys()) {
-        HandleSeqEntry(*it);
-    }
-    x_WriteToFile(*sub);
     return true;
 }
 
