@@ -16,8 +16,8 @@
 #include <objtools/readers/hgvs/id_resolver.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
-
+//BEGIN_objects_SCOPE
+USING_SCOPE(objects);
 
 class CAaSeqlocHelper 
 {
@@ -115,7 +115,7 @@ public:
         list<CRef<CSeq_feat>> CreateSeqfeats(CRef<CVariantExpression>& variant_expr) const;
 }; // CHgvsProtIrepReader
 
-END_objects_SCOPE
+//END_objects_SCOPE
 END_NCBI_SCOPE
 
 #endif // _PROTEIN_IREP_TO_SEQFEAT_HPP_

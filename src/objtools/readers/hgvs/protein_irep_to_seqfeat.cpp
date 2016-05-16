@@ -10,7 +10,8 @@
 
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
+//BEGIN_objects_SCOPE
+USING_SCOPE(objects);
 USING_SCOPE(NHgvsTestUtils);
 
 CNCBIeaa CHgvsProtIrepReader::x_ConvertToNcbieaa(string aa_seq) const
@@ -578,6 +579,6 @@ CRef<CSeq_loc> CAaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 }
 
 
-END_objects_SCOPE
+//END_objects_SCOPE
 END_NCBI_SCOPE
 

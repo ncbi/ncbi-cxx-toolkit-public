@@ -7,8 +7,9 @@
 
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
+//BEGIN_objects_SCOPE
 
+USING_SCOPE(objects);
 USING_SCOPE(NHgvsTestUtils);
 
 CRef<CSeq_literal> CHgvsNaIrepReader::x_CreateNtSeqLiteral(const string& raw_seq) const
@@ -1209,6 +1210,6 @@ CRef<CDelta_item> CHgvsNaDeltaHelper::GetStopIntronOffset(const CNtLocation& nt_
 
 
 
-END_objects_SCOPE
+//END_objects_SCOPE
 END_NCBI_SCOPE
 

@@ -9,7 +9,7 @@
 #include <objects/seq/Seq_literal.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
+USING_SCOPE(objects);
 
 class CDeltaHelper
 {
@@ -20,7 +20,7 @@ public:
 };
 
 
-END_objects_SCOPE
+//END_objects_SCOPE
 END_NCBI_SCOPE
 
 #endif // _IREP_TO_SEQFEAT_COMMON_HPP_
