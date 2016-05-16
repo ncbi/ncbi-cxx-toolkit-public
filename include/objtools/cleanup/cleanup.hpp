@@ -373,6 +373,9 @@ public:
 /// @return bool indicates whether any changes were made
     static bool RescueSiteRefPubs(CSeq_entry_Handle seh);
 
+/// Is this a "minimal" pub? (If yes, do not rescue from a Seq-feat.cit)
+    static bool IsMinPub(const CPubdesc& pd, bool is_refseq_prot);
+
     //helper function for moving feature to pubdesc descriptor
     static void MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBioseq_Handle b, bool remove_feat = true);
 

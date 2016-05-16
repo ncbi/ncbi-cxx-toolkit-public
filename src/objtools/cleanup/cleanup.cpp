@@ -2781,13 +2781,43 @@ bool IsSiteRef(const CSeq_feat& sf)
 }
 
 
+bool CCleanup::IsMinPub(const CPubdesc& pd, bool is_refseq_prot)
+{
+    if (!pd.IsSetPub()) {
+        return true;
+    }
+    bool found_non_minimal = false;
+    ITERATE(CPubdesc::TPub::Tdata, it, pd.GetPub().Get()) {
+        if ((*it)->IsMuid() || (*it)->IsPmid()) {
+            if (is_refseq_prot) {
+                found_non_minimal = true;
+                break;
+            }
+        } else if ((*it)->IsGen()) {
+            const CCit_gen& gen = (*it)->GetGen();
+            if (gen.IsSetCit() && !gen.IsSetJournal() &&
+                !gen.IsSetAuthors() && !gen.IsSetVolume() &&
+                !gen.IsSetPages()) {
+                //minimalish, keep looking
+            } else {
+                found_non_minimal = true;
+            }
+        } else {
+            found_non_minimal = true;
+            break;
+        }
+    }
+    
+    return !found_non_minimal;
+}
+
+
 bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
 {
     bool found_site_ref = false;
     CFeat_CI f(seh, CSeqFeatData::e_Imp);
     while (f && !found_site_ref) {
-        if (f->GetData().GetImp().IsSetKey() && 
-            NStr::Equal(f->GetData().GetImp().GetKey(), "Site-ref")) {
+        if (IsSiteRef(*(f->GetSeq_feat()))) {
             found_site_ref = true;
         }
         ++f;
@@ -2798,13 +2828,23 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
 
     bool any_change = false;
     for (CBioseq_CI b(seh); b; ++b) {
+        bool is_refseq_prot = false;
+        if (b->IsAa()) {
+            ITERATE(CBioseq::TId, id_it, b->GetCompleteBioseq()->GetId()) {
+                if ((*id_it)->IsOther()) {
+                    is_refseq_prot = true;
+                    break;
+                }
+            }
+        }
+
         for (CFeat_CI p(*b); p; ++p) {
             if (!p->IsSetCit() || p->GetCit().Which() != CPub_set::e_Pub) {
                 continue;
             }            
 
             bool is_site_ref = IsSiteRef(*(p->GetSeq_feat()));
-            ITERATE(CSeq_feat::TCit::TPub, c, p->GetCit().GetPub()) { 
+            ITERATE(CSeq_feat::TCit::TPub, c, p->GetCit().GetPub()) {
                 CRef<CSeqdesc> d(new CSeqdesc());
                 if ((*c)->IsEquiv()) {
                     ITERATE(CPub_equiv::Tdata, t, (*c)->GetEquiv().Get()) {
@@ -2826,7 +2866,9 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
                 CRef<CCleanupChange> changes(makeCleanupChange(0));
                 CNewCleanup_imp pubclean(changes, 0);
                 pubclean.BasicCleanup(d->SetPub(), ShouldStripPubSerial(*(b->GetCompleteBioseq())));
-                MoveOneFeatToPubdesc(*p, d, *b, false);
+                if (!IsMinPub(d->SetPub(), is_refseq_prot)) {
+                    MoveOneFeatToPubdesc(*p, d, *b, false);
+                }
             }
             if (is_site_ref) {
                 CSeq_feat_EditHandle feh(*p);
