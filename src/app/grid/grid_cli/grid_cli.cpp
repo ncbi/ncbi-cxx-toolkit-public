@@ -425,8 +425,11 @@ struct SOptionDefinition {
             "Default: 'submit'.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eFileTrackAPIKey),
-        "ft-api-key", "FileTrack API key. When connecting to "
-            "FileTrack directly, an API key is required.", {-1}},
+        FT_API_KEY_OPTION, "FileTrack API key.", {-1}},
+
+    {OPT_DEF(eOptionWithParameter, eFileTrackToken),
+        FT_TOKEN_OPTION, "FileTrack auth token. When connecting to "
+            "FileTrack directly, either an API key or token is required.", {-1}},
 
     {OPT_DEF(eSwitch, eMirror),
         "mirror", "NetCache: reconfigure mirroring.", {-1}},
@@ -589,7 +592,7 @@ struct SCommandDefinition {
         "parameters all at once.\n",
         {eAppUID, eNetCache, eCache, eEnableMirroring,
             eNetSchedule, eQueue, eAuth,
-            eFileTrackSite, eFileTrackAPIKey, eNoConnRetries,
+            eFileTrackSite, eFileTrackAPIKey, eFileTrackToken, eNoConnRetries,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_BlobInfo,
@@ -647,7 +650,7 @@ struct SCommandDefinition {
         "the generated object locator is printed to the standard output."
         ABOUT_NETSTORAGE_OPTION,
         {eOptionalID, NETSTORAGE_COMMON_OPTIONS,
-            NETSTORAGE_DIRECT_OPTIONS, eFileTrackAPIKey,
+            NETSTORAGE_DIRECT_OPTIONS, eFileTrackAPIKey, eFileTrackToken,
             eInput, eInputFile, eTTL,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -671,7 +674,7 @@ struct SCommandDefinition {
         "unless user key is provided to specify the original object."
         ABOUT_NETSTORAGE_OPTION,
         {eID, NETSTORAGE_COMMON_OPTIONS,
-            NETSTORAGE_DIRECT_OPTIONS, eFileTrackAPIKey,
+            NETSTORAGE_DIRECT_OPTIONS, eFileTrackAPIKey, eFileTrackToken,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand,
@@ -1590,6 +1593,7 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.ft_site = opt_value;
                 break;
             case eFileTrackAPIKey:
+            case eFileTrackToken:
                 m_Opts.ft_key = opt_value;
                 break;
             case eServiceName:
@@ -1795,6 +1799,9 @@ bool CGridCommandLineInterfaceApp::ParseLoginToken(const string& token)
         } else if (label == LOGIN_TOKEN_FILETRACK_API_KEY) {
             m_Opts.ft_key = value_field.GetString();
             MarkOptionAsSet(eFileTrackAPIKey);
+        } else if (label == LOGIN_TOKEN_FILETRACK_TOKEN) {
+            m_Opts.ft_key = value_field.GetString();
+            MarkOptionAsSet(eFileTrackToken);
         }
 
         label_field = label_field.GetNextHomogeneous();

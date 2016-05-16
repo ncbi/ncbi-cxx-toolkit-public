@@ -65,6 +65,7 @@
 #define LOGIN_TOKEN_NO_CONN_RETRIES "r0"
 #define LOGIN_TOKEN_FILETRACK_SITE "fts"
 #define LOGIN_TOKEN_FILETRACK_API_KEY "ftk"
+#define LOGIN_TOKEN_FILETRACK_TOKEN "ftt"
 
 #define LOGIN_TOKEN_OPTION "login-token"
 #define NETCACHE_OPTION "netcache"
@@ -120,6 +121,8 @@
 #define PASSWORD_OPTION "password"
 #define OFFSET_OPTION "offset"
 #define SIZE_OPTION "size|length"
+#define FT_API_KEY_OPTION "ft-api-key"
+#define FT_TOKEN_OPTION "ft-token"
 #define DIRECT_MODE_OPTION "direct"
 #define ATTR_VALUE_ARG "ATTR_VALUE"
 
@@ -248,6 +251,7 @@ enum EOption {
     ePreviousInterval,
     eFileTrackSite,
     eFileTrackAPIKey,
+    eFileTrackToken,
     eMirror,
     eServiceName,
     eNoDNSLookup,
