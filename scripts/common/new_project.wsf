@@ -157,6 +157,7 @@
             usage_str += "    <name>      -- name of the project\n";
             usage_str += "    <type>      -- one of the following:\n";
             usage_str += "                   app[/basic]       a simple application\n";
+            usage_str += "                   app/multicmd      a simple command-based application\n";
             usage_str += "                   app/alnmgr        an application that uses Alignment Manager\n";
             usage_str += "                   app/asn           an application that uses ASN.1 specification\n";
             usage_str += "                   app/blast         a BLAST application\n";
@@ -244,6 +245,7 @@
                 prompt += "This can be one of the following:\n";
                 prompt += "\tapp\n";
                 prompt += "\tapp/basic\n";
+                prompt += "\tapp/multicmd\n";
                 prompt += "\tapp/alnmgr\n";
                 prompt += "\tapp/asn\n";
                 prompt += "\tapp/blast\n";
@@ -281,6 +283,7 @@
             this.TemplatesDict = new ActiveXObject("Scripting.Dictionary");
             this.TemplatesDict.Add("app",         "sample/app/basic");
             this.TemplatesDict.Add("app/basic",   "sample/app/basic");
+            this.TemplatesDict.Add("app/multicmd",   "sample/app/multicmd");
             this.TemplatesDict.Add("app/alnmgr",  "sample/app/alnmgr");
             this.TemplatesDict.Add("app/asn",     "sample/app/asn");
             this.TemplatesDict.Add("app/blast",   "sample/app/blast");

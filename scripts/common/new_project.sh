@@ -38,6 +38,7 @@ ARGUMENTS:
      lib/dtd         to build a library from an XML DTD
      lib/xsd         to build a library from an XML Schema
      app[/basic]     to build a simple application
+     app/multicmd    to build a simple command-based application
      app/alnmgr      to build an application using the alignment manager
      app/asn         to build a library from ASN.1 spec, and sample application
      app/blast       to build an application using BLAST
