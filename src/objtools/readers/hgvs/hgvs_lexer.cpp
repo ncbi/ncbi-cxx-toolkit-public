@@ -27,7 +27,7 @@ SHgvsLexer::SHgvsLexer()
     identifier("o?([A-Z]|rs|ss|chr)([a-zA-Z0-9_.]+):"),
     slash("\\/"),
     double_slash("\\/\\/"), 
-    splice("spl?")
+    splice("spl\\?")
 {
 
     this->self = lex::token_def<>( '(' ) | ')' | '{' | '}' | '[' | ']' | ';' | ':' | ',' | '_' |
