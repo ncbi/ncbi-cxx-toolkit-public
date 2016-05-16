@@ -77,6 +77,12 @@ void AssignFuzzyLocalVariation(CRef<CSimpleVariant>& input, CRef<CSimpleVariant>
 
 void AssignFuzzyLocalVariantSeq(CRef<CSimpleVariantSeq>& in, CRef<CSimpleVariantSeq>& result);
 
+void AssignSimpleVariant(CRef<CSimpleVariant>& simple_variant, CRef<CVariant>& result);
+
+void AssignSpecialVariant(ESpecialVariant special_variant, CRef<CVariant>& result);
+
+void AssignSingleVariation(CRef<CVariant>& variant, CRef<CSequenceVariant>& result);
+
 void AssignSingleLocalVariation(CRef<CSimpleVariant>& local_var, CRef<CSequenceVariant>& result);
 
 void AssignUnknownChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result);
@@ -87,7 +93,7 @@ void AssignSecondChromosomeSpecialVariant(const ESpecialVariant& special_variant
 
 void AssignChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result);
 
-void AssignSpecialVariant(const ESpecialVariant& special_variant, CRef<CSequenceVariant>& result);
+//void AssignSpecialVariant(const ESpecialVariant& special_variant, CRef<CSequenceVariant>& result);
 
 void AssignSequenceType(CRef<CSequenceVariant>& result);
 

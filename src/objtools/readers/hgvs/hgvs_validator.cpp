@@ -26,7 +26,15 @@ const char* CHgvsVariantException::GetErrCodeString(void) const
 void CHgvsVariantValidator::Validate(const CVariantExpression& hgvs_variant) 
 {
     // Need to fix this
+
+    const auto& first_subvariant = hgvs_variant.GetSequence_variant().GetSubvariants().front();
+
+    if (!first_subvariant->IsSimple()) {
+        return;
+    }
+
     const auto& simple_variant = hgvs_variant.GetSequence_variant().GetSubvariants().front()->GetSimple();
+
     auto seq_type = hgvs_variant.GetSequence_variant().GetSeqtype();
 
     x_ValidateSimpleVariant(simple_variant, seq_type);

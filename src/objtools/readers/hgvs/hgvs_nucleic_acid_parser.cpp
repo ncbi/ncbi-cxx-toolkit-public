@@ -14,7 +14,10 @@ using boost::phoenix::bind;
 BEGIN_NCBI_SCOPE
 
 
-SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) : SHgvsNucleicAcidGrammar::base_type(dna_expression)
+SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) : 
+    special_variant(tok),
+    SHgvsNucleicAcidGrammar::base_type(dna_expression)
+
 {
     dna_expression = tok.identifier ACTION1(AssignRefSeqIdentifier) >>
                      dna_seq_variants ACTION1(AssignSequenceVariant);
@@ -22,15 +25,18 @@ SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) : SHgvsN
     dna_seq_variants = dna_simple_seq_variant | dna_chimera | dna_mosaic;
 
     dna_simple_seq_variant = tok.na_tag ACTION1(AssignSequenceType) >> 
-                             simple_variation ACTION1(AssignSingleLocalVariation);
+                             variant ACTION1(AssignSingleVariation);
 
     dna_mosaic = ( (tok.na_tag ACTION1(AssignSequenceType) >> 
-                 ( "[" >> (simple_variation >> tok.slash) ACTION1(AssignSingleLocalVariation) 
-                 >> simple_variation ACTION1(AssignSingleLocalVariation) >> "]" ) ) ) ACTION0(TagAsMosaic);
+                 ( "[" >> (variant >> tok.slash) ACTION1(AssignSingleVariation) 
+                 >> variant ACTION1(AssignSingleVariation) >> "]" ) ) ) ACTION0(TagAsMosaic);
 
     dna_chimera = ( (tok.na_tag ACTION1(AssignSequenceType) >> 
-                 ( "[" >> (simple_variation >> tok.double_slash) ACTION1(AssignSingleLocalVariation) 
-                 >> simple_variation ACTION1(AssignSingleLocalVariation) >> "]" ) ) ) ACTION0(TagAsChimera);
+                 ( "[" >> (variant >> tok.double_slash) ACTION1(AssignSingleVariation) 
+                 >> variant ACTION1(AssignSingleVariation) >> "]" ) ) ) ACTION0(TagAsChimera);
+
+    variant = simple_variation ACTION1(AssignSimpleVariant) | 
+              special_variant ACTION1(AssignSpecialVariant);
 
     simple_variation = fuzzy_simple_variation | confirmed_simple_variation;
 

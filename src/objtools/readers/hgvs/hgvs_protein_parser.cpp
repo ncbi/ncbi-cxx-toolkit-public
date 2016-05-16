@@ -2,7 +2,7 @@
 #include <boost/spirit/include/phoenix.hpp>
 #include <objtools/readers/hgvs/hgvs_protein_parser.hpp>
 #include <objtools/readers/hgvs/semantic_actions.hpp>
-
+#include <objtools/readers/hgvs/hgvs_special_variant_parser.hpp>
 
 using boost::spirit::qi::_1;
 using boost::spirit::qi::_2;
@@ -27,7 +27,9 @@ void IsMet1(const CRef<CAaSite>& aa_site, boost::spirit::unused_type context, bo
 }
 
 
-SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) : SHgvsProteinGrammar::base_type(protein_expression)
+SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) : 
+    special_variant(tok),
+    SHgvsProteinGrammar::base_type(protein_expression)
 {
  // Also need to account for variants involving different genes on different chromosomes. 
     protein_expression = tok.identifier ACTION1(AssignRefSeqIdentifier) 
@@ -36,16 +38,19 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) : SHgvsProteinGr
     protein_seq_variants = protein_simple_seq_variant | protein_mosaic | protein_chimera;
 
     protein_simple_seq_variant = tok.protein_tag ACTION0(AssignSequenceType) >>
-                                 protein_simple_variation ACTION1(AssignSingleLocalVariation);
+                                 variant ACTION1(AssignSingleVariation);
 
     protein_mosaic = ( (tok.protein_tag ACTION0(AssignSequenceType) >>
-                     ( "[" >> (protein_simple_variation >> tok.slash) ACTION1(AssignSingleLocalVariation)
-                     >> (protein_simple_variation ACTION1(AssignSingleLocalVariation)) >> "]" ) ) ACTION0(TagAsMosaic));
+                     ( "[" >> (variant >> tok.slash) ACTION1(AssignSingleVariation)
+                     >> (variant ACTION1(AssignSingleVariation)) >> "]" ) ) ACTION0(TagAsMosaic));
 
     protein_chimera =  ( (tok.protein_tag ACTION0(AssignSequenceType) >>
-                       ( "[" >> (protein_simple_variation >> tok.double_slash) ACTION1(AssignSingleLocalVariation)
-                        >> (protein_simple_variation ACTION1(AssignSingleLocalVariation)) >> "]" ) ) ACTION0(TagAsChimera));
-                     
+                       ( "[" >> (variant >> tok.double_slash) ACTION1(AssignSingleVariation)
+                        >> (variant ACTION1(AssignSingleVariation)) >> "]" ) ) ACTION0(TagAsChimera));
+
+    variant = protein_simple_variation ACTION1(AssignSimpleVariant) |
+              special_variant ACTION1(AssignSpecialVariant);
+
     protein_simple_variation = protein_confirmed_simple_variation | protein_fuzzy_simple_variation;
 
     protein_fuzzy_simple_variation = ("(" >> protein_confirmed_simple_variation >> ")") ACTION1(AssignFuzzyLocalVariation);

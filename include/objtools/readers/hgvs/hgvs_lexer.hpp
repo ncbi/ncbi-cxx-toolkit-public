@@ -44,6 +44,7 @@ struct SHgvsLexer : lex::lexer<TLexer>
     TAttributedToken identifier;
     TSimpleToken slash;
     TSimpleToken double_slash;
+    TSimpleToken splice;
 };
 
 #endif // _HGVS_LEXER_HPP_

@@ -7,14 +7,13 @@
 #include <boost/spirit/include/qi.hpp>
 #include <objtools/readers/hgvs/hgvs_parser_common.hpp>
 #include <objects/varrep/varrep__.hpp>
+#include <objtools/readers/hgvs/hgvs_special_variant_parser.hpp>
 
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
 using TParseIterator = SHgvsLexer::iterator_type;
-//using TTerminal = boost::spirit::qi::rule<TParseIterator, std::string()>;
-//template<typename T> using TRule = boost::spirit::qi::rule<TParseIterator, CRef<T>()>;
 
 
 struct SHgvsProteinGrammar : boost::spirit::qi::grammar<TParseIterator, CRef<CVariantExpression>()>
@@ -26,13 +25,12 @@ struct SHgvsProteinGrammar : boost::spirit::qi::grammar<TParseIterator, CRef<CVa
     using TTerminal = boost::spirit::qi::rule<TParseIterator, std::string()>;
     template<typename T> using TRule = boost::spirit::qi::rule<TParseIterator, CRef<T>()>;
 
-    boost::spirit::qi::rule<TParseIterator, ESpecialVariant()> protein_special_variant;
- 
     TRule<CVariantExpression> protein_expression;
     TRule<CSequenceVariant> protein_seq_variants; 
     TRule<CSequenceVariant> protein_mosaic;
     TRule<CSequenceVariant> protein_chimera;
     TRule<CSequenceVariant> protein_simple_seq_variant;
+    TRule<CVariant> variant;
     TRule<CSimpleVariantSeq> protein_unknown_chrom_variant;
     TRule<CSimpleVariantSeq> protein_confirmed_unknown_chrom_variant;
     TRule<CSimpleVariantSeq> protein_fuzzy_unknown_chrom_variant;
@@ -78,6 +76,8 @@ struct SHgvsProteinGrammar : boost::spirit::qi::grammar<TParseIterator, CRef<CVa
     TTerminal aa1_seq;
     TTerminal aa1;
     TTerminal nn_int;
+
+    SHgvsSpecialVariantGrammar special_variant;
 };
 
 END_NCBI_SCOPE

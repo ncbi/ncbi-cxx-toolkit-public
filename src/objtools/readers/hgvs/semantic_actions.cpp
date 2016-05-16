@@ -318,6 +318,25 @@ void AssignSingleLocalVariation(CRef<CSimpleVariant>& simple_var, CRef<CSequence
     result->SetSubvariants().push_back(variant);
 }
 
+void AssignSimpleVariant(CRef<CSimpleVariant>& simple_var, CRef<CVariant>& result)
+{
+    result = CreateResultIfNull(result);
+    result->SetSimple(*simple_var);
+}
+
+void AssignSpecialVariant(ESpecialVariant special_variant, CRef<CVariant>& result)
+{
+    result = CreateResultIfNull(result);
+    result->SetSpecial() = special_variant;
+}
+
+
+void AssignSingleVariation(CRef<CVariant>& variant, CRef<CSequenceVariant>& result)
+{
+    result = CreateResultIfNull(result);
+    result->SetSubvariants().push_back(variant);
+}
+
 
 void AssignUnknownChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result)
 {
@@ -347,11 +366,11 @@ void AssignChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenc
 }
 
 
-void AssignSpecialVariant(const ESpecialVariant& special_variant, CRef<CSequenceVariant>& result)
-{
-    result = CreateResultIfNull(result);
+//void AssignSpecialVariant(const ESpecialVariant& special_variant, CRef<CSequenceVariant>& result)
+//{
+//result = CreateResultIfNull(result);
 //    result->SetVariants().SetKnownChromosomeVariant().SetChrom1_variant().SetSpecial_variant(special_variant);
-}
+//}
 
 
 void AssignSequenceType(CRef<CSequenceVariant>& result)

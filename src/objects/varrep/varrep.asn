@@ -39,14 +39,14 @@ VariantSeqType ::= INTEGER {
 
 
 SpecialVariant ::= INTEGER { 
-    unknown                     (0),
-    not-analyzed                (1),
-    no-change                   (2),
-    no-change-expected          (3),
-    no-seq                      (4),
-    no-seq-expected             (5),
-    rna-splice-effect           (6),
-    rna-splice-effect-expected  (7)   
+    unknown            (0), -- ?
+    not-analyzed       (1), -- (?) Not sure about this
+    nochange           (2), -- =
+    nochange-expected  (3), -- (=)
+    noseq              (4), -- 0
+    noseq-expected     (5), -- 0?
+    splice-expected    (6), -- spl?
+    splice-possible    (7)  -- (spl?) 
 }
 
 
