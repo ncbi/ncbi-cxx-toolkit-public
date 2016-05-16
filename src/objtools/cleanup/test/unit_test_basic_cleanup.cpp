@@ -659,19 +659,19 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3617)
     BOOST_CHECK_EQUAL(CCleanup::ExtendToStopIfShortAndNotPartial(*cds, *bi), true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), stop);
 
-    cds->SetLocation().SetPacked_int().Set().back()->SetTo(stop - 2);
+    cds->SetLocation().SetMix().Set().back()->SetInt().SetTo(stop - 2);
     BOOST_CHECK_EQUAL(CCleanup::ExtendToStopIfShortAndNotPartial(*cds, *bi), true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), stop);
 
-    cds->SetLocation().SetPacked_int().Set().back()->SetTo(stop - 3);
+    cds->SetLocation().SetMix().Set().back()->SetInt().SetTo(stop - 3);
     BOOST_CHECK_EQUAL(CCleanup::ExtendToStopIfShortAndNotPartial(*cds, *bi), true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), stop);
 
-    cds->SetLocation().SetPacked_int().Set().back()->SetTo(stop - 4);
+    cds->SetLocation().SetMix().Set().back()->SetInt().SetTo(stop - 4);
     BOOST_CHECK_EQUAL(CCleanup::ExtendToStopIfShortAndNotPartial(*cds, *bi), false);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), stop - 4);
 
-    cds->SetLocation().SetPacked_int().Set().back()->SetTo(stop);
+    cds->SetLocation().SetMix().Set().back()->SetInt().SetTo(stop);
 
     cds->SetLocation().Assign(*(MakeMixLoc(id)));
     RevComp(entry);
@@ -683,15 +683,15 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3617)
     BOOST_CHECK_EQUAL(CCleanup::ExtendToStopIfShortAndNotPartial(*cds, *bi), true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), stop);
 
-    cds->SetLocation().SetPacked_int().Set().back()->SetFrom(stop + 2);
+    cds->SetLocation().SetMix().Set().back()->SetInt().SetFrom(stop + 2);
     BOOST_CHECK_EQUAL(CCleanup::ExtendToStopIfShortAndNotPartial(*cds, *bi), true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), stop);
 
-    cds->SetLocation().SetPacked_int().Set().back()->SetFrom(stop + 3);
+    cds->SetLocation().SetMix().Set().back()->SetInt().SetFrom(stop + 3);
     BOOST_CHECK_EQUAL(CCleanup::ExtendToStopIfShortAndNotPartial(*cds, *bi), true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), stop);
 
-    cds->SetLocation().SetPacked_int().Set().back()->SetFrom(stop + 4);
+    cds->SetLocation().SetMix().Set().back()->SetInt().SetFrom(stop + 4);
     BOOST_CHECK_EQUAL(CCleanup::ExtendToStopIfShortAndNotPartial(*cds, *bi), false);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), stop + 4);
 
