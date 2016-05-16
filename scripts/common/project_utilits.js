@@ -1,6 +1,6 @@
+// $Id$
 ////////////////////////////////////////////////////////////////////////////////////
 // Shared part of new_project.wsf and import_project.wsf
-
 // global settings
 var g_verbose       = false;
 var g_usefilecopy   = true;
@@ -10,7 +10,7 @@ var g_open_solution = true;
 var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
 
-// valid:   "71", "80", "80x64", "90", "90x64", "100", "100x64", "120", "120x64", "140", "140x64"
+// valid:   "120", "120x64", "140", "140x64"
 var g_def_msvcver = "120";
 var g_msvcver     = "120";
 
@@ -159,18 +159,11 @@ function GetConfigs(oTask)
     if (oTask.DllBuild) {
         var configs = new Array ("DebugDLL", "ReleaseDLL");
         return configs;
-    } else {
-        if (g_msvcver == "71") {
-            var configs = new Array (
-                "Debug",   "DebugMT",   "DebugDLL", 
-                "Release", "ReleaseMT", "ReleaseDLL");
-            return configs;
-        } else {
-            var configs = new Array (
-                "DebugMT",   "DebugDLL", 
-                "ReleaseMT", "ReleaseDLL");
-            return configs;
-        }
+    } else {        
+        var configs = new Array (
+            "DebugMT",   "DebugDLL", 
+            "ReleaseMT", "ReleaseDLL");
+        return configs;
     }
 }       
 // recursive path creator - oFso is pre-created file system object
@@ -496,12 +489,10 @@ function SetMsvcVer(oArgs, flag)
 {
     var msvcver = GetFlaggedValue(oArgs, flag, "");
     if (msvcver.length  != 0) {
-        if (msvcver != "71" && msvcver != "80" &&  msvcver != "80x64"
-                            && msvcver != "90" &&  msvcver != "90x64"
-                            && msvcver != "100" && msvcver != "100x64"
-                            && msvcver != "110" && msvcver != "110x64"
-                            && msvcver != "120" && msvcver != "120x64"
-                            && msvcver != "140" && msvcver != "140x64"
+        if (
+				   msvcver != "110" && msvcver != "110x64"
+				&& msvcver != "120" && msvcver != "120x64"
+				&& msvcver != "140" && msvcver != "140x64"
            ) {
             WScript.Echo("ERROR: Unknown version of MSVC requested: " + msvcver);
             WScript.Quit(1);    
@@ -512,15 +503,6 @@ function SetMsvcVer(oArgs, flag)
 
 function GetMsvcFolder()
 {
-    if (g_msvcver == "80" || g_msvcver == "80x64") {
-        return "msvc800_prj";
-    }
-    if (g_msvcver == "90" || g_msvcver == "90x64") {
-        return "msvc900_prj";
-    }
-    if (g_msvcver == "100" || g_msvcver == "100x64") {
-        return "msvc1000_prj";
-    }
     if (g_msvcver == "110" || g_msvcver == "110x64") {
         return "vs2013";
     }
@@ -530,7 +512,7 @@ function GetMsvcFolder()
     if (g_msvcver == "140" || g_msvcver == "140x64") {
         return "vs2015";
     }
-    return "msvc710_prj";
+    return "vs2013";
 }
 
 function GetFlaggedValue(oArgs, flag, default_val)
@@ -595,20 +577,8 @@ function GetPositionalValue(oArgs, position)
 // Configuration of pre-built C++ toolkit
 function GetDefaultSuffix()
 {
-    var s = "msvc8";
-    if (g_msvcver == "80") {
-        s = "msvc8";
-    } else if (g_msvcver == "80x64") {
-        s = "msvc8.64";
-    } else if (g_msvcver == "90") {
-        s = "msvc9";
-    } else if (g_msvcver == "90x64") {
-        s = "msvc9.64";
-    } else if (g_msvcver == "100") {
-        s = "msvc10";
-    } else if (g_msvcver == "100x64") {
-        s = "msvc10.64";
-    } else if (g_msvcver == "110" || g_msvcver == "120") {
+    var s = "vs2013";
+    if (g_msvcver == "110" || g_msvcver == "120") {
         s = "vs2013";
     } else if (g_msvcver == "110x64" || g_msvcver == "120x64") {
         s = "vs2013.64";
@@ -616,8 +586,6 @@ function GetDefaultSuffix()
         s = "vs2015";
     } else if (g_msvcver == "140x64") {
         s = "vs2015.64";
-    } else {
-        s = "msvc71";
     }
     return s;
 }
@@ -628,19 +596,7 @@ function GetPtbTargetSolutionArgs(oShell, ptb)
     if (ver < 180) {
         return s;
     }
-    if (g_msvcver == "80") {
-        s = " -ide 800 -arch Win32";
-    } else if (g_msvcver == "80x64") {
-        s = " -ide 800 -arch x64";
-    } else if (g_msvcver == "90") {
-        s = " -ide 900 -arch Win32";
-    } else if (g_msvcver == "90x64") {
-        s = " -ide 900 -arch x64";
-    } else if (g_msvcver == "100") {
-        s = " -ide 1000 -arch Win32";
-    } else if (g_msvcver == "100x64") {
-        s = " -ide 1000 -arch x64";
-    } else if (g_msvcver == "110") {
+    if (g_msvcver == "110") {
         s = " -ide 1100 -arch Win32";
     } else if (g_msvcver == "110x64") {
         s = " -ide 1100 -arch x64";
@@ -653,14 +609,13 @@ function GetPtbTargetSolutionArgs(oShell, ptb)
     } else if (g_msvcver == "140x64") {
         s = " -ide 1400 -arch x64";
     } else {
-        s = " -ide 710 -arch Win32";
+        s = " -ide 1200 -arch Win32";
     }
     return s;
 }
 function GetTargetPlatform()
 {
-    if (g_msvcver == "80x64"  || g_msvcver == "90x64" ||
-        g_msvcver == "100x64" || g_msvcver == "110x64" ||
+    if (g_msvcver == "110x64" ||
         g_msvcver == "120x64" || g_msvcver == "140x64") {
         return "x64";
     }
