@@ -217,6 +217,7 @@ string CDiscrepancySet::Format(const string& s, unsigned int count)
     string str = s;
     NStr::TruncateSpacesInPlace(str);
     NStr::ReplaceInPlace(str, "[n]", NStr::Int8ToString(count));
+    NStr::ReplaceInPlace(str, "[n/2]", NStr::Int8ToString(count / 2));
     NStr::ReplaceInPlace(str, "[s]", count == 1 ? "" : "s");  // nouns
     NStr::ReplaceInPlace(str, "[S]", count == 1 ? "s" : "");  // verbs
     NStr::ReplaceInPlace(str, "[is]", count == 1 ? "is" : "are");
