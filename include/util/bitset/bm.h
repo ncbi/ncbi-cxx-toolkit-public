@@ -2060,7 +2060,7 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
     unsigned blocks_memory = 0;
     gap_word_t* gapl_ptr = st->gap_length;
 
-    st->max_serialize_mem = sizeof(id_t) * 4;
+    st->max_serialize_mem = unsigned(sizeof(id_t) * 4);
 
     unsigned block_idx = 0;
 
@@ -2073,7 +2073,7 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
         if (!blk_blk) 
         {
             block_idx += bm::set_array_size;
-            st->max_serialize_mem += sizeof(unsigned) + 1;
+            st->max_serialize_mem += unsigned(sizeof(unsigned) + 1);
             continue;
         }
 
@@ -2082,7 +2082,7 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
             const bm::word_t* blk = blk_blk[j];
             if (IS_VALID_ADDR(blk))
             {
-                st->max_serialize_mem += empty_blocks << 2;
+                st->max_serialize_mem += unsigned(empty_blocks << 2);
                 empty_blocks = 0;
 
                 if (BM_IS_GAP(blk))
@@ -2090,14 +2090,9 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
                     ++(st->gap_blocks);
 
                     bm::gap_word_t* gap_blk = BMGAP_PTR(blk);
-
-                    unsigned mem_used = 
-                        bm::gap_capacity(gap_blk, blockman_.glen()) 
-                        * sizeof(gap_word_t);
-
+                    unsigned mem_used = unsigned(bm::gap_capacity(gap_blk, blockman_.glen()) * sizeof(gap_word_t));
                     *gapl_ptr = gap_length(gap_blk);
-
-                    st->max_serialize_mem += *gapl_ptr * sizeof(gap_word_t);
+                    st->max_serialize_mem += unsigned(*gapl_ptr * sizeof(gap_word_t));
                     blocks_memory += mem_used;
 
                     ++gapl_ptr;
@@ -2105,7 +2100,7 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
                 else // bit block
                 {
                     ++(st->bit_blocks);
-                    unsigned mem_used = sizeof(bm::word_t) * bm::set_block_size;
+                    unsigned mem_used = (unsigned)sizeof(bm::word_t) * bm::set_block_size;
                     st->max_serialize_mem += mem_used;
                     blocks_memory += mem_used;
                 }
@@ -2123,7 +2118,7 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
 
     // Calc size of different odd and temporary things.
 
-    st->memory_used += sizeof(*this) - sizeof(blockman_);
+    st->memory_used += unsigned(sizeof(*this)- sizeof(blockman_));
     st->memory_used += blockman_.mem_used();
     st->memory_used += blocks_memory;
 }

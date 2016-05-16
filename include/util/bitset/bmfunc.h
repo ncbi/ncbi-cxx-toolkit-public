@@ -772,11 +772,11 @@ void for_each_dgap(const T* gap_buf, Func& func)
     ++pcurr;
     
     T prev = *pcurr;
-    func(prev + 1); // first element incremented to avoid 0
+    func((T)(prev + 1)); // first element incremented to avoid 0
     ++pcurr;
     do
     {
-        func(*pcurr - prev); // all others are [N] - [N-1]
+        func((T)(*pcurr - prev)); // all others are [N] - [N-1]
         prev = *pcurr;
     } while (++pcurr < pend);
 }
@@ -1269,7 +1269,7 @@ unsigned gap_add_value(T* buf, unsigned pos)
 {
     BM_ASSERT(pos < bm::gap_max_bits);
 
-    register T end = (*buf >> 3);
+    register T end = (T)(*buf >> 3);
 	T curr = end;
     register T* pcurr = buf + end;
     register T* pend  = pcurr;
@@ -1325,13 +1325,13 @@ unsigned gap_add_value(T* buf, unsigned pos)
 	}
 	else  // Worst case we need to split current block.
 	{
-        *pcurr++ = pos - 1;
-        *pcurr = pos;
-		end+=2;
+        *pcurr++ = (T)(pos - 1);
+        *pcurr = (T)pos;
+        end = (T)(end + 2);
 	}
 
     // Set correct length word.
-    *buf = (*buf & 7) + (end << 3);
+    *buf = (T)((*buf & 7) + (end << 3));
 
     buf[end] = bm::gap_max_bits - 1;
     return end;
@@ -1352,7 +1352,7 @@ unsigned gap_add_value(T* buf, unsigned pos)
 template<typename T> 
 unsigned gap_set_array(T* buf, const T* arr, unsigned len)
 {
-    *buf = (*buf & 6u) + (1u << 3); // gap header setup
+    *buf = (T)((*buf & 6u) + (1u << 3)); // gap header setup
 
 	T* pcurr = buf + 1;
 
@@ -1360,12 +1360,12 @@ unsigned gap_set_array(T* buf, const T* arr, unsigned len)
 	T curr = arr[i];
 	if (curr != 0) // need to add the first gap: (0 to arr[0]-1)
 	{
-		*pcurr = curr - 1;
+		*pcurr = (T)(curr - 1);
         ++pcurr;
 	}
     else
     {
-        *buf += 1; // GAP starts with 1
+        ++(*buf); // GAP starts with 1
     }
 	T prev = curr; 
     T acc = prev;
@@ -1382,7 +1382,7 @@ unsigned gap_set_array(T* buf, const T* arr, unsigned len)
         {
             *pcurr++ = acc;
             acc = curr;
-            *pcurr++ = curr-1;
+            *pcurr++ = (T)(curr-1);
         }
 		prev = curr;
 	}
@@ -1969,7 +1969,7 @@ bm::id_t gap_bitset_xor_count(const unsigned* block, const T*  buf)
     
     for (bitval^=1, ++pcurr; pcurr <= pend; bitval^=1, ++pcurr)
     {
-        T prev = *(pcurr-1)+1;
+        T prev = (T)(*(pcurr-1)+1);
         bm::id_t c = bit_block_calc_count_range(block, prev, *pcurr);
         
         if (bitval) // 1 gap; means Result = Total_Bits - BitCount;
@@ -2007,7 +2007,7 @@ bm::id_t gap_bitset_xor_any(const unsigned* block, const T*  buf)
     
     for (bitval^=1, ++pcurr; pcurr <= pend; bitval^=1, ++pcurr)
     {
-        T prev = *(pcurr-1)+1;
+        T prev = (T)(*(pcurr-1)+1);
         bm::id_t c = bit_block_any_range(block, prev, *pcurr);
         
         if (bitval) // 1 gap; means Result = Total_Bits - BitCount;
@@ -2054,7 +2054,7 @@ bm::id_t gap_bitset_or_count(const unsigned* block, const T*  buf)
     
     for (bitval^=1, ++pcurr; pcurr <= pend; bitval^=1, ++pcurr)
     {
-        T prev = *(pcurr-1)+1;
+        T prev = (T)(*(pcurr-1)+1);
         bm::id_t c;
         
         if (bitval)
@@ -2101,7 +2101,7 @@ bm::id_t gap_bitset_or_any(const unsigned* block, const T*  buf)
     
     for (bitval^=1, ++pcurr; pcurr <= pend; bitval^=1, ++pcurr)
     {
-        T prev = *(pcurr-1)+1;
+        T prev = (T)(*(pcurr-1)+1);
         bm::id_t c;
         
         if (bitval)
@@ -2292,7 +2292,7 @@ void gap_init_range_block(T* buf,
         else
         {
             gap_len = 2;
-            buf[1] = to;
+            buf[1] = (T)to;
             buf[2] = (T)(set_max - 1);
             buf[0] = (T)((*buf & 6u) + (gap_len << 3) + value);
         }
@@ -2310,11 +2310,11 @@ void gap_init_range_block(T* buf,
     else
     {
         gap_len = 3;
-        buf[1] = from - 1;
-        buf[2] = (T) to;
+        buf[1] = (T)(from - 1);
+        buf[2] = (T)to;
         buf[3] = (T)(set_max - 1);
     }
-    buf[0] =  (T)((*buf & 6u) + (gap_len << 3) + value);
+    buf[0] = (T)((*buf & 6u) + (gap_len << 3) + value);
 }
 
 
@@ -2441,7 +2441,7 @@ template<typename T>
 void set_gap_level(T* buf, unsigned level)
 {
     BM_ASSERT(level < bm::gap_levels);
-    *buf = ((level & 3) << 1) | (*buf & 1) | (*buf & ~7); 
+    *buf = (T)(((level & 3) << 1) | (*buf & 1) | (*buf & ~7)); 
 }
 
 
@@ -2561,7 +2561,7 @@ template<typename T>
                }
                bitval = bitval_next;
            }
-           bit_idx += sizeof(*src) * 8;
+           bit_idx += unsigned(sizeof(*src) * 8);
            if (bit_idx >= bits)
            {
                goto complete;
@@ -2707,7 +2707,7 @@ D gap_convert_to_arr(D* BMRESTRICT       dest,
         if (pending >= dest_len)
             return 0;
         dest_len -= pending;
-        T from = *(pcurr-1)+1;
+        T from = (T)(*(pcurr-1)+1);
         T to = *pcurr;
         for (T i = from; ;++i) 
         {
@@ -4407,7 +4407,7 @@ unsigned bit_count_nonzero_size(const T*     blk,
                     break;
             }
             blk = blk_j-1;
-            count += sizeof(gap_word_t);
+            count += unsigned(sizeof(gap_word_t));
         }
         else
         {
@@ -4427,7 +4427,7 @@ unsigned bit_count_nonzero_size(const T*     blk,
                     break;
                 }
             }
-            count += sizeof(gap_word_t);
+            count += unsigned(sizeof(gap_word_t));
             // count all bit-words now
             count += unsigned((blk_j - blk) * sizeof(T));
             blk = blk_j;
@@ -4436,7 +4436,7 @@ unsigned bit_count_nonzero_size(const T*     blk,
     }
     while(blk < blk_end); 
 
-    return count + (2 * sizeof(T));
+    return count + unsigned(2 * sizeof(T));
 }
 
 
@@ -4762,7 +4762,7 @@ template<typename T> T bit_convert_to_arr(T* BMRESTRICT dest,
                                           unsigned mask = 0)
 {
     T* BMRESTRICT pcurr = dest;
-    for(unsigned bit_idx=0; bit_idx < bits; ++src,bit_idx += sizeof(*src) * 8)
+    for(unsigned bit_idx=0; bit_idx < bits; ++src,bit_idx += unsigned(sizeof(*src) * 8))
     {
         unsigned val = *src ^ mask; // possible to invert value by XOR 0xFF..
         if (val == 0) 

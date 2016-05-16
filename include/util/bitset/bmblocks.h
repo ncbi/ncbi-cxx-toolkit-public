@@ -1281,7 +1281,7 @@ public:
                            when deep scan is not requested result can be approximate
         \returns true if all bits are in the block are 0.
     */
-    bool is_block_zero(unsigned          nb, 
+    bool is_block_zero(unsigned          /*nb*/,
                        const bm::word_t* blk, 
                        bool              deep_scan = true) const
     {
@@ -1313,7 +1313,7 @@ public:
                            when deep scan is not requested result can be approximate
         \return true if block consists of 1 bits.
     */
-    bool is_block_one(unsigned          nb, 
+    bool is_block_one(unsigned          /*nb*/,
                       const bm::word_t* blk,
                       bool              deep_scan = true) const
     {
@@ -1374,13 +1374,14 @@ public:
 
     unsigned mem_used() const
     {
-        unsigned used = sizeof(*this);
-        used += temp_block_ ? sizeof(word_t) * bm::set_block_size : 0;
-        used += sizeof(bm::word_t**) * top_block_size_;
+        unsigned used = 
+            (unsigned)(sizeof(*this) +
+                       (temp_block_ ? sizeof(word_t) * bm::set_block_size : 0) +
+                       sizeof(bm::word_t**) * top_block_size_);
 
         for (unsigned i = 0; i < top_block_size_; ++i)
         {
-            used += blocks_[i] ? sizeof(void*) * bm::set_array_size : 0;
+            used = used + unsigned(blocks_[i] ? sizeof(void*) * bm::set_array_size : 0);
         }
 
         return used;

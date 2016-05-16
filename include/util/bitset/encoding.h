@@ -335,7 +335,7 @@ class bit_in
 public:
     bit_in(TDecoder& decoder)
         : src_(decoder),
-          used_bits_(sizeof(accum_) * 8),
+          used_bits_(unsigned(sizeof(accum_) * 8)),
           accum_(0)
     {
     }
@@ -355,7 +355,7 @@ public:
         {
             if (acc == 0)
             {
-                zero_bits += (sizeof(acc) * 8) - used;
+                zero_bits = zero_bits + unsigned(sizeof(acc) * 8) - used;
                 used = 0;
                 acc = src_.get_32();
                 continue;
@@ -388,7 +388,7 @@ public:
         // get the value
         unsigned current;
         
-        unsigned free_bits = (sizeof(acc) * 8) - used;
+        unsigned free_bits = unsigned(sizeof(acc) * 8) - used;
         if (zero_bits <= free_bits)
         {
         take_accum:
