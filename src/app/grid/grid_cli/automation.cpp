@@ -235,7 +235,6 @@ void CAutomationProc::SendWarning(const string& warn_msg,
     warning.AppendString(warn_msg);
     warning.AppendString(source->GetType());
     warning.AppendInteger(source->GetID());
-    warning.AppendString(CTime(CTime::eCurrent).AsString());
     m_MessageSender->SendMessage(warning);
 }
 
@@ -244,7 +243,6 @@ void CAutomationProc::SendError(const CTempString& error_message)
     CJsonNode error(CJsonNode::NewArrayNode());
     error.Append(m_ErrNode);
     error.AppendString(error_message);
-    error.AppendString(CTime(CTime::eCurrent).AsString());
     m_MessageSender->SendMessage(error);
 }
 
