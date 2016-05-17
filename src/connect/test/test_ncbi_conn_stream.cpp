@@ -112,17 +112,6 @@ public:
         TFTP_Flags flag = 0;
         SConnNetInfo* net_info;
         size_t i, j, k, l, m, n, size;
-    
-        // Set error posting and tracing on maximum
-        SetDiagTrace(eDT_Enable);
-        SetDiagPostLevel(eDiag_Info);
-        SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default)
-                            | eDPF_All | eDPF_OmitInfoSev);
-        UnsetDiagPostFlag(eDPF_Line);
-        UnsetDiagPostFlag(eDPF_File);
-        UnsetDiagPostFlag(eDPF_Location);
-        UnsetDiagPostFlag(eDPF_LongFilename);
-        SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
         if (GetArguments().Size() <= 1)
             g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
@@ -651,5 +640,15 @@ public:
 
 int main(int argc, const char* argv[])
 {
+    // Set error posting and tracing on maximum
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default)
+        | eDPF_All | eDPF_OmitInfoSev);
+    UnsetDiagPostFlag(eDPF_Line);
+    UnsetDiagPostFlag(eDPF_File);
+    UnsetDiagPostFlag(eDPF_Location);
+    UnsetDiagPostFlag(eDPF_LongFilename);
+    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
     return CNCBITestApp().AppMain(argc, argv);
 }
