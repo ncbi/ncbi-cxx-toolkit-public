@@ -188,7 +188,7 @@ CIdMapperConfig::SetCurrentContext(
 //  ============================================================================
 {
     vector<string> columns;
-    NStr::Tokenize( strLine, " \t[]|:", columns, NStr::fSplit_MergeDelimiters);
+    NStr::Split( strLine, " \t[]|:", columns, NStr::fSplit_MergeDelimiters);
     
     //sanity check: only a single columns remaining
     if ( columns.size() != 1 ) {
@@ -205,7 +205,7 @@ CIdMapperConfig::AddMapEntry(
 //  ============================================================================
 {
     vector<string> columns;
-    NStr::Tokenize( strLine, " \t", columns, NStr::eMergeDelims );
+    NStr::Split(strLine, " \t", columns, NStr::fSplit_MergeDelims);
     
     //sanity check: two or three columns. If three columns, the last better be
     //integer
