@@ -51,13 +51,13 @@
 #define CONN_NCBI_FTP_HOST  "ftp-ext.ncbi.nlm.nih.gov"
 
 
-static const size_t kBufferSize = 1024;
+static const size_t kBufferSize = 512*1024;
 
 
 USING_NCBI_SCOPE;
 
 
-static CNcbiRegistry* s_CreateRegistry(void)
+static void s_CreateRegistry(void)
 {
     CNcbiRegistry* reg = &CNcbiApplication::Instance()->GetConfig();
 
@@ -111,7 +111,6 @@ public:
         s_CreateRegistry();
         TFTP_Flags flag = 0;
         SConnNetInfo* net_info;
-        auto_ptr<CNcbiRegistry> reg;
         size_t i, j, k, l, m, n, size;
     
         // Set error posting and tracing on maximum
@@ -645,12 +644,7 @@ public:
 
         LOG_POST(Info << "Test 9 passed\n");
 
-
-        CORE_SetREG(0);
-
         CORE_LOG(eLOG_Note, "TEST completed successfully");
-        CORE_SetLOCK(0);
-        CORE_SetLOG(0);
         return 0/*okay*/;
     }
 };
