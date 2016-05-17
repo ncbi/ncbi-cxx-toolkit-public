@@ -178,7 +178,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
             autofix = true;
         }
     }
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, CDiscrepancySet::Format(m_Name, objs.size())));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, CDiscrepancySet::Format(m_Name, objs.size()), m_Name));
     item->m_Autofix = autofix;
     item->m_Fatal = fatal;
     item->m_Ext = m_Ext;
