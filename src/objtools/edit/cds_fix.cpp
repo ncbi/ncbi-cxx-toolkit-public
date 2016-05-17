@@ -880,6 +880,7 @@ bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope)
             if (len_wanted > 0) {
                 new_loc = TruncateSeqLoc (cds.GetLocation(), len_wanted);
                 if (new_loc) {
+                    new_loc->SetPartialStart(cds.GetLocation().IsPartialStart(eExtreme_Biological), eExtreme_Biological);
                     new_loc->SetPartialStop(false, eExtreme_Biological);
                     cds.SetLocation().Assign(*new_loc);
                     if (cds.GetLocation().IsPartialStart(eExtreme_Biological)) {
