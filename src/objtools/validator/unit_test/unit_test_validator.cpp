@@ -13205,10 +13205,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     // two duplicate feature errors, one for cds, one for mRNA
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "CDSwithMultipleMRNAs",
-      "CDS overlapped by 2 mRNAs, but product locations are unique"));
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "CDSwithMultipleMRNAs",
-      "CDS overlapped by 2 mRNAs, but product locations are unique"));
+//    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "CDSwithMultipleMRNAs",
+//      "CDS overlapped by 2 mRNAs, but product locations are unique"));
+//    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "CDSwithMultipleMRNAs",
+//      "CDS overlapped by 2 mRNAs, but product locations are unique"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "FeatContentDup", 
       "Duplicate feature"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "FeatContentDup", 
@@ -14013,8 +14013,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNAmismatch)
     STANDARD_SETUP
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSmRNAmismatch",
                                "mRNA count (2) does not match CDS (1) count for gene"));
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "CDSwithMultipleMRNAs",
-                               "CDS overlapped by 2 mRNAs, but product locations are unique"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSwithMultipleMRNAs",
+                              "CDS matches 2 mRNAs"));
+//    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "CDSwithMultipleMRNAs",
+//                               "CDS overlapped by 2 mRNAs, but product locations are unique"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14292,7 +14294,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSwithMultipleMRNAs)
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatureProductInconsistency",
                               "mRNA products are not unique"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSwithMultipleMRNAs",
-                              "CDS overlapped by 2 mRNAs"));
+                              "CDS matches 2 mRNAs"));
+
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatContentDup",
                               "Duplicate feature"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "MultipleMRNAproducts",
@@ -14314,8 +14317,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSwithMultipleMRNAs)
 
     CLEAR_ERRORS
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "CDSwithMultipleMRNAs",
-                              "CDS overlapped by 2 mRNAs, but product locations are unique"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSwithMultipleMRNAs",
+                              "CDS matches 2 mRNAs"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatContentDup", "Duplicate feature"));
     expected_errors.push_back(new CExpectedError("prot2", eDiag_Warning, "GenomicProductPackagingProblem",
                               "Protein bioseq should be product of CDS feature on contig, but is not"));
@@ -14557,6 +14560,7 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CDSwithNoMRNAOverlap)
     CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature (*cds_it);
     unit_test_util::AddFeat (gene, nuc);
 
+/*
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSwithNoMRNAOverlap",
@@ -14565,7 +14569,6 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CDSwithNoMRNAOverlap)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS    
-
     scope.RemoveTopLevelSeqEntry(seh);
     for (int i = 0; i < 3; i++) {
         ++cds_it;
@@ -14583,6 +14586,7 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CDSwithNoMRNAOverlap)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS    
+*/
 }
 
 
@@ -14784,8 +14788,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefProblem)
     CreateReciprocalLinks(*cds, *misc);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
-                                "CDS/mRNA unambiguous pair have erroneous cross-references"));
+//    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
+//                                "CDS/mRNA unambiguous pair have erroneous cross-references"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
                                 "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
@@ -14799,8 +14803,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefProblem)
     scope.RemoveTopLevelSeqEntry(seh);
     misc->ResetXref();
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
-                                "CDS/mRNA unambiguous pair have erroneous cross-references"));
+//    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
+//                                "CDS/mRNA unambiguous pair have erroneous cross-references"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
                                 "Cross-referenced feature does not have its own cross-reference"));
     eval = validator.Validate(seh, options);
@@ -15956,8 +15960,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefNotReciprocal)
     gene->SetId().SetLocal().SetId(3);
 
     STANDARD_SETUP
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
-                               "CDS/mRNA unambiguous pair have erroneous cross-references"));
+//    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
+//                               "CDS/mRNA unambiguous pair have erroneous cross-references"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
                                "Cross-referenced feature does not have its own cross-reference"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
