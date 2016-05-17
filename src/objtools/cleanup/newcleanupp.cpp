@@ -8413,9 +8413,11 @@ void CNewCleanup_imp::x_MoveCDSFromNucAnnotToSetAnnot( CBioseq_set &set )
         SAnnotSelector sel(CSeqFeatData::e_Cdregion);
         CFeat_CI fi(seh, sel);
         while (fi) {
-            CSeq_feat_Handle fh = fi->GetSeq_feat_Handle();
-            if (feature::PromoteCDSToNucProtSet(fh)) {
-                ChangeMade (CCleanupChange::eMoveFeat);
+            if (fi->IsSetProduct()) {
+                CSeq_feat_Handle fh = fi->GetSeq_feat_Handle();
+                if (feature::PromoteCDSToNucProtSet(fh)) {
+                    ChangeMade(CCleanupChange::eMoveFeat);
+                }
             }
             ++fi;
         }
