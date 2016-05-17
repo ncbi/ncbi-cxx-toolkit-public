@@ -450,7 +450,9 @@ TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all)
         }
         di->m_Objs = objs;
         out.clear();
-        out.push_back(CRef<CReportItem>(di));
+        if (di->m_Objs.size()) {
+            out.push_back(CRef<CReportItem>(di));
+        }
     }
     if (all) {
         ITERATE(TDiscrepancyCaseMap, it, tests) {
