@@ -1088,7 +1088,7 @@ void CObjectIStreamAsn::SkipString(EStringType type)
                 SkipEndOfLine(c);
                 break;
             case '\"':
-                if ( m_Input.PeekChar(i + 1) == '\"' ) {
+                if ( m_Input.PeekCharNoEOF(i + 1) == '\"' ) {
                     // double quote -> one quote
                     m_Input.SkipChars(i + 2);
                     i = 0;
