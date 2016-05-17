@@ -1419,8 +1419,8 @@ private:
 
     sequence::EOverlapType m_OverlapType;
     CScope* m_Scope;
-    EMatchType m_MatchType;
     bool m_IsPseudo;
+    EMatchType m_MatchType;
 };
 
 
