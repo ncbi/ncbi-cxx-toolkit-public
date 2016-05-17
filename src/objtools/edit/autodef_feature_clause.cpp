@@ -1194,6 +1194,10 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *par
     }
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
     CSeqFeatData::ESubtype parent_subtype = parent_clause->GetMainFeatureSubtype();
+
+    if (parent_subtype == CSeqFeatData::eSubtype_mobile_element) {
+        return true;
+    }
     
     if (subtype == CSeqFeatData::eSubtype_exon || subtype == CSeqFeatData::eSubtype_intron) {
         if (parent_subtype == CSeqFeatData::eSubtype_cdregion
