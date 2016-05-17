@@ -149,7 +149,7 @@ class CProcessHighestSeObjs : public CNcbiApplication
 void CProcessHighestSeObjs::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -169,7 +169,7 @@ void CProcessHighestSeObjs::Init(void)
 int CProcessHighestSeObjs::Run(void)
 {
     // Get object stream.
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, NcbiCin));
+    unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, NcbiCin));
 
     // Set hooks.  No hooks are necessary for Seq-entry because in that case
     // all highest-level (Seq-entry) objects are read.

@@ -1,6 +1,6 @@
 #include <ncbi_pch.hpp>
-#include <objects/biblio/Auth_list.hpp>
-#include <objects/biblio/Cit_art.hpp>
+#include <objects/general/Date.hpp>
+#include <objects/general/Date_std.hpp>
 #include <serial/objectio.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -16,21 +16,45 @@ public:
                                   const CConstObjectInfoMI& passed_info)
     {
         DefaultWrite(out, passed_info);
+
+#if 0
+// get information about the member
+        // typeinfo of the parent class (Date-std)
+        CObjectTypeInfo oti = passed_info.GetClassType();
+        // typeinfo and data of the parent class
+        const CConstObjectInfo& oi = passed_info.GetClassObject();
+        // typeinfo of the member (Int4)
+        CObjectTypeInfo omti = passed_info.GetMemberType();
+        // typeinfo and data of the member
+        CConstObjectInfo om = passed_info.GetMember();
+        // index of the member in parent class (1)
+        TMemberIndex mi = passed_info.GetMemberIndex();
+        // information about the member, including its name (year)
+        const CMemberInfo* minfo = passed_info.GetMemberInfo();
+        // ePrimitiveValueInteger
+        EPrimitiveValueType t = omti.GetPrimitiveValueType();
+        // 4
+        size_t sz = omti.GetTypeInfo()->GetSize();
+        // true
+        bool s = omti.IsPrimitiveValueSigned();
+
+// call DefaultWrite (above) or write directly
+        Int4 y = 2001;
+        out.WriteClassMember( minfo->GetId(), minfo->GetTypeInfo(), &y);
+#endif
     }
 };
 
 int main(int argc, char** argv)
 {
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, "if"));
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "of"));
-
-    CObjectTypeInfo(CType<CAuth_list>())
-        .FindMember("names")
+    unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
+    CObjectTypeInfo(CType<CDate_std>())
+        .FindMember("year")
         .SetLocalWriteHook(*out, new CDemoHook);
 
-    CCit_art article;
-    *in >> article;
-    *out << article;
+    CDate date;
+    date.SetStd().SetYear(1999);
+    *out << date;
 
     return 0;
 }

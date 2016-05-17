@@ -10,9 +10,9 @@ SRC = hooks_copy_member
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = seq seqcode pub medline biblio general xser sequtil xutil xncbi
+# LIB = seq seqcode pub medline biblio general xser sequtil xutil xncbi
 LIBS = $(ORIG_LIBS)
-# LIB = seqset $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
+LIB = seqset $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
 ## If you need the C toolkit...
 # LIBS     = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
 # CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)

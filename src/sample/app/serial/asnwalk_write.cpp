@@ -28,6 +28,9 @@
 * File Description:
 *   Simple program demonstrating how to walk a serial object.
 *
+*   The program recursively visits all members of CSeq_entry class object
+*   and modifies all primitive type values with random data
+*
 * ===========================================================================
 */
 

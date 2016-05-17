@@ -100,6 +100,25 @@ public:
         // reading everything else.
         DefaultRead(in, passed_info);
 
+#if 0
+// call DefaultRead to read member data, or DefaultSkip to skip it
+        DefaultSkip(in, passed_info);
+
+// get information about the member
+        // typeinfo of the parent class
+        CObjectTypeInfo oti = passed_info.GetClassType();
+        // typeinfo and data of the parent class
+        const CObjectInfo& oi = passed_info.GetClassObject();
+        // typeinfo of the member
+        CObjectTypeInfo omti = passed_info.GetMemberType();
+        // typeinfo and data of the member
+        CObjectInfo om = passed_info.GetMember();
+        // index of the member in parent class
+        TMemberIndex mi = passed_info.GetMemberIndex();
+        // information about the member, including its name
+        const CMemberInfo* minfo = passed_info.GetMemberInfo();
+#endif
+
         // Perform any post-read processing here.  Once the object has been
         // read, its data can be used for processing.
         CNcbiOstrstream oss;
@@ -112,11 +131,11 @@ public:
 int main(int argc, char** argv)
 {
     // Create some ASN.1 data that can be parsed by this code sample.
-    char asn[] = "Date-std ::= { year 1998 }";
+    char asn[] = "Date-std ::= { year 1998, month 1, day 2, season \"winter\" }";
 
     // Setup an input stream, based on the sample ASN.1.
     CNcbiIstrstream iss(asn);
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, iss));
+    unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, iss));
 
     ////////////////////////////////////////////////////
     // Create a hook for the 'year' class member of Date-std objects.

@@ -26,7 +26,10 @@
 * Author:  Andrei Gourianov
 *
 * File Description:
-*   Simple program demonstrating how to walk a serial object.
+*   Simple program demonstrating how to walk a serial object TypeInfo.
+*
+*   The program recursively visits all members of CSeq_entry class TypeInfo
+*   and prints out their types and  names
 *
 * ===========================================================================
 */

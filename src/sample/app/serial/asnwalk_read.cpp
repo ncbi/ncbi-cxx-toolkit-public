@@ -28,6 +28,10 @@
 * File Description:
 *   Simple program demonstrating how to walk a serial object.
 *
+*   The program reads object of CSeq_entry class from a file
+*   then recursively visits all its members and subclasses
+*   and prints out their types, names and data
+*
 * ===========================================================================
 */
 
@@ -57,7 +61,7 @@ int CDemoApp::Run(void)
 {
     // Get a Seq-entry object.
     CSeq_entry entry;
-    CNcbiIfstream in("sample.asn");
+    CNcbiIfstream in("seq-entry-sample.asn");
     in >> MSerial_AsnText >> entry;
 
     // Get the type info and walk the object hierarchy.

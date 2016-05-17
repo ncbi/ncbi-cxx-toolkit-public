@@ -1,5 +1,6 @@
 #include <ncbi_pch.hpp>
-#include <objects/biblio/Cit_art.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/objectio.hpp>
 #include <serial/objistr.hpp>
@@ -15,20 +16,36 @@ public:
     virtual void CopyObject(CObjectStreamCopier& copier,
                             const CObjectTypeInfo& passed_info)
     {
+        cout << copier.In().GetStackPath() << endl;
         DefaultCopy(copier, passed_info);
+
+#if 0
+// or read object
+        CSeq_annot annot;
+        copier.In().ReadObject(&annot, CSeq_annot::GetTypeInfo());
+        cout << MSerial_AsnText << annot << endl;
+// and maybe write it as well
+        copier.Out().WriteObject(&annot, CSeq_annot::GetTypeInfo());
+
+// or skip the object
+        copier.In().SkipObject(CSeq_annot::GetTypeInfo());
+        
+        // typeinfo of the object (Seq-annot)
+        TTypeInfo ti = passed_info.GetTypeInfo();
+#endif
     }
 };
 
 int main(int argc, char** argv)
 {
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, "if"));
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "of"));
+    unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, "seq-entry-sample.asn"));
+    unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "seq-entry-sample_output.asn"));
     CObjectStreamCopier copier(*in, *out);
 
-    CObjectTypeInfo(CType<CCit_art>())
+    CObjectTypeInfo(CType<CSeq_annot>())
         .SetLocalCopyHook(copier, new CDemoHook());
 
-    copier.Copy(CType<CCit_art>());
+    copier.Copy(CType<CSeq_entry>());
 
     return 0;
 }
