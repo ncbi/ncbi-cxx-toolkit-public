@@ -1447,7 +1447,7 @@ void CAutoDefFeatureClause_Base::RemoveFeaturesUnderType(unsigned int feature_ty
 void CAutoDefFeatureClause_Base::RemoveFeaturesInLocation(const CSeq_loc& loc)
 {
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        if (m_ClauseList[k]->CompareLocation(loc) == sequence::eContained) {
+        if (m_ClauseList[k]->CompareLocation(loc) == sequence::eContains) {
             m_ClauseList[k]->MarkForDeletion();
         } else {
             m_ClauseList[k]->RemoveFeaturesInLocation(loc);
