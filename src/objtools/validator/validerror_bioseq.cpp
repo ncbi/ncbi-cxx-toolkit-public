@@ -6314,7 +6314,7 @@ void CCdsMatchInfo::AssignMatches(list<CRef<CMrnaMatchInfo>>& mrnas)
 void CValidError_bioseq::x_CheckForMultiplemRNAs(const CCdsMatchInfo& cds_match)
 {
 
-    int mrna_count = 0;
+    int mrna_count = 1;
     for (const auto& mrna : cds_match.GetXrefmRNAs()) {
        if (!mrna->HasMatch()) {
           ++mrna_count;
@@ -6327,7 +6327,7 @@ void CValidError_bioseq::x_CheckForMultiplemRNAs(const CCdsMatchInfo& cds_match)
          }
     }
    
-    if (mrna_count) {
+    if (mrna_count>1) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSwithMultipleMRNAs,
                  "CDS matches " + NStr::IntToString (mrna_count)
                   + " mRNAs",
@@ -6425,6 +6425,10 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
                 ++num_unmatched_cds;
             }
         }
+    }
+
+    if (num_matched_cds == mrna_list.size()) {
+        return;
     }
 
     // Some of the CDS features have been matched, but some are unmatched
