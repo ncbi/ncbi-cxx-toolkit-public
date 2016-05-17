@@ -152,7 +152,7 @@ CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
             CQuery      query = db.NewQuery();
 
             object_id = 0;
-            query.SetParameter("@next_id", 0, eSDB_Int8, eSP_InOut);
+            query.SetOutputParameter("@next_id", eSDB_Int8);
             query.SetParameter("@count", count);
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -200,7 +200,7 @@ CNSTDatabase::ExecSP_CreateClient(const string &  client, Int8 &  client_id)
 
             client_id = k_UndefinedClientID;
             query.SetParameter("@client_name", client);
-            query.SetParameter("@client_id", client_id, eSDB_Int8, eSP_InOut);
+            query.SetOutputParameter("@client_id", eSDB_Int8);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -249,7 +249,7 @@ CNSTDatabase::ExecSP_CreateUser(const CNSTUserID &  user, Int8 &  user_id)
             user_id = k_UndefinedUserID;
             query.SetParameter("@user_name", user.GetName());
             query.SetParameter("@user_namespace", user.GetNamespace());
-            query.SetParameter("@user_id", user_id, eSDB_Int8, eSP_InOut);
+            query.SetOutputParameter("@user_id", eSDB_Int8);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -303,9 +303,6 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             CDatabase               db = m_Db->Clone();
             CQuery                  query = db.NewQuery();
 
-            // To be on the safe side
-            Int4                    db_size_was_null = 0;
-
             query.SetParameter("@object_id", object_id);
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@object_create_tm",
@@ -314,10 +311,7 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             query.SetParameter("@object_size", size);
             query.SetParameter("@client_id", client_id);
             query.SetParameter("@user_id", user_id);
-
-            // To be on the safe side
-            query.SetParameter("@size_was_null", db_size_was_null,
-                               eSDB_Int4, eSP_InOut);
+            query.SetOutputParameter("@size_was_null", eSDB_Int4);
 
             if (ttl.m_IsNull)
                 query.SetNullParameter("@object_expiration", eSDB_DateTime);
@@ -388,19 +382,13 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             CDatabase               db = m_Db->Clone();
             CQuery                  query = db.NewQuery();
 
-            // To be on the safe side
-            Int4                    db_size_was_null = 0;
-
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@object_size", size);
             query.SetParameter("@client_id", client_id);
             query.SetParameter("@user_id", user_id);
             query.SetParameter("@current_time", current_time);
-
-            // To be on the safe side
-            query.SetParameter("@size_was_null", db_size_was_null,
-                               eSDB_Int4, eSP_InOut);
+            query.SetOutputParameter("@size_was_null", eSDB_Int4);
 
             if (exp_record_found.m_IsNull)
                 query.SetNullParameter("@object_exp_if_found",
@@ -553,18 +541,12 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             CDatabase               db = m_Db->Clone();
             CQuery                  query = db.NewQuery();
 
-            // To be on the safe side
-            Int4                    db_size_was_null = 0;
-
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@object_size", size);
             query.SetParameter("@client_id", client_id);
             query.SetParameter("@current_time", current_time);
-
-            // To be on the safe side
-            query.SetParameter("@size_was_null", db_size_was_null,
-                               eSDB_Int4, eSP_InOut);
+            query.SetOutputParameter("@size_was_null", eSDB_Int4);
 
             if (exp_record_found.m_IsNull)
                 query.SetNullParameter("@object_exp_if_found",
@@ -796,8 +778,7 @@ CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
                                eSDB_Int4);
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@client_id", client_id);
-            query.SetParameter("@object_size", object_size.m_Value,
-                                               eSDB_Int8, eSP_InOut);
+            query.SetOutputParameter("@object_size", eSDB_Int8);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -1169,8 +1150,7 @@ CNSTDatabase::ExecSP_GetObjectExpiration(const string &        object_key,
             CQuery                  query = db.NewQuery();
 
             query.SetParameter("@object_key", object_key);
-            query.SetParameter("@expiration", expiration.m_Value,
-                                              eSDB_DateTime, eSP_InOut);
+            query.SetOutputParameter("@expiration", eSDB_DateTime);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -1319,8 +1299,7 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
                 query.SetNullParameter("@limit", eSDB_Int8);
             else
                 query.SetParameter("@limit", limit.m_Value);
-            query.SetParameter("@total_object_cnt", total,
-                               eSDB_Int8, eSP_InOut);
+            query.SetOutputParameter("@total_object_cnt", eSDB_Int8);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
 
@@ -1330,7 +1309,8 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
                 locators.push_back(qit["object_loc"].AsString());
             }
 
-            total = query.GetParameter("@total_object_cnt").AsInt8();
+            if (!query.GetParameter("@total_object_cnt").IsNull())
+                total = query.GetParameter("@total_object_cnt").AsInt8();
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -1458,8 +1438,7 @@ CNSTDatabase::ExecSP_GetObjectSize(const string &  object_key,
             CQuery      query = db.NewQuery();
 
             query.SetParameter("@object_key", object_key);
-            query.SetParameter("@object_size", object_size.m_Value,
-                                               eSDB_Int8, eSP_InOut);
+            query.SetOutputParameter("@object_size", eSDB_Int8);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -1510,8 +1489,7 @@ CNSTDatabase::ExecSP_UpdateObjectSizeIfNULL(const string &  object_key,
             CQuery      query = db.NewQuery();
 
             query.SetParameter("@object_key", object_key);
-            query.SetParameter("@object_size", object_size.m_Value,
-                                               eSDB_Int8, eSP_InOut);
+            query.SetOutputParameter("@object_size", eSDB_Int8);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
