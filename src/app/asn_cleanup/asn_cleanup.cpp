@@ -339,6 +339,8 @@ static void CompleteOutputFile(CObjectOStream& out)
 
     out.EndClass(); // ends 'CSeq_submit'
 
+    Separator(out);
+
     fflush(NULL);
 }
 
