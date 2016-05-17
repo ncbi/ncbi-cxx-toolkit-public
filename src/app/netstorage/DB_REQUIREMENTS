@@ -1,0 +1,11 @@
+The code requires the following DB side components:
+- Database structure: version 5
+- Stored procedures: version 10
+
+To check the DB versions please use the following request:
+SELECT * FROM Versions
+
+If the versions in your DB do not match the required versions please update the
+database using the appropriate .sql scripts in this directory.
+Note: the .sql scripts only allow to move the DB forward.
+
