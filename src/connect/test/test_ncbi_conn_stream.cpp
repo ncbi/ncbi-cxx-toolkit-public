@@ -218,11 +218,13 @@ public:
                     state = ms->rdstate();
                 }
 #if defined(NCBI_COMPILER_GCC)
-#  if NCBI_COMPILER_VERSION == 510 && (!defined(_GLIBCXX_USE_CXX11_ABI)  ||  _GLIBCXX_USE_CXX11_ABI != 0)
+#  if (NCBI_COMPILER_VERSION > 500  && NCBI_COMPILER_VERSION < 600)  &&  (!defined(_GLIBCXX_USE_CXX11_ABI)  ||  _GLIBCXX_USE_CXX11_ABI != 0)
                 catch (...) {
                     // WORKAROUND:
-                    //   At least GCC 5.1.0 in optimized mode and using new ABI:
+                    //   At least GCC 5.1.0 and 5.3.0 and using new ABI:
                     //   fails to catch "IOS_BASE::failure" above.
+                    // Looks like ios_base::failure's actual type in the
+                    // std lib is pre-C++11 in this case.
                     state = ms->rdstate();
                 }
 #  endif
