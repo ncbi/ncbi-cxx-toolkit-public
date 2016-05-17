@@ -644,7 +644,7 @@ int main(int argc, const char* argv[])
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default)
-        | eDPF_All | eDPF_OmitInfoSev);
+                        | eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_Location);
