@@ -22,4 +22,4 @@ REQUIRES = objects LIBXML LIBXSLT $(VDB_REQ)
 CXXFLAGS += $(ORIG_CXXFLAGS)
 LDFLAGS  += $(ORIG_LDFLAGS)
 
-WATCHERS = bollin kornbluh gotvyans
+WATCHERS = bollin gotvyans

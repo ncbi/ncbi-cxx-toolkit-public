@@ -11,5 +11,5 @@ include @builddir@/Makefile.meta
 
 REQUIRES = LIBXSLT 
 
-WATCHERS = kachalos kornbluh
+WATCHERS = kachalos
 

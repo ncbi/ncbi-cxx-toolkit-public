@@ -12,4 +12,4 @@ REQUIRES = objects -Cygwin SQLITE3
 CXXFLAGS = $(ORIG_CXXFLAGS)
 # -Wno-parentheses
 
-WATCHERS = kornbluh sapojnik
+WATCHERS = sapojnik

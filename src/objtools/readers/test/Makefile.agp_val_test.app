@@ -10,4 +10,4 @@ SRC = agp_val_test
 LIB = $(OBJREAD_LIBS) seqset $(SEQ_LIBS) pub medline biblio general \
       xser xutil xncbi
 
-WATCHERS = sapojnik kornbluh
+WATCHERS = sapojnik

@@ -13,4 +13,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD  =
 CHECK_COPY = test_data
 
-WATCHERS = vasilche dicuccio bollin kornbluh
+WATCHERS = vasilche dicuccio bollin

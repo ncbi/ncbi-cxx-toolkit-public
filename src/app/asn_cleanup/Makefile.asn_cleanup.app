@@ -26,4 +26,4 @@ CXXFLAGS += $(ORIG_CXXFLAGS)
 LDFLAGS  += $(ORIG_LDFLAGS)
 
 
-WATCHERS = bollin kornbluh
+WATCHERS = bollin

@@ -9,4 +9,4 @@ LIB = xcleanup xobjutil valid taxon3 submit xconnect xregexp $(PCRE_LIB) \
 
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-WATCHERS = bollin kornbluh kans
+WATCHERS = bollin kans

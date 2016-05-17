@@ -15,4 +15,4 @@ CHECK_CMD =
 CHECK_COPY = test_cached_taxon.ini
 CHECK_TIMEOUT = 3000
 
-WATCHERS = bollin kans kornbluh
+WATCHERS = bollin kans

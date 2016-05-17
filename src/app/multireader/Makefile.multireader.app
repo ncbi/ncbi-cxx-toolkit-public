@@ -17,4 +17,4 @@ LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 REQUIRES = objects algo -Cygwin
 
 
-WATCHERS = ludwigf kornbluh gotvyans
+WATCHERS = ludwigf gotvyans

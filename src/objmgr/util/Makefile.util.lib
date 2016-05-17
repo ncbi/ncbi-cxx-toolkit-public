@@ -11,7 +11,7 @@ LIB = xobjutil
 
 DLL_LIB = $(SOBJMGR_LIBS)
 
-WATCHERS = ucko vasilche kornbluh
+WATCHERS = ucko vasilche
 
 
 

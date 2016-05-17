@@ -20,7 +20,7 @@ SRC = accession_item basecount_item comment_item contig_item date_item \
 
 DLL_LIB = xalnmgr xconnect
 
-WATCHERS = ludwigf dicuccio kornbluh
+WATCHERS = ludwigf dicuccio
 
 
 USES_LIBRARIES =  \

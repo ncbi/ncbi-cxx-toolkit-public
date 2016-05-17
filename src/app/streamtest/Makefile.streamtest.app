@@ -20,4 +20,4 @@ POST_LINK = $(VDB_POST_LINK)
 
 REQUIRES = objects algo LIBXSLT $(VDB_REQ)
 
-WATCHERS = kans kornbluh drozdov
+WATCHERS = kans drozdov

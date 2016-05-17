@@ -14,5 +14,5 @@ CHECK_COPY = current.prt test_validator.sh
 
 REQUIRES = -Cygwin objects
 
-WATCHERS = bollin kornbluh kans foleyjp asztalos gotvyans
+WATCHERS = bollin kans foleyjp asztalos gotvyans
 

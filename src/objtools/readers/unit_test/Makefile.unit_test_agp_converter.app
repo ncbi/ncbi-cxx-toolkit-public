@@ -13,4 +13,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD  =
 CHECK_COPY = agp_converter_test_cases
 
-WATCHERS = bollin kornbluh ludwigf
+WATCHERS = bollin ludwigf

@@ -20,7 +20,7 @@ SRC = agp_write \
 
 DLL_LIB = variation_utils $(XFORMAT_LIBS)
 
-WATCHERS = ludwigf boukn kornbluh gotvyans foleyjp
+WATCHERS = ludwigf boukn gotvyans foleyjp
 
 USES_LIBRARIES =  \
     $(OBJREAD_LIBS) variation_utils xalnmgr xformat

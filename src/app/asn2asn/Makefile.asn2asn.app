@@ -20,4 +20,4 @@ CHECK_COPY = asn2asn.sh ../../serial/datatool/testdata
 CHECK_REQUIRES = unix in-house-resources -Cygwin
 CHECK_TIMEOUT = 600
 
-WATCHERS = gouriano kornbluh
+WATCHERS = gouriano

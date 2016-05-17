@@ -12,5 +12,5 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 
-WATCHERS = dicuccio ucko kornbluh
+WATCHERS = dicuccio ucko
 

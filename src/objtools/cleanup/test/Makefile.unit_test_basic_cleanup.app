@@ -16,4 +16,4 @@ CHECK_CMD =
 CHECK_COPY = test_cases
 CHECK_TIMEOUT = 1200
 
-WATCHERS = bollin kornbluh kans 
+WATCHERS = bollin kans 

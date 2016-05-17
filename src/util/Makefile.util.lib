@@ -14,7 +14,7 @@ PROJ_TAG = core
 
 LIBS = $(ORIG_LIBS)
 
-WATCHERS = vakatov kornbluh
+WATCHERS = vakatov
 
 
 

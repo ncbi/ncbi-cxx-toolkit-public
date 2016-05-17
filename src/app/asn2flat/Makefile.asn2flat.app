@@ -21,4 +21,4 @@ POST_LINK = $(VDB_POST_LINK)
 
 REQUIRES = objects $(VDB_REQ)
 
-WATCHERS = ludwigf kornbluh gotvyans
+WATCHERS = ludwigf gotvyans

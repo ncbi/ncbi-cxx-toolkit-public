@@ -22,4 +22,4 @@ LDFLAGS = -L$(import_root)/../lib $(ORIG_LDFLAGS)
 
 REQUIRES = objects
 
-WATCHERS = kachalos kornbluh
+WATCHERS = kachalos

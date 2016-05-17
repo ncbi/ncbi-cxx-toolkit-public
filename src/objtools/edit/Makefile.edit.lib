@@ -18,7 +18,7 @@ DLL_LIB = $(XFORMAT_LIBS) xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
 
 ASN_DEP = seqset valid macro
 
-WATCHERS = bollin kornbluh gotvyans
+WATCHERS = bollin gotvyans
 
 
 USES_LIBRARIES =  \
