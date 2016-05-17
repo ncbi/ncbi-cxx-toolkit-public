@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
+#include <objects/seqfeat/Gb_qual.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
@@ -310,6 +311,78 @@ DISCREPANCY_SUMMARIZE(SHORT_RRNA)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// DISC_RBS_WITHOUT_GENE
+
+const string kRBSWithoutGene = "[n] RBS feature[s] [does] not have overlapping gene[s]";
+const string kRBS = "RBS";
+
+bool IsRBS(const CSeq_feat& f)
+{
+    if (f.GetData().GetSubtype() == CSeqFeatData::eSubtype_RBS) {
+        return true;
+    }
+    if (f.GetData().GetSubtype() != CSeqFeatData::eSubtype_regulatory) {
+        return false;
+    }
+    if (!f.IsSetQual()) {
+        return false;
+    }
+    ITERATE(CSeq_feat::TQual, it, f.GetQual()) {
+        if ((*it)->IsSetQual() && NStr::Equal((*it)->GetQual(), "regulatory_class") &&
+            CSeqFeatData::GetRegulatoryClass((*it)->GetVal()) == CSeqFeatData::eSubtype_RBS) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void AddRBS(CReportNode& objs, CDiscrepancyContext& context) 
+{
+    if (!objs["genes"].empty()) {
+        NON_CONST_ITERATE(TReportObjectList, robj, objs[kRBS].GetObjects())
+        {
+            const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
+            CConstRef<CSeq_feat> rbs(dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer()));
+            objs[kRBSWithoutGene].Add(*context.NewDiscObj(rbs), false).Fatal();
+        }
+    }
+}
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(RBS_WITHOUT_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "RBS features should have an overlapping gene")
+//  ----------------------------------------------------------------------------
+{
+    // See if we have moved to the "next" Bioseq
+    if (m_Count != context.GetCountBioseq()) {
+        AddRBS(m_Objs, context);
+
+        m_Count = context.GetCountBioseq();
+        m_Objs["genes"].clear();
+        m_Objs["RBS"].clear();
+    }
+
+    // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
+    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef));
+
+    if (obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene) {
+        m_Objs["genes"].Add(*this_disc_obj);
+    } else if (IsRBS(obj) && context.GetCurrentGene() == NULL) {
+        m_Objs["RBS"].Add(*this_disc_obj);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(RBS_WITHOUT_GENE)
+//  ----------------------------------------------------------------------------
+{
+    AddRBS(m_Objs, context);
+    m_Objs.GetMap().erase("genes");
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 
 END_SCOPE(NDiscrepancy)
