@@ -247,6 +247,7 @@ docsum needs xser
 drmaa needs3party $(ORIG_LIBS)
 dtd_sample_lib needs xser
 dummy_gpipe needs3party $(ORIG_LIBS)
+ec_hmm_relation_cd needs3party $(ORIG_LIBS)
 edirect needs eueid
 edirect needs ncqhst
 edirect needs txserv
@@ -888,6 +889,7 @@ pepXML needs xser
 phytree_format needs taxon1
 phytree_format needs xalgophytree
 pn_ctl needs $(GPIPE_GENCOLL_LIBS)
+pn_ctl needs ec_hmm_relation_cd
 pn_ctl needs gpipe_jira
 pn_ctl needs gpipe_prok_clean_prot_names
 pn_ctl needs hmm_file
