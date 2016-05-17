@@ -1,0 +1,3035 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1844617 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/chicken/Guangxi/C1228/2015(H9N2)" } ,
+                {
+                  subtype serotype ,
+                  subname "H9N2" } ,
+                {
+                  subtype nat-host ,
+                  subname "chicken" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "China" } ,
+            {
+              subtype segment ,
+              name "4" } ,
+            {
+              subtype collection-date ,
+              name "28-Dec-2015" } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhixun" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhiqin" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Sisi" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Liji" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiaolin" ,
+                          initials "J." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              title "Full-Genome Sequence Analysis of an Avian Influenza Virus
+ H9N2 Strain Isolated from a Domestic Chicken in Guangxi,Southern China" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Xun" ,
+                          initials "Z.X." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Qin" ,
+                          initials "Z.Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Si Si" ,
+                          initials "S.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Li Ji" ,
+                          initials "L.J." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiao Lin" ,
+                          initials "J.L." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 4 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10447877 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 17 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 4 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 5 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/Seq1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726797 } ,
+            genbank {
+              accession "KX185883" } } ,
+          descr {
+            title "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))
+ segment 1 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 1742 ,
+            seq-data
+              ncbi2na '24024AA0FD3051D00E88493478C1CC71CB2C12824B92308DE4DA734
+34101D44807B2111C120043B57B844E5020F9D4448930EA39EEE4109FA84177CF7211FB14F8287
+0DCE90D7DFB8CCFBEA28220EB5CCDB62214D27BC1A3EEF356A0EC80372089C2B477F2F79C2DF34
+0A3523FD52110DE83BB7CCBA8424293BDA3D3DC4824E23AF874020419F15CF421950C440C34200
+813DFF4EEA93034545478479121037B110816110418BBA412080C0CA17D014F8CA142977ED06BF
+8EA083C3CF3EB4B3C016AD011E60C0370E80DC32753ACE844F7F4A22251A8835E08787C008AC9E
+44B90ED21220ABA7C04413E53D403B8B0B393FA01E740313E93022DD01F92FADE283B17DC8D4B2
+2873DAA5324A3D322A2BEB4A1CBE7AFACEAF524F40C142ABEB3A49232A1D0540290F8C0304D40B
+8304CB2100E0424B380F3634E0F498BF80721F04E3C10C23E18D035E8CCEA4CC3920F9CBDE7E00
+520047638938E40EC043FB10C0B822A4FABD439AE823A80A3BF62731440EE3850E4E8843DA06A1
+71048282CD08A2D08F2021200C8AAB427A0DE0A07C4035D14FCF61ED974DDFB0F90EABF9E5FFEF
+7A94ED43AB7E48E413FB330FA400457EFDC70'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "HA" } ,
+                    location
+                      int {
+                        from 33 ,
+                        to 1715 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq1" } } } } } } ,
+        seq {
+          id {
+            local
+              id 1 ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726798 } } ,
+          descr {
+            title "hemagglutunin [Influenza A virus
+ (A/chicken/Guangxi/C1228/2015(H9N2))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 560 ,
+            seq-data
+              ncbieaa "METASLITILLVVTGSSADKICIGYQSTNSTETVDTLTENNVPVTHAKELLHTEH
+NGMLCATSLGQPLILDTCTIEGLIYGNPSCDILLGGREWSYIVERPSAVNGLCYPGNVENLEELRSLFSSAKSYQRIQ
+IFPDTIWNVSYSGTSKACSDSFYRSMRWLTQKNNAYPIQDAQYTNNQEKNILFMWGINHPPTDTAQTNLYTRTDTTTS
+VATEEINRTFKPLIGPRPLVNGLMGRINYYWSVLKPGQTLRIKSNGNLIAPWYGHILSGESHGRILKTDLKRGSCTVQ
+CQTEKGGLNTTLPFQNVSKYAFGNCSKYIGIKSLKLAVGLRNVPSRSSRGLFGAIAGFIEGGWSGLVAGWYGFQHSNN
+QGVGMAADRDSTQKAIDKITSKVNNIVDKMNKQYEIIDHEFSEFETRLNMINNKIDDQILDIWAYNAELLVLLENQKT
+LDEHDANVNNLYNKVKRALGSNAVEDGKGCFELYHKCDDQCMETIRNGTYNRRKYQEESRLERQKIEGVKLESEGTYK
+ILTIYSTVASSLVIAMGFAAFLFWAMSNGSCRCNICI" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "hemagglutunin" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 559 ,
+                        id
+                          local
+                            id 1 } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      id 1 ,
+                location
+                  int {
+                    from 33 ,
+                    to 1715 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq1" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1844617 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/chicken/Guangxi/C1228/2015(H9N2)" } ,
+                {
+                  subtype serotype ,
+                  subname "H9N2" } ,
+                {
+                  subtype nat-host ,
+                  subname "chicken" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "China" } ,
+            {
+              subtype segment ,
+              name "6" } ,
+            {
+              subtype collection-date ,
+              name "28-Dec-2015" } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhixun" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhiqin" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Sisi" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Liji" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiaolin" ,
+                          initials "J." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              title "Full-Genome Sequence Analysis of an Avian Influenza Virus
+ H9N2 Strain Isolated from a Domestic Chicken in Guangxi,Southern China" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Xun" ,
+                          initials "Z.X." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Qin" ,
+                          initials "Z.Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Si Si" ,
+                          initials "S.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Li Ji" ,
+                          initials "L.J." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiao Lin" ,
+                          initials "J.L." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 4 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10447878 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 17 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 4 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 5 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq2" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/Seq2" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726799 } ,
+            genbank {
+              accession "KX185884" } } ,
+          descr {
+            title "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))
+ segment 6 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 1457 ,
+            seq-data
+              ncbi2na '24024A2E00E0D405228C1243E9DEDDDC34F98C33B75D3923E537C10
+41CE11C4FD2920E0E4B054D8B010B8E53B81434C32228112E4FE0C91C53222A03FB5C0B2483108
+3EB401443B48F12AF655FFD02861D0F29DDE42EA84DEAE108815CEDD392DD040EF343F91FA92A0
+515E001091D03A471138C81574481DFF0E0E2F2BB54FD3FA814042EE4C93ADCBD09E718EA024EB
+C4EFEEF1EA8E30039C79C934DCE3A8EFED84B3EBD3AD4004D7481D28B4839BF9343A07EE4BEC38
+78E82E4D280A584722CF3F30882A00F3033C953CD282E7491BE2839DFBC576B35E0BCAEEDE4884
+3E82A750CA54F7333033A78F324F8B52F3BB9D2A7EFA611142038E3275249241E488570C1808AA
+5528B80ABA97F861A838EFE8EA1A11D003AF4677AF3885FCAB6D0EBE853A70F40B448C0CA42D32
+F84B863EB7AB3DEB37DDEF829000E4D04AEFFCEE8BE308A8851281522EEBA1740C934FBBDEE815
+7AC4CE8129D3A5E3A260CD07D3973309FD90FF200075FBF71C0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "NA" } ,
+                    location
+                      int {
+                        from 19 ,
+                        to 1419 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq2" } } } } } } ,
+        seq {
+          id {
+            local
+              id 2 ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/2" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726800 } } ,
+          descr {
+            title "neuraminidase [Influenza A virus
+ (A/chicken/Guangxi/C1228/2015(H9N2))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 466 ,
+            seq-data
+              ncbieaa "MNPNQRITAIGSVSLIIAIICLLMQIAILTTTMTLHFRQNECSNPSSKQVMPCEP
+IIIERNTVHLNSTTIEREICPKVAEYKNWSKPQCQITGFAPFSKDDSIRLSASGDIWVTREPYVSCSLNKCYQFALGQ
+GTTLKNKHSNGTTHDRTPHRTLLMNELGVPFHLGTKQVCIAWSSSSCYDGKAWLHVCVTGDDKNATASIIYDGMFVDS
+IGSWSKNILRTQESECVCINGTCAVVMTDGSASGKADTRVLFIREGKIINISPLSGSAQHVEECSCYPRYPEVRCVCR
+DNWKGSNRPILYINMADYSIESSYVCSGLVGDTPRNDDSSSSSNCRDPNNERGAPGVKGWAFDDGNDVWMGRTLKNGS
+RSGYETFRVVNGWTMANSKSQINRQVIVDSDDWSGYSGIFSVEGKKCINRCFYVELIRGRPQEPRVWWTSNSIIVFCG
+TPGTYGTGSWPDGANINFMPI" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "neuraminidase" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 465 ,
+                        id
+                          local
+                            id 2 } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      id 2 ,
+                location
+                  int {
+                    from 19 ,
+                    to 1419 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq2" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1844617 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/chicken/Guangxi/C1228/2015(H9N2)" } ,
+                {
+                  subtype serotype ,
+                  subname "H9N2" } ,
+                {
+                  subtype nat-host ,
+                  subname "chicken" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "China" } ,
+            {
+              subtype segment ,
+              name "5" } ,
+            {
+              subtype collection-date ,
+              name "28-Dec-2015" } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhixun" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhiqin" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Sisi" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Liji" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiaolin" ,
+                          initials "J." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              title "Full-Genome Sequence Analysis of an Avian Influenza Virus
+ H9N2 Strain Isolated from a Domestic Chicken in Guangxi,Southern China" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Xun" ,
+                          initials "Z.X." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Qin" ,
+                          initials "Z.Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Si Si" ,
+                          initials "S.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Li Ji" ,
+                          initials "L.J." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiao Lin" ,
+                          initials "J.L." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 4 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10447879 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 17 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 4 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 5 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq3" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/Seq3" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726801 } ,
+            genbank {
+              accession "KX185885" } } ,
+          descr {
+            title "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))
+ segment 5 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 1565 ,
+            seq-data
+              ncbi2na '24024AB230D1D1E2E134134E9B7429140635CE048E807AE88194839
+C788D2A4DEDA083AF2693EA23FC4C48EEC481D01D2E10E0A8A78D4832CC10C8883AC77793F8E02
+0A048C5E8224D52E6A028560801E8AD43F1608221A80EAE22278D7B38428A034A28FE9B426043A
+228641E7ADF15378E33A4F505E0E3944CD220622776E6C7A0E85528EE7778E428D05756288DE89
+E4A2492C0AA32A18EB8E89E3DA38C018A8C061603F7A229803A8820422F93188A3B904D700A80F
+501249102243AE8D0B988892035E80E780C82374FFFE90ADE474D788A37BA54C2D797979FBBB1A
+1F92E94BA3187F888828C757AFA0C857F5979F401252BFF2DC3C85038815244422D072EE8E9394
+77924FE285F22DD0BF4D22A1083AD508A12F35148AAF40F9F40E204E8243A1D411DF81F20B233E
+A7308148268A831414122A4DE6A103C9BD0547F76312201755F6022614F3A49FF1E80C78AB206D
+E138A1E034C20E3A00E4216823BB4F52A9AA2DF627768600A418158DB97D7F84E2C3828DF3F7DA
+210E48A2CE10F0200315FBF71C0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "NP" } ,
+                    location
+                      int {
+                        from 45 ,
+                        to 1541 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq3" } } } } } } ,
+        seq {
+          id {
+            local
+              id 3 ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/3" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726802 } } ,
+          descr {
+            title "nucleocapsid protein [Influenza A virus
+ (A/chicken/Guangxi/C1228/2015(H9N2))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 498 ,
+            seq-data
+              ncbieaa "MASQGTKRSYEQMETGGERQNATEIRASVGRMVSGIGRFYIQMCTELKLSDNEGR
+LIQNSITIERMVLSAFDERRNRYLEEHPSAGKDPKKTGGPIYRRRDGKWVRELILYDKEEIRRIWRQANNGEDATAGL
+THLMIWHSNLNDATYQRTRALVRTGMDPRMCSLMQGSTLPRRSGAAGAAVKGIGTMVMELIRMIKRGINDRNFWRGEN
+GRRTRVAYERMCNILKGKFQTAAQRAMVDQVRESRNPGNAEIEDLIFLARSALILRGSVAHKSCLPACVYGLAVASGY
+DFEREGYSLVGIDPFRLLQNSQVFSLIRPNENPAHKSQLVWMACHSAAFEDLRVSSFIRGTRMVPRGQLSTRGVQIAS
+NENMEAMDSNTLELRSRYWAIRTRSGGNTNQQRASAGQISVQPTFSIQRNLPFERATIMAAFTGNTEGRTSDMRTEII
+RMMENARPEDVSFQGRGVFELSDEKATNPIVPSFDMSNEGSYFFGDNAEEYDN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "nucleocapsid protein" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 497 ,
+                        id
+                          local
+                            id 3 } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      id 3 ,
+                location
+                  int {
+                    from 45 ,
+                    to 1541 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq3" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1844617 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/chicken/Guangxi/C1228/2015(H9N2)" } ,
+                {
+                  subtype serotype ,
+                  subname "H9N2" } ,
+                {
+                  subtype nat-host ,
+                  subname "chicken" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "China" } ,
+            {
+              subtype segment ,
+              name "3" } ,
+            {
+              subtype collection-date ,
+              name "28-Dec-2015" } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhixun" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhiqin" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Sisi" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Liji" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiaolin" ,
+                          initials "J." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              title "Full-Genome Sequence Analysis of an Avian Influenza Virus
+ H9N2 Strain Isolated from a Domestic Chicken in Guangxi,Southern China" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Xun" ,
+                          initials "Z.X." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Qin" ,
+                          initials "Z.Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Si Si" ,
+                          initials "S.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Li Ji" ,
+                          initials "L.J." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiao Lin" ,
+                          initials "J.L." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 4 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10447880 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 17 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 4 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 5 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq4" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/Seq4" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726803 } ,
+            genbank {
+              accession "KX185886" } } ,
+          descr {
+            title "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))
+ segment 3 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 2233 ,
+            seq-data
+              ncbi2na '26024AC78D403A087FB98439F4350E36D89F9A00A4380831AA08D60
+0D804040F64D0CE4447C82DE7D3B1DE3F51F4D8606298341CF320DE98D40EEFBE01363F80C3E0A
+8885818E97A12EB832CFE41146A2D800540FDD5A37BF8F10A0058F4F80FA2C18A2A0351333C5C8
+8094300C0358821133513FDD3D1E88223A4140923C477E182024A90834014A7BD14C29284E9492
+A973A8F5FDB4B5808A608043E0808FE0344A0539929F96140B754581F7524F801FC8973BA3A3D8
+16069E4F8A909FDD03B4020B8194836253F70A1045195DD23E5C3A97579DD26B403DF9E3A39DE0
+3C24F8A15894E0AA2A8C59CCE398D03938013DF6AE8089504F340513880A4C0D50F374E1FA090B
+9C9207D284F80382208750210204E08010943C0BA91DAE004E916882B21FE08F9023B438DE012C
+692E3894895234724EFA3D22E0F410A4EE0F858F427AB207E380CA208EF95436044F909388681C
+FF1248AED51E4A9C783130E0A8BB1303127F9F0E4DFB9A53A38FF41E3D438C240E4814082821A0
+0405CCE8F4F300A08DD3F8A0E3161BAC07FB0B3A0FF57C58542BE8144C0EA00B3EEF7E032A84E7
+5E60792CA50BB42153BF7B3B88143A85D42342380EAB3A03886797DF43775048F88938F827835D
+6D022021785020F7F801034804E943E88345C2A2F8A0AF53680AEE4817C724037BBF04B7339355
+10762A3DD27836200F9C74FBD291F2A305E817A07F637E0A9CCE090F8A2E5E3C38D5EAFF9F0E4D
+FAF41D7D7444E4708CBEE90E79CFE73531ED4002C5FBF71C0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "PA" } ,
+                    location
+                      int {
+                        from 24 ,
+                        to 2174 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq4" } } } } } } ,
+        seq {
+          id {
+            local
+              id 4 ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/4" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726804 } } ,
+          descr {
+            title "polymerase PA [Influenza A virus
+ (A/chicken/Guangxi/C1228/2015(H9N2))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 716 ,
+            seq-data
+              ncbieaa "MEDFVRQCFNPMIVELAEKAMKEYGEDPKIETNKFASICTHLEVCFMYSDFHFID
+ERGESTIIESGDPNVLLKHRFEIIEGRDRTMAWTVVNSICNTTGVEKPKFLPDLFDYKENRFIEIGVTRREIHIYYLE
+KANKIKSEKTHIHIFSFTGEEMATKADYTLDEESRARIKTRLFTIRQDMASRGLWDSFRQSERGEETIEERFEITGTM
+RRLADQSLPPNFSSIENFRAYVDGFEPNGCIEGKLSQMSKEVNARIEPFLRTTPRPLRLPNGPPCSQRSKFLLMDALK
+LSIEDPSHEGEGIPLYDAIKCMKTFFGWKEPNIIKPHEKGINPNYLMTWKQVLAELQDIENEEKTPKTKNMKKTSQLK
+WALGENMAPEKVDFEDCKDVNDLKQYGSDEPEPRSLACWIQSEFNKACELTDSSWVELDEIGEDVAPIEHIASMRRNY
+FTAEVSHCRATEYIMKGVYINTALLNASCAAMDDFQLIPMISKCRTKEGRRKTNLYGFIIKGRSHLRNDTDVVNFVSM
+EFSLTDPRLEPHKWEKYCVLEIGDMLLRTAVGQVSRPMFLYVRTNGTSKIKMKWGMEMRRCLLQSLQQIESMIEAESS
+VKEKDLTKEFFENKSETWPIGESPKGVEEGSIGKVCRTLLAKSVFNSLYASPQLEGFSAESRKLLLIVQALRDNLEPG
+TFDLEGLYEAIEECLINDPWVLLNASWFNSFLTHALR" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "polymerase PA" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 715 ,
+                        id
+                          local
+                            id 4 } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      id 4 ,
+                location
+                  int {
+                    from 24 ,
+                    to 2174 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq4" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1844617 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/chicken/Guangxi/C1228/2015(H9N2)" } ,
+                {
+                  subtype serotype ,
+                  subname "H9N2" } ,
+                {
+                  subtype nat-host ,
+                  subname "chicken" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "China" } ,
+            {
+              subtype segment ,
+              name "2" } ,
+            {
+              subtype collection-date ,
+              name "28-Dec-2015" } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhixun" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhiqin" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Sisi" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Liji" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiaolin" ,
+                          initials "J." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              title "Full-Genome Sequence Analysis of an Avian Influenza Virus
+ H9N2 Strain Isolated from a Domestic Chicken in Guangxi,Southern China" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Xun" ,
+                          initials "Z.X." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Qin" ,
+                          initials "Z.Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Si Si" ,
+                          initials "S.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Li Ji" ,
+                          initials "L.J." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiao Lin" ,
+                          initials "J.L." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 4 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10447881 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 17 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 4 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 5 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq5" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/Seq5" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726805 } ,
+            genbank {
+              accession "KX185887" } } ,
+          descr {
+            title "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))
+ segment 2 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 2341 ,
+            seq-data
+              ncbi2na '26024A4073F83A3B43587F9FF7E02E52E4039CC2C51BD5F31E88575
+31253A04A04A3114E844B412044C0C74800A02E841811221E891541D0D43E3A14F978A10E258BA
+B39101A3EECFA090E9FD7E0837454A8DFE0076EDD8043A03EF490108BA301E150A59485CE1E86F
+832034969E7164FA5047322B3D2360E9784943834A0AF8D8FD7428EE3A3D0E8C28223A23C4113F
+52282288B8A8413850803AD11220432808001021E042289C5C30891E13E0C43840A39E02A90BE0
+0A2A4364114A0E40D228F6ECFDB2091C98A24DEE201F890DE9757B68A8388202703E903BEE2823
+8E1C3D108C489DD7D18F1EA841140E8388340155A3BF72438C13134428149483AFC80ECF093E75
+CC3BDD0108E988F2A02AC4EFE02C02CE09C68442C52680E7640CF85E031F4103410888036008C2
+1771E323A44974F895E838E3A93BD04EF8B12DF28BF43DE0DDA92082C45005133EBA868750D748
+E1F6574CB839160D38A8312928BA32BDCC817903CB6A301389082035C4C0DA12813D83D109FFDC
+59CE8F6C9C1F4B3A2F952FFA2ED6A3C38B49E13893EBBC4B0C0810CE3010637E85241A748E95F4
+9CFCD021C48C44C58ED12AB8C440F40628893D83E0827BA89215BD829287BEBF48E8A5405EC433
+5A0DC44F522B79F80EA0F8E8E087142929EEC35CE056FEF2D30A03E3D2D0439EEB0E52F4E95250
+093A2CE396F905113D3A3D700A0D9DCF74114B40AA8D7E286048EC520B9E4173D802F7D5492F4C
+5A294BE83F524EBA294EBB72A560F8E460F87D837A0A3C20208BF9E234E08DEF514F8227486900
+32E0FC9FB5F4E000E5FBF71C0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "PB1" } ,
+                    location
+                      int {
+                        from 24 ,
+                        to 2297 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq5" } } } } } } ,
+        seq {
+          id {
+            local
+              id 5 ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/5" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726806 } } ,
+          descr {
+            title "polymerase PB1 [Influenza A virus
+ (A/chicken/Guangxi/C1228/2015(H9N2))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 757 ,
+            seq-data
+              ncbieaa "MDVNPTLLFLKVPVQNAISTTFPYTGDPPYSHGTGTGYTMDTVNRTHKYSEKGKW
+TTNTETGAPQLNPIDGPLPEDNEPSGYAQTDCVLEAMAFLEESHPGIFENSCLETMEIVQQTRVDKLTQGRQTYDWTL
+NRNQPAATALANTIEVFRSNGLTANESGRLIDFLKDVMDSMDKEEMEITTHFQRKRRVRDNMTKKMVTQRTIGKKKQR
+LNKRSYLIRALTLNTMTKDAERGKLKRRAIATPGMQIRGFVYFVEALARSICEKLEQSGLPVGGNEKKAKLANVVRKM
+MTNSQDTELSFTITGDNTKWNENQNPRMFLAMITYITRNQPEWFRNVLSIAPIMFSNKMARLGKGYMFESKSMKLRTQ
+VPAEMLANIDLKYFNKSTREKIEKIRPLLIDGTASLSPGMMMGMFNMLSTVLGVSILNLGQKKYTKTTYWWDGLQSSD
+DFALIVNAPNHEGIQAGVDRFYRTCKLVGINMSKKKSYINRTGTFEFTSFFYRYGFVANFSMELPSFGVSGINESADM
+SIGVTVIKNNMINNDLGPATAQMALQLFIKDYRYTYRCHRGDTQIQTRRAFELKKLWEQTRSKAGLLVSDGGPNLYNI
+RNLHIPEVCLKWELMDEDYQGRLCNPMNPFVSHKEIDSVNNAVVMPVHGPAKSMEYDAVATTHSWIPKRNRSILNTSQ
+RGILEDEQMYQKCCNLFEKFFPSSSYRRPVGISSMVEAMVSRARIDARIDFESGRIKKEEFAEIMKICSTIEELRRQK
+" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "polymerase PB1" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 756 ,
+                        id
+                          local
+                            id 5 } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      id 5 ,
+                location
+                  int {
+                    from 24 ,
+                    to 2297 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq5" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1844617 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/chicken/Guangxi/C1228/2015(H9N2)" } ,
+                {
+                  subtype serotype ,
+                  subname "H9N2" } ,
+                {
+                  subtype nat-host ,
+                  subname "chicken" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "China" } ,
+            {
+              subtype segment ,
+              name "1" } ,
+            {
+              subtype collection-date ,
+              name "28-Dec-2015" } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhixun" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhiqin" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Sisi" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Liji" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiaolin" ,
+                          initials "J." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              title "Full-Genome Sequence Analysis of an Avian Influenza Virus
+ H9N2 Strain Isolated from a Domestic Chicken in Guangxi,Southern China" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Xun" ,
+                          initials "Z.X." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Qin" ,
+                          initials "Z.Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Si Si" ,
+                          initials "S.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Li Ji" ,
+                          initials "L.J." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiao Lin" ,
+                          initials "J.L." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 4 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10447882 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 17 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 4 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 5 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq6" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/Seq6" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726807 } ,
+            genbank {
+              accession "KX185888" } } ,
+          descr {
+            title "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))
+ segment 1 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 2341 ,
+            seq-data
+              ncbi2na '26024AD0333D0CE80830081C223F8ED12DD91D988C7840041EE8533
+A530D080C44DA82128820D49DF28E0BA38E98E03150F1248402AC3A238D5A0283810AD215FE890
+840639E8DA122E3AED177A7B86EBA0480E850610912D4F3502B73004CFF802B6021C013A85F695
+6F47D6014AF00C65922D84C054A539237CB9C2824423B4D3A2B6CF54060BEA94833E1348B44BC1
+8C1428020A089F4A1E403E55FC3AE9F13BE88881EBD908423F714B27A2A10926ECCD82CF13F854
+2A179EA240EC44528AA0B880E38EF8D22FC3CF9E72033EF208904B3492159E9F67FE88EE532C44
+8CA6ABCA3AF84D7C84015048204A7BA333B0A490EA5C28D2F4D7D27FA2BF47F402842EAD37B402
+A0820B9D12905D404F80308B13828CE283D10EB6860890494F70A02414821E35078CB8BA808E24
+343658A634CBA43AEF744228FB38C0A7B88AE3F81FED04898349870354E4D075E293F500A3902B
+DEF5027AA0F8153E10EC3A838DA0CF9784E15524488ED3E228B88BCB00EAEC8E0C752C788ABADB
+893E16FDF8AB5A8522A806C75EDD7822BCB8044A812009E1CC131D36DCE3BA88D0EB520D2E7AD0
+44CD0E8D3C80FA807B023D0EB54215C439CC4308E83F815FD0D5CB97027948AD0CCBA3DB0AB5CF
+5248E6E3B1EA84FE11ED40C30273C53F9249575A248B28E4BDDF7707B81B0AAF4A0E28CBEE2290
+F75EEF43C410A414229F12E7E80A392B97C3A08548E2A04928BA0DE6B3C228FFE3DEA4082300AC
+EA524F8934183E2437E602A8829C3BBE32A42886EBBEB0E01A01A87724C7C784B4849850083DA3
+A5343C3B60F3F00185FBF71C0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "PB2" } ,
+                    location
+                      int {
+                        from 27 ,
+                        to 2306 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq6" } } } } } } ,
+        seq {
+          id {
+            local
+              id 6 ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/6" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726808 } } ,
+          descr {
+            title "polymerase PB2 [Influenza A virus
+ (A/chicken/Guangxi/C1228/2015(H9N2))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 759 ,
+            seq-data
+              ncbieaa "MERIKELRDLMSQSRTREILTKTTVDHMAIIKKYTSGRQEKNPALRMKWMMAMKY
+PITADKRVMEMIPERNEQGQTLWSKTNDAGSDRVMVSPLAVTWWNRNGPTTSTVHYPKVYKTYFEKVERLKHGTFGPV
+HFRNQVKIRRRVDINPGHADLSAKEAQDVIMEVVFPNEVGARILTSESQLTITKEKKEELQDCKIAPLMVAYMLEREL
+VRKTRFLPVAGGTSSVYIEVLHLTQGTCWEQMYTPGGEVRNDDVDQSLIIAARNIVRRATVSADPLASLLEMCHSTQI
+GGVRMVDILRQNPTEEQAVDICKAAMGLRISSSFSFGGFTFKRTSGSSVKREEEVLTGNLQTLKIRVHEGYEEFTMVG
+RRATAILRKATRRLIQLIVSGKDEQSIAEAIIVAMVFSQEDCMIKAVRGDLNFVNRANQRLNPMHQLLRHFQKDAKVL
+FQSWGIEPIDNVMGMIGILPDMTPSTEMSLRGVRVSKMGVDEYSSTERVVVSIDRFLRVRDQRGNVLLSPEEVSETQG
+TEKLTITYSSSMMWEINGPESVLVNTYQWIIRNWETVKIQWSQDPTMLYNKMEFEPFQSLVPKAARGQYSGFVRVLFQ
+QMRDVLGTFDTVQIIKLLPFAAAPPEQSRMQFSSLTVNVRGSGMRIVVRGNSPVFNYNKATKRLTVLGKDAGALMEDP
+DEGTAGVESAVLRGFLILGKEDKRYGPALSINELSNLAKGEKANVLIGQGDVVLVMKRKRDSSILTDSQTATKRIRMA
+IN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "polymerase PB2" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 758 ,
+                        id
+                          local
+                            id 6 } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      id 6 ,
+                location
+                  int {
+                    from 27 ,
+                    to 2306 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq6" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1844617 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/chicken/Guangxi/C1228/2015(H9N2)" } ,
+                {
+                  subtype serotype ,
+                  subname "H9N2" } ,
+                {
+                  subtype nat-host ,
+                  subname "chicken" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "China" } ,
+            {
+              subtype segment ,
+              name "8" } ,
+            {
+              subtype collection-date ,
+              name "28-Dec-2015" } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhixun" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhiqin" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Sisi" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Liji" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiaolin" ,
+                          initials "J." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              title "Full-Genome Sequence Analysis of an Avian Influenza Virus
+ H9N2 Strain Isolated from a Domestic Chicken in Guangxi,Southern China" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Xun" ,
+                          initials "Z.X." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Qin" ,
+                          initials "Z.Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Si Si" ,
+                          initials "S.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Li Ji" ,
+                          initials "L.J." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiao Lin" ,
+                          initials "J.L." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 4 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10447883 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 17 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 4 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 5 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq7" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/Seq7" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726809 } ,
+            genbank {
+              accession "KX185889" } } ,
+          descr {
+            title "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))
+ segment 8 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 890 ,
+            seq-data
+              ncbi2na '24824AB84004C3A3D411EED09F52B21E7F7FA4ED6406BF9214207AB
+8E553F72169F6588D20B5788A082491DFADE84D2049076E0A024CCBA260FFA2822D21824FC0387
+3E7D2E527519C5C1E13877E080ED088FAF0E74C540480B84AB57F93C83A142432F84004D13E024
+0FD2EE3FD0D8FA097C31C7C89FF1A382890CBA980DD14F17DDF5284C78428ED00390F8AD74DA28
+FE0E838C112F62DDE01DC488F67E880498E28EA21751DDD403201A80E88810F09482F6080C23AF
+8F820B184CAF023C488327F810307FCE425F1073E7E0BA24223081FDDBF49F3F0E3000457EFDC7
+0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "NS1" } ,
+                    location
+                      int {
+                        from 26 ,
+                        to 679 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq7" } } ,
+                  {
+                    data
+                      gene {
+                        locus "NS2" } ,
+                    location
+                      mix {
+                        int {
+                          from 26 ,
+                          to 55 ,
+                          strand plus ,
+                          id
+                            local
+                              str "Seq7" } ,
+                        int {
+                          from 528 ,
+                          to 863 ,
+                          strand plus ,
+                          id
+                            local
+                              str "Seq7" } } } } } } } ,
+        seq {
+          id {
+            local
+              id 7 ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/7" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726810 } } ,
+          descr {
+            title "nonstructural protein 1 [Influenza A virus
+ (A/chicken/Guangxi/C1228/2015(H9N2))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 217 ,
+            seq-data
+              ncbieaa "MDSNTVSSFQVDCFLWHVRKRFADQELGDAPFLDRLRRDQKSLRGRSSTLGLDIR
+TATREGKHIVERILEEESDEAFKMTIASVPAPRYLTDMTLEEMSRDWLMLIPKQKVTGSLCIRMDQAIVDKNITLKAN
+FSVIFNRLEALILLRAFTDEGAIVGEISPLPSLPGHTDKDVKNAIEVLIGGFEWNDNTVRVSETLQRFAWRNSDEDGR
+PPLSPK" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "nonstructural protein 1" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 216 ,
+                        id
+                          local
+                            id 7 } } } } } } ,
+        seq {
+          id {
+            local
+              str "7_1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/7_1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726811 } } ,
+          descr {
+            title "nonstructural protein 2 [Influenza A virus
+ (A/chicken/Guangxi/C1228/2015(H9N2))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 121 ,
+            seq-data
+              ncbieaa "MDSNTVSSFQDILTRMSKMQLRSSSEDLNGMITQFESLKLYRDSLGETAMRMGDL
+HSLQNRNGKWREQLSQKFEEIRWLIEEVRHRLKITENSFEQITFMQALQLLLEVEQEIRTFSFQLI" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "nonstructural protein 2" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 120 ,
+                        id
+                          local
+                            str "7_1" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      id 7 ,
+                location
+                  int {
+                    from 26 ,
+                    to 679 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq7" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      str "7_1" ,
+                location
+                  mix {
+                    int {
+                      from 26 ,
+                      to 55 ,
+                      strand plus ,
+                      id
+                        local
+                          str "Seq7" } ,
+                    int {
+                      from 528 ,
+                      to 863 ,
+                      strand plus ,
+                      id
+                        local
+                          str "Seq7" } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1844617 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/chicken/Guangxi/C1228/2015(H9N2)" } ,
+                {
+                  subtype serotype ,
+                  subname "H9N2" } ,
+                {
+                  subtype nat-host ,
+                  subname "chicken" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "China" } ,
+            {
+              subtype segment ,
+              name "7" } ,
+            {
+              subtype collection-date ,
+              name "28-Dec-2015" } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhixun" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhiqin" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Sisi" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Liji" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiaolin" ,
+                          initials "J." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              title "Full-Genome Sequence Analysis of an Avian Influenza Virus
+ H9N2 Strain Isolated from a Domestic Chicken in Guangxi,Southern China" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Dan" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Xun" ,
+                          initials "Z.X." } } ,
+                    {
+                      name
+                        name {
+                          last "Li" ,
+                          first "Meng" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Zhi Qin" ,
+                          initials "Z.Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Luo" ,
+                          first "Si Si" ,
+                          initials "S.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Xie" ,
+                          first "Li Ji" ,
+                          initials "L.J." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Li" ,
+                          initials "L." } } ,
+                    {
+                      name
+                        name {
+                          last "Fan" ,
+                          first "Qin" ,
+                          initials "Q." } } ,
+                    {
+                      name
+                        name {
+                          last "Huang" ,
+                          first "Jiao Lin" ,
+                          initials "J.L." } } } ,
+                affil
+                  std {
+                    affil "Guangxi Veterinary Research Institute" ,
+                    div "Guangxi Key Laboratory of Animal Vaccines and
+ Diagnostics" ,
+                    city "Nanning" ,
+                    sub "Guangxi" ,
+                    country "China" ,
+                    street "51 You Ai Road" ,
+                    postal-code "530001" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 4 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10447884 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 17 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 4 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 5 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq8" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/Seq8" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726812 } ,
+            genbank {
+              accession "KX185890" } } ,
+          descr {
+            title "Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))
+ segment 7 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 1027 ,
+            seq-data
+              ncbi2na '24024AC8EFC08E2DF7058AD806C6F77734F534A557409623644887E
+28EFFE4A820648DD8B774E8BA30210850D7B45DE1C2A8FF2AFEEF46745B952E26287926C86BFB5
+0065703A83A2150104E84292F03CC4201E08A80E13F4E890282C91D271D07AE67E52793AB74CC4
+128EA84B85920AA77E872CEE51FB8923E78644136B54CA48E9871C505470F29388320EB1C9491C
+69429CE8923A7A342E04A49A094E82D90B4A72903AF4A738812DA87457275244ADC0238DF3E00F
+E4A5C5205A3A8B907926BD0B8D776F3E49C134FA8CF91F8C7BA3DF8DB7FFF40E4FCDB67F031AFE
+008A97DC68283978B738A820CDA4A04920E7BA3BE18EB4FFB41322782C001C5FBF71C'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "M1" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 783 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq8" } } ,
+                  {
+                    data
+                      gene {
+                        locus "M2" } ,
+                    location
+                      mix {
+                        int {
+                          from 25 ,
+                          to 50 ,
+                          strand plus ,
+                          id
+                            local
+                              str "Seq8" } ,
+                        int {
+                          from 739 ,
+                          to 1006 ,
+                          strand plus ,
+                          id
+                            local
+                              str "Seq8" } } } } } } } ,
+        seq {
+          id {
+            local
+              id 8 ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/8" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726813 } } ,
+          descr {
+            title "matrix protein 1 [Influenza A virus
+ (A/chicken/Guangxi/C1228/2015(H9N2))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 252 ,
+            seq-data
+              ncbieaa "MSLLTEVETYVLSIIPSGPLKAEIAQRLEDVFAGKNADLESLMEWIKTRPILSPL
+TKGILGFVFTLTVPSERGLQRRRFVQNALNGNGDPNNMDKAVKLYKKLKREMTFHGAKEVALSYSTGALASCMGLIYN
+RMGTVTAEGALGLVCATCEQIADAQHRSHRQMATTTNPLIRHENRMVLASTTAKAMEQMAGSSEQAAEAMEVASQARQ
+MVQAMRTVGTHPSSSTGLKDDLIENLQAYQNRMGVQLQRFK" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "matrix protein 1" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 251 ,
+                        id
+                          local
+                            id 8 } } } } } } ,
+        seq {
+          id {
+            local
+              str "8_1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "C1228/8_1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 65726814 } } ,
+          descr {
+            title "matrix protein 2 [Influenza A virus
+ (A/chicken/Guangxi/C1228/2015(H9N2))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 97 ,
+            seq-data
+              ncbieaa "MSLLTEVETPTRTGWECNCSGSSDPLVIAANIIGILHLILWILDRLFFKCIYRRF
+KYGLKRGPSTEGMPESMREEYRQEQQNAVDVDDGHFVNIELK" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "matrix protein 2" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 96 ,
+                        id
+                          local
+                            str "8_1" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      id 8 ,
+                location
+                  int {
+                    from 25 ,
+                    to 783 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq8" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      str "8_1" ,
+                location
+                  mix {
+                    int {
+                      from 25 ,
+                      to 50 ,
+                      strand plus ,
+                      id
+                        local
+                          str "Seq8" } ,
+                    int {
+                      from 739 ,
+                      to 1006 ,
+                      strand plus ,
+                      id
+                        local
+                          str "Seq8" } } } } } } } } }

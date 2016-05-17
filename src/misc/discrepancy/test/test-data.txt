@@ -70,3 +70,5 @@ ZERO_BASECOUNT		ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn		ZERO_BASECOU
 ZERO_BASECOUNT-X	ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn	-X	ZERO_BASECOUNT-X.gold.txt	C Toolkit counts the same sequence multiple times
 
 ### Please keep the tests in alphabetical order!
+DUP_DEFLINE		DUP_DEFLINE		DISC_DUP_DEFLINE	DUP_DEFLINES_problem.sqn
+DUP_DEFLINE_2		DUP_DEFLINE		DISC_DUP_DEFLINE	DUP_DEFLINES_all_unique.sqn
