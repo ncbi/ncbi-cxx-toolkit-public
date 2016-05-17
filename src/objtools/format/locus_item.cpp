@@ -241,6 +241,7 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
             string basename = ctx.GetMaster().GetBaseName();
             if (!NStr::IsBlank(basename)) {
                 m_Name = basename;
+                m_FullName = m_Name;
                 s_AddLocusSuffix(m_Name, ctx);
                 return;
             }
@@ -306,6 +307,7 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
             }
         }
 
+        m_FullName = m_Name;
         if( m_Name.length() > MAX_LOCUS_ACCN_LEN ) {
             m_Name.resize(MAX_LOCUS_ACCN_LEN);
             *m_Name.rbegin() = '>';

@@ -65,6 +65,7 @@ public:
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const string& GetName     (void) const;
+    const string& GetFullName (void) const;
     size_t        GetLength   (void) const;
     TStrand       GetStrand   (void) const;
     TBiomol       GetBiomol   (void) const;
@@ -92,6 +93,7 @@ private:
 
     // data
     string          m_Name;
+    string          m_FullName;
     size_t          m_Length;
     TStrand         m_Strand;
     TBiomol         m_Biomol;
@@ -109,6 +111,13 @@ inline
 const string& CLocusItem::GetName(void) const
 {
     return m_Name;
+}
+
+
+inline
+const string& CLocusItem::GetFullName(void) const
+{
+    return m_FullName;
 }
 
 
