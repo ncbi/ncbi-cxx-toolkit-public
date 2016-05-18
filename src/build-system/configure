@@ -29879,6 +29879,7 @@ else
    TLS_LIBS=$OPENSSL_LIBS
 fi
 
+NETWORK_LIBS="$TLS_LIBS $NETWORK_LIBS"
 
 case "$with_krb5" in
    no )       ac_cv_path_KRB5_CONFIG=no    ;;
@@ -30818,7 +30819,7 @@ if test "$with_ftds" != "no" ; then
          try_local=no
          ;;
    esac
-   : ${FTDS_CTLIBS:="-lct -ltds"}
+   : ${FTDS_CTLIBS:="-lct -ltds $NETWORK_LIBS"}
    ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -30854,7 +30855,7 @@ if test "$with_ftds" != "no" ; then
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
          test "$ftds_ver" = 64  &&  FTDS_PATH="<$d>"
          FTDS64_CTLIB_LIB="ct_ftds64${STATIC} tds_ftds64${STATIC}"
-         FTDS64_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS)'
+         FTDS64_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS)'
          FTDS64_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
          freetds=freetds
       elif test -d "$FTDS_PATH" ; then
@@ -30870,7 +30871,7 @@ if test "$with_ftds" != "no" ; then
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
          test "$ftds_ver" = 95  &&  FTDS_PATH="<$d>"
          FTDS95_CTLIB_LIB="ct_ftds95${STATIC} tds_ftds95${STATIC}"
-         FTDS95_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS)'
+         FTDS95_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS)'
          FTDS95_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
          freetds=freetds
       elif test -d "$FTDS_PATH" ; then

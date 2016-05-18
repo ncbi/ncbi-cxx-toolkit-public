@@ -4421,6 +4421,7 @@ else
    TLS_LIBS=$OPENSSL_LIBS
 fi
 
+NETWORK_LIBS="$TLS_LIBS $NETWORK_LIBS"
 
 case "$with_krb5" in
    no )       ac_cv_path_KRB5_CONFIG=no    ;;
@@ -4749,7 +4750,7 @@ if test "$with_ftds" != "no" ; then
          try_local=no
          ;;
    esac
-   : ${FTDS_CTLIBS:="-lct -ltds"}
+   : ${FTDS_CTLIBS:="-lct -ltds $NETWORK_LIBS"}
    NCBI_RPATHIFY(FTDS_CTLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_CTLIBS)
    FTDS_INCLUDE="-I$FTDS_PATH/include"
    NCBI_LOCAL_FTDS(64)

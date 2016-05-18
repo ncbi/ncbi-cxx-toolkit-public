@@ -314,7 +314,7 @@ AC_DEFUN(NCBI_LOCAL_FTDS,
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
          test "$ftds_ver" = $1  &&  FTDS_PATH="<$d>"
          FTDS$1[_CTLIB_LIB]="ct_ftds$1${STATIC} tds_ftds$1${STATIC}"
-         FTDS$1[_CTLIB_LIBS]='$(ICONV_LIBS) $(KRB5_LIBS)'
+         FTDS$1[_CTLIB_LIBS]='$(ICONV_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS)'
          FTDS$1[_CTLIB_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
          freetds=freetds
       elif test -d "$FTDS_PATH" ; then
