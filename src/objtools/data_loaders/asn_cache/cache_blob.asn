@@ -1,0 +1,17 @@
+-- ASN definition for the cache blob.  This collection wraps
+-- the compressed SeqEntry blob.
+
+ASN-Cache DEFINITIONS ::=
+BEGIN
+
+EXPORTS Cache-blob;
+
+Cache-blob ::= SEQUENCE {
+    magic       INTEGER,
+    timestamp   INTEGER,
+    blob        OCTET STRING,
+    md5-digest  OCTET STRING
+}
+
+END
+

@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = genbank lds2 blastdb patcher
+SUB_PROJ = genbank lds2 blastdb patcher asn_cache
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -1,0 +1,12 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+ASN_PROJ = asn_cache
+LIB_PROJ = ncbi_xloader_asn_cache
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+

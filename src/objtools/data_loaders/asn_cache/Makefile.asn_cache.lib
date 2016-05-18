@@ -1,0 +1,21 @@
+# $Id$
+
+ASN = cache_blob
+ASN_DEP = seq seqset general
+
+LIB = asn_cache
+
+SRC = cache_blob__ cache_blob___ \
+      asn_cache \
+      asn_cache_stats \
+      asn_cache_util \
+      asn_index \
+      chunk_file \
+      dump_asn_index \
+      seq_id_chunk_file
+
+WATCHERS = marksc2
+
+
+USES_LIBRARIES =  \
+    bdb cache_blob seqset

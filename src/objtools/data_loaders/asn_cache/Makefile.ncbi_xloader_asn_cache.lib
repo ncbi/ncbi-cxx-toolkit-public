@@ -1,0 +1,19 @@
+# $Id$
+
+ASN_DEP = seq seqset general asn_cache
+
+LIB = ncbi_xloader_asn_cache
+SRC = asn_cache_loader
+
+DLL_LIB = asn_cache bdb xobjmgr xncbi
+
+LIB_OR_DLL = both
+
+CPPFLAGS = -DNCBI_ASN_CACHE_EXPORTS $(ORIG_CPPFLAGS)
+
+WATCHERS = marksc2
+
+
+
+USES_LIBRARIES =  \
+    $(DL_LIBS) $(SOBJMGR_LIBS) asn_cache
