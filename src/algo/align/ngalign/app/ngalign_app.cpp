@@ -70,12 +70,12 @@
 
 #include <algo/align/ngalign/ngalign_interface.hpp>
 
-#include <asn_cache/lib/Cache_blob.hpp>
-#include <asn_cache/lib/asn_index.hpp>
-#include <asn_cache/lib/chunk_file.hpp>
-#include <asn_cache/lib/asn_cache_util.hpp>
-#include <asn_cache/lib/seq_id_chunk_file.hpp>
-#include <internal/asn_cache/lib/asn_cache_loader.hpp>
+#include <objtools/data_loaders/asn_cache/Cache_blob.hpp>
+#include <objtools/data_loaders/asn_cache/asn_index.hpp>
+#include <objtools/data_loaders/asn_cache/chunk_file.hpp>
+#include <objtools/data_loaders/asn_cache/asn_cache_util.hpp>
+#include <objtools/data_loaders/asn_cache/seq_id_chunk_file.hpp>
+#include <objtools/data_loaders/asn_cache/asn_cache_loader.hpp>
 
 
 BEGIN_NCBI_SCOPE
