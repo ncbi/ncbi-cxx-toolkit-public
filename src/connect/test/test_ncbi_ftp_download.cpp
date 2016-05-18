@@ -575,6 +575,26 @@ static void s_InitiateFtpRetrieval(CConn_IOStream& ftp,
 class CNCBITestApp : public CNcbiApplication
 {
 public:
+    void Init(void) 
+    {
+         auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+
+         arg_desc->AddOptionalPositional("url",
+                                         "URL to test",
+                                         CArgDescriptions::eString);
+         
+         arg_desc->AddOptionalPositional("throttler",
+                                         "Delay in msec",
+                                         CArgDescriptions::eString);
+
+         arg_desc->AddOptionalPositional("offset",
+                                         "If set, a \"REST %position%\" will "
+                                         "be launched where this parameter "
+                                         "will be the value for %position%",
+                                         CArgDescriptions::eString);
+        SetupArgDescriptions(arg_desc.release());
+    }
     int Run(void)
     {
         enum EProcessor {
