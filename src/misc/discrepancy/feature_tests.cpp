@@ -32,6 +32,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/feat_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -378,6 +379,106 @@ DISCREPANCY_SUMMARIZE(RBS_WITHOUT_GENE)
 {
     AddRBS(m_Objs, context);
     m_Objs.GetMap().erase("genes");
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+// MISSING_GENES
+
+const string kMissingGene = "[n] feature[s] [has] no genes";
+
+bool ReportGeneMissing(const CSeq_feat& f)
+{
+    CSeqFeatData::ESubtype subtype = f.GetData().GetSubtype();
+    if (IsRBS(f) ||
+        f.GetData().IsCdregion() ||
+        f.GetData().IsRna() ||
+        subtype == CSeqFeatData::eSubtype_exon ||
+        subtype == CSeqFeatData::eSubtype_intron) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Missing Genes")
+//  ----------------------------------------------------------------------------
+{
+    if (context.GetCurrentGene() != NULL || !ReportGeneMissing(obj)) {
+        return;
+    }
+    m_Objs[kMissingGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
+            false).Fatal();
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MISSING_GENES)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// EXTRA_GENES
+
+const string kExtraGene = "[n] gene feature[s] [is] not associated with a CDS or RNA feature.";
+const string kExtraPseudo = "[n] pseudo gene feature[s] [is] not associated with a CDS or RNA feature.";
+const string kExtraGeneNonPseudoNonFrameshift = "[n] non-pseudo gene feature[s] are not associated with a CDS or RNA feature and [does] not have frameshift in the comment.";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Extra Genes")
+//  ----------------------------------------------------------------------------
+{
+    // TODO: Do not collect if mRNA sequence in Gen-prod set
+
+    // do not collect if pseudo
+    if (!obj.GetData().IsGene()) {
+        return;
+    }
+
+    // Are any "reportable" features under this gene?
+    CFeat_CI fi(context.GetScope(), obj.GetLocation());
+    bool found_reportable = false;
+    while (fi && !found_reportable) {
+        if (fi->GetData().IsCdregion() ||
+            fi->GetData().IsRna()) {
+            found_reportable = true;
+        }
+        ++fi;
+    }
+
+    if (found_reportable) {
+        return;
+    }
+    
+    if (CCleanup::IsPseudo(obj, context.GetScope())) {
+        m_Objs[kExtraGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        m_Objs[kExtraGene][kExtraPseudo].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+    } else {
+        // do not report if note or description
+        if (obj.IsSetComment() && !NStr::IsBlank(obj.GetComment())) {
+            // ignore genes with notes
+        } else if (obj.GetData().GetGene().IsSetDesc() && !NStr::IsBlank(obj.GetData().GetGene().GetDesc())) {
+            // ignore genes with descriptions
+        } else {
+            m_Objs[kExtraGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+            m_Objs[kExtraGene][kExtraGeneNonPseudoNonFrameshift].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        }
+    }
+
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(EXTRA_GENES)
+//  ----------------------------------------------------------------------------
+{
     if (m_Objs.empty()) {
         return;
     }

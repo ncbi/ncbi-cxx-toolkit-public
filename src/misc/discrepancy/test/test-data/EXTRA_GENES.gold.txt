@@ -1,0 +1,16 @@
+Discrepancy Report Results
+
+Summary
+EXTRA_GENES: 4 gene features are not associated with a CDS or RNA feature.
+
+Detailed Report
+
+EXTRA_GENES: 4 gene features are not associated with a CDS or RNA feature.
+EXTRA_GENES: 3 non-pseudo gene features are not associated with a CDS or RNA feature and do not have frameshift in the comment.
+D:\toolkit\src\misc\discrepancy\test\test-data\missing_genes.sqn:Gene	x	lcl|seq_1:plus1-25	
+D:\toolkit\src\misc\discrepancy\test\test-data\missing_genes.sqn:Gene	zz	lcl|seq_4:plus1-336	
+D:\toolkit\src\misc\discrepancy\test\test-data\missing_genes.sqn:Gene	w	lcl|seq_6:plus1-336	
+
+EXTRA_GENES: 1 pseudo gene feature is not associated with a CDS or RNA feature.
+D:\toolkit\src\misc\discrepancy\test\test-data\missing_genes.sqn:Gene	z2	lcl|seq_3:plus1-336	
+

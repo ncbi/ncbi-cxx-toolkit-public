@@ -1,0 +1,13 @@
+Discrepancy Report Results
+
+Summary
+RBS_WITHOUT_GENE: RBS
+RBS_WITHOUT_GENE: 1 RBS feature does not has overlapping gene
+
+Detailed Report
+
+RBS_WITHOUT_GENE: RBS
+
+RBS_WITHOUT_GENE: 1 RBS feature does not has overlapping gene
+D:\toolkit\src\misc\discrepancy\test\test-data\rbs_without_gene.sqn:regulatory	/regulatory_class=ribosome_binding_site	lcl|seq_1:plus1-20	
+
