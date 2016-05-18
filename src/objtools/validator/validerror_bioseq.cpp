@@ -6399,7 +6399,6 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
         } 
     }
 
-
     if (!mrna_list.empty()) {
         x_ValidateGeneCDSmRNACounts(seq);
     }
@@ -6412,7 +6411,6 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
     int num_matched_cds = 0;
     int num_unmatched_cds = 0;
     for (auto&& cds : cds_list) {
-
         // Check to see if a CDS feat references or overlaps multiple mRNAs
         x_CheckForMultiplemRNAs(*cds);
         
@@ -6425,10 +6423,6 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
                 ++num_unmatched_cds;
             }
         }
-    }
-
-    if (num_matched_cds == mrna_list.size()) {
-        return;
     }
 
     // Some of the CDS features have been matched, but some are unmatched

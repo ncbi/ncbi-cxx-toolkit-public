@@ -9899,8 +9899,12 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
 
     expected_errors.push_back(new CExpectedError("nuc2", eDiag_Warning, "GenomicProductPackagingProblem",
                                                  "Nucleotide bioseq should be product of mRNA feature on contig, but is not"));
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSwithNoMRNAOverlap",
+                                                 "1 out of 2 CDSs overlapped by 0 mRNAs"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    expected_errors.pop_back();
 
     scope.RemoveTopLevelSeqEntry(seh);
     // take CDS away and add mrna - that way protein is orphan, nucleotide is product
@@ -9919,7 +9923,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     expected_errors[0]->SetErrMsg("Protein bioseq should be product of CDS feature on contig, but is not");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
     // put CDS back, move annotation to gen-prod-set
     scope.RemoveTopLevelSeqEntry(seh);
     contig->SetSeq().SetAnnot().front()->SetData().SetFtable().push_back(cds);
@@ -9943,7 +9946,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     delete expected_errors[1];
     expected_errors.pop_back();
     */
-
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSet().ResetAnnot();
     CRef<CSeq_feat> mrna2 (new CSeq_feat());
@@ -9964,7 +9966,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
                                                  "Product of mRNA feature (lcl|nuc3) not packaged in genomic product set"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
     CLEAR_ERRORS
 }
 
