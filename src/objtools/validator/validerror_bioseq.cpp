@@ -6265,16 +6265,13 @@ void CCdsMatchInfo::x_AssignOverlappingMrnas(list<CRef<CMrnaMatchInfo>>& mrnas)
 // Xref must have match info as well in order to update the mRNA features
 void CCdsMatchInfo::x_SelectBestMatch(void) {
 
-    // Find the first xref that overlaps as expected
-    for (auto& mrna : m_Xrefs) {
-        if (Overlaps(mrna->GetSeqfeat())) {
-            m_BestMatch = mrna;
-            m_BestMatch->SetMatch(*this);
-            m_MatchType = eMatch_OverlappingXref;
-            return;
-        }
+    if (!m_Xrefs.empty()) {
+        m_BestMatch = m_Xrefs.front();
+        m_BestMatch->SetMatch(*this);
+        m_MatchType = Overlaps(m_BestMatch->GetSeqfeat()) ? eMatch_OverlappingXref : 
+            eMatch_XrefOnly;
+        return;
     }
-
 
     for (const auto& mrna : m_OtherOverlappingmRNAs) 
     {
@@ -6286,18 +6283,6 @@ void CCdsMatchInfo::x_SelectBestMatch(void) {
             return;
         }
     }
-
-     // Assign an xref that has incomplete or no overlap
-     if (m_Xrefs.empty()) {
-         return;
-     } 
-
-     //auto& xref = SetXrefs().front();
-     auto xref = m_Xrefs.front();
-     m_BestMatch = xref;
-     m_BestMatch->SetMatch(*this);
-     m_MatchType = eMatch_XrefOnly;
-     return; 
 }
 
 
