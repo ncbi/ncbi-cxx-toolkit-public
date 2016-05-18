@@ -38,9 +38,7 @@
 #include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>
 
-#ifdef NCBI_OS_MSWIN
-#  include <winsock2.h>
-#else // NCBI_OS_UNIX
+#ifdef NCBI_OS_UNIX
 #  include <unistd.h>
 #endif
 
