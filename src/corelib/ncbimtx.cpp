@@ -2227,10 +2227,10 @@ void CConditionVariable::SignalSome(void)
         switch (res) {
         case EINVAL:
             NCBI_THROW(CConditionVariableException, eInvalidValue,
-                       "WaitForSignal failed: invalid paramater");
+                       "SignalSome failed: invalid paramater");
         default:
             NCBI_THROW(CConditionVariableException, eInvalidValue,
-                       "WaitForSignal failed: unknown error");
+                       "SignalSome failed: unknown error");
         }
     }
 #endif
@@ -2247,10 +2247,10 @@ void CConditionVariable::SignalAll(void)
         switch (res) {
         case EINVAL:
             NCBI_THROW(CConditionVariableException, eInvalidValue,
-                       "WaitForSignal failed: invalid paramater");
+                       "SignalAll failed: invalid paramater");
         default:
             NCBI_THROW(CConditionVariableException, eInvalidValue,
-                       "WaitForSignal failed: unknown error");
+                       "SignalAll failed: unknown error");
         }
     }
 #endif
