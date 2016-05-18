@@ -1,0 +1,11 @@
+# $Id$
+
+# Build library "data_loaders_util"
+###############################
+
+SRC = gp_app
+
+LIB = data_loaders_util
+
+DLL_LIB = 
+LIBS = 
