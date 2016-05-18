@@ -189,6 +189,12 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 
 // When printing a message in 'old' (human readable) format LOG_POST skips
 // all fields except the message.
+/// This macro is deprecated and it's strongly recomended to move
+/// in all projects (except tests) to macro LOG_POST_X to make possible more
+/// flexible error statistics and logging.
+///
+/// @sa
+///   LOG_POST_EX, LOG_POST_X
 #define LOG_POST(message)                                               \
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,                        \
       NCBI_NS_NCBI::eDiag_Error,                                        \
