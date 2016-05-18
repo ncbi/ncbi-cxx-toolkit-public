@@ -41,7 +41,7 @@
 
 
 // generated includes
-#include <internal/asn_cache/lib/Cache_blob_.hpp>
+#include <objtools/data_loaders/asn_cache/Cache_blob_.hpp>
 
 // generated classes
 
