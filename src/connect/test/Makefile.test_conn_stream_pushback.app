@@ -10,4 +10,4 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 CHECK_CMD = test_conn_stream_pushback.sh
 CHECK_COPY = test_conn_stream_pushback.sh
 
-WATCHERS = lavr
+WATCHERS = lavr elisovdn

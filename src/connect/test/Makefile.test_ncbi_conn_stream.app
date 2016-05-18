@@ -9,4 +9,4 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD =
 
-WATCHERS = lavr
+WATCHERS = lavr elisovdn

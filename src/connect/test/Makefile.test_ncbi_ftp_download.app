@@ -11,4 +11,4 @@ LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 CHECK_CMD = test_ncbi_ftp_download.sh
 CHECK_COPY = test_ncbi_ftp_download.sh
 
-WATCHERS = lavr
+WATCHERS = lavr elisovdn
