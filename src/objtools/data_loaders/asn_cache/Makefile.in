@@ -3,7 +3,7 @@
 # Meta-makefile
 #################################
 
-ASN_PROJ = asn_cache
+ASN_PROJ = cache_blob
 LIB_PROJ = ncbi_xloader_asn_cache
 
 srcdir = @srcdir@

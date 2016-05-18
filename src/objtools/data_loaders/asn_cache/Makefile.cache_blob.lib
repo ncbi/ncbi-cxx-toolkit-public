@@ -1,6 +1,5 @@
 # $Id$
 
-ASN = cache_blob
 ASN_DEP = seq seqset general
 
 LIB = asn_cache
