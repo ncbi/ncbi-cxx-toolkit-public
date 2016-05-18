@@ -1522,6 +1522,10 @@ BOOST_AUTO_TEST_CASE(Test_RemovableMobileElement)
     misc->SetData().SetImp().SetKey("repeat_region");
     CRef<CGb_qual> q(new CGb_qual("satellite", "y"));
     misc->SetQual().push_back(q);
+    misc->SetLocation().SetInt().SetFrom(0);
+    misc->SetLocation().SetInt().SetTo(10);
+    mob_el->SetLocation().SetInt().SetFrom(15);
+    mob_el->SetLocation().SetInt().SetTo(20);
     AddTitle(entry, "Sebaea microphylla satellite y sequence.");
     CheckDeflineMatches(entry);
 
