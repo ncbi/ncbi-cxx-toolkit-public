@@ -96,6 +96,7 @@ an_prok_pipeline needs tax_xml
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
 asn_cache includes id_dump
+asn_cache includes cache_blob
 asn_config needs build_config_base
 asn_config needs config_access
 asn_config needs gpipe_objutil
