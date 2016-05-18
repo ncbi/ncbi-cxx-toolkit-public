@@ -343,10 +343,6 @@ I_Connection::~I_Connection(void)
 }
 
 
-I_ConnectionExtra::~I_ConnectionExtra(void)
-{}
-
-
 END_NCBI_SCOPE
 
 

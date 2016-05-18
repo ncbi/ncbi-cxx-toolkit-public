@@ -98,6 +98,7 @@ public:
                                   double           preference = 100.0);
     virtual void    GetServersList(const string& service,
                                    list<string>* serv_list) const;
+    virtual bool    RecordServer(I_ConnectionExtra& extra) const;
 
     void Push(const CRef<IDBServiceMapper>& mapper);
     void Pop(void);

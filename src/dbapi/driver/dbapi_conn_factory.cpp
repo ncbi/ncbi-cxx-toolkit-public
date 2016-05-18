@@ -611,6 +611,10 @@ CDBConnectionFactory::MakeValidConnection(
 
     if (conn.get())
     {
+        if (conn->Host() == 0) {
+            GetRuntimeData(params.GetConnValidator()).GetDBServiceMapper()
+                .RecordServer(conn->GetExtraFeatures());
+        }
         CTrivialConnValidator use_db_validator(
             params.GetDatabaseName(),
             CTrivialConnValidator::eKeepModifiedConnection
@@ -759,8 +763,11 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
     }}
 
     extra.Print(prefix + "resource", service);
+
     if ( !dsp_srv->GetName().empty() ) {
         extra.Print(prefix + "server_name", dsp_srv->GetName());
+    } else if (connection != NULL  &&  !connection->ServerName().empty()) {
+        extra.Print(prefix + "server_name", connection->ServerName());
     }
 
     if (dsp_srv->GetHost() != 0) {
@@ -768,12 +775,17 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
                     impl::ConvertN2A(dsp_srv->GetHost()));
     } else if (params.GetHost() != 0) {
         extra.Print(prefix + "server_ip", impl::ConvertN2A(params.GetHost()));
+    } else if (connection != NULL  &&  connection->Host() != 0) {
+        extra.Print(prefix + "server_ip",
+                    impl::ConvertN2A(connection->Host()));
     }
 
     if (dsp_srv->GetPort() != 0) {
         extra.Print(prefix + "server_port", dsp_srv->GetPort());
     } else if (params.GetPort() != 0) {
         extra.Print(prefix + "server_port", params.GetPort());
+    } else if (connection != NULL  &&  connection->Port() != 0) {
+        extra.Print(prefix + "server_port", connection->Port());
     }
 
     if ( !params.GetUserName().empty() ) {

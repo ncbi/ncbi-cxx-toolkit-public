@@ -397,6 +397,15 @@ string CConnection::GetDriverName(void) const
     return GetCDriverContext().GetDriverName();
 }
 
+void CConnection::x_RecordServer(const CDBServer& server)
+{
+    _TRACE("Updating server metadata from " << ServerName() << '@'
+           << ConvertN2A(m_Host) << ':' << m_Port << " to " << server.GetName()
+           << '@' << ConvertN2A(server.GetHost()) << ':' << server.GetPort());
+    m_ExceptionContext->server_name = server.GetName();
+    m_Host = server.GetHost();
+    m_Port = server.GetPort();
+}
 
 } // namespace impl
 

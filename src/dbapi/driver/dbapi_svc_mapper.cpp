@@ -254,6 +254,19 @@ CDBServiceMapperCoR::GetServersList(const string& service, list<string>* serv_li
 }
 
 
+bool
+CDBServiceMapperCoR::RecordServer(I_ConnectionExtra& extra) const
+{
+    CFastMutexGuard mg(m_Mtx);
+    REVERSE_ITERATE (TDelegates, dg_it, m_Delegates) {
+        if ((*dg_it)->RecordServer(extra)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void
 CDBServiceMapperCoR::ConfigureFromRegistry(const IRegistry* registry)
 {

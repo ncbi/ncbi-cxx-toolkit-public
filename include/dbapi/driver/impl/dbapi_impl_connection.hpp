@@ -312,6 +312,8 @@ protected:
         return const_cast<CObject*>(m_UserData.GetPointerOrNull());
     }
 
+    void x_RecordServer(const CDBServer& server);
+
 private:
     typedef deque<impl::CCommand*>  TCommandList;
 
@@ -326,8 +328,8 @@ private:
     CDBConnParams::EServerType      m_ServerType;
     bool                            m_ServerTypeIsKnown;
 
-    const Uint4    m_Host;
-    const Uint2    m_Port;
+    Uint4          m_Host;
+    Uint2          m_Port;
     const string   m_Passwd;
     const string   m_Pool;
     unsigned int   m_PoolMinSize;

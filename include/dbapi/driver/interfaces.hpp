@@ -1128,8 +1128,6 @@ private:
 
 
 
-class I_ConnectionExtra;
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  I_Connection::
@@ -1382,31 +1380,6 @@ public:
         return Cursor(cursor_name, query, batch_size);
     }
 
-};
-
-
-class NCBI_DBAPIDRIVER_EXPORT I_ConnectionExtra
-{
-public:
-    virtual ~I_ConnectionExtra(void);
-
-#ifdef NCBI_OS_MSWIN
-    typedef SOCKET  TSockHandle;
-#else
-    typedef int     TSockHandle;
-#endif
-
-    /// Get OS handle of the socket represented by the connection
-    virtual TSockHandle GetLowLevelHandle(void) const = 0;
-
-    virtual void SetUserData(CObject* data) = 0;
-    template<typename T> T* GetUserData(void)
-    { return dynamic_cast<T*>(x_GetUserData()); }
-    template<typename T> const T* GetUserData(void) const
-    { return dynamic_cast<T*>(x_GetUserData()); }
-
-protected:
-    virtual CObject* x_GetUserData(void) const = 0;
 };
 
 

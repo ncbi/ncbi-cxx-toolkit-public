@@ -41,10 +41,45 @@
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-/// Forward declaration
+/// Forward declarations
 ///
 
+class CDBServer;
+class IDBServiceMapper;
 class IRegistry;
+
+///////////////////////////////////////////////////////////////////////////////
+/// I_ConnectionExtra
+///
+
+class I_ConnectionExtra
+{
+public:
+    virtual ~I_ConnectionExtra(void) { }
+
+#ifdef NCBI_OS_MSWIN
+    typedef SOCKET  TSockHandle;
+#else
+    typedef int     TSockHandle;
+#endif
+
+    /// Get OS handle of the socket represented by the connection
+    virtual TSockHandle GetLowLevelHandle(void) const = 0;
+
+    virtual void SetUserData(CObject* data) = 0;
+    template<typename T> T* GetUserData(void)
+    { return dynamic_cast<T*>(x_GetUserData()); }
+    template<typename T> const T* GetUserData(void) const
+    { return dynamic_cast<T*>(x_GetUserData()); }
+
+protected:
+    virtual CObject* x_GetUserData(void) const = 0;
+    virtual void     x_RecordServer(const CDBServer& server) { }
+
+private:
+    friend class IDBServiceMapper;
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// IDBServiceMapper
@@ -127,6 +162,18 @@ public:
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100) = 0;
+
+    /// Given a connection that succeeded even though this service
+    /// mapper was unable to identify a good server beforehand, try to
+    /// determine which server it actually reached on the basis of its
+    /// low-level handle (if available); on success, pass the result
+    /// to its x_RecordServer method to inform subsequent logging.
+    /// @return true if successful, false otherwise.
+    virtual bool RecordServer(I_ConnectionExtra& extra) const { return false; }
+
+protected:
+    static void x_RecordServer(I_ConnectionExtra& extra, CDBServer& server)
+        { extra.x_RecordServer(server); }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
