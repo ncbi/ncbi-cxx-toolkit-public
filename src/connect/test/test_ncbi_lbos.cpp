@@ -45,7 +45,12 @@ NCBITEST_INIT_TREE()
 NCBITEST_INIT_CMDLINE(args)
 {
     args->AddOptionalPositional("lbos", "Primary address to LBOS",
-                               CArgDescriptions::eString);
+                                CArgDescriptions::eString);
+
+    
+    args->AddOptionalPositional("onlyhealthcheck", 
+                                "Only healthcheck response thread, no tests",
+                                CArgDescriptions::eBoolean);
 }
 
 
@@ -57,6 +62,7 @@ NCBITEST_AUTO_FINI()
 #endif
     s_PrintPortsLines();
     s_Print500sCount();
+    s_PrintResolutionErrors();
 }
 
 /* We might want to clear ZooKeeper from nodes before running tests.
@@ -82,6 +88,15 @@ NCBITEST_AUTO_INIT()
         string custom_lbos = 
             CNcbiApplication::Instance()->GetArgs()["lbos"].AsString();
         config.Set("CONN", "LBOS", custom_lbos);
+    }
+    if (CNcbiApplication::Instance()->GetArgs()["onlyhealthcheck"]) {
+        s_HealthchecKThread = new CHealthcheckThread;
+#ifdef NCBI_THREADS
+        s_HealthchecKThread->Run();
+#endif
+        while (true) {
+            SleepSec(1);
+        }
     }
     LOG_POST(Error << "Checking LBOS primary address... LBOS=" << 
              config.Get("CONN", "LBOS"));

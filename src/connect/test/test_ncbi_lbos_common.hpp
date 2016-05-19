@@ -82,6 +82,7 @@
         if (!(P)) {/* the process is doomed, let's print what was announced */\
             s_PrintPortsLines();                                              \
             s_Print500sCount();                                               \
+            s_PrintResolutionErrors();                                        \
         }                                                                     \
         NCBI_ALWAYS_ASSERT(P,ss.str().c_str());                               \
     }
@@ -279,6 +280,13 @@ struct SLBOSVersion
     }
 };
 
+struct SLBOSResolutionError
+{
+    int code_line;
+    int expected_count;
+    int count;
+    unsigned short port;
+};
 
 /* First let's declare some functions that will be
  * used in different test suites. It is convenient
@@ -341,7 +349,10 @@ static SLBOSVersion    s_LBOSVersion                = {0,0,0};
 /** To remember on which line of code which port was announced 
  *  (for debugging purposes)                                                 */
 static map<int, int>   s_PortsLines;
-/** Remember how times we got 500 */
+/* To remember on which line of code we did not find as many servers as 
+ * expected */
+static vector<SLBOSResolutionError>  s_ResolutionErrors;
+/** Remember how many times we got 500 */
 static unsigned int    s_500sCount                  = 0;
 
 
@@ -354,6 +365,19 @@ DEFINE_STATIC_FAST_MUTEX(s_WriteLogLock);
 #define PORT_STR_HELPER(port) #port
 #define PORT_STR(port) PORT_STR_HELPER(port)
 
+/*#define ANNOUNCEMENT_HOST string("iebdev22") */
+#define ANNOUNCEMENT_HOST s_GetMyIP() /* The host which is used for healthchecks 
+                                         in all test cases. By default, 
+                                         ANNOUNCEMENT_HOST is set to s_GetMyIP()
+                                         For additional 
+                                         tests it can be changed to any host */
+
+/*#define ANNOUNCEMENT_HOST_0000 "iebdev22"*/
+#define ANNOUNCEMENT_HOST_0000 "0.0.0.0" 
+                                         /* The host which is used as 0.0.0.0.
+                                            For additional tests it can be 
+                                            changed to some other host 
+                                            address. */
 const int kPortsNeeded = 9;
 static CSafeStatic<vector<unsigned short>> s_ListeningPorts;
 
@@ -733,6 +757,9 @@ static void s_AnnounceCPPFromRegistry(const string& registry_section)
         s_LBOS_CPP_AnnounceReg(registry_section);
     } catch (CLBOSException& ex) {
         MEASURE_TIME_FINISH
+        if (ex.GetErrCode() == 500) {
+            s_500sCount++;
+        }
         s_PrintRegistryAnnouncedDetails(registry_section.c_str(), ex.what(), 
                                         ex.GetErrCodeString(),
                                         ex.GetErrCode(), time_elapsed);
@@ -793,10 +820,13 @@ static unsigned short s_DeannounceC(const char*     name,
     MEASURE_TIME_START
     result = LBOS_Deannounce(name, version, host, port, lbos_ans, lbos_mes);  
     MEASURE_TIME_FINISH
-        s_PrintDeannouncedDetails(name, version, host, port,
-                                  lbos_ans ? *lbos_ans : NULL,
-                                  lbos_mes ? *lbos_mes : NULL,
-                                  result, time_elapsed);
+    if (result == 500) {
+        s_500sCount++;
+    }
+    s_PrintDeannouncedDetails(name, version, host, port,
+                                lbos_ans ? *lbos_ans : NULL,
+                                lbos_mes ? *lbos_mes : NULL,
+                                result, time_elapsed);
     return result;
 }
 
@@ -823,10 +853,13 @@ static void s_DeannounceCPP(const string& name,
     }
     catch (CLBOSException& ex) {
         MEASURE_TIME_FINISH
-            s_PrintDeannouncedDetails(name.c_str(), version.c_str(), 
-                                      host.c_str(), port, 
-                                      ex.what(), ex.GetErrCodeString(),
-                                      ex.GetStatusCode(), time_elapsed);
+        if (ex.GetStatusCode() == 500) {
+            s_500sCount++;
+        }
+        s_PrintDeannouncedDetails(name.c_str(), version.c_str(), 
+                                    host.c_str(), port, 
+                                    ex.what(), ex.GetErrCodeString(),
+                                    ex.GetStatusCode(), time_elapsed);
         throw; /* Move the exception down the stack */
     }
     MEASURE_TIME_FINISH
@@ -853,7 +886,8 @@ do {                                                                          \
 } while (false)
 
 
-/**  */
+/** Print all ports with which servers were announced, and line of code which
+ * initiated each announcement  */
 static void s_PrintPortsLines()
 {
     /* We will not surround it with mutex because it is not so important */
@@ -869,6 +903,30 @@ static void s_PrintPortsLines()
                     << " was announced on line " << ports_iter->second << endl;
     }
     WRITE_LOG(ports_lines.str());
+}
+
+
+/** Print all cases when we did not find as many servers as expected. Write 
+ * line of code which started counting, port of server searched, expected count 
+ * and real count */
+static void s_PrintResolutionErrors()
+{
+    /* We will not surround it with mutex because it is not so important */
+    static bool already_launched = false;
+    if (already_launched) return;
+    already_launched = true;
+
+    stringstream errors;
+    errors << "Printing s_CountServersWithExpectation errors:" << endl;
+    auto errors_iter = s_ResolutionErrors.begin();
+    for (; errors_iter != s_ResolutionErrors.end(); errors_iter++) {
+        errors << "Port " << errors_iter->port << " "
+               << "was announced on line " << errors_iter->code_line << ", "
+               << "expected to find" << errors_iter->expected_count << ", "
+               << "but " << errors_iter->count << " was found instead"
+               << endl;
+    }
+    WRITE_LOG(errors.str());
 }
 
 
@@ -1053,7 +1111,7 @@ public:
         int             iters_btw_grbg_cllct = secs_btw_grbg_cllct * 100000 /
                                                (rw_timeout.sec * 100000 + 
                                                 rw_timeout.usec);
-
+        
         if (s_GetTimeOfDay(&accept_time_stop) != 0) {
             memset(&accept_time_stop, 0, sizeof(accept_time_stop));
         }
@@ -1261,15 +1319,11 @@ static CHealthcheckThread* s_HealthchecKThread;
 int s_CountServersWithExpectation(string            service,
                                   unsigned short    port,
                                   int               expected_count,
+                                  size_t            code_line,
                                   int               secs_timeout,
                                   string            dtab = "")
 {
     CConnNetInfo net_info;
-    WRITE_LOG("Counting number of servers \"" << service <<
-                   "\" with dtab \"" << dtab <<
-                   "\" and port " << port << ", ip " << s_GetMyIP() <<
-                   " via service discovery "
-                   "(expecting " << expected_count << " servers found).");
     const int wait_time = 1000; /* msecs */
     int max_retries = secs_timeout * 1000 / wait_time; /* number of repeats
                                                           until timeout */
@@ -1279,7 +1333,7 @@ int s_CountServersWithExpectation(string            service,
     while (servers != expected_count && retries < max_retries) {
         WRITE_LOG("Counting number of servers \"" << service <<
                   "\" with dtab \"" << dtab <<
-                  "\" and port " << port << ", ip " << s_GetMyIP() <<
+                  "\" and port " << port << ", ip " << ANNOUNCEMENT_HOST <<
                   " via service discovery "
                   "(expecting " << expected_count << 
                   " servers found). Retry #" << retries);
@@ -1315,6 +1369,18 @@ int s_CountServersWithExpectation(string            service,
                   << service << ", port " << port << " after " 
                   << time_elapsed << " seconds via service discovery.");
         retries++;
+    }
+    /* If we did not find the expected amount of servers, there will be an error 
+     * (just if to think logically).
+     * To easier find what went wrong - save line of code that called 
+     * s_CountServersWithExpectation(), port, count and expected count */
+    if (servers != expected_count) {
+        SLBOSResolutionError err;
+        err.code_line = code_line;
+        err.count = servers;
+        err.expected_count = expected_count;
+        err.port = port;
+        s_ResolutionErrors.push_back(err);
     }
     return servers;
 }
@@ -2614,31 +2680,34 @@ void FullCycle__ShouldWork()
     lbos_answer = NULL;
     SELECT_PORT(count_before, service, port1);
     s_AnnounceCSafe(service.c_str(), "1.0.0", "", port1,
-                     (string("http://") + s_GetMyIP() + ":"
+                     (string("http://") + ANNOUNCEMENT_HOST + ":"
                              + s_PortStr(PORT_N) +  "/health").c_str(),
                     &lbos_answer.Get(), NULL);
     lbos_answer = NULL;
 
     SELECT_PORT(count_before, service, port2);
     s_AnnounceCSafe(service.c_str(), "1.0.0", "", port2,
-                     (string("http://") + s_GetMyIP() + ":"
+                     (string("http://") + ANNOUNCEMENT_HOST + ":"
                              + s_PortStr(PORT_N) +  "/health").c_str(),
                     &lbos_answer.Get(), NULL);
     lbos_answer = NULL;
 
     SELECT_PORT(count_before, service, port3);
     s_AnnounceCSafe(service.c_str(), "1.0.0", "", port3,
-                     (string("http://") + s_GetMyIP() + ":"
+                     (string("http://") + ANNOUNCEMENT_HOST + ":"
                              + s_PortStr(PORT_N) +  "/health").c_str(),
                     &lbos_answer.Get(), NULL);
     lbos_answer = NULL;
 
     unsigned int servers_found1 =
-        s_CountServersWithExpectation(service, port1, 1, kDiscoveryDelaySec),
+        s_CountServersWithExpectation(service, port1, 1, __LINE__, 
+                                      kDiscoveryDelaySec),
                  servers_found2 =
-        s_CountServersWithExpectation(service, port2, 1, kDiscoveryDelaySec),
+        s_CountServersWithExpectation(service, port2, 1, __LINE__, 
+                                      kDiscoveryDelaySec),
                  servers_found3 =
-        s_CountServersWithExpectation(service, port3, 1, kDiscoveryDelaySec);
+        s_CountServersWithExpectation(service, port3, 1, __LINE__,
+                                      kDiscoveryDelaySec);
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(servers_found1 == 1, "lbostest was announced, "
                                                    "but cannot find it");
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(servers_found2 == 1, "lbostest was announced, "
@@ -2768,13 +2837,14 @@ void NonStandardVersion__FoundWithDTab()
     }
 
     s_AnnounceCSafe(service.c_str(), "1.1.0", "", port,
-                    //"http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
-                     (string("http://") + s_GetMyIP() + ":" + s_PortStr(PORT_N) +  "/health").c_str(),
+                     (string("http://") + ANNOUNCEMENT_HOST + ":" + 
+                     s_PortStr(PORT_N) +  "/health").c_str(),
                     &lbos_answer.Get(), NULL);
 
     unsigned int servers_found =
-        s_CountServersWithExpectation(service, port, 1, kDiscoveryDelaySec, 
-                                  "DTab-local: /lbostest=>/zk#/lbostest/1.1.0");
+        s_CountServersWithExpectation(service, port, 1, __LINE__, 
+                                      kDiscoveryDelaySec, "DTab-local: "
+                                      "/lbostest=>/zk#/lbostest/1.1.0");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(servers_found == 1,
                            "Error while searching non-standard server "
                            "version with DTab");
@@ -2796,11 +2866,13 @@ void NonStandardVersion__FoundWithDTab()
                                "DTab-local: /lbostest1=>/zk#/lbostest1/1.1.0");
     }
     s_AnnounceCSafe(service.c_str(), "1.1.0", "", port,
-                  ("http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health").c_str(),
-                  &lbos_answer.Get(), NULL);
-
-    servers_found = s_CountServersWithExpectation(service, port, 1, kDiscoveryDelaySec,
-                           "DTab-local: /lbostest1=>/zk#/lbostest1/1.1.0");
+                    ("http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  
+                    "/health").c_str(),
+                    &lbos_answer.Get(), NULL);
+    servers_found = 
+        s_CountServersWithExpectation(service, port, 1, __LINE__, 
+                                      kDiscoveryDelaySec, "DTab-local: "
+                                      "/lbostest1=>/zk#/lbostest1/1.1.0");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(servers_found == 1,
                            "Error while searching server with no standard"
                            "version with DTab");
@@ -2860,14 +2932,16 @@ void NonStandardVersion__FoundWithRequestContextDTab()
     }
 
     s_AnnounceCSafe(service.c_str(), "1.2.0", "", port,
-        //"http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
-        (string("http://") + s_GetMyIP() + ":" + s_PortStr(PORT_N) +  "/health").c_str(),
-        &lbos_answer.Get(), NULL);
+                    (string("http://") + ANNOUNCEMENT_HOST + ":" + 
+                    s_PortStr(PORT_N) + "/health").c_str(),
+                    &lbos_answer.Get(), NULL);
 
-    CDiagContext::GetRequestContext().SetDtab("DTab-local: /lbostest=>/zk#/lbostest/1.2.0");
+    CDiagContext::GetRequestContext().SetDtab("DTab-local: /lbostest=>"
+                                              "/zk#/lbostest/1.2.0");
     unsigned int servers_found =
-        s_CountServersWithExpectation(service, port, 1, kDiscoveryDelaySec, 
-                                  "DTab-local: /lbostest=>/zk#/lbostest/1.1.0");
+        s_CountServersWithExpectation(service, port, 1, __LINE__, 
+                                      kDiscoveryDelaySec, "DTab-local: "
+                                      "/lbostest=>/zk#/lbostest/1.1.0");
     CDiagContext::GetRequestContext().SetDtab("");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(servers_found == 1,
                            "Error while searching non-standard server "
@@ -2890,12 +2964,14 @@ void NonStandardVersion__FoundWithRequestContextDTab()
                                "DTab-local: /lbostest1=>/zk#/lbostest1/1.2.0");
     }
     s_AnnounceCSafe(service.c_str(), "1.2.0", "", port,
-                  "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                  "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health",
                   &lbos_answer.Get(), NULL);
 
     CDiagContext::GetRequestContext().SetDtab("DTab-local: /lbostest1=>/zk#/lbostest1/1.2.0");
-    servers_found = s_CountServersWithExpectation(service, port, 1, kDiscoveryDelaySec,
-                           "DTab-local: /lbostest1=>/zk#/lbostest1/1.1.0");
+    servers_found = 
+        s_CountServersWithExpectation(service, port, 1, __LINE__,
+                                      kDiscoveryDelaySec, "DTab-local: "
+                                      "/lbostest1=>/zk#/lbostest1/1.1.0");
     CDiagContext::GetRequestContext().SetDtab("");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(servers_found == 1,
                            "Error while searching server with no standard"
@@ -4058,7 +4134,8 @@ void AllOK__ReturnSuccess()
                              "1.0.0",
                              "",
                              port,
-                             "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                             "http://" ANNOUNCEMENT_HOST_0000 + 
+                             s_PortStr(PORT_N) +  "/health",
                              &lbos_answer.Get(), &lbos_status_message.Get());
     
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
@@ -4079,14 +4156,14 @@ void AllOK__ReturnSuccess()
     s_AnnounceCSafe(node_name.c_str(),
                     "1.0.0",
                     "", port,
-                    (string("http://") + s_GetMyIP() +
+                    (string("http://") + ANNOUNCEMENT_HOST +
                     ":" + s_PortStr(PORT_N) +  "/health").c_str(),
                     &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
 
     /* Cleanup */
-    s_DeannounceC(node_name.c_str(), "1.0.0", s_GetMyIP().c_str(),
+    s_DeannounceC(node_name.c_str(), "1.0.0", ANNOUNCEMENT_HOST.c_str(),
                   port, NULL, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, kLBOSSuccess);
     lbos_answer = NULL;
@@ -4135,13 +4212,14 @@ void AllOK__LBOSAnswerProvided()
     WRITE_LOG("Part II: real IP");
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                    (string("http://") + s_GetMyIP() + ":" + s_PortStr(PORT_N) + "/health").c_str(),
+                    (string("http://") + ANNOUNCEMENT_HOST + ":" + 
+                    s_PortStr(PORT_N) + "/health").c_str(),
                     &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Announcement function did not return "
                            "LBOS answer as expected");
     /* Cleanup */
-    s_DeannounceC(node_name.c_str(), "1.0.0", s_GetMyIP().c_str(),
+    s_DeannounceC(node_name.c_str(), "1.0.0", ANNOUNCEMENT_HOST.c_str(),
                   port, NULL, NULL);
                     
     lbos_answer = NULL;
@@ -4168,7 +4246,8 @@ void AllOK__LBOSStatusMessageIsOK()
     SELECT_PORT(count_before, node_name, port);
     /* Announce */
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                    (string("http://0.0.0.0:") + s_PortStr(PORT_N) + "/health").c_str(),
+                    (string("http://" ANNOUNCEMENT_HOST_0000 ":") + 
+                    s_PortStr(PORT_N) + "/health").c_str(),
                     &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
     NCBITEST_CHECK_EQUAL_MT_SAFE(
@@ -4189,12 +4268,13 @@ void AllOK__LBOSStatusMessageIsOK()
      * and check if there is no server already announced */
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                  (string("http://") + s_GetMyIP() + ":" + s_PortStr(PORT_N) +  "/health").c_str(),
-                  &lbos_answer.Get(), &lbos_status_message.Get());
+                    (string("http://") + ANNOUNCEMENT_HOST + ":" + 
+                    s_PortStr(PORT_N) +  "/health").c_str(),
+                    &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     /* Cleanup */
-    s_DeannounceC(node_name.c_str(), "1.0.0", s_GetMyIP().c_str(),
+    s_DeannounceC(node_name.c_str(), "1.0.0", ANNOUNCEMENT_HOST.c_str(),
                   port, NULL, NULL);
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -4226,7 +4306,8 @@ void AllOK__AnnouncedServerSaved()
     /* Announce */
     unsigned short result;
     result = s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                             "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                             "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                             s_PortStr(PORT_N) +  "/health",
                              &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(result == kLBOSSuccess,
                                    "Announcement function did not return "
@@ -4257,14 +4338,14 @@ void AllOK__AnnouncedServerSaved()
                     "1.0.0",
                     "",
                     port,
-                    (string("http://") + s_GetMyIP() +
+                    (string("http://") + ANNOUNCEMENT_HOST +
                             ":" + s_PortStr(PORT_N) +  "/health").c_str(),
                     &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(result == kLBOSSuccess,
                                    "Announcement function did not return "
                                    "SUCCESS as expected");
     find_result = s_FindAnnouncedServer(node_name, "1.0.0", port,
-                                        s_GetMyIP());
+                                        ANNOUNCEMENT_HOST);
     NCBITEST_CHECK_EQUAL_MT_SAFE(find_result, 1);
     /* Cleanup */
     lbos_answer = NULL;
@@ -4302,7 +4383,8 @@ void NoLBOS__ReturnNoLBOSAndNotFind()
     
     result = s_AnnounceC(node_name,
                          "1.0.0", "", port,
-                         "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) +  " / health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSNoLBOS);
 
@@ -4333,7 +4415,8 @@ void NoLBOS__LBOSAnswerNull()
     s_AnnounceC(node_name.c_str(),
                 "1.0.0",
                 "", port,
-                "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                s_PortStr(PORT_N) +  " / health",
                 &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
@@ -4364,7 +4447,8 @@ void NoLBOS__LBOSStatusMessageNull()
     s_AnnounceC(node_name.c_str(),
                 "1.0.0",
                 "", port,
-                "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                s_PortStr(PORT_N) +  " / health",
                 &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "Answer from LBOS was not NULL");
@@ -4395,7 +4479,7 @@ void LBOSError__ReturnServerErrorCode()
                                       s_FakeReadAnnouncementWithErrorFromLBOS);
     unsigned short result;
     result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                   "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                   "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health",
                    &lbos_answer.Get(), &lbos_status_message.Get());
 
     /* Check that error code is the same as in mock*/
@@ -4426,7 +4510,7 @@ void LBOSError__ReturnServerStatusMessage()
                                     g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
                                     s_FakeReadAnnouncementWithErrorFromLBOS);
     s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health",
                 &lbos_answer.Get(), &lbos_status_message.Get());
 
     /* Check that error code is the same as in mock*/
@@ -4457,7 +4541,8 @@ void LBOSError__LBOSAnswerProvided()
                                       g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
                                       s_FakeReadAnnouncementWithErrorFromLBOS);
     s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                  "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                  "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                  s_PortStr(PORT_N) +  "/health",
                   &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(*lbos_answer ? *lbos_answer : "<NULL>"),
                          "Those lbos errors are scaaary");
@@ -4499,7 +4584,8 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
      */
     WRITE_LOG("Part 1. First time announcing server");
     result = s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                      "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                      "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                      s_PortStr(PORT_N) +  "/health",
                       &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                              "Did not get answer after announcement");
@@ -4509,8 +4595,8 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
                            "Host:port returned by LBOS is trash");
     /* Count how many servers there are */
     int count_after = 0;
-    count_after = s_CountServersWithExpectation(node_name, port, 1, 
-                                                kDiscoveryDelaySec);
+    count_after = s_CountServersWithExpectation(node_name, port, 1,
+                                                __LINE__, kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
     WRITE_LOG("Trying to find the announced server in "
@@ -4529,7 +4615,8 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
      */
     WRITE_LOG("Part 2. Second time announcing server");
     result = s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                      "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                      "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                      s_PortStr(PORT_N) +  "/health",
                       &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
@@ -4541,7 +4628,8 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
                            convert_result != *lbos_answer,
                            "LBOS answer could not be parsed to host:port");
     /* Count how many servers there are. */
-    count_after = s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec);
+    count_after = s_CountServersWithExpectation(node_name, port, 1, __LINE__,
+                                                kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
     WRITE_LOG("Trying to find the announced server in "
               "%LBOS%/lbos/text/service");
@@ -4556,7 +4644,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
     /* Cleanup */     
     int deannounce_result = s_DeannounceC(node_name.c_str(), 
                                             "1.0.0",
-                                            s_GetMyIP().c_str(), 
+                                            ANNOUNCEMENT_HOST.c_str(),
                                             port, NULL, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, kLBOSSuccess);
 #undef PORT_N
@@ -4586,7 +4674,7 @@ void ForeignDomain__NoAnnounce()
 
         unsigned short result;
         result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                               "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                               "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health",
                                &lbos_answer.Get(), &lbos_status_message.Get());
         NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSNoLBOS);
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4685,7 +4773,8 @@ void IncorrectPort__ReturnInvalidArgs()
     /* I. 0 */
     port = 0;
     result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                         "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4718,7 +4807,8 @@ void IncorrectVersion__ReturnInvalidArgs()
      */
     WRITE_LOG("Part I. Version is <NULL>");
     result = s_AnnounceC(node_name.c_str(), NULL, "", port,
-                         ("http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health").c_str(),
+                         ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) +  "/health").c_str(),
                          &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
@@ -4737,7 +4827,8 @@ void IncorrectVersion__ReturnInvalidArgs()
     WRITE_LOG("Part II. Version is \"\" (empty string)");
     node_name = s_GenerateNodeName();
     result = s_AnnounceC(node_name.c_str(), "", "", port,
-                         "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
@@ -4771,8 +4862,8 @@ void IncorrectServiceName__ReturnInvalidArgs()
      */
     WRITE_LOG("Part I. Service name is <NULL>");
     result = s_AnnounceC(NULL, "1.0.0", "", port,
-                         ("http://0.0.0.0:" + s_PortStr(PORT_N)
-                                 +  "/health").c_str(),
+                         ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) + "/health").c_str(),
                          &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
@@ -4792,13 +4883,15 @@ void IncorrectServiceName__ReturnInvalidArgs()
     port = kDefaultPort;
     /* As the call is not supposed to go through mapper to network,
      * we do not need any mocks*/
-    result = s_AnnounceC("", "1.0.0", "", port, "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
-                   &lbos_answer.Get(), &lbos_status_message.Get());
+    result = s_AnnounceC("", "1.0.0", "", port, 
+                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) +  "/health",
+                         &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                         "LBOS status message is not NULL");
+                                   "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-        "Answer from LBOS was not NULL");
+                                   "Answer from LBOS was not NULL");
 #undef PORT_N
 #define PORT_N 0
 }
@@ -4826,9 +4919,12 @@ void RealLife__VisibleAfterAnnounce()
     SELECT_PORT(count_before, node_name, port);
     unsigned short result;
     result = s_AnnounceCSafe(node_name, "1.0.0", "", port,
-                             "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                             "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                             s_PortStr(PORT_N) +  "/health",
                              &lbos_answer.Get(), &lbos_status_message.Get());
-    int count_after = s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec);
+    int count_after = s_CountServersWithExpectation(node_name, port, 1, 
+                                                    __LINE__,
+                                                    kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
     /* Cleanup */
@@ -4866,7 +4962,8 @@ void IP0000__ReplaceWithIP()
                                 g_LBOS_UnitTesting_GetLBOSFuncs()->AnnounceEx,
                                 s_FakeAnnounceEx);
     unsigned short result;
-    string health = "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health";
+    string health = "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) + 
+                    "/health";
     result = s_AnnounceC(node_name, "1.0.0", "", port,
                          health, &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSDNSResolveError);
@@ -4881,7 +4978,8 @@ void IP0000__ReplaceWithIP()
     WRITE_LOG("Mocking SOCK_gethostbyaddr with \"251.252.253.147\"");
     mock1 = s_FakeGetLocalHostAddress<true, 251, 252, 253, 147>;
     s_AnnounceC(node_name, "1.0.0", "", port,
-                "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                s_PortStr(PORT_N) +  "/health",
                 &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSDNSResolveError);
     healthcheck.str(std::string());
@@ -4915,7 +5013,8 @@ void ResolveLocalIPError__ReturnDNSError()
                               s_FakeGetLocalHostAddress<false,0,0,0,0>);
     unsigned short result;
     result = s_AnnounceC(node_name, "1.0.0", "", port,
-                         "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSDNSResolveError);
     /* Cleanup*/
@@ -4937,7 +5036,8 @@ void LBOSOff__ReturnKLBOSOff()
     WRITE_LOG("LBOS mapper is OFF (maybe it is not turned ON in registry " 
               "or it could not initialize at start) - return kLBOSOff");
     result = s_AnnounceC("lbostest", "1.0.0", "", port,
-                         "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSOff);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4965,7 +5065,8 @@ void LBOSAnnounceCorruptOutput__Return454()
                     s_FakeReadAnnouncementSuccessWithCorruptOutputFromLBOS);
     unsigned short result;
     result = s_AnnounceC(node_name, "1.0.0", "", port,
-                         "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSCorruptOutput);
     /* Cleanup */
@@ -5370,12 +5471,14 @@ void Deannounced__Return1(unsigned short port)
      */
     WRITE_LOG("Part I. 0.0.0.0");
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                  "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                  "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                  s_PortStr(PORT_N) +  "/health",
                   &lbos_answer.Get(), &lbos_status_message.Get());
     lbos_answer = NULL;
     lbos_status_message = NULL;
     /* Count how many servers there are */
     int count_after = s_CountServersWithExpectation(node_name, port, 1, 
+                                                    __LINE__,
                                                     kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
 
@@ -5397,14 +5500,14 @@ void Deannounced__Return1(unsigned short port)
     node_name = s_GenerateNodeName();
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                    (string("http://") + s_GetMyIP() + 
+                    (string("http://") + ANNOUNCEMENT_HOST + 
                     ":" + s_PortStr(PORT_N) +  "/health").c_str(),
                     &lbos_answer.Get(), &lbos_status_message.Get());
     lbos_answer = NULL;
     lbos_status_message = NULL;
 
     /* Count how many servers there are */
-    count_after = s_CountServersWithExpectation(node_name, port, 1, 
+    count_after = s_CountServersWithExpectation(node_name, port, 1, __LINE__,
                                                 kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
 
@@ -5476,7 +5579,8 @@ void Deannounced__AnnouncedServerRemoved()
     node_name = s_GenerateNodeName();
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                    (string("http://") + s_GetMyIP() + ":8080/health").c_str(), 
+                    (string("http://") + ANNOUNCEMENT_HOST + 
+                    ":8080/health").c_str(), 
                     &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
     find_result = s_FindAnnouncedServer(node_name, "1.0.0", port, s_GetMyIP());
@@ -5601,7 +5705,9 @@ void RealLife__InvisibleAfterDeannounce()
     int count_before;
     SELECT_PORT(count_before, node_name, port);
     Deannounced__Return1(port);
-    int count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec);
+    int count_after = s_CountServersWithExpectation(node_name, port, 0,
+                                                    __LINE__,
+                                                    kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
 }
 
@@ -5658,7 +5764,8 @@ void NoHostProvided__LocalAddress()
     int count_before;
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                  "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                  "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                  s_PortStr(PORT_N) +  "/health",
                   &lbos_answer.Get(), &lbos_status_message.Get());
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -5746,7 +5853,8 @@ void AllDeannounced__NoSavedLeft()
         ports.push_back(port);
         counts_before.push_back(count_before);
         s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", ports[i],
-                      "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health",
+                      "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                      s_PortStr(PORT_N) +  "/health",
                       &lbos_answer.Get(), &lbos_status_message.Get());
         lbos_answer = NULL;
         lbos_status_message = NULL;
@@ -5758,7 +5866,8 @@ void AllDeannounced__NoSavedLeft()
     for (i = 0;  i < ports.size();  i++) {
         counts_after.push_back(
             s_CountServersWithExpectation(
-            s_GenerateNodeName(), ports[i], counts_before[i], kDiscoveryDelaySec));
+                    s_GenerateNodeName(), ports[i], counts_before[i], __LINE__,
+                    kDiscoveryDelaySec));
         NCBITEST_CHECK_EQUAL_MT_SAFE(counts_before[i], counts_after[i]);
     }
 }
@@ -5790,7 +5899,8 @@ void AllOK__ReturnSuccess()
     */
     WRITE_LOG("Part I : 0.0.0.0");
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
-                                           "http://0.0.0.0:" + s_PortStr(PORT_N) + 
+                                           "http://" ANNOUNCEMENT_HOST_0000 ":" 
+                                           + s_PortStr(PORT_N) + 
                                            "/health"));
     /* Cleanup */
     BOOST_CHECK_NO_THROW(s_DeannounceCPP(node_name, "1.0.0", "", port));
@@ -5802,7 +5912,7 @@ void AllOK__ReturnSuccess()
     WRITE_LOG("Part II: real IP");
     node_name = s_GenerateNodeName();
     SELECT_PORT(count_before, node_name, port);
-    string health = string("http://") + s_GetMyIP() + ":8080/health";
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
                                            health));
     /* Count how many servers there are */
@@ -5831,7 +5941,8 @@ void AllOK__AnnouncedServerSaved()
     WRITE_LOG("Part I : 0.0.0.0");
     SELECT_PORT(count_before, node_name, port);
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
-                         "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"));
+                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) +  "/health"));
     int find_result = s_FindAnnouncedServer(node_name.c_str(), "1.0.0", port,
                                             "0.0.0.0");
     NCBITEST_CHECK_NE_MT_SAFE(find_result, -1);
@@ -5844,7 +5955,8 @@ void AllOK__AnnouncedServerSaved()
     SELECT_PORT(count_before, node_name, port);
     BOOST_CHECK_NO_THROW(
         s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
-                          string("http://") + s_GetMyIP() + ":8080/health"));
+                          string("http://") + ANNOUNCEMENT_HOST + 
+                          ":8080/health"));
     find_result = s_FindAnnouncedServer(node_name.c_str(), "1.0.0",
                                         port, s_GetMyIP().c_str());
     NCBITEST_CHECK_NE_MT_SAFE(find_result, -1);
@@ -5871,7 +5983,8 @@ void NoLBOS__ThrowNoLBOSAndNotFind()
                                       s_FakeReadEmpty);
     BOOST_CHECK_EXCEPTION(
             s_AnnounceCPP(node_name, "1.0.0", "", port,
-                          "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"),
+                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                          s_PortStr(PORT_N) +  "/health"),
                           CLBOSException, comparator);
 
     /* Cleanup*/
@@ -5900,7 +6013,8 @@ void LBOSError__ThrowServerError()
         s_FakeReadAnnouncementWithErrorFromLBOS);
     BOOST_CHECK_EXCEPTION(
             s_AnnounceCPP(node_name, "1.0.0", "", port,
-                          "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"),
+                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                          s_PortStr(PORT_N) +  "/health"),
             CLBOSException, comparator);
 }
 
@@ -5923,7 +6037,8 @@ void LBOSError__LBOSAnswerProvided()
                                       s_FakeReadAnnouncementWithErrorFromLBOS);
     try {
         s_AnnounceCPP(node_name, "1.0.0", "", port,
-                      "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health");
+                      "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                      s_PortStr(PORT_N) +  "/health");
     }
     catch(const CLBOSException& ex) {
         /* Checking that message in exception is exactly what LBOS sent*/
@@ -5970,10 +6085,12 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
      */
     WRITE_LOG("Part 1. First time announcing server");
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
-                                           "http://0.0.0.0:" + s_PortStr(PORT_N) + 
-                                           "/health"));
+                                           "http://" ANNOUNCEMENT_HOST_0000 ":" 
+                                           + s_PortStr(PORT_N) + "/health"));
     /* Count how many servers there are */
-    int count_after = s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec);
+    int count_after = s_CountServersWithExpectation(node_name, port, 1,
+                                                    __LINE__,
+                                                    kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
     int find_result = s_FindAnnouncedServer(node_name, "1.0.0", port,
                                             "0.0.0.0");
@@ -5984,9 +6101,11 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
     WRITE_LOG("Part 2. Second time announcing server");
     BOOST_CHECK_NO_THROW(
         s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
-                          "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"));
+                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                          s_PortStr(PORT_N) +  "/health"));
     /* Count how many servers there are.  */
-    count_after = s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec);
+    count_after = s_CountServersWithExpectation(node_name, port, 1, __LINE__,
+                                                kDiscoveryDelaySec);
     find_result = s_FindAnnouncedServer(node_name, "1.0.0", port,
                                         "0.0.0.0");
     NCBITEST_CHECK_EQUAL_MT_SAFE(find_result, 1);
@@ -6011,7 +6130,7 @@ void IncorrectURL__ThrowInvalidArgs()
              "mapper when passed incorrect healthcheck URL");
     WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
               "\", status code \"" << 452 <<
-                "\", message \"" << "452\\n" << "\".");
+              "\", message \"" << "452\\n" << "\".");
     /* Count how many servers there are before we announce */
     /*
      * I. Healthcheck URL that does not start with http or https
@@ -6020,7 +6139,8 @@ void IncorrectURL__ThrowInvalidArgs()
     port = kDefaultPort;
     node_name = s_GenerateNodeName();
     BOOST_CHECK_EXCEPTION(
-        s_AnnounceCPP(node_name, "1.0.0", "", port, "0.0.0.0:8080/health"), CLBOSException, comparator);
+        s_AnnounceCPP(node_name, "1.0.0", "", port, "0.0.0.0:8080/health"),
+                      CLBOSException, comparator);
     /*
      * II. Empty healthcheck URL
      */
@@ -6081,7 +6201,8 @@ void IncorrectVersion__ThrowInvalidArgs()
     /*
      * I. Empty string
      */
-    string health = "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health";
+    string health = "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                    s_PortStr(PORT_N) +  "/health";
     stringstream healthcheck;
     healthcheck << health << "/port" << port << "/host" << "" <<
                    "/version" << "";
@@ -6118,7 +6239,8 @@ void IncorrectServiceName__ThrowInvalidArgs()
      * we do not need any mocks*/
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPP("", "1.0.0", "", port,
-                      "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"), CLBOSException, comparator);
+                      "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +
+                      "/health"), CLBOSException, comparator);
 }
 
 
@@ -6140,8 +6262,11 @@ void RealLife__VisibleAfterAnnounce()
     SELECT_PORT(count_before, node_name, port);
     BOOST_CHECK_NO_THROW(
         s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
-                       "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"));
-    int count_after = s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec);
+                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                          s_PortStr(PORT_N) +  "/health"));
+    int count_after = s_CountServersWithExpectation(node_name, port, 1,
+                                                    __LINE__,
+                                                    kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
     /* Cleanup */
     BOOST_CHECK_NO_THROW(s_DeannounceCPP(node_name, "1.0.0", "", port));
@@ -6171,7 +6296,8 @@ void IP0000__ReplaceWithIP()
                                 s_FakeAnnounceEx);
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPP(node_name, "1.0.0", "", port,     
-                      "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"), CLBOSException, comparator);
+                      "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +
+                      "/health"), CLBOSException, comparator);
     stringstream healthcheck;
     healthcheck << "http%3A%2F%2F1.2.3.4%3A" + s_PortStr(PORT_N) +  "%2Fhealth" << 
                    "%2Fport" << port <<
@@ -6180,7 +6306,8 @@ void IP0000__ReplaceWithIP()
     mock1 = s_FakeGetLocalHostAddress<true, 251,252,253,147>;
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPP(node_name, "1.0.0", "", port, 
-                      "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"), CLBOSException, comparator);
+                      "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) + 
+                      "/health"), CLBOSException, comparator);
     healthcheck.str(std::string());
     healthcheck << "http%3A%2F%2F251.252.253.147%3A" + s_PortStr(PORT_N) +  
                    "%2Fhealth" << 
@@ -6215,7 +6342,8 @@ void ResolveLocalIPError__ReturnDNSError()
                               s_FakeGetLocalHostAddress<false,0,0,0,0>);
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPP(node_name, "1.0.0", "", port,
-                      "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"), CLBOSException, comparator);
+                      "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) + 
+                      "/health"), CLBOSException, comparator);
     /* Cleanup*/
     WRITE_LOG("Reverting mock og SOCK_gethostbyaddr with \"0.0.0.0\"");
 }
@@ -6234,7 +6362,9 @@ void LBOSOff__ThrowKLBOSOff()
                 "\", message \"" << "550\\n" << "\".");
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPP("lbostest", "1.0.0", "", 8080,
-                      "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"), CLBOSException, comparator);
+                      "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) + 
+                      "/health"), 
+                      CLBOSException, comparator);
 }
 
 
@@ -6258,7 +6388,8 @@ void LBOSAnnounceCorruptOutput__ThrowServerError()
                     s_FakeReadAnnouncementSuccessWithCorruptOutputFromLBOS);
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPP(node_name, "1.0.0", "", port,
-                      "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"), CLBOSException, comparator);
+                      "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +
+                      "/health"), CLBOSException, comparator);
     /* Cleanup */
     WRITE_LOG("Reverting mock of CONN_Read with corrupt output");
 }
@@ -6289,11 +6420,13 @@ void HealthcheckDead__ThrowE_NotFound()
     ExceptionComparator<CLBOSException::EErrCode::e_LBOSBadRequest, 400> 
                                                 comparator("400 Bad Request\n");
     BOOST_CHECK_EXCEPTION(
-        s_AnnounceCPP(node_name, "1.0.0", "", port, "http://badhealth.gov"), CLBOSException, comparator);
-    int count_after = s_CountServersWithExpectation(node_name, port, 0, 
+        s_AnnounceCPP(node_name, "1.0.0", "", port, "http://badhealth.gov"), 
+                      CLBOSException, comparator);
+    int count_after = s_CountServersWithExpectation(node_name, port, 0,
+                                                    __LINE__,
                                                     kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
-    count_after = s_CountServersWithExpectation(node_name, port, 0, 
+    count_after = s_CountServersWithExpectation(node_name, port, 0, __LINE__,
                                                 kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
 
@@ -6305,14 +6438,16 @@ void HealthcheckDead__ThrowE_NotFound()
     SELECT_PORT(count_before, node_name, port);
     BOOST_CHECK_NO_THROW(                    //  missing 'h'
         s_AnnounceCPPSafe(node_name, "1.0.0", "", port,// v
-                          "http://0.0.0.0:" + s_PortStr(PORT_N) + 
-                          "/healt"));
-    count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec);
+                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                          s_PortStr(PORT_N) + "/healt"));
+    count_after = s_CountServersWithExpectation(node_name, port, 0, __LINE__,
+                                                kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
     lbos_answer = NULL;
-    s_DeannounceC(node_name.c_str(), "1.0.0", "cnn.com", port, &lbos_answer.Get(),
-                  NULL);
-    count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec);
+    s_DeannounceC(node_name.c_str(), "1.0.0", "cnn.com", port, 
+                  &lbos_answer.Get(), NULL);
+    count_after = s_CountServersWithExpectation(node_name, port, 0, __LINE__,
+                                                kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
 }
 
@@ -6358,10 +6493,12 @@ void SeparateHost__AnnouncementOK()
     SELECT_PORT(count_before, node_name, port);
 
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "cnn.com", port,
-                                           "http://0.0.0.0:" + s_PortStr(PORT_N) + 
+                                           "http://" ANNOUNCEMENT_HOST_0000 ":" 
+                                           + s_PortStr(PORT_N) + 
                                            "/health"));
     int count_after = s_CountServersWithExpectation(node_name, port, 1,
-        kDiscoveryDelaySec);
+                                                    __LINE__,
+                                                    kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
 
     stringstream healthcheck;
@@ -6580,10 +6717,13 @@ void HealthcheckDead__ThrowE_NotFound()
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPPFromRegistry("SECTION_WITH_HEALTHCHECK_DNS_ERROR"),
                                    CLBOSException, comparator);
-    int count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec);
+    int count_after = s_CountServersWithExpectation(node_name, port, 0, 
+                                                    __LINE__,
+                                                    kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
     BOOST_CHECK_NO_THROW(LBOS::DeannounceAll());
-    count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec);
+    count_after = s_CountServersWithExpectation(node_name, port, 0, __LINE__,
+                                                kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
 
 
@@ -6592,10 +6732,12 @@ void HealthcheckDead__ThrowE_NotFound()
               "return  kLBOSSuccess");
     BOOST_CHECK_NO_THROW(
                    s_AnnounceCPPFromRegistry("SECTION_WITH_DEAD_HEALTHCHECK"));
-    count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec);
+    count_after = s_CountServersWithExpectation(node_name, port, 0, __LINE__,
+                                                kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
     BOOST_CHECK_NO_THROW(LBOS::DeannounceAll());
-    count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec);
+    count_after = s_CountServersWithExpectation(node_name, port, 0, __LINE__,
+                                                kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
 
     /* Cleanup */
@@ -6626,9 +6768,10 @@ void Deannounced__Return1(unsigned short port)
     WRITE_LOG("Part I. 0.0.0.0");
     BOOST_CHECK_NO_THROW(
         s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
-                          "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"));
+                          "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health"));
     /* Count how many servers there are */
-    int count_after = s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec);
+    int count_after = s_CountServersWithExpectation(node_name, port, 1, __LINE__,
+                                                    kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
     /* Cleanup */
     BOOST_CHECK_NO_THROW(s_DeannounceCPP(node_name, "1.0.0", "", port));
@@ -6638,12 +6781,13 @@ void Deannounced__Return1(unsigned short port)
     WRITE_LOG("Part II. IP");
     node_name = s_GenerateNodeName();
     SELECT_PORT(count_before, node_name, port);
-    string health =
-            string("http://") + s_GetMyIP() + ":" + s_PortStr(PORT_N) +  "/health";
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":" + 
+                    s_PortStr(PORT_N) +  "/health";
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
                                            health));
     /* Count how many servers there are */
-    count_after = s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec);
+    count_after = s_CountServersWithExpectation(node_name, port, 1, __LINE__,
+                                                kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
 
     BOOST_CHECK_NO_THROW(
@@ -6695,7 +6839,8 @@ void Deannounced__AnnouncedServerRemoved()
      */
     WRITE_LOG("Part II. Check with IP");
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
-                                           string("http://") + s_GetMyIP() +
+                                           string("http://") + 
+                                           ANNOUNCEMENT_HOST +
                                            ":8080/health"));
     /* Check that server is in storage */
     find_result = s_FindAnnouncedServer(node_name.c_str(), "1.0.0", port,
@@ -6792,7 +6937,9 @@ void RealLife__InvisibleAfterDeannounce()
     //SleepMilliSec(1500); //ZK is not that fast
     Deannounced__Return1(port);
     //SleepMilliSec(1500); //ZK is not that fast
-    int count_after = s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec);
+    int count_after = s_CountServersWithExpectation(node_name, port, 0,
+                                                    __LINE__,
+                                                    kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after - count_before, 0);
 }
 
@@ -6814,7 +6961,7 @@ void NoHostProvided__LocalAddress()
         // We get random answers of LBOS in this test, so try-catch
         // Service always get announced, though
         s_AnnounceCPP(node_name, "1.0.0", "",
-                      port, "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health");
+                      port, "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health");
     } 
     catch (...) {
     }
@@ -6894,7 +7041,7 @@ void AllDeannounced__NoSavedLeft()
         counts_before.push_back(count_before);
         BOOST_CHECK_NO_THROW(
             s_AnnounceCPPSafe(node_name, "1.0.0", "", ports[i],
-                              "http://0.0.0.0:" + s_PortStr(PORT_N) +  "/health"));
+                              "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health"));
     }
     WRITE_LOG("Part II. DeannounceAll");
     BOOST_CHECK_NO_THROW(LBOS::DeannounceAll());
@@ -7149,8 +7296,8 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
     unsigned short port1, port2;
-    string health = 
-        string("http://") + s_GetMyIP() + ":" + s_PortStr(PORT_N) +  "/health";
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":" + 
+                    s_PortStr(PORT_N) + "/health";
     int count_before;
     SELECT_PORT(count_before, node_name, port1);
     s_AnnounceCPPSafe(node_name, "v1", "", port1, health.c_str());
@@ -7161,23 +7308,23 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
     /* Set first version */
     LBOS::ServiceVersionSet(node_name, "v1");
     unsigned int servers_found =
-        s_CountServersWithExpectation(node_name, port1, 1, kDiscoveryDelaySec, 
-                                       "");
+        s_CountServersWithExpectation(node_name, port1, 1, __LINE__,
+                                      kDiscoveryDelaySec, "");
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 1U);
     servers_found =
-        s_CountServersWithExpectation(node_name, port2, 0, kDiscoveryDelaySec, 
-                                       "");
+        s_CountServersWithExpectation(node_name, port2, 0, __LINE__, 
+                                      kDiscoveryDelaySec, "");
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 0U);
 
     /* Set second version and discover  */
     LBOS::ServiceVersionSet(node_name, "v2");
     servers_found =
-        s_CountServersWithExpectation(node_name, port1, 0, kDiscoveryDelaySec, 
-                                       "");
+        s_CountServersWithExpectation(node_name, port1, 0, __LINE__,
+                                      kDiscoveryDelaySec, "");
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 0U);
     servers_found =
-        s_CountServersWithExpectation(node_name, port2, 1, kDiscoveryDelaySec, 
-                                       "");
+        s_CountServersWithExpectation(node_name, port2, 1, __LINE__,
+                                      kDiscoveryDelaySec, "");
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 1U);
 
     /* Cleanup */
@@ -7200,21 +7347,21 @@ void AnnounceThenDeleteVersion__DiscoverFindsNothing()
     LBOS::ServiceVersionSet(node_name, "1.0.0");
     
     /* Announce and discover */
-    string health = 
-                 string("http://") + s_GetMyIP() + ":" + s_PortStr(PORT_N) +  "/health";
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":" + 
+                    s_PortStr(PORT_N) + "/health";
     int count_before;
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCPPSafe(node_name, "1.0.0", "", port, health.c_str());
     unsigned int servers_found =
-        s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec, 
-                                       "");
+        s_CountServersWithExpectation(node_name, port, 1, __LINE__,
+                                      kDiscoveryDelaySec, "");
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 1U);
 
     /* Delete version and not discover */
     LBOS::ServiceVersionDelete(node_name);
     servers_found =
-        s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec, 
-                                       "");
+        s_CountServersWithExpectation(node_name, port, 0, __LINE__,
+                                      kDiscoveryDelaySec, "");
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 0U);
 
     /* Cleanup */

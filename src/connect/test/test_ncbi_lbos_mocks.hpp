@@ -835,7 +835,7 @@ void s_LBOS_CPP_Announce(const string&   service,
             success = true;
 #endif
             LBOS::Announce(service, version, host, port,
-                healthcheck_url);
+                           healthcheck_url);
 #ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
                 success (remove this hack when LBOS is fixed) */
         }
