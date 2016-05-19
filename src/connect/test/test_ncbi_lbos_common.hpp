@@ -327,6 +327,7 @@ static bool            s_CheckTestVersion       (vector<SLBOSVersion>
 static 
 vector<SLBOSVersion>   s_ParseVersionsString    (string versions);
 static void            s_PrintPortsLines        (void);
+static void            s_PrintResolutionErrors  (void);
 static void            s_Print500sCount         (void);
 
 const int              kThreadsNum                  = 34;
