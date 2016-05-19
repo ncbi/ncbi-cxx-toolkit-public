@@ -35,10 +35,15 @@
 #include <objects/biblio/Cit_gen.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Cit_let.hpp>
+#include <objects/biblio/Cit_book.hpp>
 #include <objects/biblio/Cit_pat.hpp>
+#include <objects/biblio/Cit_proc.hpp>
 #include <objects/biblio/Title.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Author.hpp>
+#include <objects/biblio/Imprint.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objmgr/seqdesc_ci.hpp>
@@ -240,6 +245,147 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// UNPUB_PUB_WITHOUT_TITLE
+
+bool IsPubUnpublished(const CImprint& imp)
+{
+    bool is_unpublished = false;
+    if (!imp.IsSetPrepub() || imp.GetPrepub() == CImprint::ePrepub_other) {
+        is_unpublished = true;
+    }
+    return is_unpublished;
+}
+
+
+bool IsPubUnpublished(const CCit_jour& journal)
+{
+    bool is_unpublished = false;
+    if (journal.IsSetImp()) {
+        is_unpublished = IsPubUnpublished(journal.GetImp());
+    }
+    return is_unpublished;
+}
+
+
+bool IsPubUnpublished(const CCit_book& book)
+{
+    bool is_unpublished = false;
+    if (book.IsSetImp()) {
+        is_unpublished = IsPubUnpublished(book.GetImp());
+    }
+    return is_unpublished;
+}
+
+
+bool IsPubUnpublished(const CCit_proc& proc)
+{
+    bool is_unpublished = false;
+    if (proc.IsSetBook()) {
+        is_unpublished = IsPubUnpublished(proc.GetBook());
+    }
+    return is_unpublished;
+}
+
+
+bool IsPubUnpublished(const CCit_let& let)
+{
+    bool is_unpublished = false;
+    if (let.IsSetCit() && let.GetCit().IsSetImp()) {
+        is_unpublished = IsPubUnpublished(let.GetCit().GetImp());
+    }
+    return is_unpublished;
+}
+
+
+bool IsPubUnpublished(const CPub& pub)
+{
+    bool is_unpublished = false;
+
+    switch (pub.Which()) {
+        case CPub::e_Gen:
+            if (pub.GetGen().IsSetCit() && NStr::FindNoCase(pub.GetGen().GetCit(), "unpublished") != string::npos) {
+                is_unpublished = true;
+            }
+            break;
+        case CPub::e_Article:
+            if (pub.GetArticle().IsSetFrom()) {
+                if (pub.GetArticle().GetFrom().IsJournal()) {
+                    is_unpublished = IsPubUnpublished(pub.GetArticle().GetFrom().GetJournal());
+                } else if (pub.GetArticle().GetFrom().IsBook()) {
+                    is_unpublished = IsPubUnpublished(pub.GetArticle().GetFrom().GetBook());
+                } else if (pub.GetArticle().GetFrom().IsProc()) {
+                    is_unpublished = IsPubUnpublished(pub.GetArticle().GetFrom().GetProc());
+                }
+            }
+            break;
+        case CPub::e_Book:
+            is_unpublished = IsPubUnpublished(pub.GetBook());
+            break;
+        case CPub::e_Journal:
+            is_unpublished = IsPubUnpublished(pub.GetJournal());
+            break;
+        case CPub::e_Proc:
+            is_unpublished = IsPubUnpublished(pub.GetProc());
+            break;
+        case CPub::e_Patent:
+            is_unpublished = true;
+            break;
+        case CPub::e_Man:
+            is_unpublished = IsPubUnpublished(pub.GetMan());
+            break;
+        default:
+            break;
+    }
+
+    return is_unpublished;
+}
+
+
+bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
+{
+    if (!pubdesc.IsSetPub()) {
+        return false;
+    }
+    bool rval = false;
+    ITERATE(CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
+        if (IsPubUnpublished(**it)) {
+            string title = kEmptyStr;
+            string authors = kEmptyStr;
+            GetPubTitleAndAuthors(**it, title, authors);
+            if (NStr::IsBlank(title) || NStr::EqualNocase(title, "Direct Submission")) {
+                rval = true;
+                break;
+            }
+        }
+    }
+}
+
+
+const string kUnpubPubWithoutTitle = "[n] unpublished pub[s] [has] no title";
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller, "Unpublished pubs should have titles")
+//  ----------------------------------------------------------------------------
+{
+    if (HasUnpubWithoutTitle(obj)) {
+        if (context.GetCurrentSeqdesc() != NULL) {
+            m_Objs[kUnpubPubWithoutTitle].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false).Fatal();
+        } else if (context.GetCurrentSeq_feat() != NULL) {
+            m_Objs[kUnpubPubWithoutTitle].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false).Fatal();
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(UNPUB_PUB_WITHOUT_TITLE)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 
 END_SCOPE(NDiscrepancy)
