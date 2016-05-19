@@ -1,0 +1,96 @@
+Discrepancy Report Results
+
+Summary
+SOURCE_QUALS: location (all present, all same)
+SOURCE_QUALS: specimen-voucher (all present, all unique)
+SOURCE_QUALS: taxid (some missing, all unique)
+SOURCE_QUALS: taxname (all present, all unique)
+
+Detailed Report
+
+SOURCE_QUALS: location (all present, all same)
+SOURCE_QUALS: 8 biosources have qualifier location = plastid
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168383| (86 components):Centripodia glauca
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168384| (86 components):Eragrostis minor
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168385| (86 components):Eragrostis tef
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168386| (86 components):Bouteloua curtipendula
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168387| (86 components):Hilaria cenchroides
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168388| (86 components):Sporobolus michauxianus
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168389| (86 components):Sporobolus heterolepis
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168390| (86 components):Zoysia macrantha
+
+SOURCE_QUALS: specimen-voucher (all present, all unique)
+SOURCE_QUALS: 1 biosource has qualifier specimen-voucher = CAN:P.M.Peterson:20865
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168388| (86 components):Sporobolus michauxianus
+
+SOURCE_QUALS: 1 biosource has qualifier specimen-voucher = DEK:M.R. Duvall:s.n.
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168389| (86 components):Sporobolus heterolepis
+
+SOURCE_QUALS: 1 biosource has qualifier specimen-voucher = DEK:S. Burke:27
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168386| (86 components):Bouteloua curtipendula
+
+SOURCE_QUALS: 1 biosource has qualifier specimen-voucher = ISC:L.G. Clark:1333
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168384| (86 components):Eragrostis minor
+
+SOURCE_QUALS: 1 biosource has qualifier specimen-voucher = ISC:P. Linder:5410
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168383| (86 components):Centripodia glauca
+
+SOURCE_QUALS: 1 biosource has qualifier specimen-voucher = RSA:A.L. Ingram:544
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168385| (86 components):Eragrostis tef
+
+SOURCE_QUALS: 1 biosource has qualifier specimen-voucher = RSA:J.T. Columbus:5049
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168387| (86 components):Hilaria cenchroides
+
+SOURCE_QUALS: 1 biosource has qualifier specimen-voucher = RSA:J.T. Columbus:5085
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168390| (86 components):Zoysia macrantha
+
+SOURCE_QUALS: taxid (some missing, all unique)
+SOURCE_QUALS: 1 biosource has missing qualifier: taxid
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168383| (86 components):Centripodia glauca
+
+SOURCE_QUALS: 1 biosource has qualifier taxid = 110835
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168385| (86 components):Eragrostis tef
+
+SOURCE_QUALS: 1 biosource has qualifier taxid = 110875
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168386| (86 components):Bouteloua curtipendula
+
+SOURCE_QUALS: 1 biosource has qualifier taxid = 110886
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168384| (86 components):Eragrostis minor
+
+SOURCE_QUALS: 1 biosource has qualifier taxid = 121785
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168389| (86 components):Sporobolus heterolepis
+
+SOURCE_QUALS: 1 biosource has qualifier taxid = 257006
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168390| (86 components):Zoysia macrantha
+
+SOURCE_QUALS: 1 biosource has qualifier taxid = 433880
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168387| (86 components):Hilaria cenchroides
+
+SOURCE_QUALS: 1 biosource has qualifier taxid = 65991
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168388| (86 components):Sporobolus michauxianus
+
+SOURCE_QUALS: taxname (all present, all unique)
+SOURCE_QUALS: 1 biosource has qualifier taxname = Bouteloua curtipendula
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168386| (86 components):Bouteloua curtipendula
+
+SOURCE_QUALS: 1 biosource has qualifier taxname = Centripodia glauca
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168383| (86 components):Centripodia glauca
+
+SOURCE_QUALS: 1 biosource has qualifier taxname = Eragrostis minor
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168384| (86 components):Eragrostis minor
+
+SOURCE_QUALS: 1 biosource has qualifier taxname = Eragrostis tef
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168385| (86 components):Eragrostis tef
+
+SOURCE_QUALS: 1 biosource has qualifier taxname = Hilaria cenchroides
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168387| (86 components):Hilaria cenchroides
+
+SOURCE_QUALS: 1 biosource has qualifier taxname = Sporobolus heterolepis
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168389| (86 components):Sporobolus heterolepis
+
+SOURCE_QUALS: 1 biosource has qualifier taxname = Sporobolus michauxianus
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168388| (86 components):Sporobolus michauxianus
+
+SOURCE_QUALS: 1 biosource has qualifier taxname = Zoysia macrantha
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168390| (86 components):Zoysia macrantha
+

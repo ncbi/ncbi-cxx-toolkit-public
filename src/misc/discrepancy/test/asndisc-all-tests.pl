@@ -10,10 +10,11 @@ my $exe_cpp;
 my %tests;
 my $keep_output;
 my $quiet;
+my $dev_tests;
 
 my $usage = <<"<<END>>";
 USAGE:
-      $exe [-c <c-version-exe>] [-cpp <cpp-version-exe>] [-keep] [-quiet]
+      $exe [-c <c-version-exe>] [-cpp <cpp-version-exe>] [-keep] [-quiet] [-dev]
 <<END>>
 
 for (my $n = 0; $n < scalar @ARGV; $n++)
@@ -33,6 +34,10 @@ for (my $n = 0; $n < scalar @ARGV; $n++)
   }
   if ($ARGV[$n] eq '-keep')
   { $keep_output = 1;
+    next;
+  }
+  if ($ARGV[$n] eq '-dev')
+  { $dev_tests = 1;
     next;
   }
 }
@@ -82,7 +87,8 @@ my $pass = 0;
 my $fail = 0;
 
 foreach my $test (sort keys %tests)
-{ $all_cases{$tests{$test}{arg}}++;
+{ next if $test=~/^_/ && !$dev_tests;
+  $all_cases{$tests{$test}{arg}}++;
   my $cmd = "perl $script $test -c $exe_c -cpp $exe_cpp";
   $cmd = "$cmd -keep" if $keep_output;
   $cmd = "$cmd -quiet" if $quiet;
