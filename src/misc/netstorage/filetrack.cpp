@@ -648,7 +648,7 @@ string SFileTrackAPI::LoginAndGetSessionKey(const CNetStorageObjectLoc& object_l
         NCBI_THROW_FMT(CNetStorageException, eAuthError,
                 "Error while uploading data to FileTrack: "
                 "authentication error (API key = " << api_key <<
-                ", URL = " << url << ").");
+                ", " << s_GetURL(object_loc, "") << ").");
     }
 
     return FILETRACK_SIDCOOKIE "=" + session_key;
