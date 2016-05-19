@@ -28,6 +28,7 @@ GLEW needs3party $(ORIG_LIBS)
 GLU needs3party $(ORIG_LIBS)
 GLU needs3party X11
 GLU needs3party Xext
+GMC needs $(CONNEXT)
 GMC needs softparse
 GMC needs xgridcgi
 OSMesa needs3party $(OPENGL_LIBS)
@@ -96,7 +97,6 @@ an_prok_pipeline needs tax_xml
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
 asn_cache includes id_dump
-asn_cache includes cache_blob
 asn_config needs build_config_base
 asn_config needs config_access
 asn_config needs gpipe_objutil
@@ -176,8 +176,6 @@ build_config_base needs gencoll_client
 build_config_base needs gpinit_bag_util
 build_config_base needs gpinit_register
 bz2 needs3party $(ORIG_LIBS)
-cache_blob needs $(COMPRESS_LIBS)
-cache_blob needs xser
 cache_g needs generic_db_utils
 cdd needs cn3d
 cdd needs scoremat
@@ -587,7 +585,6 @@ id2_split needs $(SOBJMGR_LIBS)
 id2cli needs id2
 id2cli needs xconnect
 id_dump needs bdb
-id_dump needs cache_blob
 id_dump needs seqset
 ideo needs xmvdatacache
 ideochr needs3party vibrant
@@ -976,10 +973,10 @@ snputil needs $(SOBJMGR_LIBS)
 snputil needs variation
 soap_dataobj needs xser
 softparse needs $(COMPRESS_LIBS)
-softparse needs $(SDBAPI_LIB)
 softparse needs affy
 softparse needs taxon1
 softparse needs xmlwrapp
+spcgi needs $(CONNEXT)
 spcgi needs softparse
 spcgi needs xgridcgi
 spellsrvbase needs txserv
