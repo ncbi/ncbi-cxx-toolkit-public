@@ -1,0 +1,1670 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "Moloha majora" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 405146 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Moloha" ,
+                  species "majora" } ,
+              lineage "Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Crustacea;
+ Malacostraca; Eumalacostraca; Eucarida; Decapoda; Pleocyemata; Brachyura;
+ Dromiacea; Homoloidea; Homolidae; Moloha" ,
+              gcode 1 ,
+              mgcode 5 ,
+              div "INV" } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Shi" ,
+                          first "Guohui" ,
+                          initials "G." } } ,
+                    {
+                      name
+                        name {
+                          last "Cui" ,
+                          first "Zhaoxia" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Hui" ,
+                          first "Min" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Liu" ,
+                          first "Yuan" ,
+                          initials "Y." } } ,
+                    {
+                      name
+                        name {
+                          last "Song" ,
+                          first "Chenwen" ,
+                          initials "C." } } } ,
+                affil
+                  std {
+                    affil "Institute of Oceanology, Chinese Academy of
+ Sciences" ,
+                    div "Experimental Marine Biology Laboratory" ,
+                    city "Qingdao" ,
+                    sub "Shandong" ,
+                    country "Chain" ,
+                    street "7 Nanhai Road" ,
+                    postal-code "266071" } } ,
+              title "The complete mitochondrial genomes of the Homoloidea
+ crabs, Homola orientalis and Moloha majora: novel non-coding region features
+ and the phylogenetic implications of the Brachyura" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Shi" ,
+                          first "Guohui" ,
+                          initials "G." } } ,
+                    {
+                      name
+                        name {
+                          last "Cui" ,
+                          first "Zhaoxia" ,
+                          initials "Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Hui" ,
+                          first "Min" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Liu" ,
+                          first "Yuan" ,
+                          initials "Y." } } ,
+                    {
+                      name
+                        name {
+                          last "Song" ,
+                          first "Chenwen" ,
+                          initials "C." } } } ,
+                affil
+                  std {
+                    affil "Institute of Oceanology, Chinese Academy of
+ Sciences" ,
+                    div "Experimental Marine Biology Laboratory" ,
+                    city "Qingdao" ,
+                    sub "Shandong" ,
+                    country "Chain" ,
+                    street "7 Nanhai Road" ,
+                    postal-code "266071" } } ,
+              date
+                std {
+                  year 2015 ,
+                  month 6 ,
+                  day 18 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 9650282 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 12 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 4 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2015 } } } ,
+        user {
+          type
+            str "NcbiAutofix" ,
+          data {
+             } } ,
+        create-date
+          std {
+            year 2014 ,
+            month 12 ,
+            day 13 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "mo" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551663 } ,
+            genbank {
+              accession "KT182069" } } ,
+          descr {
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 15903 ,
+            topology circular ,
+            seq-data
+              ncbi2na '190638FFFD0405302136B17CCFF37FA27E24A0CB281F770B70F3D89
+20F28417ACBF0FA038503710EF3EC1E74E4F6C30FFFF32F3143CC3E8A3DA03E3CB177CCF289D78
+CC9FF51B30104C23FE1F7D75377447FCF04229F2C808A2CA07AF81EFCD75FC9759CF9539289F7B
+E332A3FFD7C4FC92ABF7D0FF289EC0FF30412C3C331BD7D1CC1CC850317F3FBF8D2CFCF1E537CF
+1C734F14BFC9289CF10C75F1216C3703137FFD854928A288D7BDFC5047CFF8FFFA51520B333FC3
+DC5E7F6B30FD133EC210834A00020DFFAC7F2830FCE433C90FACFF2BF6FBF895144CFC73E8321B
+231189F3FC7D671CC3CF92E504A0F00FFC8E1CA057D1A0540FD31117DFCD789CFA3F3FFF3F16CA
+29F04A2CBDF9C1DF73E33C7F138C7CF3B2F913F53CEFF353289ECF6B3FF928F2747ACF7F3F1283
+07303500E3C00F43D70733FB28B03305FFD5504FD728703ACC5D86F1DE1C548E4C441380CFBF5D
+0CAF530FD0C334B3CA3F33F3ECE20D3C3F70DB5EFF3F9F7F5F577DCF8388130C75D79E34CBCCC8
+0F50D3C707DC0384800ECC23D09DF3CE08FC5F7FC80F0E544E3747CADD423224D57F8C810F05FF
+D4E14EC33C3DF3FC3CFD3FB2BCCC30DDFCF3F0F730F0D8FCCF200D01CF82C3F810F3D490F37C3F
+F3E7755D7C61F7F37FC8E0BC105420C13F0873EB4D0E33E34CE0CF48FD301720FE1DF330F5C7D2
+37E033423D6FCF23BE30D810F7D73031D03DB3FC3C89E78EC3D3D3812C5F5F283C09239CF5EA63
+C050208FCC3C3614AFEFF1A10EF480FEEB9434CBFCC5CFB0F80BB34103DFFF03E0DDF79CF821D3
+58E1E02C2CCADFF01700CB2FF1771F7AE0203CBC0F305F27ED09C03CDCC48CFDF0E5D23275DC33
+8733F0C3FFFCF308F1EF3F30C303CFF3C05F34000E003F3CC0F30E3D20005E00E30707CFF73FF8
+17D3423F07F53C0F81F71FC728F0FF5F5FFF33E27DD7D18E37F3CE0B03C3CC3DF4C483F0277DFF
+17DD30281C7BCFFCF2DFFF4F0FB3D0C3FDCA3C717CEFF472342D376C304F34F34F17F38FC430C3
+F3AB8F014CB01133F9D3F2F510AC75D69FC317FCCBFC3E010F2033CD614AC7F27B18F249C330F9
+E84FC7FC13C7C82049D7DFCA0CDFC7F33FC3FCD043FC7DF31C83796F90F3D0DF3BFF9ECF0877FC
+C4200341C384D374E8F515F347CB233085F85FC12BDCF22730CF0712BF2C038FD133F0570FC73C
+F08FFC9473FC14C3D0E38623B076E0A85CD0A1F447D2CBF4168F18E2B30F77F3EFD20BFCFFFF77
+FFFE25FFF4C821FDD710F80FACCCF85D7F28B0F5FF057F503D7F3C0C710FF1EDF4A2412C1389D3
+4E43CC8270D31D0D7F408F283C53CD728333FC49DD424CE0CEC827D7F10F221DEFFEBD05FFFB27
+128FD3A3C4EC3CFA8417DF24B3BFF36FCFC1ED3FF4DC04D3F2AFE09249F8CF84FDB21B2FE3CF5F
+CECF4FC78E28A73FFF0CCC2CCFE1F50D0021C832F72000C38FDFCDCF37B3CF13C30FDC73CF30D3
+77DCFF3700030DF2162000CD55CE0EE8FE35C0A37D1BF17FF5718FFFF0F92C3FFF0FFE3B203467
+FC7D73E5DCF3C33C40ECFF4E0C3C4108A3F7FF35DF3CA3CC71838010A27722E34C01CCB40CCE13
+38BE4F4C2BBFC072FF03C809803F93F2FDA5C0FFAC33C5DC3FF048250048A50D3EF0E3F4F80CFD
+7BC250A0CF2C08C09F707D0DF09AF03D6FCCF5EFFCCBB00045F13FD3EC01E03FC3F7001EFC03BB
+FB11303CAE5131733FF3C0F3F013710B7C07DFF927D0E433DCCC0F3303033038000010F3C004C0
+CFFCC0C7F0F7DF9FB30CFC0080003F00004B33015AAB5CC0F48D35FED0CCFCC3073152FFC0F0FF
+2C0FC0B23030ACC0D13085CC0203300330FF020FC0030FC4FCC33F00CC14033275E75DF1070070
+1DF4F30C74040F3E0AF4A003434E02008D730C3275E75C374D320FC33C0F20F34D0C43F3056C0F
+0C1D77C073000F01A02CC131EF017B24004CC310080733F02374C025BF500F035F20C00527000A
+0351022703C9047CCCCF11D029001FC70175CCC18337E13D3813CE0C3E05244CC041027F03024E
+EF040E020133344015C38083DD0CC1D72F87C0B2022430FFFD034CF403C9D42179CC0CFBC04203
+0F04005FEE3F20FF7024ADC0183CF03011496C108BE08391C0960128B289E73249EB0509E00283
+F891FF2F3E490F1C7003FC300CFCDD34F40C30B300C003F4D75C0C0330858F7C020C904DD4358F
+E33C4BC331593D823FF4FF8C303050A4C201C15C15B74142C031C3C0F287C034F35F3200040270
+0423330063C03C03453B3305D7730C401CC8203C30C40A30033C087F43400F32C004320B20FC07
+003774743C3B0F03F0112FFE0F7043C10170E07000C000F3107C0ECF80FFD014C1F2EF0C5D01C0
+39FF1C2C3C34F00C0F10C0528BDF3C37FD00430CF08A0343B003021033D3F1FF5E0404833020FC
+00FF53BE1C2DCCC0CC0B309A770002230330F0C732F0FF7D370C3DF10D25C3F45C023F020A2B9E
+733F7057C30014D301731CA4C03D0095FC7070C071B7D71DBD331CCF270100C0520813014E171C
+F1C31275DF0174D0F3014F0544C01405CCE2012083090F021F4CD07E1B01334040C30F3140C37C
+370F4C342CC3301C33860100F0C760D054C177C3F4300552700F3205E73209F71389FCAC14C0E8
+303312907F1CC02500CFDC03340C73C000C20D000C0F2C3D702F01C53E03CC037C302014302B02
+020022CC014CCC0C527EC1674A78C174D700F00D02CA0F0233F40DF1300C1030D4C81C02C30F02
+30C300030710F000FC0F00FFE73FF0FFF87230C03C080C3D33FF0003C0333FC00353570233D701
+0030F30D30010FC0503003F043030143F83037D0D5C103FCF0CC00CA0C301FC13D4313C01F8004
+34FD4CE06043303C30230D70C55F54243C0BC0000284030374F571DC80CC00FCC0D000C5433CC0
+F50DF0C083F0C0E7CE3080C05C0C059010F30312800C320034B0034D3CBFC32FC0D005FADFB034
+00E030CFDF007D2003CC1C337D075409C33FF5F01CFF78CDD3CF0C3173CC305F373CCFC46CC0D3
+5FCD0CA3C13C7FC4043FD3FB3C4D28F34234DFFE3FD333DEFFC3FFF28A0C32FF3D3F3B65DDF937
+0C403F03F53FF3733F3CFFF7F3C10FD0CB0F7FFFCC8FC323FD71F40C33E7B97DC773C30BCD00C0
+14CF0F0FA3F3D5703C3CCF45F3F3EF7F3F3CF07F1CB6FB00377C754CCA1731BF34DF3841173DB0
+044D7F3F00F301A2F3EC8CC5DD5080CFD0FF780FFA357FCAFCE5CBCC41F304ACFF5CDCC4F31250
+EC83C97DFCBB214CDE588EC0F3AF8F1F6C4F119C3AA7DFFFFF3793F395336866B33FCEADF3F1F3
+111F832CA2C70F73F32F3241E5F5CA33B3C538A10334F78A2512C3C405DF7490F57FF68123F2D4
+383F8A2BFF4B230E51DC118FFF13F4FF31C5FF3CFDE732C32C4CFF3FF11434A250C357CA0DDC80
+CF8C0357FD3531FC4FC08CFB28FFC3CC375F1FF0DF07F3C057CFCF288578C3FCF524057F2C1D79
+D13D0520E33FFCFE7CE53FC6373540C0F28A2F3E5764334B643FC30DF17FC44C7D00FD823C13FC
+57F0340FF3FE37F0FD0DB3CF1F1383E89DB52C8235F33FC12B40D70533CCFF7BFCFC30350C33C3
+0CE23033F00C3CFCBF030040EFF8013C0C200F0DF0C3E4331C3F2F003C0C0304304033FC3D7000
+003030F0C904AC01DFF509C0C4F0FCD336C16EB02C5D81D030080090C0C50FF0B00C1134428EDF
+5C00003440C05DF300A3D7E4CF494C00F02405751DF33D283005E01C3D20D57D200340A8B18F2F
+D250108290D43C1F40A808400800D333CD78C3CF030370DC1D75C300C30078300F0250DF074C20
+32FE2438FA0BFD5008831F103289405655CCB20C055057C04130000081DF33C0DC3C050FD30AC0
+1074040C080C00870012B800C30AC003C004820F2C8F7F2C043FC4934800AFB20C5CCC171FCF2B
+5FC60FE0CCD700DF5BDC302F1009457C424440C3403C0C3C30F30F1CD340CCCCCC33333FC71732
+330773F0F035C0DC3133F7940B2C030DCFCC0073F01CFC35FDB1C032BC103F4223201417A7665A
+DE0740D3B00CF02B60485F77CC1A711CC080FF0F41362B6407FFFD8C2077C0003C67BCD5C0B07C
+37C037C00A34F00301013CC2CFC00424BC473F31D734550C4333CF47F00CF0107CD04003013F13
+023F32ADF36D55E053F097DD1F00BC0F40FF00088434FCFEF414F4F425D43C021C3CF39C5FE46B
+C0F16695FC0FCFD2EA4AF214FCC1CD01213BFF8C04A43030B3B62F5FFD3140530300FC70F3FC3F
+00FC0140F31F330D3FD1F040CC3F03CF3F431C1700F03030C81C1013CBFC01FC004C9C73427CBF
+03030003C3F32FC000F030827715D71DF3C4CCC7F03333070F43D3F7C00148CC00565C1FF45FC3
+3CCF0431FF1C4B073FCC03C1CFFFFDA8FCC074F0C0FF0F3570C542B103FC3F71FC0F30C31C0F01
+FDDF10C70C073EF33C03F7F000C740D3FFFC0F3FF74F41F040CC3DF042C331D00C4363F918C8DC
+743B0B88EF31CF01CC7F8F10723B3FD431371CEF187CCD3FC0180B86A633B131DC894337FC27CF
+01FC1C43C0D45F4521C0F525E5F4FC0C03F3EC153D51FDF329E45F8DC331CB138773FC38F0FFF0
+0345C30E1ACC407030002C235C6EBF36F452012BD7705A1C0916503DFE0FC0833070C37D0B0DCC
+FD07CB30CAB370D73FC15C23FF49F43157F1CCEC2FC73F311C3F45FF301901DF1FB0BC037079C0
+70037F4749D70B3059AE9E9103FF348DF3320E70F70F70F0F3C33C4C799D01B3CC0FCF1511003C
+3303F00CCC044700FC4ECCFF0F300C005C2420D01FFC208ACA22FBF88FFB3ECAF2E200B2D28DEC
+3320E2224CCD1ED732EBBEEFB008CB024AC60F731A232266665B4038F733332091396C13353FD0
+330B044D5F134D5F44CCC2E11345F134D7DD333332D1357C4D357D13330BB44D5744D75FD13330
+B144D5744D35F44CCC2CD135744D35F44CCC2C51357C4D35744CCCECD1357C4D35F44CCC2E5135
+7C4D35F44CCC2C51357C4D35F44CCC2C51357C4D35F44CCC2E53222B3331CF03FCC38373C00032
+2033C0FCC440C00CDFF4303BCC800A3CF03FCC0CD2F3C700C0458AD1DCEBFF5FFCEA253062E14B
+BF3FCB30EAAC3CF303CE31CCCCF4FCFC33C802430CCFCFC0ECCCCCCCCCCCC0FF70F000470F33DD
+17003F00C0F10FC30CCB978F00A307F8C8BC34EE3F3D1733C46C3A3F1143F54023401FFCE5FC45
+062C008C270FC270EA74C55B438CBC05FDDFFC3BF7C45070CF73D737D3C3C4A77FCFD4FDF7134E
+3F127E2FA3C83C0DC337FCF5FC3F43405000043F582490F033FDC3D097CAF7D0F3CF3032FB7CCF
+88CD00CCD74F3C3FCF2770DF007E89275FD4D0EBF5D0B0C82B3CEE174273CFF0C10F400F2750CC
+DC737CFCF20403DCFF7F3CDF3CD083FFD273FFAF7F28ACF050BFCF1800F325CF7D4F0D3327E0C3
+349CC30F22002CE0F333FC4F73D4D3F7DF43CBF0CFD3F0B00C0D3F3540F3C3CCFDF35C0FCF33F1
+CD5DD23CF37F28A3C5D7FF7ABF3D70383DC3D03FD3373013333DDF3FFDFF0DD0570D11CCFFCC46
+0FFCF10C3CFF045C1300E3F340003D040D7F74337FCD333F4333F20E34F577F33F0C3F023FC2F3
+301C325F40BCC0002FD35FF037C27F2EC38C44DDC0FE4370CCFCF31CC0941FF0C3020BCC07EF2C
+0FC437165C074947F34'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "COI" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 1533 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "COII" } ,
+                    location
+                      int {
+                        from 1603 ,
+                        to 2290 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 75 } } ,
+                    location
+                      int {
+                        from 2291 ,
+                        to 2360 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 68 } } ,
+                    location
+                      int {
+                        from 2361 ,
+                        to 2424 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    location
+                      int {
+                        from 1534 ,
+                        to 1598 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "ATP8" } ,
+                    location
+                      int {
+                        from 2425 ,
+                        to 2583 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "ATP6" } ,
+                    location
+                      int {
+                        from 2577 ,
+                        to 3248 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "COIII" } ,
+                    location
+                      int {
+                        from 3248 ,
+                        to 4038 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 71 } } ,
+                    location
+                      int {
+                        from 4038 ,
+                        to 4103 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "NADH3" } ,
+                    location
+                      int {
+                        from 4104 ,
+                        to 4454 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "NADH5" } ,
+                    location
+                      int {
+                        from 4906 ,
+                        to 6634 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 65 } } ,
+                    location
+                      int {
+                        from 4453 ,
+                        to 4514 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 82 } } ,
+                    location
+                      int {
+                        from 4515 ,
+                        to 4577 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 78 } } ,
+                    location
+                      int {
+                        from 4578 ,
+                        to 4641 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 83 } } ,
+                    location
+                      int {
+                        from 4646 ,
+                        to 4710 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 69 } } ,
+                    location
+                      int {
+                        from 4711 ,
+                        to 4776 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 72 } } ,
+                    location
+                      int {
+                        from 4776 ,
+                        to 4843 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 70 } } ,
+                    location
+                      int {
+                        from 4843 ,
+                        to 4905 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "NADH4" } ,
+                    location
+                      int {
+                        from 6696 ,
+                        to 8039 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "NADH4L" } ,
+                    location
+                      int {
+                        from 8033 ,
+                        to 8335 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "NADH6" } ,
+                    location
+                      int {
+                        from 8471 ,
+                        to 8982 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 84 } } ,
+                    location
+                      int {
+                        from 8338 ,
+                        to 8403 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 80 } } ,
+                    location
+                      int {
+                        from 8404 ,
+                        to 8468 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "cytb" } ,
+                    location
+                      int {
+                        from 8982 ,
+                        to 10118 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "NADH1" } ,
+                    location
+                      int {
+                        from 10207 ,
+                        to 11145 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 83 } } ,
+                    location
+                      int {
+                        from 10117 ,
+                        to 10183 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    location
+                      int {
+                        from 11173 ,
+                        to 11240 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 86 } } ,
+                    location
+                      int {
+                        from 12558 ,
+                        to 12630 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "16S ribosomal RNA" } ,
+                    location
+                      int {
+                        from 11241 ,
+                        to 12557 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "12S ribosomal RNA" } ,
+                    location
+                      int {
+                        from 12631 ,
+                        to 13456 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      imp {
+                        key "D-loop" } ,
+                    location
+                      int {
+                        from 13457 ,
+                        to 14493 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 73 } } ,
+                    location
+                      int {
+                        from 14494 ,
+                        to 14559 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 81 } } ,
+                    location
+                      int {
+                        from 14556 ,
+                        to 14625 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 77 } } ,
+                    location
+                      int {
+                        from 14625 ,
+                        to 14693 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      gene {
+                        locus "NADH2" } ,
+                    location
+                      int {
+                        from 14694 ,
+                        to 15695 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 87 } } ,
+                    location
+                      int {
+                        from 15695 ,
+                        to 15763 ,
+                        strand plus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 67 } } ,
+                    location
+                      int {
+                        from 15763 ,
+                        to 15828 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 89 } } ,
+                    location
+                      int {
+                        from 15838 ,
+                        to 15902 ,
+                        strand minus ,
+                        id
+                          local
+                            str "mo" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551664 } } ,
+          descr {
+            title "cytochrome oxidase subunit I (mitochondrion) [Moloha
+ majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 511 ,
+            seq-data
+              ncbieaa "TQRWFFSTNHKDIGTLYFIFGAWAGMVGTSLSLIIRAELGQPGSLIGNDQIYNVI
+VTAHAFVMIFFMVMPIMIGGFGNWLVPLMLGAPDMAFPRMNNMSFWLLPPSLTLLLTSGLVESGVGTGWTVYPPLASA
+IAHAGASVDMGIFSLHLAGVSSILGAVNFMTTVINMRSFTMTMDQMPLFVWSVFITAILLLLSLPVLAGAITMLLTDR
+NLNTSFFDPAGGGDPVLYQHLFWFFGHPEVYILILPAFGMISHIVSQESGKKESFGTLGMIYAMLAIGILGFVVWAHH
+MFTIGMDVDTRAYFTSATMIIAVPTGIKIFSWLGTLHGTQISYTPSLSWAIGFIFLFTVGGLTGVVLANSSIDITLHD
+TYYVVAHFHYVLSMGAVFGIFAGLAHWYSLFTGMTMNPKWLKIQFLTMFVGVNMTFFPQHFLGLNGMPRRYSDYPDAY
+TTWNIVSSMGSMISMMSVLGFMFIVWESLISNRPVLFASFLPSSIEWEHNTPPADHSYMEIPIITN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome oxidase subunit I" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 510 ,
+                        id
+                          local
+                            str "mo_1" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_2" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_2" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551665 } } ,
+          descr {
+            title "cytochrome oxidase subunit II (mitochondrion) [Moloha
+ majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 229 ,
+            seq-data
+              ncbieaa "MPTWSHLGLQDSASPLMEQLTFFHDHVMLILILIISFVGYMMISLLFNSMINRFM
+LENQTIEVIWTIIPAIILIFIALPSLRLLYLLDEVNNPSMTFKTIGHQWYWSYEYSDFMNLEFDSYMIPTSDLEMSSF
+RLLDVDNRTILPMNTQIRILISAADVIHSWTVPSLGIKADAIPGRLNQSSFMINRPGLFYGQCSEICGANHSFMPIVI
+ESVSTNSFLNWISSAIED" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome oxidase subunit II" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 228 ,
+                        id
+                          local
+                            str "mo_2" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_3" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_3" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551666 } } ,
+          descr {
+            title "ATPase 8 (mitochondrion) [Moloha majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 52 ,
+            seq-data
+              ncbieaa "MPQMAPLMWLYLMIFFIMSLLLFMMMNYFIKPYQKNEKFIMNYNDSEKTWKW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "ATPase 8" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 51 ,
+                        id
+                          local
+                            str "mo_3" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_4" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_4" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551667 } } ,
+          descr {
+            title "ATPase 6 (mitochondrion) [Moloha majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 223 ,
+            seq-data
+              ncbieaa "MMTNLFSIFEPSSSFNFPLNWTSTLLGLIFLPFLYWASPSRWSLLWSKLIMILHT
+EFKALLLPSHKGTTVIFISLFSLIVFNNFLGLLPYVFTSSSHLVMTLSLSLPLWFTMMIYGWLNHSKHMFAHLVPQGT
+PPALMPFMVLIETISNIIRPGTLAVRLAANMIAGHLLLTLLSSTAPSLGMSLLYILILSTILLLMLESAVAIIQSYVF
+AVLSLFYTSKIN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "ATPase 6" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 222 ,
+                        id
+                          local
+                            str "mo_4" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_5" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_5" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551668 } } ,
+          descr {
+            title "cytochrome oxidase subunit III (mitochondrion) [Moloha
+ majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 264 ,
+            seq-data
+              ncbieaa "MTSSHGFHPYHLVDMSPWPLTGSISAMMLTTGLVKWFHMFNPNLLLLSFLATILT
+MIQWWRDVTREGTYQGLHTSVVSTGLRWGMILFIVSEVLFFFSFFWAFFHSSLSPTIEIGMYWPPLGVIPFNPFQIPL
+LNTTILLSSGATVTWAHHAIMEANHTQSFQSLGITIILGMYFTALQAYEYVEASFTISDSVFGSTFFVATGFHGLHVI
+IGTTFLAVCFYRLFNCHFSSKHHLGFEAAAWYWHFVDVVWLFLYVFIYWWGGY" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome oxidase subunit III" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 263 ,
+                        id
+                          local
+                            str "mo_5" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_6" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_6" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551669 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 3 (mitochondrion) [Moloha
+ majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 116 ,
+            seq-data
+              ncbieaa "MISLSIICIITLMISTIIMIISSILSKKMILDREKMSPYECGFDPKGSSRLPFSL
+RFFLIAVIFLIFDVEITLLLPIASIINITNVFSWMITTSGFLFILLLGLYYEWKQGALEWS" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 3" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 115 ,
+                        id
+                          local
+                            str "mo_6" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_7" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_7" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551670 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 5 (mitochondrion) [Moloha
+ majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 576 ,
+            seq-data
+              ncbieaa "MVWKISMHLSCMIFLFFSSLGLLIVSIQKLCLNLITLIEWEIFSLNSTSIVFTMI
+FDWKSLMFLSFVLLISSMVLYYSGGYMHGDFNFNRFMYLVLAFVFSMSMMILSPNLISILLGWDGLGLVSYALVIYYQ
+NEKSSNAGMLTVMSNRIGDVAILLSIGLMFYLGGWNFLFYTYYLNDEMNILLKFLVVIAAMTKSAQIPFSAWLPAAMA
+APTPVSALVHSSTLVTAGVYLMIRFSPALENSKSQSFLLIISCLTMFMAGLGANFEYDLKKIIALSTLSQLGVMLSIL
+SLGFCDMCFFHLLTHALFKALLFMCAGSIIHNVHECQDIRYMGGLVKFLPLSVMYMSVANLALCGFPFLAGFYSKDLI
+LETAFMSSLNMVSFVLYVFATGLTVCYTFRLIFYSLSGVINLRVMNCIDDNSNLMLNSMMSLGAGAIIMGSFLSWLIF
+PEPSMICLSIMMKSLVLVVSGAGAMFWLYFKYYKCKLFFKFFKIMFLYFFYSSYVIYTLFIYFKFTKINLKTGYSYYK
+YIDKGWSEFMGPPGLYTVFFKFFFFLNIMQASSIKVFMKMFMFLMIVFFFIYI" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 5" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 575 ,
+                        id
+                          local
+                            str "mo_7" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_8" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_8" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551671 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 4 (mitochondrion) [Moloha
+ majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 447 ,
+            seq-data
+              ncbieaa "MLKFIIPIFMLMKFVSDWSFIQIGLFIVKFLFGLNCFYDYNYFCLGMSLGMDFLK
+YILIFLKMWIISLILLSSQKIKNSKNFNLNFLIVVIFLLLSLIITFSSMDYLLFYVSFEMSLIPTLILILGWGYQPER
+LQAGIYMWFYTLFLSLPLLVSLLSFYNFNGSLTLGITNLFFDSYFFNSIWYFSNILAFMVKLPVYLFHLWLPKAHVEA
+SMAGSMILAGVLLKLSGYGLIRVLILFRHISLYYTWLWISLSLFGMIIICLMCLRQVDMKSLIAYSSVSHMGLVLCGL
+MVYNWWGLSGAVLVMVGHGLCSSGLFCLANMVYERVGSRSLLVSKGLLNFMPSMGLWWFLLSVSNMAAPPSLNLLGEI
+SLIVSIISWSKLTMVLIMFISFFSAAYTLYLYSLSQHGKFLNSLYSVCSGKVNEYLSLFLHWFPLNIIVLKSLMSTPG
+LL" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 4" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 446 ,
+                        id
+                          local
+                            str "mo_8" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_9" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_9" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551672 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 4L (mitochondrion) [Moloha
+ majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 100 ,
+            seq-data
+              ncbieaa "MMIFTDFSIIFPVFMIVCGLFSFISYHKHLLNSLLSLEFMMLGIFWFMNFYISSV
+GNEIYFVLFFLTLIAWEGVLGLSLLIYIVRSYGNDCFSSFNVLEC" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 4L" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 99 ,
+                        id
+                          local
+                            str "mo_9" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_10" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_10" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551673 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 6 (mitochondrion) [Moloha
+ majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 170 ,
+            seq-data
+              ncbieaa "MSLLMMPIMMTLSIMFTRMNHPLSMGLTLLLQTIFICITSGLSSSSFWFSYILFL
+IFLGGMMVLFIYVASLASNTKFKFPFLSMFIIFSLLTISMVILFFMDLMDFPTSNNIAVPSTLLMSYQNKTMLINWIY
+SPKLIMFTLFIVLYLLLTLLVVVKISYSHMGPMRLSS" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 6" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 169 ,
+                        id
+                          local
+                            str "mo_10" } } } } } } ,
+        seq {
+          id {
+            local
+              str "cob1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/cob1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551674 } } ,
+          descr {
+            title "cytochrome b (mitochondrion) [Moloha majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 378 ,
+            seq-data
+              ncbieaa "MTTPIRKTHPLFKIMNGVIVDMPLPSNISIFWNFGSLLGLCLVMQLMTGIFLSMH
+YTANVELAFFSVDHICRDVNYGWLLRTLHANGASFFFICIYAHIGRGMFYGSYLLMHTWMVGVLILFMVMATAFLGYV
+LPWGQMSFWGATVITNLFSAIPFFGTDLVQWIWGGFSVDNATLTRFFTFHFMLPFIISAMVMVHILFLHQSGANNPLG
+ISSNIDKIPFHPYFTFKDIVGFLIMISLLLILTLLNPYLLGDPDNFIPANPLVTPAHIQPEWYFLFAYAILRSIPNKL
+GGVIALAMSVAILMILPFTHTSKFRSLTFYPLNQILFWSLISIVLLLTWIGARPVEDPYILTGQILTMLYFLFYLMNP
+MMLMMWDKYLK" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome b" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 377 ,
+                        id
+                          local
+                            str "cob1" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_11" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_11" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551675 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 1 (mitochondrion) [Moloha
+ majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 312 ,
+            seq-data
+              ncbieaa "MMVIMIINYLILIICVLVSVAFVTLLERKILGYIQIRKGPNKVGYMGILQPFSDA
+VKLFTKESTNSSVFNFLPYYFSPVFSLFISLFVWVVLPYEIGLISFNMSVLFFLCCLSVGVYSTMGAGLAPICKYSLL
+GKLPIIAQTISYELSLALILFSFIILLGGVSLDLFNNYQDNMWFFFLSFPLKLIGLPSCLAETNRTPFDFSEGDSELV
+SGFIPEYKSGGFALIFMAEYASNPFMSGLFVIFFLGSHPCDVLFYLKLVFIAFSFIWVRGTLPRLRYDKLMYLAWKSV
+LPVAINYLFFFLGIKMFCYCYFI" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 1" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 311 ,
+                        id
+                          local
+                            str "mo_11" } } } } } } ,
+        seq {
+          id {
+            local
+              str "mo_12" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "Moloha majora.sqn/mo_12" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 56551676 } } ,
+          descr {
+            title "NADH2 gene product (mitochondrion) [Moloha majora]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 333 ,
+            seq-data
+              ncbieaa "MFLTPTNILFLSSLITGSFISISSTSWFTAWVGLELNLMSFIPLISIKPKKTISE
+AAIKYFLIQALGSSIIIMNSCLMLSYQNMSSLLILLALILKLGAAPFHQWFPQVMEGIMWPQAIILMTIQKLAPMYLL
+SYLLEQNSIFFIILLSSIFSAIFGSLGGINQVLLRKIMAYSSINHMAWMMSAMMISEKVWIMYFTFYSIISSSISLMF
+HLSKMNHLSQIINYISYPKFIMFTIPLSLLSLGGLPPFSGFIPKWILIQIFMSMNMYILLFFLLISTLITLYFYTRIF
+ITMIILTPNMKWFIKKNSTNPFSMSFIMYFNMFSMIIPSLYLMI" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                         } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 332 ,
+                        id
+                          local
+                            str "mo_12" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                comment "TAA stop codon is completed by the addition~~ of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "mo_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 1533 ,
+                    strand plus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "mo_2" ,
+                location
+                  int {
+                    from 1603 ,
+                    to 2290 ,
+                    strand plus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                product
+                  whole
+                    local
+                      str "mo_3" ,
+                location
+                  int {
+                    from 2425 ,
+                    to 2583 ,
+                    strand plus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                product
+                  whole
+                    local
+                      str "mo_4" ,
+                location
+                  int {
+                    from 2577 ,
+                    to 3248 ,
+                    strand plus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "mo_5" ,
+                location
+                  int {
+                    from 3248 ,
+                    to 4038 ,
+                    strand plus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                product
+                  whole
+                    local
+                      str "mo_6" ,
+                location
+                  int {
+                    from 4104 ,
+                    to 4454 ,
+                    strand plus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "mo_7" ,
+                location
+                  int {
+                    from 4906 ,
+                    to 6634 ,
+                    strand minus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                product
+                  whole
+                    local
+                      str "mo_8" ,
+                location
+                  int {
+                    from 6696 ,
+                    to 8039 ,
+                    strand minus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                product
+                  whole
+                    local
+                      str "mo_9" ,
+                location
+                  int {
+                    from 8033 ,
+                    to 8335 ,
+                    strand minus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "mo_10" ,
+                location
+                  int {
+                    from 8471 ,
+                    to 8982 ,
+                    strand plus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                product
+                  whole
+                    local
+                      str "cob1" ,
+                location
+                  int {
+                    from 8982 ,
+                    to 10118 ,
+                    strand plus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                product
+                  whole
+                    local
+                      str "mo_11" ,
+                location
+                  int {
+                    from 10207 ,
+                    to 11145 ,
+                    strand minus ,
+                    id
+                      local
+                        str "mo" } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 5 } } ,
+                product
+                  whole
+                    local
+                      str "mo_12" ,
+                location
+                  int {
+                    from 14694 ,
+                    to 15695 ,
+                    strand plus ,
+                    id
+                      local
+                        str "mo" } } } } } } } }
