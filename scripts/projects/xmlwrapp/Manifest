@@ -45,7 +45,7 @@ IntelMAC          : GCC-universal  : GCC.sh           --without-debug --with-mt 
 IntelMAC          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 Win32_13          : 13-static-32   : static 32 ReleaseDLL
-Win64_13          : 13-static-64   : static 64 ReleaseDLL <ENV>CPPFLAGS=-DNCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI</ENV>
+Win64_13          : 13-static-64   : static 64 ReleaseDLL
 
 XCode             : plain          : Xcode.sh 30
 
