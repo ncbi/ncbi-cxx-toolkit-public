@@ -47,7 +47,7 @@ Linux64-Centos     : icc : ICC.sh            --with-strip --without-debug --with
 DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
 
 Win32         : plain : static  32  ReleaseMT
-Win64         : plain : static  64  ReleaseMT
+Win64         : plain : static  64  ReleaseMT <ENV>CPPFLAGS=-DNCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI</ENV>
 
 #IntelMAC            : universal : GCC.sh   --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
 IntelMAC    : universal : Clang.sh --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public --with-experimental=Int8GI
