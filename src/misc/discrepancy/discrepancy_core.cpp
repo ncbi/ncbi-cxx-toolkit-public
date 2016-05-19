@@ -254,6 +254,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     REGISTER_DISCREPANCY_TYPE(COrgName)
     REGISTER_DISCREPANCY_TYPE(CRNA_ref)
     REGISTER_DISCREPANCY_TYPE(CSeq_annot)
+    REGISTER_DISCREPANCY_TYPE(CPubdesc)
     REGISTER_DISCREPANCY_TYPE(CBioseq_set)
     return false;
 }
@@ -309,6 +310,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     ENABLE_DISCREPANCY_TYPE(CBioSource)
     ENABLE_DISCREPANCY_TYPE(COrgName)
     ENABLE_DISCREPANCY_TYPE(CRNA_ref)
+    ENABLE_DISCREPANCY_TYPE(CPubdesc)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_annot), it is handled separately!
     // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
 
@@ -403,6 +405,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
         HANDLE_DISCREPANCY_TYPE(CBioSource)
         HANDLE_DISCREPANCY_TYPE(COrgName)
         HANDLE_DISCREPANCY_TYPE(CRNA_ref)
+        HANDLE_DISCREPANCY_TYPE(CPubdesc)
     }
 }
 
