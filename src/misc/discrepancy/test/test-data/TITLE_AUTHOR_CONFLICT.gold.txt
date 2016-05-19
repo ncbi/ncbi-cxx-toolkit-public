@@ -1,0 +1,30 @@
+Discrepancy Report Results
+
+Summary
+TITLE_AUTHOR_CONFLICT: 2 articles have title 'The importance of an innervated and intact antrum and pylorus in preventing postoperative duodenogastric reflux and gastritis.' but do not have the same author list
+TITLE_AUTHOR_CONFLICT: 2 articles have title 'patent title 1' but do not have the same author list
+TITLE_AUTHOR_CONFLICT: 2 articles have title 'title 1' but do not have the same author list
+
+Detailed Report
+
+TITLE_AUTHOR_CONFLICT: 2 articles have title 'The importance of an innervated and intact antrum and pylorus in preventing postoperative duodenogastric reflux and gastritis.' but do not have the same author list
+TITLE_AUTHOR_CONFLICT: 1 article has title 'The importance of an innervated and intact antrum and pylorus in preventing postoperative duodenogastric reflux and gastritis.' and author list 'M.R.Keighley, P.Asquith, J.A.Edwards, J.Alexander-Williams'
+D:\toolkit\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_3:Keighley,M.R. (1975) Br J Surg 62:(10)845-849 PM123
+
+TITLE_AUTHOR_CONFLICT: 1 article has title 'The importance of an innervated and intact antrum and pylorus in preventing postoperative duodenogastric reflux and gastritis.' and author list 'M.R.Keighley, P.Asquith, J.Alexander-Williams'
+D:\toolkit\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_4:Keighley,M.R. (1975) Br J Surg 62:(10)845-849 PM123
+
+TITLE_AUTHOR_CONFLICT: 2 articles have title 'patent title 1' but do not have the same author list
+TITLE_AUTHOR_CONFLICT: 1 article has title 'patent title 1' and author list 'H.Williams'
+D:\toolkit\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_6:Williams,H.
+
+TITLE_AUTHOR_CONFLICT: 1 article has title 'patent title 1' and author list 'ab.c'
+D:\toolkit\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_5:c,ab.
+
+TITLE_AUTHOR_CONFLICT: 2 articles have title 'title 1' but do not have the same author list
+TITLE_AUTHOR_CONFLICT: 1 article has title 'title 1' and author list 'as.d'
+D:\toolkit\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_1:d,as.Unpublished
+
+TITLE_AUTHOR_CONFLICT: 1 article has title 'title 1' and author list 'qw.e'
+D:\toolkit\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_1:e,qw.Unpublished
+
