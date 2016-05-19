@@ -98,6 +98,7 @@ DISCREPANCY_CASE(DUP_DEFLINE, CSeq_inst, eOncaller, "Definition lines should be 
 
 
 const string kIdenticalDeflines = "[n] definition line[s] [is] identical:";
+const string kAllUniqueDeflines = "All deflines are unique";
 const string kUniqueDeflines = "[n] definition line[s] [is] unique";
 
 //  ----------------------------------------------------------------------------
@@ -108,6 +109,14 @@ DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
         return;
     }
     CReportNode::TNodeMap::iterator it = m_Objs["titles"].GetMap().begin();
+    bool all_unique = true;
+    while (it != m_Objs["titles"].GetMap().end() && all_unique) {
+        if (it->second->GetObjects().size() > 1) {
+            all_unique = false;
+        }
+        ++it;
+    }
+    it = m_Objs["titles"].GetMap().begin();
     while (it != m_Objs["titles"].GetMap().end()) {            
         NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["titles"][it->first].GetObjects())
         {
@@ -118,7 +127,11 @@ DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
                 m_Objs[kIdenticalDeflines + it->first].Add(*context.NewDiscObj(title_desc), false);
             } else {
                 //unique definition line
-                m_Objs[kUniqueDeflines].Add(*context.NewDiscObj(title_desc), false);
+                if (all_unique) {
+                    m_Objs[kAllUniqueDeflines].Add(*context.NewDiscObj(title_desc), false);
+                } else {
+                    m_Objs[kUniqueDeflines].Add(*context.NewDiscObj(title_desc), false);
+                }
             }
         }  
         ++it;
