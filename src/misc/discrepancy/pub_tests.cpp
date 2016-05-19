@@ -228,7 +228,7 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
                     const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
                     CConstRef<CSeqdesc> pub_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
 
-                    m_Objs[top]["[n] article[s] [has] title '" + it->first + "' and author list '" + it2->first + "'"].Add(*context.NewDiscObj(pub_desc), false);
+                    m_Objs[top]["[n] article[s] [has] title '" + it->first + "' and author list '" + it2->first + "'"].Add(*context.NewDiscObj(pub_desc), false).Fatal();
                 }
                 ++it2;
             }
