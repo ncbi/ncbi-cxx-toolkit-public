@@ -27,6 +27,11 @@ public:
 private:
     CGBReleaseFile::ISeqEntryHandler& m_handler;
     CObjectOStream& m_out;
+    bool m_isGenbank;
+
+    void x_SetBioseqsetHook(CObjectIStream &in, bool isSet);
+
+    friend class CReadBioseqsetClassHook;
 };
 
 END_NCBI_SCOPE

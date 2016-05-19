@@ -37,11 +37,21 @@
 #include <serial/objectio.hpp>
 
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 #include "read_hooks.hpp"
 
 BEGIN_NCBI_SCOPE
 
+static void WriteClassMember(CObjectOStream& out, const CObjectInfoMI &member)
+{
+    out.BeginClassMember(member.GetMemberInfo()->GetId());
+    out.WriteObject(member.GetMember().GetObjectPtr(), member.GetMemberInfo()->GetTypeInfo());
+    out.EndClassMember();
+}
+
+////////////////////////////////////////////////
+// class CReadSubmitBlockHook
 CReadSubmitBlockHook::CReadSubmitBlockHook(CObjectOStream& out) :
     m_out(out)
 {
@@ -56,14 +66,11 @@ void CReadSubmitBlockHook::ReadClassMember(CObjectIStream &in, const CObjectInfo
     m_out.BeginClass(classTypeInfo);
 
     // writing 'sub' member
-    const CMemberInfo* memInfo = classTypeInfo->GetMemberInfo("sub");
-    m_out.BeginClassMember(memInfo->GetId());
     in.ReadClassMember(member);
-    m_out.WriteObject(member.GetMember().GetObjectPtr(), member.GetMemberInfo()->GetTypeInfo());
-    m_out.EndClassMember();
+    WriteClassMember(m_out, member);
 
     // start writing 'data' member
-    memInfo = classTypeInfo->GetMemberInfo("data");
+    const CMemberInfo* memInfo = classTypeInfo->GetMemberInfo("data");
     m_out.BeginClassMember(memInfo->GetId());
 
     const CPointerTypeInfo* pointerType = CTypeConverter<CPointerTypeInfo>::SafeCast(memInfo->GetTypeInfo());
@@ -82,23 +89,230 @@ void CReadSubmitBlockHook::ReadClassMember(CObjectIStream &in, const CObjectInfo
     m_out.BeginContainer(containerType);
 }
 
+
+static CObjectTypeInfoMI GetBioseqsetClassTypeInfo()
+{
+    CObjectTypeInfo bioseqTypeInfo = CType<CBioseq_set>();
+    return bioseqTypeInfo.FindMember("class");
+}
+
+////////////////////////////////////////////////
+// class CSimpleReadHook
+class CSimpleReadHook : public CReadClassMemberHook
+{
+public:
+    CSimpleReadHook(CObjectOStream& out) :
+        m_out(out)
+    {}
+
+    virtual void ReadClassMember(CObjectIStream &in, const CObjectInfoMI &member)
+    {
+        in.ReadClassMember(member);
+        WriteClassMember(m_out, member);
+    }
+
+private:
+    CObjectOStream& m_out;
+};
+
+////////////////////////////////////////////////
+// class CReadSetHook
+class CReadSetHook : public CReadClassMemberHook
+{
+public:
+    CReadSetHook(CGBReleaseFile::ISeqEntryHandler& handler, CObjectOStream& out) :
+        m_handler(handler),
+        m_out(out),
+        m_level(0)
+    {}
+
+    virtual void ReadClassMember(CObjectIStream &in, const CObjectInfoMI &member)
+    {
+        ++m_level;
+        if (m_level == 1)
+        {
+            // Start writing 'set'
+            m_out.BeginClassMember(member.GetMemberInfo()->GetId());
+
+            const CContainerTypeInfo* containerType = CTypeConverter<CContainerTypeInfo>::SafeCast(member.GetMemberInfo()->GetTypeInfo());
+            m_out.BeginContainer(containerType);
+
+            // Read each element separately to a local TSeqEntry,
+            // process it somehow, and... not store it in the container.
+            for (CIStreamContainerIterator i(in, member); i; ++i) {
+
+                CRef<CSeq_entry> entry(new CSeq_entry);
+                i >> *entry;
+
+                m_handler.HandleSeqEntry(entry);
+
+                m_out.BeginContainerElement(entry->GetThisTypeInfo());
+                m_out.WriteObject(entry, entry->GetThisTypeInfo());
+                m_out.EndContainerElement();
+            }
+
+            // Complete writing 'set'
+            m_out.EndContainer();
+            m_out.EndClassMember();
+        }
+        else
+        {
+            // standard read
+            in.ReadClassMember(member);
+        }
+
+        --m_level;
+    }
+
+private:
+    CGBReleaseFile::ISeqEntryHandler& m_handler;
+    CObjectOStream& m_out;
+    size_t m_level;
+};
+
+
+////////////////////////////////////////////////
+// class CReadBioseqsetClassHook
+// needs to determine 'class' of the next bioseq_set
+
+static void StartWritingSet(CObjectOStream& out)
+{
+    CObjectTypeInfo entryTypeInfo = CType<CSeq_entry>();
+
+    out.BeginContainerElement(entryTypeInfo.GetTypeInfo()); // begins the next seq-entry
+
+    const CChoiceTypeInfo* choiceType = entryTypeInfo.GetChoiceTypeInfo();
+    out.BeginChoice(choiceType);
+
+    // start writing entries
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo("set");
+    out.BeginChoiceVariant(choiceType, variantInfo->GetId());
+
+    const CClassTypeInfo* classType = CTypeConverter<CClassTypeInfo>::SafeCast(variantInfo->GetTypeInfo());
+    out.BeginClass(classType);
+}
+
+static void EndWritingSet(CObjectOStream& out)
+{
+    out.EndClass();
+    out.EndChoiceVariant();
+    out.EndChoice();
+    out.EndContainerElement();
+}
+
+class CReadBioseqsetClassHook : public CReadClassMemberHook
+{
+public:
+    CReadBioseqsetClassHook(CReadEntryHook& entryHook, CObjectOStream& out) :
+        m_inside(false),
+        m_entryHook(entryHook),
+        m_out(out)
+    {}
+
+    virtual void ReadClassMember(CObjectIStream &in, const CObjectInfoMI &member)
+    {
+        in.ReadClassMember(member);
+
+        if (!m_inside)
+        {
+            m_inside = true;
+
+            int val = member.GetMember().GetPrimitiveValueInt();
+            if ((val == CBioseq_set::eClass_genbank))
+            {
+                StartWritingSet(m_out);
+
+                const CObjectInfo& oi = member.GetClassObject();
+                for (CObjectInfoMI item = oi.BeginMembers(); item; ++item)
+                {
+                    if (item.GetItemInfo()->GetId().GetName() == "class")
+                        break;
+
+                    if (item.IsSet())
+                        WriteClassMember(m_out, item);
+                }
+
+                m_entryHook.x_SetBioseqsetHook(in, true);
+
+                WriteClassMember(m_out, member);
+            }
+        }
+    }
+
+private:
+    bool m_inside;
+    CReadEntryHook& m_entryHook;
+    CObjectOStream& m_out;
+};
+
 CReadEntryHook::CReadEntryHook(CGBReleaseFile::ISeqEntryHandler& handler, CObjectOStream& out) :
     m_handler(handler),
-    m_out(out)
+    m_out(out),
+    m_isGenbank(false)
 {
 }
 
 void CReadEntryHook::ReadObject(CObjectIStream &in, const CObjectInfo& obj)
 {
+    CObjectTypeInfoMI bioseqsetClassInfo = GetBioseqsetClassTypeInfo();
+
     for (CIStreamContainerIterator i(in, obj); i; ++i)
     {
+        m_isGenbank = false;
+        bioseqsetClassInfo.SetLocalReadHook(in, new CReadBioseqsetClassHook(*this, m_out));
+
         CRef<CSeq_entry> entry(new CSeq_entry);
         i >> *entry;
-        m_handler.HandleSeqEntry(entry);
 
-        m_out.BeginContainerElement(entry->GetThisTypeInfo());
-        m_out.WriteObject(entry, entry->GetThisTypeInfo());
-        m_out.EndContainerElement();
+        if (m_isGenbank)
+        {
+            EndWritingSet(m_out);
+            x_SetBioseqsetHook(in, false);
+        }
+        else
+        {
+            m_handler.HandleSeqEntry(entry);
+
+            m_out.BeginContainerElement(entry->GetThisTypeInfo());
+            m_out.WriteObject(entry, entry->GetThisTypeInfo());
+            m_out.EndContainerElement();
+        }
+
+        bioseqsetClassInfo.ResetLocalReadHook(in);
     }
 }
+
+void CReadEntryHook::x_SetBioseqsetHook(CObjectIStream &in, bool isSet)
+{
+    CObjectTypeInfo bioseqsetTypeInfo = CType<CBioseq_set>();
+
+    CObjectTypeInfoMI setMember = bioseqsetTypeInfo.FindMember("seq-set");
+
+    if (isSet)
+        setMember.SetLocalReadHook(in, new CReadSetHook(m_handler, m_out));
+    else
+        setMember.ResetLocalReadHook(in);
+
+    // Skip all embers before 'class' member - they will be written by 'class' hook function
+    CObjectTypeInfoMI member = bioseqsetTypeInfo.BeginMembers();
+    for (; member; ++member)
+    {
+        if (member.GetAlias() == "class")
+            break;
+    }
+
+    for (++member; member; ++member)
+    {
+        if (member.GetAlias() != setMember.GetAlias())
+        {
+            if (isSet)
+                member.SetLocalReadHook(in, new CSimpleReadHook(m_out));
+            else
+                member.ResetLocalReadHook(in);
+        }
+    }
+
+    m_isGenbank = true;
+}
+
 END_NCBI_SCOPE
