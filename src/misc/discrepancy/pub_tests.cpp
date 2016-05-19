@@ -359,6 +359,7 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
             }
         }
     }
+    return rval;
 }
 
 
