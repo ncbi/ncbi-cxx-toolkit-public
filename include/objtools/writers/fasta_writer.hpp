@@ -54,7 +54,8 @@ public:
     CFastaOstreamEx(CNcbiOstream& out);
 
     virtual void WriteFeature(const CSeq_feat& feat,
-                              CScope& scope);
+                              CScope& scope,
+                              bool translateIfCds=false);
 
     virtual void WriteFeatureTitle(const CSeq_feat& feat,
                                    CScope& scope);
@@ -68,58 +69,58 @@ protected:
 
     void x_AddGeneAttributes(const CSeq_feat& feat,
                              CScope& scope,
-                             string& defline);
+                             string& defline) const;
 
     void x_AddProteinNameAttribute(const CSeq_feat& feat,
                                    CScope& scope,
-                                   string& defline);
+                                   string& defline) const;
 
     void x_AddDbxrefAttribute(const CSeq_feat& feat,
                               CScope& scope,
-                              string& defline);
+                              string& defline) const;
 
     void x_AddReadingFrameAttribute(const CSeq_feat& feat, 
-                                    string& defline);
+                                    string& defline) const;
 
     void x_AddncRNAClassAttribute(const CSeq_feat& feat,
-                                  string& defline);
+                                  string& defline) const;
 
     void x_AddPseudoAttribute(const CSeq_feat& feat,
                               CScope& scope,
-                              string& defline);
+                              string& defline) const;
 
     void x_AddPseudoGeneAttribute(const CSeq_feat& feat,
                                   CScope& scope,
-                                  string& defline);
+                                  string& defline) const;
 
     void x_AddRNAProductAttribute(const CSeq_feat& feat,
-                                  string& defline);
+                                  string& defline) const;
 
     void x_AddPartialAttribute(const CSeq_feat& feat, 
                                CScope& scope,
-                               string& defline);
+                               string& defline) const;
 
     void x_AddExceptionAttribute(const CSeq_feat& feat, 
-                                 string& defline);
+                                 string& defline) const;
 
     void x_AddProteinIdAttribute(const CSeq_feat& feat,
                                  CScope& scope,
-                                 string& defline);
+                                 string& defline) const;
     
     void x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
-                                            string& defline);
+                                            string& defline) const;
 
     void x_AddLocationAttribute(const CSeq_feat& feat,
                                 CScope& scope,
-                                string& defline);
+                                string& defline) const;
 
     void x_AddDeflineAttribute(const string& label,
                                const string& value,
-                               string& defline);
+                               string& defline) const;
 
     void x_AddDeflineAttribute(const string& label,
                                bool value,
-                               string& defline);
+                               string& defline) const;
 
     string x_GetCDSIdString(const CSeq_feat& cds,
                             CScope& scope);
@@ -132,7 +133,6 @@ protected:
 
     string x_GetGeneIdString(const CSeq_feat& gene,
                              CScope& scope);
-
 
     TSeqPos m_FeatCount;
 };

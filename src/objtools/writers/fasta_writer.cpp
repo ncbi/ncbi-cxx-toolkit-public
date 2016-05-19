@@ -66,16 +66,54 @@ void CFastaOstreamEx::ResetFeatureCount(void)
 }
 
 
+
+CRef<CSeq_loc> s_ShiftLocation(const TSeqPos frame, 
+                               const ENa_strand strand,
+                               CScope& scope,
+                               const CSeq_loc& loc)
+{
+    auto seq_id = Ref(new CSeq_id());
+    seq_id->Assign(*loc.GetId());
+
+    auto start = loc.GetStart(eExtreme_Biological);
+    auto stop = start;
+
+    if (strand == eNa_strand_minus) {
+        start += 2-frame;
+    } else {
+        stop += frame-2;
+    }
+
+    auto loc_ref = Ref(new CSeq_loc(*seq_id, start, stop, strand));
+
+    return sequence::Seq_loc_Subtract(loc, 
+                                      *loc_ref, 
+                                      CSeq_loc::fMerge_AbuttingOnly,
+                                      &scope);
+}
+
+
+
 void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat, 
-                                   CScope& scope)
+                                   CScope& scope,
+                                   const bool translateIfCds)
 {
     if (!feat.IsSetData()) {
         return;
     }
 
-    if (!feat.GetData().IsCdregion() &&
+    const bool IsCdregion = feat.GetData().IsCdregion();
+
+    if (!IsCdregion &&
         !feat.GetData().IsGene() &&
         !feat.GetData().IsRna()) {
+        return;
+    }
+
+    if (translateIfCds &&
+        IsCdregion &&
+        feat.IsSetPseudo() &&
+        feat.GetPseudo()) {
         return;
     }
 
@@ -84,8 +122,15 @@ void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat,
         return;
     }
 
+
     WriteFeatureTitle(feat, scope);
-    if (!feat.GetData().IsCdregion() ||
+    if (IsCdregion &&
+        translateIfCds) {
+        WriteSequence(bsh, &(feat.GetLocation()), CSeq_loc::fMerge_AbuttingOnly);
+        return;
+    }
+
+    if (!IsCdregion ||
         !feat.GetData().GetCdregion().IsSetFrame() ||
         feat.GetData().GetCdregion().GetFrame()==1) {
         WriteSequence(bsh, &(feat.GetLocation()), CSeq_loc::fMerge_AbuttingOnly);
@@ -94,24 +139,9 @@ void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat,
 
     // Cdregion with frameshift
     const auto& loc = feat.GetLocation();
-    auto seq_id = Ref(new CSeq_id());
-    seq_id->Assign(*loc.GetId());
-
-    auto start = loc.GetStart(eExtreme_Biological);
-    auto stop =  start;
-
-    const auto strand = loc.GetStrand();
     const auto frame = feat.GetData().GetCdregion().GetFrame();
-    if (strand == eNa_strand_minus) {
-        start += 2-frame;
-    } else {
-        stop += frame-2;
-    }
-    auto untranslated_loc = Ref(new CSeq_loc(*seq_id, start, stop, strand));
-
-    auto translated_loc = sequence::Seq_loc_Subtract(loc, *untranslated_loc, 
-                                                CSeq_loc::fMerge_AbuttingOnly, &scope);
-
+    const auto strand = loc.GetStrand();
+    auto translated_loc = s_ShiftLocation(frame, strand, scope, loc);
     WriteSequence(bsh, translated_loc.GetPointer(), CSeq_loc::fMerge_AbuttingOnly);
 }
 
@@ -142,7 +172,7 @@ void CFastaOstreamEx::WriteFeatureTitle(const CSeq_feat& feat,
 
 
 string CFastaOstreamEx::x_GetCDSIdString(const CSeq_feat& cds,
-                                         CScope& scope)
+                                         CScope& scope) 
 {
     // Need to put a whole bunch of checks in here
     const auto& src_loc = cds.GetLocation();
@@ -168,7 +198,7 @@ string CFastaOstreamEx::x_GetCDSIdString(const CSeq_feat& cds,
 
 
 string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat, 
-                                         CScope& scope)
+                                         CScope& scope) 
 {
     if (!feat.IsSetData() ||
         !feat.GetData().IsRna()) {
@@ -270,7 +300,7 @@ string CFastaOstreamEx::x_GetProtIdString(const CSeq_feat& prot,
 
 
 string CFastaOstreamEx::x_GetGeneIdString(const CSeq_feat& gene,
-                                          CScope& scope)
+                                          CScope& scope) 
 {
     const auto& src_loc = gene.GetLocation();
     
@@ -312,7 +342,7 @@ CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
 
 void CFastaOstreamEx::x_AddDeflineAttribute(const string& label,
                                             const string& value,
-                                            string& defline)
+                                            string& defline) const
 {
     if (label.empty() || value.empty()) {
         return;
@@ -323,7 +353,7 @@ void CFastaOstreamEx::x_AddDeflineAttribute(const string& label,
 
 void CFastaOstreamEx::x_AddDeflineAttribute(const string& label,
                                             const bool value,
-                                            string& defline)
+                                            string& defline) const
 {
     if (label.empty() || !value) {
         return;
@@ -334,7 +364,7 @@ void CFastaOstreamEx::x_AddDeflineAttribute(const string& label,
 
 void CFastaOstreamEx::x_AddGeneAttributes(const CSeq_feat& feat,
                                           CScope& scope,
-                                          string& defline)
+                                          string& defline) const
 {
     if (!feat.IsSetData()) {
         return;
@@ -369,7 +399,7 @@ void CFastaOstreamEx::x_AddGeneAttributes(const CSeq_feat& feat,
 
 void CFastaOstreamEx::x_AddPseudoAttribute(const CSeq_feat& feat,
                                            CScope& scope, 
-                                           string& defline)
+                                           string& defline) const
 {
     if (!feat.IsSetData()) {
         return;
@@ -401,7 +431,7 @@ void CFastaOstreamEx::x_AddPseudoAttribute(const CSeq_feat& feat,
 
 void CFastaOstreamEx::x_AddPseudoGeneAttribute(const CSeq_feat& feat,
                                               CScope& scope,
-                                              string& defline)
+                                              string& defline) const
 {
     if (!feat.IsSetData()) {
         return;
@@ -425,7 +455,7 @@ void CFastaOstreamEx::x_AddPseudoGeneAttribute(const CSeq_feat& feat,
 
 void CFastaOstreamEx::x_AddDbxrefAttribute(const CSeq_feat& feat,
                                            CScope& scope,
-                                           string& defline)
+                                           string& defline) const
 {
     string db_xref = "";
 
@@ -462,7 +492,7 @@ void CFastaOstreamEx::x_AddDbxrefAttribute(const CSeq_feat& feat,
 
 void CFastaOstreamEx::x_AddProteinNameAttribute(const CSeq_feat& feat,
                                                 CScope& scope,
-                                                string& defline)
+                                                string& defline) const
 {
     string protein_name;
     if (feat.GetData().IsProt() &&
@@ -499,13 +529,12 @@ void CFastaOstreamEx::x_AddProteinNameAttribute(const CSeq_feat& feat,
             }
         }
     }
-
     x_AddDeflineAttribute("protein", protein_name, defline);
 }
 
 
 void CFastaOstreamEx::x_AddReadingFrameAttribute(const CSeq_feat& feat,
-                                               string& defline)
+                                               string& defline) const
 {
     if (!feat.IsSetData()) {
         return;
@@ -523,7 +552,7 @@ void CFastaOstreamEx::x_AddReadingFrameAttribute(const CSeq_feat& feat,
 
 void CFastaOstreamEx::x_AddPartialAttribute(const CSeq_feat& feat,
                                             CScope& scope,
-                                            string& defline)
+                                            string& defline) const
 {
     auto partial = sequence::SeqLocPartialCheck(feat.GetLocation(), &scope);
     string partial_string = "";
@@ -543,7 +572,7 @@ void CFastaOstreamEx::x_AddPartialAttribute(const CSeq_feat& feat,
 
 
 void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
-                                                         string& defline)
+                                                         string& defline) const
 {
     if (!feat.IsSetData() ||
         !feat.GetData().IsCdregion() || 
@@ -570,7 +599,7 @@ void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
 
 
 void CFastaOstreamEx::x_AddExceptionAttribute(const CSeq_feat& feat, 
-                                              string& defline)
+                                              string& defline) const
 {
     if (feat.IsSetExcept_text()) {
         auto except_string = feat.GetExcept_text();
@@ -581,7 +610,7 @@ void CFastaOstreamEx::x_AddExceptionAttribute(const CSeq_feat& feat,
 
 void CFastaOstreamEx::x_AddProteinIdAttribute(const CSeq_feat& feat,
                                               CScope& scope,
-                                              string& defline)
+                                              string& defline) const
 {
     if (feat.GetData().IsCdregion() &&
         feat.IsSetProduct() &&
@@ -595,7 +624,7 @@ void CFastaOstreamEx::x_AddProteinIdAttribute(const CSeq_feat& feat,
 
 void CFastaOstreamEx::x_AddLocationAttribute(const CSeq_feat& feat, 
                                              CScope& scope,
-                                             string& defline)
+                                             string& defline) const
 {
     CFlatFileConfig cfg;
     CFlatFileContext ffctxt(cfg);
@@ -614,7 +643,7 @@ void CFastaOstreamEx::x_AddLocationAttribute(const CSeq_feat& feat,
 
 
 void CFastaOstreamEx::x_AddncRNAClassAttribute(const CSeq_feat& feat,
-                                               string& defline)
+                                               string& defline) const
 {
     if (!feat.IsSetData() ||
         !feat.GetData().IsRna() ||
@@ -678,7 +707,7 @@ static const string& s_AaName(int aa)
 
 
 void CFastaOstreamEx::x_AddRNAProductAttribute(const CSeq_feat& feat,
-                                               string& defline)
+                                               string& defline) const
 {
     if (!feat.IsSetData() ||
         !feat.GetData().IsRna()) {
