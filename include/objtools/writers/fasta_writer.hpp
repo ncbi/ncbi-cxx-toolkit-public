@@ -63,67 +63,76 @@ public:
 
 protected:
 
-    virtual void x_WriteFeatureAttributes(const CSeq_feat& feat, 
-                                          CScope& scope);
+    void x_WriteFeatureAttributes(const CSeq_feat& feat, 
+                                  CScope& scope);
 
-    virtual void x_AddGeneAttributes(const CSeq_feat& feat,
-                                     CScope& scope,
-                                     string& defline);
+    void x_AddGeneAttributes(const CSeq_feat& feat,
+                             CScope& scope,
+                             string& defline);
 
-    virtual void x_AddProteinNameAttribute(const CSeq_feat& feat,
-                                           CScope& scope,
-                                           string& defline);
+    void x_AddProteinNameAttribute(const CSeq_feat& feat,
+                                   CScope& scope,
+                                   string& defline);
 
-    virtual void x_AddDbxrefAttribute(const CSeq_feat& feat,
-                                      CScope& scope,
-                                      string& defline);
+    void x_AddDbxrefAttribute(const CSeq_feat& feat,
+                              CScope& scope,
+                              string& defline);
 
-    virtual void x_AddReadingFrameAttribute(const CSeq_feat& feat, 
+    void x_AddReadingFrameAttribute(const CSeq_feat& feat, 
+                                    string& defline);
+
+    void x_AddncRNAClassAttribute(const CSeq_feat& feat,
+                                  string& defline);
+
+    void x_AddPseudoAttribute(const CSeq_feat& feat,
+                              CScope& scope,
+                              string& defline);
+
+    void x_AddPseudoGeneAttribute(const CSeq_feat& feat,
+                                  CScope& scope,
+                                  string& defline);
+
+    void x_AddRNAProductAttribute(const CSeq_feat& feat,
+                                  string& defline);
+
+    void x_AddPartialAttribute(const CSeq_feat& feat, 
+                               CScope& scope,
+                               string& defline);
+
+    void x_AddExceptionAttribute(const CSeq_feat& feat, 
+                                 string& defline);
+
+    void x_AddProteinIdAttribute(const CSeq_feat& feat,
+                                 CScope& scope,
+                                 string& defline);
+    
+    void x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
                                             string& defline);
 
-    virtual void x_AddncRNAClassAttribute(const CSeq_feat& feat,
-                                          string& defline);
+    void x_AddLocationAttribute(const CSeq_feat& feat,
+                                CScope& scope,
+                                string& defline);
 
-    virtual void x_AddPseudoAttribute(const CSeq_feat& feat,
-                                      CScope& scope,
-                                      string& defline);
+    void x_AddDeflineAttribute(const string& label,
+                               const string& value,
+                               string& defline);
 
-    virtual void x_AddPseudoGeneAttribute(const CSeq_feat& feat,
-                                          CScope& scope,
-                                          string& defline);
+    void x_AddDeflineAttribute(const string& label,
+                               bool value,
+                               string& defline);
 
-    virtual void x_AddRNAProductAttribute(const CSeq_feat& feat,
-                                          string& defline);
+    string x_GetCDSIdString(const CSeq_feat& cds,
+                            CScope& scope);
 
-    virtual void x_AddPartialAttribute(const CSeq_feat& feat, 
-                                       CScope& scope,
-                                       string& defline);
+    string x_GetRNAIdString(const CSeq_feat& rna,
+                            CScope& scope);
 
-    virtual void x_AddExceptionAttribute(const CSeq_feat& feat, 
-                                         string& defline);
+    string x_GetProtIdString(const CSeq_feat& prot,
+                             CScope& scope);
 
-    virtual void x_AddProteinIdAttribute(const CSeq_feat& feat,
-                                         CScope& scope,
-                                         string& defline);
-    
-    virtual void x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
-                                                    string& defline);
+    string x_GetGeneIdString(const CSeq_feat& gene,
+                             CScope& scope);
 
-    virtual void x_AddLocationAttribute(const CSeq_feat& feat,
-                                        CScope& scope,
-                                        string& defline);
-
-    virtual string x_GetCDSIdString(const CSeq_feat& cds,
-                                    CScope& scope);
-
-    virtual string x_GetRNAIdString(const CSeq_feat& rna,
-                                    CScope& scope);
-
-    virtual string x_GetProtIdString(const CSeq_feat& prot,
-                                     CScope& scope);
-
-    virtual string x_GetGeneIdString(const CSeq_feat& gene,
-                                     CScope& scope);
 
     TSeqPos m_FeatCount;
 };

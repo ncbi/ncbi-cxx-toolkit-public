@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Sergiy Gotvyanskyy
+ * Authors:  Sergiy Gotvyanskyy, Justin Foley
  *
  * File Description:  Write object as a hierarchy of FASTA objects
  *
@@ -45,7 +45,6 @@
 #include <objtools/format/items/flat_seqloc.hpp>
 #include <objtools/writers/write_util.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
-//#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/sequtil/sequtil.hpp>
@@ -138,7 +137,6 @@ void CFastaOstreamEx::WriteFeatureTitle(const CSeq_feat& feat,
     }
    
     m_Out << ">lcl|" << id_string;
-
     x_WriteFeatureAttributes(feat, scope);
 }
 
@@ -165,7 +163,6 @@ string CFastaOstreamEx::x_GetCDSIdString(const CSeq_feat& cds,
     }
 
     id_string += to_string(++m_FeatCount);
-
     return id_string;
 }
 
@@ -178,19 +175,9 @@ string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat,
         return "";
     } 
 
-
     const auto& src_loc = feat.GetLocation();
-
     auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
-
-
-
-
     const auto& rna = feat.GetData().GetRna();
-  
-
-
-   
     const auto rna_type = rna.IsSetType() ? rna.GetType() : CRNA_ref::eType_unknown;
 
     string rna_tag;
@@ -322,6 +309,29 @@ CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
 }
 
 
+
+void CFastaOstreamEx::x_AddDeflineAttribute(const string& label,
+                                            const string& value,
+                                            string& defline)
+{
+    if (label.empty() || value.empty()) {
+        return;
+    }
+    defline += " [" + label + "=" + value + "]";
+}
+
+
+void CFastaOstreamEx::x_AddDeflineAttribute(const string& label,
+                                            const bool value,
+                                            string& defline)
+{
+    if (label.empty() || !value) {
+        return;
+    }
+    defline += " [" + label + "=true]";
+}
+                                     
+
 void CFastaOstreamEx::x_AddGeneAttributes(const CSeq_feat& feat,
                                           CScope& scope,
                                           string& defline)
@@ -346,16 +356,12 @@ void CFastaOstreamEx::x_AddGeneAttributes(const CSeq_feat& feat,
 
     if (gene->IsSetLocus()) {
         auto gene_locus = gene->GetLocus();
-        if (!gene_locus.empty()) {
-            defline += " [gene=" + gene_locus + "]";
-        }
+        x_AddDeflineAttribute("gene", gene_locus, defline);
     }
 
     if (gene->IsSetLocus_tag()) {
         auto gene_locus_tag = gene->GetLocus_tag();
-        if (!gene_locus_tag.empty()) {
-            defline += " [locus_tag=" + gene_locus_tag + "]";
-        }
+        x_AddDeflineAttribute("locus_tag", gene_locus_tag, defline);
     }
 }
 
@@ -389,9 +395,7 @@ void CFastaOstreamEx::x_AddPseudoAttribute(const CSeq_feat& feat,
         }
     } 
 
-    if (is_pseudo) {
-       defline += " [pseudo=true]";
-    }
+    x_AddDeflineAttribute("pseudo", is_pseudo, defline);
 }
 
 
@@ -414,10 +418,8 @@ void CFastaOstreamEx::x_AddPseudoGeneAttribute(const CSeq_feat& feat,
         }
         pseudogene = gene_feat->GetNamedQual("pseudogene");
     }
-       
-    if (!pseudogene.empty()) {
-        defline += " [pseudogene=" + pseudogene + "]";
-    }
+
+    x_AddDeflineAttribute("pseudogene", pseudogene, defline);
 }
 
 
@@ -425,31 +427,28 @@ void CFastaOstreamEx::x_AddDbxrefAttribute(const CSeq_feat& feat,
                                            CScope& scope,
                                            string& defline)
 {
-    string dbxref_string = "";
+    string db_xref = "";
 
     if (feat.IsSetDbxref()) {
         for (auto&& pDbtag : feat.GetDbxref()) {
-
             const CDbtag& dbtag = *pDbtag;
             if (dbtag.IsSetDb() && dbtag.IsSetTag()) {
-                if (!dbxref_string.empty()) {
-                    dbxref_string += ",";
+                if (!db_xref.empty()) {
+                    db_xref += ",";
                 }
-                dbxref_string += dbtag.GetDb() + ":";
+                db_xref += dbtag.GetDb() + ":";
                 if (dbtag.GetTag().IsId()) {
-                    dbxref_string += to_string(dbtag.GetTag().GetId());
+                    db_xref += to_string(dbtag.GetTag().GetId());
                 } else {
-                    dbxref_string += dbtag.GetTag().GetStr();
+                    db_xref += dbtag.GetTag().GetStr();
                 }
             }
         }
-        if (!dbxref_string.empty()) {
-            defline += " [db_xref=" + dbxref_string  + "]";
-        }
+        x_AddDeflineAttribute("db_xref", db_xref, defline);
     }
 
-    // Attempt to get dbxref from parent gene
-    if (dbxref_string.empty() &&
+    // Attempt to get db_xref from parent gene
+    if (db_xref.empty() &&
         feat.IsSetData() &&
         !feat.GetData().IsGene()) {
         auto gene_feat = s_GetBestGeneForFeat(feat, scope);   
@@ -501,9 +500,7 @@ void CFastaOstreamEx::x_AddProteinNameAttribute(const CSeq_feat& feat,
         }
     }
 
-    if (!protein_name.empty()) {
-       defline += " [protein=" + protein_name + "]";
-    }
+    x_AddDeflineAttribute("protein", protein_name, defline);
 }
 
 
@@ -518,7 +515,7 @@ void CFastaOstreamEx::x_AddReadingFrameAttribute(const CSeq_feat& feat,
         feat.GetData().GetCdregion().IsSetFrame()) {
         auto frame = feat.GetData().GetCdregion().GetFrame();
         if (frame > 1) {
-           defline += " [frame=" + to_string(frame) + "]";
+            x_AddDeflineAttribute("frame", to_string(frame), defline);
         }
     }
 }
@@ -541,9 +538,7 @@ void CFastaOstreamEx::x_AddPartialAttribute(const CSeq_feat& feat,
         partial_string += "3\'";
     }
 
-    if (!partial_string.empty()) {
-        defline += " [partial=" + partial_string + "]";
-    }
+    x_AddDeflineAttribute("partial", partial_string, defline);
 }
 
 
@@ -570,11 +565,7 @@ void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
         }
     }
 
-    if (!transl_exception.empty()) {
-        defline += " [transl_except=" + transl_exception + "]";
-    }
-
-    return;
+    x_AddDeflineAttribute("transl_except", transl_exception, defline);
 }
 
 
@@ -583,9 +574,7 @@ void CFastaOstreamEx::x_AddExceptionAttribute(const CSeq_feat& feat,
 {
     if (feat.IsSetExcept_text()) {
         auto except_string = feat.GetExcept_text();
-        if (!except_string.empty()) {
-            defline += " [exception=" + except_string + "]";
-        }
+        x_AddDeflineAttribute("exception", except_string, defline);
     }
 }
 
@@ -598,9 +587,8 @@ void CFastaOstreamEx::x_AddProteinIdAttribute(const CSeq_feat& feat,
         feat.IsSetProduct() &&
         feat.GetProduct().GetId()) {
         string protein_id = sequence::GetAccessionForId(*(feat.GetProduct().GetId()), scope);
-        if (!protein_id.empty()) {
-            defline += " [protein_id=" + protein_id + "]";
-        }
+
+        x_AddDeflineAttribute("protein_id", protein_id, defline);
     }
 }
 
@@ -609,10 +597,8 @@ void CFastaOstreamEx::x_AddLocationAttribute(const CSeq_feat& feat,
                                              CScope& scope,
                                              string& defline)
 {
-
     CFlatFileConfig cfg;
     CFlatFileContext ffctxt(cfg);
-
 
     auto bsh = scope.GetBioseqHandle(feat.GetLocation());
     if (!bsh) {
@@ -621,16 +607,9 @@ void CFastaOstreamEx::x_AddLocationAttribute(const CSeq_feat& feat,
 
 
     CBioseqContext ctxt(bsh, ffctxt);
-    
-
     auto loc_string = CFlatSeqLoc(feat.GetLocation(), ctxt).GetString();
 
-    if (loc_string.empty()) {
-        return;
-    }
-
-    defline += " [location=" + loc_string + "]";
-    return;
+    x_AddDeflineAttribute("location", loc_string, defline);
 }
 
 
@@ -647,12 +626,7 @@ void CFastaOstreamEx::x_AddncRNAClassAttribute(const CSeq_feat& feat,
 
     const auto ncRNA_class = feat.GetData().GetRna().GetExt().GetGen().GetClass();
 
-    if (ncRNA_class.empty()) {
-        return;
-    }
-
-    defline += " [ncRNA_class=" + ncRNA_class + "]";
-    return;
+    x_AddDeflineAttribute("ncRNA_class", ncRNA_class, defline);
 }
 
 
@@ -703,8 +677,6 @@ static const string& s_AaName(int aa)
 }
 
 
-
-
 void CFastaOstreamEx::x_AddRNAProductAttribute(const CSeq_feat& feat,
                                                string& defline)
 {
@@ -717,14 +689,10 @@ void CFastaOstreamEx::x_AddRNAProductAttribute(const CSeq_feat& feat,
     const auto rna_type = rna.IsSetType() ?
         rna.GetType() : CRNA_ref::eType_unknown;
 
-
     string product_string;
     if (rna_type == CRNA_ref::eType_tRNA) {
-
         if (rna.IsSetExt() && rna.GetExt().IsTRNA()) {
-            
             const auto& trna = rna.GetExt().GetTRNA();
-
             CWriteUtil::GetTrnaProductName(trna, product_string);
         }
     } // rna_type == CRNA_ref::eType_tRNA
@@ -742,15 +710,11 @@ void CFastaOstreamEx::x_AddRNAProductAttribute(const CSeq_feat& feat,
         product_string = rna.GetExt().GetGen().GetProduct();
     }
 
-
     if (product_string.empty()) {
         product_string = feat.GetNamedQual("product");
     }
 
-
-    if (!product_string.empty()) {
-        defline += " [product=" + product_string + "]"; 
-    }
+    x_AddDeflineAttribute("product", product_string, defline);
 }
 
 
