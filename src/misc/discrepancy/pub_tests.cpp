@@ -43,6 +43,7 @@
 #include <objects/biblio/Title.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Author.hpp>
+#include <objects/biblio/Affil.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
@@ -388,6 +389,72 @@ DISCREPANCY_SUMMARIZE(UNPUB_PUB_WITHOUT_TITLE)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// MISSING_AFFIL
+
+bool HasNoAffiliation(const CAffil& affil)
+{
+    bool rval = false;
+    if (affil.IsStr()) {
+        if (NStr::IsBlank(affil.GetStr())) {
+            rval = true;
+        }
+    } else if (affil.IsStd()) {
+        if (!affil.GetStd().IsSetAffil() ||
+            NStr::IsBlank(affil.GetStd().GetAffil())) {
+            rval = true;
+        }
+    } else {
+        rval = true;
+    }
+    return rval;
+}
+
+
+bool IsCitSubMissingAffiliation(const CPubdesc& pubdesc)
+{
+    if (!pubdesc.IsSetPub()) {
+        return false;
+    }
+    bool rval = false;
+    ITERATE(CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
+        if ((*it)->IsSub()) {
+            if (!(*it)->GetSub().IsSetAuthors() || 
+                !(*it)->GetSub().GetAuthors().IsSetAffil() ||
+                HasNoAffiliation((*it)->GetSub().GetAuthors().GetAffil())) {
+                rval = true;
+                break;
+            } 
+        }
+    }
+    return rval;
+}
+
+
+const string kMissingAffil = "[n] citsub[s] [is] missing affiliation";
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MISSING_AFFIL, CPubdesc, eDisc | eOncaller, "Missing affiliation")
+//  ----------------------------------------------------------------------------
+{
+    if (IsCitSubMissingAffiliation(obj)) {
+        if (context.GetCurrentSeqdesc() != NULL) {
+            m_Objs[kMissingAffil].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false).Fatal();
+        } else if (context.GetCurrentSeq_feat() != NULL) {
+            m_Objs[kMissingAffil].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false).Fatal();
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MISSING_AFFIL)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

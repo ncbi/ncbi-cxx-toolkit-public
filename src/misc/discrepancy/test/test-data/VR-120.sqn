@@ -1,0 +1,4103 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "Rattus norvegicus" ,
+            common "Norway rat" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 10116 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Rattus" ,
+                  species "norvegicus" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "94" } } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Glires; Rodentia;
+ Sciurognathi; Muroidea; Muridae; Murinae; Rattus" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "ROD" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Song" ,
+                          first "Wei" ,
+                          initials "W." } } } ,
+                affil
+                  std {
+                    email "songweigenome@163.com" } } ,
+              date
+                std {
+                  year 2014 ,
+                  month 6 ,
+                  day 4 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 8731020 } } } ,
+        user {
+          type
+            str "NcbiAutofix" ,
+          data {
+             } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 7 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 10 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 2 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2014 } } } ,
+        update-date
+          std {
+            year 2014 ,
+            month 9 ,
+            day 22 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              id 1111 ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "songwei.sqn/1111" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 46057388 } ,
+            genbank {
+              accession "KJ939360" } } ,
+          descr {
+            molinfo {
+              biomol genomic ,
+              tech standard ,
+              completeness complete } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } } } ,
+            create-date
+              std {
+                year 2014 ,
+                month 6 ,
+                day 4 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 16310 ,
+            topology circular ,
+            seq-data
+              ncbi2na 'BC3B27CC3024091E00E7C8E8F400D5301102BFAD7A5F30F0FA2B08F
+113901353016BB00D5F013F97007C288A934244C332742197E5C9445546A1D24B8C0CF090E0602
+FE1C2731774ABEB03F6E525166B4C63C1501C3CFF69B006E50730374C320F00D41F33B803D3EF2
+85C25430602C3DC34FCCC3918C9C21501EA3C8C551CE7C95C05F0C3C05C403CFE522071C9C49F0
+0740A1FA6B1FCCD4DC8A25EF730D8C055BCC5F157DD9C3D25CCC594DF49015C00A4702C2442040
+4C006F2B42BB250E09A0203A9C4FF7FD52204F18057F380702840A28FCB2C0F0832227C3E0C890
+E0B19111656D15D740F23E93D333130FD1C103F388A230B6C10AC24C7A02EE7E830D12EC9F0D10
+24DE971152083D3003811FE070D72571050504C1C05551301C013F07400B3E88080FC7C5289CC8
+80B1642A0EB80870FC0B00309023C05FB17FE4C383C1C8035F040083F09C20558050189C5C0043
+F4E0D056DCEC900CBA823FF2B22B8025CD89FAE327AF9500083F4BD07F09F14D204103403B01F0
+0CC94022A1277F280280017C0CB83010710D1F053ECA7C02494D0C0809BD09D04C4C7C4447CF51
+0174303D733440FA9C37323532380C7BC338B042050F75C910BB38415A3053ED0F360D32B1C150
+4300F17357076F2541129B9FC2808F0002C0281DA404625597BF14004D17724C10B3C8A4F97952
+E1C0BC06966B35E16E40AC930D1FBD7C3CA8720E0E9C062AF41EDDF1FD0D2E03E17D4B8229E837
+543086208573A27D0FC72F41F3300105C3A9C0100C0CE07000FDAFAAE176883000D75838FF05C8
+7442D02C31C337CF8543CF8D06850BC572A304990D73F08BD33610F2AFC61763BE8D284D50EB92
+09CF0EBDBFBD063C0B5C6E378BD216890D4ADAFDCDCFC43F754B180A10880E8975F14C2E754143
+F38000DD0C0B333B10C0F017252BCF2AE92252B0F9B087C017EF548AF40D77570CBB1FCF0CD704
+75C35437C3E53A5F5D15CB2068035CA7131071902954136CA54CEB3DC414FE48E530073D300815
+31955C145D0CD1CFCF3655057757C4727709738355F143174557CD05D05CA4C73F3DC944D0B7F4
+B71D4F738D28E24D03D00C7573DA2571896F95014DDF182D10C94F35DF35B5D70C269D7DD5C40C
+7CD1C44204CDE1CF0D565E1432530CE313F415C92010362757D87C120A20D20F2DD29FC1B60C65
+92853D95CF7D3258B11433CD70C065704D0FB3D72957CCD1343C5783CC74149F4C12011C7DCD44
+1FD738358935C556FF63385070E45D738003F5D51C11C93DE4CE313F57943FD724A0F515C44C80
+CEDE1008BC7F8C8B030C8AF00D77CFDCA10CA0F817117083D00F75B9C50C45775C4CB0AD270709
+CDA95315600EFADC057D5B1C30150D15C34F3F1FC735D32A5EC34733727507C75C338B28FA0309
+7FC9CD3547DC9410002546341E0924100CFF705427125D0C3CD71CB4D35D071010D2833815D410
+4050C131C74130C74FD1C94C01FA1C955F51C7871582D150A0F55C44FA3C37C704E1000F9D4734
+3DCC50FF341D70150734514F7643F4D2DFEFA65E28A1F05215011800D324CF4D0F951328E0C124
+35F53105707C15D701F043F135C7C7BD433D34474C101D2410434111DD1D9380C01D530D705304
+D4D35D734728A1D557744A3FF1403890F37589F700041E7415CD0470C9CD32573C25CF7DCC461C
+3F1DCCD5D14CF54141041D4030DD514514015004C3FCD75415D12CF0B15F15C59FD7541C344C82
+FCA3312D4225F4095F2004042FC1F78C287B087337C4DEF0390341E7F0F09C0D741C8FA0A3D017
+1803F2F049C0C571F1E9F4371F7565CD20038A6A2097CB2288F77117D83F90F6138C345F0A7FFA
+C00AA9D055EDFC8FC4B70E7C7494FF1739DB016F877FD0705102336815DC5CF3FA25E24A0CB2A1
+27F0B3DC3D89E0728494A6475CA238503730ED36D1254E4F6C30FF7F32C31730C3E8A7DA81E1FB
+1470C3E89578CC93D51830304C27FE1E7D7534FDC75FF24D7532C827A27A04A3812CCD557C9680
+5C9539E8935B23F073FFD5D45C96ABB7DCDF289CD07F3451CD3C33005579CC150CD211777FB38D
+6C70F125B5C71F774794B3C924ACD1CC75F1216037031C7F7D8559E8AE885435FCD045CF78F7DA
+51520BB137C3DF52AFE83CFD13B2F173C77A0002057DA3332B3ACE2530CDCFA7D728FCFB389134
+4CF44B29723B21158971FC4DE51CC3CD90F5C4A6C02CF49E1D9C4713A280CD038D5594CF3897CA
+BF37DF3D12CAA9704A8DB1CDC1D357E13EC7D38C4C73B2C9D1F51CEDF3732892CF6534C9E9F6D4
+78F5473DD29CC5703844E2402547F94F33FB2BB01304F7F5D047D728F24A8C5DB6F1DE3CD48E7C
+451380C4B75DCCA74F4DD1F1A5B5FB0E37D38FE2097D93401882C7743F5C75D0705C838793A395
+54571444F60817D73B00BC0C202828F60557107AFD0943F4C14F3B7F74088CF2C030F1305FB42B
+C2F321F0373337C4E9F153F41FA7C421944D1734C8207C407F4E144570C3ECF5D349D5CB1FCCF3
+F470C70410070444424432195082C8043F810F7549ED3DF3DC3E57D5D5C60F73130C8623C3054B
+DC12C087328450E31E09CE0CC7873821739FE1D7130D5050E170052B81F6DCF20BE30DAB2DF143
+207D435B31C374D6086D791D3896D5F472AF0016190D56965C0509C4B84D01614ADCF73A50E778
+0FE69D03449F4C54FB1C80CB57700CFD801E349F730FC074F9827C89BC17FC2F02F221040DD443
+84E510721135138FCF10D375D0C94473F3FCFD0F003F7D5017F5E45D5D550073251200060C15F8
+834038180173F977F4F15510C32B7143EFB053CF3BD5343DCF54D3481970D24161C474FD047870
+D01F34D01030EF0D444500A1817895C30FB3570F33F3E9D0505F72A7DF55313F15714749CDCC05
+C24C94D55CE24A25B0F729F584407000F7F2547DF1642815537570F54C70F34D80734973F3D058
+C91C92C61C12404F124A5373C39370DA289C772C7CC84D2545059C43C4FCF3DC7DC7C4B1F83F96
+C97C3D0973B3D15F72C25EC5C4E3044C3854501539314CCB0150953851C12895CD277DC7C4D69F
+2C338F53C41D443DD734F2975E10135C1CCCD0E3862334D6E0A04C50A514455CFB10029758C683
+0D7BF3EDD60B3DF7F968FFDE24FF34F525CBD715185CA6BE785541283C55FC0D5720B157DC0C4D
+2D77C934A2DD0F13895344970C82905805330142571C3453DDF28F33F4737C425D22CFD804D3FD
+CDD21A0FC69D04F7D3241A8FD3A5D46C3CFA741FD70FB7B71C610700F51F44D004D3F68FE09649
+38C7847DB23B2FE1CF5CC6FDCDCF8E28D71D5F2CC04310787D434BC3DE000748222C3C171F3CD3
+443C1345F37FCD74FD0F93DE3E5D0301F31D60024054CE0EE9F615042F79197D7FF4300FFDF2C9
+4F13F71CF61720365F1C755754E263D01050C71C430C90797F3DCB473FC9DFA5C2718381100287
+20E04830FAC3CBF0300F0E3F61D3C8F38C30D30F1414384DE7F5C0FC1CC97F13CDDC72B1FF33F6
+7547C3371DD779720A0C31CD1CFED307D04D44F01D41D4C3753053543C53DCBFF925E60924B2BF
+25F1CB003F40C7C68121C6C4017417DC43BC00F3FD53734C75D51C138774941000378143B45D71
+27F72E25CF09F3475CE100E1803C5C0FDD2F33DD758D4F3515470D3DC107E1D75470C39D9C9403
+44C00080330E4D001FC4DD0C7CF25D40FF1D34C13DD6412070FF3FCCD7BD8251DC35411C3CD3C4
+638A41404819F039283F3F5CFF311C3E9D4D51DF0F95D3F435007432811D07D70D77574411155C
+574138D4114F738724ECC324FCC340314F31A2D4DCE3C500951B209D43E4A7730FF2490F75C09C
+AABCEA30C62FD4D3DC855704037F25C54F4D35DD3CE2930F3072743797194048DC034F0F9F1D34
+B094CC95CB4D1253CC352114E09F4EA2710C70C365469F05D7477CF797240450718183D12581CC
+3CC9D8A3C40C37F53E324138E1CF2427C94172471455C3C174CA62F3D3EF32413FD78D8157734D
+7CC90704FB4D128371D0CCCC3CD105418A0070525130105D417D5111883C11D3277113CF55D31C
+F043415C074D12970433B2B32FC40013C87B837041280D03D7CFC5080B39081E70F4E454C5C013
+3A7F7C7FCCA320B0D4FADF2814005FAE41D40C02C30330C135D0D74C37E3FC7C411434D3F53050
+5C5007CF87F5B4CE71F4D0F03DD3D75F25DF17F1C73DF51441120CCC3C70784F87073C3DCF01F1
+CC2FD00F873F7435CF5CD2C95CF6C138D0D310F77D38CCC4778D544F058F4F0B1F0C33D70F1CC7
+0F705D2704373D41DFCFA38828B283CCD7DF3C368E38CE96E48650449A575090D771058B6884FA
+FD35C9CC178F79701301D7881D4103FDF050C504372D5DD12871C3E4944A00D6543DA1F4D4E1D5
+349CC82950756DDE571C47424432FBA4A8DF5C30D63D455705D010CB1CF30494C73B7EB90D144F
+3D12437B9DD15006134000FB27F741352507297CC32D13CA8F0505717E7F5D44FE454E4F7D0253
+3CF4CE75A3434D4C97418E04213D800CA4330C024314F44D37EDD3CDA897257C5A0C5FD744A3DC
+F402374D36094D046EC114197895C30D1FC3651353079EEC4B31934DC7DB45384014631D5470F1
+CF0E004150174F0D434065C93CA0935C929F5F3747033D750704F40F744315E13F0030495C74F1
+0D728FE53E57207C10FC11C0DCD0C24054501CD34F74175729C715143CC4583CF5D0007703DC9C
+40F35F0171C85C37872008435403417434540541CDC030CD41400A9C340733F5CD3F74D1CFD1C3
+FF37C4447C3562E3F430C3003559010E14549451CD3D0B2441CC0C96415435557504C154134D0D
+D313C34365C87340341C1D45F3CF407010B2047141D4C0095C010001C00C050F215D0B75AB1D74
+B25324BECC540C4141355540C0F0031CF0170018155015C01CF09150C4D4704343509514C0CAE0
+A7D06505721052D0012C07C0301330FED3CFDC4493F07B870E13800D36FB0F41CC804DC38404D6
+00DD155CF4034D051D7F361755954DC1374D38E01F6BDDC728B3974CB1035D129F3D724311C46D
+E314C124FF4D2D151379621B01C69E1C358C5C46506997433FF4DE5CF5D4EEA18A1CC73A35C47F
+5C805E013EA34F71CFE4B4C90793D3A9CEC754E2840CD3DE289C4B0F10173CDE7357C4FA8715CB
+60E0DE28A7DD2C84090570467DF64F51F4D754F4F36595F90FB137DFF5D460128D03055128F01D
+6192100D53D4D4CF310F02175CAECFCCF1CF3D70C15CB1CF7D52171CA215210F31159C155D0455
+1544D014838CFF77F9719CF719D4F54101CA28B6C95C37CD0D70DF25F5C53D7931F4010649F04F
+5950D15035FC7835CB2505D70DF04E0DA29414B20454FCD3CFA50725D4D271FF43CD74F74C50DD
+E83EF82100EF00E03C3B5632CC00F1DEB7EC05003822D0DF74A10D0820A07175514D045409E33D
+CFC071F7ED2C4C038CCA13C013F3B336C4F03CFF550933093B0CCCFC38FCA1313F01D07303D304
+13B73DD8313C030E7CF21337BBCF213914F0B4C05FDDF53387357B550FADDCFDC535D6E0341056
+5476D55DF7675A953DB5EAAE1CC7807F14A4DEBDF1F4A94D0FAFCDB531BD57C0C213763AC1AB70
+D254E341307BAE3313FACFFF0FF68E5F5D04C96D0A4E0AD2440B5EE817FCBC2AD3F35D32102760
+21CFF3D3BFB084C0CFCC0C7800DED0435554557117807D0E54355C013C09083C0C0100271F0F7C
+029F753DCB214403FC17037C93EB00FD584437F5F70715DFC7E5C5D200F51311400'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "Trnf" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 66 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 70 } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 66 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Rnr1" } ,
+                    location
+                      int {
+                        from 67 ,
+                        to 1024 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "12S ribosomal RNA" } ,
+                    comment "12S ribosomal RNA" ,
+                    location
+                      int {
+                        from 67 ,
+                        to 1024 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnv" } ,
+                    location
+                      int {
+                        from 1025 ,
+                        to 1092 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 86 } } ,
+                    location
+                      int {
+                        from 1025 ,
+                        to 1092 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Rnr2" } ,
+                    location
+                      int {
+                        from 1093 ,
+                        to 2662 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "16S ribosomal RNA" } ,
+                    comment "16S ribosomal RNA" ,
+                    location
+                      int {
+                        from 1093 ,
+                        to 2662 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnl1" } ,
+                    location
+                      int {
+                        from 2663 ,
+                        to 2737 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 ,
+                            codon {
+                              2 ,
+                              3 } } } ,
+                    location
+                      int {
+                        from 2663 ,
+                        to 2737 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND1" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd1" ,
+                          name "NADH dehydrogenase 1, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620555 } } } ,
+                    comment "Nd1; NADH1" ,
+                    location
+                      int {
+                        from 2738 ,
+                        to 3692 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trni" } ,
+                    location
+                      int {
+                        from 3693 ,
+                        to 3761 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 73 } } ,
+                    location
+                      int {
+                        from 3693 ,
+                        to 3761 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnq" } ,
+                    location
+                      int {
+                        from 3759 ,
+                        to 3829 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 81 } } ,
+                    location
+                      int {
+                        from 3759 ,
+                        to 3829 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnm" } ,
+                    location
+                      int {
+                        from 3833 ,
+                        to 3901 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 77 } } ,
+                    location
+                      int {
+                        from 3833 ,
+                        to 3901 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND2" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd2" ,
+                          name "NADH dehydrogenase 2, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620556 } } } ,
+                    comment "Nd2; NADH2" ,
+                    location
+                      int {
+                        from 3902 ,
+                        to 4940 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnw" } ,
+                    location
+                      int {
+                        from 4941 ,
+                        to 5006 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 87 } } ,
+                    location
+                      int {
+                        from 4941 ,
+                        to 5006 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trna" } ,
+                    location
+                      int {
+                        from 5008 ,
+                        to 5076 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 65 } } ,
+                    location
+                      int {
+                        from 5008 ,
+                        to 5076 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnn" } ,
+                    location
+                      int {
+                        from 5079 ,
+                        to 5150 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 78 } } ,
+                    location
+                      int {
+                        from 5079 ,
+                        to 5150 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      imp {
+                        key "rep_origin" } ,
+                    location
+                      int {
+                        from 5151 ,
+                        to 5183 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } ,
+                    qual {
+                      {
+                        qual "direction" ,
+                        val "right" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnc" } ,
+                    location
+                      int {
+                        from 5184 ,
+                        to 5251 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 67 } } ,
+                    location
+                      int {
+                        from 5184 ,
+                        to 5251 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trny" } ,
+                    location
+                      int {
+                        from 5255 ,
+                        to 5320 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 89 } } ,
+                    location
+                      int {
+                        from 5255 ,
+                        to 5320 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "COX1" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Co1" ,
+                          name "cytochrome c oxidase I, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 621871 } } } ,
+                    comment "Co1; Cox1" ,
+                    location
+                      int {
+                        from 5322 ,
+                        to 6866 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trns1" } ,
+                    location
+                      int {
+                        from 6864 ,
+                        to 6932 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 83 ,
+                            codon {
+                              4 ,
+                              5 ,
+                              6 ,
+                              7 } } } ,
+                    location
+                      int {
+                        from 6864 ,
+                        to 6932 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnd" } ,
+                    location
+                      int {
+                        from 6936 ,
+                        to 7003 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 68 } } ,
+                    location
+                      int {
+                        from 6936 ,
+                        to 7003 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "COX2" ,
+                        desc "COXII" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Co2" ,
+                          name "cytochrome c oxidase II, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 621872 } } } ,
+                    comment "Cox2; co2; COII" ,
+                    location
+                      int {
+                        from 7005 ,
+                        to 7688 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnk" } ,
+                    location
+                      int {
+                        from 7692 ,
+                        to 7755 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 75 } } ,
+                    location
+                      int {
+                        from 7692 ,
+                        to 7755 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "ATP8" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Atp8" ,
+                          name "ATP synthase 8, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 621240 } } } ,
+                    comment "ATPase8" ,
+                    location
+                      int {
+                        from 7757 ,
+                        to 7960 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "ATP6" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Atp6" ,
+                          name "ATP synthase 6, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 621239 } } } ,
+                    location
+                      int {
+                        from 7918 ,
+                        to 8598 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "COX3" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Co3" ,
+                          name "cytochrome c oxidase III, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 621873 } } } ,
+                    comment "Cox3; Co3; COIII" ,
+                    location
+                      int {
+                        from 8598 ,
+                        to 9381 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trng" } ,
+                    location
+                      int {
+                        from 9382 ,
+                        to 9449 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 71 } } ,
+                    location
+                      int {
+                        from 9382 ,
+                        to 9449 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND3" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd3" ,
+                          name "NADH dehydrogenase 3, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620557 } } } ,
+                    comment "Nd3; NADH3" ,
+                    location
+                      int {
+                        from 9450 ,
+                        to 9797 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnr" } ,
+                    location
+                      int {
+                        from 9799 ,
+                        to 9866 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 82 } } ,
+                    location
+                      int {
+                        from 9799 ,
+                        to 9866 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND4L" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd4l" ,
+                          name "NADH dehdrogenase 4L, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620494 } } } ,
+                    comment "Nd4l; NADH4L" ,
+                    location
+                      int {
+                        from 9870 ,
+                        to 10166 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND4" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd4" ,
+                          name "NADH dehydrogenase 4, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620559 } } } ,
+                    comment "NADH4" ,
+                    location
+                      int {
+                        from 10160 ,
+                        to 11537 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnh" } ,
+                    location
+                      int {
+                        from 11538 ,
+                        to 11605 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 72 } } ,
+                    location
+                      int {
+                        from 11538 ,
+                        to 11605 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trns2" } ,
+                    location
+                      int {
+                        from 11606 ,
+                        to 11665 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 83 ,
+                            codon {
+                              44 ,
+                              45 } } } ,
+                    location
+                      int {
+                        from 11606 ,
+                        to 11665 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnl2" } ,
+                    location
+                      int {
+                        from 11665 ,
+                        to 11735 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 ,
+                            codon {
+                              16 ,
+                              17 ,
+                              18 ,
+                              19 } } } ,
+                    location
+                      int {
+                        from 11665 ,
+                        to 11735 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND5" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd5" ,
+                          name "NADH dehydrogenase 5, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620560 } } } ,
+                    comment "Nd5; NADH5" ,
+                    location
+                      int {
+                        from 11736 ,
+                        to 13565 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND6" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd6" ,
+                          name "NADH dehydrogenase 6, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620561 } } } ,
+                    comment "NADH6" ,
+                    location
+                      int {
+                        from 13543 ,
+                        to 14061 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trne" } ,
+                    location
+                      int {
+                        from 14062 ,
+                        to 14130 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 69 } } ,
+                    location
+                      int {
+                        from 14062 ,
+                        to 14130 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "CYTB" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Cytb" ,
+                          name "cytochrome b, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620081 } } } ,
+                    location
+                      int {
+                        from 14136 ,
+                        to 15278 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnt" } ,
+                    location
+                      int {
+                        from 15280 ,
+                        to 15346 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 84 } } ,
+                    location
+                      int {
+                        from 15280 ,
+                        to 15346 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnp" } ,
+                    location
+                      int {
+                        from 15348 ,
+                        to 15415 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 80 } } ,
+                    location
+                      int {
+                        from 15348 ,
+                        to 15415 ,
+                        strand minus ,
+                        id
+                          local
+                            id 1111 } } ,
+                  {
+                    data
+                      imp {
+                        key "D-loop" } ,
+                    location
+                      int {
+                        from 15416 ,
+                        to 16309 ,
+                        strand plus ,
+                        id
+                          local
+                            id 1111 } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_1" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139912 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 1 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 318 ,
+            seq-data
+              ncbieaa "MYFINILTLLIPILIAMAFLTLVERKILGYMQLRKGPNIVGPYGILQPFADAMKL
+FMKEPMRPLTTSMSLFIIAPTLSLTLALSLWIPLPMPHPLINLNLGMLFILATSSLSVYSILWSGWASNSKYSLFGAL
+RAVAQTISYEVTMAIILLSVLLMSGSFSLQMLITTQEHIWLLIPAWPMAMMWYISTLAETNRAPFDLTEGESELVSGF
+NVEYAAGPFALFFMAEYTNIILMNALTSIVFLGPLYHINYPELYSTSFMTETLLLSTTFLWIRASYPRFRYDQLMHLL
+WKNFLPLTLAFCMWYISLPIFLAGIPPYT" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 1" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 317 ,
+                        id
+                          local
+                            str "KJ939360_1" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_2" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139913 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 2 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 346 ,
+            seq-data
+              ncbieaa "MNPITLIIIYFTILMGPVITMSSSNLLLMWVGLEMSLLAIIPLLANKKSPRSTEA
+ATKYFLTQATASMIILLVIILNYKQSGMWTLQQQTNNMLLNMMLISLAMKLGLAPFHYWLPEVTQGIPLHIGLILLTW
+QKIAPLSILYQFYQLLNPTITTILAISSVFVGAWGGLNQTQTRKIMAYSSIAHMGWMTAILPYNPNLTLLNLTIYILL
+TVPMFITLMTNSATTINTLSLAWNKTPMILTMTSIILLSLGGLPPLTGFLPKWAIISELLKNNCSTLSTLMAIMALLS
+LFFYTRLIYSMSLTMFPTNNNSKMISHHHQNPKHNFILPTLTVLSTLTLPLSSQLIT" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 2" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 345 ,
+                        id
+                          local
+                            str "KJ939360_2" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_3" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139914 } } ,
+          descr {
+            title "cytochrome c oxidase subunit I (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 514 ,
+            seq-data
+              ncbieaa "MLVNRWLFSTNHKDIGTLYLLFGAWAGMVGTALSILIRAELGQPGALLGDDQIYN
+VIVTAHAFVMIFFMVMPMMIGGFGNWLVPLMIGAPDMAFPRMNNMSFWLLPPSFLLLLASSMVEAGAGTGWTVYPPLA
+GNLAHAGASVDLTIFSLHLAGVSSILGAINFITTIINMKPPAMTQYQTPLFVWSVLITAVLLLLSLPVLAAGITMLLT
+DRNLNTTFFDPAGGGDPILYQHLFWFFGHPEVYILILPGFGIISHVVTYYSGKKEPFGYMGMVWAMMSIGFLGFIVWA
+HHMFTVGLDVDTRAYFTSATMIIAIPTGVKVFSWLATLHGGNIKWSPAMLWALGFIFLFTVGGLTGIVLSNSSLDIVL
+HDTYYVVAHFHYVLSMGAVFAIMAGFVHWFPLFSGYTLNDTWAKAHFAIMFVGVNMTFFPQHFLGLAGMPRRYSDYPD
+AYTTWNTVSSMGSFISLTAVLVMIFMIWEAFASKREVLSISYSSTNLEWLHGCPPPYHTFEEPSYVKVK" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome c oxidase subunit I" } ,
+                        desc "cytochrome c oxidase subunit 1" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 513 ,
+                        id
+                          local
+                            str "KJ939360_3" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_4" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139915 } } ,
+          descr {
+            title "cytochrome c oxidase subunit II (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 227 ,
+            seq-data
+              ncbieaa "MAYPFQLGLQDATSPIMEELTNFHDHTLMIVFLISSLVLYIISLMLTTKLTHTST
+MDAQEVETIWTILPAVILILIALPSLRILYMMDEINNPVLTVKTMGHQWYWSYEYTDYEDLCFDSYMIPTNDLKPGEL
+RLLEVDNRVVLPMELPIRMLISSEDVLHSWAVPSLGLKTDAIPGRLNQATVTSNRPGLFYGQCSEICGSNHSFMPIVL
+EMVPLKYFENWSASMI" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome c oxidase subunit II" } ,
+                        desc "cytochrome c oxidase subunit 2" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 226 ,
+                        id
+                          local
+                            str "KJ939360_4" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_5" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139916 } } ,
+          descr {
+            title "ATP synthase F0 subunit 8 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 67 ,
+            seq-data
+              ncbieaa "MPQLDTSTWFITIISSMATLFILFQLKISSQTFPAPPSPKTMATEKTNNPWESKW
+TKTYLPLSLPPQ" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "ATP synthase F0 subunit 8" } ,
+                        desc "ATPase subunit 8" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 66 ,
+                        id
+                          local
+                            str "KJ939360_5" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_6" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139917 } } ,
+          descr {
+            title "ATP synthase F0 subunit 6 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 226 ,
+            seq-data
+              ncbieaa "MNENLFASFITPTMMGLPIVVTIIMFPSILFPSSERLISNRLHSFQHWLIKLIIK
+QMMLIHTPKGRTWALMIVSLIMFIGSTNLLGLLPHTFTPTTQLSMNLSMAIPLWAGAVILGFRHKLKNSLAHFLPQGT
+PISLIPMLIIIETISLFIQPMALAVRLTANITAGHLLMHLIGGATLVLMDISPPTATITFIILLLLTVLEFAVALIQA
+YVFTLLVSLYLHDNT" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "ATP synthase F0 subunit 6" } ,
+                        desc "ATPase subunit 6" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 225 ,
+                        id
+                          local
+                            str "KJ939360_6" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_7" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139918 } } ,
+          descr {
+            title "cytochrome c oxidase subunit III (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 261 ,
+            seq-data
+              ncbieaa "MTHQTHAYHMVNPSPWPLTGALSALLLTSGLVMWFHYNSTILLSLGLLTNILTMY
+QWWRDIIREGTYQGHHTPIVQKGLRYGMILFIVSEVFFFAGFFWAFYHSSLVPTHDLGGCWPPTGITPLNPLEVPLLN
+TSVLLASGVSITWAHHSLMEGNRNHMNQALLITILLGLYFTILQASEYFETSFSISDGIYGSTFFMATGFHGLHVIIG
+STFLIVCLLRQLKFHFTSKHHFGFEAAAWYWHFVDVVWLFLYVSIYWWGS" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome c oxidase subunit III" } ,
+                        desc "cytochrome c oxidase subunit 3" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 260 ,
+                        id
+                          local
+                            str "KJ939360_7" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_8" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139919 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 3 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 115 ,
+            seq-data
+              ncbieaa "MNLLIIITINITLSFILISIAFWLPQMNLYSEKANPYECGFDPTSSARLPFSMKF
+FLVAITFLLFDLEIALLLPLPWAIQTTNTTTMMATAFILVTILALGLSYEWTQKGLEWTE" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 3" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 114 ,
+                        id
+                          local
+                            str "KJ939360_8" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_9" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139920 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 4L (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 98 ,
+            seq-data
+              ncbieaa "MTSAFLNLTMAFTLSLLGTFMFRSHLMSTLLCLEGMMLSLFVMTSTSTLNSNSMI
+SMTIPITILVFAACEAAVGLALLVKISNTYGTDYVQNLNLLQC" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 4L" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 97 ,
+                        id
+                          local
+                            str "KJ939360_9" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_10" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139921 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 4 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 459 ,
+            seq-data
+              ncbieaa "MLKIIFPSIMLLPLTWLSANKKIWTNVTSYSFLVSLLSLSLLWQNDENYLNFSVM
+FSSDPLSTPLIILTTWLLPLMMLASQNHMKKENMMHQKLYISMLISLQILLIMTFSATELILFYILFEATLIPTLIII
+TRWGNQTERLNAGIYFLFYTLIGSIPLLIALISIQNSMGTLNFLILSLTTHPLPSTWSNTILWLACMMAFMIKMPLYG
+VHLWLPKAHVEAPIAGSMILAAILLKLGGYGMMRVSIILDPLTKSLAYPFIILSLWGMIMTSSICLRQTDLKSLIAYS
+SVSHMALVITAIMIQTPWSFMGATMLMIAHGLTSSLLFCLANTNYERIHSRTMIMARGLQMIFPLMATWWLLASLANL
+ALPPLINLMGELFIVMATFSWSNPSIILMATNIVITGIYSMYMIITTQRGKLTSHMNNLQPSHTRELTLMALHIIPLM
+LLTINPKLITGLTM" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 4" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 458 ,
+                        id
+                          local
+                            str "KJ939360_10" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_11" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139922 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 5 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 609 ,
+            seq-data
+              ncbieaa "MNMMTSSILMILILLTTPIIISMTNLPKLIDFPSYATSSIKFSFLLSLLPLLLFF
+HHNTEYMITNWHWLTINSIKLTMSFKIDYFSILFLSVALFVTWSIMQFSSWYMHSDPHINRFIKYLMMFLITMLILTS
+ANNLFQLFIGWEGVGIMSFLLIGWWYGRADANTAALQAILYNRVGDIGFILAMTWFCLNMNSWELQQIFLTNTNNLVP
+LTGLLIAATGKSAQFGLHPWLPSAMEGPTPVSALLHSSTMVVAGIFLMIRFHPLTSNNSTIMTAMLCLGAITTLFTAI
+CALTQNDIKKIVAFSTSSQLGLMMVTLGINQPYLAFLHICTHAFFKAMLFMCSGSIIHSLNDEQDIRKMGNMMKAMPF
+TSSCLIIGSLALTGMPFLTGFYSKDLIIEAINTCNTNAWALMITLIATSMTAVYSMRIIYFVTMTKPRYSPLITINEN
+NPNLINPIKRLALGSILAGFLISLNIPPTNIQILTMPWHLKMTALLITILGFAIALELNNLTLNLSMSKPTKLSSFST
+SLGYYPPIMHRIIPQKTLNSSYKLSLNLLDLIWLEKTIPKSTSITQTQLSKMMSNQKGLIKLYFLSFLITISLIFILH
+TLNPEWFQ" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 5" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 608 ,
+                        id
+                          local
+                            str "KJ939360_11" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_12" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139923 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 6 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 172 ,
+            seq-data
+              ncbieaa "MTNYMFILSLLFLTGCLGLALKPSPIYGGLGLIVSGCIGCLMVLGFGGSFLGLMV
+FLIYLGGMLVVFGYTTAMATEEYPETWGSNWFIFSFFVLGLFMELVVFYLFSLNNKVELVDFDSLGDWLMYEIDDVGV
+MLEGGIGVAAIYSCATWMMVVAGWSLFAGIFIIIEITRD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 6" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 171 ,
+                        id
+                          local
+                            str "KJ939360_12" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939360_13" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139924 } } ,
+          descr {
+            title "cytochrome b (mitochondrion) [Rattus norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 380 ,
+            seq-data
+              ncbieaa "MTNIRKSHPLFKIINHSFIDLPAPSNISSWWNFGSLLGVCLMVQILTGLFLAMHY
+TSDTMTAFSSVTHICRDVNYGWLIRYLHANGASMFFICLFLHVGRGLYYGSYTFLETWNIGIILLFAVMATAFMGYVL
+PWGQMSFWGATVITNLLSAIPYIGTTLVEWIWGGFSVDKATLTRFFAFHFILPFIIAALAIVHLLFLHETGSNNPTGL
+NSDADKIPFHPYYTIKDLLGVFMLLLFLMTLVLFFPDLLGDPDNYTPANPLNTPPHIKPEWYFLFAYAILRSIPNKLG
+GVVALILSILILAFLPFLHTSKQRSLTFRPITQILYWILVANLLILTWIGGQPVEHPFIIIGQLASISYFSIILILMP
+ISGIVEDKMLKWN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome b" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 379 ,
+                        id
+                          local
+                            str "KJ939360_13" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } ,
+                    code-break {
+                      {
+                        loc
+                          int {
+                            from 3692 ,
+                            to 3692 ,
+                            strand plus ,
+                            id
+                              local
+                                id 1111 } ,
+                        aa
+                          ncbieaa 42 } } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "KJ939360_1" ,
+                location
+                  int {
+                    from 2738 ,
+                    to 3692 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } ,
+                    code-break {
+                      {
+                        loc
+                          int {
+                            from 4940 ,
+                            to 4940 ,
+                            strand plus ,
+                            id
+                              local
+                                id 1111 } ,
+                        aa
+                          ncbieaa 42 } } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "KJ939360_2" ,
+                location
+                  int {
+                    from 3902 ,
+                    to 4940 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939360_3" ,
+                location
+                  int {
+                    from 5322 ,
+                    to 6866 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939360_4" ,
+                location
+                  int {
+                    from 7005 ,
+                    to 7688 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939360_5" ,
+                location
+                  int {
+                    from 7757 ,
+                    to 7960 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939360_6" ,
+                location
+                  int {
+                    from 7918 ,
+                    to 8598 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } ,
+                    code-break {
+                      {
+                        loc
+                          int {
+                            from 9381 ,
+                            to 9381 ,
+                            strand plus ,
+                            id
+                              local
+                                id 1111 } ,
+                        aa
+                          ncbieaa 42 } } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "KJ939360_7" ,
+                location
+                  int {
+                    from 8598 ,
+                    to 9381 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939360_8" ,
+                location
+                  int {
+                    from 9450 ,
+                    to 9797 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939360_9" ,
+                location
+                  int {
+                    from 9870 ,
+                    to 10166 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } ,
+                    code-break {
+                      {
+                        loc
+                          int {
+                            from 11537 ,
+                            to 11537 ,
+                            strand plus ,
+                            id
+                              local
+                                id 1111 } ,
+                        aa
+                          ncbieaa 42 } } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "KJ939360_10" ,
+                location
+                  int {
+                    from 10160 ,
+                    to 11537 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939360_11" ,
+                location
+                  int {
+                    from 11736 ,
+                    to 13565 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939360_12" ,
+                location
+                  int {
+                    from 13543 ,
+                    to 14061 ,
+                    strand minus ,
+                    id
+                      local
+                        id 1111 } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939360_13" ,
+                location
+                  int {
+                    from 14136 ,
+                    to 15278 ,
+                    strand plus ,
+                    id
+                      local
+                        id 1111 } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "Rattus norvegicus" ,
+            common "Norway rat" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 10116 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Rattus" ,
+                  species "norvegicus" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "108" } } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Glires; Rodentia;
+ Sciurognathi; Muroidea; Muridae; Murinae; Rattus" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "ROD" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Zhu" ,
+                          first "Rong" ,
+                          initials "R." } } } ,
+                affil
+                  std {
+                    email "songweigenome@163.com" } } ,
+              date
+                std {
+                  year 2014 ,
+                  month 6 ,
+                  day 4 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 8731021 } } } ,
+        user {
+          type
+            str "NcbiAutofix" ,
+          data {
+             } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 7 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 10 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 2 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2014 } } } ,
+        update-date
+          std {
+            year 2014 ,
+            month 9 ,
+            day 22 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              id 3453 ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "zhurong.sqn/3453" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 46057402 } ,
+            genbank {
+              accession "KJ939361" } } ,
+          descr {
+            molinfo {
+              biomol genomic ,
+              tech standard ,
+              completeness complete } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } } } ,
+            create-date
+              std {
+                year 2014 ,
+                month 6 ,
+                day 4 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 16308 ,
+            topology circular ,
+            seq-data
+              ncbi2na 'BC3B27CC3024091E00E7C8E8F400D5301102BFAD7A5F30F0FA2B08F
+113901353016BB00D5F013F97007C288A934244C332742197E5C9445546A1D24B8C0CF090E0602
+FE1C2731774ABEB03F6E525166B4C63C1501C3CFF69B006E50730374C320F00D41F33B803D3EF2
+85C25430602C3DC34FCCC3918C9C21501EA3C8C551CE7C95C05F0C3C05C403CFE522071C9C49F0
+0740A1FA6B1FCCD4DC8A25EF730D8C055BCC5F157DD9C3D25CCC594DF49015C00A4702C2442040
+4C006F2B42BB250E09A0203A9C4FF7FD52204F18057F380702840A28FCB2C0F0832227C3E0C890
+E0B19111656D15D740F23E93D333130FD1C103F388A230B6C10AC24C7A02EE7E830D12EC9F0D10
+24DE971152083D3003811FE070D72571050504C1C05551301C013F07400B3E88080FC7C5289CC8
+80B1642A0EB80870FC0B00309023C05FB17FE4C383C1C8035F040083F09C20558050189C5C0043
+F4E0D056DCEC900CBA823FF2B22B8025CD89FAE327AF9500083F4BD07F09F14D204103403B01F0
+0CC94022A1277F280280017C0CB83010710D1F053ECA7C02494D0C0809BD09D04C4C7C4447CF51
+0174303D733440FA9C37323532380C7BC338B042050F75C910BB38415A3053ED0F360D32B1C150
+4300F17357076F2541129B9FC2808F0002C0281DA404625597BF14004D17724C10B3C8A4F97952
+E1C0BC06966B35E16E40AC930D1FBD7C3CA8720E0E9C062AF41EDDF1FD0D2E03E17D4B8229E837
+543086208573A27D0FC72F41F3300105C3A9C0100C0CE07000FDAFAAE176883000D75838FF05C8
+7442D02C31C337CF8543CF8D06850BC572A304990D73F08BD33610F2AFC61763BE8D284D50EB92
+09CF0EBDBFBD063C0B5C6E378BD216890D4ADAFDCDCFC43F754B180A10880E8975F14C2E754143
+F38000DD0C0B333B10C0F017252BCF2AE92252B0F9B087C017EF548AF40D77570CBB1FCF0CD704
+75C35437C3E53A5F5D15CB2068035CA7131071902954136CA54CEB3DC414FE48E530073D300815
+31955C145D0CD1CFCF3655057757C4727709738355F143174557CD05D05CA4C73F3DC944D0B7F4
+B71D4F738D28E24D03D00C7573DA2571896F95014DDF182D10C94F35DF35B5D70C269D7DD5C40C
+7CD1C44204CDE1CF0D565E1432530CE313F415C92010362757D87C120A20D20F2DD29FC1B60C65
+92853D95CF7D3258B11433CD70C065704D0FB3D72957CCD1343C5783CC74149F4C12011C7DCD44
+1FD738358935C556FF63385070E45D738003F5D51C11C93DE4CE313F57943FD724A0F515C44C80
+CEDE1008BC7F8C8B030C8AF00D77CFDCA10CA0F817117083D00F75B9C50C45775C4CB0AD270709
+CDA95315600EFADC057D5B1C30150D15C34F3F1FC735D32A5EC34733727507C75C338B28FA0309
+7FC9CD3547DC9410002546341E0924100CFF705427125D0C3CD71CB4D35D071010D2833815D410
+4050C131C74130C74FD1C94C01FA1C955F51C7871582D150A0F55C44FA3C37C704E1000F9D4734
+3DCC50FF341D70150734514F7643F4D2DFEFA65E28A1F05215011800D324CF4D0F951328E0C124
+35F53105707C15D701F043F135C7C7BD433D34474C101D2410434111DD1D9380C01D530D705304
+D4D35D734728A1D557744A3FF1403890F37589F700041E7415CD0470C9CD32573C25CF7DCC461C
+3F1DCCD5D14CF54141041D4030DD514514015004C3FCD75415D12CF0B15F15C59FD7541C344C82
+FCA3312D4225F4095F2004042FC1F78C287B087337C4DEF0390341E7F0F09C0D741C8FA0A3D017
+1803F2F049C0C571F1E9F4371F7565CD20038A6A2097CB2288F77117D83F90F6138C345F0A7FFA
+C00AA9D055EDFC8FC4B70E7C7494FF1739DB016F877FD0705102336815DC5CF3FA25E24A0CB2A1
+27F0B3DC3D89E0728494A6475CA238503730ED36D1254E4F6C30FF7F32C31730C3E8A7DA81E1FB
+1470C3E89578CC93D51830304C27FE1E7D7534FDC75FF24D7532C827A27A04A3812CCD557C9680
+5C9539E8935B23F073FFD5D45C96ABB7DCDF289CD07F3451CD3C33005579CC150CD211777FB38D
+6C70F125B5C71F774794B3C924ACD1CC75F1216037031C7F7D8559E8AE885435FCD045CF78F7DA
+51520BB137C3DF52AFE83CFD13B2F173C77A0002057DA3332B3ACE2530CDCFA7D728FCFB389134
+4CF44B29723B21158971FC4DE51CC3CD90F5C4A6C02CF49E1D9C4713A280CD038D5594CF3897CA
+BF37DF3D12CAA9704A8DB1CDC1D357E13EC7D38C4C73B2C9D1F51CEDF3732892CF6534C9E9F6D4
+78F5473DD29CC5703844E2402547F94F33FB2BB01304F7F5D047D728F24A8C5DB6F1DE3CD48E7C
+451380C4B75DCCA74F4DD1F1A5B5FB0E37D38FE2097D93401882C7743F5C75D0705C838793A395
+54571444F60817D73B00BC0C202828F60557107AFD0943F4C14F3B7F74088CF2C030F1305FB42B
+C2F321F0373337C4E9F153F41FA7C421944D1734C8207C407F4E144570C3ECF5D349D5CB1FCCF3
+F470C70410070444424432195082C8043F810F7549ED3DF3DC3E57D5D5C60F73130C8623C3054B
+DC12C087328450E31E09CE0CC7873821739FE1D7130D5050E170052B81F6DCF20BE30DAB2DF143
+207D435B31C374D6086D791D3896D5F472AF0016190D56965C0509C4B84D01614ADCF73A50E778
+0FE69D03449F4C54FB1C80CB57700CFD801E349F730FC074F9827C89BC17FC2F02F221040DD443
+84E510721135138FCF10D375D0C94473F3FCFD0F003F7D5017F5E45D5D550073251200060C15F8
+834038180173F977F4F15510C32B7143EFB053CF3BD5343DCF54D3481970D24161C474FD047870
+D01F34D01030EF0D444500A1817895C30FB3570F33F3E9D0505F72A7DF55313F15714749CDCC05
+C24C94D55CE24A25B0F729F584407000F7F2547DF1642815537570F54C70F34D80734973F3D058
+C91C92C61C12404F124A5373C39370DA289C772C7CC84D2545059C43C4FCF3DC7DC7C4B1F83F96
+C97C3D0973B3D15F72C25EC5C4E3044C3854501539314CCB0150953851C12895CD277DC7C4D69F
+2C338F53C41D443DD734F2975E10135C1CCCD0E3862334D6E0A04C50A514455CFB10029758C683
+0D7BF3EDD60B3DF7F968FFDE24FF34F525CBD715185CA6BE785541283C55FC0D5720B157DC0C4D
+2D77C934A2DD0F13895344970C82905805330142571C3453DDF28F33F4737C425D22CFD804D3FD
+CDD21A0FC69D04F7D3241A8FD3A5D46C3CFA741FD70FB7B71C610700F51F44D004D3F68FE09649
+38C7847DB23B2FE1CF5CC6FDCDCF8E28D71D5F2CC04310787D434BC3DE000748222C3C171F3CD3
+443C1345F37FCD74FD0F93DE3E5D0301F31D60024054CE0EE9F615042F79197D7FF4300FFDF2C9
+4F13F71CF61720365F1C755754E263D01050C71C430C90797F3DCB473FC9DFA5C2718381100287
+20E04830FAC3CBF0300F0E3F61D3C8F38C30D30F1414384DE7F5C0FC1CC97F13CDDC72B1FF33F6
+7547C3371DD779720A0C31CD1CFED307D04D44F01D41D4C3753053543C53DCBFF925E60924B2BF
+25F1CB003F40C7C68121C6C4017417DC43BC00F3FD53734C75D51C138774941000378143B45D71
+27F72E25CF09F3475CE100E1803C5C0FDD2F33DD758D4F3515470D3DC107E1D75470C39D9C9403
+44C00080330E4D001FC4DD0C7CF25D40FF1D34C13DD6412070FF3FCCD7BD8251DC35411C3CD3C4
+638A41404819F039283F3F5CFF311C3E9D4D51DF0F95D3F435007432811D07D70D77574411155C
+574138D4114F738724ECC324FCC340314F31A2D4DCE3C500951B209D43E4A7730FF2490F75C09C
+AABCEA30C62FD4D3DC855704037F25C54F4D35DD3CE2930F3072743797194048DC034F0F9F1D34
+B094CC95CB4D1253CC352114E09F4EA2710C70C365469F05D7477CF797240450718183D12581CC
+3CC9D8A3C40C37F53E324138E1CF2427C94172471455C3C174CA62F3D3EF32413FD78D8157734D
+7CC90704FB4D128371D0CCCC3CD105418A0070525130105D417D5111883C11D3277113CF55D31C
+F043415C074D12970433B2B32FC40013C87B837041280D03D7CFC5080B39081E70F4E454C5C013
+3A7F7C7FCCA320B0D4FADF2814005FAE41D40C02C30330C135D0D74C37E3FC7C411434D3F53050
+5C5007CF87F5B4CE71F4D0F03DD3D75F25DF17F1C73DF51441120CCC3C70784F87073C3DCF01F1
+CC2FD00F873F7435CF5CD2C95CF6C138D0D310F77D38CCC4778D544F058F4F0B1F0C33D70F1CC7
+0F705D2704373D41DFCFA38828B283CCD7DF3C368E38CE96E48650449A575090D771058B6884FA
+FD35C9CC178F79701301D7881D4103FDF050C504372D5DD12871C3E4944A00D6543DA1F4D4E1D5
+349CC82950756DDE571C47424432FBA4A8DF5C30D63D455705D010CB1CF30494C73B7EB90D144F
+3D12437B9DD15006134000FB27F741352507297CC32D13CA8F0505717E7F5D44FE454E4F7D0253
+3CF4CE75A3434D4C97418E04213D800CA4330C024314F44D37EDD3CDA897257C5A0C5FD744A3DC
+F402374D36094D046EC114197895C30D1FC3651353079EEC4B31934DC7DB45384014631D5470F1
+CF0E004150174F0D434065C93CA0935C929F5F3747033D750704F40F744315E13F0030495C74F1
+0D728FE53E57207C10FC11C0DCD0C24054501CD34F74175729C715143CC4583CF5D0007703DC9C
+40F35F0171C85C37872008435403417434540541CDC030CD41400A9C340733F5CD3F74D1CFD1C3
+FF37C4447C3562E3F430C3003559010E14549451CD3D0B2441CC0C96415435557504C154134D0D
+D313C34365C87340341C1D45F3CF407010B2047141D4C0095C010001C00C050F215D0B75AB1D74
+B25324BECC540C4141355540C0F0031CF0170018155015C01CF09150C4D4704343509514C0CAE0
+A7D06505721052D0012C07C0301330FED3CFDC4493F07B870E13800D36FB0F41CC804DC38404D6
+00DD155CF4034D051D7F361755954DC1374D38E01F6BDDC728B3974CB1035D129F3D724311C46D
+E314C124FF4D2D151379621B01C69E1C358C5C46506997433FF4DE5CF5D4EEA18A1CC73A35C47F
+5C805E013EA34F71CFE4B4C90793D3A9CEC754E2840CD3DE289C4B0F10173CDE7357C4FA8715CB
+60E0DE28A7DD2C84090570467DF64F51F4D754F4F36595F90FB137DFF5D460128D03055128F01D
+6192100D53D4D4CF310F02175CAECFCCF1CF3D70C15CB1CF7D52171CA215210F31159C155D0455
+1544D014838CFF77F9719CF719D4F54101CA28B6C95C37CD0D70DF25F5C53D7931F4010649F04F
+5950D15035FC7835CB2505D70DF04E0DA29414B20454FCD3CFA50725D4D271FF43CD74F74C50DD
+E83EF82100EF00E03C3B5632CC00F1DEB7EC05003822D0DF74A10D0820A07175514D045409E33D
+CFC071F7ED2C4C038CCA13C013F3B336C4F03CFF550933093B0CCCFC38FCA1313F01D07303D304
+13B73DD8313C030E7CF21337BBCF213914F0B4C05FDDF53387357B550FADDCFDC535D6E0341056
+5476D55DF7675A953DB5EAAE1CC7807F14A4DEBDF1F4A94D0FAFCDB531BD57C0C213763AC1AB70
+D254E341307BAE3313FACFFF0FF68E5F5D04C96D0A4E0AD2440B5EE817FCBC2AD3F35D32102760
+21CFF3D3BFB084C0CFCC0C7800DED0435554557117807D0E54355C013C0920F03004009C7C3DFC
+0A7DD4F72C85100FF05C0DF24FAC03F56110DF5F70715DFC7E5C5D200F5131140'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "Trnf" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 66 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 70 } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 66 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Rnr1" } ,
+                    location
+                      int {
+                        from 67 ,
+                        to 1024 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "12S ribosomal RNA" } ,
+                    comment "12S ribosomal RNA" ,
+                    location
+                      int {
+                        from 67 ,
+                        to 1024 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnv" } ,
+                    location
+                      int {
+                        from 1025 ,
+                        to 1092 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 86 } } ,
+                    location
+                      int {
+                        from 1025 ,
+                        to 1092 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Rnr2" } ,
+                    location
+                      int {
+                        from 1093 ,
+                        to 2662 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "16S ribosomal RNA" } ,
+                    comment "16S ribosomal RNA" ,
+                    location
+                      int {
+                        from 1093 ,
+                        to 2662 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnl1" } ,
+                    location
+                      int {
+                        from 2663 ,
+                        to 2737 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 ,
+                            codon {
+                              2 ,
+                              3 } } } ,
+                    location
+                      int {
+                        from 2663 ,
+                        to 2737 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND1" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd1" ,
+                          name "NADH dehydrogenase 1, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620555 } } } ,
+                    comment "Nd1; NADH1" ,
+                    location
+                      int {
+                        from 2738 ,
+                        to 3692 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trni" } ,
+                    location
+                      int {
+                        from 3693 ,
+                        to 3761 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 73 } } ,
+                    location
+                      int {
+                        from 3693 ,
+                        to 3761 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnq" } ,
+                    location
+                      int {
+                        from 3759 ,
+                        to 3829 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 81 } } ,
+                    location
+                      int {
+                        from 3759 ,
+                        to 3829 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnm" } ,
+                    location
+                      int {
+                        from 3833 ,
+                        to 3901 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 77 } } ,
+                    location
+                      int {
+                        from 3833 ,
+                        to 3901 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND2" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd2" ,
+                          name "NADH dehydrogenase 2, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620556 } } } ,
+                    comment "Nd2; NADH2" ,
+                    location
+                      int {
+                        from 3902 ,
+                        to 4940 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnw" } ,
+                    location
+                      int {
+                        from 4941 ,
+                        to 5006 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 87 } } ,
+                    location
+                      int {
+                        from 4941 ,
+                        to 5006 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trna" } ,
+                    location
+                      int {
+                        from 5008 ,
+                        to 5076 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 65 } } ,
+                    location
+                      int {
+                        from 5008 ,
+                        to 5076 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnn" } ,
+                    location
+                      int {
+                        from 5079 ,
+                        to 5150 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 78 } } ,
+                    location
+                      int {
+                        from 5079 ,
+                        to 5150 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      imp {
+                        key "rep_origin" } ,
+                    location
+                      int {
+                        from 5151 ,
+                        to 5183 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } ,
+                    qual {
+                      {
+                        qual "direction" ,
+                        val "right" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnc" } ,
+                    location
+                      int {
+                        from 5184 ,
+                        to 5251 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 67 } } ,
+                    location
+                      int {
+                        from 5184 ,
+                        to 5251 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trny" } ,
+                    location
+                      int {
+                        from 5255 ,
+                        to 5320 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 89 } } ,
+                    location
+                      int {
+                        from 5255 ,
+                        to 5320 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "COX1" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Co1" ,
+                          name "cytochrome c oxidase I, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 621871 } } } ,
+                    comment "Co1; Cox1" ,
+                    location
+                      int {
+                        from 5322 ,
+                        to 6866 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trns1" } ,
+                    location
+                      int {
+                        from 6864 ,
+                        to 6932 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 83 ,
+                            codon {
+                              4 ,
+                              5 ,
+                              6 ,
+                              7 } } } ,
+                    location
+                      int {
+                        from 6864 ,
+                        to 6932 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnd" } ,
+                    location
+                      int {
+                        from 6936 ,
+                        to 7003 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 68 } } ,
+                    location
+                      int {
+                        from 6936 ,
+                        to 7003 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "COX2" ,
+                        desc "COXII" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Co2" ,
+                          name "cytochrome c oxidase II, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 621872 } } } ,
+                    comment "Cox2; co2; COII" ,
+                    location
+                      int {
+                        from 7005 ,
+                        to 7688 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnk" } ,
+                    location
+                      int {
+                        from 7692 ,
+                        to 7755 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 75 } } ,
+                    location
+                      int {
+                        from 7692 ,
+                        to 7755 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "ATP8" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Atp8" ,
+                          name "ATP synthase 8, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 621240 } } } ,
+                    comment "ATPase8" ,
+                    location
+                      int {
+                        from 7757 ,
+                        to 7960 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "ATP6" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Atp6" ,
+                          name "ATP synthase 6, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 621239 } } } ,
+                    location
+                      int {
+                        from 7918 ,
+                        to 8598 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "COX3" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Co3" ,
+                          name "cytochrome c oxidase III, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 621873 } } } ,
+                    comment "Cox3; Co3; COIII" ,
+                    location
+                      int {
+                        from 8598 ,
+                        to 9381 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trng" } ,
+                    location
+                      int {
+                        from 9382 ,
+                        to 9449 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 71 } } ,
+                    location
+                      int {
+                        from 9382 ,
+                        to 9449 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND3" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd3" ,
+                          name "NADH dehydrogenase 3, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620557 } } } ,
+                    comment "Nd3; NADH3" ,
+                    location
+                      int {
+                        from 9450 ,
+                        to 9797 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnr" } ,
+                    location
+                      int {
+                        from 9799 ,
+                        to 9866 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 82 } } ,
+                    location
+                      int {
+                        from 9799 ,
+                        to 9866 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND4L" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd4l" ,
+                          name "NADH dehdrogenase 4L, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620494 } } } ,
+                    comment "Nd4l; NADH4L" ,
+                    location
+                      int {
+                        from 9870 ,
+                        to 10166 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND4" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd4" ,
+                          name "NADH dehydrogenase 4, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620559 } } } ,
+                    comment "NADH4" ,
+                    location
+                      int {
+                        from 10160 ,
+                        to 11537 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnh" } ,
+                    location
+                      int {
+                        from 11538 ,
+                        to 11605 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 72 } } ,
+                    location
+                      int {
+                        from 11538 ,
+                        to 11605 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trns2" } ,
+                    location
+                      int {
+                        from 11606 ,
+                        to 11665 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 83 ,
+                            codon {
+                              44 ,
+                              45 } } } ,
+                    location
+                      int {
+                        from 11606 ,
+                        to 11665 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnl2" } ,
+                    location
+                      int {
+                        from 11665 ,
+                        to 11735 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 ,
+                            codon {
+                              16 ,
+                              17 ,
+                              18 ,
+                              19 } } } ,
+                    location
+                      int {
+                        from 11665 ,
+                        to 11735 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND5" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd5" ,
+                          name "NADH dehydrogenase 5, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620560 } } } ,
+                    comment "Nd5; NADH5" ,
+                    location
+                      int {
+                        from 11736 ,
+                        to 13565 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "ND6" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Nd6" ,
+                          name "NADH dehydrogenase 6, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620561 } } } ,
+                    comment "NADH6" ,
+                    location
+                      int {
+                        from 13543 ,
+                        to 14061 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trne" } ,
+                    location
+                      int {
+                        from 14062 ,
+                        to 14130 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 69 } } ,
+                    location
+                      int {
+                        from 14062 ,
+                        to 14130 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "CYTB" ,
+                        formal-name {
+                          status official ,
+                          symbol "mt-Cytb" ,
+                          name "cytochrome b, mitochondrial" ,
+                          source {
+                            db "RGD" ,
+                            tag
+                              id 620081 } } } ,
+                    location
+                      int {
+                        from 14136 ,
+                        to 15278 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnt" } ,
+                    location
+                      int {
+                        from 15280 ,
+                        to 15346 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 84 } } ,
+                    location
+                      int {
+                        from 15280 ,
+                        to 15346 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      gene {
+                        locus "Trnp" } ,
+                    location
+                      int {
+                        from 15348 ,
+                        to 15415 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 80 } } ,
+                    location
+                      int {
+                        from 15348 ,
+                        to 15415 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } ,
+                  {
+                    data
+                      imp {
+                        key "D-loop" } ,
+                    location
+                      int {
+                        from 15416 ,
+                        to 16307 ,
+                        strand plus ,
+                        id
+                          genbank {
+                            accession "KJ939361" } } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_1" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139925 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 1 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 318 ,
+            seq-data
+              ncbieaa "MYFINILTLLIPILIAMAFLTLVERKILGYMQLRKGPNIVGPYGILQPFADAMKL
+FMKEPMRPLTTSMSLFIIAPTLSLTLALSLWIPLPMPHPLINLNLGMLFILATSSLSVYSILWSGWASNSKYSLFGAL
+RAVAQTISYEVTMAIILLSVLLMSGSFSLQMLITTQEHIWLLIPAWPMAMMWYISTLAETNRAPFDLTEGESELVSGF
+NVEYAAGPFALFFMAEYTNIILMNALTSIVFLGPLYHINYPELYSTSFMTETLLLSTTFLWIRASYPRFRYDQLMHLL
+WKNFLPLTLAFCMWYISLPIFLAGIPPYT" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 1" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 317 ,
+                        id
+                          local
+                            str "KJ939361_1" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_2" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139926 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 2 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 346 ,
+            seq-data
+              ncbieaa "MNPITLIIIYFTILMGPVITMSSSNLLLMWVGLEMSLLAIIPLLANKKSPRSTEA
+ATKYFLTQATASMIILLVIILNYKQSGMWTLQQQTNNMLLNMMLISLAMKLGLAPFHYWLPEVTQGIPLHIGLILLTW
+QKIAPLSILYQFYQLLNPTITTILAISSVFVGAWGGLNQTQTRKIMAYSSIAHMGWMTAILPYNPNLTLLNLTIYILL
+TVPMFITLMTNSATTINTLSLAWNKTPMILTMTSIILLSLGGLPPLTGFLPKWAIISELLKNNCSTLSTLMAIMALLS
+LFFYTRLIYSMSLTMFPTNNNSKMISHHHQNPKHNFILPTLTVLSTLTLPLSSQLIT" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 2" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 345 ,
+                        id
+                          local
+                            str "KJ939361_2" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_3" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139927 } } ,
+          descr {
+            title "cytochrome c oxidase subunit I (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 514 ,
+            seq-data
+              ncbieaa "MLVNRWLFSTNHKDIGTLYLLFGAWAGMVGTALSILIRAELGQPGALLGDDQIYN
+VIVTAHAFVMIFFMVMPMMIGGFGNWLVPLMIGAPDMAFPRMNNMSFWLLPPSFLLLLASSMVEAGAGTGWTVYPPLA
+GNLAHAGASVDLTIFSLHLAGVSSILGAINFITTIINMKPPAMTQYQTPLFVWSVLITAVLLLLSLPVLAAGITMLLT
+DRNLNTTFFDPAGGGDPILYQHLFWFFGHPEVYILILPGFGIISHVVTYYSGKKEPFGYMGMVWAMMSIGFLGFIVWA
+HHMFTVGLDVDTRAYFTSATMIIAIPTGVKVFSWLATLHGGNIKWSPAMLWALGFIFLFTVGGLTGIVLSNSSLDIVL
+HDTYYVVAHFHYVLSMGAVFAIMAGFVHWFPLFSGYTLNDTWAKAHFAIMFVGVNMTFFPQHFLGLAGMPRRYSDYPD
+AYTTWNTVSSMGSFISLTAVLVMIFMIWEAFASKREVLSISYSSTNLEWLHGCPPPYHTFEEPSYVKVK" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome c oxidase subunit I" } ,
+                        desc "cytochrome c oxidase subunit 1" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 513 ,
+                        id
+                          local
+                            str "KJ939361_3" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_4" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139928 } } ,
+          descr {
+            title "cytochrome c oxidase subunit II (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 227 ,
+            seq-data
+              ncbieaa "MAYPFQLGLQDATSPIMEELTNFHDHTLMIVFLISSLVLYIISLMLTTKLTHTST
+MDAQEVETIWTILPAVILILIALPSLRILYMMDEINNPVLTVKTMGHQWYWSYEYTDYEDLCFDSYMIPTNDLKPGEL
+RLLEVDNRVVLPMELPIRMLISSEDVLHSWAVPSLGLKTDAIPGRLNQATVTSNRPGLFYGQCSEICGSNHSFMPIVL
+EMVPLKYFENWSASMI" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome c oxidase subunit II" } ,
+                        desc "cytochrome c oxidase subunit 2" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 226 ,
+                        id
+                          local
+                            str "KJ939361_4" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_5" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139929 } } ,
+          descr {
+            title "ATP synthase F0 subunit 8 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 67 ,
+            seq-data
+              ncbieaa "MPQLDTSTWFITIISSMATLFILFQLKISSQTFPAPPSPKTMATEKTNNPWESKW
+TKTYLPLSLPPQ" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "ATP synthase F0 subunit 8" } ,
+                        desc "ATPase subunit 8" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 66 ,
+                        id
+                          local
+                            str "KJ939361_5" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_6" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139930 } } ,
+          descr {
+            title "ATP synthase F0 subunit 6 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 226 ,
+            seq-data
+              ncbieaa "MNENLFASFITPTMMGLPIVVTIIMFPSILFPSSERLISNRLHSFQHWLIKLIIK
+QMMLIHTPKGRTWALMIVSLIMFIGSTNLLGLLPHTFTPTTQLSMNLSMAIPLWAGAVILGFRHKLKNSLAHFLPQGT
+PISLIPMLIIIETISLFIQPMALAVRLTANITAGHLLMHLIGGATLVLMDISPPTATITFIILLLLTVLEFAVALIQA
+YVFTLLVSLYLHDNT" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "ATP synthase F0 subunit 6" } ,
+                        desc "ATPase subunit 6" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 225 ,
+                        id
+                          local
+                            str "KJ939361_6" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_7" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139931 } } ,
+          descr {
+            title "cytochrome c oxidase subunit III (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 261 ,
+            seq-data
+              ncbieaa "MTHQTHAYHMVNPSPWPLTGALSALLLTSGLVMWFHYNSTILLSLGLLTNILTMY
+QWWRDIIREGTYQGHHTPIVQKGLRYGMILFIVSEVFFFAGFFWAFYHSSLVPTHDLGGCWPPTGITPLNPLEVPLLN
+TSVLLASGVSITWAHHSLMEGNRNHMNQALLITILLGLYFTILQASEYFETSFSISDGIYGSTFFMATGFHGLHVIIG
+STFLIVCLLRQLKFHFTSKHHFGFEAAAWYWHFVDVVWLFLYVSIYWWGS" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome c oxidase subunit III" } ,
+                        desc "cytochrome c oxidase subunit 3" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 260 ,
+                        id
+                          local
+                            str "KJ939361_7" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_8" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139932 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 3 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 115 ,
+            seq-data
+              ncbieaa "MNLLIIITINITLSFILISIAFWLPQMNLYSEKANPYECGFDPTSSARLPFSMKF
+FLVAITFLLFDLEIALLLPLPWAIQTTNTTTMMATAFILVTILALGLSYEWTQKGLEWTE" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 3" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 114 ,
+                        id
+                          local
+                            str "KJ939361_8" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_9" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139933 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 4L (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 98 ,
+            seq-data
+              ncbieaa "MTSAFLNLTMAFTLSLLGTFMFRSHLMSTLLCLEGMMLSLFVMTSTSTLNSNSMI
+SMTIPITILVFAACEAAVGLALLVKISNTYGTDYVQNLNLLQC" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 4L" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 97 ,
+                        id
+                          local
+                            str "KJ939361_9" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_10" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139934 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 4 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 459 ,
+            seq-data
+              ncbieaa "MLKIIFPSIMLLPLTWLSANKKIWTNVTSYSFLVSLLSLSLLWQNDENYLNFSVM
+FSSDPLSTPLIILTTWLLPLMMLASQNHMKKENMMHQKLYISMLISLQILLIMTFSATELILFYILFEATLIPTLIII
+TRWGNQTERLNAGIYFLFYTLIGSIPLLIALISIQNSMGTLNFLILSLTTHPLPSTWSNTILWLACMMAFMIKMPLYG
+VHLWLPKAHVEAPIAGSMILAAILLKLGGYGMMRVSIILDPLTKSLAYPFIILSLWGMIMTSSICLRQTDLKSLIAYS
+SVSHMALVITAIMIQTPWSFMGATMLMIAHGLTSSLLFCLANTNYERIHSRTMIMARGLQMIFPLMATWWLLASLANL
+ALPPLINLMGELFIVMATFSWSNPSIILMATNIVITGIYSMYMIITTQRGKLTSHMNNLQPSHTRELTLMALHIIPLM
+LLTINPKLITGLTM" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 4" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 458 ,
+                        id
+                          local
+                            str "KJ939361_10" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_11" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139935 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 5 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 609 ,
+            seq-data
+              ncbieaa "MNMMTSSILMILILLTTPIIISMTNLPKLIDFPSYATSSIKFSFLLSLLPLLLFF
+HHNTEYMITNWHWLTINSIKLTMSFKIDYFSILFLSVALFVTWSIMQFSSWYMHSDPHINRFIKYLMMFLITMLILTS
+ANNLFQLFIGWEGVGIMSFLLIGWWYGRADANTAALQAILYNRVGDIGFILAMTWFCLNMNSWELQQIFLTNTNNLVP
+LTGLLIAATGKSAQFGLHPWLPSAMEGPTPVSALLHSSTMVVAGIFLMIRFHPLTSNNSTIMTAMLCLGAITTLFTAI
+CALTQNDIKKIVAFSTSSQLGLMMVTLGINQPYLAFLHICTHAFFKAMLFMCSGSIIHSLNDEQDIRKMGNMMKAMPF
+TSSCLIIGSLALTGMPFLTGFYSKDLIIEAINTCNTNAWALMITLIATSMTAVYSMRIIYFVTMTKPRYSPLITINEN
+NPNLINPIKRLALGSILAGFLISLNIPPTNIQILTMPWHLKMTALLITILGFAIALELNNLTLNLSMSKPTKLSSFST
+SLGYYPPIMHRIIPQKTLNSSYKLSLNLLDLIWLEKTIPKSTSITQTQLSKMMSNQKGLIKLYFLSFLITISLIFILH
+TLNPEWFQ" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 5" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 608 ,
+                        id
+                          local
+                            str "KJ939361_11" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_12" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139936 } } ,
+          descr {
+            title "NADH dehydrogenase subunit 6 (mitochondrion) [Rattus
+ norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 172 ,
+            seq-data
+              ncbieaa "MTNYMFILSLLFLTGCLGLALKPSPIYGGLGLIVSGCIGCLMVLGFGGSFLGLMV
+FLIYLGGMLVVFGYTTAMATEEYPETWGSNWFIFSFFVLGLFMELVVFYLFSLNNKVELVDFDSLGDWLMYEIDDVGV
+MLEGGIGVAAIYSCATWMMVVAGWSLFAGIFIIIEITRD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "NADH dehydrogenase subunit 6" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 171 ,
+                        id
+                          local
+                            str "KJ939361_12" } } } } } } ,
+        seq {
+          id {
+            local
+              str "KJ939361_13" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 48139937 } } ,
+          descr {
+            title "cytochrome b (mitochondrion) [Rattus norvegicus]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 380 ,
+            seq-data
+              ncbieaa "MTNIRKSHPLFKIINHSFIDLPAPSNISSWWNFGSLLGVCLMVQILTGLFLAMHY
+TSDTMTAFSSVTHICRDVNYGWLIRYLHANGASMFFICLFLHVGRGLYYGSYTFLETWNIGIILLFAVMATAFMGYVL
+PWGQMSFWGATVITNLLSAIPYIGTTLVEWIWGGFSVDKATLTRFFAFHFILPFIIAALAIVHLLFLHETGSNNPTGL
+NSDADKIPFHPYYTIKDLLGVFMLLLFLMTLVLFFPDLLGDPDNYTPANPLNTPPHIKPEWYFLFAYAILRSIPNKLG
+GVVALILSILILAFLPFLHTSKQRSLTFRPITQILYWILVANLLILTWIGGQPVEHPFIIIGQLASISYFSIILILMP
+ISGIVEDKMLKWN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cytochrome b" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 379 ,
+                        id
+                          local
+                            str "KJ939361_13" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } ,
+                    code-break {
+                      {
+                        loc
+                          int {
+                            from 3692 ,
+                            to 3692 ,
+                            strand plus ,
+                            id
+                              genbank {
+                                accession "KJ939361" } } ,
+                        aa
+                          ncbieaa 42 } } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "KJ939361_1" ,
+                location
+                  int {
+                    from 2738 ,
+                    to 3692 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } ,
+                    code-break {
+                      {
+                        loc
+                          int {
+                            from 4940 ,
+                            to 4940 ,
+                            strand plus ,
+                            id
+                              genbank {
+                                accession "KJ939361" } } ,
+                        aa
+                          ncbieaa 42 } } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "KJ939361_2" ,
+                location
+                  int {
+                    from 3902 ,
+                    to 4940 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939361_3" ,
+                location
+                  int {
+                    from 5322 ,
+                    to 6866 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939361_4" ,
+                location
+                  int {
+                    from 7005 ,
+                    to 7688 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939361_5" ,
+                location
+                  int {
+                    from 7757 ,
+                    to 7960 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939361_6" ,
+                location
+                  int {
+                    from 7918 ,
+                    to 8598 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } ,
+                    code-break {
+                      {
+                        loc
+                          int {
+                            from 9381 ,
+                            to 9381 ,
+                            strand plus ,
+                            id
+                              genbank {
+                                accession "KJ939361" } } ,
+                        aa
+                          ncbieaa 42 } } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "KJ939361_7" ,
+                location
+                  int {
+                    from 8598 ,
+                    to 9381 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939361_8" ,
+                location
+                  int {
+                    from 9450 ,
+                    to 9797 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939361_9" ,
+                location
+                  int {
+                    from 9870 ,
+                    to 10166 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } ,
+                    code-break {
+                      {
+                        loc
+                          int {
+                            from 11537 ,
+                            to 11537 ,
+                            strand plus ,
+                            id
+                              genbank {
+                                accession "KJ939361" } } ,
+                        aa
+                          ncbieaa 42 } } } ,
+                comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+                product
+                  whole
+                    local
+                      str "KJ939361_10" ,
+                location
+                  int {
+                    from 10160 ,
+                    to 11537 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939361_11" ,
+                location
+                  int {
+                    from 11736 ,
+                    to 13565 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939361_12" ,
+                location
+                  int {
+                    from 13543 ,
+                    to 14061 ,
+                    strand minus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } ,
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                product
+                  whole
+                    local
+                      str "KJ939361_13" ,
+                location
+                  int {
+                    from 14136 ,
+                    to 15278 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KJ939361" } } } } } } } } }
