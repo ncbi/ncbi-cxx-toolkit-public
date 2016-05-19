@@ -1,0 +1,30 @@
+Discrepancy Report Results
+
+Summary
+DUP_DEFLINE: 2 definition lines are identical:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 1 cRNA sequence
+DUP_DEFLINE: 16 definition lines are unique
+
+Detailed Report
+
+DUP_DEFLINE: 2 definition lines are identical:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 1 cRNA sequence
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|Seq1:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 1 cRNA sequence
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|Seq6:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 1 cRNA sequence
+
+DUP_DEFLINE: 16 definition lines are unique
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|Seq5:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 2 cRNA sequence
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|Seq4:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 3 cRNA sequence
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|Seq3:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 5 cRNA sequence
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|Seq2:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 6 cRNA sequence
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|Seq8:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 7 cRNA sequence
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|Seq7:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 8 cRNA sequence
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|1:hemagglutunin [Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))]
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|8:matrix protein 1 [Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))]
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|8_1:matrix protein 2 [Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))]
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|2:neuraminidase [Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))]
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|7:nonstructural protein 1 [Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))]
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|7_1:nonstructural protein 2 [Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))]
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|3:nucleocapsid protein [Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))]
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|4:polymerase PA [Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))]
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|5:polymerase PB1 [Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))]
+D:\toolkit\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:lcl|6:polymerase PB2 [Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2))]
+
