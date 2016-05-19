@@ -220,7 +220,7 @@ public:
     bool Promote();
 
     bool empty() { return m_Map.empty() && m_Objs.empty(); }
-    void clear() { m_Map.clear(); m_Objs.clear(); }
+    void clear() { m_Map.clear(); m_Objs.clear(); m_Hash.clear(); }
     void clearObjs() { m_Objs.clear(); }
 protected:
     string m_Name;
