@@ -92,7 +92,7 @@ DISCREPANCY_AUTOFIX(PSEUDO_MISMATCH)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf && SetPseudo(sf, scope)) {
             n++;
@@ -134,7 +134,7 @@ bool IsShortrRNA(const CSeq_feat& f, CScope* scope)
 
     string rrna_name = f.GetData().GetRna().GetRnaProductName();
 
-    ITERATE(TRNALengthMap, it, kTrnaLengthMap) {
+    ITERATE (TRNALengthMap, it, kTrnaLengthMap) {
         if (NStr::FindNoCase(rrna_name, it->first) != string::npos &&
             len < it->second.first &&
             (!it->second.second || (f.IsSetPartial() && f.GetPartial())) ) {
@@ -156,20 +156,6 @@ const string kCDSRNAOverlapNoContain = "[n/2] coding regions overlap RNA[s] (no 
 const string kCDSRNAOverlapNoContainSameStrand = "[n/2] coding region[s] overlap RNA[s] on the same strand (no containment)";
 const string kCDSRNAOverlapNoContainOppStrand = "[n/2] coding region[s] overlap RNA[s] on the opposite strand (no containment)";
 
-#define ADD_CDS_RNA_PAIR(second) \
-    m_Objs[kCDSRNAAnyOverlap].Add(*context.NewDiscObj(cds_sf), false).Fatal(); \
-    m_Objs[kCDSRNAAnyOverlap].Add(*context.NewDiscObj(rna_sf), false).Fatal(); \
-    m_Objs[kCDSRNAAnyOverlap][second].Add(*context.NewDiscObj(cds_sf), false).Fatal(); \
-    m_Objs[kCDSRNAAnyOverlap][second].Add(*context.NewDiscObj(rna_sf), false).Fatal();
-
-#define ADD_CDS_RNA_TRIPLET(second, third) \
-    m_Objs[kCDSRNAAnyOverlap].Add(*context.NewDiscObj(cds_sf), false).Fatal(); \
-    m_Objs[kCDSRNAAnyOverlap].Add(*context.NewDiscObj(rna_sf), false).Fatal(); \
-    m_Objs[kCDSRNAAnyOverlap][second].Add(*context.NewDiscObj(cds_sf), false).Fatal(); \
-    m_Objs[kCDSRNAAnyOverlap][second].Add(*context.NewDiscObj(rna_sf), false).Fatal(); \
-    m_Objs[kCDSRNAAnyOverlap][second][third].Add(*context.NewDiscObj(cds_sf), false).Fatal(); \
-    m_Objs[kCDSRNAAnyOverlap][second][third].Add(*context.NewDiscObj(rna_sf), false).Fatal();
-
 void ProcessCDSRNAPair(CConstRef<CSeq_feat> cds_sf, CConstRef<CSeq_feat> rna_sf, CReportNode& m_Objs, CDiscrepancyContext& context)
 {
     sequence::ECompare loc_compare =
@@ -177,24 +163,33 @@ void ProcessCDSRNAPair(CConstRef<CSeq_feat> cds_sf, CConstRef<CSeq_feat> rna_sf,
         rna_sf->GetLocation(),
         &(context.GetScope()));
     if (loc_compare == sequence::eSame) {
-        ADD_CDS_RNA_PAIR(kCDSRNAExactMatch);
-    } else if (loc_compare == sequence::eContained) {
-        ADD_CDS_RNA_PAIR(kCDSRNAContainedIn);
-    } else if (loc_compare == sequence::eContains) {
+        m_Objs[kCDSRNAAnyOverlap][kCDSRNAExactMatch].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+    }
+    else if (loc_compare == sequence::eContained) {
+        m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainedIn].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+    }
+    else if (loc_compare == sequence::eContains) {
         if (rna_sf->GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
-            ADD_CDS_RNA_PAIR(kCDSRNAContainstRNA);
-        } else {
-            ADD_CDS_RNA_PAIR(kCDSRNAContains);
+            m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainstRNA].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
         }
-    } else if (loc_compare != sequence::eNoOverlap) {
+        else {
+            m_Objs[kCDSRNAAnyOverlap][kCDSRNAContains].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+        }
+    }
+    else if (loc_compare != sequence::eNoOverlap) {
         ENa_strand cds_strand = cds_sf->GetLocation().GetStrand();
         ENa_strand rna_strand = rna_sf->GetLocation().GetStrand();
         if (cds_strand == eNa_strand_minus && rna_strand != eNa_strand_minus) {
-            ADD_CDS_RNA_TRIPLET(kCDSRNAOverlapNoContain, kCDSRNAOverlapNoContainOppStrand);
-        } else if (cds_strand != eNa_strand_minus && rna_strand == eNa_strand_minus) {
-            ADD_CDS_RNA_TRIPLET(kCDSRNAOverlapNoContain, kCDSRNAOverlapNoContainOppStrand);
-        } else {
-            ADD_CDS_RNA_TRIPLET(kCDSRNAOverlapNoContain, kCDSRNAOverlapNoContainSameStrand);
+            //ADD_CDS_RNA_TRIPLET(kCDSRNAOverlapNoContain, kCDSRNAOverlapNoContainOppStrand);
+            m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainOppStrand].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+        }
+        else if (cds_strand != eNa_strand_minus && rna_strand == eNa_strand_minus) {
+            //ADD_CDS_RNA_TRIPLET(kCDSRNAOverlapNoContain, kCDSRNAOverlapNoContainOppStrand);
+            m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainOppStrand].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+        }
+        else {
+            //ADD_CDS_RNA_TRIPLET(kCDSRNAOverlapNoContain, kCDSRNAOverlapNoContainSameStrand);
+            m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainSameStrand].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
         }
     }
 }
@@ -221,16 +216,14 @@ DISCREPANCY_CASE(RNA_CDS_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS RNA Overlap")
 
     if (obj.GetData().IsCdregion()) {
         CConstRef<CSeq_feat> cds_sf(&obj);
-        NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["RNAs"].GetObjects())
-        {
+        NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["RNAs"].GetObjects()) {
             const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
             CConstRef<CSeq_feat> rna_sf(dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer()));
-
             if (rna_sf) {
                 ProcessCDSRNAPair(cds_sf, rna_sf, m_Objs, context);
             }
         }
-        NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["tRNAs"].GetObjects()) {
+        NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["tRNAs"].GetObjects()) {
             const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
             CConstRef<CSeq_feat> rna_sf(dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer()));
             if (rna_sf) {
@@ -243,7 +236,7 @@ DISCREPANCY_CASE(RNA_CDS_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS RNA Overlap")
         CSeqFeatData::ESubtype subtype = obj.GetData().GetSubtype();
         if (subtype == CSeqFeatData::eSubtype_tRNA) {
             if (!context.IsEukaryotic()) {
-                do_check = true;                
+                do_check = true;
             }
         } else if (subtype == CSeqFeatData::eSubtype_mRNA || subtype == CSeqFeatData::eSubtype_ncRNA) {
             //always ignore these
@@ -251,11 +244,11 @@ DISCREPANCY_CASE(RNA_CDS_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS RNA Overlap")
             // check to see if these are "short"
             do_check = !IsShortrRNA(obj, &(context.GetScope()));
         } else {
-            do_check = true;            
-        }        
+            do_check = true;
+        }
         if (do_check) {
             CConstRef<CSeq_feat> rna_sf(&obj);
-            NON_CONST_ITERATE(TReportObjectList, cobj, m_Objs["coding regions"].GetObjects()) {
+            NON_CONST_ITERATE (TReportObjectList, cobj, m_Objs["coding regions"].GetObjects()) {
                 const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(cobj->GetNCPointer());
                 CConstRef<CSeq_feat> cds_sf(dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer()));
                 if (cds_sf) {
@@ -283,7 +276,7 @@ DISCREPANCY_SUMMARIZE(RNA_CDS_OVERLAP)
     if (m_Objs.empty()) {
         return;
     }
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
 
@@ -329,7 +322,7 @@ bool IsRBS(const CSeq_feat& f)
     if (!f.IsSetQual()) {
         return false;
     }
-    ITERATE(CSeq_feat::TQual, it, f.GetQual()) {
+    ITERATE (CSeq_feat::TQual, it, f.GetQual()) {
         if ((*it)->IsSetQual() && NStr::Equal((*it)->GetQual(), "regulatory_class") &&
             CSeqFeatData::GetRegulatoryClass((*it)->GetVal()) == CSeqFeatData::eSubtype_RBS) {
             return true;
@@ -341,8 +334,7 @@ bool IsRBS(const CSeq_feat& f)
 void AddRBS(CReportNode& objs, CDiscrepancyContext& context) 
 {
     if (!objs["genes"].empty()) {
-        NON_CONST_ITERATE(TReportObjectList, robj, objs[kRBS].GetObjects())
-        {
+        NON_CONST_ITERATE (TReportObjectList, robj, objs[kRBS].GetObjects()) {
             const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
             CConstRef<CSeq_feat> rbs(dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer()));
             objs[kRBSWithoutGene].Add(*context.NewDiscObj(rbs), false).Fatal();
