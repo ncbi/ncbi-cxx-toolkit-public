@@ -42,7 +42,7 @@ extern "C" {
 
 /** data types */
 
-typedef signed char TNCBIScore;
+typedef int TNCBIScore; /* historically signed char */
 typedef struct SNCBIPackedScoreMatrix {
     const char*       symbols;  /**< order of residues */
     const TNCBIScore* scores;   /**< strlen(symbols) x strlen(symbols) */
