@@ -18,14 +18,14 @@ public:
                                    const CObjectTypeInfoCV& passed_info)
     {
         cout << copier.In().GetStackPath() << endl;
+#if 1
         DefaultCopy(copier, passed_info);
 
-#if 0
-#if 0
+#else
+#if 1
 // or skip variant in input stream:
-        copier.In().Skip(passed_info.GetVariantType().GetTypeInfo(), CObjectIStream::eNoFileHeader);
+        copier.In().SkipObject(passed_info.GetVariantType());
 #endif
-
 #if 0
 // or read CSeq_feat objects one by one
         for ( CIStreamContainerIterator i(copier.In(), passed_info.GetVariantType()); i; ++i ) {
@@ -34,7 +34,7 @@ public:
             cout << MSerial_AsnText << feat << endl;
         }
 #endif
-#if 1
+#if 0
 // or read CSeq_feat objects one by one
         for ( CIStreamContainerIterator i(copier.In(), passed_info.GetVariantType()); i; ++i ) {
             CObjectInfo oi(CSeq_feat::GetTypeInfo());
@@ -51,6 +51,25 @@ public:
             o << feat;
             cout << MSerial_AsnText << feat << endl;
         }
+#endif
+#if 0
+// or read the whole SET OF Seq-feat at once
+        CSeq_annot::TData::TFtable ft;
+        CObjectInfo oi(&ft, passed_info.GetVariantType().GetTypeInfo());
+        // or, like this:
+        //  CObjectInfo oi(passed_info.GetVariantType());
+        copier.In().ReadObject(oi);
+        // write them one by one
+        for( const auto& e: ft) {
+            cout << MSerial_AsnText << *e << endl;
+        }
+        copier.Out().WriteObject(oi);
+#endif
+#if 0
+// or read the whole SET OF Seq-feat at once
+        CObjectInfo oi(passed_info.GetVariantType());
+        copier.In().ReadObject(oi);
+        copier.Out().WriteObject(oi);
 #endif
 
 // get information about the variant

@@ -17,14 +17,14 @@ public:
     virtual void CopyClassMember(CObjectStreamCopier& copier,
                                  const CObjectTypeInfoMI& passed_info)
     {
+#if 1
         DefaultCopy(copier, passed_info);
 
-#if 0
-#if 0
+#else
+#if 1
 // or skip member in input stream:
-        copier.In().Skip(passed_info.GetMemberType().GetTypeInfo(), CObjectIStream::eNoFileHeader);
+        copier.In().SkipObject(passed_info.GetMemberType());
 #endif
-
 #if 0
 // or read CSeq_annot objects one by one
         for ( CIStreamContainerIterator i(copier.In(), passed_info); i; ++i ) {
@@ -50,6 +50,23 @@ public:
             o << annot;
             cout << MSerial_AsnText << annot << endl;
         }
+#endif
+#if 0
+// or read the whole SET OF Seq-annot at once
+        CBioseq::TAnnot annot;
+        CObjectInfo oi(&annot, passed_info.GetMemberType().GetTypeInfo());
+        copier.In().ReadObject(oi);
+        // write them one by one
+        for( const auto& e: annot) {
+            cout << MSerial_AsnText << *e << endl;
+        }
+        copier.Out().WriteObject(oi);
+#endif
+#if 0
+// or read the whole SET OF Seq-annot at once
+        CObjectInfo oi(passed_info.GetMemberType());
+        copier.In().ReadObject(oi);
+        copier.Out().WriteObject(oi);
 #endif
 
 // get information about the member

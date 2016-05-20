@@ -13,19 +13,21 @@ public:
                             const CObjectTypeInfo& passed_info)
     {
         cout << in.GetStackPath() << endl;
+#if 1
         DefaultSkip(in, passed_info);
 
+#else
 #if 0
 // or read
         CObjectInfo oi(passed_info);
         DefaultRead(in, oi);
         cout << MSerial_AsnText << oi << endl;
 #endif
-#if 0
+#if 1
 // or copy it into stdout
         unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
         CObjectStreamCopier copier(in, *out);
-        copier.Copy(passed_info.GetTypeInfo(), CObjectStreamCopier::eNoFileHeader);
+        copier.CopyObject(passed_info.GetTypeInfo());
 #endif
 #if 0
 // or read it into delay buffer
@@ -47,6 +49,7 @@ public:
         ib->ReadObject(oi);
         // now the object is valid
         cout << MSerial_AsnText << oi;
+#endif
 #endif
 #endif
 

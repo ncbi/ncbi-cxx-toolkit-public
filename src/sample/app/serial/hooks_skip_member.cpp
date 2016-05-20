@@ -15,9 +15,9 @@ public:
                                  const CObjectTypeInfoMI& passed_info)
     {
         cout << in.GetStackPath() << endl;
+#if 1
         in.SkipObject(*passed_info);
-
-#if 0
+#else
 // get information about the member
         // typeinfo of the parent class (Bioseq)
         CObjectTypeInfo oti = passed_info.GetClassType();
@@ -27,8 +27,8 @@ public:
         TMemberIndex mi = passed_info.GetMemberIndex();
         // information about the member, including its name (annot)
         const CMemberInfo* minfo = passed_info.GetMemberInfo();
-#endif
-#if 0
+
+#if 1
 // or read CSeq_annot objects one by one and write them into stdout
         unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
         COStreamContainer o(*out, passed_info);
@@ -53,10 +53,9 @@ public:
             cout << MSerial_AsnText << *e << endl;
         }
         // or write them all at once
-        // NOTE: while this works, it does not produce well formed text ASN,
-        // because CBioseq::TAnnot typeinfo has no name
         unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
-        out->Write(oi);
+        out->WriteObject(oi);
+#endif
 #endif
     }
 };

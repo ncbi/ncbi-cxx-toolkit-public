@@ -17,8 +17,14 @@ public:
                             const CObjectTypeInfo& passed_info)
     {
         cout << copier.In().GetStackPath() << endl;
+#if 1
         DefaultCopy(copier, passed_info);
 
+#else
+#if 1
+// or skip the object
+        copier.In().SkipObject(passed_info.GetTypeInfo());
+#endif
 #if 0
 // or read object
         CSeq_annot annot;
@@ -26,9 +32,13 @@ public:
         cout << MSerial_AsnText << annot << endl;
 // and maybe write it as well
         copier.Out().WriteObject(&annot, CSeq_annot::GetTypeInfo());
-
-// or skip the object
-        copier.In().SkipObject(CSeq_annot::GetTypeInfo());
+#endif
+#if 0
+// or read object and write it
+        CObjectInfo oi(passed_info.GetTypeInfo());
+        copier.In().ReadObject(oi);
+        copier.Out().WriteObject(oi);
+#endif
         
         // typeinfo of the object (Seq-annot)
         TTypeInfo ti = passed_info.GetTypeInfo();

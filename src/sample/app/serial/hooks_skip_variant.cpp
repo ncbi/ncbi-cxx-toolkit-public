@@ -15,9 +15,10 @@ public:
                                    const CObjectTypeInfoCV& passed_info)
     {
         cout << in.GetStackPath() << endl;
-        in.SkipObject(*passed_info);
+#if 1
+        in.SkipObject(passed_info.GetVariantType());
 
-#if 0
+#else
 // get information about the variant
         // typeinfo of the parent class (Seq-annot.data)
         CObjectTypeInfo oti = passed_info.GetChoiceType();
@@ -28,7 +29,7 @@ public:
         // information about the variant, including its name (ftable)
         const CVariantInfo* minfo = passed_info.GetVariantInfo();
 
-#if 0
+#if 1
 // or read CSeq_feat objects one by one
         for ( CIStreamContainerIterator i(in, passed_info.GetVariantType()); i; ++i ) {
             CSeq_feat feat;
@@ -63,10 +64,8 @@ public:
             cout << MSerial_AsnText << *e << endl;
         }
         // or write them all at once
-        // NOTE: while this works, it does not produce well formed text ASN,
-        // because CSeq_annot::TData::TFtable typeinfo has no name
         unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
-        out->Write(oi);
+        out->WriteObject(oi);
 #endif
 #endif
     }

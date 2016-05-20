@@ -1,6 +1,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/general/Date.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 
 USING_NCBI_SCOPE;
@@ -12,12 +13,22 @@ public:
     virtual void ReadChoiceVariant(CObjectIStream& strm,
                                    const CObjectInfoCV& passed_info)
     {
+#if 1
         DefaultRead(strm, passed_info);
-#if 0
+#else
+#if 1
 // or skip it
-//        strm.SkipAnyContentVariant();
-// or like this
-        strm.Skip(passed_info.GetVariantType().GetTypeInfo(), CObjectIStream::eNoFileHeader);
+        strm.SkipObject(passed_info.GetVariantType());
+#endif
+#if 0
+// read the object into local buffer
+// this data will be discarded when this function terminates
+// so the choice variant of the object being read will be invalid
+        CObjectInfo obj(passed_info.GetVariantType());
+        strm.ReadObject(obj);
+        unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
+        out->WriteObject(obj);
+#endif
 
 // get information about the member
         // typeinfo of the parent class (Date)

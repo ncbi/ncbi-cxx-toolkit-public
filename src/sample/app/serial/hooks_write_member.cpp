@@ -15,9 +15,10 @@ public:
     virtual void WriteClassMember(CObjectOStream& out,
                                   const CConstObjectInfoMI& passed_info)
     {
+#if 1
         DefaultWrite(out, passed_info);
 
-#if 0
+#else
 // get information about the member
         // typeinfo of the parent class (Date-std)
         CObjectTypeInfo oti = passed_info.GetClassType();
@@ -39,8 +40,20 @@ public:
         bool s = omti.IsPrimitiveValueSigned();
 
 // call DefaultWrite (above) or write directly
+#if 1
         Int4 y = 2001;
         out.WriteClassMember( minfo->GetId(), minfo->GetTypeInfo(), &y);
+#endif
+#if 0
+        // create class object
+        CObjectInfo coi(passed_info.GetClassType());
+        // set its member
+        coi.FindClassMember("year").GetMember().SetPrimitiveValueInt4(2001);
+        // create member iterator
+        CConstObjectInfoMI member(coi, passed_info.GetMemberIndex());
+        // write this member only
+        DefaultWrite(out, member);
+#endif
 #endif
     }
 };

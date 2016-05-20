@@ -13,19 +13,28 @@ public:
     virtual void ReadClassMember(CObjectIStream& strm,
                                  const CObjectInfoMI& passed_info)
     {
+#if 1
         DefaultRead(strm, passed_info);
 
-#if 0
-#if 0
+#else
+#if 1
 // call DefaultRead to read member data, or DefaultSkip to skip it
         DefaultSkip(strm, passed_info);
 #endif
-
+#if 0
+// read the object into local buffer
+// this data will be discarded when this function terminates
+// so the class member of the object being read will be invalid
+        CObjectInfo obj(passed_info.GetMemberType());
+        strm.ReadObject(obj);
+        unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
+        out->WriteObject(obj);
+#endif
 #if 0
 // or copy it into stdout
         unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
         CObjectStreamCopier copier(strm, *out);
-        copier.Copy(passed_info.GetMemberType().GetTypeInfo(), CObjectStreamCopier::eNoFileHeader);
+        copier.CopyObject(passed_info.GetMemberType().GetTypeInfo());
 #endif
 
 // get information about the member

@@ -15,25 +15,26 @@ public:
     virtual void WriteObject(CObjectOStream& out,
                              const CConstObjectInfo& passed_info)
     {
+#if 1
         DefaultWrite(out, passed_info);
 
-#if 0
-#if 0
+#else
+#if 1
 // or write it directly
         CDate_std s;
         s.SetYear(2001);
         s.SetMonth(1);
-        passed_info.GetTypeInfo()->DefaultWriteData(out, &s);
-        // we may not use the following because it will call this same hook again recursively
-        //out.WriteObject(&s, passed_info.GetTypeInfo());
+        CObjectInfo oi(&s, passed_info.GetTypeInfo());
+        DefaultWrite(out, oi);
 #endif
 #if 0
 // or like this
         CDate_std s;
         s.SetYear(2001);
         s.SetMonth(1);
-        CObjectInfo oi(&s, passed_info.GetTypeInfo());
-        DefaultWrite(out, oi);
+        passed_info.GetTypeInfo()->DefaultWriteData(out, &s);
+        // we may not use the following because it will call this same hook again recursively
+        //out.WriteObject(&s, passed_info.GetTypeInfo());
 #endif
 #endif
 
