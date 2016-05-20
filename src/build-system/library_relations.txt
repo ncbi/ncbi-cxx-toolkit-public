@@ -897,6 +897,7 @@ pn_ctl needs third_party
 png needs $(Z_LIB)
 png needs3party $(ORIG_LIBS)
 png needs3party $(Z_LIBS)
+process_annotation_stats needs xser
 proj needs pubmed
 proj needs seqset
 prok_align_monomer needs $(SOBJMGR_LIBS)
@@ -1129,6 +1130,7 @@ u2tl needs3party $(SYBASE_LIBS)
 u2tl needs3party $(Z_LIBS)
 uilist needs xser
 unicoll_dump_access needs gpipe_sqlite
+univ_prot_access needs xser
 uudutil needs $(COMPRESS_LIBS)
 uudutil needs gbproj
 uudutil needs xconnserv
