@@ -49,8 +49,13 @@ const string kMissingGenomeAssemblyComments = "[n] bioseq[s] [is] missing Genome
 DISCREPANCY_CASE(MISSING_GENOMEASSEMBLY_COMMENTS, CSeq_inst, eDisc, "Bioseqs should have GenomeAssembly structured comments")
 //  ----------------------------------------------------------------------------
 {
+    if (obj.IsAa()) {
+        return;
+    }
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
-    if (!seq) return;
+    if (!seq) {
+        return;
+    }
     CBioseq_Handle b = context.GetScope().GetBioseqHandle(*seq);
 
     CSeqdesc_CI d(b, CSeqdesc::e_User);
