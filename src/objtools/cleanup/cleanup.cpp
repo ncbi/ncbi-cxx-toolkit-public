@@ -1124,11 +1124,15 @@ CConstRef <CSeq_feat> CCleanup::GetGeneForFeature(const CSeq_feat& feat, CScope&
             }
         } else return (CConstRef <CSeq_feat>());
     } else {
+#if 1
+        return sequence::GetOverlappingGene(feat.GetLocation(), scope, sequence::eTransSplicing_Auto);
+#else
         return(
             CConstRef <CSeq_feat>(sequence::GetBestOverlappingFeat(feat.GetLocation(),
             CSeqFeatData::e_Gene,
             sequence::eOverlap_Contained,
             scope)));
+#endif
     }
 
     return (CConstRef <CSeq_feat>());

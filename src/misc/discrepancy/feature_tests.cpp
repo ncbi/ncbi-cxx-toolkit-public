@@ -51,7 +51,7 @@ DISCREPANCY_CASE(PSEUDO_MISMATCH, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Pseud
 {
     if (obj.IsSetPseudo() && obj.GetPseudo() && 
         (obj.GetData().IsCdregion() || obj.GetData().IsRna())) {
-        const CSeq_feat* gene = context.GetCurrentGene();
+        CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(obj, context.GetScope());
         if (gene && !CCleanup::IsPseudo(*gene, context.GetScope())) {
             m_Objs[kPseudoMismatch].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), 
                     false).Fatal();
@@ -359,7 +359,7 @@ DISCREPANCY_CASE(RBS_WITHOUT_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "RBS 
 
     if (obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene) {
         m_Objs["genes"].Add(*this_disc_obj);
-    } else if (IsRBS(obj) && context.GetCurrentGene() == NULL) {
+    } else if (IsRBS(obj) && CCleanup::GetGeneForFeature(obj, context.GetScope()) == NULL) {
         m_Objs["RBS"].Add(*this_disc_obj);
     }
 }
@@ -400,11 +400,18 @@ bool ReportGeneMissing(const CSeq_feat& f)
 DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Missing Genes")
 //  ----------------------------------------------------------------------------
 {
-    if (context.GetCurrentGene() != NULL || !ReportGeneMissing(obj)) {
+    if (!ReportGeneMissing(obj)) {
         return;
     }
-    m_Objs[kMissingGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
+    const CGene_ref* gene = obj.GetGeneXref();
+    if (gene) {
+        return;
+    }
+    CConstRef<CSeq_feat> gene_feat = CCleanup::GetGeneForFeature(obj, context.GetScope());
+    if (!gene_feat) {
+        m_Objs[kMissingGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
             false).Fatal();
+    }
 }
 
 //  ----------------------------------------------------------------------------
