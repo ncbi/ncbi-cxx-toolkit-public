@@ -24,7 +24,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 11024
+          tag str "HGNC:11024"
         },
         {
           db "HPRD",
@@ -220,7 +220,7 @@ Seq-annot ::= {
         {
           data prot {
             name {
-              "glycerol-3-phosphate transporter"
+              "glucose-6-phosphate exchanger SLC37A1"
             }
           }
         }
@@ -257,7 +257,7 @@ Seq-annot ::= {
         },
         {
           db "HGNC",
-          tag id 2195
+          tag str "HGNC:2195"
         },
         {
           db "MIM",
@@ -842,10 +842,10 @@ Seq-annot ::= {
       },
       product whole gi 240248230,
       location int {
-          from 195029,
-          to 196310,
-          strand minus,
-          id gi 258441149
+        from 195029,
+        to 196310,
+        strand minus,
+        id gi 258441149
       }
     },
     {
@@ -858,12 +858,12 @@ Seq-annot ::= {
       partial TRUE,
       product whole gi 240248231,
       location int {
-          from 195029,
-          to 196310,
-          strand plus,
-          id gi 258441149,
-          fuzz-from lim lt,
-          fuzz-to lim gt
+        from 195029,
+        to 196310,
+        strand plus,
+        id gi 258441149,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       },
       xref {
         {

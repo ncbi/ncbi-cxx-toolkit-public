@@ -17711,6 +17711,7 @@ FE7A033F5ECCC07DFD0DC430C0A7E2B01E7C'H
           data ftable {
             {
               data cdregion {
+                frame one,
                 code {
                   id 1
                 },
@@ -17719,13 +17720,13 @@ FE7A033F5ECCC07DFD0DC430C0A7E2B01E7C'H
                     loc int {
                       from 653,
                       to 655,
-                      strand plus,
                       id gi 148277093
                     },
                     aa ncbieaa 85
                   }
                 }
               },
+              comment "UGA stop codon recoded as selenocysteine",
               product whole gi 255958313,
               location int {
                 from 218,
