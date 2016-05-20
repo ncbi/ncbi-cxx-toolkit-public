@@ -178,12 +178,14 @@ sub normalize_word
 sub normalize_detail
 { my $str = shift;
 
-  $str=~s/:plus([<]?\d+-[>]?\d+)/:$1/;
-  $str=~s/:minus([<]?\d+-[>]?\d+)/:c$1/;
-
+  $str=~s/:plus([<]?\d+-[>]?\d+)/:$1/g;
+  $str=~s/, plus([<]?\d+-[>]?\d+)/, $1/g;
+  $str=~s/:minus([<]?\d+-[>]?\d+)/:c$1/g;
+  $str=~s/, minus([<]?\d+-[>]?\d+)/, c$1/g;
+  $str=~s/(\(\S+,\s)(\S+:)/$1/g;
   # C seems to prefer "()" for seq-loc-mix but C++ seems to prefer "[]"
-  $str=~s/\t\[/\t\(/;
-  $str=~s/\]$/\)/;
+  $str=~s/\[/\(/g;
+  $str=~s/\]/\)/g;
 
   return $str;
 }

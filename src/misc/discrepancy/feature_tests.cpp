@@ -458,16 +458,16 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Extra Gen
     }
     
     if (CCleanup::IsPseudo(obj, context.GetScope())) {
-        m_Objs[kExtraGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
         m_Objs[kExtraGene][kExtraPseudo].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
     } else {
         // do not report if note or description
         if (obj.IsSetComment() && !NStr::IsBlank(obj.GetComment())) {
             // ignore genes with notes
-        } else if (obj.GetData().GetGene().IsSetDesc() && !NStr::IsBlank(obj.GetData().GetGene().GetDesc())) {
+        }
+        else if (obj.GetData().GetGene().IsSetDesc() && !NStr::IsBlank(obj.GetData().GetGene().GetDesc())) {
             // ignore genes with descriptions
-        } else {
-            m_Objs[kExtraGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        }
+        else {
             m_Objs[kExtraGene][kExtraGeneNonPseudoNonFrameshift].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
         }
     }
