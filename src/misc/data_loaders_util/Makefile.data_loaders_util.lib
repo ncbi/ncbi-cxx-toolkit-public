@@ -12,3 +12,7 @@ LIBS =
 
 USES_LIBRARIES = ncbi_xloader_genbank ncbi_xloader_blastdb ncbi_xloader_lds2 \
                  ncbi_xloader_asn_cache ncbi_xloader_csra ncbi_xloader_wgs
+
+ASN_DEP = blastdb genome_collection seqset
+
+WATCHERS = gouriano whlavina
