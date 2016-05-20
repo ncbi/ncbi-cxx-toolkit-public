@@ -134,10 +134,28 @@ const CMolInfo* CDiscrepancyContext::GetCurrentMolInfo()
     return mol_info;
 }
 
-static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type)
+bool CDiscrepancyContext::HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type)
 {
     return NStr::FindNoCase(def_lineage, type) != string::npos || def_lineage.empty() && biosrc.IsSetLineage() && NStr::FindNoCase(biosrc.GetLineage(), type) != string::npos;
 }
+
+
+bool CDiscrepancyContext::HasLineage(const string& lineage)
+{
+    static bool result = false;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+        const CBioSource* biosrc = GetCurrentBiosource();
+        if (biosrc) {
+            result = HasLineage(*biosrc, GetLineage(), lineage);
+            return result;
+        }
+        result = false;
+    }
+    return result;
+}
+
 
 bool CDiscrepancyContext::IsEukaryotic()
 {

@@ -336,6 +336,8 @@ public:
     const CBioSource* GetCurrentBiosource(void);
     const CMolInfo* GetCurrentMolInfo(void);
     CBioSource::TGenome GetCurrentGenome(void);
+    static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type);
+    bool HasLineage(const string& lineage);
     bool IsEukaryotic(void);
     bool IsBacterial(void);
     bool IsCurrentRnaInGenProdSet(void);
