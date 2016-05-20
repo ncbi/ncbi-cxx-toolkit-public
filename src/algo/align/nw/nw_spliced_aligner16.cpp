@@ -183,11 +183,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     const char * NCBI_RESTRICT seq1 (m_Seq1 + data->m_offset1 - 1);
     const char * NCBI_RESTRICT seq2 (m_Seq2 + data->m_offset2 - 1);
 
-#ifdef NW_ALGO_ALIGN_SPLICED16_USE_SPLICED_SCORE_MATRIX
-    const TScore (*sm) [NCBI_FSM_DIM] (
-        reinterpret_cast<const TScore (*)[NCBI_FSM_DIM]> 
-        (&m_ScoreMatrix.front()));
-#endif
+    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
     const bool bFreeGapLeft1  (data->m_esf_L1 && data->m_offset1 == 0);
     const bool bFreeGapRight1 (data->m_esf_R1 &&
@@ -341,11 +337,7 @@ NWSPL_DETECTDONOR(2)
         for (j = 1; j < N2; ++j, ++k) {
             			
 
-#ifdef NW_ALGO_ALIGN_SPLICED16_USE_SPLICED_SCORE_MATRIX
             G = pV[j] + sm[ci][(unsigned char)seq2[j]];
-#else
-            G = pV[j] + (ci == seq2[j]? m_Wm: m_Wms);
-#endif
             pV[j] = V;
 
             n0 = V + wg1;
