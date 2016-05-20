@@ -266,6 +266,7 @@ public:
           m_Write(object_loc)
     {}
 
+    bool Init() { return m_Context->filetrack_api; }
     void SetLocator();
 
     IState* StartRead(void*, size_t, size_t*, ERW_Result*);
@@ -904,8 +905,10 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
     }
 
     if (!primary_ft && !secondary_ft && (flags & fNST_Movable)) {
-        LOG_POST(Trace << "FileTrack (movable)");
-        m_Locations.push(&m_FileTrack);
+        if (m_FileTrack.Init()) {
+            LOG_POST(Trace << "FileTrack (movable)");
+            m_Locations.push(&m_FileTrack);
+        }
     }
 
     if (!primary_nc && secondary_nc) {
@@ -916,8 +919,10 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
     }
 
     if (!primary_ft && secondary_ft) {
-        LOG_POST(Trace << "FileTrack (flag)");
-        m_Locations.push(&m_FileTrack);
+        if (m_FileTrack.Init()) {
+            LOG_POST(Trace << "FileTrack (flag)");
+            m_Locations.push(&m_FileTrack);
+        }
     }
 
     if (primary_nc) {
@@ -928,8 +933,10 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
     }
     
     if (primary_ft) {
-        LOG_POST(Trace << "FileTrack (location)");
-        m_Locations.push(&m_FileTrack);
+        if (m_FileTrack.Init()) {
+            LOG_POST(Trace << "FileTrack (location)");
+            m_Locations.push(&m_FileTrack);
+        }
     }
 
     // No real locations, only CNotFound

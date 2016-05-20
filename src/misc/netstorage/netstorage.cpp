@@ -147,7 +147,7 @@ private:
 CObj* SDirectNetStorageImpl::OpenImpl(const string& object_loc)
 {
     ISelector::Ptr selector(m_Context->Create(object_loc));
-    return new CObj(selector);
+    return new CObj(selector, true);
 }
 
 
@@ -264,7 +264,7 @@ CObj* SDirectNetStorageByKeyImpl::OpenImpl(const string& key,
         TNetStorageFlags flags)
 {
     ISelector::Ptr selector(m_Context->Create(flags, key));
-    return new CObj(selector);
+    return new CObj(selector, true);
 }
 
 
@@ -298,7 +298,7 @@ CObj* SDirectNetStorageByKeyImpl::Open(TNetStorageFlags flags,
         const string& key)
 {
     ISelector::Ptr selector(m_Context->Create(flags, m_ServiceName, key));
-    return new CObj(selector);
+    return new CObj(selector, true);
 }
 
 

@@ -139,7 +139,7 @@ string CObj::Relocate(TNetStorageFlags flags)
     }
 
     LOG_POST(Trace << "locations are different");
-    CRef<CObj> new_file(new CObj(selector, true));
+    CRef<CObj> new_file(new CObj(selector));
 
     for (;;) {
         new_file->Write(buffer, bytes_read, NULL);
@@ -220,7 +220,7 @@ ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
         if (rw_state) {
             m_Location = l;
             m_State = rw_state;
-            if (!m_Relocating) RemoveOldCopyIfExists();
+            if (m_RemoveOldCopy) RemoveOldCopyIfExists();
             return result;
         }
     }
