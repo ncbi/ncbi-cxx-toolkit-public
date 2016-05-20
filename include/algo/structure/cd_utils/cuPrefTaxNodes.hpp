@@ -108,6 +108,12 @@ public:
     //  Looks if taxid is *exactly* one of the priority tax nodes.
     bool IsPriorityTaxnode(int taxid);
 
+    //  If taxidIn is not an a priority taxnode, return its nearest ancestor that is.  
+    //  Use taxClient to ascend the lineage of taxidIn in the full taxonomy tree.
+    //  Return true if a priorityTaxid is found; otherwise return false and set priorityTaxid = 0.
+    bool GetPriorityTaxid(int taxidIn, int& priorityTaxid, TaxClient& taxClient);
+    bool GetPriorityTaxidAndName(int taxidIn, int& priorityTaxid, string& nodeName, TaxClient& taxClient);
+
     //  If not an exact match w/ a priority taxnode, and there is
     //  not an entry for the taxid in the corresponding ancestral map, use taxClient
     //  to ascend the tax tree to see if one of its ancestors is a match.  Return the 

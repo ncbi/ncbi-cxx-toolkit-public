@@ -43,15 +43,11 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-//extern string launchDirectory;
-const string CJL_LaunchDirectory = "E:\\Users\\lanczyck\\CDTree\\Code\\c++\\compilers\\msvc710_prj\\static\\bin\\debug\\";
-
 const string CPriorityTaxNodes::PREF_TAXNODE_FILE  = "data/txnodes.asn";
    
 CPriorityTaxNodes::CPriorityTaxNodes(TaxNodeInputType inputType) : m_inputType(inputType)
 {
     string filename = PREF_TAXNODE_FILE;
-//    string filename = CJL_LaunchDirectory + PREF_TAXNODE_FILE;
     LoadFromFile(filename, false);
 }
 
@@ -259,6 +255,38 @@ bool CPriorityTaxNodes::IsPriorityTaxnode(int taxid)
     return it != m_selectedTaxNodesMap.end();
 }
 
+bool CPriorityTaxNodes::GetPriorityTaxid(int taxidIn, int& priorityTaxid, TaxClient& taxClient)
+{
+    string nodeName;
+    return GetPriorityTaxidAndName(taxidIn, priorityTaxid, nodeName, taxClient);
+}
+
+bool CPriorityTaxNodes::GetPriorityTaxidAndName(int taxidIn, int& priorityTaxid, string& nodeName, TaxClient& taxClient)
+{
+    bool result = false;
+	TaxidToOrgMap::iterator it = m_selectedTaxNodesMap.find(taxidIn), itEnd = m_selectedTaxNodesMap.end();
+
+    priorityTaxid = 0;
+    nodeName = kEmptyStr;
+    if (it != itEnd) {
+        priorityTaxid = taxidIn;
+        result = true;
+    } else {  // fail to find exact match; try to find ancetral match
+        it = findAncestor(taxidIn, &taxClient);
+        if (it != itEnd)
+        {
+            priorityTaxid = it->first;
+            result = true;
+        }
+    }
+
+    if (it != itEnd) {  //  result = true
+        nodeName = getTaxName(it->second.orgRef);
+    }
+
+	return result;
+}
+
 //  return -1 if fails or taxid = 0
 int CPriorityTaxNodes::GetPriorityTaxnode(int taxid, const OrgNode*& orgNode, TaxClient* taxClient) 
 {
@@ -289,7 +317,7 @@ int CPriorityTaxNodes::GetPriorityTaxnode(int taxid, string& nodeName, TaxClient
 {
     const OrgNode* orgNode = NULL;
 
-    nodeName.erase();
+    nodeName = kEmptyStr;
     if (GetPriorityTaxnode(taxid, orgNode, taxClient) != -1 && orgNode) {
         nodeName.append(getTaxName(orgNode->orgRef));
         return orgNode->order;
