@@ -862,7 +862,7 @@ DISCREPANCY_SUMMARIZE(NONWGS_SETS_PRESENT)
 
 DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc | eOncaller, "No annotation")
 {
-    if (obj.IsAa() || context.HasFeatures()) {
+    if (context.HasFeatures()) {
         return;
     }
     m_Objs["[n] bioseq[s] [has] no features"].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
