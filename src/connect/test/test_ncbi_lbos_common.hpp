@@ -4135,7 +4135,7 @@ void AllOK__ReturnSuccess()
                              "1.0.0",
                              "",
                              port,
-                             "http://" ANNOUNCEMENT_HOST_0000 + 
+                             "http://" ANNOUNCEMENT_HOST_0000 ":" +
                              s_PortStr(PORT_N) +  "/health",
                              &lbos_answer.Get(), &lbos_status_message.Get());
     
@@ -4157,8 +4157,8 @@ void AllOK__ReturnSuccess()
     s_AnnounceCSafe(node_name.c_str(),
                     "1.0.0",
                     "", port,
-                    (string("http://") + ANNOUNCEMENT_HOST +
-                    ":" + s_PortStr(PORT_N) +  "/health").c_str(),
+                    (string("http://") + ANNOUNCEMENT_HOST + ":" +
+                    s_PortStr(PORT_N) +  "/health").c_str(),
                     &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
