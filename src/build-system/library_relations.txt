@@ -96,7 +96,9 @@ an_prok_pipeline needs pathogen_connection
 an_prok_pipeline needs tax_xml
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
-asn_cache includes id_dump
+asn_cache needs $(COMPRESS_LIBS)
+asn_cache needs bdb
+asn_cache needs seqset
 asn_config needs build_config_base
 asn_config needs config_access
 asn_config needs gpipe_objutil
@@ -181,7 +183,7 @@ cdd needs cn3d
 cdd needs scoremat
 clog needs3party $(ORIG_LIBS)
 cluster_assignment needs xser
-cluster_utils needs gpipe_objutil
+cluster_utils needs data_loaders_util
 clustering needs cobalt
 cn3d needs mmdb
 cobalt needs $(BLAST_LIBS)
@@ -213,6 +215,10 @@ ctutils needs3party $(SYBASE_LIBS)
 ctutils needs3party $(VDB_LIBS)
 ctutils needs3party ncbiobj
 curl needs3party $(ORIG_LIBS)
+data_loaders_util needs $(GPIPE_LOADER_LIBS)
+data_loaders_util needs $(OBJMGR_LIBS)
+data_loaders_util needs $(SDBAPI_LIB)
+data_loaders_util needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
 db needs3party $(ORIG_LIBS)
 dbapi needs dbapi_driver
 dbapi_driver needs xncbi
@@ -448,14 +454,12 @@ gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
 gpipe_meta_access needs gpipe_common
 gpipe_object_edit needs xalgoalignutil
-gpipe_objutil needs $(GPIPE_LOADER_LIBS)
+gpipe_objutil includes data_loaders_util
 gpipe_objutil needs $(OBJEDIT_LIBS)
-gpipe_objutil needs $(OBJMGR_LIBS)
 gpipe_objutil needs $(XFORMAT_LIBS)
 gpipe_objutil needs gpipe_attr
 gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
-gpipe_objutil needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_prodigal needs prok_cluster_data
 gpipe_prok_clean_prot_names needs gpipe_attr
@@ -584,8 +588,6 @@ id2_split needs $(COMPRESS_LIBS)
 id2_split needs $(SOBJMGR_LIBS)
 id2cli needs id2
 id2cli needs xconnect
-id_dump needs bdb
-id_dump needs seqset
 ideo needs xmvdatacache
 ideochr needs3party vibrant
 ideocli needs ideo
