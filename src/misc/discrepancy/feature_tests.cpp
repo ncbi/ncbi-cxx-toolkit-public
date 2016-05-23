@@ -30,6 +30,10 @@
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
 #include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -441,6 +445,8 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Extra Gen
     if (!obj.GetData().IsGene()) {
         return;
     }
+    bool gene_partial_start = obj.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool gene_partial_stop = obj.GetLocation().IsPartialStop(eExtreme_Biological);
 
     // Are any "reportable" features under this gene?
     CFeat_CI fi(context.GetScope(), obj.GetLocation());
@@ -448,7 +454,18 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Extra Gen
     while (fi && !found_reportable) {
         if (fi->GetData().IsCdregion() ||
             fi->GetData().IsRna()) {
-            found_reportable = true;
+            bool exclude_for_partials = false;
+            if (sequence::Compare(obj.GetLocation(), fi->GetLocation(), &(context.GetScope())) == sequence::eSame) {
+                // check partials
+                if (!gene_partial_start && fi->GetLocation().IsPartialStart(eExtreme_Biological)) {
+                    exclude_for_partials = true;
+                } else if (!gene_partial_stop && fi->GetLocation().IsPartialStop(eExtreme_Biological)) {
+                    exclude_for_partials = true;
+                }
+            }
+            if (!exclude_for_partials) {
+                found_reportable = true;
+            }
         }
         ++fi;
     }
@@ -483,6 +500,186 @@ DISCREPANCY_SUMMARIZE(EXTRA_GENES)
     }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
+
+// BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS
+
+const string kNonExtendableException = "unextendable partial coding region";
+
+const string kNonExtendable = "[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so";
+
+bool IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSeqPos& extend_len)
+{
+    bool rval = false;
+    if (left < 3) {
+        rval = true;
+        extend_len = left;
+    } else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() &&
+               seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta &&
+               seq.GetInst().IsSetExt() &&
+               seq.GetInst().GetExt().IsDelta()) {
+        TSeqPos offset = 0;
+        TSeqPos last_gap_stop = 0;
+        ITERATE(CDelta_ext::Tdata, it, seq.GetInst().GetExt().GetDelta().Get()) {
+            if ((*it)->IsLiteral()) {
+                offset += (*it)->GetLiteral().GetLength();
+                if (!(*it)->GetLiteral().IsSetSeq_data()) {
+                    last_gap_stop = offset;
+                } else if ((*it)->GetLiteral().GetSeq_data().IsGap()) {
+                    last_gap_stop = offset;
+                }
+            } else if ((*it)->IsLoc()) {
+                offset += sequence::GetLength((*it)->GetLoc(), scope);
+            }
+            if (offset > left) {
+                break;
+            }
+        }
+        if (left - last_gap_stop < 3) {
+            rval = true;
+            extend_len = left - last_gap_stop;
+        }
+    }
+    return rval;
+}
+
+
+bool IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, TSeqPos& extend_len)
+{
+    bool rval = false;
+    if (right > seq.GetLength() - 4) {
+        rval = true;
+        extend_len = seq.GetLength() - right - 1;
+    } else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() &&
+        seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta &&
+        seq.GetInst().IsSetExt() &&
+        seq.GetInst().GetExt().IsDelta()) {
+        TSeqPos offset = 0;
+        TSeqPos next_gap_start = 0;
+        ITERATE(CDelta_ext::Tdata, it, seq.GetInst().GetExt().GetDelta().Get()) {
+            if ((*it)->IsLiteral()) {
+                if (!(*it)->GetLiteral().IsSetSeq_data()) {
+                    next_gap_start = offset;
+                } else if ((*it)->GetLiteral().GetSeq_data().IsGap()) {
+                    next_gap_start = offset;
+                }
+                offset += (*it)->GetLiteral().GetLength();
+            } else if ((*it)->IsLoc()) {
+                offset += sequence::GetLength((*it)->GetLoc(), scope);
+            }
+            if (offset > right + 3) {
+                break;
+            }
+        }
+        if (next_gap_start > right && next_gap_start - right < 3) {
+            rval = true;
+            extend_len = next_gap_start - right;
+        }
+    }
+    return rval;
+}
+
+
+bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope)
+{
+    bool rval = false;
+    if (loc.IsPartialStart(eExtreme_Positional)) {
+        TSeqPos start = loc.GetStart(eExtreme_Positional);
+        if (start > 0) {
+            TSeqPos extend_len = 0;
+            if (!IsExtendableLeft(start, seq, scope, extend_len)) {
+                rval = true;
+            }
+        }
+    }
+    if (!rval && loc.IsPartialStop(eExtreme_Positional)) {
+        TSeqPos stop = loc.GetStop(eExtreme_Positional);
+        if (stop < seq.GetLength() - 1) {
+            TSeqPos extend_len = 0;
+            if (!IsExtendableRight(stop, seq, scope, extend_len)) {
+                rval = true;
+            }
+        }
+    }
+    return rval;
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc, "Find partial feature ends on bacterial sequences that cannot be extended: on when non-eukaryote")
+//  ----------------------------------------------------------------------------
+{
+    if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
+        return;
+    }
+    //only examine coding regions
+    if (!obj.IsSetData() || !obj.GetData().IsCdregion()) {
+        return;
+    }
+    //ignore if feature already has exception
+    if (obj.IsSetExcept_text() && NStr::FindNoCase(obj.GetExcept_text(), kNonExtendableException) != string::npos) {
+        return;
+    }
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+
+    bool add_this = IsNonExtendable(obj.GetLocation(), *seq, &(context.GetScope()));
+
+    if (add_this) {
+        m_Objs[kNonExtendable].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
+            false).Fatal();
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+const string kBacterialPartialNonextendableException = "[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so, but [has] the correct exception";
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, CSeq_feat_BY_BIOSEQ, eDisc, "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote")
+//  ----------------------------------------------------------------------------
+{
+    if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
+        return;
+    }
+    //only examine coding regions
+    if (!obj.IsSetData() || !obj.GetData().IsCdregion()) {
+        return;
+    }
+    //ignore if feature does not have exception
+    if (!obj.IsSetExcept_text() || NStr::FindNoCase(obj.GetExcept_text(), kNonExtendableException) == string::npos) {
+        return;
+    }
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+
+    bool add_this = IsNonExtendable(obj.GetLocation(), *seq, &(context.GetScope()));
+
+    if (add_this) {
+        m_Objs[kBacterialPartialNonextendableException].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
+            false).Fatal();
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 
 
 END_SCOPE(NDiscrepancy)
