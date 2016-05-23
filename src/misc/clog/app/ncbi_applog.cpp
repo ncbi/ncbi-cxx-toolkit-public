@@ -70,7 +70,7 @@
     ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-hostrole] [-hostloc]
                                       [-logsite] [-pid] [-sid] [-phid] [-rid] [-srvport]
                                       [-app_start_time] [-req_start_time]
-    ncbi_applog url           <token> [-sid] [-phid] [-timestamp TIME]
+    ncbi_applog url           <token> [-appname] [-host] [-pid] [-sid] [-phid] [-maxtime TIME] [-maxtime-delay TIMESPAN]
 
   Special commands (must be used without <token> parameter):
     ncbi_applog raw           -file <applog_formatted_logs_for_a_single_app.txt> [-logsite SITE] 
@@ -174,7 +174,7 @@ struct SInfo {
     string            host_location;    ///< Host location (CGI mode only, ignored for local host)
     STime             app_start_time;   ///< Application start time
     STime             req_start_time;   ///< Request start time
-    STime             post_time;        ///< Posting time (defined only for redirect mode)
+    STime             post_time;        ///< Posting time (if differs from the current time)
     unsigned int      server_port;      ///< Value of $SERVER_PORT environment variable
 
     SInfo() :
@@ -497,19 +497,31 @@ void CNcbiApplogApp::Init(void)
             "Generate an Applog query URL on a base of token information and print it to stdout. "
             "Token can be obtained from <start_app> or <start_request> command. "
             "Generated URL will include data to a whole application or request only, accordingly to "
-            "the type of specified token. Also, this command should be called after <stop_app> or <stop_request> "
-            "to get correct date/time range for the query. Or you can use -timestamp argument to specify "
-            "end of the range, starting date/time will be automatically obtained from the token. "
-            "The query automatically include application name, host, pid and additionally request ID for request. "
-            "all additional data could be added using optional flags. "
+            "the type of specified token and provided flags. Also, this command should be called "
+            "after <stop_app> or <stop_request> to get correct date/time range for the query. "
+            "Or you can use -timestamp argument to specify the end of the query time range. "
+            "Starting date/time for a query will be automatically obtained from the token. "
+            "The generated url query includes only a minimum information by default, "
+            "at least one flag should be used to add search terms, if in doubt use -std flag."
             "This operation doesn't affect current logging (if any)."
         );
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
-        arg->AddFlag("sid",  "Session ID (application-wide or request, depending on the type of token).");
-        arg->AddFlag("phid", "Hit ID (application-wide or request, depending on the type of token).");
-        arg->AddDefaultKey
-            ("timestamp", "TIME", "Ending date/time for a query range, current by default (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
+        arg->AddFlag("std",     "Include application name, host name and pid to the query. "
+                                "Automatically imply -appname, -host and -pid flags.");
+        arg->AddFlag("appname", "Include application name to the query.");
+        arg->AddFlag("host",    "Include host name to the query.");
+        arg->AddFlag("pid",     "Include process ID of the application to the query.");
+        arg->AddFlag("sid",     "Include session ID (application-wide or request, depending on the type of token) to the query.");
+        arg->AddFlag("phid",    "Include hit ID (application-wide or request, depending on the type of token) to the query.");
+        arg->AddDefaultKey("maxtime", "TIME", 
+            "Specify ending date/time for a query range, current by default (YYYY-MM-DDThh:mm:sus, MM/DD/YY hh:mm:ss, time_t).", 
+            CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey("maxtime-delay", "TIMESPAN",
+            "A timespan used to adjust ending date/time for a query, specified by -maxtime argument "
+            "(or current time, if not specified). Could be useful to get an URL before sending <stop_app> "
+            "command and to avoid any time calculations directly in the scripts."
+            "Accept a string with timespan in the human readable format (like '100 seconds', '100s', '2m 30s', '1d').",
             CArgDescriptions::eString, kEmptyStr);
         cmd->AddCommand("url", arg.release());
     }}
@@ -1332,7 +1344,13 @@ int CNcbiApplogApp::Run(void)
     // Get posting time if specified
     if ( !m_IsRaw ) {
         string timestamp;
-        timestamp = args["timestamp"].AsString();
+        if (args.Exist("timestamp")) {
+            timestamp = args["timestamp"].AsString();
+        }
+        if (timestamp.empty()  &&  cmd == "url") {
+            // for url command treat -maxtime argument as synonym for -timestamp
+            timestamp = args["maxtime"].AsString();
+        }
         if ( !timestamp.empty() ) {
             // YYYY-MM-DDThh:mm:ss
             if (timestamp.length() == 19  &&  timestamp.find("T") != NPOS ) {
@@ -1350,31 +1368,56 @@ int CNcbiApplogApp::Run(void)
     }
 
     if (cmd == "url") {
-        // note, the token and posting time ()is any have parsed already
+        // note, the token and posting time (if any) has parsed already
         CApplogUrl url;
 
-        url.SetAppName(m_Info.appname);
-        url.SetLogsite(m_Info.logsite);
-        url.SetHost(m_Info.host);
-        url.SetProcessID(m_Info.pid);
-
-        if (m_Info.post_time.sec) {
-            url.SetDateTime(CTime(m_Info.post_time.sec));
-        } else {
-            url.SetDateTime(CTime(token_par_type == eToken_App ? 
-                m_Info.app_start_time.sec : m_Info.req_start_time.sec));
+        if (args["std"]) {
+            url.SetAppName(m_Info.appname);
+            url.SetLogsite(m_Info.logsite);
+            url.SetHost(m_Info.host);
+            url.SetProcessID(m_Info.pid);
         }
-        // Request ID
-        if (token_par_type == eToken_Request) {
-            url.SetRequestID(m_Info.rid);
+        else {
+            if (args["appname"]) {
+                url.SetAppName(m_Info.appname);
+                url.SetLogsite(m_Info.logsite);
+            }
+            if (args["host"]) {
+                url.SetHost(m_Info.host);
+            }
+            if (args["pid"]) {
+                url.SetProcessID(m_Info.pid);
+            }
         }
-        // Optional values
         if (args["sid"]) {
             url.SetSession(token_par_type == eToken_App ? m_Info.sid_app : m_Info.sid_req);
         }
         if (args["phid"]) {
             url.SetHitID(token_par_type == eToken_App ? m_Info.phid_app : m_Info.phid_req);
         }
+
+        // For requests add request ID by default
+        if (token_par_type == eToken_Request) {
+            url.SetRequestID(m_Info.rid);
+        }
+
+        // Date/time
+        CTime time_start(token_par_type == eToken_App ? m_Info.app_start_time.sec : m_Info.req_start_time.sec);
+        CTime time_end;
+        if (m_Info.post_time.sec) {
+            time_end.SetTimeT(m_Info.post_time.sec);
+        } else {
+            time_end.SetCurrent();
+        }
+        string timespan = args["maxtime-delay"].AsString();
+        if (!timespan.empty()) {
+            CTimeSpan ts;
+            ts.AssignFromSmartString(timespan);
+            time_end += ts;
+        }
+        url.SetDateTime(time_start, time_end);
+
+        // Compose URL
         cout << url.ComposeUrl();
         return 0;
     }
