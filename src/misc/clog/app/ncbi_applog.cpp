@@ -499,7 +499,7 @@ void CNcbiApplogApp::Init(void)
             "Generated URL will include data to a whole application or request only, accordingly to "
             "the type of specified token and provided flags. Also, this command should be called "
             "after <stop_app> or <stop_request> to get correct date/time range for the query. "
-            "Or you can use -timestamp argument to specify the end of the query time range. "
+            "Or you can use -maxtime argument to specify the end of the query time range. "
             "Starting date/time for a query will be automatically obtained from the token. "
             "The generated url query includes only a minimum information by default, "
             "at least one flag should be used to add search terms, if in doubt use -std flag."
