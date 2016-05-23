@@ -920,7 +920,7 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit,
     
     size_t mod = len % 3;
     CRef<CSeq_loc> vector_loc(new CSeq_loc());
-    vector_loc->SetInt().SetId().Assign(*(loc.GetId()));
+    vector_loc->SetInt().SetId().Assign(*(bsh.GetId().front().GetSeqId()));
 
     if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
         vector_loc->SetInt().SetFrom(0);
