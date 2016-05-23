@@ -96,24 +96,26 @@ static CObjectTypeInfoMI GetBioseqsetClassTypeInfo()
     return bioseqTypeInfo.FindMember("class");
 }
 
-////////////////////////////////////////////////
-// class CSimpleReadHook
-class CSimpleReadHook : public CReadClassMemberHook
+static void MidWritingSet(CObjectOStream& out, const CObjectInfo& obj)
 {
-public:
-    CSimpleReadHook(CObjectOStream& out) :
-        m_out(out)
-    {}
-
-    virtual void ReadClassMember(CObjectIStream &in, const CObjectInfoMI &member)
+    // Skip all members before 'class' member - they have been already written by 'class' hook function
+    CObjectInfoMI item = obj.BeginMembers();
+    for (; item; ++item)
     {
-        in.ReadClassMember(member);
-        WriteClassMember(m_out, member);
+        if (item.GetItemInfo()->GetId().GetName() == "class")
+            break;
     }
 
-private:
-    CObjectOStream& m_out;
-};
+    // Write all members after ''class' member and before 'seq-set' member
+    for (++item; item; ++item)
+    {
+        if (item.GetItemInfo()->GetId().GetName() == "seq-set")
+            break;
+
+        if (item.IsSet())
+            WriteClassMember(out, item);
+    }
+}
 
 ////////////////////////////////////////////////
 // class CReadSetHook
@@ -131,6 +133,8 @@ public:
         ++m_level;
         if (m_level == 1)
         {
+            MidWritingSet(m_out, member.GetClassObject());
+
             // Start writing 'set'
             m_out.BeginClassMember(member.GetMemberInfo()->GetId());
 
@@ -192,8 +196,23 @@ static void StartWritingSet(CObjectOStream& out)
     out.BeginClass(classType);
 }
 
-static void EndWritingSet(CObjectOStream& out)
+static void EndWritingSet(CObjectOStream& out, const CObjectInfo& obj)
 {
+    // Skip all members before 'seq-set' member - they have been already written by 'class' hook function
+    CObjectInfoMI item = obj.BeginMembers();
+    for (; item; ++item)
+    {
+        if (item.GetItemInfo()->GetId().GetName() == "seq-set")
+            break;
+    }
+
+    // Write all members after 'seq-set' member
+    for (++item; item; ++item)
+    {
+        if (item.IsSet())
+            WriteClassMember(out, item);
+    }
+
     out.EndClass();
     out.EndChoiceVariant();
     out.EndChoice();
@@ -266,7 +285,8 @@ void CReadEntryHook::ReadObject(CObjectIStream &in, const CObjectInfo& obj)
 
         if (m_isGenbank)
         {
-            EndWritingSet(m_out);
+            CBioseq_set& bio_set = entry->SetSet();
+            EndWritingSet(m_out, CObjectInfo(&bio_set, bio_set.GetThisTypeInfo()));
             x_SetBioseqsetHook(in, false);
         }
         else
@@ -292,25 +312,6 @@ void CReadEntryHook::x_SetBioseqsetHook(CObjectIStream &in, bool isSet)
         setMember.SetLocalReadHook(in, new CReadSetHook(m_handler, m_out));
     else
         setMember.ResetLocalReadHook(in);
-
-    // Skip all embers before 'class' member - they will be written by 'class' hook function
-    CObjectTypeInfoMI member = bioseqsetTypeInfo.BeginMembers();
-    for (; member; ++member)
-    {
-        if (member.GetAlias() == "class")
-            break;
-    }
-
-    for (++member; member; ++member)
-    {
-        if (member.GetAlias() != setMember.GetAlias())
-        {
-            if (isSet)
-                member.SetLocalReadHook(in, new CSimpleReadHook(m_out));
-            else
-                member.ResetLocalReadHook(in);
-        }
-    }
 
     m_isGenbank = true;
 }
