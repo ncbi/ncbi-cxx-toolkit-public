@@ -179,6 +179,14 @@ public:
 /// @return Boolean return value indicates whether gene-xrefs were removed
     static bool RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh);
 
+/// Extends a location to the specificed position.
+/// @param loc Seq-loc to extend
+/// @param pos position of new end of location
+/// @param scope Scope in which to look for sequences
+/// @return Boolean return value indicates whether the location was extended
+    static bool SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope);
+
+
 /// Extends a coding region up to 50 nt. if the coding region:
 /// 1. does not end with a stop codon
 /// 2. is adjacent to a stop codon

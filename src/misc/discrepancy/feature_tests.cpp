@@ -699,7 +699,7 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, CSeq_feat_BY_BIOSEQ,
 
     if (add_this) {
         m_Objs[kBacterialPartialNonextendableException].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
-            false).Fatal();
+            false);
     }
 }
 
@@ -715,6 +715,114 @@ DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION)
 }
 
 
+const string kPartialProblems = "[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, but could be extended by 3 or fewer nucleotides to do so";
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc, "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote")
+//  ----------------------------------------------------------------------------
+{
+    if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
+        return;
+    }
+    //only examine coding regions
+    if (!obj.IsSetData() || !obj.GetData().IsCdregion()) {
+        return;
+    }
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+
+    bool add_this = false;
+    if (obj.GetLocation().IsPartialStart(eExtreme_Positional)) {
+        TSeqPos start = obj.GetLocation().GetStart(eExtreme_Positional);
+        if (start > 0) {
+            TSeqPos extend_len = 0;
+            if (IsExtendableLeft(start, *seq, &(context.GetScope()), extend_len)) {
+                add_this = true;
+            }
+        }
+    }
+    if (!add_this && obj.GetLocation().IsPartialStop(eExtreme_Positional)) {
+        TSeqPos stop = obj.GetLocation().GetStop(eExtreme_Positional);
+        if (stop < seq->GetLength() - 1) {
+            TSeqPos extend_len = 0;
+            if (!IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len)) {
+                add_this = true;
+            }
+        }
+    }
+
+    if (add_this) {
+        m_Objs[kPartialProblems].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
+            false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(PARTIAL_PROBLEMS)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+static bool ExtendToGapsOrEnds(const CSeq_feat& sf, CScope& scope)
+{
+    bool rval = false;
+
+    CBioseq_Handle bsh = scope.GetBioseqHandle(sf.GetLocation());
+    if (!bsh) {
+        return rval;
+    }
+    CConstRef<CBioseq> seq = bsh.GetCompleteBioseq();
+
+    CRef<CSeq_feat> new_feat(new CSeq_feat());
+    new_feat->Assign(sf);
+
+    if (sf.GetLocation().IsPartialStart(eExtreme_Positional)) {
+        TSeqPos start = sf.GetLocation().GetStart(eExtreme_Positional);
+        if (start > 0) {
+            TSeqPos extend_len = 0;
+            if (IsExtendableLeft(start, *seq, &scope, extend_len) &&
+                CCleanup::SeqLocExtend(new_feat->SetLocation(), start - extend_len, scope)) {
+                rval = true;
+            }
+        }
+    }
+
+    if (sf.GetLocation().IsPartialStop(eExtreme_Positional)) {
+        TSeqPos stop = sf.GetLocation().GetStop(eExtreme_Positional);
+        if (stop > 0) {
+            TSeqPos extend_len = 0;
+            if (IsExtendableRight(stop, *seq, &scope, extend_len) &&
+                CCleanup::SeqLocExtend(new_feat->SetLocation(), stop + extend_len, scope)) {
+                rval = true;
+            }
+        }
+    }
+
+    if (rval) {
+        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(sf));
+        feh.Replace(*new_feat);
+        rval = true;
+    }
+    return rval;
+}
+
+
+DISCREPANCY_AUTOFIX(PARTIAL_PROBLEMS)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf && ExtendToGapsOrEnds(*sf, scope)) {
+            n++;
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS: Set exception for [n] feature[s]", n) : 0);
+}
 
 
 END_SCOPE(NDiscrepancy)

@@ -861,7 +861,7 @@ bool CCleanup::RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
 }
 
 
-bool SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
+bool CCleanup::SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
 {
     size_t loc_start = loc.GetStart(eExtreme_Positional);
     size_t loc_stop = loc.GetStop(eExtreme_Positional);
