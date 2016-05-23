@@ -37,8 +37,7 @@
 #include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
-
-BEGIN_SCOPE(objects)
+BEGIN_SCOPE(objects) 
 
 class CSeq_entry;
 class CBioseq;
@@ -53,16 +52,20 @@ public:
 
     CFastaOstreamEx(CNcbiOstream& out);
 
-    virtual void WriteFeature(const CSeq_feat& feat,
-                              CScope& scope,
-                              bool translateIfCds=false);
+    void WriteFeature(const CSeq_feat& feat,
+                      CScope& scope,
+                      bool translate_cds=false);
 
-    virtual void WriteFeatureTitle(const CSeq_feat& feat,
-                                   CScope& scope);
+    void WriteFeatureTitle(const CSeq_feat& feat,
+                           CScope& scope,
+                           bool translate_cds=false);
 
     void ResetFeatureCount(void);
 
 protected:
+
+    void x_WriteTranslatedCds(const CSeq_feat& cds,
+                              CScope& scope);
 
     void x_WriteFeatureAttributes(const CSeq_feat& feat, 
                                   CScope& scope);
@@ -107,6 +110,10 @@ protected:
                                  CScope& scope,
                                  string& defline) const;
     
+    void x_AddTranscriptIdAttribute(const CSeq_feat& feat,
+                                    CScope& scope,
+                                    string& defline) const;
+
     void x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
                                             string& defline) const;
 
@@ -123,7 +130,8 @@ protected:
                                string& defline) const;
 
     string x_GetCDSIdString(const CSeq_feat& cds,
-                            CScope& scope);
+                            CScope& scope,
+                            bool translate_cds=false);
 
     string x_GetRNAIdString(const CSeq_feat& rna,
                             CScope& scope);
@@ -135,6 +143,7 @@ protected:
                              CScope& scope);
 
     TSeqPos m_FeatCount;
+    CRef<CScope> m_InternalScope;
 };
 
 
@@ -197,6 +206,5 @@ protected:
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
 
 #endif // end of "include-guard"
