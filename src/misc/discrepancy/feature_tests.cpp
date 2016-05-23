@@ -631,6 +631,41 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, 
 }
 
 
+static bool AddToException(const CSeq_feat* sf, CScope& scope, const string& except_text)
+{
+    bool rval = false;
+    if (!sf->IsSetExcept_text() || NStr::Find(sf->GetExcept_text(), except_text) == string::npos) {
+        CRef<CSeq_feat> new_feat(new CSeq_feat());
+        new_feat->Assign(*sf);
+        if (new_feat->IsSetExcept_text()) {
+            new_feat->SetExcept_text(sf->GetExcept_text() + "; " + except_text);
+        } else {
+            new_feat->SetExcept_text(except_text);
+        }
+        new_feat->SetExcept(true);
+        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+        feh.Replace(*new_feat);
+        rval = true;
+    }
+    return rval;
+}
+
+
+DISCREPANCY_AUTOFIX(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf && AddToException(sf, scope, kNonExtendableException)) {
+            n++;
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS: Set exception for [n] feature[s]", n) : 0);
+}
+
+
+
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
 //  ----------------------------------------------------------------------------
