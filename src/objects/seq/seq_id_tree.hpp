@@ -37,7 +37,6 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_limits.hpp>
-#include <corelib/hash_map.hpp>
 
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
