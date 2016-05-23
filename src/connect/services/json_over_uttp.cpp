@@ -40,7 +40,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_XCONNECT_EXPORT CNetScheduleStructuredOutputParser
+class CJsonParser
 {
 public:
     CJsonNode ParseObject(const string& ns_output)
@@ -956,11 +956,11 @@ string CJsonNode::Repr(TReprFlags flags) const
 
 #define INVALID_FORMAT_ERROR() \
     NCBI_THROW2(CStringException, eFormat, \
-            (*m_Ch == '\0' ? "Unexpected end of NetSchedule output" : \
-                    "Syntax error in structured NetSchedule output"), \
+            (*m_Ch == '\0' ? "Unexpected end of output" : \
+                    "Syntax error in structured output"), \
             GetPosition())
 
-CJsonNode CNetScheduleStructuredOutputParser::ParseJSON(const string& json)
+CJsonNode CJsonParser::ParseJSON(const string& json)
 {
     m_Ch = (m_NSOutput = json).c_str();
 
@@ -994,7 +994,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseJSON(const string& json)
     return root;
 }
 
-string CNetScheduleStructuredOutputParser::ParseString(size_t max_len)
+string CJsonParser::ParseString(size_t max_len)
 {
     size_t len;
     string val(NStr::ParseQuoted(CTempString(m_Ch, max_len), &len));
@@ -1003,7 +1003,7 @@ string CNetScheduleStructuredOutputParser::ParseString(size_t max_len)
     return val;
 }
 
-Int8 CNetScheduleStructuredOutputParser::ParseInt(size_t len)
+Int8 CJsonParser::ParseInt(size_t len)
 {
     Int8 val = NStr::StringToInt8(CTempString(m_Ch, len));
 
@@ -1020,7 +1020,7 @@ Int8 CNetScheduleStructuredOutputParser::ParseInt(size_t len)
     return val;
 }
 
-double CNetScheduleStructuredOutputParser::ParseDouble(size_t len)
+double CJsonParser::ParseDouble(size_t len)
 {
     double val = NStr::StringToDouble(CTempString(m_Ch, len));
 
@@ -1028,7 +1028,7 @@ double CNetScheduleStructuredOutputParser::ParseDouble(size_t len)
     return val;
 }
 
-bool CNetScheduleStructuredOutputParser::MoreNodes()
+bool CJsonParser::MoreNodes()
 {
     while (isspace((unsigned char) *m_Ch))
         ++m_Ch;
@@ -1039,7 +1039,7 @@ bool CNetScheduleStructuredOutputParser::MoreNodes()
     return true;
 }
 
-CJsonNode CNetScheduleStructuredOutputParser::ParseObject(char closing_char)
+CJsonNode CJsonParser::ParseObject(char closing_char)
 {
     CJsonNode result(CJsonNode::NewObjectNode());
 
@@ -1074,7 +1074,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseObject(char closing_char)
     INVALID_FORMAT_ERROR();
 }
 
-CJsonNode CNetScheduleStructuredOutputParser::ParseArray(char closing_char)
+CJsonNode CJsonParser::ParseArray(char closing_char)
 {
     CJsonNode result(CJsonNode::NewArrayNode());
 
@@ -1098,7 +1098,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseArray(char closing_char)
     INVALID_FORMAT_ERROR();
 }
 
-CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
+CJsonNode CJsonParser::ParseValue()
 {
     size_t max_len = GetRemainder();
     size_t len = 0;
@@ -1196,17 +1196,17 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
 
 CJsonNode CJsonNode::ParseObject(const string& json)
 {
-    return CNetScheduleStructuredOutputParser().ParseObject(json);
+    return CJsonParser().ParseObject(json);
 }
 
 CJsonNode CJsonNode::ParseArray(const string& json)
 {
-    return CNetScheduleStructuredOutputParser().ParseArray(json);
+    return CJsonParser().ParseArray(json);
 }
 
 CJsonNode CJsonNode::ParseJSON(const string& json)
 {
-    return CNetScheduleStructuredOutputParser().ParseJSON(json);
+    return CJsonParser().ParseJSON(json);
 }
 
 const char* CJsonOverUTTPException::GetErrCodeString() const
