@@ -177,16 +177,15 @@ sub normalize_word
 # Fix data lines, like coordinates of features.
 sub normalize_detail
 { my $str = shift;
-
-  $str=~s/:plus([<]?\d+-[>]?\d+)/:$1/g;
-  $str=~s/, plus([<]?\d+-[>]?\d+)/, $1/g;
-  $str=~s/:minus([<]?\d+-[>]?\d+)/:c$1/g;
-  $str=~s/, minus([<]?\d+-[>]?\d+)/, c$1/g;
+  #print ">> $str\n";
+  $str=~s/:plus([<>]?\d+-[<>]?\d+)/:$1/g;
+  $str=~s/, plus([<>]?\d+-[<>]?\d+)/, $1/g;
+  $str=~s/:minus([<>]?\d+-[<>]?\d+)/:c$1/g;
+  $str=~s/, minus([<>]?\d+-[<>]?\d+)/, c$1/g;
   $str=~s/(\(\S+,\s)(\S+:)/$1/g;
   # C seems to prefer "()" for seq-loc-mix but C++ seems to prefer "[]"
-  $str=~s/\[/\(/g;
-  $str=~s/\]/\)/g;
-
+  $str=~s/[][)(]//g;
+  #print "<< $str\n";
   return $str;
 }
 
