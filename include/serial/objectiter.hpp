@@ -493,6 +493,7 @@ public:
     /// Get containing choice
     CObjectTypeInfo GetChoiceType(void) const;
 
+    operator CObjectTypeInfo(void) const;
     /// Get variant data type
     CObjectTypeInfo GetVariantType(void) const;
     /// Get variant data type

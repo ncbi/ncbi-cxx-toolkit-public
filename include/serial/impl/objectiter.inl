@@ -656,6 +656,11 @@ CObjectTypeInfo CObjectTypeInfoCV::GetChoiceType(void) const
 }
 
 inline
+CObjectTypeInfoCV::operator CObjectTypeInfo(void) const
+{
+    return GetVariantInfo()->GetTypeInfo();
+}
+inline
 CObjectTypeInfo CObjectTypeInfoCV::GetVariantType(void) const
 {
     return GetVariantInfo()->GetTypeInfo();

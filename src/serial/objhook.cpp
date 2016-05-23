@@ -124,6 +124,11 @@ void CSkipClassMemberHook::SkipMissingClassMember(CObjectIStream& stream,
     member.GetMemberInfo()->DefaultSkipMissingMember(stream);
 }
 
+void CSkipClassMemberHook::DefaultRead(CObjectIStream& in,
+                                       const CObjectInfo& object)
+{
+    object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
+}
 void CSkipClassMemberHook::DefaultSkip(CObjectIStream& in,
                                        const CObjectTypeInfoMI& object)
 {
@@ -132,6 +137,16 @@ void CSkipClassMemberHook::DefaultSkip(CObjectIStream& in,
 
 CSkipChoiceVariantHook::~CSkipChoiceVariantHook(void)
 {
+}
+void CSkipChoiceVariantHook::DefaultRead(CObjectIStream& in,
+                                       const CObjectInfo& object)
+{
+    object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
+}
+void CSkipChoiceVariantHook::DefaultSkip(CObjectIStream& stream,
+                                         const CObjectTypeInfoCV& variant)
+{
+    stream.SkipObject(variant.GetVariantType());
 }
 
 CCopyObjectHook::~CCopyObjectHook(void)
@@ -160,7 +175,7 @@ void CReadObjectHook::DefaultRead(CObjectIStream& in,
 }
 
 void CReadObjectHook::DefaultSkip(CObjectIStream& in,
-                                  const CObjectInfo& object)
+                                  const CObjectTypeInfo& object)
 {
     object.GetTypeInfo()->DefaultSkipData(in);
 }
@@ -178,15 +193,20 @@ void CReadClassMemberHook::ResetMember(const CObjectInfoMI& object,
 }
 
 void CReadClassMemberHook::DefaultSkip(CObjectIStream& in,
-                                       const CObjectInfoMI& object)
+                                       const CObjectTypeInfoMI& object)
 {
-    in.SkipObject(object.GetMember());
+    in.SkipObject(object.GetMemberType());
 }
 
 void CReadChoiceVariantHook::DefaultRead(CObjectIStream& in,
                                          const CObjectInfoCV& object)
 {
     in.ReadChoiceVariant(object);
+}
+void CReadChoiceVariantHook::DefaultSkip(CObjectIStream& in,
+                                         const CObjectTypeInfoCV& object)
+{
+    in.SkipObject(object.GetVariantType());
 }
 
 void CWriteObjectHook::DefaultWrite(CObjectOStream& out,
@@ -201,10 +221,23 @@ void CWriteClassMemberHook::DefaultWrite(CObjectOStream& out,
     out.WriteClassMember(member);
 }
 
+void CWriteClassMemberHook::CustomWrite(CObjectOStream& out,
+    const CConstObjectInfoMI& member, const CConstObjectInfo& custom_object)
+{
+    const CMemberInfo* memberInfo = member.GetMemberInfo();
+    out.WriteClassMember(memberInfo->GetId(), memberInfo->GetTypeInfo(), custom_object.GetObjectPtr());
+}
+
 void CWriteChoiceVariantHook::DefaultWrite(CObjectOStream& out,
                                            const CConstObjectInfoCV& variant)
 {
     out.WriteChoiceVariant(variant);
+}
+
+void CWriteChoiceVariantHook::CustomWrite(CObjectOStream& out,
+    const CConstObjectInfoCV& variant, const CConstObjectInfo& custom_object)
+{
+    out.WriteExternalObject(custom_object.GetObjectPtr(), variant.GetVariantInfo()->GetTypeInfo());
 }
 
 void CCopyObjectHook::DefaultCopy(CObjectStreamCopier& copier,

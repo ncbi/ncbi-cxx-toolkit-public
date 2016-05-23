@@ -70,7 +70,7 @@ public:
                      const CObjectInfo& object);
     /// Default skip
     void DefaultSkip(CObjectIStream& in,
-                     const CObjectInfo& object);
+                     const CObjectTypeInfo& object);
 };
 
 /// Read hook for data member of a containing object (eg, SEQUENCE)
@@ -88,7 +88,7 @@ public:
     void DefaultRead(CObjectIStream& in,
                      const CObjectInfoMI& object);
     void DefaultSkip(CObjectIStream& in,
-                     const CObjectInfoMI& object);
+                     const CObjectTypeInfoMI& object);
     void ResetMember(const CObjectInfoMI& object,
                      CObjectInfoMI::EEraseFlag flag =
                          CObjectInfoMI::eErase_Optional);
@@ -124,7 +124,8 @@ public:
                                    const CObjectInfoCV& variant) = 0;
     void DefaultRead(CObjectIStream& in,
                      const CObjectInfoCV& object);
-    // No default skip method - can not skip variants
+    void DefaultSkip(CObjectIStream& in,
+                     const CObjectTypeInfoCV& object);
 };
 
 /// Read hook for a choice variant (CHOICE)
@@ -179,6 +180,9 @@ public:
                                   const CConstObjectInfoMI& member) = 0;
     void DefaultWrite(CObjectOStream& out,
                       const CConstObjectInfoMI& member);
+    void CustomWrite(CObjectOStream& out,
+                     const CConstObjectInfoMI& member,
+                     const CConstObjectInfo& custom_object);
 };
 
 /// Write hook for a choice variant (CHOICE)
@@ -191,6 +195,9 @@ public:
                                     const CConstObjectInfoCV& variant) = 0;
     void DefaultWrite(CObjectOStream& out,
                       const CConstObjectInfoCV& variant);
+    void CustomWrite(CObjectOStream& out,
+                     const CConstObjectInfoCV& variant,
+                     const CConstObjectInfo& custom_object);
 };
 
 /// Skip hook for a standalone object
@@ -221,6 +228,8 @@ public:
                                  const CObjectTypeInfoMI& member) = 0;
     virtual void SkipMissingClassMember(CObjectIStream& stream,
                                         const CObjectTypeInfoMI& member);
+    void DefaultRead(CObjectIStream& in,
+                     const CObjectInfo& object);
     void DefaultSkip(CObjectIStream& stream,
                      const CObjectTypeInfoMI& member);
 };
@@ -233,8 +242,10 @@ public:
 
     virtual void SkipChoiceVariant(CObjectIStream& stream,
                                    const CObjectTypeInfoCV& variant) = 0;
-//    void DefaultSkip(CObjectIStream& stream,
-//                     const CObjectTypeInfoCV& variant);
+    void DefaultRead(CObjectIStream& in,
+                     const CObjectInfo& object);
+    void DefaultSkip(CObjectIStream& stream,
+                     const CObjectTypeInfoCV& variant);
 };
 
 
