@@ -467,11 +467,9 @@ int CGridCommandLineInterfaceApp::Automation_DebugConsole()
 
     CAutomationProc proc(&dumper_and_sender);
 
-    CNetScheduleStructuredOutputParser parser;
-
     while (fgets(read_buf, sizeof(read_buf), stdin) != NULL) {
         try {
-            CJsonNode input_message(parser.ParseArray(read_buf));
+            CJsonNode input_message(CJsonNode::ParseArray(read_buf));
 
             try {
                 dumper_and_sender.DumpInputMessage(input_message);

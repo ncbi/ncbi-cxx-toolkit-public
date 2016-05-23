@@ -33,52 +33,8 @@
 #define CONNECT__SERVICES__NS_OUTPUT_PARSER__HPP
 
 #include "netschedule_api.hpp"
-#include "json_over_uttp.hpp"
 
 BEGIN_NCBI_SCOPE
-
-class NCBI_XCONNECT_EXPORT CNetScheduleStructuredOutputParser
-{
-public:
-    CJsonNode ParseObject(const string& ns_output)
-    {
-        m_Ch = (m_NSOutput = ns_output).c_str();
-
-        return ParseObject('\0');
-    }
-
-    CJsonNode ParseArray(const string& ns_output)
-    {
-        m_Ch = (m_NSOutput = ns_output).c_str();
-
-        return ParseArray('\0');
-    }
-
-    CJsonNode ParseJSON(const string& json);
-
-private:
-    size_t GetRemainder() const
-    {
-        return m_NSOutput.length() - (m_Ch - m_NSOutput.data());
-    }
-
-    size_t GetPosition() const
-    {
-        return m_Ch - m_NSOutput.data() + 1;
-    }
-
-    string ParseString(size_t max_len);
-    Int8 ParseInt(size_t len);
-    double ParseDouble(size_t len);
-    bool MoreNodes();
-
-    CJsonNode ParseObject(char closing_char);
-    CJsonNode ParseArray(char closing_char);
-    CJsonNode ParseValue();
-
-    string m_NSOutput;
-    const char* m_Ch;
-};
 
 class NCBI_XCONNECT_EXPORT CAttrListParser
 {

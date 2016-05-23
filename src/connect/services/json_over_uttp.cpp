@@ -40,6 +40,49 @@
 
 BEGIN_NCBI_SCOPE
 
+class NCBI_XCONNECT_EXPORT CNetScheduleStructuredOutputParser
+{
+public:
+    CJsonNode ParseObject(const string& ns_output)
+    {
+        m_Ch = (m_NSOutput = ns_output).c_str();
+
+        return ParseObject('\0');
+    }
+
+    CJsonNode ParseArray(const string& ns_output)
+    {
+        m_Ch = (m_NSOutput = ns_output).c_str();
+
+        return ParseArray('\0');
+    }
+
+    CJsonNode ParseJSON(const string& json);
+
+private:
+    size_t GetRemainder() const
+    {
+        return m_NSOutput.length() - (m_Ch - m_NSOutput.data());
+    }
+
+    size_t GetPosition() const
+    {
+        return m_Ch - m_NSOutput.data() + 1;
+    }
+
+    string ParseString(size_t max_len);
+    Int8 ParseInt(size_t len);
+    double ParseDouble(size_t len);
+    bool MoreNodes();
+
+    CJsonNode ParseObject(char closing_char);
+    CJsonNode ParseArray(char closing_char);
+    CJsonNode ParseValue();
+
+    string m_NSOutput;
+    const char* m_Ch;
+};
+
 const char* CJsonException::GetErrCodeString() const
 {
     switch (GetErrCode()) {
@@ -909,6 +952,261 @@ string CJsonNode::Repr(TReprFlags flags) const
     }
 
     return CNcbiOstrstreamToString(oss);
+}
+
+#define INVALID_FORMAT_ERROR() \
+    NCBI_THROW2(CStringException, eFormat, \
+            (*m_Ch == '\0' ? "Unexpected end of NetSchedule output" : \
+                    "Syntax error in structured NetSchedule output"), \
+            GetPosition())
+
+CJsonNode CNetScheduleStructuredOutputParser::ParseJSON(const string& json)
+{
+    m_Ch = (m_NSOutput = json).c_str();
+
+    while (isspace((unsigned char) *m_Ch))
+        ++m_Ch;
+
+    CJsonNode root;
+
+    switch (*m_Ch) {
+    case '[':
+        ++m_Ch;
+        root = ParseArray(']');
+        break;
+
+    case '{':
+        ++m_Ch;
+        root = ParseObject('}');
+        break;
+
+    default:
+        INVALID_FORMAT_ERROR();
+    }
+
+    while (isspace((unsigned char) *m_Ch))
+        ++m_Ch;
+
+    if (*m_Ch != '\0') {
+        INVALID_FORMAT_ERROR();
+    }
+
+    return root;
+}
+
+string CNetScheduleStructuredOutputParser::ParseString(size_t max_len)
+{
+    size_t len;
+    string val(NStr::ParseQuoted(CTempString(m_Ch, max_len), &len));
+
+    m_Ch += len;
+    return val;
+}
+
+Int8 CNetScheduleStructuredOutputParser::ParseInt(size_t len)
+{
+    Int8 val = NStr::StringToInt8(CTempString(m_Ch, len));
+
+    if (*m_Ch == '-') {
+        ++m_Ch;
+        --len;
+    }
+    if (*m_Ch == '0' && len > 1) {
+        NCBI_THROW2(CStringException, eFormat,
+                "Leading zeros are not allowed", GetPosition());
+    }
+
+    m_Ch += len;
+    return val;
+}
+
+double CNetScheduleStructuredOutputParser::ParseDouble(size_t len)
+{
+    double val = NStr::StringToDouble(CTempString(m_Ch, len));
+
+    m_Ch += len;
+    return val;
+}
+
+bool CNetScheduleStructuredOutputParser::MoreNodes()
+{
+    while (isspace((unsigned char) *m_Ch))
+        ++m_Ch;
+    if (*m_Ch != ',')
+        return false;
+    while (isspace((unsigned char) *++m_Ch))
+        ;
+    return true;
+}
+
+CJsonNode CNetScheduleStructuredOutputParser::ParseObject(char closing_char)
+{
+    CJsonNode result(CJsonNode::NewObjectNode());
+
+    while (isspace((unsigned char) *m_Ch))
+        ++m_Ch;
+
+    if (*m_Ch == closing_char) {
+        ++m_Ch;
+        return result;
+    }
+
+    while (*m_Ch == '\'' || *m_Ch == '"') {
+        // New attribute/value pair
+        string attr_name(ParseString(GetRemainder()));
+
+        while (isspace((unsigned char) *m_Ch))
+            ++m_Ch;
+        if (*m_Ch == ':' || *m_Ch == '=')
+            while (isspace((unsigned char) *++m_Ch))
+                ;
+
+        result.SetByKey(attr_name, ParseValue());
+
+        if (!MoreNodes()) {
+            if (*m_Ch != closing_char)
+                break;
+            ++m_Ch;
+            return result;
+        }
+    }
+
+    INVALID_FORMAT_ERROR();
+}
+
+CJsonNode CNetScheduleStructuredOutputParser::ParseArray(char closing_char)
+{
+    CJsonNode result(CJsonNode::NewArrayNode());
+
+    while (isspace((unsigned char) *m_Ch))
+        ++m_Ch;
+
+    if (*m_Ch == closing_char) {
+        ++m_Ch;
+        return result;
+    }
+
+    do
+        result.Append(ParseValue());
+    while (MoreNodes());
+
+    if (*m_Ch == closing_char) {
+        ++m_Ch;
+        return result;
+    }
+
+    INVALID_FORMAT_ERROR();
+}
+
+CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
+{
+    size_t max_len = GetRemainder();
+    size_t len = 0;
+
+    switch (*m_Ch) {
+    /* Array */
+    case '[':
+        ++m_Ch;
+        return ParseArray(']');
+
+    /* Object */
+    case '{':
+        ++m_Ch;
+        return ParseObject('}');
+
+    /* String */
+    case '\'':
+    case '"':
+        return CJsonNode::NewStringNode(ParseString(max_len));
+
+    /* Number */
+    case '-':
+        // Check that there's at least one digit after the minus sign.
+        if (max_len <= 1 || !isdigit((unsigned char) m_Ch[1])) {
+            ++m_Ch;
+            break;
+        }
+        len = 1;
+
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+        // Skim through the integer part.
+        do
+            if (++len >= max_len)
+                return CJsonNode::NewIntegerNode(ParseInt(len));
+        while (isdigit((unsigned char) m_Ch[len]));
+
+        // Stumbled upon a non-digit character -- check
+        // if it's a fraction part or an exponent part.
+        switch (m_Ch[len]) {
+        case '.':
+            if (++len == max_len || !isdigit((unsigned char) m_Ch[len])) {
+                NCBI_THROW2(CStringException, eFormat,
+                        "At least one digit after the decimal "
+                        "point is required", GetPosition());
+            }
+            for (;;) {
+                if (++len == max_len)
+                    return CJsonNode::NewDoubleNode(ParseDouble(len));
+
+                if (!isdigit((unsigned char) m_Ch[len])) {
+                    if (m_Ch[len] == 'E' || m_Ch[len] == 'e')
+                        break;
+
+                    return CJsonNode::NewDoubleNode(ParseDouble(len));
+                }
+            }
+            /* FALL THROUGH */
+
+        case 'E':
+        case 'e':
+            if (++len == max_len ||
+                    (m_Ch[len] == '-' || m_Ch[len] == '+' ?
+                            ++len == max_len ||
+                                    !isdigit((unsigned char) m_Ch[len]) :
+                            !isdigit((unsigned char) m_Ch[len]))) {
+                m_Ch += len;
+                NCBI_THROW2(CStringException, eFormat,
+                        "Invalid exponent specification", GetPosition());
+            }
+            while (++len < max_len && isdigit((unsigned char) m_Ch[len]))
+                ;
+            return CJsonNode::NewDoubleNode(ParseDouble(len));
+
+        default:
+            return CJsonNode::NewIntegerNode(ParseInt(len));
+        }
+
+    /* Constant */
+    case 'F': case 'f': case 'N': case 'n':
+    case 'T': case 't': case 'Y': case 'y':
+        while (len <= max_len && isalpha((unsigned char) m_Ch[len]))
+            ++len;
+
+        {
+            CTempString val(m_Ch, len);
+            m_Ch += len;
+            return val == "null" ? CJsonNode::NewNullNode() :
+                CJsonNode::NewBooleanNode(NStr::StringToBool(val));
+        }
+    }
+
+    INVALID_FORMAT_ERROR();
+}
+
+CJsonNode CJsonNode::ParseObject(const string& json)
+{
+    return CNetScheduleStructuredOutputParser().ParseObject(json);
+}
+
+CJsonNode CJsonNode::ParseArray(const string& json)
+{
+    return CNetScheduleStructuredOutputParser().ParseArray(json);
+}
+
+CJsonNode CJsonNode::ParseJSON(const string& json)
+{
+    return CNetScheduleStructuredOutputParser().ParseJSON(json);
 }
 
 const char* CJsonOverUTTPException::GetErrCodeString() const

@@ -278,6 +278,10 @@ class NCBI_XCONNECT_EXPORT CJsonNode
 
     /// Return a string representation of this node.
     string Repr(TReprFlags flags = 0) const;
+
+    static CJsonNode ParseObject(const string& json);
+    static CJsonNode ParseArray(const string& json);
+    static CJsonNode ParseJSON(const string& json);
 };
 
 /// Iterator for JSON arrays and objects.

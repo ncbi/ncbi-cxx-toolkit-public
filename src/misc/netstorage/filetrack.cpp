@@ -494,8 +494,7 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
     CJsonNode root;
 
     try {
-        CNetScheduleStructuredOutputParser json_parser;
-        root = json_parser.ParseJSON(http_response);
+        root = CJsonNode::ParseJSON(http_response);
     }
     catch (CStringException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
@@ -717,11 +716,10 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
 #if 0
     ostringstream oss;
     oss << response.ContentStream().rdbuf();
-    CNetScheduleStructuredOutputParser parser;
 
     try {
         // If there is already "path" in response
-        if (CJsonNode root = parser.ParseJSON(oss.str())) {
+        if (CJsonNode root = CJsonNode::ParseJSON(oss.str())) {
             if (CJsonNode path = root.GetByKeyOrNull("path")) {
                 return path.AsString();
             }
