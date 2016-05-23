@@ -29,7 +29,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
-#include <corelib/hash_set.hpp>
 
 #include <objects/taxon1/taxon1.hpp>
 #include <objects/blastdb/defline_extra.hpp>
