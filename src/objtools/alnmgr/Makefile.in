@@ -3,5 +3,7 @@
 LIB_PROJ = alnmgr
 SUB_PROJ = demo unit_test
 
+WATCHERS = grichenk
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

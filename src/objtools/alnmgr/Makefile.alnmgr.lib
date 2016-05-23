@@ -12,8 +12,7 @@ SRC = aln_builders aln_converters aln_generators aln_seqid aln_serial	\
 
 DLL_LIB = tables
 
-WATCHERS = todorov dicuccio grichenk
-
+WATCHERS = grichenk
 
 
 USES_LIBRARIES =  \
