@@ -17,13 +17,13 @@ public:
         DefaultSkip(in, passed_info);
 
 #else
-#if 0
+#if 1
 // or read
         CObjectInfo oi(passed_info);
         DefaultRead(in, oi);
         cout << MSerial_AsnText << oi << endl;
 #endif
-#if 1
+#if 0
 // or copy it into stdout
         unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
         CObjectStreamCopier copier(in, *out);

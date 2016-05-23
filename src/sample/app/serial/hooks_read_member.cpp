@@ -36,6 +36,12 @@ public:
         CObjectStreamCopier copier(strm, *out);
         copier.CopyObject(passed_info.GetMemberType().GetTypeInfo());
 #endif
+#if 0
+// or read it into delay buffer
+        strm.StartDelayBuffer();
+        DefaultSkip(strm, passed_info);
+        CRef<CByteSource> data = strm.EndDelayBuffer();
+#endif
 
 // get information about the member
         // typeinfo of the parent class (Date-std)

@@ -16,7 +16,7 @@ public:
     {
         cout << in.GetStackPath() << endl;
 #if 1
-        in.SkipObject(*passed_info);
+        DefaultSkip(in, passed_info);
 #else
 // get information about the member
         // typeinfo of the parent class (Bioseq)
@@ -27,8 +27,14 @@ public:
         TMemberIndex mi = passed_info.GetMemberIndex();
         // information about the member, including its name (annot)
         const CMemberInfo* minfo = passed_info.GetMemberInfo();
-
 #if 1
+// or read the whole SET OF Seq-annot at once
+        CObjectInfo oi(passed_info);
+        DefaultRead(in, oi);
+        cout << MSerial_AsnText << oi << endl;
+#endif
+
+#if 0
 // or read CSeq_annot objects one by one and write them into stdout
         unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
         COStreamContainer o(*out, passed_info);

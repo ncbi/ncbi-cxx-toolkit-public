@@ -15,9 +15,9 @@ public:
     virtual void WriteChoiceVariant(CObjectOStream& out,
                                     const CConstObjectInfoCV& passed_info)
     {
+#if 1
         DefaultWrite(out, passed_info);
-
-#if 0
+#else
 // get information about the member
         // typeinfo of the parent class (Date)
         CObjectTypeInfo oti = passed_info.GetChoiceType();
@@ -32,10 +32,13 @@ public:
         // information about the member, including its name (std)
         const CVariantInfo* minfo = passed_info.GetVariantInfo();
 
+#if 1
 // call DefaultWrite (above) or write directly
         CDate_std s;
         s.SetYear(2001);
-        out.WriteObject(&s, minfo->GetTypeInfo());
+        CConstObjectInfo coi(&s, passed_info.GetVariantType().GetTypeInfo());
+        CustomWrite(out, passed_info, coi);
+#endif
 #endif
     }
 };

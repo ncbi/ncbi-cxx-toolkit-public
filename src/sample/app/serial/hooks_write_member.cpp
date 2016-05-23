@@ -42,7 +42,13 @@ public:
 // call DefaultWrite (above) or write directly
 #if 1
         Int4 y = 2001;
-        out.WriteClassMember( minfo->GetId(), minfo->GetTypeInfo(), &y);
+        CConstObjectInfo coi(&y, passed_info.GetMemberType().GetTypeInfo());
+        CustomWrite(out, passed_info, coi);
+#endif
+#if 0
+        CObjectInfo coi(passed_info.GetMemberType());
+        coi.SetPrimitiveValueInt4(2001);
+        CustomWrite(out, passed_info, coi);
 #endif
 #if 0
         // create class object

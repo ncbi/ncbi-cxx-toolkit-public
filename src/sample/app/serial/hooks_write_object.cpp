@@ -19,25 +19,13 @@ public:
         DefaultWrite(out, passed_info);
 
 #else
-#if 1
-// or write it directly
+// or write another object instead
         CDate_std s;
         s.SetYear(2001);
         s.SetMonth(1);
-        CObjectInfo oi(&s, passed_info.GetTypeInfo());
+        CConstObjectInfo oi(&s, passed_info.GetTypeInfo());
         DefaultWrite(out, oi);
 #endif
-#if 0
-// or like this
-        CDate_std s;
-        s.SetYear(2001);
-        s.SetMonth(1);
-        passed_info.GetTypeInfo()->DefaultWriteData(out, &s);
-        // we may not use the following because it will call this same hook again recursively
-        //out.WriteObject(&s, passed_info.GetTypeInfo());
-#endif
-#endif
-
     }
 };
 

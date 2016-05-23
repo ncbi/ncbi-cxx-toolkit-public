@@ -18,7 +18,7 @@ public:
 #else
 #if 1
 // or skip it
-        strm.SkipObject(passed_info.GetVariantType());
+        DefaultSkip(strm, passed_info);
 #endif
 #if 0
 // read the object into local buffer
@@ -28,6 +28,12 @@ public:
         strm.ReadObject(obj);
         unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
         out->WriteObject(obj);
+#endif
+#if 0
+// or read it into delay buffer
+        strm.StartDelayBuffer();
+        DefaultSkip(strm, passed_info);
+        CRef<CByteSource> data = strm.EndDelayBuffer();
 #endif
 
 // get information about the member

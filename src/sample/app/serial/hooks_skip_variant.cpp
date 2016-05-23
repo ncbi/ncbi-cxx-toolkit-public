@@ -16,7 +16,7 @@ public:
     {
         cout << in.GetStackPath() << endl;
 #if 1
-        in.SkipObject(passed_info.GetVariantType());
+        DefaultSkip(in, passed_info);
 
 #else
 // get information about the variant
@@ -30,6 +30,12 @@ public:
         const CVariantInfo* minfo = passed_info.GetVariantInfo();
 
 #if 1
+// or read the whole SET OF Seq-feat at once
+        CObjectInfo oi(passed_info);
+        DefaultRead(in, oi);
+        cout << MSerial_AsnText << oi << endl;
+#endif
+#if 0
 // or read CSeq_feat objects one by one
         for ( CIStreamContainerIterator i(in, passed_info.GetVariantType()); i; ++i ) {
             CSeq_feat feat;
