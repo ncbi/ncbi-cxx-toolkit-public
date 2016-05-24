@@ -240,5 +240,65 @@ DISCREPANCY_AUTOFIX(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
 }
 
 
+// DUPLICATE_LOCUS_TAGS
+const string kDuplicateLocusTagsTop = "[n] gene[s] [has] duplicate locus tags";
+const string kDuplicateLocusTagsStart = "[n] gene[s] [has] locus tag ";
+const string kDuplicateAdjacent = "[n] gene[s] [is] adjacent to another gene with the same locus tag.";
+const string kDuplicateLocusTags = "locus_tag";
+
+DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, CSeq_inst, eOncaller, "Duplicate Locus Tags")
+{
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
+    CFeat_CI f(bsh, CSeqFeatData::e_Gene);
+    string last_locus_tag = kEmptyStr;
+    CConstRef<CSeq_feat> last_gene(NULL);
+    while (f) {
+        if (f->GetData().GetGene().IsSetLocus_tag()) {
+            CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(f->GetSeq_feat(), eKeepRef));
+            const string& this_locus_tag = f->GetData().GetGene().GetLocus_tag();
+            m_Objs[kDuplicateLocusTags][this_locus_tag].Add(*this_disc_obj);
+            if (last_gene && NStr::Equal(last_locus_tag, this_locus_tag)) {
+                m_Objs[kDuplicateLocusTagsTop][kDuplicateAdjacent].Add(*context.NewDiscObj(last_gene));
+                m_Objs[kDuplicateLocusTagsTop][kDuplicateAdjacent].Add(*context.NewDiscObj(f->GetSeq_feat()));
+            }
+            last_locus_tag = this_locus_tag;
+        } else {
+            last_locus_tag = kEmptyStr;
+        }
+        last_gene = f->GetSeq_feat();
+        ++f;
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(DUPLICATE_LOCUS_TAGS)
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    CReportNode::TNodeMap::iterator it = m_Objs[kDuplicateLocusTags].GetMap().begin();
+    while (it != m_Objs[kDuplicateLocusTags].GetMap().end()) {
+        if (m_Objs[kDuplicateLocusTags][it->first].GetObjects().size() > 1) {
+            string label = kDuplicateLocusTagsStart + it->first + ".";
+            NON_CONST_ITERATE(TReportObjectList, robj, m_Objs[kDuplicateLocusTags][it->first].GetObjects())
+            {
+                const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
+                CConstRef<CSeq_feat> feat(dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer()));
+                m_Objs[kDuplicateLocusTagsTop][label].Add(*context.NewDiscObj(feat), false);
+            }
+        }
+        ++it;
+    }
+    m_Objs.GetMap().erase(kDuplicateLocusTags);
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

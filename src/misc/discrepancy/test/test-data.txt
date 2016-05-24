@@ -25,6 +25,7 @@ DIVISION_CODE_CONFLICTS	DIVISION_CODE_CONFLICTS	DIVISION_CODE_CONFLICTS	division
 #DUPLICATE_GENE_LOCUS	DUPLICATE_GENE_LOCUS	DUPLICATE_GENE_LOCUS	chloro.sqn
 DUP_DEFLINE		DUP_DEFLINE		DISC_DUP_DEFLINE	DUP_DEFLINES_problem.sqn	DUP_DEFLINE.gold.txt	C version does not include title in summary
 DUP_DEFLINE_2		DUP_DEFLINE		DISC_DUP_DEFLINE	DUP_DEFLINES_all_unique.sqn	DUP_DEFLINE_2.gold.txt	C version does not list objects for all unique deflines result
+_DUPLICATE_LOCUS_TAGS	DUPLICATE_LOCUS_TAGS	DUPLICATE_LOCUS_TAGS	DUPLICATE_LOCUS_TAGS.sqn
 EC_NUMBER_ON_UNKNOWN_PROTEIN	EC_NUMBER_ON_UNKNOWN_PROTEIN	EC_NUMBER_ON_UNKNOWN_PROTEIN	ec_number_on_unk_prot.asn
 EUKARYOTE_SHOULD_HAVE_MRNA	EUKARYOTE_SHOULD_HAVE_MRNA	EUKARYOTE_SHOULD_HAVE_MRNA	Drosophila.sqn
 EXTRA_GENES		EXTRA_GENES		EXTRA_GENES		missing_genes.sqn	EXTRA_GENES.gold.txt	C version not listing all categories for some reason
@@ -122,4 +123,5 @@ ZERO_BASECOUNT-X	ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn	-X	ZERO_BASE
 
 ### Please keep the tests in alphabetical order!
 ### to run the tests whose names begins with the underscore, use asndisc-all-tests.pl -dev
+
 
