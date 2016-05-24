@@ -70,9 +70,11 @@
 
 BEGIN_NCBI_SCOPE
 
+DEFINE_STATIC_FAST_MUTEX(s_ConfigMutex);
 DEFINE_STATIC_FAST_MUTEX(s_SingletonMutex);
 DEFINE_STATIC_FAST_MUTEX(s_KnownConnMutex);
-
+static CSocket* s_TimeoutingSock = NULL;
+static CSocket* s_PeerSock = NULL;
 
 /*/////////////////////////////////////////////////////////////////////////////
 //                              MOCK DEFINITIONS                             //
@@ -89,7 +91,7 @@ DEFINE_STATIC_FAST_MUTEX(s_KnownConnMutex);
                 s_Monkey_ ## name = val;                                       \
             }
 
-/* This macro contatins the list of variables to be mocked. Needed mocks will
+/* This macro contains the list of variables to be mocked. Needed mocks will
  * be created with DECLARE_MONKEY_MOCK
  */
 MONKEY_MOCK_MACRO()
@@ -109,6 +111,75 @@ static vector<string>& s_Monkey_Split(const string   &s,
         elems.push_back(item);
     }
     return elems;
+}
+
+
+static void s_TimeoutingSocketInit(void)
+{
+    unsigned short i = 8080;
+    CListeningSocket* server_socket;
+
+    for (;  i < 8100;  i++) {
+        /* Initialize a timeouting socket */
+        try {
+            server_socket = new CListeningSocket(i);
+        } catch (CException) {
+            continue;
+        }
+        STimeout         accept_timeout = { 0, 20000 };
+        STimeout         connect_timeout = { 1, 20000 };
+        if (server_socket->GetStatus() != eIO_Success) {
+            server_socket->Close();
+            delete server_socket;
+            continue;
+        }
+        try {
+            s_TimeoutingSock = new CSocket(CSocketAPI::gethostbyaddr(0), i,
+                                           &connect_timeout);
+        } catch (CException) {
+            continue;
+        }
+        s_PeerSock       = new CSocket;
+        if (server_socket->Accept(*s_PeerSock, &accept_timeout) == eIO_Success) {
+            server_socket->Close();
+            delete server_socket;
+            char buf[1024];
+            size_t n_read;
+            s_TimeoutingSock->SetTimeout(eIO_Read, &accept_timeout);
+            s_TimeoutingSock->SetTimeout(eIO_Write, &accept_timeout);
+            s_TimeoutingSock->Read((void*)buf, 1024, &n_read);
+            return;
+        } else {
+            s_TimeoutingSock->Close();
+            delete s_TimeoutingSock;
+            s_PeerSock->Close();
+            delete s_PeerSock;
+            server_socket->Close();
+            delete server_socket;
+            continue;
+        }
+        /* If we got here, everything works fine */
+    }
+    throw CMonkeyException(CDiagCompileInfo(), NULL,
+                            CMonkeyException::EErrCode::e_MonkeyUnknown,
+                            "Could not create a peer socket for the "
+                            "timeouting socket. Tried ports 8080-8100",
+                            ncbi::EDiagSev::eDiagSevMin);
+}
+
+
+static void s_TimeoutingSocketDestroy(void)
+{
+    if (s_TimeoutingSock != NULL) {
+        s_TimeoutingSock->Close();
+        delete s_TimeoutingSock;
+        s_TimeoutingSock = NULL;
+    }
+    if (s_PeerSock != NULL) {
+        s_PeerSock->Close();
+        delete s_PeerSock;
+        s_PeerSock = NULL;
+    }
 }
 
 
@@ -511,10 +582,11 @@ CMonkeyWriteRule::CMonkeyWriteRule(const vector<string>& params)
 }
 
 
-int CMonkeyWriteRule::Run(MONKEY_SOCKTYPE        sock,
-                          const MONKEY_DATATYPE  data,
-                          MONKEY_LENTYPE         size,
-                          int                    flags)
+MONKEY_RETTYPE CMonkeyWriteRule::Run(MONKEY_SOCKTYPE        sock,
+                                     const MONKEY_DATATYPE  data,
+                                     MONKEY_LENTYPE         size,
+                                     int                    flags,
+                                     SOCK*                  sock_ptr)
 {
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedSend(true);
@@ -524,6 +596,7 @@ int CMonkeyWriteRule::Run(MONKEY_SOCKTYPE        sock,
     if (return_status != eIO_Success && return_status != -1) {
         switch (return_status) {
         case eIO_Timeout:
+            *sock_ptr = s_TimeoutingSock->GetSOCK();
             MONKEY_SET_SOCKET_ERROR(SOCK_EWOULDBLOCK);
             return -1;
         case eIO_Closed:
@@ -570,13 +643,15 @@ int CMonkeyWriteRule::Run(MONKEY_SOCKTYPE        sock,
 CMonkeyReadRule::CMonkeyReadRule(const vector<string>& params)
     : CMonkeyRWRuleBase(params)
 {
+    STimeout r_timeout = { 1, 0 };
 }
 
 
-int CMonkeyReadRule::Run(MONKEY_SOCKTYPE sock,
-                         MONKEY_DATATYPE buf,
-                         MONKEY_LENTYPE  size,
-                         int             flags)
+MONKEY_RETTYPE CMonkeyReadRule::Run(MONKEY_SOCKTYPE sock,
+                                    MONKEY_DATATYPE buf,
+                                    MONKEY_LENTYPE  size,
+                                    int             flags,
+                                    SOCK*           sock_ptr)
 {
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedRecv(true);
@@ -586,6 +661,7 @@ int CMonkeyReadRule::Run(MONKEY_SOCKTYPE sock,
     if (return_status != eIO_Success && return_status != -1) {
         switch (return_status) {
         case eIO_Timeout:
+            *sock_ptr = s_TimeoutingSock->GetSOCK();
             MONKEY_SET_SOCKET_ERROR(SOCK_EWOULDBLOCK);
             return -1;
         case eIO_Closed:
@@ -603,7 +679,7 @@ int CMonkeyReadRule::Run(MONKEY_SOCKTYPE sock,
         return 0;
 
     /* So we decided to override */
-    int bytes_read = recv(sock, buf, size, flags);
+    MONKEY_RETTYPE bytes_read = recv(sock, buf, size, flags);
 
     /* We cannot resize the buffer since it can be a local array, so we have to 
      * decrease monkey text length instead */
@@ -704,7 +780,6 @@ CMonkeyPollRule::CMonkeyPollRule(const vector<string>& params)
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedPoll(true);
 #endif /* NCBI_MONKEY_TESTS */
-    LOG_POST(Error << "CHAOS MONKEY ENGAGE!!! INTERCEPTED poll()");
     for ( unsigned int i = 0;  i < params.size();  i++ ) {
         vector<string> name_value = s_Monkey_Split(params[i], '=');
         string name  = name_value[0];
@@ -720,6 +795,7 @@ bool CMonkeyPollRule::Run(size_t*     n,
                           SOCK*       sock,
                           EIO_Status* return_status)
 {
+    LOG_POST(Error << "CHAOS MONKEY ENGAGE!!! INTERCEPTED poll()");
     if (m_Ignore) {
         return true;
     }
@@ -933,11 +1009,13 @@ bool CMonkeyPlan::WriteRule(MONKEY_SOCKTYPE        sock,
                             const MONKEY_DATATYPE  data,
                             MONKEY_LENTYPE         size,
                             int                    flags,
-                            int*                   bytes_written)
+                            MONKEY_RETTYPE*        bytes_written,
+                            SOCK*                  sock_ptr)
 {
     for (unsigned int i = 0;  i < m_WriteRules.size();  i++) {
         if (m_WriteRules[i].CheckRun(sock)) {
-            *bytes_written = m_WriteRules[i].Run(sock, data, size, flags);
+            *bytes_written = m_WriteRules[i].Run(sock, data, size, flags, 
+                                                 sock_ptr);
             return true;
         }
         // If this rule did not engage, we go to the next rule
@@ -951,11 +1029,12 @@ bool CMonkeyPlan::ReadRule(MONKEY_SOCKTYPE        sock,
                            MONKEY_DATATYPE        buf,
                            MONKEY_LENTYPE         size,
                            int                    flags,
-                           int*                   bytes_read)
+                           MONKEY_RETTYPE*        bytes_read,
+                           SOCK*                  sock_ptr)
 {
     for (unsigned int i = 0;  i < m_ReadRules.size();  i++) {
         if (m_ReadRules[i].CheckRun(sock)) {
-            *bytes_read = m_ReadRules[i].Run(sock, buf, size, flags);
+            *bytes_read = m_ReadRules[i].Run(sock, buf, size, flags, sock_ptr);
             return true;
         }
         // If this rule did not engage, we go to the next rule
@@ -1027,10 +1106,11 @@ void CMonkeyPlan::x_ReadPortRange(const string& conf)
 //////////////////////////////////////////////////////////////////////////
 // CMonkey
 //////////////////////////////////////////////////////////////////////////
-CMonkey* CMonkey::m_Instance = NULL;
+CMonkey*          CMonkey::sm_Instance   = NULL;
+FMonkeyHookSwitch CMonkey::sm_HookSwitch = NULL;
 
 
-CMonkey::CMonkey() : m_Probability(1.0)
+CMonkey::CMonkey() : m_Probability(1.0), m_Enabled(false)
 {
     ReloadConfig();
 }
@@ -1040,29 +1120,41 @@ CMonkey* CMonkey::Instance()
 {
     CFastMutexGuard spawn_guard(s_SingletonMutex);
 
-    if (m_Instance == NULL) {
-        m_Instance = new CMonkey;
+    if (sm_Instance == NULL) {
+        sm_Instance = new CMonkey;
     }
-    return m_Instance;
+    return sm_Instance;
 }
 
 
-void CMonkey::ReloadConfig(string config)
+bool CMonkey::IsEnabled()
 {
+    return m_Enabled;
+}
+
+
+void CMonkey::ReloadConfig(const string& config)
+{
+    CFastMutexGuard spawn_guard(s_ConfigMutex);
     string          rules;
-    string          monkey_section = config.empty() ? 
-                                     s_GetMonkeySection() : config;
+    string          monkey_section = config.empty() ? s_GetMonkeySection() : 
+                                                      config;
     list<string>    sections;
     CNcbiRegistry&  reg = CNcbiApplication::Instance()->GetConfig();
     reg.EnumerateSections(&sections);
     /* If the section does not exist */
+    reg.EnumerateSections(&sections);
+    /* If the section does not exist */
     if (find(sections.begin(), sections.end(), monkey_section)
         == sections.end()) {
+        m_Enabled = false;
         return;
     }
-    if (ConnNetInfo_Boolean(reg.Get(monkey_section, "ENABLED").c_str()) != 1) {
+    if (ConnNetInfo_Boolean(reg.Get(monkey_section, "enabled").c_str()) != 1) {
+        m_Enabled = false;
         return;
     }
+    m_Enabled = true;
     string probability = reg.Get(monkey_section, "probability");
     if (probability != "") {
         probability = NStr::Replace(probability, " ", "");
@@ -1074,6 +1166,8 @@ void CMonkey::ReloadConfig(string config)
             m_Probability = NStr::StringToDouble(probability);
         }
     }
+    /* Disable hooks while Monkey initializes */
+    sm_HookSwitch(eMonkeyHookSwitch_Disabled);
     for (int i = 1;  ;  ++i) {
         string section = monkey_section + "_PLAN" + NStr::IntToString(i);
         if (find(sections.begin(), sections.end(), section) ==
@@ -1082,13 +1176,29 @@ void CMonkey::ReloadConfig(string config)
         }
         m_Plans.push_back(CMonkeyPlan(section));
     }
+    if (m_Enabled) {
+        s_TimeoutingSocketInit();
+    }
+    else {
+        s_TimeoutingSocketDestroy();
+    }
+    if (sm_HookSwitch == NULL) {
+        throw CMonkeyException(
+            CDiagCompileInfo(__FILE__, __LINE__),
+            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            "Launch CONNECT_Init() before initializing CMonkey instance");
+    } else {
+        sm_HookSwitch(m_Enabled ? eMonkeyHookSwitch_Enabled 
+                                : eMonkeyHookSwitch_Disabled);
+    }
 }
 
 
-int CMonkey::Send(MONKEY_SOCKTYPE        sock,
-                  const MONKEY_DATATYPE  data,
-                  MONKEY_LENTYPE         size,
-                  int                    flags)
+MONKEY_RETTYPE CMonkey::Send(MONKEY_SOCKTYPE        sock,
+                             const MONKEY_DATATYPE  data,
+                             MONKEY_LENTYPE         size,
+                             int                    flags,
+                             SOCK*                  sock_ptr)
 {
     string host_fqdn, host_IP;
     unsigned short peer_port;
@@ -1096,19 +1206,21 @@ int CMonkey::Send(MONKEY_SOCKTYPE        sock,
     CMonkeyPlan* sock_plan = x_FindPlan(sock, host_fqdn, host_IP, peer_port);
 
     if (sock_plan != NULL) {
-        int bytes_written;
+        MONKEY_RETTYPE bytes_written;
         /* Plan may decide to leave connection untouched */
-        if ( sock_plan->WriteRule(sock, data, size, flags, &bytes_written) )
+        if ( sock_plan->WriteRule(sock, data, size, flags, &bytes_written, 
+                                  sock_ptr) )
             return bytes_written;
     }
      return send(sock, (const char*)data, size, flags);
 }
 
 
-int CMonkey::Recv(MONKEY_SOCKTYPE        sock,
-                  MONKEY_DATATYPE        buf,
-                  MONKEY_LENTYPE         size,
-                  int                    flags)
+MONKEY_RETTYPE CMonkey::Recv(MONKEY_SOCKTYPE        sock,
+                             MONKEY_DATATYPE        buf,
+                             MONKEY_LENTYPE         size,
+                             int                    flags,
+                             SOCK*                  sock_ptr)
 {
     string host_fqdn, host_IP;
     unsigned short peer_port;
@@ -1117,8 +1229,8 @@ int CMonkey::Recv(MONKEY_SOCKTYPE        sock,
     CMonkeyPlan* sock_plan = x_FindPlan(sock, host_fqdn, host_IP, peer_port);
 
     if (sock_plan != NULL) {
-        int bytes_read;
-        if ( sock_plan->ReadRule(sock, buf, size, flags, &bytes_read) )
+        MONKEY_RETTYPE bytes_read;
+        if (sock_plan->ReadRule(sock, buf, size, flags, &bytes_read, sock_ptr))
             return bytes_read;
     }
     return recv(sock, buf, size, flags);
@@ -1187,10 +1299,16 @@ void CMonkey::Close(MONKEY_SOCKTYPE sock)
 }
 
 
+void CMonkey::MonkeyHookSwitchSet(FMonkeyHookSwitch hook_switch_func)
+{
+    sm_HookSwitch = hook_switch_func;
+}
+
+
 /** Return plan for the socket, new or already assigned one. If the socket
  * is ignored by Chaos Monkey, NULL is returned */
-CMonkeyPlan* CMonkey::x_FindPlan(SOCKET sock, string hostname, 
-                                 string host_IP, unsigned short port)
+CMonkeyPlan* CMonkey::x_FindPlan(MONKEY_SOCKTYPE sock,  const string& hostname, 
+                                 const string& host_IP, unsigned short port)
 {
     CFastMutexGuard spawn_guard(s_KnownConnMutex);
     auto sock_plan = m_KnownSockets.find(sock);

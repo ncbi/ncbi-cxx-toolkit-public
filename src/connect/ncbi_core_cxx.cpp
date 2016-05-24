@@ -314,30 +314,33 @@ static const char* s_GetRequestDTab(void)
  *                         CRAZY MONKEY CALLS                          *
  ***********************************************************************/
 #ifdef NCBI_MONKEY
-#   ifndef NCBI_OS_MSWIN
-#       define __stdcall /*empty*/
-#   endif /* NCBI_OS_MSWIN */
 extern "C" {
-    static int __stdcall s_MonkeySend(SOCKET sock, 
-                            const char*  data, 
-                            int    size, 
-                            int    flags)
+    static MONKEY_RETTYPE 
+        MONKEY_STDCALL s_MonkeySend(MONKEY_SOCKTYPE        sock,
+                                    const MONKEY_DATATYPE  data,
+                                    MONKEY_LENTYPE         size,
+                                    int                    flags,
+                                    void* /* SOCK* */      sock_ptr)
     {
-        return CMonkey::Instance()->Send(sock, data, size, flags);
+        return CMonkey::Instance()->Send(sock, data, size, flags, 
+                                         (SOCK*)sock_ptr);
     }
     
-    static int __stdcall s_MonkeyRecv(SOCKET sock,
-                            char*  buf,
-                            int    size,
-                            int    flags)
+    static MONKEY_RETTYPE 
+        MONKEY_STDCALL s_MonkeyRecv(MONKEY_SOCKTYPE   sock,
+                                    MONKEY_DATATYPE   buf,
+                                    MONKEY_LENTYPE    size,
+                                    int               flags,
+                                    void* /* SOCK* */ sock_ptr)
     {
-        return CMonkey::Instance()->Recv(sock, buf, size, flags);
+        return CMonkey::Instance()->Recv(sock, buf, size, flags, 
+                                         (SOCK*)sock_ptr);
     }
 
     
-    static int __stdcall s_MonkeyConnect(SOCKET                 sock,
-                               const struct sockaddr* name,
-                               int                    namelen)
+    static int MONKEY_STDCALL s_MonkeyConnect(MONKEY_SOCKTYPE        sock,
+                                              const struct sockaddr* name,
+                                              MONKEY_SOCKLENTYPE     namelen)
     {
         return CMonkey::Instance()->Connect(sock, name, namelen);
     }
@@ -357,7 +360,47 @@ extern "C" {
         CMonkey::Instance()->Close(sock);
     }
 }
+
+
+static int s_MONKEY_Poll_dummy(size_t*     n,
+                               void*       polls,
+                               EIO_Status* return_status)
+{
+    return 0; /* call was not intercepted by Monkey*/
+}
+
+
+static void s_MONKEY_Close_dummy(SOCKET sock)
+{
+    return; /* call was not intercepted by Monkey*/
+}
+
+
+/* Chaos Monkey hooks for Connect library*/
+static void s_SetMonkeyHooks(EMonkeyHookSwitch hook_switch)
+{
+    switch (hook_switch)
+    {
+    case eMonkeyHookSwitch_Disabled:
+        g_MONKEY_Send    = NULL;
+        g_MONKEY_Recv    = NULL;
+        g_MONKEY_Connect = NULL;
+        g_MONKEY_Poll    = NULL;
+        g_MONKEY_Close   = NULL;
+        break;
+    case eMonkeyHookSwitch_Enabled:
+        g_MONKEY_Send    = s_MonkeySend;
+        g_MONKEY_Recv    = s_MonkeyRecv;
+        g_MONKEY_Connect = s_MonkeyConnect;
+        g_MONKEY_Poll    = s_MonkeyPoll;
+        g_MONKEY_Close   = s_MonkeyClose;
+        break;
+    default:
+        break;
+    }
+}
 #endif /* NCBI_MONKEY */
+
 
 /***********************************************************************
  *                                 Init                                *
@@ -401,11 +444,12 @@ static void s_Init(IRWRegistry*      reg  = 0,
     g_CORE_GetRequestDtab = s_GetRequestDTab;
 
 #ifdef NCBI_MONKEY
-    g_MONKEY_Write   = s_MonkeySend;
-    g_MONKEY_Read    = s_MonkeyRecv;
-    g_MONKEY_Connect = s_MonkeyConnect;
-    g_MONKEY_Poll    = s_MonkeyPoll;
-#endif /* NCBI_MONKEY */
+    /* Allow CMonkey to switch hooks to Connect library */
+    CMonkey::MonkeyHookSwitchSet(s_SetMonkeyHooks);
+    /* Create CMonkey instance. It loads the config and sets hooks */
+    CMonkey::Instance();
+#endif /* #ifdef NCBI_MONKEY */
+
     /* done! */
     s_ConnectInit = how;
 }
@@ -441,6 +485,8 @@ extern void CONNECT_Init(IRWRegistry*      reg,
     }
     NCBI_CATCH_ALL_X(8, "CONNECT_Init() failed");
 }
+
+
 
 
 CConnIniter::CConnIniter(void)

@@ -57,21 +57,12 @@ FNcbiGetRequestDtab     g_CORE_GetRequestDtab    = 0;
 #       include <sys/socket.h>
 #   endif /* NCBI_OS_UNIX */
 
-static int g_MONKEY_Poll_dummy(size_t*     n,
-                               void*       polls,
-                               EIO_Status* return_status)
-{
-    return 0; /* call was not intercepted by Monkey*/
-}
-static void g_MONKEY_Close_dummy(SOCKET sock)
-{
-    return; /* call was not intercepted by Monkey*/
-}
-FMonkeyWrite            g_MONKEY_Write           = send;
-FMonkeyRead             g_MONKEY_Read            = recv;
-FMonkeyPoll             g_MONKEY_Poll            = g_MONKEY_Poll_dummy;
-FMonkeyConnect          g_MONKEY_Connect         = connect;
-FMonkeyClose            g_MONKEY_Close           = g_MONKEY_Close_dummy;
+
+FMonkeySend    g_MONKEY_Send    = NULL;
+FMonkeyRecv    g_MONKEY_Recv    = NULL;
+FMonkeyConnect g_MONKEY_Connect = NULL;
+FMonkeyPoll    g_MONKEY_Poll    = NULL;
+FMonkeyClose   g_MONKEY_Close   = NULL;
 #endif /* #ifdef NCBI_MONKEY */
 
 extern int g_NCBI_ConnectSrandAddend(void)

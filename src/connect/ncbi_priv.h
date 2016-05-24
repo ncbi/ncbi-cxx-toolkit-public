@@ -52,13 +52,13 @@
  *
  */
 
-
 #include "ncbi_assert.h"
 #include <connect/ncbi_util.h>
 #ifdef NCBI_MONKEY
 #   if defined(NCBI_OS_MSWIN)
 #       include <WinSock2.h>
 #   else
+#       include <sys/socket.h>
 #       define SOCKET int
 #   endif /*NCBI_OS_...*/
 #endif /* NCBI_MONKEY */
@@ -345,41 +345,52 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetRequestDtab g_CORE_GetRequestDtab;
 
 
 #ifdef NCBI_MONKEY
+/* UNIX and Windows have different prototypes for send(), recv(), etc., so
+* some types have to be pre-selected based on current OS
+*/
+#   ifdef NCBI_OS_MSWIN
+#       define MONKEY_RETTYPE  int
+#       define MONKEY_SOCKTYPE SOCKET
+#       define MONKEY_DATATYPE char*
+#       define MONKEY_LENTYPE  int
+#       define MONKEY_SOCKLENTYPE  int
+#       define MONKEY_STDCALL __stdcall /* in Windows, socket functions have 
+                                           prototypes with __stdcall */
+#   else
+#       define MONKEY_RETTYPE  ssize_t
+#       define MONKEY_SOCKTYPE int
+#       define MONKEY_DATATYPE void*
+#       define MONKEY_LENTYPE  size_t
+#       define MONKEY_SOCKLENTYPE  socklen_t
+#       define MONKEY_STDCALL /* empty*/ 
+#   endif /* NCBI_OS_MSWIN */
+
 /******************************************************************************
  *  Socket functions via Crazy Monkey
  */
-#ifdef NCBI_OS_MSWIN
-typedef int(__stdcall *FMonkeyRead)   (SOCKET                 sock,
-                                       char*                  buf,
-                                       int                    size,
-                                       int                    flags);
-typedef int (__stdcall *FMonkeyWrite) (SOCKET                 s, 
-                                       const char*            data, 
-                                       int                    size, 
-                                       int                    flags);
-typedef int(__stdcall *FMonkeyConnect)(SOCKET                 sock,
-                                       const struct sockaddr* name,
-                                       int                    namelen);
-#else
-typedef int(*FMonkeyRead)   (SOCKET                 sock,
-                             char*                  buf,
-                             int                    size,
-                             int                    flags);
-typedef int (*FMonkeyWrite) (SOCKET                 s, 
-                             const char*            data, 
-                             int                    size, 
-                             int                    flags);
-typedef int(*FMonkeyConnect)(SOCKET                 sock,
-                             const struct sockaddr* name,
-                             int                    namelen);
-#endif /* NCBI_OS_MSWIN */ 
-typedef int /* bool */ (*FMonkeyPoll)   (size_t*          n,
-                                         void* /*SSOCK_Poll[]* */polls,
-                                         EIO_Status*      return_status);
-typedef void (*FMonkeyClose) (SOCKET sock);
+typedef MONKEY_RETTYPE
+            (MONKEY_STDCALL  *FMonkeyRecv)  (MONKEY_SOCKTYPE       sock,
+                                             MONKEY_DATATYPE       buf,
+                                             MONKEY_LENTYPE        size,
+                                             int                   flags,
+                                             void* /* SOCK* */     sock_ptr);
+typedef MONKEY_RETTYPE
+            (MONKEY_STDCALL *FMonkeySend)  (MONKEY_SOCKTYPE        sock,
+                                            const MONKEY_DATATYPE  data,
+                                            MONKEY_LENTYPE         size,
+                                            int                    flags,
+                                            void* /* SOCK* */      sock_ptr);
+typedef int(MONKEY_STDCALL *FMonkeyConnect)(MONKEY_SOCKTYPE        sock,
+                                            const struct sockaddr* name,
+                                            MONKEY_SOCKLENTYPE     namelen);
 
-extern NCBI_XCONNECT_EXPORT FMonkeyWrite    g_MONKEY_Write;
-extern NCBI_XCONNECT_EXPORT FMonkeyRead     g_MONKEY_Read;
+typedef int /* bool */    (*FMonkeyPoll)   (size_t*                n,
+                                            void* /*SSOCK_Poll[]* */polls,
+                                            EIO_Status*            ret_status);
+typedef void              (*FMonkeyClose)  (SOCKET sock); 
+
+extern NCBI_XCONNECT_EXPORT FMonkeySend     g_MONKEY_Send;
+extern NCBI_XCONNECT_EXPORT FMonkeyRecv     g_MONKEY_Recv;
 extern NCBI_XCONNECT_EXPORT FMonkeyPoll     g_MONKEY_Poll;
 extern NCBI_XCONNECT_EXPORT FMonkeyConnect  g_MONKEY_Connect;
 extern NCBI_XCONNECT_EXPORT FMonkeyClose    g_MONKEY_Close;

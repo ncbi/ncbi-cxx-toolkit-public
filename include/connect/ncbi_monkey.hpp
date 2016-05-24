@@ -53,21 +53,6 @@
 #   include <sstream>
 
 
-/* UNIX and Windows have different prototypes for send(), recv(), etc., so
-* some types have to be pre-selected based on current OS
-*/
-#   ifdef NCBI_OS_MSWIN
-#       define MONKEY_SOCKTYPE SOCKET
-#       define MONKEY_DATATYPE char*
-#       define MONKEY_LENTYPE  int
-#       define MONKEY_SOCKLENTYPE  int
-#   else
-#       define MONKEY_SOCKTYPE int
-#       define MONKEY_DATATYPE void*
-#       define MONKEY_LENTYPE  size_t
-#       define MONKEY_SOCKLENTYPE  socklen_t
-#   endif /* NCBI_OS_MSWIN */
-
 BEGIN_NCBI_SCOPE
 
 using namespace std;
@@ -149,16 +134,16 @@ public:
     };
 protected:
     CMonkeyRWRuleBase(const vector<string>& name_value);
-    string       GetText();
-    size_t       GetTextLength();
-    bool         GetGarbage();
-    EFillType    GetFillType();
+    string    GetText();
+    size_t    GetTextLength();
+    bool      GetGarbage();
+    EFillType GetFillType();
 private:
-    void         x_ReadFill(const string& fill_str);
-    string       m_Text;
-    size_t       m_TextLength;
-    bool         m_Garbage;
-    EFillType    m_FillType;
+    void      x_ReadFill(const string& fill_str);
+    string    m_Text;
+    size_t    m_TextLength;
+    bool      m_Garbage;
+    EFillType m_FillType;
 };
 
 
@@ -167,10 +152,11 @@ class CMonkeyWriteRule : public CMonkeyRWRuleBase
 public:
     CMonkeyWriteRule(const vector<string>& name_value);
 
-    int  Run(MONKEY_SOCKTYPE        sock,
-             const MONKEY_DATATYPE  data,
-             MONKEY_LENTYPE         size,
-             int                    flags);
+    MONKEY_RETTYPE  Run(MONKEY_SOCKTYPE        sock,
+                        const MONKEY_DATATYPE  data,
+                        MONKEY_LENTYPE         size,
+                        int                    flags,
+                        SOCK*                  sock_ptr);
 };
 
 
@@ -179,10 +165,14 @@ class CMonkeyReadRule : public CMonkeyRWRuleBase
 public:
     CMonkeyReadRule(const vector<string>& name_value);
 
-    int Run(MONKEY_SOCKTYPE sock,
-            MONKEY_DATATYPE buf,
-            MONKEY_LENTYPE  size,
-            int             flags);
+    MONKEY_RETTYPE Run(MONKEY_SOCKTYPE sock,
+                       MONKEY_DATATYPE buf,
+                       MONKEY_LENTYPE  size,
+                       int             flags, 
+                       SOCK*           sock_ptr);
+private:
+    /* A socket that gets timeouts*/
+    SOCK m_TimeoutingSocket;
 };
 
 
@@ -235,13 +225,15 @@ public:
                      const MONKEY_DATATYPE  data,
                      MONKEY_LENTYPE         size,
                      int                    flags,
-                     int*                   bytes_written);
+                     MONKEY_RETTYPE*        bytes_written,
+                     SOCK*                  sock_ptr);
 
     bool ReadRule   (MONKEY_SOCKTYPE        sock,
                      MONKEY_DATATYPE        buf,
                      MONKEY_LENTYPE         size,
                      int                    flags,
-                     int*                   bytes_read);
+                     MONKEY_RETTYPE*        bytes_read,
+                     SOCK*                  sock_ptr);
 
     bool ConnectRule(MONKEY_SOCKTYPE        sock,
                      const struct sockaddr* name,
@@ -275,21 +267,33 @@ private:
 };
 
 
+enum EMonkeyHookSwitch {
+    eMonkeyHookSwitch_Disabled = 0,
+    eMonkeyHookSwitch_Enabled  = 1
+};
+
+
+typedef void (*FMonkeyHookSwitch)(EMonkeyHookSwitch hook_switch);
+
+
 class CMonkey 
 {
 public:
     static CMonkey* Instance();
-    void ReloadConfig(string config = "");
+    void ReloadConfig(const string& config = "");
+    bool IsEnabled();
 
-    int Send(MONKEY_SOCKTYPE        sock,
-             const MONKEY_DATATYPE  data,
-             MONKEY_LENTYPE         size,
-             int                    flags);
+    MONKEY_RETTYPE Send(MONKEY_SOCKTYPE        sock,
+                        const MONKEY_DATATYPE  data,
+                        MONKEY_LENTYPE         size,
+                        int                    flags,
+                        SOCK*                  sock_ptr);
 
-    int Recv(MONKEY_SOCKTYPE        sock,
-             MONKEY_DATATYPE        buf,
-             MONKEY_LENTYPE         size,
-             int                    flags);
+    MONKEY_RETTYPE Recv(MONKEY_SOCKTYPE        sock,
+                        MONKEY_DATATYPE        buf,
+                        MONKEY_LENTYPE         size,
+                        int                    flags,
+                        SOCK*                  sock_ptr);
 
     int Connect(MONKEY_SOCKTYPE        sock,
                 const struct sockaddr* name,
@@ -301,7 +305,10 @@ public:
     /* Not a real Chaos Monkey interceptor, just a function to remove the socket 
      * that was closed from m_KnownSockets */
     void Close(MONKEY_SOCKTYPE sock);
+
+    static void MonkeyHookSwitchSet(FMonkeyHookSwitch hook_switch_func);
 private:
+    /* No one can create a separate instance of CMonkey*/
     CMonkey();
     /** Return plan for the socket, new or already assigned one. If the socket
      *  is ignored by Chaos Monkey, NULL is returned. 
@@ -309,13 +316,15 @@ private:
      *  Tell whether host has to be matched, too. In case of poll() on 
      *  listening socket it is impossible to know host before accept(), so 
      *  the check is omitted. */
-    CMonkeyPlan* x_FindPlan(MONKEY_SOCKTYPE sock, string hostname,
-                            string IP, unsigned short port);
+    CMonkeyPlan* x_FindPlan(MONKEY_SOCKTYPE sock,  const string& hostname,
+                            const string& host_IP, unsigned short port);
     /** Sockets that are already assigned to a plan (or known to be ignored) */
     map<SOCKET, CMonkeyPlan*> m_KnownSockets;
-    static CMonkey*           m_Instance;
+    static CMonkey*           sm_Instance;
     vector<CMonkeyPlan>       m_Plans;
     double                    m_Probability;
+    bool                      m_Enabled;
+    static FMonkeyHookSwitch  sm_HookSwitch;
 };
 
 
