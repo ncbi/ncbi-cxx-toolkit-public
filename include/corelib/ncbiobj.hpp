@@ -892,6 +892,13 @@ public:
     /// Assignment operator for references.
     TThisType& operator=(TThisType&& ref)
         {
+#ifdef NCBI_COMPILER_MSVC
+            // extra check on MSVC
+            if (this == &ref) {
+                // no-op
+                return *this;
+            }
+#endif
             TObjectType* oldPtr = m_Data.second();
             TObjectType* newPtr = ref.m_Data.second();
             if ( newPtr ) {
@@ -1472,6 +1479,13 @@ public:
     /// Assignment operator for const references.
     TThisType& operator=(TThisType&& ref)
         {
+#ifdef NCBI_COMPILER_MSVC
+            // extra check on MSVC
+            if (this == &ref) {
+                // no-op
+                return *this;
+            }
+#endif
             TObjectType* oldPtr = m_Data.second();
             TObjectType* newPtr = ref.m_Data.second();
             if ( newPtr ) {
