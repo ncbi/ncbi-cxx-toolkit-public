@@ -49,7 +49,8 @@ public:
         eAlnErr_NoError = 0,
         eAlnErr_Fatal,
         eAlnErr_BadData,
-        eAlnErr_BadFormat
+        eAlnErr_BadFormat,
+        eAlnErr_BadChar
     } EAlnErr;
     
     // constructor
@@ -82,6 +83,38 @@ private:
 /// class CAlnReader supports importing a large variety of text-based
 /// alignment formats into standard data structures.
 ///
+class CErrorContainer 
+{
+
+private:
+    list<CAlnError> errors;
+    map<CAlnError::EAlnErr, size_t> error_count;
+
+public:
+    size_t GetErrorCount(CAlnError::EAlnErr category) const
+    {
+        auto it = error_count.find(category);
+        if (it != error_count.end()) {
+            return it->second;
+        }
+        return 0;
+    }
+
+    void clear(void) {
+        errors.clear();
+        error_count.clear();
+    }
+
+    void push_back(const CAlnError& error) {
+        errors.push_back(error);
+        ++error_count[error.GetCategory()];
+    }
+
+    size_t size(void) const {
+        return errors.size();
+    }
+};
+
 
 class NCBI_XOBJREAD_EXPORT CAlnReader
 {
@@ -94,7 +127,8 @@ public:
     };
  
     // error messages
-    typedef vector<CAlnError> TErrorList;
+    //typedef list<CAlnError> TErrorList;
+    typedef CErrorContainer TErrorList;
 
     // constructor
     CAlnReader(CNcbiIstream& is) : m_IS(is), m_ReadDone(false) { m_Errors.clear(); };
@@ -110,6 +144,7 @@ public:
     string&       SetAlphabet(void);
     void          SetAlphabet(const string& value);
     void          SetAlphabet(EAlphabet alpha);
+    bool          IsAlphabet(EAlphabet alpha) const;
 
     const string& GetBeginningGap(void) const;
     string&       SetBeginningGap(void);
@@ -308,6 +343,26 @@ void CAlnReader::SetAlphabet(EAlphabet alpha)
         break;
     }
 }
+
+
+inline 
+bool CAlnReader::IsAlphabet(EAlphabet alpha) const
+{
+    switch (alpha) {
+    case eAlpha_Nucleotide:
+        return (m_Alphabet == "ABCDGHKMNRSTUVWXYabcdghkmnrstuvwxy");
+
+    case eAlpha_Protein:
+        return (m_Alphabet == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+
+    default:
+        return false;
+    }
+    return false;
+}
+
+
+
 
 
 inline

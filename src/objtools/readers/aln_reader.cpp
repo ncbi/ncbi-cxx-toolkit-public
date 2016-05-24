@@ -74,6 +74,9 @@ CAlnError::CAlnError(int category, int line_num, string id, string message)
     case 3:
         m_Category = eAlnErr_BadFormat;
         break;
+    case 4:
+        m_Category = eAlnErr_BadChar;
+        break;
     default:
         m_Category = eAlnErr_Unknown;
         break;
@@ -112,13 +115,22 @@ static void ALIGNMENT_CALLBACK s_ReportError(TErrorInfoPtr err_ptr,
 {
     CAlnReader::TErrorList *err_list;
     TErrorInfoPtr           next_err;
-    
+   
+    const int category_BadData = 2;
+    const int category_BadChar = 4;
+
     while (err_ptr != NULL) {    
         if (user_data != NULL) {
             err_list = (CAlnReader::TErrorList *)user_data;
-            (*err_list).push_back (CAlnError(err_ptr->category, err_ptr->line_num, 
+            int category = err_ptr->category;
+            string err_msg = (err_ptr->message == NULL) ? "" : err_ptr->message;
+            if ( (category == category_BadData) &&
+                 (err_msg.find("bad char") != string::npos) ) {
+                category = category_BadChar;
+            }
+            (*err_list).push_back (CAlnError(category, err_ptr->line_num, 
                                              err_ptr->id == NULL ? "" : err_ptr->id, 
-                                             err_ptr->message == NULL ? "" : err_ptr->message));
+                                             err_msg));
         }
         
         string msg = "Error reading alignment file";
@@ -168,9 +180,45 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
     // read the alignment stream
     TAlignmentFilePtr afp;
     m_Errors.clear();
+
+    const streampos start_pos = m_IS.tellg();
+
     afp = ReadAlignmentFile2(s_ReadLine, (void *) &m_IS,
                             s_ReportError, &(m_Errors), &info,
                             (generate_local_ids ? eTrue : eFalse));
+
+    // if the first attempt failed, change the alphabet and attempt to 
+    // read a second time
+    if (!afp && 
+        m_Errors.GetErrorCount(CAlnError::eAlnErr_BadChar)
+        && start_pos >= 0) {
+        m_Errors.clear();
+        // reset the input stream
+        m_IS.clear();
+        m_IS.seekg(start_pos, ios::beg);
+
+        string message = "Attempted read failed due to bad characters.";
+        // reset alphabet
+        if (IsAlphabet(eAlpha_Nucleotide)) {
+            message += " Switching to protein alphabet";
+            SetAlphabet(eAlpha_Protein);
+        } else 
+        if (IsAlphabet(eAlpha_Protein)) {
+            message += " Switching to nucleotide alphabet";
+            SetAlphabet(eAlpha_Nucleotide);
+        }
+        ERR_POST(Warning << message);
+
+        info.alphabet = const_cast<char *>(m_Alphabet.c_str());
+
+        // read a second time
+        afp = ReadAlignmentFile2(s_ReadLine, (void *) &m_IS,
+                                 s_ReportError, &(m_Errors), &info,
+                                 (generate_local_ids ? eTrue : eFalse));
+    }
+
+
+
     if (!afp) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
                    "Error reading alignment", 0);
