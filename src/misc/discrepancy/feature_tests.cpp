@@ -873,5 +873,40 @@ DISCREPANCY_SUMMARIZE(EUKARYOTE_SHOULD_HAVE_MRNA)
 }
 
 
+// NON_GENE_LOCUS_TAG
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(NON_GENE_LOCUS_TAG, CSeq_feat, eDisc | eOncaller, "Nongene Locus Tag")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetData() && obj.GetData().IsGene()) {
+        return;
+    }
+    if (!obj.IsSetQual()) {
+        return;
+    }
+    bool report = false;
+    ITERATE(CSeq_feat::TQual, it, obj.GetQual()) {
+        if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "locus_tag")) {
+            report = true;
+            break;
+        }
+    }
+    if (report) {
+        m_Objs["[n] non-gene feature[s] [has] locus tag[s]."].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(NON_GENE_LOCUS_TAG)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
