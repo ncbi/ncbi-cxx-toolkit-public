@@ -210,6 +210,24 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
         CSeq_id worst_id;
         if (!worst) {
             id = GetId().begin()->GetPointer();
+            ITERATE (CBioseq::TId, id_itr, GetId()) {
+                const CSeq_id& sid = **id_itr;
+                switch (sid.Which()) {
+                    case CSeq_id::e_Other:
+                    case CSeq_id::e_Genbank:
+                    case CSeq_id::e_Embl:
+                    case CSeq_id::e_Ddbj:
+                        {
+                            const CTextseq_id& tsid = *sid.GetTextseq_Id ();
+                            if (tsid.IsSetAccession()) {
+                                id = &sid;
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
         } else {
             const CSeq_id* wid =
                 FindBestChoice(GetId(), CSeq_id::WorstRank).GetPointer();
