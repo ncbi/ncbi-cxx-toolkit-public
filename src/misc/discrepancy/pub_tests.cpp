@@ -521,15 +521,12 @@ string SummarizeAffiliation(const CAffil::C_Std& affil)
     ADD_TO_AFFIL_SUMMARY(Affil)
     ADD_TO_AFFIL_SUMMARY(Street)
     ADD_TO_AFFIL_SUMMARY(City)
-    if (affil.IsSetSub() && !NStr::IsBlank(affil.GetSub()) &&
-        affil.IsSetPostal_code() && !NStr::IsBlank(affil.GetPostal_code())) {
+    ADD_TO_AFFIL_SUMMARY(Sub)
+    if (affil.IsSetPostal_code() && !NStr::IsBlank(affil.GetPostal_code())) {
         if (!NStr::IsBlank(rval)) {
-            rval += ", ";
+            rval += " ";
         }
-        rval += affil.GetSub() + " " + affil.GetPostal_code();
-    } else {
-        ADD_TO_AFFIL_SUMMARY(Sub)
-        ADD_TO_AFFIL_SUMMARY(Postal_code)
+        rval += affil.GetPostal_code();
     }
     ADD_TO_AFFIL_SUMMARY(Country)
 
