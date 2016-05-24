@@ -676,7 +676,11 @@ void CJobInfoToJSON::ProcessOutput(const string& data)
 void CJobInfoToJSON::ProcessJobInfoField(const CTempString& field_name,
         const CTempString& field_value)
 {
-    m_JobInfo.SetByKey(field_name, CJsonNode::GuessType(field_value));
+    // There could be page hit ID values that look like a double
+    CJsonNode node(field_name != "ncbi_phid" ?
+            CJsonNode::GuessType(field_value) :
+            CJsonNode::NewStringNode(field_value)) ;
+    m_JobInfo.SetByKey(field_name, node);
 }
 
 void CJobInfoToJSON::ProcessRawLine(const string& line)
