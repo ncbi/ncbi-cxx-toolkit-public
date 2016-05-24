@@ -924,6 +924,7 @@ refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs bacterial_pipeline_proc
 refseq_ctl needs bag_access
 refseq_ctl needs gpinit_access
+refseq_ctl needs process_annotation_stats
 refseq_ctl needs xid_utils
 reftrack_access needs gpipe_common
 reftrack_admin needs reftrack_access
@@ -993,11 +994,6 @@ sqlitewrapp needs3party $(SQLITE3_LIBS)
 sraread needs $(SOBJMGR_LIBS)
 sraread needs $(VDB_LIB)
 sraread needs3party $(VDB_LIBS)
-srprism needs srprism_seq
-srprism_common needs $(COMPRESS_LIBS)
-srprism_common needs xutil
-srprism_seq needs srprism_common
-srprism_setup needs xncbi
 ssl needs $(Z_LIB)
 ssl needs3party $(KRB5_LIBS)
 ssl needs3party $(NETWORK_LIBS)
