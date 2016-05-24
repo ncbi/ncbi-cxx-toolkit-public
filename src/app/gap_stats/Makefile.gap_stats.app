@@ -19,5 +19,5 @@ CHECK_CMD = python3 test_gap_stats.py
 CHECK_COPY = test_gap_stats.py test_data
 CHECK_REQUIRES = unix PYTHON3
 
-WATCHERS = kornbluh
+WATCHERS = drozdov
 
