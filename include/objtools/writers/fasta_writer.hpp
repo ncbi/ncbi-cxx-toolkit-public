@@ -64,6 +64,11 @@ public:
 
 protected:
 
+   CRef<CSeq_loc> x_TrimLocation(TSeqPos frame, 
+                                 ENa_strand strand,
+                                 CScope& scope,
+                                 const CSeq_loc& loc);
+
     void x_WriteTranslatedCds(const CSeq_feat& cds,
                               CScope& scope);
 

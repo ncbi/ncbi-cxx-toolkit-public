@@ -56,36 +56,42 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
 
-// MORE DESCRIPTIVE VAR NAMES!!!
-//
-// Make this a method of CFastaOstreamEx
-CRef<CSeq_loc> s_ShiftLocation(const TSeqPos frame, 
-                               const ENa_strand strand,
-                               CScope& scope,
-                               const CSeq_loc& loc)
+/*
+CRef<CSeq_loc> CFastaOstreamEx::x_TrimLocation(const TSeqPos frame, 
+                                               const ENa_strand strand,
+                                               CScope& scope,
+                                               const CSeq_loc& loc)
 {
+    if (frame !=2 && frame != 3) {
+        string err_msg = "Unexpected frame value : " + frame;
+        NCBI_THROW(CObjWriterException, eInternal, err_msg);
+    }
+
     auto seq_id = Ref(new CSeq_id());
     seq_id->Assign(*loc.GetId());
 
-    auto start = loc.GetStart(eExtreme_Biological);
-    auto stop = start;
-
-    if (strand == eNa_strand_minus) {
-        start += 2-frame;
-    } else {
-        string err_msg = "Frame shift on plus strand not yet supported";
-        NCBI_THROW(CObjWriterException, eInternal, err_msg); 
-  //      stop += frame-2; // Look at this! - Add comments so I understand my own code!!
+    auto start_trim = loc.GetStart(eExtreme_Biological);
+    auto stop_trim = start_trim;
+    if (frame == 3) {
+        if (strand == eNa_strand_minus) {
+            if (!start_trim) {
+                string err_msg = "Expected a positive start index\n";
+                NCBI_THROW(CObjWriterException, eInternal, err_msg);
+            }
+            --start_trim;
+        } else {
+            stop_trim++;
+        }
     }
 
-    auto loc_ref = Ref(new CSeq_loc(*seq_id, start, stop, strand));
+    auto trim_interval = Ref(new CSeq_loc(*seq_id, start_trim, stop_trim, strand));
 
     return sequence::Seq_loc_Subtract(loc, 
-                                      *loc_ref, 
+                                      *trim_interval, 
                                       CSeq_loc::fMerge_AbuttingOnly,
                                       &scope);
 }
-
+*/
 
 CFastaOstreamEx::CFastaOstreamEx(CNcbiOstream& out) : 
     CFastaOstream(out), 
@@ -105,8 +111,9 @@ void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat,
                                    CScope& scope,
                                    const bool translate_cds)
 {
-    if (!feat.IsSetData()) { // Message
-        return;
+    // Could change this to return false if data not set
+    if (!feat.IsSetData()) { 
+        return; 
     }
 
     const bool IsCdregion = feat.GetData().IsCdregion();
@@ -138,11 +145,11 @@ void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat,
         return;
     }
 
-    // Cdregion with frameshift
+    // Cdregion with frame != 1
     const auto& loc = feat.GetLocation();
     const auto frame = feat.GetData().GetCdregion().GetFrame();
     const auto strand = loc.GetStrand();
-    auto trimmed_loc = s_ShiftLocation(frame, strand, scope, loc);
+    auto trimmed_loc = x_TrimLocation(frame, strand, scope, loc);
     WriteSequence(bsh, trimmed_loc.GetPointer(), CSeq_loc::fMerge_AbuttingOnly);
 }
 
@@ -170,6 +177,42 @@ void CFastaOstreamEx::WriteFeatureTitle(const CSeq_feat& feat,
    
     m_Out << ">lcl|" << id_string;
     x_WriteFeatureAttributes(feat, scope);
+}
+
+
+CRef<CSeq_loc> CFastaOstreamEx::x_TrimLocation(const TSeqPos frame, 
+                                               const ENa_strand strand,
+                                               CScope& scope,
+                                               const CSeq_loc& loc)
+{
+    if (frame !=2 && frame != 3) {
+        string err_msg = "Unexpected frame value : " + frame;
+        NCBI_THROW(CObjWriterException, eInternal, err_msg);
+    }
+
+    auto seq_id = Ref(new CSeq_id());
+    seq_id->Assign(*loc.GetId());
+    // if frame == 2, trim just a single site
+    auto start_trim = loc.GetStart(eExtreme_Biological);
+    auto stop_trim = start_trim;
+    if (frame == 3) {
+        if (strand == eNa_strand_minus) {
+            if (!start_trim) {
+                string err_msg = "Expected a positive start index\n";
+                NCBI_THROW(CObjWriterException, eInternal, err_msg);
+            }
+            --start_trim;
+        } else {
+            stop_trim++;
+        }
+    }
+
+    auto trim_interval = Ref(new CSeq_loc(*seq_id, start_trim, stop_trim, strand));
+
+    return sequence::Seq_loc_Subtract(loc, 
+                                      *trim_interval, 
+                                      CSeq_loc::fMerge_AbuttingOnly,
+                                      &scope);
 }
 
 
