@@ -31,6 +31,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/valid/Comment_rule.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include "discrepancy_core.hpp"
 
@@ -146,6 +147,62 @@ DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// TERMINAL_NS
+
+const string kTerminalNs = "[n] sequence[s] [has] terminal Ns";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc, "Ns at end of sequences")
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (!seq) {
+        return;
+    }
+
+    bool has_terminal_n_or_gap = false;
+
+    CBioseq_Handle b = context.GetScope().GetBioseqHandle(*seq);
+    CRef<CSeq_loc> start(new CSeq_loc());
+    start->SetInt().SetId().Assign(*(seq->GetId().front()));
+    start->SetInt().SetFrom(0);
+    start->SetInt().SetTo(0);
+
+    CSeqVector start_vec(*start, context.GetScope(), CBioseq_Handle::eCoding_Iupac);
+    CSeqVector::const_iterator vi_start = start_vec.begin();
+
+    if (*vi_start == 'N' || vi_start.IsInGap()) {
+        has_terminal_n_or_gap = true;
+    } else {
+        CRef<CSeq_loc> stop(new CSeq_loc());
+        stop->SetInt().SetId().Assign(*(seq->GetId().front()));
+        stop->SetInt().SetFrom(seq->GetLength() - 1);
+        stop->SetInt().SetTo(seq->GetLength() - 1);
+
+        CSeqVector stop_vec(*stop, context.GetScope(), CBioseq_Handle::eCoding_Iupac);
+        CSeqVector::const_iterator vi_stop = stop_vec.begin();
+        if (*vi_stop == 'N' || vi_stop.IsInGap()) {
+            has_terminal_n_or_gap = true;
+        }
+    }
+
+    if (has_terminal_n_or_gap) {
+        m_Objs[kTerminalNs].Add(*context.NewDiscObj(seq),
+            false).Fatal();
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(TERMINAL_NS)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

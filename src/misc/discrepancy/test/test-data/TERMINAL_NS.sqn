@@ -1,0 +1,816 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name name {
+          last "Purohit",
+          first "Hemant"
+        },
+        affil std {
+          affil "CSIR-National Environmental Engineering Research Institute",
+          div "Environmental Genomics Division",
+          city "Nagpur",
+          sub "Maharashtra",
+          country "India",
+          street "Nehru Marg",
+          email "hemantdrd@hotmail.com",
+          fax "+91-712-2243927",
+          phone "+91-712-2249883",
+          postal-code "440020"
+        }
+      }
+    },
+    cit {
+      authors {
+        names std {
+          {
+            name name {
+              last "Puranik",
+              first "Sampada",
+              initials "S."
+            }
+          },
+          {
+            name name {
+              last "More",
+              first "Ravi",
+              initials "R.P."
+            }
+          },
+          {
+            name name {
+              last "Pal",
+              first "Rajesh",
+              initials "R.R."
+            }
+          },
+          {
+            name name {
+              last "Khardenavis",
+              first "Anshuman",
+              initials "A.A."
+            }
+          },
+          {
+            name name {
+              last "Qureshi",
+              first "Asifa",
+              initials "A."
+            }
+          },
+          {
+            name name {
+              last "Kapley",
+              first "Atya",
+              initials "A."
+            }
+          },
+          {
+            name name {
+              last "Purohit",
+              first "Hemant",
+              initials "H.J."
+            }
+          }
+        },
+        affil std {
+          affil "CSIR-National Environmental Engineering Research Institute",
+          div "Environmental Genomics Division",
+          city "Nagpur",
+          sub "Maharashtra",
+          country "India",
+          street "Nehru Marg",
+          postal-code "440020"
+        }
+      },
+      date std {
+        year 2014,
+        month 1,
+        day 3
+      }
+    },
+    subtype new,
+    tool "tbl2asn 22.7 - MS WINDOWS VISTA"
+  },
+  data entrys {
+    set {
+      class genbank,
+      seq-set {
+        seq {
+          id {
+            local str "contig1"
+          },
+          descr {
+            source {
+              org {
+                taxname "sediment metagenome",
+                db {
+                  {
+                    db "taxon",
+                    tag id 749907
+                  }
+                },
+                orgname {
+                  name partial {
+                    {
+                      fixed-level other,
+                      level "species",
+                      name "sediment metagenome"
+                    }
+                  },
+                  lineage "unclassified sequences; metagenomes; ecological
+ metagenomes",
+                  gcode 11,
+                  mgcode 2,
+                  div "ENV",
+                  pgcode 11
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India: loktak lake, Manipur"
+                },
+                {
+                  subtype isolation-source,
+                  name "lake sediment"
+                },
+                {
+                  subtype collection-date,
+                  name "Apr-2013"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "DBLink",
+              data {
+                {
+                  label str "BioProject",
+                  num 1,
+                  data strs {
+                    "PRJNA230137"
+                  }
+                },
+                {
+                  label str "BioSample",
+                  num 1,
+                  data strs {
+                    "SAMN02438464"
+                  }
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SeriousSeqEntryCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 1
+                },
+                {
+                  label str "day",
+                  data int 3
+                },
+                {
+                  label str "year",
+                  data int 2014
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 3
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 574,
+            seq-data iupacna "AGAACATCGAGCGCCTGCAGGTCATCGCCGGCCTCACCTCCGACACGC
+TGATCGGCGGCGCCGGCGACGACCTGCTCGACGCCGGGGGCGGCAACGACACGCTGTTCGGCTCGGGCGGCACCGACA
+CGCTGCGCGGCGGCACCGGCCGCGACACCCTGGTGCTCAACGGCGGCGCCGGCTTGTTCGACGGCGGCGACGCCCCTC
+GTCACCGCAGCCTTCGCCTCGCTCGTGCTGAAGGGCTTCTCCGGAAACCGTTACGCGATGAAGGGCGGCGACGCCCAG
+GCCGGAGCGCTCGTCACGAAGTACGACGGCCAGCGCCCCACCGGCTACAGCCCGATGAAGAAGCAAGGCTCCATCGTG
+CTCGGCACGGGCGGGGACGGTAGCTTCTACTCGACCGGGATCTTCTTCGAGGGCGCGATCACGAGCGGTTGCCCGGAT
+GGAAGCACGGTCGACGACGCCATTCAGGCCAACATCGTCGCTGCGGGGTACGGCAAATGATTGCGAGTCGCTCGGTCT
+GCCACAGGCTCAGAACTGCGTGATGAACTTCCAGGCTTCTGGGGCATTCCAGCTCATC"
+          }
+        },
+        seq {
+          id {
+            local str "contig2791"
+          },
+          descr {
+            source {
+              org {
+                taxname "sediment metagenome",
+                db {
+                  {
+                    db "taxon",
+                    tag id 749907
+                  }
+                },
+                orgname {
+                  name partial {
+                    {
+                      fixed-level other,
+                      level "species",
+                      name "sediment metagenome"
+                    }
+                  },
+                  lineage "unclassified sequences; metagenomes; ecological
+ metagenomes",
+                  gcode 11,
+                  mgcode 2,
+                  div "ENV",
+                  pgcode 11
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India: loktak lake, Manipur"
+                },
+                {
+                  subtype isolation-source,
+                  name "lake sediment"
+                },
+                {
+                  subtype collection-date,
+                  name "Apr-2013"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "DBLink",
+              data {
+                {
+                  label str "BioProject",
+                  num 1,
+                  data strs {
+                    "PRJNA230137"
+                  }
+                },
+                {
+                  label str "BioSample",
+                  num 1,
+                  data strs {
+                    "SAMN02438464"
+                  }
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SeriousSeqEntryCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 1
+                },
+                {
+                  label str "day",
+                  data int 3
+                },
+                {
+                  label str "year",
+                  data int 2014
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 3
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 577,
+            seq-data iupacna "NNNNNNNGGGCGGAGCAGTCGCGCTCGCCTCACTGCTCGCCGGGAAGC
+TCGACGTGCGCGGCAAGGTCGCGGTGGCAGTGCTGTCGGGCGGAAACGTCGACGCGGAGTTGTTCGCGAAGCTGGTGG
+CGTAGACCCTCATCCTGAGGAGCATGGCGAAGCCATGCGTCTCGAAGGATCGAGGCCCTGGAATTCTCCGCGGAACAT
+GGGCCGCCCTCGTCCTTCGAGACGGCCGCTTCGCGGCCTCCTCAGCATGAGGAAAGTGCGCGTTGCGCGGGTTCACAC
+TACGACGTCGAGCCGACCACGCCCTCGACCAGGTAGTTCATCCTCTCGAGCTCAAGCTCGGTCTGATGGAGCACTTCG
+TGCCGGCCGGGATCACGACCGCACCCTTGTTGTCCTTCAGCCCGCCCTTGAAGATGACGTAGGTGCCCGCCAGCATCG
+CGGCCTTGATCTCGTCGGCCTTCGCCTTCGCGGGCGCGCCGACGGCGGCACCGTACGCCGACATCTTCACGTAGCCGT
+CCTTCAGGCCGCCGCGCAGGAAGTTCGGCATCGGCGAGCCGGCCTGAAGGACGGCTACGTG"
+          }
+        },
+        seq {
+          id {
+            local str "contig4037"
+          },
+          descr {
+            source {
+              org {
+                taxname "sediment metagenome",
+                db {
+                  {
+                    db "taxon",
+                    tag id 749907
+                  }
+                },
+                orgname {
+                  name partial {
+                    {
+                      fixed-level other,
+                      level "species",
+                      name "sediment metagenome"
+                    }
+                  },
+                  lineage "unclassified sequences; metagenomes; ecological
+ metagenomes",
+                  gcode 11,
+                  mgcode 2,
+                  div "ENV",
+                  pgcode 11
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India: loktak lake, Manipur"
+                },
+                {
+                  subtype isolation-source,
+                  name "lake sediment"
+                },
+                {
+                  subtype collection-date,
+                  name "Apr-2013"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "DBLink",
+              data {
+                {
+                  label str "BioProject",
+                  num 1,
+                  data strs {
+                    "PRJNA230137"
+                  }
+                },
+                {
+                  label str "BioSample",
+                  num 1,
+                  data strs {
+                    "SAMN02438464"
+                  }
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SeriousSeqEntryCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 1
+                },
+                {
+                  label str "day",
+                  data int 3
+                },
+                {
+                  label str "year",
+                  data int 2014
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 3
+            }
+          },
+          inst {
+            repr delta,
+            mol dna,
+            length 743,
+            ext delta {
+              literal {
+                length 124,
+                seq-data ncbi4na 'FFFFFFFFF24424482421412242242812148824414241
+111414112242488488284224224411182242248484284414484412214124224182442114124224
+24'H
+              },
+              literal {
+                length 98,
+                seq-data gap {
+                  type scaffold,
+                  linkage linked,
+                  linkage-evidence {
+                    {
+                      type paired-ends
+                    }
+                  }
+                }
+              },
+              literal {
+                length 521,
+                seq-data ncbi2na 'DBD0450A9A99E602798A94A934208D88EDBD79586E0A
+D9798A5E69A5267D0558867A6B99E99A4214DA61B9E98E26D8629AD8BDF659935B63516799E49E
+79286EA5EA7174676164899519DDA9A6299064D09EB8589D942B99B6391911A6699A6A00919949
+9867B1B9D862586B6B7913A586D88274D66E793E5FB619A9046B4DB4D89100'H
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "contig4330"
+          },
+          descr {
+            source {
+              org {
+                taxname "sediment metagenome",
+                db {
+                  {
+                    db "taxon",
+                    tag id 749907
+                  }
+                },
+                orgname {
+                  name partial {
+                    {
+                      fixed-level other,
+                      level "species",
+                      name "sediment metagenome"
+                    }
+                  },
+                  lineage "unclassified sequences; metagenomes; ecological
+ metagenomes",
+                  gcode 11,
+                  mgcode 2,
+                  div "ENV",
+                  pgcode 11
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India: loktak lake, Manipur"
+                },
+                {
+                  subtype isolation-source,
+                  name "lake sediment"
+                },
+                {
+                  subtype collection-date,
+                  name "Apr-2013"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "DBLink",
+              data {
+                {
+                  label str "BioProject",
+                  num 1,
+                  data strs {
+                    "PRJNA230137"
+                  }
+                },
+                {
+                  label str "BioSample",
+                  num 1,
+                  data strs {
+                    "SAMN02438464"
+                  }
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SeriousSeqEntryCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 1
+                },
+                {
+                  label str "day",
+                  data int 3
+                },
+                {
+                  label str "year",
+                  data int 2014
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 3
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 782,
+            seq-data iupacna "NNAAGGCGNCGACTACNGCGCCGCNNTCGCCCGCAAGNTGAACGCCTN
+TCATCTGCANGTGCAGTTGGCATCGATCGCCCAGGGACTGCTCCAGCATCTGGCCATCAATCACTCCGCCCTGGTCTG
+GCGCCACTTCCGCGGTTGGCTGCGCACCATGAATCCGGCGCTGCCGCCTTCCGAACTGGTTGTGGCCACCGCGCTACG
+TTCTATACTTCCGGAATTTCTCTCCTCGGACCGGCTCGACAAGAACCTGCGAAAATTACTCCACTCCTACAAGACTCA
+CCTCAGACCCTCGCTTACCGAGGAGTCCTTTGAGGAATACGCTGCTTGAAACATCGTGAGAACTTCGCACTGTCCAGT
+AAGATAATCGTGCAAATAAAACTCGCCGGAAGAATACCCGCCGTACAGAACCGCACGGCCATCATGCAGAAGCTTCTC
+AAGCTGCACCGAAACTGCGTAGTACGCGCGCTGATCCCGCTCATCCGCGGATGTAAAGACGCCTCGCGGAGGAGCTGG
+CGTCGCCCAGCCGGGTCCGAGCCAGACGATAACTTTCCTGCCCGGCTTGTTCACTTCCTCTTTTGCCAAGCCGACCAG
+CGCATTGAGTGACACGAGCAGGGCATCAAGACCTCTCGGTCTGACGGTTGCGTCCATTTCACCGACGACGCGGGCGAG
+CGCGAAGCCATCCCACGATGGCTGCGAAAGGATTTTTATGCCAGATGGATCAAGCCGCGCAACCGTAGTTAGCTGCCC
+CAGACGCCCTCCATTCTCACGCAGAAAGGTCT"
+          }
+        },
+        seq {
+          id {
+            local str "contig4453"
+          },
+          descr {
+            source {
+              org {
+                taxname "sediment metagenome",
+                db {
+                  {
+                    db "taxon",
+                    tag id 749907
+                  }
+                },
+                orgname {
+                  name partial {
+                    {
+                      fixed-level other,
+                      level "species",
+                      name "sediment metagenome"
+                    }
+                  },
+                  lineage "unclassified sequences; metagenomes; ecological
+ metagenomes",
+                  gcode 11,
+                  mgcode 2,
+                  div "ENV",
+                  pgcode 11
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India: loktak lake, Manipur"
+                },
+                {
+                  subtype isolation-source,
+                  name "lake sediment"
+                },
+                {
+                  subtype collection-date,
+                  name "Apr-2013"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "DBLink",
+              data {
+                {
+                  label str "BioProject",
+                  num 1,
+                  data strs {
+                    "PRJNA230137"
+                  }
+                },
+                {
+                  label str "BioSample",
+                  num 1,
+                  data strs {
+                    "SAMN02438464"
+                  }
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SeriousSeqEntryCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 1
+                },
+                {
+                  label str "day",
+                  data int 3
+                },
+                {
+                  label str "year",
+                  data int 2014
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 3
+            }
+          },
+          inst {
+            repr delta,
+            mol dna,
+            length 540,
+            ext delta {
+              literal {
+                length 174,
+                seq-data ncbi4na 'FFFFFFFF242114482482442482442142482444284242
+142844482484284882182444242412424442418224284284284214184114414424114218824484
+2844142228121224212241241428424211422144428422424824'H
+              },
+              literal {
+                length 29,
+                seq-data gap {
+                  type scaffold,
+                  linkage linked,
+                  linkage-evidence {
+                    {
+                      type paired-ends
+                    }
+                  }
+                }
+              },
+              literal {
+                length 337,
+                seq-data ncbi2na '26137D769E9C26D865ABF866016661F71A5941D0A1E8
+2A769A236248EB542293A5171A467B9A3A11D998991959269859366366D7176996906EF616A635
+D87DD829719A14818658719667858A6B42D6968D96648580'H
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "contig5349"
+          },
+          descr {
+            source {
+              org {
+                taxname "sediment metagenome",
+                db {
+                  {
+                    db "taxon",
+                    tag id 749907
+                  }
+                },
+                orgname {
+                  name partial {
+                    {
+                      fixed-level other,
+                      level "species",
+                      name "sediment metagenome"
+                    }
+                  },
+                  lineage "unclassified sequences; metagenomes; ecological
+ metagenomes",
+                  gcode 11,
+                  mgcode 2,
+                  div "ENV",
+                  pgcode 11
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "India: loktak lake, Manipur"
+                },
+                {
+                  subtype isolation-source,
+                  name "lake sediment"
+                },
+                {
+                  subtype collection-date,
+                  name "Apr-2013"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "DBLink",
+              data {
+                {
+                  label str "BioProject",
+                  num 1,
+                  data strs {
+                    "PRJNA230137"
+                  }
+                },
+                {
+                  label str "BioSample",
+                  num 1,
+                  data strs {
+                    "SAMN02438464"
+                  }
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SeriousSeqEntryCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 1
+                },
+                {
+                  label str "day",
+                  data int 3
+                },
+                {
+                  label str "year",
+                  data int 2014
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 3
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 730,
+            seq-data iupacna "NTTCGGGATTCTGGTCGAAGATGTTGTAGATGACCTGCACGGCGTCAA
+TCAGGCCGGATTTTACGGCGCGAATGCCGTTTTCGGGCTCCCAACGATTCTGGCTGATGCCAATGGCGCGGACTTTTC
+CGGAAGCGCGAAGTTTTTCGATGGTATTTTTCGTGCGGGGATCGTCGAGCCATGCGTCCATCCAGGTGTGGTACTGAA
+TTAAGTCGAGCGTGGCGAGGCCGAGATTTTTCAAGCTATTGTCGACGTACTCGAAGACATAGTCCGGCGGATAGCAAT
+CGTCGAGGGAAAATTCCTTGAGCGCGGGCCAACGGCGATTCTTTGGCGGAATTTTCGTGGCAACGTACAGTTTCTTCG
+ATGAATTGGCGCGCAGCGTTTTGCCGAGAAGTTCTTCGCTGTGGCCGTCACCGTAAGCCCACGCGGTATCAAAGAAAT
+TGCAGCCGAGATCGATGGAGCGCTGCAGTGCGGAAAGAGATTCCGCGTCTTCTGAGCCGGTCCAACCGGCCATTCCCC
+ACATGCCGTAGCCGATTTCGCTGACTTGCCATCCGGTACGGCCAAAGCGACGCAGTTTCATGGTGCGAAAGTTCTCCC
+AGGTTTGGTTTGCGCGAACGATTATACGGCAGGGCCGCGCAGTGGCCGGAGAAAGTAGTGATATAACCGGATAGCGGA
+GGAAGAACGATGAAGCGGAACGGAATGCGTTGGCTGGCGACAGTCACAGGAATCCTAT"
+          }
+        }
+      }
+    }
+  }
+}

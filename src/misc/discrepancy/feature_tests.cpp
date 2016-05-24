@@ -36,6 +36,7 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objmgr/feat_ci.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -751,7 +752,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc, "Find partial fea
 
     if (add_this) {
         m_Objs[kPartialProblems].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
-            false);
+            false).Fatal();
     }
 }
 
@@ -822,6 +823,53 @@ DISCREPANCY_AUTOFIX(PARTIAL_PROBLEMS)
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS: Set exception for [n] feature[s]", n) : 0);
+}
+
+
+// EUKARYOTE_SHOULD_HAVE_MRNA
+
+const string kEukaryoteShouldHavemRNA = "no mRNA present";
+const string kEukaryoticCDSHasMrna = "Eukaryotic CDS has mRNA";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(EUKARYOTE_SHOULD_HAVE_MRNA, CSeq_feat_BY_BIOSEQ, eDisc, "Eukaryote should have mRNA")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData() || !obj.GetData().IsCdregion() || CCleanup::IsPseudo(obj, context.GetScope())) {
+        return;
+    }
+    if (!context.IsEukaryotic()) {
+        return;
+    }
+    const CMolInfo* molinfo = context.GetCurrentMolInfo();
+    if (!molinfo || !molinfo->IsSetBiomol() || molinfo->GetBiomol() != CMolInfo::eBiomol_genomic) {
+        return;
+    }
+    
+    CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(obj, context.GetScope());
+
+    if (mrna) {
+        m_Objs[kEukaryoticCDSHasMrna].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
+            false);
+    } else if (m_Objs[kEukaryoteShouldHavemRNA].GetObjects().empty()) {
+        m_Objs[kEukaryoteShouldHavemRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
+            false).Fatal();
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(EUKARYOTE_SHOULD_HAVE_MRNA)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    if (!m_Objs[kEukaryoteShouldHavemRNA].GetObjects().empty() && m_Objs[kEukaryoticCDSHasMrna].GetObjects().empty()) {
+        m_Objs.GetMap().erase(kEukaryoticCDSHasMrna);
+        m_Objs[kEukaryoteShouldHavemRNA].clearObjs();
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    }
 }
 
 
