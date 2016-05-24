@@ -520,7 +520,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey("maxtime-delay", "TIMESPAN",
             "A timespan used to adjust ending date/time for a query, specified by -maxtime argument "
             "(or current time, if not specified). Could be useful to get an URL before sending <stop_app> "
-            "command and to avoid any time calculations directly in the scripts."
+            "command and to avoid any time calculations directly in the scripts. "
             "Accept a string with timespan in the human readable format (like '100 seconds', '100s', '2m 30s', '1d').",
             CArgDescriptions::eString, kEmptyStr);
         cmd->AddCommand("url", arg.release());
