@@ -33,8 +33,30 @@
 #define CONNECT__SERVICES__NS_OUTPUT_PARSER__HPP
 
 #include "netschedule_api.hpp"
+#include "json_over_uttp.hpp"
 
 BEGIN_NCBI_SCOPE
+
+
+// Deprecated, use corresponding static method of CJsonNode instead
+class NCBI_DEPRECATED NCBI_XCONNECT_EXPORT CNetScheduleStructuredOutputParser
+{
+public:
+    CJsonNode ParseObject(const string& ns_output)
+    {
+        return CJsonNode::ParseObject(ns_output);
+    }
+
+    CJsonNode ParseArray(const string& ns_output)
+    {
+        return CJsonNode::ParseArray(ns_output);
+    }
+
+    CJsonNode ParseJSON(const string& json)
+    {
+        return CJsonNode::ParseJSON(json);
+    }
+};
 
 class NCBI_XCONNECT_EXPORT CAttrListParser
 {
