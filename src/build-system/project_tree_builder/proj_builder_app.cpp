@@ -1540,6 +1540,9 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                     if (!lib3order.empty()) {
                         ofs << "GENERATED_LIB3PARTY_ORDER =";
                         ITERATE( list<string>, l3, lib3order) {
+                            if (l3->empty()) {
+                                continue;
+                            }
                             ofs << " ";
                             if (m_Frameworks.find(*l3) != m_Frameworks.end()) {
                                 ofs << "-framework ";
