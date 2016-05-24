@@ -8,6 +8,6 @@ APP_PROJ = asn_cache_test cache_index_copy concat_seqentries \
            sub_cache_create walk_cache_test
 
 srcdir = @srcdir@
-include @builddir@/meta
+include @builddir@/Makefile.meta
 
 
