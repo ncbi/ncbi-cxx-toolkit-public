@@ -16,4 +16,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD = unit_test_gap_analysis -basic-data gap_analysis.seq.asn -in-letter-gap-data gap_with_letters.seq.asn -mixed-gap-type-data mixed_gap_type_data.seq.asn
 CHECK_COPY = gap_analysis.seq.asn gap_with_letters.seq.asn mixed_gap_type_data.seq.asn
 
-WATCHERS = kornbluh
+WATCHERS = drozdov
