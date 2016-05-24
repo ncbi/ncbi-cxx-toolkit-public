@@ -567,10 +567,15 @@ DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, CPubdesc, eDisc | eOncaller, "All Cit-sub
 }
 
 
-static void SummarizeAffilField(CReportNode& objs, CDiscrepancyContext& context, const string& field_name, const string& alias)
+static void SummarizeAffilField
+(CReportNode& objs,
+ CDiscrepancyContext& context, 
+ const string& field_name, 
+ const string& alias,
+ const string leading_spaces)
 {
     if (objs[field_name].GetMap().size() > 1) {
-        string one = "Affiliations have different values for " + alias;
+        string one = leading_spaces + "Affiliations have different values for " + alias;
         CReportNode::TNodeMap::iterator it = objs[field_name].GetMap().begin();
         while (it != objs[field_name].GetMap().end()) {
             string two = "[n] affiliation[s] [has] " + alias + " value '" + it->first + "'";
@@ -593,8 +598,9 @@ static void SummarizeAffilField(CReportNode& objs, CDiscrepancyContext& context,
 DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT)
 //  ----------------------------------------------------------------------------
 {
+    // Note - using leading spaces to control order of messages
     if (m_Objs.empty()) {
-        m_Objs[kCitSubSummary]["No citsubs were found!"].Fatal();
+        m_Objs[kCitSubSummary]["          No citsubs were found!"].Fatal();
     }
 
     if (m_Objs[kSummaries].GetMap().size() > 1) {
@@ -602,9 +608,9 @@ DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT)
         while (it != m_Objs[kSummaries].GetMap().end()) {
             string two;
             if (NStr::IsBlank(it->first)) {
-                two = "[n] Cit-sub[s] [has] no affiliation";
+                two = "         [n] Cit-sub[s] [has] no affiliation";
             } else {
-                two = "[n] CitSub[s] [has] affiliation " + it->first;
+                two = "        [n] CitSub[s] [has] affiliation " + it->first;
             }
             NON_CONST_ITERATE(TReportObjectList, robj, m_Objs[kSummaries][it->first].GetObjects())
             {
@@ -618,13 +624,13 @@ DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT)
     }
     m_Objs.GetMap().erase(kSummaries);
 
-    SummarizeAffilField(m_Objs, context, "Affil", "institution");
-    SummarizeAffilField(m_Objs, context, "Div", "department");
-    SummarizeAffilField(m_Objs, context, "City", "city");
-    SummarizeAffilField(m_Objs, context, "Sub", "state/province");
-    SummarizeAffilField(m_Objs, context, "Country", "country");
-    SummarizeAffilField(m_Objs, context, "Street", "street");
-    SummarizeAffilField(m_Objs, context, "Postal_code", "postal code");
+    SummarizeAffilField(m_Objs, context, "Affil", "institution", "       ");
+    SummarizeAffilField(m_Objs, context, "Div", "department", "      ");
+    SummarizeAffilField(m_Objs, context, "City", "city", "     ");
+    SummarizeAffilField(m_Objs, context, "Sub", "state/province", "    ");
+    SummarizeAffilField(m_Objs, context, "Country", "country", "   ");
+    SummarizeAffilField(m_Objs, context, "Street", "street", "  ");
+    SummarizeAffilField(m_Objs, context, "Postal_code", "postal code", " ");
 
     if (m_Objs.empty()) {
         return;
