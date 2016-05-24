@@ -510,7 +510,7 @@ void AddAffilFields(CDiscrepancyContext& context, const CAffil& affil, CReportNo
     if(affil.IsSet##Fieldname() && !NStr::IsBlank(affil.Get##Fieldname())) { \
         if (!NStr::IsBlank(rval)) { \
             rval += ", "; \
-                } \
+        } \
         rval += affil.Get##Fieldname(); \
     }
 
@@ -521,8 +521,16 @@ string SummarizeAffiliation(const CAffil::C_Std& affil)
     ADD_TO_AFFIL_SUMMARY(Affil)
     ADD_TO_AFFIL_SUMMARY(Street)
     ADD_TO_AFFIL_SUMMARY(City)
-    ADD_TO_AFFIL_SUMMARY(Sub)
-    ADD_TO_AFFIL_SUMMARY(Postal_code)
+    if (affil.IsSetSub() && !NStr::IsBlank(affil.GetSub()) &&
+        affil.IsSetPostal_code() && !NStr::IsBlank(affil.GetPostal_code())) {
+        if (!NStr::IsBlank(rval)) {
+            rval += ", ";
+        }
+        rval += affil.GetSub() + " " + affil.GetPostal_code();
+    } else {
+        ADD_TO_AFFIL_SUMMARY(Sub)
+        ADD_TO_AFFIL_SUMMARY(Postal_code)
+    }
     ADD_TO_AFFIL_SUMMARY(Country)
 
     return rval;
