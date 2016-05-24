@@ -456,5 +456,182 @@ DISCREPANCY_SUMMARIZE(MISSING_AFFIL)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// CITSUBAFFIL_CONFLICT
+
+static void AddAffilFieldObject(CDiscrepancyContext& context, const string& field_name, const string& field_value, CReportNode& objs)
+{
+    if (context.GetCurrentSeqdesc() != NULL) {
+        // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(context.GetCurrentSeqdesc(), eKeepRef));
+        objs[field_name][field_value].Add(*this_disc_obj, false);
+    } else if (context.GetCurrentSeq_feat() != NULL) {
+        // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(context.GetCurrentSeq_feat(), eKeepRef));
+        objs[field_name][field_value].Add(*this_disc_obj, false);
+    }
+}
+
+
+#define ADD_ONE_AFFIL_FIELD(Fieldname) \
+    if(affil.GetStd().IsSet##Fieldname() && !NStr::IsBlank(affil.GetStd().Get##Fieldname())) { \
+        AddAffilFieldObject(context, #Fieldname, affil.GetStd().Get##Fieldname(), objs); \
+    } else { \
+        AddAffilFieldObject(context, #Fieldname, kEmptyStr, objs); \
+    }
+
+void AddAffilFields(CDiscrepancyContext& context, const CAffil& affil, CReportNode& objs)
+{
+    if (affil.IsStr()) {
+        AddAffilFieldObject(context, "Affil", affil.GetStr(), objs);
+        // add blanks for remaining fields
+        AddAffilFieldObject(context, "Div", kEmptyStr, objs);
+        AddAffilFieldObject(context, "City", kEmptyStr, objs);
+        AddAffilFieldObject(context, "Sub", kEmptyStr, objs);
+        AddAffilFieldObject(context, "Country", kEmptyStr, objs);
+        AddAffilFieldObject(context, "Street", kEmptyStr, objs);
+        AddAffilFieldObject(context, "Postal_code", kEmptyStr, objs);
+    } else if (affil.IsStd()) {
+        ADD_ONE_AFFIL_FIELD(Affil)
+        ADD_ONE_AFFIL_FIELD(Div)
+        ADD_ONE_AFFIL_FIELD(City)
+        ADD_ONE_AFFIL_FIELD(Sub)
+        ADD_ONE_AFFIL_FIELD(Country)
+        ADD_ONE_AFFIL_FIELD(Street)
+        ADD_ONE_AFFIL_FIELD(Postal_code)
+    } else {
+        // add blanks for all fields
+        AddAffilFieldObject(context, "Affil", kEmptyStr, objs);
+    }
+}
+
+
+#define ADD_TO_AFFIL_SUMMARY(Fieldname) \
+    if(affil.IsSet##Fieldname() && !NStr::IsBlank(affil.Get##Fieldname())) { \
+        if (!NStr::IsBlank(rval)) { \
+            rval += ", "; \
+                } \
+        rval += affil.Get##Fieldname(); \
+    }
+
+string SummarizeAffiliation(const CAffil::C_Std& affil)
+{
+    string rval = kEmptyStr;
+    ADD_TO_AFFIL_SUMMARY(Div)
+    ADD_TO_AFFIL_SUMMARY(Affil)
+    ADD_TO_AFFIL_SUMMARY(Street)
+    ADD_TO_AFFIL_SUMMARY(City)
+    ADD_TO_AFFIL_SUMMARY(Sub)
+    ADD_TO_AFFIL_SUMMARY(Postal_code)
+    ADD_TO_AFFIL_SUMMARY(Country)
+
+    return rval;
+}
+
+
+string SummarizeAffiliation(const CAffil& affil)
+{
+    if (affil.IsStd()) {
+        return SummarizeAffiliation(affil.GetStd());
+    } else if (affil.IsStr()) {
+        return affil.GetStr();
+    } else {
+        return kEmptyStr;
+    }
+}
+
+
+const string kCitSubSummary = "Citsub affiliation conflicts found";
+const string kSummaries = "summaries";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, CPubdesc, eDisc | eOncaller, "All Cit-subs should have identical affiliations")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetPub()) {
+        return;
+    }
+    ITERATE(CPubdesc::TPub::Tdata, it, obj.GetPub().Get()) {
+        if ((*it)->IsSub()) {
+            if (!(*it)->GetSub().IsSetAuthors() || !(*it)->GetSub().GetAuthors().IsSetAffil()) {
+                AddAffilFieldObject(context, kSummaries, kEmptyStr, m_Objs);
+            } else {
+                AddAffilFields(context, (*it)->GetSub().GetAuthors().GetAffil(), m_Objs);
+                AddAffilFieldObject(context, 
+                                    kSummaries,
+                                    SummarizeAffiliation((*it)->GetSub().GetAuthors().GetAffil()), 
+                                    m_Objs);
+            }
+        }
+    }
+}
+
+
+static void SummarizeAffilField(CReportNode& objs, CDiscrepancyContext& context, const string& field_name, const string& alias)
+{
+    if (objs[field_name].GetMap().size() > 1) {
+        string one = "Affiliations have different values for " + alias;
+        CReportNode::TNodeMap::iterator it = objs[field_name].GetMap().begin();
+        while (it != objs[field_name].GetMap().end()) {
+            string two = "[n] affiliation[s] [has] " + alias + " value '" + it->first + "'";
+            NON_CONST_ITERATE(TReportObjectList, robj, objs[field_name][it->first].GetObjects())
+            {
+                const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
+                CConstRef<CSeqdesc> pub_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
+
+                objs[kCitSubSummary][one][two].Add(*context.NewDiscObj(pub_desc), false);
+            }
+            ++it;
+        }
+    }
+    objs.GetMap().erase(field_name);
+
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        m_Objs[kCitSubSummary]["No citsubs were found!"].Fatal();
+    }
+
+    if (m_Objs[kSummaries].GetMap().size() > 1) {
+        CReportNode::TNodeMap::iterator it = m_Objs[kSummaries].GetMap().begin();
+        while (it != m_Objs[kSummaries].GetMap().end()) {
+            string two;
+            if (NStr::IsBlank(it->first)) {
+                two = "[n] Cit-sub[s] [has] no affiliation";
+            } else {
+                two = "[n] CitSub[s] [has] affiliation " + it->first;
+            }
+            NON_CONST_ITERATE(TReportObjectList, robj, m_Objs[kSummaries][it->first].GetObjects())
+            {
+                const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
+                CConstRef<CSeqdesc> pub_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
+
+                m_Objs[kCitSubSummary][two].Add(*context.NewDiscObj(pub_desc), false);
+            }
+            ++it;
+        }
+    }
+    m_Objs.GetMap().erase(kSummaries);
+
+    SummarizeAffilField(m_Objs, context, "Affil", "institution");
+    SummarizeAffilField(m_Objs, context, "Div", "department");
+    SummarizeAffilField(m_Objs, context, "City", "city");
+    SummarizeAffilField(m_Objs, context, "Sub", "state/province");
+    SummarizeAffilField(m_Objs, context, "Country", "country");
+    SummarizeAffilField(m_Objs, context, "Street", "street");
+    SummarizeAffilField(m_Objs, context, "Postal_code", "postal code");
+
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
