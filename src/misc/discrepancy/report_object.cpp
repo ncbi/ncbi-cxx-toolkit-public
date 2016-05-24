@@ -339,10 +339,10 @@ void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& 
             }
         }
     }
-    
-    GetTextObjectDescription(seq_feat, scope, label, location, locus_tag);   
+
+    GetTextObjectDescription(seq_feat, scope, label, location, locus_tag);
     context.clear();
-    if (seq_feat.GetData().IsCdregion()) { 
+    if (seq_feat.GetData().IsCdregion()) {
         context = GetProductForCDS(seq_feat, scope);
         if (NStr::IsBlank(context)) {
             GetSeqFeatLabel(seq_feat, context);
@@ -352,11 +352,12 @@ void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& 
     } else if (seq_feat.GetData().IsGene()) {
         if (seq_feat.GetData().GetGene().CanGetLocus() &&
             !NStr::IsBlank(seq_feat.GetData().GetGene().GetLocus())) {
-            context = seq_feat.GetData().GetGene().GetLocus(); 
+            context = seq_feat.GetData().GetGene().GetLocus();
         } else if (seq_feat.GetData().GetGene().CanGetDesc()) {
-            context = seq_feat.GetData().GetGene().GetDesc(); 
+            context = seq_feat.GetData().GetGene().GetDesc();
         }
-    } 
+        else context = GetLocusTagForFeature(seq_feat, scope);
+    }
     else GetSeqFeatLabel(seq_feat, context);
 }
 
