@@ -6143,8 +6143,6 @@ bool CMrnaMatchInfo::Overlaps(const CSeq_feat& cds) const
     {
         overlap_type = eOverlap_SubsetRev;
     }
-    auto overlap  = TestForOverlapEx(cds.GetLocation(), m_Mrna->GetLocation(), overlap_type, m_Scope);
-
     return (TestForOverlapEx(cds.GetLocation(), m_Mrna->GetLocation(), overlap_type, m_Scope) >= 0);
 }
 
