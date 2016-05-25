@@ -114,6 +114,9 @@ version  1 # of file format
 4+8   R???  gb_wgs_nuc
 4+9   R???  gb_wgs_nuc
 4+10  R???  gb_wgs_nuc
+4+8   S???  gb_wgs_nuc # specifically, USPTO pre-grant patent data
+4+9   S???  gb_wgs_nuc # specifically, USPTO pre-grant patent data
+4+10  S???  gb_wgs_nuc # specifically, USPTO pre-grant patent data
 
 # Mass sequence Genome for Annotation
 5+7   A???? ddbj_other_nuc
