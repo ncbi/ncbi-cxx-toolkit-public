@@ -123,6 +123,11 @@ public:
         size_t size(void) const {
             return errors.size();
         }
+
+        typedef list<CAlnError> TErrors;
+        typedef TErrors::const_iterator const_iterator;
+        const_iterator begin(void) const { return errors.begin(); }
+        const_iterator end(void)   const { return errors.end();   }
     };
 
     // error messages
