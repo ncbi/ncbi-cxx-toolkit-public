@@ -269,6 +269,8 @@ void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
 
     x_AddProteinIdAttribute(feat, scope, defline);
 
+    x_AddTranscriptIdAttribute(feat, scope, defline);
+
     x_AddLocationAttribute(feat, scope, defline);
 
     m_Out << defline << "\n"; // endl flushes output? 
