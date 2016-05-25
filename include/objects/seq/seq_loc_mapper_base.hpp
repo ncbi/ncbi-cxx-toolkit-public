@@ -82,9 +82,8 @@ public:
                   ENa_strand        dst_strand,
                   bool              ext_to = false,
                   int               frame = 0,
-                  TSeqPos           dst_total_len = kInvalidSeqPos,
                   TSeqPos           src_bioseq_len = kInvalidSeqPos,
-                  TSeqPos           dst_len = kInvalidSeqPos );
+                  TSeqPos           dst_len = kInvalidSeqPos);
 
     /// Check if the id is on the source sequence.
     bool GoodSrcId(const CSeq_id& id) const;
@@ -145,9 +144,6 @@ private:
     bool                m_ExtTo;
     // Holds the frame shift (0 if none) of the underlying CDS (if any).
     int                 m_Frame;
-    // Holds the complete length of the destination.  This is needed
-    // to detect whether or not fuzzy edges should be extended to the end.
-    TSeqPos             m_Dst_total_len;
     // This holds the complete length of the original source bioseq.
     // Needed to detect whether or not fuzzy edges should be extended to the end.
     TSeqPos             m_Src_bioseq_len;

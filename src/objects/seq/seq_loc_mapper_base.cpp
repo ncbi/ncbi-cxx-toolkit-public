@@ -193,7 +193,6 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
                              ENa_strand         dst_strand,
                              bool               ext_to,
                              int                frame,
-                             TSeqPos            dst_total_len,
                              TSeqPos            src_bioseq_len,
                              TSeqPos            dst_len)
     : m_Src_id_Handle(src_id),
@@ -206,7 +205,6 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
       m_Reverse(!SameOrientation(src_strand, dst_strand)),
       m_ExtTo(ext_to),
       m_Frame(frame),
-      m_Dst_total_len(dst_total_len),
       m_Src_bioseq_len(src_bioseq_len),
       m_Dst_len(dst_len),
       m_Group(0)
@@ -469,7 +467,7 @@ CMappingRanges::AddConversion(CSeq_id_Handle    src_id,
     CRef<CMappingRange> cvt(new CMappingRange(
         src_id, src_from, src_length, src_strand,
         dst_id, dst_from, dst_strand,
-        ext_to, frame, dst_total_len, src_bioseq_len, dst_len )); 
+        ext_to, frame, src_bioseq_len, dst_len )); 
     AddConversion(cvt);
     return cvt;
 }
@@ -1059,7 +1057,10 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     TSeqPos dst_len = 0;
     if ( rg.IsWhole() ) {
         dst_start = 0;
-        dst_len = kInvalidSeqPos;
+        dst_len = GetSequenceLength(dst_it.GetSeq_id());
+        if (dst_type == eSeq_prot) {
+            dst_len *= 3;
+        }
     }
     else if ( !rg.Empty() ) {
         dst_start = dst_it.GetRange().GetFrom()*dst_width;
@@ -1180,7 +1181,10 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
             else if ( rg.IsWhole() ) {
                 dst_start = 0;
-                dst_len = kInvalidSeqPos;
+                dst_len = GetSequenceLength(dst_it.GetSeq_id());
+                if (dst_type == eSeq_prot) {
+                    dst_len *= 3;
+                }
             }
             else {
                 dst_start = dst_it.GetRange().GetFrom()*dst_width;
@@ -2433,16 +2437,32 @@ void CSeq_loc_Mapper_Base::x_AddConversion(const CSeq_id& src_id,
     if (m_DstRanges.size() <= size_t(dst_strand)) {
         m_DstRanges.resize(size_t(dst_strand) + 1);
     }
-    CSeq_id_Handle main_id = CollectSynonyms(CSeq_id_Handle::GetHandle(src_id));
+    CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(src_id);
+    CSeq_id_Handle dst_idh = CSeq_id_Handle::GetHandle(dst_id);
+    CSeq_id_Handle main_id = CollectSynonyms(src_idh);
+    TSeqPos dst_seq_len = GetSequenceLength(dst_id);
+    if (dst_seq_len != kInvalidSeqPos  &&  dst_seq_len > 0) {
+        ESeqType dst_type = GetSeqType(dst_idh);
+        if (dst_type == eSeq_prot) {
+            dst_seq_len *= 3;
+        }
+        if (length > dst_seq_len - dst_start) {
+            TSeqPos trim = length - dst_seq_len + dst_start;
+            length -= trim;
+            if (dst_len != kInvalidSeqPos) {
+                dst_len = dst_len > trim ? dst_len - trim : 0;
+            }
+        }
+    }
     CRef<CMappingRange> rg = m_Mappings->AddConversion(
         main_id, src_start, length, src_strand,
-        CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
+        dst_idh, dst_start, dst_strand,
         ext_right, frame, dst_total_len, src_bioseq_len, dst_len );
     if ( m_CurrentGroup ) {
         rg->SetGroup(m_CurrentGroup);
     }
     // Add destination range.
-    m_DstRanges[size_t(dst_strand)][CSeq_id_Handle::GetHandle(dst_id)]
+    m_DstRanges[size_t(dst_strand)][dst_idh]
         .push_back(TRange(dst_start, dst_start + length - 1));
 }
 
