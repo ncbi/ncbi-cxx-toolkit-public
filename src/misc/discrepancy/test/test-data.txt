@@ -1,4 +1,4 @@
-### Test name		Commandline C++		Commandline C		Input file		-X?	Special use
+### Test name		Commandline C++		Commandline C		Input file/dir		-X?	Special use
 
 BACTERIA_SHOULD_NOT_HAVE_MRNA	BACTERIA_SHOULD_NOT_HAVE_MRNA	DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA	BACTERIA_SHOULD_NOT_HAVE_MRNA.asn
 BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS	BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS	DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS	VR-154.sqn
@@ -123,5 +123,3 @@ ZERO_BASECOUNT-X	ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn	-X	ZERO_BASE
 
 ### Please keep the tests in alphabetical order!
 ### to run the tests whose names begins with the underscore, use asndisc-all-tests.pl -dev
-
-

@@ -74,8 +74,8 @@ my $out_cpp = "$test.cpp.txt";
 my $gold = File::Spec->catfile($path, 'test-data', $tests{$test}{gold}) if $tests{$test}{gold} ne '';
 my $data = $tests{$test}{data};
 my $rx = join('|', split(',', $arg.','.$arg0));
-
-my $cmd = "$exe_cpp -e $arg -i $input -o $out_cpp";
+my $ip = -d $input ? 'p' : 'i';
+my $cmd = "$exe_cpp -e $arg -$ip $input -o $out_cpp";
 $cmd .= " -X ALL" if $tests{$test}{ext};
 
 open(OLD_STDOUT, '>&STDOUT') if $quiet;
@@ -86,7 +86,8 @@ die "Error running $exe_cpp\n" if $result;
 
 if ($gold eq '')
 {
-  $cmd = "$exe_c -e $arg0 -i $input -o $out_c";
+  my $ip = -d $input ? 'p' : 'i';
+  $cmd = "$exe_c -e $arg0 -$ip $input -o $out_c";
   $cmd .= " -X ALL" if $tests{$test}{ext};
   open(OLD_STDOUT, '>&STDOUT') if $quiet;
   open(STDOUT, '>/dev/null') if $quiet;
