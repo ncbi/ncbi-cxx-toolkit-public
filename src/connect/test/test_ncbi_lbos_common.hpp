@@ -923,7 +923,7 @@ static void s_PrintResolutionErrors()
     for (; errors_iter != s_ResolutionErrors.end(); errors_iter++) {
         errors << "Port " << errors_iter->port << " "
                << "was announced on line " << errors_iter->code_line << ", "
-               << "expected to find" << errors_iter->expected_count << ", "
+               << "expected to find " << errors_iter->expected_count << ", "
                << "but " << errors_iter->count << " was found instead"
                << endl;
     }
@@ -7598,8 +7598,6 @@ void GetNext_Reset__ShouldNotCrash()
                       *net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/));
     for (i = 0;  elapsed < secondsBeforeStop;  ++i) {
-        WRITE_LOG("Stability test 1: iteration " << i << ", " << elapsed <<
-                  " seconds passed");
         do {
             info = SERV_GetNextInfoEx(*iter, NULL);
         } while (info != NULL);
@@ -7608,7 +7606,6 @@ void GetNext_Reset__ShouldNotCrash()
             memset(&stop, 0, sizeof(stop));
         elapsed = s_TimeDiff(&stop, &start);
     }
-    WRITE_LOG("Stability test 1:  " << i << " iterations\n");
 }
 
 void FullCycle__ShouldNotCrash()
@@ -7629,8 +7626,6 @@ void FullCycle__ShouldNotCrash()
     int i = 0;
     CConnNetInfo net_info;
     for (i = 0;  elapsed < secondsBeforeStop;  ++i) {
-        WRITE_LOG("Stability test 2: iteration " << i << ", " << elapsed <<
-                  " seconds passed");
         CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
                           
                           SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
@@ -7643,7 +7638,6 @@ void FullCycle__ShouldNotCrash()
             memset(&stop, 0, sizeof(stop));
         elapsed = s_TimeDiff(&stop, &start);
     }
-    WRITE_LOG("Stability test 2:  " << i << " iterations\n");
 }
 } /* namespace Stability */
 
@@ -7712,9 +7706,6 @@ void FullCycle__ShouldNotCrash()
      */
     for (total_iters = 0, cycle_iters = 0;  total_elapsed < secondsBeforeStop;
             ++total_iters, ++cycle_iters) {
-        WRITE_LOG("Performance test: "
-                  "iteration " << total_iters << ", " <<
-                  total_elapsed << " seconds passed");
         CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
                        SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                        *net_info, 0/*skip*/, 0/*n_skip*/,
@@ -7725,7 +7716,6 @@ void FullCycle__ShouldNotCrash()
             ++total_hosts;
             ++cycle_hosts;;
         }
-        WRITE_LOG("Found " << hosts_found << " hosts");
         s_CallCounter = 0;
         if (s_GetTimeOfDay(&stop) != 0)
             memset(&stop, 0, sizeof(stop));
@@ -8111,7 +8101,6 @@ static vector<SAnnouncedServer> s_ParseService()
     if (*lbos_output_orig == NULL)
         lbos_output_orig = strdup("");
     string lbos_output = *lbos_output_orig;
-    WRITE_LOG("/text/service output: \r\n" << lbos_output);
     vector<string> to_find;
     to_find.push_back("/lbostest");
     to_find.push_back("/lbostest1");
