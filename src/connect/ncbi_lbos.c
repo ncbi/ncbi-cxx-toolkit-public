@@ -38,6 +38,7 @@
 #include "ncbi_priv.h"
 #include <stdlib.h> /* free, realloc, calloc, malloc */
 #include <ctype.h> /* isdigit */
+#include "parson.h"
 
 #define            kHostportStringLength     (16+1+5)/**<
                                                      strlen("255.255.255.255")+
@@ -49,6 +50,11 @@
 #define            NCBI_USE_ERRCODE_X        Connect_LBSM /**< Used in
                                                                CORE_LOG*_X  */
 
+#ifdef NCBI_COMPILER_MSVC
+#   define LBOS_STRTOK strtok_s
+#else
+#   define LBOS_STRTOK strtok_r
+#endif 
 /*/////////////////////////////////////////////////////////////////////////////
 //                         STATIC VARIABLES                                  //
 /////////////////////////////////////////////////////////////////////////////*/
@@ -61,8 +67,13 @@ static const char* kDomainFile                = "/etc/ncbi/domain";
 #else 
     static const char* kLbosresolverFile      = "/etc/ncbi/lbosresolver";
 #endif
-static const char* kLBOSQuery                 = "/lbos/text/mlresolve?name=";
 
+#ifdef USE_JSON
+static const char* kLBOSQuery                 = "/lbos/v3/services/"
+                                                "?format=json&show=all&q=";
+#else
+static const char* kLBOSQuery                 = "/lbos/text/mlresolve?name=";
+#endif
 
 /*
  * LBOS registry section for announcement
@@ -1226,8 +1237,8 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     }
     servicename_url_encoded = s_LBOS_URLEncode(serviceName);
   /*encode service name to url encoding (change ' ' to %20, '/' to %2f, etc.)*/
-    url_length = strlen("http://") + strlen(lbos_address) +
-            strlen(kLBOSQuery) + strlen(servicename_url_encoded);
+    url_length = strlen("http://")  + strlen(lbos_address) +
+                 strlen(kLBOSQuery) + strlen(servicename_url_encoded);
     url = (char*)malloc(sizeof(char) * url_length + 1); /** to make up
                                                    LBOS query URI to connect*/
     if (url == NULL)
@@ -1253,16 +1264,96 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         return NULL;
     }
     /*
+        {
+          "services": {
+            "/Lbsmd/v.1/accnlist": [
+              {
+                "serviceEndpoint": {
+                  "host": "130.14.22.103",
+                  "port": 80
+                },
+                "meta": {
+                  "type": "HTTP",
+                  "rate": "1"
+                }
+              },
+              {
+                "serviceEndpoint": {
+                  "host": "130.14.88.92",
+                  "port": 8080
+                },
+                "meta": {
+                  "type": "HTTP",
+                  "rate": "33",
+                  "debug": "true",
+                  "comments": debug"
+                }
+              }
+            ]
+          }
+        }
+    */
+#ifdef USE_JSON
+    JSON_Value *root_value;
+    JSON_Object *root_obj;
+    JSON_Object *services;
+    JSON_Object *service;
+    JSON_Array *serviceEndpoints;
+    JSON_Object *serviceEndpoint;
+    int i = 0, j = 0;
+    printf ("lbos answer: %s\n", lbos_answer);
+    root_value = json_parse_string(lbos_answer);
+    if (json_value_get_type(root_value) == JSONObject) {
+        root_obj = json_value_get_object(root_value);
+        services = json_object_get_object(root_obj, "services");
+        for (i = 0;  i < json_object_get_count(services);  i++) {
+            const char* svc_name =  json_object_get_name(services, i);
+            printf("Parsing service %s\n", svc_name);
+            serviceEndpoints = json_object_get_array(services, svc_name);
+            for (j = 0;  j < json_array_get_count(serviceEndpoints);  j++) {
+                serviceEndpoint = json_array_get_object(serviceEndpoints, j);
+                const char* host = json_object_dotget_string(serviceEndpoint,
+                                                             "serviceEndpoint.host");
+                int port = (int)json_object_dotget_number(serviceEndpoint,
+                                                          "serviceEndpoint.port");
+                const char* rate = json_object_dotget_string(serviceEndpoint,
+                                                             "serviceEndpoint.meta.rate");
+                printf("host: %s, port: %d, rate: %s\n", host, port, rate);
+                 if (infos_capacity <= infos_count + 1) {
+                    SSERV_Info** realloc_result = (SSERV_Info**)realloc(infos,
+                            sizeof(SSERV_Info*) * (infos_capacity*2 + 1));
+                    if (realloc_result == NULL) {
+                        /* If error with realloc, return as much as could allocate
+                            * for*/
+                        infos_count--; /*Will just rewrite last info with NULL to
+                                            mark end of array*/
+                        break;
+                    } else { /*If realloc successful */
+                        infos = realloc_result;
+                        infos_capacity = infos_capacity*2 + 1;
+                    }
+                }
+                SSERV_Info * info = calloc(1, sizeof(info));
+                info->port = port;
+                if (host != NULL) {
+                    SOCK_StringToHostPort(host, &info->host, NULL);
+                }
+                info->rate = rate ? atoi(rate) : 0;
+                infos[infos_count++] = info;
+            }
+        }
+    } else {
+        /* do nothing! */
+    }
+
+#else /* Old LBOS output */
+    /*
      * We read all the answer, find host:port in the answer and fill
      * 'hostports', occasionally reallocating array, if needed
      */
     for (str = lbos_answer  ;  ;  str = NULL) {
         SSERV_Info * info;
-#ifdef NCBI_COMPILER_MSVC
-        token = strtok_s(str, "\n", &saveptr);
-#else
-        token = strtok_r(str, "\n", &saveptr);
-#endif
+        token = LBOS_STRTOK(str, "\n", &saveptr); /*strtok call depends on OS*/
         if (token == NULL) {
             break;
         }
@@ -1297,8 +1388,9 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
                 kHostportStringLength);
         /*Copy IP from stream to the result char array*/
         CORE_LOGF(eLOG_Note, ("Resolved [%s] to [%s]", serviceName, hostport));
-#endif
+#endif /* _DEBUG */
     }
+#endif /* USE_JSON */
     free(lbos_answer);
     /* Shuffle list with Durstenfeld's shuffle algorithm 
      * (also credits go to Fisher and Yates, and Knuth) */
