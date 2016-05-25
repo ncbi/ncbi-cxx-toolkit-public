@@ -6559,13 +6559,21 @@ extern EIO_Status SOCK_Poll(size_t          n,
      * some sockets from array, so we need two iterators */
     if (orig_polls != polls) {
         size_t orig_iter = 0, new_iter = 0;
+        /* First - initialize events with eIO_Open (no event) */
+        for (orig_iter = 0;  orig_iter < orig_n;  orig_iter++) {
+            orig_polls[orig_iter].event = eIO_Open /* no event */;
+            orig_polls[orig_iter].revent = eIO_Open /* no event */;
+        }
         for (; new_iter < n; new_iter++) {
-            while (orig_polls[orig_iter].sock != polls[new_iter].sock &&
-                orig_iter < orig_n) {
+            while (orig_iter < orig_n) {
+                if (orig_polls[orig_iter].sock->sock 
+                                           == polls[new_iter].sock->sock) {
+                    orig_polls[orig_iter].event  = polls[new_iter].event;
+                    orig_polls[orig_iter].revent = polls[new_iter].revent;
+                    break; /* Item found! Now increase new_iter */
+                }
                 orig_iter++;
             }
-            orig_polls[orig_iter].event = polls[new_iter].event;
-            orig_polls[orig_iter].revent = polls[new_iter].revent;
         }
         free(polls);
         polls = orig_polls;
