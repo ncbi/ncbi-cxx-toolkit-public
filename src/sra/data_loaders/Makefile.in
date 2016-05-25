@@ -19,7 +19,7 @@
 # EXPENDABLE_APP_PROJ =
 
 ## Subdirectories to traverse.
-SUB_PROJ = sra bam csra wgs vdbgraph
+SUB_PROJ = sra bam csra wgs vdbgraph snp
 # POTENTIAL_SUB_PROJ =
 # EXPENDABLE_SUB_PROJ =
 

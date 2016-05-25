@@ -11,8 +11,8 @@
 ## Libraries to be built as usual.
 # ASN_PROJ =
 # DTD_PROJ =
-LIB_PROJ = 
-EXPENDABLE_LIB_PROJ = ncbi_xloader_snp
+LIB_PROJ = ncbi_xloader_snp
+EXPENDABLE_LIB_PROJ =
 
 ## Applications to be built as usual.
 # APP_PROJ =
