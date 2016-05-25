@@ -308,3 +308,13 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "Unreachable libgnutls-30.dll memory error in gnutls_psk_set_server_params_function()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			!!!;
+			mod=libgnutls-30.dll,func=gnutls_psk_set_server_params_function;
+		}
+	}
+}
