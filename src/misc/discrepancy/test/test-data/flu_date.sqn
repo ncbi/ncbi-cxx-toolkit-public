@@ -1,0 +1,2619 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          org {
+            taxname "Influenza A virus (A/yellow-billed
+ teal/Chile/12/2014(H7N3))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1843483 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/yellow-billed
+ teal/Chile/12/2014(H7N3))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/yellow-billed teal/Chile/12/2014" } ,
+                {
+                  subtype serotype ,
+                  subname "H7N3" } ,
+                {
+                  subtype nat-host ,
+                  subname "Anas flavirostris" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Chile" } ,
+            {
+              subtype segment ,
+              name "7" } ,
+            {
+              subtype collection-date ,
+              name "26-Apr-2015" } } ,
+          pcr-primers {
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggg" ,
+                  name "Sal_HA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtgtttt" ,
+                  name "Xma_NS_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcaggagt" ,
+                  name "Sal_NA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggagtttttt" ,
+                  name "Xma_NA_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggtg" ,
+                  name "Sal_NS_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtgtttt" ,
+                  name "Xma_NS_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcaggta" ,
+                  name "Sal_NP_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtattttt" ,
+                  name "Xma_NP_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggtag" ,
+                  name "Sal_MP_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggtagttttt" ,
+                  name "Xma_MP_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcgaaagcaggtac" ,
+                  name "Sal_PA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggtactt" ,
+                  name "Xma_PA_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcgaaagcaggca" ,
+                  name "Sal_PB1_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaaacaaggcattt" ,
+                  name "Xma_PB1_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcgaaagcaggtc" ,
+                  name "Sal_PB2_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggtcgttt" ,
+                  name "Xma_PB2_R" } } } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Osario" ,
+                          first "Jorge" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Schultz-Cherry" ,
+                          first "Stacey" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Jimenez" ,
+                          first "Pedro" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        name {
+                          last "Freiden" ,
+                          first "Pamela" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        consortium "Centers of Excellence for Influenza
+ Research and Surveillance (CEIRS)" } } ,
+                affil
+                  std {
+                    affil "St. Jude Center of Excellence for Influenza
+ Research and Surveillance (CEIRS)" ,
+                    city "Memphis" ,
+                    sub "TN" ,
+                    country "USA" ,
+                    postal-code "38105" } } ,
+              title "Direct Submission (CEIRS DPCC)" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Osario" ,
+                          first "Jorge" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Schultz-Cherry" ,
+                          first "Stacey" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Jimenez" ,
+                          first "Pedro" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        name {
+                          last "Freiden" ,
+                          first "Pamela" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        consortium "Centers of Excellence for Influenza
+ Research and Surveillance (CEIRS)" } } ,
+                affil
+                  std {
+                    affil "St. Jude Center of Excellence for Influenza
+ Research and Surveillance (CEIRS)" ,
+                    city "Memphis" ,
+                    sub "TN" ,
+                    country "USA" ,
+                    postal-code "38105" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 20 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10492297 } } } ,
+        user {
+          type
+            str "DBLink" ,
+          data {
+            {
+              label
+                str "BioProject" ,
+              num 1 ,
+              data
+                strs {
+                  "PRJNA309181" } } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 25 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 17 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 23 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "557107.MP" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "557107.MP.sqn/557107.MP" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315931 } ,
+            genbank {
+              accession "KX264375" } } ,
+          descr {
+            title "Influenza A virus (A/yellow-billed
+ teal/Chile/12/2014(H7N3)) segment 7 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } ,
+            comment "This submission was made by the CEIRS Data Processing and
+ Coordinating Center (DPCC) on behalf of the St. Jude Center of Excellence for
+ Influenza Research and Surveillance (CEIRS). This work was supported by
+ National Institute of Allergy and Infectious Diseases, National Institutes of
+ Health, grant HHSN272201400006C." ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Assembly Method" ,
+                  data
+                    str "BioEdit v. 7" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "Sequence" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "SubSources" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Segment" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 872 ,
+            strand ss ,
+            seq-data
+              ncbi2na '5B4A557409623664887E08EDFE7A020448DD8A474E83A70210850D7
+B45DE1C2A8FF28FEEF46745B952E26287926C867FBD20E5743A83AA350104E84A92E01EC4A09D0
+0A88D13D4EA94282E99D2F1DC7AE47652F93A974CC4120EA85B051E0BA4FE972EEE51FB8923E78
+754936B544848EB84105054F0D21188128EB1E94B1449C294E8903A4A342E04A492094E8AF94B4
+A52923AE4A438A14FA874D72752E7ADC0238DF7E00FE4A5C5209A3A8B9039263D0B8D776F3E590
+B34FA8DF91F8CFBA3DF8DB7FDF40E4FCDB67F031AFE008A97DC682AB978F738A822C5'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "M1" ,
+                        locus-tag "AWT79_557107_M1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 713 ,
+                        strand plus ,
+                        id
+                          local
+                            str "557107.MP" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      gene {
+                        locus "M2" ,
+                        locus-tag "AWT79_557107_M2" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 669 ,
+                        to 871 ,
+                        strand plus ,
+                        id
+                          local
+                            str "557107.MP" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "557107.MP.1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "557107.MP.sqn/557107.MP.1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315932 } } ,
+          descr {
+            title "matrix protein 1, partial [Influenza A virus
+ (A/yellow-billed teal/Chile/12/2014(H7N3))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-left } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 237 ,
+            seq-data
+              ncbieaa "PSGPLKAEIAQRLEDVFAGKNTDLEALMEWLKTRPILSPLTKGILGFVFTLTVPS
+ERGLQRRRFVQNALNGNGDPNNMDRAVKLYRKLKREITFHGAKEVALSYSTGALASCMGLIYNRMGTVTTEVAFGLVC
+ATCEQIADSQHRSHRQMVTTTNPLIRHENRMVLASTTAKAMEQMAGSSEQAAEAMEVASQARQMVQAMRTIGTHPSSS
+AGLKDDLLENLQAYQKRMGVQMQRFK" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "matrix protein 1" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 236 ,
+                        id
+                          local
+                            str "557107.MP.1" ,
+                        fuzz-from
+                          lim lt } } } } } } ,
+        seq {
+          id {
+            local
+              str "557107.MP.2" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "557107.MP.sqn/557107.MP.2" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315933 } } ,
+          descr {
+            title "matrix protein 2, partial [Influenza A virus
+ (A/yellow-billed teal/Chile/12/2014(H7N3))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 67 ,
+            seq-data
+              ncbieaa "PTRSGWECKCSDSSDPLVIAASIIGILHLILWILDRLFFKCIYRRFKYGLKRGPS
+TEGVPDSMREEY" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "matrix protein 2" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 66 ,
+                        id
+                          local
+                            str "557107.MP.2" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "557107.MP.1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 713 ,
+                    strand plus ,
+                    id
+                      local
+                        str "557107.MP" ,
+                    fuzz-from
+                      lim lt } } ,
+              {
+                data
+                  cdregion {
+                    frame two ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "557107.MP.2" ,
+                location
+                  int {
+                    from 669 ,
+                    to 871 ,
+                    strand plus ,
+                    id
+                      local
+                        str "557107.MP" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          org {
+            taxname "Influenza A virus (A/kelp gull/Chile/18/2014(H13))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1839662 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/kelp gull/Chile/18/2014(H13))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/kelp gull/Chile/18/2014" } ,
+                {
+                  subtype serotype ,
+                  subname "H13" } ,
+                {
+                  subtype nat-host ,
+                  subname "Larus dominicanus" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Chile" } ,
+            {
+              subtype segment ,
+              name "7" } ,
+            {
+              subtype collection-date ,
+              name "30-Apr-2014" } } ,
+          pcr-primers {
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggg" ,
+                  name "Sal_HA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtgtttt" ,
+                  name "Xma_NS_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggtag" ,
+                  name "Sal_MP_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggtagttttt" ,
+                  name "Xma_MP_R" } } } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Osario" ,
+                          first "Jorge" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Schultz-Cherry" ,
+                          first "Stacey" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Jimenez" ,
+                          first "Pedro" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        name {
+                          last "Freiden" ,
+                          first "Pamela" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        consortium "Centers of Excellence for Influenza
+ Research and Surveillance (CEIRS)" } } ,
+                affil
+                  std {
+                    affil "St. Jude Center of Excellence for Influenza
+ Research and Surveillance (CEIRS)" ,
+                    city "Memphis" ,
+                    sub "TN" ,
+                    country "USA" ,
+                    postal-code "38105" } } ,
+              title "Direct Submission (CEIRS DPCC)" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Osario" ,
+                          first "Jorge" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Schultz-Cherry" ,
+                          first "Stacey" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Jimenez" ,
+                          first "Pedro" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        name {
+                          last "Freiden" ,
+                          first "Pamela" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        consortium "Centers of Excellence for Influenza
+ Research and Surveillance (CEIRS)" } } ,
+                affil
+                  std {
+                    affil "St. Jude Center of Excellence for Influenza
+ Research and Surveillance (CEIRS)" ,
+                    city "Memphis" ,
+                    sub "TN" ,
+                    country "USA" ,
+                    postal-code "38105" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 20 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10492298 } } } ,
+        user {
+          type
+            str "DBLink" ,
+          data {
+            {
+              label
+                str "BioProject" ,
+              num 1 ,
+              data
+                strs {
+                  "PRJNA309181" } } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 25 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 17 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 23 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "557410.MP" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "557410.MP.sqn/557410.MP" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315934 } ,
+            genbank {
+              accession "KX264376" } } ,
+          descr {
+            title "Influenza A virus (A/kelp gull/Chile/18/2014(H13)) segment
+ 7 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } ,
+            comment "This submission was made by the CEIRS Data Processing and
+ Coordinating Center (DPCC) on behalf of the St. Jude Center of Excellence for
+ Influenza Research and Surveillance (CEIRS). This work was supported by
+ National Institute of Allergy and Infectious Diseases, National Institutes of
+ Health, grant HHSN272201400006C." ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Assembly Method" ,
+                  data
+                    str "BioEdit v. 7" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "Sequence" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "SubSources" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Segment" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 339 ,
+            strand ss ,
+            seq-data
+              ncbi2na '74D72752E7ADC0238DF7E00FE4A5C520183A8B9239263D0B8D776F3
+E590B34FA8DF91F8CFBA31F8DB7FDF40E4FCDB65F031AFE008A97DC6828B978B738A820CDA4A04
+922E7BA3BE10EB4FFB413227A2C001C5FBF70'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "M1" ,
+                        locus-tag "AWT79_557410_M1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 97 ,
+                        strand plus ,
+                        id
+                          local
+                            str "557410.MP" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      gene {
+                        locus "M2" ,
+                        locus-tag "AWT79_557410_M2" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 53 ,
+                        to 320 ,
+                        strand plus ,
+                        id
+                          local
+                            str "557410.MP" ,
+                        fuzz-from
+                          lim lt } } } } } } ,
+        seq {
+          id {
+            local
+              str "557410.MP.1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "557410.MP.sqn/557410.MP.1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315935 } } ,
+          descr {
+            title "matrix protein 1, partial [Influenza A virus (A/kelp
+ gull/Chile/18/2014(H13))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-left } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 31 ,
+            seq-data
+              ncbieaa "HPSSSAGLKDDLLENLQAYQKRMGVQMQRFK" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "matrix protein 1" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 30 ,
+                        id
+                          local
+                            str "557410.MP.1" ,
+                        fuzz-from
+                          lim lt } } } } } } ,
+        seq {
+          id {
+            local
+              str "557410.MP.2" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "557410.MP.sqn/557410.MP.2" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315936 } } ,
+          descr {
+            title "matrix protein 2, partial [Influenza A virus (A/kelp
+ gull/Chile/18/2014(H13))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-left } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 88 ,
+            seq-data
+              ncbieaa "PTRNEWECRCSDSSDPLVIAASIIGILHLILWILDRLFFKCIYRRLKYGLKRGPS
+TEGVPESMREEYRQEQQSAVDVDNGHFVNIELE" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "matrix protein 2" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 87 ,
+                        id
+                          local
+                            str "557410.MP.2" ,
+                        fuzz-from
+                          lim lt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame three ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "557410.MP.1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 97 ,
+                    strand plus ,
+                    id
+                      local
+                        str "557410.MP" ,
+                    fuzz-from
+                      lim lt } } ,
+              {
+                data
+                  cdregion {
+                    frame two ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "557410.MP.2" ,
+                location
+                  int {
+                    from 53 ,
+                    to 320 ,
+                    strand plus ,
+                    id
+                      local
+                        str "557410.MP" ,
+                    fuzz-from
+                      lim lt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          org {
+            taxname "Influenza A virus (A/yellow-billed
+ teal/Chile/20/2014(H5))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1851730 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/yellow-billed
+ teal/Chile/20/2014(H5))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/yellow-billed teal/Chile/20/2014" } ,
+                {
+                  subtype serotype ,
+                  subname "H5" } ,
+                {
+                  subtype nat-host ,
+                  subname "Anas flavirostris" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Chile" } ,
+            {
+              subtype segment ,
+              name "4" } ,
+            {
+              subtype collection-date ,
+              name "30-Apr-2014" } } ,
+          pcr-primers {
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggg" ,
+                  name "Sal_HA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtgtttt" ,
+                  name "Xma_NS_R" } } } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Osario" ,
+                          first "Jorge" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Schultz-Cherry" ,
+                          first "Stacey" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Jimenez" ,
+                          first "Pedro" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        name {
+                          last "Freiden" ,
+                          first "Pamela" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        consortium "Centers of Excellence for Influenza
+ Research and Surveillance (CEIRS)" } } ,
+                affil
+                  std {
+                    affil "St. Jude Center of Excellence for Influenza
+ Research and Surveillance (CEIRS)" ,
+                    city "Memphis" ,
+                    sub "TN" ,
+                    country "USA" ,
+                    postal-code "38105" } } ,
+              title "Direct Submission (CEIRS DPCC)" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Osario" ,
+                          first "Jorge" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Schultz-Cherry" ,
+                          first "Stacey" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Jimenez" ,
+                          first "Pedro" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        name {
+                          last "Freiden" ,
+                          first "Pamela" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        consortium "Centers of Excellence for Influenza
+ Research and Surveillance (CEIRS)" } } ,
+                affil
+                  std {
+                    affil "St. Jude Center of Excellence for Influenza
+ Research and Surveillance (CEIRS)" ,
+                    city "Memphis" ,
+                    sub "TN" ,
+                    country "USA" ,
+                    postal-code "38105" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 20 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10492299 } } } ,
+        user {
+          type
+            str "DBLink" ,
+          data {
+            {
+              label
+                str "BioProject" ,
+              num 1 ,
+              data
+                strs {
+                  "PRJNA309181" } } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 25 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 17 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 23 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "557469.HA" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "557469.HA.sqn/557469.HA" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315937 } ,
+            genbank {
+              accession "KX264377" } } ,
+          descr {
+            title "Influenza A virus (A/yellow-billed teal/Chile/20/2014(H5))
+ segment 4 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } ,
+            comment "This submission was made by the CEIRS Data Processing and
+ Coordinating Center (DPCC) on behalf of the St. Jude Center of Excellence for
+ Influenza Research and Surveillance (CEIRS). This work was supported by
+ National Institute of Allergy and Infectious Diseases, National Institutes of
+ Health, grant HHSN272201400006C." ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Assembly Method" ,
+                  data
+                    str "BioEdit v. 7" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "Sequence" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "SubSources" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Segment" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 661 ,
+            strand ss ,
+            seq-data
+              ncbi2na 'D86BEB3AB34D1241892A0BA339E78D08371D0026363A8D1430AE075
+30F8403811D0F629EFA8083D041F202883220FE0C200E823A3DF2133A1F10E489DF2E74E801808
+1DE8FD4E3D03BC805ECE30AD69D49C2210E4020F290EAEFF83DCD303B8438B93A02EE203A04CE3
+CD46B1D2083401E0CA8A0337A2C0BE8B43A91F148CF34371D06BE62F57347A434EBA7ADCD7FE8E
+E750E8DFE4B920FE4DCABEE2F48FB0F00115FBF71C0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "HA" ,
+                        locus-tag "AWT79_557469_HA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 616 ,
+                        strand plus ,
+                        id
+                          local
+                            str "557469.HA" ,
+                        fuzz-from
+                          lim lt } } } } } } ,
+        seq {
+          id {
+            local
+              str "557469.HA.1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "557469.HA.sqn/557469.HA.1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315938 } } ,
+          descr {
+            title "hemagglutinin, partial [Influenza A virus (A/yellow-billed
+ teal/Chile/20/2014(H5))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-left } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 204 ,
+            seq-data
+              ncbieaa "DGWYGYHHSNEQGSGYAADQESTQKAIDGITNKVNSIIDKMNTQFEAVGKEFNNL
+ERRIENLNKKMEDGFLDIWTYNAELLVLMENERTLDFHDSNVRNLYDKVRLQLRDNAKELGNGCFEFYHKCDNECMES
+VRNGTYDYPRYSEESKLNREEISGVKLESMGTYQILSIYSTVASSLSLAIMVAGLSFWMCSNGSLQCRICI" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "hemagglutinin" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 203 ,
+                        id
+                          local
+                            str "557469.HA.1" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      prot {
+                        name {
+                          "HA2" } ,
+                        processed mature } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 203 ,
+                        id
+                          local
+                            str "557469.HA.1" ,
+                        fuzz-from
+                          lim lt } ,
+                    xref {
+                      {
+                        data
+                          gene {
+                            locus "HA" ,
+                            locus-tag "AWT79_557469_HA" } } } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame three ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "557469.HA.1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 616 ,
+                    strand plus ,
+                    id
+                      local
+                        str "557469.HA" ,
+                    fuzz-from
+                      lim lt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          org {
+            taxname "Influenza A virus (A/yellow-billed
+ pintail/Chile/10/2014(H7N3))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1839665 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/yellow-billed
+ pintail/Chile/10/2014(H7N3))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/yellow-billed pintail/Chile/10/2014" } ,
+                {
+                  subtype serotype ,
+                  subname "H7N3" } ,
+                {
+                  subtype nat-host ,
+                  subname "Anas georgica" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Chile" } ,
+            {
+              subtype segment ,
+              name "7" } ,
+            {
+              subtype collection-date ,
+              name "17-Apr-2014" } } ,
+          pcr-primers {
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggg" ,
+                  name "Sal_HA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtgtttt" ,
+                  name "Xma_NS_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcaggagt" ,
+                  name "Sal_NA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggagtttttt" ,
+                  name "Xma_NA_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggtg" ,
+                  name "Sal_NS_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtgtttt" ,
+                  name "Xma_NS_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcaggta" ,
+                  name "Sal_NP_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtattttt" ,
+                  name "Xma_NP_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggtag" ,
+                  name "Sal_MP_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggtagttttt" ,
+                  name "Xma_MP_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcgaaagcaggtac" ,
+                  name "Sal_PA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggtactt" ,
+                  name "Xma_PA_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcgaaagcaggca" ,
+                  name "Sal_PB1_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaaacaaggcattt" ,
+                  name "Xma_PB1_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcgaaagcaggtc" ,
+                  name "Sal_PB2_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggtcgttt" ,
+                  name "Xma_PB2_R" } } } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Osario" ,
+                          first "Jorge" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Schultz-Cherry" ,
+                          first "Stacey" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Jimenez" ,
+                          first "Pedro" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        name {
+                          last "Freiden" ,
+                          first "Pamela" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        consortium "Centers of Excellence for Influenza
+ Research and Surveillance (CEIRS)" } } ,
+                affil
+                  std {
+                    affil "St. Jude Center of Excellence for Influenza
+ Research and Surveillance (CEIRS)" ,
+                    city "Memphis" ,
+                    sub "TN" ,
+                    country "USA" ,
+                    postal-code "38105" } } ,
+              title "Direct Submission (CEIRS DPCC)" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Osario" ,
+                          first "Jorge" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Schultz-Cherry" ,
+                          first "Stacey" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Jimenez" ,
+                          first "Pedro" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        name {
+                          last "Freiden" ,
+                          first "Pamela" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        consortium "Centers of Excellence for Influenza
+ Research and Surveillance (CEIRS)" } } ,
+                affil
+                  std {
+                    affil "St. Jude Center of Excellence for Influenza
+ Research and Surveillance (CEIRS)" ,
+                    city "Memphis" ,
+                    sub "TN" ,
+                    country "USA" ,
+                    postal-code "38105" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 20 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10492300 } } } ,
+        user {
+          type
+            str "DBLink" ,
+          data {
+            {
+              label
+                str "BioProject" ,
+              num 1 ,
+              data
+                strs {
+                  "PRJNA309181" } } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 25 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 17 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 23 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "556501.MP" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "556501.MP.sqn/556501.MP" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315939 } ,
+            genbank {
+              accession "KX264378" } } ,
+          descr {
+            title "Influenza A virus (A/yellow-billed
+ pintail/Chile/10/2014(H7N3)) segment 7 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } ,
+            comment "This submission was made by the CEIRS Data Processing and
+ Coordinating Center (DPCC) on behalf of the St. Jude Center of Excellence for
+ Influenza Research and Surveillance (CEIRS). This work was supported by
+ National Institute of Allergy and Infectious Diseases, National Institutes of
+ Health, grant HHSN272201400006C." ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Assembly Method" ,
+                  data
+                    str "BioEdit v. 7" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "Sequence" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "SubSources" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Segment" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 872 ,
+            strand ss ,
+            seq-data
+              ncbi2na '5B4A557409623664887E08EDFE7A020448DD8A474E83A70210850D7
+B45DE1C2A8FF28FEEF46745B952E26287926C867FB520E5743A83AA350104E84A92E01EC4A09D0
+0A88D13D4EA94282E99D2F1DC7AE47E52F93A974CC4120EA85B051E0BA4FE972EEE51FB8923E78
+754916B544848EB8410505470D21188128EB1E94B1449C294E8903A4A342E04A492094E8AF94B4
+A52923AE4A438A14FA874D72752E7ADC0238DF7E00FE4A5C5209A3A8B9039263D0B8D776F3E590
+B34FA8DF91F8CFBA3DF8DB7FDF40E4FCDB67F031AFE008A97DC682AB978B738A822C5'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "M1" ,
+                        locus-tag "AWT79_556501_M1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 713 ,
+                        strand plus ,
+                        id
+                          local
+                            str "556501.MP" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      gene {
+                        locus "M2" ,
+                        locus-tag "AWT79_556501_M2" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 669 ,
+                        to 871 ,
+                        strand plus ,
+                        id
+                          local
+                            str "556501.MP" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "556501.MP.1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "556501.MP.sqn/556501.MP.1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315940 } } ,
+          descr {
+            title "matrix protein 1, partial [Influenza A virus
+ (A/yellow-billed pintail/Chile/10/2014(H7N3))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-left } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 237 ,
+            seq-data
+              ncbieaa "PSGPLKAEIAQRLEDVFAGKNTDLEALMEWLKTRPILSPLTKGILGFVFTLTVPS
+ERGLQRRRFVQNALNGNGDPNNMDRAVKLYRKLKREITFHGAKEVALSYSTGALASCMGLIYNRMGTVTTEVAFGLVC
+ATCEQIADSQHRSHRQMVTTTNPLIRHENRMVLASTTAKAMEQMAGSSEQAAEAMEVASQARQMVQAMRTIGTHPSSS
+AGLKDDLLENLQAYQKRMGVQMQRFK" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "matrix protein 1" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 236 ,
+                        id
+                          local
+                            str "556501.MP.1" ,
+                        fuzz-from
+                          lim lt } } } } } } ,
+        seq {
+          id {
+            local
+              str "556501.MP.2" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "556501.MP.sqn/556501.MP.2" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315941 } } ,
+          descr {
+            title "matrix protein 2, partial [Influenza A virus
+ (A/yellow-billed pintail/Chile/10/2014(H7N3))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 67 ,
+            seq-data
+              ncbieaa "PTRSGWECKCSDSSDPLVIAASIIGILHLILWILDRLFFKCIYRRFKYGLKRGPS
+TEGVPESMREEY" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "matrix protein 2" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 66 ,
+                        id
+                          local
+                            str "556501.MP.2" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "556501.MP.1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 713 ,
+                    strand plus ,
+                    id
+                      local
+                        str "556501.MP" ,
+                    fuzz-from
+                      lim lt } } ,
+              {
+                data
+                  cdregion {
+                    frame two ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "556501.MP.2" ,
+                location
+                  int {
+                    from 669 ,
+                    to 871 ,
+                    strand plus ,
+                    id
+                      local
+                        str "556501.MP" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          org {
+            taxname "Influenza A virus (A/yellow-billed
+ pintail/Chile/11/2014(H7N3))" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1839666 } } ,
+            orgname {
+              name
+                virus "Influenza A virus (A/yellow-billed
+ pintail/Chile/11/2014(H7N3))" ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "A/yellow-billed pintail/Chile/11/2014" } ,
+                {
+                  subtype serotype ,
+                  subname "H7N3" } ,
+                {
+                  subtype nat-host ,
+                  subname "Anas georgica" } } ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Chile" } ,
+            {
+              subtype segment ,
+              name "7" } ,
+            {
+              subtype collection-date ,
+              name "24-Apr-2008" } } ,
+          pcr-primers {
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggg" ,
+                  name "Sal_HA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtgtttt" ,
+                  name "Xma_NS_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcaggagt" ,
+                  name "Sal_NA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggagtttttt" ,
+                  name "Xma_NA_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggtg" ,
+                  name "Sal_NS_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtgtttt" ,
+                  name "Xma_NS_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcaggta" ,
+                  name "Sal_NP_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaagggtattttt" ,
+                  name "Xma_NP_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcaaaagcagggtag" ,
+                  name "Sal_MP_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggtagttttt" ,
+                  name "Xma_MP_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcgaaagcaggtac" ,
+                  name "Sal_PA_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggtactt" ,
+                  name "Xma_PA_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcgaaagcaggca" ,
+                  name "Sal_PB1_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaaacaaggcattt" ,
+                  name "Xma_PB1_R" } } } ,
+            {
+              forward {
+                {
+                  seq "tattgtcgacagggagcgaaagcaggtc" ,
+                  name "Sal_PB2_F" } } ,
+              reverse {
+                {
+                  seq "atatcccggggtattagtagaaacaaggtcgttt" ,
+                  name "Xma_PB2_R" } } } } } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Osario" ,
+                          first "Jorge" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Schultz-Cherry" ,
+                          first "Stacey" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Jimenez" ,
+                          first "Pedro" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        name {
+                          last "Freiden" ,
+                          first "Pamela" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        consortium "Centers of Excellence for Influenza
+ Research and Surveillance (CEIRS)" } } ,
+                affil
+                  std {
+                    affil "St. Jude Center of Excellence for Influenza
+ Research and Surveillance (CEIRS)" ,
+                    city "Memphis" ,
+                    sub "TN" ,
+                    country "USA" ,
+                    postal-code "38105" } } ,
+              title "Direct Submission (CEIRS DPCC)" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Osario" ,
+                          first "Jorge" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Schultz-Cherry" ,
+                          first "Stacey" ,
+                          initials "S." } } ,
+                    {
+                      name
+                        name {
+                          last "Jimenez" ,
+                          first "Pedro" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        name {
+                          last "Freiden" ,
+                          first "Pamela" ,
+                          initials "P." } } ,
+                    {
+                      name
+                        consortium "Centers of Excellence for Influenza
+ Research and Surveillance (CEIRS)" } } ,
+                affil
+                  std {
+                    affil "St. Jude Center of Excellence for Influenza
+ Research and Surveillance (CEIRS)" ,
+                    city "Memphis" ,
+                    sub "TN" ,
+                    country "USA" ,
+                    postal-code "38105" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 20 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10492301 } } } ,
+        user {
+          type
+            str "DBLink" ,
+          data {
+            {
+              label
+                str "BioProject" ,
+              num 1 ,
+              data
+                strs {
+                  "PRJNA309181" } } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 25 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 17 } ,
+        update-date
+          std {
+            year 2016 ,
+            month 5 ,
+            day 23 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "556960.MP" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "556960.MP.sqn/556960.MP" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315942 } ,
+            genbank {
+              accession "KX264379" } } ,
+          descr {
+            title "Influenza A virus (A/yellow-billed
+ pintail/Chile/11/2014(H7N3)) segment 7 cRNA sequence" ,
+            molinfo {
+              biomol cRNA } ,
+            comment "This submission was made by the CEIRS Data Processing and
+ Coordinating Center (DPCC) on behalf of the St. Jude Center of Excellence for
+ Influenza Research and Surveillance (CEIRS). This work was supported by
+ National Institute of Allergy and Infectious Diseases, National Institutes of
+ Health, grant HHSN272201400006C." ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Assembly Method" ,
+                  data
+                    str "BioEdit v. 7" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "Sequence" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "SubSources" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Segment" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 872 ,
+            strand ss ,
+            seq-data
+              ncbi2na '5B4A557409623664887E08EDFE7A020448DD8A474E83A70210850D7
+B45DE1C2A8FF28FEEF46745B952E26287926C867FB520E5743A83AA350104E84A92E01EC4A09D0
+0A88D13D4EA94282E99D2F1DC7AE47E52F93A974CC4120EA85B051E0BA4FE972EEE51FB8923E78
+754916B544848EB8410505470D21188128EB1E94B1449C294E8903A4A342E04A492094E8AF94B4
+A52923AE4A438A14FA874D72752E7ADC0238DF7E00FE4A5C5209A3A8B9039263D0B8D776F3E590
+B34FA8DF91F8CFBA3DF8DB7FDF40E4FCDB67F031AFE008A97DC682AB978B738A822C5'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "M1" ,
+                        locus-tag "AWT79_556960_M1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 713 ,
+                        strand plus ,
+                        id
+                          local
+                            str "556960.MP" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      gene {
+                        locus "M2" ,
+                        locus-tag "AWT79_556960_M2" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 669 ,
+                        to 871 ,
+                        strand plus ,
+                        id
+                          local
+                            str "556960.MP" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "556960.MP.1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "556960.MP.sqn/556960.MP.1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315943 } } ,
+          descr {
+            title "matrix protein 1, partial [Influenza A virus
+ (A/yellow-billed pintail/Chile/11/2014(H7N3))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-left } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 237 ,
+            seq-data
+              ncbieaa "PSGPLKAEIAQRLEDVFAGKNTDLEALMEWLKTRPILSPLTKGILGFVFTLTVPS
+ERGLQRRRFVQNALNGNGDPNNMDRAVKLYRKLKREITFHGAKEVALSYSTGALASCMGLIYNRMGTVTTEVAFGLVC
+ATCEQIADSQHRSHRQMVTTTNPLIRHENRMVLASTTAKAMEQMAGSSEQAAEAMEVASQARQMVQAMRTIGTHPSSS
+AGLKDDLLENLQAYQKRMGVQMQRFK" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "matrix protein 1" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 236 ,
+                        id
+                          local
+                            str "556960.MP.1" ,
+                        fuzz-from
+                          lim lt } } } } } } ,
+        seq {
+          id {
+            local
+              str "556960.MP.2" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "556960.MP.sqn/556960.MP.2" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 66315944 } } ,
+          descr {
+            title "matrix protein 2, partial [Influenza A virus
+ (A/yellow-billed pintail/Chile/11/2014(H7N3))]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 67 ,
+            seq-data
+              ncbieaa "PTRSGWECKCSDSSDPLVIAASIIGILHLILWILDRLFFKCIYRRFKYGLKRGPS
+TEGVPESMREEY" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "matrix protein 2" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 66 ,
+                        id
+                          local
+                            str "556960.MP.2" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "556960.MP.1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 713 ,
+                    strand plus ,
+                    id
+                      local
+                        str "556960.MP" ,
+                    fuzz-from
+                      lim lt } } ,
+              {
+                data
+                  cdregion {
+                    frame two ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "556960.MP.2" ,
+                location
+                  int {
+                    from 669 ,
+                    to 871 ,
+                    strand plus ,
+                    id
+                      local
+                        str "556960.MP" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } } }
