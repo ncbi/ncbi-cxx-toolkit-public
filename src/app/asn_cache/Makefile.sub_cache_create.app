@@ -8,4 +8,6 @@ LIB = asn_cache  \
 	  bdb $(OBJMGR_LIBS)
 LIBS = $(SRA_SDK_SYSLIBS) $(BERKELEYDB_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
+REQUIRES = VDB
+
 WATCHERS = marksc2
