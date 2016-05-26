@@ -123,3 +123,5 @@ ZERO_BASECOUNT-X	ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn	-X	ZERO_BASE
 
 ### Please keep the tests in alphabetical order!
 ### to run the tests whose names begins with the underscore, use asndisc-all-tests.pl -dev
+
+_SUBMITBLOCK_CONFLICT	SUBMITBLOCK_CONFLICT	DISC_SUBMITBLOCK_CONFLICT	SUBMITBLOCK_CONFLICT

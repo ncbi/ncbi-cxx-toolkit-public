@@ -1,0 +1,236 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name
+          name {
+            last "q" ,
+            first "q" ,
+            initials "q" } ,
+        affil
+          str "q" } } ,
+    cit {
+      authors {
+        names
+          std {
+            {
+              name
+                name {
+                  last "q" ,
+                  first "q" ,
+                  initials "q." } } } ,
+        affil
+          str "q" } ,
+      date
+        std {
+          year 2014 ,
+          month 1 ,
+          day 8 } } ,
+    subtype new ,
+    tool "tbl2asn 22.9 - LINUX UNIX" } ,
+  data
+    entrys {
+      set {
+        class nuc-prot ,
+        descr {
+          source {
+            genome genomic ,
+            org {
+              taxname "Blastopirellula marina" ,
+              db {
+                {
+                  db "taxon" ,
+                  tag
+                    id 124 } } ,
+              orgname {
+                name
+                  binomial {
+                    genus "Blastopirellula" ,
+                    species "marina" } ,
+                attrib "nomodforward" ,
+                mod {
+                  {
+                    subtype nat-host ,
+                    subname "Racoon" } } ,
+                lineage "Bacteria; Planctomycetes; Planctomycetia;
+ Planctomycetales; Planctomycetaceae; Blastopirellula" ,
+                gcode 11 ,
+                div "BCT" } } } ,
+          pub {
+            pub {
+              gen {
+                cit "Unpublished" ,
+                authors {
+                  names
+                    std {
+                      {
+                        name
+                          name {
+                            last "q" ,
+                            first "q" ,
+                            initials "q." } } } ,
+                  affil
+                    str "q" } ,
+                title "a" } } } } ,
+        seq-set {
+          seq {
+            id {
+              local
+                str "nuc1" } ,
+            descr {
+              molinfo {
+                biomol genomic } ,
+              user {
+                type
+                  str "NcbiCleanup" ,
+                data {
+                  {
+                    label
+                      str "method" ,
+                    data
+                      str "SequinCleanup" } ,
+                  {
+                    label
+                      str "version" ,
+                    data
+                      int 7 } ,
+                  {
+                    label
+                      str "month" ,
+                    data
+                      int 2 } ,
+                  {
+                    label
+                      str "day" ,
+                    data
+                      int 5 } ,
+                  {
+                    label
+                      str "year" ,
+                    data
+                      int 2014 } } } ,
+              create-date
+                std {
+                  year 2014 ,
+                  month 1 ,
+                  day 8 } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 2760 ,
+              seq-data
+                ncbi2na '8554CF3D2088EFE0421FE009502282351502E80B1479275DC1C1D
+44BD78810F41D0507317B74A2A2D0AE80E2149304A8282782E4835EA341FA75E7BC3B77A528EB5
+282523D55E95334940CF7E00775035C3F08AFF54C24443A2D0109F579285C870EB57FF3203CD50
+D0289C50E950FC9F3B0B09032F254A01127C5002FCD7D4FDC2043DD70D3B370D49030482005D2A
+D4140417820303AEAF24AD509FA479530228923D00550220D4B85480808305FD710A8D414917A2
+01D10AF3887040D03CC0F075D48A927752C50BB43DEF8504E00F3C542AC8F5288F549CBB1C9340
+FF542A0CBF4814300AD4DE3DE03C351680E013A054521E282B5B35D4020DEFFDEA09044E815540
+28D1D557FE2AC0744292828DFC7F3D35FE8908A03B55C578311D5CC355228DDD7CE52230CEEA28
+288E0FD7A47F48524AD05280D4D17D5E0F75F6AD22175361E10E08A350F8541AB8E2FF12A85D31
+FAAC283527D0282D0BCAC5B808C54CED54B4D4D421008317504F512305CB085088F6DF3AE0CF35
+7A4E48224F3517C413E75D770451422004BAB3CF35D70E5FE042088B114DD4DFAAB4EA14020F3B
+549000A820C533CC3273F7A8D0B450FC440DE490B95E890220490551D4B2FF527A9F22825C1314
+208200CE07384B31104128C0C75E00A84AF54D1E1DEE3D004170CCD0820B03D33794B894082D5E
+7BBEB81552A5488095DD3D47A3C77515FE97EFD288E3A2020B5441C58A92D11C24E529134DC551
+213505414080CBD220037358808240C4857F4A8E39253BE00027C57BDC0300BF35E9524A521202
+EE5FFDE09E1D5D40404E57B4402C17C8A20A810EF7E400CFA89414BD0E02052C17CF5E281D8A75
+E080374A52004D40882AA282E28D138048022E5D33500AE539751DC070285375FD4912B9D77E90
+8A214A76D27A225253ADDE549524915E1E87849C88927CBAC40CD85475F9748945DFD7F5377F42
+2'H } ,
+            annot {
+              {
+                data
+                  ftable {
+                    {
+                      id
+                        local
+                          id 2 ,
+                      data
+                        cdregion {
+                          frame one ,
+                          code {
+                            id 11 } } ,
+                      product
+                        whole
+                          local
+                            str "nuc1_1" ,
+                      location
+                        int {
+                          from 0 ,
+                          to 98 ,
+                          strand plus ,
+                          id
+                            local
+                              str "nuc1" } ,
+                      xref {
+                        {
+                          id
+                            local
+                              id 1 } ,
+                        {
+                          data
+                            gene {
+                               } } } } ,
+                    {
+                      id
+                        local
+                          id 1 ,
+                      data
+                        gene {
+                          locus "abc" } ,
+                      location
+                        int {
+                          from 0 ,
+                          to 98 ,
+                          strand plus ,
+                          id
+                            local
+                              str "nuc1" } ,
+                      xref {
+                        {
+                          id
+                            local
+                              id 2 } } } ,
+                    {
+                      data
+                        gene {
+                          locus "zxc" } ,
+                      location
+                        int {
+                          from 0 ,
+                          to 2759 ,
+                          strand plus ,
+                          id
+                            local
+                              str "nuc1" } } } } } } ,
+          seq {
+            id {
+              local
+                str "nuc1_1" } ,
+            descr {
+              molinfo {
+                biomol peptide ,
+                tech concept-trans } } ,
+            inst {
+              repr raw ,
+              mol aa ,
+              length 32 ,
+              seq-data
+                ncbieaa "-PHIIQKRCLNKTLKSPKRKIHPKWKVPLQLL" } ,
+            annot {
+              {
+                data
+                  ftable {
+                    {
+                      data
+                        prot {
+                          name {
+                            "protein name" } } ,
+                      location
+                        int {
+                          from 0 ,
+                          to 31 ,
+                          id
+                            local
+                              str "nuc1_1" } } } } } } } } } }
