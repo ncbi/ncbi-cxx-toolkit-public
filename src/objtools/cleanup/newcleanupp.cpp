@@ -12566,7 +12566,7 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
     CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(sf, *m_Scope);
     CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(sf, *m_Scope);
 
-    if (sequence::GetLength(sf.GetLocation(), m_Scope) > 15) {
+    if (!m_IsEmblOrDdbj) {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(sf.GetLocation());
         if (bsh && CCleanup::ExtendToStopIfShortAndNotPartial(sf, bsh)) {
             CCdregion::TFrame frame = cdr.IsSetFrame() ? cdr.GetFrame() : CCdregion::eFrame_not_set;
