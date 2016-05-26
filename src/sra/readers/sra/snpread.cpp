@@ -217,7 +217,7 @@ CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
             throw;
         }
     }
-    m_SNPTable = CVDBTable(m_Db, "features");
+    m_SNPTable = CVDBTable(m_Db, "feature");
     // only one ref seq
     if ( CRef<SSNPTableCursor> snp = SNP() ) {
         SSeqInfo* info = 0;
