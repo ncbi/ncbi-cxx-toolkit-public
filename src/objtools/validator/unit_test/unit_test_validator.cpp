@@ -11096,7 +11096,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     misc->SetLocation().SetInt().SetFrom(11);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetSeverity(eDiag_Critical);
-    expected_errors[0]->SetErrMsg("Location: SeqLoc [lcl|good:12-11] out of range");
+    expected_errors[0]->SetErrMsg("Location: SeqLoc [{lcl|good}] out of range");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     scope.RemoveTopLevelSeqEntry(seh);
@@ -11228,7 +11228,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_CdTransFail)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Critical, "Range",
-                              "Location: SeqLoc [lcl|nuc:28-27] out of range"));
+                                                 "Location: SeqLoc [{lcl|nuc}] out of range"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ProductLength",
                                                  "Protein product length [8] is more than 120% of the translation length [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
