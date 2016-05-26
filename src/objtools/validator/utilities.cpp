@@ -872,6 +872,23 @@ bool IsRefGeneTrackingObject (const CUser_object& user)
     return rval;
 }
 
+static void UpdateGItoAccn (CSeq_loc& loc, CScope& scope)
+
+{
+    CSeq_loc_I it(loc);
+    for (; it; ++it) {
+        const CSeq_id& id = it.GetSeq_id();
+        if (id.IsGi()) {
+            CSeq_id_Handle acc_handle
+                = sequence::GetId(id, scope, sequence::eGetId_ForceAcc);
+            if (acc_handle) {
+                it.SetSeq_id_Handle(acc_handle);
+            }
+        }
+    }
+    loc.Assign(*it.MakeSeq_loc());
+}
+
 
 string GetValidatorLocationLabel (const CSeq_loc& loc, CScope& scope)
 {
@@ -885,7 +902,10 @@ string GetValidatorLocationLabel (const CSeq_loc& loc, CScope& scope)
         }
     }
     if (NStr::IsBlank(loc_label)) {
-        loc.GetLabel(&loc_label);
+        CSeq_loc tweaked_loc;
+        tweaked_loc.Assign(loc);
+        UpdateGItoAccn(tweaked_loc, scope);
+        tweaked_loc.GetLabel(&loc_label);
         NStr::ReplaceInPlace(loc_label, ":plus", ":");
         NStr::ReplaceInPlace(loc_label, ", plus", ", ");
         NStr::ReplaceInPlace(loc_label, ":both", ":");
