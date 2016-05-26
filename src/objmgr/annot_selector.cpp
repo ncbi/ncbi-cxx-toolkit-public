@@ -76,7 +76,9 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_CollectSeq_annots(false),
       m_CollectTypes(false),
       m_CollectNames(false),
-      m_IgnoreStrand(false)
+      m_IgnoreStrand(false),
+      m_FilterMask(0),
+      m_FilterBits(0)
 {
     if ( feat != CSeqFeatData::e_not_set ) {
         SetFeatType(feat);
@@ -104,7 +106,9 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_CollectSeq_annots(false),
       m_CollectTypes(false),
       m_CollectNames(false),
-      m_IgnoreStrand(false)
+      m_IgnoreStrand(false),
+      m_FilterMask(0),
+      m_FilterBits(0)
 {
 }
 
@@ -128,7 +132,9 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_CollectSeq_annots(false),
       m_CollectTypes(false),
       m_CollectNames(false),
-      m_IgnoreStrand(false)
+      m_IgnoreStrand(false),
+      m_FilterMask(0),
+      m_FilterBits(0)
 {
 }
 
@@ -170,6 +176,8 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_CollectTypes = sel.m_CollectTypes;
         m_CollectNames = sel.m_CollectNames;
         m_IgnoreStrand = sel.m_IgnoreStrand;
+        m_FilterMask = sel.m_FilterMask;
+        m_FilterBits = sel.m_FilterBits;
         m_AdaptiveTriggers = sel.m_AdaptiveTriggers;
         m_ExcludedTSE = sel.m_ExcludedTSE;
         m_AnnotTypesBitset = sel.m_AnnotTypesBitset;

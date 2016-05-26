@@ -166,6 +166,8 @@ public:
     const CSeqTableInfo& GetTableInfo(void) const;
     bool IsSortedTable(void) const;
     CSeq_annot_SortedIter StartSortedIterator(CRange<TSeqPos> range) const;
+    bool MatchBitFilter(const SAnnotSelector& sel,
+                        const CSeq_annot_SortedIter& iter) const;
 
     void UpdateTableFeat(CRef<CSeq_feat>& seq_feat,
                          CRef<CSeq_point>& seq_point,

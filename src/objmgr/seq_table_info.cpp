@@ -1088,6 +1088,29 @@ string CSeqTableInfo::GetLabel(size_t index) const
 }
 
 
+bool CSeqTableInfo::MatchBitFilter(const SAnnotSelector& sel,
+                                   size_t index) const
+{
+    for ( auto& c : m_ExtraColumns ) {
+        const CSeqTable_column& col = *c.first.Get();
+        const CSeqTable_column_info& col_info = col.GetHeader();
+        if ( col_info.IsSetField_name() ) {
+            const string& name = col_info.GetField_name();
+            if ( name == "E.QualityCodes" ) {
+                const vector<char>* bytes = c.first.GetBytesPtr(index);
+                if ( !bytes || bytes->size() != 8 ) {
+                    continue;
+                }
+                Uint8 bits = *reinterpret_cast<const Uint8*>(bytes->data());
+                return (bits & sel.GetFilterMask()) == sel.GetFilterBits();
+            }
+        }
+    }
+    // assume match if no quality bit info is set
+    return true;
+}
+
+
 const CSeqTableColumnInfo*
 CSeqTableInfo::FindColumn(int field_id) const
 {

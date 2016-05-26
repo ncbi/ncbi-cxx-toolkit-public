@@ -2029,5 +2029,13 @@ void CSeq_annot_SortedIter::x_Settle(void)
 }
 
 
+bool CSeq_annot_Info::MatchBitFilter(const SAnnotSelector& sel,
+                                     const CSeq_annot_SortedIter& iter) const
+{
+    _ASSERT(IsSortedTable());
+    return m_Table_Info->MatchBitFilter(sel, iter.GetRow());
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

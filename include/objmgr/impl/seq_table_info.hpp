@@ -55,6 +55,7 @@ class CSeq_feat;
 struct SAnnotObject_Key;
 struct SAnnotObject_Index;
 struct SAnnotTypeSelector;
+struct SAnnotSelector;
 
 /////////////////////////////////////////////////////////////////////////////
 // information about Seq-table column
@@ -259,6 +260,8 @@ public:
 
     bool HasLabel(size_t row) const;
     string GetLabel(size_t row) const;
+
+    bool MatchBitFilter(const SAnnotSelector& sel, size_t row) const;
 
     // returns null if column not found
     const CSeqTableColumnInfo* FindColumn(int field_id) const;

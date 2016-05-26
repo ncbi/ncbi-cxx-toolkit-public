@@ -3044,6 +3044,12 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                             for ( CSeq_annot_SortedIter iter =
                                       seq_annot.StartSortedIterator(range);
                                   iter; ++iter ) {
+
+                                if (m_Selector->HasBitFilter() &&
+                                    !seq_annot.MatchBitFilter(*m_Selector,
+                                                              iter) ) {
+                                    continue;
+                                }
                                 
                                 if (m_Selector->m_CollectTypes) {
                                     m_AnnotTypes.set(index);

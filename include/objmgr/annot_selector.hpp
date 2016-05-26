@@ -726,6 +726,35 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         return m_IgnoreFarLocationsForSorting;
     }
 
+    /// Set bit filter for annotations that support it (SNP)
+    /// If filter is set then collect only annotations
+    /// that have masked (filter_mask) bits equal to the filter_bits
+    typedef Uint8 TBitFilter;
+    SAnnotSelector& SetBitFilter(TBitFilter filter_bits,
+                                 TBitFilter filter_mask = TBitFilter(-1))
+    {
+        m_FilterMask = filter_mask;
+        m_FilterBits = filter_bits & filter_mask;
+        return *this;
+    }
+    SAnnotSelector& ResetBitFilter(void)
+    {
+        m_FilterMask = m_FilterBits = 0;
+        return *this;
+    }
+    bool HasBitFilter(void) const
+    {
+        return m_FilterMask != 0;
+    }
+    TBitFilter GetFilterMask(void) const
+    {
+        return m_FilterMask;
+    }
+    TBitFilter GetFilterBits(void) const
+    {
+        return m_FilterBits;
+    }
+
 protected:
     friend class CAnnot_Collector;
 
@@ -773,6 +802,8 @@ protected:
     TAnnotTypesBitset     m_AnnotTypesBitset;
     AutoPtr<CHandleRangeMap> m_SourceLoc;
     CBioseq_Handle        m_IgnoreFarLocationsForSorting;
+    TBitFilter            m_FilterMask;
+    TBitFilter            m_FilterBits;
 };
 
 
