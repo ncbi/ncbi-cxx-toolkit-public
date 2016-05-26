@@ -341,6 +341,15 @@ struct SSeqAlignsByPctIdent
     };
 };
 
+struct SRangeIteratorsByAddress
+{
+    bool operator()(TAlignRangeMultiSet::const_iterator it1,
+                    TAlignRangeMultiSet::const_iterator it2) const
+    {
+		return &*it1 < &*it2;
+    };
+};
+
 
 struct SCompartScore {
     TSeqPos total_size;
@@ -449,7 +458,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 			std::sort(aligns.begin(), aligns.end(), SSeqAlignsBySize());
         }
 
-#ifdef _VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE_OUTPUT
         {{
              cerr << "ids: " << id_pair.first.first << " x "
                  << id_pair.second.first << endl;
@@ -502,8 +511,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                      << it->first.first << ", "
                      << it->first.second << ")"
                      << " [" << it->first.first.GetLength()
-                     << ", " << it->first.second.GetLength() << "]"
-                     << " (0x" << std::hex << ((intptr_t)i->second.GetPointer()) << std::dec << ")";
+                     << ", " << it->first.second.GetLength() << "]";
                  if (prev_it != align_ranges.end()) {
                      cerr << "  consistent="
                          << (IsConsistent(prev_it->first, it->first,
@@ -620,8 +628,8 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     }
                 }
 
-                float diff_len_ratio = double(diff) / it->second->GetAlignLength(false);
 #ifdef _VERBOSE_DEBUG
+                float diff_len_ratio = double(diff) / it->second->GetAlignLength(false);
                 cerr << "  comp_id=" << comp_id
                     << "  is_consistent=" << (is_consistent ? "true" : "false")
                     << "  is_intersecting_query=" << (is_intersecting_query ? "true" : "false")
@@ -684,7 +692,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 #endif
         }
 
-#ifdef _VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE_OUTPUT
         {{
              cerr << "found " << compartments.size() << endl;
              size_t count = 0;
@@ -697,7 +705,6 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                          << i->first.second << ")"
                          << " [" << i->first.first.GetLength()
                          << ", " << i->first.second.GetLength() << "]"
-                         << " (0x" << std::hex << ((intptr_t)i->second.GetPointer()) << std::dec << ")"
                          << endl;
                  }
              }
@@ -705,10 +712,12 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 #endif
 
         // pack into seq-align-sets
+        size_t compart_count = 0;
         ITERATE (list<TAlignRangeMultiSet>, it, compartments) {
+            ++compart_count;
             CRef<CSeq_align_set> sas(new CSeq_align_set);
             SCompartScore score;
-            set<TSeqPos> break_positions;
+            set<TAlignRangeMultiSet::const_iterator, SRangeIteratorsByAddress> break_positions;
             if ((options & fCompart_FilterByDiffLen) && it->size() > 1) {
                 /// Find large gaps that require breaking the compartments.
                 /// Go over the compartment forward and then backwards, and mark
@@ -726,16 +735,15 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                 bool reverse_subject = second_subject_range != it->end() &&
                                        second_subject_range->first.second
                                            < it->begin()->first.second;
-                TSeqPos subject_end = reverse_subject
-                                    ? it->begin()->first.second.GetTo()
-                                    : it->begin()->first.second.GetFrom();
-                set<TSeqPos> forward_breaks, backward_breaks;
-                TSeqPos current_end_point = 0;
-                TSeqPos current_potential_break = 0;
-#ifdef _VERBOSE_DEBUG
+                TSeqPos subject_end = (reverse_subject
+                                    ? it->begin()->first
+                                    : it->rbegin()->first) . second.GetTo();
+                set<TAlignRangeMultiSet::const_iterator, SRangeIteratorsByAddress>
+                    forward_breaks, backward_breaks;
+                TSignedSeqPos current_end_point = 0;
+                TSignedSeqPos current_potential_break = 0;
                 TSeqPos count = 1;
                 TSeqPos last_break = 0;
-#endif
                 ITERATE (TAlignRangeMultiSet, i, *it) {
 #ifdef _VERBOSE_DEBUG
                      cerr << "    ("
@@ -743,14 +751,13 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                          << i->first.second << ")"
                          << " [" << i->first.first.GetLength()
                          << ", " << i->first.second.GetLength() << "]"
-                         << " (0x" << std::hex << ((intptr_t)i->second.GetPointer()) << std::dec << ")"
                          << endl;
 #endif
-                    TSeqPos start_point = i->first.first.GetFrom() +
-                      (reverse_subject ? subject_end - i->first.second.GetFrom()
-                                       : i->first.second.GetFrom());
-                    TSeqPos end_point = i->first.first.GetTo() +
+                    TSignedSeqPos start_point = i->first.first.GetFrom() +
                       (reverse_subject ? subject_end - i->first.second.GetTo()
+                                       : i->first.second.GetFrom());
+                    TSignedSeqPos end_point = i->first.first.GetTo() +
+                      (reverse_subject ? subject_end - i->first.second.GetFrom()
                                        : i->first.second.GetTo());
 #ifdef _VERBOSE_DEBUG
                     if (i != it->begin()) {
@@ -762,23 +769,22 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     {
                         /// gap since last alignment is over threshold; mark
                         /// this is a breakpoint
-                        forward_breaks.insert(i->first.first.GetFrom());
+                        forward_breaks.insert(i);
 #ifdef _VERBOSE_DEBUG
-			cerr << "Break! " << (count - last_break) << " members" << endl;
+			cerr << "Break! " << (count - last_break) << " members start_point " << start_point << " current break " << current_potential_break << endl;
 			last_break = count;
 #endif
                     }
                     current_end_point = max(current_potential_break, end_point);
-                    current_potential_break =
-                        max(current_potential_break, end_point) +
+                    current_potential_break = current_end_point +
                            diff_len_filter * i->second->GetAlignLength(false);
                 }
-                current_potential_break = current_end_point = UINT_MAX;
+                current_potential_break = current_end_point = INT_MAX;
 #ifdef _VERBOSE_DEBUG
                 count = 1;
                 last_break = 0;
-                TSeqPos last_double_break = 0;
 #endif
+                TSeqPos last_double_break = 0;
                 REVERSE_ITERATE (TAlignRangeMultiSet, i, *it) {
 #ifdef _VERBOSE_DEBUG
                      cerr << "    ("
@@ -786,14 +792,13 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                          << i->first.second << ")"
                          << " [" << i->first.first.GetLength()
                          << ", " << i->first.second.GetLength() << "]"
-                         << " (0x" << std::hex << ((intptr_t)i->second.GetPointer()) << std::dec << ")"
                          << endl;
 #endif
-                    TSeqPos start_point = i->first.first.GetFrom() +
-                      (reverse_subject ? subject_end - i->first.second.GetFrom()
-                                       : i->first.second.GetFrom());
-                    TSeqPos end_point = i->first.first.GetTo() +
+                    TSignedSeqPos start_point = i->first.first.GetFrom() +
                       (reverse_subject ? subject_end - i->first.second.GetTo()
+                                       : i->first.second.GetFrom());
+                    TSignedSeqPos end_point = i->first.first.GetTo() +
+                      (reverse_subject ? subject_end - i->first.second.GetFrom()
                                        : i->first.second.GetTo());
 #ifdef _VERBOSE_DEBUG
                     if (i != it->rbegin()) {
@@ -805,29 +810,31 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     {
                         /// gap since last alignment is over threshold; mark
                         /// this is a breakpoint
-                        TSeqPos breakpoint;
-                        backward_breaks.insert(breakpoint = (--i)->first.first.GetFrom());
-                        ++i;
+                        TAlignRangeMultiSet::const_iterator breakpoint = i.base();
+                        backward_breaks.insert(breakpoint);
 #ifdef _VERBOSE_DEBUG
                         if (forward_breaks.count(breakpoint)) {
                             cerr << "Double after " << (count - last_double_break) << ' ';
                             last_double_break = count;
                         }
-			cerr << "Break! " << (count - last_break) << " members" << endl;
+			cerr << "Break! " << (count - last_break) << " members end_point " << end_point << " current break " << current_potential_break << endl;
 			last_break = count;
 #endif
                     }
                     current_end_point = min(current_potential_break, start_point);
-                    current_potential_break =
-                        min(current_potential_break, start_point) -
+                    current_potential_break = current_end_point -
                            diff_len_filter * i->second->GetAlignLength(false);
                 }
                 set_intersection(forward_breaks.begin(), forward_breaks.end(),
                              backward_breaks.begin(), backward_breaks.end(),
-                             inserter(break_positions, break_positions.end()));
+                             inserter(break_positions, break_positions.end()),
+                             SRangeIteratorsByAddress());
              }
              ITERATE (TAlignRangeMultiSet, i, *it) {
-                if (break_positions.count(i->first.first.GetFrom())) {
+                if (break_positions.count(i)) {
+#ifdef DEBUG_VERBOSE_OUTPUT
+                        cerr << "compartment " << compart_count << " break at " << i->first.first.GetFrom() << ".." << i->first.first.GetTo() << endl;
+#endif
                     TCompartScore sc(score, sas);
                     scored_compartments.push_back(sc);
                     score.Reset();
