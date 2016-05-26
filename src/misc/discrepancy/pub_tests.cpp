@@ -46,7 +46,11 @@
 #include <objects/biblio/Affil.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/general/Name_std.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/general/Person_id.hpp>
+#include <objects/submit/Submit_block.hpp>
+#include <objects/submit/Contact_info.hpp>
+#include <corelib/ncbistre.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 
 #include "discrepancy_core.hpp"
@@ -643,6 +647,170 @@ DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// SUBMITBLOCK_CONFLICT
+
+#define COMPARE_STRING_FIELD(Fieldname) \
+    if (!c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
+        return -1;\
+    } else if (c1.IsSet##Fieldname() && !c2.IsSet##Fieldname()) { \
+        return 1; \
+    } else if (c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
+        int cmp = NStr::Compare(c1.Get##Fieldname(), c2.Get##Fieldname()); \
+        if (cmp < 0) { \
+            return -1; \
+        } else if (cmp > 0) { \
+            return 1; \
+        } \
+    }
+
+
+template <typename Type>
+int CompareByAsnString(const Type& c1, const Type& c2)
+{
+    CNcbiOstrstream ostr;
+    ostr << MSerial_AsnText << c1;
+    string l1 = CNcbiOstrstreamToString(ostr);
+
+    ostr << MSerial_AsnText << c2;
+    string l2 = CNcbiOstrstreamToString(ostr);
+
+    return NStr::Compare(l1, l2);
+}
+
+
+#define FIELD_SET_COMPARE(Fieldname) \
+    if (!c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
+        return -1;\
+            } else if (c1.IsSet##Fieldname() && !c2.IsSet##Fieldname()) { \
+        return 1; \
+    } else if (c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
+        int cmp = CompareByAsnString(c1, c2); \
+        if (cmp != 0) { \
+            return cmp; \
+        } \
+    } 
+
+#define FIELD_COMPARE_VAL(Fieldname) \
+    if (!c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
+        return -1;\
+    } else if (c1.IsSet##Fieldname() && !c2.IsSet##Fieldname()) { \
+        return 1; \
+    } else if (c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
+        if (c1.Get##Fieldname() < c2.Get##Fieldname()) { \
+            return -1; \
+        } else if (c1.Get##Fieldname() > c2.Get##Fieldname()) { \
+            return 1; \
+        } \
+    } 
+
+int s_CitSubCompareWithoutDate(const CCit_sub& c1, const CCit_sub& c2)
+{
+    int cmp = 0;
+
+    FIELD_SET_COMPARE(Authors) 
+    FIELD_SET_COMPARE(Imp) 
+    FIELD_COMPARE_VAL(Medium)
+    COMPARE_STRING_FIELD(Descr)
+
+    return 0;
+}
+
+
+int s_SubmitBlockCompare(const CSubmit_block& c1, const CSubmit_block& c2)
+{
+    FIELD_SET_COMPARE(Contact)
+    if (!c1.IsSetCit() && c2.IsSetCit()) {
+        return -1;
+    } else if (c1.IsSetCit() && !c2.IsSetCit()) {
+        return 1;
+    } else if (c1.IsSetCit() && c2.IsSetCit()) {
+        int tmp = s_CitSubCompareWithoutDate(c1.GetCit(), c2.GetCit());
+        if (tmp != 0) {
+            return tmp;
+        }
+    }
+    bool hup1 = (c1.IsSetHup() && c1.GetHup());
+    bool hup2 = (c2.IsSetHup() && c2.GetHup());
+    if (!hup1 && hup2) {
+        return -1;
+    } else if (hup1 && !hup2) {
+        return 1;
+    }
+    FIELD_SET_COMPARE(Reldate)
+    FIELD_COMPARE_VAL(Subtype)
+    COMPARE_STRING_FIELD(Tool)
+    COMPARE_STRING_FIELD(User_tag)
+    COMPARE_STRING_FIELD(Comment)
+    return 0;
+}
+
+static bool s_SortSubmitBlock(CRef<CSubmit_block> sb1, CRef<CSubmit_block> sb2)
+{
+    if (s_SubmitBlockCompare(*sb1, *sb2) < 0) {
+        return true;
+    }
+}
+
+
+
+#if 0
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(SUBMITBLOCK_CONFLICT, CSubmit_block, eDisc | eOncaller, "Records should have identical submit-blocks")
+//  ----------------------------------------------------------------------------
+{
+    // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
+    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSubmit_block>(&obj), eKeepRef));
+
+    m_Objs["blocks"].Add(*this_disc_obj, false);
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    vector < CConstRef<CSubmit_block> > blocks;
+    CReportNode::TNodeMap::iterator it = m_Objs["blocks"].GetMap().begin();
+    while (it != m_Objs["blocks"].GetMap().end()) {
+        NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["blocks"].GetObjects())
+        {
+            const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
+            CConstRef<CSubmit_block> obj(dynamic_cast<const CSubmit_block*>(other_disc_obj->GetObject().GetPointer()));
+            blocks.push_back(obj);
+        }
+    }
+    if (blocks.size() < 2) {
+        return;
+    }
+    stable_sort(blocks.begin(), blocks.end(), s_SortSubmitBlock);
+    size_t group_num = 1;
+    string label_start = "[n] records have identical submit-blocks (";
+    string label = label_start + NStr::NumericToString(group_num) + ")";
+    vector < CConstRef<CSubmit_block> >::iterator it1 = blocks.begin();
+    m_Objs[label].Add(*context.NewDiscObj(*it1), false);
+    vector < CConstRef<CSubmit_block> >::iterator it2 = blocks.begin();
+    ++it2;
+    while (it2 != blocks.end()) {
+        if (s_SubmitBlockCompare(**it1, **it2) != 0) {
+            group_num++;
+            label = label_start + NStr::NumericToString(group_num) + ")";
+        }
+        m_Objs["[n] records have identical submit-blocks (" + label + ")"].Add(*context.NewDiscObj(*it2), false);
+        ++it1;
+        ++it2;
+    }
+    m_Objs.GetMap().erase("blocks");
+    if (m_Objs.GetMap().size() > 1) {
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    }
+}
+
+#endif
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
