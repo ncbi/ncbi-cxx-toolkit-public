@@ -344,6 +344,12 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("feat_id_str", "FeatIdStr",
                              "String Feat-id of features to search",
                              CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("filter_bits", "FilterBits",
+                             "Filter SNP features by bits",
+                             CArgDescriptions::eInt8);
+    arg_desc->AddOptionalKey("filter_mask", "FilterMask",
+                             "Mask for filter SNP features by bits",
+                             CArgDescriptions::eInt8);
     arg_desc->AddFlag("make_tree", "make feature tree");
     arg_desc->AddDefaultKey("feat_id_mode", "feat_id_mode",
                             "CFeatTree xref by feat id mode",
@@ -1464,6 +1470,15 @@ int CDemoApp::Run(void)
         }
         if ( args["max_search_time"] ) {
             base_sel.SetMaxSearchTime(float(args["max_search_time"].AsDouble()));
+        }
+        if ( args["filter_bits"] ) {
+            if ( args["filter_mask"] ) {
+                base_sel.SetBitFilter(args["filter_bits"].AsInt8(),
+                                      args["filter_mask"].AsInt8());
+            }
+            else {
+                base_sel.SetBitFilter(args["filter_bits"].AsInt8());
+            }
         }
         if ( no_feat_policy ) {
             base_sel.SetAdaptiveDepthFlags(base_sel.GetAdaptiveDepthFlags()&
