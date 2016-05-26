@@ -515,6 +515,34 @@ bool s_IsPreprotein(CSeq_feat_Handle fh)
 }
 
 
+void RescueProtProductQual(CSeq_feat& feat)
+{
+    if (!feat.IsSetQual() ||
+        !feat.IsSetData() || 
+        !feat.GetData().IsProt() ||
+        feat.GetData().GetProt().IsSetName()) {
+        return;
+    }
+    CSeq_feat::TQual::iterator it = feat.SetQual().begin();
+    while (it != feat.SetQual().end()) {
+        if ((*it)->IsSetQual() &&
+            NStr::Equal((*it)->GetQual(), "product")) {
+            if ((*it)->IsSetVal() && !NStr::IsBlank((*it)->GetVal())) {
+                feat.SetData().SetProt().SetName().push_back((*it)->GetVal());
+            }
+            it = feat.SetQual().erase(it);
+            break;
+        } else {
+            ++it;
+        }
+    }
+
+    if (feat.SetQual().empty()) {
+        feat.ResetQual();
+    }
+}
+
+
 bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
 {
     CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
@@ -559,7 +587,10 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     new_feat->Assign(*orig_feat);
     if (new_feat->GetData().Which() == CSeqFeatData::e_Imp) {
         new_feat->SetData().SetProt().SetProcessed(processed);
-        if (processed == CProt_ref::eProcessed_mature) {
+        // if possible, rescue product qual
+        RescueProtProductQual(*new_feat);
+        if (processed == CProt_ref::eProcessed_mature &&
+            !new_feat->GetData().GetProt().IsSetName()) {
             if (orig_feat->IsSetComment() && !NStr::IsBlank(orig_feat->GetComment())) {
                 new_feat->SetData().SetProt().SetName().push_back(orig_feat->GetComment());
                 new_feat->ResetComment();
