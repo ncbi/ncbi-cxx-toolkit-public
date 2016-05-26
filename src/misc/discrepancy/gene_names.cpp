@@ -112,7 +112,7 @@ DISCREPANCY_AUTOFIX(BAD_GENE_NAME)
 // BAD_BACTERIAL_GENE_NAME
 DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eDisc | eOncaller, "Bad bacterial gene name")
 {
-    if (!obj.IsGene() || !obj.GetGene().CanGetLocus() || context.HasLineage("Eukaryota")) {
+    if (!obj.IsGene() || !obj.GetGene().CanGetLocus() || context.HasLineage("Eukaryota") || context.IsViral()) {
         return;
     }
     string locus = obj.GetGene().GetLocus();

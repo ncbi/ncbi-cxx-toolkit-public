@@ -340,6 +340,7 @@ public:
     bool HasLineage(const string& lineage);
     bool IsEukaryotic(void);
     bool IsBacterial(void);
+    bool IsViral(void);
     bool IsCurrentRnaInGenProdSet(void);
     bool SequenceHasFarPointers(void);
     const CSeqSummary& GetNucleotideCount(void);

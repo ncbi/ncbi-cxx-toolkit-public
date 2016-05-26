@@ -142,18 +142,13 @@ bool CDiscrepancyContext::HasLineage(const CBioSource& biosrc, const string& def
 
 bool CDiscrepancyContext::HasLineage(const string& lineage)
 {
-    static bool result = false;
+    static const CBioSource* biosrc = 0;
     static size_t count = 0;
     if (count != m_Count_Bioseq) {
         count = m_Count_Bioseq;
-        const CBioSource* biosrc = GetCurrentBiosource();
-        if (biosrc) {
-            result = HasLineage(*biosrc, GetLineage(), lineage);
-            return result;
-        }
-        result = false;
+        biosrc = GetCurrentBiosource();
     }
-    return result;
+    return biosrc ? HasLineage(*biosrc, GetLineage(), lineage) : false;
 }
 
 
@@ -191,6 +186,26 @@ bool CDiscrepancyContext::IsBacterial()
         if (biosrc) {
             //CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
             if (HasLineage(*biosrc, GetLineage(), "Bacteria")) {
+                result = true;
+                return result;
+            }
+        }
+        result = false;
+    }
+    return result;
+}
+
+
+bool CDiscrepancyContext::IsViral()
+{
+    static bool result = false;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+        const CBioSource* biosrc = GetCurrentBiosource();
+        if (biosrc) {
+            CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
+            if (HasLineage(*biosrc, GetLineage(), "Viruses")) {
                 result = true;
                 return result;
             }

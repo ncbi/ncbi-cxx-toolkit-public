@@ -753,16 +753,13 @@ static bool s_SortSubmitBlock(CRef<CSubmit_block> sb1, CRef<CSubmit_block> sb2)
 }
 
 
-
-#if 0
 //  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(SUBMITBLOCK_CONFLICT, CSubmit_block, eDisc | eOncaller, "Records should have identical submit-blocks")
 //  ----------------------------------------------------------------------------
 {
     // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
-    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSubmit_block>(&obj), eKeepRef));
-
-    m_Objs["blocks"].Add(*this_disc_obj, false);
+//    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSubmit_block>(&obj), eKeepRef));
+//    m_Objs["blocks"].Add(*this_disc_obj, false);
 }
 
 
@@ -773,7 +770,7 @@ DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
     if (m_Objs.empty()) {
         return;
     }
-
+/*/
     vector < CConstRef<CSubmit_block> > blocks;
     CReportNode::TNodeMap::iterator it = m_Objs["blocks"].GetMap().begin();
     while (it != m_Objs["blocks"].GetMap().end()) {
@@ -792,7 +789,7 @@ DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
     string label_start = "[n] records have identical submit-blocks (";
     string label = label_start + NStr::NumericToString(group_num) + ")";
     vector < CConstRef<CSubmit_block> >::iterator it1 = blocks.begin();
-    m_Objs[label].Add(*context.NewDiscObj(*it1), false);
+//    m_Objs[label].Add(*context.NewDiscObj(*it1), false);
     vector < CConstRef<CSubmit_block> >::iterator it2 = blocks.begin();
     ++it2;
     while (it2 != blocks.end()) {
@@ -800,7 +797,7 @@ DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
             group_num++;
             label = label_start + NStr::NumericToString(group_num) + ")";
         }
-        m_Objs["[n] records have identical submit-blocks (" + label + ")"].Add(*context.NewDiscObj(*it2), false);
+//        m_Objs["[n] records have identical submit-blocks (" + label + ")"].Add(*context.NewDiscObj(*it2), false);
         ++it1;
         ++it2;
     }
@@ -808,9 +805,9 @@ DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
     if (m_Objs.GetMap().size() > 1) {
         m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
+/*/
 }
 
-#endif
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
