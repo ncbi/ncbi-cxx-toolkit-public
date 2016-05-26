@@ -950,11 +950,11 @@ static int  s_FindAnnouncedServer(string            service,
     CLBOSStatus lbos_status(true, true);
     struct SLBOS_AnnounceHandle_Tag*& arr =
         *g_LBOS_UnitTesting_GetAnnouncedServers();
+    CORE_LOCK_READ;
     unsigned int count = g_LBOS_UnitTesting_GetAnnouncedServersNum();
     unsigned int found = 0;
     /* Just iterate and compare */
     unsigned int i = 0;
-    CORE_LOCK_READ;
     for (i = 0; i < count; i++) {
         if (strcasecmp(service.c_str(), arr[i].service) == 0
             &&
