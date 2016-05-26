@@ -3220,6 +3220,12 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         case eDS_ToStdlog:
         case eDS_Default:
             {
+                // When using applog, create separate log file for each
+                // user to avoid permission problems.
+                string euid;
+#if defined(NCBI_OS_UNIX)
+                euid = "." + NStr::NumericToString(geteuid());
+#endif
                 string log_base;
                 string def_log_dir;
                 {{
@@ -3231,7 +3237,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     }
                 }}
                 if ( !log_base.empty() ) {
-                    log_base = CFile(log_base).GetBase() + ".log";
+                    log_base = CFile(log_base).GetBase() + euid + ".log";
                     string log_name;
                     // Try /log/<port>
                     if ( !def_log_dir.empty() ) {
@@ -3268,7 +3274,8 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     }
                     // Try cwd/ for eDS_ToStdlog only
                     if (ds == eDS_ToStdlog) {
-                        log_name = CFile::ConcatPath(".", log_base);
+                        // Don't include euid in file name when using cwd.
+                        log_name = CFile::ConcatPath(".", CFile(log_base).GetBase() + ".log");
                         if ( SetLogFile(log_name, eDiagFile_All) ) {
                             log_set = true;
                             new_log_name = log_name;
@@ -3287,10 +3294,10 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     }
                 }
                 // No command line and no base name.
-                // Try to switch to /log/fallback/UNKNOWN
+                // Try to switch to /log/fallback/UNKNOWN.<euid>
                 if (!log_set  &&  log_base.empty()) {
                     static const char* kDefaultFallback = "/log/fallback/UNKNOWN";
-                    if ( SetApplogFile(kDefaultFallback) ) {
+                    if ( SetApplogFile(string(kDefaultFallback) + euid) ) {
                         log_set = true;
                         new_log_name = kDefaultFallback;
                         to_applog = true;
