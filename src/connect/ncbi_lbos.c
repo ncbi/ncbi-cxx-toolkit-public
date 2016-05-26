@@ -38,9 +38,7 @@
 #include "ncbi_priv.h"
 #include <stdlib.h> /* free, realloc, calloc, malloc */
 #include <ctype.h> /* isdigit */
-#ifdef USE_JSON
-#   include "parson.h"
-#endif /* USE_JSON*/
+#include "parson.h"
 #define            kHostportStringLength     (16+1+5)/**<
                                                      strlen("255.255.255.255")+
                                                      strlen(":") +
