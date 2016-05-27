@@ -318,3 +318,15 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "xstring::assign called from CNcbiEnvironment constructor"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ncbi_core.dll,func=assign,src=xstring;
+			mod=ncbi_core.dll,func=Reset,src=ncbienv.cpp;
+			mod=ncbi_core.dll,func=CNcbiEnvironment,src=ncbienv.cpp;
+		}
+	}
+}
