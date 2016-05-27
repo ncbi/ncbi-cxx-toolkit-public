@@ -92,7 +92,7 @@ DISCREPANCY_CASE(DUP_DEFLINE, CSeq_inst, eOncaller, "Definition lines should be 
 //  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
-    if (!seq || !seq->IsSetDescr()) return;
+    if (!seq || !seq->IsSetDescr() || obj.IsAa()) return;
 
     ITERATE(CBioseq::TDescr::Tdata, it, seq->GetDescr().Get()) {
         if ((*it)->IsTitle()) {
@@ -143,6 +143,9 @@ DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
         ++it;
     }
     m_Objs.GetMap().erase("titles");
+    if (all_unique) {
+        m_Objs[kAllUniqueDeflines].clearObjs();
+    }
 
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
