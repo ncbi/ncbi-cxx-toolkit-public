@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/seq/MolInfo.hpp>
 #include <objects/valid/Comment_rule.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -206,6 +207,49 @@ DISCREPANCY_SUMMARIZE(TERMINAL_NS)
     }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
+
+// SHORT_PROT_SEQUENCES
+const string kShortProtSeqs = "[n] protein sequences are shorter than 50 aa.";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(SHORT_PROT_SEQUENCES, CSeq_inst, eDisc, "Protein sequences should be at least 50 aa, unless they are partial")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsAa() || !obj.IsSetLength() || obj.GetLength() >= 50) {
+        return;
+    }
+
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (!seq) {
+        return;
+    }
+
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*seq);
+    if (!bsh) {
+        return;
+    }
+    CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
+    if (mi && mi->GetMolinfo().IsSetCompleteness() &&
+        mi->GetMolinfo().GetCompleteness() != CMolInfo::eCompleteness_unknown &&
+        mi->GetMolinfo().GetCompleteness() != CMolInfo::eCompleteness_complete) {
+        return;
+    }
+
+    m_Objs[kShortProtSeqs].Add(*context.NewDiscObj(seq), false);
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(SHORT_PROT_SEQUENCES)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
