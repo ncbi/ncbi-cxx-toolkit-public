@@ -213,7 +213,7 @@ DISCREPANCY_SUMMARIZE(TERMINAL_NS)
 const string kShortProtSeqs = "[n] protein sequences are shorter than 50 aa.";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SHORT_PROT_SEQUENCES, CSeq_inst, eDisc, "Protein sequences should be at least 50 aa, unless they are partial")
+DISCREPANCY_CASE(SHORT_PROT_SEQUENCES, CSeq_inst, eDisc | eOncaller, "Protein sequences should be at least 50 aa, unless they are partial")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsAa() || !obj.IsSetLength() || obj.GetLength() >= 50) {
@@ -250,6 +250,48 @@ DISCREPANCY_SUMMARIZE(SHORT_PROT_SEQUENCES)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// COMMENT_PRESENT
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(COMMENT_PRESENT, CSeqdesc, eOncaller, "Comment descriptor present")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsComment()) {
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef));
+        m_Objs["comment"][obj.GetComment()].Add(*this_disc_obj, false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(COMMENT_PRESENT)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    bool all_same = false;
+    if (m_Objs["comment"].GetMap().size() == 1) {
+        all_same = true;
+    }
+    string label = all_same ? "[n] comment descriptor[s] were found (all same)" : "[n] comment descriptor[s] were found (some different)";
+
+    CReportNode::TNodeMap::iterator it = m_Objs["comment"].GetMap().begin();
+    while (it != m_Objs["comment"].GetMap().end()) {
+        NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["comment"][it->first].GetObjects())
+        {
+            const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
+            CConstRef<CSeqdesc> comment_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
+            m_Objs[label].Add(*context.NewDiscObj(comment_desc), false);
+        }
+        ++it;
+    }
+    m_Objs.GetMap().erase("comment");
+
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
