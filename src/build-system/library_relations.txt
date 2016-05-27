@@ -970,6 +970,7 @@ seqsplit needs seqset
 seqtest needs $(SEQ_LIBS)
 seqtest needs pub
 sequtil needs xncbi
+simple_asm needs gc_load_utils
 smartasn_g needs submit
 smartnet needs3party vibrant
 smartnetclient needs xconnect
