@@ -47,6 +47,10 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -137,8 +141,10 @@ class CPrimeCacheApplication : public CNcbiApplication
 {
 public:
     CPrimeCacheApplication()
-        : m_MainIndex(CAsnIndex::e_main),
-          m_SeqIdIndex(CAsnIndex::e_seq_id)
+        : m_MainIndex(CAsnIndex::e_main)
+        , m_SeqIdIndex(CAsnIndex::e_seq_id)
+        , m_ExtractDelta(false)
+        , m_MaxDeltaLevel(UINT_MAX)
     {
     }
     
@@ -147,8 +153,13 @@ private:
     virtual int  Run(void);
     virtual void Exit(void);
 
-    void x_Process_Ids(CNcbiIstream& istr,
-                       CNcbiOstream& ostr_seqids);
+    void x_Read_Ids(CNcbiIstream& istr,
+                    set<CSeq_id_Handle> &ids);
+
+    void x_Process_Ids(const set<CSeq_id_Handle> &ids,
+                       CNcbiOstream& ostr_seqids,
+                       unsigned delta_level,
+                       size_t count);
 
     void x_Process_SRA(CNcbiIstream& istr,
                        CNcbiOstream& ostr_seqids);
@@ -158,7 +169,9 @@ private:
 
     void x_Process_SeqEntry(CNcbiIstream& istr,
                             CNcbiOstream& ostr_seqids,
-                            ESerialDataFormat serial_fmt);
+                            ESerialDataFormat serial_fmt,
+                            set<CSeq_id_Handle> &delta_ids,
+                            size_t &count);
 
     void x_ExtractAndIndex(const CSeq_entry& entry,
                            CAsnIndex::TTimestamp timestamp,
@@ -172,7 +185,9 @@ private:
     // as a single blob. 
     void x_CacheSeqEntry(CNcbiIstream& istr,
                          CNcbiOstream& ostr_seqids,
-                         ESerialDataFormat serial_fmt);
+                         ESerialDataFormat serial_fmt,
+                         set<CSeq_id_Handle> &delta_ids,
+                         size_t &count);
 
     // Split group of sequences packaged together
     // and cache each sequence separately from the others.
@@ -180,6 +195,8 @@ private:
                                  CNcbiOstream& ostr_seqids,
                                  ESerialDataFormat serial_fmt);
 
+    void x_ExtractDelta(CBioseq_Handle         bsh,
+                     set<CSeq_id_Handle>& delta_ids);
 
     class CCacheBioseq
     {
@@ -205,6 +222,9 @@ private:
     list< CRef<CSeqdesc> > m_other_descs;
     sequence::EGetIdType m_id_type;
     set<CSeq_inst::EMol> m_StripInstMol;
+    bool m_ExtractDelta;
+    unsigned m_MaxDeltaLevel;
+    set<CSeq_id_Handle> m_CachedIds;
 };
 
 template <typename T, typename Consumer>
@@ -335,6 +355,18 @@ void CPrimeCacheApplication::Init(void)
     arg_desc->AddFlag("split-sequences",
                       "Split group of sequences packaged together. Applicable to asn(b)-seq-entry format.");
 
+    arg_desc->AddFlag("extract-delta",
+                      "Extract and index delta-seq far-pointers");
+    arg_desc->SetDependency("split-sequences",
+                            CArgDescriptions::eExcludes, "extract-delta");
+
+    arg_desc->AddOptionalKey("delta-level", "RecursionLevel",
+                             "Number of levels to descend when retrieving "
+                             "items in delta sequences",
+                             CArgDescriptions::eInteger);
+    arg_desc->SetDependency("delta-level",
+                            CArgDescriptions::eRequires, "extract-delta");
+
 
     // Setup arg.descriptions for this application
     arg_desc->SetCurrentGroup("Default application arguments");
@@ -361,6 +393,9 @@ void CPrimeCacheApplication::x_ExtractAndIndex(const CSeq_entry&      entry,
         m_SeqIdChunk.Write( bioseq.GetId() );
         IndexABioseq( bioseq, m_SeqIdIndex, timestamp, 0,
                       seq_id_offset, m_SeqIdChunk.GetOffset() - seq_id_offset );
+        ITERATE (CBioseq::TId, id_it, bioseq.GetId()) {
+            m_CachedIds.insert(CSeq_id_Handle::GetHandle(**id_it));
+        }
     }
 }
 
@@ -526,7 +561,9 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
 
 void CPrimeCacheApplication::x_Process_SeqEntry(CNcbiIstream& istr,
                                                 CNcbiOstream& ostr_seqids,
-                                                ESerialDataFormat serial_fmt)
+                                                ESerialDataFormat serial_fmt,
+                                                set<CSeq_id_Handle> &delta_ids,
+                                                size_t &count)
 {
     const CArgs& args = GetArgs();
  
@@ -534,7 +571,7 @@ void CPrimeCacheApplication::x_Process_SeqEntry(CNcbiIstream& istr,
         x_SplitAndCacheSeqEntry(istr, ostr_seqids, serial_fmt);
     }
     else {
-        x_CacheSeqEntry(istr, ostr_seqids, serial_fmt);
+        x_CacheSeqEntry(istr, ostr_seqids, serial_fmt, delta_ids, count);
     }
 }
 void CPrimeCacheApplication::x_SplitAndCacheSeqEntry(CNcbiIstream& istr,
@@ -559,14 +596,15 @@ void CPrimeCacheApplication::x_SplitAndCacheSeqEntry(CNcbiIstream& istr,
 
 void CPrimeCacheApplication::x_CacheSeqEntry(CNcbiIstream& istr,
                                              CNcbiOstream& ostr_seqids,
-                                             ESerialDataFormat serial_fmt)
+                                             ESerialDataFormat serial_fmt,
+                                             set<CSeq_id_Handle> &delta_ids,
+                                             size_t &count)
 {
     CRef<CObjectManager> om(CObjectManager::GetInstance());
 
     time_t timestamp = CTime(CTime::eCurrent).GetTimeT();
     CStopWatch sw;
     sw.Start();
-    size_t count = 0;
 
     auto_ptr<CObjectIStream> is(CObjectIStream::Open(serial_fmt, istr));
     while ( !is->EndOfData() ) {
@@ -610,6 +648,9 @@ void CPrimeCacheApplication::x_CacheSeqEntry(CNcbiIstream& istr,
             CSeq_id_Handle idh = sequence::GetId(*bioseq_it, m_id_type);
             if ( trimmed_bioseqs.empty() || !trimmed_bioseqs.count(idh) ) {
                 ostr_seqids << idh << '\n';
+                if (m_ExtractDelta) {
+                     x_ExtractDelta(*bioseq_it, delta_ids);
+                }
             }
         }
 
@@ -619,11 +660,26 @@ void CPrimeCacheApplication::x_CacheSeqEntry(CNcbiIstream& istr,
         }
     }
 
-    LOG_POST(Error << "Cache Seq-entry: done, dumped " << count << " items");
+    LOG_POST(Error << "Cache Seq-entry: done, cached " << count << " items");
 }
 
-void CPrimeCacheApplication::x_Process_Ids(CNcbiIstream& istr,
-                                           CNcbiOstream& ostr_seqids)
+void CPrimeCacheApplication::x_Read_Ids(CNcbiIstream& istr,
+                                        set<CSeq_id_Handle> &ids)
+{
+    string line;
+    while (NcbiGetlineEOL(istr, line)) {
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()  ||  line[0] == '#') {
+            continue;
+        }
+        ids.insert(CSeq_id_Handle::GetHandle(line));
+    }
+}
+
+void CPrimeCacheApplication::x_Process_Ids(const set<CSeq_id_Handle> &ids,
+                                           CNcbiOstream& ostr_seqids,
+                                           unsigned delta_level,
+                                           size_t count)
 {
     CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
     CScope scope(*CObjectManager::GetInstance());
@@ -632,26 +688,18 @@ void CPrimeCacheApplication::x_Process_Ids(CNcbiIstream& istr,
     time_t timestamp = CTime(CTime::eCurrent).GetTimeT();
     CStopWatch sw;
     sw.Start();
-    size_t count = 0;
 
-    string line;
-    while (NcbiGetlineEOL(istr, line)) {
-        NStr::TruncateSpacesInPlace(line);
-        if (line.empty()  ||  line[0] == '#') {
+    set<CSeq_id_Handle> delta_ids;
+    ITERATE (set<CSeq_id_Handle>, id_it, ids) {
+        CSeq_id_Handle idh = *id_it;
+        if (m_CachedIds.count(idh)) {
+            /// ID already cached
             continue;
         }
-
-        if (CSignal::IsSignaled()) {
-            NCBI_THROW(CException, eUnknown,
-                       "trapped signal, exiting");
-        }
-
-
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(line);
         CBioseq_Handle bsh = scope.GetBioseqHandle(idh);
         if ( !bsh ) {
             NCBI_THROW(CException, eUnknown,
-                       "failed to retrieve sequence for id: " + line);
+                       "failed to retrieve sequence for id: " + idh.AsString());
         }
 
         CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
@@ -680,7 +728,12 @@ void CPrimeCacheApplication::x_Process_Ids(CNcbiIstream& istr,
         for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
             CSeq_id_Handle idh = sequence::GetId(*bioseq_it, m_id_type);
             if ( trimmed_bioseqs.empty() || !trimmed_bioseqs.count(idh) ) {
-                ostr_seqids << idh << '\n';
+                if (delta_level == 0) {
+                    ostr_seqids << idh << '\n';
+                }
+                if (m_ExtractDelta) {
+                     x_ExtractDelta(*bioseq_it, delta_ids);
+                }
             }
         }
 
@@ -690,8 +743,11 @@ void CPrimeCacheApplication::x_Process_Ids(CNcbiIstream& istr,
         }
     }
 
-    LOG_POST(Error << "done, dumped " << count << " items");
-
+    if (!delta_ids.empty() && delta_level++ < m_MaxDeltaLevel) {
+        x_Process_Ids(delta_ids, ostr_seqids, delta_level, count);
+    } else {
+        LOG_POST(Error << "done, cached " << count << " items");
+    }
 }
 
 bool CPrimeCacheApplication::x_StripSeqEntry(CScope& scope, CSeq_entry& seq_entry, set<CSeq_id_Handle>& trimmed_bioseqs)
@@ -928,6 +984,13 @@ int CPrimeCacheApplication::Run(void)
         }
     }
 
+    m_ExtractDelta = args["extract-delta"];
+    if (args["delta-level"]) {
+        m_MaxDeltaLevel = args["delta-level"].AsInteger();
+    }
+
+    size_t count = 0;
+    set<CSeq_id_Handle> ids;
     if (args["input-manifest"]) {
         CNcbiIstream& istr = args["input-manifest"].AsInputFile();
         string line;
@@ -939,7 +1002,7 @@ int CPrimeCacheApplication::Run(void)
 
             CNcbiIfstream is(line.c_str());
             if (ifmt == "ids") {
-                x_Process_Ids(is, ostr);
+                x_Read_Ids(is, ids);
             }
             else if (ifmt == "fasta") {
                 x_Process_Fasta(is, ostr);
@@ -948,10 +1011,10 @@ int CPrimeCacheApplication::Run(void)
                 x_Process_SRA(is, ostr);
             }
             else if (ifmt == "asn-seq-entry") {
-                x_Process_SeqEntry(is, ostr, eSerial_AsnText);
+                x_Process_SeqEntry(is, ostr, eSerial_AsnText, ids, count);
             }
             else if (ifmt == "asnb-seq-entry") {
-                x_Process_SeqEntry(is, ostr, eSerial_AsnBinary);
+                x_Process_SeqEntry(is, ostr, eSerial_AsnBinary, ids, count);
             }
             else {
                 NCBI_THROW(CException, eUnknown,
@@ -962,7 +1025,7 @@ int CPrimeCacheApplication::Run(void)
     else {
         CNcbiIstream& istr = args["i"].AsInputFile();
         if (ifmt == "ids") {
-            x_Process_Ids(istr, ostr);
+            x_Read_Ids(istr, ids);
         }
         else if (ifmt == "fasta") {
             x_Process_Fasta(istr, ostr);
@@ -971,15 +1034,19 @@ int CPrimeCacheApplication::Run(void)
                 x_Process_SRA(istr, ostr);
             }
         else if (ifmt == "asn-seq-entry") {
-            x_Process_SeqEntry(istr, ostr, eSerial_AsnText);
+            x_Process_SeqEntry(istr, ostr, eSerial_AsnText, ids, count);
         }
         else if (ifmt == "asnb-seq-entry") {
-            x_Process_SeqEntry(istr, ostr, eSerial_AsnBinary);
+            x_Process_SeqEntry(istr, ostr, eSerial_AsnBinary, ids, count);
         }
         else {
             NCBI_THROW(CException, eUnknown,
                        "unhandled input format");
         }
+    }
+
+    if (!ids.empty()) {
+        x_Process_Ids(ids, ostr, ifmt == "ids" ? 0 : 1, count);
     }
 
     GetDiagContext().GetRequestContext().SetRequestStatus(200);
@@ -988,6 +1055,25 @@ int CPrimeCacheApplication::Run(void)
     return 0;
 }
 
+void CPrimeCacheApplication::x_ExtractDelta(CBioseq_Handle         bsh,
+                     set<CSeq_id_Handle>& delta_ids)
+{
+    ///
+    /// process any delta-seqs
+    ///
+    if (bsh.GetInst().IsSetExt()  &&
+        bsh.GetInst().GetExt().IsDelta()) {
+        ITERATE (CBioseq::TInst::TExt::TDelta::Tdata, iter,
+                 bsh.GetInst().GetExt().GetDelta().Get()) {
+            const CDelta_seq& seg = **iter;
+            CTypeConstIterator<CSeq_id> id_iter(seg);
+            for ( ;  id_iter;  ++id_iter) {
+                delta_ids.insert
+                    (CSeq_id_Handle::GetHandle(*id_iter));
+            }
+        }
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
