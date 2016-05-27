@@ -45,6 +45,7 @@
 #include <objects/genomecoll/GCClient_AttributeFlags.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
 #include <objects/genomecoll/GCClient_FindBestAssemblyR.hpp>
+#include <objects/genomecoll/GCClient_GetAssemblyBySequ.hpp>
 #include <objects/genomecoll/cached_assembly.hpp>
 // generated classes
 
@@ -135,20 +136,117 @@ public:
 
     string ValidateChrType(const string& chrType, const string& chrLoc);
 
+    NCBI_DEPRECATED  // Use FindOneAssemblyBySequences
     CRef<CGCClient_AssemblyInfo> FindBestAssembly
         (const string& seq_id,
          int filter_type,
          int sort_type = eGCClient_FindBestAssemblySort_default);
 
+    NCBI_DEPRECATED  // Use FindOneAssemblyBySequences
     CRef<CGCClient_AssemblySequenceInfo> FindBestAssembly
         (const list<string>& seq_id,
          int filter_type,
          int sort_type = eGCClient_FindBestAssemblySort_default);
 
+    NCBI_DEPRECATED  // Use FindAssembliesBySequences
     CRef<CGCClient_AssembliesForSequences> FindAllAssemblies
         (const list<string>& seq_id,
          int filter_type,
          int sort_type = eGCClient_FindBestAssemblySort_default);
+
+
+    /// Find assembly by sequence accession
+    ///
+    /// @param sequence_acc
+    ///     Sequence accession in ACC.VER format
+    /// @param filter
+    ///     Bitfield, OR-ed combination of eGCClient_GetAssemblyBySequenceFilter_* values:
+    ///         eGCClient_GetAssemblyBySequenceFilter_all     - do not filter out anything
+    ///         eGCClient_GetAssemblyBySequenceFilter_latest  - look up for latest releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_major   - look up for major releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_genbank - look up for GenBank releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_refseq  - look up for RefSeq releases only
+    ///     If none of genbank of refseq filters are specified then both GenBank and RefSeq releases will be returned
+    /// @param sort
+    ///     Assembly ordering:
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_default - sort by number of sequences found in assembly, then by reference/representative/other, then by modification date
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_latest  - sort by number of sequences found in assembly, then latest first, then by reference/representative/other, then by modification date
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_major   - sort by number of sequences found in assembly, then major first, then by reference/representative/other, then by modification date
+    /// @return Assembly if found, NULL otherwise.
+    CRef<CGCClient_AssemblyInfo> FindOneAssemblyBySequences
+        (const string& sequence_acc,
+         int filter,
+         CGCClient_GetAssemblyBySequenceRequest::ESort sort = CGCClient_GetAssemblyBySequenceRequest::eSort_default);
+
+    /// Find assembly by sequence accessions
+    ///
+    /// @param sequence_acc
+    ///     Sequence accessions in ACC.VER format
+    /// @param filter
+    ///     Bitfield, OR-ed combination of eGCClient_GetAssemblyBySequenceFilter_* values:
+    ///         eGCClient_GetAssemblyBySequenceFilter_all     - do not filter out anything
+    ///         eGCClient_GetAssemblyBySequenceFilter_latest  - look up for latest releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_major   - look up for major releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_genbank - look up for GenBank releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_refseq  - look up for RefSeq releases only
+    ///     If none of genbank of refseq filters are specified then both GenBank and RefSeq releases will be returned
+    /// @param sort
+    ///     Assembly ordering:
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_default - sort by number of sequences found in assembly, then by reference/representative/other, then by modification date
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_latest  - sort by number of sequences found in assembly, then latest first, then by reference/representative/other, then by modification date
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_major   - sort by number of sequences found in assembly, then major first, then by reference/representative/other, then by modification date
+    /// @return If assembly is found then return it with list of related sequences. NULL otherwise.
+    CRef<CGCClient_AssemblySequenceInfo> FindOneAssemblyBySequences
+        (const list<string>& sequence_acc,
+         int filter,
+         CGCClient_GetAssemblyBySequenceRequest::ESort sort = CGCClient_GetAssemblyBySequenceRequest::eSort_default);
+
+    /// Find assemblies by sequence accession
+    ///
+    /// @param sequence_acc
+    ///     Sequence accession in ACC.VER format
+    /// @param filter
+    ///     Bitfield, OR-ed combination of eGCClient_GetAssemblyBySequenceFilter_* values:
+    ///         eGCClient_GetAssemblyBySequenceFilter_all     - do not filter out anything
+    ///         eGCClient_GetAssemblyBySequenceFilter_latest  - look up for latest releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_major   - look up for major releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_genbank - look up for GenBank releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_refseq  - look up for RefSeq releases only
+    ///     If none of genbank of refseq filters are specified then both GenBank and RefSeq releases will be returned
+    /// @param sort
+    ///     Assembly ordering:
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_default - sort by number of sequences found in assembly, then by reference/representative/other, then by modification date
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_latest  - sort by number of sequences found in assembly, then latest first, then by reference/representative/other, then by modification date
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_major   - sort by number of sequences found in assembly, then major first, then by reference/representative/other, then by modification date
+    /// @return List of found assemblies with related sequences.
+    CRef<CGCClient_AssembliesForSequences> FindAssembliesBySequences
+        (const string& sequence_acc,
+         int filter,
+         CGCClient_GetAssemblyBySequenceRequest::ESort sort = CGCClient_GetAssemblyBySequenceRequest::eSort_default);
+
+    /// Find assemblies by sequence accessions
+    ///
+    /// @param sequence_acc
+    ///     Sequence accessions in ACC.VER format
+    /// @param filter
+    ///     Bitfield, OR-ed combination of eGCClient_GetAssemblyBySequenceFilter_* values:
+    ///         eGCClient_GetAssemblyBySequenceFilter_all     - do not filter out anything
+    ///         eGCClient_GetAssemblyBySequenceFilter_latest  - look up for latest releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_major   - look up for major releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_genbank - look up for GenBank releases only
+    ///         eGCClient_GetAssemblyBySequenceFilter_refseq  - look up for RefSeq releases only
+    ///     If none of genbank of refseq filters are specified then both GenBank and RefSeq releases will be returned
+    /// @param sort
+    ///     Assembly ordering:
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_default - sort by number of sequences found in assembly, then by reference/representative/other, then by modification date
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_latest  - sort by number of sequences found in assembly, then latest first, then by reference/representative/other, then by modification date
+    ///         CGCClient_GetAssemblyBySequenceRequest::eSort_major   - sort by number of sequences found in assembly, then major first, then by reference/representative/other, then by modification date
+    /// @return List of found assemblies with related sequences.
+    CRef<CGCClient_AssembliesForSequences> FindAssembliesBySequences
+        (const list<string>& sequence_acc,
+         int filter,
+         CGCClient_GetAssemblyBySequenceRequest::ESort sort = CGCClient_GetAssemblyBySequenceRequest::eSort_default);
+
 
 
     CRef<CGCClient_EquivalentAssemblies> GetEquivalentAssemblies(const string& acc,
@@ -159,6 +257,7 @@ private:
     CGenomicCollectionsService(const CGenomicCollectionsService& value);
     CGenomicCollectionsService& operator=(const CGenomicCollectionsService& value);
 
+    CRef<CGCClient_AssembliesForSequences> FindAssembliesBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort, bool top_only);
 };
 
 END_objects_SCOPE

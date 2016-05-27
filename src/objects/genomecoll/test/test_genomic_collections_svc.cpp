@@ -179,7 +179,7 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
 
     argDesc->AddKey("request", "request",
                             "Type of request", CArgDescriptions::eString);
-    argDesc->SetConstraint("request", &(*new CArgAllow_Strings,"get-chrtype-valid","get-assembly","get-assembly-blob","get-best-assembly","get-all-assemblies","get-equivalent-assemblies"));
+    argDesc->SetConstraint("request", &(*new CArgAllow_Strings,"get-chrtype-valid","get-assembly","get-assembly-blob","get-best-assembly","get-all-assemblies","get-equivalent-assemblies","get-assembly-by-sequence"));
     
     argDesc->AddOptionalKey("url", "Url",
                             "URL to genemic collections service.cgi", CArgDescriptions::eString);
@@ -254,16 +254,20 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
                     CArgDescriptions::eString);
 
     argDesc->AddOptionalKey("-filter", "filter",
-                            "Find best assembly - filter",
-                            CArgDescriptions::eInteger);
+                            "Get assembly by sequence - filter",
+                            CArgDescriptions::eString);
 
     argDesc->AddOptionalKey("-sort", "sort",
-                            "Find best assembly - sort",
-                            CArgDescriptions::eInteger);
+                            "Get assembly by sequence - sort",
+                            CArgDescriptions::eString);
 
     argDesc->AddOptionalKey("-limit", "limit",
                             "Find best assembly - return limit",
                             CArgDescriptions::eInteger);
+
+    argDesc->AddOptionalKey("top_asm", "top_assembly",
+                            "Get assembly by sequence - return top assembly only",
+                            CArgDescriptions::eBoolean);
 
     argDesc->AddOptionalKey("equiv", "equivalency",
                             "Get equivalent assemblies - equivalency type",
@@ -420,6 +424,30 @@ int CTestGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsSer
 
             CRef<CGCClient_AssembliesForSequences> reply(service.FindAllAssemblies(acc, filter, sort));
             ostr << *reply;
+        }
+        else if(request == "get-assembly-by-sequence")
+        {
+            list<string> acc, filter_s;
+            NStr::Split(args["acc"].AsString(), ",", acc);
+            NStr::Split(args["filter"] ? args["filter"].AsString() : "all", ",", filter_s);
+
+            int filter = 0;
+            ITERATE(list<string>, it, filter_s)
+                filter |= ENUM_METHOD_NAME(EGCClient_GetAssemblyBySequenceFilter)()->FindValue(*it);
+
+            int sort = args["sort"] ? CGCClient_GetAssemblyBySequenceRequest::ENUM_METHOD_NAME(ESort)()->FindValue(args["sort"].AsString()) : CGCClient_GetAssemblyBySequenceRequest::eSort_default;
+            bool top_asm = args["top_asm"] ? args["top_asm"].AsBoolean() : false;
+
+            if(top_asm)
+            {
+                CRef<CGCClient_AssemblySequenceInfo> reply(service.FindOneAssemblyBySequences(acc, filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort)));
+                ostr << *reply;
+            }
+            else
+            {
+                CRef<CGCClient_AssembliesForSequences> reply(service.FindAssembliesBySequences(acc, filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort)));
+                ostr << *reply;
+            }
         }
         else if(request == "get-equivalent-assemblies")
         {

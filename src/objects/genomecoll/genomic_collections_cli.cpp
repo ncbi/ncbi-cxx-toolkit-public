@@ -311,6 +311,58 @@ CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAllAssemb
 }
 
 
+CRef<CGCClient_AssemblyInfo> CGenomicCollectionsService::FindOneAssemblyBySequences(const string& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort)
+{
+    CRef<CGCClient_AssemblySequenceInfo> asmseq_info(FindOneAssemblyBySequences(list<string>(1, sequence_acc), filter, sort));
+
+    return asmseq_info ? CRef<CGCClient_AssemblyInfo>(&asmseq_info->SetAssembly()) : CRef<CGCClient_AssemblyInfo>();
+}
+
+CRef<CGCClient_AssemblySequenceInfo> CGenomicCollectionsService::FindOneAssemblyBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort)
+{
+    CRef<CGCClient_AssembliesForSequences> assm(FindAssembliesBySequences(sequence_acc, filter, sort, true));
+
+    return assm->CanGetAssemblies() && !assm->GetAssemblies().empty() ?
+           CRef<CGCClient_AssemblySequenceInfo>(assm->SetAssemblies().front()) :
+           CRef<CGCClient_AssemblySequenceInfo>();
+}
+
+CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssembliesBySequences(const string& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort)
+{
+    return FindAssembliesBySequences(list<string>(1, sequence_acc), filter, sort);
+}
+
+CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssembliesBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort)
+{
+    return FindAssembliesBySequences(sequence_acc, filter, sort, false);
+}
+CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssembliesBySequences(const list<string>& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort, bool top_only)
+
+{
+    CGCClient_GetAssemblyBySequenceRequest req;
+    CGCClientResponse reply;
+
+    req.SetSequence_acc().assign(sequence_acc.begin(), sequence_acc.end());
+    req.SetFilter(filter);
+    req.SetSort(sort);
+    req.SetTop_assembly_only(top_only ? 1 : 0);
+
+    LogRequest(req);
+
+    try {
+        CRef<CGCClient_AssembliesForSequences> assm = AskGet_assembly_by_sequence(req, &reply);
+
+        return assm;
+    } catch (const CException& ex) {
+        if(reply.IsSrvr_error()) {
+            NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription(), ex);
+        }
+        throw;
+    }
+    return CRef<CGCClient_AssembliesForSequences>();
+}
+
+
 CRef<CGCClient_EquivalentAssemblies> CGenomicCollectionsService::GetEquivalentAssemblies(const string& acc, int equivalency)
 {
     CGCClient_GetEquivalentAssembliesRequest req;
