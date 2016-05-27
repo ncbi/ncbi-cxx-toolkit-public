@@ -1,0 +1,107 @@
+Seq-entry ::= seq {
+  id {
+    local
+      str "nuc1" } ,
+  descr {
+    molinfo {
+      biomol genomic } ,
+    create-date
+      std {
+        year 2016 ,
+        month 2 ,
+        day 3 } } ,
+  inst {
+    repr raw ,
+    mol rna ,
+    length 2760 ,
+    strand ss ,
+    seq-data
+      ncbi2na '8554CF3D2088EFE0421FE009502282351502E80B1479275DC1C1D44BD78810F
+41D0507317B74A2A2D0AE80E2149304A8282782E4835EA341FA75E7BC3B77A528EB5282523D55E
+95334940CF7E00775035C3F08AFF54C24443A2D0109F579285C870EB57FF3203CD50D0289C50E9
+50FC9F3B0B09032F254A01127C5002FCD7D4FDC2043DD70D3B370D49030482005D2AD414041782
+0303AEAF24AD509FA479530228923D00550220D4B85480808305FD710A8D414917A201D10AF388
+7040D03CC0F075D48A927752C50BB43DEF8504E00F3C542AC8F5288F549CBB1C9340FF542A0CBF
+4814300AD4DE3DE03C351680E013A054521E282B5B35D4020DEFFDEA09044E81554028D1D557FE
+2AC0744292828DFC7F3D35FE8908A03B55C578311D5CC355228DDD7CE52230CEEA28288E0FD7A4
+7F48524AD05280D4D17D5E0F75F6AD22175361E10E08A350F8541AB8E2FF12A85D31FAAC283527
+D0282D0BCAC5B808C54CED54B4D4D421008317504F512305CB085088F6DF3AE0CF357A4E48224F
+3517C413E75D770451422004BAB3CF35D70E5FE042088B114DD4DFAAB4EA14020F3B549000A820
+C533CC3273F7A8D0B450FC440DE490B95E890220490551D4B2FF527A9F22825C1314208200CE07
+384B31104128C0C75E00A84AF54D1E1DEE3D004170CCD0820B03D33794B894082D5E7BBEB81552
+A5488095DD3D47A3C77515FE97EFD288E3A2020B5441C58A92D11C24E529134DC5512135054140
+80CBD220037358808240C4857F4A8E39253BE00027C57BDC0300BF35E9524A521202EE5FFDE09E
+1D5D40404E57B4402C17C8A20A810EF7E400CFA89414BD0E02052C17CF5E281D8A75E080374A52
+004D40882AA282E28D138048022E5D33500AE539751DC070285375FD4912B9D77E908A214A76D2
+7A225253ADDE549524915E1E87849C88927CBAC40CD85475F9748945DFD7F5377F422'H } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              rna {
+                type tRNA ,
+                ext
+                  tRNA {
+                    aa
+                      ncbieaa 65 } } ,
+            partial TRUE ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local
+                    str "nuc1" ,
+                fuzz-from
+                  lim lt } } ,
+          {
+            data
+              rna {
+                type tRNA ,
+                ext
+                  tRNA {
+                    aa
+                      ncbieaa 66 } } ,
+            location
+              int {
+                from 29 ,
+                to 39 ,
+                strand plus ,
+                id
+                  local
+                    str "nuc1" } } ,
+          {
+            data
+              rna {
+                type tRNA ,
+                ext
+                  tRNA {
+                    aa
+                      ncbieaa 67 } } ,
+            location
+              int {
+                from 49 ,
+                to 109 ,
+                strand plus ,
+                id
+                  local
+                    str "nuc1" } } ,
+          {
+            data
+              rna {
+                type tRNA ,
+                ext
+                  tRNA {
+                    aa
+                      ncbieaa 68 } } ,
+            location
+              int {
+                from 119 ,
+                to 219 ,
+                strand plus ,
+                id
+                  local
+                    str "nuc1" } } } } } }
