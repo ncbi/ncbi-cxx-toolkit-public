@@ -134,6 +134,16 @@ const CMolInfo* CDiscrepancyContext::GetCurrentMolInfo()
     return mol_info;
 }
 
+bool CDiscrepancyContext::IsCurrentSequenceMrna()
+{
+    const CMolInfo* m = GetCurrentMolInfo();
+    if (m && m->IsSetBiomol() && m->GetBiomol() == CMolInfo::eBiomol_mRNA) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool CDiscrepancyContext::HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type)
 {
     return NStr::FindNoCase(def_lineage, type) != string::npos || def_lineage.empty() && biosrc.IsSetLineage() && NStr::FindNoCase(biosrc.GetLineage(), type) != string::npos;

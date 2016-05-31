@@ -938,5 +938,141 @@ DISCREPANCY_SUMMARIZE(FIND_BADLEN_TRNAS)
 }
 
 
+// GENE_PARTIAL_CONFLICT
+bool IsPartialStartConflict(const CSeq_feat& feat, const CSeq_feat& gene)
+{
+    bool rval = false;
+    bool partial_feat = feat.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial_gene = gene.GetLocation().IsPartialStart(eExtreme_Biological);
+    
+    if ((partial_feat && !partial_gene) || (!partial_feat && partial_gene)) {
+        if (feat.GetLocation().GetStart(eExtreme_Biological) == gene.GetLocation().GetStart(eExtreme_Biological)) {
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
+bool IsPartialStopConflict(const CSeq_feat& feat, const CSeq_feat& gene)
+{
+    bool rval = false;
+    bool partial_feat = feat.GetLocation().IsPartialStop(eExtreme_Biological);
+    bool partial_gene = gene.GetLocation().IsPartialStop(eExtreme_Biological);
+
+    if ((partial_feat && !partial_gene) || (!partial_feat && partial_gene)) {
+        if (feat.GetLocation().GetStop(eExtreme_Biological) == gene.GetLocation().GetStop(eExtreme_Biological)) {
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+const string kGenePartialConflictTop = "[n/2] feature location[s] conflict with partialness of overlapping gene";
+const string kGenePartialConflictOther = "[n/2] feature[s] that [is] not coding region[s] or misc_feature[s] conflict with partialness of overlapping gene";
+const string kGenePartialConflictCodingRegion = "[n/2] coding region location[s] conflict with partialness of overlapping gene";
+const string kGenePartialConflictMiscFeat = "[n/2] misc_feature location[s] conflict with partialness of overlapping gene";
+const string kConflictBoth = " feature partialness conflicts with gene on both ends";
+const string kConflictStart = " feature partialness conflicts with gene on 5' end";
+const string kConflictStop = " feature partialness conflicts with gene on 3' end";
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, CSeq_feat_BY_BIOSEQ, eOncaller, "Feature partialness should agree with gene partialness if endpoints match")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData()) {
+        return;
+    }
+    const CSeq_feat* gene = context.GetCurrentGene();
+    if (!gene) {
+        return;
+    }
+
+    CSeqFeatData::ESubtype subtype = obj.GetData().GetSubtype();
+
+    bool conflict_start = false;
+    bool conflict_stop = false;
+
+    string middle_label = kGenePartialConflictOther;
+
+    if (obj.GetData().IsCdregion()) {
+        bool is_mrna = context.IsCurrentSequenceMrna();
+        if (!context.IsEukaryotic() || is_mrna) {
+            middle_label = kGenePartialConflictCodingRegion;
+            conflict_start = IsPartialStartConflict(obj, *gene);
+            conflict_stop = IsPartialStopConflict(obj, *gene);
+            if (is_mrna && (!conflict_start || !conflict_stop)) {                
+                CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*(context.GetCurrentBioseq()));               
+                if (!conflict_start) {
+                    //look for 5' UTR
+                    TSeqPos gene_start = gene->GetLocation().GetStart(eExtreme_Biological);
+                    bool found_start = false;
+                    for (CFeat_CI fi(bsh, CSeqFeatData::eSubtype_5UTR); fi; ++fi) {
+                        if (fi->GetLocation().GetStart(eExtreme_Biological) == gene_start) {
+                            found_start = true;
+                            break;
+                        }
+                    }
+                    if (!found_start) {
+                        conflict_start = true;
+                    }
+                }
+                if (!conflict_stop) {
+                    //look for 3' UTR
+                    TSeqPos gene_stop = gene->GetLocation().GetStop(eExtreme_Biological);
+                    bool found_stop = false;
+                    for (CFeat_CI fi(bsh, CSeqFeatData::eSubtype_3UTR); fi; ++fi) {
+                        if (fi->GetLocation().GetStart(eExtreme_Biological) == gene_stop) {
+                            found_stop = true;
+                            break;
+                        }
+                    }
+                    if (!found_stop) {
+                        conflict_stop = true;
+                    }
+                }
+            }
+        }
+    } else if (obj.GetData().IsRna() ||
+        subtype == CSeqFeatData::eSubtype_intron ||
+        subtype == CSeqFeatData::eSubtype_exon ||
+        subtype == CSeqFeatData::eSubtype_5UTR ||
+        subtype == CSeqFeatData::eSubtype_3UTR ||
+        subtype == CSeqFeatData::eSubtype_misc_feature) {
+        conflict_start = IsPartialStartConflict(obj, *gene);
+        conflict_stop = IsPartialStopConflict(obj, *gene);
+        if (subtype == CSeqFeatData::eSubtype_misc_feature) {
+            middle_label = kGenePartialConflictMiscFeat;
+        }
+    }
+
+    if (conflict_start || conflict_stop) {
+        string label = CSeqFeatData::SubtypeValueToName(subtype);
+        if (conflict_start && conflict_stop) {
+            label += kConflictBoth;
+        } else if (conflict_start) {
+            label += kConflictStart;
+        } else {
+            label += kConflictStop;
+        }
+        m_Objs[kGenePartialConflictTop][middle_label][label].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+        m_Objs[kGenePartialConflictTop][middle_label][label].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(GENE_PARTIAL_CONFLICT)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
