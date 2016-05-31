@@ -208,6 +208,7 @@ public:
     static string AutoFix(TSubtype subtype, const string& value);
     void AutoFix();
 
+    static bool HasCultureNotes(const string& value);
     static void RemoveCultureNotes(string& value, bool is_species_level = true);
     void RemoveCultureNotes(bool is_species_level = true);
 

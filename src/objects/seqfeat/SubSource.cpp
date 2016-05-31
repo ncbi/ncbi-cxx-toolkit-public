@@ -4278,6 +4278,24 @@ static const char * s_ReplaceableCultureNotes[] = {
  NULL
 };
 
+
+bool CSubSource::HasCultureNotes(const string& value)
+{
+    for (size_t i = 0; s_RemovableCultureNotes[i] != NULL; i++) {
+        size_t pos = NStr::FindNoCase(value, s_RemovableCultureNotes[i]);
+        if (pos != string::npos) {
+            return true;
+        }
+    }
+    for (size_t i = 0; s_ReplaceableCultureNotes[i] != NULL; i++) {
+        if (NStr::EqualNocase(value, s_ReplaceableCultureNotes[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CSubSource::RemoveCultureNotes (string& value, bool is_species_level)
 {
     if (NStr::IsBlank(value)) {

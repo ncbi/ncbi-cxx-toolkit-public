@@ -206,5 +206,51 @@ DISCREPANCY_SUMMARIZE(INFLUENZA_DATE_MISMATCH)
 }
 
 
+// UNCULTURED_NOTES
+
+static bool HasUnculturedNotes(const CBioSource& src)
+{
+    if (!src.IsSetSubtype()) {
+        return false;
+    }
+    ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
+        if ((*it)->IsSetSubtype() &&
+            (*it)->GetSubtype() == CSubSource::eSubtype_other &&
+            (*it)->IsSetName() &&
+            CSubSource::HasCultureNotes((*it)->GetName())) {
+            return true;
+        }
+    }
+    return false;
+};
+
+
+const string kUnculturedNotes = "[n] bio-source[s] [has] uncultured note[s]";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(UNCULTURED_NOTES, CBioSource, eOncaller, "Uncultured Notes")
+//  ----------------------------------------------------------------------------
+{
+    if (HasUnculturedNotes(obj)) {
+        if (context.GetCurrentSeqdesc() != NULL) {
+            m_Objs[kUnculturedNotes].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false).Fatal();
+        } else if (context.GetCurrentSeq_feat() != NULL) {
+            m_Objs[kUnculturedNotes].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false).Fatal();
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(UNCULTURED_NOTES)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
