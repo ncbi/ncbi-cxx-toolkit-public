@@ -2043,7 +2043,11 @@ case "$compiler:$compiler_version:$with_bin_release" in
     DLL_LDFLAGS="-static-intel -diag-disable 10237 -nodefaultlibs $DLL_LDFLAGS"
     # Redundant for apps, but necessary for plugins to be adequately
     # self-contained, at least on 32-bit Linux.
-    LIBS="$LIBS -lstdc++"
+    if test "$with_bin_release" = "yes"; then
+       LDFLAGS="$LDFLAGS -static-libstdc++"
+    elif test "$with_dll" != "no"; then
+       LIBS="$LIBS -lstdc++"
+    fi
     LINK="$LINK -Kc++"
     # Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
     # stop short, as can otherwise happen. :-/
