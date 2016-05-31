@@ -169,17 +169,17 @@ void ProcessCDSRNAPair(CConstRef<CSeq_feat> cds_sf, CConstRef<CSeq_feat> rna_sf,
         &(context.GetScope()),
         sequence::fCompareOverlapping);
     if (loc_compare == sequence::eSame) {
-        m_Objs[kCDSRNAAnyOverlap][kCDSRNAExactMatch].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+        m_Objs[kCDSRNAAnyOverlap][kCDSRNAExactMatch].Ext().Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
     }
     else if (loc_compare == sequence::eContained) {
-        m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainedIn].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+        m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainedIn].Ext().Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
     }
     else if (loc_compare == sequence::eContains) {
         if (rna_sf->GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
-            m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainstRNA].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+            m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainstRNA].Ext().Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
         }
         else {
-            m_Objs[kCDSRNAAnyOverlap][kCDSRNAContains].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+            m_Objs[kCDSRNAAnyOverlap][kCDSRNAContains].Ext().Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
         }
     }
     else if (loc_compare != sequence::eNoOverlap) {
@@ -187,15 +187,15 @@ void ProcessCDSRNAPair(CConstRef<CSeq_feat> cds_sf, CConstRef<CSeq_feat> rna_sf,
         ENa_strand rna_strand = rna_sf->GetLocation().GetStrand();
         if (cds_strand == eNa_strand_minus && rna_strand != eNa_strand_minus) {
             //ADD_CDS_RNA_TRIPLET(kCDSRNAOverlapNoContain, kCDSRNAOverlapNoContainOppStrand);
-            m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainOppStrand].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+            m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain].Ext()[kCDSRNAOverlapNoContainOppStrand].Ext().Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
         }
         else if (cds_strand != eNa_strand_minus && rna_strand == eNa_strand_minus) {
             //ADD_CDS_RNA_TRIPLET(kCDSRNAOverlapNoContain, kCDSRNAOverlapNoContainOppStrand);
-            m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainOppStrand].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+            m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain].Ext()[kCDSRNAOverlapNoContainOppStrand].Ext().Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
         }
         else {
             //ADD_CDS_RNA_TRIPLET(kCDSRNAOverlapNoContain, kCDSRNAOverlapNoContainSameStrand);
-            m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainSameStrand].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
+            m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain].Ext()[kCDSRNAOverlapNoContainSameStrand].Ext().Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
         }
     }
 }
@@ -477,7 +477,7 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Extra Gen
     }
     
     if (CCleanup::IsPseudo(obj, context.GetScope())) {
-        m_Objs[kExtraGene][kExtraPseudo].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        m_Objs[kExtraGene][kExtraPseudo].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
     } else {
         // do not report if note or description
         if (obj.IsSetComment() && !NStr::IsBlank(obj.GetComment())) {
@@ -487,7 +487,7 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Extra Gen
             // ignore genes with descriptions
         }
         else {
-            m_Objs[kExtraGene][kExtraGeneNonPseudoNonFrameshift].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+            m_Objs[kExtraGene][kExtraGeneNonPseudoNonFrameshift].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
         }
     }
 
@@ -1057,8 +1057,7 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, CSeq_feat_BY_BIOSEQ, eOncaller, "Feature
         } else {
             label += kConflictStop;
         }
-        m_Objs[kGenePartialConflictTop][middle_label][label].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
-        m_Objs[kGenePartialConflictTop][middle_label][label].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false);
+        m_Objs[kGenePartialConflictTop][middle_label].Ext()[label].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false);
     }
 }
 
@@ -1070,7 +1069,7 @@ DISCREPANCY_SUMMARIZE(GENE_PARTIAL_CONFLICT)
     if (m_Objs.empty()) {
         return;
     }
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
 
@@ -1133,8 +1132,7 @@ DISCREPANCY_CASE(BAD_GENE_STRAND, CSeq_feat_BY_BIOSEQ, eOncaller, "Genes and fea
             if (!all_ok) {
                 size_t offset = m_Objs[kBadGeneStrand].GetMap().size() + 1;
                 string label = "Gene and feature strands conflict (pair " + NStr::NumericToString(offset) + ")";
-                m_Objs[kBadGeneStrand][label].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
-                m_Objs[kBadGeneStrand][label].Add(*context.NewDiscObj(fi->GetSeq_feat()), false);
+                m_Objs[kBadGeneStrand][label].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Add(*context.NewDiscObj(fi->GetSeq_feat()), false);
             }
         }
     }

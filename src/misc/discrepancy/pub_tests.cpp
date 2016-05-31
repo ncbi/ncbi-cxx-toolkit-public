@@ -233,12 +233,10 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
             string top = "[n] articles have title '" + it->first + "' but do not have the same author list";
             CReportNode::TNodeMap::iterator it2 = m_Objs["titles"][it->first].GetMap().begin();
             while (it2 != m_Objs["titles"][it->first].GetMap().end()) {
-                NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["titles"][it->first][it2->first].GetObjects())
-                {
+                NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["titles"][it->first][it2->first].GetObjects()) {
                     const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
                     CConstRef<CSeqdesc> pub_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
-
-                    m_Objs[top]["[n] article[s] [has] title '" + it->first + "' and author list '" + it2->first + "'"].Add(*context.NewDiscObj(pub_desc), false).Fatal();
+                    m_Objs["Publication Title/Author Inconsistencies"][top]["[n] article[s] [has] title '" + it->first + "' and author list '" + it2->first + "'"].Add(*context.NewDiscObj(pub_desc), false).Fatal();
                 }
                 ++it2;
             }
