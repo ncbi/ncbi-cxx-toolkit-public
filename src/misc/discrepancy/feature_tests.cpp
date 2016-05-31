@@ -1150,5 +1150,67 @@ DISCREPANCY_SUMMARIZE(BAD_GENE_STRAND)
 }
 
 
+//MICROSATELLITE_REPEAT_TYPE
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MICROSATELLITE_REPEAT_TYPE, CSeq_feat_BY_BIOSEQ, eOncaller, "Microsatellites must have repeat type of tandem")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region || !obj.IsSetQual())
+        return;
+
+    bool is_microsatellite = false;
+    bool is_tandem = false;
+
+    const CSeq_feat::TQual& quals = obj.GetQual();
+    for (auto it = quals.begin(); it != quals.end() && (!is_microsatellite || !is_tandem); ++it) {
+        const CGb_qual& qual = **it;
+        if (NStr::EqualCase(qual.GetQual(), "satellite")) {
+            if (NStr::EqualNocase(qual.GetVal(), "microsatellite") ||
+                NStr::StartsWith(qual.GetVal(), "microsatellite:", NStr::eNocase)) {
+                is_microsatellite = true;
+            }
+        }
+        else if (NStr::EqualCase(qual.GetQual(), "rpt_type")) {
+            is_tandem = NStr::EqualCase(qual.GetVal(), "tandem");
+        }
+    }
+
+    if (is_microsatellite && !is_tandem) {
+        m_Objs["[n] microsatellite[s] do not have a repeat type of tandem"].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Fatal();
+    }
+}
+
+// ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MICROSATELLITE_REPEAT_TYPE)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_AUTOFIX(MICROSATELLITE_REPEAT_TYPE)
+    //  ----------------------------------------------------------------------------
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf) {
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*sf);
+            CRef<CGb_qual> new_qual(new CGb_qual("rpt_type", "tandem"));
+            new_feat->SetQual().push_back(new_qual);
+            CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+            feh.Replace(*new_feat);
+            n++;
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("MICROSATELLITE_REPEAT_TYPE: added repeat type of tandem to [n] microsatellite[s]", n) : 0);
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

@@ -1,0 +1,306 @@
+Seq-entry ::= set {
+  class genbank,
+  seq-set {
+    seq {
+      id {
+        local str "Seq1",
+        general {
+          db "BankIt",
+          tag str "1657039/Seq1"
+        },
+        general {
+          db "TMSMART",
+          tag id 39787263
+        },
+        genbank {
+          accession "KF591393"
+        }
+      },
+      descr {
+        molinfo {
+          biomol genomic,
+          completeness partial
+        },
+        source {
+          genome genomic,
+          org {
+            taxname "Pan paniscus",
+            common "pygmy chimpanzee",
+            db {
+              {
+                db "taxon",
+                tag id 9597
+              }
+            },
+            orgname {
+              gcode 1,
+              mgcode 2,
+              div "PRI"
+            }
+          }
+        },
+        update-date std {
+          year 2013,
+          month 8,
+          day 27,
+          hour 10,
+          minute 59,
+          second 58
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 334,
+        strand ds,
+        seq-data iupacna "AAAAAACCGAACTTGAGGCCATTGATATAGTTGAAAGTGATCAGAAATTTGA
+AAGTACCGGGGAGGCTCTCCGTAAATTGATTGAACGTAAGATTAAAATTAATCATACCCTTCTGGATAAGAAAAACGA
+AAAAACGGGTTACCTCCTATAATGATAGTAATAGCTCAAAGACTTCACATTAATGACCTACACGGCATAATCAAAGAA
+ACAGAACCCGTAATCCCTGCCTCTGAAGCCCTAAAAACCCTAAGACAAGGGGACACCATAGACCCCAACACATGGGTG
+GACTTAAACCTCCCCGCTATCTGTGAAAACCCCGAAACTGACCTACTA"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data imp {
+                key "repeat_region"
+              },
+              location int {
+                from 0,
+                to 9,
+                id local str "Seq1"
+              },
+              qual {
+                {
+                  qual "rpt_type",
+                  val "tandem"
+                }
+              }
+            },
+            {
+              data imp {
+                key "repeat_region"
+              },
+              location int {
+                from 10,
+                to 19,
+                strand plus,
+                id genbank {
+                  accession "KF591393"
+                }
+              },
+              qual {
+                {
+                  qual "rpt_type",
+                  val "tandem"
+                },
+                {
+                  qual "satellite",
+                  val "microSatellite"
+                }
+              }
+            },
+            {
+              data imp {
+                key "repeat_region"
+              },
+              location int {
+                from 29,
+                to 39,
+                strand plus,
+                id genbank {
+                  accession "KF591393"
+                }
+              },
+              qual {
+                {
+                  qual "satellite",
+                  val "satellite:beta"
+                }
+              }
+            },
+            {
+              data imp {
+                key "repeat_region"
+              },
+              location int {
+                from 49,
+                to 59,
+                strand plus,
+                id genbank {
+                  accession "KF591393"
+                }
+              },
+              qual {
+                {
+                  qual "satellite",
+                  val "microsatellite:S1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq2",
+        general {
+          db "BankIt",
+          tag str "1657039/Seq2"
+        },
+        general {
+          db "TMSMART",
+          tag id 39787265
+        },
+        genbank {
+          accession "KF591394"
+        }
+      },
+      descr {
+        molinfo {
+          biomol genomic,
+          completeness partial
+        },
+        source {
+          genome genomic,
+          org {
+            taxname "Karenia brevis",
+            db {
+              {
+                db "taxon",
+                tag id 156230
+              }
+            },
+            orgname {
+              gcode 1,
+              mgcode 4,
+              div "PLN"
+            }
+          }
+        },
+        update-date std {
+          year 2013,
+          month 8,
+          day 27,
+          hour 10,
+          minute 59,
+          second 58
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 262,
+        strand ds,
+        seq-data iupacna "CCGGGGGGTATTGATGAAGCTTGAACGAAGTGGGGAGTAAGATCGGGAGTGC
+GATCGGCAATGGCTTGGATCGTGCTAAATCAAAAGTGGAAGCCCTTAACGAGAAATTAGGCACTATGGGGCAGGTCAT
+AACTAGTGCTGTCGGTGCAATAGGAATGGGGGGTATTTATGACCTCACCGTCGCAATTCATCAGTTTCAGCATGTCCC
+TCCTACTCCTCATATACGATCTTGGAGTGCAACTGATAACATGGGTCATTAACA"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus "Hypothetical protein gene",
+                desc "Hypothetical protein gene"
+              },
+              location int {
+                from 119,
+                to 130,
+                strand plus,
+                id local str "Seq2"
+              }
+            },
+            {
+              data imp {
+                key "repeat_region"
+              },
+              location int {
+                from 0,
+                to 9,
+                strand plus,
+                id genbank {
+                  accession "KF591394"
+                }
+              },
+              qual {
+                {
+                  qual "rpt_type",
+                  val "inverted"
+                }
+              }
+            },
+            {
+              data imp {
+                key "repeat_region"
+              },
+              location int {
+                from 10,
+                to 19,
+                strand plus,
+                id genbank {
+                  accession "KF591394"
+                }
+              },
+              qual {
+                {
+                  qual "rpt_type",
+                  val "inverted"
+                },
+                {
+                  qual "satellite",
+                  val "microsatellite:alpha"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              location int {
+                from 29,
+                to 39,
+                strand plus,
+                id genbank {
+                  accession "KF591394"
+                }
+              },
+              qual {
+                {
+                  qual "rpt_type",
+                  val "dispersed"
+                },
+                {
+                  qual "satellite",
+                  val "microsatellite:beta"
+                }
+              }
+            },
+            {
+              data imp {
+                key "repeat_region"
+              },
+              location int {
+                from 49,
+                to 59,
+                strand plus,
+                id genbank {
+                  accession "KF591394"
+                }
+              },
+              qual {
+                {
+                  qual "satellite",
+                  val "minisatellite:S1"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
