@@ -35,7 +35,7 @@ class TestGapStats(unittest.TestCase):
 
         # remove irrelevant applog-style messages from stderr, if any
         stderr_irrelevant_lines_re = re.compile(
-            br'UNK_SESSION\s*gap_stats\s*(start|stop|extra)')
+            br'(UNK_SESSION|UNK_CLIENT).*gap_stats\s*(start|stop|extra)')
         stderr_str = b'\n'.join(
             filter((lambda line: not stderr_irrelevant_lines_re.search(line)),
                    stderr_str.split(b'\n'))
