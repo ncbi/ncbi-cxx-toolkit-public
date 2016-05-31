@@ -891,7 +891,7 @@ s_MakeScore(const string& ident_string, double d, int i, bool is_integer)
 /// [in]
 /// @param gi_list list of GIs associated with this HSP [in]
 static size_t 
-s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<int>  & gi_list)
+s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<TGi>  & gi_list)
 {
     _ASSERT(hsp);
     // query coverage hsp
@@ -939,7 +939,7 @@ s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<int>  & gi_list)
 static void
 s_BuildScoreList(const BlastHSP     * hsp,
                  CSeq_align::TScore & scores,
-                 const vector<int>  & gi_list,
+                 const vector<TGi>  & gi_list,
                  Int4 query_length)
 {
     if (!hsp)
@@ -986,9 +986,9 @@ s_BuildScoreList(const BlastHSP     * hsp,
     }
     
     if ( !gi_list.empty() ) {
-        static const string kUseThisGi("use_this_gi");
-        ITERATE(vector<int>, gi, gi_list) {
-            scores.push_back(s_MakeScore(kUseThisGi, 0.0, *gi, true));
+        ITERATE(vector<TGi>, gi, gi_list) { 
+	    const string kGI = string("gi:") + NStr::NumericToString(*gi);
+            scores.push_back(s_MakeScore(kGI, 0.0, 0, true));
         }
     }
     
@@ -1014,7 +1014,7 @@ s_BuildScoreList(const BlastHSP     * hsp,
 static void
 s_AddScoresToSeqAlign(CRef<CSeq_align>  & seqalign,
                       const BlastHSP    * hsp,
-                      const vector<int> & gi_list,
+                      const vector<TGi> & gi_list,
                       Int4 query_length)
 {
     // Add the scores for this HSP
@@ -1036,7 +1036,7 @@ CRef<CDense_diag>
 x_UngappedHSPToDenseDiag(BlastHSP* hsp, CRef<CSeq_id> query_id, 
                          CRef<CSeq_id> subject_id,
                          Int4 query_length, Int4 subject_length,
-                         const vector<int> & gi_list)
+                         const vector<TGi> & gi_list)
 {
     CRef<CDense_diag> retval(new CDense_diag());
     
@@ -1086,7 +1086,7 @@ CRef<CStd_seg>
 x_UngappedHSPToStdSeg(BlastHSP* hsp, CRef<CSeq_id> query_id, 
                       CRef<CSeq_id> subject_id,
                       Int4 query_length, Int4 subject_length,
-                      const vector<int> & gi_list)
+                      const vector<TGi> & gi_list)
 {
     CRef<CStd_seg> retval(new CStd_seg());
 
@@ -1162,7 +1162,7 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                                CRef<CSeq_id> subject_id, 
                                Int4 query_length,
                                Int4 subject_length,
-                               const vector<int> & gi_list,
+                               const vector<TGi> & gi_list,
                                vector<CRef<CSeq_align > > & sa_vector)
 {
     CRef<CSeq_align> seqalign(new CSeq_align()); 
@@ -1221,7 +1221,7 @@ void
 BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
                        CRef<CSeq_id> query_id, CRef<CSeq_id> subject_id, 
                        Int4 query_length, Int4 subject_length, bool is_ooframe,
-                       const vector<int> & gi_list,
+                       const vector<TGi> & gi_list,
                        vector<CRef<CSeq_align > > & sa_vector)
 {
     // Process the list of HSPs corresponding to one subject sequence and
@@ -1349,7 +1349,7 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         }
 
         // Get GIs for entrez query restriction.
-        vector<int> gi_list;
+        vector<TGi> gi_list;
         GetFilteredRedundantGis(*seqinfo_src, hsp_list->oid, gi_list);
         
         // stores a CSeq_align for each matching sequence
@@ -1556,7 +1556,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             TSeqPos query_length = query_data.GetSeqLength(qindex); 
             s_AdjustNegativeSubjFrameInBlastn(kSubjStrand, prog, hsp_list);
             
-            vector<int> gi_list;
+            vector<TGi> gi_list;
             GetFilteredRedundantGis(seqinfo_src, hsp_list->oid, gi_list);
 
             // Union subject sequence ranges
@@ -1791,7 +1791,7 @@ CRef<CStd_seg>
 x_NonTranslatedHSPToStdSeg(BlastHSP* hsp, CRef<CSeq_id> query_id,
                       	   CRef<CSeq_id> subject_id,
                       	   Int4 query_length, Int4 subject_length,
-                      	   const vector<int> & gi_list)
+                      	   const vector<TGi> & gi_list)
 {
     CRef<CStd_seg> retval(new CStd_seg());
 
@@ -1854,7 +1854,7 @@ BLASTPrelminSearchHitListToStdSeg(EBlastProgramType 	   program,
 
 	CRef<CStd_seg>
 	(*fun_ptr) (BlastHSP* , CRef<CSeq_id> , CRef<CSeq_id> , Int4 , Int4 ,
-	                      	   const vector<int> & ) = NULL;
+	                      	   const vector<TGi> & ) = NULL;
 
 	if((TRANSLATED_QUERY_MASK | TRANSLATED_SUBJECT_MASK) & program )
 		fun_ptr = x_UngappedHSPToStdSeg;
@@ -1874,7 +1874,7 @@ BLASTPrelminSearchHitListToStdSeg(EBlastProgramType 	   program,
             const Uint4 oid = hsp_list->oid;
        	    TSeqPos subject_length = 0;
        	    CRef<CSeq_id> subject_id;
-       	    vector<int> gi_list;
+       	    vector<TGi> gi_list;
        	    GetFilteredRedundantGis(*subject_seqinfo, oid, gi_list);
        	    GetSequenceLengthAndId(subject_seqinfo, oid, subject_id, &subject_length);
 

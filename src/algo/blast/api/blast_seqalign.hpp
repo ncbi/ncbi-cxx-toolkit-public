@@ -78,7 +78,7 @@ BLASTHspListToSeqAlign(EBlastProgramType program,
                        Int4 query_length, 
                        Int4 subject_length,
                        bool is_ooframe,
-                       const vector<int> & gi_list,
+                       const vector<TGi> & gi_list,
                        vector<CRef<CSeq_align > > & sa_vector);
 
 void
@@ -88,7 +88,7 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                                CRef<CSeq_id> subject_id, 
                                Int4 query_length, 
                                Int4 subject_length,
-                               const vector<int> & gi_list,
+                               const vector<TGi> & gi_list,
                                vector<CRef<CSeq_align > > & sa_vector);
 
 /// Convert traceback output into Seq-align format.

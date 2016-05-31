@@ -68,7 +68,7 @@ void GetSequenceLengthAndId(const blast::IBlastSeqInfoSrc * seqinfo_src,
 
 void GetFilteredRedundantGis(const IBlastSeqInfoSrc & seqinfo_src,
                              int                      oid,
-                             vector<int>            & gis)
+                             vector<TGi>            & gis)
 {
     gis.resize(0);
     
@@ -81,7 +81,7 @@ void GetFilteredRedundantGis(const IBlastSeqInfoSrc & seqinfo_src,
     
     ITERATE(list< CRef<CSeq_id> >, id, seqid_list) {
         if ((**id).IsGi()) {
-            gis.push_back(GI_TO(int, (**id).GetGi()));
+            gis.push_back((**id).GetGi());
         }
     }
 

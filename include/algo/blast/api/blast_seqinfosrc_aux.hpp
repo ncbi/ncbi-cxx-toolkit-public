@@ -73,7 +73,7 @@ void GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src,
 NCBI_XBLAST_EXPORT
 void GetFilteredRedundantGis(const IBlastSeqInfoSrc & sisrc,
                              int                      oid,
-                             vector<int>            & gis);
+                             vector<TGi>            & gis);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

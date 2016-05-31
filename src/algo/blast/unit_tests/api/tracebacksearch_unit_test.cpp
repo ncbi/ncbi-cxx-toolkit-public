@@ -218,9 +218,10 @@ public:
         return hsps;
     }
 
-    void x_FindUsedGis(const CDense_seg & dseg, set<int> & used)
+    void x_FindUsedGis(const CDense_seg & dseg, set<TGi> & used)
     {
         typedef vector< CRef< CScore > > TScoreList;
+	const string k_GiPrefix = "gi:";
         
         if (dseg.CanGetScores()) {
             const TScoreList & scores = dseg.GetScores();
@@ -235,8 +236,14 @@ public:
                         BOOST_REQUIRE(sc1.CanGetValue());
                         BOOST_REQUIRE(sc1.GetValue().IsInt());
                         
-                        used.insert(sc1.GetValue().GetInt());
+                        used.insert(GI_FROM(TIntId, sc1.GetValue().GetInt()));
                     }
+		    else if (NStr::StartsWith(id_name, k_GiPrefix))
+		    {
+			string strGI = NStr::Replace(id_name, k_GiPrefix, "");
+			TGi gi = NStr::StringToInt8(strGI);
+			used.insert(gi);
+		    }
                 }
             }
         }
@@ -244,8 +251,9 @@ public:
     
     typedef vector< CRef< CScore > > TScoreList;
     
-    void x_FindUsedGis(const TScoreList & scores, set<int> & used)
+    void x_FindUsedGis(const TScoreList & scores, set<TGi> & used)
     {
+	const string k_GiPrefix = "gi:";
         ITERATE(TScoreList, sc, scores) {
             const CScore & sc1 = **sc;
             
@@ -256,13 +264,19 @@ public:
                     BOOST_REQUIRE(sc1.CanGetValue());
                     BOOST_REQUIRE(sc1.GetValue().IsInt());
                         
-                    used.insert(sc1.GetValue().GetInt());
+                    used.insert(GI_FROM(TIntId, sc1.GetValue().GetInt()));
+                }
+		else if (NStr::StartsWith(id_name, k_GiPrefix))
+		{
+			string strGI = NStr::Replace(id_name, k_GiPrefix, "");
+			TGi gi = NStr::StringToInt8(strGI);
+			used.insert(gi);
                 }
             }
         }
     }
     
-    void x_FindUsedGis(const CSeq_align_set & aset, set<int> & used)
+    void x_FindUsedGis(const CSeq_align_set & aset, set<TGi> & used)
     {
         ITERATE(CSeq_align_set::Tdata, align, aset.Get()) {
             CSeq_align::C_Segs::E_Choice ch = (**align).GetSegs().Which();
@@ -340,7 +354,7 @@ BOOST_FIXTURE_TEST_SUITE(tracebacksearch, CTracebackSearchTestFixture)
 BOOST_AUTO_TEST_CASE(Traceback) {
     CSearchResultSet rset = x_Traceback(0);
     
-    set<int> use_these;
+    set<TGi> use_these;
     x_FindUsedGis(*rset[0].GetSeqAlign(), use_these);
     
     BOOST_REQUIRE(use_these.empty());
@@ -446,11 +460,11 @@ BOOST_AUTO_TEST_CASE(TracebackEntrez) {
     
     CSearchResultSet rset = x_Traceback(gi_list.GetPointerOrNull());
     
-    set<int> use_these;
+    set<TGi> use_these;
     x_FindUsedGis(*rset[0].GetSeqAlign(), use_these);
     
     BOOST_REQUIRE_EQUAL((int)use_these.size(), 1);
-    BOOST_REQUIRE_EQUAL(*use_these.begin(), 158292535);
+    BOOST_REQUIRE_EQUAL(*use_these.begin(), GI_FROM(TIntId,158292535));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
