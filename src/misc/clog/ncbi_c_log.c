@@ -1342,7 +1342,7 @@ static int /*bool*/ s_SetLogFiles(const char* path_with_base_name)
     /* Check max possible file name (path.trace) */
     n = strlen(path_with_base_name);
     assert(n);
-    assert((n + 6) < sizeof(path));
+    assert((n + 5 /*.perf*/) <= sizeof(path));
     memcpy(path, path_with_base_name, n);
 
     /* Trace */
@@ -1402,20 +1402,42 @@ static int /*bool*/ s_SetLogFiles(const char* path_with_base_name)
 /** (Re)Initialize logging file streams.
  *  Use application base name and specified directory as path for logging files.
  */
-static int /*bool*/ s_SetLogFilesDir(const char* dir) 
+static int /*bool*/ s_SetLogFilesDir(const char* dir, int /*bool*/ is_applog) 
 {
     char path[FILENAME_MAX + 1];
-    size_t n, nlen;
+#if defined(NCBI_OS_UNIX)
+    char filename_buf[FILENAME_MAX + 1];
+#endif
+    const char* filename = NULL;
+    size_t n, filelen;
 
     assert(dir);
     n = strlen(dir);
     assert(n);
-    nlen = strlen(sx_Info->app_base_name);
-    assert(nlen);
 
+    /* When using applog, create separate log file for each user */
+    /* to avoid permission problems */
+#if defined(NCBI_OS_UNIX)
+    if (is_applog) {
+        int nbuf;
+        nbuf = sprintf(filename_buf, "%s.%d", sx_Info->app_base_name, geteuid());
+        if (nbuf <= 0) {
+            return 0;
+        }
+        filelen = nbuf;
+        filename_buf[filelen] = '\0';
+        filename = filename_buf;
+    }
+#endif
+    if (!filename) {
+        filename = sx_Info->app_base_name;
+        filelen  = strlen(filename);
+        assert(filelen);
+    }
+    
     /* Check max possible file name (dir/basename.trace) */
-    assert((n + 1 + nlen + 6) < sizeof(path));
-    s_ConcatPathEx(dir, n,  sx_Info->app_base_name, nlen, path, FILENAME_MAX + 1);
+    assert((n + 1 + filelen + 5) <= sizeof(path));
+    s_ConcatPathEx(dir, n, filename, filelen, path, FILENAME_MAX + 1);
     return s_SetLogFiles(path);
 }
 
@@ -1515,7 +1537,7 @@ static void s_InitDestination(const char* logfile_path)
                 /* toolkitrc file */
                 dir = s_GetToolkitRCLogLocation();
                 if (dir) {
-                    if (s_SetLogFilesDir(dir)) {
+                    if (s_SetLogFilesDir(dir,1)) {
                         sx_Info->reuse_file_names = 1;
                         return;
                     }
@@ -1523,7 +1545,7 @@ static void s_InitDestination(const char* logfile_path)
                 /* server port */
                 if (sx_Info->server_port) {
                     sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
-                    if (s_SetLogFilesDir(xdir)) {
+                    if (s_SetLogFilesDir(xdir,1)) {
                         sx_Info->reuse_file_names = 1;
                         return;
                     }
@@ -1532,7 +1554,7 @@ static void s_InitDestination(const char* logfile_path)
                 /* /log/srv */ 
                 dir = s_ConcatPath(kBaseLogDir, "srv", xdir, FILENAME_MAX + 1);
                 if (dir) {
-                    if (s_SetLogFilesDir(dir)) {
+                    if (s_SetLogFilesDir(dir,1)) {
                         sx_Info->reuse_file_names = 1;
                         return;
                     }
@@ -1540,7 +1562,7 @@ static void s_InitDestination(const char* logfile_path)
                 /* /log/fallback */
                 dir = s_ConcatPath(kBaseLogDir, "fallback", xdir, FILENAME_MAX + 1);
                 if (dir) {
-                    if (s_SetLogFilesDir(dir)) {
+                    if (s_SetLogFilesDir(dir,1)) {
                         sx_Info->reuse_file_names = 1;
                         return;
                     }
@@ -1549,7 +1571,7 @@ static void s_InitDestination(const char* logfile_path)
                 if (sx_Info->logsite  &&  sx_Info->logsite[0] != '\0') {
                     dir = s_ConcatPath(kBaseLogDir, sx_Info->logsite, xdir, FILENAME_MAX + 1);
                     if (dir) {
-                        if (s_SetLogFilesDir(dir)) {
+                        if (s_SetLogFilesDir(dir,1)) {
                             sx_Info->reuse_file_names = 1;
                             return;
                         }
@@ -1564,7 +1586,7 @@ static void s_InitDestination(const char* logfile_path)
                 #elif defined(NCBI_OS_MSWIN)
                     cwd = _getcwd(NULL, 0);
                 #endif
-                if (cwd  &&  s_SetLogFilesDir(cwd)) {
+                if (cwd  &&  s_SetLogFilesDir(cwd,0)) {
                     free(cwd);
                     sx_Info->reuse_file_names = 1;
                     return;
@@ -2667,7 +2689,7 @@ extern void NcbiLog_SetHitID(const char* hit_id)
        or just save it for very next request.
     */
     if (hit_id  &&  s_IsInsideRequest(ctx)) {
-        // if not the same
+        /* if not the same */
         if ( !(ctx->phid[0]  &&  strcmp(ctx->phid, hit_id) == 0) ) {
             s_LogHitID(ctx, hit_id);
         }
