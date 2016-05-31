@@ -742,8 +742,10 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     forward_breaks, backward_breaks;
                 TSignedSeqPos current_end_point = 0;
                 TSignedSeqPos current_potential_break = 0;
+#ifdef _VERBOSE_DEBUG
                 TSeqPos count = 1;
                 TSeqPos last_break = 0;
+#endif
                 ITERATE (TAlignRangeMultiSet, i, *it) {
 #ifdef _VERBOSE_DEBUG
                      cerr << "    ("
@@ -783,8 +785,8 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 #ifdef _VERBOSE_DEBUG
                 count = 1;
                 last_break = 0;
-#endif
                 TSeqPos last_double_break = 0;
+#endif
                 REVERSE_ITERATE (TAlignRangeMultiSet, i, *it) {
 #ifdef _VERBOSE_DEBUG
                      cerr << "    ("
