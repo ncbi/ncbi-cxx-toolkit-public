@@ -515,7 +515,7 @@ void CNcbiApplogApp::Init(void)
         arg->AddFlag("sid",     "Include session ID (application-wide or request, depending on the type of token) to the query.");
         arg->AddFlag("phid",    "Include hit ID (application-wide or request, depending on the type of token) to the query.");
         arg->AddDefaultKey("maxtime", "TIME", 
-            "Specify ending date/time for a query range, current by default (YYYY-MM-DDThh:mm:sus, MM/DD/YY hh:mm:ss, time_t).", 
+            "Specify ending date/time for a query range, current by default (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
         arg->AddDefaultKey("maxtime-delay", "TIMESPAN",
             "A timespan used to adjust ending date/time for a query, specified by -maxtime argument "
@@ -990,11 +990,11 @@ string CNcbiApplogApp::GenerateToken(ETokenType type) const
 
 ETokenType CNcbiApplogApp::ParseToken()
 {
-    // Minimal token looks as:
+    // Minimal token looks like:
     //     "name=STR&pid=NUM&guid=HEX&atime=N.N"
     // Also, can have: 
     //     asid, rsid, rtime, phid, client, host, srvport, logsite.
-    // for redirect mode:
+    // and for redirect mode:
     //     hostrole, hostloc
 
     ETokenType type = eToken_App;
@@ -1244,9 +1244,9 @@ void CNcbiApplogApp::Error(const string& msg)
 
 int CNcbiApplogApp::Run(void)
 {
-    bool       is_api_init = false;               ///< C Logging API is initialized
-    ETokenType token_gen_type = eToken_Undefined; ///< Token type to generate (app, request)
-    ETokenType token_par_type = eToken_Undefined; ///< Parsed token type (app, request)
+    bool       is_api_init = false;                ///< C Logging API is initialized
+    ETokenType token_gen_type = eToken_Undefined;  ///< Token type to generate (app, request)
+    ETokenType token_par_type = eToken_Undefined;  ///< Parsed token type (app, request)
 
     try {
 
@@ -1511,6 +1511,7 @@ int CNcbiApplogApp::Run(void)
     // -----------------------------------------------------------------------
     // LOCAL logging
     // -----------------------------------------------------------------------
+
 
     // -----  start_app  -----------------------------------------------------
     // ncbi_applog start_app -pid PID -appname NAME [-host HOST] [-sid SID] [-phid PHID] [-logsite SITE] -> token
