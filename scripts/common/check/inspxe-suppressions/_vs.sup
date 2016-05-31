@@ -266,7 +266,7 @@ suppression = {
 	name = "libsybct64.dll internal problem"
 	type = {invalid_memory_access}
 	stacks = {
-		allocation={
+		{
 			!!!;
 			mod=ntdll.dll,func=RtlCompareUnicodeStrings;
 			...;
