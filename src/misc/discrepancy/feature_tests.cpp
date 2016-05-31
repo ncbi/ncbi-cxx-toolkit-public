@@ -1148,7 +1148,7 @@ DISCREPANCY_SUMMARIZE(BAD_GENE_STRAND)
     if (m_Objs.empty()) {
         return;
     }
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
 
