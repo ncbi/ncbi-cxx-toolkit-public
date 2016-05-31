@@ -166,7 +166,8 @@ void ProcessCDSRNAPair(CConstRef<CSeq_feat> cds_sf, CConstRef<CSeq_feat> rna_sf,
     sequence::ECompare loc_compare =
         sequence::Compare(cds_sf->GetLocation(),
         rna_sf->GetLocation(),
-        &(context.GetScope()));
+        &(context.GetScope()),
+        sequence::fCompareOverlapping);
     if (loc_compare == sequence::eSame) {
         m_Objs[kCDSRNAAnyOverlap][kCDSRNAExactMatch].Add(*context.NewDiscObj(cds_sf), false).Add(*context.NewDiscObj(rna_sf), false).Fatal();
     }
@@ -456,7 +457,7 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Extra Gen
         if (fi->GetData().IsCdregion() ||
             fi->GetData().IsRna()) {
             bool exclude_for_partials = false;
-            if (sequence::Compare(obj.GetLocation(), fi->GetLocation(), &(context.GetScope())) == sequence::eSame) {
+            if (sequence::Compare(obj.GetLocation(), fi->GetLocation(), &(context.GetScope()), sequence::fCompareOverlapping) == sequence::eSame) {
                 // check partials
                 if (!gene_partial_start && fi->GetLocation().IsPartialStart(eExtreme_Biological)) {
                     exclude_for_partials = true;
@@ -1072,6 +1073,83 @@ DISCREPANCY_SUMMARIZE(GENE_PARTIAL_CONFLICT)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+bool StrandsMatch(ENa_strand s1, ENa_strand s2)
+{
+    if (s1 == eNa_strand_minus && s2 != eNa_strand_minus) {
+        return false;
+    } else if (s1 != eNa_strand_minus && s2 == eNa_strand_minus) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+// BAD_GENE_STRAND
+const string kBadGeneStrand = "[n/2] feature location[s] conflict with gene location strand[s]";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(BAD_GENE_STRAND, CSeq_feat_BY_BIOSEQ, eOncaller, "Genes and features that share endpoints should be on the same strand")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData() || !obj.GetData().IsGene() || !obj.IsSetLocation()) {
+        return;
+    }
+    // note - use positional instead of biological, because we are *looking* for
+    // objects on the opposite strand
+    TSeqPos gene_start = obj.GetLocation().GetStart(eExtreme_Positional);
+    TSeqPos gene_stop = obj.GetLocation().GetStop(eExtreme_Positional);
+
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*(context.GetCurrentBioseq()));
+    for (CFeat_CI fi(context.GetScope(), obj.GetLocation()); fi; ++fi) {
+        if (fi->GetData().GetSubtype() == CSeqFeatData::eSubtype_primer_bind ||
+            fi->GetData().IsGene()) {
+            continue;
+        }
+        TSeqPos feat_start = fi->GetLocation().GetStart(eExtreme_Positional);
+        TSeqPos feat_stop = fi->GetLocation().GetStop(eExtreme_Positional);
+        if (feat_start == gene_start || feat_stop == gene_stop) {
+            // compare intervals, to make sure each interval is covered by a gene interval on the correct strand
+            CSeq_loc_CI f_loc(fi->GetLocation());
+            bool all_ok = true;
+            while (f_loc && all_ok) {
+                CSeq_loc_CI g_loc(obj.GetLocation());
+                bool found = false;
+                while (g_loc && !found) {
+                    if (StrandsMatch(f_loc.GetStrand(), g_loc.GetStrand())) {
+                        sequence::ECompare cmp = sequence::Compare(*(f_loc.GetRangeAsSeq_loc()), *(g_loc.GetRangeAsSeq_loc()), &(context.GetScope()), sequence::fCompareOverlapping);
+                        if (cmp == sequence::eContained || cmp == sequence::eSame) {
+                            found = true;
+                        }
+                    }
+                    ++g_loc;
+                }
+                if (!found) {
+                    all_ok = false;
+                }
+                ++f_loc;
+            }
+            if (!all_ok) {
+                size_t offset = m_Objs[kBadGeneStrand].GetMap().size() + 1;
+                string label = "Gene and feature strands conflict (pair " + NStr::NumericToString(offset) + ")";
+                m_Objs[kBadGeneStrand][label].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+                m_Objs[kBadGeneStrand][label].Add(*context.NewDiscObj(fi->GetSeq_feat()), false);
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(BAD_GENE_STRAND)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 
 END_SCOPE(NDiscrepancy)
