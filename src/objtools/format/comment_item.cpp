@@ -73,8 +73,8 @@ bool CCommentItem::sm_FirstComment = true;
 
 static const string kRefSeq = "REFSEQ";
 static const string kRefSeqInformation = "REFSEQ INFORMATION";
-static const string kRefSeqLink = "<a href=\"http://www.ncbi.nlm.nih.gov/RefSeq/\">REFSEQ</a>";
-static const string kRefSeqInformationLink = "<a href=\"http://www.ncbi.nlm.nih.gov/RefSeq/\">REFSEQ INFORMATION</a>";
+static const string kRefSeqLink = "<a href=\"https://www.ncbi.nlm.nih.gov/RefSeq/\">REFSEQ</a>";
+static const string kRefSeqInformationLink = "<a href=\"https://www.ncbi.nlm.nih.gov/RefSeq/\">REFSEQ INFORMATION</a>";
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -692,7 +692,7 @@ string CCommentItem::GetStringForRefTrack
          oss << s;
      }}
 
-    const static string kRefSeqGeneLink = "<a href=\"http://www.ncbi.nlm.nih.gov/refseq/rsg/\">RefSeqGene</a>";
+    const static string kRefSeqGeneLink = "<a href=\"https://www.ncbi.nlm.nih.gov/refseq/rsg/\">RefSeqGene</a>";
     const static string kRefSeqGene = "RefSeqGene";
 
     /// check for a concomitant RefSeqGene item
@@ -1206,7 +1206,7 @@ string CCommentItem::GetStringForModelEvidance
     }
 
     const char *documentation_str = ( bHtml ? 
-        "<a href=\"http://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/\">Documentation</a>" : 
+        "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/\">Documentation</a>" : 
         "Documentation" );
 
     text << ".~Also see:~"
@@ -1272,7 +1272,7 @@ static bool s_GetEncodeValues
 
 string CCommentItem::GetStringForEncode(CBioseqContext& ctx)
 {
-    const static string kEncodeProjLink = "http://www.nhgri.nih.gov/10005107";
+    const static string kEncodeProjLink = "https://www.nhgri.nih.gov/10005107";
 
     const bool bHtml = ctx.Config().DoHTML();
 
@@ -1322,7 +1322,7 @@ string CCommentItem::GetStringForAuthorizedAccess(CBioseqContext& ctx)
         str << "</a>";
         str << " to Study ";
         str << "<a href=\""  
-            << "http://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id="
+            << "https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id="
             << sAuthorizedAccess << "\">";
         str << sAuthorizedAccess;
         str << "</a>";
