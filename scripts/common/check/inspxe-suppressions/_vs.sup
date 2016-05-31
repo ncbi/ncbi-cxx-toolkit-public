@@ -263,16 +263,6 @@ suppression = {
 	}
 }
 suppression = {
-	name = "False positive in MS implementation of basic_string::assign()"
-	type = {invalid_memory_access}
-	stacks = {
-		{
-			!!!;
-			src=xstring,func=assign,line=1160,func_line=12;
-		}
-	}
-}
-suppression = {
 	name = "libsybct64.dll internal problem"
 	type = {invalid_memory_access}
 	stacks = {
@@ -319,12 +309,12 @@ suppression = {
 	}
 }
 suppression = {
-	name = "xstring::assign called from CNcbiEnvironment constructor"
+	name = "False positive in basic_string::assign() called from CNcbiEnvironment constructor"
 	type = {invalid_memory_access}
 	stacks = {
 		{
 			...;
-			mod=ncbi_core.dll,func=assign,src=xstring;
+			func=assign,src=xstring;
 			mod=ncbi_core.dll,func=Reset,src=ncbienv.cpp;
 			mod=ncbi_core.dll,func=CNcbiEnvironment,src=ncbienv.cpp;
 		}
