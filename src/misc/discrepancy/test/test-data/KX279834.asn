@@ -1,0 +1,5981 @@
+Seq-entry ::= set {
+  class genbank,
+  descr {
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 6
+        },
+        {
+          label str "day",
+          data int 1
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    }
+  },
+  seq-set {
+    set {
+      class phy-set,
+      descr {
+        title "Saccharomycetales 18S ribosomal RNA gene, partial sequence;
+ internal transcribed spacer 1, 5.8S ribosomal RNA gene, and internal
+ transcribed spacer 2, complete sequence; and 26S ribosomal RNA gene, partial
+ sequence.",
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Martinez-Torres",
+                      first "Abigail",
+                      initials "A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Gutierrez-Ambrocio",
+                      first "Sandra",
+                      initials "S."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Heredia-del-Orbe",
+                      first "Pamela",
+                      initials "P."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Villa-Tanaca",
+                      first "Lourdes",
+                      initials "L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Hernandez-Rodriguez",
+                      first "Cesar",
+                      initials "C."
+                    }
+                  }
+                },
+                affil std {
+                  affil "ENCB, Instituto Politecnico Nacional",
+                  div "Departamento de microbiologia",
+                  city "Mexico City",
+                  sub "Mexico City",
+                  country "Mexico",
+                  street "Prol. Carpio y Plan de Ayala. S/N Col. Casco de
+ Santo Tomas",
+                  postal-code "11340"
+                }
+              },
+              title "Inferring the role of microorganisms in water kefir
+ fermentations."
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Martinez-Torres",
+                      first "Abigail",
+                      initials "A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Gutierrez-Ambrocio",
+                      first "Sandra",
+                      initials "S."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Heredia-del-Orbe",
+                      first "Pamela",
+                      initials "P."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Villa-Tanaca",
+                      first "Lourdes",
+                      initials "L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Hernandez-Rodriguez",
+                      first "Cesar",
+                      initials "C."
+                    }
+                  }
+                },
+                affil std {
+                  affil "ENCB, Instituto Politecnico Nacional",
+                  div "Departamento de Microbiologia",
+                  city "Mexico City",
+                  country "Mexico",
+                  street "Prol. Carpio y Plan de Ayala. S/N Col. Casco de
+ Santo Tomas",
+                  postal-code "11340"
+                }
+              },
+              date std {
+                year 2016,
+                month 5,
+                day 25
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10505206
+            }
+          }
+        },
+        user {
+          type str "NcbiAutofix",
+          data {
+          }
+        },
+        create-date std {
+          year 2016,
+          month 5,
+          day 25
+        },
+        update-date std {
+          year 2016,
+          month 6,
+          day 1
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local id 1,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/1"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376426
+            },
+            genbank {
+              accession "KX279834"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK146 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK146"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "1"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 785,
+            seq-data ncbi2na '760A34F0203F0C3FE00E8FFFEFFA4224E227FC7A90821088
+E88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDFE
+41FFDFEA4F62436A9522B04044043FCDCF4F03FFB400420FF6C1E80FF00CF001FD041A377EBDD9
+36382064980E631B0EE0F920F5B834D837F81913E655FACF52AA4E5EFE26D3F5F7404F7BFACB8B
+8C77FA2F07E03E7A5FF4FA3BFFFD4088AFDDE6E7E2B30E42C6B6FF2BFC5079A70DFFFCC789B3E8
+1BCD8C20889B729810EF7C0BF85D034AC0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 14,
+                    strand plus,
+                    id local id 1,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 15,
+                    to 375,
+                    strand plus,
+                    id local id 1
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 376,
+                    to 533,
+                    strand plus,
+                    id local id 1
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 534,
+                    to 765,
+                    strand plus,
+                    id local id 1
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 766,
+                    to 784,
+                    strand plus,
+                    id local id 1,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 2,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/2"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376427
+            },
+            genbank {
+              accession "KX279835"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK79 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK79"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "2"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 804,
+            seq-data ncbi2na '876028D3C080FC30FF803A3FFFBFE90893889FF1EA420842
+23A22D496A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337
+F907FF7FA93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF7
+64D8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E
+2E31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CF
+A06F363082226DCA6043BDF00FE1740D2B28B159E0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 17,
+                    strand plus,
+                    id local id 2,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 18,
+                    to 378,
+                    strand plus,
+                    id local id 2
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 379,
+                    to 536,
+                    strand plus,
+                    id local id 2
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 537,
+                    to 768,
+                    strand plus,
+                    id local id 2
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 769,
+                    to 803,
+                    strand plus,
+                    id local id 2,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 3,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/3"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376428
+            },
+            genbank {
+              accession "KX279836"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK90A 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK90A"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "3"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 804,
+            seq-data ncbi2na '760A34F0203F0C3FE00E8FFFEFFA4224E227FC7A90821088
+E88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDFE
+41FFDFEA4F62436A9522B04044043FCDCF4F03FFB400420FF6C1E80FF00CF001FD041A377EBDD9
+36382064980E631B0EE0F920F5B834D837F81913E655FACF52AA4E5EFE26D3F5F7404F7BFACB8B
+8C77FA2F07E03E7A5FF4FA3BFFFD4088AFDDE6E7E2B30E42C6B6FF2BFC5079A70DFFFCC789B3E8
+1BCD8C20889B729810EF7C0BF85D034ACA2C56781F'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 14,
+                    strand plus,
+                    id local id 3,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 15,
+                    to 375,
+                    strand plus,
+                    id local id 3
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 376,
+                    to 533,
+                    strand plus,
+                    id local id 3
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 534,
+                    to 765,
+                    strand plus,
+                    id local id 3
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 766,
+                    to 803,
+                    strand plus,
+                    id local id 3,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 4,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/4"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376429
+            },
+            genbank {
+              accession "KX279837"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK33B 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK33B"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "4"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 786,
+            seq-data ncbi2na '79A0A34F0203F0C3FE00E8FFFEFFA4224E227FC7A9082108
+8E88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDF
+E41FFDFEA4F62436A9522B04044043FCDCF4F03FFB400420FF6C1E80FF00CF001FD041A377EBDD
+936382064980E631B0EE0F920F5B834D837F81913E655FACF52AA4E5EFE26D3F5F7404F7BFACB8
+B8C77FA2F07E03E7A5FF4FA3BFFFD4088AFDDE6E7E2B30E42C6B6FF2BFC5079A70DFFFCC789B3E
+81BCD8C20889B729810EF7C0BF85D034A0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 16,
+                    strand plus,
+                    id local id 4,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 17,
+                    to 377,
+                    strand plus,
+                    id local id 4
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 378,
+                    to 535,
+                    strand plus,
+                    id local id 4
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 536,
+                    to 767,
+                    strand plus,
+                    id local id 4
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 768,
+                    to 785,
+                    strand plus,
+                    id local id 4,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 5,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/5"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376430
+            },
+            genbank {
+              accession "KX279838"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK45 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK45"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "5"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 802,
+            seq-data ncbi2na '68234F0203F0C3FE00E8FFFEFFA4224E227FC7A90821088E
+88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDFE4
+1FFDFEA4F62436A9522B04044043FCDCF4F03FFB400420FF6C1E80FF00CF001FD041A377EBDD93
+6382064980E631B0EE0F920F5B834D837F81913E655FACF52AA4E5EFE26D3F5F7404F7BFACB8B8
+C77FA2F07E03E7A5FF4FA3BFFFD4088AFDDE6E7E2B30E42C6B6FF2BFC5079A70DFFFCC789B3E81
+BCD8C20889B729810EF7C0BF85D034ACA2C56781F0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 12,
+                    strand plus,
+                    id local id 5,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 13,
+                    to 373,
+                    strand plus,
+                    id local id 5
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 374,
+                    to 531,
+                    strand plus,
+                    id local id 5
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 532,
+                    to 763,
+                    strand plus,
+                    id local id 5
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 764,
+                    to 801,
+                    strand plus,
+                    id local id 5,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 6,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/6"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376431
+            },
+            genbank {
+              accession "KX279839"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK33D 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1 and 5.8S ribosomal RNA
+ gene, complete sequence; and internal transcribed spacer 2, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK33D"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "6"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 753,
+            seq-data ncbi2na '1E82B4C080F0C3F803A3FFFBFE90893889FF1EA42084223A
+22D496A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337F90
+7FF7FA93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF764D
+8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E2E3
+1DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CFA06
+F363082226DCA60400'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 13,
+                    strand plus,
+                    id local id 6,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 14,
+                    to 372,
+                    strand plus,
+                    id local id 6
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 373,
+                    to 530,
+                    strand plus,
+                    id local id 6
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 531,
+                    to 752,
+                    strand plus,
+                    id local id 6,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 7,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/7"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376432
+            },
+            genbank {
+              accession "KX279840"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK17C 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK17C"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "7"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 806,
+            seq-data ncbi2na '76828D3C080FC30FF803A3FFFBFE90893889FF1EA4208422
+3A22D496A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337F
+907FF7FA93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF76
+4D8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E2
+E31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CFA
+06F363082226DCA6043BDF02FE1740D2ACA2C56781F0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 15,
+                    strand plus,
+                    id local id 7,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 16,
+                    to 376,
+                    strand plus,
+                    id local id 7
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 377,
+                    to 534,
+                    strand plus,
+                    id local id 7
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 535,
+                    to 766,
+                    strand plus,
+                    id local id 7
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 767,
+                    to 805,
+                    strand plus,
+                    id local id 7,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 8,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/8"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376433
+            },
+            genbank {
+              accession "KX279841"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK209 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK209"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "8"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 811,
+            seq-data ncbi2na '6828D3C080FC30FF803A3FFFBFE90893889FF1EA42084223
+A22D496A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337F9
+07FF7FA93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF764
+D8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E2E
+31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CFA0
+6F363082226DCA6043BDF02FE1740D2B28B159E07C2734'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 13,
+                    strand plus,
+                    id local id 8,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 14,
+                    to 374,
+                    strand plus,
+                    id local id 8
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 375,
+                    to 532,
+                    strand plus,
+                    id local id 8
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 533,
+                    to 764,
+                    strand plus,
+                    id local id 8
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 765,
+                    to 810,
+                    strand plus,
+                    id local id 8,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 9,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/9"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376434
+            },
+            genbank {
+              accession "KX279842"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK44 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1 and 5.8S ribosomal RNA
+ gene, complete sequence; and internal transcribed spacer 2, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK44"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "9"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 761,
+            seq-data ncbi2na '1E6828D3C080FC30FF803A3FFFBFE90893889FF1EA420842
+23A22D496A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337
+F907FF7FA93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF7
+64D8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E
+2E31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CF
+A06F363082226DCA604380'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 17,
+                    strand plus,
+                    id local id 9,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 18,
+                    to 378,
+                    strand plus,
+                    id local id 9
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 379,
+                    to 536,
+                    strand plus,
+                    id local id 9
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 537,
+                    to 760,
+                    strand plus,
+                    id local id 9,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 10,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/10"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376435
+            },
+            genbank {
+              accession "KX279843"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK11B 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK11B"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "10"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 788,
+            seq-data ncbi2na '9E6828D3C080FC30FF803A3FFFBFE90893889FF1EA420842
+23A22D496A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337
+F907FF7FA93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF7
+64D8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E
+2E31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CF
+A06F363082226DCA6043BDF02FE1740D3B'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 17,
+                    strand plus,
+                    id local id 10,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 18,
+                    to 378,
+                    strand plus,
+                    id local id 10
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 379,
+                    to 536,
+                    strand plus,
+                    id local id 10
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 537,
+                    to 768,
+                    strand plus,
+                    id local id 10
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 769,
+                    to 787,
+                    strand plus,
+                    id local id 10,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 11,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/11"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376436
+            },
+            genbank {
+              accession "KX279844"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK165 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK165"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "11"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 811,
+            seq-data ncbi2na '68234F0203F0C3FE00E8FFFEFFA4224E227FC7A90821088E
+88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDFE4
+1FFDFEA4F62436A9522B04044043FCDCF4F03FFB400420FF6C1E80FF00CF001FD041A377EBDD93
+6382064980E631B0EE0F920F5B834D837F81913E655FACF52AA4E5EFE26D3F5F7404F7BFAB2E2E
+31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CFA0
+6F363082226DCA6043BDF02FE1740D2B28EC56781F24CC'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 12,
+                    strand plus,
+                    id local id 11,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 13,
+                    to 373,
+                    strand plus,
+                    id local id 11
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 374,
+                    to 531,
+                    strand plus,
+                    id local id 11
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 532,
+                    to 764,
+                    strand plus,
+                    id local id 11
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 765,
+                    to 810,
+                    strand plus,
+                    id local id 11,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 12,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/12"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376437
+            },
+            genbank {
+              accession "KX279845"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK93A 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1 and 5.8S ribosomal RNA
+ gene, complete sequence; and internal transcribed spacer 2, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK93A"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "12"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 766,
+            seq-data ncbi2na '1E6828D3C080FC30FF803A3FFFBFE90893889FF1EA420842
+23A22D496A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337
+F907FF7FA93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF7
+64D8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E
+2E31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CF
+A06F363082226DCA6043BDF0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 17,
+                    strand plus,
+                    id local id 12,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 18,
+                    to 378,
+                    strand plus,
+                    id local id 12
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 379,
+                    to 536,
+                    strand plus,
+                    id local id 12
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 537,
+                    to 765,
+                    strand plus,
+                    id local id 12,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 13,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/13"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376438
+            },
+            genbank {
+              accession "KX279846"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK110 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK110"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "13"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 784,
+            seq-data ncbi2na '1E6828D3C080FC30FF803A3FFFBFE90893889FF1EA420842
+23A22D496A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337
+F907FF7FA93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF7
+64D8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E
+2E31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CF
+A06F363082226DCA6043BDF02FE1740D'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 17,
+                    strand plus,
+                    id local id 13,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 18,
+                    to 378,
+                    strand plus,
+                    id local id 13
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 379,
+                    to 536,
+                    strand plus,
+                    id local id 13
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 537,
+                    to 768,
+                    strand plus,
+                    id local id 13
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 769,
+                    to 783,
+                    strand plus,
+                    id local id 13,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 14,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/14"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376439
+            },
+            genbank {
+              accession "KX279847"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK1 18S ribosomal RNA gene,
+ partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA gene, and
+ internal transcribed spacer 2, complete sequence; and 26S ribosomal RNA gene,
+ partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK1"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "14"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 795,
+            seq-data ncbi2na '68A34F0203F0C3FE00E8FFFEFFA4224E227FC7A90821088E
+88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDFE4
+1FFDFEA4F62436A9522B04044043FCDCF4F03FFB400420FF6C1E80FF00CF001FD041A377EBDD93
+6382064980E631B0EE0F920F5B834D837F81913E655FACF52AA4E5EFE26D3F5F7404F7BFACB8B8
+C77FA2F07E03E7A5FF4FA3BFFFD4088AFDDE6E7E2B30E42C6B6FF2BFC5079A70DFFFCC789B3E81
+BCD8C20889B729810EF7C0BF85D034ACA2C564'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 12,
+                    strand plus,
+                    id local id 14,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 13,
+                    to 373,
+                    strand plus,
+                    id local id 14
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 374,
+                    to 531,
+                    strand plus,
+                    id local id 14
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 532,
+                    to 763,
+                    strand plus,
+                    id local id 14
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 764,
+                    to 794,
+                    strand plus,
+                    id local id 14,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 15,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/15"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376440
+            },
+            genbank {
+              accession "KX279848"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK49 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1 and 5.8S ribosomal RNA
+ gene, complete sequence; and internal transcribed spacer 2, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK49"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "15"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 761,
+            seq-data ncbi2na '9E6828D3C080FC30FF803A3FFFBFE90893889FF1EA420842
+23A22D496A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337
+F907FF7FA93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF7
+64D8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E
+2E31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CF
+A06F363082226DCA604380'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 17,
+                    strand plus,
+                    id local id 15,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 18,
+                    to 378,
+                    strand plus,
+                    id local id 15
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 379,
+                    to 536,
+                    strand plus,
+                    id local id 15
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 537,
+                    to 760,
+                    strand plus,
+                    id local id 15,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 16,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/16"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376441
+            },
+            genbank {
+              accession "KX279849"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK50 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK50"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "16"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 799,
+            seq-data ncbi2na '79828D3C080FC30FF803A3FFFBFE90893889FF1EA4208422
+3A22D496A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337F
+907FF7FA93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF76
+4D8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E2
+E31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CFA
+06F363082226DCA6043B7C0BE1740D396CA15E54'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 15,
+                    strand plus,
+                    id local id 16,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 16,
+                    to 376,
+                    strand plus,
+                    id local id 16
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 377,
+                    to 534,
+                    strand plus,
+                    id local id 16
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 535,
+                    to 766,
+                    strand plus,
+                    id local id 16
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 767,
+                    to 798,
+                    strand plus,
+                    id local id 16,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 17,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/17"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376442
+            },
+            genbank {
+              accession "KX279850"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK26 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK26"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "17"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 772,
+            seq-data ncbi2na '79A0A34F0203F0C3FE00E8FFFEFFA4224E227FC7A9082108
+8E88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDF
+E41FFDFEA4F62436A9522B04044043FCDCF4F03FFB400420FF6C1E80FF00CF001FD041A377EBDD
+936382064980E631B0EE0F920F5B834D837F81913E655FACF52AA4E5EFE26D3F5F7404F7BFACB8
+B8C77FA2F07E03E7A5FF4FA3BFFFD4088AFDDE6E7E2B30E42C6B6FF2BFC5079A70DFFFCC789B3E
+81BCD8C20889B729810EF7C0BF'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 16,
+                    strand plus,
+                    id local id 17,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 17,
+                    to 377,
+                    strand plus,
+                    id local id 17
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 378,
+                    to 535,
+                    strand plus,
+                    id local id 17
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 536,
+                    to 767,
+                    strand plus,
+                    id local id 17
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 768,
+                    to 771,
+                    strand plus,
+                    id local id 17,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 18,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/18"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376443
+            },
+            genbank {
+              accession "KX279851"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK57 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK57"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "18"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 817,
+            seq-data ncbi2na '879A0A34F0203F0C3FE00E8FFFEFFA4224E227FC7A908210
+88E88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CD
+FE41FFDFEA4F62436A9522B04044043FCDCF4F03FFB400420FF6C1E80FF00CF001FD041A377EBD
+D936382064980E631B0EE0F920F5B834D837F81913E655FACF52AA4E5EFE26D3F5F7404F7BFACB
+8B8C77FA2F07E03E7A5FF4FA3BFFFD4088AFDDE6E7E2B30E42C6B6FF2BFC5079A70DFFFCC789B3
+E81BCD8C20889B729810EF7C0BF85D034ACA2C56781F093340'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 18,
+                    strand plus,
+                    id local id 18,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 19,
+                    to 379,
+                    strand plus,
+                    id local id 18
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 380,
+                    to 537,
+                    strand plus,
+                    id local id 18
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 538,
+                    to 769,
+                    strand plus,
+                    id local id 18
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 770,
+                    to 816,
+                    strand plus,
+                    id local id 18,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 19,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/19"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376444
+            },
+            genbank {
+              accession "KX279852"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK4B 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK4B"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "19"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 788,
+            seq-data ncbi2na 'C080FC30FF803A3FFFBFE90893889FF1EA42084223A22D49
+6A5E67C2E66B7E729FB0BF7F7E73D406B888FDEE7FEF32843C016FD0C4111EE8BFD337F907FF7F
+A93D890DAA548AC1011010FF373D3C0FFED001083FDB07A03FC033C007F41068DDFAF764D8E081
+9260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E2E31DFE8
+BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CFA06F3630
+82226DCA6043BDF02FE1740D2B28B959E3'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 1,
+                    strand plus,
+                    id local id 19,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 2,
+                    to 362,
+                    strand plus,
+                    id local id 19
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 363,
+                    to 520,
+                    strand plus,
+                    id local id 19
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 521,
+                    to 752,
+                    strand plus,
+                    id local id 19
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 753,
+                    to 787,
+                    strand plus,
+                    id local id 19,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 20,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/20"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376445
+            },
+            genbank {
+              accession "KX279853"
+            }
+          },
+          descr {
+            title "Saccharomyces cerevisiae strain WK13C 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+ RNA gene, partial sequence.",
+            source {
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                syn {
+                  "Saccharomyces uvarum var. melibiosus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces capensis",
+                  "yeast",
+                  "lager beer yeast",
+                  "brewer's yeast"
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK13C"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "20"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 785,
+            seq-data ncbi2na '760A34F0203F0C3FE00E8FFFEFFA4224E227FC7A90821088
+E88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDFE
+41FFDFEA4F62436A9522B04044043FCDCF4F03FFB400420FF6C1E80FF00CF001FD041A377EBDD9
+36382064980E631B0EE0F920F5B834D837F81913E655FACF52AA4E5EFE26D3F5F7404F7BFACB8B
+8C77FA2F07E03E7A5FF4FA3BFFFD4088AFDDE6E7E2B30E42C6B6FF2BFC5079A70DFFFCC789B3E8
+1BCD8C20889B729810EF7C0BF85D034AC0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 14,
+                    strand plus,
+                    id local id 20,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 15,
+                    to 375,
+                    strand plus,
+                    id local id 20
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 376,
+                    to 533,
+                    strand plus,
+                    id local id 20
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 534,
+                    to 765,
+                    strand plus,
+                    id local id 20
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 766,
+                    to 784,
+                    strand plus,
+                    id local id 20,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 21,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/21"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376446
+            },
+            genbank {
+              accession "KX279854"
+            }
+          },
+          descr {
+            title "Candida californica strain WK64 18S ribosomal RNA gene,
+ partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA gene, and
+ internal transcribed spacer 2, complete sequence; and 26S ribosomal RNA gene,
+ partial sequence.",
+            source {
+              org {
+                taxname "Candida californica",
+                db {
+                  {
+                    db "taxon",
+                    tag id 460514
+                  }
+                },
+                syn {
+                  "Cryptococcus californicus Mrak & McClung ex Anderson &
+ Skinner",
+                  "Cryptococcus californicus",
+                  "Candida sp. CBS 989",
+                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert"
+                },
+                orgname {
+                  name binomial {
+                    genus "Pichia",
+                    species "Candida californica"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK64"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Pichiaceae; Pichia",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "21"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 420,
+            seq-data ncbi2na 'A879A0A34F2EE330135111BA9904044D0530C527D013102F
+C0401FD041A377EBDD936382264980E63172EE0F92536E0D362F7E0644F995B6B3D69A9397B789
+B6FD7DF046CBBC84E95A59E956580201BE6A78981C804A19FA596204F042761748D2B283159E07
+C24CD0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 20,
+                    strand plus,
+                    id local id 21,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 21,
+                    to 102,
+                    strand plus,
+                    id local id 21
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 103,
+                    to 258,
+                    strand plus,
+                    id local id 21
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 259,
+                    to 376,
+                    strand plus,
+                    id local id 21
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 377,
+                    to 419,
+                    strand plus,
+                    id local id 21,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 22,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/22"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376447
+            },
+            genbank {
+              accession "KX279855"
+            }
+          },
+          descr {
+            title "Candida californica strain WK172 18S ribosomal RNA gene,
+ partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA gene, and
+ internal transcribed spacer 2, complete sequence; and 26S ribosomal RNA gene,
+ partial sequence.",
+            source {
+              org {
+                taxname "Candida californica",
+                db {
+                  {
+                    db "taxon",
+                    tag id 460514
+                  }
+                },
+                syn {
+                  "Cryptococcus californicus Mrak & McClung ex Anderson &
+ Skinner",
+                  "Cryptococcus californicus",
+                  "Candida sp. CBS 989",
+                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert"
+                },
+                orgname {
+                  name binomial {
+                    genus "Pichia",
+                    species "Candida californica"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK172"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Pichiaceae; Pichia",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "22"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 420,
+            seq-data ncbi2na 'A979A0A34F1EE330135111BA9904044D0530C527D013102F
+C0401FD041A377EBDD936382264980E63172EE0F92536E0D362F7E0644F995B6B3D69A9397B789
+B6FD7DF046CBBC84E95A59E956580201BE6A78981C804A19FA596204F042761748D2B283159E07
+C24CDC'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 20,
+                    strand plus,
+                    id local id 22,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 21,
+                    to 102,
+                    strand plus,
+                    id local id 22
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 103,
+                    to 258,
+                    strand plus,
+                    id local id 22
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 259,
+                    to 376,
+                    strand plus,
+                    id local id 22
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 377,
+                    to 419,
+                    strand plus,
+                    id local id 22,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 23,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/23"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376448
+            },
+            genbank {
+              accession "KX279856"
+            }
+          },
+          descr {
+            title "Candida californica strain WK214 18S ribosomal RNA gene,
+ partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA gene, and
+ internal transcribed spacer 2, complete sequence; and 26S ribosomal RNA gene,
+ partial sequence.",
+            source {
+              org {
+                taxname "Candida californica",
+                db {
+                  {
+                    db "taxon",
+                    tag id 460514
+                  }
+                },
+                syn {
+                  "Cryptococcus californicus Mrak & McClung ex Anderson &
+ Skinner",
+                  "Cryptococcus californicus",
+                  "Candida sp. CBS 989",
+                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert"
+                },
+                orgname {
+                  name binomial {
+                    genus "Pichia",
+                    species "Candida californica"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK214"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Pichiaceae; Pichia",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "23"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 420,
+            seq-data ncbi2na 'F179A0A34F1EE330135111BA9904044D0530C527D013102F
+C0401FD041A377EBDD936382264980E63172EE0F92536E0D362F7E0644F995B6B3D69A9397B789
+B6FD7DF046CBBC84E95A59E956580201BE6A78981C804A19FA596204F042761748D2B283159E07
+C24CD0'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 20,
+                    strand plus,
+                    id local id 23,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 21,
+                    to 102,
+                    strand plus,
+                    id local id 23
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 103,
+                    to 258,
+                    strand plus,
+                    id local id 23
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 259,
+                    to 376,
+                    strand plus,
+                    id local id 23
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 377,
+                    to 419,
+                    strand plus,
+                    id local id 23,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 24,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/24"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376449
+            },
+            genbank {
+              accession "KX279857"
+            }
+          },
+          descr {
+            title "Candida californica strain WK205 18S ribosomal RNA gene,
+ partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA gene, and
+ internal transcribed spacer 2, complete sequence; and 26S ribosomal RNA gene,
+ partial sequence.",
+            source {
+              org {
+                taxname "Candida californica",
+                db {
+                  {
+                    db "taxon",
+                    tag id 460514
+                  }
+                },
+                syn {
+                  "Cryptococcus californicus Mrak & McClung ex Anderson &
+ Skinner",
+                  "Cryptococcus californicus",
+                  "Candida sp. CBS 989",
+                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert"
+                },
+                orgname {
+                  name binomial {
+                    genus "Pichia",
+                    species "Candida californica"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK205"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Pichiaceae; Pichia",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "24"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 419,
+            seq-data ncbi2na '05E6828D3C7B8CC04D4446EA6410113414C3149F404C40BF
+01007F41068DDFAF764D8E0899260398C5CBB83E494DB834D8BDF81913E656DACF5A6A4E5EDE26
+DBF5F7C11B2EF213A56967A559600806F9A9E26072012867E9658813C109D85D234ACA0C56781F
+093340'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 19,
+                    strand plus,
+                    id local id 24,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 20,
+                    to 101,
+                    strand plus,
+                    id local id 24
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 102,
+                    to 257,
+                    strand plus,
+                    id local id 24
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 258,
+                    to 375,
+                    strand plus,
+                    id local id 24
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 376,
+                    to 418,
+                    strand plus,
+                    id local id 24,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local id 25,
+            general {
+              db "NCBIFILE",
+              tag str "WATER KEFIR YEASTS.sqn/25"
+            },
+            general {
+              db "TMSMART",
+              tag id 66376450
+            },
+            genbank {
+              accession "KX279858"
+            }
+          },
+          descr {
+            title "Pichia membranifaciens strain WK199 18S ribosomal RNA gene,
+ partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA gene, and
+ internal transcribed spacer 2, complete sequence; and 26S ribosomal RNA gene,
+ partial sequence.",
+            source {
+              org {
+                taxname "Pichia membranifaciens",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4926
+                  }
+                },
+                syn {
+                  "Saccharomyces membranifaciens",
+                  "Pichia membranifaciens (E.C.Hansen) E.C.Hansen",
+                  "Pichia membranaefaciens"
+                },
+                orgname {
+                  name binomial {
+                    genus "Pichia",
+                    species "membranifaciens"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "WK199"
+                    },
+                    {
+                      subtype gb-anamorph,
+                      subname "Candida valida"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Pichiaceae; Pichia",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Mexico"
+                },
+                {
+                  subtype isolation-source,
+                  name "water kefir"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "BioEdit v. 7.2.5"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "25"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      num 1,
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 484,
+            seq-data ncbi2na 'B0E35F592BD05C6828E3C7B8F31411547ABA9910045C05E8
+B3111B41008DC020C01FD041A377EBDD936382264980E63172EE0F92536E0D362F7E0644F995B6
+B3D69A9397B789B6FD7DFB916AB7F9235DDE6489E96E51E95A580201BE6860981C4DA867FA5962
+60000114F89D85D234ACA2C56781F09734309A'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "18S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 41,
+                    strand plus,
+                    id local id 25,
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 1"
+                    }
+                  },
+                  location int {
+                    from 42,
+                    to 130,
+                    strand plus,
+                    id local id 25
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "5.8S ribosomal RNA"
+                  },
+                  location int {
+                    from 131,
+                    to 286,
+                    strand plus,
+                    id local id 25
+                  }
+                },
+                {
+                  data rna {
+                    type miscRNA,
+                    ext gen {
+                      product "internal transcribed spacer 2"
+                    }
+                  },
+                  location int {
+                    from 287,
+                    to 429,
+                    strand plus,
+                    id local id 25
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "26S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 430,
+                    to 483,
+                    strand plus,
+                    id local id 25,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
