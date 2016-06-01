@@ -37,7 +37,6 @@
 #include <corelib/test_mt.hpp>
 #define NCBI_CONN_STREAM_EXPERIMENTAL_API
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_gnutls.h>
 
 #include "test_assert.h"  // This header must go last
 
@@ -103,9 +102,7 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
 
 bool CTestApp::TestApp_Init(void)
 {
-#ifdef HAVE_LIBGNUTLS
-    SOCK_SetupSSL(NcbiSetupGnuTls);
-#else
+#ifndef HAVE_LIBGNUTLS
     ERR_POST(Warning << "SSL is not supported on this platform");
 #endif //HAVE_LIBGNUTLS
 
