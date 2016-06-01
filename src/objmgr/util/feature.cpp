@@ -3336,8 +3336,13 @@ bool PromoteCDSToNucProtSet(objects::CSeq_feat_Handle& orig_feat)
     if (orig_feat.IsSetPseudo() && orig_feat.GetPseudo()) {
         return false;
     }
-    CBioseq_Handle nuc_bsh = orig_feat.GetScope().GetBioseqHandle(orig_feat.GetLocation());
-    if (!nuc_bsh) {
+    CBioseq_Handle nuc_bsh;
+    try {
+        nuc_bsh = orig_feat.GetScope().GetBioseqHandle(orig_feat.GetLocation());
+        if (!nuc_bsh) {
+            return false;
+        }
+    } catch (...) {
         return false;
     }
 
