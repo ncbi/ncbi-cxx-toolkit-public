@@ -32,9 +32,10 @@
 
 #include <common/ncbi_package_ver.h>
 
-#define NETSTORAGE_GC_EXPECTED_DB_STRUCTURE     2
-#define NETSTORAGE_GC_VERSION                   NCBI_PACKAGE_VERSION
-#define NETSTORAGE_GC_BUILD_DATE                __DATE__ " " __TIME__
+#define NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_LOW     2
+#define NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_HIGH    5
+#define NETSTORAGE_GC_VERSION                       NCBI_PACKAGE_VERSION
+#define NETSTORAGE_GC_BUILD_DATE                    __DATE__ " " __TIME__
 
 #endif // NETSTORAGE_GC_VERSION__HPP
 

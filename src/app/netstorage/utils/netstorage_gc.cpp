@@ -52,9 +52,14 @@ CNetStorageGCApp::CNetStorageGCApp(void) :
                                 NCBI_PACKAGE_VERSION_PATCH);
     CRef<CVersion>      full_version(new CVersion(version));
 
-    full_version->AddComponentVersion("Expected NetStorage DB structure",
-                                      NETSTORAGE_GC_EXPECTED_DB_STRUCTURE,
-                                      0, 0);
+    full_version->AddComponentVersion(
+                        "Expected NetStorage DB structure (lowest)",
+                        NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_LOW,
+                        0, 0);
+    full_version->AddComponentVersion(
+                        "Expected NetStorage DB structure (highest)",
+                        NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_HIGH,
+                        0, 0);
 
     SetVersion(version);
     SetFullVersion(full_version);
@@ -81,7 +86,8 @@ int CNetStorageGCApp::Run(void)
         .Print("_type", "startup")
         .Print("info", "versions")
         .Print("netstorage_gc", NETSTORAGE_GC_VERSION)
-        .Print("db_structure", NETSTORAGE_GC_EXPECTED_DB_STRUCTURE)
+        .Print("db_structure_low", NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_LOW)
+        .Print("db_structure_high", NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_HIGH)
         .Print("build", NETSTORAGE_GC_BUILD_DATE);
 
 
@@ -94,12 +100,24 @@ int CNetStorageGCApp::Run(void)
 
     // Check the DB structure version
     int                     db_ver = db.GetDBStructureVersion();
-    if (db_ver != NETSTORAGE_GC_EXPECTED_DB_STRUCTURE) {
+    if (db_ver < NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_LOW ||
+        db_ver > NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_HIGH) {
         string  message("NetStorage meta info database "
-                        "structure version mismatch. Expected: " +
-                        NStr::NumericToString(
-                                    NETSTORAGE_GC_EXPECTED_DB_STRUCTURE) +
-                        ", found: " + NStr::NumericToString(db_ver));
+                        "structure version mismatch. ");
+        if (NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_LOW ==
+            NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_HIGH)
+            message += "Expected: " +
+                       NStr::NumericToString(
+                               NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_LOW) +
+                       ", found: " + NStr::NumericToString(db_ver);
+        else
+            message += "Expected range: " +
+                       NStr::NumericToString(
+                                    NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_LOW) +
+                       "..." +
+                       NStr::NumericToString(
+                                    NETSTORAGE_GC_EXPECTED_DB_STRUCTURE_HIGH) +
+                       ", found: " + NStr::NumericToString(db_ver);
         ERR_POST(message);
         cerr << message << endl;
         return 1;
