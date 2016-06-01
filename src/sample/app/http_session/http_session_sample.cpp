@@ -37,10 +37,6 @@
 #include <corelib/ncbistr.hpp>
 #include <connect/ncbi_http_session.hpp>
 
-// gnutls is required for https connections.
-// The application needs to be linked with $(GNUTLS_LIBS) and connssl
-#include <connect/ncbi_gnutls.h>
-
 // This header is not necessary for real application,
 // but required for automatic testsuite.
 #include <common/test_assert.h>  /* This header must go last */
@@ -145,9 +141,6 @@ int CHttpSessionApp::Run(void)
     m_PrintCookies = args["print-cookies"];
     m_PrintBody = args["print-body"];
     bool http11 = args["http-11"];
-
-    // Setup secure connections.
-    SOCK_SetupSSL(NcbiSetupGnuTls);
 
     CHttpSession session;
     if ( http11 ) {

@@ -39,7 +39,6 @@
 #ifdef TEST_CONN_TAR
 #  define NCBI_CONN_STREAM_EXPERIMENTAL_API
 #  include <connect/ncbi_conn_stream.hpp>
-#  include <connect/ncbi_gnutls.h>
 #endif // TEST_CONN_TAR
 #include <errno.h>
 #ifdef NCBI_OS_MSWIN
@@ -429,9 +428,6 @@ int CTarTest::Run(void)
     CCanceled canceled;
     auto_ptr<CConn_IOStream> conn;
     if (NStr::Find(CTempString(file, 3/*pos*/, 5/*len*/), "://") != NPOS) {
-#  ifdef HAVE_LIBGNUTLS
-        SOCK_SetupSSL(NcbiSetupGnuTls);
-#  endif // HAVE_LIBGNUTLS
         SOCK_SetInterruptOnSignalAPI(eOn);
         if (action == eList  ||  action == eExtract  ||  action == eTest
             ||  (pipethru  &&  action != eCreate)) {

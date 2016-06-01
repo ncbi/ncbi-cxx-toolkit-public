@@ -36,7 +36,6 @@
 
 #include <connect/services/ns_output_parser.hpp>
 
-#include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_http_session.hpp>
 
 #include <util/random_gen.hpp>
@@ -580,21 +579,6 @@ SFileTrackAPI::SFileTrackAPI(const SFileTrackConfig& c)
     : config(c)
 {
     m_Random.Randomize();
-
-#ifdef HAVE_LIBGNUTLS
-    DEFINE_STATIC_FAST_MUTEX(s_TLSSetupMutex);
-
-    static bool s_TLSSetupIsDone = false;
-
-    if (!s_TLSSetupIsDone) {
-        CFastMutexGuard guard(s_TLSSetupMutex);
-        if (!s_TLSSetupIsDone)
-            SOCK_SetupSSL(NcbiSetupGnuTls);
-        s_TLSSetupIsDone = true;
-    }
-#else
-    NCBI_USER_THROW("SSL support is not available in this build");
-#endif /*HAVE_LIBGNUTLS*/
 }
 
 static EHTTP_HeaderParse s_HTTPParseHeader_GetSID(const char* http_header,

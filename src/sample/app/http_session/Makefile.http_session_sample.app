@@ -11,10 +11,8 @@ SRC = http_session_sample
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = connssl xconnect xncbi
-# LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
-# Use this line to enable https connections
-LIBS = $(GNUTLS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIB = xconnect xncbi
+LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 ## If you need the C toolkit...
 # LIBS     = $(NCBI_C_LIBPATH) -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
