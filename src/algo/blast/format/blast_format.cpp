@@ -58,6 +58,7 @@ USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 USING_SCOPE(align_format);
+USING_SCOPE(sequence);
 #endif
 
 
@@ -779,8 +780,18 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
     }
 }
 
+static void s_SetCloneInfo(const CIgBlastTabularInfo& tabinfo,
+                           const CBioseq_Handle& handle,
+                           CBlastFormat::SClone& clone_info) {
+    clone_info.seqid = GetTitle(handle).substr(0, 25);
+    tabinfo.GetIgInfo (clone_info.v_gene, clone_info.d_gene, clone_info.j_gene,
+                       clone_info.chain_type, clone_info.na, clone_info.aa);
+    
+}
 void
-CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
+CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results,
+                                     SClone& clone_info,
+                                     bool fill_clone_info)
 {
     CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
     /* TODO do we support ungapped Igblast search?
@@ -819,7 +830,9 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
                                 annots->m_ChainTypeToShow, 
                                 &m_ScoringMatrix);
         tabinfo.SetIgAnnotation(annots, m_IgOptions);
-
+        if (fill_clone_info) {
+            s_SetCloneInfo(tabinfo, bhandle, clone_info);
+        }
         tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
                                 m_DbName, 
                                 m_IgOptions->m_DomainSystem,
@@ -1106,8 +1119,12 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
 void
 CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
                                 CConstRef<blast::CBlastQueryVector> queries, 
+                                SClone& clone_info,
+                                bool fill_clone_info,
                                 int index)
 {
+    clone_info.na = NcbiEmptyString;
+    clone_info.aa = NcbiEmptyString;
 
     // For remote searches, we don't retrieve the sequence data for the query
     // sequence when initially sending the request to the BLAST server (if it's
@@ -1157,7 +1174,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         m_FormatType == CFormattingArgs::eTabularWithComments ||
         m_FormatType == CFormattingArgs::eCommaSeparatedValues) {
         m_FormatType = CFormattingArgs::eTabularWithComments;
-        x_PrintIgTabularReport(results);
+        x_PrintIgTabularReport(results, clone_info, fill_clone_info);
         return;
     }
 
@@ -1224,6 +1241,9 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
                                 annots->m_ChainTypeToShow, 
                                 &m_ScoringMatrix);
         tabinfo.SetIgAnnotation(annots, m_IgOptions);
+        if (fill_clone_info) {
+            s_SetCloneInfo(tabinfo, bhandle, clone_info);
+        }
         m_Outfile << "Domain classification requested: " << m_IgOptions->m_DomainSystem << endl << endl;
         if (m_IsHTML) {
             tabinfo.PrintHtmlSummary();

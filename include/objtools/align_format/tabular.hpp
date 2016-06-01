@@ -636,6 +636,22 @@ public:
     void SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot, 
                          const CConstRef<blast::CIgBlastOptions> &ig_opts);
 
+    ///Getter
+    const void GetIgInfo (string& v, 
+                          string& d, 
+                          string& j,
+                          string& master_chain_to_show,
+                          string& cdr3_nuc,
+                          string& cdr3_aa) const {
+        v = m_VGene.sid;
+        d = m_DGene.sid;  
+        j = m_JGene.sid;
+        master_chain_to_show = m_MasterChainTypeToShow;
+        cdr3_nuc = m_Cdr3Seq;
+        cdr3_aa = m_Cdr3SeqTrans;
+    }
+                         
+
 protected:
     void x_ResetIgFields();
     void x_PrintIgGenes(bool isHtml=false, const string& header="# ") const;
@@ -660,6 +676,7 @@ private:
     int m_Cdr3End;
     string m_Cdr3Seq;
     string m_Cdr3SeqTrans;
+        
 };
 
 END_SCOPE(align_format)

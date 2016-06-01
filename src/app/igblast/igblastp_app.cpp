@@ -217,9 +217,10 @@ int CIgBlastpApp::Run(void)
             */
             BlastFormatter_PreFetchSequenceData(*results, scope);
             ITERATE(CSearchResultSet, result, *results) {
+                CBlastFormat::SClone clone_info;
                 CIgBlastResults &ig_result = *const_cast<CIgBlastResults *>
                         (dynamic_cast<const CIgBlastResults *>(&(**result)));
-                formatter.PrintOneResultSet(ig_result, query);
+                formatter.PrintOneResultSet(ig_result, query, clone_info, false);
             }
         }
 

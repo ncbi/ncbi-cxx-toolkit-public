@@ -56,13 +56,27 @@ Author: Jason Papadopoulos
 #include <objects/blast/blast__.hpp>
 
 BEGIN_NCBI_SCOPE
-
+USING_SCOPE(align_format);
 class CCmdLineBlastXML2ReportData;
 
 /// This class formats the BLAST results for command line applications
 class NCBI_XBLASTFORMAT_EXPORT CBlastFormat
 {
 public:
+
+    ///igblast clone info
+    struct SClone {
+        string na;
+        string chain_type;
+        string aa;
+        string v_gene;
+        string d_gene;
+        string j_gene;
+        string seqid;
+    };
+
+    
+
     /// The line length of pairwise blast output
     static const int kFormatLineLength = 68;
 
@@ -208,6 +222,8 @@ public:
     /// @param result position index if index >= 0 [in]
     void PrintOneResultSet(blast::CIgBlastResults& results,
                            CConstRef<blast::CBlastQueryVector> queries, 
+                           SClone& clone_info,
+                           bool fill_clone_info,
                            int index = -1);
 
     /// Print all alignment information for aa PHI-BLAST run.
@@ -428,7 +444,9 @@ private:
 
    /// Prints IgTabular report for one query
    /// @param results Results for one query or Phi-blast iteration [in]
-   void x_PrintIgTabularReport(const blast::CIgBlastResults& results);
+   void x_PrintIgTabularReport(const blast::CIgBlastResults& results,
+                               SClone& clone_info,
+                               bool fill_clone_info);
 
    /// Replace the query with its reversed-compliement
    /// @param results Ig Blast results [in, out]
