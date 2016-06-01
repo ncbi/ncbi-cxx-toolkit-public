@@ -106,9 +106,6 @@ int main(int argc, char* argv[])
     UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
-    // Init the library explicitly (this sets up the log)
-    CONNECT_Init(0);
-
     STimeout tmo = { 5, 0 };
     EIO_Status status = Soaker(argv[1], "Hello", &tmo, &tmo);
     cout << "Status = " << IO_StatusStr(status) << endl;

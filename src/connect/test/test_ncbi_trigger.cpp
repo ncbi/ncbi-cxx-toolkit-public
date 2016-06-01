@@ -96,7 +96,12 @@ CTest::CTest()
 
 void CTest::Init(void)
 {
-    CONNECT_Init(&GetConfig());
+    // Init the library explicitly (this sets up the log)
+    {
+        class CInPlaceConnIniter : protected CConnIniter
+        {
+        } conn_initer;  /*NCBI_FAKE_WARNING*/
+    }
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);

@@ -151,9 +151,12 @@ bool CTestApp::LoadConfig(CNcbiRegistry& reg, const string* conf)
 
 void CTestApp::Init(void)
 {
-    s_Run = false;
-
-    CONNECT_Init(&GetConfig());
+    // Init the library explicitly (this sets up the registry)
+    {
+        class CInPlaceConnIniter : protected CConnIniter
+        {
+        } conn_initer;  /*NCBI_FAKE_WARNING*/
+    }
 
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
     if (args->Exist ("h"))
@@ -171,6 +174,8 @@ void CTestApp::Init(void)
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "NCBI Connectivity Test Suite");
     SetupArgDescriptions(args.release());
+
+    s_Run = false;
 }
 
 

@@ -155,12 +155,6 @@ CNCBITestApp::CNCBITestApp(void)
 
 void CNCBITestApp::Init(void)
 {
-    CONNECT_Init(&Instance()->GetConfig());
-
-#ifdef HAVE_LIBGNUTLS
-    SOCK_SetupSSL(NcbiSetupGnuTls);
-#endif // HAVE_LIBGNUTLS
-
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     if (arg_desc->Exist ("h"))

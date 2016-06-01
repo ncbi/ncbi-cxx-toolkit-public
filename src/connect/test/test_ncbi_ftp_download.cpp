@@ -589,7 +589,7 @@ CNCBITestApp::CNCBITestApp(void)
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Trace);
     SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default)
-        | eDPF_All | eDPF_OmitInfoSev);
+                        | eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_Location);
@@ -611,8 +611,12 @@ CNCBITestApp::CNCBITestApp(void)
 
 void CNCBITestApp::Init(void)
 {
-    // Init the library explicitly (this sets up the log)
-    CONNECT_Init(&Instance()->GetConfig());
+    // Init the library exlicitly (this sets up the registry)
+    {
+        class CInPlaceConnIniter : protected CConnIniter
+        {
+        } conn_initer;  /*NCBI_FAKE_WARNING*/
+    }
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 

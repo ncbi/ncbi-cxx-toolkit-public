@@ -61,7 +61,7 @@ static void s_CreateRegistry(void)
 {
     CNcbiRegistry* reg = &CNcbiApplication::Instance()->GetConfig();
 
-    // Compose a test registry
+    // Populate test registry
     reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_HOST, DEF_CONN_HOST);
     reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
     reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
@@ -131,7 +131,12 @@ CNCBITestApp::CNCBITestApp(void)
 
 void CNCBITestApp::Init(void)
 {
-    CONNECT_Init(&Instance()->GetConfig());
+    // Init the library explicitly (this sets up the registry)
+    {
+        class CInPlaceConnIniter : protected CConnIniter
+        {
+        } conn_initer;  /*NCBI_FAKE_WARNING*/
+    }
     s_CreateRegistry();
 }
 
