@@ -670,6 +670,7 @@ int CTbl2AsnApp::Run(void)
     {
         m_context.m_discrepancy_file = &args["Z"].AsOutputFile();
     }
+    m_context.m_eukariote = args["euk"].AsBoolean();
 
     if (m_context.m_cleanup.find('f') != string::npos)
         m_context.m_use_hypothetic_protein = true;
