@@ -9,6 +9,6 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
 
 CHECK_CMD = test_ncbi_http_upload.sh
-CHECK_COPY = .test_ncbi_http_upload.sh ./../check/ncbi_test_data
+CHECK_COPY = test_ncbi_http_upload.sh ../../check/ncbi_test_data
 
 WATCHERS = lavr
