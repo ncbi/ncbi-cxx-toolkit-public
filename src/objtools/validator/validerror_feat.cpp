@@ -6331,23 +6331,18 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
             if (far_feat) {
                 bool has_xref = false;
                 bool has_reciprocal_xref = false;
-                const CSeq_feat& ff = *(far_feat.GetSeq_feat());
-                const bool is_cds_mrna = FeaturePairIsTwoTypes(feat, ff,
-                                                               CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_mRNA);
-                const bool is_gene_mrna = FeaturePairIsTwoTypes(feat, ff, 
-                                                                CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_mRNA);
-                const bool is_gene_cdregion = FeaturePairIsTwoTypes(feat, ff,
-                                                                    CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_cdregion);
-
                 FOR_EACH_SEQFEATXREF_ON_SEQFEAT (it, *(far_feat.GetSeq_feat())) {
                     if ((*it)->IsSetId()) {
                         has_xref = true;
                         if (feat.IsSetId() && s_FeatureIdsMatch(feat.GetId(), (*it)->GetId())) {
                             has_reciprocal_xref = true;
-
-                            if (is_cds_mrna ||
-                                is_gene_mrna ||
-                                is_gene_cdregion) {
+                            const CSeq_feat& ff = *(far_feat.GetSeq_feat());
+                            if (FeaturePairIsTwoTypes(feat, ff,
+                                                      CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_mRNA)
+                                || FeaturePairIsTwoTypes(feat, ff,
+                                                      CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_mRNA)
+                                || FeaturePairIsTwoTypes(feat, ff,
+                                                      CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_cdregion)) {
                                 if (feat.GetData().IsCdregion() && far_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
                                     ECompare comp = Compare(feat.GetLocation(), far_feat.GetLocation(),
                                         m_Scope, fCompareOverlapping);
@@ -6380,17 +6375,6 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefNotReciprocal, 
                                 "Cross-referenced feature does not link reciprocally",
                                 feat);
-                }
-                // Try the following if a CDS references an mRNA feature, 
-                // but the mRNA does not have a reciprocal xref.
-                if ((!has_reciprocal_xref) &&
-                    (is_cds_mrna && feat.GetData().IsCdregion())) {
-                    ECompare comp = Compare(feat.GetLocation(), far_feat.GetLocation(),
-                            m_Scope, fCompareOverlapping);
-                    if ( (comp != eContained) && (comp != eSame)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem, 
-                                "CDS not contained within cross-referenced mRNA", feat);
-                    }
                 }
             } else {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefFeatureMissing,
