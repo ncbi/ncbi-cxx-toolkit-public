@@ -104,7 +104,7 @@ extern "C" {
  * @var fHTTP_NoAutoRetry
  *       Do not attempt any auto-retries in case of failing connections
  *       (this flag effectively means having SConnNetInfo::max_try set to 1).
-
+ *
  * @var fHTTP_UnsafeRedirects
  *       For security reasons the following redirects comprise security risk,
  *       and thus, are prohibited:  switching from https to http, and/or
@@ -285,6 +285,8 @@ typedef void        (*FHTTP_Cleanup)
  *  When fHTTP_WriteThru is set with HTTP/1.1, writing to the connector begins
  *  upon any write operations, and reading from the connector causes the
  *  request body to finalize and response to be fetched from the server.
+ *  Request method must be explicitly specified with fHTTP_WriteThru, "ANY"
+ *  does not get accepted (the eIO_NotSupported error returned).
  *
  *  @note
  *     If "fHTTP_AutoReconnect" is set in "flags", then the connector makes an
