@@ -978,9 +978,9 @@ void CTbl2AsnApp::ProcessOneFile()
     {
         m_logger->PutError(*auto_ptr<CLineError>(
             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-            "File " + m_context.m_current_file + " does not exists")));
-        return;
-    }
+                "File " + m_context.m_current_file + " does not exists")));
+            return;
+        }
 
     CFile log_name;
     if (!DryRun() && m_context.m_split_log_files)
@@ -1142,7 +1142,7 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
     ProcessAnnotFile(name + ".gff", result);
     ProcessAnnotFile(name + ".gff3", result);
     ProcessAnnotFile(name + ".gff2", result);
-    ProcessAnnotFile(name + ".bed", result);
+    ProcessAnnotFile(name + ".gtf", result);
 }
 
 void CTbl2AsnApp::ProcessTBLFile(const string& pathname, CSeq_entry& result)

@@ -1028,10 +1028,10 @@ void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
 CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
 {
     int flags = 0;
-    //flags |= CGff3Reader::fAllIdsAsLocal;
     flags |= CGff3Reader::fNewCode;
     flags |= CGff3Reader::fGenbankMode;
     flags |= CGff3Reader::fRetainLocusIds;
+    flags |= CGff3Reader::fGeneXrefs;
 
     CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
     CStreamLineReader lr(instream);
@@ -1044,20 +1044,24 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     typedef CGff3Reader::TAnnotList ANNOTS;
     ANNOTS& annots = entry->SetAnnot();
    
-    for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
+    for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it) {
+
         edit::CFeatTableEdit fte(**it, m_context.m_locus_tag_prefix, startingLocusTagNumber, m_context.m_logger);
         fte.InferPartials();
-        if (m_context.m_eukariote)
-          fte.InferParentMrnas();
-        fte.InferParentGenes();
+        if (m_context.m_eukariote) {
+            fte.GenerateMissingMrnaForCds();
+            fte.GenerateMissingGeneForMrna();
+        }
+        else {
+            fte.GenerateMissingGeneForCds();
+        }
         fte.EliminateBadQualifiers();
         fte.GenerateLocusTags();
         fte.GenerateProteinAndTranscriptIds();
         fte.SubmitFixProducts();
+
         startingLocusTagNumber = fte.PendingLocusTagNumber();
     }
-
-
 
     return entry;
 }
@@ -1153,10 +1157,11 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& obj, CNcbiIstream& in)
 CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
 {
     int flags = 0;
-    flags |= CGtfReader::fAllIdsAsLocal;
     flags |= CGtfReader::fNewCode;
     flags |= CGtfReader::fGenbankMode;
     flags |= CGtfReader::fRetainLocusIds;
+    //flags |= CGtfReader::fNumericIdsAsLocal;
+    //flags |= CGtfReader::fGenerateChildXrefs;
 
     CGtfReader reader(flags, m_AnnotName, m_AnnotTitle);
     CStreamLineReader lr(instream);
