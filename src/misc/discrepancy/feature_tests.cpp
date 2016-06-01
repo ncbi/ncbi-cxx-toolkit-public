@@ -1238,5 +1238,83 @@ DISCREPANCY_AUTOFIX(MICROSATELLITE_REPEAT_TYPE)
 }
 
 
+// SUSPICIOUS_NOTE_TEXT
+static const string kSuspiciousNotePhrases[] =
+{
+    "characterised",
+    "recognised",
+    "characterisation",
+    "localisation",
+    "tumour",
+    "uncharacterised",
+    "oxydase",
+    "colour",
+    "localise",
+    "faecal",
+    "orthologue",
+    "paralogue",
+    "homolog",
+    "homologue",
+    "intronless gene"
+};
+
+const size_t kNumSuspiciousNotePhrases = sizeof(kSuspiciousNotePhrases) / sizeof(string);
+
+static const string kSuspiciousNoteTop = "[n] note text[s] contain suspicious phrase[s]";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(SUSPICIOUS_NOTE_TEXT, CSeq_feat, eOncaller, "Find Suspicious Phrases in Note Text")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData()) {
+        return;
+    }
+    for (size_t k = 0; k < kNumSuspiciousNotePhrases; k++) {
+        bool has_phrase = false;
+        switch (obj.GetData().GetSubtype()) {
+            case CSeqFeatData::eSubtype_gene:
+                // look in gene comment and gene description
+                if (obj.IsSetComment() &&
+                    NStr::FindNoCase(obj.GetComment(), kSuspiciousNotePhrases[k]) != string::npos) {
+                    has_phrase = true;
+                } else if (obj.GetData().GetGene().IsSetDesc() &&
+                    NStr::FindNoCase(obj.GetData().GetGene().GetDesc(), kSuspiciousNotePhrases[k]) != string::npos) {
+                    has_phrase = true;
+                }
+                break;
+            case CSeqFeatData::eSubtype_prot:
+                if (obj.GetData().GetProt().IsSetDesc() &&
+                    NStr::FindNoCase(obj.GetData().GetProt().GetDesc(), kSuspiciousNotePhrases[k]) != string::npos) {
+                    has_phrase = true;
+                }
+                break;
+            case CSeqFeatData::eSubtype_cdregion:
+            case CSeqFeatData::eSubtype_misc_feature:
+                if (obj.IsSetComment() &&
+                    NStr::FindNoCase(obj.GetComment(), kSuspiciousNotePhrases[k]) != string::npos) {
+                    has_phrase = true;
+                }
+                break;
+            default:
+                break;
+        }
+        if (has_phrase) {
+            m_Objs[kSuspiciousNoteTop]["[n] note text[s] contain '" + kSuspiciousNotePhrases[k] + "'"].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(SUSPICIOUS_NOTE_TEXT)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
