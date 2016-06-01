@@ -98,6 +98,10 @@ Location: {src,include}/gui/utils/muparser
 Author:   Ingo Berg
 License:  BSDish [include/gui/utils/muparser/muParser.h]
 
+Location: src/connect/parson.{c,h}
+Author:   Krzysztof Gabis
+License:  MIT [https://opensource.org/licenses/MIT]
+
 
 ==============================================================
 Copyright F.A.Q.
