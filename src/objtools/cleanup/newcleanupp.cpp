@@ -4427,6 +4427,7 @@ static const TTrnaKey trna_key_to_subtype [] = {
     {  "His",            'H'  },
     {  "Histidine",      'H'  },
     {  "Ile",            'I'  },
+    {  "iMet",           'M'  },
     {  "Isoleucine",     'I'  },
     {  "Leu",            'L'  },
     {  "Leu or Ile",     'J'  },
@@ -4712,6 +4713,7 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
         char aa = s_ParseSeqFeatTRnaString(name, &justTrnaText, codon, false);
         if (aa != '\0') {
             const bool is_fMet = (NStr::Find(name, "fMet") != NPOS);
+            const bool is_iMet = (NStr::Find(name, "iMet") != NPOS);
             CRNA_ref_Base::C_Ext::TTRNA &trp = rna.SetExt().SetTRNA();
             trp.SetAa().SetNcbieaa(aa);
             if (justTrnaText) {
@@ -4720,6 +4722,8 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             if (aa == 'M') {
                 if (is_fMet) {
                     x_AddToComment(feat, "fMet");
+                } else if (is_iMet) {
+                    x_AddToComment(feat, "iMet");
                 }
             }
             x_SeqFeatTRNABC(feat, trp);
@@ -4747,6 +4751,9 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
                 if (NStr::Find(product, "fMet") != NPOS &&
                     (!feat.IsSetComment() || NStr::Find(feat.GetComment(), "fMet") == NPOS)) {
                     x_AddToComment(feat, "fMet");
+                } else if (NStr::Find(product, "iMet") != NPOS &&
+                    (!feat.IsSetComment() || NStr::Find(feat.GetComment(), "iMet") == NPOS)) {
+                    x_AddToComment(feat, "iMet");
                 }
             }
 
@@ -4767,6 +4774,9 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
                 x_AddToComment(feat, product);
             }
             if (NStr::CompareNocase (product, "tRNA-fMet") == 0 || NStr::CompareNocase (product, "iRNA-fMet") == 0) {
+                return eAction_Nothing;
+            }
+            if (NStr::CompareNocase (product, "tRNA-iMet") == 0 || NStr::CompareNocase (product, "iRNA-iMet") == 0) {
                 return eAction_Nothing;
             }
             return eAction_Erase;
@@ -8948,7 +8958,7 @@ void CNewCleanup_imp::RnaFeatBC (
             CAminoAcidCharToSymbol::const_iterator aa_end  = sm_TrnaInverseKeys.upper_bound(aa);
             for( ; aa_iter != aa_end ; ++aa_iter ) {
                 const string &a_name = aa_iter->second;
-                if( comment == a_name && ( aa != 'M' || ! NStr::EqualNocase(a_name, "fMet") ) ) {
+                if( comment == a_name && ( aa != 'M' || ! NStr::EqualNocase(a_name, "fMet") || ! NStr::EqualNocase(a_name, "iMet") ) ) {
                     RESET_FIELD(seq_feat, Comment);
                     ChangeMade(CCleanupChange::eChangeComment);
                     break;
