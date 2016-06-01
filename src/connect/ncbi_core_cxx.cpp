@@ -34,13 +34,14 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "ncbi_ansi_ext.h"
-#include "ncbi_priv.h"
-#include <connect/ncbi_monkey.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_gnutls.h>
+#include <connect/ncbi_monkey.hpp>
+#include "ncbi_ansi_ext.h"
+#include "ncbi_priv.h"
 #include <stdlib.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_Core
@@ -252,6 +253,7 @@ extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
 extern "C" {
 static void s_Fini(void) THROWS_NONE
 {
+    SOCK_SetupSSL(0);
     CORE_SetREG(0);
     CORE_SetLOG(0);
     CORE_SetLOCK(0);
@@ -310,9 +312,11 @@ static const char* s_GetRequestDTab(void)
 }
 }
 
+
 /***********************************************************************
  *                         CRAZY MONKEY CALLS                          *
  ***********************************************************************/
+
 #ifdef NCBI_MONKEY
 extern "C" {
     static MONKEY_RETTYPE 
@@ -417,6 +421,7 @@ static enum EConnectInit {
 
 /* NB: gets called under a lock */
 static void s_Init(IRWRegistry*      reg  = 0,
+                   FSSLSetup         ssl  = 0,
                    CRWLock*          lock = 0,
                    TConnectInitFlags flag = 0,
                    EConnectInit      how  = eConnectInit_Weak)
@@ -434,43 +439,25 @@ static void s_Init(IRWRegistry*      reg  = 0,
         atexit(s_Fini);
     }
 
-    /* setup request ID retrieval callback */
-    g_CORE_GetRequestID = s_GetRequestID;
-
-    /* setup app name retrieval callback */
-    g_CORE_GetAppName = s_GetAppName;
-
-    /* setup DTab-Local retrieval */
+    /* setup retrieval functions */
+    g_CORE_GetAppName     = s_GetAppName;
+    g_CORE_GetRequestID   = s_GetRequestID;
     g_CORE_GetRequestDtab = s_GetRequestDTab;
+
+    /* setup SSL */
+    if (ssl) {
+        SOCK_SetupSSL(ssl);
+    }
 
 #ifdef NCBI_MONKEY
     /* Allow CMonkey to switch hooks to Connect library */
     CMonkey::MonkeyHookSwitchSet(s_SetMonkeyHooks);
-    /* Create CMonkey instance. It loads the config and sets hooks */
+    /* Create CMonkey instance. It loads config and sets hooks */
     CMonkey::Instance();
-#endif /* #ifdef NCBI_MONKEY */
+#endif /* NCBI_MONKEY */
 
     /* done! */
     s_ConnectInit = how;
-}
-
-
-static void s_InitInternal(void)
-{
-    CFastMutexGuard guard(s_ConnectInitMutex);
-    if (!g_CORE_Registry  &&  !g_CORE_Log
-        &&  g_CORE_MT_Lock == &g_CORE_MT_Lock_default) {
-        try {
-            if (s_ConnectInit == eConnectInit_Intact) {
-                CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-                CNcbiApplication* app = CNcbiApplication::Instance();
-                s_Init(app ? &app->GetConfig() : 0);
-            }
-        }
-        NCBI_CATCH_ALL_X(7, "CONNECT_InitInternal() failed");
-    } else {
-        s_ConnectInit = eConnectInit_Explicit;
-    }
 }
 
 
@@ -481,18 +468,29 @@ extern void CONNECT_Init(IRWRegistry*      reg,
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
     try {
-        s_Init(reg, lock, flag, eConnectInit_Explicit);
+        s_Init(reg, 0/*ssl*/, lock, flag, eConnectInit_Explicit);
     }
     NCBI_CATCH_ALL_X(8, "CONNECT_Init() failed");
 }
 
 
-
-
 CConnIniter::CConnIniter(void)
 {
-    if (s_ConnectInit == eConnectInit_Intact) {
-        s_InitInternal();
+    if (s_ConnectInit != eConnectInit_Intact)
+        return;
+    CFastMutexGuard guard(s_ConnectInitMutex);
+    if (!g_CORE_Registry  &&  !g_CORE_Log
+        &&  g_CORE_MT_Lock == &g_CORE_MT_Lock_default) {
+        try {
+            if (s_ConnectInit == eConnectInit_Intact) {
+                CMutexGuard appguard(CNcbiApplication::GetInstanceMutex());
+                CNcbiApplication* app = CNcbiApplication::Instance();
+                s_Init(app ? &app->GetConfig() : 0, NcbiSetupGnuTls);
+            }
+        }
+        NCBI_CATCH_ALL_X(7, "CONNECT_InitInternal() failed");
+    } else {
+        s_ConnectInit = eConnectInit_Explicit;
     }
 }
 
