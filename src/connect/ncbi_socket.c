@@ -2653,7 +2653,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                     if (sock->log == eOn
                         ||  (sock->log == eDefault  &&  s_Log == eOn)) {
                         CORE_LOGF(eLOG_Trace,
-                                  ("%sSSL session established%s%s",
+                                  ("%sSSL session created%s%s",
                                    s_ID(sock, _id),
                                    &" "[!desc], desc ? desc : ""));
                     }
