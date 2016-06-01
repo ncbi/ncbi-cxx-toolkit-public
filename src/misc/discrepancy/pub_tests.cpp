@@ -113,7 +113,7 @@ string GetAuthorString(const CAuth_list& auth_list)
     if (auth_list.IsSetNames()) {
         switch (auth_list.GetNames().Which()) {
             case CAuth_list::C_Names::e_Std:
-                ITERATE(CAuth_list::C_Names::TStd, it, auth_list.GetNames().GetStd()) {
+                ITERATE (CAuth_list::C_Names::TStd, it, auth_list.GetNames().GetStd()) {
                     string a = GetAuthorString(**it);
                     if (!NStr::IsBlank(a)) {
                         if (!NStr::IsBlank(authors)) {
@@ -124,7 +124,7 @@ string GetAuthorString(const CAuth_list& auth_list)
                 }
                 break;
             case CAuth_list::C_Names::e_Ml:
-                ITERATE(CAuth_list::C_Names::TMl, it, auth_list.GetNames().GetMl()) {
+                ITERATE (CAuth_list::C_Names::TMl, it, auth_list.GetNames().GetMl()) {
                     if (!NStr::IsBlank(*it)) {
                         if (!NStr::IsBlank(authors)) {
                             authors += ", ";
@@ -134,7 +134,7 @@ string GetAuthorString(const CAuth_list& auth_list)
                 }
                 break;
             case CAuth_list::C_Names::e_Str:
-                ITERATE(CAuth_list::C_Names::TStr, it, auth_list.GetNames().GetStr()) {
+                ITERATE (CAuth_list::C_Names::TStr, it, auth_list.GetNames().GetStr()) {
                     if (!NStr::IsBlank(*it)) {
                         if (!NStr::IsBlank(authors)) {
                             authors += ", ";
@@ -189,7 +189,7 @@ void GetPubTitleAndAuthors(const CPubdesc& pubdesc, string& title, string& autho
     title = kEmptyStr;
     authors = kEmptyStr;
     if (pubdesc.IsSetPub()) {
-        ITERATE(CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
+        ITERATE (CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
             GetPubTitleAndAuthors(**it, title, authors);
             if (!NStr::IsBlank(title)) {
                 break;
@@ -351,7 +351,7 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
         return false;
     }
     bool rval = false;
-    ITERATE(CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
+    ITERATE (CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
         if (IsPubUnpublished(**it)) {
             string title = kEmptyStr;
             string authors = kEmptyStr;
@@ -419,7 +419,7 @@ bool IsCitSubMissingAffiliation(const CPubdesc& pubdesc)
         return false;
     }
     bool rval = false;
-    ITERATE(CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
+    ITERATE (CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
         if ((*it)->IsSub()) {
             if (!(*it)->GetSub().IsSetAuthors() || 
                 !(*it)->GetSub().GetAuthors().IsSetAffil() ||
@@ -558,16 +558,14 @@ DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, CPubdesc, eDisc | eOncaller, "All Cit-sub
     if (!obj.IsSetPub()) {
         return;
     }
-    ITERATE(CPubdesc::TPub::Tdata, it, obj.GetPub().Get()) {
+    ITERATE (CPubdesc::TPub::Tdata, it, obj.GetPub().Get()) {
         if ((*it)->IsSub()) {
             if (!(*it)->GetSub().IsSetAuthors() || !(*it)->GetSub().GetAuthors().IsSetAffil()) {
                 AddAffilFieldObject(context, kSummaries, kEmptyStr, m_Objs);
-            } else {
+            }
+            else {
                 AddAffilFields(context, (*it)->GetSub().GetAuthors().GetAffil(), m_Objs);
-                AddAffilFieldObject(context, 
-                                    kSummaries,
-                                    SummarizeAffiliation((*it)->GetSub().GetAuthors().GetAffil()), 
-                                    m_Objs);
+                AddAffilFieldObject(context, kSummaries, SummarizeAffiliation((*it)->GetSub().GetAuthors().GetAffil()),  m_Objs);
             }
         }
     }
@@ -586,12 +584,10 @@ static void SummarizeAffilField
         CReportNode::TNodeMap::iterator it = objs[field_name].GetMap().begin();
         while (it != objs[field_name].GetMap().end()) {
             string two = "[n] affiliation[s] [has] " + alias + " value '" + it->first + "'";
-            NON_CONST_ITERATE(TReportObjectList, robj, objs[field_name][it->first].GetObjects())
-            {
+            NON_CONST_ITERATE (TReportObjectList, robj, objs[field_name][it->first].GetObjects()) {
                 const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
                 CConstRef<CSeqdesc> pub_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
-
-                objs[kCitSubSummary][one][two].Add(*context.NewDiscObj(pub_desc), false);
+                objs[kCitSubSummary][one][two].Ext().Add(*context.NewDiscObj(pub_desc), false);
             }
             ++it;
         }
@@ -616,14 +612,13 @@ DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT)
             string two;
             if (NStr::IsBlank(it->first)) {
                 two = "         [n] Cit-sub[s] [has] no affiliation";
-            } else {
+            }
+            else {
                 two = "        [n] CitSub[s] [has] affiliation " + it->first;
             }
-            NON_CONST_ITERATE(TReportObjectList, robj, m_Objs[kSummaries][it->first].GetObjects())
-            {
+            NON_CONST_ITERATE (TReportObjectList, robj, m_Objs[kSummaries][it->first].GetObjects()) {
                 const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
                 CConstRef<CSeqdesc> pub_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
-
                 m_Objs[kCitSubSummary][two].Add(*context.NewDiscObj(pub_desc), false);
             }
             ++it;
@@ -772,7 +767,7 @@ DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
     vector < CConstRef<CSubmit_block> > blocks;
     CReportNode::TNodeMap::iterator it = m_Objs["blocks"].GetMap().begin();
     while (it != m_Objs["blocks"].GetMap().end()) {
-        NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["blocks"].GetObjects())
+        NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["blocks"].GetObjects())
         {
             const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
             CConstRef<CSubmit_block> obj(dynamic_cast<const CSubmit_block*>(other_disc_obj->GetObject().GetPointer()));
