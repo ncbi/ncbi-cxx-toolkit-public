@@ -2,11 +2,14 @@
 #
 # XXCONNECT -- includes C++-only part of connection library
 
+CPPFLAGS = $(GNUTLS_INCLUDE) $(ORIG_CPPFLAGS)
+
 SRC_CXX = ncbi_socket_cxx ncbi_core_cxx email_diag_handler \
           ncbi_conn_streambuf ncbi_conn_stream ncbi_conn_test \
           ncbi_misc ncbi_namedpipe ncbi_namedpipe_connector \
           ncbi_pipe ncbi_pipe_connector ncbi_conn_reader_writer \
-          ncbi_userhost ncbi_http_session ncbi_lbos_cxx ncbi_monkey
+          ncbi_userhost ncbi_http_session ncbi_lbos_cxx ncbi_monkey \
+	      ncbi_gnutls
 
 SRC      = $(SRC_CXX)
 
@@ -16,7 +19,3 @@ PROJ_TAG = core
 LIBS     = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 WATCHERS = lavr elisovdn
-
-
-USES_LIBRARIES =  \
-    $(NCBI_C_ncbi) xncbi

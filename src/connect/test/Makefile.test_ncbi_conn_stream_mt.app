@@ -3,10 +3,8 @@
 APP = test_ncbi_conn_stream_mt
 SRC = test_ncbi_conn_stream_mt
 
-CPPFLAGS = $(GNUTLS_INCLUDE) $(ORIG_CPPFLAGS)
-
-LIB = connssl xconnect test_mt xncbi
-LIBS = $(GNUTLS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIB = xconnect test_mt xncbi
+LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
 
 CHECK_CMD = test_ncbi_conn_stream_mt.sh
