@@ -26,4 +26,5 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   ncbi_util.o:           CFLAGS += -fno-builtin-strncmp
   ncbi_version.o:        CFLAGS += -fno-builtin-strcpy -fno-builtin-strcspn \
                                    -fno-builtin-strspn
+  parson.o:              CFLAGS += -fno-builtin-strncmp
 endif
