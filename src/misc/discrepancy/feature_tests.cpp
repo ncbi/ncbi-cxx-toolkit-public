@@ -294,7 +294,7 @@ const string kShortRRNA = "[n] rRNA feature[s] [is] too short";
 DISCREPANCY_CASE(SHORT_RRNA, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Short rRNA Features")
 //  ----------------------------------------------------------------------------
 {
-    if (IsShortrRNA(obj, &(context.GetScope()))) {
+    if (!obj.IsSetPartial() && IsShortrRNA(obj, &(context.GetScope()))) {
         m_Objs[kShortRRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
             false).Fatal();
     }
