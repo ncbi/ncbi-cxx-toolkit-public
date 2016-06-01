@@ -102,10 +102,6 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
 
 bool CTestApp::TestApp_Init(void)
 {
-#ifndef HAVE_LIBGNUTLS
-    ERR_POST(Warning << "SSL is not supported on this platform");
-#endif //HAVE_LIBGNUTLS
-
     sm_URL = GetArgs()["url"].AsString();
     ERR_POST(Info << "URL=" << sm_URL);
     return !sm_URL.empty();

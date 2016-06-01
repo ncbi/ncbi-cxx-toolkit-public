@@ -403,7 +403,7 @@ static void s_SetMonkeyHooks(EMonkeyHookSwitch hook_switch)
         break;
     }
 }
-#endif /* NCBI_MONKEY */
+#endif //NCBI_MONKEY
 
 
 /***********************************************************************
@@ -454,7 +454,7 @@ static void s_Init(IRWRegistry*      reg  = 0,
     CMonkey::MonkeyHookSwitchSet(s_SetMonkeyHooks);
     /* Create CMonkey instance. It loads config and sets hooks */
     CMonkey::Instance();
-#endif /* NCBI_MONKEY */
+#endif //NCBI_MONKEY
 
     /* done! */
     s_ConnectInit = how;
@@ -485,6 +485,9 @@ CConnIniter::CConnIniter(void)
             if (s_ConnectInit == eConnectInit_Intact) {
                 CMutexGuard appguard(CNcbiApplication::GetInstanceMutex());
                 CNcbiApplication* app = CNcbiApplication::Instance();
+#ifndef HAVE_LIBGNUTLS
+                ERR_POST(Warning << "SSL is not supported in this build");
+#endif //HAVE_LIBGNUTLS
                 s_Init(app ? &app->GetConfig() : 0, NcbiSetupGnuTls);
             }
         }
