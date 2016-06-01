@@ -1,0 +1,321 @@
+Seq-entry ::= seq {
+  id {
+    local str "BankIt1923396",
+    general {
+      db "BankIt",
+      tag id 1923396
+    },
+    general {
+      db "TMSMART",
+      tag id 66444650
+    },
+    genbank {
+      accession "KX344070"
+    }
+  },
+  descr {
+    title "Fusarium verticillioides strain ANF212 28S ribosomal RNA gene,
+ partial sequence.",
+    source {
+      genome genomic,
+      org {
+        taxname "Fusarium verticillioides",
+        db {
+          {
+            db "taxon",
+            tag id 117187
+          }
+        },
+        syn {
+          "Fusarium moniliforme"
+        },
+        orgname {
+          name binomial {
+            genus "Fusarium",
+            species "verticillioides"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "ANF212"
+            }
+          },
+          lineage "Eukaryota; Fungi; Dikarya; Ascomycota; Pezizomycotina;
+ Sordariomycetes; Hypocreomycetidae; Hypocreales; Nectriaceae; Fusarium;
+ Fusarium fujikuroi species complex",
+          gcode 1,
+          mgcode 4,
+          div "PLN"
+        }
+      },
+      subtype {
+        {
+          subtype isolation-source,
+          name "agricultural soil"
+        },
+        {
+          subtype collected-by,
+          name "Anuja Sharma"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Sharma",
+                  first "Anuja",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Aggarwal",
+                  first "Neeraj",
+                  initials "N.K."
+                }
+              }
+            }
+          },
+          title "Lignolytic potential on water hyacinth (Eichhornia Crassipes)"
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Sharma",
+                  first "Anuja",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Aggarwal",
+                  first "Neeraj",
+                  initials "N.K."
+                }
+              }
+            },
+            affil std {
+              affil "Kurukshetra University",
+              div "Microbiology",
+              city "Kurukshetra",
+              sub "Haryana",
+              country "India",
+              postal-code "136119"
+            }
+          },
+          medium email,
+          date std {
+            year 2016,
+            month 5,
+            day 27
+          }
+        }
+      }
+    },
+    user {
+      class "SMART_V1.0",
+      type id 1,
+      data {
+        {
+          label id 1,
+          num 1,
+          data int 10512719
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "ALT EMAIL:anuja.s.sharma@kuk.ac.in"
+        },
+        {
+          label str "AdditionalComment",
+          data str "BankIt1923396"
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Assembly-Data-START##"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Sanger dideoxy sequencing"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SEQS:1"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "AdditionalComment",
+          data str "RESUB: This is a resubmission of Group/BankIt#:1911222"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "AdditionalComment",
+          data str "LocalID:BankIt1923396"
+        }
+      }
+    },
+    user {
+      type str "OriginalID",
+      data {
+        {
+          label str "LocalId",
+          data str "BankIt1923396"
+        }
+      }
+    },
+    user {
+      class "1.0",
+      type str "AutodefOptions",
+      data {
+        {
+          label str "UseLabels",
+          data bool TRUE
+        },
+        {
+          label str "LeaveParenthetical",
+          data bool TRUE
+        },
+        {
+          label str "SpecifyNuclearProduct",
+          data bool TRUE
+        },
+        {
+          label str "MaxMods",
+          data int 0
+        },
+        {
+          label str "FeatureListType",
+          data str "List All Features"
+        },
+        {
+          label str "MiscFeatRule",
+          data str "Delete"
+        },
+        {
+          label str "HIVRule",
+          data str "WantBoth"
+        },
+        {
+          label str "ModifierList",
+          data fields {
+            {
+              label str "OrgMods",
+              num 1,
+              data strs {
+                "strain"
+              }
+            }
+          }
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 6
+        },
+        {
+          label str "day",
+          data int 1
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    },
+    update-date std {
+      year 2016,
+      month 5,
+      day 27,
+      hour 6,
+      minute 40,
+      second 1
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 584,
+    strand ds,
+    seq-data ncbi4na '1F12F121444118842228148112442414841142442112142821118884
+111828442828244422241488481188848141441812888841842448422882241488222844112444
+124221814144484141422224828448844184221118282848111488228824124148241481488844
+411842842828111844414481818482882811142811181224422141412241814242121148141484
+182411141841111421288841111414148811111481248411188488411144411424888184122141
+288444288448811821828444488282222148421288882214822144221421821488882422444441
+811141288244411848442828288244441484881814222488484811812228442444412841448824
+242182842114418428442481184482182112412224828841122444112211'H
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data rna {
+            type rRNA,
+            ext name "28S ribosomal RNA"
+          },
+          partial TRUE,
+          location int {
+            from 0,
+            to 583,
+            strand plus,
+            id local str "BankIt1923396",
+            fuzz-from lim lt,
+            fuzz-to lim gt
+          }
+        }
+      }
+    }
+  }
+}

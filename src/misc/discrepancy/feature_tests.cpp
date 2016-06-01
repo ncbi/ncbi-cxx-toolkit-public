@@ -377,6 +377,7 @@ DISCREPANCY_SUMMARIZE(RBS_WITHOUT_GENE)
 {
     AddRBS(m_Objs, context);
     m_Objs.GetMap().erase("genes");
+    m_Objs.GetMap().erase("RBS");
     if (m_Objs.empty()) {
         return;
     }
