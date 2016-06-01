@@ -635,7 +635,7 @@ DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
  * for port generation                                                       */
 static unsigned short s_GeneratePort()
 {
-    int thread_num = *tls->GetValue();
+    int thread_num = *s_Tls->GetValue();
     static int cur = static_cast<int>(time(0));
 
     {{
@@ -862,14 +862,27 @@ EIO_Status s_FakeReadDiscoveryCorrupt(CONN              conn,
     static string buf = "";
     if (buf == "") {
         ostringstream oss;
+        oss << "{"
+            <<     "\"services\":{"
+            <<          "\"/lbos\":[";
         unsigned int local_lines = lines;
-        for (unsigned int i = 0; i < local_lines; i++) {
-            oss << "STANDALONE 0" << i + 1 << ".0" <<
-                i + 2 << ".0" <<
-                i + 3 << ".0" <<
-                i + 4 << ":" << (i + 1) * 215 <<
-                " Regular R=1000.0 L=yes T=30\n";
+        for (unsigned int i = 0;  i < local_lines;  i++) {
+            oss <<          "{"
+                <<              "\"serviceEndpoint\":{"
+                <<                  "\"host\":\"" 
+                <<                               "0" << i + 1 
+                <<                               ".0" << i + 2 
+                <<                               ".0" << i + 3 
+                <<                               ".0" << i + 4 << "\", "
+                <<                   "\"port\":" << (i + 1) * 215 
+                <<              "},"
+                <<              "\"meta\" : {}"
+                <<           "}"
+                <<           (i < local_lines - 1 ? "," : "");
         }
+        oss <<          "]" 
+            <<      "}" 
+            << "}";
         buf = oss.str();
     }
     unsigned int len = buf.length();
@@ -904,14 +917,28 @@ EIO_Status s_FakeReadDiscovery(CONN            conn,
     static string buf = "";
     if (buf == "") {
         stringstream oss;
+        oss << "{\"services\":{\"/lbos\":[";
         unsigned int localscope_lines = lines;
-        for (unsigned int i = 0; i < localscope_lines; i++) {
-            oss << "STANDALONE " << i + 1 << "." << i + 2 << "." <<
-                                    i + 3 << "." << i + 4 << ":" <<
-                                    (i + 1) * 215 <<
-                                    " Regular R=1000.0 L=yes T=30\n";
+        for (unsigned int i = 0;  i < localscope_lines;  i++) {
+             oss << "{"
+                 <<     "\"serviceEndpoint\":{"
+                 <<         "\"host\":\""
+                 <<                    i + 1
+                 <<                    "." << i + 2
+                 <<                    "." << i + 3
+                 <<                    "." << i + 4 << "\", "
+                 <<         "\"port\":" << (i + 1) * 215 
+                 <<     "},"
+                 <<     "\"meta\":{"
+                 <<          "\"extra\":\"/sviewer/girevhist.cgi\","
+                 <<          "\"type\":\"HTTP\","
+                 <<          "\"rate\":\"1\""
+                 <<     "}"
+                 << "}"
+                 << (i < localscope_lines - 1 ? "," : ""); /* divide by comma */
         }
-        buf = oss.str();
+        oss << "]}}";
+        buf = oss.str();    
     }
     unsigned int len = buf.length();
     if (bytesSent < len) {
@@ -931,7 +958,8 @@ EIO_Status s_FakeReadDiscovery(CONN            conn,
 }
 
 
-/* Emulate a lot of records to be sure that algorithm can take so much */
+/* Emulate a lot of records to be sure that algorithm can take so much 
+ * Does not include any additional data apart from host and port. */
 template <unsigned int lines>
 static
 EIO_Status s_FakeReadDiscoveryEmptyExtra(CONN            conn,
@@ -945,14 +973,23 @@ EIO_Status s_FakeReadDiscoveryEmptyExtra(CONN            conn,
     static string buf = "";
     if (buf == "") {
         stringstream oss;
-        unsigned int localscope_lines = lines;
-        for (unsigned int i = 0; i < localscope_lines; i++) {
-            oss << "STANDALONE " << i + 1 << "." << i + 2 << "." <<
-                                    i + 3 << "." << i + 4 << ":" <<
-                                    (i + 1) * 215 <<
-                                    " Regular R=1000.0 L=yes T=30 | \n";
+        oss << "{\"services\":{\"/lbos\":[";
+        unsigned int localscope_lines = lines;        
+        for (unsigned int i = 0;  i < localscope_lines;  i++) {
+             oss << "{"
+                 <<     "\"serviceEndpoint\":{"
+                 <<         "\"host\":\""
+                 <<                     i + 1
+                 <<                     "." << i + 2
+                 <<                     "." << i + 3
+                 <<                     "." << i + 4 << "\", "
+                 <<         "\"port\":" << (i + 1) * 215 
+                 <<     "}"
+                 << "}"
+                 << (i < localscope_lines - 1 ? "," : ""); /* divide by comma */
         }
-        buf = oss.str();
+        oss << "]}}";
+        buf = oss.str();        
     }
     unsigned int len = buf.length();
     if (bytesSent < len) {
@@ -972,7 +1009,9 @@ EIO_Status s_FakeReadDiscoveryEmptyExtra(CONN            conn,
 }
 
 
-/* Emulate a lot of records to be sure that algorithm can take so much */
+/* Emulate a lot of records to be sure that algorithm can take so much.
+ * This variation provides unknown variables in JSON to test if the algorithm 
+ * can handle this situation*/
 template <unsigned int lines>
 static
 EIO_Status s_FakeReadDiscoveryExtra(CONN            conn,
@@ -986,14 +1025,36 @@ EIO_Status s_FakeReadDiscoveryExtra(CONN            conn,
     static string buf = "";
     if (buf == "") {
         stringstream oss;
+        oss << "{"
+            <<      "\"meta\":{"
+            <<          "\"extra\":\"/sviewer/girevhist.cgi\","
+            <<          "\"type\":\"HTTP\","
+            <<          "\"a\":\"5\""
+            <<      "},"
+            << "\"services\":{\"/lbos\":[";
         unsigned int localscope_lines = lines; // to see value in debugger
-        for (unsigned int i = 0; i < localscope_lines; i++) {
-            oss << "STANDALONE " << i + 1 << "." << i + 2 << "." <<
-                                    i + 3 << "." << i + 4 << ":" <<
-                                    (i + 1) * 215 <<
-                                    " Regular R=1000.0 L=yes T=30"
-                                    " | a=5 http://a.b.com/health/?p=5 alive\n";
+        for (unsigned int i = 0;  i < localscope_lines;  i++) {
+             oss << "{"
+                 <<     "\"serviceEndpoint\":{"
+                 <<         "\"host\":\""
+                 <<                      i + 1
+                 <<                      "." << i + 2
+                 <<                      "." << i + 3
+                 <<                      "." << i + 4 << "\", "
+                 <<         "\"port\":" << (i + 1) * 215 
+                 <<     "}, "
+                 <<      "\"meta\":{"
+                 <<          "\"extra\":\"/sviewer/girevhist.cgi\","
+                 <<          "\"type\":\"HTTP\","
+                 <<          "\"a\":\"5\","
+                 <<          "\"http\":\"http://a.b.com/health/?p=5\","
+                 <<          "\"alive\":\"yes\","
+                 <<          "\"rate\":\"1\""
+                 <<     "}"
+                 << "}" 
+                 << (i < localscope_lines - 1 ? "," : ""); /* divide by comma */
         }
+        oss << "]}}";
         buf = oss.str();
     }
     unsigned int len = buf.length();
@@ -1028,10 +1089,29 @@ EIO_Status s_FakeReadDiscoveryEmptyServInfoPart(CONN            conn,
     static string buf = "";
     if (buf == "") {
         stringstream oss;
-        unsigned int localscope_lines = lines;
-        for (unsigned int i = 0; i < localscope_lines; i++) {
-            oss << " | a=5 http://a.b.com/health/?p=5 alive\n";
+        oss << "{"
+            << "    \"meta\":{"
+            <<          "\"extra\":\"/sviewer/girevhist.cgi\","
+            <<          "\"type\":\"HTTP\","
+            <<          "\"a\":\"5\""
+            <<      "},"
+            << "\"services\":{\"/lbos\":[";
+        unsigned int localscope_lines = lines; // to see value in debugger
+        for (unsigned int i = 0;  i < localscope_lines;  i++) {
+             oss << "{"
+                 <<     "\"serviceEndpoint\":{"
+                 <<     "},"
+                 <<     "\"meta\":{"
+                 <<         "\"extra\":\"/sviewer/girevhist.cgi\","
+                 <<         "\"type\":\"HTTP\","
+                 <<         "\"a\":\"5\","
+                 <<         "\"http\":\"http://a.b.com/health/?p=5\","
+                 <<         "\"alive\":\"yes\""
+                 <<     "}"
+                 << "}" 
+                 << (i < localscope_lines - 1 ? "," : ""); /* divide by comma */
         }
+        oss << "]}}";
         buf = oss.str();
     }
     unsigned int len = buf.length();
@@ -1098,6 +1178,7 @@ static void s_FakeFillCandidates (SLBOS_Data* data,
         if (data->cand[i].info == NULL) return;
         data->cand[i].info->host = host;
         data->cand[i].info->port = port;
+        data->cand[i].info->rate = 1;
     }
 }
 

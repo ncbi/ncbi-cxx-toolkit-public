@@ -67,6 +67,10 @@ static const char* kDomainFile                = "/etc/ncbi/domain";
     static const char* kLbosresolverFile      = "/etc/ncbi/lbosresolver";
 #endif
 
+/* Test mode of JSON. 
+ * TODO: The sections in this file that are not used when USE_JSON is defined - 
+ * are to be removed on or after July, 1, 2016 */
+#define USE_JSON   
 #ifdef USE_JSON
 static const char* kLBOSQuery                 = "/lbos/v3/services/"
                                                 "?format=json&show=all&q=";
@@ -1300,24 +1304,24 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     JSON_Array *serviceEndpoints;
     JSON_Object *serviceEndpoint;
     int i = 0, j = 0;
-    printf ("lbos answer: %s\n", lbos_answer);
     root_value = json_parse_string(lbos_answer);
     if (json_value_get_type(root_value) == JSONObject) {
         root_obj = json_value_get_object(root_value);
         services = json_object_get_object(root_obj, "services");
         for (i = 0;  i < json_object_get_count(services);  i++) {
             const char* svc_name =  json_object_get_name(services, i);
-            printf("Parsing service %s\n", svc_name);
             serviceEndpoints = json_object_get_array(services, svc_name);
             for (j = 0;  j < json_array_get_count(serviceEndpoints);  j++) {
                 serviceEndpoint = json_array_get_object(serviceEndpoints, j);
                 const char* host = json_object_dotget_string(serviceEndpoint,
                                                              "serviceEndpoint.host");
+                if (host == NULL) {
+                    continue;
+                }
                 int port = (int)json_object_dotget_number(serviceEndpoint,
                                                           "serviceEndpoint.port");
                 const char* rate = json_object_dotget_string(serviceEndpoint,
                                                              "serviceEndpoint.meta.rate");
-                printf("host: %s, port: %d, rate: %s\n", host, port, rate);
                  if (infos_capacity <= infos_count + 1) {
                     SSERV_Info** realloc_result = (SSERV_Info**)realloc(infos,
                             sizeof(SSERV_Info*) * (infos_capacity*2 + 1));
@@ -1332,10 +1336,11 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
                         infos_capacity = infos_capacity*2 + 1;
                     }
                 }
-                SSERV_Info * info = calloc(1, sizeof(info));
+                SSERV_Info * info = calloc(1, sizeof(SSERV_Info));
                 info->port = port;
-                if (host != NULL) {
-                    SOCK_StringToHostPort(host, &info->host, NULL);
+                if (SOCK_StringToHostPort(host, &info->host, NULL) == host) {
+                    free(info);
+                    continue;
                 }
                 info->rate = rate ? atoi(rate) : 0;
                 infos[infos_count++] = info;
@@ -1344,6 +1349,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     } else {
         /* do nothing! */
     }
+    json_value_free(root_value);
 
 #else /* Old LBOS output */
     /*
@@ -1368,8 +1374,9 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
             * info and one for finalizing NULL
             */
         if (infos_capacity <= infos_count + 1) {
-            SSERV_Info** realloc_result = (SSERV_Info**)realloc(infos,
-                    sizeof(SSERV_Info*) * (infos_capacity*2 + 1));
+            SSERV_Info** realloc_result = 
+                (SSERV_Info**)realloc(infos, sizeof(SSERV_Info*) * 
+                                             (infos_capacity*2 + 1));
             if (realloc_result == NULL) {
                 /* If error with realloc, return as much as could allocate
                     * for*/

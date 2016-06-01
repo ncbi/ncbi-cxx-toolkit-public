@@ -43,6 +43,7 @@
 #include <corelib/request_ctx.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_lbos.hpp>
+#include <connect/ncbi_monkey.hpp>
 #include "../ncbi_lbosp.hpp"
 #include <connect/server.hpp>
 #include <util/random_gen.hpp>
@@ -73,7 +74,7 @@
 #   define NCBITEST_CHECK_MESSAGE(P,M)                                        \
     {                                                                         \
         stringstream ss;                                                      \
-        int* p_val = tls->GetValue();                                         \
+        int* p_val = s_Tls->GetValue();                                         \
         if (p_val != NULL)                                                    \
         {                                                                     \
             ss << "Thread " << *p_val << ": ";                                \
@@ -292,7 +293,7 @@ struct SLBOSResolutionError
  * used in different test suites. It is convenient
  * that their definitions are at the very end, so that
  * test config is as high as possible */
-static CRef<CTls<int>> tls(new CTls<int>);
+static CRef<CTls<int>> s_Tls(new CTls<int>);
 static void            s_PrintInfo                  (HOST_INFO);
 static void            s_TestFindMethod             (ELBOSFindMethod);
 static string          s_PrintThreadNum             ();
@@ -1287,8 +1288,12 @@ private:
     }
     
     void* Main(void) {
-        tls->SetValue(new int, TlsCleanup);
-        *tls->GetValue() = kHealthThreadNumber;
+        s_Tls->SetValue(new int, TlsCleanup);
+        *s_Tls->GetValue() = kHealthThreadNumber;
+#ifdef NCBI_MONKEY
+        CMonkey::Instance()->
+            RegisterThread(NStr::NumericToString(kHealthThreadNumber));
+#endif /* NCBI_MONKEY */
         WRITE_LOG("Healthcheck thread started");
         if (s_GetTimeOfDay(&m_LastSuccAcceptTime) != 0) {
             memset(&m_LastSuccAcceptTime, 0, sizeof(m_LastSuccAcceptTime));
@@ -1859,9 +1864,9 @@ static void s_FakeInputTest(int servers_num)
             if (iter->second.check)
                 i++;
         }
-        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == servers_num,
-                                       "Mapper should find 200 hosts, but "
-                                       "did not.");
+        stringstream ss;
+        ss << "Mapper should find " << servers_num << " hosts, but found " << i;
+        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == servers_num, ss.str().c_str());
     }
 }
 void ExtraData__DoesNotCrash()
@@ -3125,9 +3130,9 @@ void FakeMassiveInput__ShouldProcess()
             if (iter->second.check)
                 i++;
         }
-        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 200,
-                                       "Mapper should find 200 hosts, but "
-                                       "did not.");
+        stringstream ss;
+        ss << "Mapper should find 200 hosts, but found " << i;
+        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 200, ss.str().c_str());
     }
 }
 
@@ -3265,9 +3270,9 @@ void FakeErrorInput__ShouldNotCrash()
             if (iter->second.check)
                 i++;
         }
-        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 80,
-                                       "Mapper should find 80 hosts, but "
-                                       "did not.");
+        stringstream ss;
+        ss << "Mapper should find 80 hosts, but found " << i;
+        NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 80, ss.str().c_str());
     }
 }
 } /* namespace ResolveViaLBOS */
@@ -3655,8 +3660,9 @@ void HaveCands__ReturnNext()
     NCBITEST_CHECK_MESSAGE_MT_SAFE(info == NULL,
                            "SERV_GetNextInfoEx: mapper error with "
                            "'after last' returned element");
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(found_hosts == 200, "Mapper should find 200 "
-                                              "hosts, but did not.");
+    stringstream ss;
+    ss << "Mapper should find 200 hosts, but found " << i;
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(found_hosts == 200, ss.str().c_str());
 
     /* Cleanup*/
 //     SERV_Close(*iter);
@@ -3697,8 +3703,9 @@ void LastCandReturned__ReturnNull()
         info = SERV_GetNextInfoEx(*iter, &hinfo);
     }
 
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 200, "Mapper should find 200 hosts, but "
-                           "did not.");
+    stringstream ss;
+    ss << "Mapper should find 200 hosts, but found " << i;
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 200, ss.str().c_str());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(hinfo == NULL,
                            "SERV_GetNextInfoEx: hinfo is not NULL "
                            "(always should be NULL)");
@@ -7783,8 +7790,11 @@ public:
 
 private:
     void* Main(void) {
-        tls->SetValue(new int, TlsCleanup);
-        *tls->GetValue() = m_ThreadIdx;
+        s_Tls->SetValue(new int, TlsCleanup);
+        *s_Tls->GetValue() = m_ThreadIdx;
+#ifdef NCBI_MONKEY
+        CMonkey::Instance()->RegisterThread(NStr::NumericToString(m_ThreadIdx));
+#endif /* NCBI_MONKEY */
         m_TestFunc();
         return NULL;
     }
@@ -8233,7 +8243,7 @@ static string s_PrintThreadNum() {
     CTime cl(CTime::eCurrent, CTime::eLocal);
 
     ss << cl.AsString("h:m:s.l ");
-    int* p_val = tls->GetValue();
+    int* p_val = s_Tls->GetValue();
     if (p_val != NULL) {
         if (*p_val == kMainThreadNumber ) {
             ss << "Main thread: ";

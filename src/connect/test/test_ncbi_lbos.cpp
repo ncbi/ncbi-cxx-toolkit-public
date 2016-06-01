@@ -73,8 +73,12 @@ NCBITEST_AUTO_FINI()
 
 NCBITEST_AUTO_INIT()
 {
-    tls->SetValue(new int, TlsCleanup);
-    *tls->GetValue() = kMainThreadNumber;
+    s_Tls->SetValue(new int, TlsCleanup);
+    *s_Tls->GetValue() = kMainThreadNumber;
+#ifdef NCBI_MONKEY
+    CMonkey::Instance()->
+        RegisterThread(NStr::NumericToString(kMainThreadNumber));
+#endif /* NCBI_MONKEY */
 #ifdef NCBI_OS_MSWIN
     srand(NULL);
 #else
@@ -123,12 +127,6 @@ NCBITEST_AUTO_INIT()
 #endif
     s_CleanDTabs();
     s_ReadLBOSVersion();
-}
-
-BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldShuffle)
-{
-    CHECK_LBOS_VERSION();
-    ResolveViaLBOS::FakeMassiveInput__ShouldShuffle();
 }
 
 

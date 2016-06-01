@@ -211,8 +211,8 @@ void Deannouncement__RealLife__InvisibleAfterDeannounce()
 
 bool CTestLBOSApp::Thread_Run(int idx)
 {
-    tls->SetValue(new int, TlsCleanup);
-    *tls->GetValue() = idx;
+    s_Tls->SetValue(new int, TlsCleanup);
+    *s_Tls->GetValue() = idx;
     WRITE_LOG("Thread launched");
     if (idx == 0) {
         LOG_POST(Error << "Cycle started");
@@ -259,8 +259,8 @@ bool CTestLBOSApp::Thread_Run(int idx)
 
 bool CTestLBOSApp::TestApp_Init(void)
 {
-    tls->SetValue(new int, TlsCleanup);
-    *tls->GetValue() = kSingleThreadNumber;
+    s_Tls->SetValue(new int, TlsCleanup);
+    *s_Tls->GetValue() = kSingleThreadNumber;
     WRITE_LOG("Thread launched");
     CConnNetInfo net_info;
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
