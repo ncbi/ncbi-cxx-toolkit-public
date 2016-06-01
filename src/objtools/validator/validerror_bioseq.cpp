@@ -6444,6 +6444,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
     // Now loop over cds to find number of matched cds and number of matched mrna
     int num_matched_cds = 0;
     int num_unmatched_cds = 0;
+    int num_matched_pseudo_cds = 0;
     for (auto&& cds : cds_list) {
         // Check to see if a CDS feat references or overlaps multiple mRNAs
         x_CheckForMultiplemRNAs(*cds);
@@ -6455,6 +6456,8 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
             } else {
                 ++num_unmatched_cds;
             }
+        } else if (cds->HasMatch()) {
+            ++num_matched_pseudo_cds;
         }
     }
 
@@ -6467,7 +6470,8 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
                 + " out of " + NStr::IntToString (numcds)
                 + " CDSs overlapped by 0 mRNAs",
                 *(seq.GetCompleteBioseq()));
-    } else if (num_matched_cds == 0 &&
+    } else if ((num_matched_cds == 0) &&
+               (num_matched_pseudo_cds == 0) && 
                num_mrna > 0) { // Return a CDSmRNAmismatch warning if there are mRNA features but no matches
         const size_t num_cds = cds_list.size();
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
