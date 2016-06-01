@@ -13,7 +13,7 @@ LIB = eutils_client \
 
 LIBS = $(LIBXSLT_STATIC_LIBS) \
 	   $(LIBXML_STATIC_LIBS) \
-	   $(DL_LIBS) $(ORIG_LIBS)
+	   $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included LIBXML LIBXSLT
 
