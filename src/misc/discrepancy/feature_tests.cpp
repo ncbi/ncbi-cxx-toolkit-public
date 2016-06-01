@@ -1299,7 +1299,7 @@ DISCREPANCY_CASE(SUSPICIOUS_NOTE_TEXT, CSeq_feat, eOncaller, "Find Suspicious Ph
                 break;
         }
         if (has_phrase) {
-            m_Objs[kSuspiciousNoteTop]["[n] note text[s] contain '" + kSuspiciousNotePhrases[k] + "'"].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            m_Objs[kSuspiciousNoteTop]["[n] note text[s] contain '" + kSuspiciousNotePhrases[k] + "'"].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
         }
     }
 }
