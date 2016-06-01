@@ -161,7 +161,7 @@ DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc, "Ns at end of sequences")
 //  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
-    if (!seq) {
+    if (!seq || seq->IsAa()) {
         return;
     }
 
