@@ -1085,6 +1085,24 @@ bool StrandsMatch(ENa_strand s1, ENa_strand s2)
 }
 
 
+bool HasMixedStrands(const CSeq_loc& loc)
+{
+    CSeq_loc_CI li(loc);
+    if (!li) {
+        return false;
+    }
+    ENa_strand first_strand = li.GetStrand();
+    ++li;
+    while (li) {
+        if (!StrandsMatch(li.GetStrand(), first_strand)) {
+            return true;
+        }
+        ++li;
+    }
+    return false;
+}
+
+
 // BAD_GENE_STRAND
 const string kBadGeneStrand = "[n/2] feature location[s] conflict with gene location strand[s]";
 
@@ -1099,35 +1117,43 @@ DISCREPANCY_CASE(BAD_GENE_STRAND, CSeq_feat_BY_BIOSEQ, eOncaller, "Genes and fea
     // objects on the opposite strand
     TSeqPos gene_start = obj.GetLocation().GetStart(eExtreme_Positional);
     TSeqPos gene_stop = obj.GetLocation().GetStop(eExtreme_Positional);
+    bool gene_mixed_strands = HasMixedStrands(obj.GetLocation());
 
     CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*(context.GetCurrentBioseq()));
-    for (CFeat_CI fi(context.GetScope(), obj.GetLocation()); fi; ++fi) {
+    for (CFeat_CI fi(bsh); fi; ++fi) {
         if (fi->GetData().GetSubtype() == CSeqFeatData::eSubtype_primer_bind ||
             fi->GetData().IsGene()) {
             continue;
         }
+        if (fi->GetLocation().GetStart(eExtreme_Positional) > gene_stop) {
+            break;
+        }
         TSeqPos feat_start = fi->GetLocation().GetStart(eExtreme_Positional);
         TSeqPos feat_stop = fi->GetLocation().GetStop(eExtreme_Positional);
         if (feat_start == gene_start || feat_stop == gene_stop) {
-            // compare intervals, to make sure each interval is covered by a gene interval on the correct strand
-            CSeq_loc_CI f_loc(fi->GetLocation());
             bool all_ok = true;
-            while (f_loc && all_ok) {
-                CSeq_loc_CI g_loc(obj.GetLocation());
-                bool found = false;
-                while (g_loc && !found) {
-                    if (StrandsMatch(f_loc.GetStrand(), g_loc.GetStrand())) {
-                        sequence::ECompare cmp = sequence::Compare(*(f_loc.GetRangeAsSeq_loc()), *(g_loc.GetRangeAsSeq_loc()), &(context.GetScope()), sequence::fCompareOverlapping);
-                        if (cmp == sequence::eContained || cmp == sequence::eSame) {
-                            found = true;
+            if (gene_mixed_strands) {
+                // compare intervals, to make sure each interval is covered by a gene interval on the correct strand
+                CSeq_loc_CI f_loc(fi->GetLocation());
+                while (f_loc && all_ok) {
+                    CSeq_loc_CI g_loc(obj.GetLocation());
+                    bool found = false;
+                    while (g_loc && !found) {
+                        if (StrandsMatch(f_loc.GetStrand(), g_loc.GetStrand())) {
+                            sequence::ECompare cmp = sequence::Compare(*(f_loc.GetRangeAsSeq_loc()), *(g_loc.GetRangeAsSeq_loc()), &(context.GetScope()), sequence::fCompareOverlapping);
+                            if (cmp == sequence::eContained || cmp == sequence::eSame) {
+                                found = true;
+                            }
                         }
+                        ++g_loc;
                     }
-                    ++g_loc;
+                    if (!found) {
+                        all_ok = false;
+                    }
+                    ++f_loc;
                 }
-                if (!found) {
-                    all_ok = false;
-                }
-                ++f_loc;
+            } else {
+                all_ok = StrandsMatch(fi->GetLocation().GetStrand(), obj.GetLocation().GetStrand());
             }
             if (!all_ok) {
                 size_t offset = m_Objs[kBadGeneStrand].GetMap().size() + 1;
