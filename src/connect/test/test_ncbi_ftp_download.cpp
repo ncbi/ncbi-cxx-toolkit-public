@@ -575,235 +575,15 @@ static void s_InitiateFtpRetrieval(CConn_IOStream& ftp,
 class CNCBITestApp : public CNcbiApplication
 {
 public:
-    void Init(void) 
-    {
-         auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    CNCBITestApp(void);
 
-
-         arg_desc->AddOptionalPositional("url",
-                                         "URL to test",
-                                         CArgDescriptions::eString);
-         
-         arg_desc->AddOptionalPositional("throttler",
-                                         "Delay in msec",
-                                         CArgDescriptions::eString);
-
-         arg_desc->AddOptionalPositional("offset",
-                                         "If set, a \"REST %position%\" will "
-                                         "be launched where this parameter "
-                                         "will be the value for %position%",
-                                         CArgDescriptions::eString);
-        SetupArgDescriptions(arg_desc.release());
-    }
-    int Run(void)
-    {
-        enum EProcessor {
-            fProcessor_Null   = 0,  // Discard all read data
-            fProcessor_List   = 1,  // List contents line-by-line
-            fProcessor_Untar  = 2,  // Untar then discard read data
-            fProcessor_Gunzip = 4   // Decompress then discard read data
-        };
-        typedef unsigned int TProcessor;
-
-
-        // Init the library explicitly (this sets up the log)
-        CONNECT_Init(&GetConfig());
-
-        // Process command line parameters (up to 2)
-        Uint8 offset = 0;
-        const char* url = 
-            GetArguments().Size() > 1  &&  
-             *(GetArguments()[1].c_str()) ? GetArguments()[1].c_str() : 
-                                            kDefaultTestURL;
-        if (GetArguments().Size() > 2) {
-            s_Throttler = NStr::StringToInt(GetArguments()[2].c_str());
-            if (GetArguments().Size() > 3) {
-                offset = NStr::StringToUInt8(GetArguments()[3]);
-            }
-        }
-
-        // Initialize all connection parameters for FTP and log them out
-        SConnNetInfo* net_info = ConnNetInfo_Create(0);
-        net_info->path[0] = '\0';
-        net_info->args[0] = '\0';
-        net_info->http_referer = 0;
-        ConnNetInfo_SetUserHeader(net_info, 0);
-
-        if (!ConnNetInfo_ParseURL(net_info, url)) {
-            ERR_POST(Fatal << "Cannot parse URL \"" << url << '"');
-        }
-
-        if        (net_info->scheme == eURL_Unspec) {
-            if (NStr::strcasecmp(net_info->host, DEF_CONN_HOST) == 0) {
-                strcpy(net_info->host, CONN_NCBI_FTP_HOST);
-            }
-            net_info->scheme = eURL_Ftp;
-        } else if (net_info->scheme != eURL_Ftp) {
-            ERR_POST(Fatal << "URL scheme must be FTP (ftp://) if specified");
-        }
-        if (!*net_info->user) {
-            ERR_POST(Warning << "Username not provided, defaulted to `ftp'");
-            strcpy(net_info->user, "ftp");
-        }
-
-        // Reassemble the URL from the connection parameters
-        url = ConnNetInfo_URL(net_info);
-        _ASSERT(url);
-
-        // Figure out what FTP flags to use
-        TFTP_Flags flags = 0;
-        if        (net_info->req_method == eReqMethod_Post) {
-            flags |= fFTP_UsePassive;
-        } else if (net_info->req_method == eReqMethod_Get) {
-            flags |= fFTP_UseActive;
-        }
-        char val[40];
-        ConnNetInfo_GetValue(0, "DELAYRESTART", val, sizeof(val), 0);
-        if (offset  &&  ConnNetInfo_Boolean(val)) {
-            flags |= fFTP_DelayRestart;
-        }
-        ConnNetInfo_GetValue(0, "USEFEAT", val, sizeof(val), "");
-        if (ConnNetInfo_Boolean(val)) {
-            flags |= fFTP_UseFeatures;
-        }
-        flags     |= fFTP_NotifySize;
-
-        // For display purposes do not use absolute paths except for "/"
-        const char* filename = net_info->path;
-        if (filename[0] == '/'  &&  filename[1]) {
-            filename++;
-        }
-
-        // Create callback data block ...
-        CDownloadCallbackData dlcbdata(filename, net_info->timeout);
-        // ... and FTP callback parameters
-        SFTP_Callback ftpcb = { x_FtpCallback, &dlcbdata };
-
-        // Create FTP stream
-        CConn_FtpStream ftp(*net_info, flags | fFTP_IgnorePath,
-                            &ftpcb, net_info->timeout);
-
-        // Print out some server info
-        if (!(ftp << "STAT" << NcbiFlush)) {
-            ERR_POST(Fatal << "Cannot connect to ftp server");
-        }
-        string status;
-        do {
-            string line;
-            getline(ftp, line);
-            size_t linelen = line.size();
-            if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
-                line.resize(--linelen);
-            }
-            NStr::TruncateSpacesInPlace(line);
-            if (line.empty()) {
-                continue;
-            }
-            if (status.empty()) {
-                status  = "Server status:\n\t" + line;
-            } else {
-                status += "\n\t";
-                status += line;
-            }
-        } while (ftp);
-        if (!status.empty()) {
-            ERR_POST(Info << status);
-        }
-        _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Open));  // NB: clears pos
-        ftp.clear();
-
-        // Look at the file extension and figure out what stream processors to use
-        TProcessor proc = fProcessor_Null;
-        if        (NStr::EndsWith(filename, ".tar.gz", NStr::eNocase)  ||
-                   NStr::EndsWith(filename, ".tgz",    NStr::eNocase)) {
-            proc |= fProcessor_Gunzip | fProcessor_Untar;
-        } else if (NStr::EndsWith(filename, ".gz",     NStr::eNocase)) {
-            proc |= fProcessor_Gunzip;
-        } else if (NStr::EndsWith(filename, ".tar",    NStr::eNocase)) {
-            proc |= fProcessor_Untar;
-        } else if (NStr::EndsWith(filename, '/')) {
-            proc |= fProcessor_List;
-        }
-
-        // Inquire about file size and begin retrieval
-        s_TryAskFtpFilesize(ftp, net_info->path);
-        Uint8 size = dlcbdata.GetSize();
-        if (size) {
-            ERR_POST(Info << "Downloading " << url << ", "
-                     << NStr::UInt8ToString(size) << " byte" << &"s"[size == 1]
-                     << ", processor 0x" << NcbiHex << proc);
-        } else {
-            ERR_POST(Info << "Downloading " << url
-                     << ", processor 0x" << NcbiHex << proc);
-        }
-        if (offset) {
-            ftp << "REST " << NStr::UInt8ToString(offset) << NcbiFlush;
-        }
-        s_InitiateFtpRetrieval(ftp, net_info->path);
-
-        // Some intermediate cleanup (NB: invalidates "filename")
-        ConnNetInfo_Destroy(net_info);
-        free((void*) url);
-
-        // NB: Can use "CONN_GetPosition(ftp.GetCONN(), eIO_Open)" to clear again
-        _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
-        // Set a fine read timeout and handle the actual timeout in callbacks
-        static const STimeout second = {1, 0};
-        // NB: also "ftp.SetTimeout(eIO_Read, &second)"
-        ftp >> SetReadTimeout(&second);
-        // Set all relevant CONN callbacks
-        const SCONN_Callback conncb = { x_ConnectionCallback, &dlcbdata };
-        CONN_SetCallback(ftp.GetCONN(), eCONN_OnRead,    &conncb, 0/*dontcare*/);
-        CONN_SetCallback(ftp.GetCONN(), eCONN_OnClose,   &conncb, dlcbdata.CB());
-        CONN_SetCallback(ftp.GetCONN(), eCONN_OnTimeout, &conncb, 0/*dontcare*/);
-
-        // Stack up all necessary stream processors to drive up the stream
-        CProcessor* processor = new CNullProcessor(ftp, &dlcbdata);
-        if (proc & fProcessor_Gunzip) {
-            processor = new CGunzipProcessor(*processor);
-        }
-        if (proc & fProcessor_Untar) {
-            processor = new CUntarProcessor(*processor);
-        }
-        if (proc & fProcessor_List) {
-            processor = new CListProcessor(*processor);
-        }
-
-        // Process stream data
-        size_t files = processor->Run();
-
-        // These should not matter, and can be issued in any order
-        // ...so do the "wrong" order on purpose to prove it works!
-        _VERIFY(ftp.Close() == eIO_Success);
-        delete processor;
-
-        // Conclude the test and print out the summary
-        Uint8 totalsize = 0;
-        ITERATE(CTar::TFiles, it, dlcbdata.Filelist()) {
-            totalsize += it->second;
-        }
-
-        ERR_POST(Info << "Total downloaded " << dlcbdata.Filelist().size()
-                 << " file" << &"s"[dlcbdata.Filelist().size() == 1] << " in "
-                 << CTimeSpan(dlcbdata.SetElapsed() + 0.5).AsString("h:m:s")
-                 << "; combined file size " << NStr::UInt8ToString(totalsize));
-
-        if (!files  ||  !dlcbdata.Filelist().size()) {
-            // Interrupted or an error occurred
-            ERR_POST("Final file list is empty");
-            return 1;
-        }
-        if (files != dlcbdata.Filelist().size()) {
-            // NB: It may be so for an "updated" tar archive, for example...
-            ERR_POST(Warning << "Final file list size mismatch: " << files);
-            return 1;
-        }
-        return 0;
-    }
+public:
+    void Init(void);
+    int  Run (void);
 };
 
 
-int main(int argc, const char* argv[])
+CNCBITestApp::CNCBITestApp(void)
 {
     // Setup error posting
     SetDiagTrace(eDT_Enable);
@@ -824,7 +604,239 @@ int main(int argc, const char* argv[])
     signal(SIGTERM, s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
 #endif // NCBI_OS
-    CSocketAPI::SetInterruptOnSignal(eOn);
 
+    CSocketAPI::SetInterruptOnSignal(eOn);
+}
+
+
+void CNCBITestApp::Init(void)
+{
+    // Init the library explicitly (this sets up the log)
+    CONNECT_Init(&Instance()->GetConfig());
+
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    arg_desc->AddOptionalPositional("url",
+                                    "URL to test",
+                                    CArgDescriptions::eString);
+
+    arg_desc->AddOptionalPositional("throttler",
+                                    "Delay in msec",
+                                    CArgDescriptions::eString);
+
+    arg_desc->AddOptionalPositional("offset",
+                                    "If set, a \"REST %position%\" will "
+                                    "be launched where this parameter "
+                                    "will be the value for %position%",
+                                    CArgDescriptions::eString);
+    SetupArgDescriptions(arg_desc.release());
+}
+
+
+int CNCBITestApp::Run(void)
+{
+    enum EProcessor {
+        fProcessor_Null   = 0,  // Discard all read data
+        fProcessor_List   = 1,  // List contents line-by-line
+        fProcessor_Untar  = 2,  // Untar then discard read data
+        fProcessor_Gunzip = 4   // Decompress then discard read data
+    };
+    typedef unsigned int TProcessor;
+
+    // Process command line parameters (up to 3)
+    Uint8 offset = 0;
+    const char* url = 
+        GetArguments().Size() > 1  &&  GetArguments()[1].c_str()[0]
+        ? GetArguments()[1].c_str()
+        : kDefaultTestURL;
+    if (GetArguments().Size() > 2) {
+        s_Throttler = NStr::StringToInt(GetArguments()[2].c_str());
+        if (GetArguments().Size() > 3) {
+            offset = NStr::StringToUInt8(GetArguments()[3]);
+        }
+    }
+
+    // Initialize all connection parameters for FTP and log them out
+    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    net_info->path[0] = '\0';
+    net_info->args[0] = '\0';
+    net_info->http_referer = 0;
+    ConnNetInfo_SetUserHeader(net_info, 0);
+
+    if (!ConnNetInfo_ParseURL(net_info, url)) {
+        ERR_POST(Fatal << "Cannot parse URL \"" << url << '"');
+    }
+
+    if        (net_info->scheme == eURL_Unspec) {
+        if (NStr::strcasecmp(net_info->host, DEF_CONN_HOST) == 0) {
+            strcpy(net_info->host, CONN_NCBI_FTP_HOST);
+        }
+        net_info->scheme = eURL_Ftp;
+    } else if (net_info->scheme != eURL_Ftp) {
+        ERR_POST(Fatal << "URL scheme must be FTP (ftp://) if specified");
+    }
+    if (!*net_info->user) {
+        ERR_POST(Warning << "Username not provided, defaulted to `ftp'");
+        strcpy(net_info->user, "ftp");
+    }
+
+    // Reassemble the URL from the connection parameters
+    url = ConnNetInfo_URL(net_info);
+    _ASSERT(url);
+
+    // Figure out what FTP flags to use
+    TFTP_Flags flags = 0;
+    if        (net_info->req_method == eReqMethod_Post) {
+        flags |= fFTP_UsePassive;
+    } else if (net_info->req_method == eReqMethod_Get) {
+        flags |= fFTP_UseActive;
+    }
+    char val[40];
+    ConnNetInfo_GetValue(0, "DELAYRESTART", val, sizeof(val), 0);
+    if (offset  &&  ConnNetInfo_Boolean(val)) {
+        flags |= fFTP_DelayRestart;
+    }
+    ConnNetInfo_GetValue(0, "USEFEAT", val, sizeof(val), "");
+    if (ConnNetInfo_Boolean(val)) {
+        flags |= fFTP_UseFeatures;
+    }
+    flags     |= fFTP_NotifySize;
+
+    // For display purposes do not use absolute paths except for "/"
+    const char* filename = net_info->path;
+    if (filename[0] == '/'  &&  filename[1]) {
+        filename++;
+    }
+
+    // Create callback data block ...
+    CDownloadCallbackData dlcbdata(filename, net_info->timeout);
+    // ... and FTP callback parameters
+    SFTP_Callback ftpcb = { x_FtpCallback, &dlcbdata };
+
+    // Create FTP stream
+    CConn_FtpStream ftp(*net_info, flags | fFTP_IgnorePath,
+                        &ftpcb, net_info->timeout);
+
+    // Print out some server info
+    if (!(ftp << "STAT" << NcbiFlush)) {
+        ERR_POST(Fatal << "Cannot connect to ftp server");
+    }
+    string status;
+    do {
+        string line;
+        getline(ftp, line);
+        size_t linelen = line.size();
+        if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
+            line.resize(--linelen);
+        }
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()) {
+            continue;
+        }
+        if (status.empty()) {
+            status  = "Server status:\n\t" + line;
+        } else {
+            status += "\n\t";
+            status += line;
+        }
+    } while (ftp);
+    if (!status.empty()) {
+        ERR_POST(Info << status);
+    }
+    _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Open));  // NB: clears pos
+    ftp.clear();
+
+    // Look at the file extension and figure out what stream processors to use
+    TProcessor proc = fProcessor_Null;
+    if        (NStr::EndsWith(filename, ".tar.gz", NStr::eNocase)  ||
+               NStr::EndsWith(filename, ".tgz",    NStr::eNocase)) {
+        proc |= fProcessor_Gunzip | fProcessor_Untar;
+    } else if (NStr::EndsWith(filename, ".gz",     NStr::eNocase)) {
+        proc |= fProcessor_Gunzip;
+    } else if (NStr::EndsWith(filename, ".tar",    NStr::eNocase)) {
+        proc |= fProcessor_Untar;
+    } else if (NStr::EndsWith(filename, '/')) {
+        proc |= fProcessor_List;
+    }
+
+    // Inquire about file size and begin retrieval
+    s_TryAskFtpFilesize(ftp, net_info->path);
+    Uint8 size = dlcbdata.GetSize();
+    if (size) {
+        ERR_POST(Info << "Downloading " << url << ", "
+                 << NStr::UInt8ToString(size) << " byte" << &"s"[size == 1]
+                 << ", processor 0x" << NcbiHex << proc);
+    } else {
+        ERR_POST(Info << "Downloading " << url
+                 << ", processor 0x" << NcbiHex << proc);
+    }
+    if (offset) {
+        ftp << "REST " << NStr::UInt8ToString(offset) << NcbiFlush;
+    }
+    s_InitiateFtpRetrieval(ftp, net_info->path);
+
+    // Some intermediate cleanup (NB: invalidates "filename")
+    ConnNetInfo_Destroy(net_info);
+    free((void*) url);
+
+    // NB: Can use "CONN_GetPosition(ftp.GetCONN(), eIO_Open)" to clear again
+    _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
+    // Set a fine read timeout and handle the actual timeout in callbacks
+    static const STimeout second = {1, 0};
+    // NB: also "ftp.SetTimeout(eIO_Read, &second)"
+    ftp >> SetReadTimeout(&second);
+    // Set all relevant CONN callbacks
+    const SCONN_Callback conncb = { x_ConnectionCallback, &dlcbdata };
+    CONN_SetCallback(ftp.GetCONN(), eCONN_OnRead,    &conncb, 0/*dontcare*/);
+    CONN_SetCallback(ftp.GetCONN(), eCONN_OnClose,   &conncb, dlcbdata.CB());
+    CONN_SetCallback(ftp.GetCONN(), eCONN_OnTimeout, &conncb, 0/*dontcare*/);
+
+    // Stack up all necessary stream processors to drive up the stream
+    CProcessor* processor = new CNullProcessor(ftp, &dlcbdata);
+    if (proc & fProcessor_Gunzip) {
+        processor = new CGunzipProcessor(*processor);
+    }
+    if (proc & fProcessor_Untar) {
+        processor = new CUntarProcessor(*processor);
+    }
+    if (proc & fProcessor_List) {
+        processor = new CListProcessor(*processor);
+    }
+
+    // Process stream data
+    size_t files = processor->Run();
+
+    // These should not matter, and can be issued in any order
+    // ...so do the "wrong" order on purpose to prove it works!
+    _VERIFY(ftp.Close() == eIO_Success);
+    delete processor;
+
+    // Conclude the test and print out the summary
+    Uint8 totalsize = 0;
+    ITERATE(CTar::TFiles, it, dlcbdata.Filelist()) {
+        totalsize += it->second;
+    }
+
+    ERR_POST(Info << "Total downloaded " << dlcbdata.Filelist().size()
+             << " file" << &"s"[dlcbdata.Filelist().size() == 1] << " in "
+             << CTimeSpan(dlcbdata.SetElapsed() + 0.5).AsString("h:m:s")
+             << "; combined file size " << NStr::UInt8ToString(totalsize));
+
+    if (!files  ||  !dlcbdata.Filelist().size()) {
+        // Interrupted or an error occurred
+        ERR_POST("Final file list is empty");
+        return 1;
+    }
+    if (files != dlcbdata.Filelist().size()) {
+        // NB: It may be so for an "updated" tar archive, for example...
+        ERR_POST(Warning << "Final file list size mismatch: " << files);
+        return 1;
+    }
+    return 0/*okay*/;
+}
+
+
+int main(int argc, const char* argv[])
+{
     return CNCBITestApp().AppMain(argc, argv);
 }
