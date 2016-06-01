@@ -57,7 +57,10 @@ static const char kSubId[] = " SubmissionPortalSID=";
 
 static string s_GetHttpCred(void)
 {
-    ifstream ifs("/am/ncbiapdata/test_data/http/test_ncbi_http_upload");
+    const char* credfile = getenv("TEST_NCBI_HTTP_UPLOAD");
+    if (!credfile)
+        credfile = "/am/ncbiapdata/test_data/http/test_ncbi_http_upload";
+    ifstream ifs(credfile);
     if (!ifs)
         return kEmptyStr;
     string key;
