@@ -84,6 +84,10 @@ private:
 
     virtual void x_Connect()
     {
+        CUrlArgs args(m_RetryCtx.GetArgs());
+        if(args.IsSetValue("cache_request_id"))
+            cout << "cache_request_id=" << args.GetValue("cache_request_id") << endl;
+
 #ifdef _DEBUG
         LOG_POST(Info << "Connecting to url:" << x_GetURL().c_str());
 #endif
