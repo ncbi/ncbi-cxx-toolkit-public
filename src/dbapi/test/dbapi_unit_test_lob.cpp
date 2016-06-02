@@ -841,6 +841,19 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
             BOOST_CHECK_EQUAL(caught, is_tds72);
         }
 
+        // Repopulate table with no initial value
+        {
+            auto_stmt.reset(conn->LangCmd("DELETE FROM " + GetTableName()));
+            rc = auto_stmt->Send();
+            BOOST_CHECK(rc);
+            auto_stmt->DumpResults();
+            auto_stmt.reset(conn->LangCmd("INSERT INTO " + GetTableName()
+                                          + "(int_field) VALUES(1)"));
+            rc = auto_stmt->Send();
+            BOOST_CHECK(rc);
+            auto_stmt->DumpResults();
+        }
+
         // Use CDB_BlobDescriptor explicitely ..,
         {
             CDB_BlobDescriptor descriptor(GetTableName(), "text_field", "int_field = 1");

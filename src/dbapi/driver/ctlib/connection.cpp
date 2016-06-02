@@ -1131,14 +1131,14 @@ CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
     auto_ptr<CDB_LangCmd> lcmd;
     bool rc = false;
 
-    q  = "-- update " + descr_in.TableName() + " set " + descr_in.ColumnName();
+    q  = "update " + descr_in.TableName() + " set " + descr_in.ColumnName();
 #ifdef FTDS_IN_USE
     q += " = '0x0' where ";
 #else
     q += " = NULL where ";
 #endif
-    q += descr_in.SearchConditions();
-    q += " -- Expected by PubSeqOS, not otherwise needed.\n";
+    q += '(' + descr_in.SearchConditions() + ')';
+    q += " and TEXTPTR(" + descr_in.ColumnName() + ") is null\n";
     q += "select top 1 ";
     q += descr_in.ColumnName();
     q += ", TEXTPTR(" + descr_in.ColumnName() + ")";
