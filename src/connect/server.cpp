@@ -250,18 +250,6 @@ CPoolOfThreads_ForServer::CPoolOfThreads_ForServer(unsigned int max_threads,
       m_KilledAll(false)
 {
     m_ThreadCount.Set(0);
-    m_PutQueueNum.Set(0);
-    m_GetQueueNum.Set(0);
-
-    // The original developer used malloc(...) here to allocate the required
-    // number of bytes for an array. It is unknown why that decision was made.
-    // Later on it was decided to replace malloc(...) with new to have a pure
-    // C++ style in the code.
-    m_Queues = (TQueue**) new char[m_MaxThreads * sizeof(m_Queues[0])];
-
-    for (TACValue i = 0; i < m_MaxThreads; ++i) {
-        m_Queues[i] = new TQueue();
-    }
 }
 
 CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer(void)
@@ -272,17 +260,10 @@ CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer(void)
 
     CAtomicCounter::TValue n = m_ThreadCount.Get();
     if (n) {
-        ERR_POST_X(10, Warning << "CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer: "
-                               << n << " thread(s) still active");
-    } else {
-        // It seems to be safe to destroy the allocated array if all the
-        // threads were stopped.
-        for (TACValue i = 0; i < m_MaxThreads; ++i) {
-            delete m_Queues[i];
-        }
-        delete [] (char *)(m_Queues);
+        ERR_POST_X(10, Warning
+                   << "CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer: "
+                   << n << " thread(s) still active");
     }
-    // Just in case let's deliberately not destroy all queues.
 }
 
 void
@@ -299,15 +280,13 @@ CPoolOfThreads_ForServer::Spawn(unsigned int num_threads)
 void
 CPoolOfThreads_ForServer::AcceptRequest(const TRequest& req)
 {
-    Uint4 q_num = Uint4(m_PutQueueNum.Add(1)) % m_MaxThreads;
-    m_Queues[q_num]->Put(req);
+    m_Queue.Put(req);
 }
 
 CPoolOfThreads_ForServer::TItemHandle
 CPoolOfThreads_ForServer::GetHandle(void)
 {
-    Uint4 q_num = Uint4(m_GetQueueNum.Add(1)) % m_MaxThreads;
-    return m_Queues[q_num]->GetHandle();
+    return m_Queue.GetHandle();
 }
 
 

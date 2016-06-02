@@ -50,7 +50,7 @@ public:
     CQueueItemBase_ForServer(void) 
         : m_Status(CQueueItemBase::ePending)
     {}
-    
+
     const EStatus&   GetStatus(void) const       { return m_Status; }
 
     void MarkAsComplete(void)        { x_SetStatus(CQueueItemBase::eComplete); }
@@ -126,13 +126,13 @@ public:
             CQueueItemBase_ForServer::x_SetStatus(new_status);
             m_Request->OnStatusChange(old_status, new_status);
         }
-        
+
     private:
         friend class CBlockingQueue_ForServer;
 
         TRequest  m_Request;
     };
-    
+
 protected:
     /// The type of the queue
     typedef deque<TItemHandle> TRealQueue;
@@ -283,9 +283,8 @@ private:
     CAtomicCounter          m_ThreadCount;
     /// The guard for m_MaxThreads and m_MaxUrgentThreads
     CMutex                  m_Mutex;
-    CAtomicCounter          m_PutQueueNum;
-    CAtomicCounter          m_GetQueueNum;
-    TQueue**                m_Queues;
+
+    TQueue                  m_Queue;
     string                  m_ThrSuffix;
 
     typedef list<CRef<TThread> > TThreads;
