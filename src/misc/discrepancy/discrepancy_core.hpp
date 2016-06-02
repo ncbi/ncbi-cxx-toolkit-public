@@ -347,6 +347,7 @@ public:
     const CSeqSummary& GetNucleotideCount(void);
     bool HasFeatures(void) const { return m_Feat_CI; }
     static string GetGenomeName(int n);
+    static string GetAminoacidName(const CSeq_feat& feat); // from tRNA
     bool IsBadLocusTagFormat(const string& locus_tag);
     const CSeq_id * GetProteinId(void);
     bool IsRefseq(void);

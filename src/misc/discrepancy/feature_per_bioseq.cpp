@@ -163,12 +163,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Count tRNAs")
         m_Objs[kEmptyStr].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
     }
 
-    string aa;
-    feature::GetLabel(obj, &aa, feature::fFGL_Content);
-    size_t n = aa.find_last_of('-');            // cut off the "tRNA-" prefix
-    if (n != string::npos) {
-        aa = aa.substr(n + 1); // is there any better way to get the aminoacid name?
-    }
+    string aa = context.GetAminoacidName(obj);
     m_Objs[aa].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
 }
 

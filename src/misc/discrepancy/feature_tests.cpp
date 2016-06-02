@@ -923,8 +923,15 @@ DISCREPANCY_CASE(FIND_BADLEN_TRNAS, CSeq_feat, eDisc | eOncaller, "Find short an
     TSeqPos len = sequence::GetLength(obj.GetLocation(), &(context.GetScope()));
     if (!obj.IsSetPartial() && len < 50) {
         m_Objs[ktRNATooShort].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
-    } else if (len > 90) {
+    }
+    else if (len > 100) {
         m_Objs[ktRNATooLong].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+    }
+    else if (len > 90) {
+        const string aa = context.GetAminoacidName(obj);
+        if (aa != "Ser" && aa != "Sec" && aa != "Leu") {
+            m_Objs[ktRNATooLong].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        }
     }
 }
 

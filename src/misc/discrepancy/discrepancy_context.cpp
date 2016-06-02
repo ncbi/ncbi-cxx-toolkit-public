@@ -349,6 +349,18 @@ string CDiscrepancyContext::GetGenomeName(int n)
 }
 
 
+string CDiscrepancyContext::GetAminoacidName(const CSeq_feat& obj) // from tRNA
+{
+    string aa;
+    feature::GetLabel(obj, &aa, feature::fFGL_Content);
+    size_t n = aa.find_last_of('-');            // cut off the "tRNA-" prefix
+    if (n != string::npos) {
+        aa = aa.substr(n + 1); // is there any better way to get the aminoacid name?
+    }
+    return aa;
+}
+
+
 bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag)
 {
     // Optimization:  compile regexp only once by making it static.
