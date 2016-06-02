@@ -12449,7 +12449,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
     CLEAR_ERRORS
 }
 
-
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
@@ -12468,6 +12467,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
 
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSmRNAmismatch",
+                      "No matches for 1 CDS and 1 mRNA"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSmRNArange", 
                       "mRNA contains CDS but internal intron-exon boundaries do not match"));
     eval = validator.Validate(seh, options);
@@ -12487,6 +12488,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
     cds->SetExcept_text("trans-splicing");
     nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[16] = 'G';
     eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSmRNAmismatch",
+                      "No matches for 1 CDS and 1 mRNA"));
     CheckErrors (*eval, expected_errors);
 
     // overlap problem rather than internal boundary problem
@@ -12514,7 +12517,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
  
     CLEAR_ERRORS
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_OverlappingPeptideFeat)
 {
@@ -12756,7 +12758,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranscriptLen)
     mrna->SetLocation().SetInt().SetTo(10);
 
     STANDARD_SETUP
-
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSmRNAmismatch",
+                      "No matches for 1 CDS and 1 mRNA"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSmRNArange",
                       "mRNA overlaps or contains CDS but does not completely contain intervals"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "TranscriptLen", 
@@ -12768,9 +12771,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranscriptLen)
     scope.RemoveTopLevelSeqEntry(seh);
     mrna->SetLocation().SetInt().SetTo(25);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[1]->SetErrCode ("PolyATail");
-    expected_errors[1]->SetSeverity(eDiag_Info);
-    expected_errors[1]->SetErrMsg ("Transcript length [26] less than product length [27], but tail is 100% polyA");
+    expected_errors[2]->SetErrCode ("PolyATail");
+    expected_errors[2]->SetSeverity(eDiag_Info);
+    expected_errors[2]->SetErrMsg ("Transcript length [26] less than product length [27], but tail is 100% polyA");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14016,8 +14019,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNAmismatch)
                                "mRNA count (2) does not match CDS (1) count for gene"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSwithMultipleMRNAs",
                               "CDS matches 2 mRNAs"));
-//    expected_errors.push_back(new CExpectedError("nuc", eDiag_Info, "CDSwithMultipleMRNAs",
-//                               "CDS overlapped by 2 mRNAs, but product locations are unique"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14251,7 +14252,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadCharInAuthorName)
     CLEAR_ERRORS
 }
 
-
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PolyATail)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodGenProdSet();
@@ -14261,6 +14261,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PolyATail)
 
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSmRNAmismatch",
+                      "No matches for 1 CDS and 1 mRNA"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSmRNArange",
                       "mRNA overlaps or contains CDS but does not completely contain intervals"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Info, "PolyATail", 
@@ -14274,13 +14276,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PolyATail)
     transcript->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAAAAAAAAAAAAAAAAAATAA");
     transcript->SetSeq().SetInst().SetLength(46);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[1]->SetErrMsg("Transcript length [26] less than product length [46], but tail >= 95% polyA");
+    expected_errors[2]->SetErrMsg("Transcript length [26] less than product length [46], but tail >= 95% polyA");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSwithMultipleMRNAs)
 {
@@ -14318,8 +14319,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSwithMultipleMRNAs)
 
     CLEAR_ERRORS
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSwithMultipleMRNAs",
-                              "CDS matches 2 mRNAs"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "CDSwithMultipleMRNAs",
+                              "CDS matches 2 mRNAs, but product locations are unique"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatContentDup", "Duplicate feature"));
     expected_errors.push_back(new CExpectedError("prot2", eDiag_Warning, "GenomicProductPackagingProblem",
                               "Protein bioseq should be product of CDS feature on contig, but is not"));
@@ -14329,7 +14330,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSwithMultipleMRNAs)
 
     CLEAR_ERRORS
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleEquivBioSources)
 {
@@ -14561,7 +14561,6 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CDSwithNoMRNAOverlap)
     CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature (*cds_it);
     unit_test_util::AddFeat (gene, nuc);
 
-/*
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSwithNoMRNAOverlap",
@@ -14577,17 +14576,18 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CDSwithNoMRNAOverlap)
         unit_test_util::AddFeat (new_mrna, nuc);
     }
     seh = scope.AddTopLevelSeqEntry(*entry);
-
+/*
     for (int i = 0; i < 8; i++) {
         expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSwithNoMRNAOverlap",
                 "CDS overlapped by 0 mRNAs"));
     }
-
+*/
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSwithNoMRNAOverlap",
+                "8 out of 12 CDSs overlapped by 0 mRNAs"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS    
-*/
 }
 
 
@@ -16663,7 +16663,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadCharInAuthorLastName)
     CLEAR_ERRORS
 }
 
-
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCDSmRNArange)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -16678,6 +16677,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCDSmRNArange)
     mrna->SetPseudo(true);
 
     STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "CDSmRNAmismatch",
+                               "No matches for 1 CDS and 1 mRNA"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Info, "PseudoCDSmRNArange", 
                               "mRNA contains CDS but internal intron-exon boundaries do not match"));
     eval = validator.Validate(seh, options);
@@ -16686,13 +16687,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCDSmRNArange)
     scope.RemoveTopLevelSeqEntry(seh);
     mrna->SetLocation().SetMix().Set().back()->SetInt().SetTo(55);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("mRNA overlaps or contains CDS but does not completely contain intervals");
+    expected_errors[1]->SetErrMsg("mRNA overlaps or contains CDS but does not completely contain intervals");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GeneXrefNeeded)
 {

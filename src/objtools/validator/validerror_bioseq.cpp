@@ -6294,29 +6294,80 @@ void CCdsMatchInfo::AssignMatches(list<CRef<CMrnaMatchInfo>>& mrnas)
 }
 
 
+
+string s_GetMrnaProductString(const CSeq_feat& mrna)
+{
+    string product_string = "";
+
+    if (!mrna.IsSetProduct()) {
+        return product_string;
+    }
+
+    mrna.GetProduct().GetLabel(&product_string);
+
+    return product_string;
+}
+
+
 void CValidError_bioseq::x_CheckForMultiplemRNAs(const CCdsMatchInfo& cds_match)
 {
 
+    if (!cds_match.HasMatch()) {
+        return;
+    }
+
+    list<string> product_strings;
+
+    const CMrnaMatchInfo& mrna_match = cds_match.GetMatch();
+    auto product_string = s_GetMrnaProductString(mrna_match.GetSeqfeat());
+    product_strings.push_back(product_string);
     int mrna_count = 1;
+
     for (const auto& mrna : cds_match.GetXrefmRNAs()) {
        if (!mrna->HasMatch()) {
+          auto product_string = s_GetMrnaProductString(mrna->GetSeqfeat());
+          product_strings.push_back(product_string);
           ++mrna_count;
        }
     }
 
     for (const auto& mrna : cds_match.GetOverlappingmRNAs()) {
          if (!mrna->HasMatch()) {
+              auto product_string = s_GetMrnaProductString(mrna->GetSeqfeat());
+              product_strings.push_back(product_string);
               ++mrna_count;
          }
     }
-   
-    if (mrna_count>1) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSwithMultipleMRNAs,
-                 "CDS matches " + NStr::IntToString (mrna_count)
-                  + " mRNAs",
-                  cds_match.GetSeqfeat());
+ 
+    if (mrna_count == 1) {
+        return;
     }
 
+    bool unique_products = false;
+    const auto num_products = product_strings.size();
+    if (product_strings.size() > 1) {
+        product_strings.sort();
+        product_strings.unique();
+        const auto num_unique_products = product_strings.size();
+        if (num_unique_products == num_products) {
+            unique_products = true;
+        }
+    }
+
+
+    if (unique_products) {
+        PostErr (eDiag_Info, eErr_SEQ_FEAT_CDSwithMultipleMRNAs, 
+                 "CDS matches " + NStr::IntToString (mrna_count)
+                 + " mRNAs, but product locations are unique",
+                 cds_match.GetSeqfeat());
+        return;
+    }
+
+    
+    PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSwithMultipleMRNAs,
+             "CDS matches " + NStr::IntToString (mrna_count)
+              + " mRNAs",
+              cds_match.GetSeqfeat());
 }
 
 
@@ -6393,10 +6444,10 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
     // Now loop over cds to find number of matched cds and number of matched mrna
     int num_matched_cds = 0;
     int num_unmatched_cds = 0;
+    int num_matched_pseudo_cds = 0;
     for (auto&& cds : cds_list) {
         // Check to see if a CDS feat references or overlaps multiple mRNAs
         x_CheckForMultiplemRNAs(*cds);
-        
         x_CheckMrnaProteinLink(*cds);
 
         if (!cds->IsPseudo()) {
@@ -6405,9 +6456,12 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
             } else {
                 ++num_unmatched_cds;
             }
+        } else if (cds->HasMatch()) {
+            ++num_matched_pseudo_cds;
         }
     }
 
+    const size_t num_mrna = mrna_list.size();
     // Some of the CDS features have been matched, but some are unmatched
     if (num_matched_cds > 0 && num_unmatched_cds > 0) {
         const auto numcds = num_matched_cds + num_unmatched_cds;
@@ -6416,6 +6470,23 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
                 + " out of " + NStr::IntToString (numcds)
                 + " CDSs overlapped by 0 mRNAs",
                 *(seq.GetCompleteBioseq()));
+    } else if ((num_matched_cds == 0) &&
+               (num_matched_pseudo_cds == 0) && 
+               num_mrna > 0) { // Return a CDSmRNAmismatch warning if there are mRNA features but no matches
+        const size_t num_cds = cds_list.size();
+
+        // Only report a mismatch if there is at least one CDS
+        if (!num_cds) {
+            return;
+        }
+
+        string msg = "No matches for " + NStr::IntToString(num_cds);
+        msg += (num_cds > 1) ? " CDSs and " : " CDS and ";
+        msg += NStr::IntToString(num_mrna);
+        msg += (num_mrna > 1) ? " mRNAs" : " mRNA"; 
+
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+                 msg, *(seq.GetCompleteBioseq()));
     }
 }
 
