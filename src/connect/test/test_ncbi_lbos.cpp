@@ -75,9 +75,11 @@ NCBITEST_AUTO_INIT()
 {
     s_Tls->SetValue(new int, TlsCleanup);
     *s_Tls->GetValue() = kMainThreadNumber;
+    CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
+    CONNECT_Init(&config);
 #ifdef NCBI_MONKEY
     CMonkey::Instance()->
-        RegisterThread(NStr::NumericToString(kMainThreadNumber));
+        RegisterThread(kMainThreadNumber);
 #endif /* NCBI_MONKEY */
 #ifdef NCBI_OS_MSWIN
     srand(NULL);
@@ -86,8 +88,6 @@ NCBITEST_AUTO_INIT()
 #endif
     boost::unit_test::framework::master_test_suite().p_name->assign(
         "lbos mapper Unit Test");
-    CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
-    CONNECT_Init(&config);
     if (CNcbiApplication::Instance()->GetArgs()["lbos"]) {
         string custom_lbos = 
             CNcbiApplication::Instance()->GetArgs()["lbos"].AsString();

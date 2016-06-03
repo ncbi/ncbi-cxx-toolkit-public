@@ -40,6 +40,7 @@
 #ifdef NCBI_MONKEY
 #   define NCBI_MONKEY_TESTS /* For Unit Testing */
 
+#   include <corelib/ncbithr.hpp>
 #   include <corelib/ncbiexpt.hpp>
 #   include <corelib/ncbiapp.hpp>
 #   include <util/random_gen.hpp>
@@ -75,13 +76,69 @@ private:
     NCBI_EXCEPTION_DEFAULT(CMonkeyException, CException);
 };
 
+/** A special class which opens access to writing to Monkey Action Log*/
+class CMonkeySeedLogKey
+{
+    friend class CMonkeySeedLogAccessor;
+    CMonkeySeedLogKey() = default;
+    ~CMonkeySeedLogKey() = default;
+    /* No copying allowed */
+    CMonkeySeedLogKey(const CMonkeySeedLogKey&) = delete;
+    CMonkeySeedLogKey& operator=(const CMonkeySeedLogKey&) = delete;
+};
+
+
+/** Base class for Monkey methods that are allowed to write to MonkeyLog */
+class CMonkeySeedLogAccessor
+{
+protected: 
+    static const CMonkeySeedLogKey& Key();
+};
+
+
+class CMonkeySeedLog
+{
+public:
+    enum EActionType {
+        eMonkey_Recv,
+        eMonkey_Send,
+        eMonkey_Poll,
+        eMonkey_Connect
+    };
+    static CMonkeySeedLog* Instance();
+
+    /** This method is not for public use.
+     * CMonkeySeedLogKey is a special class that allows only some certain 
+     * class to call this method */
+    int GetRand(const CMonkeySeedLogKey& /* key */);
+
+    /** To be able to reproduce Chaos Monkey behavior, you need to tag each
+    * thread with a unique token. Then you can ask Chaos Monkey to reproduce
+    * behavior from a previous run, if Monkey saved what it did to a file */
+    bool RegisterThread(int token);
+
+    int GetSeed();
+    void SetSeed(int seed);
+
+private:
+    CMonkeySeedLog();
+    static CMonkeySeedLog*     sm_Instance;
+    CRef<CTls<int>>            m_TlsToken;
+    CRef<CTls<vector<int> > >  m_TlsRandList;
+    CRef<CTls<int> >           m_TlsRandListPos;
+    unsigned int               m_Seed;
+    /** Remember registered tokens for threads to avoid collisions */
+    set<int>                   m_RegisteredTokens;
+};
+
+typedef CMonkeySeedLog::EActionType EActionType;
 
 /** Common functionality for all rule types:
  *  - Runs order (vector<double> m_Runs)
  *  - How to repeat runs order (ERepeatType m_RepeatType) 
  *  - After how many runs repeat order (size_t m_RunsSize) 
  */
-class CMonkeyRuleBase
+class CMonkeyRuleBase : public CMonkeySeedLogAccessor
 {
 public:
     enum ERepeatType {
@@ -97,18 +154,19 @@ public:
      * already been successfully matched if this check is run) */
     bool CheckRun(MONKEY_SOCKTYPE sock);
 protected:
-    CMonkeyRuleBase(const vector<string>& name_value);
+    CMonkeyRuleBase(EActionType                 action_type,
+                    const vector<string>&       name_value);
     int /* EIO_Status or -1 */ GetReturnStatus();
     unsigned long  GetDelay();
 private:
     void           x_ReadRuns     (const string& runs);
     void           x_ReadEIOStatus(const string& eIOStatus_str);
-    int            m_ReturnStatus;
-    ERepeatType    m_RepeatType;
-    unsigned long  m_Delay;
-    vector<double> m_Runs;
-    map<MONKEY_SOCKTYPE,
-        size_t>    m_RunPos;
+    int                          m_ReturnStatus;
+    ERepeatType                  m_RepeatType;
+    unsigned long                m_Delay;
+    vector<double>               m_Runs;
+    EActionType                  m_ActionType;
+    map<MONKEY_SOCKTYPE, size_t> m_RunPos;
     /** If there are no-interception runs before repeating the cycle,
      * we know that from m_RunsSize */
     size_t         m_RunsSize;
@@ -133,7 +191,8 @@ public:
         eMonkey_FillLastLetter
     };
 protected:
-    CMonkeyRWRuleBase(const vector<string>& name_value);
+    CMonkeyRWRuleBase(EActionType           action_type, 
+                      const vector<string>& name_value);
     string    GetText();
     size_t    GetTextLength();
     bool      GetGarbage();
@@ -203,7 +262,7 @@ private:
 };
 
 
-class CMonkeyPlan
+class CMonkeyPlan : public CMonkeySeedLogAccessor
 {
 public:
 /* 
@@ -220,29 +279,29 @@ public:
                      const string&          url);
     /** Guarantees to have not run send() if returned false. Returning true
         can mean either that send() was run or that send() was simulated to be 
-        unsuccessful  */
-    bool WriteRule  (MONKEY_SOCKTYPE        sock,
-                     const MONKEY_DATATYPE  data,
-                     MONKEY_LENTYPE         size,
-                     int                    flags,
-                     MONKEY_RETTYPE*        bytes_written,
-                     SOCK*                  sock_ptr);
+        unsuccessful */
+    bool WriteRule     (MONKEY_SOCKTYPE        sock,
+                        const MONKEY_DATATYPE  data,
+                        MONKEY_LENTYPE         size,
+                        int                    flags,
+                        MONKEY_RETTYPE*        bytes_written,
+                        SOCK*                  sock_ptr);
 
-    bool ReadRule   (MONKEY_SOCKTYPE        sock,
-                     MONKEY_DATATYPE        buf,
-                     MONKEY_LENTYPE         size,
-                     int                    flags,
-                     MONKEY_RETTYPE*        bytes_read,
-                     SOCK*                  sock_ptr);
+    bool ReadRule      (MONKEY_SOCKTYPE        sock,
+                        MONKEY_DATATYPE        buf,
+                        MONKEY_LENTYPE         size,
+                        int                    flags,
+                        MONKEY_RETTYPE*        bytes_read,
+                        SOCK*                  sock_ptr);
 
-    bool ConnectRule(MONKEY_SOCKTYPE        sock,
-                     const struct sockaddr* name,
-                     MONKEY_SOCKLENTYPE     namelen,
-                     int*                   result);
+    bool ConnectRule   (MONKEY_SOCKTYPE        sock,
+                        const struct sockaddr* name,
+                        MONKEY_SOCKLENTYPE     namelen,
+                        int*                   result);
 
-    bool PollRule   (size_t*                n,
-                     SOCK*                  sock,
-                     EIO_Status*            return_status);
+    bool PollRule      (size_t*                n,
+                        SOCK*                  sock,
+                        EIO_Status*            return_status);
 private:
     /**  */
     template<class Rule_Ty>
@@ -251,19 +310,21 @@ private:
                      vector<Rule_Ty>& container);
 
 
-    void                       x_ReadPortRange(const string&    conf);
-    unsigned short             m_Probability;
-    string                     m_HostRegex;
+    void                           x_ReadPortRange(const string&    conf);
+    unsigned short                 m_Probability;
+    string                         m_HostRegex;
     /** Port ranges are stored in pairs.
      * odd item - from, even - till (both - inclusive). So for one element
      * in range "from" and "till" are the same. Example:
      * for range "8080-8085, 8089"
      * m_PortRanges = { 8080, 8085, 8089, 8089 } */
-    vector<unsigned short>     m_PortRanges;
-    vector<CMonkeyWriteRule>   m_WriteRules;
-    vector<CMonkeyReadRule>    m_ReadRules;
-    vector<CMonkeyConnectRule> m_ConnectRules;
-    vector<CMonkeyPollRule>    m_PollRules;
+    vector<unsigned short>         m_PortRanges;
+    vector<CMonkeyWriteRule>       m_WriteRules;
+    vector<CMonkeyReadRule>        m_ReadRules;
+    vector<CMonkeyConnectRule>     m_ConnectRules;
+    vector<CMonkeyPollRule>        m_PollRules;
+    /** Only for debugging purposes */
+    string                         m_Name;
 };
 
 
@@ -276,7 +337,7 @@ enum EMonkeyHookSwitch {
 typedef void (*FMonkeyHookSwitch)(EMonkeyHookSwitch hook_switch);
 
 
-class CMonkey 
+class CMonkey : public CMonkeySeedLogAccessor
 {
 public:
     static CMonkey* Instance();
@@ -305,6 +366,11 @@ public:
     /* Not a real Chaos Monkey interceptor, just a function to remove the socket 
      * that was closed from m_KnownSockets */
     void Close(MONKEY_SOCKTYPE sock);
+    
+    bool RegisterThread(int token);
+
+    int GetSeed();
+    void SetSeed(int seed);
 
     static void MonkeyHookSwitchSet(FMonkeyHookSwitch hook_switch_func);
 private:

@@ -44,7 +44,6 @@
 #   include <corelib/env_reg.hpp>
 #   include <corelib/ncbiapp.hpp>
 #   include <corelib/ncbimisc.hpp>
-#   include <connect/ncbi_monkey.hpp>
 #   include "ncbi_monkeyp.hpp"
 #   include <list>
 
@@ -71,10 +70,17 @@
 BEGIN_NCBI_SCOPE
 
 DEFINE_STATIC_FAST_MUTEX(s_ConfigMutex);
+DEFINE_STATIC_FAST_MUTEX(s_SeedLogConfigMutex);
 DEFINE_STATIC_FAST_MUTEX(s_SingletonMutex);
+DEFINE_STATIC_FAST_MUTEX(s_SeedSingletonMutex);
 DEFINE_STATIC_FAST_MUTEX(s_KnownConnMutex);
-static CSocket* s_TimeoutingSock = NULL;
-static CSocket* s_PeerSock = NULL;
+static CSocket*          s_TimeoutingSock = NULL;
+static CSocket*          s_PeerSock = NULL;
+const  int               kRandCount = 100;
+/* Registry names */
+const string             kMonkeyMainSect = "CHAOS_MONKEY";
+const string             kEnablField     = "enabled";
+const string             kSeedField     = "seed";
 
 /*/////////////////////////////////////////////////////////////////////////////
 //                              MOCK DEFINITIONS                             //
@@ -111,6 +117,14 @@ static vector<string>& s_Monkey_Split(const string   &s,
         elems.push_back(item);
     }
     return elems;
+}
+
+
+/* Trash collector for Thread Local Storage */
+template<class T>
+static void s_TlsCleanup(T* p_value, void* /* data */)
+{
+    delete p_value;
 }
 
 
@@ -186,7 +200,7 @@ static void s_TimeoutingSocketDestroy(void)
 static string s_GetMonkeySection()
 {
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
-    return config.Get("CHAOS_MONKEY", "config");
+    return config.Get(kMonkeyMainSect, "config");
 }
 
 
@@ -302,13 +316,114 @@ const char* CMonkeyException::what() const throw()
     return m_Message.c_str();
 }
 
+/*//////////////////////////////////////////////////////////////////////////////
+//                           Monkey Action Log                                //
+//////////////////////////////////////////////////////////////////////////////*/
+CMonkeySeedLog* CMonkeySeedLog::sm_Instance = NULL;
+
+
+CMonkeySeedLog::CMonkeySeedLog()
+{
+    m_TlsToken  = new CTls<int>;
+    m_TlsRandList = new CTls<vector<int> >;
+    m_TlsRandListPos = new CTls<int>;
+    srand((unsigned int)time(NULL));
+    m_Seed = rand();
+    LOG_POST(Note << "Chaos Monkey seed is: " << m_Seed);
+}
+
+
+const CMonkeySeedLogKey& CMonkeySeedLogAccessor::Key()
+{
+    static CMonkeySeedLogKey key;
+    return key;
+}
+
+
+CMonkeySeedLog* CMonkeySeedLog::Instance()
+{
+    CFastMutexGuard spawn_guard(s_SeedSingletonMutex);
+
+    if (sm_Instance == NULL) {
+        sm_Instance = new CMonkeySeedLog;
+    }
+    return sm_Instance;
+}
+
+
+bool CMonkeySeedLog::RegisterThread(int token)
+{
+    CFastMutexGuard guard(s_SeedLogConfigMutex);
+    LOG_POST(Note << "Registering thread with token " << token);
+
+    stringstream ss;
+    ss << "Token " << token << " has been already registered in CMonkey and "
+          "cannot be used again";
+    if (m_RegisteredTokens.find(token) != m_RegisteredTokens.end()) {
+        throw CMonkeyException(
+            CDiagCompileInfo(__FILE__, __LINE__),
+            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            ss.str());
+    }
+    m_RegisteredTokens.insert(token);
+
+    /* Remember token */
+    m_TlsToken->SetValue(new int, s_TlsCleanup<int>);
+    *m_TlsToken->GetValue() = token;
+    
+    vector<int>* rand_list = new vector<int>();
+    srand(m_Seed + token);
+    for (unsigned int i = 0; i < kRandCount; ++i) {
+        rand_list->push_back(rand());
+    }    
+    m_TlsRandList->SetValue(rand_list, s_TlsCleanup< vector<int> >);
+    
+    m_TlsRandListPos->SetValue(new int, s_TlsCleanup<int>);
+    *m_TlsRandListPos->GetValue() = 0;
+
+    return true;
+}
+
+
+int CMonkeySeedLog::GetSeed()
+{
+    /* save m_seedlog to file */
+    return m_Seed;
+}
+
+
+void CMonkeySeedLog::SetSeed(int seed)
+{
+    /* load m_seedlog from file */
+    m_Seed = seed;
+    LOG_POST(Info << "Chaos Monkey seed was manually changed to: " << m_Seed);
+}
+
+
+int CMonkeySeedLog::GetRand(const CMonkeySeedLogKey& /* key */)
+{
+    if (m_TlsToken->GetValue() == NULL) {
+        return rand();
+    }
+    int& list_pos = *m_TlsRandListPos->GetValue();
+    if (++list_pos == kRandCount) {
+        list_pos = 0;
+    }
+    LOG_POST(Note << "Getting random value " 
+                  << (*m_TlsRandList->GetValue())[list_pos] 
+                  << " for thread " << *m_TlsToken->GetValue() 
+                  << ". Next random value is " 
+                  << (*m_TlsRandList->GetValue())[list_pos + 1]);
+    return (*m_TlsRandList->GetValue())[list_pos];
+}
 
 /*//////////////////////////////////////////////////////////////////////////////
 //                             CMonkeyRuleBase                                //
 //////////////////////////////////////////////////////////////////////////////*/
-CMonkeyRuleBase::CMonkeyRuleBase(const vector<string>& params)
+CMonkeyRuleBase::CMonkeyRuleBase(EActionType                 action_type,
+                                 const vector<string>&       params)
     : m_ReturnStatus(-1), m_RepeatType(eMonkey_RepeatNone), m_Delay (0),
-      m_RunsSize(0)
+      m_RunsSize(0), m_ActionType(action_type)
 {
     /** If there are no-interception runs before repeating the cycle,
     * we know that from m_RunsSize */
@@ -326,7 +441,24 @@ CMonkeyRuleBase::CMonkeyRuleBase(const vector<string>& params)
     }
 }
 
-
+static string s_PrintActionType(EActionType action) {
+    switch (action)
+    {
+    case CMonkeySeedLog::EActionType::eMonkey_Recv:
+        return "recv()";
+    case CMonkeySeedLog::EActionType::eMonkey_Send:
+        return "send()";
+    case CMonkeySeedLog::EActionType::eMonkey_Poll:
+        return "poll()";
+    case CMonkeySeedLog::EActionType::eMonkey_Connect:
+        return "connect()";
+    default:
+        throw CMonkeyException(
+            CDiagCompileInfo(__FILE__, __LINE__),
+            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            string("Unknown EActionType value"));
+    }
+}
 /** Check that the rule should trigger on this run */
 bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock)
 {
@@ -349,7 +481,14 @@ bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock)
                 break;
             }
         }
-        isRun = (rand() % 100) < m_Runs[m_RunPos[sock]] * 100;
+        int rand_val = CMonkeySeedLog::Instance()->GetRand(Key());
+        LOG_POST(Note << "Checking if the rule for " 
+                      << s_PrintActionType(m_ActionType) 
+                      << " will be run this time. Random value is " 
+                      << rand_val << ", probability threshold is " 
+                      << m_Runs[m_RunPos[sock]] * 100);
+        isRun = (rand_val % 100) < m_Runs[m_RunPos[sock]] * 100;
+        LOG_POST(Note << "The rule will be " << (isRun ? "" : "NOT ") << "run");
     }
     /* In "number of the run" mode each item in m_Runs is a specific number of 
        run when the rule should trigger */
@@ -476,9 +615,10 @@ unsigned long CMonkeyRuleBase::GetDelay()
 /*//////////////////////////////////////////////////////////////////////////////
 //                              CMonkeyRWRuleBase                             //
 //////////////////////////////////////////////////////////////////////////////*/
-CMonkeyRWRuleBase::CMonkeyRWRuleBase(const vector<string>& params) 
-    : CMonkeyRuleBase(params), m_Text(""), m_TextLength(0), m_Garbage(false),
-      m_FillType(eMonkey_FillRepeat)
+CMonkeyRWRuleBase::CMonkeyRWRuleBase(EActionType           action_type, 
+                                     const vector<string>& params)
+    : CMonkeyRuleBase(action_type, params), m_Text(""), m_TextLength(0), 
+      m_Garbage(false), m_FillType(eMonkey_FillRepeat)
 {
     for ( unsigned int i = 0;  i < params.size();  i++ ) {
         vector<string> name_value = s_Monkey_Split(params[i], '=');
@@ -577,7 +717,7 @@ CMonkeyRWRuleBase::EFillType CMonkeyRWRuleBase::GetFillType()
 // CMonkeyWriteRule
 //////////////////////////////////////////////////////////////////////////
 CMonkeyWriteRule::CMonkeyWriteRule(const vector<string>& params) 
-    : CMonkeyRWRuleBase(params)
+    : CMonkeyRWRuleBase(CMonkeySeedLog::eMonkey_Send, params)
 {
 }
 
@@ -641,7 +781,7 @@ MONKEY_RETTYPE CMonkeyWriteRule::Run(MONKEY_SOCKTYPE        sock,
 // CMonkeyReadRule
 //////////////////////////////////////////////////////////////////////////
 CMonkeyReadRule::CMonkeyReadRule(const vector<string>& params)
-    : CMonkeyRWRuleBase(params)
+    : CMonkeyRWRuleBase(CMonkeySeedLog::eMonkey_Recv, params)
 {
     STimeout r_timeout = { 1, 0 };
 }
@@ -708,7 +848,7 @@ MONKEY_RETTYPE CMonkeyReadRule::Run(MONKEY_SOCKTYPE sock,
 //////////////////////////////////////////////////////////////////////////
 
 CMonkeyConnectRule::CMonkeyConnectRule(const vector<string>& params)
-    : CMonkeyRuleBase(params)
+    : CMonkeyRuleBase(CMonkeySeedLog::eMonkey_Connect, params)
 {
     for (unsigned int i = 0; i < params.size(); i++) {
         vector<string> name_value = s_Monkey_Split(params[i], '=');
@@ -775,7 +915,7 @@ int CMonkeyConnectRule::Run(MONKEY_SOCKTYPE        sock,
 // CMonkeyPollRule
 //////////////////////////////////////////////////////////////////////////
 CMonkeyPollRule::CMonkeyPollRule(const vector<string>& params) 
-    : CMonkeyRuleBase(params)
+    : CMonkeyRuleBase(CMonkeySeedLog::eMonkey_Poll, params)
 {
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedPoll(true);
@@ -807,7 +947,7 @@ bool CMonkeyPollRule::Run(size_t*     n,
 // CMonkeyPlan
 //////////////////////////////////////////////////////////////////////////
 CMonkeyPlan::CMonkeyPlan(const string& section)
-    :  m_Probability(100), m_HostRegex(".*")
+    : m_Probability(100), m_HostRegex(".*"), m_Name(section)
 {
     /* Plan settings */
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
@@ -1001,7 +1141,15 @@ bool CMonkeyPlan::Match(const string&  sock_host,
             break;
         }
     }
-    return port_match ? ((rand() % 100) < m_Probability) : false;
+    int rand_val = CMonkeySeedLog::Instance()->GetRand(Key());
+    LOG_POST(Note << "Checking if plan " << m_Name  
+                  << " will be matched. Random value is " 
+                  << rand_val << ", probability threshold is " 
+                  << m_Probability);
+    LOG_POST(Note << "Plan " << m_Name << " was " 
+                  << ((port_match && ((rand_val % 100) < m_Probability)) ? 
+                      "" : "NOT ") << "matched");
+    return port_match ? ((rand_val % 100) < m_Probability) : false;
 }
 
 
@@ -1073,13 +1221,13 @@ bool CMonkeyPlan::PollRule(size_t*     n,
         if (m_PollRules[i].CheckRun((*sock)->sock)) {
             return m_PollRules[i].Run(n, sock, return_status);
         }
+        LOG_POST(Error << "CHAOS MONKEY NOT ENGAGED!!! poll() passed");
         // If this rule did not trigger, we go to the next rule
     }
     // If no rules triggered, return 0
     *return_status = EIO_Status::eIO_Success;
     return false;
 }
-
 
 
 void CMonkeyPlan::x_ReadPortRange(const string& conf)
@@ -1141,8 +1289,19 @@ void CMonkey::ReloadConfig(const string& config)
                                                       config;
     list<string>    sections;
     CNcbiRegistry&  reg = CNcbiApplication::Instance()->GetConfig();
-    reg.EnumerateSections(&sections);
-    /* If the section does not exist */
+    if (ConnNetInfo_Boolean(reg.Get(kMonkeyMainSect, kEnablField).c_str()) != 1) 
+    {
+        LOG_POST(Note << "Chaos Monkey is disabled in [" 
+                      << kMonkeyMainSect << "]");
+        m_Enabled = false;
+        return;
+    }
+    string seed = reg.Get(kMonkeyMainSect, kSeedField).c_str();
+    if (seed != "") {
+        LOG_POST(Note << "Chaos Monkey seed is set to " 
+                      << seed << " in config");
+        SetSeed(NStr::StringToInt(seed));
+    }
     reg.EnumerateSections(&sections);
     /* If the section does not exist */
     if (find(sections.begin(), sections.end(), monkey_section)
@@ -1150,7 +1309,10 @@ void CMonkey::ReloadConfig(const string& config)
         m_Enabled = false;
         return;
     }
-    if (ConnNetInfo_Boolean(reg.Get(monkey_section, "enabled").c_str()) != 1) {
+    if (ConnNetInfo_Boolean(reg.Get(monkey_section, kEnablField).c_str()) != 1)
+    {
+        LOG_POST(Note << "Chaos Monkey is disabled in [" 
+                      << monkey_section << "]");
         m_Enabled = false;
         return;
     }
@@ -1299,6 +1461,28 @@ void CMonkey::Close(MONKEY_SOCKTYPE sock)
 }
 
 
+bool CMonkey::RegisterThread(int token)
+{
+    if (!m_Enabled) {
+        LOG_POST(Error << "Chaos Monkey is disabled, the thread with token " 
+                       << token << " was not registered");
+        return false;
+    }
+    return CMonkeySeedLog::Instance()->RegisterThread(token);
+}
+
+
+void CMonkey::SetSeed(int seed)
+{
+    CMonkeySeedLog::Instance()->SetSeed(seed);
+}
+
+
+int CMonkey::GetSeed()
+{
+    return CMonkeySeedLog::Instance()->GetSeed();
+}
+
 void CMonkey::MonkeyHookSwitchSet(FMonkeyHookSwitch hook_switch_func)
 {
     sm_HookSwitch = hook_switch_func;
@@ -1317,8 +1501,17 @@ CMonkeyPlan* CMonkey::x_FindPlan(MONKEY_SOCKTYPE sock,  const string& hostname,
     }
     /* Plan was not found. First roll the dice to know if Monkey will process 
      * current socket */
-    if (rand() % 100 >= m_Probability)
+    int rand_val = CMonkeySeedLog::Instance()->GetRand(Key());
+    LOG_POST(Note << "Checking if connection will be intercepted by "
+                  << "Chaos Monkey. Random value is " 
+                  << rand_val << ", probability threshold is " 
+                  << m_Probability);
+    LOG_POST(Note << "The connection will be "
+                  << ((rand_val % 100 >= m_Probability) ? "NOT " : "") 
+                  << "processed.");
+    if (rand_val % 100 >= m_Probability) {
         return NULL;
+    }
     /* Now we can find a plan */
     bool match_found = false;
     for (unsigned int i = 0; i < m_Plans.size() && !match_found; i++) {
@@ -1338,3 +1531,4 @@ CMonkeyPlan* CMonkey::x_FindPlan(MONKEY_SOCKTYPE sock,  const string& hostname,
 END_NCBI_SCOPE
 
 #endif /* #ifdef NCBI_MONKEY */
+

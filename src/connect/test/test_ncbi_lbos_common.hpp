@@ -1292,7 +1292,7 @@ private:
         *s_Tls->GetValue() = kHealthThreadNumber;
 #ifdef NCBI_MONKEY
         CMonkey::Instance()->
-            RegisterThread(NStr::NumericToString(kHealthThreadNumber));
+            RegisterThread(kHealthThreadNumber);
 #endif /* NCBI_MONKEY */
         WRITE_LOG("Healthcheck thread started");
         if (s_GetTimeOfDay(&m_LastSuccAcceptTime) != 0) {
@@ -7793,7 +7793,7 @@ private:
         s_Tls->SetValue(new int, TlsCleanup);
         *s_Tls->GetValue() = m_ThreadIdx;
 #ifdef NCBI_MONKEY
-        CMonkey::Instance()->RegisterThread(NStr::NumericToString(m_ThreadIdx));
+        CMonkey::Instance()->RegisterThread(m_ThreadIdx);
 #endif /* NCBI_MONKEY */
         m_TestFunc();
         return NULL;
