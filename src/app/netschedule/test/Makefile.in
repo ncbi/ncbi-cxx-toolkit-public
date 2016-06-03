@@ -1,4 +1,4 @@
-APP_PROJ = test_netschedule_crash
+APP_PROJ = test_netschedule_crash ns_loader
 PROJ_TAG = test
 
 srcdir = @srcdir@
