@@ -84,6 +84,8 @@ private:
         string seqid;
         int count;
         string all_seqid;
+        double min_identity;
+        double max_identity;
     };
 
     struct sort_order {
@@ -111,19 +113,19 @@ private:
     };
 
 
-    typedef map<string, SAaInfo> AaMap;
-    typedef map<SCloneNuc, AaMap, sort_order> CloneInfo;
+    typedef map<string, SAaInfo*> AaMap;
+    typedef map<SCloneNuc, AaMap*, sort_order> CloneInfo;
     CloneInfo m_Clone;
     
-    static bool x_SortByCount(const pair<SCloneNuc, AaMap> & c1, const pair<SCloneNuc, AaMap> & c2) {
+    static bool x_SortByCount(const pair<const SCloneNuc*, AaMap*> *c1, const pair<const SCloneNuc*, AaMap*> *c2) {
         
         int c1_total = 0;
         int c2_total = 0;
-        ITERATE(AaMap, iter, c1.second){
-            c1_total += iter->second.count;
+        ITERATE(AaMap, iter, *(c1->second)){
+            c1_total += iter->second->count;
         }
-        ITERATE(AaMap, iter, c2.second){
-            c2_total += iter->second.count;
+        ITERATE(AaMap, iter, *(c2->second)){
+            c2_total += iter->second->count;
         }
  
         
@@ -295,7 +297,7 @@ int CIgBlastnApp::Run(void)
             ITERATE(CSearchResultSet, result, *results) {
                 CBlastFormat::SClone clone_info;
                 SCloneNuc clone_nuc;
-                AaMap aa_info;
+                AaMap* aa_info = new AaMap;
                 CIgBlastResults &ig_result = *const_cast<CIgBlastResults *>
                         (dynamic_cast<const CIgBlastResults *>(&(**result)));
                 formatter.PrintOneResultSet(ig_result, query, clone_info, !(ig_opts->m_IsProtein));
@@ -308,22 +310,31 @@ int CIgBlastnApp::Run(void)
                     clone_nuc.d_gene = clone_info.d_gene;
                     clone_nuc.j_gene = clone_info.j_gene;
                
-                    SAaInfo info;
-                    info.count = 1;
-                    info.seqid = clone_info.seqid;
-                    info.all_seqid = clone_info.seqid;
+                    SAaInfo* info = new SAaInfo;
+                    info->count = 1;
+                    info->seqid = clone_info.seqid;
+                    info->all_seqid = clone_info.seqid;
+                    info->min_identity = clone_info.identity;
+                    info->max_identity = clone_info.identity;
                     CloneInfo::iterator iter = m_Clone.find(clone_nuc); 
                     if (iter != m_Clone.end()) {
-                        AaMap::iterator iter2 = iter->second.find(clone_info.aa);
-                        if (iter2 != iter->second.end()) {
-                            iter2->second.count  ++;
-                            iter2->second.all_seqid = iter2->second.all_seqid + "," + info.seqid; 
+                        AaMap::iterator iter2 = iter->second->find(clone_info.aa);
+                        if (iter2 != (*iter->second).end()) {
+                            if (info->min_identity < iter2->second->min_identity) {
+                                iter2->second->min_identity = info->min_identity;
+                            }
+                            if (info->max_identity > iter2->second->max_identity) {
+                                iter2->second->max_identity = info->max_identity;
+                            }
+                            
+                            iter2->second->count  ++;
+                            iter2->second->all_seqid = iter2->second->all_seqid + "," + info->seqid; 
                         } else {
-                            iter->second.insert(AaMap::value_type(clone_info.aa, info));
+                            (*iter->second).insert(AaMap::value_type(clone_info.aa, info));
                         }
                         
                     } else {
-                        aa_info[clone_info.aa] = info;
+                        (*aa_info)[clone_info.aa] = info;
                         m_Clone.insert(CloneInfo::value_type(clone_nuc, aa_info));
                     }
                 }
@@ -331,70 +342,75 @@ int CIgBlastnApp::Run(void)
         }
          
         //sort by clone abundance
-        typedef vector<pair<SCloneNuc, AaMap> > MapVec;
+        typedef vector<pair<const SCloneNuc*,  AaMap*> * > MapVec;
         MapVec map_vec; 
         ITERATE(CloneInfo, iter, m_Clone) {
-            pair<SCloneNuc, AaMap> data(iter->first, iter->second); 
+            pair<const SCloneNuc*, AaMap*> *data = new pair<const SCloneNuc*, AaMap* > (&(iter->first), iter->second); 
             map_vec.push_back(data); 
         }
         stable_sort(map_vec.begin(), map_vec.end(), x_SortByCount);
         
         int total_elements = 0;
         ITERATE(MapVec, iter, map_vec) {
-            ITERATE(AaMap, iter2, iter->second){
-                total_elements += iter2->second.count;
+            ITERATE(AaMap, iter2, *((*iter)->second)){
+                total_elements += iter2->second->count;
             }
         }
         m_CmdLineArgs->GetOutputStream() << "\nTotal queries = " << total_input << ", queries with identifiable CDR3 = " <<  total_elements << endl << endl;
         
         
         if (!(ig_opts->m_IsProtein) && total_elements > 1) {
-            m_CmdLineArgs->GetOutputStream() << "\n" << "#Clonotype summary.  Clonotype is defined by having the same germline V(D)J gene usage as well as the same CDR3 nucleotide and amino sequence (Clones having the same CDR3 nucleotide but different amino acid sequence due to frameshift in V gene are assigned to different clonotypes.  However, they have the same identifier prefix, for example, 6a, 6b).  Fields are clonotype identifier, representative query sequence name, count, frequency, CDR3 nucleotide sequence, CDR3 amino acid sequence, chain type, V gene, D gene, J gene\n" << endl;
+            m_CmdLineArgs->GetOutputStream() << "\n" << "#Clonotype summary.  A particular clonotype includes any V(D)J rearrangements having the same germline V(D)J gene segments as well as the same CDR3 nucleotide and amino sequence (Rearrangements having the same CDR3 nucleotide but different amino acid sequence due to frameshift in V gene are assigned to a different clonotype.  However, they have the same identifier prefix, for example, 6a, 6b).  Fields are clonotype identifier, representative query sequence name, count, frequency (%), CDR3 nucleotide sequence, CDR3 amino acid sequence, chain type, V gene, D gene, J gene\n" << endl;
             
             int count = 1; 
             string suffix = "abc";
             
-            typedef map<string, string> clone_seqid_map;
             ITERATE(MapVec, iter, map_vec) {
                 int aa_count = 0;
-                ITERATE(AaMap, iter2, iter->second){
+                ITERATE(AaMap, iter2, *((*iter)->second)){
                     
-                    double frequency = ((double) iter2->second.count)/total_elements*100;
+                    double frequency = ((double) iter2->second->count)/total_elements*100;
 
                     string clone_name = NStr::IntToString(count);   
-                    if (iter->second.size() > 1) {
+                    if ((*iter)->second->size() > 1) {
                         clone_name += suffix[aa_count];
                     }
                 
-                    m_CmdLineArgs->GetOutputStream() << std::setprecision(3) << clone_name << "\t"
+                    m_CmdLineArgs->GetOutputStream() 
+                        << std::setprecision(3) << clone_name << "\t"
                         
-                         <<iter2->second.seqid<<"\t"
-                         <<iter2->second.count<<"\t"
-                         <<frequency<<"%"<<"\t"
-                         <<iter->first.na<<"\t"
-                         <<iter2->first<<"\t"
-                         <<iter->first.chain_type<<"\t"
-                         <<iter->first.v_gene<<"\t"
-                         <<iter->first.d_gene<<"\t"
-                         <<iter->first.j_gene<<"\t"
-                         <<endl;
+                        <<iter2->second->seqid<<"\t"
+                        <<iter2->second->count<<"\t"
+                        <<frequency<<"\t"
+                        <<(*iter)->first->na<<"\t"
+                        <<iter2->first<<"\t"
+                        <<(*iter)->first->chain_type<<"\t"
+                        <<(*iter)->first->v_gene<<"\t"
+                        <<(*iter)->first->d_gene<<"\t"
+                        <<(*iter)->first->j_gene<<"\t"
+                        <<endl;
                     aa_count ++;
                 }
                 count ++;
             }
 
             count = 1;
-            m_CmdLineArgs->GetOutputStream() << "\n#Query identifiers grouped by clonotypes.  Fields are clonotype identifier, query sequence name (multiple names are separated by a comma if applicable)"<< endl << endl;
+            m_CmdLineArgs->GetOutputStream() << "\n#All query sequences grouped by clonotypes.  Fields are clonotype identifier, count, min similarity to top germline V gene (%), max similarity to top germline V gene (%), query sequence name (multiple names are separated by a comma if applicable)"<< endl << endl;
             ITERATE(MapVec, iter, map_vec) {
                 int aa_count = 0;
-                ITERATE(AaMap, iter2, iter->second){
+                ITERATE(AaMap, iter2, *((*iter)->second)){
                     string clone_name = NStr::IntToString(count);   
-                    if (iter->second.size() > 1) {
+                    if ((*iter)->second->size() > 1) {
                         clone_name += suffix[aa_count];
                     }
                     
-                    m_CmdLineArgs->GetOutputStream() << clone_name << "\t"
-                         <<iter2->second.all_seqid<<"\t" << endl;
+                    m_CmdLineArgs->GetOutputStream() 
+                        << std::setprecision(3) 
+                        << clone_name << "\t"
+                        <<iter2->second->count<<"\t"
+                        <<iter2->second->min_identity*100<<"\t"
+                        <<iter2->second->max_identity*100<<"\t"
+                        <<iter2->second->all_seqid<<"\t" << endl;
                          
                     aa_count ++;
                 }
@@ -402,7 +418,16 @@ int CIgBlastnApp::Run(void)
             }
         }
         
-      
+        ITERATE(CloneInfo, iter, m_Clone) {
+            ITERATE(AaMap, iter2, *(iter->second)){
+                delete iter2->second;
+            }
+            delete iter->second;
+        }
+
+        ITERATE(MapVec, iter, map_vec) {
+            delete *iter;
+        }
       
         formatter.PrintEpilog(opt);
 

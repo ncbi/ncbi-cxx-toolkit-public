@@ -73,6 +73,7 @@ public:
         string d_gene;
         string j_gene;
         string seqid;
+        double identity;
     };
 
     

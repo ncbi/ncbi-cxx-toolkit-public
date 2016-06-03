@@ -617,6 +617,7 @@ public:
         m_IgDomains.push_back(domain);
     };
 
+
     /// Set gene info
     void SetVGene(const string &id, int s, int e) {
         m_VGene.Set(id, s,e);
@@ -650,6 +651,12 @@ public:
         cdr3_nuc = m_Cdr3Seq;
         cdr3_aa = m_Cdr3SeqTrans;
     }
+
+    ///Get Ig domain
+    const vector<SIgDomain*>& GetIgDomains() const {
+
+        return m_IgDomains; 
+    }    
                          
 
 protected:

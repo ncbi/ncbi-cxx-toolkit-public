@@ -783,11 +783,33 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
 static void s_SetCloneInfo(const CIgBlastTabularInfo& tabinfo,
                            const CBioseq_Handle& handle,
                            CBlastFormat::SClone& clone_info) {
-    clone_info.seqid = GetTitle(handle).substr(0, 25);
+   
+    if (handle.GetSeqId()->Which() == CSeq_id::e_Local){
+        clone_info.seqid = GetTitle(handle).substr(0, 25);
+    } else {
+        string seqid;
+        handle.GetSeqId()->GetLabel(&seqid, CSeq_id::eFasta);
+        clone_info.seqid = seqid.substr(0, 25);
+        clone_info.seqid = clone_info.seqid.substr(0, 25);
+    }
     tabinfo.GetIgInfo (clone_info.v_gene, clone_info.d_gene, clone_info.j_gene,
                        clone_info.chain_type, clone_info.na, clone_info.aa);
-    
+    clone_info.identity = 0;
+    const vector<CIgBlastTabularInfo::SIgDomain*>& domains = tabinfo.GetIgDomains();
+    int length = 0;
+    int num_match = 0;
+    for (unsigned int i=0; i<domains.size(); ++i) {
+        if (domains[i]->length > 0) {
+            length += domains[i]->length;
+            num_match += domains[i]->num_match;
+        }
+    }
+    if (length > 0){
+        clone_info.identity = ((double)num_match)/length;
+        
+    }
 }
+
 void
 CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results,
                                      SClone& clone_info,
