@@ -10,5 +10,6 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_ncbi_http_upload.sh
 CHECK_COPY = test_ncbi_http_upload.sh ../../check/ncbi_test_data
+CHECK_REQUIRES = GNUTLS
 
 WATCHERS = lavr
