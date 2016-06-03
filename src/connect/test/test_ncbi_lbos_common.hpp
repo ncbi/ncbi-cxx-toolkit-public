@@ -289,6 +289,16 @@ struct SLBOSResolutionError
     unsigned short port;
 };
 
+
+struct SServer
+{
+    unsigned int host;
+    unsigned short port;
+    string version;
+    string service;
+};
+
+
 /* First let's declare some functions that will be
  * used in different test suites. It is convenient
  * that their definitions are at the very end, so that
@@ -330,6 +340,9 @@ vector<SLBOSVersion>   s_ParseVersionsString    (string versions);
 static void            s_PrintPortsLines        (void);
 static void            s_PrintResolutionErrors  (void);
 static void            s_Print500sCount         (void);
+static vector<SServer> s_GetAnnouncedServers    (bool is_enabled = false, 
+                                                 vector<string> to_find 
+                                                            = vector<string>());
 
 const int              kThreadsNum                  = 34;
 /** When the test is run in single-threaded mode, we set the number of the 
@@ -363,7 +376,7 @@ DEFINE_STATIC_FAST_MUTEX(s_BoostTestLock);
 /* Mutex for log output */
 DEFINE_STATIC_FAST_MUTEX(s_WriteLogLock);
 
-#define PORT_N 5 /* port for healtcheck */
+#define PORT_N 5 /* port for healthcheck */
 #define PORT_STR_HELPER(port) #port
 #define PORT_STR(port) PORT_STR_HELPER(port)
 
@@ -1344,6 +1357,24 @@ int s_CountServersWithExpectation(string            service,
                   "(expecting " << expected_count << 
                   " servers found). Retry #" << retries);
         servers = 0;
+        /* Check that the server is actually announced and enabled */
+        auto announced_srvrs = s_GetAnnouncedServers(false, { service }),
+             enabled_srvrs   = s_GetAnnouncedServers(true,  { service });
+        bool serv_enabled = false, serv_announced = false;
+        for (unsigned short i = 0; i < announced_srvrs.size(); ++i) {
+            if (announced_srvrs[i].port == port &&
+                announced_srvrs[i].service == service) {
+                serv_announced = true;
+                break;
+            }
+        }
+        for (unsigned short i = 0; i < enabled_srvrs.size(); ++i) {
+            if (enabled_srvrs[i].port == port &&
+                enabled_srvrs[i].service == service) {
+                serv_enabled = true;
+                break;
+            }
+        }
         if (retries > 0) { /* for the first cycle we do not sleep */
 #ifdef NCBI_THREADS
             SleepMilliSec(wait_time);
@@ -1373,7 +1404,10 @@ int s_CountServersWithExpectation(string            service,
         MEASURE_TIME_FINISH
         WRITE_LOG("Found " << servers << " servers of service " 
                   << service << ", port " << port << " after " 
-                  << time_elapsed << " seconds via service discovery.");
+                  << time_elapsed << " seconds via service discovery.\n"
+                  << "This service is " << (serv_announced ? "" : "NOT ") 
+                  << "announced and is " << (serv_enabled ? "" : "NOT ")
+                  << "enabled.");
         retries++;
     }
     /* If we did not find the expected amount of servers, there will be an error 
@@ -8084,19 +8118,13 @@ void s_TestFindMethod(ELBOSFindMethod find_method)
     }
 }
 
-struct SAnnouncedServer
-{
-    unsigned int host;
-    unsigned short port;
-    string version;
-    string service;
-};
 
-
-/** Result of parsing of /service */
-static vector<SAnnouncedServer> s_ParseService()
+/** Result of parsing of /service.
+ * is_enabled tell if only enabled servers must be returned */
+static vector<SServer> s_GetAnnouncedServers(bool is_enabled, 
+                                             vector<string> to_find)
 {
-    vector<SAnnouncedServer> nodes;
+    vector<SServer> nodes;
     CConnNetInfo net_info;
     size_t start = 0, end = 0;
     CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
@@ -8107,11 +8135,10 @@ static vector<SAnnouncedServer> s_ParseService()
     */
     CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
         UrlReadAll(*net_info, (string("http://") + lbos_addr +
-        "/lbos/text/service").c_str(), NULL, NULL));
+        "/lbos/watches?format=text").c_str(), NULL, NULL));
     if (*lbos_output_orig == NULL)
         lbos_output_orig = strdup("");
     string lbos_output = *lbos_output_orig;
-    vector<string> to_find;
     to_find.push_back("/lbostest");
     to_find.push_back("/lbostest1");
 
@@ -8145,8 +8172,8 @@ static vector<SAnnouncedServer> s_ParseService()
             start = end + 1; //skip \t
             end = lbos_output.find("\t", start);
             string is_announced = lbos_output.substr(start, end - start);
-            if (is_announced == "true") {
-                SAnnouncedServer node;
+            if (!is_enabled || is_announced == "true") {
+                SServer node;
                 node.host = CSocketAPI::gethostbyname(ip);
                 node.port = port;
                 node.service = to_find[i];
@@ -8168,8 +8195,8 @@ static vector<SAnnouncedServer> s_ParseService()
  * servers with other names that are not related to our test */
 static void s_ClearZooKeeper()
 {
-    vector<SAnnouncedServer> nodes = s_ParseService();
-    vector<SAnnouncedServer>::iterator node;
+    vector<SServer> nodes = s_GetAnnouncedServers(true);
+    vector<SServer>::iterator node;
     for (node = nodes.begin(); node != nodes.end(); node++) {
         string host = CSocketAPI::HostPortToString(node->host, 0);
         if (host == s_GetMyIP()) {
@@ -8213,8 +8240,8 @@ bool s_CheckIfAnnounced(string          service,
                      " and version " << version << " (expected that it does" <<
                      (expectedAnnounced ? "" : " NOT") << " appear in /text/service "
                      << ". Retry #" << retries);
-            vector<SAnnouncedServer> nodes = s_ParseService();
-            vector<SAnnouncedServer>::iterator node;
+            vector<SServer> nodes = s_GetAnnouncedServers(true);
+            vector<SServer>::iterator node;
             for (node = nodes.begin();  node != nodes.end();   node++) {
                 string host = CSocketAPI::HostPortToString(node->host, 0);
                 if (expected_host == host && node->port == server_port &&
