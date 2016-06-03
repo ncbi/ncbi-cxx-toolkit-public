@@ -7,6 +7,9 @@ CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 
 TEST_NCBI_HTTP_UPLOAD="$NCBI_TEST_DATA/http/test_ncbi_http_upload"
 
-test -f "$TEST_NCBI_HTTP_UPLOAD"  ||  exit 0
+if [ ! -f "$TEST_NCBI_HTTP_UPLOAD" ]; then
+  echo "NCBI_UNITTEST_SKIPPED"
+  exit 0
+fi
 
 $CHECK_EXEC test_ncbi_http_upload $@
