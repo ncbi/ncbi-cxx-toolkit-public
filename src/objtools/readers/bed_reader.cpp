@@ -136,8 +136,6 @@ CBedReader::ReadSeqAnnot(
     ILineErrorListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
-    const size_t MAX_RECORDS = 100000;
-
     xProgressInit(lr);
 
     CRef<CSeq_annot> annot;
@@ -188,9 +186,6 @@ CBedReader::ReadSeqAnnot(
         if (xParseFeature(fields, annot, featureCount, pEC)) {
             ++featureCount;
             continue;
-        }
-        if (tbl.size() >= MAX_RECORDS) {
-            break;
         }
     }
     //  Only return a valid object if there was at least one feature
