@@ -360,7 +360,7 @@ int CIgBlastnApp::Run(void)
         
         
         if (!(ig_opts->m_IsProtein) && total_elements > 1) {
-            m_CmdLineArgs->GetOutputStream() << "\n" << "#Clonotype summary.  A particular clonotype includes any V(D)J rearrangements having the same germline V(D)J gene segments as well as the same CDR3 nucleotide and amino sequence (Rearrangements having the same CDR3 nucleotide but different amino acid sequence due to frameshift in V gene are assigned to a different clonotype.  However, they have the same identifier prefix, for example, 6a, 6b).  Fields are clonotype identifier, representative query sequence name, count, frequency (%), CDR3 nucleotide sequence, CDR3 amino acid sequence, chain type, V gene, D gene, J gene\n" << endl;
+            m_CmdLineArgs->GetOutputStream() << "\n" << "#Clonotype summary.  A particular clonotype includes any V(D)J rearrangements having the same germline V(D)J gene segments as well as the same CDR3 nucleotide and amino sequence (Rearrangements having the same CDR3 nucleotide but different amino acid sequence due to frameshift in V gene are assigned to a different clonotype.  However, they have the same identifier prefix, for example, 6a, 6b).  Fields (tab-delimited) are clonotype identifier, representative query sequence name, count, frequency (%), CDR3 nucleotide sequence, CDR3 amino acid sequence, chain type, V gene, D gene, J gene\n" << endl;
             
             int count = 1; 
             string suffix = "abc";
@@ -395,7 +395,7 @@ int CIgBlastnApp::Run(void)
             }
 
             count = 1;
-            m_CmdLineArgs->GetOutputStream() << "\n#All query sequences grouped by clonotypes.  Fields are clonotype identifier, count, min similarity to top germline V gene (%), max similarity to top germline V gene (%), query sequence name (multiple names are separated by a comma if applicable)"<< endl << endl;
+            m_CmdLineArgs->GetOutputStream() << "\n#All query sequences grouped by clonotypes.  Fields (tab-delimited) are clonotype identifier, count, min similarity to top germline V gene (%), max similarity to top germline V gene (%), query sequence name (multiple names are separated by a comma if applicable)"<< endl << endl;
             ITERATE(MapVec, iter, map_vec) {
                 int aa_count = 0;
                 ITERATE(AaMap, iter2, *((*iter)->second)){
