@@ -559,8 +559,8 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
             fprintf(stderr, GRID_APP_NAME ": options '--" NOW_OPTION "', '--"
                     DIE_OPTION "', and '--" DRAIN_OPTION
                     "' are mutually exclusive.\n");
+            return 2;
         }
-        /* FALL THROUGH */
 
     case eNetStorageAdmin:
         return ShutdownNetStorageServer();
