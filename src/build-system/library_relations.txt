@@ -443,7 +443,6 @@ gpipe_ftp_new needs gpipe_alnutil
 gpipe_ftp_new needs xalgoalignutil
 gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
-gpipe_jira needs connssl
 gpipe_jira needs gpinit_access
 gpipe_jira needs gpipe_attr
 gpipe_jira needs gpipe_curl
@@ -490,7 +489,6 @@ gpipe_val needs pub
 gpipe_val needs valerr
 gpipe_val needs xmlwrapp
 gpipe_xml needs $(SEQ_LIBS)
-gpipe_xml needs connssl
 gpipe_xml needs gpipe_attr
 gpipe_xml needs gpipe_dateutil
 gpipe_xml needs pub
@@ -838,7 +836,6 @@ netblast needs3party netcli
 netcli needs3party $(NCBI_C_ncbi)
 netentr needs3party ncbiacc
 netentr needs3party netcli
-netstorage needs connssl
 netstorage needs ncbi_xcache_netcache
 nettle needs3party $(ORIG_LIBS)
 nlmzip needs3party $(NCBI_C_ncbi)
@@ -856,14 +853,12 @@ osutils needs3party ctutils
 pathogen_cluster_loader needs $(SDBAPI_LIB)
 pathogen_cluster_loader needs xasmcompare
 pathogen_cluster_loader needs xconnect
-pathogen_connection needs connssl
 pathogen_connection needs gpipe_common
 pathogen_connection needs gpipe_dateutil
 pathogen_ctl needs $(GPIPE_COMMON_LIBS)
-pathogen_ctl needs $(SRAREAD_LIBS)
 pathogen_ctl needs bag_access
+pathogen_ctl needs gpipe_kmer
 pathogen_ctl needs pathogen_connection
-pathogen_ctl needs taxon1
 pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs gpipe_common
 pathogen_target_loader needs gpinit_register
@@ -900,7 +895,7 @@ pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
 python2.7 needs3party $(ORIG_LIBS)
-python_ncbi_dbapi needs connect
+python_ncbi_dbapi needs connssl
 python_ncbi_dbapi needs dbapi
 python_ncbi_dbapi needs3party $(PYTHON_LIBS)
 rcobaltasn_g needs xser
@@ -1334,7 +1329,7 @@ xcleanup needs xobjutil
 xcompress needs $(CMPRS_LIB)
 xcompress needs xutil
 xcompress needs3party $(CMPRS_LIBS)
-xconnect includes connect
+xconnect includes connssl
 xconnect needs xncbi
 xconnext includes $(CONNEXT)
 xconnext needs xconnect
@@ -1395,7 +1390,6 @@ xid_estsub needs xregexp
 xid_mapper needs $(SOBJMGR_LIBS)
 xid_utils needs $(CONNEXT)
 xid_utils needs $(SEQ_LIBS)
-xid_utils needs connssl
 xid_utils needs dbapi_driver
 xid_utils needs pub
 xid_utils needs xcgi
@@ -1528,6 +1522,7 @@ xvalidate needs $(OBJEDIT_LIBS)
 xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs valerr
 xvalidate needs xalnmgr
+xxconnect includes connssl
 xxconnect needs xncbi
 xxconnect needs3party $(NCBI_C_ncbi)
 z needs3party $(ORIG_LIBS)
