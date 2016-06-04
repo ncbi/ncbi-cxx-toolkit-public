@@ -62,8 +62,6 @@ align_format needs taxon1
 align_format needs xalnmgr
 align_format needs xcgi
 align_format needs xhtml
-align_part_ci needs $(SEQ_LIBS)
-align_part_ci needs pub
 aligndb_client needs $(SEQ_LIBS)
 aligndb_client needs pub
 aligndb_reader needs $(COMPRESS_LIBS)
@@ -420,7 +418,7 @@ gpipe_best_placement needs gpipe_alnutil
 gpipe_best_placement needs xalgoalignutil
 gpipe_blast needs $(BLAST_INPUT_LIBS)
 gpipe_blast needs gpipe_alnutil
-gpipe_clean_prot_names needs $(SDBAPI_LIB)
+gpipe_clean_prot_names needs gpipe_attr
 gpipe_clean_prot_names needs xdiscrepancy_report
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs eutils_client
@@ -461,8 +459,6 @@ gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_prodigal needs prok_cluster_data
-gpipe_prok_clean_prot_names needs gpipe_attr
-gpipe_prok_clean_prot_names needs gpipe_clean_prot_names
 gpipe_property needs gpipe_common
 gpipe_remap needs xobjreadex
 gpipe_resource_req needs xncbi
@@ -872,8 +868,8 @@ phytree_format needs taxon1
 phytree_format needs xalgophytree
 pn_ctl needs $(GPIPE_GENCOLL_LIBS)
 pn_ctl needs ec_hmm_relation_cd
+pn_ctl needs gpipe_clean_prot_names
 pn_ctl needs gpipe_jira
-pn_ctl needs gpipe_prok_clean_prot_names
 pn_ctl needs hmm_file
 pn_ctl needs hmm_hit_handle
 pn_ctl needs idload_utils
@@ -885,7 +881,6 @@ process_annotation_stats needs xser
 proj needs pubmed
 proj needs seqset
 prok_align_monomer needs $(SOBJMGR_LIBS)
-prok_align_monomer needs align_part_ci
 prok_cluster_data needs attr_cd
 prok_cluster_data needs bacterial_pipeline_proc
 prok_cluster_data needs xalgoalignutil
