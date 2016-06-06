@@ -110,6 +110,9 @@
 /* Define to 1 if necessary to get FIONBIO (e.g., on Solaris) */
 /* #undef BSD_COMP */
 
+/* Define to 1 if you have the <Accelerate/Accelerate.h> header file. */
+#define HAVE_ACCELERATE_ACCELERATE_H 1
+
 /* Define to 1 if you have the `alarm' function. */
 #define HAVE_ALARM 1
 
@@ -146,6 +149,9 @@
 
 /* Define to 1 if the `Boost.Threads' library is available. */
 /* #undef HAVE_BOOST_THREAD */
+
+/* Define to 1 if you have the <clapack.h> header file. */
+/* #undef HAVE_CLAPACK_H */
 
 /* Define to 1 if the preprocessor supports GNU-style variadic macros. */
 #define HAVE_CPP_GNU_VARARGS 1
@@ -270,6 +276,12 @@
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #define HAVE_IOS_REGISTER_CALLBACK 1
 
+/* Define to 1 if you have the <lapacke.h> header file. */
+/* #undef HAVE_LAPACKE_H */
+
+/* Define to 1 if you have the <lapacke/lapacke.h> header file. */
+/* #undef HAVE_LAPACKE_LAPACKE_H */
+
 /* Define to 1 if you have the `lchown' function. */
 /* #undef HAVE_LCHOWN */
 
@@ -313,6 +325,9 @@
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
 /* #undef HAVE_LIBKSTAT */
+
+/* Define to 1 if liblapack is available. */
+#define HAVE_LIBLAPACK 1
 
 /* Define to 1 if liblzo2 is available. */
 /* #undef HAVE_LIBLZO */
@@ -642,6 +657,9 @@
 
 /* Define to 1 if wxWidgets is available. */
 /* #undef HAVE_WXWIDGETS */
+
+/* Define to 1 if the system has the type `__CLPK_integer'. */
+#define HAVE___CLPK_INTEGER 1
 
 /* Define as const if the declaration of iconv() needs const. */
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050 /* MAC_OS_X_VERSION_10_5 */
