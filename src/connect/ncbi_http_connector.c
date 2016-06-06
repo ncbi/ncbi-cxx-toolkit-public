@@ -1852,7 +1852,6 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         const char* how = 0;
         if (uuu->received < uuu->expected) {
             if (status == eIO_Closed) {
-                assert(uuu->conn_state == eCS_ReadBody);
                 status  = eIO_Unknown;
                 how = "premature EOM in";
             }
@@ -2092,7 +2091,7 @@ static EIO_Status s_VT_Write
     } else
         uuu->w_timeout  = kInfiniteTimeout;
 
-    /* if trying to write after a request then close the socket,
+    /* if trying to write after a request then close the socket first,
      * and so return to "IDLE" */
     if (uuu->sock  &&  uuu->conn_state > eCS_WriteRequest) {
         status = s_Disconnect(uuu, timeout,
@@ -2118,8 +2117,8 @@ static EIO_Status s_VT_Write
             if (status != eIO_Success)
                 return status;
         }
-        assert((!uuu->sock  ||  uuu->conn_state == eCS_WriteRequest)
-               &&  !uuu->w_len);
+        assert(!uuu->sock  ||  (uuu->conn_state == eCS_WriteRequest
+                                &&  !uuu->w_len));
         if (size) {
             char prefix[80];
             int  n = sprintf(prefix, "%" NCBI_BIGCOUNT_FORMAT_SPEC_HEX "\r\n",
@@ -2186,7 +2185,7 @@ static EIO_Status s_VT_Flush
     }
     status = x_IsWriteThru(uuu)
         ? s_ConnectAndSend(uuu, timeout, eEM_Flush)
-        : s_PreRead       (uuu, timeout, eEM_Flush); 
+        : s_PreRead       (uuu, timeout, eEM_Flush);
     return BUF_Size(uuu->r_buf) ? eIO_Success : status;
 }
 
