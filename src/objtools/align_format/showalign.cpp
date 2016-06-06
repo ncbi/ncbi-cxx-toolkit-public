@@ -4639,10 +4639,10 @@ void CDisplaySeqalign::x_PreProcessSingleAlign(CSeq_align_set::Tdata::const_iter
 }
 
 
-void CDisplaySeqalign::DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <string> selectedIDs) //(blast_rank = 1,2...)
+void CDisplaySeqalign::DisplayPairwiseSeqalign(CNcbiOstream& out,unordered_set <string> selectedIDs) //(blast_rank = 1,2...)
 {
     string alignRows;
-    hash_set <string> :: const_iterator idsIter;
+    unordered_set <string> :: const_iterator idsIter;
 
     CSeq_align_set actual_aln_list;
     //Not sure we need this - check with Jean
