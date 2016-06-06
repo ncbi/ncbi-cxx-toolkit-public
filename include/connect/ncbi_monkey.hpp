@@ -58,6 +58,14 @@ BEGIN_NCBI_SCOPE
 
 using namespace std;
 
+enum EMonkeyActionType {
+    eMonkey_Recv,
+    eMonkey_Send,
+    eMonkey_Poll,
+    eMonkey_Connect
+};
+
+
 class NCBI_XNCBI_EXPORT CMonkeyException : public CException
 {
 public:
@@ -76,69 +84,34 @@ private:
     NCBI_EXCEPTION_DEFAULT(CMonkeyException, CException);
 };
 
-/** A special class which opens access to writing to Monkey Action Log*/
-class CMonkeySeedLogKey
+
+/** A special class which opens access to Monkey Seed 
+ *  (only for Monkey rules and plans) */
+class CMonkeySeedKey
 {
-    friend class CMonkeySeedLogAccessor;
-    CMonkeySeedLogKey() = default;
-    ~CMonkeySeedLogKey() = default;
+    friend class CMonkeySeedAccessor;
+    CMonkeySeedKey() = default;
+    ~CMonkeySeedKey() = default;
     /* No copying allowed */
-    CMonkeySeedLogKey(const CMonkeySeedLogKey&) = delete;
-    CMonkeySeedLogKey& operator=(const CMonkeySeedLogKey&) = delete;
+    CMonkeySeedKey(const CMonkeySeedKey&) = delete;
+    CMonkeySeedKey& operator=(const CMonkeySeedKey&) = delete;
 };
 
 
 /** Base class for Monkey methods that are allowed to write to MonkeyLog */
-class CMonkeySeedLogAccessor
+class CMonkeySeedAccessor
 {
 protected: 
-    static const CMonkeySeedLogKey& Key();
+    static const CMonkeySeedKey& Key();
 };
 
-
-class CMonkeySeedLog
-{
-public:
-    enum EActionType {
-        eMonkey_Recv,
-        eMonkey_Send,
-        eMonkey_Poll,
-        eMonkey_Connect
-    };
-    static CMonkeySeedLog* Instance();
-
-    /** This method is not for public use.
-     * CMonkeySeedLogKey is a special class that allows only some certain 
-     * class to call this method */
-    int GetRand(const CMonkeySeedLogKey& /* key */);
-
-    /** To be able to reproduce Chaos Monkey behavior, you need to tag each
-    * thread with a unique token. Then you can ask Chaos Monkey to reproduce
-    * behavior from a previous run, if Monkey saved what it did to a file */
-    bool RegisterThread(int token);
-
-    int GetSeed();
-    void SetSeed(int seed);
-
-private:
-    CMonkeySeedLog();
-    static CMonkeySeedLog*     sm_Instance;
-    CRef<CTls<int>>            m_TlsToken;
-    CRef<CTls<vector<int> > >  m_TlsRandList;
-    CRef<CTls<int> >           m_TlsRandListPos;
-    unsigned int               m_Seed;
-    /** Remember registered tokens for threads to avoid collisions */
-    set<int>                   m_RegisteredTokens;
-};
-
-typedef CMonkeySeedLog::EActionType EActionType;
 
 /** Common functionality for all rule types:
  *  - Runs order (vector<double> m_Runs)
  *  - How to repeat runs order (ERepeatType m_RepeatType) 
  *  - After how many runs repeat order (size_t m_RunsSize) 
  */
-class CMonkeyRuleBase : public CMonkeySeedLogAccessor
+class CMonkeyRuleBase : public CMonkeySeedAccessor
 {
 public:
     enum ERepeatType {
@@ -154,8 +127,8 @@ public:
      * already been successfully matched if this check is run) */
     bool CheckRun(MONKEY_SOCKTYPE sock);
 protected:
-    CMonkeyRuleBase(EActionType                 action_type,
-                    const vector<string>&       name_value);
+    CMonkeyRuleBase(EMonkeyActionType     action_type,
+                    const vector<string>& name_value);
     int /* EIO_Status or -1 */ GetReturnStatus();
     unsigned long  GetDelay();
 private:
@@ -165,7 +138,7 @@ private:
     ERepeatType                  m_RepeatType;
     unsigned long                m_Delay;
     vector<double>               m_Runs;
-    EActionType                  m_ActionType;
+    EMonkeyActionType            m_ActionType;
     map<MONKEY_SOCKTYPE, size_t> m_RunPos;
     /** If there are no-interception runs before repeating the cycle,
      * we know that from m_RunsSize */
@@ -191,7 +164,7 @@ public:
         eMonkey_FillLastLetter
     };
 protected:
-    CMonkeyRWRuleBase(EActionType           action_type, 
+    CMonkeyRWRuleBase(EMonkeyActionType           action_type, 
                       const vector<string>& name_value);
     string    GetText();
     size_t    GetTextLength();
@@ -262,7 +235,7 @@ private:
 };
 
 
-class CMonkeyPlan : public CMonkeySeedLogAccessor
+class CMonkeyPlan : public CMonkeySeedAccessor
 {
 public:
 /* 
@@ -337,9 +310,21 @@ enum EMonkeyHookSwitch {
 typedef void (*FMonkeyHookSwitch)(EMonkeyHookSwitch hook_switch);
 
 
-class CMonkey : public CMonkeySeedLogAccessor
+class CMonkey : public CMonkeySeedAccessor
 {
 public:
+    /** This method is not for public use.
+     * CMonkeySeedLogKey is a special class that allows only some certain 
+     * class to call this method */
+    int GetRand(const CMonkeySeedKey& /* key */);
+
+    /** To be able to reproduce Chaos Monkey behavior, you need to tag each
+    * thread with a unique token. Then you can ask Chaos Monkey to reproduce
+    * behavior from a previous run, if Monkey saved what it did to a file */
+    bool RegisterThread(int token);
+
+    int GetSeed();
+    void SetSeed(int seed);
     static CMonkey* Instance();
     void ReloadConfig(const string& config = "");
     bool IsEnabled();
@@ -366,11 +351,6 @@ public:
     /* Not a real Chaos Monkey interceptor, just a function to remove the socket 
      * that was closed from m_KnownSockets */
     void Close(MONKEY_SOCKTYPE sock);
-    
-    bool RegisterThread(int token);
-
-    int GetSeed();
-    void SetSeed(int seed);
 
     static void MonkeyHookSwitchSet(FMonkeyHookSwitch hook_switch_func);
 private:
@@ -391,6 +371,12 @@ private:
     double                    m_Probability;
     bool                      m_Enabled;
     static FMonkeyHookSwitch  sm_HookSwitch;
+    CRef<CTls<int>>           m_TlsToken;
+    CRef<CTls<vector<int> > > m_TlsRandList;
+    CRef<CTls<int> >          m_TlsRandListPos;
+    unsigned int              m_Seed;
+    /** Remember registered tokens for threads to avoid collisions */
+    set<int>                  m_RegisteredTokens;
 };
 
 
