@@ -2459,7 +2459,8 @@ extern void SetDiagHandler(CDiagHandler* handler,
 
 /// Get the currently set diagnostic handler class.
 NCBI_XNCBI_EXPORT
-extern CDiagHandler* GetDiagHandler(bool take_ownership = false);
+extern CDiagHandler* GetDiagHandler(bool take_ownership = false,
+                                    bool* current_ownership = 0);
 
 /// Set the diagnostic handler using the specified diagnostic handler
 /// and cleanup functions.

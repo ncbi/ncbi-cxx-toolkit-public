@@ -403,8 +403,6 @@ NCBI_PARAM_DEF_EX(string, Log, LogRegistry, kEmptyStr,
 typedef NCBI_PARAM_TYPE(Log, LogRegistry) TLogRegistry;
 
 
-// Are we using applog automatically (set by SetupDiag)?
-static bool s_UsingAutoApplog = false;
 static bool s_FinishedSetupDiag = false;
 static bool s_MergeLinesSetBySetupDiag = false;
 
@@ -2938,12 +2936,14 @@ void CDiagContext::DiscardMessages(void)
 
 // Diagnostics setup
 
+static const char* kRootLog = "/log/";
+
 string GetDefaultLogLocation(CNcbiApplication& app)
 {
     static const char* kToolkitRcPath = "/etc/toolkitrc";
     static const char* kWebDirToPort = "Web_dir_to_port";
 
-    string log_path = "/log/";
+    string log_path = kRootLog;
 
     string exe_path = CFile(app.GetProgramExecutablePath()).GetDir();
     CNcbiIfstream is(kToolkitRcPath, ios::binary);
@@ -3023,19 +3023,6 @@ void CDiagContext::x_FinalizeSetupDiag(void)
 }
 
 
-// Helper function to set log file with forced splitting.
-bool SetApplogFile(const string& file_name)
-{
-    bool old_split = s_UsingAutoApplog;
-    s_UsingAutoApplog = true;
-    bool res = SetLogFile(file_name);
-    if ( !res ) {
-        s_UsingAutoApplog = old_split;
-    }
-    return res;
-}
-
-
 // Load string value from config if not null, or from the environment.
 static string s_GetLogConfigString(const CTempString name,
                                    const CTempString defval,
@@ -3079,6 +3066,16 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                              const char*          cmd_logfile)
 {
     CDiagLock lock(CDiagLock::eWrite);
+
+    // Check severity level change status now.
+    // This used to be done in SetDiag(), but if the first logging event is an
+    // Extra(), new post format is enabled and post level is Trace, the initialization
+    // results in infinite recursion. To prevent this, call this as soon as possible,
+    // before any logging is done.
+    if ( CDiagBuffer::sm_PostSeverityChange == eDiagSC_Unknown ) {
+        CDiagBuffer::GetSeverityChangeEnabledFirstTime();
+    }
+
     CDiagContext& ctx = GetDiagContext();
     // Initialize message collecting
     if (collect == eDCM_Init) {
@@ -3087,8 +3084,6 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     else if (collect == eDCM_InitNoLimit) {
         ctx.InitMessages(size_t(-1));
     }
-    bool old_using_applog = s_UsingAutoApplog;
-    s_UsingAutoApplog = false; // Prevent splitting logs unless applog is used.
 
     /*
     The default order of checking possible log locations is:
@@ -3242,7 +3237,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     // Try /log/<port>
                     if ( !def_log_dir.empty() ) {
                         log_name = CFile::ConcatPath(def_log_dir, log_base);
-                        if ( SetApplogFile(log_name) ) {
+                        if ( SetLogFile(log_name) ) {
                             log_set = true;
                             new_log_name = log_name;
                             to_applog = true;
@@ -3250,8 +3245,8 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         }
                     }
                     // Try /log/srv if port is unknown or not writable
-                    log_name = CFile::ConcatPath("/log/srv", log_base);
-                    if ( SetApplogFile(log_name) ) {
+                    log_name = CFile::ConcatPath(CFile::ConcatPath(kRootLog, "srv"), log_base);
+                    if ( SetLogFile(log_name) ) {
                         log_set = true;
                         new_log_name = log_name;
                         to_applog = true;
@@ -3265,8 +3260,8 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         break;
                     }
                     // Try to switch to /log/fallback/
-                    log_name = CFile::ConcatPath("/log/fallback/", log_base);
-                    if ( SetApplogFile(log_name) ) {
+                    log_name = CFile::ConcatPath(CFile::ConcatPath(kRootLog, "fallback"), log_base);
+                    if ( SetLogFile(log_name) ) {
                         log_set = true;
                         new_log_name = log_name;
                         to_applog = true;
@@ -3296,15 +3291,15 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                 // No command line and no base name.
                 // Try to switch to /log/fallback/UNKNOWN.<euid>
                 if (!log_set  &&  log_base.empty()) {
-                    static const char* kDefaultFallback = "/log/fallback/UNKNOWN";
-                    if ( SetApplogFile(string(kDefaultFallback) + euid) ) {
+                    string default_fallback = CFile::ConcatPath(kRootLog, "fallback/UNKNOWN.log");
+                    if ( SetLogFile(default_fallback + euid) ) {
                         log_set = true;
-                        new_log_name = kDefaultFallback;
+                        new_log_name = default_fallback;
                         to_applog = true;
                         break;
                     }
                     _TRACE_X(4, "Failed to set log file to " <<
-                        CFile::NormalizePath(kDefaultFallback));
+                        CFile::NormalizePath(default_fallback));
                 }
                 const char* log_name = TTeeToStderr::GetDefault() ?
                     kLogName_Tee : kLogName_Stderr;
@@ -3326,7 +3321,6 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     // Unlock severity level
     SetApplogSeverityLocked(false);
     if ( to_applog ) {
-        _ASSERT(s_UsingAutoApplog);
         ctx.SetOldPostFormat(false);
         SetDiagPostFlag(eDPF_MergeLines);
         s_MergeLinesSetBySetupDiag = true;
@@ -3336,7 +3330,6 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         SetApplogSeverityLocked(true);
     }
     else {
-        s_UsingAutoApplog = old_using_applog;
         if ( s_MergeLinesSetBySetupDiag ) {
             UnsetDiagPostFlag(eDPF_MergeLines);
         }
@@ -3387,7 +3380,7 @@ CDiagContext::TCount CDiagContext::GetProcessPostNumber(EPostNumberIncrement inc
 
 bool CDiagContext::IsUsingRootLog(void)
 {
-    return GetLogFile().substr(0, 5) == "/log/";
+    return GetLogFile().substr(0, 5) == kRootLog;
 }
 
 
@@ -3651,11 +3644,6 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
         return false;
     }
 
-    // Check severity level change status
-    if ( sm_PostSeverityChange == eDiagSC_Unknown ) {
-        GetSeverityChangeEnabledFirstTime();
-    }
-
     EDiagSev sev = diag.GetSeverity();
     bool is_console = (diag.GetPostFlags() & eDPF_IsConsole) > 0;
     if (!is_console  &&  SeverityDisabled(sev)) {
@@ -3803,7 +3791,6 @@ bool CDiagBuffer::GetTraceEnabledFirstTime(void)
 
 bool CDiagBuffer::GetSeverityChangeEnabledFirstTime(void)
 {
-    CDiagLock lock(CDiagLock::eWrite);
     if ( sm_PostSeverityChange != eDiagSC_Unknown ) {
         return sm_PostSeverityChange == eDiagSC_Enable;
     }
@@ -5577,7 +5564,9 @@ extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
             ctx.Extra().Print("switch_diag_to", new_name);
         }
     }
-    if ( CDiagBuffer::sm_CanDeleteHandler )
+    // Do not delete old handler if it's reinstalled (possibly just to change
+    // the ownership).
+    if (CDiagBuffer::sm_CanDeleteHandler  &&  CDiagBuffer::sm_Handler != handler)
         delete CDiagBuffer::sm_Handler;
     if ( TTeeToStderr::GetDefault() ) {
         // Need to tee?
@@ -5599,9 +5588,13 @@ extern bool IsSetDiagHandler(void)
     return (CDiagBuffer::sm_Handler != s_DefaultHandler);
 }
 
-extern CDiagHandler* GetDiagHandler(bool take_ownership)
+extern CDiagHandler* GetDiagHandler(bool take_ownership,
+                                    bool* current_ownership)
 {
     CDiagLock lock(CDiagLock::eRead);
+    if ( current_ownership ) {
+        *current_ownership = CDiagBuffer::sm_CanDeleteHandler;
+    }
     if (take_ownership) {
         _ASSERT(CDiagBuffer::sm_CanDeleteHandler);
         CDiagBuffer::sm_CanDeleteHandler = false;
@@ -6162,19 +6155,33 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             string trace_name = special ? adj_name : adj_name + ".trace";
             string perf_name = special ? adj_name : adj_name + ".perf";
 
-            if (!s_CreateHandler(err_name, err_handler))
-                return false;
-            if (!s_CreateHandler(log_name, log_handler))
-                return false;
-            if (!s_CreateHandler(trace_name, trace_handler))
-                return false;
-            if (!s_CreateHandler(perf_name, perf_handler))
-                return false;
+            if ( s_SplitLogFile ) {
+                if (!s_CreateHandler(err_name, err_handler))
+                    return false;
+                if (!s_CreateHandler(log_name, log_handler))
+                    return false;
+                if (!s_CreateHandler(trace_name, trace_handler))
+                    return false;
+                if (!s_CreateHandler(perf_name, perf_handler))
+                    return false;
 
-            x_SetHandler(&m_Err, &m_OwnErr, err_handler.release(), true);
-            x_SetHandler(&m_Log, &m_OwnLog, log_handler.release(), true);
-            x_SetHandler(&m_Trace, &m_OwnTrace, trace_handler.release(), true);
-            x_SetHandler(&m_Perf, &m_OwnPerf, perf_handler.release(), true);
+                x_SetHandler(&m_Err, &m_OwnErr, err_handler.release(), true);
+                x_SetHandler(&m_Log, &m_OwnLog, log_handler.release(), true);
+                x_SetHandler(&m_Trace, &m_OwnTrace, trace_handler.release(), true);
+                x_SetHandler(&m_Perf, &m_OwnPerf, perf_handler.release(), true);
+            }
+            else {
+                if (!s_CreateHandler(file_name, err_handler))
+                    return false;
+                if (!s_CreateHandler(perf_name, perf_handler))
+                    return false;
+
+                x_SetHandler(&m_Err, &m_OwnErr, err_handler.get(), true);
+                x_SetHandler(&m_Log, &m_OwnLog, err_handler.get(), true);
+                x_SetHandler(&m_Trace, &m_OwnTrace, err_handler.release(), true);
+                x_SetHandler(&m_Perf, &m_OwnPerf, perf_handler.release(), true);
+            }
+
             m_ReopenTimer->Restart();
             break;
         }
@@ -6289,10 +6296,10 @@ void CFileDiagHandler::Reopen(TReopenFlags flags)
     if ( m_Err ) {
         m_Err->Reopen(flags);
     }
-    if ( m_Log ) {
+    if ( m_Log  &&  m_Log != m_Err ) {
         m_Log->Reopen(flags);
     }
-    if ( m_Trace ) {
+    if ( m_Trace  &&  m_Trace != m_Log  &&  m_Trace != m_Err ) {
         m_Trace->Reopen(flags);
     }
     if ( m_Perf ) {
@@ -6785,8 +6792,7 @@ extern bool SetLogFile(const string& file_name,
         // Auto-split log file
         SetSplitLogFile(true);
     }
-    bool no_split = !(s_SplitLogFile  ||  s_UsingAutoApplog);
-    if ( no_split ) {
+    if ( !s_SplitLogFile ) {
         if (file_type != eDiagFile_All) {
             ERR_POST_X(8, Info <<
                 "Failed to set log file for the selected event type: "
@@ -6804,9 +6810,8 @@ extern bool SetLogFile(const string& file_name,
         }
         else {
             // output to file
-            auto_ptr<CFileHandleDiagHandler> fhandler(
-                new CFileHandleDiagHandler(file_name));
-            if ( !fhandler->Valid() ) {
+            auto_ptr<CFileDiagHandler> fhandler(new CFileDiagHandler());
+            if ( !fhandler->SetLogFile(file_name, eDiagFile_All, quick_flush) ) {
                 ERR_POST_X(9, Info << "Failed to initialize log: " << file_name);
                 return false;
             }
@@ -6817,22 +6822,33 @@ extern bool SetLogFile(const string& file_name,
         CFileDiagHandler* handler =
             dynamic_cast<CFileDiagHandler*>(GetDiagHandler());
         if ( !handler ) {
+            bool old_ownership = false;
             CStreamDiagHandler_Base* sub_handler =
-                dynamic_cast<CStreamDiagHandler_Base*>(GetDiagHandler());
+                dynamic_cast<CStreamDiagHandler_Base*>(GetDiagHandler(false, &old_ownership));
+            if ( !sub_handler ) {
+                old_ownership = false;
+            }
             // Install new handler, try to re-use the old one
             auto_ptr<CFileDiagHandler> fhandler(new CFileDiagHandler());
-            // If we are going to set all three handlers, no need to save
-            // the old one.
             if ( sub_handler  &&  file_type != eDiagFile_All) {
-                GetDiagHandler(true); // Take ownership!
+                // If we are going to set all handlers, no need to save the old one.
+                if ( old_ownership ) {
+                    GetDiagHandler(true); // Take ownership!
+                }
                 // Set all three handlers to the old one.
-                fhandler->SetSubHandler(sub_handler, eDiagFile_All, false);
+                fhandler->SetSubHandler(sub_handler, eDiagFile_All, old_ownership);
             }
             if ( fhandler->SetLogFile(file_name, file_type, quick_flush) ) {
+                // This will delete the old handler in case of eDiagFile_All.
+                // Otherwise the new handler will remember the ownership.
                 SetDiagHandler(fhandler.release());
                 return true;
             }
             else {
+                // Restore the old handler's ownership if necessary.
+                if ( old_ownership ) {
+                    SetDiagHandler(sub_handler, true);
+                }
                 return false;
             }
         }

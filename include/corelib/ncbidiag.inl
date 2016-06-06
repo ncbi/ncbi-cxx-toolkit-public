@@ -100,7 +100,8 @@ class CDiagBuffer
     // Handler
     NCBI_XNCBI_EXPORT friend void
     SetDiagHandler(CDiagHandler* handler, bool can_delete);
-    NCBI_XNCBI_EXPORT friend CDiagHandler* GetDiagHandler(bool take_ownership);
+    NCBI_XNCBI_EXPORT friend CDiagHandler* GetDiagHandler(bool take_ownership,
+                                                          bool* current_ownership);
     NCBI_XNCBI_EXPORT friend bool IsSetDiagHandler(void);
 
     // Error code information
