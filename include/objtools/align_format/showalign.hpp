@@ -35,7 +35,7 @@
 #define OBJTOOLS_ALIGN_FORMAT___SHOWALIGN_HPP
 
 #include <corelib/ncbireg.hpp>
-#include <corelib/hash_set.hpp>
+#include <unordered_set>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -255,7 +255,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     }
 
     //Display pariwise seqalign for the set of seq IDS (for future use)
-    void DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <string> selectedIDs);        
+    void DisplayPairwiseSeqalign(CNcbiOstream& out,unordered_set <string> selectedIDs);        
     //Data representing templates for defline display 
     struct SAlignTemplates {
         string alignHeaderTmpl; ///< Template for displaying header,deflines and gene info  - BLAST_ALIGN_HEADER
