@@ -117,7 +117,12 @@ CBlockingQueue_ForServer::Put(const TRequest& data)
 {
     CMutexGuard guard(m_Mutex);
     if (m_Queue.empty()) {
+        #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
         m_GetCond.SignalAll();
+        #else
+        m_GetSem.TryWait(); // is this still needed?
+        m_GetSem.Post();
+        #endif
     }
     TItemHandle handle(new CQueueItem(data));
     m_Queue.push_back(handle);
@@ -130,11 +135,23 @@ CBlockingQueue_ForServer::GetHandle(void)
     CMutexGuard guard(m_Mutex);
 
     while (m_Queue.empty()) {
+        #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
         m_GetCond.WaitForSignal(m_Mutex);
+        #else
+        m_GetSem.TryWait();
+        m_GetSem.Post();
+        #endif
     }
 
     TItemHandle handle(m_Queue.front());
     m_Queue.pop_front();
+
+    #ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
+    if (!m_Queue.empty()) {
+        m_GetSem.TryWait();
+        m_GetSem.Post();
+    }
+    #endif
 
     guard.Release(); // avoid possible deadlocks from x_SetStatus
     handle->x_SetStatus(CQueueItemBase::eActive);
