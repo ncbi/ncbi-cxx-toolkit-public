@@ -156,7 +156,7 @@ protected:
     /// Initialize the server
     ///
     /// Called by Run method before poll cycle.
-    virtual void Init();
+    virtual void Init() {}
 
     /// Cleanup the server
     ///
@@ -164,12 +164,12 @@ protected:
     /// are stopped, but before releasing listening ports. Here you're still
     /// guaranteed that another instance running on the same set of ports will
     /// fail at StartListening point.
-    virtual void Exit();
+    virtual void Exit() {}
 
     /// Runs synchronously when no socket activity has occurred in a
     /// while (as determined by m_AcceptTimeout).
     /// @sa m_Parameters->accept_timeout
-    virtual void ProcessTimeout(void) { }
+    virtual void ProcessTimeout(void) {}
 
     /// Runs synchronously between iterations.
     /// @return
@@ -177,7 +177,6 @@ protected:
     virtual bool ShutdownRequested(void) { return false; }
 
 private:
-    void x_AddRequests(const vector<CRef<CStdRequest> >& reqs);
     void x_DoRun(void);
 
     friend class CNetCacheServer;

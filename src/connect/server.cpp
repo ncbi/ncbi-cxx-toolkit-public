@@ -117,12 +117,7 @@ CBlockingQueue_ForServer::Put(const TRequest& data)
 {
     CMutexGuard guard(m_Mutex);
     if (m_Queue.empty()) {
-#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
         m_GetCond.SignalAll();
-#else
-        m_GetSem.TryWait(); // is this still needed?
-        m_GetSem.Post();
-#endif
     }
     TItemHandle handle(new CQueueItem(data));
     m_Queue.push_back(handle);
@@ -135,22 +130,11 @@ CBlockingQueue_ForServer::GetHandle(void)
     CMutexGuard guard(m_Mutex);
 
     while (m_Queue.empty()) {
-#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
         m_GetCond.WaitForSignal(m_Mutex);
-#else
-        m_GetSem.TryWait();
-        m_GetSem.Post();
-#endif
     }
 
     TItemHandle handle(m_Queue.front());
     m_Queue.pop_front();
-#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
-    if (!m_Queue.empty()) {
-        m_GetSem.TryWait();
-        m_GetSem.Post();
-    }
-#endif
 
     guard.Release(); // avoid possible deadlocks from x_SetStatus
     handle->x_SetStatus(CQueueItemBase::eActive);
@@ -195,7 +179,7 @@ CThreadInPool_ForServer::x_HandleOneRequest(bool catch_all)
     if (catch_all) {
         try {
             ProcessRequest(handle);
-        } catch (std::exception& e) {
+        } catch (const std::exception &  e) {
             handle->MarkAsForciblyCaught();
             NCBI_REPORT_EXCEPTION_X(9, "Exception from thread in pool: ", e);
             // throw;
@@ -664,12 +648,10 @@ void CServer::x_DoRun(void)
     vector<CSocketAPI::SPoll> polls;
     size_t     count;
     typedef vector<IServer_ConnectionBase*> TConnsList;
-    typedef vector<CRef<CStdRequest> > TReqsList;
     TConnsList timer_requests;
     TConnsList revived_conns;
     TConnsList to_close_conns;
     TConnsList to_delete_conns;
-    TReqsList to_add_reqs;
     STimeout timer_timeout;
     const STimeout* timeout;
 
@@ -685,24 +667,22 @@ void CServer::x_DoRun(void)
             CRef<CStdRequest> req(conn_base->CreateRequest(
                                                 evt, *m_ConnectionPool,
                                                 m_Parameters->idle_timeout));
-            to_add_reqs.push_back(req);
+            m_ThreadPool->AcceptRequest(req);
         }
         ITERATE(TConnsList, it, to_close_conns) {
             IServer_ConnectionBase* conn_base = *it;
             CRef<CStdRequest> req(conn_base->CreateRequest(
                                                 eServIO_Inactivity, *m_ConnectionPool,
                                                 m_Parameters->idle_timeout));
-            to_add_reqs.push_back(req);
+            m_ThreadPool->AcceptRequest(req);
         }
         ITERATE(TConnsList, it, to_delete_conns) {
             IServer_ConnectionBase* conn_base = *it;
             CRef<CStdRequest> req(conn_base->CreateRequest(
                                                 eServIO_Delete, *m_ConnectionPool,
                                                 m_Parameters->idle_timeout));
-            to_add_reqs.push_back(req);
+            m_ThreadPool->AcceptRequest(req);
         }
-        x_AddRequests(to_add_reqs);
-        to_add_reqs.clear();
 
         timeout = m_Parameters->accept_timeout;
 
@@ -746,17 +726,22 @@ void CServer::x_DoRun(void)
                     IServer_ConnectionBase* conn_base = *it;
                     CRef<CStdRequest> req(conn_base->CreateRequest(
                                           (EServIO_Event)-1, *m_ConnectionPool, timeout));
-                    to_add_reqs.push_back(req);
+                    m_ThreadPool->AcceptRequest(req);
                 }
-                x_AddRequests(to_add_reqs);
-                to_add_reqs.clear();
             }
             continue;
         }
 
         m_ConnectionPool->SetAllActive(polls);
         ITERATE (vector<CSocketAPI::SPoll>, it, polls) {
-            if (!it->m_REvent) continue;
+            if (!it->m_REvent)
+                continue;
+            CTrigger *      trigger = dynamic_cast<CTrigger *>(it->m_Pollable);
+            if (trigger) {
+                trigger->Reset();
+                continue;
+            }
+
             IServer_ConnectionBase* conn_base =
                 dynamic_cast<IServer_ConnectionBase*>(it->m_Pollable);
             _ASSERT(conn_base);
@@ -764,11 +749,8 @@ void CServer::x_DoRun(void)
                                                 IOEventToServIOEvent(it->m_REvent),
                                                 *m_ConnectionPool,
                                                 m_Parameters->idle_timeout));
-            if (req)
-                to_add_reqs.push_back(req);
+            m_ThreadPool->AcceptRequest(req);
         }
-        x_AddRequests(to_add_reqs);
-        to_add_reqs.clear();
     }
 }
 
@@ -781,7 +763,7 @@ void CServer::Run(void)
     if (s_ServerCatchExceptions->Get()) {
         try {
             x_DoRun();
-        } catch (CException& ex) {
+        } catch (const CException &  ex) {
             ERR_POST(ex);
             // Avoid collateral damage from destroying the thread pool
             // while worker threads are active (or, worse, initializing).
@@ -824,23 +806,6 @@ void CServer::DeferConnectionProcessing(CSocket* sock)
     DeferConnectionProcessing(dynamic_cast<IServer_ConnectionBase*>(sock));
 }
 
-
-void CServer::Init()
-{
-}
-
-
-void CServer::Exit()
-{
-}
-
-
-void CServer::x_AddRequests(const vector<CRef<CStdRequest> >& reqs)
-{
-    ITERATE(vector<CRef<CStdRequest> >, it, reqs) {
-        m_ThreadPool->AcceptRequest(*it);
-    }
-}
 
 void CServer::AddConnectionToPool(CServer_Connection* conn)
 {

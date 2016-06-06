@@ -46,16 +46,6 @@
 BEGIN_NCBI_SCOPE
 
 
-class CServer_ControlConnection : public CSocket,
-                                  public IServer_ConnectionBase
-{
-public:
-    virtual CStdRequest* CreateRequest(EServIO_Event event,
-                                       CServer_ConnectionPool& connPool,
-                                       const STimeout* timeout);
-};
-
-
 class CServer_ConnectionPool
 {
 public:
@@ -103,12 +93,10 @@ private:
 
     typedef set<TConnBase*> TData;
 
-    TData           m_Data;
-    mutable CMutex  m_Mutex;
-    unsigned int    m_MaxConnections;
-    CSocket         m_ControlSocket;
-    mutable CServer_ControlConnection m_ControlSocketForPoll;
-    CFastMutex      m_ControlMutex;
+    TData               m_Data;
+    mutable CMutex      m_Mutex;
+    unsigned int        m_MaxConnections;
+    mutable CTrigger    m_ControlTrigger;
 };
 
 

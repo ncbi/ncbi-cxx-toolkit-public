@@ -91,9 +91,6 @@ public:
 
     /// Constructor
     CBlockingQueue_ForServer(void)
-#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
-        : m_GetSem(0,1)
-#endif
     {}
 
     /// Put a request into the queue.  If the queue remains full for
@@ -138,12 +135,8 @@ protected:
     typedef deque<TItemHandle> TRealQueue;
 
     // Derived classes should take care to use these members properly.
-    TRealQueue m_Queue;     ///< The queue
-#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+    TRealQueue          m_Queue;     ///< The queue
     CConditionVariable  m_GetCond;
-#else
-    CSemaphore          m_GetSem;    ///< Raised if the queue contains data
-#endif
     mutable CMutex      m_Mutex;     ///< Guards access to queue
 
 private:

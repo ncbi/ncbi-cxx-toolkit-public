@@ -56,43 +56,9 @@ std::string g_ServerConnTypeToString(enum EServerConnType  conn_type)
 }
 
 
-// CServer_ControlConnection
-CStdRequest* CServer_ControlConnection::CreateRequest(
-                                            EServIO_Event event,
-                                            CServer_ConnectionPool& connPool,
-                                            const STimeout* timeout)
-{
-    char buf[4096];
-    Read(buf, sizeof(buf));
-    return NULL;
-}
-
-static void CheckIOStatus(EIO_Status io_status, const char* step)
-{
-    if (io_status != eIO_Success) {
-        NCBI_THROW_FMT(CConnException, eConn,
-                       "Cannot create signaling socket for internal use: " <<
-                       step << ": " << IO_StatusStr(io_status));
-    }
-}
-
 CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
-        m_MaxConnections(max_connections)
-{
-    // Create internal signaling connection from m_ControlSocket to
-    // m_ControlSocketForPoll
-    CListeningSocket listener;
-    static const STimeout kTimeout = { 10, 500000 }; // 10.5s // DEBUG
-    CheckIOStatus(listener.Listen(0, 5, fSOCK_BindLocal), "Listen/Bind");
-    CheckIOStatus(m_ControlSocket.Connect("127.0.0.1",
-        listener.GetPort(eNH_HostByteOrder)), "Connect");
-    m_ControlSocket.DisableOSSendDelay();
-    // Set a (modest) timeout to prevent SetConnType from blocking forever
-    // with m_Mutex held, which could deadlock the whole server.
-    CheckIOStatus(m_ControlSocket.SetTimeout(eIO_Write,
-        &kTimeout), "SetTimeout");
-    CheckIOStatus(listener.Accept(m_ControlSocketForPoll), "Accept");
-}
+    m_MaxConnections(max_connections)
+{}
 
 CServer_ConnectionPool::~CServer_ConnectionPool()
 {
@@ -184,11 +150,10 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EServerConnType type)
 
 void CServer_ConnectionPool::PingControlConnection(void)
 {
-    CFastMutexGuard guard(m_ControlMutex);
-    EIO_Status status = m_ControlSocket.Write("", 1, NULL, eIO_WritePlain);
+    EIO_Status status = m_ControlTrigger.Set();
     if (status != eIO_Success) {
         ERR_POST_X(4, Warning
-                   << "PingControlConnection: failed to write to control socket: "
+                   << "PingControlConnection: failed to set control trigger: "
                    << IO_StatusStr(status));
     }
 }
@@ -228,15 +193,16 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
     to_close_conns.clear();
     to_delete_conns.clear();
 
-    CMutexGuard guard(m_Mutex);
-    // Control socket goes here as well
-    polls.reserve(m_Data.size()+1);
-    polls.push_back(CSocketAPI::SPoll(
-                    dynamic_cast<CPollable*>(&m_ControlSocketForPoll), eIO_Read));
-    CTime current_time(CTime::eEmpty);
-    const CTime* alarm_time = NULL;
-    const CTime* min_alarm_time = NULL;
-    bool alarm_time_defined = false;
+    const CTime *   alarm_time = NULL;
+    const CTime *   min_alarm_time = NULL;
+    bool            alarm_time_defined = false;
+    CTime           current_time(CTime::eEmpty);
+
+    CMutexGuard     guard(m_Mutex);
+
+    // Control trigger goes here as well
+    polls.push_back(CSocketAPI::SPoll(&m_ControlTrigger, eIO_Read));
+
     ERASE_ITERATE(TData, it, m_Data) {
         // Check that socket is not processing packet - safeguards against
         // out-of-order packet processing by effectively pulling socket from
@@ -322,11 +288,15 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
 void CServer_ConnectionPool::SetAllActive(const vector<CSocketAPI::SPoll>& polls)
 {
     ITERATE(vector<CSocketAPI::SPoll>, it, polls) {
-        if (!it->m_REvent) continue;
+        if (!it->m_REvent)
+            continue;
+
+        CTrigger *      trigger = dynamic_cast<CTrigger *>(it->m_Pollable);
+        if (trigger)
+            continue;
+
         IServer_ConnectionBase* conn_base =
                         dynamic_cast<IServer_ConnectionBase*>(it->m_Pollable);
-        if (conn_base == &m_ControlSocketForPoll)
-            continue;
 
         conn_base->type_lock.Lock();
         if (conn_base->type == eInactiveSocket)
