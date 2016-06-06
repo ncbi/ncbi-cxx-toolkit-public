@@ -1,26 +1,21 @@
+
 # Preconditions:
 # - MS SQL access required for the service
 def Delete( locator,
             allowBackendFallback = True ):
 
-    if DBRecordExists(locator):
+    # status is one of the following:
+    # - expired
+    # - not found
+    status = DBRemoveObject(locator)
+    if status == Expired:
+        return "ObjectExpired"
 
-        if IsObjectExpired(locator):
-            return "ObjectExpired"
+    if status == NotFound:
+        if not allowBackendFallback:
+            return "NotFound"
 
-        DeleteFromBackend(locator)  # Warning could be generated
-                                    # Backend object not found
-
-        DeleteAttributes(locator)
-        DeleteObject(locator)
-        return "OK"
-
-    # Here: object record does not exist
-
-    if allowBackendFallback:
-        report = DeleteFromBackend(locator)
-        if report == "NotFound":
-            return Warning( "ObjectNotFound" )
-        return "OK"
-    else:
-        return Warning( "ObjectNotFound" )
+    report = DeleteFromBackend(locator)
+    if report == "NotFound":
+        return "ObjectNotFound"
+    return "OK"
