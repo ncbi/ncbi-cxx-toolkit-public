@@ -120,6 +120,7 @@ CFormatGuessApp::Run(void)
     FormatStrings[ CFormatGuess::eGff2 ] = "GFF2 feature table";
     FormatStrings[ CFormatGuess::eGff3 ] = "GFF3 feature table";
     FormatStrings[ CFormatGuess::eGvf ] = "GVF gene variation data";
+    FormatStrings[ CFormatGuess::eVcf ] = "VCF Variant Call Format";
     CFormatGuess Guesser( strFileName );
     CFormatGuess::EFormat uFormat = Guesser.GuessFormat();
 
