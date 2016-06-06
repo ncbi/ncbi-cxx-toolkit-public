@@ -320,3 +320,13 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "False positive in operator<<()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=MSVCR120.dll,func=flsbuf;
+		}
+	}
+}
