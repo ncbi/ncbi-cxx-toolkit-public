@@ -484,6 +484,9 @@
 /* Define to 1 if Python 2.7 libraries are available. */
 #undef HAVE_PYTHON27
 
+/* Define to 1 if Python 3 libraries are available. */
+#undef HAVE_PYTHON3
+
 /* Define to 1 if you have the `readpassphrase' function. */
 #undef HAVE_READPASSPHRASE
 
