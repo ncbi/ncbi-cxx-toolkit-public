@@ -2462,11 +2462,6 @@ CNetStorageHandler::x_ProcessDelete(
 
         x_CheckExpirationStatus(status);
         if (status == kSPObjectNotFound) {
-            AppendWarning(reply,
-                          NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
-                          kObjectNotFound,
-                          kScopeLogic, eObjectNotFoundWarning);
-
             if (allow_backend_fallback == false) {
                 // It is forbidden to consult to the backend so pretend that
                 // the object does not exist there either
