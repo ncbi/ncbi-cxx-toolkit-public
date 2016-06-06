@@ -1,0 +1,6 @@
+# $Id$
+LIB = lapackwrapp
+SRC = ncbi_lapack
+
+LIBS     = $(LAPACK_LIBS) $(ORIG_LIBS)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(LAPACK_INCLUDE)

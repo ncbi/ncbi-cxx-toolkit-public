@@ -1,0 +1,8 @@
+# $Id$
+LIB_PROJ = lapackwrapp
+
+REQUIRES = LAPACK
+WATCHERS = ucko
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

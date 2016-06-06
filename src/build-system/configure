@@ -829,6 +829,8 @@ MONGODB_INCLUDE
 MONGODB_LIBS
 GMOCK_INCLUDE
 GMOCK_LIBS
+LAPACK_INCLUDE
+LAPACK_LIBS
 signature
 build_root
 top_srcdir
@@ -1605,7 +1607,7 @@ bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
-magic curl mimetic gsoap avro cereal sasl2 mongodb gmock 3psw \
+magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1675,7 +1677,7 @@ for x_arg in "$@" ; do
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2* | --with-mongodb=* \
-      | --with-gmock=* )
+      | --with-gmock=* | --with-lapack=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -1986,6 +1988,8 @@ Optional Packages:
  --without-mongodb       do not use MongoDB
  --with-gmock=DIR        use Google Mock installation in DIR
  --without-gmock         do not use Google Mock
+ --with-lapack=DIR       use LAPACK installation in DIR
+ --without-lapack        do not use LAPACK
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
@@ -2520,6 +2524,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_gmock=no
+         fi
+        if test "${with_lapack-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-lapack but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_lapack=no
          fi
 
       $as_unset NCBI || test "${NCBI+set}" != set || { NCBI=; export NCBI; }
@@ -3997,6 +4007,18 @@ fi
 # Check whether --with-gmock2 was given.
 if test "${with_gmock2+set}" = set; then
   withval=$with_gmock2;
+fi
+
+
+# Check whether --with-lapack was given.
+if test "${with_lapack+set}" = set; then
+  withval=$with_lapack;
+fi
+
+
+# Check whether --with-lapack2 was given.
+if test "${with_lapack2+set}" = set; then
+  withval=$with_lapack2;
 fi
 
 
@@ -45369,6 +45391,476 @@ _ACEOF
 
 
 
+# LAPACK
+CPPFLAGS="-DHAVE_LAPACK_CONFIG_H $orig_CPPFLAGS"
+case "$with_lapack" in
+   yes | no | '' ) ;;
+   *             ) LAPACK_PATH=$with_lapack ;;
+esac
+if test -d "$LAPACK_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $LAPACK_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $LAPACK_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            LAPACK_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$LAPACK_PATH" in
+               /*) ;;
+               * ) LAPACK_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) LAPACK_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   CPPFLAGS="-I$LAPACK_PATH/include $CPPFLAGS"
+fi
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+
+
+
+for ac_header in lapacke.h lapacke/lapacke.h clapack.h Accelerate/Accelerate.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## ---------------------------------------- ##
+## Report this to cpp-core@ncbi.nlm.nih.gov ##
+## ---------------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+if test "$ac_cv_header_clapack_h:$ac_cv_header_Accelerate_Accelerate_h" != no:no; then
+   { echo "$as_me:$LINENO: checking for __CLPK_integer" >&5
+echo $ECHO_N "checking for __CLPK_integer... $ECHO_C" >&6; }
+if test "${ac_cv_type___CLPK_integer+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#ifdef HAVE_CLAPACK_H
+        #  include <clapack.h>
+	#else
+	#  include <Accelerate/Accelerate.h>
+	#endif
+
+typedef __CLPK_integer ac__type_new_;
+int
+main ()
+{
+if ((ac__type_new_ *) 0)
+  return 0;
+if (sizeof (ac__type_new_))
+  return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_type___CLPK_integer=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_type___CLPK_integer=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_type___CLPK_integer" >&5
+echo "${ECHO_T}$ac_cv_type___CLPK_integer" >&6; }
+if test $ac_cv_type___CLPK_integer = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE___CLPK_INTEGER 1
+_ACEOF
+
+
+fi
+
+fi
+
+if test "$with_lapack" != "no"; then
+    case "$with_lapack" in
+       yes | "" ) ;;
+       *        ) LAPACK_PATH=$with_lapack ;;
+    esac
+    if test "$LAPACK_PATH" != /usr -a -d "$LAPACK_PATH"; then
+       in_path=" in $LAPACK_PATH"
+       if test -z "$LAPACK_INCLUDE" -a -d "$LAPACK_PATH/include"; then
+          LAPACK_INCLUDE="-I$LAPACK_PATH/include"
+       fi
+       if test -n "$LAPACK_LIBPATH"; then
+          :
+       elif test -d "$LAPACK_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LAPACK_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LAPACK_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LAPACK_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LAPACK_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$LAPACK_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LAPACK_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LAPACK_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LAPACK_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LAPACK_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       LAPACK_LIBS="$LAPACK_LIBPATH -llapack -lblas"
+    else
+       LAPACK_INCLUDE=""
+       LAPACK_LIBS="-llapack -lblas"
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for liblapack$in_path" >&5
+echo $ECHO_N "checking for liblapack$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_lapack+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $LAPACK_INCLUDE $orig_CPPFLAGS"
+       LIBS="$LAPACK_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+extern "C" int dsyev_();
+int
+main ()
+{
+return dsyev_();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_lapack=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_lapack=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_lapack" >&5
+echo "${ECHO_T}$ncbi_cv_lib_lapack" >&6; }
+    if test "$ncbi_cv_lib_lapack" = "no"; then
+       if test "${with_lapack:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-lapack explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-lapack explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_lapack" = "no"; then
+    LAPACK_PATH="No_LAPACK"
+    LAPACK_INCLUDE=
+    LAPACK_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}LAPACK"; WithPackagesSep=" "
+    LAPACK_INCLUDE=" $LAPACK_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBLAPACK 1
+_ACEOF
+
+ fi
+
+
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -45801,7 +46293,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK; do
+  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -47161,6 +47653,8 @@ MONGODB_INCLUDE!$MONGODB_INCLUDE$ac_delim
 MONGODB_LIBS!$MONGODB_LIBS$ac_delim
 GMOCK_INCLUDE!$GMOCK_INCLUDE$ac_delim
 GMOCK_LIBS!$GMOCK_LIBS$ac_delim
+LAPACK_INCLUDE!$LAPACK_INCLUDE$ac_delim
+LAPACK_LIBS!$LAPACK_LIBS$ac_delim
 signature!$signature$ac_delim
 build_root!$build_root$ac_delim
 top_srcdir!$top_srcdir$ac_delim
@@ -47229,8 +47723,6 @@ lib_ext!$lib_ext$ac_delim
 dll_ext!$dll_ext$ac_delim
 loadable_ext!$loadable_ext$ac_delim
 lib_l_ext!$lib_l_ext$ac_delim
-exe_ext!$exe_ext$ac_delim
-f_compile!$f_compile$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -47272,6 +47764,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+exe_ext!$exe_ext$ac_delim
+f_compile!$f_compile$ac_delim
 f_outobj!$f_outobj$ac_delim
 f_outlib!$f_outlib$ac_delim
 f_libpath!$f_libpath$ac_delim
@@ -47367,8 +47861,6 @@ WXWIDGETS_LIBS!$WXWIDGETS_LIBS$ac_delim
 WXWIDGETS_STATIC_LIBS!$WXWIDGETS_STATIC_LIBS$ac_delim
 WXWIDGETS_GL_LIBS!$WXWIDGETS_GL_LIBS$ac_delim
 WXWIDGETS_GL_STATIC_LIBS!$WXWIDGETS_GL_STATIC_LIBS$ac_delim
-WXWIDGETS_POST_LINK!$WXWIDGETS_POST_LINK$ac_delim
-FASTCGI_INCLUDE!$FASTCGI_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -47410,6 +47902,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+WXWIDGETS_POST_LINK!$WXWIDGETS_POST_LINK$ac_delim
+FASTCGI_INCLUDE!$FASTCGI_INCLUDE$ac_delim
 FASTCGI_LIBS!$FASTCGI_LIBS$ac_delim
 FASTCGI_OBJS!$FASTCGI_OBJS$ac_delim
 NCBI_SSS_INCLUDE!$NCBI_SSS_INCLUDE$ac_delim
@@ -47494,7 +47988,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 82; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 84; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

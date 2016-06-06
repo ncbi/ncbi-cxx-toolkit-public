@@ -70,8 +70,8 @@ case "$with_3psw" in
                      wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
-                     oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm,
-                     magic, curl, gsoap, avro, cereal, sasl2, mongodb, gmock],
+                     oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
+                     curl, gsoap, avro, cereal, sasl2, mongodb, gmock, lapack],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -485,6 +485,10 @@ AC_ARG_WITH(gmock,
    [ --with-gmock=DIR        use Google Mock installation in DIR])
 AC_ARG_WITH(gmock2,
    [ --without-gmock         do not use Google Mock])
+AC_ARG_WITH(lapack,
+   [ --with-lapack=DIR       use LAPACK installation in DIR])
+AC_ARG_WITH(lapack2,
+   [ --without-lapack        do not use LAPACK])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw2,
@@ -546,7 +550,7 @@ bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
-magic curl mimetic gsoap avro cereal sasl2 mongodb gmock 3psw \
+magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -615,7 +619,7 @@ for x_arg in "$@" ; do
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2* | --with-mongodb=* \
-      | --with-gmock=* )
+      | --with-gmock=* | --with-lapack=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -7322,6 +7326,33 @@ NCBI_CHECK_THIRD_PARTY_LIB(gmock,
        testing::InitGoogleMock(&my_argc, my_argv);])],
    [-lgtest])
 
+
+# LAPACK
+CPPFLAGS="-DHAVE_LAPACK_CONFIG_H $orig_CPPFLAGS"
+case "$with_lapack" in
+   yes | no | '' ) ;;
+   *             ) LAPACK_PATH=$with_lapack ;;
+esac
+if test -d "$LAPACK_PATH"; then
+   NCBI_FIX_DIR(LAPACK_PATH)
+   CPPFLAGS="-I$LAPACK_PATH/include $CPPFLAGS"
+fi
+AC_LANG_PUSH(C)
+AC_CHECK_HEADERS(lapacke.h lapacke/lapacke.h clapack.h Accelerate/Accelerate.h)
+AC_LANG_POP(C)
+if test "$ac_cv_header_clapack_h:$ac_cv_header_Accelerate_Accelerate_h" != no:no; then
+   AC_CHECK_TYPES([__CLPK_integer], [], [],
+      [[#ifdef HAVE_CLAPACK_H
+        #  include <clapack.h>
+	#else
+	#  include <Accelerate/Accelerate.h>
+	#endif]])
+fi
+
+NCBI_CHECK_THIRD_PARTY_LIB(lapack,
+   [AC_LANG_PROGRAM([[extern "C" int dsyev_();]],
+      [[return dsyev_();]])],
+   [-lblas])
 
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"

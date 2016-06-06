@@ -3,6 +3,9 @@
 /* Define to 1 if necessary to get FIONBIO (e.g., on Solaris) */
 #undef BSD_COMP
 
+/* Define to 1 if you have the <Accelerate/Accelerate.h> header file. */
+#undef HAVE_ACCELERATE_ACCELERATE_H
+
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 
@@ -64,6 +67,9 @@
 
 /* Define to 1 if the `Boost.Thread' library is available. */
 #undef HAVE_BOOST_THREAD
+
+/* Define to 1 if you have the <clapack.h> header file. */
+#undef HAVE_CLAPACK_H
 
 /* Define to 1 if the preprocessor supports GNU-style variadic macros. */
 #undef HAVE_CPP_GNU_VARARGS
@@ -203,6 +209,12 @@
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #undef HAVE_IOS_REGISTER_CALLBACK
 
+/* Define to 1 if you have the <lapacke.h> header file. */
+#undef HAVE_LAPACKE_H
+
+/* Define to 1 if you have the <lapacke/lapacke.h> header file. */
+#undef HAVE_LAPACKE_LAPACKE_H
+
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
@@ -289,6 +301,9 @@
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBKSTAT
+
+/* Define to 1 if liblapack is available. */
+#undef HAVE_LIBLAPACK
 
 /* Define to 1 if liblzo2 is available. */
 #undef HAVE_LIBLZO
@@ -711,6 +726,9 @@
 
 /* Define to 1 if Zorba is available. */
 #undef HAVE_ZORBA
+
+/* Define to 1 if the system has the type `__CLPK_integer'. */
+#undef HAVE___CLPK_INTEGER
 
 /* Full GNU-style system type */
 #undef HOST
