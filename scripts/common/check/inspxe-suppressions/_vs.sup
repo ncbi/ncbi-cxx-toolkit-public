@@ -330,3 +330,16 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "False positive in fclose()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=MSVCR120.dll,func=write;
+			...;
+			mod=MSVCR120.dll,func=fclose;
+			func=close,src=fstream;
+		}
+	}
+}
