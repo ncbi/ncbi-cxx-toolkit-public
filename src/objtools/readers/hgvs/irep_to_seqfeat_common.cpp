@@ -5,8 +5,7 @@
 #include <objtools/readers/hgvs/irep_to_seqfeat_errors.hpp>
 
 BEGIN_NCBI_SCOPE
-//BEGIN_objects_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 CRef<CDelta_item> CDeltaHelper::CreateSSR(const CCount& count, 
         CRef<CSeq_literal> seq_literal,
@@ -77,6 +76,6 @@ CRef<CDelta_item> CDeltaHelper::CreateSSR(const CCount& count,
 }
 
 
-//END_objects_SCOPE
+END_SCOPE(objects)
 END_NCBI_SCOPE
 

@@ -6,8 +6,7 @@
 
 
 BEGIN_NCBI_SCOPE
-
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 void AssignRefSeqIdentifier(const string& identifier, CRef<CVariantExpression>& result);
 
@@ -178,6 +177,7 @@ void AssignNtIdentity(CRef<CNtLocation>& nt_loc,
 
 void AssignSequenceType(const string& type, CRef<CSequenceVariant>& result);
 
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif

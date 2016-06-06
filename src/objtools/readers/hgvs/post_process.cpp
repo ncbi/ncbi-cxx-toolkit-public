@@ -7,7 +7,7 @@
 #include <corelib/ncbidiag.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 CRef<CSeq_literal> CPostProcessUtils::GetLiteralAtLoc(const CSeq_loc& loc, CScope& scope) const
 {
@@ -383,4 +383,5 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
     return;
 }
 
+END_SCOPE(objects)
 END_NCBI_SCOPE

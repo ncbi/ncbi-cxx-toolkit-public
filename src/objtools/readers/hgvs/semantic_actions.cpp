@@ -2,6 +2,7 @@
 #include <objtools/readers/hgvs/semantic_actions.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 template <typename T>
 CRef<T> MakeResult(CRef<T> result) 
@@ -767,6 +768,7 @@ void AssignSequenceType(const string& type_string, CRef<CSequenceVariant>& resul
     result->SetSeqtype(seq_type);
 }
 
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 

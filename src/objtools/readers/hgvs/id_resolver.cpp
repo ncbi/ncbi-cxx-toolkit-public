@@ -8,7 +8,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
 CIdResolver::CIdResolver(CScope& scope)  : m_Scope(scope),
     m_LRGregex(new CRegexp("^(LRG_\\d+)([pt]\\d+)?$")),
     m_CCDSregex(new CRegexp("^CCDS\\d+\\.\\d+$")),

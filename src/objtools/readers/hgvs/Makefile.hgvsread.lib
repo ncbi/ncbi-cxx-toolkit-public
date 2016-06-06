@@ -4,7 +4,8 @@ SRC = hgvs_lexer hgvs_parser hgvs_protein_parser \
       hgvs_nucleic_acid_parser semantic_actions \
       hgvs_validator id_resolver irep_to_seqfeat_common \
       irep_to_seqfeat_errors na_irep_to_seqfeat \
-      protein_irep_to_seqfeat post_process variation_ref_utils 
+      protein_irep_to_seqfeat post_process variation_ref_utils \
+      special_irep_to_seqfeat
 
 USES_LIBRARIES = varrep $(PCRE_LIBS)
 

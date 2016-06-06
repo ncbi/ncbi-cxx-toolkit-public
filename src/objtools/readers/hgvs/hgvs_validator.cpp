@@ -479,6 +479,5 @@ void CHgvsVariantValidator::x_ValidateNtCode(const string& nt_code, const bool i
     } 
 }
 
-
 END_SCOPE(objects)
 END_NCBI_SCOPE

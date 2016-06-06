@@ -10,8 +10,7 @@
 #include <objtools/readers/hgvs/hgvs_special_variant_parser.hpp>
 
 BEGIN_NCBI_SCOPE
-
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 using TParseIterator = SHgvsLexer::iterator_type;
 
@@ -80,6 +79,7 @@ struct SHgvsProteinGrammar : boost::spirit::qi::grammar<TParseIterator, CRef<CVa
     SHgvsSpecialVariantGrammar special_variant;
 };
 
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif // _HGVS_PROTEIN_PARSER_HPP_

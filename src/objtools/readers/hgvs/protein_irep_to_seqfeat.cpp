@@ -7,11 +7,12 @@
 #include <objtools/readers/hgvs/irep_to_seqfeat_errors.hpp>
 #include <objtools/readers/hgvs/irep_to_seqfeat_common.hpp>
 #include <objtools/readers/hgvs/variation_ref_utils.hpp>
-
+#include <objtools/readers/hgvs/special_irep_to_seqfeat.hpp>
+#include <objtools/readers/hgvs/post_process.hpp>
 
 BEGIN_NCBI_SCOPE
-//BEGIN_objects_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
+
 USING_SCOPE(NHgvsTestUtils);
 
 CNCBIeaa CHgvsProtIrepReader::x_ConvertToNcbieaa(string aa_seq) const
@@ -154,10 +155,11 @@ CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSeqfeat(const string& var_name,
 }
 
 
-
-CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(CRef<CVariantExpression>& variant_expr) const 
+// Make CreateSeqfeat a method of the base class, CHgvsIrepReader.
+// Make x_CreateSeqfeat a virtual method, maybe.
+CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(const CVariantExpression& variant_expr) const 
 {
-    const auto& sequence_variant = variant_expr->GetSequence_variant();
+    const auto& sequence_variant = variant_expr.GetSequence_variant();
     if (sequence_variant.IsSetComplex()) {
         string message;
         if (sequence_variant.GetComplex() == CSequenceVariant::eComplex_chimera) {
@@ -170,48 +172,59 @@ CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(CRef<CVariantExpression>& var
         NCBI_THROW(CVariationIrepException, eUnsupported, message);
     }    
 
-    const auto& simple_variant = sequence_variant.GetSubvariants().front()->GetSimple();
+
+    CRef<CVariant> subvariant = variant_expr.GetSequence_variant().GetSubvariants().front();
+
     const auto seq_type = sequence_variant.GetSeqtype();
 
     if (seq_type != eVariantSeqType_p) {
         NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Protein sequence expected");
     }
 
-    return x_CreateSeqfeat(variant_expr->GetInput_expr(),
-                           variant_expr->GetReference_id(),
-                           simple_variant);
+
+    if (subvariant->IsSpecial()) {
+        CConstRef<CSeq_id> seq_id = m_IdResolver->GetAccessionVersion(variant_expr.GetReference_id()).GetSeqId();
+        ESpecialVariant special_type = static_cast<ESpecialVariant>(subvariant->GetSpecial());
+        return g_CreateSpecialSeqfeat(special_type, *seq_id, variant_expr.GetInput_expr());
+    }
+
+
+    const CSimpleVariant& simple_variant = subvariant->GetSimple();
+
+    CRef<CSeq_feat> unnormalized_variant = x_CreateSeqfeat(variant_expr.GetInput_expr(),
+                                                           variant_expr.GetReference_id(),
+                                                           simple_variant);
+
+    return g_NormalizeVariationSeqfeat(*unnormalized_variant, &m_Scope);
 }
 
 
-list<CRef<CSeq_feat>> CHgvsProtIrepReader::CreateSeqfeats(CRef<CVariantExpression>& variant_expr) const 
+list<CRef<CSeq_feat>> CHgvsProtIrepReader::CreateSeqfeats(const CVariantExpression& variant_expr) const 
 {
     list<CRef<CSeq_feat>> feat_list;
 
-    const auto& seq_var = variant_expr->GetSequence_variant();
-  //  for (const auto& seq_var : variant_expr->GetSeqvars()) {
+    const auto& seq_var = variant_expr.GetSequence_variant();
 
-        const auto seq_type = seq_var.GetSeqtype();
-        if (seq_type != eVariantSeqType_p) {
-            NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Protein sequence expected");
+    const auto seq_type = seq_var.GetSeqtype();
+    if (seq_type != eVariantSeqType_p) {
+        NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Protein sequence expected");
+    }
+
+    for (const auto& variant : seq_var.GetSubvariants()) {
+        const auto& simple_variant = variant->GetSimple();
+
+        auto seq_feat = x_CreateSeqfeat(variant_expr.GetInput_expr(),
+                                        variant_expr.GetReference_id(),
+                                        simple_variant);
+        if (seq_feat.NotNull()) {
+            feat_list.push_back(seq_feat);
         }
-
-        for (const auto& variant : seq_var.GetSubvariants()) {
-            const auto& simple_variant = variant->GetSimple();
-
-            auto seq_feat = x_CreateSeqfeat(variant_expr->GetInput_expr(),
-                                            variant_expr->GetReference_id(),
-                                            simple_variant);
-            if (seq_feat.NotNull()) {
-                feat_list.push_back(seq_feat);
-            }
-        }
-  //  }
+    }
 
     return feat_list;
 }
 
 
-// Need to add support for special variants
 
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarref(const string& var_name,
@@ -578,7 +591,6 @@ CRef<CSeq_loc> CAaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
     return seq_loc;
 }
 
-
-//END_objects_SCOPE
+END_SCOPE(objects)
 END_NCBI_SCOPE
 

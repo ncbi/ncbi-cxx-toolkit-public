@@ -9,12 +9,10 @@
 #include <objects/varrep/varrep__.hpp>
 
 BEGIN_NCBI_SCOPE
-
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 using TParseIterator = SHgvsLexer::iterator_type;
 
-//struct SHgvsSpecialVariantGrammar :  boost::spirit::qi::grammar<TParseIterator, string()>
 struct SHgvsSpecialVariantGrammar :  boost::spirit::qi::grammar<TParseIterator, ESpecialVariant()>
 {
     SHgvsSpecialVariantGrammar(const SHgvsLexer& tok);
@@ -22,7 +20,7 @@ struct SHgvsSpecialVariantGrammar :  boost::spirit::qi::grammar<TParseIterator, 
     TRule variant_expression;
 };
 
-
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 

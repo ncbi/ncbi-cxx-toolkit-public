@@ -4,12 +4,12 @@
 #include <objtools/readers/hgvs/irep_to_seqfeat_errors.hpp>
 #include <objtools/readers/hgvs/irep_to_seqfeat_common.hpp>
 #include <objtools/readers/hgvs/variation_ref_utils.hpp>
-
+#include <objtools/readers/hgvs/special_irep_to_seqfeat.hpp>
+#include <objtools/readers/hgvs/post_process.hpp>
 
 BEGIN_NCBI_SCOPE
-//BEGIN_objects_SCOPE
+BEGIN_SCOPE(objects)
 
-USING_SCOPE(objects);
 USING_SCOPE(NHgvsTestUtils);
 
 CRef<CSeq_literal> CHgvsNaIrepReader::x_CreateNtSeqLiteral(const string& raw_seq) const
@@ -90,19 +90,14 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaSubVarref(const CNtLocation& n
 
     { 
         CSeq_data result(final_nt, CSeq_data::e_Iupacna);
-        //auto subvar_ref = Ref(new CVariation_ref());
 
         CRef<CVariation_ref> subvar_ref;
         if (final_nt.size() > 1) {
             subvar_ref = g_CreateMNP(result,
                                      final_nt.size(),
                                      offset);
-     //       subvar_ref->SetMNP(result, 
-     //                          final_nt.size(),
-     //                          offset);
         } else {
             subvar_ref = g_CreateSNV(result, offset);
-            //subvar_ref->SetSNV(result, offset);
         }
         if (method != CVariation_ref::eMethod_E_unknown) {
             subvar_ref->SetMethod().push_back(method);
@@ -157,8 +152,6 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDeletionVarref(const CDeletion& 
         auto& var_set = var_ref->SetData().SetSet();
         var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
         {
-           // auto subvar_ref = Ref(new CVariation_ref());
-           // subvar_ref->SetDeletion(start_offset, stop_offset);
             auto subvar_ref = g_CreateDeletion(start_offset, stop_offset);
             if (method != CVariation_ref::eMethod_E_unknown) {
                 subvar_ref->SetMethod().push_back(method);
@@ -486,10 +479,11 @@ CRef<CSeq_feat> CHgvsNaIrepReader::x_CreateSeqfeat(const string& var_name,
     return seq_feat;
 }
 
-
-CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(CRef<CVariantExpression>& variant_expr) const 
+// Could make CreateSeqfeat a base class method
+// x_CreateSeqfeat could be a virtual method, which has to be implemented in both cases, maybe
+CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(const CVariantExpression& variant_expr) const 
 {
-    const auto& sequence_variant = variant_expr->GetSequence_variant();
+    const auto& sequence_variant = variant_expr.GetSequence_variant();
 
     if (sequence_variant.IsSetComplex()) {
         string message;
@@ -504,40 +498,54 @@ CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(CRef<CVariantExpression>& varia
     }
 
 
-    const auto& simple_variant = variant_expr->GetSequence_variant().GetSubvariants().front()->GetSimple();
-    const auto seq_type = variant_expr->GetSequence_variant().GetSeqtype();
+    CRef<CVariant> subvariant = variant_expr.GetSequence_variant().GetSubvariants().front();
+
+
+    const auto seq_type = variant_expr.GetSequence_variant().GetSeqtype();
 
     if (seq_type == eVariantSeqType_p || 
         seq_type == eVariantSeqType_u) {
         // Throw an exception - invalid sequence type
     }
 
-    return x_CreateSeqfeat(variant_expr->GetInput_expr(),
-                           variant_expr->GetReference_id(),
-                           seq_type,
-                           simple_variant);
+    if (subvariant->IsSpecial()) {
+        CConstRef<CSeq_id> seq_id = m_IdResolver->GetAccessionVersion(variant_expr.GetReference_id()).GetSeqId();
+        ESpecialVariant special_type = static_cast<ESpecialVariant>(subvariant->GetSpecial());
+        return g_CreateSpecialSeqfeat(special_type, *seq_id, variant_expr.GetInput_expr());
+    }
+
+   
+    const CSimpleVariant& simple_variant = subvariant->GetSimple();
+
+    CRef<CSeq_feat> unnormalized_seqfeat = x_CreateSeqfeat(variant_expr.GetInput_expr(),
+                                                           variant_expr.GetReference_id(),
+                                                           seq_type,
+                                                           simple_variant);
+    
+    return g_NormalizeVariationSeqfeat(*unnormalized_seqfeat, &m_Scope);
 }
 
-list<CRef<CSeq_feat>> CHgvsNaIrepReader::CreateSeqfeats(CRef<CVariantExpression>& variant_expr) const 
+
+list<CRef<CSeq_feat>> CHgvsNaIrepReader::CreateSeqfeats(const CVariantExpression& variant_expr) const 
 {
     list<CRef<CSeq_feat>> feat_list;
 
-    const auto& seq_var = variant_expr->GetSequence_variant();
+    const auto& seq_var = variant_expr.GetSequence_variant();
 
-        const auto seq_type = seq_var.GetSeqtype();
+    const auto seq_type = seq_var.GetSeqtype();
 
-        for (const auto& variant : seq_var.GetSubvariants()) {
-            const auto& simple_variant = variant->GetSimple();
+    for (const auto& variant : seq_var.GetSubvariants()) {
+        const auto& simple_variant = variant->GetSimple();
 
-            auto seq_feat = x_CreateSeqfeat(variant_expr->GetInput_expr(),
-                                            variant_expr->GetReference_id(),
-                                            seq_type,
-                                            simple_variant);
+        auto seq_feat = x_CreateSeqfeat(variant_expr.GetInput_expr(),
+                                        variant_expr.GetReference_id(),
+                                        seq_type,
+                                        simple_variant);
 
-            if (seq_feat.NotNull()) {
-                feat_list.push_back(seq_feat);
-            }
+        if (seq_feat.NotNull()) {
+            feat_list.push_back(seq_feat);
         }
+    }
     return feat_list;
 }
 
@@ -1209,7 +1217,6 @@ CRef<CDelta_item> CHgvsNaDeltaHelper::GetStopIntronOffset(const CNtLocation& nt_
 }
 
 
-
-//END_objects_SCOPE
+END_SCOPE(objects)
 END_NCBI_SCOPE
 

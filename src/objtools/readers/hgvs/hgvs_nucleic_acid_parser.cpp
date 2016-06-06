@@ -12,6 +12,7 @@ using boost::phoenix::bind;
 
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 
 SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) : 

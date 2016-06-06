@@ -12,6 +12,7 @@ using boost::spirit::qi::_a;
 using boost::phoenix::bind;
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 void IsMet1(const CRef<CAaSite>& aa_site, boost::spirit::unused_type context, bool& match)
 {

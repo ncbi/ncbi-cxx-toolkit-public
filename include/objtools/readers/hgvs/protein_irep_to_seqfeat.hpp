@@ -14,10 +14,10 @@
 #include <objects/varrep/varrep__.hpp>
 #include <objtools/readers/hgvs/irep_to_seqfeat_errors.hpp>
 #include <objtools/readers/hgvs/id_resolver.hpp>
+#include <objtools/readers/hgvs/irep_to_seqfeat.hpp>
 
 BEGIN_NCBI_SCOPE
-//BEGIN_objects_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 class CAaSeqlocHelper 
 {
@@ -40,17 +40,18 @@ public:
 };
 
 
-class CHgvsProtIrepReader 
+class CHgvsProtIrepReader : public CHgvsIrepReader
 {
 public:
         using TSet = CVariation_ref::C_Data::C_Set;
         using TDelta = CVariation_inst::TDelta::value_type;
-       
+ 
         CHgvsProtIrepReader(CScope& scope, CVariationIrepMessageListener& message_listener) 
-            : m_Scope(scope), 
-              m_IdResolver(Ref(new CIdResolver(scope))), 
-              m_MessageListener(message_listener) {}
+            : CHgvsIrepReader(scope, message_listener) {}
 
+        CRef<CSeq_feat> CreateSeqfeat(const CVariantExpression& variant_expr) const;
+
+        list<CRef<CSeq_feat>> CreateSeqfeats(const CVariantExpression& variant_expr) const;
  private:
         CSeq_data::TNcbieaa x_ConvertToNcbieaa(string aa_seq) const;
 
@@ -101,21 +102,13 @@ public:
                                                const CRepeat& ssr,
                                                const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
-        CScope& m_Scope;
-        CRef<CIdResolver> m_IdResolver;
-        CVariationIrepMessageListener& m_MessageListener;
-
         CRef<CSeq_feat> x_CreateSeqfeat(const string& var_name,
                                         const string& identifier,
                                         const CSimpleVariant& var_desc) const;
 
-public:
-        CRef<CSeq_feat> CreateSeqfeat(CRef<CVariantExpression>& variant_expr) const;
-
-        list<CRef<CSeq_feat>> CreateSeqfeats(CRef<CVariantExpression>& variant_expr) const;
 }; // CHgvsProtIrepReader
 
-//END_objects_SCOPE
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif // _PROTEIN_IREP_TO_SEQFEAT_HPP_

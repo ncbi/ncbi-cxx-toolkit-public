@@ -11,7 +11,7 @@
 #include <objects/valerr/ValidErrItem.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 class CPostProcessUtils 
 {
@@ -66,8 +66,7 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat,
                                 CScope* scope,
                                 bool IsCDS=false);
 
-
+END_SCOPE(objects)
 END_NCBI_SCOPE
-
 
 #endif // _POST_PROCESS_HPP_

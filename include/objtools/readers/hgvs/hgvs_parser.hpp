@@ -5,6 +5,7 @@
 #include <objtools/readers/hgvs/hgvs_nucleic_acid_parser.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 struct SHgvsVariantGrammar : boost::spirit::qi::grammar<SHgvsLexer::iterator_type, CRef<CVariantExpression>()>
 {
@@ -31,6 +32,7 @@ private:
 };
 
 
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif // _HGVS_PARSER_HPP_

@@ -7,6 +7,7 @@ using boost::spirit::qi::_val;
 using boost::phoenix::bind;
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 template<class T>
 CRef<T> MakeResultIfNull(CRef<T> result)
@@ -23,9 +24,6 @@ void s_SimpleAssign(CRef<CVariant>& result)
 SHgvsSpecialVariantGrammar::SHgvsSpecialVariantGrammar(const SHgvsLexer& tok) :
     SHgvsSpecialVariantGrammar::base_type(variant_expression)
 {
-//    variant_expression = tok.unknown_val [ bind(s_SimpleAssign, _val) ] |
-//                         ( "(" >> tok.unknown_val >> ")" ) [ bind(s_SimpleAssign, _val) ];
-
 
     variant_expression = tok.unknown_val [ _val = eSpecialVariant_unknown ] |
                          ( "(" >> tok.unknown_val >> ")" ) [ _val = eSpecialVariant_not_analyzed ] |

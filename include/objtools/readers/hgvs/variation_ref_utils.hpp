@@ -4,7 +4,7 @@
 #include <objects/seqfeat/Variation_ref.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects);
 BEGIN_SCOPE(NHgvsTestUtils)
 
 CRef<CVariation_ref> g_CreateSNV(const CSeq_data& nucleotide, 
@@ -57,7 +57,9 @@ CRef<CVariation_ref> g_CreateConversion(const CSeq_loc& interval,
 
 CRef<CVariation_ref> g_CreateFrameshift(void);
 
+
 END_SCOPE(NHgvsTestUtils)
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif

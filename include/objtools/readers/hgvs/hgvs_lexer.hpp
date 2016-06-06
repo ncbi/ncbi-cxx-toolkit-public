@@ -1,9 +1,7 @@
 #ifndef _HGVS_LEXER_HPP_
 #define _HGVS_LEXER_HPP_
 
-
 #include <boost/spirit/include/lex_lexertl.hpp>
-
 
 namespace lex = boost::spirit::lex;
 

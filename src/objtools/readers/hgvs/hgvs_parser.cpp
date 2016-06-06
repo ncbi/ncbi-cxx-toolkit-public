@@ -2,7 +2,7 @@
 #include <objtools/readers/hgvs/hgvs_parser.hpp>
 
 BEGIN_NCBI_SCOPE
-
+USING_SCOPE(objects);
 
 SHgvsVariantGrammar::SHgvsVariantGrammar(const SHgvsLexer& tok) : 
     protein_variant(tok),
