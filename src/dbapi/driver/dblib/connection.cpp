@@ -233,11 +233,43 @@ CDB_CursorCmd* CDBL_Connection::Cursor(const string& cursor_name,
 }
 
 
+void CDBL_Connection::x_SetExtraMsg(const I_BlobDescriptor& descr,
+                                   size_t data_size)
+{
+    CNcbiOstrstream oss;
+    oss << "Data size: " << data_size;
+    if (descr.DescriptorType() == CDBL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
+        const CDBL_BlobDescriptor& dbldescr 
+            = static_cast<const CDBL_BlobDescriptor&>(descr);
+        oss << " Destination: " << dbldescr.m_ObjName
+            << " WHERE TEXTPTR(...) = 0x";
+        if ( !dbldescr.m_TxtPtr_is_NULL ) {
+            char buffer[DBTXPLEN * 2];
+            size_t n = impl::binary_to_hex_string
+                (buffer, sizeof(buffer), dbldescr.m_TxtPtr, DBTXPLEN,
+                 impl::fB2H_NoFinalNul | impl::fB2H_NoPrefix);
+            oss << CTempString(buffer, n);
+        }
+    } else {
+        const CDB_BlobDescriptor* dbdescr
+            = dynamic_cast<const CDB_BlobDescriptor*>(&descr);
+        if (dbdescr != NULL) {
+            oss << " Destination: " << dbdescr->TableName() << '.'
+                << dbdescr->ColumnName() << " WHERE "
+                << dbdescr->SearchConditions();
+        }
+    }
+    string extra_msg = CNcbiOstrstreamToString(oss);
+    SetExtraMsg(extra_msg);
+}
+
+
 CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_BlobDescriptor& descr_in,
                                               size_t data_size,
                                               bool log_it,
                                               bool /*dump_results*/)
 {
+    x_SetExtraMsg(descr_in, data_size);
     CHECK_DRIVER_ERROR( data_size < 1, "Wrong (zero) data size." + GetDbgInfo(), 210092 );
 
     I_BlobDescriptor* p_desc= 0;
@@ -249,6 +281,8 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_BlobDescriptor& descr_in,
             (dynamic_cast<CDB_BlobDescriptor&>(descr_in));
         if (p_desc == NULL) {
             return NULL;
+        } else {
+            x_SetExtraMsg(*p_desc, data_size);
         }
     }
 
@@ -374,6 +408,8 @@ bool CDBL_Connection::x_SendData(I_BlobDescriptor& descr_in,
     if (size < 1)
         return false;
 
+    x_SetExtraMsg(descr_in, size);
+
     I_BlobDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
@@ -382,6 +418,7 @@ bool CDBL_Connection::x_SendData(I_BlobDescriptor& descr_in,
         p_desc = x_GetNativeBlobDescriptor
             (dynamic_cast<CDB_BlobDescriptor&>(descr_in));
         if(p_desc == 0) return false;
+        x_SetExtraMsg(*p_desc, size);
     }
 
 

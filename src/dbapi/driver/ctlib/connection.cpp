@@ -711,11 +711,40 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 }
 
 
+void CTL_Connection::x_SetExtraMsg(const I_BlobDescriptor& descr,
+                                   size_t data_size)
+{
+    CNcbiOstrstream oss;
+    oss << "Data size: " << data_size;
+    if (descr.DescriptorType() == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
+        const CS_IODESC& iodesc
+            = static_cast<const CTL_BlobDescriptor&>(descr).m_Desc;
+        char buffer[CS_TP_SIZE * 2];
+        size_t n = impl::binary_to_hex_string
+            (buffer, sizeof(buffer), iodesc.textptr, iodesc.textptrlen,
+             impl::fB2H_NoFinalNul | impl::fB2H_NoPrefix);
+        oss << " Destination: " << CTempString(iodesc.name, iodesc.namelen)
+            << " WHERE TEXTPTR(...) = 0x" << CTempString(buffer, n);
+    } else {
+        const CDB_BlobDescriptor* dbdescr
+            = dynamic_cast<const CDB_BlobDescriptor*>(&descr);
+        if (dbdescr != NULL) {
+            oss << " Destination: " << dbdescr->TableName() << '.'
+                << dbdescr->ColumnName() << " WHERE "
+                << dbdescr->SearchConditions();
+        }
+    }
+    string extra_msg = CNcbiOstrstreamToString(oss);
+    SetExtraMsg(extra_msg);
+}
+
+
 CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_BlobDescriptor& descr_in,
                                              size_t data_size,
                                              bool log_it,
                                              bool dump_results)
 {
+    x_SetExtraMsg(descr_in, data_size);
     CTL_SendDataCmd* sd_cmd = new CTL_SendDataCmd(*this,
                                                   descr_in,
                                                   data_size,
@@ -888,6 +917,8 @@ bool CTL_Connection::x_SendData(I_BlobDescriptor& descr_in, CDB_Stream& stream,
     if ( !size )
         return false;
 
+    x_SetExtraMsg(descr_in, size);
+
     if (IsDead()) {
         DATABASE_DRIVER_ERROR("Connection has died." + GetDbgInfo(), 122012);
     }
@@ -911,6 +942,8 @@ bool CTL_Connection::x_SendData(I_BlobDescriptor& descr_in, CDB_Stream& stream,
         } else if (static_cast<CTL_BlobDescriptor*>(p_desc)->m_Desc.textptrlen
                    <= 0) {
             return x_SendUpdateWrite(*dbdesc, stream, size);
+        } else {
+            x_SetExtraMsg(*p_desc, size);
         }
     }
 

@@ -238,6 +238,7 @@ protected:
     virtual void SetCancelTimeout(size_t nof_secs);
 
 private:
+    void x_SetExtraMsg(const I_BlobDescriptor& descr, size_t data_size);
     bool x_SendData(I_BlobDescriptor& desc, CDB_Stream& img,
                     bool log_it = true);
     I_BlobDescriptor* x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& d);

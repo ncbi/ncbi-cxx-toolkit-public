@@ -490,6 +490,7 @@ protected:
 private:
     void x_LoadTextPtrProcs(void);
     void x_CmdAlloc(CS_COMMAND** cmd);
+    void x_SetExtraMsg(const I_BlobDescriptor& descr, size_t data_size);
     bool x_SendData(I_BlobDescriptor& desc, CDB_Stream& img,
                     bool log_it = true);
     bool x_SendUpdateWrite(CDB_BlobDescriptor& desc, CDB_Stream& img,
