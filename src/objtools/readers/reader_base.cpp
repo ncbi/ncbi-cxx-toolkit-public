@@ -451,7 +451,7 @@ void CReaderBase::xAssignTrackData(
     if ( !m_pTrackDefaults->Name().empty() ) {
         annot->SetNameDesc(m_pTrackDefaults->Name());
     }
-    map<string,string>::const_iterator cit = m_pTrackDefaults->Values().begin();
+    map<const string,string>::const_iterator cit = m_pTrackDefaults->Values().begin();
     while ( cit != m_pTrackDefaults->Values().end() ) {
         trackdata->AddField( cit->first, cit->second );
         ++cit;
