@@ -1307,13 +1307,7 @@ void CMultiReaderApp::xPostProcessAnnot(
 
     edit::CFeatTableEdit fte(annot, prefix, startingLocusTagNumber, m_pErrors);
     fte.InferPartials();
-    if (args["euk"].AsBoolean()) {
-        fte.GenerateMissingMrnaForCds();
-        fte.GenerateMissingGeneForMrna();
-    }
-    else {
-        fte.GenerateMissingGeneForCds();
-    }
+    fte.GenerateMissingParentFeatures(args["euk"].AsBoolean());
     fte.EliminateBadQualifiers();
     fte.GenerateLocusTags();
     fte.GenerateProteinAndTranscriptIds();

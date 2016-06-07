@@ -606,6 +606,38 @@ void CFeatTableEdit::GenerateLocusTags()
 	}
 }
 
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::GenerateMissingParentFeatures(
+    bool forEukaryote)
+//  ----------------------------------------------------------------------------
+{
+    if (forEukaryote) {
+        GenerateMissingParentFeaturesForEukaryote();
+    }
+    else {
+        GenerateMissingParentFeaturesForProkaryote();
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::GenerateMissingParentFeaturesForEukaryote()
+//  ----------------------------------------------------------------------------
+{
+    GenerateMissingMrnaForCds();
+    GenerateMissingGeneForMrna();
+}
+
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::GenerateMissingParentFeaturesForProkaryote()
+//  ----------------------------------------------------------------------------
+{
+    GenerateMissingGeneForCds();
+}
+
+
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::xFeatureAddQualifier(
     CMappedFeat mf,

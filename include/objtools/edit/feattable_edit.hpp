@@ -70,7 +70,10 @@ public:
     void GenerateMissingMrnaForCds();
     void GenerateMissingGeneForMrna();
     void GenerateMissingGeneForCds();
-
+    void GenerateMissingParentFeatures(
+        bool forEukaryote);
+    void GenerateMissingParentFeaturesForEukaryote();
+    void GenerateMissingParentFeaturesForProkaryote();
     unsigned int PendingLocusTagNumber() const {
         return mLocusTagNumber;
     }
