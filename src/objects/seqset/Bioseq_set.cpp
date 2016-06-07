@@ -207,9 +207,10 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
     if (!best_seq_id) {
         *label += "(No Bioseqs)";
     } else {
-        CNcbiOstrstream os;
-        os << best_seq_id->DumpAsFasta();
-        *label += CNcbiOstrstreamToString(os);
+        //CNcbiOstrstream os;
+        //os << best_seq_id->DumpAsFasta();
+        //*label += CNcbiOstrstreamToString(os);
+        *label += best_seq_id->GetSeqIdString();
         if (this->IsSetSeq_set()) {
             const TSeq_set& sset = this->GetSeq_set();
             size_t len = sset.size();

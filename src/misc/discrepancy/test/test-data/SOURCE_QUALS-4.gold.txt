@@ -14,609 +14,609 @@ Detailed Report
 
 SOURCE_QUALS: fwd-primer-name (all present, some duplicates, some multi)
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 10f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 11f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 12f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 13f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 14f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 15f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 16f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 17f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 18f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 19f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 1f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 20f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 21f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 22f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 23f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 24f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 2f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 3f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 4f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 5f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 6f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 7f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 8f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-name = 9f
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: fwd-primer-seq (all present, some duplicates, some multi)
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = aatcgcccactctttccc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = acaataccacaaccaactccac
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = acacgatagctaggacccaaactg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = acagcttcatgcccattgtact
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = acgcgcatataagcaggtaaat
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = actagtattagaggcaatgcctg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = agcagaatatgccaacatcatc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = aggtgaaagccctatatgcctc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = atcattctgaggagctacggtc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = caaccaaaacaagcattccattcg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = caataataaccatggccctagc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = cacagctctcataattgcccac
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = cagccctaatcgtaaccatcat
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = catgactcctcccccttatact
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = cctaactacgtaaaaaccaccg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = cctataacaccagccctctcgt
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = cctgacgctatagagatagtaccg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = ctaaacacctcaatcctcctcg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = gagcatcccaaacaaacaatct
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = gaggttcaactcctctccctaat
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = ggcggcaatattaaatgatcac
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = gggtatttctactcatccgctt
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = tagcccactttctaccacaagg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier fwd-primer-seq = ttctgactacttccaccatcct
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: location (all present, all same)
 SOURCE_QUALS: 4 biosources have qualifier location = mitochondrion
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: rev-primer-name (all present, some duplicates, some multi)
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 10r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 11r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 12r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 13r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 14r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 15r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 16r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 17r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 18r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 19r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 1r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 20r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 21r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 22r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 23r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 24r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 2r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 3r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 4r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 5r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 6r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 7r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 8r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-name = 9r
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: rev-primer-seq (all present, some duplicates, some multi)
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = aagcttggatcagagctactgc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = aaggattcgtaatgatggaagg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = agatccgatgattacgtgcaac
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = agttgggtttgatttagccctc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = atataagtaaccctgcaagggc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = atgtgaagcaccgccaagtc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = caaagtgaatttttgctcatgc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = caggggtgtttggtattgagac
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = catgtgacgaatagtgctacgg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = cccaccaatctagtgaggactt
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = cttcacgggaaggttaatttcac
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = gactagcaattaatgcacgacg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = gcgttatagggtgtgtagagca
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = ggatcctgctagggtgtagaat
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = ggatgaaagaggttgtttttgg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = ggcttgctgggtatgagtagtt
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = gggcaggaagctttttcatagt
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = ggtaagtgcctgctttcgt
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = tattgctttgaagaaagcgtgc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = tcggatgttggtcatattaagg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = tctccgattagattgatggatg
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = tgggtgaaatggaattttgtct
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = ttgccacatagatgagttggttc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: 4 biosources have qualifier rev-primer-seq = ttggtgactagttttagggcatc
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: taxid (all present, all same)
 SOURCE_QUALS: 4 biosources have qualifier taxid = 9823
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: taxname (all present, all same)
 SOURCE_QUALS: 4 biosources have qualifier taxname = Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
 SOURCE_QUALS: tissue-type (all present, all same)
 SOURCE_QUALS: 4 biosources have qualifier tissue-type = ear of pig
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219| (14 components):Sus scrofa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220| (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194217 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194218 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194219 (14 components):Sus scrofa
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KT194217.sqn:KT194220 (14 components):Sus scrofa
 
