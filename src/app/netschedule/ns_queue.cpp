@@ -4070,14 +4070,10 @@ void CQueue::TouchClientsRegistry(CNSClientId &  client,
     TNSBitVector        running_jobs;
     TNSBitVector        reading_jobs;
 
-    {{
-        CFastMutexGuard     guard(m_OperationLock);
-        m_ClientsRegistry.Touch(client, running_jobs, reading_jobs,
-                                client_was_found, session_was_reset,
-                                old_session, had_wn_pref_affs,
-                                had_reader_pref_affs);
-    }}
-
+    m_ClientsRegistry.Touch(client, running_jobs, reading_jobs,
+                            client_was_found, session_was_reset,
+                            old_session, had_wn_pref_affs,
+                            had_reader_pref_affs);
 
     if (session_was_reset) {
         if (running_jobs.any())

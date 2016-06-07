@@ -75,10 +75,10 @@ CNSClientsRegistry::Touch(CNSClientId &          client,
     if (!client.IsComplete())
         return;
 
+    map< string, CNSClient >::iterator  known_client;
     CMutexGuard                         guard(m_Lock);
-    map< string, CNSClient >::iterator  known_client =
-                                             m_Clients.find(client.GetNode());
 
+    known_client = m_Clients.find(client.GetNode());
     if (known_client == m_Clients.end()) {
         // The client is not known yet
         CNSClient       new_ns_client(client, &m_BlacklistTimeout,
