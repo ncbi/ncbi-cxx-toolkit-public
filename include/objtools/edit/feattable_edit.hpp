@@ -109,6 +109,12 @@ protected:
         const CMappedFeat&);
     void xGenerateMissingGeneForSubtype(
         CSeqFeatData::ESubtype);
+    void xGenerateMissingGeneForChoice(
+        CSeqFeatData::E_Choice);
+    bool xCreateMissingParentGene(
+        CMappedFeat);
+    bool xAdjustExistingParentGene(
+        CMappedFeat);
 
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
