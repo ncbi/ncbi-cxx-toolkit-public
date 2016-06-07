@@ -7,27 +7,20 @@
 #include <boost/spirit/include/qi.hpp>
 #include <objtools/readers/hgvs/hgvs_parser_common.hpp>
 #include <objects/varrep/varrep__.hpp>
-#include <objtools/readers/hgvs/hgvs_special_variant_parser.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 using TParseIterator = SHgvsLexer::iterator_type;
 
-struct SHgvsNucleicAcidGrammar : boost::spirit::qi::grammar<TParseIterator, CRef<CVariantExpression>()>
+struct SHgvsNucleicAcidGrammar : boost::spirit::qi::grammar<TParseIterator, CRef<CSimpleVariant>()>
 {
     SHgvsNucleicAcidGrammar(const SHgvsLexer& tok);
 
     using TTerminal = boost::spirit::qi::rule<TParseIterator, std::string()>;
     template<typename T> using TRule = boost::spirit::qi::rule<TParseIterator, CRef<T>()>;
 
-    TRule<CVariantExpression> dna_expression;
-    TRule<CSequenceVariant> dna_seq_variants;
-    TRule<CSequenceVariant> dna_simple_seq_variant;
-    TRule<CSequenceVariant> dna_mosaic;
-    TRule<CSequenceVariant> dna_chimera;
-    TRule<CVariant> variant;
-    TRule<CSimpleVariant> simple_variation;
+    TRule<CSimpleVariant> simple_dna_variation;
     TRule<CSimpleVariant> fuzzy_simple_variation;
     TRule<CSimpleVariant> confirmed_simple_variation;
     TRule<CSimpleVariant> sub;
@@ -60,8 +53,6 @@ struct SHgvsNucleicAcidGrammar : boost::spirit::qi::grammar<TParseIterator, CRef
     TRule<CCount> fuzzy_count;
     TTerminal val_or_unknown;
     TTerminal nn_int;
-
-    SHgvsSpecialVariantGrammar special_variant;
 };
 
 END_SCOPE(objects)

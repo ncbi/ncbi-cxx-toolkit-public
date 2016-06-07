@@ -16,30 +16,10 @@ USING_SCOPE(objects);
 
 
 SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) : 
-    special_variant(tok),
-    SHgvsNucleicAcidGrammar::base_type(dna_expression)
+    SHgvsNucleicAcidGrammar::base_type(simple_dna_variation)
 
 {
-    dna_expression = tok.identifier ACTION1(AssignRefSeqIdentifier) >>
-                     dna_seq_variants ACTION1(AssignSequenceVariant);
-
-    dna_seq_variants = dna_simple_seq_variant | dna_chimera | dna_mosaic;
-
-    dna_simple_seq_variant = tok.na_tag ACTION1(AssignSequenceType) >> 
-                             variant ACTION1(AssignSingleVariation);
-
-    dna_mosaic = ( (tok.na_tag ACTION1(AssignSequenceType) >> 
-                 ( "[" >> (variant >> tok.slash) ACTION1(AssignSingleVariation) 
-                 >> variant ACTION1(AssignSingleVariation) >> "]" ) ) ) ACTION0(TagAsMosaic);
-
-    dna_chimera = ( (tok.na_tag ACTION1(AssignSequenceType) >> 
-                 ( "[" >> (variant >> tok.double_slash) ACTION1(AssignSingleVariation) 
-                 >> variant ACTION1(AssignSingleVariation) >> "]" ) ) ) ACTION0(TagAsChimera);
-
-    variant = simple_variation ACTION1(AssignSimpleVariant) | 
-              special_variant ACTION1(AssignSpecialVariant);
-
-    simple_variation = fuzzy_simple_variation | confirmed_simple_variation;
+    simple_dna_variation = fuzzy_simple_variation | confirmed_simple_variation;
 
     fuzzy_simple_variation = ("(" >> confirmed_simple_variation >> ")") ACTION1(AssignFuzzyLocalVariation);
 

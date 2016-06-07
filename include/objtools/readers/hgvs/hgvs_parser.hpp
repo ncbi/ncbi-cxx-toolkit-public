@@ -3,6 +3,7 @@
 
 #include <objtools/readers/hgvs/hgvs_protein_parser.hpp>
 #include <objtools/readers/hgvs/hgvs_nucleic_acid_parser.hpp>
+#include <objtools/readers/hgvs/hgvs_special_variant_parser.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -15,8 +16,24 @@ struct SHgvsVariantGrammar : boost::spirit::qi::grammar<SHgvsLexer::iterator_typ
     template<typename T> using TRule = boost::spirit::qi::rule<TParseIterator, CRef<T>()>;
 
     TRule<CVariantExpression> variant_expression;
-    SHgvsProteinGrammar protein_variant;
-    SHgvsNucleicAcidGrammar na_variant;
+
+    TRule<CVariantExpression> protein_expression;
+    TRule<CSequenceVariant> protein_seq_variants;
+    TRule<CSequenceVariant> protein_simple_seq_variant;
+    TRule<CSequenceVariant> protein_mosaic;
+    TRule<CSequenceVariant> protein_chimera;
+    TRule<CVariant> protein_variant;
+    SHgvsProteinGrammar  simple_protein_variant;
+
+    TRule<CVariantExpression> na_expression;
+    TRule<CSequenceVariant> na_seq_variants;
+    TRule<CSequenceVariant> na_simple_seq_variant;
+    TRule<CSequenceVariant> na_mosaic;
+    TRule<CSequenceVariant> na_chimera;
+    TRule<CVariant> na_variant;
+    SHgvsNucleicAcidGrammar simple_na_variant;
+
+    SHgvsSpecialVariantGrammar special_variant;
 };
 
 
