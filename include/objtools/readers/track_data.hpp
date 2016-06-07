@@ -23,54 +23,53 @@
  *
  * ===========================================================================
  *
- * Author:  Frank Ludwig
+ * Author: Frank Ludwig
  *
  * File Description:
- *   WIGGLE transient data structures
+ *   data structures of interest to multiple readers
  *
  */
 
-#include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include "reader_data.hpp"
+#ifndef OBJTOOLS_READERS___TRACKDATA__HPP
+#define OBJTOOLS_READERS___TRACKDATA__HPP
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
-//  ----------------------------------------------------------------------------
-bool CBrowserData::IsBrowserData(
-    const LineData& linedata )
-//  ----------------------------------------------------------------------------
+//  ============================================================================
+class NCBI_XOBJREAD_EXPORT CTrackData
+//  ============================================================================
 {
-    return ( !linedata.empty() && linedata[0] == "browser" );
-}
+public:
+    typedef std::vector<std::string> LineData;
+    typedef std::map<const std::string, std::string > TrackData;
+public:
+    CTrackData();
+    ~CTrackData() {};
+    bool ParseLine(
+        const LineData& );
+    static bool IsTrackData(
+        const LineData& );
+    const TrackData& Values() const {return mData;};
+    bool ContainsData() const {return !mData.empty();};
 
-//  ----------------------------------------------------------------------------
-bool CBrowserData::ParseLine(
-    const LineData& linedata )
-//  ----------------------------------------------------------------------------
-{
-    if ( !IsBrowserData(linedata) ) {
-        return false;
-    }
-    m_Data.clear();
+    //convenience accessors
+    string Type() const {return ValueOf("type");};
+    string Description() const {return ValueOf("description");};
+    string Name() const {return ValueOf("name");};
+    int Offset() const;
 
-    LineData::const_iterator cit = linedata.begin();
-    for ( cit++; cit != linedata.end(); ++cit ) {
-        string key, value;
-        m_Data[ key ] = value;
-    }
-    return true;
-}
+    string ValueOf(
+        const std::string&) const;
 
-//  ----------------------------------------------------------------------------
-const CBrowserData::BrowserData&
-CBrowserData::Values() const
-//  ----------------------------------------------------------------------------
-{
-    return m_Data;
-}
+protected:
+    TrackData mData;
+    //string m_strType;
+    //string m_strDescription;
+    //string m_strName;
+};
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+#endif // OBJTOOLS_READERS___TRACKDATA__HPP

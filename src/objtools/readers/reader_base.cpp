@@ -84,6 +84,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/track_data.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/readers/microarray_reader.hpp>

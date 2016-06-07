@@ -33,43 +33,69 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
-#include "reader_data.hpp"
+#include <objtools/readers/track_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-bool CBrowserData::IsBrowserData(
+CTrackData::CTrackData()
+//  ----------------------------------------------------------------------------
+{
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CTrackData::IsTrackData(
     const LineData& linedata )
 //  ----------------------------------------------------------------------------
 {
-    return ( !linedata.empty() && linedata[0] == "browser" );
+    return ( !linedata.empty() && linedata[0] == "track" );
 }
 
 //  ----------------------------------------------------------------------------
-bool CBrowserData::ParseLine(
+bool CTrackData::ParseLine(
     const LineData& linedata )
 //  ----------------------------------------------------------------------------
 {
-    if ( !IsBrowserData(linedata) ) {
+    if ( !IsTrackData(linedata) ) {
         return false;
     }
-    m_Data.clear();
+    string s = mData["name"];
+    mData.clear();
 
     LineData::const_iterator cit = linedata.begin();
     for ( cit++; cit != linedata.end(); ++cit ) {
         string key, value;
-        m_Data[ key ] = value;
+        NStr::SplitInTwo( *cit, "=", key, value );
+        value = NStr::Replace(value, "\"", " ");
+        NStr::TruncateSpacesInPlace(value);
+        mData[key] = value;
     }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
-const CBrowserData::BrowserData&
-CBrowserData::Values() const
+int CTrackData::Offset() const 
+//  ----------------------------------------------------------------------------
+{ 
+    string offset = ValueOf("offset");
+    if (offset.empty()) {
+        return 0;
+    }
+    return NStr::StringToInt(offset); 
+};
+
+//  ----------------------------------------------------------------------------
+string CTrackData::ValueOf(
+    const string& key) const
 //  ----------------------------------------------------------------------------
 {
-    return m_Data;
+    auto valueIt = mData.find(key);
+    if (valueIt != mData.end()) {
+        return valueIt->second;
+    }
+    return "";
 }
 
 END_SCOPE(objects)
