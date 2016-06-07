@@ -88,6 +88,11 @@ private:
         double max_identity;
     };
 
+    struct SAaStatus {
+        string aa;
+        string productive;
+    };
+
     struct sort_order {
         bool operator()(const SCloneNuc s1, const SCloneNuc s2) const
         {
@@ -112,8 +117,20 @@ private:
         }
     };
 
+    struct sort_order_aa_status {
+        bool operator()(const SAaStatus s1, const SAaStatus s2) const
+        {
+            if (s1.aa != s2.aa)
+                return s1.aa < s2.aa ? true : false;
+            
+            if (s1.productive != s2.productive)
+                return s1.productive < s2.productive ? true : false;
+                                                                        
+            return false;
+        }
+    };
 
-    typedef map<string, SAaInfo*> AaMap;
+    typedef map<SAaStatus, SAaInfo*, sort_order_aa_status> AaMap;
     typedef map<SCloneNuc, AaMap*, sort_order> CloneInfo;
     CloneInfo m_Clone;
     
@@ -316,9 +333,13 @@ int CIgBlastnApp::Run(void)
                     info->all_seqid = clone_info.seqid;
                     info->min_identity = clone_info.identity;
                     info->max_identity = clone_info.identity;
+                    
+                    SAaStatus aa_status;
+                    aa_status.aa = clone_info.aa;
+                    aa_status.productive = clone_info.productive;
                     CloneInfo::iterator iter = m_Clone.find(clone_nuc); 
                     if (iter != m_Clone.end()) {
-                        AaMap::iterator iter2 = iter->second->find(clone_info.aa);
+                        AaMap::iterator iter2 = iter->second->find(aa_status);
                         if (iter2 != (*iter->second).end()) {
                             if (info->min_identity < iter2->second->min_identity) {
                                 iter2->second->min_identity = info->min_identity;
@@ -330,11 +351,11 @@ int CIgBlastnApp::Run(void)
                             iter2->second->count  ++;
                             iter2->second->all_seqid = iter2->second->all_seqid + "," + info->seqid; 
                         } else {
-                            (*iter->second).insert(AaMap::value_type(clone_info.aa, info));
+                            (*iter->second).insert(AaMap::value_type(aa_status, info));
                         }
                         
                     } else {
-                        (*aa_info)[clone_info.aa] = info;
+                        (*aa_info)[aa_status] = info;
                         m_Clone.insert(CloneInfo::value_type(clone_nuc, aa_info));
                     }
                 }
@@ -360,12 +381,16 @@ int CIgBlastnApp::Run(void)
         
         
         if (!(ig_opts->m_IsProtein) && total_elements > 1) {
-            m_CmdLineArgs->GetOutputStream() << "\n" << "#Clonotype summary.  A particular clonotype includes any V(D)J rearrangements having the same germline V(D)J gene segments as well as the same CDR3 nucleotide and amino sequence (Rearrangements having the same CDR3 nucleotide but different amino acid sequence due to frameshift in V gene are assigned to a different clonotype.  However, they have the same identifier prefix, for example, 6a, 6b).  Fields (tab-delimited) are clonotype identifier, representative query sequence name, count, frequency (%), CDR3 nucleotide sequence, CDR3 amino acid sequence, chain type, V gene, D gene, J gene\n" << endl;
+            m_CmdLineArgs->GetOutputStream() << "\n" << "#Clonotype summary.  A particular clonotype includes any V(D)J rearrangements that have the same germline V(D)J gene segments, the same productive/non-productive status and the same CDR3 nucleotide as well as amino sequence (Those having the same CDR3 nucleotide but different amino acid sequence or productive/non-productive status due to frameshift in V or J gene are assigned to a different clonotype.  However, their clonotype identifers share the same prefix, for example, 6a, 6b).  Fields (tab-delimited) are clonotype identifier, representative query sequence name, count, frequency (%), CDR3 nucleotide sequence, CDR3 amino acid sequence, productive status, chain type, V gene, D gene, J gene\n" << endl;
             
             int count = 1; 
-            string suffix = "abc";
+            string suffix = "abcdefghijklmnop";  //4x4 possibility = 16.  empty string included.
             
             ITERATE(MapVec, iter, map_vec) {
+                if (count > args["num_clonotype"].AsInteger()) {
+                    break;
+                }
+
                 int aa_count = 0;
                 ITERATE(AaMap, iter2, *((*iter)->second)){
                     
@@ -383,7 +408,8 @@ int CIgBlastnApp::Run(void)
                         <<iter2->second->count<<"\t"
                         <<frequency<<"\t"
                         <<(*iter)->first->na<<"\t"
-                        <<iter2->first<<"\t"
+                        <<iter2->first.aa<<"\t"
+                        <<iter2->first.productive<<"\t"
                         <<(*iter)->first->chain_type<<"\t"
                         <<(*iter)->first->v_gene<<"\t"
                         <<(*iter)->first->d_gene<<"\t"
@@ -397,6 +423,9 @@ int CIgBlastnApp::Run(void)
             count = 1;
             m_CmdLineArgs->GetOutputStream() << "\n#All query sequences grouped by clonotypes.  Fields (tab-delimited) are clonotype identifier, count, min similarity to top germline V gene (%), max similarity to top germline V gene (%), query sequence name (multiple names are separated by a comma if applicable)"<< endl << endl;
             ITERATE(MapVec, iter, map_vec) {
+                if (count > args["num_clonotype"].AsInteger()) {
+                    break;
+                }
                 int aa_count = 0;
                 ITERATE(AaMap, iter2, *((*iter)->second)){
                     string clone_name = NStr::IntToString(count);   

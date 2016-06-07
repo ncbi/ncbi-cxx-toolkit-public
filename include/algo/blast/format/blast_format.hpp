@@ -74,6 +74,7 @@ public:
         string j_gene;
         string seqid;
         double identity;
+        string productive;
     };
 
     

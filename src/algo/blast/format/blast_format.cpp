@@ -788,12 +788,13 @@ static void s_SetCloneInfo(const CIgBlastTabularInfo& tabinfo,
         clone_info.seqid = GetTitle(handle).substr(0, 25);
     } else {
         string seqid;
-        handle.GetSeqId()->GetLabel(&seqid, CSeq_id::eFasta);
+        CRef<CSeq_id> wid = FindBestChoice(handle.GetBioseqCore()->GetId(), CSeq_id::WorstRank);
+        wid->GetLabel(&seqid, CSeq_id::eContent);
         clone_info.seqid = seqid.substr(0, 25);
         clone_info.seqid = clone_info.seqid.substr(0, 25);
     }
     tabinfo.GetIgInfo (clone_info.v_gene, clone_info.d_gene, clone_info.j_gene,
-                       clone_info.chain_type, clone_info.na, clone_info.aa);
+                       clone_info.chain_type, clone_info.na, clone_info.aa, clone_info.productive);
     clone_info.identity = 0;
     const vector<CIgBlastTabularInfo::SIgDomain*>& domains = tabinfo.GetIgDomains();
     int length = 0;
@@ -808,6 +809,7 @@ static void s_SetCloneInfo(const CIgBlastTabularInfo& tabinfo,
         clone_info.identity = ((double)num_match)/length;
         
     }
+   
 }
 
 void

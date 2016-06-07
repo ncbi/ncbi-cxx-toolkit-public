@@ -1449,6 +1449,12 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
         arg_desc.SetConstraint(kArgDPenalty, 
                                new CArgAllowValuesBetween(-6, 0));
+
+        arg_desc.AddDefaultKey(kArgNumClonotype, "num_clonotype",
+                                "Number of top clonotypes to show ",
+                               CArgDescriptions::eInteger, "100");
+        arg_desc.SetConstraint(kArgNumClonotype, 
+                               new CArgAllowValuesGreaterThanOrEqual(0));
        
     }
 
@@ -1475,6 +1481,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgMinVLength, "Min_V_Length",
                            "Minimal required V gene length",
                            CArgDescriptions::eInteger, "9");
+
     arg_desc.SetConstraint(kArgMinVLength, 
                            new CArgAllowValuesGreaterThanOrEqual(9));
     

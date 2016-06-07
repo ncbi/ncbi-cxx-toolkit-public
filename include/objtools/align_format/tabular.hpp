@@ -643,13 +643,15 @@ public:
                           string& j,
                           string& master_chain_to_show,
                           string& cdr3_nuc,
-                          string& cdr3_aa) const {
+                          string& cdr3_aa,
+                          string& productive) const {
         v = m_VGene.sid;
         d = m_DGene.sid;  
         j = m_JGene.sid;
         master_chain_to_show = m_MasterChainTypeToShow;
         cdr3_nuc = m_Cdr3Seq;
         cdr3_aa = m_Cdr3SeqTrans;
+        productive = m_OtherInfo[4];
     }
 
     ///Get Ig domain
@@ -677,7 +679,10 @@ private:
     SIgGene m_VGene;
     SIgGene m_DGene;
     SIgGene m_JGene;
-    vector<SIgDomain *> m_IgDomains;                                        
+    vector<SIgDomain *> m_IgDomains; 
+    // index 4, productive/non-productive
+    // index 3, stop codon or not
+
     vector<string> m_OtherInfo;
     int m_Cdr3Start;
     int m_Cdr3End;
