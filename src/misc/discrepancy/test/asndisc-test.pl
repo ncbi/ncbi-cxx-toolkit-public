@@ -186,6 +186,7 @@ sub normalize_detail
   $str=~s/(\(\S+,\s)(\S+:)/$1/g;
   $str=~s/^lcl\|//g;
   # C seems to prefer "()" for seq-loc-mix but C++ seems to prefer "[]"
+  $str=~s/\s*\(\d+ components?\)//g;
   $str=~s/[][)(]//g;
   #print "<< $str\n";
   return $str;
