@@ -858,11 +858,12 @@ void CMultiReaderApp::xProcessBed(
     }
     //TestCanceler canceler;
     //reader.SetCanceler(&canceler);
-    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(istr, m_pErrors);
+    CStreamLineReader lr( istr );
+    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     while(pAnnot) {
         xWriteObject(args, *pAnnot, ostr);
         pAnnot.Reset();
-        pAnnot = reader.ReadSeqAnnot(istr, m_pErrors);
+        pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     }
 }
 
