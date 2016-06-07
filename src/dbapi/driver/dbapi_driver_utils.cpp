@@ -99,6 +99,37 @@ SIZE_TYPE GetValidUTF8Len(const CTempString& ts)
     return len;
 }
 
+size_t binary_to_hex_string(char* buffer, size_t buffer_size,
+                            const void* value, size_t value_size,
+                            TBinaryToHexFlags flags)
+{
+    static const char s_HexDigits[] = "0123456789ABCDEF";
+
+    const unsigned char* c = (const unsigned char*) value;
+    size_t i = 0, margin = 0;
+    if ((flags & fB2H_NoFinalNul) == 0) {
+        margin += 1;
+    }
+    if ((flags & fB2H_NoPrefix) == 0) {
+        margin += 2;
+    }
+    if (value_size * 2 + margin > buffer_size) {
+        return 0;
+    }
+    if ((flags & fB2H_NoPrefix) == 0) {
+        buffer[i++] = '0';
+        buffer[i++] = 'x';
+    }
+    for (size_t j = 0;  j < value_size;  j++) {
+        buffer[i++] = s_HexDigits[c[j] >> 4];
+        buffer[i++] = s_HexDigits[c[j] & 0x0F];
+    }
+    if ((flags & fB2H_NoFinalNul) == 0) {
+        buffer[i + 1] = '\0';
+    }
+    return i;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 CDBBindedParams::CDBBindedParams(CDB_Params& bindings, EOwnership ownership) 
 : m_Bindings(&bindings, ownership)

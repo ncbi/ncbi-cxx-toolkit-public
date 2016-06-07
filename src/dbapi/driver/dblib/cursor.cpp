@@ -368,8 +368,6 @@ CDBL_CursorCmd::~CDBL_CursorCmd()
 
 bool CDBL_CursorCmd::x_AssignParams()
 {
-    static const char s_hexnum[] = "0123456789ABCDEF";
-
     m_CombinedQuery = GetQuery();
 
     for (unsigned int n = 0; n < GetBindParamsImpl().NofParams(); n++) {
@@ -426,42 +424,23 @@ bool CDBL_CursorCmd::x_AssignParams()
             }
             case eDB_Binary: {
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-                const unsigned char* c = (const unsigned char*) val.Value();
-                size_t i = 0, size = val.Size();
-                val_buffer[i++] = '0';
-                val_buffer[i++] = 'x';
-                for (size_t j = 0; j < size; j++) {
-                    val_buffer[i++] = s_hexnum[c[j] >> 4];
-                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
-                }
-                val_buffer[i++] = '\0';
+                impl::binary_to_hex_string(val_buffer, sizeof(val_buffer),
+                                           val.Value(), val.Size());
                 break;
             }
             case eDB_VarBinary: {
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-                const unsigned char* c = (const unsigned char*) val.Value();
-                size_t i = 0, size = val.Size();
-                val_buffer[i++] = '0';
-                val_buffer[i++] = 'x';
-                for (size_t j = 0; j < size; j++) {
-                    val_buffer[i++] = s_hexnum[c[j] >> 4];
-                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
-                }
-                val_buffer[i++] = '\0';
+                impl::binary_to_hex_string(val_buffer, sizeof(val_buffer),
+                                           val.Value(), val.Size());
                 break;
             }
             case eDB_LongBinary: {
                 CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
-                const unsigned char* c = (const unsigned char*) val.Value();
-                size_t i = 0, size = val.DataSize();
-                if(size*2 > sizeof(val_buffer) - 4) return false;
-                val_buffer[i++] = '0';
-                val_buffer[i++] = 'x';
-                for (size_t j = 0; j < size; j++) {
-                    val_buffer[i++] = s_hexnum[c[j] >> 4];
-                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
+                if (impl::binary_to_hex_string(val_buffer, sizeof(val_buffer),
+                                               val.Value(), val.DataSize())
+                    == 0) {
+                    return false;
                 }
-                val_buffer[i++] = '\0';
                 break;
             }
             case eDB_Float: {

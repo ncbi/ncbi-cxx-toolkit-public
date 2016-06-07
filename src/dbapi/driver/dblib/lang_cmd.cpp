@@ -274,8 +274,6 @@ CDBL_LangCmd::~CDBL_LangCmd()
 
 bool CDBL_LangCmd::x_AssignParams()
 {
-    static const char s_hexnum[] = "0123456789ABCDEF";
-
     for (unsigned int n = 0; n < GetBindParamsImpl().NofParams(); n++) {
         if(GetBindParamsImpl().GetParamStatus(n) == 0) continue;
         const string& name  =  GetBindParamsImpl().GetParamName(n);
@@ -390,41 +388,29 @@ bool CDBL_LangCmd::x_AssignParams()
             }
             case eDB_Binary: {
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-                const unsigned char* c = (const unsigned char*) val.Value();
-                size_t i = 0, size = val.Size();
-                val_buffer[i++] = '0';
-                val_buffer[i++] = 'x';
-                for (size_t j = 0; j < size; j++) {
-                    val_buffer[i++] = s_hexnum[c[j] >> 4];
-                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
-                }
+                size_t i = impl::binary_to_hex_string
+                    (val_buffer, sizeof(val_buffer) - 1,
+                     val.Value(), val.Size(), impl::fB2H_NoFinalNul);
                 val_buffer[i++] = '\n';
                 val_buffer[i++] = '\0';
                 break;
             }
             case eDB_VarBinary: {
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-                const unsigned char* c = (const unsigned char*) val.Value();
-                size_t i = 0, size = val.Size();
-                val_buffer[i++] = '0';
-                val_buffer[i++] = 'x';
-                for (size_t j = 0; j < size; j++) {
-                    val_buffer[i++] = s_hexnum[c[j] >> 4];
-                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
-                }
+                size_t i = impl::binary_to_hex_string
+                    (val_buffer, sizeof(val_buffer) - 1,
+                     val.Value(), val.Size(), impl::fB2H_NoFinalNul);
                 val_buffer[i++] = '\n';
                 val_buffer[i++] = '\0';
                 break;
             }
             case eDB_LongBinary: {
                 CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
-                const unsigned char* c = (const unsigned char*) val.Value();
-                size_t i = 0, size = val.DataSize();
-                val_buffer[i++] = '0';
-                val_buffer[i++] = 'x';
-                for (size_t j = 0; j < size; j++) {
-                    val_buffer[i++] = s_hexnum[c[j] >> 4];
-                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
+                size_t i = impl::binary_to_hex_string
+                    (val_buffer, sizeof(val_buffer),
+                     val.Value(), val.DataSize(), impl::fB2H_NoFinalNul);
+                if (i == 0) {
+                    return false;
                 }
                 val_buffer[i++] = '\n';
                 val_buffer[i++] = '\0';

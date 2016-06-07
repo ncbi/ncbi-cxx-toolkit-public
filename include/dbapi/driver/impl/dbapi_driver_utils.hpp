@@ -259,6 +259,19 @@ string ConvertN2A(Uint4 host);
 NCBI_DBAPIDRIVER_EXPORT
 SIZE_TYPE GetValidUTF8Len(const CTempString& ts);
 
+enum EBinaryToHexFlags
+{
+    fB2H_NoFinalNul = 0x1,
+    fB2H_NoPrefix   = 0x2
+};
+typedef int TBinaryToHexFlags;
+// Returns the number of bytes used in buffer, NOT counting the final
+// NUL (if it wasn't suppressed).
+NCBI_DBAPIDRIVER_EXPORT
+size_t binary_to_hex_string(char* buffer, size_t buffer_size,
+                            const void* value, size_t value_size,
+                            TBinaryToHexFlags flags = 0);
+    
 /////////////////////////////////////////////////////////////////////////////
 inline
 void
