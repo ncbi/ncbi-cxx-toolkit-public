@@ -609,10 +609,12 @@ CSQLITE_Connection::DeleteDatabase(void)
     CFile(m_FileName + "-journal").Remove();
 }
 
+DEFINE_STATIC_FAST_MUTEX(s_FileAccessMutex);
 
 CSQLITE_Connection*
 CSQLITE_Connection::CreateInMemoryDatabase(CTempString file_name, bool shared)
 {
+    CFastMutexGuard guard(s_FileAccessMutex);
     string dbname = shared ? "file::memory:?cache=shared" : ":memory:";
     CSQLITE_Connection fdb(file_name, fReadOnly);
     auto_ptr<CSQLITE_Connection> mdb(new CSQLITE_Connection(dbname,
