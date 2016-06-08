@@ -808,8 +808,15 @@ bool SNetStorageRPC::Exists(const string& object_loc)
 
     CJsonNode request(MkObjectRequest("EXISTS", object_loc));
 
-    return Exchange(GetServiceFromLocator(object_loc),
-            request).GetBoolean("Exists");
+    try {
+        return Exchange(GetServiceFromLocator(object_loc),
+                request).GetBoolean("Exists");
+    }
+    catch (CNetStorageException& e) {
+        if (e.GetErrCode() != CNetStorageException::eExpired) throw;
+    }
+
+    return false;
 }
 
 ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
@@ -828,10 +835,18 @@ ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
 
     m_UseNextSubHitID.ProperCommand();
     CJsonNode request(MkObjectRequest("DELETE", object_loc));
-    CJsonNode response(Exchange(GetServiceFromLocator(object_loc), request));
-    CJsonNode not_found(response.GetByKeyOrNull("NotFound"));
 
-    return not_found && not_found.AsBoolean() ? eNSTRR_NotFound : eNSTRR_Removed;
+    try {
+        CJsonNode response(Exchange(GetServiceFromLocator(object_loc), request));
+        CJsonNode not_found(response.GetByKeyOrNull("NotFound"));
+
+        return not_found && not_found.AsBoolean() ? eNSTRR_NotFound : eNSTRR_Removed;
+    }
+    catch (CNetStorageException& e) {
+        if (e.GetErrCode() != CNetStorageException::eExpired) throw;
+    }
+
+    return eNSTRR_NotFound;
 }
 
 class CJsonOverUTTPExecHandler : public INetServerExecHandler
@@ -1471,8 +1486,15 @@ bool SNetStorageByKeyRPC::Exists(const string& key, TNetStorageFlags flags)
 {
     CJsonNode request(m_NetStorageRPC->MkObjectRequest("EXISTS", key, flags));
 
-    return m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service,
-            request).GetBoolean("Exists");
+    try {
+        return m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service,
+                request).GetBoolean("Exists");
+    }
+    catch (CNetStorageException& e) {
+        if (e.GetErrCode() != CNetStorageException::eExpired) throw;
+    }
+
+    return false;
 }
 
 ENetStorageRemoveResult SNetStorageByKeyRPC::Remove(const string& key,
@@ -1481,12 +1503,19 @@ ENetStorageRemoveResult SNetStorageByKeyRPC::Remove(const string& key,
     m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
     CJsonNode request(m_NetStorageRPC->MkObjectRequest("DELETE", key, flags));
 
-    CJsonNode response(
-            m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service, request));
+    try {
+        CJsonNode response(
+                m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service, request));
 
-    CJsonNode not_found(response.GetByKeyOrNull("NotFound"));
+        CJsonNode not_found(response.GetByKeyOrNull("NotFound"));
 
-    return not_found && not_found.AsBoolean() ? eNSTRR_NotFound : eNSTRR_Removed;
+        return not_found && not_found.AsBoolean() ? eNSTRR_NotFound : eNSTRR_Removed;
+    }
+    catch (CNetStorageException& e) {
+        if (e.GetErrCode() != CNetStorageException::eExpired) throw;
+    }
+
+    return eNSTRR_NotFound;
 }
 
 struct SNetStorageAdminImpl : public CObject
