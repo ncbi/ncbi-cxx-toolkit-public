@@ -1313,6 +1313,7 @@ void SNetStorageObjectRPC::SetExpiration(const CTimeout& ttl)
     }
 
     CJsonNode request(x_MkRequest("SETEXPTIME"));
+    request.SetBoolean("CreateIfNotFound", false);
 
     if (ttl.IsFinite()) {
         request.SetString("TTL", ttl.GetAsTimeSpan().AsString("dTh:m:s"));
