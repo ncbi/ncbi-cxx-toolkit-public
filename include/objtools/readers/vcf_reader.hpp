@@ -314,6 +314,7 @@ protected:
     vector<string> m_MetaDirectives;
     vector<string> m_GenotypeHeaders;
     CMessageListenerLenient m_ErrorsPrivate;
+    bool m_MetaHandled;
 };
 
 END_SCOPE(objects)

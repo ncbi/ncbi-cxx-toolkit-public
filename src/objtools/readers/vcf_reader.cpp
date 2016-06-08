@@ -169,7 +169,8 @@ ESpecNumber SpecNumber(
 //  ----------------------------------------------------------------------------
 CVcfReader::CVcfReader(
     int flags ):
-    CReaderBase(flags)
+    CReaderBase(flags),
+    m_MetaHandled(false)
 //  ----------------------------------------------------------------------------
 {
 }
@@ -193,8 +194,6 @@ CVcfReader::ReadSeqAnnot(
         return CRef<CSeq_annot>();
     }
     CRef< CSeq_annot > annot( new CSeq_annot );
-    CRef< CAnnot_descr > desc( new CAnnot_descr );
-    annot->SetDesc( *desc );
     annot->SetData().SetFtable();
     if (!m_Meta) {
         m_Meta.Reset( new CAnnotdesc );
@@ -270,6 +269,10 @@ CVcfReader::xProcessMetaLine(
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( line, "##" ) ) {
+        if ( !m_MetaDirectives.empty() && !m_MetaHandled ) {
+            m_Meta->SetUser().AddField("meta-information", m_MetaDirectives);
+        }
+        m_MetaHandled = true;
         return false;
     }
     m_MetaDirectives.push_back(line.substr(2));
@@ -486,7 +489,6 @@ CVcfReader::xProcessHeaderLine(
     if ( ! NStr::StartsWith( line, "#CHROM" ) ) {
         return false;
     }
-    m_Meta->SetUser().AddField("meta-information", m_MetaDirectives);
 
     //
     //  Per spec:
@@ -520,7 +522,13 @@ CVcfReader::xAssignVcfMeta(
     CRef<CSeq_annot> pAnnot )
 //  ----------------------------------------------------------------------------
 {
-    if (m_Meta) {
+    if (m_Meta &&
+        m_Meta->IsUser() &&
+        m_Meta->GetUser().IsSetData()) {
+        if (!pAnnot->IsSetDesc()) {
+            CRef< CAnnot_descr > desc( new CAnnot_descr );
+            pAnnot->SetDesc(*desc);
+        }
         pAnnot->SetDesc().Set().push_back( m_Meta );
     }
     return true;
