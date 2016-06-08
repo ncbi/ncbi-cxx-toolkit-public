@@ -514,6 +514,19 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
 
 }
 
+CCompartOptions::CCompartOptions(void) :
+    m_CompartmentPenalty(default_CompartmentPenalty),
+    m_MinCompartmentIdty(default_MinCompartmentIdty),
+    m_MinSingleCompartmentIdty(default_MinSingleCompartmentIdty),
+    m_MaxExtent(default_MaxExtent),
+    m_ByCoverage(default_ByCoverage),
+    m_MaxIntron(default_MaxIntron),
+    m_MaxOverlap(default_MaxOverlap),
+    m_Maximizing(default_Maximizing),
+    m_SubjectMol(default_SubjectMol)
+{
+}
+
 CCompartOptions::CCompartOptions(const CArgs& args) :
     m_CompartmentPenalty(args["compartment_penalty"].AsDouble()),
     m_MinCompartmentIdty(args["min_compartment_idty"].AsDouble()),

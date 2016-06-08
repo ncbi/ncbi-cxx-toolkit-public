@@ -46,6 +46,9 @@ class NCBI_XALGOALIGN_EXPORT CCompartOptions {
 public:
     static void SetupArgDescriptions(CArgDescriptions* argdescr);
 
+    ///with deafalt params
+    CCompartOptions();
+    ///from application args
     CCompartOptions(const CArgs& args);
 
     double m_CompartmentPenalty;
