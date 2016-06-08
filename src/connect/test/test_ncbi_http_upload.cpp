@@ -201,8 +201,10 @@ int CNCBITestApp::Run(void)
     CConn_HttpStream auth(kAuthUrl + string("?key=") + key, 0/*net_info*/,
                           kEmptyStr/*user_header*/, x_ParseKeyHeader, &subid,
                           0/*adjust*/, 0/*cleanup*/,
-                          fHTTP_Flushable | fHTTP_NoAutoRetry);
+                          fHTTP_Flushable);
     auth.Close();
+    if (subid.empty())
+        ERR_POST(Fatal << "Cannot initiate new submission ID");
 
     // cout << "Got SubID = " << subid << endl;
 
