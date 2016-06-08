@@ -150,11 +150,6 @@ void CFeatTableEdit::GenerateMissingMrnaForCds()
         if (pOverlappingRna) {
             continue;
         }
-        //CRef<CSeq_feat> pRna = edit::MakemRNAforCDS(cds, *mpScope);
-        //if (!pRna) {
-        //    //should never happen!
-        //    continue;
-        //}
         CRef<CSeq_feat> pRna(new CSeq_feat);
         pRna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
         pRna->SetLocation().Assign(cds.GetLocation());
@@ -164,12 +159,36 @@ void CFeatTableEdit::GenerateMissingMrnaForCds()
         //product name
         pRna->SetData().SetRna().SetExt().SetName(
             sGetCdsProductName(cds, *mpScope));
+
         //find proper name for rna
         string rnaId(xNextFeatId());
         pRna->SetId().SetLocal().SetStr(rnaId);
+
         //add rna xref to cds
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(cds));
         feh.AddFeatXref(rnaId);
+
+        //add cds xref to rna
+        CRef<CFeat_id> pFeatId(new CFeat_id);
+        pFeatId->Assign(cds.GetId());
+        CRef<CSeqFeatXref> pRnaXref(new CSeqFeatXref);
+        pRnaXref->SetId(*pFeatId);
+        pRna->SetXref().push_back(pRnaXref);
+
+        CMappedFeat parentGene = feature::GetBestGeneForFeat(*it, &mTree);
+        if (parentGene) {
+            //if gene exists, add gene xref to rna
+            CSeq_feat_EditHandle geh(mpScope->GetObjectHandle(
+                parentGene.GetOriginalFeature()));
+            geh.AddFeatXref(rnaId);
+            //if gene exists, add rna xref to gene
+            CRef<CFeat_id> pGeneId(new CFeat_id);
+            pGeneId->Assign(parentGene.GetId());
+            CRef<CSeqFeatXref> pRnaXref(new CSeqFeatXref);
+            pRnaXref->SetId(*pGeneId);
+            pRna->SetXref().push_back(pRnaXref);
+        }
+
         //add new rna to feature table
         mEditHandle.AddFeat(*pRna);
         mTree.AddFeature(mpScope->GetObjectHandle(*pRna));
@@ -673,10 +692,7 @@ void CFeatTableEdit::GenerateMissingParentFeaturesForEukaryote()
 //  ----------------------------------------------------------------------------
 {
     GenerateMissingMrnaForCds();
-    GenerateMissingGeneForMrna();
-
-    //create mRNA features for all CDS features
-    //create gene features for all RNA types, not just mRNA
+    xGenerateMissingGeneForChoice(CSeqFeatData::e_Rna);
 }
 
 
@@ -684,10 +700,8 @@ void CFeatTableEdit::GenerateMissingParentFeaturesForEukaryote()
 void CFeatTableEdit::GenerateMissingParentFeaturesForProkaryote()
 //  ----------------------------------------------------------------------------
 {
-    //GenerateMissingGeneForCds();
-    this->xGenerateMissingGeneForChoice(CSeqFeatData::e_Cdregion);
-    this->xGenerateMissingGeneForChoice(CSeqFeatData::e_Rna);
-    //create gene features for all RNA types, not just mRNA
+    xGenerateMissingGeneForChoice(CSeqFeatData::e_Cdregion);
+    xGenerateMissingGeneForChoice(CSeqFeatData::e_Rna);
 }
 
 
