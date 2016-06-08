@@ -1574,15 +1574,16 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                 x_FillObjectInfo(reply, "NoMetadataFound");
             } else {
                 // The record in the meta DB for the object is found
-                if (expiration.m_IsNull)
+                if (expiration.m_IsNull) {
                     reply.SetString("ExpirationTime", "NotSet");
-                else {
-                    if (expiration.m_Value < CurrentTime())
-                        NCBI_THROW(CNetStorageServerException,
-                                   eNetStorageObjectExpired, kObjectExpired);
-
+                    reply.SetString("Expired", "False");
+                } else {
                     reply.SetString("ExpirationTime",
                                     expiration.m_Value.AsString());
+                    if (expiration.m_Value < CurrentTime())
+                        reply.SetString("Expired", "True");
+                    else
+                        reply.SetString("Expired", "False");
                 }
                 x_SetObjectInfoReply(reply, "CreationTime", creation);
                 x_SetObjectInfoReply(reply, "ObjectReadTime", obj_read);
@@ -1596,10 +1597,6 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                 x_SetObjectInfoReply(reply, "UserName", user_name);
             }
         } catch (const CNetStorageServerException &  ex) {
-            if (ex.GetErrCode() == CNetStorageServerException::
-                                                    eNetStorageObjectExpired)
-                throw;
-
             // eDatabaseError => no connection or MS SQL error
             x_FillObjectInfo(reply, "MetadataAccessWarning");
             AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
@@ -1718,6 +1715,7 @@ void CNetStorageHandler::x_FillObjectInfo(CJsonNode &  reply,
                                           const string &  val)
 {
     reply.SetString("ExpirationTime", val);
+    reply.SetString("Expired", val);
     reply.SetString("CreationTime", val);
     reply.SetString("ObjectReadTime", val);
     reply.SetString("ObjectWriteTime", val);
