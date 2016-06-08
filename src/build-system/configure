@@ -32227,16 +32227,15 @@ fi
 
 
  if test -x "$PYTHON"; then
-    PYTHON_VERSION=`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    pyconf="$real_srcdir/scripts/common/impl/python-config.py"
+    PYTHON_VERSION=`"$PYTHON" "$pyconf" --version 2>/dev/null`
  else
     PYTHON_VERSION=
     ncbi_cv_lib_python=no
  fi
  if test -n "$PYTHON_VERSION"; then
-    PYTHON_INCLUDE=`$PYTHON -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print("-I%s -I%s" % (f(), f(True)))'`
-    PYTHON_LIBPATH=`$PYTHON -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL")))'`
-    PYTHON_DEPS=`$PYTHON -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS")))'`
-    PYTHON_LDVERSION=`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LDVERSION") or sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    PYTHON_INCLUDE=`"$PYTHON" "$pyconf" --include`
+    PYTHON_LIBPATH=`"$PYTHON" "$pyconf" --libpath`
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -32249,7 +32248,7 @@ fi
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
-    PYTHON_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON_LDVERSION $PYTHON_DEPS"
+    PYTHON_LIBS="${ncbi_rp_L_flags} `"$PYTHON" "$pyconf" --libs`"
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -32265,7 +32264,7 @@ fi
        ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
        ncbi_rp_R_sep=:
     done
-    PYTHON_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON_LDVERSION $PYTHON_DEPS"
+    PYTHON_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} `"$PYTHON" "$pyconf" --libs`"
  fi
     CPPFLAGS="$PYTHON_INCLUDE $orig_CPPFLAGS"
     LIBS="$PYTHON_LIBS $orig_LIBS"
@@ -32402,16 +32401,15 @@ fi
 
 
  if test -x "$PYTHON25"; then
-    PYTHON25_VERSION=`$PYTHON25 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    pyconf="$real_srcdir/scripts/common/impl/python-config.py"
+    PYTHON25_VERSION=`"$PYTHON25" "$pyconf" --version 2>/dev/null`
  else
     PYTHON25_VERSION=
     ncbi_cv_lib_python25=no
  fi
  if test -n "$PYTHON25_VERSION"; then
-    PYTHON25_INCLUDE=`$PYTHON25 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print("-I%s -I%s" % (f(), f(True)))'`
-    PYTHON25_LIBPATH=`$PYTHON25 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL")))'`
-    PYTHON25_DEPS=`$PYTHON25 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS")))'`
-    PYTHON25_LDVERSION=`$PYTHON25 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LDVERSION") or sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    PYTHON25_INCLUDE=`"$PYTHON25" "$pyconf" --include`
+    PYTHON25_LIBPATH=`"$PYTHON25" "$pyconf" --libpath`
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -32424,7 +32422,7 @@ fi
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
-    PYTHON25_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON25_LDVERSION $PYTHON25_DEPS"
+    PYTHON25_LIBS="${ncbi_rp_L_flags} `"$PYTHON25" "$pyconf" --libs`"
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -32440,7 +32438,7 @@ fi
        ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
        ncbi_rp_R_sep=:
     done
-    PYTHON25_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON25_LDVERSION $PYTHON25_DEPS"
+    PYTHON25_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} `"$PYTHON25" "$pyconf" --libs`"
  fi
     CPPFLAGS="$PYTHON25_INCLUDE $orig_CPPFLAGS"
     LIBS="$PYTHON25_LIBS $orig_LIBS"
@@ -32577,16 +32575,15 @@ fi
 
 
  if test -x "$PYTHON26"; then
-    PYTHON26_VERSION=`$PYTHON26 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    pyconf="$real_srcdir/scripts/common/impl/python-config.py"
+    PYTHON26_VERSION=`"$PYTHON26" "$pyconf" --version 2>/dev/null`
  else
     PYTHON26_VERSION=
     ncbi_cv_lib_python26=no
  fi
  if test -n "$PYTHON26_VERSION"; then
-    PYTHON26_INCLUDE=`$PYTHON26 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print("-I%s -I%s" % (f(), f(True)))'`
-    PYTHON26_LIBPATH=`$PYTHON26 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL")))'`
-    PYTHON26_DEPS=`$PYTHON26 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS")))'`
-    PYTHON26_LDVERSION=`$PYTHON26 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LDVERSION") or sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    PYTHON26_INCLUDE=`"$PYTHON26" "$pyconf" --include`
+    PYTHON26_LIBPATH=`"$PYTHON26" "$pyconf" --libpath`
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -32599,7 +32596,7 @@ fi
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
-    PYTHON26_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON26_LDVERSION $PYTHON26_DEPS"
+    PYTHON26_LIBS="${ncbi_rp_L_flags} `"$PYTHON26" "$pyconf" --libs`"
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -32615,7 +32612,7 @@ fi
        ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
        ncbi_rp_R_sep=:
     done
-    PYTHON26_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON26_LDVERSION $PYTHON26_DEPS"
+    PYTHON26_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} `"$PYTHON26" "$pyconf" --libs`"
  fi
     CPPFLAGS="$PYTHON26_INCLUDE $orig_CPPFLAGS"
     LIBS="$PYTHON26_LIBS $orig_LIBS"
@@ -32752,16 +32749,15 @@ fi
 
 
  if test -x "$PYTHON27"; then
-    PYTHON27_VERSION=`$PYTHON27 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    pyconf="$real_srcdir/scripts/common/impl/python-config.py"
+    PYTHON27_VERSION=`"$PYTHON27" "$pyconf" --version 2>/dev/null`
  else
     PYTHON27_VERSION=
     ncbi_cv_lib_python27=no
  fi
  if test -n "$PYTHON27_VERSION"; then
-    PYTHON27_INCLUDE=`$PYTHON27 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print("-I%s -I%s" % (f(), f(True)))'`
-    PYTHON27_LIBPATH=`$PYTHON27 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL")))'`
-    PYTHON27_DEPS=`$PYTHON27 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS")))'`
-    PYTHON27_LDVERSION=`$PYTHON27 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LDVERSION") or sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    PYTHON27_INCLUDE=`"$PYTHON27" "$pyconf" --include`
+    PYTHON27_LIBPATH=`"$PYTHON27" "$pyconf" --libpath`
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -32774,7 +32770,7 @@ fi
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
-    PYTHON27_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON27_LDVERSION $PYTHON27_DEPS"
+    PYTHON27_LIBS="${ncbi_rp_L_flags} `"$PYTHON27" "$pyconf" --libs`"
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -32790,7 +32786,7 @@ fi
        ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
        ncbi_rp_R_sep=:
     done
-    PYTHON27_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON27_LDVERSION $PYTHON27_DEPS"
+    PYTHON27_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} `"$PYTHON27" "$pyconf" --libs`"
  fi
     CPPFLAGS="$PYTHON27_INCLUDE $orig_CPPFLAGS"
     LIBS="$PYTHON27_LIBS $orig_LIBS"
@@ -32927,16 +32923,15 @@ fi
 
 
  if test -x "$PYTHON3"; then
-    PYTHON3_VERSION=`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    pyconf="$real_srcdir/scripts/common/impl/python-config.py"
+    PYTHON3_VERSION=`"$PYTHON3" "$pyconf" --version 2>/dev/null`
  else
     PYTHON3_VERSION=
     ncbi_cv_lib_python3=no
  fi
  if test -n "$PYTHON3_VERSION"; then
-    PYTHON3_INCLUDE=`$PYTHON3 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print("-I%s -I%s" % (f(), f(True)))'`
-    PYTHON3_LIBPATH=`$PYTHON3 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL")))'`
-    PYTHON3_DEPS=`$PYTHON3 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS")))'`
-    PYTHON3_LDVERSION=`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LDVERSION") or sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    PYTHON3_INCLUDE=`"$PYTHON3" "$pyconf" --include`
+    PYTHON3_LIBPATH=`"$PYTHON3" "$pyconf" --libpath`
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -32949,7 +32944,7 @@ fi
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
-    PYTHON3_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON3_LDVERSION $PYTHON3_DEPS"
+    PYTHON3_LIBS="${ncbi_rp_L_flags} `"$PYTHON3" "$pyconf" --libs`"
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -32965,7 +32960,7 @@ fi
        ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
        ncbi_rp_R_sep=:
     done
-    PYTHON3_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON3_LDVERSION $PYTHON3_DEPS"
+    PYTHON3_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} `"$PYTHON3" "$pyconf" --libs`"
  fi
     CPPFLAGS="$PYTHON3_INCLUDE $orig_CPPFLAGS"
     LIBS="$PYTHON3_LIBS $orig_LIBS"
