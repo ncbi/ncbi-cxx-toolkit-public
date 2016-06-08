@@ -69,6 +69,7 @@ public:
         TNetStorageFlags flags);
 
     CDirectNetStorageObject Open(const string& object_loc);
+    bool Exists(const string& db_loc, const string& client_loc);
 
     CJsonNode ReportConfig() const;
 };
@@ -85,6 +86,7 @@ public:
 
     CDirectNetStorageObject Open(const string& unique_key,
             TNetStorageFlags flags = 0);
+    bool Exists(const string& db_loc, const string& key, TNetStorageFlags flags);
 };
 
 END_NCBI_SCOPE

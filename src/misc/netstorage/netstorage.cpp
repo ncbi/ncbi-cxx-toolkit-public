@@ -375,6 +375,13 @@ CDirectNetStorageObject CDirectNetStorage::Open(const string& object_loc)
 }
 
 
+bool CDirectNetStorage::Exists(const string& /* db_loc */, const string& client_loc)
+{
+    // TODO: Implement logic mentioned in CXX-8219
+    return m_Impl->Exists(client_loc);
+}
+
+
 CJsonNode CDirectNetStorage::ReportConfig() const
 {
     return Impl<const SDirectNetStorageImpl>(m_Impl)->ReportConfig();
@@ -399,6 +406,14 @@ CDirectNetStorageObject CDirectNetStorageByKey::Open(const string& key,
 {
     SNetStorage::SLimits::Check<SNetStorage::SLimits::SUserKey>(key);
     return Impl<SDirectNetStorageByKeyImpl>(m_Impl)->Open(flags, key);
+}
+
+
+bool CDirectNetStorageByKey::Exists(const string& /* db_loc */,
+        const string& key, TNetStorageFlags flags)
+{
+    // TODO: Implement logic mentioned in CXX-8219
+    return m_Impl->Exists(key, flags);
 }
 
 
