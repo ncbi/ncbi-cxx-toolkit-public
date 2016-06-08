@@ -35,6 +35,7 @@
 #define SEQ_ID_RESOLVER_HPP_
 
 
+#include <util/ncbi_cache.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
 #include <objmgr/scope.hpp>
@@ -135,6 +136,10 @@ private:
     typedef map<string, CSeq_id_Handle> TData;
     TData m_data;
     mutable CRef<CSeq_loc_Mapper> m_SLMapper;
+
+    typedef CCache<string, CSeq_id_Handle> TLocCache;
+    auto_ptr<TLocCache> m_loccache;
+
 };
 
 END_NCBI_SCOPE

@@ -40,7 +40,6 @@
 #include <misc/hgvs/hgvs_parser2.hpp>
 #include <misc/hgvs/seq_id_resolver.hpp>
 
-#include <util/ncbi_cache.hpp>
 #include <util/xregexp/regexp.hpp>
 #include <objects/entrez2/entrez2_client.hpp>
 
@@ -171,23 +170,18 @@ CSeq_id_Resolver__CCDS::~CSeq_id_Resolver__CCDS()
 
 CSeq_id_Resolver__ChrNamesFromGC::CSeq_id_Resolver__ChrNamesFromGC(const CGC_Assembly& assembly, CScope& scope)
   : CSeq_id_Resolver(scope),
-    m_SLMapper(new CSeq_loc_Mapper(assembly,
-                                   CSeq_loc_Mapper::eGCA_Refseq
-                                   //,&scope,
-                                   //CSeq_loc_Mapper::eCopyScope
-                                  )
-              )
+    m_SLMapper(new CSeq_loc_Mapper(assembly, CSeq_loc_Mapper::eGCA_Refseq)),
+    m_loccache(new TLocCache(15))
+
 {
 }
 
 CSeq_id_Handle CSeq_id_Resolver__ChrNamesFromGC::x_Create(const string& s)
 {
-    typedef CCache<string, CSeq_id_Handle> TLocCache;
-    static auto_ptr<TLocCache> loccache(new TLocCache(15));
     static const int kRetrFlags = TLocCache::fGet_NoInsert;
 
     TLocCache::EGetResult result;
-    const CSeq_id_Handle exist_idh = loccache->Get(s, kRetrFlags, &result);
+    const CSeq_id_Handle exist_idh = m_loccache->Get(s, kRetrFlags, &result);
     if (result == TLocCache::eGet_Found) {
         LOG_POST(Info << "cached id for: " << s);
         return exist_idh;
@@ -218,12 +212,13 @@ CSeq_id_Handle CSeq_id_Resolver__ChrNamesFromGC::x_Create(const string& s)
         origid.Reset(new CSeq_id(s, CSeq_id::fParse_AnyLocal));
         LOG_POST(Info << "created seq-id: " << origid->AsFastaString());
     }
+
     LOG_POST(Info << "created seq-id-handle: " << idh.AsString());
     CConstRef<CSeq_loc> origloc(new CSeq_loc(const_cast<CSeq_id&>(*origid), 0, 0));
     CConstRef<CSeq_loc> newloc = x_MapLoc(*origloc);
     const CSeq_id& id = *(newloc.NotNull() ? newloc : origloc)->GetId();
     idh = sequence::GetId(id, *m_scope, sequence::eGetId_Best);
-    loccache->Add(s, idh);
+    m_loccache->Add(s, idh);
     return idh;
 }
 
