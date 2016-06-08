@@ -44,6 +44,7 @@
 // defintion include
 #include <misc/xmlwrapp/xml_init.hpp>
 #include "deref_impl.hpp"
+#include "https_input_impl.hpp"
 
 // libxml includes
 #include <libxml/globals.h>
@@ -85,6 +86,8 @@ void xml::init::init_library() {
 
     // init the parser (keeps libxml2 thread safe)
     xmlInitParser();
+
+    xml::impl::register_https_input();
 }
 //####################################################################
 void xml::init::shutdown_library() {

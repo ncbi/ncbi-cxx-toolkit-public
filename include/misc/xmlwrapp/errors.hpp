@@ -182,6 +182,13 @@ public:
     **/
     std::string print (void) const;
 
+    /**
+     * Appends the messages from the other container.
+     * @author Sergey Satskiy, NCBI
+    **/
+    void append_messages(const error_messages &  other);
+
+
 private:
     error_messages_type error_messages_;
     bool has_messages_of_type (error_message::message_type type) const;

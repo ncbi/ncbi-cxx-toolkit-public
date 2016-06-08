@@ -41,6 +41,7 @@
 #include <misc/xmlwrapp/exception.hpp>
 #include "document_impl.hpp"
 #include "utility.hpp"
+#include "https_input_impl.hpp"
 
 // standard includes
 #include <stdexcept>
@@ -162,11 +163,18 @@ void schema::construct (const char* file_or_data, size_type size,
     }
 
     messages->get_messages().clear();
+
+    // Just in case collect https warnings
+    xml::impl::clear_https_messages();
+
     xmlSchemaSetParserErrors(ctxt, cb_schema_error,
                                    cb_schema_warning,
                                    messages);
     pimpl_->schema_ = xmlSchemaParse(ctxt);
     xmlSchemaFreeParserCtxt(ctxt);
+
+    // Copy the collected https messages from tls
+    messages->append_messages(xml::impl::get_https_messages());
 
     // Fatal errors are impossible here. They may appear for document parser
     // only.

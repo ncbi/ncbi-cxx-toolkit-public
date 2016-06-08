@@ -76,7 +76,9 @@ std::string error_message::get_filename (void) const {
 
 
 // xml::error_messages class implementation
-const error_messages::error_messages_type& error_messages::get_messages (void) const {
+const error_messages::error_messages_type &
+error_messages::get_messages (void) const
+{
     return error_messages_;
 }
 
@@ -84,9 +86,12 @@ error_messages::error_messages_type& error_messages::get_messages (void) {
     return error_messages_;
 }
 
-bool error_messages::has_messages_of_type (error_message::message_type type) const {
+bool
+error_messages::has_messages_of_type (error_message::message_type type) const
+{
     error_messages_type::const_iterator  end(error_messages_.end());
-    for (error_messages_type::const_iterator k(error_messages_.begin()); k != end; ++k)
+    for (error_messages_type::const_iterator k(error_messages_.begin());
+            k != end; ++k)
         if (k->get_message_type() == type)
             return true;
     return false;
@@ -104,19 +109,28 @@ bool error_messages::has_fatal_errors (void) const {
     return has_messages_of_type(error_message::type_fatal_error);
 }
 
-std::string error_messages::print(void) const {
+std::string error_messages::print(void) const
+{
     std::string buffer;
     try {
         error_messages_type::const_iterator  begin(error_messages_.begin());
         error_messages_type::const_iterator  end(error_messages_.end());
         for (error_messages_type::const_iterator  k(begin); k != end; ++k) {
             if (k != begin) buffer += std::string( "\n" );
-            buffer += error_message::message_type_str(k->get_message_type()) + ": " + k->get_message();
+            buffer += error_message::message_type_str(k->get_message_type()) +
+                                                      ": " + k->get_message();
         }
     }
     catch (...)
     {}
     return buffer;
+}
+
+void error_messages::append_messages(const error_messages &  other)
+{
+    for (error_messages_type::const_iterator  k = other.get_messages().begin();
+            k != other.get_messages().end(); ++k)
+        error_messages_.push_back(*k);
 }
 
 

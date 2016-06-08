@@ -41,6 +41,7 @@
 #include <misc/xmlwrapp/exception.hpp>
 #include "document_impl.hpp"
 #include "utility.hpp"
+#include "https_input_impl.hpp"
 
 // standard includes
 #include <stdexcept>
@@ -94,7 +95,14 @@ dtd::dtd (const char* filename, error_messages* messages,
     if (messages)
         messages->get_messages().clear();
 
+    // Just in case collect https warnings
+    xml::impl::clear_https_messages();
+
     pimpl_->dtd_ = xmlParseDTD(0, reinterpret_cast<const xmlChar*>(filename));
+
+    if (messages)
+        messages->append_messages(xml::impl::get_https_messages());
+
     if (pimpl_->dtd_ == NULL) {
         // It is a common case that the file does not exist or cannot be
         // opened. libxml2 does not recognise it so make a test here to

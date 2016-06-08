@@ -51,6 +51,7 @@
 #include "utility.hpp"
 #include "document_impl.hpp"
 #include "node_manip.hpp"
+#include "https_input_impl.hpp"
 
 // standard includes
 #include <new>
@@ -308,6 +309,8 @@ xml::document::document (const char *               filename,
     else
         messages->get_messages().clear();
 
+    xml::impl::clear_https_messages();
+
     xmlDocPtr tmpdoc = xmlSAXParseFileWithData_Custom(&sax, filename, temp);
     if (!tmpdoc) {
         // It is a common case that the file does not exist or cannot be
@@ -323,6 +326,9 @@ xml::document::document (const char *               filename,
         }
         fclose(test);
     }
+
+    // Copy the collected https messages from tls
+    temp->append_messages(xml::impl::get_https_messages());
 
     if (is_failure(temp, how) || !tmpdoc) {
         if (tmpdoc) xmlFreeDoc(tmpdoc);
@@ -371,9 +377,13 @@ xml::document::document (const char *               data,
         msgs.reset(temp = new error_messages);
     else
         messages->get_messages().clear();
+    xml::impl::clear_https_messages();
     ctxt->_private = temp;
 
     int ret(xmlParseDocument(ctxt));
+
+    // Copy the collected https messages from tls
+    temp->append_messages(xml::impl::get_https_messages());
 
     if (!ctxt->wellFormed || ret != 0 || is_failure(temp, how)) {
         if (ctxt->myDoc)
@@ -437,6 +447,7 @@ xml::document::document (std::istream &           stream,
         msgs.reset(temp = new error_messages);
     else
         messages->get_messages().clear();
+    xml::impl::clear_https_messages();
 
     /* Make sure that the stream is not empty */
     if (stream && (stream.eof() ||
@@ -466,6 +477,8 @@ xml::document::document (std::istream &           stream,
     }
     xmlParseChunk(ctxt, 0, 0, 1);
 
+    // Copy the collected https messages from tls
+    temp->append_messages(xml::impl::get_https_messages());
 
     /* The parsing has been finished, check the results */
     if (!ctxt->wellFormed || ctxt->myDoc == NULL || is_failure(temp, how))
@@ -609,13 +622,18 @@ bool document::validate (error_messages *  messages_,
     vctxt.userData = temp;
 
     temp->get_messages().clear();
+    xml::impl::clear_https_messages();
 
     int retCode = xmlValidateDocument(&vctxt, pimpl_->doc_);
+
+    // Copy the collected https messages from tls
+    temp->append_messages(xml::impl::get_https_messages());
+
     if (retCode == 0)
         return false;
-    if (static_cast<error_messages*>(vctxt.userData)->has_errors())
+    if (temp->has_errors())
         return false;
-    if (static_cast<error_messages*>(vctxt.userData)->has_warnings()) {
+    if (temp->has_warnings()) {
         if (how == type_warnings_are_errors)
             return false;
     }
