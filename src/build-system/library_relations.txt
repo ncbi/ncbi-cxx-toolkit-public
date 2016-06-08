@@ -560,7 +560,8 @@ hgvs_name needs $(OBJMGR_LIBS)
 hgvs_name needs gui_objutils
 hgvs_name needs sv_objects
 hmm_file needs xregexp
-hmm_hit_handle needs xobjutil
+hmm_hit_handle needs $(SEQ_LIBS)
+hmm_hit_handle needs pub
 hogweed needs3party $(GMP_LIBS)
 hogweed needs3party $(ORIG_LIBS)
 homologene needs $(SEQ_LIBS)
@@ -618,6 +619,7 @@ krb5 needs3party $(NETWORK_LIBS)
 krb5 needs3party $(ORIG_LIBS)
 krb5 needs3party com_err
 krb5 needs3party k5crypto
+lapackwrapp needs3party $(ORIG_LIBS)
 lbsmdapi needs connect
 lds2 needs $(COMPRESS_LIBS)
 lds2 needs $(OBJREAD_LIBS)
