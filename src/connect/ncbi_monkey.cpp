@@ -307,6 +307,17 @@ const struct timeval* beg)
 }
 #endif
 
+
+/*//////////////////////////////////////////////////////////////////////////////
+//                             CMonkeySeedKey                                 //
+//////////////////////////////////////////////////////////////////////////////*/
+const CMonkeySeedKey& CMonkeySeedAccessor::Key()
+{
+    static CMonkeySeedKey key;
+    return key;
+}
+
+
 /*//////////////////////////////////////////////////////////////////////////////
 //                            CMonkeyException                                //
 //////////////////////////////////////////////////////////////////////////////*/
@@ -315,11 +326,12 @@ const char* CMonkeyException::what() const throw()
     return m_Message.c_str();
 }
 
+
 /*//////////////////////////////////////////////////////////////////////////////
 //                             CMonkeyRuleBase                                //
 //////////////////////////////////////////////////////////////////////////////*/
-CMonkeyRuleBase::CMonkeyRuleBase(EMonkeyActionType                 action_type,
-                                 const vector<string>&       params)
+CMonkeyRuleBase::CMonkeyRuleBase(EMonkeyActionType     action_type,
+                                 const vector<string>& params)
     : m_ReturnStatus(-1), m_RepeatType(eMonkey_RepeatNone), m_Delay (0),
       m_RunsSize(0), m_ActionType(action_type)
 {
@@ -339,6 +351,7 @@ CMonkeyRuleBase::CMonkeyRuleBase(EMonkeyActionType                 action_type,
     }
 }
 
+
 static string s_PrintActionType(EMonkeyActionType action) {
     switch (action)
     {
@@ -357,6 +370,8 @@ static string s_PrintActionType(EMonkeyActionType action) {
             string("Unknown EMonkeyActionType value"));
     }
 }
+
+
 /** Check that the rule should trigger on this run */
 bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock)
 {
@@ -380,13 +395,14 @@ bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock)
             }
         }
         int rand_val = CMonkey::Instance()->GetRand(Key());
-        LOG_POST(Note << "Checking if the rule for " 
-                      << s_PrintActionType(m_ActionType) 
+        LOG_POST(Note << "[CMonkeyRuleBase::CheckRun]  Checking if the rule " 
+                      << "for " << s_PrintActionType(m_ActionType) 
                       << " will be run this time. Random value is " 
                       << rand_val << ", probability threshold is " 
                       << m_Runs[m_RunPos[sock]] * 100);
         isRun = (rand_val % 100) < m_Runs[m_RunPos[sock]] * 100;
-        LOG_POST(Note << "The rule will be " << (isRun ? "" : "NOT ") << "run");
+        LOG_POST(Note << "[CMonkeyRuleBase::CheckRun]  The rule will be " 
+                      << (isRun ? "" : "NOT ") << "run");
     }
     /* In "number of the run" mode each item in m_Runs is a specific number of 
        run when the rule should trigger */
@@ -629,7 +645,8 @@ MONKEY_RETTYPE CMonkeyWriteRule::Run(MONKEY_SOCKTYPE        sock,
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedSend(true);
 #endif /* NCBI_MONKEY_TESTS */
-    LOG_POST(Error << "CHAOS MONKEY ENGAGE!!! INTERCEPTED send()");
+    LOG_POST(Error << "[CMonkeyWriteRule::Run]  CHAOS MONKEY ENGAGE!!! "
+                      "INTERCEPTED send()");
     int return_status = GetReturnStatus();
     if (return_status != eIO_Success && return_status != -1) {
         switch (return_status) {
@@ -694,7 +711,8 @@ MONKEY_RETTYPE CMonkeyReadRule::Run(MONKEY_SOCKTYPE sock,
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedRecv(true);
 #endif /* NCBI_MONKEY_TESTS */
-    LOG_POST(Error << "CHAOS MONKEY ENGAGE!!! INTERCEPTED recv()");
+    LOG_POST(Error << "[CMonkeyReadRule::Run]  CHAOS MONKEY ENGAGE!!! "
+                      "INTERCEPTED recv()");
     int return_status = GetReturnStatus();
     if (return_status != eIO_Success && return_status != -1) {
         switch (return_status) {
@@ -766,7 +784,8 @@ int CMonkeyConnectRule::Run(MONKEY_SOCKTYPE        sock,
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedConnect(true);
 #endif /* NCBI_MONKEY_TESTS */
-    LOG_POST(Error << "CHAOS MONKEY ENGAGE!!! INTERCEPTED connect()");
+    LOG_POST(Error << "[CMonkeyConnectRule::Run]  CHAOS MONKEY ENGAGE!!! "
+                      "INTERCEPTED connect()");
     int return_status = GetReturnStatus();
     if (return_status != eIO_Success && return_status != -1) {
         switch (return_status) {
@@ -833,7 +852,8 @@ bool CMonkeyPollRule::Run(size_t*     n,
                           SOCK*       sock,
                           EIO_Status* return_status)
 {
-    LOG_POST(Error << "CHAOS MONKEY ENGAGE!!! INTERCEPTED poll()");
+    LOG_POST(Error << "[CMonkeyPollRule::Run]  CHAOS MONKEY ENGAGE!!! "
+                      "INTERCEPTED poll()");
     if (m_Ignore) {
         return true;
     }
@@ -1040,11 +1060,11 @@ bool CMonkeyPlan::Match(const string&  sock_host,
         }
     }
     int rand_val = CMonkey::Instance()->GetRand(Key());
-    LOG_POST(Note << "Checking if plan " << m_Name  
+    LOG_POST(Note << "[CMonkeyPlan::Match]  Checking if plan " << m_Name  
                   << " will be matched. Random value is " 
                   << rand_val << ", probability threshold is " 
                   << m_Probability);
-    LOG_POST(Note << "Plan " << m_Name << " was " 
+    LOG_POST(Note << "[CMonkeyPlan::Match]  Plan " << m_Name << " was " 
                   << ((port_match && ((rand_val % 100) < m_Probability)) ? 
                       "" : "NOT ") << "matched");
     return port_match ? ((rand_val % 100) < m_Probability) : false;
@@ -1119,7 +1139,8 @@ bool CMonkeyPlan::PollRule(size_t*     n,
         if (m_PollRules[i].CheckRun((*sock)->sock)) {
             return m_PollRules[i].Run(n, sock, return_status);
         }
-        LOG_POST(Error << "CHAOS MONKEY NOT ENGAGED!!! poll() passed");
+        LOG_POST(Error << "[CMonkeyPlan::PollRule]  CHAOS MONKEY NOT "
+                          "ENGAGED!!! poll() passed");
         // If this rule did not trigger, we go to the next rule
     }
     // If no rules triggered, return 0
@@ -1158,13 +1179,13 @@ FMonkeyHookSwitch CMonkey::sm_HookSwitch = NULL;
 
 CMonkey::CMonkey() : m_Probability(1.0), m_Enabled(false)
 {
-    ReloadConfig();
     m_TlsToken = new CTls<int>;
     m_TlsRandList = new CTls<vector<int> >;
     m_TlsRandListPos = new CTls<int>;
     srand((unsigned int)time(NULL));
     m_Seed = rand();
-    LOG_POST(Note << "Chaos Monkey seed is: " << m_Seed);
+    LOG_POST(Note << "[CMonkey::CMonkey()]  Chaos Monkey seed is: " << m_Seed);
+    ReloadConfig();
 }
 
 
@@ -1195,15 +1216,15 @@ void CMonkey::ReloadConfig(const string& config)
     CNcbiRegistry&  reg = CNcbiApplication::Instance()->GetConfig();
     if (ConnNetInfo_Boolean(reg.Get(kMonkeyMainSect, kEnablField).c_str()) != 1) 
     {
-        LOG_POST(Note << "Chaos Monkey is disabled in [" 
-                      << kMonkeyMainSect << "]");
+        LOG_POST(Note << "[CMonkey::ReloadConfig]  Chaos Monkey is disabled " 
+                      << "in [" << kMonkeyMainSect << "]");
         m_Enabled = false;
         return;
     }
     string seed = reg.Get(kMonkeyMainSect, kSeedField).c_str();
     if (seed != "") {
-        LOG_POST(Note << "Chaos Monkey seed is set to " 
-                      << seed << " in config");
+        LOG_POST(Note << "[CMonkey::ReloadConfig]  Chaos Monkey seed is set " 
+                      << "to " << seed << " in config");
         SetSeed(NStr::StringToInt(seed));
     }
     reg.EnumerateSections(&sections);
@@ -1215,12 +1236,13 @@ void CMonkey::ReloadConfig(const string& config)
     }
     if (ConnNetInfo_Boolean(reg.Get(monkey_section, kEnablField).c_str()) != 1)
     {
-        LOG_POST(Note << "Chaos Monkey is disabled in [" 
-                      << monkey_section << "]");
+        LOG_POST(Note << "[CMonkey::ReloadConfig]  Chaos Monkey is disabled " 
+                      << "in [" << monkey_section << "]");
         m_Enabled = false;
         return;
     }
     m_Enabled = true;
+    LOG_POST(Error << "[CMonkey::ReloadConfig]  Chaos Monkey is active!");
     string probability = reg.Get(monkey_section, "probability");
     if (probability != "") {
         probability = NStr::Replace(probability, " ", "");
@@ -1384,11 +1406,11 @@ CMonkeyPlan* CMonkey::x_FindPlan(MONKEY_SOCKTYPE sock,  const string& hostname,
     /* Plan was not found. First roll the dice to know if Monkey will process 
      * current socket */
     int rand_val = CMonkey::Instance()->GetRand(Key());
-    LOG_POST(Note << "Checking if connection will be intercepted by "
-                  << "Chaos Monkey. Random value is " 
+    LOG_POST(Note << "[CMonkey::x_FindPlan]  Checking if connection will be "
+                  << "intercepted by Chaos Monkey. Random value is " 
                   << rand_val << ", probability threshold is " 
                   << m_Probability);
-    LOG_POST(Note << "The connection will be "
+    LOG_POST(Note << "[CMonkey::x_FindPlan]  The connection will be "
                   << ((rand_val % 100 >= m_Probability) ? "NOT " : "") 
                   << "processed.");
     if (rand_val % 100 >= m_Probability) {
@@ -1410,27 +1432,21 @@ CMonkeyPlan* CMonkey::x_FindPlan(MONKEY_SOCKTYPE sock,  const string& hostname,
 }
 
 
-
-const CMonkeySeedKey& CMonkeySeedAccessor::Key()
-{
-    static CMonkeySeedKey key;
-    return key;
-}
-
-
 bool CMonkey::RegisterThread(int token)
 {
     if (!m_Enabled) {
-        LOG_POST(Error << "Chaos Monkey is disabled, the thread with token "
-            << token << " was not registered");
+        ERR_POST(Error << "[CMonkey::RegisterThread]  Chaos Monkey is "
+                       << "disabled, the thread with token "
+                       << token << " was not registered");
         return false;
     }
     CFastMutexGuard guard(s_SeedLogConfigMutex);
-    LOG_POST(Note << "Registering thread with token " << token);
+    LOG_POST(Note << "[CMonkey::RegisterThread]  Registering thread with "
+                  << "token " << token);
 
     stringstream ss;
-    ss << "Token " << token << " has been already registered in CMonkey and "
-        "cannot be used again";
+    ss << "[CMonkey::RegisterThread]  Token " << token 
+       << " has been already registered in CMonkey and cannot be used again";
     if (m_RegisteredTokens.find(token) != m_RegisteredTokens.end()) {
         throw CMonkeyException(
             CDiagCompileInfo(__FILE__, __LINE__),
@@ -1445,9 +1461,13 @@ bool CMonkey::RegisterThread(int token)
 
     vector<int>* rand_list = new vector<int>();
     srand(m_Seed + token);
+    stringstream rand_list_str;
     for (unsigned int i = 0; i < kRandCount; ++i) {
         rand_list->push_back(rand());
+        rand_list_str << *rand_list->rbegin() << " ";
     }
+    LOG_POST(Note << "[CMonkey::RegisterThread]  Random list for token "
+                  << token << " is " << rand_list_str.str());
     m_TlsRandList->SetValue(rand_list, s_TlsCleanup< vector<int> >);
 
     m_TlsRandListPos->SetValue(new int, s_TlsCleanup<int>);
@@ -1468,7 +1488,8 @@ void CMonkey::SetSeed(int seed)
 {
     /* load m_seedlog from file */
     m_Seed = seed;
-    LOG_POST(Info << "Chaos Monkey seed was manually changed to: " << m_Seed);
+    LOG_POST(Info << "[CMonkey::SetSeed]  Chaos Monkey seed was manually "
+                     "changed to: " << m_Seed);
 }
 
 
@@ -1481,11 +1502,11 @@ int CMonkey::GetRand(const CMonkeySeedKey& /* key */)
     if (++list_pos == kRandCount) {
         list_pos = 0;
     }
-    LOG_POST(Note << "Getting random value "
-        << (*m_TlsRandList->GetValue())[list_pos]
-        << " for thread " << *m_TlsToken->GetValue()
-        << ". Next random value is "
-        << (*m_TlsRandList->GetValue())[list_pos + 1]);
+    LOG_POST(Note << "[CMonkey::GetRand]  Getting random value "
+                  << (*m_TlsRandList->GetValue())[list_pos]
+                  << " for thread " << *m_TlsToken->GetValue()
+                  << ". Next random value is "
+                  << (*m_TlsRandList->GetValue())[list_pos + 1]);
     return (*m_TlsRandList->GetValue())[list_pos];
 }
 
