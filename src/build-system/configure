@@ -32228,7 +32228,7 @@ fi
 
  if test -x "$PYTHON"; then
     pyconf="$real_srcdir/scripts/common/impl/python-config.py"
-    PYTHON_VERSION=`"$PYTHON" "$pyconf" --version 2>/dev/null`
+    PYTHON_VERSION=`DYLD_BIND_AT_LAUNCH=1 "$PYTHON" "$pyconf" --version 2>&5`
  else
     PYTHON_VERSION=
     ncbi_cv_lib_python=no
@@ -32343,6 +32343,7 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_python" >&5
 echo "${ECHO_T}$ncbi_cv_lib_python" >&6; }
  else
+    PYTHON=
     ncbi_cv_lib_python=no
  fi
  if test "$ncbi_cv_lib_python" = "no"; then
@@ -32402,7 +32403,7 @@ fi
 
  if test -x "$PYTHON25"; then
     pyconf="$real_srcdir/scripts/common/impl/python-config.py"
-    PYTHON25_VERSION=`"$PYTHON25" "$pyconf" --version 2>/dev/null`
+    PYTHON25_VERSION=`DYLD_BIND_AT_LAUNCH=1 "$PYTHON25" "$pyconf" --version 2>&5`
  else
     PYTHON25_VERSION=
     ncbi_cv_lib_python25=no
@@ -32517,6 +32518,7 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_python25" >&5
 echo "${ECHO_T}$ncbi_cv_lib_python25" >&6; }
  else
+    PYTHON25=
     ncbi_cv_lib_python25=no
  fi
  if test "$ncbi_cv_lib_python25" = "no"; then
@@ -32576,7 +32578,7 @@ fi
 
  if test -x "$PYTHON26"; then
     pyconf="$real_srcdir/scripts/common/impl/python-config.py"
-    PYTHON26_VERSION=`"$PYTHON26" "$pyconf" --version 2>/dev/null`
+    PYTHON26_VERSION=`DYLD_BIND_AT_LAUNCH=1 "$PYTHON26" "$pyconf" --version 2>&5`
  else
     PYTHON26_VERSION=
     ncbi_cv_lib_python26=no
@@ -32691,6 +32693,7 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_python26" >&5
 echo "${ECHO_T}$ncbi_cv_lib_python26" >&6; }
  else
+    PYTHON26=
     ncbi_cv_lib_python26=no
  fi
  if test "$ncbi_cv_lib_python26" = "no"; then
@@ -32750,7 +32753,7 @@ fi
 
  if test -x "$PYTHON27"; then
     pyconf="$real_srcdir/scripts/common/impl/python-config.py"
-    PYTHON27_VERSION=`"$PYTHON27" "$pyconf" --version 2>/dev/null`
+    PYTHON27_VERSION=`DYLD_BIND_AT_LAUNCH=1 "$PYTHON27" "$pyconf" --version 2>&5`
  else
     PYTHON27_VERSION=
     ncbi_cv_lib_python27=no
@@ -32865,6 +32868,7 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_python27" >&5
 echo "${ECHO_T}$ncbi_cv_lib_python27" >&6; }
  else
+    PYTHON27=
     ncbi_cv_lib_python27=no
  fi
  if test "$ncbi_cv_lib_python27" = "no"; then
@@ -32924,7 +32928,7 @@ fi
 
  if test -x "$PYTHON3"; then
     pyconf="$real_srcdir/scripts/common/impl/python-config.py"
-    PYTHON3_VERSION=`"$PYTHON3" "$pyconf" --version 2>/dev/null`
+    PYTHON3_VERSION=`DYLD_BIND_AT_LAUNCH=1 "$PYTHON3" "$pyconf" --version 2>&5`
  else
     PYTHON3_VERSION=
     ncbi_cv_lib_python3=no
@@ -33039,6 +33043,7 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_python3" >&5
 echo "${ECHO_T}$ncbi_cv_lib_python3" >&6; }
  else
+    PYTHON3=
     ncbi_cv_lib_python3=no
  fi
  if test "$ncbi_cv_lib_python3" = "no"; then

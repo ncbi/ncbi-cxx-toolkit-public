@@ -269,7 +269,7 @@ AC_DEFUN(_NCBI_CHECK_PYTHON,
     [${PYTHON_PATH+$PYTHON_PATH/bin:}$PATH:/usr/local/python-$2/bin])
  if test -x "[$]$1"; then
     pyconf="$real_srcdir/scripts/common/impl/python-config.py"
-    $1_VERSION=`"[$]$1" "$pyconf" --version 2>/dev/null`
+    $1_VERSION=`DYLD_BIND_AT_LAUNCH=1 "[$]$1" "$pyconf" --version 2>&AS_MESSAGE_LOG_FD`
  else
     $1_VERSION=
     [ncbi_cv_lib_]m4_tolower($1)=no
@@ -295,6 +295,7 @@ AC_DEFUN(_NCBI_CHECK_PYTHON,
            [[ncbi_cv_lib_]m4_tolower($1)=yes],
            [[ncbi_cv_lib_]m4_tolower($1)=no])])
  else
+    $1=
     [ncbi_cv_lib_]m4_tolower($1)=no
  fi
  if test "[$ncbi_cv_lib_]m4_tolower($1)" = "no"; then
