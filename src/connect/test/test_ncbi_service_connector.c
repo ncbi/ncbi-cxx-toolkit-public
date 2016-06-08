@@ -30,6 +30,7 @@
  *
  */
 
+#include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_service_connector.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
@@ -63,6 +64,8 @@ int main(int argc, const char* argv[])
     ConnNetInfo_AppendArg(net_info, "platform", "none");
     ConnNetInfo_AppendArg(net_info, "address",  "2010");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    SOCK_SetupSSL(NcbiSetupGnuTls);
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
 
