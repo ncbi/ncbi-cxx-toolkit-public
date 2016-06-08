@@ -1702,7 +1702,11 @@ CNCAlerts::Register(CNCAlerts::eDebugReleaseCacheData1, "ref_cnt is 0");
     }
 
     Uint2 time_bucket = data->time_bucket;
-    SBucketCache* cache = s_GetBucketCache(time_bucket);
+    TBucketCacheMap::const_iterator it = s_BucketsCache.find(time_bucket);
+    if (it == s_BucketsCache.end()) {
+        return;
+    }
+    SBucketCache* cache = it->second;
     cache->lock.Lock();
 
 #ifdef _DEBUG

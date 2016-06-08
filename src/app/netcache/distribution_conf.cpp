@@ -692,7 +692,9 @@ CNCDistributionConf::GenerateBlobKey(Uint2 local_port,
     slot = s_SelfSlots[index];
     Uint4 remain = rnd_num % s_SlotRndShare;
     Uint4 key_rnd = (slot - 1) * s_SlotRndShare + remain;
-    time_bucket = Uint2((slot - 1) * s_CntSlotBuckets + remain / s_TimeRndShare) + 1;
+    time_bucket = min(
+        Uint2((slot - 1) * s_CntSlotBuckets + remain / s_TimeRndShare + 1),
+        CNCDistributionConf::GetCntTimeBuckets());
     CNetCacheKey::GenerateBlobKey(&key,
                                   static_cast<Uint4>(s_BlobId.Add(1)),
                                   s_SelfHostIP, local_port, ver, key_rnd);
@@ -778,8 +780,9 @@ CNCDistributionConf::GetSlotByRnd(Uint4 key_rnd,
 {
     // Slot numbers are 1-based
     slot = Uint2(key_rnd / s_SlotRndShare) + 1;
-    time_bucket = Uint2((slot - 1) * s_CntSlotBuckets
-                        + key_rnd % s_SlotRndShare / s_TimeRndShare) + 1;
+    time_bucket = min(
+        Uint2((slot - 1) * s_CntSlotBuckets + key_rnd % s_SlotRndShare / s_TimeRndShare + 1),
+        CNCDistributionConf::GetCntTimeBuckets());
 }
 
 Uint8 CNCDistributionConf::GetSrvIdByIP(Uint4 ip)
