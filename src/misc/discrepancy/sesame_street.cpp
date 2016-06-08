@@ -50,6 +50,47 @@ DISCREPANCY_MODULE(sesame_street);
 // Some animals are more equal than others...
 
 
+static string OrderQual(const string& s)
+{
+    static string names[] = {
+        "collected-by",
+        "country",
+        "identified-by",
+        "host",
+        "fwd-primer-name",
+        "fwd-primer-seq",
+        "rev-primer-name",
+        "rev-primer-seq",
+        "culture-collection",
+        "plasmid-name",
+        "isolation-source"
+        "strain",
+        "note-subsrc",
+        "note-orgmod",
+        "specimen-voucher",
+        "taxname",
+        "tissue-type",
+        "taxid",
+        "location"
+    };
+    const size_t sz = sizeof(names) / sizeof(names[0]);
+    size_t n;
+    for (n = 0; n < sz; n++) {
+        if (names[n] == s) {
+            break;
+        }
+    }
+    if (n == sz) {
+        return s;
+    }
+    string r;
+    for (size_t i = sz; i > n; i--) {
+        r += " ";
+    }
+    return r + s;
+}
+
+
 DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller, "Some animals are more equal than others...")
 {
     CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
@@ -231,7 +272,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                 capital[upper][jj->first].push_back(*o);
             }
         }
-        string diagnosis = it->first;
+        string diagnosis = OrderQual(it->first);
         diagnosis += " (";
         diagnosis += pres == total ? "all present" : "some missing";
         diagnosis += ", ";
