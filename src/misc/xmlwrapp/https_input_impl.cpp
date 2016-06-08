@@ -82,7 +82,16 @@ namespace {
 
     // There is no good way for the callbacks above to tell about the
     // errors or warnings. So this is a storage for the custom messages.
-    thread_local xml::error_messages    https_messages;
+    #if defined(_MSC_VER)
+        __declspec(thread) xml::error_messages    https_messages;
+    #else
+        // On Apple C-lang no messages
+        #if defined(__APPLE__)  &&  defined(__clang__)
+            xml::error_messages    https_messages;
+        #else
+            thread_local   xml::error_messages    https_messages;
+        #endif
+    #endif
 }
 
 
@@ -101,7 +110,9 @@ namespace xml {
 
         void clear_https_messages(void)
         {
+            #if !defined(__APPLE__)  ||  !defined(__clang__)
             https_messages.get_messages().clear();
+            #endif
         }
 
         const error_messages &  get_https_messages(void)
@@ -114,9 +125,11 @@ namespace xml {
                                   int                             line,
                                   const std::string &             fname)
         {
+            #if !defined(__APPLE__)  ||  !defined(__clang__)
             https_messages.get_messages().push_back(
                                     error_message(msg, msg_type,
                                                   line, fname));
+            #endif
         }
 
     }   // namespace impl
