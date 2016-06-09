@@ -86,6 +86,7 @@ private:
         string all_seqid;
         double min_identity;
         double max_identity;
+        double total_identity;
     };
 
     struct SAaStatus {
@@ -333,7 +334,8 @@ int CIgBlastnApp::Run(void)
                     info->all_seqid = clone_info.seqid;
                     info->min_identity = clone_info.identity;
                     info->max_identity = clone_info.identity;
-                    
+                    info->total_identity = clone_info.identity;
+                        
                     SAaStatus aa_status;
                     aa_status.aa = clone_info.aa;
                     aa_status.productive = clone_info.productive;
@@ -347,7 +349,7 @@ int CIgBlastnApp::Run(void)
                             if (info->max_identity > iter2->second->max_identity) {
                                 iter2->second->max_identity = info->max_identity;
                             }
-                            
+                            iter2->second->total_identity += info->total_identity;
                             iter2->second->count  ++;
                             iter2->second->all_seqid = iter2->second->all_seqid + "," + info->seqid; 
                         } else {
@@ -428,7 +430,7 @@ int CIgBlastnApp::Run(void)
             }
 
             count = 1;
-            *outfile << "\n#All query sequences grouped by clonotypes.  Fields (tab-delimited) are clonotype identifier, count, min similarity to top germline V gene (%), max similarity to top germline V gene (%), query sequence name (multiple names are separated by a comma if applicable)"<< endl << endl;
+            *outfile << "\n#All query sequences grouped by clonotypes.  Fields (tab-delimited) are clonotype identifier, count, frequency (%), min similarity to top germline V gene (%), max similarity to top germline V gene (%), average similarity to top germline V gene (%), query sequence name (multiple names are separated by a comma if applicable)"<< endl << endl;
             ITERATE(MapVec, iter, map_vec) {
                 if (count > args["num_clonotype"].AsInteger()) {
                     break;
@@ -439,14 +441,17 @@ int CIgBlastnApp::Run(void)
                     if ((*iter)->second->size() > 1) {
                         clone_name += suffix[aa_count];
                     }
-                    
+                   
+                    double frequency = ((double) iter2->second->count)/total_elements*100;
                     *outfile << std::setprecision(3) 
-                        << clone_name << "\t"
-                        <<iter2->second->count<<"\t"
-                        <<iter2->second->min_identity*100<<"\t"
-                        <<iter2->second->max_identity*100<<"\t"
-                        <<iter2->second->all_seqid<<"\t" << endl;
-                         
+                             << clone_name << "\t"
+                             << iter2->second->count<<"\t"
+                             << frequency << "\t"
+                             << iter2->second->min_identity*100<<"\t"
+                             << iter2->second->max_identity*100<<"\t"
+                             << iter2->second->total_identity/iter2->second->count*100<<"\t"
+                             << iter2->second->all_seqid<<"\t" << endl;
+                    
                     aa_count ++;
                 }
                 count ++;
