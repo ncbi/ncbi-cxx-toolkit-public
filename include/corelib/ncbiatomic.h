@@ -68,7 +68,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
 #else
 {
     void** nv_loc = (void**) location;
-#  ifdef NCBI_HAVE_CXX11
+#  if defined(NCBI_HAVE_CXX11) && !defined(NCBI_COMPILER_MSVC)
     if (sizeof(std::atomic<void*>) == sizeof(void*)) {
         std::atomic<void*>& a = *(std::atomic<void*>*)nv_loc;
         return a.exchange(new_value);
