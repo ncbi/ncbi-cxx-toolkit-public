@@ -330,6 +330,23 @@ protected:
         CRef<CSeq_feat>&,
         const vector<string>&);
         
+    void xSetFeatureColor(
+        CRef<CUser_object>,
+        const vector<string>&);
+
+    void xSetFeatureColorFromItemRgb(
+        CRef<CUser_object>,
+        const string&);
+    void xSetFeatureColorFromScore(
+        CRef<CUser_object>,
+        const string&);
+    void xSetFeatureColorByStrand(
+        CRef<CUser_object>,
+        const string&,
+        ENa_strand);
+    void xSetFeatureColorDefault(
+        CRef<CUser_object>);
+
     bool xContainsThickFeature(
         const vector<string>&) const;
 

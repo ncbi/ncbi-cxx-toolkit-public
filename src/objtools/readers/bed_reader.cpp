@@ -84,6 +84,7 @@
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
+#include <objtools/readers/track_data.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/error_codes.hpp>
@@ -1119,6 +1120,167 @@ void CBedReader::xSetFeatureTitle(
 }
 
 //  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureColor(
+    CRef<CUser_object> pDisplayData,
+    const vector<string>& fields )
+//  ----------------------------------------------------------------------------
+{
+    //1: if track line itemRgb is set, try that first:
+    string trackItemRgb = m_pTrackDefaults->ValueOf("itemRgb");
+    if (trackItemRgb == "On"  &&  fields.size() >= 9) {
+        string featItemRgb = fields[8];
+        if (featItemRgb != ".") {
+            xSetFeatureColorFromItemRgb(pDisplayData, featItemRgb);
+            return;
+        }
+    }
+
+    //2: if track useScore is set, try that next:
+    string trackUseScore = m_pTrackDefaults->ValueOf("useScore");
+    if (trackUseScore == "1"  && fields.size() >= 5) {
+        string featScore = fields[4];
+        if (featScore != ".") {    
+            xSetFeatureColorFromScore(pDisplayData, featScore);
+            return; 
+        }
+    }
+
+    //3: if track colorByStrand is set, try that next:
+    string trackColorByStrand = m_pTrackDefaults->ValueOf("colorByStrand");
+    if (!trackColorByStrand.empty()  && fields.size() >= 6) {
+        ENa_strand strand = 
+            (fields[5] == "-") ? eNa_strand_minus : eNa_strand_plus;
+        xSetFeatureColorByStrand(pDisplayData, trackColorByStrand, strand);
+        return;
+    }
+    //4: if none of the track color attributes are set, attempt feature itemRgb:
+    if (fields.size() >= 9) {
+        string featItemRgb = fields[8];
+        if (featItemRgb != ".") {
+            xSetFeatureColorFromItemRgb(pDisplayData, featItemRgb);
+            return;
+        }
+    }
+    
+    //5: if still here, assign default color:
+    xSetFeatureColorDefault(pDisplayData);
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureColorDefault(
+    CRef<CUser_object> pDisplayData)
+//  ----------------------------------------------------------------------------
+{
+    const string colorDefault("0 0 0");
+    pDisplayData->AddField("color", colorDefault);
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureColorByStrand(
+    CRef<CUser_object> pDisplayData,
+    const string& trackColorByStrand,
+    ENa_strand strand)
+//  ----------------------------------------------------------------------------
+{
+    try {
+        string colorPlus, colorMinus;
+        NStr::SplitInTwo(trackColorByStrand, " ", colorPlus, colorMinus);
+        string useColor = (strand == eNa_strand_minus) ? colorMinus : colorPlus;
+        xSetFeatureColorFromItemRgb(pDisplayData, useColor);
+    }
+    catch (std::exception&) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Invalid track line: Bad colorByStrand value.") );
+        pErr->Throw();
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureColorFromScore(
+    CRef<CUser_object> pDisplayData,
+    const string& featScore )
+//  ----------------------------------------------------------------------------
+{
+    int score;
+    try {
+        score = NStr::StringToInt(featScore);
+    }
+    catch (const std::exception&) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad score value to be used for color.") );
+        pErr->Throw();
+    }
+    if (score < 0  ||  1000 < score) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad score value to be used for color.") );
+        pErr->Throw();
+    }
+    string greyValue  = NStr::IntToString(255 - (score/4));
+    vector<string> srgb{ greyValue, greyValue, greyValue};
+    string rgbValue = NStr::Join(srgb, " ");
+    pDisplayData->AddField("color", rgbValue);
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureColorFromItemRgb(
+    CRef<CUser_object> pDisplayData,
+    const string& itemRgb )
+//  ----------------------------------------------------------------------------
+{
+    vector<string> srgb;
+    if (itemRgb == "0") {
+        srgb.push_back("0");
+        srgb.push_back("0");
+        srgb.push_back("0");
+    }
+    else {
+        NStr::Split(itemRgb, ",", srgb);
+    }
+    if (srgb.size() != 3) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad color value.") );
+        pErr->Throw();
+    }
+    try {
+        for (int i=0; i < 3; i++)
+        {
+           int x = NStr::StringToInt(srgb[i]);
+           if (x<0 || x>255) {
+                AutoPtr<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
+                    eDiag_Error,
+                    0,
+                    "Invalid data line: Bad color value.") );
+                pErr->Throw();
+           }
+
+        }
+    }
+    catch(const std::exception&) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad color value.") );
+        pErr->Throw();
+    }
+    string rgbValue = NStr::Join(srgb, " ");
+    pDisplayData->AddField("color", rgbValue);
+}
+
+//  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureBedData(
     CRef<CSeq_feat>& feature,
     const vector<string>& fields )
@@ -1178,54 +1340,7 @@ void CBedReader::xSetFeatureBedData(
         pDisplayData->AddField("score", int_score);
     }
 
-    if (fields.size() < 9) {
-        return;
-    }
-    vector<string> srgb;
-    if (fields[8] == "0"  ||  fields[8] == ".") {
-        srgb.push_back("0");
-        srgb.push_back("0");
-        srgb.push_back("0");
-    }
-    else {
-        NStr::Split(fields[8], ",", srgb);
-    }
-    if (srgb.size() != 3)
-    {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Invalid data line: Bad color value.") );
-        pErr->Throw();
-    }
-    try
-    {
-        for (int i=0; i < 3; i++)
-        {
-           int x = NStr::StringToInt(srgb[i]);
-           if (x<0 || x>255) {
-                AutoPtr<CObjReaderLineException> pErr(
-                    CObjReaderLineException::Create(
-                    eDiag_Error,
-                    0,
-                    "Invalid data line: Bad color value.") );
-                pErr->Throw();
-           }
-
-        }
-    }
-    catch(const std::exception&)
-    {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Invalid data line: Bad color value.") );
-        pErr->Throw();
-    }
-    string rgbValue = NStr::Join(srgb, " ");
-    pDisplayData->AddField("color", rgbValue);
+    this->xSetFeatureColor(pDisplayData, fields);
 }
 
 //  ----------------------------------------------------------------------------
