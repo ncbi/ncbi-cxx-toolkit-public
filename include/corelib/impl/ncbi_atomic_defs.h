@@ -90,7 +90,7 @@ extern "C" {
 #  define NCBI_SWAP_POINTERS_EXTERN 1
 #endif
 
-#if defined(NCBI_HAVE_CXX11)
+#if defined(NCBI_HAVE_CXX11) && !defined(NCBI_COMPILER_MSVC)
 #  include <atomic>
 #endif
 
@@ -130,7 +130,7 @@ extern "C" {
 #  if defined(__sparc)  &&  !defined(__sparcv9)
 #    define NCBI_COUNTER_RESERVED_VALUE 0x3FFFFFFF
 #  endif
-#elif defined(NCBI_HAVE_CXX11) && !defined(NCBI_OS_MSWIN)
+#elif defined(NCBI_HAVE_CXX11) && !defined(NCBI_COMPILER_MSVC)
    /* std::atomic<> in MSVC has non-default constructor so
       static CAtomicCounter couldn't be initialized in MT-safe manner */
     typedef size_t TNCBIAtomicValue;
