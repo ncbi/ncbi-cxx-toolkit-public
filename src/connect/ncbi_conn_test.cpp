@@ -316,10 +316,12 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
         } else
             *user_header = '\0';
         SAuxData* auxdata = new SAuxData(m_Canceled, 0);
-        http.push_back(new CConn_HttpStream(net_info, user_header, s_AnyHeader,
+        http.push_back(new CConn_HttpStream(net_info, 
+                                            user_header, s_AnyHeader,
                                             auxdata, s_Adjust, s_Cleanup));
         http.back()->SetCanceledCallback(m_Canceled);
     }
+    ConnNetInfo_Destroy(net_info);
 
     EIO_Status status = eIO_Success;
     do {
