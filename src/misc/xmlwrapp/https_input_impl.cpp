@@ -82,16 +82,14 @@ namespace {
 
     // There is no good way for the callbacks above to tell about the
     // errors or warnings. So this is a storage for the custom messages.
-    #if defined(_MSC_VER)
-        __declspec(thread) xml::error_messages    https_messages;
+
+    // Temporarily disable message collecting on some platforms
+    // On Apple/free bsd C-lang and on MS - no messages
+    #if ((defined(__APPLE__) || defined(__FreeBSD__)) && defined(__clang__) || defined(_MSC_VER))
+        #define NO_THREAD_LOCAL_HTTPS_MESSAGES 1
+        xml::error_messages    https_messages;
     #else
-        // On Apple C-lang no messages
-        #if (defined(__APPLE__) || defined(__FreeBSD__)) && defined(__clang__)
-            #define NO_THREAD_LOCAL_HTTPS_MESSAGES 1
-            xml::error_messages    https_messages;
-        #else
-            thread_local   xml::error_messages    https_messages;
-        #endif
+        thread_local   xml::error_messages    https_messages;
     #endif
 }
 
