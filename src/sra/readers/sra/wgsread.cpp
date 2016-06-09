@@ -755,7 +755,7 @@ void CWGSDb_Impl::x_InitIdParams(void)
 string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
                                              CTempString vol_path)
 {
-    if ( 1 ) {
+    if ( 0 ) {
         static bool kTryTestFiles =
             getenv("HOME") && strcmp(getenv("HOME"), "/home/vasilche") == 0;
         if ( kTryTestFiles ) {
