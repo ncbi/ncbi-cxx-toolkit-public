@@ -87,7 +87,12 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
     sym = psm->symbols;
     dim = (int)strlen(sym);
     /* fill with default */
-    memset(&fsm->s, psm->defscore, NCBI_FSM_DIM * NCBI_FSM_DIM);
+    for (i = 0;  i < NCBI_FSM_DIM;  ++i) {
+        fsm->s[0][i] = psm->defscore;
+    }
+    for (i = 1;  i < NCBI_FSM_DIM;  ++i) {
+        memcpy(fsm->s[i], fsm->s[0], NCBI_FSM_DIM * sizeof(fsm->s[0][0]));
+    }
     for (i = 0;  i < dim;  ++i) {
         aa1 = sym[i];
         /* get core (NCBIeaa x NCBIeaa) */
