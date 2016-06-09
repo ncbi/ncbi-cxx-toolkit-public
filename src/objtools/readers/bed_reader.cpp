@@ -1119,6 +1119,53 @@ void CBedReader::xSetFeatureTitle(
     }
 }
 
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureScore(
+    CRef<CUser_object> pDisplayData,
+    const vector<string>& fields )
+//  ----------------------------------------------------------------------------
+{
+    string trackUseScore = m_pTrackDefaults->ValueOf("useScore");
+    if (fields.size() < 5  || trackUseScore == "1") {
+        //record does not carry score information
+        return;
+    }
+
+    int int_score = NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow );
+    double d_score = 0;
+
+    if (int_score == 0 && fields[4].compare("0") != 0) {
+        try {
+            d_score = NStr::StringToDouble(fields[4]);
+        }
+        catch(std::exception&) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Invalid data line: Bad \"score\" value.") );
+            pErr->Throw();
+        }
+    }
+
+    if (d_score < 0 || int_score < 0) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad \"score\" value.") );
+        pErr->Throw();
+    }
+    else if (d_score > 0) {
+        pDisplayData->AddField("score", d_score);
+    }
+    else {
+        pDisplayData->AddField("score", int_score);
+    }
+}
+
+
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureColor(
     CRef<CUser_object> pDisplayData,
@@ -1295,52 +1342,13 @@ void CBedReader::xSetFeatureBedData(
 	}
     
     CRef<CUser_object> pDisplayData(new CUser_object());
-    if (fields.size() < 5  ||  fields[4] == ".") {
-        return;
-    }
 
     CSeq_feat::TExts& exts = feature->SetExts();
     pDisplayData->SetType().SetStr("DisplaySettings");
     exts.push_front(pDisplayData);
 
-    int int_score = NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow );
-    double d_score = 0;
-
-    if (int_score == 0 && fields[4].compare("0") != 0)
-    {
-        try {
-            d_score = NStr::StringToDouble(fields[4]);
-        }
-        catch(std::exception&) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                "Invalid data line: Bad \"score\" value.") );
-            pErr->Throw();
-        }
-    }
-
-    if (d_score < 0 || int_score < 0)
-    {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Invalid data line: Bad \"score\" value.") );
-        pErr->Throw();
-    }
-    else
-    if (d_score > 0)
-    {
-        pDisplayData->AddField("score", d_score);
-    }
-    else
-    {
-        pDisplayData->AddField("score", int_score);
-    }
-
-    this->xSetFeatureColor(pDisplayData, fields);
+    xSetFeatureScore(pDisplayData, fields);
+    xSetFeatureColor(pDisplayData, fields);
 }
 
 //  ----------------------------------------------------------------------------

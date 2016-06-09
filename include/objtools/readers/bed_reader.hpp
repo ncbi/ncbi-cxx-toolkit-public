@@ -330,6 +330,9 @@ protected:
         CRef<CSeq_feat>&,
         const vector<string>&);
         
+    void xSetFeatureScore(
+        CRef<CUser_object>,
+        const vector<string>&);
     void xSetFeatureColor(
         CRef<CUser_object>,
         const vector<string>&);
