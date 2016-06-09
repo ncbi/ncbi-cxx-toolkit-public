@@ -244,7 +244,7 @@ CVcfReader::ReadSeqAnnot(
         ProcessWarning(*pErr, pEC);
     }
     xAssignTrackData(annot);
-    xAssignVcfMeta(annot);
+    xAssignVcfMeta(annot, pEC);
     return annot;
 }
 
@@ -519,7 +519,8 @@ CVcfReader::xProcessHeaderLine(
 //  ----------------------------------------------------------------------------
 bool
 CVcfReader::xAssignVcfMeta(
-    CRef<CSeq_annot> pAnnot )
+    CRef<CSeq_annot> pAnnot,
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if (m_Meta &&
@@ -530,6 +531,14 @@ CVcfReader::xAssignVcfMeta(
             pAnnot->SetDesc(*desc);
         }
         pAnnot->SetDesc().Set().push_back( m_Meta );
+    } else { // VCF input ought to include a header
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Warning,
+            0,
+            "CVcfReader::xAssignVcfMeta: Missing VCF header data.",
+            ILineError::eProblem_GeneralParsingError) );
+        ProcessWarning(*pErr, pEC);
     }
     return true;
 }
