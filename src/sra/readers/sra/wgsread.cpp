@@ -370,6 +370,7 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, TRIM_LEN);
     DECLARE_VDB_COLUMN_AS(NCBI_taxid, TAXID);
     DECLARE_VDB_COLUMN_AS_STRING(DESCR);
+    DECLARE_VDB_COLUMN_AS_STRING(NUC_PROT_DESCR);
     DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
     DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, GAP_START);
@@ -423,6 +424,7 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(TRIM_LEN),
       INIT_OPTIONAL_VDB_COLUMN(TAXID),
       INIT_OPTIONAL_VDB_COLUMN(DESCR),
+      INIT_OPTIONAL_VDB_COLUMN(NUC_PROT_DESCR),
       INIT_OPTIONAL_VDB_COLUMN(ANNOT),
       INIT_OPTIONAL_VDB_COLUMN(GB_STATE),
       INIT_OPTIONAL_VDB_COLUMN(GAP_START),
@@ -753,13 +755,14 @@ void CWGSDb_Impl::x_InitIdParams(void)
 string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
                                              CTempString vol_path)
 {
-    if ( 0 ) {
+    if ( 1 ) {
         static bool kTryTestFiles =
             getenv("HOME") && strcmp(getenv("HOME"), "/home/vasilche") == 0;
         if ( kTryTestFiles ) {
             string test_dir = "/home/dondosha/TEST";
             string path = CDirEntry::MakePath(test_dir, path_or_acc);
             if ( CDirEntry(path).Exists() ) {
+                LOG_POST("Using local test file: "<<path);
                 return path;
             }
         }
@@ -982,7 +985,11 @@ void sx_AddDescrBytes(CSeq_descr& descr, CTempString bytes)
         // is of type Seq-descr (starts with byte 49)
         // or of type Seqdesc (starts with byte >= 160)
         if ( bytes[0] == kSeq_descrFirstByte ) {
-            in >> descr;
+            CSeq_descr tmp;
+            in >> tmp;
+            for ( auto& desc : tmp.Set() ) {
+                descr.Set().push_back(desc);
+            }
         }
         else {
             while ( in.HaveMoreData() ) {
@@ -2211,9 +2218,10 @@ void CWGSSeqIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 
 bool CWGSSeqIterator::HasSeqDescrBytes(void) const
 {
-    x_CheckValid("CWGSSeqIterator::GetSeqDescrBytes");
+    x_CheckValid("CWGSSeqIterator::HasSeqDescrBytes");
     return m_Cur->m_DESCR && !m_Cur->DESCR(m_CurrId).empty();
 }
+
 
 CTempString CWGSSeqIterator::GetSeqDescrBytes(void) const
 {
@@ -2225,14 +2233,42 @@ CTempString CWGSSeqIterator::GetSeqDescrBytes(void) const
     return descr_bytes;
 }
 
+
+bool CWGSSeqIterator::HasNucProtDescrBytes(void) const
+{
+    x_CheckValid("CWGSSeqIterator::HasNucProtDescrBytes");
+    return m_Cur->m_NUC_PROT_DESCR && !m_Cur->NUC_PROT_DESCR(m_CurrId).empty();
+}
+
+
+CTempString CWGSSeqIterator::GetNucProtDescrBytes(void) const
+{
+    x_CheckValid("CWGSSeqIterator::GetNucProtDescrBytes");
+    CTempString descr_bytes;
+    if ( m_Cur->m_NUC_PROT_DESCR ) {
+        descr_bytes = m_Cur->NUC_PROT_DESCR(m_CurrId);
+    }
+    return descr_bytes;
+}
+
+
 bool CWGSSeqIterator::HasSeq_descr(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::HasSeq_descr");
-    if ( (flags & fSeqDescr) && HasSeqDescrBytes() ) {
-        return true;
+    if ( flags & fSeqDescr ) {
+        if ( HasSeqDescrBytes() ) {
+            return true;
+        }
     }
-    if ( (flags & fMasterDescr) && !GetDb().GetMasterDescr().empty() ) {
-        return true;
+    if ( flags & fNucProtDescr ) {
+        if ( HasNucProtDescrBytes() ) {
+            return true;
+        }
+    }
+    if ( flags & fMasterDescr ) {
+        if ( !GetDb().GetMasterDescr().empty() ) {
+            return true;
+        }
     }
     return false;
 }
@@ -2242,10 +2278,11 @@ CRef<CSeq_descr> CWGSSeqIterator::GetSeq_descr(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetSeq_descr");
     CRef<CSeq_descr> ret(new CSeq_descr);
-    if ( flags & fSeqDescr ) {
-        if( m_Cur->m_DESCR ) {
-            sx_AddDescrBytes(*ret, *m_Cur->DESCR(m_CurrId));
-        }
+    if ( (flags & fSeqDescr) && m_Cur->m_DESCR ) {
+        sx_AddDescrBytes(*ret, *m_Cur->DESCR(m_CurrId));
+    }
+    if ( (flags & fNucProtDescr) && m_Cur->m_NUC_PROT_DESCR ) {
+        sx_AddDescrBytes(*ret, *m_Cur->NUC_PROT_DESCR(m_CurrId));
     }
     if ( flags & fMasterDescr ) {
         GetDb().AddMasterDescr(*ret);
@@ -3329,16 +3366,19 @@ void CWGSSeqIterator::x_CreateBioseq(SWGSCreateInfo& info) const
     GetIds(info.main_seq->SetId(), info.flags);
     if ( info.flags & fMaskDescr ) {
         PROFILE(sw___GetContigDescr);
-        if ( info.flags & fMasterDescr ) {
-            if ( CRef<CSeq_descr> descr = GetSeq_descr(info.flags) ) {
-                info.main_seq->SetDescr(*descr);
+        if ( (info.flags & fMaskDescr) == fSeqDescr  ) {
+            // only own descriptors
+            if ( m_Cur->m_DESCR ) {
+                CVDBStringValue descr = m_Cur->DESCR(m_CurrId);
+                if ( !descr.empty() ) {
+                    info.x_AddDescr(*descr);
+                }
             }
         }
-        else if ( m_Cur->m_DESCR ) {
-            // only own descriptors
-            CVDBStringValue descr = m_Cur->DESCR(m_CurrId);
-            if ( !descr.empty() ) {
-                info.x_AddDescr(*descr);
+        else {
+            // full descirptor collection
+            if ( CRef<CSeq_descr> descr = GetSeq_descr(info.flags) ) {
+                info.main_seq->SetDescr(*descr);
             }
         }
     }
@@ -3502,12 +3542,8 @@ void SWGSCreateInfo::x_CreateProtSet(TVDBRowIdRange range)
 static
 void sx_AddMasterDescr(const CWGSDb& db, CSeq_entry& entry)
 {
-    CSeq_descr descr;
-    db->AddMasterDescr(descr);
-    const CSeq_descr::Tdata& src = descr.Get();
-    if ( !src.empty() ) {
-        CSeq_descr::Tdata& dst = entry.SetDescr().Set();
-        dst.insert(dst.end(), src.begin(), src.end());
+    if ( !db->GetMasterDescr().empty() ) {
+        db->AddMasterDescr(entry.SetDescr());
     }
 }
 
@@ -3521,12 +3557,20 @@ void CWGSSeqIterator::x_CreateEntry(SWGSCreateInfo& info) const
     }
     else {
         TFlags flags = info.flags;
-        info.flags = flags & ~fMasterDescr;
+        info.flags = flags & ~(fMasterDescr | fNucProtDescr);
         x_CreateBioseq(info);
         info.flags = flags;
         info.x_CreateProtSet(GetLocFeatRowIdRange());
-        if ( flags & fMasterDescr ) {
-            sx_AddMasterDescr(m_Db, *info.entry);
+        if ( flags & (fNucProtDescr | fMasterDescr) ) {
+            if ( (flags & fNucProtDescr) && m_Cur->m_NUC_PROT_DESCR ) {
+                CVDBStringValue descr = m_Cur->NUC_PROT_DESCR(m_CurrId);
+                if ( !descr.empty() ) {
+                    sx_AddDescrBytes(info.entry->SetDescr(), descr);
+                }
+            }
+            if ( flags & fMasterDescr ) {
+                sx_AddMasterDescr(m_Db, *info.entry);
+            }
         }
     }
 }
@@ -4076,20 +4120,23 @@ void CWGSScaffoldIterator::x_CreateBioseq(SWGSCreateInfo& info) const
     GetIds(info.main_seq->SetId(), info.flags);
     if ( info.flags & fMaskDescr ) {
         PROFILE(sw___GetContigDescr);
-        if ( info.flags & fMaskDescr ) {
+        if ( (info.flags & fMaskDescr) == fSeqDescr  ) {
+            // only own descriptors
+            /*
+            if ( m_Cur->m_DESCR ) {
+                CVDBStringValue descr = m_Cur->DESCR(m_CurrId);
+                if ( !descr.empty() ) {
+                    info.x_AddDescr(*descr);
+                }
+            }
+            */
+        }
+        else {
+            // full descirptor collection
             if ( CRef<CSeq_descr> descr = GetSeq_descr(info.flags) ) {
                 info.main_seq->SetDescr(*descr);
             }
         }
-        /*
-        else if ( m_Cur->m_DESCR ) {
-            // only own descriptors
-            CVDBStringValue descr = m_Cur->DESCR(m_CurrId);
-            if ( !descr.empty() ) {
-                info.x_AddDescr(*descr);
-            }
-        }
-        */
     }
     info.main_seq->SetInst(*GetSeq_inst(info.flags));
 }
@@ -4766,16 +4813,19 @@ void CWGSProteinIterator::x_CreateBioseq(SWGSCreateInfo& info) const
     GetIds(info.main_seq->SetId(), info.flags);
     if ( info.flags & fMaskDescr ) {
         PROFILE(sw___GetProtDescr);
-        if ( info.flags & fMasterDescr ) {
-            if ( CRef<CSeq_descr> descr = GetSeq_descr(info.flags) ) {
-                info.main_seq->SetDescr(*descr);
+        if ( (info.flags & fMaskDescr) == fSeqDescr  ) {
+            // only own descriptors
+            if ( m_Cur->m_DESCR ) {
+                CVDBStringValue descr = m_Cur->DESCR(m_CurrId);
+                if ( !descr.empty() ) {
+                    info.x_AddDescr(*descr);
+                }
             }
         }
-        else if ( m_Cur->m_DESCR ) {
-            // only own descriptors
-            CVDBStringValue descr = m_Cur->DESCR(m_CurrId);
-            if ( !descr.empty() ) {
-                info.x_AddDescr(*descr);
+        else {
+            // full descirptor collection
+            if ( CRef<CSeq_descr> descr = GetSeq_descr(info.flags) ) {
+                info.main_seq->SetDescr(*descr);
             }
         }
     }

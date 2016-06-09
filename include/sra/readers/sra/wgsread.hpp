@@ -770,9 +770,10 @@ public:
         fDefaultInst  = fInst_delta,
 
         fSeqDescr     = 1<<4,
+        fNucProtDescr = 1<<12,
         fMasterDescr  = 1<<5,
-        fMaskDescr    = fSeqDescr|fMasterDescr,
-        fDefaultDescr = fSeqDescr|fMasterDescr,
+        fMaskDescr    = fSeqDescr|fNucProtDescr|fMasterDescr,
+        fDefaultDescr = fSeqDescr|fNucProtDescr|fMasterDescr,
 
         fSeqAnnot     = 1<<6,
         fQualityGraph = 1<<7,
@@ -796,6 +797,9 @@ public:
     // Return descr binary byte sequence as is
     bool HasSeqDescrBytes(void) const;
     CTempString GetSeqDescrBytes(void) const;
+    // Return descr binary byte sequence for nuc-prot set as is
+    bool HasNucProtDescrBytes(void) const;
+    CTempString GetNucProtDescrBytes(void) const;
     // return effective descr
     bool HasSeq_descr(TFlags flags = fDefaultFlags) const;
     // Parse the binary byte sequence and instantiate ASN.1 object

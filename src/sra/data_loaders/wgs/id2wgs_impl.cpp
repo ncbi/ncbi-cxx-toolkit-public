@@ -1450,7 +1450,7 @@ CRef<CAsnBinData> CID2WGSProcessor_Impl::GetObject(SWGSSeqInfo& seq0)
     if ( seq.IsContig() ) {
         CWGSSeqIterator& it = GetContigIterator(seq);
         CWGSSeqIterator::TFlags flags =
-            (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
+            it.fDefaultFlags & ~it.fMasterDescr;
         CRef<CAsnBinData> obj;
 #ifdef ALLOW_SPLIT
         obj = it.GetSplitInfoData(flags);
@@ -1466,13 +1466,13 @@ CRef<CAsnBinData> CID2WGSProcessor_Impl::GetObject(SWGSSeqInfo& seq0)
     if ( seq.IsScaffold() ) {
         CWGSScaffoldIterator& it = GetScaffoldIterator(seq);
         CWGSScaffoldIterator::TFlags flags =
-            (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
+            it.fDefaultFlags & ~it.fMasterDescr;
         return Ref(new CAsnBinData(*it.GetSeq_entry(flags)));
     }
     if ( seq.IsProtein() ) {
         CWGSProteinIterator& it = GetProteinIterator(seq);
         CWGSProteinIterator::TFlags flags =
-            (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
+            it.fDefaultFlags & ~it.fMasterDescr;
         return Ref(new CAsnBinData(*it.GetSeq_entry(flags)));
     }
     return null;
@@ -1486,7 +1486,7 @@ CRef<CAsnBinData> CID2WGSProcessor_Impl::GetChunk(SWGSSeqInfo& seq0,
     if ( seq.IsContig() ) {
         CWGSSeqIterator& it = GetContigIterator(seq);
         CWGSSeqIterator::TFlags flags =
-            (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
+            it.fDefaultFlags & ~it.fMasterDescr;
         return it.GetChunkData(chunk_id, flags);
     }
     return null;
@@ -1865,14 +1865,30 @@ class CID2ProcessorResolverCollect : public CID2ProcessorResolver
 {
 public:
 
-    bool ResolveRequests(CID2ProcessorResolver* /*resolver*/)
+    bool ResolveRequests(CID2ProcessorResolver* resolver)
         {
-            return false;
+            bool ret = false;
+            if ( resolver ) {
+                for ( auto& p : m_ResolvedIds ) {
+                    if ( p.second.empty() ) {
+                        p.second = resolver->GetIds(*p.first.GetSeqId());
+                        if ( !p.second.empty() ) {
+                            ret = true;
+                        }
+                    }
+                }
+            }
+            return ret;
         }
 
     virtual TIds GetIds(const CSeq_id& id)
         {
             return m_ResolvedIds[CSeq_id_Handle::GetHandle(id)];
+        }
+
+    virtual void ProcessPacket(TReplies& /*replies*/,
+                               CID2_Request_Packet& /*packet*/)
+        {
         }
 
 private:
