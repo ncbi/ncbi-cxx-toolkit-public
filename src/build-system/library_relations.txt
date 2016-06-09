@@ -117,7 +117,6 @@ bacterial_pipeline_proc needs gpipe_objutil
 bag_access needs $(SEQ_LIBS)
 bag_access needs gpipe_common
 bag_access needs pub
-bamread needs $(VDB_LIB)
 bamread needs seqset
 bamread needs3party $(VDB_LIBS)
 basic_sample_lib needs xncbi
@@ -199,7 +198,6 @@ connect needs3party $(ORIG_LIBS)
 connext needs connect
 connssl needs connect
 connssl needs3party $(GCRYPT_LIBS)
-connssl needs3party $(GNUTLS_LIBS)
 creaders needs3party $(ORIG_LIBS)
 crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
@@ -207,16 +205,19 @@ crypto needs3party $(Z_LIBS)
 ct_ftds64 needs tds_ftds64
 ct_ftds95 needs tds_ftds95
 ctransition needs xncbi
-ctutils needs $(VDB_LIB)
 ctutils needs3party $(SYBASE_DLLS)
 ctutils needs3party $(SYBASE_LIBS)
 ctutils needs3party $(VDB_LIBS)
 ctutils needs3party ncbiobj
 curl needs3party $(ORIG_LIBS)
-data_loaders_util needs $(GPIPE_LOADER_LIBS)
 data_loaders_util needs $(OBJMGR_LIBS)
 data_loaders_util needs $(SDBAPI_LIB)
-data_loaders_util needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
+data_loaders_util needs $(ncbi_xreader_pubseqos2)
+data_loaders_util needs ncbi_xloader_asn_cache
+data_loaders_util needs ncbi_xloader_blastdb
+data_loaders_util needs ncbi_xloader_csra
+data_loaders_util needs ncbi_xloader_lds2
+data_loaders_util needs ncbi_xloader_wgs
 db needs3party $(ORIG_LIBS)
 dbapi needs dbapi_driver
 dbapi_driver needs xncbi
@@ -369,11 +370,9 @@ gnomon_access needs sqlitewrapp
 gnomon_access needs xalgognomon
 gnomon_access needs xqueryparse
 gnomon_asn_proc needs xobjutil
-gnutls needs $(Z_LIB)
 gnutls needs3party $(GMP_LIBS)
 gnutls needs3party $(NETTLE_LIBS)
 gnutls needs3party $(ORIG_LIBS)
-gnutls needs3party $(Z_LIBS)
 gpcgi needs $(SDBAPI_LIB)
 gpcgi needs xcgi
 gpcgi needs xconnect
@@ -417,6 +416,7 @@ gpipe_attr needs gpipe_property
 gpipe_best_placement needs gpipe_alnutil
 gpipe_best_placement needs xalgoalignutil
 gpipe_blast needs $(BLAST_INPUT_LIBS)
+gpipe_blast needs $(BLAST_LIBS)
 gpipe_blast needs gpipe_alnutil
 gpipe_clean_prot_names needs gpipe_attr
 gpipe_clean_prot_names needs xdiscrepancy_report
@@ -457,6 +457,7 @@ gpipe_objutil needs $(XFORMAT_LIBS)
 gpipe_objutil needs gpipe_attr
 gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
+gpipe_objutil needs xalnmgr
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_prodigal needs prok_cluster_data
 gpipe_property needs gpipe_common
@@ -619,6 +620,8 @@ krb5 needs3party $(NETWORK_LIBS)
 krb5 needs3party $(ORIG_LIBS)
 krb5 needs3party com_err
 krb5 needs3party k5crypto
+lapack needs3party $(ORIG_LIBS)
+lapackwrapp needs3party $(LAPACK_LIBS)
 lapackwrapp needs3party $(ORIG_LIBS)
 lbsmdapi needs connect
 lds2 needs $(COMPRESS_LIBS)
@@ -892,9 +895,11 @@ pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
 python2.7 needs3party $(ORIG_LIBS)
+python_ncbi_dbapi needs $(Z_LIB)
 python_ncbi_dbapi needs connssl
 python_ncbi_dbapi needs dbapi
 python_ncbi_dbapi needs3party $(PYTHON_LIBS)
+python_ncbi_dbapi needs3party $(Z_LIBS)
 rcobaltasn_g needs xser
 refseq_aln_source needs $(COMPRESS_LIBS)
 refseq_aln_source needs dbapi
@@ -972,7 +977,6 @@ sqlite3 needs3party $(ORIG_LIBS)
 sqlitewrapp needs xncbi
 sqlitewrapp needs3party $(SQLITE3_LIBS)
 sraread needs $(SOBJMGR_LIBS)
-sraread needs $(VDB_LIB)
 sraread needs3party $(VDB_LIBS)
 ssl needs $(Z_LIB)
 ssl needs3party $(KRB5_LIBS)
@@ -1123,7 +1127,6 @@ variation_utils needs variation
 variation_utils needs xobjutil
 varrep needs xser
 vdb2blast needs $(BLAST_LIBS)
-vdb2blast needs $(VDB_LIB)
 vdb2blast needs3party $(VDB_LIBS)
 vibgif needs3party $(NCBI_C_ncbi)
 vibnet needs3party ncbiacc
@@ -1394,7 +1397,6 @@ xid_utils needs xconnect
 xid_utils needs xmlwrapp
 xid_utils_noncorelib needs txclient
 xid_utils_noncorelib needs xid_utils
-xid_wgs needs $(VDB_LIB)
 xid_wgs needs xncbi
 xid_wgs needs3party $(VDB_LIBS)
 xid_wgsdb needs xid_utils
