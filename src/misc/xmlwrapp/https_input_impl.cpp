@@ -86,7 +86,8 @@ namespace {
         __declspec(thread) xml::error_messages    https_messages;
     #else
         // On Apple C-lang no messages
-        #if defined(__APPLE__)  &&  defined(__clang__)
+        #if (defined(__APPLE__) || defined(__FreeBSD__)) && defined(__clang__)
+            #define NO_THREAD_LOCAL_HTTPS_MESSAGES 1
             xml::error_messages    https_messages;
         #else
             thread_local   xml::error_messages    https_messages;
@@ -110,7 +111,7 @@ namespace xml {
 
         void clear_https_messages(void)
         {
-            #if !defined(__APPLE__)  ||  !defined(__clang__)
+            #ifndef NO_THREAD_LOCAL_HTTPS_MESSAGES
             https_messages.get_messages().clear();
             #endif
         }
@@ -125,7 +126,7 @@ namespace xml {
                                   int                             line,
                                   const std::string &             fname)
         {
-            #if !defined(__APPLE__)  ||  !defined(__clang__)
+            #ifndef NO_THREAD_LOCAL_HTTPS_MESSAGES
             https_messages.get_messages().push_back(
                                     error_message(msg, msg_type,
                                                   line, fname));
