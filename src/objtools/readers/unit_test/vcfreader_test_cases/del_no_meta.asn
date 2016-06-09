@@ -1,0 +1,101 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbSNP",
+          tag str "rs000"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "AA"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 1,
+        to 2,
+        id other {
+          accession "NC_000008",
+          version 10
+        }
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "PASS"
+          },
+          {
+            label str "info",
+            data str "DB"
+          }
+        }
+      }
+    }
+  }
+}
