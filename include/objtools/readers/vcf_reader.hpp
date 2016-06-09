@@ -218,7 +218,8 @@ protected:
         
     virtual bool
     xAssignVcfMeta(
-        CRef<CSeq_annot> );
+        CRef<CSeq_annot>,
+        ILineErrorListener* );
 
     virtual bool
     xAssignVariationAlleleSet(
