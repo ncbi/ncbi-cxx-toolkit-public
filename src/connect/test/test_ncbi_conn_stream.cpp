@@ -48,7 +48,8 @@
 #  define DEV_NULL "NUL"
 #endif // NCBI_OS_UNIX
 
-#define CONN_NCBI_FTP_HOST  "ftp-ext.ncbi.nlm.nih.gov"
+#define CONN_NCBI_FTP_PUBLIC_HOST   "ftp-ext.ncbi.nlm.nih.gov"
+#define CONN_NCBI_FTP_PRIVATE_HOST  "ftp-private.ncbi.nlm.nih.gov"
 
 
 static const size_t kBufferSize = 512 * 1024;
@@ -153,7 +154,6 @@ int CNCBITestApp::Run(void)
         g_NCBI_ConnectRandomSeed = atoi(GetArguments()[1].c_str());
     CORE_LOGF(eLOG_Note, ("Random SEED = %u", g_NCBI_ConnectRandomSeed));
     srand(g_NCBI_ConnectRandomSeed);
-
 
     LOG_POST(Info << "Test 0 of 9: Checking error log setup");
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
@@ -292,8 +292,8 @@ int CNCBITestApp::Run(void)
              << (int) m    << " iteration(s) with "
              << (int) size << " byte(s) transferred\n");
 
-
     LOG_POST(Info << "Test 2 of 9: FTP download");
+
     if (rand() & 1)
         flag |= fFTP_DelayRestart;
     if (!(net_info = ConnNetInfo_Create(0)))
@@ -306,7 +306,8 @@ int CNCBITestApp::Run(void)
                              DEF_CONN_DEBUG_PRINTOUT);
         flag |= strcasecmp(val, "all") == 0 ? fFTP_LogAll : fFTP_LogData;
     }
-    CConn_FTPDownloadStream download(CONN_NCBI_FTP_HOST,
+
+    CConn_FTPDownloadStream download(CONN_NCBI_FTP_PUBLIC_HOST,
                                      "Misc/test_ncbi_conn_stream.FTP.data",
                                      "ftp"/*default*/, "-none"/*default*/,
                                      "/toolbox/ncbi_tools++/DATA",
@@ -338,7 +339,6 @@ int CNCBITestApp::Run(void)
     LOG_POST(Info << "Test 2 passed: 1024+" << size << '=' << n
              << " byte(s) downloaded via FTP\n");
 
-
     LOG_POST(Info << "Test 3 of 9: FTP upload");
     string ftpuser, ftppass, ftpfile;
     if (s_GetFtpCreds(ftpuser, ftppass)) {
@@ -358,7 +358,7 @@ int CNCBITestApp::Run(void)
             flag |= fFTP_UseFeatures;
         if (rand() & 1)
             flag |= fFTP_UseActive;
-        CConn_FTPUploadStream upload("ftp-private.ncbi.nlm.nih.gov",
+        CConn_FTPUploadStream upload(CONN_NCBI_FTP_PRIVATE_HOST,
                                      ftpuser, ftppass, ftpfile,
                                      "test_upload",
                                      0/*port = default*/, flag,
@@ -428,14 +428,13 @@ int CNCBITestApp::Run(void)
     } else
         LOG_POST(Info << "Test 3 skipped\n");
 
-
     LOG_POST(Info << "Test 4 of 9: FTP peculiarities");
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
         _ASSERT(!ftpfile.empty());
         // Note that FTP streams are not buffered for the sake of command
         // responses;  for file xfers the use of read() and write() does
         // the adequate buffering at user-level (and FTP connection).
-        CConn_FtpStream ftp("ftp-private.ncbi.nlm.nih.gov",
+        CConn_FtpStream ftp(CONN_NCBI_FTP_PRIVATE_HOST,
                             ftpuser, ftppass, "test_download",
                             0/*port = default*/, flag, 0/*cmcb*/,
                             net_info->timeout);
@@ -465,6 +464,7 @@ int CNCBITestApp::Run(void)
         ftp << "XCUP" << NcbiEndl;
         if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
             ERR_POST(Fatal << "Test 4 failed in XCUP");
+        //ftp.clear();
         ftp << "RETR \377\377 special file downloadable" << NcbiEndl;
         if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success) {
             ftp.clear();
@@ -475,7 +475,8 @@ int CNCBITestApp::Run(void)
                      " BUGGY FTP (UNCLEAN IAC) SERVER DETECTED!!! "
                      "***\n");
         }
-        ftp << "RETR \357\273\277\320\237\321\200\320"
+        ftp << "RETR "
+            << "\357\273\277\320\237\321\200\320"
             << "\270\320\262\320\265\321\202" << NcbiEndl;
         if (!ftp  ||  ftp.Status (eIO_Write) != eIO_Success)
             ERR_POST(Fatal << "Test 4 failed in RETR UTF-8");
@@ -489,7 +490,6 @@ int CNCBITestApp::Run(void)
         LOG_POST(Info << "Test 4 skipped\n");
 
     ConnNetInfo_Destroy(net_info);
-
 
     {{
         // Silent test for timeouts and memory leaks in an unused stream
