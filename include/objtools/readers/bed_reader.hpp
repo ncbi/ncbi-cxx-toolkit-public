@@ -167,6 +167,7 @@ public:
 public:
     enum EBedFlags {
         fThreeFeatFormat = 1<<8,
+        fDirectedFeatureModel = 1<<9,
     };
     typedef int TFlags;
 
@@ -245,6 +246,30 @@ protected:
         unsigned int,
         ILineErrorListener*);
 
+    bool xParseFeatureGeneModelFormat(
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        unsigned int,
+        ILineErrorListener*);
+
+    bool xAppendFeatureGene(
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        unsigned int,
+        ILineErrorListener*);
+
+    bool xAppendFeatureRna(
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        unsigned int,
+        ILineErrorListener*);
+
+    bool xAppendFeatureCds(
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        unsigned int,
+        ILineErrorListener*);
+
     void x_SetFeatureLocation(
         CRef<CSeq_feat>&,
         const vector<string>&);
@@ -252,16 +277,29 @@ protected:
     void xSetFeatureLocationChrom(
         CRef<CSeq_feat>&,
         const vector<string>&);
+    void xSetFeatureLocationGene(
+        CRef<CSeq_feat>&,
+        const vector<string>&);
         
     void xSetFeatureLocationThick(
+        CRef<CSeq_feat>&,
+        const vector<string>&);
+    void xSetFeatureLocationCds(
         CRef<CSeq_feat>&,
         const vector<string>&);
         
     void xSetFeatureLocationBlock(
         CRef<CSeq_feat>&,
         const vector<string>&);
+    void xSetFeatureLocationRna(
+        CRef<CSeq_feat>&,
+        const vector<string>&);
         
     void xSetFeatureIdsChrom(
+        CRef<CSeq_feat>&,
+        const vector<string>&,
+        unsigned int);
+    void xSetFeatureIdsGene(
         CRef<CSeq_feat>&,
         const vector<string>&,
         unsigned int);
@@ -270,8 +308,16 @@ protected:
         CRef<CSeq_feat>&,
         const vector<string>&,
         unsigned int);
+    void xSetFeatureIdsCds(
+        CRef<CSeq_feat>&,
+        const vector<string>&,
+        unsigned int);
         
     void xSetFeatureIdsBlock(
+        CRef<CSeq_feat>&,
+        const vector<string>&,
+        unsigned int);
+    void xSetFeatureIdsRna(
         CRef<CSeq_feat>&,
         const vector<string>&,
         unsigned int);
@@ -288,6 +334,12 @@ protected:
         const vector<string>&) const;
 
     bool xContainsBlockFeature(
+        const vector<string>&) const;
+
+    bool xContainsRnaFeature(
+        const vector<string>&) const;
+
+    bool xContainsCdsFeature(
         const vector<string>&) const;
 
     ENa_strand xGetStrand(

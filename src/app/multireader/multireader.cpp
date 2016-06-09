@@ -480,6 +480,11 @@ void CMultiReaderApp::Init(void)
         true);
 
     arg_desc->AddFlag(
+        "dfm",
+        "use BED directed feature model",
+        true);
+
+    arg_desc->AddFlag(
         "genbank",
         "clean up output for genbank submission",
         true);
@@ -1232,6 +1237,9 @@ void CMultiReaderApp::xSetFlags(
         }
         if ( args["3ff"] ) {
             m_iFlags |= CBedReader::fThreeFeatFormat;
+        }
+        if ( args["dfm"] ) {
+            m_iFlags |= CBedReader::fDirectedFeatureModel;
         }
         break;
        
