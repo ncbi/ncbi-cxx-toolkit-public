@@ -377,11 +377,19 @@ int CIgBlastnApp::Run(void)
                 total_elements += iter2->second->count;
             }
         }
-        m_CmdLineArgs->GetOutputStream() << "\nTotal queries = " << total_input << ", queries with identifiable CDR3 = " <<  total_elements << endl << endl;
+
+        CNcbiOstream* outfile = NULL;
+            
+        if (args.Exist("clonotype_out") && args["clonotype_out"] && args["clonotype_out"].AsString() != NcbiEmptyString) {
+            outfile = &(args["clonotype_out"].AsOutputFile());
+        } else {
+            outfile = &m_CmdLineArgs->GetOutputStream();
+        }
+        *outfile << "\nTotal queries = " << total_input << ", queries with identifiable CDR3 = " <<  total_elements << endl << endl;
         
         
         if (!(ig_opts->m_IsProtein) && total_elements > 1) {
-            m_CmdLineArgs->GetOutputStream() << "\n" << "#Clonotype summary.  A particular clonotype includes any V(D)J rearrangements that have the same germline V(D)J gene segments, the same productive/non-productive status and the same CDR3 nucleotide as well as amino sequence (Those having the same CDR3 nucleotide but different amino acid sequence or productive/non-productive status due to frameshift in V or J gene are assigned to a different clonotype.  However, their clonotype identifers share the same prefix, for example, 6a, 6b).  Fields (tab-delimited) are clonotype identifier, representative query sequence name, count, frequency (%), CDR3 nucleotide sequence, CDR3 amino acid sequence, productive status, chain type, V gene, D gene, J gene\n" << endl;
+            *outfile << "\n" << "#Clonotype summary.  A particular clonotype includes any V(D)J rearrangements that have the same germline V(D)J gene segments, the same productive/non-productive status and the same CDR3 nucleotide as well as amino sequence (Those having the same CDR3 nucleotide but different amino acid sequence or productive/non-productive status due to frameshift in V or J gene are assigned to a different clonotype.  However, their clonotype identifers share the same prefix, for example, 6a, 6b).  Fields (tab-delimited) are clonotype identifier, representative query sequence name, count, frequency (%), CDR3 nucleotide sequence, CDR3 amino acid sequence, productive status, chain type, V gene, D gene, J gene\n" << endl;
             
             int count = 1; 
             string suffix = "abcdefghijklmnop";  //4x4 possibility = 16.  empty string included.
@@ -401,8 +409,7 @@ int CIgBlastnApp::Run(void)
                         clone_name += suffix[aa_count];
                     }
                 
-                    m_CmdLineArgs->GetOutputStream() 
-                        << std::setprecision(3) << clone_name << "\t"
+                    *outfile << std::setprecision(3) << clone_name << "\t"
                         
                         <<iter2->second->seqid<<"\t"
                         <<iter2->second->count<<"\t"
@@ -421,7 +428,7 @@ int CIgBlastnApp::Run(void)
             }
 
             count = 1;
-            m_CmdLineArgs->GetOutputStream() << "\n#All query sequences grouped by clonotypes.  Fields (tab-delimited) are clonotype identifier, count, min similarity to top germline V gene (%), max similarity to top germline V gene (%), query sequence name (multiple names are separated by a comma if applicable)"<< endl << endl;
+            *outfile << "\n#All query sequences grouped by clonotypes.  Fields (tab-delimited) are clonotype identifier, count, min similarity to top germline V gene (%), max similarity to top germline V gene (%), query sequence name (multiple names are separated by a comma if applicable)"<< endl << endl;
             ITERATE(MapVec, iter, map_vec) {
                 if (count > args["num_clonotype"].AsInteger()) {
                     break;
@@ -433,8 +440,7 @@ int CIgBlastnApp::Run(void)
                         clone_name += suffix[aa_count];
                     }
                     
-                    m_CmdLineArgs->GetOutputStream() 
-                        << std::setprecision(3) 
+                    *outfile << std::setprecision(3) 
                         << clone_name << "\t"
                         <<iter2->second->count<<"\t"
                         <<iter2->second->min_identity*100<<"\t"

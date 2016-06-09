@@ -1455,6 +1455,10 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                CArgDescriptions::eInteger, "100");
         arg_desc.SetConstraint(kArgNumClonotype, 
                                new CArgAllowValuesGreaterThanOrEqual(0));
+        
+        arg_desc.AddOptionalKey(kArgClonotypeFile, "clonotype_out", 
+                                "Output file name for clonotype info",
+                               CArgDescriptions::eOutputFile);
        
     }
 

@@ -39,6 +39,7 @@ Author: Jason Papadopoulos
 #include <objects/seq/Seq_descr.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/create_defline.hpp>
 #include <algo/blast/core/blast_stat.h>
 #include <corelib/ncbiutil.hpp>                 // for FindBestChoice
 #include <algo/blast/api/sseqloc.hpp>
@@ -785,13 +786,15 @@ static void s_SetCloneInfo(const CIgBlastTabularInfo& tabinfo,
                            CBlastFormat::SClone& clone_info) {
    
     if (handle.GetSeqId()->Which() == CSeq_id::e_Local){
-        clone_info.seqid = GetTitle(handle).substr(0, 25);
+        CDeflineGenerator defline (handle.GetSeq_entry_Handle());
+        clone_info.seqid = defline.GenerateDefline(handle).substr(0, 45);
+        
+    //    clone_info.seqid = CDeflineGenerator.substr(0, 45);
     } else {
         string seqid;
         CRef<CSeq_id> wid = FindBestChoice(handle.GetBioseqCore()->GetId(), CSeq_id::WorstRank);
         wid->GetLabel(&seqid, CSeq_id::eContent);
-        clone_info.seqid = seqid.substr(0, 25);
-        clone_info.seqid = clone_info.seqid.substr(0, 25);
+        clone_info.seqid = seqid.substr(0, 45);
     }
     tabinfo.GetIgInfo (clone_info.v_gene, clone_info.d_gene, clone_info.j_gene,
                        clone_info.chain_type, clone_info.na, clone_info.aa, clone_info.productive);

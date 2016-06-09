@@ -298,6 +298,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgExtendAlign;
 NCBI_BLASTINPUT_EXPORT extern const string kArgMinVLength;
 ///Argument to specify number of clonotype to show
 NCBI_BLASTINPUT_EXPORT extern const string kArgNumClonotype;
+///Argument to specify number of clonotype file
+NCBI_BLASTINPUT_EXPORT extern const string kArgClonotypeFile;
 /// Arugment to specify if Igblast alignment should be translated to protein
 NCBI_BLASTINPUT_EXPORT extern const string kArgTranslate;
 ///Arugment to specify if Igblast min D gene match
