@@ -511,10 +511,10 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 /// All calls to ERR_POST_X under the same default error code
 /// MUST be with deferent error subcodes to make possible more
 /// flexible error statistics and logging.
-/// If using of macro leads to compile errors containing in message strings
-/// like "err_code_x" or "ErrCodeX" then you didn't defined error code name
-/// with NCBI_DEFINE_ERRCODE_X macro or didn't selected current default
-/// error code with valid NCBI_USE_ERRCODE_X definition.
+/// If using the macro leads to compile errors containing strings
+/// like "err_code_x" or "ErrCodeX" in messages, it means you didn't define 
+/// error code name with NCBI_DEFINE_ERRCODE_X macro or didn't select current 
+/// default error code with valid NCBI_USE_ERRCODE_X definition.
 /// This macro allows the use of only constant error subcodes
 /// (integer literals or enum constants). If you need to make variable error
 /// subcode you need to use macro ERR_POST_EX as follows:
