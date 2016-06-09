@@ -65,7 +65,9 @@ int main(int argc, const char* argv[])
     ConnNetInfo_AppendArg(net_info, "address",  "2010");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
+#ifdef NCBI_CXX_TOOLKIT
     SOCK_SetupSSL(NcbiSetupGnuTls);
+#endif /*NCBI_CXX_TOOLKIT*/
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
 
