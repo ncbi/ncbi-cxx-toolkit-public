@@ -325,10 +325,10 @@ static double          s_TimeDiff               (const struct   timeval*,
                                                  const struct   timeval*);
 static string          s_GenerateNodeName       (void);
 static unsigned short  s_GeneratePort           ();
-static bool            s_CheckIfAnnounced       (string         service,
-                                                 string         version,
+static bool            s_CheckIfAnnounced       (const string&  service,
+                                                 const string&  version,
                                                  unsigned short server_port,
-                                                 string         health_suffix,
+                                                 const string&  health_suffix,
                                                  bool         expectedAnnounced
                                                                         = true,
                                                  string         host = "");
@@ -336,7 +336,7 @@ static string          s_ReadLBOSVersion        (void);
 static bool            s_CheckTestVersion       (vector<SLBOSVersion>
                                                                 versions_arr);
 static 
-vector<SLBOSVersion>   s_ParseVersionsString    (string versions);
+vector<SLBOSVersion>   s_ParseVersionsString    (const string& versions);
 static void            s_PrintPortsLines        (void);
 static void            s_PrintResolutionErrors  (void);
 static void            s_Print500sCount         (void);
@@ -523,7 +523,7 @@ static void s_PrintRegistryAnnouncementDetails(const char* registry_section)
     CCObjHolder<char> host(host_str);
     CCObjHolder<char> port(port_str);
     CCObjHolder<char> hlth(hlth_str);
-    s_PrintAnnouncementDetails(srvc.Get(), vers.Get(), port.Get(), host.Get(),
+    s_PrintAnnouncementDetails(srvc.Get(), vers.Get(), host.Get(), port.Get(),
                                hlth.Get());
 }
 
@@ -618,11 +618,11 @@ static unsigned short s_AnnounceC(const char*       name,
 }
         
 
-static unsigned short s_AnnounceC(string           name,
-                                  string           version,
-                                  string           host,
+static unsigned short s_AnnounceC(const string&    name,
+                                  const string&    version,
+                                  const string&    host,
                                   unsigned short   port,
-                                  string           health,
+                                  const string&    health,
                                   char**           lbos_ans,
                                   char**           lbos_mes,
                                   bool             safe = false)
@@ -667,11 +667,11 @@ static unsigned short s_AnnounceCSafe(const char*      name,
 }
 
 
-static unsigned short s_AnnounceCSafe(string           name,
-                                      string           version,
-                                      string           host,
+static unsigned short s_AnnounceCSafe(const string&    name,
+                                      const string&    version,
+                                      const string&    host,
                                       unsigned short   port,
-                                      string           health,
+                                      const string&    health,
                                       char**           lbos_ans,
                                       char**           lbos_mes)
 {
@@ -951,10 +951,10 @@ static void s_Print500sCount()
 }
 
 
-static int  s_FindAnnouncedServer(string            service,
-                                  string            version,
+static int  s_FindAnnouncedServer(const string&     service,
+                                  const string&     version,
                                   unsigned short    port,
-                                  string            host)
+                                  const string&     host)
 {
     WRITE_LOG("Trying to find announced server in the storage\"" <<
                 service << "\" with version " << version << ", port " <<
@@ -996,7 +996,7 @@ static int  s_FindAnnouncedServer(string            service,
 
 /** To run tests of /configuration we need name of service that is not used yet.
 */
-static bool s_CheckServiceKnown(string service)
+static bool s_CheckServiceKnown(const string& service)
 {
     bool exists;
     LBOS::ServiceVersionGet(service, &exists);
@@ -1335,12 +1335,12 @@ static CHealthcheckThread* s_HealthchecKThread;
  * (usually it is 0 or 1)
  * This function does not care about host (IP) of server.
  */
-int s_CountServersWithExpectation(string            service,
+int s_CountServersWithExpectation(const string&     service,
                                   unsigned short    port,
                                   int               expected_count,
                                   size_t            code_line,
                                   int               secs_timeout,
-                                  string            dtab = "")
+                                  const string&     dtab = "")
 {
     CConnNetInfo net_info;
     const int wait_time = 1000; /* msecs */
@@ -1622,11 +1622,11 @@ namespace Announcement
  *     hostname
  * 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host 
  *     IP: do not announce and return DNS_RESOLVE_ERROR
- * 20. LBOS is OFF - return kLBOSOff                                        
+ * 20. LBOS is OFF - return eLBOSOff                                        
  * 21. Announced successfully, but LBOS return corrupted answer - 
  *     return SERVER_ERROR                                                   
  * 22. Trying to announce server and providing dead healthcheck URL -
- *     return kLBOSNotFound       
+ *     return eLBOSNotFound       
  * 23. Trying to announce server and providing dead healthcheck URL -
  *     server should not be announced                                        
  * 24. Announce server with separate host and healtcheck - should be found in 
@@ -1664,18 +1664,18 @@ namespace AnnouncementRegistry
 {
 void TestNullOrEmptyField(const char* field_tested);
 /*  1.  All parameters good (Custom section has all parameters correct in 
-        config) - return kLBOSSuccess
-    2.  Custom section has nothing in config - return kLBOSInvalidArgs
+        config) - return eLBOSSuccess
+    2.  Custom section has nothing in config - return eLBOSInvalidArgs
     3.  Section empty or NULL (should use default section and return 
-        kLBOSSuccess)
-    4.  Service is empty or NULL - return kLBOSInvalidArgs
-    5.  Version is empty or NULL - return kLBOSInvalidArgs
-    6.  port is empty or NULL - return kLBOSInvalidArgs
-    7.  port is out of range - return kLBOSInvalidArgs
-    8.  port contains letters - return kLBOSInvalidArgs
-    9.  healthcheck is empty or NULL - return kLBOSInvalidArgs
+        eLBOSSuccess)
+    4.  Service is empty or NULL - return eLBOSInvalidArgs
+    5.  Version is empty or NULL - return eLBOSInvalidArgs
+    6.  port is empty or NULL - return eLBOSInvalidArgs
+    7.  port is out of range - return eLBOSInvalidArgs
+    8.  port contains letters - return eLBOSInvalidArgs
+    9.  healthcheck is empty or NULL - return eLBOSInvalidArgs
     10. healthcheck does not start with http:// or https:// - return 
-        kLBOSInvalidArgs                                                    */
+        eLBOSInvalidArgs                                                    */
 void ParamsGood__ReturnSuccess();
 void CustomSectionNoVars__ReturnInvalidArgs();
 void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess();
@@ -1701,7 +1701,7 @@ namespace Deannouncement
  *    to resolve                                                            
  * 6. Another domain - do not deannounce 
  * 7. Deannounce without IP specified - deannounce from local host 
- * 8. LBOS is OFF - return kLBOSOff                                         */
+ * 8. LBOS is OFF - return eLBOSOff                                         */
 void Deannounced__Return1(unsigned short port);
 void Deannounced__AnnouncedServerRemoved();
 void NoLBOS__Return0();
@@ -1979,39 +1979,39 @@ void CheckErrorCodeStrings()
     /* 400 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSBadRequest, "",
-                                  kLBOSBadRequest).GetErrCodeString();
+                                  eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 404 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSNotFound, "",
-                                  kLBOSBadRequest).GetErrCodeString();
+                                  eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
     
     /* 500 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSServerError, "",
-                                  kLBOSServerError).GetErrCodeString();
+                                  eLBOSServerError).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 450 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSNoLBOS, "",
-                                  kLBOSBadRequest).GetErrCodeString();
+                                  eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "LBOS was not found");
 
     /* 451 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::
                                   e_LBOSDNSResolveError, "",
-                                  kLBOSBadRequest).GetErrCodeString();
+                                  eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "DNS error. Possibly, cannot "
                                  "get IP of current machine or resolve "
                                  "provided hostname for the server");
     /* 452 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSInvalidArgs, "",
-                                  kLBOSBadRequest).GetErrCodeString();
+                                  eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, 
                                  "Invalid arguments were provided. No "
                                  "request to LBOS was sent");
@@ -2019,27 +2019,27 @@ void CheckErrorCodeStrings()
     /* 453 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSMemAllocError, "",
-                                  kLBOSBadRequest).GetErrCodeString();
+                                  eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Memory allocation error happened "
                                                "while performing request");
 
     /* 454 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSCorruptOutput, "",
-                                  kLBOSBadRequest).GetErrCodeString();
+                                  eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Failed to parse LBOS output.");
 
     /* 550 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSOff, "",
-                                  kLBOSBadRequest).GetErrCodeString();
+                                  eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, 
                                  "LBOS functionality is turned OFF. Check "
                                  "config file or connection to LBOS.");
     /* unknown */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::e_LBOSUnknown, "",
-                                  kLBOSBadRequest).GetErrCodeString();
+                                  eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Unknown LBOS error code");
 }
 }
@@ -2141,7 +2141,8 @@ void NotAnnounceHost__TryFindReturnsTheSame()
 /** Common part for all tests that check if resolution works */
 /* No multithread, test uses private methods that are not thread-safe by 
  * themselves */
-static void s_LBOSIPCacheTest(string host, string expected_result = "N/A")
+static void s_LBOSIPCacheTest(const string& host, 
+                              const string& expected_result = "N/A")
 {
     CLBOSStatus lbos_status(true, true);
     string lbos_answer;
@@ -4180,12 +4181,12 @@ void AllOK__ReturnSuccess()
                              s_PortStr(PORT_N) +  "/health",
                              &lbos_answer.Get(), &lbos_status_message.Get());
     
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
 
     /* Cleanup */
     deannounce_result = s_DeannounceC(node_name.c_str(), "1.0.0", NULL, 
                                       port, NULL, NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOSSuccess);
     lbos_answer = NULL;
     lbos_status_message = NULL;
     
@@ -4202,12 +4203,12 @@ void AllOK__ReturnSuccess()
                     s_PortStr(PORT_N) +  "/health").c_str(),
                     &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
 
     /* Cleanup */
     s_DeannounceC(node_name.c_str(), "1.0.0", ANNOUNCEMENT_HOST.c_str(),
                   port, NULL, NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOSSuccess);
     lbos_answer = NULL;
     lbos_status_message = NULL;
 #undef PORT_N
@@ -4351,7 +4352,7 @@ void AllOK__AnnouncedServerSaved()
                              "http://" ANNOUNCEMENT_HOST_0000 ":" + 
                              s_PortStr(PORT_N) +  "/health",
                              &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(result == kLBOSSuccess,
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(result == eLBOSSuccess,
                                    "Announcement function did not return "
                                    "SUCCESS as expected");
     int find_result = s_FindAnnouncedServer(node_name, "1.0.0", port,
@@ -4364,7 +4365,7 @@ void AllOK__AnnouncedServerSaved()
                                           "1.0.0", "", port,
                                           &lbos_answer.Get(),
                                           &lbos_status_message.Get());
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(deannounce_result == kLBOSSuccess,
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(deannounce_result == eLBOSSuccess,
                                    "Deannouncement function did not return "
                                    "SUCCESS as expected");
     /* Cleanup */
@@ -4383,7 +4384,7 @@ void AllOK__AnnouncedServerSaved()
                     (string("http://") + ANNOUNCEMENT_HOST +
                             ":" + s_PortStr(PORT_N) +  "/health").c_str(),
                     &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(result == kLBOSSuccess,
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(result == eLBOSSuccess,
                                    "Announcement function did not return "
                                    "SUCCESS as expected");
     find_result = s_FindAnnouncedServer(node_name, "1.0.0", port,
@@ -4396,7 +4397,7 @@ void AllOK__AnnouncedServerSaved()
                                       "1.0.0",
                                       "",
                                       port, NULL, NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOSSuccess);
     lbos_answer = NULL;
     lbos_status_message = NULL;
 #undef PORT_N
@@ -4409,7 +4410,7 @@ void AllOK__AnnouncedServerSaved()
 void NoLBOS__ReturnNoLBOSAndNotFind()
 {
     WRITE_LOG("Testing behavior of LBOS when no LBOS is found."
-                " Should return kLBOSNoLBOS");
+                " Should return eLBOSNoLBOS");
     CLBOSStatus lbos_status(true, true);
     unsigned short result;
     string node_name = s_GenerateNodeName();
@@ -4426,9 +4427,9 @@ void NoLBOS__ReturnNoLBOSAndNotFind()
     result = s_AnnounceC(node_name,
                          "1.0.0", "", port,
                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                         s_PortStr(PORT_N) +  " / health",
+                         s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSNoLBOS);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSNoLBOS);
 
     /* Cleanup*/
     WRITE_LOG("Reverting mock of CONN_Read() with s_FakeReadEmpty()");
@@ -4458,7 +4459,7 @@ void NoLBOS__LBOSAnswerNull()
                 "1.0.0",
                 "", port,
                 "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                s_PortStr(PORT_N) +  " / health",
+                s_PortStr(PORT_N) +  "/health",
                 &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
@@ -4490,7 +4491,7 @@ void NoLBOS__LBOSStatusMessageNull()
                 "1.0.0",
                 "", port,
                 "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                s_PortStr(PORT_N) +  " / health",
+                s_PortStr(PORT_N) +  "/health",
                 &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "Answer from LBOS was not NULL");
@@ -4501,7 +4502,7 @@ void NoLBOS__LBOSStatusMessageNull()
 }
 
 
-/*  8. LBOS returned error: return kLBOSServerError                          */
+/*  8. LBOS returned error: return eLBOSServerError                          */
 /* Test is NOT thread-safe. */
 void LBOSError__ReturnServerErrorCode()
 {
@@ -4527,14 +4528,14 @@ void LBOSError__ReturnServerErrorCode()
     /* Check that error code is the same as in mock*/
     NCBITEST_CHECK_MESSAGE_MT_SAFE(result == 507,
                            "Announcement did not return "
-                           "kLBOSDNSResolveError as expected");
+                           "eLBOSDNSResolveError as expected");
     /* Cleanup*/
     WRITE_LOG(
         "Reverting mock of CONN_Read() with s_FakeReadEmpty()");
 }
 
 
-/*  8.5. LBOS returned error: return kLBOSServerError                         */
+/*  8.5. LBOS returned error: return eLBOSServerError                         */
 /* Test is NOT thread-safe. */
 void LBOSError__ReturnServerStatusMessage()
 {
@@ -4558,7 +4559,7 @@ void LBOSError__ReturnServerStatusMessage()
     /* Check that error code is the same as in mock*/
     NCBITEST_CHECK_MESSAGE_MT_SAFE(strcmp(*lbos_status_message, "LBOS STATUS") == 0,
                            "Announcement did not return "
-                           "kLBOSDNSResolveError as expected");
+                           "eLBOSDNSResolveError as expected");
     /* Cleanup*/
     WRITE_LOG("Reverting mock of CONN_Read() with "
               "s_FakeReadAnnouncementWithErrorFromLBOS()");
@@ -4640,7 +4641,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
     count_after = s_CountServersWithExpectation(node_name, port, 1,
                                                 __LINE__, kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     WRITE_LOG("Trying to find the announced server in "
               "%LBOS%/lbos/text/service");
     int servers_in_text_service = s_FindAnnouncedServer(node_name, "1.0.0", 
@@ -4660,7 +4661,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
                       "http://" ANNOUNCEMENT_HOST_0000 ":" + 
                       s_PortStr(PORT_N) +  "/health",
                       &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                              "Did not get answer after announcement");
     convert_result = SOCK_StringToHostPort(*lbos_answer,
@@ -4688,7 +4689,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
                                             "1.0.0",
                                             ANNOUNCEMENT_HOST.c_str(),
                                             port, NULL, NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOSSuccess);
 #undef PORT_N
 #define PORT_N 0 
 }
@@ -4710,7 +4711,7 @@ void ForeignDomain__NoAnnounce()
         string node_name = s_GenerateNodeName();
         WRITE_LOG("Testing behavior of LBOS mapper when no LBOS is "
                    "available in the current region (should "
-                   "return error code kLBOSNoLBOS).");
+                   "return error code eLBOSNoLBOS).");
         WRITE_LOG("Mocking region with \"or-wa\"");
         CMockString mock1(*g_LBOS_UnitTesting_CurrentDomain(), "or-wa");
 
@@ -4718,7 +4719,7 @@ void ForeignDomain__NoAnnounce()
         result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
                                "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health",
                                &lbos_answer.Get(), &lbos_status_message.Get());
-        NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSNoLBOS);
+        NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSNoLBOS);
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                "LBOS status message is not NULL");
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -4744,7 +4745,7 @@ void IncorrectURL__ReturnInvalidArgs()
     unsigned short port = kDefaultPort;
     WRITE_LOG("Testing behavior of LBOS "
              "mapper when passed incorrect healthcheck URL - should return "
-             "kLBOSInvalidArgs");
+             "eLBOSInvalidArgs");
     /* Count how many servers there are before we announce */
     /*
      * I. Healthcheck URL that equals NULL
@@ -4753,7 +4754,7 @@ void IncorrectURL__ReturnInvalidArgs()
     unsigned short result;
     result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port, NULL,
                     &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4770,7 +4771,7 @@ void IncorrectURL__ReturnInvalidArgs()
     node_name = s_GenerateNodeName();
     s_AnnounceC(node_name.c_str(), "1.0.0", "", port, "",
                     &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4786,7 +4787,7 @@ void IncorrectURL__ReturnInvalidArgs()
     s_AnnounceC(node_name.c_str(), "1.0.0", "", port, 
                 "lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
                 &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4810,7 +4811,7 @@ void IncorrectPort__ReturnInvalidArgs()
     unsigned short port = kDefaultPort;
     WRITE_LOG("Testing behavior of LBOS "
               "mapper when passed incorrect port (zero) - should return "
-              "kLBOSInvalidArgs");
+              "eLBOSInvalidArgs");
     unsigned short result;
     /* I. 0 */
     port = 0;
@@ -4818,7 +4819,7 @@ void IncorrectPort__ReturnInvalidArgs()
                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
                          s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                     "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4843,7 +4844,7 @@ void IncorrectVersion__ReturnInvalidArgs()
     unsigned short result;
     WRITE_LOG("Testing behavior of LBOS "
              "mapper when passed incorrect version - should return "
-             "kLBOSInvalidArgs");
+             "eLBOSInvalidArgs");
     /*
      * I. NULL version
      */
@@ -4853,7 +4854,7 @@ void IncorrectVersion__ReturnInvalidArgs()
                          s_PortStr(PORT_N) +  "/health").c_str(),
                          &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4873,7 +4874,7 @@ void IncorrectVersion__ReturnInvalidArgs()
                          s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4898,7 +4899,7 @@ void IncorrectServiceName__ReturnInvalidArgs()
     unsigned short port = kDefaultPort;
     WRITE_LOG("Testing behavior of LBOS "
               "mapper when passed incorrect service name - should return "
-              "kLBOSInvalidArgs");
+              "eLBOSInvalidArgs");
     /*
      * I. NULL service name
      */
@@ -4908,7 +4909,7 @@ void IncorrectServiceName__ReturnInvalidArgs()
                          s_PortStr(PORT_N) + "/health").c_str(),
                          &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4929,7 +4930,7 @@ void IncorrectServiceName__ReturnInvalidArgs()
                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
                          s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4967,7 +4968,7 @@ void RealLife__VisibleAfterAnnounce()
     int count_after = s_CountServersWithExpectation(node_name, port, 1, 
                                                     __LINE__,
                                                     kDiscoveryDelaySec);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
     /* Cleanup */
     s_DeannounceC(node_name.c_str(), "1.0.0",
@@ -5008,7 +5009,7 @@ void IP0000__ReplaceWithIP()
                     "/health";
     result = s_AnnounceC(node_name, "1.0.0", "", port,
                          health, &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSDNSResolveError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSDNSResolveError);
     stringstream healthcheck;
     healthcheck << "http%3A%2F%2F1.2.3.4%3A" + s_PortStr(PORT_N) +  "%2Fhealth" << 
                    "%2Fport" << port <<
@@ -5023,7 +5024,7 @@ void IP0000__ReplaceWithIP()
                 "http://" ANNOUNCEMENT_HOST_0000 ":" + 
                 s_PortStr(PORT_N) +  "/health",
                 &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSDNSResolveError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSDNSResolveError);
     healthcheck.str(std::string());
     healthcheck << "http%3A%2F%2F251.252.253.147%3A" + s_PortStr(PORT_N) +  
                    "%2Fhealth" << "%2Fport" << port <<
@@ -5036,7 +5037,7 @@ void IP0000__ReplaceWithIP()
 
 
 /* 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host
- *     IP - return kLBOSDNSResolveError                                       */
+ *     IP - return eLBOSDNSResolveError                                       */
 /* Test is NOT thread-safe. */
 void ResolveLocalIPError__ReturnDNSError()
 {
@@ -5058,15 +5059,17 @@ void ResolveLocalIPError__ReturnDNSError()
                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
                          s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSDNSResolveError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSDNSResolveError);
     /* Cleanup*/
     lbos_answer = NULL;
-    s_DeannounceC(node_name.c_str(), "1.0.0", "", port, &lbos_answer.Get(), NULL);
+    result = s_DeannounceC(node_name.c_str(), "1.0.0", "", port, 
+                           &lbos_answer.Get(), NULL);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSDNSResolveError);
     WRITE_LOG("Reverting mock og SOCK_gethostbyaddr with \"0.0.0.0\"");
 }
 
 
-/* 20. LBOS is OFF - return kLBOSOff                                          */
+/* 20. LBOS is OFF - return eLBOSOff                                          */
 /* Test is NOT thread-safe. */
 void LBOSOff__ReturnKLBOSOff()
 {
@@ -5076,12 +5079,12 @@ void LBOSOff__ReturnKLBOSOff()
     unsigned short port = 8080;
     unsigned short result;
     WRITE_LOG("LBOS mapper is OFF (maybe it is not turned ON in registry " 
-              "or it could not initialize at start) - return kLBOSOff");
+              "or it could not initialize at start) - return eLBOSOff");
     result = s_AnnounceC("lbostest", "1.0.0", "", port,
                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
                          s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSOff);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSOff);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -5100,7 +5103,7 @@ void LBOSAnnounceCorruptOutput__Return454()
     CCObjHolder<char> lbos_status_message(NULL);
     unsigned short port = kDefaultPort;
     WRITE_LOG("Announced successfully, but LBOS returns corrupted answer - "
-              "return kLBOSCorruptOutput");
+              "return eLBOSCorruptOutput");
     WRITE_LOG("Mocking CONN_Read with corrupt output");
     CMockFunction<FLBOS_ConnReadMethod*> mock(
                     g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
@@ -5110,7 +5113,7 @@ void LBOSAnnounceCorruptOutput__Return454()
                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
                          s_PortStr(PORT_N) +  "/health",
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSCorruptOutput);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSCorruptOutput);
     /* Cleanup */
     WRITE_LOG("Reverting mock of CONN_Read with corrupt output");
 }
@@ -5135,11 +5138,11 @@ void HealthcheckDead__ReturnKLBOSSuccess()
      * I. Healthcheck is dead completely 
      */
      WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
-                "return  kLBOSBadRequest");
+                "return  eLBOSBadRequest");
     result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
                   "http://badhealth.gov", 
                   &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSBadRequest);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSBadRequest);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
                            "Answer from LBOS was not NULL");
     NCBITEST_CHECK_EQUAL_MT_SAFE(
@@ -5154,11 +5157,11 @@ void HealthcheckDead__ReturnKLBOSSuccess()
      * II. Healthcheck returns 404
      */
      WRITE_LOG("Part II. Healthcheck is \"http:/0.0.0.0:4097/healt\" - "
-                "return  kLBOSSuccess");
+                "return  eLBOSSuccess");
      result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
                           "http://0.0.0.0:4097/healt", //wrong port
                           &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Answer from LBOS was NULL");
     NCBITEST_CHECK_EQUAL_MT_SAFE(
@@ -5204,7 +5207,7 @@ namespace AnnouncementRegistry /* These tests are NOT for multithreading */
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
 /*  1.  All parameters good (Custom section has all parameters correct in 
-        config) - return kLBOSSuccess                                       */
+        config) - return eLBOSSuccess                                       */
 void ParamsGood__ReturnSuccess() 
 {
     CLBOSStatus         lbos_status(true, true);
@@ -5212,10 +5215,10 @@ void ParamsGood__ReturnSuccess()
     CCObjHolder<char>   lbos_status_message(NULL);
     unsigned short      result;
     WRITE_LOG("Simple announcement from registry. "
-              "Should return kLBOSSuccess");
+              "Should return eLBOSSuccess");
     result = s_AnnounceCRegistry(NULL, &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                                    "Successful announcement did not end up "
                                    "with answer from LBOS");
@@ -5225,7 +5228,7 @@ void ParamsGood__ReturnSuccess()
     s_DeannounceAll();
 }
 
-/*  2.  Custom section has nothing in config - return kLBOSInvalidArgs      */
+/*  2.  Custom section has nothing in config - return eLBOSInvalidArgs      */
 void CustomSectionNoVars__ReturnInvalidArgs()
 {
     CLBOSStatus         lbos_status(true, true);
@@ -5233,11 +5236,11 @@ void CustomSectionNoVars__ReturnInvalidArgs()
     CCObjHolder<char>   lbos_status_message(NULL);
     unsigned short      result;
     WRITE_LOG("Custom section has nothing in config - "
-              "return kLBOSInvalidArgs");
+              "return eLBOSInvalidArgs");
     result = s_AnnounceCRegistry("EMPTY_SECTION",
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5245,7 +5248,7 @@ void CustomSectionNoVars__ReturnInvalidArgs()
 }
 
 /*  3.  Section empty or NULL (should use default section and return 
-        kLBOSSuccess, if section is Good)                                   */
+        eLBOSSuccess, if section is Good)                                   */
 void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess()
 {
     CLBOSStatus         lbos_status(true, true);
@@ -5253,13 +5256,13 @@ void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess()
     CCObjHolder<char>   lbos_status_message(NULL);
     unsigned short      result;
     WRITE_LOG("Section empty or NULL - should use default section and return "
-              "kLBOSSuccess, if section is Good)");
+              "eLBOSSuccess, if section is Good)");
     /*
      * I. NULL section
      */
     result = s_AnnounceCRegistry(NULL, &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                                    "Successful announcement did not end up "
                                    "with answer from LBOS");
@@ -5274,7 +5277,7 @@ void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess()
      */
     result = s_AnnounceCRegistry("", &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Successful announcement did not end up with "
                            "answer from LBOS");
@@ -5302,7 +5305,7 @@ void TestNullOrEmptyField(const char* field_tested)
     result = s_AnnounceCRegistry((null_section + field_name).c_str(),
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5317,38 +5320,38 @@ void TestNullOrEmptyField(const char* field_tested)
     result = s_AnnounceCRegistry((empty_section + field_name).c_str(),
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
                                    "Answer from LBOS was not NULL");
 }
 
-/*  4.  Service is empty or NULL - return kLBOSInvalidArgs                  */
+/*  4.  Service is empty or NULL - return eLBOSInvalidArgs                  */
 void ServiceEmptyOrNull__ReturnInvalidArgs()
 {
-    WRITE_LOG("Service is empty or NULL - return kLBOSInvalidArgs");
+    WRITE_LOG("Service is empty or NULL - return eLBOSInvalidArgs");
     TestNullOrEmptyField("SERVICE");
 }
 
-/*  5.  Version is empty or NULL - return kLBOSInvalidArgs                  */
+/*  5.  Version is empty or NULL - return eLBOSInvalidArgs                  */
 void VersionEmptyOrNull__ReturnInvalidArgs()
 {
-    WRITE_LOG("Version is empty or NULL - return kLBOSInvalidArgs");
+    WRITE_LOG("Version is empty or NULL - return eLBOSInvalidArgs");
     TestNullOrEmptyField("VERSION");
 }
 
-/*  6.  Port is empty or NULL - return kLBOSInvalidArgs                     */
+/*  6.  Port is empty or NULL - return eLBOSInvalidArgs                     */
 void PortEmptyOrNull__ReturnInvalidArgs()
 {
-    WRITE_LOG("Port is empty or NULL - return kLBOSInvalidArgs");
+    WRITE_LOG("Port is empty or NULL - return eLBOSInvalidArgs");
     TestNullOrEmptyField("PORT");
 }
 
-/*  7.  Port is out of range - return kLBOSInvalidArgs                      */
+/*  7.  Port is out of range - return eLBOSInvalidArgs                      */
 void PortOutOfRange__ReturnInvalidArgs()
 {
-    WRITE_LOG("Port is out of range - return kLBOSInvalidArgs");
+    WRITE_LOG("Port is out of range - return eLBOSInvalidArgs");
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> lbos_status_message(NULL);
@@ -5360,7 +5363,7 @@ void PortOutOfRange__ReturnInvalidArgs()
     result = s_AnnounceCRegistry("SECTION_WITH_PORT_OUT_OF_RANGE1",
                                   &lbos_answer.Get(), 
                                   &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5375,7 +5378,7 @@ void PortOutOfRange__ReturnInvalidArgs()
     result = s_AnnounceCRegistry("SECTION_WITH_PORT_OUT_OF_RANGE2",
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5390,17 +5393,17 @@ void PortOutOfRange__ReturnInvalidArgs()
     result = s_AnnounceCRegistry("SECTION_WITH_PORT_OUT_OF_RANGE3",
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
                                    "Answer from LBOS was not NULL");
 }
 
-/*  8.  Port contains letters - return kLBOSInvalidArgs                     */
+/*  8.  Port contains letters - return eLBOSInvalidArgs                     */
 void PortContainsLetters__ReturnInvalidArgs()
 {
-    WRITE_LOG("Port contains letters - return kLBOSInvalidArgs");
+    WRITE_LOG("Port contains letters - return eLBOSInvalidArgs");
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> lbos_status_message(NULL);
@@ -5408,7 +5411,7 @@ void PortContainsLetters__ReturnInvalidArgs()
     result = s_AnnounceCRegistry("SECTION_WITH_CORRUPTED_PORT",
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5417,19 +5420,19 @@ void PortContainsLetters__ReturnInvalidArgs()
     lbos_answer = NULL;    
 }
 
-/*  9.  Healthcheck is empty or NULL - return kLBOSInvalidArgs              */
+/*  9.  Healthcheck is empty or NULL - return eLBOSInvalidArgs              */
 void HealthchecktEmptyOrNull__ReturnInvalidArgs()
 {
-    WRITE_LOG("Healthcheck is empty or NULL - return kLBOSInvalidArgs");
+    WRITE_LOG("Healthcheck is empty or NULL - return eLBOSInvalidArgs");
     TestNullOrEmptyField("HEALTHCHECK");
 }
 
 /*  10. Healthcheck does not start with http:// or https:// - return         
-        kLBOSInvalidArgs                                                    */ 
+        eLBOSInvalidArgs                                                    */ 
 void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs()
 {
     WRITE_LOG("Healthcheck does not start with http:// or https:// - return "      
-              "kLBOSInvalidArgs");
+              "eLBOSInvalidArgs");
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> lbos_status_message(NULL);
@@ -5437,7 +5440,7 @@ void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs()
     result = s_AnnounceCRegistry("SECTION_WITH_CORRUPTED_HEALTHCHECK",
                                  &lbos_answer.Get(),
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5446,21 +5449,21 @@ void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs()
     lbos_answer = NULL;    
 }
 /*  11. Trying to announce server providing dead healthcheck URL -
-        return kLBOSSuccess (previously was kLBOSNotFound)                    */
+        return eLBOSSuccess (previously was eLBOSNotFound)                    */
 void HealthcheckDead__ReturnKLBOSSuccess()
 {
     WRITE_LOG("Trying to announce server providing dead healthcheck URL - "
-              "return kLBOSSuccess(previously was kLBOSNotFound)");
+              "return eLBOSSuccess(previously was eLBOSNotFound)");
     CLBOSStatus         lbos_status         (true, true);
     CCObjHolder<char>   lbos_answer         (NULL);
     CCObjHolder<char>   lbos_status_message (NULL);
     unsigned short      result;
     /* 1. Non-existent domain in healthcheck */
     WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
-              "return  kLBOSBadRequest");
+              "return  eLBOSBadRequest");
     result = s_AnnounceCRegistry("SECTION_WITH_HEALTHCHECK_DNS_ERROR",
                                  &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSBadRequest);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSBadRequest);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), 
         "Bad Request");
@@ -5471,10 +5474,10 @@ void HealthcheckDead__ReturnKLBOSSuccess()
 
     /* 2. Healthcheck is reachable but does not answer */
      WRITE_LOG("Part II. Healthcheck is \"http:/0.0.0.0:4097/healt\" - "
-                "return  kLBOSSuccess");
+                "return  eLBOSSuccess");
      result = s_AnnounceCRegistry("SECTION_WITH_DEAD_HEALTHCHECK",
                                     &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
@@ -5491,13 +5494,13 @@ void HealthcheckDead__ReturnKLBOSSuccess()
 namespace Deannouncement
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
-/* 1. Successfully de-announced: return kLBOSSuccess                          */
+/* 1. Successfully de-announced: return eLBOSSuccess                          */
 /*    Test is thread-safe. */
 void Deannounced__Return1(unsigned short port)
 {
 #undef PORT_N
 #define PORT_N 8
-    WRITE_LOG("Successfully de-announced: return kLBOSSuccess");
+    WRITE_LOG("Successfully de-announced: return eLBOSSuccess");
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_status_message(NULL);
     CCObjHolder<char> lbos_answer(NULL);
@@ -5526,7 +5529,7 @@ void Deannounced__Return1(unsigned short port)
 
     result = s_DeannounceC(node_name.c_str(), "1.0.0", "", port, 
                            &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5556,7 +5559,7 @@ void Deannounced__Return1(unsigned short port)
     result = s_DeannounceC(node_name.c_str(), 
                            "1.0.0", s_GetMyIP().c_str(), port,
                            &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5604,7 +5607,7 @@ void Deannounced__AnnouncedServerRemoved()
                            s_GetMyHost().c_str(),
                            port, &lbos_answer.Get(), 
                            &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5634,7 +5637,7 @@ void Deannounced__AnnouncedServerRemoved()
     result = s_DeannounceC(node_name.c_str(), "1.0.0",
                            s_GetMyIP().c_str(), port,
                            &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5664,7 +5667,7 @@ void Deannounced__AnnouncedServerRemoved()
     result = s_DeannounceC(node_name.c_str(), "1.0.0",
                            "", port,
                            &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5693,7 +5696,7 @@ void NoLBOS__Return0()
                                        s_FakeReadEmpty);
     result = s_DeannounceC(node_name.c_str(), "1.0.0", "", port, 
                            &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSNoLBOS);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSNoLBOS);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5754,7 +5757,7 @@ void RealLife__InvisibleAfterDeannounce()
 }
 
 
-/*6. If trying to deannounce in another domain - should return kLBOSNoLBOS */
+/*6. If trying to deannounce in another domain - should return eLBOSNoLBOS */
 /* We fake our domain so no address looks like our own domain */
 /* Test is NOT thread-safe. */
 void ForeignDomain__DoNothing()
@@ -5762,7 +5765,7 @@ void ForeignDomain__DoNothing()
 #if 0 /* deprecated */
     /* Test is not run in TeamCity*/
     if (!getenv("TEAMCITY_VERSION")) {
-        WRITE_LOG("Deannounce in another domain - return kLBOSNoLBOS");
+        WRITE_LOG("Deannounce in another domain - return eLBOSNoLBOS");
         CLBOSStatus lbos_status(true, true);
         CCObjHolder<char> lbos_answer(NULL);
         CCObjHolder<char> lbos_status_message(NULL);
@@ -5773,7 +5776,7 @@ void ForeignDomain__DoNothing()
         CMockString mock(*g_LBOS_UnitTesting_CurrentDomain(), "or-wa");
         result = s_DeannounceC(node_name.c_str(), "1.0.0", "", port, 
                                &lbos_answer.Get(), &lbos_status_message.Get());
-        NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSNoLBOS);
+        NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSNoLBOS);
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                              "LBOS status message is not NULL");
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5825,7 +5828,7 @@ void NoHostProvided__LocalAddress()
                                       ":" + s_PortStr(PORT_N) +  "/health",
                                       false);
     NCBITEST_CHECK_EQUAL_MT_SAFE(is_announced, false);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5833,28 +5836,28 @@ void NoHostProvided__LocalAddress()
 }
 
 
-/* 8. LBOS is OFF - return kLBOSOff                                         */
+/* 8. LBOS is OFF - return eLBOSOff                                         */
 /* Test is NOT thread-safe. */
 void LBOSOff__ReturnKLBOSOff()
 {
-    WRITE_LOG("Deannonce when LBOS mapper is OFF - return kLBOSOff");
+    WRITE_LOG("Deannonce when LBOS mapper is OFF - return eLBOSOff");
     CLBOSStatus lbos_status(true, false);
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> lbos_status_message(NULL);
     unsigned short result = 
         s_DeannounceC("lbostest", "1.0.0", "", 8080, 
                       &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSOff);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSOff);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
                            "Answer from LBOS was not NULL");
 }
-/* 9. Trying to deannounce non-existent service - return kLBOSNotFound      */
+/* 9. Trying to deannounce non-existent service - return eLBOSNotFound      */
 /*    Test is thread-safe. */
 void NotExists__ReturnKLBOSNotFound()
 {
-    WRITE_LOG("Deannonce non-existent service - return kLBOSNotFound");
+    WRITE_LOG("Deannonce non-existent service - return eLBOSNotFound");
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> lbos_status_message(NULL);
@@ -5862,7 +5865,7 @@ void NotExists__ReturnKLBOSNotFound()
         s_DeannounceC("notexists", "1.0.0", 
                         "", 8080, 
                         &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, kLBOSNotFound);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSNotFound);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), 
         "Not Found");
@@ -6229,7 +6232,7 @@ void IncorrectVersion__ThrowInvalidArgs()
 {
     WRITE_LOG("Testing behavior of LBOS "
              "mapper when passed incorrect version - should return "
-             "kLBOSInvalidArgs");
+             "eLBOSInvalidArgs");
     WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
@@ -6267,7 +6270,7 @@ void IncorrectServiceName__ThrowInvalidArgs()
     unsigned short port = kDefaultPort;
     WRITE_LOG("Testing behavior of LBOS "
               "mapper when passed incorrect service name - should return "
-              "kLBOSInvalidArgs");
+              "eLBOSInvalidArgs");
     WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
@@ -6390,7 +6393,7 @@ void ResolveLocalIPError__ReturnDNSError()
     WRITE_LOG("Reverting mock og SOCK_gethostbyaddr with \"0.0.0.0\"");
 }
 
-/* 20. LBOS is OFF - return kLBOSOff                                        */
+/* 20. LBOS is OFF - return eLBOSOff                                        */
 /* Test is NOT thread-safe. */
 void LBOSOff__ThrowKLBOSOff()
 {
@@ -6398,7 +6401,7 @@ void LBOSOff__ThrowKLBOSOff()
                                                             comparator("550\n");
     CLBOSStatus lbos_status(true, false);
     WRITE_LOG("LBOS mapper is OFF (maybe it is not turned ON in registry " 
-              "or it could not initialize at start) - return kLBOSOff");
+              "or it could not initialize at start) - return eLBOSOff");
     WRITE_LOG("Expected exception with error code \"" << "e_LBOSOff" <<
               "\", status code \"" << 550 <<
                 "\", message \"" << "550\\n" << "\".");
@@ -6438,7 +6441,7 @@ void LBOSAnnounceCorruptOutput__ThrowServerError()
 
 
 /*22. Trying to announce server and providing dead healthcheck URL - 
-      return kLBOSNotFound                                                  */
+      return eLBOSNotFound                                                  */
 void HealthcheckDead__ThrowE_NotFound()
 {
     CLBOSStatus lbos_status(true, true);
@@ -6453,7 +6456,7 @@ void HealthcheckDead__ThrowE_NotFound()
      * I. Healthcheck is on non-existent domain
      */
      WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
-                "return  kLBOSBadRequest");
+                "return  eLBOSBadRequest");
     SELECT_PORT(count_before, node_name, port);
     WRITE_LOG("Expected exception with error code \"" << 
                 "e_LBOSBadRequest" <<
@@ -6563,7 +6566,7 @@ namespace AnnouncementRegistry_CXX /* These tests are NOT for multithreading */
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
 /*  1.  All parameters good (Default section has all parameters correct in 
-        config) - return kLBOSSuccess                                        */
+        config) - return eLBOSSuccess                                        */
 void ParamsGood__ReturnSuccess() 
 {
     WRITE_LOG("Simple announcement from registry. "
@@ -6574,7 +6577,7 @@ void ParamsGood__ReturnSuccess()
     BOOST_CHECK_NO_THROW(LBOS::DeannounceAll());
 }
 
-/*  2.  Custom section has nothing in config - return kLBOSInvalidArgs       */
+/*  2.  Custom section has nothing in config - return eLBOSInvalidArgs       */
 void CustomSectionNoVars__ThrowInvalidArgs()
 {
     ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
@@ -6591,7 +6594,7 @@ void CustomSectionNoVars__ThrowInvalidArgs()
 }
 
 /*  3.  Section empty (should use default section and return 
-        kLBOSSuccess, if section is Good)                                    */
+        eLBOSSuccess, if section is Good)                                    */
 void CustomSectionEmptyOrNullAndSectionIsOk__AllOK()
 {
     CLBOSStatus lbos_status(true, true);
@@ -6638,31 +6641,31 @@ void TestNullOrEmptyField(const char* field_tested)
         CLBOSException, comparator);
 }
 
-/*  4.  Service is empty or NULL - return kLBOSInvalidArgs                  */
+/*  4.  Service is empty or NULL - return eLBOSInvalidArgs                  */
 void ServiceEmptyOrNull__ThrowInvalidArgs()
 {
     WRITE_LOG("Service is empty or NULL");
     TestNullOrEmptyField("SERVICE");
 }
 
-/*  5.  Version is empty or NULL - return kLBOSInvalidArgs                  */
+/*  5.  Version is empty or NULL - return eLBOSInvalidArgs                  */
 void VersionEmptyOrNull__ThrowInvalidArgs()
 {
     WRITE_LOG("Version is empty or NULL");
     TestNullOrEmptyField("VERSION");
 }
 
-/*  6.  Port is empty or NULL - return kLBOSInvalidArgs                     */
+/*  6.  Port is empty or NULL - return eLBOSInvalidArgs                     */
 void PortEmptyOrNull__ThrowInvalidArgs()
 {
     WRITE_LOG("Service is empty or NULL");
     TestNullOrEmptyField("PORT");
 }
 
-/*  7.  Port is out of range - return kLBOSInvalidArgs                      */
+/*  7.  Port is out of range - return eLBOSInvalidArgs                      */
 void PortOutOfRange__ThrowInvalidArgs()
 {
-    WRITE_LOG("Port is out of range - return kLBOSInvalidArgs");
+    WRITE_LOG("Port is out of range - return eLBOSInvalidArgs");
     ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
                                                             comparator("452\n");
     /*
@@ -6699,7 +6702,7 @@ void PortOutOfRange__ThrowInvalidArgs()
         s_AnnounceCPPFromRegistry("SECTION_WITH_PORT_OUT_OF_RANGE3"),
         CLBOSException, comparator);
 }
-/*  8.  Port contains letters - return kLBOSInvalidArgs                     */
+/*  8.  Port contains letters - return eLBOSInvalidArgs                     */
 void PortContainsLetters__ThrowInvalidArgs()
 {
     WRITE_LOG("Port contains letters");
@@ -6714,14 +6717,14 @@ void PortContainsLetters__ThrowInvalidArgs()
         s_AnnounceCPPFromRegistry("SECTION_WITH_CORRUPTED_PORT"),
         CLBOSException, comparator);
 }
-/*  9.  Healthcheck is empty or NULL - return kLBOSInvalidArgs              */
+/*  9.  Healthcheck is empty or NULL - return eLBOSInvalidArgs              */
 void HealthchecktEmptyOrNull__ThrowInvalidArgs()
 {
     WRITE_LOG("Healthcheck is empty or NULL");
     TestNullOrEmptyField("HEALTHCHECK");
 }
 /*  10. Healthcheck does not start with http:// or https:// - return         
-        kLBOSInvalidArgs                                                    */ 
+        eLBOSInvalidArgs                                                    */ 
 void HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs()
 {
     WRITE_LOG("Healthcheck does not start with http:// or https://");
@@ -6737,7 +6740,7 @@ void HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs()
         CLBOSException, comparator);
 }
 /*  11. Trying to announce server and providing dead healthcheck URL -
-        return kLBOSNotFound                                                */
+        return eLBOSNotFound                                                */
 void HealthcheckDead__ThrowE_NotFound()
 {
     WRITE_LOG("Trying to announce server providing dead healthcheck URL - "
@@ -6749,7 +6752,7 @@ void HealthcheckDead__ThrowE_NotFound()
     count_before = s_CountServers(node_name, port);
     /* 1. Non-existent domain in healthcheck */
     WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
-              "return  kLBOSBadRequest");
+              "return  eLBOSBadRequest");
     WRITE_LOG("Expected exception with error code \"" << 
                 "e_LBOSBadRequest" <<
                 "\", status code \"" << 400 <<
@@ -6771,7 +6774,7 @@ void HealthcheckDead__ThrowE_NotFound()
 
     /* 2. Healthcheck is reachable but does not answer */
     WRITE_LOG("Part II. Healthcheck is \"http:/0.0.0.0:4097/healt\" - "
-              "return  kLBOSSuccess");
+              "return  eLBOSSuccess");
     BOOST_CHECK_NO_THROW(
                    s_AnnounceCPPFromRegistry("SECTION_WITH_DEAD_HEALTHCHECK"));
     count_after = s_CountServersWithExpectation(node_name, port, 0, __LINE__,
@@ -7022,7 +7025,7 @@ void NoHostProvided__LocalAddress()
     NCBITEST_CHECK_EQUAL_MT_SAFE(is_announced, false);
 }
 
-/* 8. LBOS is OFF - return kLBOSOff                                         */
+/* 8. LBOS is OFF - return eLBOSOff                                         */
 /* Test is NOT thread-safe. */
 void LBOSOff__ThrowKLBOSOff()
 {
@@ -8144,6 +8147,7 @@ static vector<SServer> s_GetAnnouncedServers(bool is_enabled,
 
     unsigned int i = 0;
     for (i = 0; i < to_find.size(); ++i) {
+        WRITE_LOG(Error << "i = " << i);
         while (start != string::npos) {
             start = lbos_output.find(to_find[i] + "\t", start);
             if (start == string::npos)
@@ -8213,10 +8217,10 @@ static void s_ClearZooKeeper()
 
 /** Find server in %LBOS%/text/service */
 static
-bool s_CheckIfAnnounced(string          service, 
-                        string          version, 
+bool s_CheckIfAnnounced(const string&   service, 
+                        const string&   version, 
                         unsigned short  server_port, 
-                        string          health_suffix,
+                        const string&   health_suffix,
                         bool            expectedAnnounced,
                         string          expected_host)
 {   
@@ -8227,19 +8231,23 @@ bool s_CheckIfAnnounced(string          service,
     int max_retries = kDiscoveryDelaySec * 1000 / wait_msecs;
     int retries = 0;
     bool announced = !expectedAnnounced;
-    expected_host = expected_host == "" ?
-        CSocketAPI::HostPortToString(CSocketAPI::GetLocalHostAddress(), 0) :
-        CSocketAPI::HostPortToString(CSocketAPI::gethostbyname(expected_host), 0);
+    expected_host = expected_host == "" 
+        ?
+      CSocketAPI::HostPortToString(CSocketAPI::GetLocalHostAddress(), 0) 
+        :
+      CSocketAPI::HostPortToString(CSocketAPI::gethostbyname(expected_host),0);
     MEASURE_TIME_START
         while (announced != expectedAnnounced && retries < max_retries) {
             announced = false;
             if (retries > 0) { /* for the first cycle we do not sleep */
                 SleepMilliSec(wait_msecs);
             }
-            WRITE_LOG("Searching for server " << service << ", port " << server_port <<
-                     " and version " << version << " (expected that it does" <<
-                     (expectedAnnounced ? "" : " NOT") << " appear in /text/service "
-                     << ". Retry #" << retries);
+            WRITE_LOG("Searching for server " << service << 
+                      ", port " << server_port << 
+                      " and version " << version << 
+                      " (expected that it does" <<
+                      (expectedAnnounced ? "" : " NOT") << 
+                      " appear in /text/service " << ". Retry #" << retries);
             vector<SServer> nodes = s_GetAnnouncedServers(true);
             vector<SServer>::iterator node;
             for (node = nodes.begin();  node != nodes.end();   node++) {
@@ -8325,7 +8333,7 @@ static SLBOSVersion s_ParseVersionString(string version)
 
 /** Get string like "x.x.x, x.x.x, x.x.x,..." and convert it to 
  * vector<SLBOSVersion> */
-static vector<SLBOSVersion> s_ParseVersionsString(string versions)
+static vector<SLBOSVersion> s_ParseVersionsString(const string& versions)
 {
     vector<SLBOSVersion> versions_arr;
     /* Now we parse version into major.minor.patch */

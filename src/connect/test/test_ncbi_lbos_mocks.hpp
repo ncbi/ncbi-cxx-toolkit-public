@@ -34,9 +34,9 @@
 #include "../ncbi_lbosp.h"
 
 /** Get number of servers with specified IP announced in ZK  */
-int                  s_CountServers(string         service,
+int                  s_CountServers(const string&  service,
                                     unsigned short port,
-                                    string         dtab);
+                                    const string&  dtab);
 
                                                                
 template <unsigned int lines>
@@ -66,7 +66,7 @@ unsigned short s_FakeAnnounceEx(const char*     service,
                                char**           http_status_message)  
 {
     s_LBOS_hostport = healthcheck_url;
-    return kLBOSDNSResolveError;
+    return eLBOSDNSResolveError;
 }
 
 
@@ -548,7 +548,9 @@ private:
  * (usually it is 0 or 1)
  * This function does not care about host (IP) of server.
  */
-int s_CountServers(string service, unsigned short port, string dtab = "")
+int s_CountServers(const string&  service, 
+                   unsigned short port, 
+                   const string&  dtab = "")
 {
     CConnNetInfo net_info;
     int servers = 0;

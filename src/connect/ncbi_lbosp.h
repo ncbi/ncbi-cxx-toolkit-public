@@ -52,17 +52,18 @@ extern "C" {
  *  454 - LBOS output could not be parsed
  *  550 - LBOS client is OFF in the current process
  */
-static const int kLBOSSuccess         = 200;
-static const int kLBOSBadRequest      = 400;
-static const int kLBOSNotFound        = 404;
-static const int kLBOSNoLBOS          = 450;
-static const int kLBOSDNSResolveError = 451;
-static const int kLBOSInvalidArgs     = 452;
-static const int kLBOSMemAllocError   = 453;
-static const int kLBOSCorruptOutput   = 454;
-static const int kLBOSServerError     = 500;
-static const int kLBOSOff             = 550;
-
+enum ELBOSStatusCodes{
+    eLBOSSuccess = 200,
+    eLBOSBadRequest = 400,
+    eLBOSNotFound = 404,
+    eLBOSNoLBOS = 450,
+    eLBOSDNSResolveError = 451,
+    eLBOSInvalidArgs = 452,
+    eLBOSMemAllocError = 453,
+    eLBOSCorruptOutput = 454,
+    eLBOSServerError = 500,
+    eLBOSOff = 550
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 //                             DATA TYPES                                    //
@@ -392,7 +393,7 @@ const SSERV_VTable*  SERV_LBOS_Open(SERV_ITER           iter,
  *  true - string is NULL or empty;
  *  false - string exists and contains elements.                             */
 NCBI_XCONNECT_EXPORT
-int/*bool*/ g_LBOS_StringIsNullOrEmpty(const char* const str);
+int/*bool*/ g_LBOS_StringIsNullOrEmpty(const char* str);
 
 
 /** Compose LBOS address from /etc/ncbi/{role, domain}.

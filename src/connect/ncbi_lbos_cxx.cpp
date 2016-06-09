@@ -140,7 +140,7 @@ std::string CLBOSIpCache::HostnameResolve(string service, string hostname,
     if (hostname == "") {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
             CLBOSException::EErrCode::e_LBOSBadRequest, "400 Bad Request",
-            kLBOSBadRequest);
+            eLBOSBadRequest);
     }
     map<CLBOSIpCacheKey, string>::iterator pos;
     CLBOSIpCacheKey key(service, hostname, version, port);
@@ -193,7 +193,7 @@ static void s_ProcessResult(unsigned short result,
                             const char* lbos_answer,
                             const char* status_message)
 {
-    if (result == kLBOSSuccess)
+    if (result == eLBOSSuccess)
         return;
 
     stringstream message;
@@ -235,8 +235,8 @@ void LBOS::Announce(const string& service, const string& version,
             ConnNetInfo_Destroy(healthcheck_info);
             throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                  CLBOSException::EErrCode::e_LBOSInvalidArgs,
-                                 NStr::IntToString(kLBOSInvalidArgs),
-                                 kLBOSInvalidArgs);
+                                 NStr::IntToString(eLBOSInvalidArgs),
+                                 eLBOSInvalidArgs);
         }
         ConnNetInfo_Destroy(healthcheck_info);
     }
@@ -277,15 +277,15 @@ void LBOS::AnnounceFromRegistry(string reg_section)
     catch (...) {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                              CLBOSException::EErrCode::e_LBOSInvalidArgs,
-                             NStr::IntToString(kLBOSInvalidArgs),
-                             kLBOSInvalidArgs);
+                             NStr::IntToString(eLBOSInvalidArgs),
+                             eLBOSInvalidArgs);
     }
     if (port_int < 1 || port_int > 65535)
     {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                              CLBOSException::EErrCode::e_LBOSInvalidArgs, 
-                             NStr::IntToString(kLBOSInvalidArgs),
-                             kLBOSInvalidArgs);
+                             NStr::IntToString(eLBOSInvalidArgs),
+                             eLBOSInvalidArgs);
     }
     unsigned short port = static_cast<unsigned short>(port_int);
     Announce(service, version, host, port, health);
@@ -437,23 +437,23 @@ CLBOSException::EErrCode
     CLBOSException::s_HTTPCodeToEnum(unsigned short http_code) 
 {
     switch (http_code) {
-    case kLBOSNoLBOS:
+    case eLBOSNoLBOS:
         return EErrCode::e_LBOSNoLBOS;
-    case kLBOSNotFound:
+    case eLBOSNotFound:
         return EErrCode::e_LBOSNotFound;
-    case kLBOSBadRequest:
+    case eLBOSBadRequest:
         return EErrCode::e_LBOSBadRequest;
-    case kLBOSOff:
+    case eLBOSOff:
         return EErrCode::e_LBOSOff;
-    case kLBOSInvalidArgs:
+    case eLBOSInvalidArgs:
         return EErrCode::e_LBOSInvalidArgs;
-    case kLBOSDNSResolveError:
+    case eLBOSDNSResolveError:
         return EErrCode::e_LBOSDNSResolveError;
-    case kLBOSMemAllocError:
+    case eLBOSMemAllocError:
         return EErrCode::e_LBOSMemAllocError;
-    case kLBOSCorruptOutput:
+    case eLBOSCorruptOutput:
         return EErrCode::e_LBOSCorruptOutput;
-    case kLBOSServerError:
+    case eLBOSServerError:
         return EErrCode::e_LBOSServerError;
     default:
         return EErrCode::e_LBOSUnknown;
