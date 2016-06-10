@@ -11033,7 +11033,6 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
-
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
@@ -11064,7 +11063,9 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "Range",
                                                  "Code-break location not in coding region - may be frame problem"));
+    SetDiagFilter(eDiagFilter_All, "!(1210.8)");
     eval = validator.Validate(seh, options);
+    SetDiagFilter(eDiagFilter_All, "");
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
@@ -11094,7 +11095,9 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     entry = unit_test_util::BuildGoodSeq();
     misc = unit_test_util::AddMiscFeature (entry);
     misc->SetLocation().SetInt().SetFrom(11);
+    SetDiagFilter(eDiagFilter_All, "!(1204.1)");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    SetDiagFilter(eDiagFilter_All, "");
     expected_errors[0]->SetSeverity(eDiag_Critical);
     expected_errors[0]->SetErrMsg("Location: SeqLoc [{lcl|good}] out of range");
     eval = validator.Validate(seh, options);
