@@ -83,13 +83,23 @@ namespace {
     // There is no good way for the callbacks above to tell about the
     // errors or warnings. So this is a storage for the custom messages.
 
-    // Temporarily disable message collecting on some platforms
-    // On Apple/free bsd C-lang and on MS - no messages
-    #if ((defined(__APPLE__) || defined(__FreeBSD__)) && defined(__clang__) || defined(_MSC_VER))
-        #define NO_THREAD_LOCAL_HTTPS_MESSAGES 1
-        xml::error_messages    https_messages;
+    // Unfortunately at the time of writing the thread_local is not properly
+    // supported by all the compilers we use. So there are a few versions
+    // introduced here.
+    #if defined(_MSC_VER)
+        #ifndef HTTPS_ERRORS_USE_POD
+            #define HTTPS_ERRORS_USE_POD 1
+        #endif
+        __declspec(thread)  xml::error_messages *   https_messages = NULL;
     #else
-        thread_local   xml::error_messages    https_messages;
+        #if (defined(__APPLE__) || defined(__FreeBSD__)) && defined(__clang__)
+            #ifndef HTTPS_ERRORS_USE_POD
+                #define HTTPS_ERRORS_USE_POD 1
+            #endif
+            __thread xml::error_messages *          https_messages = NULL;
+        #else
+            thread_local xml::error_messages        https_messages;
+        #endif
     #endif
 }
 
@@ -109,14 +119,26 @@ namespace xml {
 
         void clear_https_messages(void)
         {
-            #ifndef NO_THREAD_LOCAL_HTTPS_MESSAGES
-            https_messages.get_messages().clear();
+            #if defined(HTTPS_ERRORS_USE_POD)
+                if (https_messages)
+                    delete https_messages;
+                https_messages = new xml::error_messages;
+            #else
+                https_messages.get_messages().clear();
             #endif
         }
 
-        const error_messages &  get_https_messages(void)
+        void collect_https_messages(xml::error_messages &  append_to)
         {
-            return https_messages;
+            #if defined(HTTPS_ERRORS_USE_POD)
+                if (https_messages) {
+                    append_to.append_messages(*https_messages);
+                    delete https_messages;
+                    https_messages = NULL;
+                }
+            #else
+                append_to.append_messages(https_messages);
+            #endif
         }
 
         void append_https_message(const std::string &             msg,
@@ -124,8 +146,13 @@ namespace xml {
                                   int                             line,
                                   const std::string &             fname)
         {
-            #ifndef NO_THREAD_LOCAL_HTTPS_MESSAGES
-            https_messages.get_messages().push_back(
+            #if defined(HTTPS_ERRORS_USE_POD)
+                if (https_messages)
+                    https_messages->get_messages().push_back(
+                                    error_message(msg, msg_type,
+                                                  line, fname));
+            #else
+                https_messages.get_messages().push_back(
                                     error_message(msg, msg_type,
                                                   line, fname));
             #endif

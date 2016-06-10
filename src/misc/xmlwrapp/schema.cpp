@@ -164,17 +164,14 @@ void schema::construct (const char* file_or_data, size_type size,
 
     messages->get_messages().clear();
 
-    // Just in case collect https warnings
+    // Wrap the libxml2 calls with the https error collecting
     xml::impl::clear_https_messages();
-
     xmlSchemaSetParserErrors(ctxt, cb_schema_error,
                                    cb_schema_warning,
                                    messages);
     pimpl_->schema_ = xmlSchemaParse(ctxt);
     xmlSchemaFreeParserCtxt(ctxt);
-
-    // Copy the collected https messages from tls
-    messages->append_messages(xml::impl::get_https_messages());
+    xml::impl::collect_https_messages(*messages);
 
     // Fatal errors are impossible here. They may appear for document parser
     // only.

@@ -45,7 +45,7 @@ namespace xml {
 
         // Access to the collected messages
         void clear_https_messages(void);
-        const error_messages &  get_https_messages(void);
+        void collect_https_messages(error_messages &  append_to);
 
     } // namespace impl
 } // namespace xml

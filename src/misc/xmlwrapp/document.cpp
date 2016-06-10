@@ -309,9 +309,11 @@ xml::document::document (const char *               filename,
     else
         messages->get_messages().clear();
 
+    // Wrap the libxml2 call with https error collecting
     xml::impl::clear_https_messages();
-
     xmlDocPtr tmpdoc = xmlSAXParseFileWithData_Custom(&sax, filename, temp);
+    xml::impl::collect_https_messages(*temp);
+
     if (!tmpdoc) {
         // It is a common case that the file does not exist or cannot be
         // opened. libxml2 does not recognise it so make a test here to
@@ -326,9 +328,6 @@ xml::document::document (const char *               filename,
         }
         fclose(test);
     }
-
-    // Copy the collected https messages from tls
-    temp->append_messages(xml::impl::get_https_messages());
 
     if (is_failure(temp, how) || !tmpdoc) {
         if (tmpdoc) xmlFreeDoc(tmpdoc);
@@ -377,13 +376,12 @@ xml::document::document (const char *               data,
         msgs.reset(temp = new error_messages);
     else
         messages->get_messages().clear();
-    xml::impl::clear_https_messages();
     ctxt->_private = temp;
 
+    // Wrap the libxml2 call with https errors collecting
+    xml::impl::clear_https_messages();
     int ret(xmlParseDocument(ctxt));
-
-    // Copy the collected https messages from tls
-    temp->append_messages(xml::impl::get_https_messages());
+    xml::impl::collect_https_messages(*temp);
 
     if (!ctxt->wellFormed || ret != 0 || is_failure(temp, how)) {
         if (ctxt->myDoc)
@@ -447,7 +445,6 @@ xml::document::document (std::istream &           stream,
         msgs.reset(temp = new error_messages);
     else
         messages->get_messages().clear();
-    xml::impl::clear_https_messages();
 
     /* Make sure that the stream is not empty */
     if (stream && (stream.eof() ||
@@ -467,18 +464,18 @@ xml::document::document (std::istream &           stream,
 
     set_parser_context_options(ctxt);
 
+    // Wrap the libxml2 calls with the https error collecting
+    xml::impl::clear_https_messages();
+
     /* Parse the document chunk by chunk */
     char                buffer[const_buffer_size];
-
     while (stream.read(buffer, const_buffer_size) || stream.gcount())
     {
         if (xmlParseChunk(ctxt, buffer, static_cast<int>(stream.gcount()), 0) != 0)
             break;
     }
     xmlParseChunk(ctxt, 0, 0, 1);
-
-    // Copy the collected https messages from tls
-    temp->append_messages(xml::impl::get_https_messages());
+    xml::impl::collect_https_messages(*temp);
 
     /* The parsing has been finished, check the results */
     if (!ctxt->wellFormed || ctxt->myDoc == NULL || is_failure(temp, how))
@@ -622,12 +619,11 @@ bool document::validate (error_messages *  messages_,
     vctxt.userData = temp;
 
     temp->get_messages().clear();
+
+    // Wrap the libxml2 call with the https error collecting
     xml::impl::clear_https_messages();
-
     int retCode = xmlValidateDocument(&vctxt, pimpl_->doc_);
-
-    // Copy the collected https messages from tls
-    temp->append_messages(xml::impl::get_https_messages());
+    xml::impl::collect_https_messages(*temp);
 
     if (retCode == 0)
         return false;

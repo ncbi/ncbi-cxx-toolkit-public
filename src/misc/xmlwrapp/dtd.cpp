@@ -95,13 +95,12 @@ dtd::dtd (const char* filename, error_messages* messages,
     if (messages)
         messages->get_messages().clear();
 
-    // Just in case collect https warnings
-    xml::impl::clear_https_messages();
-
-    pimpl_->dtd_ = xmlParseDTD(0, reinterpret_cast<const xmlChar*>(filename));
-
+    // Wrap the libxml2 call with an https error collecting
     if (messages)
-        messages->append_messages(xml::impl::get_https_messages());
+        xml::impl::clear_https_messages();
+    pimpl_->dtd_ = xmlParseDTD(0, reinterpret_cast<const xmlChar*>(filename));
+    if (messages)
+        xml::impl::collect_https_messages(*messages);
 
     if (pimpl_->dtd_ == NULL) {
         // It is a common case that the file does not exist or cannot be

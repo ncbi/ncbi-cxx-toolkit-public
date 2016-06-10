@@ -292,10 +292,8 @@ bool event_parser::parse_file (const char *filename, error_messages* messages,
     if (!parse_finished_)
         parse_finish(messages, how);
 
-    if (messages) {
+    if (messages)
         messages->get_messages().clear();
-        xml::impl::clear_https_messages();
-    }
     pimpl_->parser_status_ = true;
 
     std::ifstream file(filename);
@@ -330,7 +328,6 @@ bool event_parser::parse_stream (std::istream &stream, error_messages* messages,
         parse_finish(temp, how);
 
     temp->get_messages().clear();
-    xml::impl::clear_https_messages();
     pimpl_->parser_status_ = true;
 
     if (stream && (stream.eof() ||
@@ -368,12 +365,12 @@ bool event_parser::parse_chunk (const char *chunk, size_type length,
     std::unique_ptr<error_messages>     msgs;
     if (!messages)
         msgs.reset(temp = new error_messages);
-    else
-        if (parse_finished_) {
-            // This is first call of the parse_chunk() after parse_finished()
-            messages->get_messages().clear();
-            xml::impl::clear_https_messages();
-        }
+
+    if (parse_finished_) {
+        // This is first call of the parse_chunk() after parse_finished()
+        temp->get_messages().clear();
+        xml::impl::clear_https_messages();
+    }
 
     parse_finished_ = false;
     pimpl_->errors_ = temp;
@@ -384,13 +381,17 @@ bool event_parser::parse_chunk (const char *chunk, size_type length,
     else
     {
         // Not first call, check that the callbacks are enabled
-        if (pimpl_->parser_context_->disableSAX != 0)
+        if (pimpl_->parser_context_->disableSAX != 0) {
+            xml::impl::collect_https_messages(*temp);
             throw xml::exception("parse_finish(...) was not called after "
                                  "an error occured or the user "
                                  "stopped the parser");
-        if (pimpl_->parser_context_->instate == XML_PARSER_EOF)
+        }
+        if (pimpl_->parser_context_->instate == XML_PARSER_EOF) {
+            xml::impl::collect_https_messages(*temp);
             throw xml::exception("parse_finish(...) was not called "
                                  "after the parser has finished");
+        }
     }
 
     xmlParseChunk(pimpl_->parser_context_, chunk,
@@ -408,10 +409,12 @@ bool event_parser::parse_finish (error_messages* messages,
     xmlParseChunk(pimpl_->parser_context_, 0, 0, 1);
 
     parse_finished_ = true;
+    error_messages *                    temp(messages);
+    std::unique_ptr<error_messages>     msgs;
+    if (!messages)
+        msgs.reset(temp = new error_messages);
 
-    // Copy the collected https messages from tls
-    if (messages)
-        messages->append_messages(xml::impl::get_https_messages());
+    xml::impl::collect_https_messages(*temp);
 
     // There was an error while parsing or the user interrupted parsing
     bool        ret_val = true;
@@ -419,9 +422,8 @@ bool event_parser::parse_finish (error_messages* messages,
         ret_val= false;
     else
     {
-        if (messages)
-            if (is_failure(messages, how))
-                ret_val= false;
+        if (is_failure(temp, how))
+            ret_val= false;
     }
 
     // The parser context is not needed any more

@@ -409,14 +409,12 @@ xmlDocPtr apply_stylesheet(xslt::impl::stylesheet_impl *s_impl,
 
     // Wierd way to collect https warnings: via tls in the custom IO handler
     // See https_input_impl.*
-    xml::impl::clear_https_messages();
-
+    if (s_impl->messages_)
+        xml::impl::clear_https_messages();
     xmlDocPtr result =
         xsltApplyStylesheetUser(style, doc, p ? &v[0] : 0, NULL, NULL, ctxt);
-
-    // Copy the collected https messages from tls
     if (s_impl->messages_)
-        s_impl->messages_->append_messages(xml::impl::get_https_messages());
+        xml::impl::collect_https_messages(*s_impl->messages_);
 
     // This is a part of a hack of leak-less handling nodeset return values
     // from XSLT extension functions. XSLT frees nodes in a nodeset too early
