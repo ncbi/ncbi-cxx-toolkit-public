@@ -31,9 +31,9 @@ FreeBSD64         : plain          : Clang.sh         --without-debug --with-mt 
 
 Linux64-Centos    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 Linux64-Centos    : GCC-nomt       : GCC.sh           --without-debug --without-mt --without-runpath --with-flat-makefile
-Linux64-Centos    : ICC-13      : ICC.sh 13.0      --without-debug --with-mt    --without-runpath --with-flat-makefile
-Linux64-Centos    : ICC-135      : ICC.sh 13.5      --without-debug --with-mt    --without-runpath --with-flat-makefile
-Linux64-Centos    : ICC-15      : ICC.sh 15.0      --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux64-Centos    : ICC-13         : ICC.sh 13.0      --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux64-Centos    : ICC-135        : ICC.sh 13.5      --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux64-Centos    : ICC-15         : ICC.sh 15.0      --without-debug --with-mt    --without-runpath --with-flat-makefile
 Linux64-Centos    : plain-ICC      : ICC.sh      --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 Linux64-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
@@ -52,3 +52,5 @@ XCode             : plain          : Xcode.sh 30
 
 
 IntelMAC-Clang36  : clang : Clang.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile --with-universal=i386,x86_64 --with-3psw=system:netopt --without-ncbi-public
+
+Linux64-Centos7    : Release      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
