@@ -6515,6 +6515,7 @@ extern EIO_Status SOCK_Poll(size_t          n,
     SSOCK_Poll* orig_polls = polls; /* to know if 'polls' was replaced */
     EIO_Status  mnk_status = -1;
     if (g_MONKEY_Poll != NULL) {
+        /* Not a poll function itself, just removes some of "polls" items */
         call_intercepted = g_MONKEY_Poll(&n, &polls, &mnk_status);
     }
     /* Even if call was intercepted, s_Select continues as if nothing
