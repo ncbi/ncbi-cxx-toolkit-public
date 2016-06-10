@@ -56,20 +56,79 @@ public:
     CSNPBlobId(const CTempString& str);
     CSNPBlobId(const CSNPFileInfo& file,
                const CSeq_id_Handle& seq_id);
+    CSNPBlobId(const CSNPDbSeqIterator& seq,
+               size_t filter_index);
+    CSNPBlobId(const CSNPFileInfo& file,
+               size_t seq_index,
+               size_t filter_index);
     ~CSNPBlobId(void);
-
-    // SNP file name or VDB accession
-    string m_File;
-    // Ref Seq-id for annot blobs
-    CSeq_id_Handle m_SeqId;
 
     // string blob id representation:
     // eBlobType_annot_plain_id
     string ToString(void) const;
     void FromString(CTempString str);
+    bool FromSatString(CTempString str);
 
     bool operator<(const CBlobId& id) const;
     bool operator==(const CBlobId& id) const;
+
+    bool IsSatId(void) const {
+        return m_Sat != 0;
+    }
+
+    Int4 GetSat(void) const {
+        return m_Sat;
+    }
+    Int4 GetSubSat(void) const {
+        return m_SubSat;
+    }
+    Int4 GetSatKey(void) const {
+        return m_SatKey;
+    }
+
+    bool IsValidSat(void) const;
+    bool IsValidSubSat(void) const;
+    bool IsValidSatKey(void) const;
+    
+    static bool IsValidNAIndex(size_t index);
+    static bool IsValidNAVersion(size_t version);
+    static bool IsValidNA(pair<size_t, size_t> na) {
+        return IsValidNAIndex(na.first) && IsValidNAVersion(na.second);
+    }
+    static bool IsValidSeqIndex(size_t seq_index);
+    static bool IsValidFilterIndex(size_t filter_index);
+
+    static pair<size_t, size_t> ParseNA(CTempString acc);
+    static bool IsValidNA(CTempString acc) {
+        return ParseNA(acc).first != 0;
+    }
+
+    string GetSatNA(void) const;
+    size_t GetNAIndex(void) const;
+    size_t GetNAVersion(void) const;
+    size_t GetSeqIndex(void) const;
+    size_t GetFilterIndex(void) const;
+
+    void SetSatNA(CTempString acc);
+    void SetNAIndex(size_t na_index);
+    void SetNAVersion(size_t na_version);
+    void SetSeqAndFilterIndex(size_t seq_index,
+                              size_t filter_index);
+
+    CSeq_id_Handle GetSeqId(void) const;
+    string GetFileName(void) const;
+
+protected:
+    // ID2 blob id
+    Int4 m_Sat;
+    Int4 m_SubSat;
+    Int4 m_SatKey;
+    
+    // SNP file name or VDB accession
+    string m_File;
+    size_t m_SeqIndex;
+    // Ref Seq-id for annot blobs
+    CSeq_id_Handle m_SeqId;
 };
 
 
@@ -83,12 +142,7 @@ class CSNPSeqInfo : public CObject
 {
 public:
     CSNPSeqInfo(CSNPFileInfo* file,
-                const CSeq_id_Handle& seq_id);
-
-    const CSeq_id_Handle& GetSeqId(void) const
-        {
-            return m_SeqId;
-        }
+                const CSNPDbSeqIterator& it);
 
     CSNPDbSeqIterator GetSeqIterator(void) const;
 
@@ -117,23 +171,10 @@ public:
 protected:
     friend class CSNPDataLoader_Impl;
 
-    // start of chunk and number of alignments in the chunk
-    struct SChunkInfo {
-        TSeqPos start_pos;
-        unsigned align_count;
-
-        bool operator()(TSeqPos pos, const SChunkInfo& chunk) const
-            { return pos < chunk.start_pos; }
-    };
-    typedef vector<SChunkInfo> TChunks;
-
-    void x_LoadRangesStat(void);
-
     CSNPFileInfo* m_File;
+    size_t m_SeqIndex;
+    size_t m_FilterIndex;
     CSeq_id_Handle m_SeqId;
-    CRef<CSeq_annot> m_CovAnnot;
-    TChunks m_AlignChunks;
-    TChunks m_GraphChunks;
 };
 
 
@@ -143,6 +184,10 @@ public:
     CSNPFileInfo(CSNPDataLoader_Impl& impl,
                   const string& file_name);
     
+    bool IsValidNA(void) const {
+        return m_IsValidNA;
+    }
+
     const string& GetFileName(void) const
         {
             return m_FileName;
@@ -156,10 +201,8 @@ public:
     CRef<CSNPBlobId> GetAnnotBlobId(const CSeq_id_Handle& id) const;
 
     CRef<CSNPSeqInfo> GetSeqInfo(const CSeq_id_Handle& seq_id);
-    CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id)
-        {
-            return GetSeqInfo(blob_id.m_SeqId);
-        }
+    CRef<CSNPSeqInfo> GetSeqInfo(size_t seq_index);
+    CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id);
 
     CMutex& GetMutex(void) const
         {
@@ -183,16 +226,19 @@ public:
 protected:
     friend class CSNPDataLoader_Impl;
 
-    typedef map<CSeq_id_Handle, CRef<CSNPSeqInfo> > TSeqs;
+    typedef map<CSeq_id_Handle, CRef<CSNPSeqInfo> > TSeqById;
+    typedef map<size_t, CRef<CSNPSeqInfo> > TSeqByIdx;
 
     void x_Initialize(CSNPDataLoader_Impl& impl,
                       const string& file_name);
 
+    bool m_IsValidNA;
     string m_FileName;
     string m_AnnotName;
     mutable CMutex m_SNPMutex;
     CSNPDb m_SNPDb;
-    TSeqs m_Seqs;
+    TSeqById m_SeqById;
+    TSeqByIdx m_SeqByIdx;
 };
 
 

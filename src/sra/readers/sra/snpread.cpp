@@ -181,17 +181,14 @@ CSNPDb_Impl::SExtraTableCursor::SExtraTableCursor(const CVDBTable& table)
 CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
                          CTempString path_or_acc)
     : m_Mgr(mgr),
+      m_DbPath(path_or_acc),
       m_ExtraTableIsOpened(false)
 {
     // SNP VDB are multi-table VDB objects.
     // However, there could be other VDBs in the same namespace (NA*)
     // so we have to check this situation and return normal eNotFoundDb error.
     try {
-        CTempString acc = path_or_acc;
-        if ( acc == "NA000000000" ) {
-            acc = "~holmesbr/test_vdb/database";
-        }
-        m_Db = CVDB(m_Mgr, acc);
+        m_Db = CVDB(m_Mgr, path_or_acc);
     }
     catch ( CSraException& exc ) {
         bool another_vdb_table = false;
@@ -252,12 +249,13 @@ CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
     }
 
     NON_CONST_ITERATE ( TSeqInfoList, it, m_SeqList ) {
+        size_t seq_index = it-m_SeqList.begin();
         m_SeqMapByName.insert
-            (TSeqInfoMapByName::value_type(it->m_Name, it));
+            (TSeqInfoMapByName::value_type(it->m_Name, seq_index));
         ITERATE ( CBioseq::TId, id_it, it->m_Seq_ids ) {
             CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(**id_it);
             m_SeqMapBySeq_id.insert
-                (TSeqInfoMapBySeq_id::value_type(idh, it));
+                (TSeqInfoMapBySeq_id::value_type(idh, seq_index));
         }
     }
 }
@@ -283,7 +281,7 @@ void CSNPDb_Impl::OpenTable(CVDBTable& table,
 
 void CSNPDb_Impl::OpenExtraTable(void)
 {
-    OpenTable(m_ExtraTable, "extras", m_ExtraTableIsOpened);
+    OpenTable(m_ExtraTable, "extra", m_ExtraTableIsOpened);
 }
 
 
@@ -312,8 +310,10 @@ CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
     CSNPDb_Impl::TSeqInfoMapByName::const_iterator iter =
         db->m_SeqMapByName.find(name);
     if ( iter != db->m_SeqMapByName.end() ) {
+        size_t seq_index = iter->second;
+        _ASSERT(seq_index < db->m_SeqList.size());
         m_Db = db;
-        m_Iter = iter->second;
+        m_Iter = db->m_SeqList.begin()+seq_index;
     }
 }
 
@@ -324,9 +324,24 @@ CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
     CSNPDb_Impl::TSeqInfoMapBySeq_id::const_iterator iter =
         db->m_SeqMapBySeq_id.find(seq_id);
     if ( iter != db->m_SeqMapBySeq_id.end() ) {
+        size_t seq_index = iter->second;
+        _ASSERT(seq_index < db->m_SeqList.size());
         m_Db = db;
-        m_Iter = iter->second;
+        m_Iter = db->m_SeqList.begin()+seq_index;
     }
+}
+
+
+CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
+                                     size_t seq_index)
+{
+    if ( seq_index >= db->m_SeqList.size() ) {
+        NCBI_THROW_FMT(CSraException, eInvalidIndex,
+                       "Sequence index is out of bounds: "<<
+                       db->GetDbPath()<<"."<<seq_index);
+    }
+    m_Db = db;
+    m_Iter = db->m_SeqList.begin()+seq_index;
 }
 
 
@@ -343,6 +358,7 @@ const CSNPDb_Impl::SSeqInfo& CSNPDbSeqIterator::GetInfo(void) const
 void CSNPDbSeqIterator::Reset(void)
 {
     m_Db.Reset();
+    m_Iter = CSNPDb_Impl::TSeqInfoList::const_iterator();
 }
 
 
@@ -1661,6 +1677,11 @@ CSNPDbFeatIterator::EExcluded CSNPDbFeatIterator::x_Excluded(void)
         return ePassedTheRegion;
     }
     TSeqPos ref_len = x_GetLength();
+    if ( !ref_len ) {
+        ERR_POST("empty SNP location: "<<
+                 m_PageIter.GetPageRowId()<<"."<<m_CurrFeatId<<
+                 " at "<<ref_pos<<" rs"<<GetFeatId());
+    }
     TSeqPos ref_end = ref_pos + ref_len;
     if ( ref_end <= GetSearchRange().GetFrom() ) {
         return eExluded;

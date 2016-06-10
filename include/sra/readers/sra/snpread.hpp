@@ -195,9 +195,13 @@ public:
         bool m_Circular;
         //vector<TSeqPos> m_AlnOverStarts; // relative to m_RowFirst
     };
-    typedef list<SSeqInfo> TSeqInfoList;
-    typedef map<string, TSeqInfoList::iterator, PNocase> TSeqInfoMapByName;
-    typedef map<CSeq_id_Handle, TSeqInfoList::iterator> TSeqInfoMapBySeq_id;
+    typedef vector<SSeqInfo> TSeqInfoList;
+    typedef map<string, size_t, PNocase> TSeqInfoMapByName;
+    typedef map<CSeq_id_Handle, size_t> TSeqInfoMapBySeq_id;
+
+    const string& GetDbPath(void) const {
+        return m_DbPath;
+    }
     
     const TSeqInfoList& GetSeqInfoList(void) const {
         return m_SeqList;
@@ -390,9 +394,9 @@ public:
     enum EByName {
         eByName
     };
-    CSNPDbSeqIterator(const CSNPDb& db, const string& name,
-                      EByName /*by_name*/);
+    CSNPDbSeqIterator(const CSNPDb& db, const string& name, EByName);
     CSNPDbSeqIterator(const CSNPDb& db, const CSeq_id_Handle& seq_id);
+    CSNPDbSeqIterator(const CSNPDb& db, size_t seq_index);
 
     void Reset(void);
 
@@ -422,6 +426,10 @@ public:
     }
     const CBioseq::TId& GetSeqIds(void) const {
         return m_Iter->m_Seq_ids;
+    }
+
+    size_t GetVDBSeqIndex(void) const {
+        return m_Iter - m_Db->GetSeqInfoList().begin();
     }
 
     bool IsCircular(void) const;
@@ -482,12 +490,12 @@ public:
     TPackedAnnot GetPackedFeatAnnot(CRange<TSeqPos> range,
                                     TFlags flags = fDefaultFlags) const;
 
-protected:
-    friend class CSNPDbPageIterator;
-
     CSNPDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();
     }
+
+protected:
+    friend class CSNPDbPageIterator;
 
 private:
     CSNPDb m_Db;

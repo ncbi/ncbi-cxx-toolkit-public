@@ -141,6 +141,18 @@ static bool IsSplitEnabled(void)
 // CSNPBlobId
 /////////////////////////////////////////////////////////////////////////////
 
+// Blob id
+// sat = 2001-2099 : SNP NA version 1 - 99
+// subsat : NA accession number
+// satkey : SequenceIndex + 1000000*FilterIndex;
+// satkey bits 24-30: 
+
+const int kSNPSatBase = 2000;
+const int kNAVersionMin = 1;
+const int kNAVersionMax = 99;
+const int kSeqIndexCount = 1000000;
+const int kFilterIndexCount = 2000;
+
 CSNPBlobId::CSNPBlobId(const CTempString& str)
 {
     FromString(str);
@@ -149,9 +161,29 @@ CSNPBlobId::CSNPBlobId(const CTempString& str)
 
 CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
                        const CSeq_id_Handle& seq_id)
-    : m_File(file.GetFileName()),
+    : m_Sat(0),
+      m_SubSat(0),
+      m_SatKey(0),
+      m_File(file.GetFileName()),
       m_SeqId(seq_id)
 {
+}
+
+
+CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
+                       size_t seq_index,
+                       size_t filter_index)
+{
+    SetSatNA(file.GetFileName());
+    SetSeqAndFilterIndex(seq_index, filter_index);
+}
+
+
+CSNPBlobId::CSNPBlobId(const CSNPDbSeqIterator& seq,
+                       size_t filter_index)
+{
+    SetSatNA(seq.GetDb().GetDbPath());
+    SetSeqAndFilterIndex(seq.GetVDBSeqIndex(), filter_index);
 }
 
 
@@ -160,35 +192,245 @@ CSNPBlobId::~CSNPBlobId(void)
 }
 
 
+bool CSNPBlobId::IsValidNAIndex(size_t na_index)
+{
+    return na_index > 0 && na_index < 1000000000;
+}
+
+
+bool CSNPBlobId::IsValidNAVersion(size_t na_version)
+{
+    return na_version >= kNAVersionMin && na_version <= kNAVersionMax;
+}
+
+
+bool CSNPBlobId::IsValidSeqIndex(size_t seq_index)
+{
+    return seq_index < kSeqIndexCount;
+}
+
+
+bool CSNPBlobId::IsValidFilterIndex(size_t filter_index)
+{
+    return filter_index < kFilterIndexCount;
+}
+
+
+size_t CSNPBlobId::GetNAIndex(void) const
+{
+    _ASSERT(IsSatId());
+    return GetSubSat();
+}
+
+
+void CSNPBlobId::SetNAIndex(size_t na_index)
+{
+    _ASSERT(IsValidNAIndex(na_index));
+    m_SubSat = na_index;
+}
+
+
+bool CSNPBlobId::IsValidSubSat(void) const
+{
+    return IsValidNAIndex(GetNAIndex());
+}
+
+
+size_t CSNPBlobId::GetNAVersion(void) const
+{
+    _ASSERT(IsSatId());
+    return GetSat() - kSNPSatBase;
+}
+
+
+void CSNPBlobId::SetNAVersion(size_t na_version)
+{
+    _ASSERT(IsValidNAVersion(na_version));
+    m_Sat = kSNPSatBase + na_version;
+}
+
+
+bool CSNPBlobId::IsValidSat(void) const
+{
+    return IsValidNAVersion(GetNAVersion());
+}
+
+
+pair<size_t, size_t> CSNPBlobId::ParseNA(CTempString acc)
+{
+    pair<size_t, size_t> ret(0, 0);
+    // NA123456789.1
+    if ( acc.size() < 13 || acc.size() > 15 ||
+         acc[0] != 'N' || acc[1] != 'A' || acc[11] != '.' ) {
+        return ret;
+    }
+    size_t na_index = NStr::StringToNumeric<size_t>(acc.substr(2, 9),
+                                                    NStr::fConvErr_NoThrow);
+    if ( !IsValidNAIndex(na_index) ) {
+        return ret;
+    }
+    size_t na_version = NStr::StringToNumeric<size_t>(acc.substr(12),
+                                                      NStr::fConvErr_NoThrow);
+    if ( !IsValidNAVersion(na_version) ) {
+        return ret;
+    }
+    ret.first = na_index;
+    ret.second = na_version;
+    return ret;
+}
+
+
+string CSNPBlobId::GetSatNA(void) const
+{
+    CNcbiOstrstream str;
+    str << "NA" << setw(9) << setfill('0') << GetNAIndex()
+        << '.' << GetNAVersion();
+    return CNcbiOstrstreamToString(str);
+}
+
+
+void CSNPBlobId::SetSatNA(CTempString acc)
+{
+    pair<size_t, size_t> na = ParseNA(acc);
+    SetNAIndex(na.first);
+    SetNAVersion(na.second);
+}
+
+
+size_t CSNPBlobId::GetSeqIndex(void) const
+{
+    _ASSERT(IsSatId());
+    return GetSatKey() % kSeqIndexCount;
+}
+
+
+size_t CSNPBlobId::GetFilterIndex(void) const
+{
+    _ASSERT(IsSatId());
+    return GetSatKey() / kSeqIndexCount;
+}
+
+
+void CSNPBlobId::SetSeqAndFilterIndex(size_t seq_index,
+                                      size_t filter_index)
+{
+    _ASSERT(IsValidSeqIndex(seq_index));
+    _ASSERT(IsValidFilterIndex(filter_index));
+    m_SatKey = seq_index + filter_index * kSeqIndexCount;
+}
+
+
+bool CSNPBlobId::IsValidSatKey(void) const
+{
+    return IsValidSeqIndex(GetSeqIndex()) &&
+        IsValidFilterIndex(GetFilterIndex());
+}
+
+
+CSeq_id_Handle CSNPBlobId::GetSeqId(void) const
+{
+    _ASSERT(!IsSatId());
+    return m_SeqId;
+}
+
+
+string CSNPBlobId::GetFileName(void) const
+{
+    if ( IsSatId() ) {
+        return GetSatNA();
+    }
+    else {
+        return m_File;
+    }
+}
+
+
 static const char kFileEnd[] = "|||";
 
 string CSNPBlobId::ToString(void) const
 {
     CNcbiOstrstream out;
-    out << m_File;
-    out << kFileEnd;
-    out << m_SeqId;
+    if ( IsSatId() ) {
+        out << m_Sat << '.' << m_SubSat << '.' << m_SatKey;
+    }
+    else {
+        out << m_File;
+        out << kFileEnd;
+        out << m_SeqId;
+    }
     return CNcbiOstrstreamToString(out);
 }
 
 
-void CSNPBlobId::FromString(CTempString str0)
+bool CSNPBlobId::FromSatString(CTempString str)
 {
-    CTempString str = str0;
+    if ( str.empty() || !isdigit(Uchar(str[0])) ) {
+        return false;
+    }
+
+    size_t dot1 = str.find('.');
+    if ( dot1 == NPOS ) {
+        return false;
+    }
+    size_t dot2 = str.find('.', dot1+1);
+    if ( dot2 == NPOS ) {
+        return false;
+    }
+    m_Sat = NStr::StringToNumeric<size_t>(str.substr(0, dot1),
+                                          NStr::fConvErr_NoThrow);
+    if ( !IsValidSat() ) {
+        return false;
+    }
+    m_SubSat = NStr::StringToNumeric<size_t>(str.substr(dot1+1, dot2-dot1-1),
+                                             NStr::fConvErr_NoThrow);
+
+    if ( !IsValidSubSat() ) {
+        return false;
+    }
+    
+    m_SatKey = NStr::StringToNumeric<size_t>(str.substr(dot2+1),
+                                             NStr::fConvErr_NoThrow);
+    if ( !IsValidSatKey() ) {
+        return false;
+    }
+    
+    _ASSERT(IsSatId());
+    return true;
+}
+
+
+void CSNPBlobId::FromString(CTempString str)
+{
+    if ( FromSatString(str) ) {
+        return;
+    }
+    m_Sat = 0;
+    m_SubSat = 0;
+    m_SatKey = 0;
+    _ASSERT(!IsSatId());
+
     SIZE_TYPE div = str.rfind(kFileEnd);
     if ( div == NPOS ) {
         NCBI_THROW_FMT(CSraException, eOtherError,
-                       "Bad CSNPBlobId: "<<str0);
+                       "Bad CSNPBlobId: "<<str);
     }
     m_File = str.substr(0, div);
-    str = str.substr(div+strlen(kFileEnd));
-    m_SeqId = CSeq_id_Handle::GetHandle(str);
+    m_SeqId = CSeq_id_Handle::GetHandle(str.substr(div+strlen(kFileEnd)));
 }
 
 
 bool CSNPBlobId::operator<(const CBlobId& id) const
 {
     const CSNPBlobId& id2 = dynamic_cast<const CSNPBlobId&>(id);
+    if ( m_Sat != id2.m_Sat ) {
+        return m_Sat < id2.m_Sat;
+    }
+    if ( m_SubSat != id2.m_SubSat ) {
+        return m_SubSat < id2.m_SubSat;
+    }
+    if ( m_SatKey != id2.m_SatKey ) {
+        return m_SatKey < id2.m_SatKey;
+    }
     if ( m_File != id2.m_File ) {
         return m_File < id2.m_File;
     }
@@ -199,7 +441,10 @@ bool CSNPBlobId::operator<(const CBlobId& id) const
 bool CSNPBlobId::operator==(const CBlobId& id) const
 {
     const CSNPBlobId& id2 = dynamic_cast<const CSNPBlobId&>(id);
-    return m_SeqId == id2.m_SeqId &&
+    return m_Sat == id2.m_Sat &&
+        m_SubSat == id2.m_SubSat &&
+        m_SatKey == id2.m_SatKey &&
+        m_SeqId == id2.m_SeqId &&
         m_File == id2.m_File;
 }
 
@@ -289,10 +534,10 @@ CRef<CSNPFileInfo>
 CSNPDataLoader_Impl::GetFileInfo(const CSNPBlobId& blob_id)
 {
     if ( !m_FixedFiles.empty() ) {
-        return GetFixedFile(blob_id.m_File);
+        return GetFixedFile(blob_id.GetFileName());
     }
     else {
-        return FindFile(blob_id.m_File);
+        return FindFile(blob_id.GetFileName());
     }
 }
 
@@ -353,8 +598,9 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
 
 
 void CSNPDataLoader_Impl::LoadBlob(const CSNPBlobId& blob_id,
-                                    CTSE_LoadLock& load_lock)
+                                   CTSE_LoadLock& load_lock)
 {
+    LOG_POST("CSNPDataLoader::LoadBlob("<<blob_id.ToString()<<")");
     CRef<CSNPFileInfo> file_info = GetFileInfo(blob_id);
     file_info->GetSeqInfo(blob_id)->LoadAnnotBlob(load_lock);
 }
@@ -363,7 +609,7 @@ void CSNPDataLoader_Impl::LoadBlob(const CSNPBlobId& blob_id,
 void CSNPDataLoader_Impl::LoadChunk(const CSNPBlobId& blob_id,
                                     CTSE_Chunk_Info& chunk_info)
 {
-    _TRACE("Loading chunk "<<blob_id.ToString()<<"."<<chunk_info.GetChunkId());
+    LOG_POST("CSNPDataLoader::LoadChunk("<<blob_id.ToString()<<"."<<chunk_info.GetChunkId()<<")");
     CRef<CSNPFileInfo> file_info = GetFileInfo(blob_id);
     file_info->GetSeqInfo(blob_id)->LoadAnnotChunk(chunk_info);
 }
@@ -388,15 +634,18 @@ CSNPFileInfo::CSNPFileInfo(CSNPDataLoader_Impl& impl,
 {
     //CMutexGuard guard(GetMutex());
     x_Initialize(impl, acc);
+    /*
     for ( CSNPDbSeqIterator rit(m_SNPDb); rit; ++rit ) {
         AddSeq(rit.GetSeqIdHandle());
     }
+    */
 }
 
 
 void CSNPFileInfo::x_Initialize(CSNPDataLoader_Impl& impl,
-                                 const string& csra)
+                                const string& csra)
 {
+    m_IsValidNA = CSNPBlobId::IsValidNA(csra);
     m_FileName = csra;
     m_AnnotName = impl.m_AnnotName;
     if ( m_AnnotName.empty() ) {
@@ -422,6 +671,7 @@ void CSNPFileInfo::GetPossibleAnnotNames(TAnnotNames& names) const
 }
 
 
+/*
 void CSNPFileInfo::AddSeq(const CSeq_id_Handle& id)
 {
     if ( GetDebugLevel() >= 1 ) {
@@ -430,17 +680,60 @@ void CSNPFileInfo::AddSeq(const CSeq_id_Handle& id)
     }
     m_Seqs[id] = new CSNPSeqInfo(this, id);
 }
+*/
 
 
 CRef<CSNPSeqInfo>
 CSNPFileInfo::GetSeqInfo(const CSeq_id_Handle& seq_id)
 {
-    //CMutexGuard guard(GetMutex());
-    TSeqs::const_iterator it = m_Seqs.find(seq_id);
-    if ( it != m_Seqs.end() ) {
+    CMutexGuard guard(GetMutex());
+    TSeqById::const_iterator it = m_SeqById.find(seq_id);
+    if ( it != m_SeqById.end() ) {
         return it->second;
     }
-    return null;
+    CRef<CSNPSeqInfo> ret;
+    CSNPDbSeqIterator seq_it(m_SNPDb, seq_id);
+    if ( seq_it ) {
+        size_t seq_index = seq_it.GetVDBSeqIndex();
+        auto& idx_slot = m_SeqByIdx[seq_index];
+        if ( idx_slot ) {
+            ret = idx_slot;
+        }
+        else {
+            // new sequence
+            ret = new CSNPSeqInfo(this, seq_it);
+            idx_slot = ret;
+        }
+    }
+    return ret;
+}
+
+
+CRef<CSNPSeqInfo>
+CSNPFileInfo::GetSeqInfo(size_t seq_index)
+{
+    CMutexGuard guard(GetMutex());
+    TSeqByIdx::const_iterator it = m_SeqByIdx.find(seq_index);
+    if ( it != m_SeqByIdx.end() ) {
+        return it->second;
+    }
+    CSNPDbSeqIterator seq_it(m_SNPDb, seq_index);
+    _ASSERT(seq_it);
+    CRef<CSNPSeqInfo> ret(new CSNPSeqInfo(this, seq_it));
+    m_SeqByIdx[seq_it.GetVDBSeqIndex()] = ret;
+    return ret;
+}
+
+
+CRef<CSNPSeqInfo>
+CSNPFileInfo::GetSeqInfo(const CSNPBlobId& blob_id)
+{
+    if ( blob_id.IsSatId() ) {
+        return GetSeqInfo(blob_id.GetSeqIndex());
+    }
+    else {
+        return GetSeqInfo(blob_id.GetSeqId());
+    }
 }
 
 
@@ -450,23 +743,36 @@ CSNPFileInfo::GetSeqInfo(const CSeq_id_Handle& seq_id)
 
 
 CSNPSeqInfo::CSNPSeqInfo(CSNPFileInfo* file,
-                         const CSeq_id_Handle& seq_id)
+                         const CSNPDbSeqIterator& it)
     : m_File(file),
-      m_SeqId(seq_id)
+      m_SeqIndex(it.GetVDBSeqIndex()),
+      m_FilterIndex(0)
 {
+    if ( !m_File->IsValidNA() ||
+         !CSNPBlobId::IsValidSeqIndex(m_SeqIndex) ||
+         !CSNPBlobId::IsValidFilterIndex(m_FilterIndex) ) {
+        m_SeqIndex = 0;
+        m_FilterIndex = 0;
+        m_SeqId = it.GetSeqIdHandle();
+        _ASSERT(m_SeqId);
+    }
 }
 
 
 CRef<CSNPBlobId> CSNPSeqInfo::GetBlobId(void) const
 {
-    return Ref(new CSNPBlobId(*m_File, GetSeqId()));
+    _ASSERT(m_File);
+    if ( !m_SeqId ) {
+        return Ref(new CSNPBlobId(*m_File, m_SeqIndex, m_FilterIndex));
+    }
+    return Ref(new CSNPBlobId(*m_File, m_SeqId));
 }
 
 
 void CSNPSeqInfo::SetBlobId(CRef<CSNPBlobId>& ret,
                             const CSeq_id_Handle& idh) const
 {
-    CRef<CSNPBlobId> id(new CSNPBlobId(*m_File, GetSeqId()));
+    CRef<CSNPBlobId> id = GetBlobId();
     if ( ret ) {
         ERR_POST_X(3, "CSNPDataLoader::GetBlobId: "
                    "Seq-id "<<idh<<" appears in two files: "
@@ -481,7 +787,12 @@ void CSNPSeqInfo::SetBlobId(CRef<CSNPBlobId>& ret,
 CSNPDbSeqIterator
 CSNPSeqInfo::GetSeqIterator(void) const
 {
-    return CSNPDbSeqIterator(*m_File, GetSeqId());
+    if ( !m_SeqId ) {
+        return CSNPDbSeqIterator(*m_File, m_SeqIndex);
+    }
+    else {
+        return CSNPDbSeqIterator(*m_File, m_SeqId);
+    }
 }
 
 
