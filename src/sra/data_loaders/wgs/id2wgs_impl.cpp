@@ -1886,6 +1886,8 @@ public:
             return m_ResolvedIds[CSeq_id_Handle::GetHandle(id)];
         }
 
+    typedef vector<CRef<CID2_Reply> > TReplies;
+
     virtual void ProcessPacket(TReplies& /*replies*/,
                                CID2_Request_Packet& /*packet*/)
         {
