@@ -1358,8 +1358,9 @@ bool CMonkey::Poll(size_t*      n,
                    EIO_Status*  return_status)
 {
     size_t polls_iter       = 0;
-    SSOCK_Poll* new_polls = new SSOCK_Poll[*n];
-    int polls_count = 0;
+    SSOCK_Poll* new_polls   = 
+        static_cast<SSOCK_Poll*>(calloc(*n, sizeof(SSOCK_Poll)));
+    int polls_count         = 0;
     while (polls_iter < *n) {
         SOCK&        sock      = (*polls)[polls_iter].sock;
         string       host_fqdn = CSocketAPI::gethostbyaddr(sock->host);
@@ -1502,11 +1503,12 @@ int CMonkey::GetRand(const CMonkeySeedKey& /* key */)
     if (++list_pos == kRandCount) {
         list_pos = 0;
     }
+    int next_list_pos = (list_pos + 1 == kRandCount) ? 0 : list_pos + 1;
     LOG_POST(Note << "[CMonkey::GetRand]  Getting random value "
                   << (*m_TlsRandList->GetValue())[list_pos]
                   << " for thread " << *m_TlsToken->GetValue()
                   << ". Next random value is "
-                  << (*m_TlsRandList->GetValue())[list_pos + 1]);
+                  << (*m_TlsRandList->GetValue())[next_list_pos]);
     return (*m_TlsRandList->GetValue())[list_pos];
 }
 
