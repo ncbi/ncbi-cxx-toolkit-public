@@ -3095,17 +3095,17 @@ KTC	s	Pedagogical University, Botany Department
 KTG	s	Kettering and District Naturalists' Society and Field Club
 KTU	s	University of Silesia, Department of Plant Systematics
 KTUH	s	Kuwait University, Botany and Microbiology Department
-KU	s	University of Kansas, Museum of Natural History
+KU	s	University of Kansas Natural History Museum
 KU-MACC	c	Kobe University Macroalgal Culture Collection
-KU:H	s	University of Kansas, Museum of Natural History, Herpetology Collection
-KU:I	s	University of Kansas, Museum of Natural History, Ichthyology collection
-KU:IP	s	University of Kansas, Museum of Natural History, Invertebrate Paleontology Collection
-KU:IT	sb	University of Kansas, Museum of Natural History, Ichthyology tissue collection
-KU:IZ	s	University of Kansas, Museum of Natural History, Invertebrate Zoology Collection
-KU:M	s	University of Kansas, Museum of Natural History, Mammology Collection
-KU:O	s	University of Kansas, Museum of Natural History, Ornithology Collection
-KU:PB	s	University of Kansas, Museum of Natural History, Paleobotany Collection
-KU:VP	s	University of Kansas, Museum of Natural History, Vertebrate Paleontology Collection
+KU:H	s	University of Kansas Natural History Museum, Herpetology Collection
+KU:I	s	University of Kansas Natural History Museum, Ichthyology collection
+KU:IP	s	University of Kansas Natural History Museum, Invertebrate Paleontology Collection
+KU:IT	sb	University of Kansas Natural History Museum, Ichthyology tissue collection
+KU:IZ	s	University of Kansas Natural History Museum, Invertebrate Zoology Collection
+KU:M	s	University of Kansas Natural History Museum, Mammology Collection
+KU:O	s	University of Kansas Natural History Museum, Ornithology Collection
+KU:PB	s	University of Kansas Natural History Museum, Paleobotany Collection
+KU:VP	s	University of Kansas Natural History Museum, Vertebrate Paleontology Collection
 KU<CHN>	s	Kwangsi University
 KUBL	s	Yoshida College, Biological Laboratory
 KUEC	s	Kyushu University Entomology Collection
@@ -3778,7 +3778,7 @@ MLRU	c	Microbiology Laboratory, Department of Biology, Faculty of Science
 MLS<AUS>	s	Marine Laboratory Sydney
 MLS<COL>	s	Museo del Instituto de La Salle
 MLS<GBR>	s	Lathallan Preparatory School
-MLUH	s	Martin Luther Universitaet
+MLUH	s	Martin Luther Universitat
 MLY	s	Arboretum Mlynany
 MLZ	s	Moore Laboratory of Zoology, Occidental College
 MLZ:Bird	s	Moore Laboratory of Zoology, Occidental College, Bird Collection
@@ -4149,8 +4149,8 @@ MZUN	s	Museo Zoologico di Universita degli Studi
 MZUNAP	s	Museo de Zoologia de la Universidad Nacional de la Amazonia Peruana
 MZUP<ITA-Padova>	s	Museo Zoologia
 MZUP<ITA-Parma>	s	Museo Zoologico di Universita degli Studi
-MZUR	s	Museo di Zoologia dell'Universita "La Sapienza"
-MZUR:BAU	s	Museo di Zoologia dell'Universita "La Sapienza", Zoological collection of the Department of Biology and Biotechnology
+MZUR	s	Museo di Zoologia dell'Universita di Roma "La Sapienza"
+MZUR:BAU	s	Museo di Zoologia dell'Universita di Roma "La Sapienza", Zoological collection of the Department of Biology and Biotechnology
 MZUS	s	Musee de Zoologie de l'Universite de Strasbourg
 MZUSP	s	Museu de Zoologia da Universidade de Sao Paulo
 MZUT<ITA-Torino>	s	Museo di Zoologia, Instituto di Zoologia e Anatomia Comparata Universita di Torino
