@@ -11225,6 +11225,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_SeqLocOrder)
 
 BOOST_AUTO_TEST_CASE(Test_FEAT_CdTransFail)
 {
+    SetDiagFilter(eDiagFilter_All, "!(1204.1)");
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetFrom(27);
@@ -11242,6 +11243,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_CdTransFail)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+    SetDiagFilter(eDiagFilter_All, "");
 }
 
 
@@ -17428,7 +17430,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimSeqIdNotMatch)
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
 
+    SetDiagFilter(eDiagFilter_All, "!(1207.5)");
     STANDARD_SETUP_WITH_DATABASE
+    SetDiagFilter(eDiagFilter_All, "");
 
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "AlignDimSeqIdNotMatch", 
                   "SeqId: The Seqalign has more or fewer ids than the number of rows in the alignment (context good1).  Look for possible formatting errors in the ids."));
