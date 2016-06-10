@@ -80,7 +80,15 @@ struct SNetStorageRPC : public SNetStorageImpl
         return service;
     }
 
+    TNetStorageFlags GetFlags(TNetStorageFlags flags) const
+    {
+        return flags ? flags : m_DefaultFlags;
+    }
+
+private:
     TNetStorageFlags m_DefaultFlags;
+
+public:
     CNetService m_Service;
 
     const TConfig m_Config;

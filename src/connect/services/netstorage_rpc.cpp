@@ -756,7 +756,7 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
     m_UseNextSubHitID.ProperCommand();
     CJsonNode request(MkStdRequest("CREATE"));
 
-    x_SetStorageFlags(request, flags);
+    x_SetStorageFlags(request, GetFlags(flags));
 
     CNetServerConnection conn;
 
@@ -765,7 +765,7 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
 
     return new SNetStorageObjectRPC(this, request, conn,
             SNetStorageObjectRPC::eByGeneratedID,
-            object_loc, flags, SNetStorageObjectRPC::eWriting);
+            object_loc, 0, SNetStorageObjectRPC::eWriting);
 }
 
 CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
@@ -982,7 +982,7 @@ CJsonNode SNetStorageRPC::MkObjectRequest(const string& request_type,
     user_key.SetString("UniqueID", unique_key);
     new_request.SetByKey("UserKey", user_key);
 
-    x_SetStorageFlags(new_request, flags);
+    x_SetStorageFlags(new_request, GetFlags(flags));
     return new_request;
 }
 
