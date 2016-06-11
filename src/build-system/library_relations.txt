@@ -313,6 +313,7 @@ ftgl needs3party $(ORIG_LIBS)
 gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
+gc_assm_rpt needs gcaccess_utils
 gc_common needs xser
 gc_load_utils needs $(GPIPE_COMMON_LIBS)
 gc_load_utils needs gc_common
@@ -408,7 +409,6 @@ gpipe_asn_proc needs gpipe_alnutil
 gpipe_asn_proc needs xalgoalignutil
 gpipe_asn_proc needs xalgognomon
 gpipe_asn_proc needs xmergetree
-gpipe_assm_rpt needs gcaccess_utils
 gpipe_attr needs gpipe_property
 gpipe_best_placement needs gpipe_alnutil
 gpipe_best_placement needs xalgoalignutil
