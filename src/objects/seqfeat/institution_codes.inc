@@ -6333,7 +6333,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ULCI	s	Universidad de la Laguna",
 "ULF	s	Universite Laval, Departement des Sciences forestieres",
 "ULKY	s	University of Louisville",
-"ULLZ	s	University of Louisiana at Layafette, Zoological Collection",
+"ULLZ	s	University of Louisiana at Layafette Zoological Collection",
 "ULM	s	Universitaet Ulm, Abteilung Systematische Botanik und Oekologie",
 "ULMG	s	University of Leipzig",
 "ULN	s	University of Lagos",
