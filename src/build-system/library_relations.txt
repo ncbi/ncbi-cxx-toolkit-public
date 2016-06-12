@@ -924,7 +924,6 @@ sdbapi needs ncbi_xdbapi_ftds64
 sdbapi needs ncbi_xdbapi_ftds95
 sdbapi needs xconnect
 sdbapi needs xutil
-sdncbiauth needs auxcomm_g
 sdncbiauth needs generic_db_core
 sdncbiauth needs muxex_g
 sdncbiauth needs xmyncbi
