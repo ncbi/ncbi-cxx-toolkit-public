@@ -3,7 +3,7 @@
 # Build library "data_loaders_util"
 ###############################
 
-SRC = gp_app
+SRC = data_loaders_util
 
 LIB = data_loaders_util
 
