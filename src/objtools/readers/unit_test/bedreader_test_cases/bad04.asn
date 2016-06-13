@@ -52,12 +52,8 @@ Seq-annot ::= {
           type str "DisplaySettings",
           data {
             {
-              label str "score",
-              data int 960
-            },
-            {
               label str "color",
-              data str "0 0 0"
+              data str "15 15 15"
             }
           }
         },
@@ -94,12 +90,8 @@ Seq-annot ::= {
           type str "DisplaySettings",
           data {
             {
-              label str "score",
-              data int 960
-            },
-            {
               label str "color",
-              data str "0 0 0"
+              data str "15 15 15"
             }
           }
         },
@@ -144,12 +136,8 @@ Seq-annot ::= {
           type str "DisplaySettings",
           data {
             {
-              label str "score",
-              data int 960
-            },
-            {
               label str "color",
-              data str "0 0 0"
+              data str "15 15 15"
             }
           }
         },
@@ -186,12 +174,8 @@ Seq-annot ::= {
           type str "DisplaySettings",
           data {
             {
-              label str "score",
-              data int 900
-            },
-            {
               label str "color",
-              data str "0 0 0"
+              data str "30 30 30"
             }
           }
         },
@@ -228,12 +212,8 @@ Seq-annot ::= {
           type str "DisplaySettings",
           data {
             {
-              label str "score",
-              data int 900
-            },
-            {
               label str "color",
-              data str "0 0 0"
+              data str "30 30 30"
             }
           }
         },
@@ -278,12 +258,8 @@ Seq-annot ::= {
           type str "DisplaySettings",
           data {
             {
-              label str "score",
-              data int 900
-            },
-            {
               label str "color",
-              data str "0 0 0"
+              data str "30 30 30"
             }
           }
         },

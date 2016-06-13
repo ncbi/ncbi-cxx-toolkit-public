@@ -48,6 +48,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 270866
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -78,6 +82,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 407277
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -108,6 +116,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 408925
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -138,6 +150,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 291416
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -168,6 +184,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 293473
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -198,6 +218,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 284555
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -228,6 +252,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 405362
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -258,6 +286,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 407002
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -288,6 +320,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 362452
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -318,6 +354,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -348,6 +388,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 381577
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -378,6 +422,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 1968792
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -408,6 +456,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 2130939
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -438,6 +490,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -468,6 +524,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -498,6 +558,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -528,6 +592,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 795130
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -558,6 +626,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -588,6 +660,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -618,6 +694,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -648,6 +728,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -678,6 +762,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -708,6 +796,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 69189
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -738,6 +830,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -768,6 +864,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -798,6 +898,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -828,6 +932,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -858,6 +966,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -888,6 +1000,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -918,6 +1034,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -948,6 +1068,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 1953726
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -978,6 +1102,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 1461282
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1008,6 +1136,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 44664
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1038,6 +1170,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1068,6 +1204,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 284688
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1098,6 +1238,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 1169669
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1128,6 +1272,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 841086
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1158,6 +1306,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 2751375
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1188,6 +1340,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1218,6 +1374,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 3919811
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1248,6 +1408,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 3919811
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1278,6 +1442,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1308,6 +1476,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1338,6 +1510,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 621799
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1368,6 +1544,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 612754
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1398,6 +1578,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1428,6 +1612,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1458,6 +1646,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1488,6 +1680,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 123391
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1518,6 +1714,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 126692
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1548,6 +1748,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 176506
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1578,6 +1782,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 111190
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1608,6 +1816,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 114769
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1638,6 +1850,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 148693
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1668,6 +1884,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 73427
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1698,6 +1918,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 402240
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1728,6 +1952,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 197403
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1758,6 +1986,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 133351
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1788,6 +2020,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 109036
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1818,6 +2054,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 71649
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1848,6 +2088,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 73993
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1878,6 +2122,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 76058
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1908,6 +2156,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 70320
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1938,6 +2190,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 68387
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1968,6 +2224,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 382000
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -1998,6 +2258,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 378694
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2028,6 +2292,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 126347
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2058,6 +2326,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 63927
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2088,6 +2360,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 60007
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2118,6 +2394,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 61381
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2148,6 +2428,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 49124
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2178,6 +2462,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 48538
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2208,6 +2496,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 44692
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2238,6 +2530,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 29539
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2268,6 +2564,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2298,6 +2598,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 650116
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2328,6 +2632,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 670546
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2358,6 +2666,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 328601
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2388,6 +2700,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 301885
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2418,6 +2734,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 895588
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2448,6 +2768,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 342104
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2478,6 +2802,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 339254
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2508,6 +2836,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2538,6 +2870,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 344408
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2568,6 +2904,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2598,6 +2938,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 105180
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2628,6 +2972,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2658,6 +3006,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 235092
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2688,6 +3040,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 683237
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2718,6 +3074,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 196598
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2748,6 +3108,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 616026
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2778,6 +3142,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 582326
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2808,6 +3176,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2838,6 +3210,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2868,6 +3244,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2898,6 +3278,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2928,6 +3312,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2958,6 +3346,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 426676
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -2988,6 +3380,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 433073
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3018,6 +3414,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3048,6 +3448,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3078,6 +3482,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3108,6 +3516,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3138,6 +3550,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3168,6 +3584,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3198,6 +3618,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3228,6 +3652,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3258,6 +3686,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3288,6 +3720,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3318,6 +3754,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3348,6 +3788,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3378,6 +3822,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3408,6 +3856,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3438,6 +3890,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 39848
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3468,6 +3924,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 33149
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3498,6 +3958,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25986
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3528,6 +3992,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 31017
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3558,6 +4026,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3588,6 +4060,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21062
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3618,6 +4094,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3648,6 +4128,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 26629
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3678,6 +4162,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 1040478
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3708,6 +4196,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 577245
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3738,6 +4230,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 118641
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3768,6 +4264,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 941267
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3798,6 +4298,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 945628
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3828,6 +4332,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 945174
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3858,6 +4366,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 822699
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3888,6 +4400,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3918,6 +4434,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 903867
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3948,6 +4468,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 233564
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -3978,6 +4502,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 401033
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4008,6 +4536,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4038,6 +4570,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 318600
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4068,6 +4604,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 425594
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4098,6 +4638,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4128,6 +4672,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 413518
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4158,6 +4706,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 420232
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4188,6 +4740,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 163607
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4218,6 +4774,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 426807
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4248,6 +4808,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 393993
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4278,6 +4842,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 393304
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4308,6 +4876,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 420441
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4338,6 +4910,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 46920
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4368,6 +4944,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 255083
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4398,6 +4978,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 203079
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4428,6 +5012,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 287261
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4458,6 +5046,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21393
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4488,6 +5080,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 84897
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4518,6 +5114,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4548,6 +5148,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 2476202
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4578,6 +5182,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 231560
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4608,6 +5216,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4638,6 +5250,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 211795
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4668,6 +5284,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 159004
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4698,6 +5318,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 155074
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4728,6 +5352,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 154477
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4758,6 +5386,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 154680
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4788,6 +5420,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 152892
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4818,6 +5454,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 137623
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4848,6 +5488,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 37276
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4878,6 +5522,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 38550
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4908,6 +5556,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 38243
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4938,6 +5590,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 38553
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4968,6 +5624,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 38882
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -4998,6 +5658,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 38663
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5028,6 +5692,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 38495
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5058,6 +5726,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 38333
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5088,6 +5760,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 54083
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5118,6 +5794,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21647
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5148,6 +5828,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21557
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5178,6 +5862,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5208,6 +5896,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 31492
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5238,6 +5930,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24261
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5268,6 +5964,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 15514
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5298,6 +5998,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 27249
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5328,6 +6032,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 27335
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5358,6 +6066,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 27288
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5388,6 +6100,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 27952
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5418,6 +6134,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24601
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5448,6 +6168,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 26990
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5478,6 +6202,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 27498
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5508,6 +6236,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 10436
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5538,6 +6270,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5568,6 +6304,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19739
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5598,6 +6338,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 127797
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5628,6 +6372,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5658,6 +6406,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 45348
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5688,6 +6440,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 42874
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5718,6 +6474,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 49559
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5748,6 +6508,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 50781
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5778,6 +6542,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 50448
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5808,6 +6576,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19739
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5838,6 +6610,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19847
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5868,6 +6644,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19654
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5898,6 +6678,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21138
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5928,6 +6712,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 10065
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5958,6 +6746,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 10175
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -5988,6 +6780,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 10065
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6018,6 +6814,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 10175
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6048,6 +6848,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 10175
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6078,6 +6882,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 10175
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6108,6 +6916,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9634
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6138,6 +6950,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9321
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6168,6 +6984,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9845
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6198,6 +7018,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 551499
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6228,6 +7052,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 367613
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6258,6 +7086,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 186283
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6288,6 +7120,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 45609
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6318,6 +7154,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 426058
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6348,6 +7188,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 406823
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6378,6 +7222,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 156323
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6408,6 +7256,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 414217
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6438,6 +7290,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 162914
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6468,6 +7324,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 124832
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6498,6 +7358,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 125273
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6528,6 +7392,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 81938
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6558,6 +7426,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 86359
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6588,6 +7460,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6618,6 +7494,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 213908
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6648,6 +7528,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 27596
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6678,6 +7562,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25290
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6708,6 +7596,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22095
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6738,6 +7630,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24144
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6768,6 +7664,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25406
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6798,6 +7698,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22517
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6828,6 +7732,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 18453
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6858,6 +7766,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21938
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6888,6 +7800,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22734
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6918,6 +7834,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22376
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6948,6 +7868,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24555
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -6978,6 +7902,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20808
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7008,6 +7936,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21387
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7038,6 +7970,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21910
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7068,6 +8004,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22303
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7098,6 +8038,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22025
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7128,6 +8072,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21864
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7158,6 +8106,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22986
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7188,6 +8140,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21604
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7218,6 +8174,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 23204
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7248,6 +8208,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21864
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7278,6 +8242,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24576
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7308,6 +8276,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 117960
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7338,6 +8310,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21604
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7368,6 +8344,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7398,6 +8378,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7428,6 +8412,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7458,6 +8446,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7488,6 +8480,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 53012
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7518,6 +8514,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7548,6 +8548,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7578,6 +8582,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7608,6 +8616,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 262766
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7638,6 +8650,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 38217
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7668,6 +8684,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 17762
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7698,6 +8718,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 42816
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7728,6 +8752,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24778
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7758,6 +8786,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 37216
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7788,6 +8820,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 26903
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7818,6 +8854,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 26903
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7848,6 +8888,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 152156
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7878,6 +8922,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 150046
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7908,6 +8956,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 148958
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7938,6 +8990,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7968,6 +9024,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 138586
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -7998,6 +9058,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 33944
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8028,6 +9092,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8058,6 +9126,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 31645
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8088,6 +9160,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 34410
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8118,6 +9194,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8148,6 +9228,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 294591
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8178,6 +9262,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 296650
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8208,6 +9296,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 257041
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8238,6 +9330,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8268,6 +9364,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 125006
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8298,6 +9398,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 133912
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8328,6 +9432,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 99126
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8358,6 +9466,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 97498
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8388,6 +9500,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 112951
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8418,6 +9534,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8448,6 +9568,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 43184
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8478,6 +9602,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 42799
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8508,6 +9636,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 347999
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8538,6 +9670,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 76887
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8568,6 +9704,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 73230
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8598,6 +9738,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24430
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8628,6 +9772,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 65534
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8658,6 +9806,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 43438
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8688,6 +9840,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 164943
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8718,6 +9874,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21082
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8748,6 +9908,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20541
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8778,6 +9942,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8808,6 +9976,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 107879
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8838,6 +10010,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21010
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8868,6 +10044,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 53518
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8898,6 +10078,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8928,6 +10112,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8958,6 +10146,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -8988,6 +10180,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 553359
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9018,6 +10214,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 42396
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9048,6 +10248,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 146110
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9078,6 +10282,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 11166
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9108,6 +10316,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 137827
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9138,6 +10350,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 340502
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9168,6 +10384,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9198,6 +10418,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 289379
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9228,6 +10452,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 293086
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9258,6 +10486,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 286621
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9288,6 +10520,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9318,6 +10554,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 253459
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9348,6 +10588,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 224720
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9378,6 +10622,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9408,6 +10656,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 199402
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9438,6 +10690,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 277224
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9468,6 +10724,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 503532
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9498,6 +10758,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 418908
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9528,6 +10792,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 301560
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9558,6 +10826,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 651432
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9588,6 +10860,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 289272
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9618,6 +10894,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 53031
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9648,6 +10928,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 46967
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9678,6 +10962,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 29264
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9708,6 +10996,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 1334056
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9738,6 +11030,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9768,6 +11064,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9798,6 +11098,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9828,6 +11132,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9858,6 +11166,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 281304
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9888,6 +11200,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 261347
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9918,6 +11234,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9948,6 +11268,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 149184
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -9978,6 +11302,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 138874
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10008,6 +11336,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10038,6 +11370,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10068,6 +11404,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 1074633
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10098,6 +11438,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10128,6 +11472,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 222155
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10158,6 +11506,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 1334056
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10188,6 +11540,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 37199
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10218,6 +11574,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 4830
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10248,6 +11608,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10278,6 +11642,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10308,6 +11676,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 82444
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10338,6 +11710,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10368,6 +11744,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 18717
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10398,6 +11778,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20711
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10428,6 +11812,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19850
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10458,6 +11846,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 23706
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10488,6 +11880,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21993
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10518,6 +11914,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 23349
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10548,6 +11948,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 23134
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10578,6 +11982,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22332
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10608,6 +12016,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 23193
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10638,6 +12050,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 23113
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10668,6 +12084,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24811
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10698,6 +12118,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21609
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10728,6 +12152,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20332
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10758,6 +12186,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21326
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10788,6 +12220,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21633
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10818,6 +12254,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 67077
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10848,6 +12288,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 124068
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10878,6 +12322,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 130455
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10908,6 +12356,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 124813
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10938,6 +12390,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 112648
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10968,6 +12424,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 130155
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -10998,6 +12458,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 57733
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11028,6 +12492,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 42234
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11058,6 +12526,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 40728
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11088,6 +12560,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 40235
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11118,6 +12594,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22116
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11148,6 +12628,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22138
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11178,6 +12662,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21341
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11208,6 +12696,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20222
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11238,6 +12730,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21297
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11268,6 +12764,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21463
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11298,6 +12798,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22456
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11328,6 +12832,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19571
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11358,6 +12866,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22162
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11388,6 +12900,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 18717
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11418,6 +12934,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22110
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11448,6 +12968,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19851
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11478,6 +13002,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21436
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11508,6 +13036,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20806
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11538,6 +13070,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20896
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11568,6 +13104,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 13168
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11598,6 +13138,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 14670
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11628,6 +13172,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 14670
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11658,6 +13206,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 14365
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11688,6 +13240,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 259066
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11718,6 +13274,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 192599
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11748,6 +13308,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 65570
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11778,6 +13342,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 34122
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11808,6 +13376,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24351
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11838,6 +13410,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 10583
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11868,6 +13444,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 54243
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11898,6 +13478,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11928,6 +13512,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 357936
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11958,6 +13546,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 451945
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -11988,6 +13580,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 442415
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12018,6 +13614,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 635576
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12048,6 +13648,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 378087
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12078,6 +13682,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 336164
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12108,6 +13716,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12138,6 +13750,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 291186
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12168,6 +13784,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 291907
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12198,6 +13818,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 190778
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12228,6 +13852,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 185242
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12258,6 +13886,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 204089
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12288,6 +13920,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 189736
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12318,6 +13954,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 383376
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12348,6 +13988,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12378,6 +14022,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12408,6 +14056,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12438,6 +14090,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12468,6 +14124,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 161260
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12498,6 +14158,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 42960
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12528,6 +14192,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12558,6 +14226,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20258
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12588,6 +14260,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 465080
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12618,6 +14294,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 372543
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12648,6 +14328,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 169132
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12678,6 +14362,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 102536
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12708,6 +14396,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 91660
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12738,6 +14430,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 70807
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12768,6 +14464,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 218883
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12798,6 +14498,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 143368
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12828,6 +14532,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 172694
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12858,6 +14566,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 173546
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12888,6 +14600,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 173546
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12918,6 +14634,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 145682
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12948,6 +14668,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 146218
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -12978,6 +14702,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 142417
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13008,6 +14736,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 132216
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13038,6 +14770,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 132914
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13068,6 +14804,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 121932
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13098,6 +14838,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13128,6 +14872,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 127952
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13158,6 +14906,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 144974
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13188,6 +14940,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 124890
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13218,6 +14974,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 140440
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13248,6 +15008,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 139016
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13278,6 +15042,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 122594
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13308,6 +15076,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 123651
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13338,6 +15110,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 124092
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13368,6 +15144,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 71581
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13398,6 +15178,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 140990
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13428,6 +15212,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 124911
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13458,6 +15246,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 124952
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13488,6 +15280,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25401
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13518,6 +15314,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25497
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13548,6 +15348,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19901
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13578,6 +15382,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24453
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13608,6 +15416,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24453
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13638,6 +15450,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22530
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13668,6 +15484,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 121141
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13698,6 +15518,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 59262
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13728,6 +15552,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 43582
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13758,6 +15586,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 31732
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13788,6 +15620,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 16258
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13818,6 +15654,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 63382
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13848,6 +15688,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 31778
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13878,6 +15722,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 48820
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13908,6 +15756,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 44151
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13938,6 +15790,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 43372
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13968,6 +15824,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 164710
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -13998,6 +15858,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 79359
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14028,6 +15892,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 80418
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14058,6 +15926,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 164710
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14088,6 +15960,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 82515
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14118,6 +15994,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 42873
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14148,6 +16028,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 35006
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14178,6 +16062,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 31766
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14208,6 +16096,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 32069
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14238,6 +16130,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 32930
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14268,6 +16164,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14298,6 +16198,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22731
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14328,6 +16232,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 23132
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14358,6 +16266,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25001
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14388,6 +16300,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 33659
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14418,6 +16334,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 23606
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14448,6 +16368,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 33228
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14478,6 +16402,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 26435
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14508,6 +16436,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 26601
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14538,6 +16470,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 28535
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14568,6 +16504,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25197
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14598,6 +16538,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25158
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14628,6 +16572,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 27079
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14658,6 +16606,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 30288
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14688,6 +16640,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 26798
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14718,6 +16674,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 28539
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14748,6 +16708,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 24432
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14778,6 +16742,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25677
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14808,6 +16776,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25881
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14838,6 +16810,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 26386
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14868,6 +16844,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 482964
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14898,6 +16878,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 413026
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14928,6 +16912,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 413542
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14958,6 +16946,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 412138
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -14988,6 +16980,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15018,6 +17014,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 317023
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15048,6 +17048,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 235776
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15078,6 +17082,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 75364
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15108,6 +17116,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 181326
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15138,6 +17150,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 297457
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15168,6 +17184,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 297457
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15198,6 +17218,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 15849
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15228,6 +17252,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 260841
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15258,6 +17286,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 344271
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15288,6 +17320,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 113079
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15318,6 +17354,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15348,6 +17388,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 344271
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15378,6 +17422,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 132872
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15408,6 +17456,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 499375
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15438,6 +17490,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 149854
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15468,6 +17524,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 211089
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15498,6 +17558,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9431
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15528,6 +17592,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 8666
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15558,6 +17626,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9361
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15588,6 +17660,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9321
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15618,6 +17694,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 40271
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15648,6 +17728,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 32558
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15678,6 +17762,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 28969
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15708,6 +17796,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 28969
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15738,6 +17830,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 50423
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15768,6 +17864,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 50423
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15798,6 +17898,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25648
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15828,6 +17932,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25648
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15858,6 +17966,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 49980
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15888,6 +18000,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 65666
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15918,6 +18034,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 11716
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15948,6 +18068,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 11716
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -15978,6 +18102,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 30493
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16008,6 +18136,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 30493
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16038,6 +18170,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 47714
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16068,6 +18204,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9569
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16098,6 +18238,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 6484
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16128,6 +18272,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9203
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16158,6 +18306,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9196
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16188,6 +18340,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9781
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16218,6 +18374,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 9668
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16248,6 +18408,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 6044
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16278,6 +18442,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16308,6 +18476,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16338,6 +18510,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 48804
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16368,6 +18544,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 125497
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16398,6 +18578,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16428,6 +18612,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 88075
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16458,6 +18646,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16488,6 +18680,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16518,6 +18714,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 21418
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16548,6 +18748,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 96283
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16578,6 +18782,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 62176
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16608,6 +18816,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 8531
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16638,6 +18850,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 25719
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16668,6 +18884,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 26014
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16698,6 +18918,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 29476
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16728,6 +18952,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16758,6 +18986,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 483977
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16788,6 +19020,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 482035
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16818,6 +19054,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 178816
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16848,6 +19088,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 11044
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16878,6 +19122,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 35615
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16908,6 +19156,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 34460
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16938,6 +19190,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 35246
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16968,6 +19224,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 85380
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -16998,6 +19258,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 219309
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17028,6 +19292,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 219309
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17058,6 +19326,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 261360
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17088,6 +19360,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 306017
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17118,6 +19394,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 253335
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17148,6 +19428,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17178,6 +19462,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17208,6 +19496,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 455172
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17238,6 +19530,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 459799
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17268,6 +19564,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17298,6 +19598,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 635576
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17328,6 +19632,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 397844
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17358,6 +19666,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 361813
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17388,6 +19700,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17418,6 +19734,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 313836
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17448,6 +19768,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 312167
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17478,6 +19802,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 224120
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17508,6 +19836,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 210888
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17538,6 +19870,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 211390
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17568,6 +19904,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 203512
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17598,6 +19938,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 376635
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17628,6 +19972,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 174306
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17658,6 +20006,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 173502
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17688,6 +20040,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17718,6 +20074,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 173977
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17748,6 +20108,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 176910
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17778,6 +20142,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 52339
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17808,6 +20176,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 155562
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17838,6 +20210,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17868,6 +20244,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 17067
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17898,6 +20278,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 222957
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17928,6 +20312,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 223067
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17958,6 +20346,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 204644
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -17988,6 +20380,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 162065
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18018,6 +20414,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 227079
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18048,6 +20448,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 64805
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18078,6 +20482,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 65284
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18108,6 +20516,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 288647
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18138,6 +20550,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 406411
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18168,6 +20584,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 396132
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18198,6 +20618,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 394996
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18228,6 +20652,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 400150
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18258,6 +20686,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 362452
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18288,6 +20720,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 253391
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18318,6 +20754,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 105988
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18348,6 +20788,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 169366
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18378,6 +20822,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 162435
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18408,6 +20856,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 243991
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18438,6 +20890,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 243992
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18468,6 +20924,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 207636
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18498,6 +20958,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 1930683
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18528,6 +20992,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20663
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18558,6 +21026,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 138009
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18588,6 +21060,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19628
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18618,6 +21094,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19757
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18648,6 +21128,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 19757
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18678,6 +21162,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20031
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18708,6 +21196,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 449097
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18738,6 +21230,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18768,6 +21264,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 194774
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18798,6 +21298,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 86954
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18828,6 +21332,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 22956
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18858,6 +21366,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 285217
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18888,6 +21400,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18918,6 +21434,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18948,6 +21468,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 645421
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -18978,6 +21502,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 1197374
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19008,6 +21536,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 74569
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19038,6 +21570,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 74569
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19068,6 +21604,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 39218
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19098,6 +21638,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 37052
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19128,6 +21672,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 27483
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19158,6 +21706,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20135
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19188,6 +21740,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 20126
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19218,6 +21774,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 419736
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19248,6 +21808,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 440289
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19278,6 +21842,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 150661
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19308,6 +21876,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 16480
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19338,6 +21910,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 16991
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19368,6 +21944,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 17373
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19398,6 +21978,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 17578
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19428,6 +22012,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 34800
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19458,6 +22046,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 85117
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19488,6 +22080,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 327622
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -19518,6 +22114,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 38895
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },

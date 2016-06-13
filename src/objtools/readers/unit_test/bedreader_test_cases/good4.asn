@@ -36,6 +36,10 @@ Seq-annot ::= {
             {
               label str "score",
               data real { 48322, 10, -2 }
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },
@@ -65,6 +69,10 @@ Seq-annot ::= {
             {
               label str "score",
               data real { 34467, 10, -2 }
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         },

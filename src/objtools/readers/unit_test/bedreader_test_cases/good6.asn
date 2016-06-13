@@ -56,6 +56,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "255 0 0"
             }
           }
         },
@@ -86,6 +90,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "255 0 0"
             }
           }
         },
@@ -116,6 +124,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "255 0 0"
             }
           }
         },
@@ -146,6 +158,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "255 0 0"
             }
           }
         },
@@ -176,6 +192,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 255"
             }
           }
         },
@@ -206,6 +226,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 255"
             }
           }
         },
@@ -236,6 +260,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 255"
             }
           }
         },
@@ -266,6 +294,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "255 0 0"
             }
           }
         },
@@ -296,6 +328,10 @@ Seq-annot ::= {
             {
               label str "score",
               data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 255"
             }
           }
         },

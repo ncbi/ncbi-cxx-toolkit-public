@@ -43,6 +43,15 @@ Seq-annot ::= {
       },
       exts {
         {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
           type str "BED",
           data {
             {
@@ -62,6 +71,15 @@ Seq-annot ::= {
         id local str "8"
       },
       exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
         {
           type str "BED",
           data {
@@ -83,6 +101,15 @@ Seq-annot ::= {
       },
       exts {
         {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
           type str "BED",
           data {
             {
@@ -102,6 +129,15 @@ Seq-annot ::= {
         id local str "chr8"
       },
       exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
         {
           type str "BED",
           data {
