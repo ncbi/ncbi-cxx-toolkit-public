@@ -8,8 +8,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CRef<CDelta_item> CDeltaHelper::CreateSSR(const CCount& count, 
-        CRef<CSeq_literal> seq_literal,
-        CVariationIrepMessageListener& listener) 
+        CRef<CSeq_literal> seq_literal)
 {
     auto delta = Ref(new CDelta_item());
     if (seq_literal.IsNull()) {
@@ -45,9 +44,7 @@ CRef<CDelta_item> CDeltaHelper::CreateSSR(const CCount& count,
 
             if (max < min) { 
                 string err_string = "Reversed range limits";
-                CVariationIrepMessage msg(err_string, eDiag_Warning);
-                msg.SetRange(count.GetRange());
-                listener.Post(msg);
+                ERR_POST(Warning << err_string);
                 const auto temp = min;
                 min = max;
                 max = temp;

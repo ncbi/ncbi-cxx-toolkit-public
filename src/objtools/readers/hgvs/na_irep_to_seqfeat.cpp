@@ -57,11 +57,8 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaIdentityVarref(const CNtLocati
         nt_literal->SetSeq_data().SetIupacna(CIUPACna(nucleotide));
     }
     auto offset = CHgvsNaDeltaHelper::GetIntronOffset(nt_loc.GetSite());
-    auto var_ref = g_CreateIdentity(nt_literal, offset);
-
-    if (method != CVariation_ref::eMethod_E_unknown) {
-       var_ref->SetMethod().push_back(method); 
-    }
+    CRef<CVariation_ref> var_ref = g_CreateIdentity(nt_literal, offset);
+    x_SetMethod(var_ref, method);
 
     return var_ref;
 }
@@ -99,9 +96,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaSubVarref(const CNtLocation& n
         } else {
             subvar_ref = g_CreateSNV(result, offset);
         }
-        if (method != CVariation_ref::eMethod_E_unknown) {
-            subvar_ref->SetMethod().push_back(method);
-        }
+        x_SetMethod(subvar_ref, method);
         var_set.SetVariations().push_back(subvar_ref);
     }
 
@@ -153,14 +148,12 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDeletionVarref(const CDeletion& 
         var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
         {
             auto subvar_ref = g_CreateDeletion(start_offset, stop_offset);
-            if (method != CVariation_ref::eMethod_E_unknown) {
-                subvar_ref->SetMethod().push_back(method);
-            }
+            x_SetMethod(subvar_ref, method);
             var_set.SetVariations().push_back(subvar_ref);
         }
         {
             auto raw_seq = x_CreateNtSeqLiteral(del.GetRaw_seq());
-            auto subvar_ref = g_CreateIdentity(raw_seq, start_offset, stop_offset);
+            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(raw_seq, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         }
         return var_ref;
@@ -180,10 +173,8 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateInsertionVarref(const CInsertion
     auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_int);
 
     auto raw_seq = x_CreateNtSeqLiteral(ins.GetSeqinfo().GetRaw_seq());
-    auto var_ref = g_CreateInsertion(*raw_seq, start_offset, stop_offset);
-    if (method != CVariation_ref::eMethod_E_unknown) {
-        var_ref->SetMethod().push_back(method);
-    }
+    CRef<CVariation_ref> var_ref = g_CreateInsertion(*raw_seq, start_offset, stop_offset);
+    x_SetMethod(var_ref, method);
 
     return var_ref;
 }
@@ -191,6 +182,9 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateInsertionVarref(const CInsertion
 
 bool CHgvsNaIrepReader::x_LooksLikePolymorphism(const CDelins& delins) const 
 {
+    // If the deleted and inserted sequences are the same size, the 
+    // variation is a substitution/polymorphism.
+
     if (delins.IsSetDeleted_raw_seq() && 
         delins.GetInserted_seq_info().IsRaw_seq() &&
         delins.GetDeleted_raw_seq().size() ==
@@ -198,7 +192,9 @@ bool CHgvsNaIrepReader::x_LooksLikePolymorphism(const CDelins& delins) const
         return true;
     }
 
-
+    // If the deletion is restricted to a single site 
+    // and the insertion involves a single nucleotide,
+    // this variation is an SNP
     if (delins.GetLoc().GetNtloc().IsSite() &&
         delins.GetInserted_seq_info().IsRaw_seq() &&
         delins.GetInserted_seq_info().GetRaw_seq().size() == 1) {
@@ -226,15 +222,13 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDelinsVarref(const CDelins& deli
         auto& var_set = var_ref->SetData().SetSet();
         var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
         {
-            auto subvar_ref = g_CreateDelins(*inserted_seq, start_offset, stop_offset);
-            if (method != CVariation_ref::eMethod_E_unknown) {
-                subvar_ref->SetMethod().push_back(method);
-            }
+            CRef<CVariation_ref> subvar_ref = g_CreateDelins(*inserted_seq, start_offset, stop_offset);
+            x_SetMethod(subvar_ref, method);
             var_set.SetVariations().push_back(subvar_ref);
         }
         {
             auto deleted_seq = x_CreateNtSeqLiteral(delins.GetDeleted_raw_seq());
-            auto subvar_ref = g_CreateIdentity(deleted_seq, start_offset, stop_offset);
+            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(deleted_seq, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         }
         return var_ref;
@@ -259,10 +253,8 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDuplicationVarref(const CDuplica
         auto& var_set = var_ref->SetData().SetSet();
         var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
         {
-            auto subvar_ref = g_CreateDuplication(start_offset, stop_offset);
-            if (method != CVariation_ref::eMethod_E_unknown) {
-                subvar_ref->SetMethod().push_back(method);
-            }
+            CRef<CVariation_ref> subvar_ref = g_CreateDuplication(start_offset, stop_offset);
+            x_SetMethod(subvar_ref, method);
             var_set.SetVariations().push_back(subvar_ref);
         }
         {
@@ -292,21 +284,18 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateInversionVarref(const CInversion
         auto& var_set = var_ref->SetData().SetSet();
         var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
         {
-            auto subvar_ref = g_CreateInversion(start_offset, stop_offset);
-
-            if (method != CVariation_ref::eMethod_E_unknown) {
-                subvar_ref->SetMethod().push_back(method);
-            }
+            CRef<CVariation_ref> subvar_ref = g_CreateInversion(start_offset, stop_offset);
+            x_SetMethod(subvar_ref, method);
             var_set.SetVariations().push_back(subvar_ref);
         }
         if (inv.IsSetRaw_seq()) {
             auto inverted_seq = x_CreateNtSeqLiteral(inv.GetRaw_seq());
-            auto subvar_ref = g_CreateIdentity(inverted_seq, start_offset, stop_offset);
+            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(inverted_seq, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         } else if (inv.IsSetSize()) {
             auto inversion_size = x_CreateNtSeqLiteral(inv.GetSize());
             const bool enforce_assert = true;
-            auto subvar_ref = g_CreateIdentity(inversion_size, start_offset, stop_offset, enforce_assert);
+            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(inversion_size, start_offset, stop_offset, enforce_assert);
             var_set.SetVariations().push_back(subvar_ref);
         }
         return var_ref;
@@ -346,13 +335,10 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateConversionVarref(const CConversi
     auto seq_loc = CNtSeqlocHelper::CreateSeqloc(*seq_id,
                                                   conv.GetDst(),
                                                   seq_type,
-                                                  m_Scope,
-                                                  m_MessageListener);
+                                                  m_Scope);
     
-    auto var_ref = g_CreateConversion(*seq_loc, start_offset, stop_offset);
-    if (method != CVariation_ref::eMethod_E_unknown) {
-        var_ref->SetMethod().push_back(method);
-    }
+    CRef<CVariation_ref> var_ref = g_CreateConversion(*seq_loc, start_offset, stop_offset);
+    x_SetMethod(var_ref, method);
     return var_ref;
 }
 
@@ -374,23 +360,21 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSSRVarref(const CRepeat& ssr,
 
     auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_loc);
 
-    auto delta = CDeltaHelper::CreateSSR(ssr.GetCount(), seq_literal, m_MessageListener);
-    auto var_ref = g_CreateMicrosatellite(delta, start_offset, stop_offset);
-    if (method != CVariation_ref::eMethod_E_unknown) {
-        var_ref->SetMethod().push_back(method);
-    }
+    auto delta = CDeltaHelper::CreateSSR(ssr.GetCount(), seq_literal);
+    CRef<CVariation_ref> var_ref = g_CreateMicrosatellite(delta, start_offset, stop_offset);
+    x_SetMethod(var_ref, method);
     return var_ref;
 }
 
 
 CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
-                                                       const CSimpleVariant& var_desc) const
+                                                       const CSimpleVariant& simple_var) const
 {
     CRef<CVariation_ref> var_ref;
-    auto& var_type = var_desc.GetType();
+    const auto& var_type = simple_var.GetType();
 
 
-    CVariation_ref::EMethod_E method = (var_desc.IsSetFuzzy() && var_desc.GetFuzzy()) ?
+    CVariation_ref::EMethod_E method = (simple_var.IsSetFuzzy() && simple_var.GetFuzzy()) ?
         CVariation_ref::eMethod_E_computational :
         CVariation_ref::eMethod_E_unknown;
 
@@ -400,8 +384,8 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
        case CSimpleVariant::TType::e_Na_identity:
            var_ref = x_CreateNaIdentityVarref(var_type.GetNa_identity(), method);
            break;
-       case CSimpleVariant::TType::e_Na_sub:
-           {
+       case CSimpleVariant::TType::e_Na_sub: 
+           { // Check if the substitution actually describes an identity
                const auto& na_sub = var_type.GetNa_sub();
                const auto initial_nt = na_sub.GetInitial();
                const auto final_nt = na_sub.GetFinal();
@@ -412,6 +396,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
                    break;
                }
            }
+           // Not identity - non-trivial substitution
            var_ref = x_CreateNaSubVarref(var_type.GetNa_sub(), method);
            break;
        case CSimpleVariant::TType::e_Dup:
@@ -457,30 +442,28 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
 
 
 
-CRef<CSeq_feat> CHgvsNaIrepReader::x_CreateSeqfeat(const string& var_name,
-                                                   const string& id_string,
-                                                   const CSequenceVariant::TSeqtype& seq_type,
-                                                   const CSimpleVariant& var_desc) const 
+CRef<CSeq_feat> CHgvsNaIrepReader::x_CreateSimpleVariantFeat(const string& var_name,
+                                                             const string& id_string,
+                                                             const CSequenceVariant::TSeqtype& seq_type,
+                                                             const CSimpleVariant& simple_var) const 
 {
     auto seq_feat = Ref(new CSeq_feat());
-    auto var_ref = x_CreateVarref(var_name, var_desc);
+    CRef<CVariation_ref> var_ref = x_CreateVarref(var_name, simple_var);
     seq_feat->SetData().SetVariation(*var_ref);
 
     auto seq_id = m_IdResolver->GetAccessionVersion(id_string).GetSeqId();
 
-
-    auto seq_loc = CNtSeqlocHelper::CreateSeqloc(*seq_id, 
-                                                  var_desc,
-                                                  seq_type,
-                                                  m_Scope,
-                                                  m_MessageListener);
+    CRef<CSeq_loc> seq_loc = CNtSeqlocHelper::CreateSeqloc(*seq_id, 
+                                                           simple_var,
+                                                           seq_type,
+                                                           m_Scope);
     seq_feat->SetLocation(*seq_loc);
 
     return seq_feat;
 }
 
 // Could make CreateSeqfeat a base class method
-// x_CreateSeqfeat could be a virtual method, which has to be implemented in both cases, maybe
+// x_CreateSimpleVariantFeat could be a virtual method, which has to be implemented in both cases, maybe
 CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(const CVariantExpression& variant_expr) const 
 {
     const auto& sequence_variant = variant_expr.GetSequence_variant();
@@ -499,8 +482,6 @@ CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(const CVariantExpression& varia
 
 
     CRef<CVariant> subvariant = variant_expr.GetSequence_variant().GetSubvariants().front();
-
-
     const auto seq_type = variant_expr.GetSequence_variant().GetSeqtype();
 
     if (seq_type == eVariantSeqType_p || 
@@ -517,49 +498,24 @@ CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(const CVariantExpression& varia
    
     const CSimpleVariant& simple_variant = subvariant->GetSimple();
 
-    CRef<CSeq_feat> unnormalized_seqfeat = x_CreateSeqfeat(variant_expr.GetInput_expr(),
-                                                           variant_expr.GetReference_id(),
-                                                           seq_type,
-                                                           simple_variant);
+    CRef<CSeq_feat> unnormalized_seqfeat = x_CreateSimpleVariantFeat(variant_expr.GetInput_expr(),
+                                                                     variant_expr.GetReference_id(),
+                                                                     seq_type,
+                                                                     simple_variant);
     
     return g_NormalizeVariationSeqfeat(*unnormalized_seqfeat, &m_Scope);
 }
 
 
-list<CRef<CSeq_feat>> CHgvsNaIrepReader::CreateSeqfeats(const CVariantExpression& variant_expr) const 
-{
-    list<CRef<CSeq_feat>> feat_list;
-
-    const auto& seq_var = variant_expr.GetSequence_variant();
-
-    const auto seq_type = seq_var.GetSeqtype();
-
-    for (const auto& variant : seq_var.GetSubvariants()) {
-        const auto& simple_variant = variant->GetSimple();
-
-        auto seq_feat = x_CreateSeqfeat(variant_expr.GetInput_expr(),
-                                        variant_expr.GetReference_id(),
-                                        seq_type,
-                                        simple_variant);
-
-        if (seq_feat.NotNull()) {
-            feat_list.push_back(seq_feat);
-        }
-    }
-    return feat_list;
-}
-
 
 
 CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
-        const CSimpleVariant& var_desc,
+        const CSimpleVariant& simple_var,
         const CSequenceVariant::TSeqtype& seq_type,
-        CScope& scope,
-        CVariationIrepMessageListener& listener)
+        CScope& scope)
 {
     CRef<CSeq_loc> seq_loc;
-    auto& var_type = var_desc.GetType();
-
+    const auto& var_type = simple_var.GetType();
     
     switch (var_type.Which()) {
         default:
@@ -568,66 +524,57 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
             seq_loc = CreateSeqloc(seq_id,
                                    var_type.GetNa_identity().GetLoc(),
                                    seq_type,
-                                   scope,
-                                   listener);
+                                   scope);
             break;
         case CSimpleVariant::TType::e_Na_sub:
             seq_loc = CreateSeqloc(seq_id,
                                    var_type.GetNa_sub().GetLoc(),
                                    seq_type,
-                                   scope,
-                                   listener);
+                                   scope);
             break;
         case CSimpleVariant::TType::e_Dup:     
             seq_loc = CreateSeqloc(seq_id, 
                                    var_type.GetDup().GetLoc().GetNtloc(),
                                    seq_type, 
-                                   scope,
-                                   listener);
+                                   scope);
             break; 
         case CSimpleVariant::TType::e_Del:     
             seq_loc = CreateSeqloc(seq_id, 
                                    var_type.GetDel().GetLoc().GetNtloc(),
                                    seq_type, 
-                                   scope,
-                                   listener);
+                                   scope);
             break; 
         case CSimpleVariant::TType::e_Ins:
             seq_loc = CreateSeqloc(seq_id,
                                    var_type.GetIns().GetInt().GetNtint(),
                                    seq_type,
-                                   scope,
-                                   listener);
+                                   scope);
             break;
         case CSimpleVariant::TType::e_Delins:     
             seq_loc = CreateSeqloc(seq_id, 
                                    var_type.GetDelins().GetLoc().GetNtloc(),
                                    seq_type, 
-                                   scope,
-                                   listener);
+                                   scope);
             break; 
 
         case CSimpleVariant::TType::e_Inv:     
             seq_loc = CreateSeqloc(seq_id, 
                                    var_type.GetInv().GetNtint(),
                                    seq_type, 
-                                   scope,
-                                   listener);
+                                   scope);
             break; 
 
         case CSimpleVariant::TType::e_Conv:
             seq_loc = CreateSeqloc(seq_id, 
                                    var_type.GetConv().GetSrc(),
                                    seq_type, 
-                                   scope,
-                                   listener);
+                                   scope);
             break;
        case CSimpleVariant::TType::e_Repeat:
             seq_loc = CreateSeqloc(seq_id,
                                    var_type.GetRepeat().GetLoc().GetNtloc(),
                                    seq_type,
-                                   scope,
-                                   listener);
+                                   scope);
             break;
     }
     return seq_loc;
@@ -638,15 +585,13 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtLocation& nt_loc,
         const CSequenceVariant::TSeqtype& seq_type,
-        CScope& scope,
-        CVariationIrepMessageListener& listener)
+        CScope& scope)
 {
     if (nt_loc.IsSite()) {
         return CreateSeqloc(seq_id,
                             nt_loc.GetSite(),
                             seq_type,
-                            scope,
-                            listener);
+                            scope);
     }
 
     
@@ -654,8 +599,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         return CreateSeqloc(seq_id,
                             nt_loc.GetRange(),
                             seq_type,
-                            scope,
-                            listener);
+                            scope);
     }
 
 
@@ -666,23 +610,20 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
     return CreateSeqloc(seq_id,
                         nt_loc.GetInt(),
                         seq_type,
-                        scope,
-                        listener);
+                        scope);
 }
 
 
 CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtSite& nt_site,
         const CSequenceVariant::TSeqtype& seq_type,
-        CScope& scope,
-        CVariationIrepMessageListener& listener)
+        CScope& scope)
 {
     TSeqPos site_index;
     const bool know_site = x_ComputeSiteIndex(seq_id,
                                               nt_site,
                                               seq_type,
                                               scope,
-                                              listener,
                                               site_index);
     auto seq_loc = Ref(new CSeq_loc());
     if (!know_site) {
@@ -709,15 +650,13 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtSiteRange& nt_range,
         const CSequenceVariant::TSeqtype& seq_type,
-        CScope& scope,
-        CVariationIrepMessageListener& listener)
+        CScope& scope)
 {
     TSeqPos site_index;
     bool know_site = x_ComputeSiteIndex(seq_id, 
                                         nt_range,
                                         seq_type,
                                         scope,
-                                        listener,
                                         site_index);
 
     auto seq_loc = Ref(new CSeq_loc());
@@ -726,10 +665,8 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         return seq_loc;
     }
 
-    ENa_strand strand = eNa_strand_plus;
-    if (nt_range.GetStart().GetStrand_minus()) {
-        strand = eNa_strand_minus;
-    }
+
+    ENa_strand strand = x_GetStrand(nt_range);
     seq_loc->SetPnt().SetPoint(site_index);
     seq_loc->SetPnt().SetId().Assign(seq_id);
     seq_loc->SetPnt().SetStrand(strand);
@@ -737,8 +674,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
     auto fuzz = x_CreateIntFuzz(seq_id,
                                 nt_range,
                                 seq_type,
-                                scope,
-                                listener);
+                                scope);
 
     if (fuzz.NotNull()) {
         seq_loc->SetPnt().SetFuzz(*fuzz);  
@@ -748,11 +684,59 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 }
 
 
+ENa_strand CNtSeqlocHelper::x_GetStrand(const CNtSite& nt_site)
+{
+    ENa_strand strand = nt_site.GetStrand_minus() ? eNa_strand_minus : eNa_strand_plus;
+
+    return strand;
+}
+
+
+ENa_strand CNtSeqlocHelper::x_GetStrand(const CNtSiteRange& nt_range)
+{
+    ENa_strand strand = eNa_strand_unknown;
+    if (nt_range.IsSetStart()) {
+        return x_GetStrand(nt_range.GetStart());
+    }
+
+    if (nt_range.IsSetStop()) {
+        strand = x_GetStrand(nt_range.GetStop());
+    }
+    return strand;
+}
+
+
+ENa_strand CNtSeqlocHelper::x_GetStrand(const CNtInterval& nt_int) 
+{
+    if (nt_int.IsSetStart()) {
+        if (nt_int.GetStart().IsSite()) {
+            return x_GetStrand(nt_int.GetStart().GetSite());
+        }
+
+        if (nt_int.GetStart().IsRange()) {
+            return x_GetStrand(nt_int.GetStart().GetRange());
+        }
+    }
+
+    if (nt_int.IsSetStop()) {
+        if (nt_int.GetStop().IsSite()) {
+            return x_GetStrand(nt_int.GetStop().GetSite());
+        }
+        
+        if (nt_int.GetStop().IsRange()) {
+            return x_GetStrand(nt_int.GetStop().GetRange());
+        }
+    }
+
+    return eNa_strand_unknown;
+}
+
+
+
 CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtInterval& nt_int,
         const CSequenceVariant::TSeqtype& seq_type,
-        CScope& scope, // cannot be NULL
-        CVariationIrepMessageListener& listener) 
+        CScope& scope)
 {
 
     if ( !nt_int.IsSetStart() || !nt_int.IsSetStop() ) {
@@ -763,38 +747,25 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
     auto seq_loc = Ref(new CSeq_loc());
     seq_loc->SetInt().SetId().Assign(seq_id);
     
-    ENa_strand strand = eNa_strand_plus;
-    
     TSeqPos start_index, stop_index;
-
 
     bool know_start = x_ComputeSiteIndex(seq_id,
                                          nt_int.GetStart(),
                                          seq_type,
                                          scope,
-                                         listener,
                                          start_index);
 
-    if ((nt_int.GetStart().IsSite() && 
-         nt_int.GetStart().GetSite().GetStrand_minus()) ||
-        (nt_int.GetStart().IsRange() &&
-         nt_int.GetStart().GetRange().GetStart().GetStrand_minus())) {
-        strand = eNa_strand_minus;
-    }
+    
 
     bool know_stop = x_ComputeSiteIndex(seq_id, 
                                         nt_int.GetStop(),
                                         seq_type,
                                         scope,
-                                        listener,
                                         stop_index);
 
     if ( (know_start && know_stop) && (start_index > stop_index) ) {
         string err_string = "Reversed interval limits";
-        // Post a warning message and reverse interval limits
-        CVariationIrepMessage msg(err_string, eDiag_Warning);
-        msg.SetNtInterval(nt_int);
-        listener.Post(msg);
+        ERR_POST(Warning << err_string);
         const auto temp = start_index;
         stop_index = start_index;
         start_index = temp;
@@ -815,8 +786,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
             auto fuzz_from = CNtSeqlocHelper::x_CreateIntFuzz(seq_id,
                                                               nt_int.GetStart().GetRange(),
                                                               seq_type,
-                                                              scope,
-                                                              listener);
+                                                              scope);
             seq_loc->SetInt().SetFuzz_from(*fuzz_from);  
         } 
         else if (nt_int.GetStart().IsRange() &&
@@ -845,8 +815,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
             auto fuzz_to = CNtSeqlocHelper::x_CreateIntFuzz(seq_id,
                                                             nt_int.GetStop().GetRange(),
                                                             seq_type,
-                                                            scope,
-                                                            listener);
+                                                            scope);
             seq_loc->SetInt().SetFuzz_to(*fuzz_to); 
         }
         else if (nt_int.GetStop().IsRange() &&
@@ -860,6 +829,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
     }
 
 
+    const ENa_strand strand = x_GetStrand(nt_int);    
     seq_loc->SetInt().SetStrand(strand);
     
     return seq_loc; 
@@ -870,8 +840,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 CRef<CInt_fuzz> CNtSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
                                                  const CNtSiteRange& nt_range,
                                                  const CSequenceVariant::TSeqtype& seq_type,
-                                                 CScope& scope,
-                                                 CVariationIrepMessageListener& listener)
+                                                 CScope& scope)
 {
     auto int_fuzz = Ref(new CInt_fuzz());
  
@@ -880,7 +849,6 @@ CRef<CInt_fuzz> CNtSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
                                          nt_range.GetStart(),
                                          seq_type,
                                          scope,
-                                         listener,
                                          start_index);   
 
     TSeqPos stop_index = 0;
@@ -888,7 +856,6 @@ CRef<CInt_fuzz> CNtSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
                                         nt_range.GetStop(),
                                         seq_type,
                                         scope,
-                                        listener,
                                         stop_index);
 
     if (know_start && know_stop) {
@@ -915,23 +882,22 @@ bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          const CNtIntLimit& nt_limit,
                                          const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope,
-                                         CVariationIrepMessageListener& listener,
                                          TSeqPos& site_index)
 {
+   // Interval limits have to be either of type NtSite or NtRange
    if (nt_limit.IsSite()) {
        return x_ComputeSiteIndex(seq_id, 
                                  nt_limit.GetSite(),
                                  seq_type,
                                  scope,
-                                 listener,
                                  site_index);
    }
+
 
    return x_ComputeSiteIndex(seq_id,
                              nt_limit.GetRange(),
                              seq_type,
                              scope,
-                             listener,
                              site_index);
 }
 
@@ -940,7 +906,6 @@ bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          const CNtSiteRange& nt_range,
                                          const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope,
-                                         CVariationIrepMessageListener& listener,
                                          TSeqPos& site_index)
 {
     const auto& nt_site = nt_range.GetStart().GetBase().IsVal() ? nt_range.GetStart() : nt_range.GetStop();
@@ -953,7 +918,6 @@ bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                               nt_site,
                               seq_type,
                               scope,
-                              listener,
                               site_index);
 }
 
@@ -962,7 +926,6 @@ bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          const CNtSite& nt_site,
                                          const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope,
-                                         CVariationIrepMessageListener& listener,
                                          TSeqPos& site_index) 
 {
     TSeqPos offset = 0;

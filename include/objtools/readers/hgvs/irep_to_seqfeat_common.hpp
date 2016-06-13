@@ -15,8 +15,7 @@ class CDeltaHelper
 {
 public:
     static CRef<CDelta_item> CreateSSR(const CCount& count,
-                                       CRef<CSeq_literal> seq_literal,
-                                       CVariationIrepMessageListener& listener);
+                                       CRef<CSeq_literal> seq_literal);
 };
 
 END_SCOPE(objects)

@@ -23,20 +23,16 @@ class CAaSeqlocHelper
 {
 public: 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
-                                       const CSimpleVariant& var_desc,
-                                       CVariationIrepMessageListener& listener);
+                                       const CSimpleVariant& simple_var);
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id, 
-                                       const CAaLocation& aa_loc,
-                                       CVariationIrepMessageListener& listener);
+                                       const CAaLocation& aa_loc);
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id, 
-                                       const CAaSite& aa_site,
-                                       CVariationIrepMessageListener& listener);
+                                       const CAaSite& aa_site);
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
-                                       const CAaInterval& aa_int,
-                                       CVariationIrepMessageListener& listener);
+                                       const CAaInterval& aa_int);
 };
 
 
@@ -46,12 +42,11 @@ public:
         using TSet = CVariation_ref::C_Data::C_Set;
         using TDelta = CVariation_inst::TDelta::value_type;
  
-        CHgvsProtIrepReader(CScope& scope, CVariationIrepMessageListener& message_listener) 
-            : CHgvsIrepReader(scope, message_listener) {}
+        CHgvsProtIrepReader(CScope& scope) 
+            : CHgvsIrepReader(scope) {}
 
         CRef<CSeq_feat> CreateSeqfeat(const CVariantExpression& variant_expr) const;
 
-        list<CRef<CSeq_feat>> CreateSeqfeats(const CVariantExpression& variant_expr) const;
  private:
         CSeq_data::TNcbieaa x_ConvertToNcbieaa(string aa_seq) const;
 

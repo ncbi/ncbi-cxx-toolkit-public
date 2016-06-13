@@ -39,63 +39,61 @@ public:
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CSimpleVariant& var_desc,
                                        const CSequenceVariant::TSeqtype& seq_type,
-                                       CScope& scope,
-                                       CVariationIrepMessageListener& listener);
+                                       CScope& scope);
 
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtSite& nt_site,
                                        const CSequenceVariant::TSeqtype& seq_type,
-                                       CScope& scope,
-                                       CVariationIrepMessageListener& listener);
+                                       CScope& scope);
 
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtSiteRange& nt_range,
                                        const CSequenceVariant::TSeqtype& seq_type,
-                                       CScope& scope,
-                                       CVariationIrepMessageListener& listener);
+                                       CScope& scope);
 
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtInterval& nt_int,
                                        const CSequenceVariant::TSeqtype& seq_type,
-                                       CScope& scope,
-                                       CVariationIrepMessageListener& listener);
+                                       CScope& scope);
+
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtLocation& nt_loc,
                                        const CSequenceVariant::TSeqtype& seq_type,
-                                       CScope& scope,
-                                       CVariationIrepMessageListener& listener);
+                                       CScope& scope);
 private:
 
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtIntLimit& nt_limit,
                                    const CSequenceVariant::TSeqtype& seq_type,
                                    CScope& scope,
-                                   CVariationIrepMessageListener& listener,
                                    TSeqPos& site_index);
 
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtSite& nt_site,
                                    const CSequenceVariant::TSeqtype& seq_type,
                                    CScope& scope,
-                                   CVariationIrepMessageListener& listener,
                                    TSeqPos& site_index);
 
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtSiteRange& nt_range,
                                    const CSequenceVariant::TSeqtype& seq_type,
                                    CScope& scope,
-                                   CVariationIrepMessageListener& listener,
                                    TSeqPos& site_index);
 
     static CRef<CInt_fuzz> x_CreateIntFuzz(const CSeq_id& seq_id,
                                            const CNtSiteRange& nt_range,
                                            const CSequenceVariant::TSeqtype& seq_type,
-                                           CScope& scope,
-                                           CVariationIrepMessageListener& listener);
+                                           CScope& scope);
+
+    static ENa_strand x_GetStrand(const CNtInterval& nt_int);
+
+    static ENa_strand x_GetStrand(const CNtSiteRange& nt_range);
+
+    static ENa_strand x_GetStrand(const CNtSite& nt_site);
 };
 
 
@@ -106,11 +104,10 @@ public:
         using TSet = CVariation_ref::C_Data::C_Set;
         using TDelta = CVariation_inst::TDelta::value_type;
 
-        CHgvsNaIrepReader(CScope& scope, CVariationIrepMessageListener& message_listener) :
-            CHgvsIrepReader(scope, message_listener) {}
+        CHgvsNaIrepReader(CScope& scope) :
+            CHgvsIrepReader(scope) {}
 
         CRef<CSeq_feat> CreateSeqfeat(const CVariantExpression& variant_expr) const;
-        list<CRef<CSeq_feat>> CreateSeqfeats(const CVariantExpression& variant_expr) const;
 private:
 
         bool x_LooksLikePolymorphism(const CDelins& delins) const;
@@ -152,16 +149,16 @@ private:
                                                const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateVarref(const string& var_name, 
-                                            const CSimpleVariant& var_desc) const;
+                                            const CSimpleVariant& simple_var) const;
 
         CRef<CSeq_literal> x_CreateNtSeqLiteral(const string& raw_seq) const;
 
         CRef<CSeq_literal> x_CreateNtSeqLiteral(TSeqPos length) const;
 
-        CRef<CSeq_feat> x_CreateSeqfeat(const string& var_name,
-                                        const string& identifier,
-                                        const CSequenceVariant::TSeqtype& seq_type,
-                                        const CSimpleVariant& var_desc) const;
+        CRef<CSeq_feat> x_CreateSimpleVariantFeat(const string& var_name,
+                                                  const string& identifier,
+                                                  const CSequenceVariant::TSeqtype& seq_type,
+                                                  const CSimpleVariant& simple_var) const;
 }; // CHgvsNaIrepReader
 
 END_SCOPE(objects)
