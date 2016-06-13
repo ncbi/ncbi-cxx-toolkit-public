@@ -788,8 +788,13 @@ bool CFastaReader::ParseIDs(
             return false;
         }
     }
-    // check if ID was too long
-    if( count == 1 && s.length() > m_MaxIDLength ){ 
+    // check if ID was too long, use only 
+    if( count == 1)
+    {
+      CTempString check;
+      size_t last = s.rfind('|');
+      check = (last == CTempString::npos) ? s : s.substr(last + 1);
+      if (check.length() > m_MaxIDLength ) { 
 
         // before throwing an ID-too-long error, check if what we
         // think is a "sequence ID" is actually sequence data
@@ -805,6 +810,7 @@ bool CFastaReader::ParseIDs(
             << " but the max length allowed is " << m_MaxIDLength 
             << ".  Please find and correct all sequence IDs that are too long.",
             CObjReaderParseException::eIDTooLong);
+      }
     }
     return count > 0;
 }
