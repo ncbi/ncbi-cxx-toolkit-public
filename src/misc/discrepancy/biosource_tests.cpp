@@ -295,23 +295,23 @@ DISCREPANCY_CASE(MISSING_VIRAL_QUALS, CBioSource, eOncaller, "Viruses should spe
     if (!has_collection_date || !has_country || !has_specific_host) {
         if (context.GetCurrentSeqdesc() != NULL) {
             if (!has_collection_date) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
+                m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Ext().Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
             }
             if (!has_country) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
+				m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Ext().Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
             }
             if (!has_specific_host) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
+				m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Ext().Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
             }
         } else if (context.GetCurrentSeq_feat() != NULL) {
             if (!has_collection_date) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+				m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Ext().Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
             }
             if (!has_country) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+				m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Ext().Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
             }
             if (!has_specific_host) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+				m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Ext().Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
             }
         }
     }
