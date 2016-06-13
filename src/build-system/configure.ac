@@ -4748,9 +4748,9 @@ if test "$with_ftds" != "no" ; then
    ftds_ver=64
    try_local=yes
    case "$with_ftds" in
-      64 | 0.64 | yes | '' )
+      64 | 0.64 )
          ;;
-      95 | 0.95 )
+      95 | 0.95 | yes | '' )
          ftds_ver=95
          ;;
       * )
