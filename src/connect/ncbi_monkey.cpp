@@ -1179,6 +1179,12 @@ FMonkeyHookSwitch CMonkey::sm_HookSwitch = NULL;
 
 CMonkey::CMonkey() : m_Probability(1.0), m_Enabled(false)
 {
+    if (sm_HookSwitch == NULL) {
+        throw CMonkeyException(
+            CDiagCompileInfo(__FILE__, __LINE__),
+            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            "Launch CONNECT_Init() before initializing CMonkey instance");
+    }
     m_TlsToken = new CTls<int>;
     m_TlsRandList = new CTls<vector<int> >;
     m_TlsRandListPos = new CTls<int>;
@@ -1208,6 +1214,7 @@ bool CMonkey::IsEnabled()
 
 void CMonkey::ReloadConfig(const string& config)
 {
+    assert(sm_HookSwitch == NULL);
     CFastMutexGuard spawn_guard(s_ConfigMutex);
     string          rules;
     string          monkey_section = config.empty() ? s_GetMonkeySection() : 
@@ -1270,15 +1277,8 @@ void CMonkey::ReloadConfig(const string& config)
     else {
         s_TimeoutingSocketDestroy();
     }
-    if (sm_HookSwitch == NULL) {
-        throw CMonkeyException(
-            CDiagCompileInfo(__FILE__, __LINE__),
-            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
-            "Launch CONNECT_Init() before initializing CMonkey instance");
-    } else {
-        sm_HookSwitch(m_Enabled ? eMonkeyHookSwitch_Enabled 
-                                : eMonkeyHookSwitch_Disabled);
-    }
+    sm_HookSwitch(m_Enabled ? eMonkeyHookSwitch_Enabled 
+                            : eMonkeyHookSwitch_Disabled);
 }
 
 
