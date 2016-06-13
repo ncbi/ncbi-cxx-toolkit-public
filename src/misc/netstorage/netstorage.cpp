@@ -133,6 +133,7 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
 
     // For direct NetStorage API only
     CObj* Create(TNetStorageFlags, const string&, Int8 = 0);
+    bool Exists(const string& db_loc, const string& client_loc);
     CJsonNode ReportConfig() const;
 
 private:
@@ -202,6 +203,54 @@ CObj* SDirectNetStorageImpl::Create(TNetStorageFlags flags,
 }
 
 
+bool s_TrustOldLoc(CCompoundIDPool& pool, const string& old_loc,
+        TNetStorageFlags new_flags)
+{
+    if (old_loc.empty()) return false;
+
+    auto old_location = CNetStorageObjectLoc(pool, old_loc).GetLocation();
+
+    // Old location is unknown/not found
+    if (old_location == eNFL_Unknown) return false;
+    if (old_location == eNFL_NotFound) return false;
+
+    // New location is unknown
+    if (!(new_flags & fNST_AnyLoc)) return true;
+
+    // Even if new location is wrong,
+    // the object should be still accessible (due to "movable")
+    if (new_flags & fNST_Movable) return true;
+
+    // Both locations are known, check for discrepancies
+
+    // Old location is NetCache
+    if (old_location == eNFL_NetCache) {
+        return new_flags & fNST_NetCache;
+    }
+
+    // Old location is FileTrack
+    return new_flags & fNST_FileTrack;
+}
+
+bool SDirectNetStorageImpl::Exists(const string& db_loc, const string& client_loc)
+{
+    CNetStorageObjectLoc new_loc(m_Context->compound_id_pool, client_loc);
+    TNetStorageFlags flags = new_loc.GetStorageAttrFlags();
+
+    if (new_loc.GetLocation() == eNFL_NetCache) {
+        flags |= fNST_NetCache;
+    } else if (new_loc.GetLocation() == eNFL_FileTrack) {
+        flags |= fNST_FileTrack;
+    }
+
+    if (s_TrustOldLoc(m_Context->compound_id_pool, db_loc, flags)) {
+        return true;
+    }
+
+    return Exists(client_loc);
+}
+
+
 CJsonNode SDirectNetStorageImpl::ReportConfig() const
 {
     CJsonNode result(CJsonNode::NewObjectNode());
@@ -246,6 +295,7 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
 
     // For direct NetStorage API only
     CObj* Open(TNetStorageFlags, const string&);
+    bool Exists(const string& db_loc, const string& key, TNetStorageFlags flags);
 
 private:
     CRef<SContext> m_Context;
@@ -299,6 +349,17 @@ CObj* SDirectNetStorageByKeyImpl::Open(TNetStorageFlags flags,
 {
     ISelector::Ptr selector(m_Context->Create(flags, m_ServiceName, key));
     return new CObj(selector, true);
+}
+
+
+bool SDirectNetStorageByKeyImpl::Exists(const string& db_loc,
+        const string& key, TNetStorageFlags flags)
+{
+    if (s_TrustOldLoc(m_Context->compound_id_pool, db_loc, flags)) {
+        return true;
+    }
+
+    return Exists(key, flags);
 }
 
 
@@ -375,10 +436,9 @@ CDirectNetStorageObject CDirectNetStorage::Open(const string& object_loc)
 }
 
 
-bool CDirectNetStorage::Exists(const string& /* db_loc */, const string& client_loc)
+bool CDirectNetStorage::Exists(const string& db_loc, const string& client_loc)
 {
-    // TODO: Implement logic mentioned in CXX-8219
-    return m_Impl->Exists(client_loc);
+    return Impl<SDirectNetStorageImpl>(m_Impl)->Exists(db_loc, client_loc);
 }
 
 
@@ -409,11 +469,10 @@ CDirectNetStorageObject CDirectNetStorageByKey::Open(const string& key,
 }
 
 
-bool CDirectNetStorageByKey::Exists(const string& /* db_loc */,
+bool CDirectNetStorageByKey::Exists(const string& db_loc,
         const string& key, TNetStorageFlags flags)
 {
-    // TODO: Implement logic mentioned in CXX-8219
-    return m_Impl->Exists(key, flags);
+    return Impl<SDirectNetStorageByKeyImpl>(m_Impl)->Exists(db_loc, key, flags);
 }
 
 
