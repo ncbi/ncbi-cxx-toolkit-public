@@ -142,6 +142,7 @@ static void insert_unique(vector<string>& v, const vector<string>& w)
 // SPELL_CHECK
 DISCREPANCY_CASE(SPELL_CHECK, CSeqFeatData, 0, "Spell check")
 {
+	return; // disabled till better times...
     InitSpellChecker();
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
         return;

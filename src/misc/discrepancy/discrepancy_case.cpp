@@ -1026,7 +1026,7 @@ DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
 }
 
 
-DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc | eOncaller, "Missing locus tags")
+DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc, "Missing locus tags")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {
         return;
