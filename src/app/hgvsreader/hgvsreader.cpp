@@ -92,23 +92,20 @@ int CHgvsToSeqfeatConverter::Run(void)
     }
 
     CRef<CSeq_feat> seq_feat;
-    auto ml = Ref(new CVariationIrepMessageListener());
     auto seq_type = irep->GetSequence_variant().GetSeqtype();
     if (seq_type == eVariantSeqType_p) {
-        unique_ptr<CHgvsIrepReader> irep_reader(new CHgvsProtIrepReader(*scope, *ml));
+        unique_ptr<CHgvsIrepReader> irep_reader(new CHgvsProtIrepReader(*scope));
         seq_feat = irep_reader->CreateSeqfeat(*irep);
     } else {
-        unique_ptr<CHgvsIrepReader> irep_reader(new CHgvsNaIrepReader(*scope, *ml));
+        unique_ptr<CHgvsIrepReader> irep_reader(new CHgvsNaIrepReader(*scope));
         seq_feat = irep_reader->CreateSeqfeat(*irep);
 
     }
     
     bool IsCDS = (seq_type == eVariantSeqType_c);
 
-//    CRef<CSeq_feat> nsf = g_NormalizeVariationSeqfeat(*seq_feat, scope); // Doesn't work for special variants
     g_ValidateVariationSeqfeat(*seq_feat, scope, IsCDS);
 
-//    CRef<CSeq_feat> nsf = seq_feat;
     ostr << MSerial_AsnText << *seq_feat;
     return 0;
 }
