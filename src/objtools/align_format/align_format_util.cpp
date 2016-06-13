@@ -2996,6 +2996,48 @@ string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,strin
     return outString;
 }
 
+string CAlignFormatUtil::MapSpaceTemplate(string inpString,string tmplParamName,string templParamVal, unsigned int maxParamValLength, int spacesFormatFlag)
+{
+    templParamVal = AddSpaces(templParamVal, maxParamValLength, spacesFormatFlag);
+    string outString = MapTemplate(inpString,tmplParamName,templParamVal);    
+
+    return outString;
+}
+
+
+string CAlignFormatUtil::AddSpaces(string paramVal, unsigned int maxParamValLength, int spacesFormatFlag)
+{
+    //if(!spacePos.empty()) {
+        string spaceString;        
+        if(maxParamValLength >= paramVal.size()) {
+            unsigned int numSpaces = maxParamValLength - paramVal.size() + 1;
+            if(spacesFormatFlag & eSpacePosToCenter) {
+                numSpaces = numSpaces/2;
+            }
+            for(size_t i=0; i < numSpaces ; i++){
+                spaceString += " ";
+            }
+        }
+        else {
+            paramVal = paramVal.substr(0, maxParamValLength - 3) + "...";
+            spaceString += " ";
+        }
+        if(spacesFormatFlag & eSpacePosAtLineEnd) {
+            paramVal = paramVal + spaceString;
+        }        
+        else if(spacesFormatFlag & eSpacePosToCenter) {
+            paramVal = spaceString + paramVal + spaceString;
+        }
+        else {
+            paramVal = spaceString + paramVal;
+        }
+        if(spacesFormatFlag & eAddEOLAtLineStart) paramVal = "\n" + paramVal;
+        if(spacesFormatFlag & eAddEOLAtLineStart) paramVal = paramVal + "\n";        
+    //}
+    
+    return paramVal;
+}
+
 static string s_MapCommonUrlParams(string urlTemplate, CAlignFormatUtil::SSeqURLInfo *seqUrlInfo)
 {
     string db,logstr_moltype;
@@ -3482,7 +3524,7 @@ string  CAlignFormatUtil::GetFASTALinkURL(SSeqURLInfo *seqUrlInfo,
         linkUrl = seqUrlInfo->seqUrl;    
         vector<string> parts;
         //SNP accession=dbSNP:rs35885954
-        NStr::Split(seqUrlInfo->accession,":rs",parts,NStr::eMergeDelims); 
+        NStr::Tokenize(seqUrlInfo->accession,":rs",parts,NStr::eMergeDelims); 
         string rs;
         if(parts.size() > 1) {
             rs = parts[1];

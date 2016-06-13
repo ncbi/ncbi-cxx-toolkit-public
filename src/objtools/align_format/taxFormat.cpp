@@ -56,14 +56,19 @@ USING_SCOPE(sequence);
 BEGIN_SCOPE(align_format)
 
 
-
 CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign, 
                        CScope& scope,
-                       bool connectToTaxServer)
+                       unsigned int displayOption,
+                       bool connectToTaxServer,
+                       unsigned int lineLength)
+                      
                       
     : m_SeqalignSetRef(&seqalign),
       m_Scope(scope),
-      m_ConnectToTaxServer(connectToTaxServer)
+      m_DisplayOption(displayOption),
+      m_ConnectToTaxServer(connectToTaxServer),
+      m_LineLength(lineLength) //used for text output
+      
 {
     m_TaxClient = NULL;    
     m_TaxTreeLoaded = false;    
@@ -72,6 +77,12 @@ CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign,
     m_TaxTreeinfo = NULL;
     m_BlastResTaxInfo = NULL;    
     m_Debug = false;
+
+    m_MaxAccLength = 0;
+    m_MaxDescrLength = 0;
+    m_MaxScoreLength = 0;
+    m_MaxEvalLength = 0;
+    m_LineLength = (m_LineLength < kMinLineLength) ? kMinLineLength : m_LineLength;
     
     if(m_ConnectToTaxServer) {        
         x_InitTaxClient();        
@@ -94,10 +105,10 @@ CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign,
     m_TaxFormatTemplates = new STaxFormatTemplates;        
 
     m_TaxFormatTemplates->blastNameLink = kBlastNameLink;
-    m_TaxFormatTemplates->orgReportTable = kOrgReportTable;
-    m_TaxFormatTemplates->orgReportOrganismHeader = kOrgReportOrganismHeader; ///< Template for displaying header
-    m_TaxFormatTemplates->orgReportTableHeader  = kOrgReportTableHeader; ///< Template for displaying header
-    m_TaxFormatTemplates->orgReportTableRow = kOrgReportTableRow;
+    m_TaxFormatTemplates->orgReportTable = (m_DisplayOption == eHtml) ? kOrgReportTable : kOrgReportTxtTable;
+    m_TaxFormatTemplates->orgReportOrganismHeader = (m_DisplayOption == eHtml) ? kOrgReportOrganismHeader : kOrgReportTxtOrganismHeader; ///< Template for displaying header
+    m_TaxFormatTemplates->orgReportTableHeader  = (m_DisplayOption == eHtml) ? kOrgReportTableHeader : kOrgReportTxtTableHeader; ///< Template for displaying header
+    m_TaxFormatTemplates->orgReportTableRow = (m_DisplayOption == eHtml) ? kOrgReportTableRow : kOrgReportTxtTableRow;
 
     m_TaxFormatTemplates->taxIdToSeqsMap = kTaxIdToSeqsMap;
 
@@ -346,7 +357,8 @@ void CTaxFormat::DisplayOrgReport(CNcbiOstream& out)
         int taxid = m_BlastResTaxInfo->orderedTaxids[i];
         STaxInfo seqsForTaxID = m_BlastResTaxInfo->seqTaxInfoMap[taxid];
         
-        string orgHeader = (m_ConnectToTaxServer) ? m_TaxFormatTemplates->orgReportOrganismHeader : kOrgReportOrganismHeaderNoTaxConnect;
+        string orgHeader = (m_ConnectToTaxServer) ? m_TaxFormatTemplates->orgReportOrganismHeader : 
+                                                    (m_DisplayOption == eHtml) ? kOrgReportOrganismHeaderNoTaxConnect : kOrgReportTxtOrganismHeaderNoTaxConnect;        
         orgHeader = x_MapTaxInfoTemplate(orgHeader,seqsForTaxID);
         string prevTaxid,nextTaxid, hidePrevTaxid, hideNextTaxid, hideTop;
         const string kDisabled = "disabled=\"disabled\"";
@@ -384,9 +396,19 @@ void CTaxFormat::DisplayOrgReport(CNcbiOstream& out)
         string taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->taxIdToSeqsMap,"giList",seqsForTaxID.giList);
         taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(taxIdToSeqsRow,"taxid",taxid);
         taxIdToSeqsMap += taxIdToSeqsRow;
-    }
+    }   
     orgReportData = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->orgReportTable,"table_rows",orgReportData);
-    orgReportData = CAlignFormatUtil::MapTemplate(orgReportData,"taxidToSeqsMap",taxIdToSeqsMap);    
+    if(m_DisplayOption == eText) {
+        string reportCaption = CAlignFormatUtil::AddSpaces(kOrgReportTxtTableCaption,m_LineLength,CAlignFormatUtil::eSpacePosToCenter | CAlignFormatUtil::eAddEOLAtLineStart);
+        orgReportData = CAlignFormatUtil::MapTemplate(orgReportData,"org_report_caption",reportCaption);
+        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"acc_hd",kOrgAccTxtTableHeader,m_MaxAccLength);                
+        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"descr_hd",kOrgDescrTxtTableHeader,m_MaxDescrLength,CAlignFormatUtil::eSpacePosToCenter);                
+        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"score_hd",kOrgScoreTxtTableHeader,m_MaxScoreLength);
+        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"evalue_hd",kOrgEValueTxtTableHeader,m_MaxEvalLength);        
+    }
+    else {        
+        orgReportData = CAlignFormatUtil::MapTemplate(orgReportData,"taxidToSeqsMap",taxIdToSeqsMap);    
+    }
     out << orgReportData;
 }
 
@@ -750,6 +772,14 @@ bool CTaxFormat::isTaxidInAlign(int taxid)
     return ret;    
 }
 
+void CTaxFormat::x_InitTextFormatInfo(CTaxFormat::SSeqInfo *seqInfo)
+{
+    m_MaxAccLength = max(max(m_MaxAccLength,(unsigned int)seqInfo->label.size()),(unsigned int)kOrgAccTxtTableHeader.size());    
+    m_MaxDescrLength = max(max(m_MaxDescrLength,(unsigned int)seqInfo->title.size()),(unsigned int)kOrgDescrTxtTableHeader.size());        
+    m_MaxScoreLength = max(max(m_MaxScoreLength,(unsigned int)seqInfo->bit_score.size()),(unsigned int)kOrgScoreTxtTableHeader.size());    
+    m_MaxEvalLength = max(max(m_MaxEvalLength,(unsigned int)seqInfo->evalue.size()),(unsigned int)kOrgEValueTxtTableHeader.size());    
+    m_MaxDescrLength =  m_LineLength - m_MaxAccLength - m_MaxScoreLength - m_MaxEvalLength - 4;//4 for spaces in between            
+ }
 
 CTaxFormat::SSeqInfo *CTaxFormat::x_FillTaxDispParams(const CBioseq_Handle& bsp_handle,
                                     double bits, 
@@ -759,11 +789,14 @@ CTaxFormat::SSeqInfo *CTaxFormat::x_FillTaxDispParams(const CBioseq_Handle& bsp_
 	seqInfo->gi = FindGi(bsp_handle.GetBioseqCore()->GetId());
 	seqInfo->seqID = FindBestChoice(bsp_handle.GetBioseqCore()->GetId(),CSeq_id::WorstRank);
 	seqInfo->label =  CAlignFormatUtil::GetLabel(seqInfo->seqID);//Just accession without db part like ref| or pdbd|		
-    seqInfo->bit_score = bits;
-    seqInfo->evalue = evalue;        
+
+    string total_bit_score_buf, raw_score_buf;
+    CAlignFormatUtil::GetScoreString(evalue, bits, 0, 0, seqInfo->evalue, seqInfo->bit_score, total_bit_score_buf,raw_score_buf);           
+
     seqInfo->displGi = seqInfo->gi;
     seqInfo->taxid = 0;	
 	seqInfo->title = CDeflineGenerator().GenerateDefline(bsp_handle);			    
+    if(m_DisplayOption == eText) x_InitTextFormatInfo(seqInfo); 
     return seqInfo;
 }
 
@@ -796,8 +829,10 @@ CTaxFormat::SSeqInfo *CTaxFormat::x_FillTaxDispParams(const CRef< CBlast_def_lin
 		seqInfo->gi =  gi;
 		seqInfo->seqID = FindBestChoice(ids, CSeq_id::WorstRank);		
 		seqInfo->label =  CAlignFormatUtil::GetLabel(seqInfo->seqID);//Just accession without db part like ref| or pdbd|		
-        seqInfo->bit_score = bits;
-        seqInfo->evalue = evalue;         
+
+        string total_bit_score_buf, raw_score_buf;
+        CAlignFormatUtil::GetScoreString(evalue, bits, 0, 0, seqInfo->evalue, seqInfo->bit_score, total_bit_score_buf,raw_score_buf);
+
 	    int taxid = 0;
 		
 		if(bdl->IsSetTaxid() &&  bdl->CanGetTaxid()){
@@ -812,6 +847,7 @@ CTaxFormat::SSeqInfo *CTaxFormat::x_FillTaxDispParams(const CRef< CBlast_def_lin
         if(seqInfo->title.empty()) {
             seqInfo->title = CDeflineGenerator().GenerateDefline(bsp_handle);            
         }        
+        if(m_DisplayOption == eText) x_InitTextFormatInfo(seqInfo);
 	}    	
     return seqInfo;
 }
@@ -867,7 +903,7 @@ void CTaxFormat::x_InitTaxInfoMap(void)
         catch (const CException&){
             continue;
         }                
-    }        
+    }                
 }
 
 void CTaxFormat::x_InitBlastDBTaxInfo(CTaxFormat::SSeqInfo *seqInfo)    
@@ -912,22 +948,26 @@ string CTaxFormat::x_MapSeqTemplate(string seqTemplate, STaxInfo &taxInfo)
     
     return reportTableRow;
 }
-
-
+        
 string CTaxFormat::x_MapSeqTemplate(string seqTemplate, SSeqInfo *seqInfo)
 {
-    string evalue_buf, bit_score_buf, total_bit_score_buf, raw_score_buf;
-    CAlignFormatUtil::GetScoreString(seqInfo->evalue, seqInfo->bit_score, 0, 0,
-                                             evalue_buf, bit_score_buf, total_bit_score_buf,raw_score_buf);
-
-    string reportTableRow = CAlignFormatUtil::MapTemplate(seqTemplate,"acc",seqInfo->label);    
-    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"gi",NStr::NumericToString(seqInfo->gi));
-    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"disp_gi",NStr::NumericToString(seqInfo->displGi));    
-    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"descr",seqInfo->title);
-    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"descr_abbr",seqInfo->title.substr(0,60));//for standalone output    
-    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"score",bit_score_buf);
-    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"evalue",evalue_buf);           
+    string reportTableRow = CAlignFormatUtil::MapTemplate(seqTemplate,"gi",NStr::NumericToString(seqInfo->gi));
+    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"disp_gi",NStr::NumericToString(seqInfo->displGi));        
+    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"descr_abbr",seqInfo->title.substr(0,60));//for standalone output        
     reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"rid",m_Rid);
+
+    if(m_DisplayOption == eText) {
+        reportTableRow = CAlignFormatUtil::MapSpaceTemplate(reportTableRow,"acc",seqInfo->label,m_MaxAccLength);                
+        reportTableRow = CAlignFormatUtil::MapSpaceTemplate(reportTableRow,"descr_text",seqInfo->title,m_MaxDescrLength);                
+        reportTableRow = CAlignFormatUtil::MapSpaceTemplate(reportTableRow,"score",seqInfo->bit_score,m_MaxScoreLength);
+        reportTableRow = CAlignFormatUtil::MapSpaceTemplate(reportTableRow,"evalue",seqInfo->evalue,m_MaxEvalLength);
+    }
+    else {
+        reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"acc",seqInfo->label);    
+        reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"descr",seqInfo->title);
+        reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"score",seqInfo->bit_score);
+        reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"evalue",seqInfo->evalue);           
+    }
     return reportTableRow;
 }
 
@@ -937,7 +977,12 @@ string CTaxFormat::x_MapTaxInfoTemplate(string tableRowTemplate,STaxInfo &taxInf
     reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"scientific_name",taxInfo.scientificName);
     string commonName = (taxInfo.commonName != taxInfo.scientificName) ? "(" + taxInfo.commonName + ")" : "";    
     reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"common_name",commonName);        
-    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"blast_name",taxInfo.blastName);                    
+    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"blast_name",taxInfo.blastName);      
+    if(m_DisplayOption == eText) {
+        string txtOrgValue = reportTableRow;//Contains <@scientific_name@>[<@blast_name@>] mapped
+        reportTableRow = CAlignFormatUtil::AddSpaces(txtOrgValue,m_LineLength,CAlignFormatUtil::eSpacePosToCenter | CAlignFormatUtil::eAddEOLAtLineStart | CAlignFormatUtil::eAddEOLAtLineEnd);
+    }
+    
     reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"bl_taxid",taxInfo.blNameTaxid);
     reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"taxid",taxInfo.taxid);
     reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"taxBrowserURL",m_TaxBrowserURL);    
