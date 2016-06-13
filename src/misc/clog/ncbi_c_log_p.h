@@ -183,6 +183,8 @@ struct SInfo_tag {
     char*             file_log_name;
     char*             file_perf_name;
     int/*bool*/       reuse_file_names;         /**< File names where not changed, reuse it */
+    int/*bool*/       split_log_file;           /**< Split log files flag                   */
+    int/*bool*/       is_applog;                /**< 1 if logging going to /log             */
 
     /* Extras for ncbi_applog */
 

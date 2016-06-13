@@ -60,10 +60,17 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 
     /* Initialize logging API 
     */
-    NcbiLog_Init(argv[0], mt_lock, eNcbiLog_MT_TakeOwnership);
+    NcbiLog_InitMT(argv[0]);
     /* Or,
-       NcbiLog_InitMT(argv[0]); -- use default MT handler as above.
+       NcbiLog_Init(argv[0], mt_lock, eNcbiLog_MT_TakeOwnership);
+       NcbiLog_InitMT(argv[0]); -- use default internal MT handler
        NcbiLog_InitST(argv[0]); -- only for single-threaded applications
+    */
+    
+    /* Create separate files for log/err/trace/perf records.
+       By default only single.log file will be created.
+       Dont have any effect if logging is going to stdout/stderr.
+       NcbiLog_SetSplitLogFile(1);
     */
 
     /* Set logging destination 
@@ -74,9 +81,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
        NcbiLog_SetDestination(eNcbiLog_Stdlog);
        NcbiLog_SetDestination(eNcbiLog_Stdout);
        NcbiLog_SetDestination(eNcbiLog_Stderr);
+       NcbiLog_SetDestination(eNcbiLog_Cwd);
        NcbiLog_SetDestination(eNcbiLog_Disable);
     */
-    
+        
     /* Set host name
        NcbiLog_SetHost("SOMEHOSTNAME");
     */

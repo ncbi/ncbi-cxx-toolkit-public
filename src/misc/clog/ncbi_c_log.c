@@ -435,7 +435,7 @@ static void s_ExtraStr(TNcbiLog_Context ctx, const char* params);
 
 /** Sleep the specified number of microseconds.
     Portable and ugly. But we don't need more precision version here,
-     we will use it only for context switches and avoiding possible CPU load.
+    we will use it only for context switches and avoiding possible CPU load.
  */
 void s_SleepMicroSec(unsigned long mc_sec)
 {
@@ -540,6 +540,7 @@ const char* NcbiLog_GetHostName(void)
 #endif
     return host;
 }
+
 
 /** Read first string from specified file.
  *  Return NULL on error.
@@ -1266,21 +1267,16 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
         case eNcbiLog_Stdout:
         case eNcbiLog_Stderr:
         case eNcbiLog_Disable:
-            /* Nothing to do here */
+            sx_Info->file_log   = kInvalidFileHandle;
+            sx_Info->file_trace = kInvalidFileHandle;
+            sx_Info->file_err   = kInvalidFileHandle;
+            sx_Info->file_perf  = kInvalidFileHandle;
             return;
         default:
             TROUBLE_MSG("unknown destination");
     }
-    if (sx_Info->file_trace) {
-    
-#if NCBILOG_USE_FILE_DESCRIPTORS
-        close(sx_Info->file_trace);
-#else
-        fclose(sx_Info->file_trace);
-#endif
-        sx_Info->file_trace = kInvalidFileHandle;
-    }
-    if (sx_Info->file_log) {
+
+    if (sx_Info->file_log != kInvalidFileHandle) {
 #if NCBILOG_USE_FILE_DESCRIPTORS
         close(sx_Info->file_log);
 #else
@@ -1288,7 +1284,17 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
 #endif
         sx_Info->file_log = kInvalidFileHandle;
     }
-    if (sx_Info->file_err) {
+
+    if (sx_Info->file_trace != kInvalidFileHandle) {
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        close(sx_Info->file_trace);
+#else
+        fclose(sx_Info->file_trace);
+#endif
+        sx_Info->file_trace = kInvalidFileHandle;
+    }
+
+    if (sx_Info->file_err != kInvalidFileHandle) {
 #if NCBILOG_USE_FILE_DESCRIPTORS
         close(sx_Info->file_err);
 #else
@@ -1296,7 +1302,8 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
 #endif
         sx_Info->file_err = kInvalidFileHandle;
     }
-    if (sx_Info->file_perf) {
+
+    if (sx_Info->file_perf != kInvalidFileHandle) {
 #if NCBILOG_USE_FILE_DESCRIPTORS
         close(sx_Info->file_perf);
 #else
@@ -1304,13 +1311,14 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
 #endif
         sx_Info->file_perf = kInvalidFileHandle;
     }
-    if (cleanup  &&  sx_Info->file_trace_name) {
-        free(sx_Info->file_trace_name);
-        sx_Info->file_trace_name = NULL;
-    }
+
     if (cleanup  &&  sx_Info->file_log_name) {
         free(sx_Info->file_log_name);
         sx_Info->file_log_name = NULL;
+    }
+    if (cleanup  &&  sx_Info->file_trace_name) {
+        free(sx_Info->file_trace_name);
+        sx_Info->file_trace_name = NULL;
     }
     if (cleanup  &&  sx_Info->file_err_name) {
         free(sx_Info->file_err_name);
@@ -1326,17 +1334,88 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
 }
 
 
-/** (Re)Initialize logging file streams.
- *  The path passed in parameter should have directory and base name for logging files.
+/** Open file streams.
+ *  All file names should be already defined.
  */
-static int /*bool*/ s_SetLogFiles(const char* path_with_base_name) 
+static int /*bool*/ s_OpenLogFiles(void)
 {
-    char path[FILENAME_MAX + 1];
-    size_t n;
 #if NCBILOG_USE_FILE_DESCRIPTORS
     int flags = O_CREAT | O_APPEND | O_WRONLY;
     mode_t mode = 0664;
 #endif    
+    assert(sx_Info->file_log_name   &&
+           sx_Info->file_trace_name &&
+           sx_Info->file_err_name   &&
+           sx_Info->file_perf_name);
+
+    assert((sx_Info->file_log   == kInvalidFileHandle)  &&
+           (sx_Info->file_trace == kInvalidFileHandle)  &&
+           (sx_Info->file_err   == kInvalidFileHandle)  &&
+           (sx_Info->file_perf  == kInvalidFileHandle));
+
+    /* Log */
+#if NCBILOG_USE_FILE_DESCRIPTORS
+    sx_Info->file_log = open(sx_Info->file_log_name, flags, mode);
+#else
+    sx_Info->file_log = fopen(sx_Info->file_log_name, "a");
+#endif        
+    if (sx_Info->file_log == kInvalidFileHandle) {
+        return 0 /*false*/;
+    }
+
+    /* Trace */
+    if (sx_Info->split_log_file) {
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        sx_Info->file_trace = open(sx_Info->file_trace_name, flags, mode);
+#else
+        sx_Info->file_trace = fopen(sx_Info->file_trace_name, "a");
+#endif    
+        if (sx_Info->file_trace == kInvalidFileHandle) {
+            return 0 /*false*/;
+        }
+    } else {
+        sx_Info->file_trace = sx_Info->file_log;
+    }
+
+    /* Err */
+    if (sx_Info->split_log_file) {
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        sx_Info->file_err = open(sx_Info->file_err_name, flags, mode);
+#else
+        sx_Info->file_err = fopen(sx_Info->file_err_name, "a");
+#endif        
+        if (sx_Info->file_err == kInvalidFileHandle) {
+            return 0 /*false*/;
+        }
+    } else {
+        sx_Info->file_err = sx_Info->file_log;
+    }
+
+    /* Perf */
+    if (sx_Info->split_log_file || sx_Info->is_applog) {
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        sx_Info->file_perf = open(sx_Info->file_perf_name, flags, mode);
+#else
+        sx_Info->file_perf = fopen(sx_Info->file_perf_name, "a");
+#endif        
+        if (sx_Info->file_perf == kInvalidFileHandle) {
+            return 0 /*false*/;
+        }
+    } else {
+        sx_Info->file_perf = sx_Info->file_log;
+    }
+
+    return 1 /*true*/;
+}
+
+
+/** (Re)Initialize logging file streams.
+ *  The path passed in parameter should have directory and base name for logging files.
+ */
+static int /*bool*/ s_SetLogFiles(const char* path_with_base_name, int/*bool*/ is_applog) 
+{
+    char path[FILENAME_MAX + 1];
+    size_t n;
 
     assert(path_with_base_name);
     /* Check max possible file name (path.trace) */
@@ -1345,64 +1424,30 @@ static int /*bool*/ s_SetLogFiles(const char* path_with_base_name)
     assert((n + 5 /*.perf*/) <= sizeof(path));
     memcpy(path, path_with_base_name, n);
 
-    /* Trace */
+    strcpy(path + n, ".log");
+    sx_Info->file_log_name = s_StrDup(path);
     strcpy(path + n, ".trace");
-#if NCBILOG_USE_FILE_DESCRIPTORS
-    sx_Info->file_trace = open(path, flags, mode);
-#else
-    sx_Info->file_trace = fopen(path, "a");
-#endif    
     sx_Info->file_trace_name = s_StrDup(path);
+    strcpy(path + n, ".err");
+    sx_Info->file_err_name = s_StrDup(path);
+    strcpy(path + n, ".perf");
+    sx_Info->file_perf_name = s_StrDup(path);
 
-    /* Log */
-    if (sx_Info->file_trace) {
-        strcpy(path + n, ".log");
-#if NCBILOG_USE_FILE_DESCRIPTORS
-        sx_Info->file_log = open(path, flags, mode);
-#else
-        sx_Info->file_log = fopen(path, "a");
-#endif        
-        sx_Info->file_log_name = s_StrDup(path);
+    /* Open files */
+    sx_Info->is_applog = is_applog;
+    if (!s_OpenLogFiles()) {
+        s_CloseLogFiles(1);
+        return 0 /*false*/;
     }
-
-    /* Err */
-    if (sx_Info->file_log) {
-        strcpy(path + n, ".err");
-#if NCBILOG_USE_FILE_DESCRIPTORS
-        sx_Info->file_err = open(path, flags, mode);
-#else
-        sx_Info->file_err = fopen(path, "a");
-#endif        
-        sx_Info->file_err_name = s_StrDup(path);
-    }
-
-    /* Perf */
-    if (sx_Info->file_err) {
-        strcpy(path + n, ".perf");
-#if NCBILOG_USE_FILE_DESCRIPTORS
-        sx_Info->file_perf = open(path, flags, mode);
-#else
-        sx_Info->file_perf = fopen(path, "a");
-#endif        
-        sx_Info->file_perf_name = s_StrDup(path);
-    }
-
-    if ((sx_Info->file_trace != kInvalidFileHandle)  &&
-        (sx_Info->file_log   != kInvalidFileHandle)  &&
-        (sx_Info->file_err   != kInvalidFileHandle)  &&
-        (sx_Info->file_perf  != kInvalidFileHandle) ) {
-        return 1 /*true*/;
-    }
-    s_CloseLogFiles(1);
-
-    return 0 /*false*/;
+    sx_Info->reuse_file_names = 1;
+    return 1 /*true*/;
 }
 
 
 /** (Re)Initialize logging file streams.
  *  Use application base name and specified directory as path for logging files.
  */
-static int /*bool*/ s_SetLogFilesDir(const char* dir, int /*bool*/ is_applog) 
+static int /*bool*/ s_SetLogFilesDir(const char* dir, int/*bool*/ is_applog) 
 {
     char path[FILENAME_MAX + 1];
 #if defined(NCBI_OS_UNIX)
@@ -1438,7 +1483,9 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir, int /*bool*/ is_applog)
     /* Check max possible file name (dir/basename.trace) */
     assert((n + 1 + filelen + 5) <= sizeof(path));
     s_ConcatPathEx(dir, n, filename, filelen, path, FILENAME_MAX + 1);
-    return s_SetLogFiles(path);
+
+    /* Set logging files */
+    return s_SetLogFiles(path, is_applog);
 }
 
 
@@ -1446,10 +1493,6 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir, int /*bool*/ is_applog)
  */
 static void s_InitDestination(const char* logfile_path) 
 {
-#if NCBILOG_USE_FILE_DESCRIPTORS
-    int flags = O_CREAT | O_APPEND | O_WRONLY;
-    mode_t mode = 0664;
-#endif    
     time_t now;
     assert(sx_Info->destination != eNcbiLog_Disable);
     
@@ -1477,8 +1520,7 @@ static void s_InitDestination(const char* logfile_path)
     if (sx_Info->destination == eNcbiLog_Default  &&  logfile_path) {
         /* special case to redirect all logging to specified files */
         s_CloseLogFiles(1);
-        if (s_SetLogFiles(logfile_path)) {
-            sx_Info->reuse_file_names = 1;
+        if (s_SetLogFiles(logfile_path, 0 /*no applog*/)) {
             return;
         }
         TROUBLE_MSG("error opening logging location");
@@ -1494,37 +1536,11 @@ static void s_InitDestination(const char* logfile_path)
 
         /* Destination and file names didn't changed, just reopen files */
         if (sx_Info->reuse_file_names) {
-
-            assert(sx_Info->file_trace_name &&
-                   sx_Info->file_log_name   &&
-                   sx_Info->file_err_name   &&
-                   sx_Info->file_perf_name);
-
-            assert((sx_Info->file_trace == kInvalidFileHandle)  &&
-                   (sx_Info->file_log   == kInvalidFileHandle)  &&
-                   (sx_Info->file_err   == kInvalidFileHandle)  &&
-                   (sx_Info->file_perf  == kInvalidFileHandle));
-
-#if NCBILOG_USE_FILE_DESCRIPTORS
-            sx_Info->file_trace = open(sx_Info->file_trace_name, flags, mode);
-            sx_Info->file_log   = open(sx_Info->file_log_name,   flags, mode);
-            sx_Info->file_err   = open(sx_Info->file_err_name,   flags, mode);
-            sx_Info->file_perf  = open(sx_Info->file_perf_name,  flags, mode);
-#else
-            sx_Info->file_trace = fopen(sx_Info->file_trace_name, "a");
-            sx_Info->file_log   = fopen(sx_Info->file_log_name,   "a");
-            sx_Info->file_err   = fopen(sx_Info->file_err_name,   "a");
-            sx_Info->file_perf  = fopen(sx_Info->file_perf_name,  "a");
-#endif
-            if ((sx_Info->file_trace != kInvalidFileHandle)  &&
-                (sx_Info->file_log   != kInvalidFileHandle)  &&
-                (sx_Info->file_err   != kInvalidFileHandle)  &&
-                (sx_Info->file_perf  != kInvalidFileHandle) ) {
+            if (s_OpenLogFiles()) {
                 return;
             }
             /* Failed to reopen, try again from scratch */
             s_CloseLogFiles(1);
-            sx_Info->reuse_file_names = 0;
         }
 
         /* Try default log location */
@@ -1537,16 +1553,14 @@ static void s_InitDestination(const char* logfile_path)
                 /* toolkitrc file */
                 dir = s_GetToolkitRCLogLocation();
                 if (dir) {
-                    if (s_SetLogFilesDir(dir,1)) {
-                        sx_Info->reuse_file_names = 1;
+                    if (s_SetLogFilesDir(dir, 1)) {
                         return;
                     }
                 }
                 /* server port */
                 if (sx_Info->server_port) {
                     sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
-                    if (s_SetLogFilesDir(xdir,1)) {
-                        sx_Info->reuse_file_names = 1;
+                    if (s_SetLogFilesDir(xdir, 1)) {
                         return;
                     }
                 }
@@ -1554,16 +1568,14 @@ static void s_InitDestination(const char* logfile_path)
                 /* /log/srv */ 
                 dir = s_ConcatPath(kBaseLogDir, "srv", xdir, FILENAME_MAX + 1);
                 if (dir) {
-                    if (s_SetLogFilesDir(dir,1)) {
-                        sx_Info->reuse_file_names = 1;
+                    if (s_SetLogFilesDir(dir, 1)) {
                         return;
                     }
                 }
                 /* /log/fallback */
                 dir = s_ConcatPath(kBaseLogDir, "fallback", xdir, FILENAME_MAX + 1);
                 if (dir) {
-                    if (s_SetLogFilesDir(dir,1)) {
-                        sx_Info->reuse_file_names = 1;
+                    if (s_SetLogFilesDir(dir, 1)) {
                         return;
                     }
                 }
@@ -1571,8 +1583,7 @@ static void s_InitDestination(const char* logfile_path)
                 if (sx_Info->logsite  &&  sx_Info->logsite[0] != '\0') {
                     dir = s_ConcatPath(kBaseLogDir, sx_Info->logsite, xdir, FILENAME_MAX + 1);
                     if (dir) {
-                        if (s_SetLogFilesDir(dir,1)) {
-                            sx_Info->reuse_file_names = 1;
+                        if (s_SetLogFilesDir(dir, 1)) {
                             return;
                         }
                     }
@@ -1586,9 +1597,8 @@ static void s_InitDestination(const char* logfile_path)
                 #elif defined(NCBI_OS_MSWIN)
                     cwd = _getcwd(NULL, 0);
                 #endif
-                if (cwd  &&  s_SetLogFilesDir(cwd,0)) {
+                if (cwd  &&  s_SetLogFilesDir(cwd, 0)) {
                     free(cwd);
-                    sx_Info->reuse_file_names = 1;
                     return;
                 }
                 free(cwd);
@@ -2170,6 +2180,10 @@ static void s_Init(const char* appname)
 #else
     sx_Info->post_level = eNcbiLog_Warning;
 #endif
+    sx_Info->file_log   = kInvalidFileHandle;
+    sx_Info->file_trace = kInvalidFileHandle;
+    sx_Info->file_err   = kInvalidFileHandle;
+    sx_Info->file_perf  = kInvalidFileHandle;
 
     /* If defined, use hard-coded application name from 
        "-D NCBI_C_LOG_APPNAME=appname" on a compilation step */
@@ -2511,6 +2525,14 @@ extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, uns
     ds = sx_Info->destination;
     MT_UNLOCK;
     return ds;
+}
+
+
+extern void NcbiLog_SetSplitLogFile(int /*bool*/ value)
+{
+    MT_LOCK_API;
+    sx_Info->split_log_file = value;
+    MT_UNLOCK;
 }
 
 

@@ -489,9 +489,21 @@ extern const char* NcbiLog_GetHostLocation(void);
  *    its value will be used as base name for logfiles.
  *    It can have special value "-" to redirect all output to STDERR.
  *  @sa
- *    ENcbiLog_Destination, NcbiLog_Init
+ *    ENcbiLog_Destination, NcbiLog_Init, NcbiLog_SetSplitLogFile
  */
 extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds);
+
+
+/** Set split log files flag. If set, the output for log/err/trace/perf records
+ *  sent to different log files. Splitting is OFF by default, all logging going
+ *  to .log-file, if any.
+ *
+ *  @note
+ *    For logging to /log .perf files are always split, regardless of this flag.
+ *  @sa
+ *    NcbiLog_SetDestination
+ */
+extern void NcbiLog_SetSplitLogFile(int /*bool*/ value);
 
 
 /** Set process ID (PID).
