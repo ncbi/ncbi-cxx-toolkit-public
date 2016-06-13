@@ -30,7 +30,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/Orgname.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 
