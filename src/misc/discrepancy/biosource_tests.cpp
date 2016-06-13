@@ -30,6 +30,8 @@
 #include <ncbi_pch.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/Orgname.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 
 #include "discrepancy_core.hpp"
@@ -243,6 +245,81 @@ DISCREPANCY_CASE(UNCULTURED_NOTES, CBioSource, eOncaller, "Uncultured Notes")
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(UNCULTURED_NOTES)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// MISSING_VIRAL_QUALS
+
+const string kMissingViralQualsTop = "[n] virus organism[s] [is] missing required qualifiers";
+const string kMissingViralQualsCollectionDate = "[n] virus organism[s] [is] missing suggested qualifier collection date";
+const string kMissingViralQualsCountry = "[n] virus organism[s] [is] missing suggested qualifier country";
+const string kMissingViralQualsSpecificHost = "[n] virus organism[s] [is] missing suggested qualifier specific-host";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MISSING_VIRAL_QUALS, CBioSource, eOncaller, "Viruses should specify collection-date, country, and specific-host")
+//  ----------------------------------------------------------------------------
+{
+    if (!CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Viruses")) {
+        return;
+    }
+    bool has_collection_date = false;
+    bool has_country = false;
+    bool has_specific_host = false;
+    if (obj.IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, it, obj.GetSubtype()) {
+            if ((*it)->IsSetSubtype()) {
+                if ((*it)->GetSubtype() == CSubSource::eSubtype_collection_date) {
+                    has_collection_date = true;
+                } else if ((*it)->GetSubtype() == CSubSource::eSubtype_country) {
+                    has_country = true;
+                }
+                if (has_collection_date && has_country) {
+                    break;
+                }
+            }
+        }
+    }
+    if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
+        ITERATE(COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_nat_host) {
+                has_specific_host = true;
+            }
+        }
+    }
+    if (!has_collection_date || !has_country || !has_specific_host) {
+        if (context.GetCurrentSeqdesc() != NULL) {
+            if (!has_collection_date) {
+                m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
+            }
+            if (!has_country) {
+                m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
+            }
+            if (!has_specific_host) {
+                m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
+            }
+        } else if (context.GetCurrentSeq_feat() != NULL) {
+            if (!has_collection_date) {
+                m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+            }
+            if (!has_country) {
+                m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+            }
+            if (!has_specific_host) {
+                m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MISSING_VIRAL_QUALS)
 //  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {

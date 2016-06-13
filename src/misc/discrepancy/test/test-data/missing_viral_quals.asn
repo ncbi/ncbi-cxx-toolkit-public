@@ -1,0 +1,272 @@
+Seq-entry ::= set {
+  class phy-set ,
+  descr {
+    pub {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "q" ,
+                      first "q" ,
+                      initials "qq." } } } ,
+            affil
+              str "q" } ,
+          title "q" } } } ,
+    user {
+      class "Genomes" ,
+      type
+        str "info" ,
+      data {
+        {
+          label
+            id 0 ,
+          data
+            int 0 } } } ,
+    user {
+      type
+        str "NcbiCleanup" ,
+      data {
+        {
+          label
+            str "method" ,
+          data
+            str "SequinCleanup" } ,
+        {
+          label
+            str "version" ,
+          data
+            int 8 } ,
+        {
+          label
+            str "month" ,
+          data
+            int 6 } ,
+        {
+          label
+            str "day" ,
+          data
+            int 1 } ,
+        {
+          label
+            str "year" ,
+          data
+            int 2016 } } } ,
+    create-date
+      std {
+        year 2011 ,
+        month 8 ,
+        day 25 } } ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "nuc1" } ,
+      descr {
+        title "TSA: uncultured bacterium mobile element integron fake protein
+ name gene, partial cds; 23S ribosomal RNA (genex) gene, partial sequence; and
+ tRNA-Ala (genex), tmRNA product name (genex), and ncRNA product telomerase
+ RNA (genex) genes, complete sequence." ,
+        source {
+          org {
+            taxname "uncultured bacterium" ,
+            orgname {
+              mod {
+                {
+                  subtype strain ,
+                  subname "nuc1" } } ,
+              lineage "Viruses" ,
+              div "ENV" } } ,
+          subtype {
+            {
+              subtype other ,
+              name "[cultured; wizard]" } } } ,
+        molinfo {
+          biomol genomic } ,
+        pub {
+          pub {
+            pmid 12345 ,
+            article {
+              title {
+                name "A new granulation method for compressed tablets
+ [proceedings]." } ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Rubinstein" ,
+                          first "M" ,
+                          initials "M.H." } } } } ,
+              from
+                journal {
+                  title {
+                    iso-jta "J. Pharm. Pharmacol." } ,
+                  imp {
+                    date
+                      std {
+                        year 1976 ,
+                        month 12 } ,
+                    volume "28" ,
+                    pages "67P" ,
+                    pubstatus ppublish } } ,
+              ids {
+                pubmed 12345 } } } ,
+          comment "pub descriptor" } ,
+        comment "this is a comment on the first sequence" ,
+        name "This is a name descriptor" ,
+        user {
+          type
+            str "GenomeProjectsDB" ,
+          data {
+            {
+              label
+                str "ProjectID" ,
+              data
+                int 1234 } ,
+            {
+              label
+                str "ParentID" ,
+              data
+                int 0 } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "nuc1" } } } ,
+        region "This is a region descriptor." } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 118 ,
+        seq-data
+          ncbi4na '18484821188488441141111851821188488418811888888444444444444
+22222222222221111111111888888888884444444444442222222222222'H } } ,
+    seq {
+      id {
+        local
+          str "nuc2" } ,
+      descr {
+        title "Uncultured bacterium." ,
+        source {
+          org {
+            taxname "uncultured bacterium" ,
+            orgname {
+              mod {
+                {
+                  subtype strain ,
+                  subname "nuc2" } } ,
+              lineage "Viruses" ,
+              div "ENV" } } ,
+          subtype {
+            {
+              subtype collection-date ,
+              name "2014" } ,
+            {
+              subtype other ,
+              name "[cultured; wizard]" } } } ,
+        molinfo {
+          biomol genomic } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "nuc2" } } } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 138 ,
+        seq-data
+          ncbi2na 'AAAAAA955555400000FFFFFAAAAAA955555400000FFFFFAAAAAA9555554
+00000FFFFFF'H } } ,
+    seq {
+      id {
+        local
+          str "nuc3" } ,
+      descr {
+        title "Uncultured bacterium 23S ribosomal RNA (genex) gene, partial
+ sequence." ,
+        source {
+          org {
+            taxname "uncultured bacterium" ,
+            orgname {
+              mod {
+                {
+                  subtype strain ,
+                  subname "nuc3" } ,
+                {
+                  subtype nat-host ,
+                  subname "Homo sapiens" } } ,
+              lineage "Viruses" ,
+              div "ENV" } } ,
+          subtype {
+            {
+              subtype other ,
+              name "[cultured; wizard]" } } } ,
+        molinfo {
+          biomol genomic } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "nuc3" } } } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 138 ,
+        seq-data
+          ncbi4na '44444444444442222222222221111111111188888242424242424242424
+24FFFFFFFFFFFF1111111118888888888444444444444422222222222211111111111888888888
+8'H } } } ,
+  annot {
+    {
+      data
+        align {
+          {
+            type partial ,
+            dim 3 ,
+            segs
+              denseg {
+                dim 3 ,
+                numseg 2 ,
+                ids {
+                  local
+                    str "nuc1" ,
+                  local
+                    str "nuc2" ,
+                  local
+                    str "nuc3" } ,
+                starts {
+                  41 ,
+                  25 ,
+                  86 ,
+                  93 ,
+                  0 ,
+                  -1 } ,
+                lens {
+                  52 ,
+                  25 } ,
+                strands {
+                  plus ,
+                  minus ,
+                  plus ,
+                  plus ,
+                  minus ,
+                  plus } } } } } } }
