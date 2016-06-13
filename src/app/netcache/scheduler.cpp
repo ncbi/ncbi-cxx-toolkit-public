@@ -456,7 +456,7 @@ s_DoTermination(CSrvTask* task)
 void
 MarkTaskTerminated(CSrvTask* task, bool immediate /* = true */)
 {
-    ESrvTaskFlags term_flag = (immediate? fTaskTerminated: fTaskNeedTermination);
+    ESrvTaskFlags term_flag = (immediate ? fTaskTerminated : fTaskNeedTermination);
 
 retry:
     TSrvTaskFlags old_flags = ACCESS_ONCE(task->m_TaskFlags);
@@ -465,7 +465,7 @@ retry:
         goto retry;
 
     if (term_flag == fTaskTerminated
-        &&  (new_flags & (fTaskRunning + fTaskQueued)) == 0)
+        &&  (new_flags & (fTaskRunning | fTaskQueued)) == 0)
     {
         s_DoTermination(task);
     }
@@ -479,7 +479,7 @@ retry:
     if ((old_flags & fTaskQueued) == 0  ||  (old_flags & fTaskRunning) != 0) {
         SRV_FATAL("Invalid task flags: " << old_flags);
     }
-    TSrvTaskFlags new_flags = old_flags + fTaskRunning - fTaskQueued;
+    TSrvTaskFlags new_flags = (old_flags | fTaskRunning) & ~fTaskQueued;
     if (!AtomicCAS(task->m_TaskFlags, old_flags, new_flags))
         goto retry;
 }
@@ -492,11 +492,11 @@ retry:
     if ((old_flags & fTaskQueued) != 0  ||  (old_flags & fTaskRunning) == 0) {
         SRV_FATAL("Invalid task flags: " << old_flags);
     }
-    TSrvTaskFlags new_flags = old_flags - fTaskRunning;
-    if (new_flags & (fTaskNeedTermination + fTaskTerminated))
+    TSrvTaskFlags new_flags = old_flags & ~fTaskRunning;
+    if (new_flags & (fTaskNeedTermination | fTaskTerminated))
         new_flags &= ~fTaskRunnable;
     else if (new_flags & fTaskRunnable)
-        new_flags = new_flags - fTaskRunnable + fTaskQueued;
+        new_flags = (new_flags & ~fTaskRunnable) | fTaskQueued;
     if (!AtomicCAS(task->m_TaskFlags, old_flags, new_flags))
         goto retry;
 
@@ -591,7 +591,7 @@ CSrvTask::SetRunnable(void)
 retry:
     TSrvTaskFlags old_flags = ACCESS_ONCE(m_TaskFlags);
     // If task has been already terminated then do nothing.
-    if (old_flags & (fTaskNeedTermination + fTaskTerminated))
+    if (old_flags & (fTaskNeedTermination | fTaskTerminated))
         return;
     // If task is currently running then we need it to mark as runnable so that
     // it will get queued again when it finishes its execution.
@@ -599,7 +599,7 @@ retry:
         // If task is already marked as runnable then are job is done already.
         if (old_flags & fTaskRunnable)
             return;
-        TSrvTaskFlags new_flags = old_flags + fTaskRunnable;
+        TSrvTaskFlags new_flags = old_flags | fTaskRunnable;
         if (!AtomicCAS(m_TaskFlags, old_flags, new_flags))
             goto retry;
         // Don't forget to cancel the timer if there was any.
@@ -612,7 +612,7 @@ retry:
 
     // Now we need to mark task as queued and actually put into queue of some
     // thread.
-    TSrvTaskFlags new_flags = old_flags + fTaskQueued;
+    TSrvTaskFlags new_flags = old_flags | fTaskQueued;
     if (!AtomicCAS(m_TaskFlags, old_flags, new_flags))
         goto retry;
 

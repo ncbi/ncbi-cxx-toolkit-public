@@ -1352,6 +1352,7 @@ CNCActiveHandler::x_SendCopyPutCmd(void)
     m_CmdToSend += GetDiagCtx()->GetSessionID();
     m_CmdToSend.append(1, '"');
 
+    x_SetStateAndStartProcessing(&CNCActiveHandler::x_SendCmdToExecute);
     return &CNCActiveHandler::x_SendCmdToExecute;
 }
 
@@ -1877,6 +1878,7 @@ CNCActiveHandler::x_SendSyncGetCmd(void)
     m_CmdToSend.append(1, ' ');
     m_CmdToSend += NStr::Int8ToString(m_BlobAccess->GetCurCreateId());
 
+    x_SetStateAndStartProcessing(&CNCActiveHandler::x_SendCmdToExecute);
     return &CNCActiveHandler::x_SendCmdToExecute;
 }
 

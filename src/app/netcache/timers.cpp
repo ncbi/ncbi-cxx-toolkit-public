@@ -122,7 +122,7 @@ s_ExecuteTimerTicket(STimerTicket* ticket)
 retry_set_flags:
     TSrvTaskFlags old_flags = ACCESS_ONCE(task->m_TaskFlags);
     if (old_flags & fTaskOnTimer) {
-        TSrvTaskFlags new_flags = old_flags - fTaskOnTimer;
+        TSrvTaskFlags new_flags = old_flags & ~fTaskOnTimer;
         if (!AtomicCAS(task->m_TaskFlags, old_flags, new_flags))
             goto retry_set_flags;
 
@@ -198,7 +198,7 @@ RemoveTaskFromTimer(CSrvTask* task, TSrvTaskFlags new_flags)
 retry:
     TSrvTaskFlags old_flags = ACCESS_ONCE(task->m_TaskFlags);
     if (old_flags & fTaskOnTimer) {
-        new_flags = old_flags - fTaskOnTimer;
+        new_flags = old_flags & ~fTaskOnTimer;
         if (!AtomicCAS(task->m_TaskFlags, old_flags, new_flags))
             goto retry;
         if (task->m_Timer) {
@@ -229,9 +229,9 @@ retry:
         TSrvTaskFlags old_flags = ACCESS_ONCE(m_TaskFlags);
         if ((old_flags & fTaskOnTimer)) {
             SRV_LOG(Critical, "Invalid task flags: " << old_flags);
-            RemoveTaskFromTimer(this, old_flags - fTaskOnTimer);
+            RemoveTaskFromTimer(this, old_flags & ~fTaskOnTimer);
         }
-        if (!(old_flags & (fTaskQueued + fTaskRunnable))) {
+        if (!(old_flags & (fTaskQueued | fTaskRunnable))) {
             TSrvTaskFlags new_flags = old_flags | fTaskOnTimer;
             if (!AtomicCAS(m_TaskFlags, old_flags, new_flags))
                 goto retry;
