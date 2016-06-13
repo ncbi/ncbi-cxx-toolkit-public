@@ -384,8 +384,6 @@ public:
         CORE_UNLOCK;
     }
 private:
-    char* m_Role;              /* pointer to static variable       */
-    char* m_Domain;            /* pointer to static variable       */
     char* m_Lbosresolver;      /* pointer to static variable       */
     char* m_MockLbosresolver;  /* current value of static variable */
 };

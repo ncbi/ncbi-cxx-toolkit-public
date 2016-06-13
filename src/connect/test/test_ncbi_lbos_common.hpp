@@ -7762,7 +7762,7 @@ CMainLoopThread* thread3;
 
 void TryMultiThread()
 {
-#define LIST_OF_FUNCS                                                          \
+#define LIST_OF_FUNCS                                                         \
     X(2, ResetIterator::NoConditions__IterContainsZeroCandidates)             \
     X(3, ResetIterator::MultipleReset__ShouldNotCrash)                        \
     X(4, ResetIterator::Multiple_AfterGetNextInfo__ShouldNotCrash)            \
@@ -7778,7 +7778,7 @@ void TryMultiThread()
     X(14,MultiThreading::s_Stability_GetNextReset_ShouldNotCrash)             \
     X(15,MultiThreading::s_Stability_FullCycle_ShouldNotCrash)                \
     X(16,MultiThreading::s_Performance_FullCycle_ShouldNotCrash)              \
-    X(18,IPCache::AnnounceHostSeparate__TryFindReturnsHostkIP)                \
+    X(18,IPCache::HostSeparate__TryFindReturnsHostkIP)                        \
     X(22,IPCache::ResolveEmpty__Error)                                        \
     X(23,IPCache::Resolve0000__Return0000)                                    \
     X(24,IPCache::DeannounceHost__TryFindDoesNotFind)                         \
