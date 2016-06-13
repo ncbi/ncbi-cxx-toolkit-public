@@ -58,8 +58,8 @@
 #include <objtools/data_loaders/asn_cache/seq_id_chunk_file.hpp>
 #include <objtools/data_loaders/asn_cache/asn_cache_util.hpp>
 #include <objtools/data_loaders/asn_cache/asn_cache_exception.hpp>
-#include <asn_cache/lib/unix_lockfile.hpp>
-#include <asn_cache/lib/extract_satkey.hpp>
+#include "unix_lockfile.hpp"
+#include "extract_satkey.hpp"
 #include "merge_sub_indices.hpp"
 
 #include <string>

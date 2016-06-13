@@ -14,4 +14,3 @@ CPPFLAGS = $(ORIG_CPPFLAGS)
 
 WATCHERS = marksc2
 
-REQUIRES = internal
