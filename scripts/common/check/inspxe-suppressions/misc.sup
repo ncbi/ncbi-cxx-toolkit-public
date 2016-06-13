@@ -18,3 +18,14 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "Deallocation without allocation in KNgcObjWriteToFile() at ncbi_vdb.dll - False positive"
+	type = {invalid_deallocation}
+	stacks = {
+		allocation={
+			...;
+			func=KNgcObjWriteToFile;
+		}
+	}
+}
+
