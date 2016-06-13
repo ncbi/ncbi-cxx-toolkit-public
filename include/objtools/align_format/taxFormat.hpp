@@ -86,6 +86,24 @@ BEGIN_SCOPE(align_format)
  const string kTaxonomyReportTableRow       = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@numhits@></td><td><@numOrgs@></td><td><@descr_abbr@></td></tr>";
 
  
+ const string kOrgReportTxtTable          = "<@org_report_caption@>\n<@acc_hd@><@descr_hd@><@score_hd@><@evalue_hd@>\n<@table_rows@>"; 
+ const string kOrgReportTxtOrganismHeader = "<@scientific_name@>[<@blast_name_link@>] taxid <@taxid@>"; 
+ const string kOrgReportTxtOrganismHeaderNoTaxConnect = "<@scientific_name@>[<@blast_name@>]";
+ const string kOrgReportTxtTableHeader    = " <@acc_hd@><@descr_hd@><@score_hd@><@evalue_hd@>\n";
+ const string kOrgReportTxtTableRow       = " <@acc@><@descr_text@><@score@><@evalue@>\n";
+
+ 
+ const string kOrgReportTxtTableCaption =  "Organism Report";
+ const string kOrgAccTxtTableHeader     =  "Accession";
+ const string kOrgDescrTxtTableHeader   =  "Description";
+ const string kOrgScoreTxtTableHeader   =  "Score";
+ const string kOrgEValueTxtTableHeader =   "E-value";
+
+ const unsigned int kMinLineLength = 100; //used for text output
+
+
+
+
 
 class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
 
@@ -96,12 +114,22 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
     ///@param seqalign: seqalign used to display taxonomy info     
     ///@param scope: scope to fetch your sequence 
     ///@param connectToTaxServe: default true indicates to connect to Tax server
+    ///@param lineLength: lineLength for text formatting
+    ///@param displayOption: displayOption HTML or text formatting
     CTaxFormat(const objects::CSeq_align_set & seqalign,
                      objects::CScope & scope,
-                     bool connectToTaxServer = true);
+                     unsigned int displayOption = eHtml,
+                     bool connectToTaxServer = true,
+                     unsigned int lineLength = 100);
+                     
                      
         /// Destructor
-    ~CTaxFormat();    
+    ~CTaxFormat();   
+
+    enum eDisplayOption {
+        eHtml,
+        eText
+    };
 
     ///Displays Organism Report
     ///@param out: stream for display
@@ -124,11 +152,12 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
         CRef<objects::CSeq_id> seqID;    ///< seqID used in defline
         string label;                    ///< sequence label        
         string title;                    ///< sequnce title
-        double bit_score;                ///< score 
-        double evalue;                   ///< evalue
+        string bit_score;                ///< score 
+        string evalue;                   ///< evalue
         TGi displGi;                     ///<gi for seq that is displayed in alignment section
     };
-
+    
+                                             
     struct STaxInfo {
         int taxid;                       ///< taxid   
         string commonName;               ///< commonName
@@ -181,6 +210,9 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
     ///
     void SetConnectToTaxServer(bool connectToTaxServer) {m_ConnectToTaxServer = connectToTaxServer;}
 
+    void SetDisplayOption(unsigned int displayOption){m_DisplayOption = displayOption;}
+
+    
     ///set blast request id
     ///@param rid: blast RID
     ///
@@ -253,6 +285,16 @@ protected:
     bool  m_ConnectToTaxServer;
     bool  m_TaxTreeLoaded;    
     CRef< ITreeIterator > m_TreeIterator;
+
+
+    //Text formatting
+    unsigned int m_MaxAccLength;
+    unsigned int m_MaxDescrLength;
+    unsigned int m_MaxScoreLength;
+    unsigned int m_MaxEvalLength;
+
+    unsigned int m_LineLength;
+    unsigned int m_DisplayOption;
     
     CTaxFormat::SSeqInfo *x_FillTaxDispParams(const CRef< objects::CBlast_def_line > &bdl,
                                   const objects::CBioseq_Handle& bsp_handle,
@@ -284,6 +326,7 @@ protected:
     string x_MapSeqTemplate(string seqTemplate, SSeqInfo *seqInfo);
     string x_MapSeqTemplate(string seqTemplate, STaxInfo &taxInfo);
     string x_MapTaxInfoTemplate(string tableRowTemplate,STaxInfo &taxInfo,unsigned int depth = 0);
+    void x_InitTextFormatInfo(CTaxFormat::SSeqInfo *seqInfo);
 
     void x_PrintTaxInfo(vector <int> taxids, string title);       
     void x_PrintLineage(void);

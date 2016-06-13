@@ -467,6 +467,16 @@ public:
         eDbTypeNotSet
     };
 
+    //Formatting flag for adding spaces
+    enum SpacesFormatingFlag {        
+        eSpacePosToCenter = (1 << 0),       ///place the param in the center of the string
+        eSpacePosAtLineStart = (1 << 1),    ///add spaces at the begining of the string
+        eSpacePosAtLineEnd = (1 << 2),      ///add spaces at the end of the string  
+        eAddEOLAtLineStart = (1 << 3),      ///add EOL at the beginning of the string  
+        eAddEOLAtLineEnd =  (1 << 4)        ///add EOL at the end of the string  
+    };
+
+
     ///Output blast errors
     ///@param error_return: list of errors to report
     ///@param error_post: post to stderr or not
@@ -1093,7 +1103,26 @@ public:
     ///
     ///<@tmplParamName@> is replaced by templParamVal
     static string MapTemplate(string inpString,string tmplParamName,string templParamVal);
-    
+        
+    ///Replace template tags by real data and calculate and add spaces dependent on maxParamLength and spacesFormatFlag
+    ///@param inpString: string containing template data
+    ///@param tmplParamName:string with template tag name
+    ///@param templParamVal: string value that replaces template
+    ///@param maxParamLength: unsigned int maxParamLength
+    ///@param spacesFormatFlag: int formatting flag
+    ///@return:string containing template data replaced by real data
+    ///
+    ///<@tmplParamName@> is replaced by templParamVal
+    static string MapSpaceTemplate(string inpString,string tmplParamName,string templParamVal, unsigned int maxParamLength, int spacesFormatFlag = eSpacePosAtLineEnd);
+
+    ///Calculate the number of spaces and add them to paramVal
+    ///@param string: input parameter value
+    ///@param string: max length for the string that holds parameter
+    ///@param int: additional fomatting after adding spaces
+    ///@param  string: the position of spaces and additional formatting
+    ///@return:string containing paramVal and spaces place appropriately
+    static string AddSpaces(string paramVal, unsigned int maxParamLength, int spacesFormatFlag = eSpacePosToCenter);
+
     ///Create URL for seqid
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
     ///@param id: seqid CSeq_id
