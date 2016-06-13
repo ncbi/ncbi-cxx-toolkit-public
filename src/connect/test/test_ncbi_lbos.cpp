@@ -57,8 +57,8 @@ NCBITEST_INIT_CMDLINE(args)
 NCBITEST_AUTO_FINI()
 {
 #ifdef NCBI_THREADS
-    s_HealthchecKThread->Stop(); // Stop listening on the socket
-    s_HealthchecKThread->Join();
+    s_HealthcheckThread->Stop(); // Stop listening on the socket
+    s_HealthcheckThread->Join();
 #endif
     s_PrintPortsLines();
     s_Print500sCount();
@@ -94,9 +94,9 @@ NCBITEST_AUTO_INIT()
         config.Set("CONN", "LBOS", custom_lbos);
     }
     if (CNcbiApplication::Instance()->GetArgs()["onlyhealthcheck"]) {
-        s_HealthchecKThread = new CHealthcheckThread;
+        s_HealthcheckThread = new CHealthcheckThread;
 #ifdef NCBI_THREADS
-        s_HealthchecKThread->Run();
+        s_HealthcheckThread->Run();
 #endif
         while (true) {
             SleepSec(1);
@@ -118,9 +118,9 @@ NCBITEST_AUTO_INIT()
         LBOS::ServiceVersionSet("/lbostest", "1.0.0");
         LOG_POST(Error << "/lbostest version successfully updated!");
     }
-    s_HealthchecKThread = new CHealthcheckThread;
+    s_HealthcheckThread = new CHealthcheckThread;
 #ifdef NCBI_THREADS
-    s_HealthchecKThread->Run();
+    s_HealthcheckThread->Run();
 #endif
 #ifdef DEANNOUNCE_ALL_BEFORE_TEST
     s_ClearZooKeeper();
@@ -351,40 +351,66 @@ BOOST_AUTO_TEST_SUITE_END()
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( IPCacheTests )//////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(IPCacheTests__AnnounceHostInHealthcheck__TryFindReturnsHostIP)
+/** Announce with host empty - resolving works, gets host from healthcheck,
+ *  resolves host to IP and  saves result to cache. We compare real 
+ *  IP with what was saved in cache
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
+BOOST_AUTO_TEST_CASE(IPCacheTests__HostInHealthcheck__TryFindReturnsHostIP)
 {
     CHECK_LBOS_VERSION();
-    IPCache::AnnounceHostInHealthcheck__TryFindReturnsHostIP();
+    IPCache::HostInHealthcheck__TryFindReturnsHostIP();
 }
 
-BOOST_AUTO_TEST_CASE(IPCacheTests__AnnounceHostSeparate__TryFindReturnsHostkIP)
+/** Announce with host difficult from the one in healthcheck - resolving works, 
+ *  resolves host to IP and saves result to cache. We compare real IP 
+ *  with what was saved in cache
+ * @attention 
+ *  No multithread, test uses private methods that are not thread-safe by 
+ *  themselves */
+BOOST_AUTO_TEST_CASE(IPCacheTests__HostSeparate__TryFindReturnsHostkIP)
 {
     CHECK_LBOS_VERSION();
-    IPCache::AnnounceHostSeparate__TryFindReturnsHostkIP();
+    IPCache::HostSeparate__TryFindReturnsHostkIP();
 }
 
-
-BOOST_AUTO_TEST_CASE(IPCacheTests__NotAnnounceHost__TryFindReturnsTheSame)
+/** Do not announce host - HostnameTryFind returns the same hostname.
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
+BOOST_AUTO_TEST_CASE(IPCacheTests__NoHost__TryFindReturnsTheSame)
 {
     CHECK_LBOS_VERSION();
-    IPCache::NotAnnounceHost__TryFindReturnsTheSame();
+    IPCache::NoHost__TryFindReturnsTheSame();
 }
 
-
+/** Resolve hostname that can be resolved to multiple options - 
+ *  the resolved IP gets saved and then is returned again and again for 
+ *  the same service name, version and port
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 BOOST_AUTO_TEST_CASE(IPCacheTests__ResolveHost__TryFindReturnsIP)
 {
     CHECK_LBOS_VERSION();
     IPCache::ResolveHost__TryFindReturnsIP();
 }
 
-
+/** Resolve and cache an IP address - it must be resolved to itself
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 BOOST_AUTO_TEST_CASE(IPCacheTests__ResolveIP__TryFindReturnsIP)
 {
     CHECK_LBOS_VERSION();
     IPCache::ResolveIP__TryFindReturnsIP();
 }
 
-
+/** Resolve an empty string - get "Unknown error".
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 BOOST_AUTO_TEST_CASE(IPCacheTests__ResolveEmpty__Error)
 {
     CHECK_LBOS_VERSION();
@@ -392,13 +418,22 @@ BOOST_AUTO_TEST_CASE(IPCacheTests__ResolveEmpty__Error)
 }
 
 
+/** Actually, this behavior is not used anywhere, but this is the contract,
+ *  and must be tested so it works if ever needed
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 BOOST_AUTO_TEST_CASE(IPCacheTests__Resolve0000__ReturnInvalidIP)
 {
     CHECK_LBOS_VERSION();
     IPCache::Resolve0000__Return0000();
 }
 
-
+/** Real-life test. Announce a host and deannounce it: cache MUST forget
+ *  deannounced host
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 BOOST_AUTO_TEST_CASE(IPCacheTests__DeannounceHost__TryFindDoesNotFind)
 {
     CHECK_LBOS_VERSION();
@@ -406,18 +441,33 @@ BOOST_AUTO_TEST_CASE(IPCacheTests__DeannounceHost__TryFindDoesNotFind)
 }
 
 
+/** Test that for the second time rsolution result is taken from cache. Tested 
+ *  with google.com which is very often resolved to different IPs
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 BOOST_AUTO_TEST_CASE(IPCacheTests__ResolveTwice__SecondTimeNoOp)
 {
     CHECK_LBOS_VERSION();
     IPCache::ResolveTwice__SecondTimeNoOp();
 }
 
+/** Add host to cache and then remove it multiple times - no crashes should 
+ *  happen. The value MUST be deleted and not found.
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 BOOST_AUTO_TEST_CASE(IPCacheTests__DeleteTwice__SecondTimeNoOp)
 {
     CHECK_LBOS_VERSION();
     IPCache::DeleteTwice__SecondTimeNoOp();
 }
 
+/** Finding a resolved hostname multiple times - just a stress test that can 
+ *  show leaking memory
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 BOOST_AUTO_TEST_CASE(IPCacheTests__TryFindTwice__SecondTimeNoOp)
 {
     CHECK_LBOS_VERSION();
@@ -578,54 +628,7 @@ BOOST_AUTO_TEST_CASE(Configure__ServiceExistsAndBoolNotProvided__NoCrash)
 }
  BOOST_AUTO_TEST_SUITE_END()
 
-
-///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( ComposeLBOSAddress )////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-/*
- * 1. Should try only one current zone
- * 2. If could not read files, give up this industry and return NULL
- * 3. If unexpected content, return NULL
- * 4. If nothing found, return NULL
- */
-
-
-/** Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
- * Should try only one current zone and return it  */
-BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos)
-{
-    CHECK_LBOS_VERSION();
-    ComposeLBOSAddress::LBOSExists__ShouldReturnLbos();
-}
- 
-
-/** No available LBOS addresses - should turn OFF and NOT crash on launch
- */
-BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__NoLBOSAddress__DoesNotCrash)
-{
-    CHECK_LBOS_VERSION();
-    ComposeLBOSAddress::NoLBOSAddress__DoesNotCrash();
-}
-
-
-/** Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
- * Should return NULL if fail on ZONE  */
-BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__RoleFail__ShouldReturnNULL)
-{
-    CHECK_LBOS_VERSION();
-    ComposeLBOSAddress::RoleFail__ShouldReturnNULL();
-}
-
-/** Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
- * Should return NULL if fail on DOMAIN  */
-BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__DomainFail__ShouldReturnNULL)
-{
-    CHECK_LBOS_VERSION();
-    ComposeLBOSAddress::DomainFail__ShouldReturnNULL();
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-
+     
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( ResetIterator)/////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -757,6 +760,13 @@ BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__ServiceExists__ReturnHostIP)
 {
     CHECK_LBOS_VERSION();
     ResolveViaLBOS::ServiceExists__ReturnHostIP();
+}
+
+
+BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__LegacyService__ReturnHostIP)
+{
+    CHECK_LBOS_VERSION();
+    ResolveViaLBOS::LegacyService__ReturnHostIP();
 }
 
 

@@ -86,12 +86,6 @@ void Announcement__AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
     Announcement::AlreadyAnnouncedInTheSameZone__ReplaceInStorage();
 }
 
-void g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos()
-{
-    CHECK_LBOS_VERSION();
-    ComposeLBOSAddress::LBOSExists__ShouldReturnLbos();
-}
-
 void SERV_Reset__NoConditions__IterContainsZeroCandidates()
 {
     CHECK_LBOS_VERSION();
@@ -225,7 +219,6 @@ bool CTestLBOSApp::Thread_Run(int idx)
         RUN_TEST(SleepMilliSec(10000));
     }
     RUN_TEST(Announcement__AlreadyAnnouncedInTheSameZone__ReplaceInStorage());
-    RUN_TEST(g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos());
     RUN_TEST(SERV_Reset__NoConditions__IterContainsZeroCandidates());
     RUN_TEST(SERV_Reset__MultipleReset__ShouldNotCrash());
     RUN_TEST(SERV_Reset__Multiple_AfterGetNextInfo__ShouldNotCrash());
@@ -274,9 +267,9 @@ bool CTestLBOSApp::TestApp_Init(void)
     CCObjHolder<char> status_message(NULL);
     LBOS_ServiceVersionSet("/lbostest", "1.0.0",
                            &*lbos_answer, &*status_message);
-    s_HealthchecKThread = new CHealthcheckThread;
+    s_HealthcheckThread = new CHealthcheckThread;
 #ifdef NCBI_THREADS
-    s_HealthchecKThread->Run();
+    s_HealthcheckThread->Run();
 #endif
 #ifdef DEANNOUNCE_ALL_BEFORE_TEST
     s_ClearZooKeeper();
@@ -290,8 +283,8 @@ bool CTestLBOSApp::TestApp_Init(void)
 bool CTestLBOSApp::TestApp_Exit(void)
 {
 #ifdef NCBI_THREADS
-    s_HealthchecKThread->Stop(); // Stop listening on the socket
-    s_HealthchecKThread->Join();
+    s_HealthcheckThread->Stop(); // Stop listening on the socket
+    s_HealthcheckThread->Join();
 #endif /* NCBI_THREADS */
     return true;
 }

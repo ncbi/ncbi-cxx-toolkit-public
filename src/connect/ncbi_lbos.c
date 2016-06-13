@@ -93,7 +93,7 @@ static const char* kLBOSDomainVariable         = "lbos_domain";
 static SConnNetInfo* s_EmptyNetInfo         = NULL; /* Do..                  */
 static       char*   s_LBOS_CurrentDomain   = NULL; /*  ..not..              */
 static       char*   s_LBOS_Lbosresolver    = NULL; /*      ..change..       */
-static       char*   s_LBOS_CurrentRole     = NULL; /*          ..after init */
+//static       char*   s_LBOS_CurrentRole     = NULL; /*          ..after init */
 static const int     kInitialCandidatesCount = 1;   /* For initial memory
                                                        allocation            */
 static       int     s_LBOS_TurnedOn         = 1;   /* If LBOS cannot 
@@ -135,8 +135,6 @@ static void           s_LBOS_Reset         (SERV_ITER     iter);
 static int/*bool*/    s_LBOS_Update        (SERV_ITER     iter,
                                             const char*   text,
                                             int           code);
-static const char*    s_LBOS_ReadDomain    (void);
-static const char*    s_LBOS_ReadRole      (void);
 static const char*    s_LBOS_ReadLbosresolver(void);
 static 
 EHTTP_HeaderParse     s_LBOS_ParseHeader   (const char*   header,
@@ -164,7 +162,6 @@ unsigned short s_LBOS_Announce(const char*             service,
 static SLBOS_Functions s_LBOS_funcs = {
                 s_LBOS_ResolveIPPort
                 ,CONN_Read
-                ,g_LBOS_ComposeLBOSAddress
                 ,s_LBOS_FillCandidates
                 ,s_LBOS_DestroyData
                 ,s_LBOS_GetNextInfo
@@ -416,7 +413,8 @@ const char* g_LBOS_strcasestr(const char* dest, const char* lookup)
  *   g_LBOS_StringConcat(g_LBOS_StringConcat(str,to_app1,&len), to_app2,&len).
  *   Value of data_length on first call should be 0.
  *  @return 
- *   1 if success, 0 if error happened and dest was not changed              */
+ *   reallocated dest on success, NULL if error happened and dest was 
+ *   not changed         */
 char*   g_LBOS_StringConcat(char*       dest, 
                             const char* to_append,
                             size_t*     dest_length)
@@ -454,71 +452,7 @@ char*   g_LBOS_StringConcat(char*       dest,
     }
     return dest;
 }
-#if 0
-/* Get "tag: value" pair from HTTP header */
-char* s_LBOS_GetHTTPHeader(const char* tag, const char* headers)
-{
-    char* tag_lwr = strlwr(strdup(tag));
-    char* header_lwr = strlwr(strdup(headers));
-    char* tag_start = header_lwr, *tag_end;
-    while (tag_start != NULL)
-    {
-        /* We move bit by bit */
-        tag_start = strstr(tag_start, tag_lwr);
-        /* We want to be sure that found tag is the tag itself,
-         * not a value as if in "Some-Tag: tag: 2". So we check for
-         * either \n before tag, or it should be positioned at the very
-         * beginning of the string
-         */
-        if  (
-                tag_start != NULL
-                &&
-                (
-                    (*(tag_start - 1) == '\n')
-                    ||
-                    (tag_start == header_lwr)
-                )
-            ) 
-            {
-                /* Look for the end of tag: value */
-                while ()
-            }
-        else {
-            tag_start = 
 
-        if (d)
-    }
-}
-
-
-char* g_LBOS_CombineDTabs(const char* primary_dtab, const char* secondary_dtab)
-{
-    char* primary_dtab, *primary_dtab_end, *new_dtab;
-    int length, primary_dtab_length;
-    primary_dtab += strlen("DTab-Local:");
-    if (primary_dtab[1] == ' ') {
-        primary_dtab++;
-    }
-    /* Find end of line */
-    primary_dtab_end = strchr(primary_dtab, '\n');
-    if (primary_dtab_end[-1] == '\r')  {
-        primary_dtab_end--;
-    }
-    /* Create new string that includes first DTabs from registry and then
-    * DTabs from HTTP requests */
-    length = 0;
-    primary_dtab_length = primary_dtab_end - primary_dtab;
-    new_dtab = NULL;
-    new_dtab = g_LBOS_StringNConcat(g_LBOS_StringConcat(
-               g_LBOS_StringConcat(g_LBOS_StringConcat(
-                 /*dest*/   /*to append*/     /*length*/  /*count*/
-                 new_dtab,  "DTab-local: ",   &length),
-                            secondary_dtab,   &length),
-                            ";",              &length),
-                            primary_dtab,     &length,    primary_dtab_length);
-    return new_dtab;
-}
-#endif
 
 char*   g_LBOS_StringNConcat(char*       dest,
                              const char* to_append,
@@ -581,33 +515,6 @@ char*   g_LBOS_RegGet(const char* section,
 }
 
 
-/**  We compose LBOS hostname based on /etc/ncbi/domain and /etc/ncbi/role.  */
-char* g_LBOS_ComposeLBOSAddress(void)
-{
-    char* site = NULL;
-    size_t length = 0;
-    const char *role   = s_LBOS_ReadRole(), 
-               *domain = s_LBOS_ReadDomain();
-
-    if (role == NULL || domain == NULL) {
-        return NULL;
-    }
-    site = g_LBOS_StringConcat(g_LBOS_StringConcat(
-                g_LBOS_StringConcat(g_LBOS_StringConcat(
-                /* dest */    /* to append */        /* length */
-                site,          "lbos.",              &length),
-                               role,                 &length),
-                               ".",                  &length),
-                               domain,               &length);
-    if (site == NULL) {
-        CORE_LOG_X(eLBOSMemAllocError, eLOG_Warning, 
-                   "s_LBOS_ComposeLBOSAddress: memory allocation failed");
-        return NULL;
-    }
-    return site;
-}
-
-
 /** Checks iterator, fact that iterator belongs to this mapper, iterator data.
  * Only debug function.                                                      */
 int/*bool*/ g_LBOS_CheckIterator(SERV_ITER              iter,
@@ -630,53 +537,6 @@ int/*bool*/ g_LBOS_CheckIterator(SERV_ITER              iter,
     if (strcmp(iter->op->mapper, s_lbos_op.mapper) != 0) {
         return 0;
     }
-    return 1;
-}
-
-
-/** Given address to LBOS instance, check if it resides in the same domain
- * (be-md, st-va, ac-va, or-wa) as current machine                           */
-int/*bool*/ g_LBOS_CheckDomain(const char* lbos_address)
-{
-    return 1; /* we do not check domain */
-    /* Though we cannot be 100% sure that sequence of numbers and dots is IP, 
-     * it is what we hope for */
-    int/*bool*/ is_ip = 1;
-    unsigned short int i;
-    for (i = 0; i < strlen(lbos_address); i++) {
-        if (!isdigit(lbos_address[i]) && lbos_address[i] != '.') {
-            is_ip = 0;
-        }
-    }
-    /*  The check now is really simple - it searches for known domains in the
-     * provided address. If domain is omitted in address - then we deny such 
-     * address, just in case. If address contains 
-     * non-standard domain - check will not work. */
-    if ( !is_ip
-         /* &&
-         (
-            (strstr(lbos_address, ".be-md.") != NULL) 
-             || 
-            (strstr(lbos_address, ".st-va.") != NULL)
-             ||
-            (strstr(lbos_address, ".or-wa.") != NULL)
-             ||
-            (strstr(lbos_address, ".ac-va.") != NULL)
-         ) */
-         &&
-         (
-            !g_LBOS_StringIsNullOrEmpty(s_LBOS_ReadDomain())
-         )
-         &&
-         (
-             strcmp(s_LBOS_ReadDomain(), "*") != 0
-         )
-       )
-    {
-        /* If we can perform check, we return result of check */
-        return (strstr(lbos_address, s_LBOS_ReadDomain()) != NULL);
-    }
-    /* If we cannot perform check, we allow any domain */
     return 1;
 }
 
@@ -773,6 +633,7 @@ char* g_LBOS_GetLBOSAddress(void)
 /*/////////////////////////////////////////////////////////////////////////////
 //                    STATIC CONVENIENCE FUNCTIONS                           //
 /////////////////////////////////////////////////////////////////////////////*/
+#if 0 /* deprecated, remove on or after July 9 2016 */
 /** Get role of current host. Returned string is read-only, may reside in 
  * 'data' memory area                                                        */
 static const char* s_LBOS_ReadRole()
@@ -844,141 +705,74 @@ static const char* s_LBOS_ReadRole()
     return s_LBOS_CurrentRole;
 }
 
-
-/** Get domain of current host. Do not modify or clear the returned string!
- * Returned string is read-only, may reside in 'data' memory area            */
-static const char* s_LBOS_ReadDomain()
-{
-    /*
-     * If no domain has been previously read, fill it
-     */
-    if (s_LBOS_CurrentDomain == NULL) {
-        char* registry_domain = NULL; /* if registry has domain specified
-                                       * for LBOS First, we check registry
-                                       * and then if nothing there, we check
-                                       * /etc/ncbi/domain                    */
-        registry_domain = g_LBOS_RegGet("CONN", kLBOSDomainVariable, NULL);
-        CORE_LOCK_WRITE;
-        if (!g_LBOS_StringIsNullOrEmpty(registry_domain)
-                && s_LBOS_CurrentDomain == NULL)
-        {
-            s_LBOS_CurrentDomain = registry_domain;
-        } else {
-            free(registry_domain);
-        }
-        CORE_UNLOCK;
-        if (s_LBOS_CurrentDomain != NULL)
-            return s_LBOS_CurrentDomain;
-
-#ifdef NCBI_OS_LINUX
-        else { /* If nothing found in registry, check /etc/ncbi/domain */
-            FILE* domain_file;
-            size_t len;
-            char str[kMaxLineSize];
-            char* read_result; /* during function will become equal either NULL 
-                               or str, do not free() */
-            if ((domain_file = fopen(kDomainFile, "r")) == NULL) {
-                CORE_LOGF(eLOG_Warning, ("s_LBOS_ReadDomain: "
-                                         "could not open domain file %s",
-                                         kDomainFile));
-                return NULL;
-            }
-            read_result = fgets(str, sizeof(str), domain_file);
-            fclose(domain_file);
-            if (read_result == NULL) {
-                CORE_LOG(eLOG_Warning, "s_LBOS_ReadDomain: "
-                                       "memory allocation failed");
-                return NULL;
-            }
-            len = strlen(str);
-            assert(len);
-            /*We remove unnecessary '/n' and probably '/r'   */
-            if (str[len - 1] == '\n') {
-                if (--len && str[len - 1] == '\r')
-                    --len;
-                str[len] = '\0';
-            }
-            if (g_LBOS_StringIsNullOrEmpty(str)) {
-                /* No domain recognized */
-                CORE_LOGF(eLOG_Warning,
-                          ("s_LBOS_ComposeLBOSAddress: domain file"
-                          "%s is empty, skipping this method",
-                          kDomainFile));
-                free(read_result);
-                return NULL;
-            }
-            CORE_LOCK_WRITE;
-            /* Check one more time that no other thread managed to fill
-                * static variable ahead of this thread. If this happened,
-                * release memory */
-            if (s_LBOS_CurrentDomain == NULL)
-                s_LBOS_CurrentDomain = strdup(str);
-            CORE_UNLOCK;
-        }
-#endif /* #ifdef NCBI_OS_LINUX */
-    }
-    return s_LBOS_CurrentDomain;
-}
+#endif /* 0 */
 
 
-/** Get domain of current host. Do not modify or clear the returned string!
- * Returned string is read-only, may reside in 'data' memory area            */
+/**  Read contents of lbosresolver
+ *
+ *  @warning 
+ *   Do not modify or clear the returned string! Returned string is 
+ *   read-only  
+ */
 static const char* s_LBOS_ReadLbosresolver(void)
 {
-#ifdef NCBI_OS_LINUX
-    if (s_LBOS_Lbosresolver == NULL) {
-        FILE* lbosresolver_file;
-        size_t len;
-        char str[kMaxLineSize];
-        char* read_result; /* during function will become equal either NULL
-                           or str, do not free() */
-        if ((lbosresolver_file = fopen(kLbosresolverFile, "r")) == NULL) {
-            CORE_LOGF(eLOG_Warning, ("LBOS mapper: "
-                                     "could not open lbosresolve file %s",
-                                     kLbosresolverFile));
-            return NULL;
-        }
-        read_result = fgets(str, sizeof(str), lbosresolver_file);
-        fclose(lbosresolver_file);
-        if (read_result == NULL) {
-            CORE_LOG(eLOG_Warning, "s_LBOS_ReadLBOSResolve: "
-                                   "memory allocation failed");
-            return NULL;
-        }
-        len = strlen(str);
-        assert(len);
-        /*We remove unnecessary '/n' and probably '/r'   */
-        if (str[len - 1] == '\n') {
-            if (--len && str[len - 1] == '\r')
-                --len;
-            str[len] = '\0';
-        }
-        if (g_LBOS_StringIsNullOrEmpty(str)) {
-            /* No domain recognized */
-            CORE_LOGF(eLOG_Warning,
-                      ("LBOS mapper: /etc/ncbi/lbosresolve file"
-                      "%s is empty, no LBOS address available",
-                      kLbosresolverFile));
-            free(read_result);
-            return NULL;
-        }
-        CORE_LOCK_WRITE;
-        /* Check one more time that no other thread managed to fill
-            * static variable ahead of this thread. If this happened,
-            * release memory */
-        if (s_LBOS_Lbosresolver == NULL)
-            /* We skip "http://" and "/lbos" */
-            str[strlen(str) - strlen("/lbos")] = '\0';
-            s_LBOS_Lbosresolver = strdup(str + 7);
-        CORE_UNLOCK;
+    if (s_LBOS_Lbosresolver != NULL) {
+        return s_LBOS_Lbosresolver;
     }
-#endif /* #ifdef NCBI_OS_LINUX */
+
+    FILE* lbosresolver_file;
+    size_t len;
+    char str[kMaxLineSize];
+    char* read_result; /* during function will become equal either NULL
+                        or str, do not free() */
+    if ((lbosresolver_file = fopen(kLbosresolverFile, "r")) == NULL) {
+        CORE_LOGF(eLOG_Warning, ("LBOS mapper: "
+                                 "could not open file %s",
+                                 kLbosresolverFile));
+        return NULL;
+    }
+    read_result = fgets(str, sizeof(str), lbosresolver_file);
+    fclose(lbosresolver_file);
+    if (read_result == NULL) {
+        CORE_LOG(eLOG_Warning, "s_LBOS_ReadLBOSResolve: "
+                               "memory allocation failed");
+        return NULL;
+    }
+    len = strlen(str);
+    assert(len);
+    if (g_LBOS_StringIsNullOrEmpty(str)) {
+        /* No domain recognized */
+        CORE_LOGF(eLOG_Warning,
+                  ("LBOS mapper: file %s is empty, no LBOS address available",
+                   kLbosresolverFile));
+        free(read_result);
+        return NULL;
+    }
+    /*We remove unnecessary '/n' and probably '/r'   */
+    if (str[len - 1] == '\n') {
+        if (--len && str[len - 1] == '\r') {
+            --len;
+        }
+        str[len] = '\0';
+    }
+    CORE_LOCK_WRITE;
+    /* Check one more time that no other thread managed to fill
+        * static variable ahead of this thread. If this happened,
+        * release memory */
+    if (s_LBOS_Lbosresolver == NULL)
+        /* We skip "http://" and "/lbos" */
+        str[strlen(str) - strlen("/lbos")] = '\0';
+        s_LBOS_Lbosresolver = strdup(str + 7);
+    CORE_UNLOCK;
+    
     return s_LBOS_Lbosresolver;
 }
 
 
-/**   Takes original string and returns URL-encoded string. Original string
- *  is untouched.
+/**  Take original string and return URL-encoded string.
+ *  @attention
+ *   Original string is untouched. Caller is responsible for freeing
+ *   allocated space.
  */
 char* s_LBOS_URLEncode (const char* to_encode)
 {
@@ -990,6 +784,31 @@ char* s_LBOS_URLEncode (const char* to_encode)
     URL_Encode(to_encode, strlen(to_encode), &src_read,
                encoded_string, encoded_string_buf_size, &dst_written);
     return encoded_string;
+}
+
+
+/**  Function to convert legacy service names for LBOS.
+ *   Takes service name and if it does not start with '/', prepends "/Legacy"
+ *   to it. 
+ *  @attention 
+ *   Original string is untouched. Caller is responsible for freeing
+ *   allocated space.
+ *  @warning
+ *   to_modify MUST be a valid non-empty C-string 
+ */
+char* s_LBOS_ModifyServiceName (const char* to_modify)
+{
+    /* If all symbols are escape, our string will take triple space */
+    static const char* prefix = "/Legacy/";
+    if (to_modify[0] == '/')
+        return strdup(to_modify);
+    /* We deal with legacy service name. First, get "/Legacy/" prefix, then
+     * change to_modify to lower register, concatenate them and return */
+    char* modified_str = strdup("/Legacy/");
+    char* service_lwr = strlwr(strdup(to_modify));
+    modified_str = g_LBOS_StringConcat(modified_str, service_lwr, NULL);
+    free(service_lwr);
+    return modified_str;
 }
 
 
@@ -1113,24 +932,7 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
         totalRead += bytesRead;
 
         buf[totalRead] = 0; /* force end of string */
-#if 0
-        /* If we have read enough and use PUT or DELETE methods,
-         * exit this loop */
-        if (
-                totalRead >= user_data.content_length
-                /*&&
-                (   net_info->req_method == eReqMethod_Put
-                    ||
-                    net_info->req_method == eReqMethod_Delete
-                )*/
-            )
-        {
-            CONN_Flush(conn);
-            CONN_SetTimeout(conn, eIO_Close, &kLBOSZeroTimeout);
-            SOCK_CloseEx(sock, 0/*retain SOCK*/);
-            break;
-        }
-#endif
+
         /* IF we still have to read - then add space to buffer, if needed  */
         if ( status == eIO_Success && totalBufSize < totalRead * 2 )
         {
@@ -1236,7 +1038,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         ConnNetInfo_OverrideUserHeader(net_info, new_dtab);
         free(new_dtab);
     }
-    servicename_url_encoded = s_LBOS_URLEncode(serviceName);
+    servicename_url_encoded = s_LBOS_ModifyServiceName(serviceName);
   /*encode service name to url encoding (change ' ' to %20, '/' to %2f, etc.)*/
     url_length = strlen("http://")  + strlen(lbos_address) +
                  strlen(kLBOSQuery) + strlen(servicename_url_encoded);
@@ -1596,30 +1398,18 @@ static unsigned short s_LBOS_PerformRequest(const char* request,
      * return error code. If we receive nothing (LBOS is not present), then
      * we save nothing.
      */
-    net_info                = ConnNetInfo_Clone(s_EmptyNetInfo);
-    net_info->req_method    = req_method;
-    buf                     = NULL;
-    status_code             = 0;
-    lbos_address            = s_LBOS_Instance;
-    /* We deny foreign de-announcement*/
-    /* Compare local domain and LBOS domain */
-    if (!g_LBOS_CheckDomain(lbos_address)) {
-        CORE_LOGF_X(1, eLOG_Error,
-                    ("Could not verify that [%s] is in local domain [%s]. "
-                    "Announcement in foreign domain is not allowed. "
-                    "If you omitted [%s] in the LBOS address - please, "
-                    "provide it.",
-                    lbos_address, s_LBOS_ReadDomain(), s_LBOS_ReadDomain()));
-    }
-    else { /* domain is good */
-        query = g_LBOS_StringConcat(g_LBOS_StringConcat(
-                                    strdup("http://"), lbos_address, &length),
-                                    request, &length);
-        length = strlen(query);
-        buf = s_LBOS_UrlReadAll(net_info, query, &status_code, 
-                                &status_message);
-        free(query);
-    }
+    net_info             = ConnNetInfo_Clone(s_EmptyNetInfo);
+    net_info->req_method = req_method;
+    buf                  = NULL;
+    status_code          = 0;
+    lbos_address         = s_LBOS_Instance;
+    query                = g_LBOS_StringConcat(g_LBOS_StringConcat(
+                                strdup("http://"), lbos_address, &length),
+                                request, &length);
+    length               = strlen(query);
+    buf                  = s_LBOS_UrlReadAll(net_info, query, &status_code, 
+                                             &status_message);
+    free(query);
     if (lbos_answer != NULL && !g_LBOS_StringIsNullOrEmpty(buf)) {
         *lbos_answer = strdup(buf);
     }
@@ -1637,7 +1427,11 @@ static unsigned short s_LBOS_PerformRequest(const char* request,
     return status_code;
 }
 
-
+/**  Find "0.0.0.0" in healthcheck_url and replace it with IP of current host
+ *  @attention
+ *   Original string is untouched. Caller is responsible for freeing
+ *   allocated space.
+ */
 static char* s_LBOS_Replace0000WithIP(const char* healthcheck_url)
 {
     size_t          chars_to_copy;
@@ -1646,6 +1440,7 @@ static char* s_LBOS_Replace0000WithIP(const char* healthcheck_url)
     size_t          length;
     /* new url with replaced "0.0.0.0" (if needed) */
     char*           my_healthcheck_url; 
+    unsigned int    local_host_ip;
     const char*     replace_pos; /* to check if there is 0.0.0.0 */
     if (healthcheck_url == NULL)
         return NULL;
@@ -1664,8 +1459,7 @@ static char* s_LBOS_Replace0000WithIP(const char* healthcheck_url)
     }
     chars_to_copy   = replace_pos - healthcheck_url;
     query           = replace_pos + strlen("0.0.0.0");
-    unsigned int local_host_ip =
-            g_LBOS_UnitTesting_GetLBOSFuncs()->LocalHostAddr(eDefault);
+    local_host_ip = g_LBOS_UnitTesting_GetLBOSFuncs()->LocalHostAddr(eDefault);
     if (local_host_ip == 0) {
         CORE_LOG(eLOG_Warning,
                  "Error with announcement, cannot find local IP.");
@@ -1731,26 +1525,6 @@ char** g_LBOS_UnitTesting_Instance(void)
 }
 
 
-/**  Pointer to s_LBOS_CurrentDomain
- *  @return
- *   address of static variable s_LBOS_CurrentDomain.
- *  @see                                                                     */
-char** g_LBOS_UnitTesting_CurrentDomain(void)
-{
-    return &s_LBOS_CurrentDomain;
-}
-
-
-/**  Pointer to s_LBOS_CurrentRole
- *  @return
- *   address of static variable s_LBOS_CurrentRole.
- *  @see                                                                     */
-char** g_LBOS_UnitTesting_CurrentRole(void)
-{
-    return &s_LBOS_CurrentRole;
-}
-
-
 /**  Pointer to s_LBOS_CurrentRole
  *  @return
  *   address of static variable s_LBOS_CurrentRole.
@@ -1772,29 +1546,20 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSFindMethod (SERV_ITER       iter,
 }
 
 
-int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile
-                                                 (const char* roleFile,
-                                                  const char* domainFile,
-                                                  const char* lbosresolverfile)
+int/*bool*/ g_LBOS_UnitTesting_SetLBOSResolverFile(const char* resolverfile)
 {
-    if (roleFile != NULL) {
-        kRoleFile = roleFile;
+    if (resolverfile != NULL) {
+        kLbosresolverFile = resolverfile;
+        return 1;
     }
-    if (domainFile != NULL) {
-        kDomainFile = domainFile;
-    }
-    if (lbosresolverfile != NULL) {
-        kLbosresolverFile = lbosresolverfile;
-    }
-    return 1;
+    return 0;
 }
 
 
-/* UNIT TESTING*/
-/**  Set custom address for LBOS. Can be both hostname:port and IP:port.
- *  Intended mostly for testing.
- * @param[in] iter
- *  Where to set address for LBOS. The settings is made for only one iterator*/
+/**  Set custom address for LBOS. Can be either hostname:port or IP:port.
+ *   Intended mostly for testing.
+ *  @param[in] iter
+ *   Where to set address for LBOS. Change is made only for this iterator */
 int/*bool*/ g_LBOS_UnitTesting_SetLBOSaddress (SERV_ITER iter, char* address) {
     SLBOS_Data* data;
     assert(g_LBOS_CheckIterator(iter, ELBOSIteratorCheckType_MustHaveData));
@@ -2309,7 +2074,7 @@ unsigned short s_LBOS_Announce(const char*             service,
     net_info->req_method = eReqMethod_Put;
     /* Format for announcement request. "ip" parameter is optional and  
      * will be added separately, if provided */
-    query_format         = "http://%s/lbos/v3/services/%s?version=%s&"
+    query_format         = "http://%s/lbos/v3/services%s?version=%s&"
                                                          "port=%hu&"
                                                          "check=%s&"
                                                          "ip=%s&"
@@ -2318,37 +2083,20 @@ unsigned short s_LBOS_Announce(const char*             service,
      * Let's try announce 
      */
     char* query;
-    /* We deny foreign announcement*/
-    /* Compare local domain and LBOS domain */
-    if (!g_LBOS_CheckDomain(lbos_address)) {
-        CORE_LOGF_X(1, eLOG_Warning, 
-                    ("[%s] is not from local domain [%s]. "
-                    "Announcement in foreign domain is not allowed.",
-                    lbos_address, s_LBOS_ReadDomain()));    
-    } else {
-        /* We do not count extra 1 byte for \0 because we still have extra 
-         * bytes because of %s placeholders */
-        query = (char*)calloc(strlen(query_format) + 
-                              strlen(lbos_address) + 
-                              strlen(service) + strlen(version) +
-                              5/* port */ + strlen(healthcheck_url) +
-                              strlen(host),
-                              sizeof(char));
-        sprintf(query, query_format,
-                lbos_address, service, version, port, healthcheck_url, host);
-        length = strlen(query);
-#if 0 /* ip is now required (?) */
-        /* If host was provided, we append it to query */
-        if (!g_LBOS_StringIsNullOrEmpty(host)) {
-            query = g_LBOS_StringConcat(g_LBOS_StringConcat(
-                                                    query,  "&ip=", &length),
-                                                            host,   &length);
-        }
-#endif 
-        buf = s_LBOS_UrlReadAll(net_info, query, &status_code, 
-                                &status_message);
-        free(query);
-    }
+    /* We do not count extra 1 byte for \0 because we still have extra 
+     * bytes because of %s placeholders in query_format */
+    query = (char*)calloc(strlen(query_format) + 
+                          strlen(lbos_address) + 
+                          strlen(service) + strlen(version) +
+                          5/* port */ + strlen(healthcheck_url) +
+                          strlen(host),
+                          sizeof(char));
+    sprintf(query, query_format,
+            lbos_address, service, version, port, healthcheck_url, host);
+    length = strlen(query);
+    buf = s_LBOS_UrlReadAll(net_info, query, &status_code, 
+                            &status_message);
+    free(query);
     if (!g_LBOS_StringIsNullOrEmpty(buf)) {
         /* If this function is not able to parse LBOS output, original LBOS
          * response will be available to the caller. Otherwise, content of 
@@ -2473,7 +2221,7 @@ unsigned short LBOS_Announce(const char*             service,
     }
 
     healthcheck_encoded  = s_LBOS_URLEncode(my_healthcheck_url);
-    service_encoded      = s_LBOS_URLEncode(service);
+    service_encoded      = s_LBOS_ModifyServiceName(service);
     version_encoded      = s_LBOS_URLEncode(version);
 
     /* Announce */
@@ -2577,7 +2325,7 @@ unsigned short s_LBOS_Deannounce(const char*      service,
     status_code = 0;
     buf = NULL;
     /* ip */
-    query_format = "http://%s/lbos/v3/services/%s?version=%s&"
+    query_format = "http://%s/lbos/v3/services%s?version=%s&"
                                                  "port=%hu&"
                                                  "ip=%s";
     /*
@@ -2586,28 +2334,18 @@ unsigned short s_LBOS_Deannounce(const char*      service,
     char* query;
     size_t length;
     assert(!g_LBOS_StringIsNullOrEmpty(host));
-    /* We deny foreign de-announcement*/
-    /* Compare local domain and LBOS domain */
-    if (!g_LBOS_CheckDomain(lbos_address)) {
-        CORE_LOGF_X(1, eLOG_Warning,
-            ("[%s] is not from local domain [%s]. "
-            "Announcement in foreign domain is not allowed.",
-            lbos_address, s_LBOS_ReadDomain()));
-    }
-    else {
-        /* We do not count extra 1 byte for \0 because we still have extra 
-         * bytes because of %s placeholders */
-        query = (char*)calloc(strlen(query_format) +
-                       strlen(lbos_address) + strlen(service) +
-                       strlen(version) + 5/*port*/ + strlen(host),
-                       sizeof(char));
-        sprintf(query, query_format, 
-                lbos_address, service, version, port, host);
-        length = strlen(query);
-        buf = s_LBOS_UrlReadAll(net_info, query, &status_code, 
-                                &status_message);
-        free(query);
-    }
+    /* We do not count extra 1 byte for \0 because we still have extra 
+        * bytes because of %s placeholders */
+    query = (char*)calloc(strlen(query_format) +
+                          strlen(lbos_address) + strlen(service) +
+                          strlen(version) + 5/*port*/ + strlen(host),
+                          sizeof(char));
+    sprintf(query, query_format, 
+            lbos_address, service, version, port, host);
+    length = strlen(query);
+    buf = s_LBOS_UrlReadAll(net_info, query, &status_code, 
+                            &status_message);
+    free(query);
     if (lbos_answer != NULL && !g_LBOS_StringIsNullOrEmpty(buf)) {
         *lbos_answer = strdup(buf);
     }
@@ -2669,7 +2407,7 @@ unsigned short LBOS_Deannounce(const char*        service,
     }
     net_info             = ConnNetInfo_Clone(s_EmptyNetInfo);
     net_info->req_method = eReqMethod_Delete;
-    service_encoded      = s_LBOS_URLEncode(service);
+    service_encoded      = s_LBOS_ModifyServiceName(service);
     version_encoded      = s_LBOS_URLEncode(version);
     
     retval = s_LBOS_Deannounce(service_encoded, version_encoded, 
@@ -2804,8 +2542,8 @@ unsigned short LBOS_ServiceVersionGet(const char*  service,
     /*
      * Arguments are good! Let's do the request
      */
-    service_encoded = s_LBOS_URLEncode(service);
-    query_format = "/lbos/xml/configuration?name=%s";
+    service_encoded = s_LBOS_ModifyServiceName(service);
+    query_format = "/lbos/v3/conf%s?format=xml";
     query = (char*)calloc(strlen(query_format) +
                           strlen(service_encoded),
                           sizeof(char));
@@ -2863,8 +2601,8 @@ unsigned short LBOS_ServiceVersionSet(const char*  service,
     /*
      * Arguments are good! Let's do the request
      */
-    service_encoded = s_LBOS_URLEncode(service);
-    query_format = "/lbos/xml/configuration?name=%s&version=%s";
+    service_encoded = s_LBOS_ModifyServiceName(service);
+    query_format = "/lbos/v3/conf%s?version=%s&format=xml";
     query = (char*)calloc(strlen(query_format) +
                           strlen(service_encoded) +
                           strlen(new_version),
@@ -2912,8 +2650,8 @@ unsigned short LBOS_ServiceVersionDelete(const char*  service,
     /*
      * Arguments are good! Let's do the request
      */
-    service_encoded = s_LBOS_URLEncode(service);
-    query_format = "/lbos/xml/configuration?name=%s";
+    service_encoded = s_LBOS_ModifyServiceName(service);
+    query_format = "/lbos/v3/conf%s?format=xml";
     query = (char*)calloc(strlen(query_format) +
                           strlen(service_encoded),
                           sizeof(char));

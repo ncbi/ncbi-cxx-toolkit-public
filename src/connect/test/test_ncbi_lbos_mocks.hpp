@@ -250,9 +250,9 @@ public:
     }
     ~CLBOSDisableInstancesMock() {
 #ifdef NCBI_OS_MSWIN
-        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(NULL, NULL, "C:\\Apps\\Admin_Installs\\etc\ncbi\\lbosresolver");
+        g_LBOS_UnitTesting_SetLBOSResolverFile("C:\\Apps\\Admin_Installs\\etc\ncbi\\lbosresolver");
 #else
-        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(NULL, NULL, "/etc/ncbi/lbosresolver");
+        g_LBOS_UnitTesting_SetLBOSResolverFile("/etc/ncbi/lbosresolver");
 #endif
         CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
         config.Set("CONN", "LBOS", m_LBOSReg);
@@ -352,61 +352,25 @@ private:
 
 
 /** Hold non-const C-string. Assignment free()'s current C-string */
-class CLBOSRoleDomainResolver
+class CLBOSResolver
 {
 public:
-    CLBOSRoleDomainResolver()
-        : m_Role(*g_LBOS_UnitTesting_CurrentRole()),
-          m_Domain(*g_LBOS_UnitTesting_CurrentDomain()),
-          m_Lbosresolver(*g_LBOS_UnitTesting_CurrentDomain()),
-          m_MockRoleFile(NULL),
-          m_MockDomainFile(NULL),
+    CLBOSResolver()
+        : m_Lbosresolver(*g_LBOS_UnitTesting_Lbosresolver()),
           m_MockLbosresolver(NULL)
     {    }
-    ~CLBOSRoleDomainResolver()
+    ~CLBOSResolver()
     {    
         CORE_LOCK_WRITE;
-        free(*g_LBOS_UnitTesting_CurrentRole());
-        free(*g_LBOS_UnitTesting_CurrentDomain());
         free(*g_LBOS_UnitTesting_Lbosresolver());
-        free(m_MockRoleFile);
-        free(m_MockDomainFile);
         free(m_MockLbosresolver);
-        *g_LBOS_UnitTesting_CurrentRole()   = NULL;
-        *g_LBOS_UnitTesting_CurrentDomain() = NULL;
         *g_LBOS_UnitTesting_Lbosresolver() = NULL;
 #ifdef NCBI_OS_MSWIN
-        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile("/etc/ncbi/role",
-                                                         "/etc/ncbi/domain",
+        g_LBOS_UnitTesting_SetLBOSResolverFile(
                            "C:\\Apps\\Admin_Installs\\etc\ncbi\\lbosresolver");
 #else
-        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile("/etc/ncbi/role",
-                                                         "/etc/ncbi/domain",
-                                                     "/etc/ncbi/lbosresolver");
+        g_LBOS_UnitTesting_SetLBOSResolverFile("/etc/ncbi/lbosresolver");
 #endif
-        CORE_UNLOCK;
-    }
-    void setRole(string roleFile) 
-    {
-        CORE_LOCK_WRITE;
-        free(*g_LBOS_UnitTesting_CurrentRole());
-        *g_LBOS_UnitTesting_CurrentRole() = NULL;
-        free(m_MockRoleFile);
-        m_MockRoleFile = strdup(roleFile.c_str());
-        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(m_MockRoleFile, NULL, 
-                                                         NULL);
-        CORE_UNLOCK;
-    }
-    void setDomain(string domainFile) 
-    {
-        CORE_LOCK_WRITE;
-        free(*g_LBOS_UnitTesting_CurrentDomain());
-        *g_LBOS_UnitTesting_CurrentDomain() = NULL;
-        free(m_MockDomainFile);
-        m_MockDomainFile = strdup(domainFile.c_str());
-        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(NULL,
-                                                         m_MockDomainFile, 
-                                                         NULL);
         CORE_UNLOCK;
     }
     void setLbosresolver(string lbosresolver) 
@@ -416,16 +380,13 @@ public:
         *g_LBOS_UnitTesting_Lbosresolver() = NULL;
         free(m_MockLbosresolver);
         m_MockLbosresolver = strdup(lbosresolver.c_str());
-        g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(NULL, NULL, 
-                                                         m_MockLbosresolver);
+        g_LBOS_UnitTesting_SetLBOSResolverFile(m_MockLbosresolver);
         CORE_UNLOCK;
     }
 private:
     char* m_Role;              /* pointer to static variable       */
     char* m_Domain;            /* pointer to static variable       */
     char* m_Lbosresolver;      /* pointer to static variable       */
-    char* m_MockRoleFile;      /* current value of static variable */
-    char* m_MockDomainFile;    /* current value of static variable */
     char* m_MockLbosresolver;  /* current value of static variable */
 };
 
@@ -658,7 +619,7 @@ static unsigned short s_GeneratePort()
 
 
 
-#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
+#ifndef NCBI_THREADS // If we have to answer healthcheck in the same thread
 /** Accepts requests on specified socket.
     Returns result - if managed or not to answer */
 static 
@@ -688,7 +649,7 @@ bool s_AnswerHealthcheck(CListeningSocket& listening_sock) {
 #endif /* NCBI_THREADS */
 
 
-#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
+#ifndef NCBI_THREADS // If we have to answer healthcheck in the same thread
 /** If single-threaded mode, instead of just read, make first flush,
  * then answer healthcheck, and then get answer from LBOS (hopefully,
  * OK)
@@ -733,7 +694,7 @@ unsigned short s_LBOS_Announce(const char*             service,
 { 
 
     int announce_result = 0;
-#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
+#ifndef NCBI_THREADS // If we have to answer healthcheck in the same thread
     // Since it is a ST application, we are not afraid to just set
     // static variable directly
     s_ReadFunc = g_LBOS_UnitTesting_GetLBOSFuncs()->Read;
@@ -790,7 +751,7 @@ static
 void s_LBOS_CPP_AnnounceReg(const string& registry_section)
 {
 
-#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
+#ifndef NCBI_THREADS // If we have to answer healthcheck in the same thread
     CMockFunction<FLBOS_ConnReadMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
         s_RealReadAnnounce);
@@ -822,7 +783,7 @@ void s_LBOS_CPP_Announce(const string&   service,
                          const string&   healthcheck_url)
 {
 
-#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
+#ifndef NCBI_THREADS // If we have to answer healthcheck in the same thread
     s_ReadFunc = g_LBOS_UnitTesting_GetLBOSFuncs()->Read;
     CMockFunction<FLBOS_ConnReadMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
@@ -1280,16 +1241,6 @@ static SSERV_Info** s_FakeResolveIPPort (const char*   lbos_address,
         hostports[1] = NULL;
         return   hostports;
     }
-}
-
-
-
-/* Because we cannot be sure in which zone the app will be tested, we
- * will return specified lbos address and just check that the function is
- * called. Original function is thoroughly tested in another test module.*/
-static char* s_FakeComposeLBOSAddress()
-{
-    return strdup("lbos.foo");
 }
 
 

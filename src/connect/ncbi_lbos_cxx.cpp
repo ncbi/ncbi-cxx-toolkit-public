@@ -132,14 +132,11 @@ std::string CLBOSIpCache::HostnameTryFind(string service, string hostname,
 std::string CLBOSIpCache::HostnameResolve(string service, string hostname, 
                                           string version, unsigned short port)
 {
-    /* LBOS behavior - if DNS could not resolve hostname, throw 400 Bad Request.
-    * Here we emulate LBOS behavior.
-    * Here we try to resolve hostname before
-    * sending it to LBOS, so we should return the same answer as LBOS would
-    * do.*/
+    /* Hostname should not be empty in any case */
     if (hostname == "") {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-            CLBOSException::EErrCode::e_LBOSBadRequest, "400 Bad Request",
+            CLBOSException::EErrCode::e_LBOSUnknown, 
+            "Internal error in LBOS Client IP Cache. Please contact developer",
             eLBOSBadRequest);
     }
     map<CLBOSIpCacheKey, string>::iterator pos;

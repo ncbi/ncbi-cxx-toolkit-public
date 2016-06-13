@@ -192,13 +192,6 @@ EIO_Status FLBOS_ConnReadMethod(CONN           conn,
                                 EIO_ReadMethod how);
 
 
-/**  Compose LBOS address from /etc/ncbi/{role, domain}.
- *  @return             
- *   Constructed host:port or IP:port. Must be free()'d by the caller.       */
-typedef
-char* FLBOS_ComposeLBOSAddressMethod(void);
-
-
 /**  Given just empty data structure and name of service, do all necessary 
  *  operations to fill the structure with servers.
  *  @param data[out]    
@@ -328,7 +321,6 @@ typedef unsigned int FLBOS_SOCKGetLocalHostAddressMethod(ESwitch reget);
 typedef struct {
     FLBOS_ResolveIPPortMethod*              ResolveIPPort;
     FLBOS_ConnReadMethod*                   Read;
-    FLBOS_ComposeLBOSAddressMethod*         ComposeLBOSAddress;
     FLBOS_FillCandidatesMethod*             FillCandidates;
     FLBOS_DestroyDataMethod*                DestroyData;
     FLBOS_GetNextInfoMethod*                GetNextInfo;
@@ -431,22 +423,14 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSaddress(SERV_ITER  iter,
 
 
 /**  Set custom files to load role and domain from, respectively.
- *  @param roleFile[in] 
- *   To change role file path, pass it here. To use current role file path, 
- *   pass NULL.
- *  @param domainFile[in]  
- *   To change domain file path, pass it here. To use current domain file path, 
- *   pass NULL.
  *  @param lbosresolverFile[in]
  *   To change lbosresolver file path, pass it here. To use current 
  *   lbosresolver file path, pass NULL.
  *  @return             
- *   false - something went wrong, values not changed;
+ *   false - values not changed;
  *   true  - success.                                                        */
 NCBI_XCONNECT_EXPORT int/*bool*/
-g_LBOS_UnitTesting_SetLBOSRoleDomainResolverFile(const char* roleFile,
-                                                 const char* domainFile,
-                                                 const char* lbosresolverFile);
+g_LBOS_UnitTesting_SetLBOSResolverFile(const char* lbosresolverFile);
 
 
 /**  Checks iterator, fact that iterator belongs to this client, iterator data.
@@ -575,22 +559,6 @@ struct SLBOS_AnnounceHandle_Tag** g_LBOS_UnitTesting_GetAnnouncedServers(void);
  *  pointer to s_LBOS_AnnouncedServersNum                                    */
 NCBI_XCONNECT_EXPORT
 int g_LBOS_UnitTesting_GetAnnouncedServersNum(void);
-
-
-/**  Pointer to s_LBOS_CurrentDomain
- *  @return
- *   address of static variable s_LBOS_CurrentDomain.
- *  @see                                                                     */
-NCBI_XCONNECT_EXPORT
-char** g_LBOS_UnitTesting_CurrentDomain(void);
-
-
-/**  Pointer to s_LBOS_CurrentRole
- *  @return
- *   address of static variable s_LBOS_CurrentRole.
- *  @see                                                                     */
-NCBI_XCONNECT_EXPORT
-char** g_LBOS_UnitTesting_CurrentRole(void);
 
 
 /**  Pointer to s_LBOS_Lbosresolver

@@ -309,9 +309,6 @@ static void            s_TestFindMethod             (ELBOSFindMethod);
 static string          s_PrintThreadNum             ();
 static void            s_PrintAnnouncedServers      ();
 
-/** Return a priori known LBOS address (not real) */
-template <unsigned int lines>
-static char*           s_FakeComposeLBOSAddress (void);
 #ifdef NCBI_OS_MSWIN
 static int             s_GetTimeOfDay           (struct timeval*);
 #else
@@ -379,6 +376,12 @@ DEFINE_STATIC_FAST_MUTEX(s_WriteLogLock);
 #define PORT_N 5 /* port for healthcheck */
 #define PORT_STR_HELPER(port) #port
 #define PORT_STR(port) PORT_STR_HELPER(port)
+
+#ifdef NCBI_OS_MSWIN
+#   define LBOSRESOLVER_PATH "C:\\Apps\\Admin_Installs\\etc\\ncbi\\lbosresolver"
+#else
+#   define LBOSRESOLVER_PATH "/etc/ncbi/lbosresolver"
+#endif
 
 /*#define ANNOUNCEMENT_HOST string("iebdev22") */
 #define ANNOUNCEMENT_HOST s_GetMyIP() /* The host which is used for healthchecks 
@@ -1327,7 +1330,7 @@ private:
     map<unsigned short, short> m_ListenPorts;
 };
 
-static CHealthcheckThread* s_HealthchecKThread;
+static CHealthcheckThread* s_HealthcheckThread;
 
 
 
@@ -1381,7 +1384,7 @@ int s_CountServersWithExpectation(const string&     service,
 #else
             /* Answer healthcheck a few times */
             for (int i = 0;  i < 10;  i++) {
-                s_HealthchecKThread->AnswerHealthcheck();
+                s_HealthcheckThread->AnswerHealthcheck();
             };
 #endif /* NCBI_THREADS */
         }
@@ -1429,18 +1432,6 @@ int s_CountServersWithExpectation(const string&     service,
 //////////////               DECLARATIONS            //////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 // /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-namespace ComposeLBOSAddress
-// \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-{
-/* 1. All files OK - return composed LBOS address
- * 2. If could not read files, give up this industry and return NULL
- * 3. If could not read files, give up this industry and return NULL         */
-void LBOSExists__ShouldReturnLbos();
-void RoleFail__ShouldReturnNULL();
-void DomainFail__ShouldReturnNULL();
-} /* namespace GetLBOSAddress */
-
-
 // /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 namespace ResetIterator
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
@@ -2047,11 +2038,13 @@ void CheckErrorCodeStrings()
 
 namespace IPCache
 {
-/** Announce with host not empty - resolving works, resolves host to IP and 
-    saves result. */
-/*  No multithread, test uses private methods that are not thread-safe by 
+/** Announce with host empty - resolving works, gets host from healthcheck,
+ *  resolves host to IP and  saves result to cache. We compare real 
+ *  IP with what was saved in cache
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
  *  themselves */
-void AnnounceHostInHealthcheck__TryFindReturnsHostIP()
+void HostInHealthcheck__TryFindReturnsHostIP()
 {
     CLBOSStatus lbos_status(true, true);
     string lbos_answer;
@@ -2082,7 +2075,13 @@ void AnnounceHostInHealthcheck__TryFindReturnsHostIP()
 }
 
 
-void AnnounceHostSeparate__TryFindReturnsHostkIP()
+/** Announce with host difficult from the one in healthcheck - resolving works, 
+ *  resolves host to IP and saves result to cache. We compare real IP 
+ *  with what was saved in cache
+ * @attention 
+ *  No multithread, test uses private methods that are not thread-safe by 
+ *  themselves */
+void HostSeparate__TryFindReturnsHostkIP()
 {
     CLBOSStatus lbos_status(true, true);
     string lbos_answer;
@@ -2112,9 +2111,11 @@ void AnnounceHostSeparate__TryFindReturnsHostkIP()
 }
 
 
-/** Do not announce host - HostnameTryFind returns the same hostname. */
-/*  No multithread */
-void NotAnnounceHost__TryFindReturnsTheSame()
+/** Do not announce host - HostnameTryFind returns the same hostname.
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
+void NoHost__TryFindReturnsTheSame()
 {
     CLBOSStatus lbos_status(true, true);
     string lbos_answer;
@@ -2138,9 +2139,10 @@ void NotAnnounceHost__TryFindReturnsTheSame()
 }
 
 
-/** Common part for all tests that check if resolution works */
-/* No multithread, test uses private methods that are not thread-safe by 
- * themselves */
+/** Common part for all tests that check if resolution works as meant to be
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 static void s_LBOSIPCacheTest(const string& host, 
                               const string& expected_result = "N/A")
 {
@@ -2168,39 +2170,57 @@ static void s_LBOSIPCacheTest(const string& host,
 }    
 
 
-/** Resolve usual hostname - it gets saved */
-/* No multithread, test uses private methods that are not thread-safe by 
- * themselves */
+/** Resolve hostname that can be resolved to multiple options - 
+ *  the resolved IP gets saved and then is returned again and again for 
+ *  the same service name, version and port
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 void ResolveHost__TryFindReturnsIP()
 {
     s_LBOSIPCacheTest("cnn.com");
 }
 
 
-/* No multithread, test uses private methods that are not thread-safe by 
- * themselves */
+/** Resolve and cache an IP address - it must be resolved to itself
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 void ResolveIP__TryFindReturnsIP()
 {
     s_LBOSIPCacheTest("130.14.25.27", "130.14.25.27");
 }
 
 
+/** Resolve an empty string - get "Unknown error".
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 void ResolveEmpty__Error()
 {
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSBadRequest, 400> comparator
-                                                      ("400 Bad Request\n");
+    ExceptionComparator<CLBOSException::EErrCode::e_LBOSUnknown, 400> 
+    comparator("Internal error in LBOS Client IP Cache. Please contact developer\n");
     BOOST_CHECK_EXCEPTION(s_LBOSIPCacheTest("", s_GetMyIP()),
                          CLBOSException, comparator);
 }
 
 
-/** Actually, this behavior is not used anywhere, but this is the contract */
+/** Actually, this behavior is not used anywhere, but this is the contract,
+ *  and must be tested so it works if ever needed
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 void Resolve0000__Return0000()
 {
     s_LBOSIPCacheTest("0.0.0.0", "0.0.0.0");
 }
 
 
+/** Real-life test. Announce a host and deannounce it: cache MUST forget
+ *  deannounced host
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 void DeannounceHost__TryFindDoesNotFind()
 {
     string host = s_GetMyHost();
@@ -2233,6 +2253,11 @@ void DeannounceHost__TryFindDoesNotFind()
 }
 
 
+/** Test that for the second time rsolution result is taken from cache. Tested 
+ *  with google.com which is very often resolved to different IPs
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 void ResolveTwice__SecondTimeNoOp()
 {
     string host = "google.com";
@@ -2264,6 +2289,11 @@ void ResolveTwice__SecondTimeNoOp()
 }
 
 
+/** Add host to cache and then remove it multiple times - no crashes should 
+ *  happen. The value MUST be deleted and not found.
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 void DeleteTwice__SecondTimeNoOp()
 {
     string host = s_GetMyHost();
@@ -2296,6 +2326,11 @@ void DeleteTwice__SecondTimeNoOp()
 }
 
 
+/** Finding a resolved hostname multiple times - just a stress test that can 
+ *  show leaking memory
+ * @attention
+ *  No multithread, test uses private methods that are not thread-safe by
+ *  themselves */
 void TryFindTwice__SecondTimeNoOp()
 {
     string host = "google.com";
@@ -2329,149 +2364,6 @@ void TryFindTwice__SecondTimeNoOp()
 }
 
 } /* namespace IPCache */
-
-
-// /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-namespace ComposeLBOSAddress
-// \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-{
-void LBOSExists__ShouldReturnLbos()
-{
-    CLBOSStatus lbos_status(true, true);
-#ifdef NCBI_OS_LINUX 
-    char* result = g_LBOS_ComposeLBOSAddress();
-    stringstream ss;
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(result),
-                                   ": LBOS address was not constructed "
-                                   "appropriately");
-    free(result);
-#endif /* #ifdef NCBI_OS_LINUX */
-}
-
-
-void NoLBOSAddress__DoesNotCrash()
-{
-    WRITE_LOG("Test: if no LBOS address was found, turn LBOS off and "
-              "not crash");
-    CLBOSStatus lbos_status(false, false);
-    CLBOSRoleDomainResolver rdr;
-    rdr.setLbosresolver("/some/trash/path");
-    CLBOSDisableInstancesMock inst_disable_mock;
-
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(*g_LBOS_UnitTesting_Instance() == NULL,
-                                   "LBOS has working instances when it "
-                                   "should not. Probably test design error.");
-
-    string service = "/lbos";
-    CConnNetInfo net_info;
-    CServIter iter((SERV_ITER)NULL);
-    BOOST_CHECK_NO_THROW(
-        SERV_OpenP(service.c_str(), fSERV_All,
-                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                       *net_info, 0/*skip*/, 0/*n_skip*/,
-                       0/*external*/, 0/*arg*/, 0/*val*/));
-    
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(*g_LBOS_UnitTesting_Instance() == NULL,
-                                   "LBOS has working instances when it "
-                                   "should not. Probably test design error.");
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(*g_LBOS_UnitTesting_PowerStatus() == 0,
-                                   "LBOS is not OFF when no LBOS address "
-                                   "available");
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
-                                   "Something was found when LBOS is OFF");
-}
-
-
-/* Thread-unsafe because of g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles().
- * Excluded from multithreaded testing.
- */
-void RoleFail__ShouldReturnNULL()
-{
-    CLBOSStatus lbos_status(true, true);
-    string path = CNcbiApplication::Instance()->GetProgramExecutablePath();
-    size_t lastSlash = min(path.rfind('/'), string::npos); //UNIX
-    size_t lastBackSlash = min(path.rfind("\\"), string::npos); //WIN
-    path = path.substr(0, max(lastSlash, lastBackSlash));
-    string corruptRoleString = path + string("/ncbi_lbos_role");
-    const char* corruptRole = corruptRoleString.c_str();
-    ofstream roleFile;
-    CLBOSRoleDomainResolver role_domain;
-    role_domain.setRole(corruptRole);
-
-    /* 1. Empty role */
-    roleFile.open(corruptRoleString.data());
-    roleFile << "";
-    roleFile.close();
-
-    CCObjHolder<char> result(g_LBOS_ComposeLBOSAddress());
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result) == 1, 
-                                   "LBOS address construction did not fail "
-                                   "appropriately on empty role");
-
-    /* 2. Garbage role */
-    roleFile.open(corruptRoleString.data());
-    roleFile << "I play a thousand of roles";
-    roleFile.close();
-    result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result) == 1, 
-                                   "LBOS address construction did not fail "
-                                   "appropriately on garbage role");
-
-    /* 3. No role file (use set of symbols that certainly
-     * cannot constitute a file name)*/
-    role_domain.setRole("|*%&&*^");
-    result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result) == 1, 
-                                   "LBOS address construction did not fail "
-                                   "appropriately on bad role file");
-}
-
-/* Thread-unsafe because of g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles().
- * Excluded from multi threaded testing.
- */
-void DomainFail__ShouldReturnNULL()
-{
-    CLBOSStatus lbos_status(true, true);
-    string path = CNcbiApplication::Instance()->GetProgramExecutablePath();
-    size_t lastSlash = min(path.rfind('/'), string::npos); //UNIX
-    size_t lastBackSlash = min(path.rfind("\\"), string::npos); //WIN
-    path = path.substr(0, max(lastSlash, lastBackSlash));
-    string corruptDomainString = path + string("/ncbi_lbos_domain");
-    const char* corruptDomain = corruptDomainString.c_str();
-    string reg_domain = "";
-    bool has_reg_domain = false;
-    ncbi::CNcbiRegistry& registry = CNcbiApplication::Instance()->GetConfig();
-    if (registry.HasEntry("CONN", "lbos_domain")) {
-        has_reg_domain = true;
-        reg_domain = registry.Get("CONN", "lbos_domain");
-        registry.Unset("CONN", "lbos_domain");
-    }
-
-    ofstream domainFile (corruptDomain);
-    domainFile << "";
-    domainFile.close();
-    CLBOSRoleDomainResolver role_domain;
-
-    /* 1. Empty domain file */
-    role_domain.setDomain(corruptDomain);
-    CCObjHolder<char> result(g_LBOS_ComposeLBOSAddress());
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result) == 1, 
-                                   "LBOS address construction did not fail "
-                                   "appropriately on empty domain file");
-
-    /* 2. No domain file (use set of symbols that certainly cannot constitute
-     * a file name)*/
-    role_domain.setDomain("|*%&&*^");
-    result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(g_LBOS_StringIsNullOrEmpty(*result) == 1, 
-                                   "LBOS address construction did not fail "
-                                   "appropriately on bad domain file");
-    /* Cleanup */
-    if (has_reg_domain) {
-        registry.Set("CONN", "lbos_domain", reg_domain);
-    }
-}
-} /* namespace GetLBOSAddress */
 
 
 // /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
@@ -3033,6 +2925,7 @@ namespace ResolveViaLBOS
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
 void ServiceExists__ReturnHostIP();
+void LegacyService__ReturnHostIP();
 void ServiceDoesNotExist__ReturnNULL();
 void NoLBOS__ReturnNULL();
 void FakeMassiveInput__ShouldProcess();
@@ -3055,15 +2948,53 @@ void ServiceExists__ReturnHostIP()
     size_t i = 0;
     if (*hostports != NULL) {
         for (i = 0;  hostports[i] != NULL;  i++) {
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->host > 0, "Problem with "
-                                   "getting host for server");
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->port > 0, "Problem with"
-                                   " getting port for server");
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->port < 65535, "Problem "
-                                   "with getting port for server");
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->host > 0, 
+                                           "Problem with getting host for "
+                                           "server");
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->port > 0, 
+                                           "Problem with getting port for "
+                                           "server");
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->port < 65535, 
+                                           "Problem with getting port for "
+                                           "server");
         }
     }
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(i > 0, 
+                                   "Problem with searching for service");
+}
 
+
+/** Look for accn2gi and check if a valid IP is returned */
+void LegacyService__ReturnHostIP()
+{
+    string service = "accn2gi";
+    CConnNetInfo net_info;
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    /* Announce the legacy service */
+
+    /*
+     * We know that iter is LBOS's.
+     */
+    CCObjArrayHolder<SSERV_Info> hostports(
+                      g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort(
+                                       lbos_addr.c_str(),
+                                       service.c_str(),
+                                       *net_info));
+    size_t i = 0;
+    if (*hostports != NULL) {
+        for (i = 0;  hostports[i] != NULL;  i++) {
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->host > 0, 
+                                           "Problem with getting host for "
+                                           "server");
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->port > 0, 
+                                           "Problem with getting port for "
+                                           "server");
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(hostports[i]->port < 65535, 
+                                           "Problem with getting port for "
+                                           "server");
+        }
+    }
     NCBITEST_CHECK_MESSAGE_MT_SAFE(i > 0, "Problem with searching for service");
 }
 
@@ -3339,25 +3270,24 @@ void SpecificMethod__FirstInResult()
     addresses = g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_Registry, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), registry_lbos);
 
-#ifdef NCBI_OS_LINUX
     /* We have to fake last method, because its result is dependent on
      * location */
     /* III. etc/ncbi address (should be 127.0.0.1) */
-    WRITE_LOG("Part 3. Testing etc/ncbi/lbosresolver");
+    WRITE_LOG("Part 3. Testing " LBOSRESOLVER_PATH);
     size_t buffer_size = 1024;
     size_t size;
     AutoArray<char> buffer(new char[buffer_size]);
-    AutoPtr<IReader> reader(CFileReader::New("/etc/ncbi/lbosresolver"));
+    AutoPtr<IReader> reader(CFileReader::New(LBOSRESOLVER_PATH));
     ERW_Result result = reader->Read(buffer.get(), buffer_size, &size);
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(result == eRW_Success, "Could not read "
-                                     "/etc/ncbi/lbosresolver, test failed");
+                                     LBOSRESOLVER_PATH ", test failed");
     buffer.get()[size] = '\0';
     string lbosresolver(buffer.get() + 7);
-    lbosresolver = lbosresolver.erase(lbosresolver.length()-6);
+    lbosresolver = NStr::Replace(lbosresolver, "\n", "");
+    lbosresolver = NStr::Replace(lbosresolver, "\r", "");
+    lbosresolver = lbosresolver.erase(lbosresolver.length() - 5);
     addresses = g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_Lbosresolve, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), lbosresolver);
-    
-#endif /* #ifdef NCBI_OS_LINUX */
 }
 
 void CustomHostNotProvided__SkipCustomHost()
@@ -3374,10 +3304,6 @@ void CustomHostNotProvided__SkipCustomHost()
 
 void NoConditions__AddressDefOrder()
 {
-    CMockFunction<FLBOS_ComposeLBOSAddressMethod*> mock(
-        g_LBOS_UnitTesting_GetLBOSFuncs()->ComposeLBOSAddress,
-        s_FakeComposeLBOSAddress);
-
     CNcbiRegistry& registry = CNcbiApplication::Instance()->GetConfig();
     string lbos = registry.Get("CONN", "lbos");
     /* I. Registry has entry (we suppose that it has by default) */
@@ -3385,27 +3311,27 @@ void NoConditions__AddressDefOrder()
     WRITE_LOG("1. Checking LBOS address when registry LBOS is provided");
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), lbos);
 
-#ifdef NCBI_OS_LINUX
     /* II. Registry has no entries - check that LBOS is read from
-     *     /etc/ncbi/lbosresolver */
+     *     LBOSRESOLVER_PATH */
     WRITE_LOG("2. Checking LBOS address when registry LBOS is not provided");
     size_t buffer_size = 1024;
     size_t size;
     AutoArray<char> buffer(new char[buffer_size]);
-    AutoPtr<IReader> reader(CFileReader::New("/etc/ncbi/lbosresolver"));
+    AutoPtr<IReader> reader(CFileReader::New(LBOSRESOLVER_PATH));
     ERW_Result result = reader->Read(buffer.get(), buffer_size, &size);
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(result == eRW_Success, "Could not read "
-                                     "/etc/ncbi/lbosresolver, test failed");
+                                     LBOSRESOLVER_PATH ", test failed");
     buffer.get()[size] = '\0';
     string lbosresolver(buffer.get() + 7);
-    lbosresolver = lbosresolver.erase(lbosresolver.length()-6);
+    lbosresolver = NStr::Replace(lbosresolver, "\n", "");
+    lbosresolver = NStr::Replace(lbosresolver, "\r", "");
+    lbosresolver = lbosresolver.erase(lbosresolver.length()-5);
     registry.Unset("CONN", "lbos");
     addresses = g_LBOS_GetLBOSAddress();
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), lbosresolver);
 
     /* Cleanup */
     registry.Set("CONN", "lbos", lbos);
-#endif /* #ifdef NCBI_OS_LINUX */
 }
 } /* namespace GetLBOSAddress */
 
@@ -3597,14 +3523,15 @@ void ErrorUpdating__ReturnNull()
                    0/*external*/, 0/*arg*/, 0/*val*/));
     HOST_INFO hinfo = NULL;
     info = SERV_GetNextInfoEx(*iter, &hinfo);
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(info == 0, "SERV_GetNextInfoEx: mapper did not "
-                           "react correctly to error in LBOS" );
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(s_CallCounter == 1,
-                           "SERV_GetNextInfoEx:mapper did not "
-                           "react correctly to error in LBOS");
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(hinfo == NULL,
-                           "SERV_GetNextInfoEx: hinfo is not NULL "
-                           "(always should be NULL)");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(info == 0, 
+                                   "SERV_GetNextInfoEx: mapper did not "
+                                   "react correctly to error in LBOS" );
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(s_CallCounter == 1, 
+                                   "SERV_GetNextInfoEx:mapper did not "
+                                   "react correctly to error in LBOS");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(hinfo == NULL, 
+                                   "SERV_GetNextInfoEx: hinfo is not NULL "
+                                   "(always should be NULL)");
 
     /* Cleanup */
     s_CallCounter = 0;
@@ -3622,16 +3549,17 @@ void ErrorUpdating__ReturnNull()
     SERV_Reset(*iter);
     mock = s_FakeFillCandidatesWithError;
     info = SERV_GetNextInfoEx(*iter, &hinfo);
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(info == 0, "SERV_GetNextInfoEx: mapper did not "
-                           "react correctly to error in LBOS "
-                           "(info not NULL)" );
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(info == 0, 
+                                   "SERV_GetNextInfoEx: mapper did not "
+                                   "react correctly to error in LBOS "
+                                   "(info not NULL)" );
     NCBITEST_CHECK_MESSAGE_MT_SAFE(s_CallCounter == 2,
-                           "SERV_GetNextInfoEx:mapper did not "
-                           "react correctly to error in LBOS "
-                           "(fillCandidates was not called once)");
+                                   "SERV_GetNextInfoEx:mapper did not "
+                                   "react correctly to error in LBOS "
+                                   "(fillCandidates was not called once)");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(hinfo == NULL,
-                           "SERV_GetNextInfoEx: hinfo is not NULL "
-                           "(always should be NULL)");
+                                   "SERV_GetNextInfoEx: hinfo is not NULL "
+                                   "(always should be NULL)");
 
     /* Cleanup*/
     /*ConnNetInfo_Destroy(*net_info);*/
@@ -3678,31 +3606,28 @@ void HaveCands__ReturnNext()
                       ":" << (i+1)*210;
             SOCK_StringToHostPort(hostport.str().c_str(), &host, &port);
             NCBITEST_CHECK_MESSAGE_MT_SAFE(s_CallCounter == 1,
-                                   "SERV_GetNextInfoEx: fill "
-                                   "candidates was called, but "
-                                   "it should not be");
-            NCBITEST_CHECK_MESSAGE_MT_SAFE(info->port == port && info->host == host,
-                                   "SERV_GetNextInfoEx: mapper "
-                                   "error with 'next' returned element");
+                                           "SERV_GetNextInfoEx: fill "
+                                           "candidates was called, but "
+                                           "it should not be");
+            NCBITEST_CHECK_MESSAGE_MT_SAFE(info->port == port && 
+                                           info->host == host,
+                                           "SERV_GetNextInfoEx: mapper "
+                                           "error with 'next' returned "
+                                           "element");
             NCBITEST_CHECK_MESSAGE_MT_SAFE(hinfo == NULL,
-                                   "SERV_GetNextInfoEx: hinfo is not "
-                                   "NULL (always should be NULL)");
+                                           "SERV_GetNextInfoEx: hinfo is not "
+                                           "NULL (always should be NULL)");
         }
     }
 
     /* The main interesting here is to check if info is null, and that
      * 'fillcandidates()' was not called again internally*/
     NCBITEST_CHECK_MESSAGE_MT_SAFE(info == NULL,
-                           "SERV_GetNextInfoEx: mapper error with "
-                           "'after last' returned element");
+                                   "SERV_GetNextInfoEx: mapper error with "
+                                   "'after last' returned element");
     stringstream ss;
     ss << "Mapper should find 200 hosts, but found " << i;
     NCBITEST_CHECK_MESSAGE_MT_SAFE(found_hosts == 200, ss.str().c_str());
-
-    /* Cleanup*/
-//     SERV_Close(*iter);
-//     g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates = temp_func_pointer;
-//     s_CallCounter = 0;
 }
 
 void LastCandReturned__ReturnNull()
@@ -3742,13 +3667,8 @@ void LastCandReturned__ReturnNull()
     ss << "Mapper should find 200 hosts, but found " << i;
     NCBITEST_CHECK_MESSAGE_MT_SAFE(i == 200, ss.str().c_str());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(hinfo == NULL,
-                           "SERV_GetNextInfoEx: hinfo is not NULL "
-                           "(always should be NULL)");
-
-    /* Cleanup*/
-//     SERV_Close(*iter);
-//     g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates = temp_func_pointer;
-//     s_CallCounter = 0;
+                                   "SERV_GetNextInfoEx: hinfo is not NULL "
+                                   "(always should be NULL)");
 }
 
 void DataIsNull__ReconstructData()
@@ -3787,14 +3707,14 @@ void DataIsNull__ReconstructData()
     info = SERV_GetNextInfoEx(*iter, &hinfo);
     /*Assert*/
     NCBITEST_CHECK_MESSAGE_MT_SAFE(s_CallCounter == 2,
-                           "SERV_GetNextInfoEx: mapper did "
-                           "not ask LBOS for candidates");
+                                   "SERV_GetNextInfoEx: mapper did "
+                                   "not ask LBOS for candidates");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(info->port == port && info->host == host,
-                           "SERV_GetNextInfoEx: mapper error "
-                           "with first returned element");
+                                   "SERV_GetNextInfoEx: mapper error "
+                                   "with first returned element");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(hinfo == NULL,
-                           "SERV_GetNextInfoEx: hinfo is not "
-                           "NULL (always should be NULL)");
+                                   "SERV_GetNextInfoEx: hinfo is not "
+                                   "NULL (always should be NULL)");
 }
 
 
@@ -3808,12 +3728,12 @@ void WrongMapper__ReturnNull()
      * GetNextInfo.
      * The mapper should return null */
     CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                   *net_info, 0/*skip*/, 0/*n_skip*/,
+                   0/*external*/, 0/*arg*/, 0/*val*/));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
-            "LBOS not found when it should be");
+                                       "LBOS not found when it should be");
         return;
     }
     /*ConnNetInfo_Destroy(*net_info);*/
@@ -3825,13 +3745,10 @@ void WrongMapper__ReturnNull()
     info = SERV_GetNextInfoEx(*iter, &hinfo);
 
     NCBITEST_CHECK_MESSAGE_MT_SAFE(info == NULL,
-                           "SERV_GetNextInfoEx: mapper did not "
-                           "react correctly to wrong mapper name");
+                                   "SERV_GetNextInfoEx: mapper did not "
+                                   "react correctly to wrong mapper name");
 
     iter->op = origTable; /* Because we need to clean iter */
-
-    /* Cleanup*/
-    //SERV_Close(*iter);
 }
 } /* namespace GetNextInfo */
 
@@ -7845,8 +7762,7 @@ CMainLoopThread* thread3;
 
 void TryMultiThread()
 {
-#define LIST_OF_FUNCS                                                         \
-    X(1, ComposeLBOSAddress::LBOSExists__ShouldReturnLbos)                    \
+#define LIST_OF_FUNCS                                                          \
     X(2, ResetIterator::NoConditions__IterContainsZeroCandidates)             \
     X(3, ResetIterator::MultipleReset__ShouldNotCrash)                        \
     X(4, ResetIterator::Multiple_AfterGetNextInfo__ShouldNotCrash)            \
