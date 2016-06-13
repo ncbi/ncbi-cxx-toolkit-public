@@ -178,6 +178,9 @@ public:
                                  vector<string> &  locators);
     int  ExecSP_GetClients(vector<string> &  names);
     int  ExecSP_DoesObjectExist(const string &  object_key);
+    int  ExecSP_GetObjectSizeAndLocator(const string &  object_key,
+                                        TNSTDBValue<Int8> &  object_size,
+                                        TNSTDBValue<string> &  object_locator);
     int  ExecSP_GetObjectSize(const string &  object_key,
                               TNSTDBValue<Int8> &  object_size);
     int  ExecSP_UpdateObjectSizeIfNULL(const string &  object_key,

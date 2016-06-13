@@ -1424,6 +1424,64 @@ CNSTDatabase::ExecSP_DoesObjectExist(const string &  object_key)
 
 
 int
+CNSTDatabase::ExecSP_GetObjectSizeAndLocator(
+                                    const string &  object_key,
+                                    TNSTDBValue<Int8> &  object_size,
+                                    TNSTDBValue<string> &  object_locator)
+{
+    const string        proc_name = "GetObjectSizeAndLocator";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        x_PreCheckConnection();
+
+        int     status;
+        try {
+            CDatabase   db = m_Db->Clone();
+            CQuery      query = db.NewQuery();
+            query.SetParameter("@object_key", object_key);
+            query.SetOutputParameter("@object_size", eSDB_Int8);
+            query.SetOutputParameter("@object_locator", eSDB_String);
+
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
+            query.VerifyDone();
+            status = x_CheckStatus(query, proc_name);
+
+            if (status == kSPStatusOK) {
+                object_size.m_IsNull = query.
+                                    GetParameter("@object_size").IsNull();
+                if (!object_size.m_IsNull)
+                    object_size.m_Value = query.
+                                    GetParameter("@object_size").AsInt8();
+                object_locator.m_IsNull = query.
+                                    GetParameter("@object_locator").IsNull();
+                if (!object_locator.m_IsNull)
+                    object_locator.m_Value = query.
+                                    GetParameter("@object_locator").AsString();
+            }
+
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
+    } catch (...) {
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
+        throw;
+    }
+}
+
+
+int
 CNSTDatabase::ExecSP_GetObjectSize(const string &  object_key,
                                    TNSTDBValue<Int8> &  object_size)
 {

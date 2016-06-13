@@ -35,4 +35,5 @@ def SetExpTime( locator,
             errors.append( ret )
     if errors:
         return "Error"
-    return "OK"
+    else:
+        return "OK"

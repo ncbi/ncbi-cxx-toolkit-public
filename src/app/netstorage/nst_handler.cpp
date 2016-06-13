@@ -2641,49 +2641,70 @@ CNetStorageHandler::x_ProcessExists(
     m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eReader);
 
-    bool        allow_backend_fallback = true;  // default
-
-    if (message.HasKey("AllowBackendFallback")) {
-        allow_backend_fallback = message.GetBoolean("AllowBackendFallback");
-    }
-
     CJsonNode                   reply = CreateResponseMessage(
                                                     common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
     bool                        need_db_access =
                                     x_DetectMetaDBNeedOnGetObjectInfo(message);
+    string                      locator_from_db;
 
+    // Part I. MS SQL db access if needed
     if (need_db_access) {
-        int  status = m_Server->GetDb().ExecSP_DoesObjectExist(
-                                    direct_object.Locator().GetUniqueKey());
-        if (status == kSPStatusOK) {
-            reply.SetBoolean("Exists", true);
-            x_SendSyncMessage(reply);
-            x_PrintMessageRequestStop();
-            return;
+        int             status;
+        try {
+            TNSTDBValue<Int8>       object_size;
+            TNSTDBValue<string>     object_locator;
+
+            status = m_Server->GetDb().ExecSP_GetObjectSizeAndLocator(
+                                        direct_object.Locator().GetUniqueKey(),
+                                        object_size, object_locator);
+            // status could be:
+            // - object expired
+            // - object not found
+            // - OK
+            if (status == kSPStatusOK)
+                if (!object_size.m_IsNull)
+                    if (!object_locator.m_IsNull)
+                        locator_from_db = object_locator.m_Value;
+        } catch (const exception &  ex) {
+            // No exception throwing because the backend will be called anyway
+            ERR_POST(ex);
+        } catch (...) {
+            // No exception throwing because the backend will be called anyway
+            ERR_POST("Unknown exception while getting an object "
+                     "size and a locator from the DB");
         }
+
+        // The check will throw an exception if the object is expired
         x_CheckExpirationStatus(status);
-        if (status == kSPObjectNotFound) {
-            // Here: object not found in the DB
-            if (allow_backend_fallback == false) {
-                reply.SetBoolean("Exists", false);
-                x_SendSyncMessage(reply);
-                x_PrintMessageRequestStop();
-                return;
-            }
-            // Otherwise the backend should be checked
-        }
     }
 
-    // Check the backend storage:
-    // - if allow_backend_fallback
-    // - if no metadata access
+    // Part II. Calling the API
     bool                exists = false;
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
+
     try {
-        exists = direct_object.Exists();
-        if (m_Server->IsLogTimingNSTAPI())
-            m_Timing.Append("NetStorageAPI Exists", start);
+        if (message.HasKey("ObjectLoc")) {
+            CDirectNetStorage   storage(
+                                    CNcbiApplication::Instance()->GetConfig(),
+                                    m_Service, m_Server->GetCompoundIDPool());
+            exists = storage.Exists(locator_from_db,
+                                    message.GetString("ObjectLoc"));
+        } else {
+            SICacheSettings     icache_settings;
+            SUserKey            user_key;
+            TNetStorageFlags    flags;
+
+            x_GetStorageParams(message, &icache_settings, &user_key, &flags);
+
+            CDirectNetStorageByKey    storage(
+                                    CNcbiApplication::Instance()->GetConfig(),
+                                    m_Service, m_Server->GetCompoundIDPool(),
+                                    user_key.m_AppDomain);
+
+            exists = storage.Exists(locator_from_db,
+                                    user_key.m_UniqueID, flags);
+        }
     } catch (...) {
         if (m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI Exists exception", start);
@@ -2694,6 +2715,7 @@ CNetStorageHandler::x_ProcessExists(
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
 }
+
 
 
 void
@@ -2860,7 +2882,7 @@ CNetStorageHandler::x_ProcessSetExpTime(
     CDirectNetStorageObject     direct_object = x_GetObject(message);
     // Part I. Update MS SQL if needed
     bool        db_error = false;
-    bool        object_size_unknown = false;
+    int         status = kSPStatusOK;
     if (db_update) {
         string  object_key = direct_object.Locator().GetUniqueKey();
         string  object_loc = direct_object.Locator().GetLocator();
@@ -2868,18 +2890,17 @@ CNetStorageHandler::x_ProcessSetExpTime(
         if (message.HasKey("CreateIfNotFound"))
             create_if_not_found = message.GetBoolean("CreateIfNotFound");
 
-        int         status = kSPStatusOK;
         try {
             x_CreateClient();
 
-            TNSTDBValue<Int8>   object_size;
+            TNSTDBValue<Int8>   object_size;    // Not really used anymore
+
             // The SP will throw an exception if an error occured
             status = m_Server->GetDb().ExecSP_SetExpiration(object_key, ttl,
                                                             create_if_not_found,
                                                             object_loc,
                                                             m_DBClientID,
                                                             object_size);
-            object_size_unknown = object_size.m_IsNull;
         } catch (const exception &  ex) {
             string          error_scope;
             Int8            error_code;
@@ -2899,50 +2920,48 @@ CNetStorageHandler::x_ProcessSetExpTime(
             db_error = true;
         }
 
-        // It was decided that we do not continue in case of logical errors in
+        // It was decided that we DO continue in case of logical errors in
         // the meta info db
-        if (db_error == false ) {
-            if (status == kSPObjectNotFound)
-                object_size_unknown = true;
-            else {
-                x_CheckExpirationStatus(status);
-                if (status != kSPStatusOK) {
-                    // Unknown status
-                    NCBI_THROW(CNetStorageServerException, eInternalError,
-                               "Unknown SetExpiration status");
-                }
-            }
-        }
-
+        if (db_error == false)
+            x_CheckExpirationStatus(status);
     }
 
     // Part II. Call the remote object SetExpiration(...)
     try {
         CTimeout    timeout;
-        if (ttl.m_IsNull || db_update)
+        if (ttl.m_IsNull || (db_update && !db_error))
             timeout.Set(CTimeout::eInfinite);
         else
             timeout.Set(ttl.m_Value);
 
         direct_object.SetExpiration(timeout);
     } catch (const CNetStorageException &  ex) {
-        if (ex.GetErrCode() == CNetStorageException::eNotSupported) {
+        CNetStorageException::TErrCode      err = ex.GetErrCode();
+        if (err == CNetStorageException::eNotSupported) {
             // Thanks to the CDirectNetStorageObject interface: there is no way
             // to test if the SetExpiration() is supported. Here it is not an
             // error, it is just that it makes no sense to call SetExpiration()
             // for the storage.
-            if (db_error)
-                AppendWarning(reply,
-                              NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
-                              ex.what(), ex.GetType(),
-                              eRemoteObjectSetExpirationWarning);
-        } else {
-            // That's a real problem of setting the object expiration
-            if (!object_size_unknown)
+            if (db_error || !db_update || status == kSPObjectNotFound)
                 AppendError(reply,
                             NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
                             ex.what(), ex.GetType(),
                             CNetStorageServerException::eStorageError);
+        } else if (err == CNetStorageException::eNotExists) {
+            // Basically it is the same condition as for NotSupported case -
+            // see CXX-8215. It however has a distinctive nature to the
+            // NotSupported case so a separate branch is introduced.
+            if (db_error || !db_update || status == kSPObjectNotFound)
+                AppendError(reply,
+                            NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                            ex.what(), ex.GetType(),
+                            CNetStorageServerException::eStorageError);
+        } else {
+            // That's a real problem of setting the object expiration
+            AppendError(reply,
+                        NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                        ex.what(), ex.GetType(),
+                        CNetStorageServerException::eStorageError);
         }
     } catch (const exception &  ex) {
         string          error_scope;
@@ -2951,21 +2970,16 @@ CNetStorageHandler::x_ProcessSetExpTime(
 
         if (GetReplyMessageProperties(ex, &error_scope, &error_code,
                                       &error_sub_code) == false) {
-            if (db_update && db_error)
-                error_sub_code = eRemoteObjectSetExpirationWarning;
-            else
-                error_sub_code = CNetStorageServerException::eStorageError;
+            error_sub_code = CNetStorageServerException::eStorageError;
         }
 
-        if (!object_size_unknown)
-            AppendError(reply, error_code, ex.what(), error_scope,
-                        error_sub_code);
+        AppendError(reply, error_code, ex.what(), error_scope,
+                    error_sub_code);
     } catch (...) {
         const string    msg = "Unknown remote storage SetExpiration error";
-        if (!object_size_unknown)
-            AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
-                        msg, kScopeUnknownException,
-                        CNetStorageServerException::eStorageError);
+        AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                    msg, kScopeUnknownException,
+                    CNetStorageServerException::eStorageError);
     }
 
     x_SendSyncMessage(reply);
