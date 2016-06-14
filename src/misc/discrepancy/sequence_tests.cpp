@@ -293,5 +293,52 @@ DISCREPANCY_SUMMARIZE(COMMENT_PRESENT)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// mRNA_ON_WRONG_SEQUENCE_TYPE
+
+const string kmRNAOnWrongSequenceType = "[n] mRNA[s] [is] located on eukaryotic sequence[s] that [does] not have genomic or plasmid source[s]";
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(mRNA_ON_WRONG_SEQUENCE_TYPE, CSeq_feat_BY_BIOSEQ, eOncaller | eDisc, "Eukaryotic sequences that are not genomic or macronuclear should not have mRNA features")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
+        return;
+    }
+    if (!context.IsEukaryotic()) {
+        return;
+    }
+    if (!context.GetCurrentBioseq() || !context.GetCurrentBioseq()->IsSetInst() ||
+        !context.GetCurrentBioseq()->GetInst().IsSetMol() ||
+        context.GetCurrentBioseq()->GetInst().GetMol() != CSeq_inst::eMol_dna) {
+        return;
+    }
+    if (!context.GetCurrentMolInfo() || !context.GetCurrentMolInfo()->IsSetBiomol() ||
+        context.GetCurrentMolInfo()->GetBiomol() != CMolInfo::eBiomol_genomic) {
+        return;
+    }
+    const CBioSource* src = context.GetCurrentBiosource();
+    if (!src || !src->IsSetGenome() ||
+        src->GetGenome() == CBioSource::eGenome_macronuclear ||
+        src->GetGenome() == CBioSource::eGenome_unknown || 
+        src->GetGenome() == CBioSource::eGenome_genomic ||
+        src->GetGenome() == CBioSource::eGenome_chromosome) {
+        return;
+    }
+    m_Objs[kmRNAOnWrongSequenceType].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(mRNA_ON_WRONG_SEQUENCE_TYPE)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
