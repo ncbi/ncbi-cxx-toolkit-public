@@ -1324,5 +1324,50 @@ DISCREPANCY_SUMMARIZE(SUSPICIOUS_NOTE_TEXT)
 }
 
 
+// CDS_HAS_NEW_EXCEPTION
+
+const string kCDSHasNewException = "[n] coding region[s] [has] new exception[s]";
+
+static const string kNewExceptions[] =
+{
+    "annotated by transcript or proteomic data",
+    "heterogeneous population sequenced",
+    "low-quality sequence region",
+    "unextendable partial coding region",
+};
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(CDS_HAS_NEW_EXCEPTION, CSeq_feat, eOncaller|eDisc, "Coding region has new exception")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData() || !obj.GetData().IsCdregion() || !obj.IsSetExcept_text()) {
+        return;
+    }
+    size_t max = sizeof(kNewExceptions) / sizeof(string);
+    bool found = false;
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::FindNoCase(obj.GetExcept_text(), kNewExceptions[i]) != string::npos) {
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        m_Objs[kCDSHasNewException].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(CDS_HAS_NEW_EXCEPTION)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
