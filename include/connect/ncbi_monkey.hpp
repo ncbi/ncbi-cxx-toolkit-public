@@ -102,7 +102,7 @@ class CMonkeySeedKey
 class CMonkeySeedAccessor
 {
 protected: 
-    static const CMonkeySeedKey& Key();
+    static const CMonkeySeedKey& Key(void);
 };
 
 
@@ -125,12 +125,16 @@ public:
     };
     /** Check that this rule will trigger on this run (host and port have 
      * already been successfully matched if this check is run) */
-    bool CheckRun(MONKEY_SOCKTYPE sock);
+    bool CheckRun(MONKEY_SOCKTYPE sock,
+                  unsigned short  probability_left = 100);
+
+    /** Get probability that the rule will run next time */
+    unsigned short GetProbability(MONKEY_SOCKTYPE sock);
 protected:
     CMonkeyRuleBase(EMonkeyActionType     action_type,
                     const vector<string>& name_value);
-    int /* EIO_Status or -1 */ GetReturnStatus();
-    unsigned long  GetDelay();
+    int /* EIO_Status or -1 */ GetReturnStatus(void);
+    unsigned long  GetDelay(void);
 private:
     void           x_ReadRuns     (const string& runs);
     void           x_ReadEIOStatus(const string& eIOStatus_str);
@@ -166,10 +170,10 @@ public:
 protected:
     CMonkeyRWRuleBase(EMonkeyActionType           action_type, 
                       const vector<string>& name_value);
-    string    GetText();
-    size_t    GetTextLength();
-    bool      GetGarbage();
-    EFillType GetFillType();
+    string    GetText(void);
+    size_t    GetTextLength(void);
+    bool      GetGarbage(void);
+    EFillType GetFillType(void);
 private:
     void      x_ReadFill(const string& fill_str);
     string    m_Text;
@@ -247,9 +251,10 @@ public:
  */
     CMonkeyPlan(const string& section);
 
-    bool Match      (const string&          host, 
-                     unsigned short         port, 
-                     const string&          url);
+    bool Match (const string&  host, 
+                unsigned short port, 
+                const string&  url,
+                unsigned short probability_left = 100);
     /** Guarantees to have not run send() if returned false. Returning true
         can mean either that send() was run or that send() was simulated to be 
         unsuccessful */
@@ -275,6 +280,8 @@ public:
     bool PollRule      (size_t*                n,
                         SOCK*                  sock,
                         EIO_Status*            return_status);
+
+    unsigned short GetProbabilty(void);
 private:
     /**  */
     template<class Rule_Ty>
@@ -323,11 +330,11 @@ public:
     * behavior from a previous run, if Monkey saved what it did to a file */
     bool RegisterThread(int token);
 
-    int GetSeed();
+    int GetSeed(void);
     void SetSeed(int seed);
-    static CMonkey* Instance();
+    static CMonkey* Instance(void);
     void ReloadConfig(const string& config = "");
-    bool IsEnabled();
+    bool IsEnabled(void);
 
     MONKEY_RETTYPE Send(MONKEY_SOCKTYPE        sock,
                         const MONKEY_DATATYPE  data,
@@ -355,7 +362,7 @@ public:
     static void MonkeyHookSwitchSet(FMonkeyHookSwitch hook_switch_func);
 private:
     /* No one can create a separate instance of CMonkey*/
-    CMonkey();
+    CMonkey(void);
     /** Return plan for the socket, new or already assigned one. If the socket
      *  is ignored by Chaos Monkey, NULL is returned. 
      * @param[in] match_host 

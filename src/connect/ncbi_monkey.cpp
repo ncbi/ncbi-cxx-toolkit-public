@@ -373,11 +373,29 @@ static string s_PrintActionType(EMonkeyActionType action) {
 
 
 /** Check that the rule should trigger on this run */
-bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock)
+bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock, 
+                               unsigned short probability_left)
 {
     bool isRun = false;
+    
+    int rand_val = CMonkey::Instance()->GetRand(Key());
+    isRun = (rand_val % 100) < GetProbability(sock) * 100 / probability_left;
+    LOG_POST(Note << "[CMonkeyRuleBase::CheckRun]  Checking if the rule " 
+                  << "for " << s_PrintActionType(m_ActionType) 
+                  << " will be run this time. Random value is " 
+                  << rand_val << ", probability threshold is " 
+                  << m_Runs[m_RunPos[sock]] * 100);
+    LOG_POST(Note << "[CMonkeyRuleBase::CheckRun]  The rule will be " 
+                  << (isRun ? "" : "NOT ") << "run");
+    m_RunPos[sock]++;
+    return isRun;
+}
+
+
+unsigned short CMonkeyRuleBase::GetProbability(MONKEY_SOCKTYPE sock)
+{
     /* If "runs" is not set, rule always triggers */
-    if (m_Runs.empty()) return true;
+    if (m_Runs.empty()) return 100;
 
     /* In probability mode each item of m_Runs is a probability of each run */
     if (m_RunMode == eMonkey_RunProbability) {
@@ -385,7 +403,7 @@ bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock)
         if (m_RunPos[sock] == m_Runs.size()) {
             switch (m_RepeatType) {
             case eMonkey_RepeatNone:
-                return false;
+                return 0;
             case eMonkey_RepeatLast:
                 m_RunPos[sock] = m_Runs.size() - 1;
                 break;
@@ -394,38 +412,28 @@ bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock)
                 break;
             }
         }
-        int rand_val = CMonkey::Instance()->GetRand(Key());
-        LOG_POST(Note << "[CMonkeyRuleBase::CheckRun]  Checking if the rule " 
-                      << "for " << s_PrintActionType(m_ActionType) 
-                      << " will be run this time. Random value is " 
-                      << rand_val << ", probability threshold is " 
-                      << m_Runs[m_RunPos[sock]] * 100);
-        isRun = (rand_val % 100) < m_Runs[m_RunPos[sock]] * 100;
-        LOG_POST(Note << "[CMonkeyRuleBase::CheckRun]  The rule will be " 
-                      << (isRun ? "" : "NOT ") << "run");
+        return m_Runs[m_RunPos[sock]] * 100;
     }
-    /* In "number of the run" mode each item in m_Runs is a specific number of 
-       run when the rule should trigger */
+    /* In "number of the run" mode each item in m_Runs is a specific number of
+    run when the rule should trigger */
     else {
         if ((m_RunPos[sock] + 1) > *m_Runs.rbegin()) {
             switch (m_RepeatType) {
             case eMonkey_RepeatNone:
-                return false;
+                return 0;
             case eMonkey_RepeatLast:
-                return true;
+                return 100;
             case eMonkey_RepeatAgain:
                 m_RunPos[sock] = 0;
                 break;
             }
         }
         /* If m_Runs has the exact number of current run, the rule triggers */
-        isRun = std::binary_search(m_Runs.begin(), 
-                                   m_Runs.end(), m_RunPos[sock] + 1);
+        return std::binary_search(m_Runs.begin(), 
+                                   m_Runs.end(), 
+                                   m_RunPos[sock] + 1)  ?  100  : 0;
     }
-    m_RunPos[sock]++;
-    return isRun;
 }
-
 
 void CMonkeyRuleBase::x_ReadEIOStatus(const string& eIOStatus_str)
 {
@@ -1004,7 +1012,8 @@ static bool s_MatchRegex(const string& to_match, const string& regex)
 /* Compares supplied parameters to */
 bool CMonkeyPlan::Match(const string&  sock_host,
                         unsigned short sock_port, 
-                        const string&  sock_url)
+                        const string&  sock_url,
+                        unsigned short probability_left)
 {
     /* Regex test just in case */
     static int regex_works = 1; /* 0 for not working, 1 for working */
@@ -1062,12 +1071,15 @@ bool CMonkeyPlan::Match(const string&  sock_host,
     int rand_val = CMonkey::Instance()->GetRand(Key());
     LOG_POST(Note << "[CMonkeyPlan::Match]  Checking if plan " << m_Name  
                   << " will be matched. Random value is " 
-                  << rand_val << ", probability threshold is " 
-                  << m_Probability);
+                  << rand_val << ", plan probability is " 
+                  << m_Probability << "%, probability left is "  
+                  << probability_left << "%, so probability threshold is"
+                  << m_Probability * 100 / probability_left << "%");
     LOG_POST(Note << "[CMonkeyPlan::Match]  Plan " << m_Name << " was " 
                   << ((port_match && ((rand_val % 100) < m_Probability)) ? 
                       "" : "NOT ") << "matched");
-    return port_match ? ((rand_val % 100) < m_Probability) : false;
+    return port_match ? ((rand_val % 100) < m_Probability*100/probability_left) 
+                                          : false;
 }
 
 
@@ -1078,13 +1090,26 @@ bool CMonkeyPlan::WriteRule(MONKEY_SOCKTYPE        sock,
                             MONKEY_RETTYPE*        bytes_written,
                             SOCK*                  sock_ptr)
 {
+    short probability_left = 100;
     for (unsigned int i = 0;  i < m_WriteRules.size();  i++) {
+        unsigned short rule_prob = m_WriteRules[i].GetProbability(sock);
         if (m_WriteRules[i].CheckRun(sock)) {
             *bytes_written = m_WriteRules[i].Run(sock, data, size, flags, 
                                                  sock_ptr);
             return true;
         }
-        // If this rule did not engage, we go to the next rule
+        /* If this rule did not engage, we go to the next rule, and
+           remember to normalize probability of next rule */
+        probability_left -= rule_prob;
+        if (probability_left <= 0) {
+            stringstream ss;
+            ss << "Probability below zero for write rule in plan " << m_Name
+                << ". Check config!";
+            throw CMonkeyException(
+                        CDiagCompileInfo(__FILE__, __LINE__),
+                        NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs, 
+                        ss.str());
+        }
     }
     // If no rules engaged, return 0
     return false;
@@ -1098,12 +1123,25 @@ bool CMonkeyPlan::ReadRule(MONKEY_SOCKTYPE        sock,
                            MONKEY_RETTYPE*        bytes_read,
                            SOCK*                  sock_ptr)
 {
+    short probability_left = 100;
     for (unsigned int i = 0;  i < m_ReadRules.size();  i++) {
+        unsigned short rule_prob = m_WriteRules[i].GetProbability(sock);
         if (m_ReadRules[i].CheckRun(sock)) {
             *bytes_read = m_ReadRules[i].Run(sock, buf, size, flags, sock_ptr);
             return true;
         }
-        // If this rule did not engage, we go to the next rule
+        /* If this rule did not engage, we go to the next rule, and
+           and remember to normalize probability of next rule */
+        probability_left -= rule_prob;
+        if (probability_left <= 0) {
+            stringstream ss;
+            ss << "Probability below zero for write rule in plan " << m_Name
+                << ". Check config!";
+            throw CMonkeyException(
+                        CDiagCompileInfo(__FILE__, __LINE__),
+                        NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs, 
+                        ss.str());
+        }
     }
     return false;
 }
@@ -1114,7 +1152,9 @@ bool CMonkeyPlan::ConnectRule(MONKEY_SOCKTYPE        sock,
                               MONKEY_SOCKLENTYPE     namelen,
                               int*                   result)
 {
+    short probability_left = 100;
     for (unsigned int i = 0;  i < m_ConnectRules.size();  i++) {
+        unsigned short rule_prob = m_WriteRules[i].GetProbability(sock);
         /* Check if the rule will trigger on this run. If not - we go to the 
            next rule in plan */
         if (m_ConnectRules[i].CheckRun(sock)) {
@@ -1124,7 +1164,18 @@ bool CMonkeyPlan::ConnectRule(MONKEY_SOCKTYPE        sock,
             *result = m_ConnectRules[i].Run(sock, name, namelen);
             return true;
         }
-        // If this rule did not engage, we go to the next rule
+        /* If this rule did not engage, we go to the next rule, and
+           and remember to normalize probability of next rule */
+        probability_left -= rule_prob;
+        if (probability_left <= 0) {
+            stringstream ss;
+            ss << "Probability below zero for write rule in plan " << m_Name
+                << ". Check config!";
+            throw CMonkeyException(
+                        CDiagCompileInfo(__FILE__, __LINE__),
+                        NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs, 
+                        ss.str());
+        }
     }
     // If no rules triggered
     return false;
@@ -1135,17 +1186,36 @@ bool CMonkeyPlan::PollRule(size_t*     n,
                            SOCK*       sock,
                            EIO_Status* return_status)
 {
+    short probability_left = 100;
     for (unsigned int i = 0;  i < m_PollRules.size();  i++) {
+        unsigned short rule_prob = m_WriteRules[i].GetProbability(sock-sock);
         if (m_PollRules[i].CheckRun((*sock)->sock)) {
             return m_PollRules[i].Run(n, sock, return_status);
         }
         LOG_POST(Error << "[CMonkeyPlan::PollRule]  CHAOS MONKEY NOT "
                           "ENGAGED!!! poll() passed");
-        // If this rule did not trigger, we go to the next rule
+        /* If this rule did not engage, we go to the next rule, and
+           and remember to normalize probability of next rule */
+        probability_left -= rule_prob;
+        if (probability_left <= 0) {
+            stringstream ss;
+            ss << "Probability below zero for write rule in plan " << m_Name
+                << ". Check config!";
+            throw CMonkeyException(
+                        CDiagCompileInfo(__FILE__, __LINE__),
+                        NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs, 
+                        ss.str());
+        }
     }
     // If no rules triggered, return 0
     *return_status = EIO_Status::eIO_Success;
     return false;
+}
+
+
+unsigned short CMonkeyPlan::GetProbabilty(void)
+{
+    return m_Probability;
 }
 
 
@@ -1214,7 +1284,7 @@ bool CMonkey::IsEnabled()
 
 void CMonkey::ReloadConfig(const string& config)
 {
-    assert(sm_HookSwitch == NULL);
+    assert(sm_HookSwitch != NULL);
     CFastMutexGuard spawn_guard(s_ConfigMutex);
     string          rules;
     string          monkey_section = config.empty() ? s_GetMonkeySection() : 
@@ -1261,8 +1331,9 @@ void CMonkey::ReloadConfig(const string& config)
             m_Probability = NStr::StringToDouble(probability);
         }
     }
-    /* Disable hooks while Monkey initializes */
+    // Disable hooks while Monkey initializes
     sm_HookSwitch(eMonkeyHookSwitch_Disabled);
+    unsigned short total_probability = 0;
     for (int i = 1;  ;  ++i) {
         string section = monkey_section + "_PLAN" + NStr::IntToString(i);
         if (find(sections.begin(), sections.end(), section) ==
@@ -1270,6 +1341,19 @@ void CMonkey::ReloadConfig(const string& config)
             break;
         }
         m_Plans.push_back(CMonkeyPlan(section));
+        total_probability += (*m_Plans.rbegin()).GetProbabilty();
+    }
+    /* Check that sum of probabilities for plans is less than 100%, otherwise -
+     * throw an exception with an easy-to-read message */
+    if (total_probability > 100) {
+        stringstream ss;
+        ss << "Total probability for plans in configuration " <<
+            monkey_section << " exceeds 100%. Please check that summary " <<
+            "probability for plans stays under 100% (where the remaining "
+            "percents go to connections that are not intercepted by any plan)."
+            "\nTurning Chaos Monkey off";
+        CORE_LOG(eLOG_Critical, ss.str().c_str());
+        m_Enabled = false;
     }
     if (m_Enabled) {
         s_TimeoutingSocketInit();
@@ -1419,13 +1503,23 @@ CMonkeyPlan* CMonkey::x_FindPlan(MONKEY_SOCKTYPE sock,  const string& hostname,
     }
     /* Now we can find a plan */
     bool match_found = false;
+    unsigned short probability_left = 100; /* If we tried to match a plan with
+                                              n% probability with no luck,
+                                              next plan only has (100-n)% 
+                                              fraction of connections to match
+                                              against, so if its probability to
+                                              all connections is m%, its 
+                                              probability to connections left 
+                                              is m/(100-n)*100%. To count this,
+                                              we need probability_left */
     for (unsigned int i = 0; i < m_Plans.size() && !match_found; i++) {
         /* Match includes probability of plan*/
-        if (m_Plans[i].Match(host_IP, port, hostname)) {
+        if (m_Plans[i].Match(host_IP, port, hostname, probability_left)) {
             // 3. If found plan - use it and assign to this socket
             m_KnownSockets[sock] = &m_Plans[i];
             return m_KnownSockets[sock];
         }
+        probability_left -= m_Plans[i].GetProbabilty();
     }
     /* If no plan triggered, then this socket will be always ignored */
     m_KnownSockets[sock] = NULL;
