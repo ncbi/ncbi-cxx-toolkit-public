@@ -73,31 +73,23 @@ CGC_Assembly::~CGC_Assembly(void)
 {
 }
 
+const list<CRef<CDbtag>>& CGC_Assembly::x_GetId() const
+{
+    if (IsAssembly_set()) return GetAssembly_set().GetId();
+    if (IsUnit()) return GetUnit().GetId();
+    NCBI_THROW(CException, eUnknown, "unhandled GC-Assembly choice");
+}
 
 int CGC_Assembly::GetReleaseId() const
 {
     int release_id = 0;
-    CGC_AssemblyUnit::TId ids;
-    if (IsAssembly_set()) {
-        ITERATE (CGC_AssemblySet::TId, id_it, GetAssembly_set().GetId()) {
-
-            if ((*id_it)->GetDb() == "GenColl"  &&
-                (*id_it)->GetTag().IsId()) {
-                release_id = (*id_it)->GetTag().GetId();
-                break;
-            }
+    typedef list<CRef<CDbtag>> TId;
+    ITERATE (TId, id_it, x_GetId()) {
+        if ((*id_it)->GetDb() == "GenColl"  &&
+            (*id_it)->GetTag().IsId()) {
+            release_id = (*id_it)->GetTag().GetId();
+            break;
         }
-    } else if (IsUnit()) {
-        ITERATE (CGC_AssemblyUnit::TId, id_it, GetUnit().GetId()) {
-            if ((*id_it)->GetDb() == "GenColl"  &&
-                (*id_it)->GetTag().IsId()) {
-                release_id = (*id_it)->GetTag().GetId();
-                break;
-            }
-        }
-    } else {
-        NCBI_THROW(CException, eUnknown,
-                   "unhandled GC-Assembly choice");
     }
     return release_id;
 }
@@ -106,30 +98,36 @@ int CGC_Assembly::GetReleaseId() const
 string CGC_Assembly::GetAccession() const
 {
     string accession;
-    CGC_AssemblyUnit::TId ids;
-    if (IsAssembly_set()) {
-        ITERATE (CGC_AssemblySet::TId, id_it, GetAssembly_set().GetId()) {
-            if ((*id_it)->GetDb() == "GenColl"  &&
-                (*id_it)->GetTag().IsStr()) {
-                accession = (*id_it)->GetTag().GetStr();
-                break;
-            }
+    typedef list<CRef<CDbtag>> TId;
+    ITERATE (TId, id_it, x_GetId()) {
+        if ((*id_it)->GetDb() == "GenColl"  &&
+            (*id_it)->GetTag().IsStr()) {
+            accession = (*id_it)->GetTag().GetStr();
+            break;
         }
-    } else if (IsUnit()) {
-        ITERATE (CGC_AssemblyUnit::TId, id_it, GetUnit().GetId()) {
-            if ((*id_it)->GetDb() == "GenColl"  &&
-                (*id_it)->GetTag().IsStr()) {
-                accession = (*id_it)->GetTag().GetStr();
-                break;
-            }
-        }
-    } else {
-        NCBI_THROW(CException, eUnknown,
-                   "unhandled GC-Assembly choice");
     }
     return accession;
 }
 
+string CGC_Assembly::GetBestIdentifier() const
+{
+    const string acc = GetAccession();
+    return !acc.empty() ? acc : x_GetSubmitterId();
+}
+
+string CGC_Assembly::x_GetSubmitterId() const
+{
+    string submitter_id;
+    typedef list<CRef<CDbtag>> TId;
+    ITERATE (TId, id_it, x_GetId()) {
+        if ((*id_it)->GetDb() == "submitter"  &&
+            (*id_it)->GetTag().IsStr()) {
+            submitter_id = (*id_it)->GetTag().GetStr();
+            break;
+        }
+    }
+    return submitter_id;
+}
 
 const CGC_AssemblyDesc& CGC_Assembly::GetDesc() const
 {

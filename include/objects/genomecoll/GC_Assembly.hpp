@@ -79,6 +79,9 @@ public:
     /// Retrieve the accession for this assembly
     string GetAccession() const;
 
+    /// Either accession or submitter-provided id
+    string GetBestIdentifier() const;
+
     /// Retrieve the full set of assembly descriptors
     const CGC_AssemblyDesc& GetDesc() const;
 
@@ -159,6 +162,9 @@ private:
                  CGC_TaggedSequences::TState relation);
 
     void x_Index(CGC_Assembly& root);
+
+    const list< CRef< CDbtag > >& x_GetId() const;
+    string x_GetSubmitterId() const;
 };
 
 /////////////////// CGC_Assembly inline methods
