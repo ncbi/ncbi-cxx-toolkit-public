@@ -199,12 +199,13 @@ class CReportNode : public CObject
 public:
     typedef map<string, CRef<CReportNode> > TNodeMap;
 
-    CReportNode(const string& name = kEmptyStr) : m_Name(name), m_Fatal(false), m_Autofix(false), m_Ext(false) {}
-    
+    CReportNode(const string& name = kEmptyStr) : m_Name(name), m_Fatal(false), m_Autofix(false), m_Ext(false), m_Count(0) {}
+
     CReportNode& operator[](const string& name);
-    
+
     CReportNode& Fatal(bool b = true) { m_Fatal = b; return *this; }
     CReportNode& Ext(bool b = true) { m_Ext = b; return *this; }
+    CReportNode& Incr() { m_Count++; return *this; }
 
     static bool Exist(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
     bool Exist(const string& name) { return m_Map.find(name) != m_Map.end(); }
@@ -231,6 +232,7 @@ protected:
     bool m_Fatal;
     bool m_Autofix;
     bool m_Ext;
+    size_t m_Count;
 };
 
 
