@@ -236,6 +236,9 @@ CGtfReader::ReadSeqAnnots(
         }
         xReportProgress(pEC);
         try {
+            if (xIsTrackTerminator(line)) {
+                continue;
+            }
             if (x_ParseBrowserLineGff(line, m_CurrentBrowserInfo)) {
                 continue;
             }

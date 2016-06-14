@@ -665,6 +665,14 @@ bool CReaderBase::xIsTrackLine(
 }
 
 //  ----------------------------------------------------------------------------
+bool CReaderBase::xIsTrackTerminator(
+    const CTempString& strLine)
+//  ----------------------------------------------------------------------------
+{
+    return (NStr::TruncateSpaces(strLine) == "###");
+}
+
+//  ----------------------------------------------------------------------------
 bool CReaderBase::xIsBrowserLine(
     const CTempString& strLine)
 //  ----------------------------------------------------------------------------

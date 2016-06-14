@@ -237,6 +237,9 @@ protected:
     virtual bool xIsBrowserLine(
         const CTempString& );
 
+    virtual bool xIsTrackTerminator(
+        const CTempString& );
+
     virtual void xAssignTrackData(
         CRef<CSeq_annot>& );
                 
