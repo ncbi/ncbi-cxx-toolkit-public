@@ -1,0 +1,361 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "n1" } ,
+      descr {
+        source {
+          org {
+            taxname "Homo sapiens" ,
+            common "human" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 9606 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Homo" ,
+                  species "sapiens" } ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "ATCC abc" } ,
+                {
+                  subtype culture-collection ,
+                  subname "ATCC:abc" } } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Homo" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "PRI" } } } ,
+        molinfo {
+          biomol genomic } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "q" ,
+                          first "q" ,
+                          initials "q." } } } ,
+                affil
+                  str "q" } ,
+              title "a" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 6 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 14 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2014 ,
+            month 1 ,
+            day 8 } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 236 ,
+        seq-data
+          ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555
+000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H } } ,
+    seq {
+      id {
+        local
+          str "n2" } ,
+      descr {
+        source {
+          org {
+            taxname "Homo sapiens" ,
+            common "human" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 9606 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Homo" ,
+                  species "sapiens" } ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "ATCC xyz" } ,
+                {
+                  subtype culture-collection ,
+                  subname "ATCC:something else" } } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Homo" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "PRI" } } } ,
+        molinfo {
+          biomol genomic } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "q" ,
+                          first "q" ,
+                          initials "q." } } } ,
+                affil
+                  str "q" } ,
+              title "a" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 6 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 14 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2014 ,
+            month 1 ,
+            day 8 } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 236 ,
+        seq-data
+          ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555
+000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H } } ,
+    seq {
+      id {
+        local
+          str "n3" } ,
+      descr {
+        source {
+          org {
+            taxname "Homo sapiens" ,
+            common "human" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 9606 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Homo" ,
+                  species "sapiens" } ,
+              mod {
+                {
+                  subtype culture-collection ,
+                  subname "ATCC:123" } } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Homo" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "PRI" } } } ,
+        molinfo {
+          biomol genomic } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "q" ,
+                          first "q" ,
+                          initials "q." } } } ,
+                affil
+                  str "q" } ,
+              title "a" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 6 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 14 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2014 ,
+            month 1 ,
+            day 8 } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 236 ,
+        seq-data
+          ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555
+000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H } } ,
+    seq {
+      id {
+        local
+          str "n4" } ,
+      descr {
+        source {
+          org {
+            taxname "Homo sapiens" ,
+            common "human" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 9606 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Homo" ,
+                  species "sapiens" } ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "ATCC x234" } } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Homo" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "PRI" } } } ,
+        molinfo {
+          biomol genomic } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "q" ,
+                          first "q" ,
+                          initials "q." } } } ,
+                affil
+                  str "q" } ,
+              title "a" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 6 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 14 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        create-date
+          std {
+            year 2014 ,
+            month 1 ,
+            day 8 } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 236 ,
+        seq-data
+          ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555
+000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H } } } }

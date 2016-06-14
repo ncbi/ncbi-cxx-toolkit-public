@@ -329,5 +329,170 @@ DISCREPANCY_SUMMARIZE(MISSING_VIRAL_QUALS)
 }
 
 
+// ATCC_CULTURE_CONFLICT
+bool HasCultureCollectionForATCCStrain(const COrgName::TMod& mods, const string& strain)
+{
+    if (NStr::IsBlank(strain)) {
+        return true;
+    }
+
+    bool found = false;
+
+    ITERATE(COrgName::TMod, m, mods) {
+        if ((*m)->IsSetSubtype() &&
+            (*m)->GetSubtype() == COrgMod::eSubtype_culture_collection &&
+            (*m)->IsSetSubname() &&
+            NStr::StartsWith((*m)->GetSubname(), "ATCC:")) {
+            string cmp = (*m)->GetSubname().substr(5);
+            NStr::TruncateSpacesInPlace(cmp);
+            size_t pos = NStr::Find(cmp, ";");
+            if (pos != string::npos) {
+                cmp = cmp.substr(0, pos);
+            }
+            if (NStr::Equal(cmp, strain)) {
+                found = true;
+                break;
+            }
+        }
+    }
+
+    return found;
+}
+
+
+bool HasStrainForATCCCultureCollection(const COrgName::TMod& mods, const string& culture_collection)
+{
+    if (NStr::IsBlank(culture_collection)) {
+        return true;
+    }
+
+    bool found = false;
+
+    ITERATE(COrgName::TMod, m, mods) {
+        if ((*m)->IsSetSubtype() &&
+            (*m)->GetSubtype() == COrgMod::eSubtype_strain &&
+            (*m)->IsSetSubname() &&
+            NStr::StartsWith((*m)->GetSubname(), "ATCC ")) {
+            string cmp = (*m)->GetSubname().substr(5);
+            NStr::TruncateSpacesInPlace(cmp);
+            size_t pos = NStr::Find(cmp, ";");
+            if (pos != string::npos) {
+                cmp = cmp.substr(0, pos);
+            }
+            if (NStr::Equal(cmp, culture_collection)) {
+                found = true;
+                break;
+            }
+        }
+    }
+
+    return found;
+}
+
+const string kATCCCultureConflict = "[n] biosource[s] [has] conflicting ATCC strain and culture collection values";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, CBioSource, eOncaller|eDisc, "ATCC strain should also appear in culture collection")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
+        return;
+    }
+
+    bool report = false;
+
+    ITERATE(COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+        if ((*m)->IsSetSubtype() && 
+            (*m)->IsSetSubname()) {
+            if ((*m)->GetSubtype() == COrgMod::eSubtype_strain &&
+                NStr::StartsWith((*m)->GetSubname(), "ATCC ") &&
+                !HasCultureCollectionForATCCStrain(obj.GetOrg().GetOrgname().GetMod(), (*m)->GetSubname().substr(5))) {
+                report = true;
+                break;
+            } else if ((*m)->GetSubtype() == COrgMod::eSubtype_culture_collection &&
+                NStr::StartsWith((*m)->GetSubname(), "ATCC:") &&
+                !HasStrainForATCCCultureCollection(obj.GetOrg().GetOrgname().GetMod(), (*m)->GetSubname().substr(5))) {
+                report = true;
+                break;
+            }
+        }
+    }
+    if (report) {
+        if (context.GetCurrentSeqdesc() != NULL) {
+            m_Objs[kATCCCultureConflict].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
+        } else if (context.GetCurrentSeq_feat() != NULL) {
+            m_Objs[kATCCCultureConflict].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(ATCC_CULTURE_CONFLICT)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+static bool SetCultureCollectionFromStrain(CBioSource& src)
+{
+    if (!src.IsSetOrg() || !src.GetOrg().IsSetOrgMod() || !src.GetOrg().GetOrgname().IsSetMod()) {
+        return false;
+    }
+
+    vector<string> add;
+    ITERATE(COrgName::TMod, m, src.GetOrg().GetOrgname().GetMod()) {
+        if ((*m)->IsSetSubtype() &&
+            (*m)->IsSetSubname()) {
+            if ((*m)->GetSubtype() == COrgMod::eSubtype_strain &&
+                NStr::StartsWith((*m)->GetSubname(), "ATCC ") &&
+                !HasCultureCollectionForATCCStrain(src.GetOrg().GetOrgname().GetMod(), (*m)->GetSubname().substr(5))) {
+                add.push_back("ATCC:" + (*m)->GetSubname());
+            }
+        }
+    }
+    if (!add.empty()) {
+        ITERATE(vector<string>, s, add) {
+            CRef<COrgMod> m(new COrgMod(COrgMod::eSubtype_culture_collection, *s));
+            src.SetOrg().SetOrgname().SetMod().push_back(m);
+        }
+        return true;
+    }
+    return false;
+}
+
+
+DISCREPANCY_AUTOFIX(ATCC_CULTURE_CONFLICT)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf && sf->IsSetData() && sf->GetData().IsBiosrc()) {
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*sf);
+            if (SetCultureCollectionFromStrain(new_feat->SetData().SetBiosrc())) {
+                CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+                feh.Replace(*new_feat);
+                n++;
+            }
+        } else {
+            const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (csd && csd->IsSource()) {
+                CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
+                if (SetCultureCollectionFromStrain(sd->SetSource())) {
+                    n++;
+                }
+            }
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("ATCC_CULTURE_CONFLICT: Set culture collection for [n] source[s]", n) : 0);
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
