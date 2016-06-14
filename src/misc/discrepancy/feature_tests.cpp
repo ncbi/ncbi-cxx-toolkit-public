@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
 #include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -1368,6 +1369,44 @@ DISCREPANCY_SUMMARIZE(CDS_HAS_NEW_EXCEPTION)
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
+
+// SHORT_LNCRNA
+
+//  {"Short lncRNA sequences", "TEST_SHORT_LNCRNA", FindShortlncRNA, NULL},
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(SHORT_LNCRNA, CSeq_feat, eOncaller | eDisc, "Short lncRNA sequences")
+//  ----------------------------------------------------------------------------
+{
+    // only looking at lncrna features
+    if (!obj.IsSetData() || 
+        obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_ncRNA ||
+        !obj.GetData().IsRna() ||
+        !obj.GetData().GetRna().IsSetExt() ||
+        !obj.GetData().GetRna().GetExt().IsGen() || 
+        !obj.GetData().GetRna().GetExt().GetGen().IsSetClass() ||
+        !NStr::EqualNocase(obj.GetData().GetRna().GetExt().GetGen().GetClass(), "lncrna")) {
+        return;
+    }
+    // ignore if partial
+    if (obj.GetLocation().IsPartialStart(eExtreme_Biological) ||
+        obj.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        return;
+    }
+
+    if (sequence::GetLength(obj.GetLocation(), &(context.GetScope())) < 200) {
+        m_Objs["[n] lncRNA feature[s] [is] suspiciously short"].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(SHORT_LNCRNA)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
