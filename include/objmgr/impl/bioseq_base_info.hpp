@@ -111,6 +111,8 @@ public:
 
     const CSeqdesc* x_SearchFirstDesc(TDescTypeMask type) const;
 
+    TDescTypeMask x_GetExistingDescrMask(void) const;
+
     // annot
     typedef vector< CRef<CSeq_annot_Info> > TAnnot;
     typedef list< CRef<CSeq_annot> > TObjAnnot;

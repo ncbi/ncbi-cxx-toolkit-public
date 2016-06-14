@@ -491,5 +491,26 @@ const CSeqdesc* CBioseq_Base_Info::x_SearchFirstDesc(TDescTypeMask mask) const
 }
 
 
+CBioseq_Base_Info::TDescTypeMask
+CBioseq_Base_Info::x_GetExistingDescrMask(void) const
+{
+    TDescTypeMask mask = 0;
+    try {
+        // collect already set descr bits
+        for ( auto& i : x_GetDescr().Get() ) {
+            mask |= 1 << i->Which();
+        }
+    }
+    catch ( exception& ) {
+        // ignore
+    }
+    // add descr mask from chunks
+    for ( auto& i : m_DescrTypeMasks ) {
+        mask |= i;
+    }
+    return mask;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

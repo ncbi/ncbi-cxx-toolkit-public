@@ -67,8 +67,11 @@ CBioseq_Base_Info& ITSE_Assigner::x_GetBase(CTSE_Info& tse_info,
     if ( place.first ) {
         return x_GetBioseq(tse_info, place.first);
     }
-    else {
+    else if ( place.second ) {
         return x_GetBioseq_set(tse_info, place.second);
+    }
+    else {
+        return const_cast<CBioseq_Base_Info&>(tse_info.x_GetBaseInfo());
     }
 }
 
