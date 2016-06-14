@@ -623,5 +623,43 @@ DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE)
 }
 
 
+// MULTISRC
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MULTISRC, CBioSource, eOncaller | eDisc, "Comma or semicolon appears in strain or isolate")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
+        return;
+    }
+
+    bool report = false;
+    ITERATE(COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+        if ((*m)->IsSetSubtype() &&
+            ((*m)->GetSubtype() == COrgMod::eSubtype_isolate || (*m)->GetSubtype() == COrgMod::eSubtype_strain) &&
+            (*m)->IsSetSubname() &&
+            (NStr::Find((*m)->GetSubname(), ",") != string::npos ||
+             NStr::Find((*m)->GetSubname(), ";") != string::npos)) {
+            report = true;
+            break;
+        }
+    }
+    if (report) {
+        AddObjSource(m_Objs, context, "[n] organism[s] [has] comma or semicolon in strain or isolate");
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MULTISRC)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
