@@ -671,6 +671,25 @@ string COrgMod::FixStrain( const string& strain)
 }
 
 
+const char* sm_BadStrainValues[] = {
+    "yes",
+    "no",
+    "-",
+    "microbial"
+};
+
+bool COrgMod::IsStrainValid(const string& strain)
+{
+    size_t max = sizeof(sm_BadStrainValues) / sizeof(const char*);
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::EqualNocase(strain, sm_BadStrainValues[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 const char* sm_KnownHostWords[] = {
   "alfalfa",
   "almond",

@@ -1530,6 +1530,10 @@ const CSeq_entry *ctx)
                         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                             "Orgmod.strain should not start with serovar",
                             obj, ctx);
+                    } else if (!COrgMod::IsStrainValid(str)) {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                            "Orgmod.strain should not be '" + str + "'",
+                            obj, ctx);
                     }
                 }
                 if (has_strain) {

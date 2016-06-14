@@ -19548,3 +19548,38 @@ BOOST_AUTO_TEST_CASE(Test_VR_612)
 
     CLEAR_ERRORS
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_616)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "yes");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency", "Orgmod.strain should not be 'yes'"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "NO");
+    expected_errors[0]->SetErrMsg("Orgmod.strain should not be 'NO'");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "-");
+    expected_errors[0]->SetErrMsg("Orgmod.strain should not be '-'");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "microbial");
+    expected_errors[0]->SetErrMsg("Orgmod.strain should not be 'microbial'");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+

@@ -102,6 +102,7 @@ public:
 
     static string FixStrain( const string& strain);
     static bool FuzzyStrainMatch( const string& strain1, const string& strain2 );
+    static bool IsStrainValid(const string& strain);
 
     static string FixHost(const string& value);
     static string FixHostCapitalization(const string& value);

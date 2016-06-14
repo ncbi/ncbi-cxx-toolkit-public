@@ -508,7 +508,7 @@ public:
     void ValidateBioSourceForSeq(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx, const CBioseq_Handle& bsh);
     void ValidateLatLonCountry(string countryname, string lat_lon, const CSerialObject& obj, const CSeq_entry *ctx);
 
-    bool IsSyntheticConstruct (const CBioSource& src);
+    static bool IsSyntheticConstruct (const CBioSource& src);
     bool IsArtificial (const CBioSource& src);
     bool IsOrganelle (int genome);
     bool IsOrganelle (CBioseq_Handle seq);
