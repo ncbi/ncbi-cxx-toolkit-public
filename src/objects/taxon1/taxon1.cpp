@@ -1057,12 +1057,12 @@ CTaxon1::GetSpecies(TTaxId id_tax, ESpeciesMode mode)
     if( mode == eSpeciesMode_RankOnly ) {
         int species_rank(m_plCache->GetSpeciesRank());
         while( !pNode->IsRoot() ) {
-        int rank( pNode->GetRank() );
-        if( rank == species_rank )
-            return pNode->GetTaxId();
-        if( (rank > 0) && (rank < species_rank))
-            return 0;
-        pNode = pNode->GetParent();
+	    int rank( pNode->GetRank() );
+	    if( rank == species_rank )
+		return pNode->GetTaxId();
+	    if( (rank >= 0) && (rank < species_rank))
+		return 0;
+	    pNode = pNode->GetParent();
         }
         return 0;
     } else { // Based on flag
@@ -1114,10 +1114,11 @@ CTaxon1::GetGenus(TTaxId id_tax)
             int rank( pNode->GetRank() );
             if( rank == genus_rank )
                 return pNode->GetTaxId();
-            if( (rank > 0) && (rank < genus_rank))
-                return 0;
+            if( (rank >= 0) && (rank < genus_rank))
+                break;
             pNode = pNode->GetParent();
         }
+	return 0;
     }
     return -1;
 }
@@ -1145,10 +1146,9 @@ CTaxon1::GetSuperkingdom(TTaxId id_tax)
             int rank( pNode->GetRank() );
             if( rank == sk_rank )
                 return pNode->GetTaxId();
-            if( (rank > 0) && (rank < sk_rank))
-                return 0;
             pNode = pNode->GetParent();
         }
+	return 0;
     }
     return -1;
 }
