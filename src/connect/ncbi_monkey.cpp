@@ -1125,7 +1125,7 @@ bool CMonkeyPlan::ReadRule(MONKEY_SOCKTYPE        sock,
 {
     short probability_left = 100;
     for (unsigned int i = 0;  i < m_ReadRules.size();  i++) {
-        unsigned short rule_prob = m_WriteRules[i].GetProbability(sock);
+        unsigned short rule_prob = m_ReadRules[i].GetProbability(sock);
         if (m_ReadRules[i].CheckRun(sock)) {
             *bytes_read = m_ReadRules[i].Run(sock, buf, size, flags, sock_ptr);
             return true;
@@ -1154,7 +1154,7 @@ bool CMonkeyPlan::ConnectRule(MONKEY_SOCKTYPE        sock,
 {
     short probability_left = 100;
     for (unsigned int i = 0;  i < m_ConnectRules.size();  i++) {
-        unsigned short rule_prob = m_WriteRules[i].GetProbability(sock);
+        unsigned short rule_prob = m_ConnectRules[i].GetProbability(sock);
         /* Check if the rule will trigger on this run. If not - we go to the 
            next rule in plan */
         if (m_ConnectRules[i].CheckRun(sock)) {
@@ -1188,7 +1188,7 @@ bool CMonkeyPlan::PollRule(size_t*     n,
 {
     short probability_left = 100;
     for (unsigned int i = 0;  i < m_PollRules.size();  i++) {
-        unsigned short rule_prob = m_WriteRules[i].GetProbability(sock-sock);
+        unsigned short rule_prob = m_PollRules[i].GetProbability((*sock)->sock);
         if (m_PollRules[i].CheckRun((*sock)->sock)) {
             return m_PollRules[i].Run(n, sock, return_status);
         }
