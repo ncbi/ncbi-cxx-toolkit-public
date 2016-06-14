@@ -389,6 +389,17 @@ bool HasStrainForATCCCultureCollection(const COrgName::TMod& mods, const string&
     return found;
 }
 
+
+void AddObjSource(CReportNode& objs, CDiscrepancyContext& context, const string& category)
+{
+    if (context.GetCurrentSeqdesc() != NULL) {
+        objs[category].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
+    } else if (context.GetCurrentSeq_feat() != NULL) {
+        objs[category].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+    }
+}
+
+
 const string kATCCCultureConflict = "[n] biosource[s] [has] conflicting ATCC strain and culture collection values";
 
 //  ----------------------------------------------------------------------------
@@ -418,11 +429,7 @@ DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, CBioSource, eOncaller|eDisc, "ATCC strai
         }
     }
     if (report) {
-        if (context.GetCurrentSeqdesc() != NULL) {
-            m_Objs[kATCCCultureConflict].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
-        } else if (context.GetCurrentSeq_feat() != NULL) {
-            m_Objs[kATCCCultureConflict].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
-        }
+        AddObjSource(m_Objs, context, kATCCCultureConflict);
     }
 }
 
@@ -491,6 +498,62 @@ DISCREPANCY_AUTOFIX(ATCC_CULTURE_CONFLICT)
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("ATCC_CULTURE_CONFLICT: Set culture collection for [n] source[s]", n) : 0);
+}
+
+// BACTERIA_MISSING_STRAIN
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(BACTERIA_MISSING_STRAIN, CBioSource, eOncaller | eDisc, "Missing strain on bacterial 'Genus sp. strain'")
+//  ----------------------------------------------------------------------------
+{
+    // only looking for bacteria
+    if (!CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria")) {
+        return;
+    }
+
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetTaxname() || 
+        NStr::FindNoCase(obj.GetOrg().GetTaxname(), "enrichment culture clone") != string::npos) {
+        // ignore enrichment culture clones, no taxname at all
+        return;
+    }
+    size_t pos = NStr::Find(obj.GetOrg().GetTaxname(), " sp. ");
+    if (pos == string::npos) {
+        // only looking for sp.
+        return;
+    }
+
+    // ignore if parentheses after sp.
+    if (NStr::EndsWith(obj.GetOrg().GetTaxname(), ")") &&
+        NStr::Find(obj.GetOrg().GetTaxname(), "(", pos + 5) != string::npos) {
+        return;
+    }
+
+    bool found = false;
+    string cmp = obj.GetOrg().GetTaxname().substr(pos + 5);
+    
+    if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrgname().IsSetMod()) {
+        ITERATE(COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+            if ((*m)->IsSetSubtype() &&
+                (*m)->GetSubtype() == COrgMod::eSubtype_strain &&
+                (*m)->IsSetSubname() &&
+                NStr::Equal((*m)->GetSubname(), cmp)) {
+                found = true;
+            }
+        }
+    }
+    if (!found) {
+        AddObjSource(m_Objs, context, "[n] bacterial biosource[s] [has] taxname 'Genus sp. strain' but no strain");
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(BACTERIA_MISSING_STRAIN)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+          return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
