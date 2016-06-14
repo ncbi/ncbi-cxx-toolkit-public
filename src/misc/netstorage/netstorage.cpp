@@ -59,12 +59,6 @@ string CDirectNetStorageObject::Relocate(TNetStorageFlags flags)
 }
 
 
-bool CDirectNetStorageObject::Exists()
-{
-    return Impl<CObj>(m_Impl)->Exists();
-}
-
-
 ENetStorageRemoveResult CDirectNetStorageObject::Remove()
 {
     return Impl<CObj>(m_Impl)->Remove();
