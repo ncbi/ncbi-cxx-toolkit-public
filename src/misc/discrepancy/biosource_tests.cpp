@@ -557,5 +557,71 @@ DISCREPANCY_SUMMARIZE(BACTERIA_MISSING_STRAIN)
 }
 
 
+// BACTERIA_SHOULD_NOT_HAVE_ISOLATE
+const string kAmplifiedWithSpeciesSpecificPrimers = "amplified with species-specific primers";
+bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& src)
+{
+    if (src.IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, s, src.GetSubtype()) {
+            if ((*s)->IsSetSubtype() && (*s)->GetSubtype() == CSubSource::eSubtype_other &&
+                (*s)->IsSetName() && NStr::Equal((*s)->GetName(), kAmplifiedWithSpeciesSpecificPrimers)) {
+                return true;
+            }
+        }
+    }
+
+    if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetMod()) {
+        ITERATE(COrgName::TMod, m, src.GetOrg().GetOrgname().GetMod()) {
+            if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == CSubSource::eSubtype_other &&
+                (*m)->IsSetSubname() && NStr::Equal((*m)->GetSubname(), kAmplifiedWithSpeciesSpecificPrimers)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, CBioSource, eOncaller, "Bacterial sources should not have isolate")
+//  ----------------------------------------------------------------------------
+{
+    // only looking for bacteria
+    if (!CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria")) {
+        return;
+    }
+    if (HasAmplifiedWithSpeciesSpecificPrimerNote(obj)) {
+        return;
+    }
+
+    bool has_bad_isolate = false;
+    if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
+        ITERATE(COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+            if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_isolate &&
+                (*m)->IsSetSubname() && 
+                !NStr::StartsWith((*m)->GetSubname(), "DGGE gel band") &&
+                !NStr::StartsWith((*m)->GetSubname(), "TGGE gel band") &&
+                !NStr::StartsWith((*m)->GetSubname(), "SSCP gel band")) {
+                has_bad_isolate = true;
+                break;
+            }
+        }
+    }
+    if (has_bad_isolate) {
+        AddObjSource(m_Objs, context, "[n] bacterial biosource[s] [has] isolate");
+    }
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
