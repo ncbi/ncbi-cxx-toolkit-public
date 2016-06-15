@@ -816,6 +816,36 @@ static void s_SetCloneInfo(const CIgBlastTabularInfo& tabinfo,
 }
 
 void
+CBlastFormat::x_PrintTaxReport(const blast::CSearchResults& results)
+{    
+    CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(),
+                                                      CScope::eGetBioseq_All);
+    CConstRef<CBioseq> bioseq = bhandle.GetBioseqCore();
+    if(m_IsHTML) {
+        m_Outfile <<  "<pre>";
+    }
+    else {
+        m_Outfile <<  "\n";
+    }
+    CBlastFormatUtil::AcknowledgeBlastQuery(*bioseq, kFormatLineLength,
+                                            m_Outfile, m_BelieveQuery,
+                                            m_IsHTML, false,
+                                            results.GetRID());
+
+    if(m_IsHTML) {
+        m_Outfile <<  "</pre>";
+    }
+    CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
+    if (m_IsUngappedSearch && results.HasAlignments()) {
+        aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
+    }
+    
+    CRef<CSeq_align_set> new_aln_set(const_cast<CSeq_align_set*>(aln_set.GetPointer()));
+    CTaxFormat *taxFormatRes = new CTaxFormat (*new_aln_set,*m_Scope,m_IsHTML ? CTaxFormat::eHtml:CTaxFormat::eText, false,max(kMinTaxFormatLineLength,kFormatLineLength)); 
+    taxFormatRes->DisplayOrgReport(m_Outfile);    
+}
+
+void
 CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results,
                                      SClone& clone_info,
                                      bool fill_clone_info)
@@ -1035,6 +1065,13 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
         x_PrintTabularReport(results, itr_num);
         return;
     }
+    if (m_FormatType == CFormattingArgs::eTaxFormat) {
+        string reportCaption = "Tax BLAST report";
+        reportCaption = m_IsHTML ? "<h1>" + reportCaption + "</h1>" : CAlignFormatUtil::AddSpaces(reportCaption,max(kMinTaxFormatLineLength,kFormatLineLength),CAlignFormatUtil::eSpacePosToCenter | CAlignFormatUtil::eAddEOLAtLineStart | CAlignFormatUtil::eAddEOLAtLineEnd);
+        m_Outfile << reportCaption;
+        x_PrintTaxReport(results);
+        return;
+    }
     const bool kIsTabularOutput = false;
 
     if (is_deltablast_domain_result) {
@@ -1063,6 +1100,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
                                             m_Outfile, m_BelieveQuery,
                                             m_IsHTML, kIsTabularOutput,
                                             results.GetRID());
+
     if (m_IsBl2Seq && !m_IsDbScan) {
         m_Outfile << "\n";
         // FIXME: this might be configurable in the future
@@ -1205,6 +1243,13 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         return;
     }
 
+    if (m_FormatType == CFormattingArgs::eTaxFormat) {
+        string reportCaption = "Tax BLAST report";
+        reportCaption = m_IsHTML ? "<h1>" + reportCaption + "</h1>" : CAlignFormatUtil::AddSpaces(reportCaption,max(kMinTaxFormatLineLength,kFormatLineLength),CAlignFormatUtil::eSpacePosToCenter | CAlignFormatUtil::eAddEOLAtLineStart | CAlignFormatUtil::eAddEOLAtLineEnd);
+        m_Outfile << reportCaption;
+        x_PrintTaxReport(results);
+        return;
+    }
 
     const bool kIsTabularOutput = false;
 
@@ -1529,6 +1574,15 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
         }
         return;
     }
+    if (m_FormatType == CFormattingArgs::eTaxFormat) {
+        string reportCaption = "Tax BLAST report";
+        reportCaption = m_IsHTML ? "<h1>" + reportCaption + "</h1>" : CAlignFormatUtil::AddSpaces(reportCaption,max(kMinTaxFormatLineLength,kFormatLineLength),CAlignFormatUtil::eSpacePosToCenter | CAlignFormatUtil::eAddEOLAtLineStart | CAlignFormatUtil::eAddEOLAtLineEnd);
+        m_Outfile << reportCaption;
+        ITERATE(CSearchResultSet, result, result_set) {
+            x_PrintTaxReport(**result);
+        }
+        return;
+    }
 
     const CSearchResults& first_results = result_set[0];
 
@@ -1547,6 +1601,16 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
                                             m_Outfile, m_BelieveQuery,
                                             m_IsHTML, false,
                                             first_results.GetRID());
+
+    if (m_FormatType == CFormattingArgs::eTaxFormat) {
+        string reportCaption = "Tax BLAST report";
+        reportCaption = m_IsHTML ? "<h1>" + reportCaption + "</h1>" : CAlignFormatUtil::AddSpaces(reportCaption,max(kMinTaxFormatLineLength,kFormatLineLength),CAlignFormatUtil::eSpacePosToCenter | CAlignFormatUtil::eAddEOLAtLineStart | CAlignFormatUtil::eAddEOLAtLineEnd);
+        m_Outfile << reportCaption;
+        ITERATE(CSearchResultSet, result, result_set) {
+           x_PrintTaxReport(**result);
+        }        
+        return;
+    }
 
     const SPHIQueryInfo *phi_query_info = first_results.GetPhiQueryInfo();
 
