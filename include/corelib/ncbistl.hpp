@@ -217,6 +217,7 @@ END_NCBI_SCOPE
 #    include <ext/concurrence.h>
 #    ifdef _GLIBCXX_THROW_OR_ABORT /* using libstdc++ from GCC 4.8 or later */
 #      include <typeinfo>
+#      include <bits/alloc_traits.h>
 #      include <bits/unique_ptr.h>
 #      include <bits/shared_ptr.h>
 #    endif
