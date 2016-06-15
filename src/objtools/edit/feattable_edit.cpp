@@ -776,7 +776,14 @@ string CFeatTableEdit::xNextProteinId(
 		++mMapProtIdCounts[locusTag];
 		disAmbig = string("_") + NStr::IntToString(mMapProtIdCounts[locusTag]);
 	}
-    return (dbPrefix + mLocusTagPrefix + "|" + locusTag + disAmbig);
+    string db = mLocusTagPrefix;
+    if (db.empty()) {
+        string prefix, suffix;
+        NStr::SplitInTwo(locusTag, "_", prefix, suffix);
+        db = prefix;
+    }
+    string proteinId = dbPrefix + db + "|" + locusTag + disAmbig;
+    return proteinId;
 }
 
 //	----------------------------------------------------------------------------
@@ -800,7 +807,14 @@ string CFeatTableEdit::xNextTranscriptId(
 	if (it != mMapProtIdCounts.end()  &&  mMapProtIdCounts[locusTag] != 0) {
 		disAmbig = string("_") + NStr::IntToString(mMapProtIdCounts[locusTag]);
 	}
-	return (dbPrefix + mLocusTagPrefix + "|mrna." + locusTag + disAmbig);
+    string db = mLocusTagPrefix;
+    if (db.empty()) {
+        string prefix, suffix;
+        NStr::SplitInTwo(locusTag, "_", prefix, suffix);
+        db = prefix;
+    }
+    string transcriptId = dbPrefix + db + "|mrna." + locusTag + disAmbig;
+	return transcriptId;
 }
 
 //  ----------------------------------------------------------------------------
