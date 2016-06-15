@@ -1,31 +1,31 @@
 Discrepancy Report Results
 
 Summary
-SOURCE_QUALS: location (all present, all unique)
 SOURCE_QUALS: note-subsrc (all present, all unique)
-SOURCE_QUALS: taxid (all present, all unique)
 SOURCE_QUALS: taxname (all present, all unique)
 SOURCE_QUALS: tissue-type (all present, all unique)
+SOURCE_QUALS: taxid (all present, all unique)
+SOURCE_QUALS: location (all present, all unique)
 
 Detailed Report
 
-SOURCE_QUALS: location (all present, all unique)
-SOURCE_QUALS: 1 biosource has qualifier location = genomic
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-88.sqn:KF812548 (2 components):Lolium perenne
-
 SOURCE_QUALS: note-subsrc (all present, all unique)
-SOURCE_QUALS: 1 biosource has qualifier note-subsrc = phosphate transporter
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-88.sqn:KF812548 (2 components):Lolium perenne
-
-SOURCE_QUALS: taxid (all present, all unique)
-SOURCE_QUALS: 1 biosource has qualifier taxid = 4522
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-88.sqn:KF812548 (2 components):Lolium perenne
+SOURCE_QUALS: 1 source has note-subsrc = phosphate transporter
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\VR-88.sqn:KF812548 (2 components):Lolium perenne
 
 SOURCE_QUALS: taxname (all present, all unique)
-SOURCE_QUALS: 1 biosource has qualifier taxname = Lolium perenne
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-88.sqn:KF812548 (2 components):Lolium perenne
+SOURCE_QUALS: 1 source has taxname = Lolium perenne
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\VR-88.sqn:KF812548 (2 components):Lolium perenne
 
 SOURCE_QUALS: tissue-type (all present, all unique)
-SOURCE_QUALS: 1 biosource has qualifier tissue-type = roots
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\VR-88.sqn:KF812548 (2 components):Lolium perenne
+SOURCE_QUALS: 1 source has tissue-type = roots
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\VR-88.sqn:KF812548 (2 components):Lolium perenne
+
+SOURCE_QUALS: taxid (all present, all unique)
+SOURCE_QUALS: 1 source has taxid = 4522
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\VR-88.sqn:KF812548 (2 components):Lolium perenne
+
+SOURCE_QUALS: location (all present, all unique)
+SOURCE_QUALS: 1 source has location = genomic
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\VR-88.sqn:KF812548 (2 components):Lolium perenne
 

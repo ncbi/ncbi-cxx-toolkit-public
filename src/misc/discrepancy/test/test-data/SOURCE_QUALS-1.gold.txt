@@ -2,30 +2,30 @@ Discrepancy Report Results
 
 Summary
 SOURCE_QUALS: culture-collection (all present, all unique)
-SOURCE_QUALS: location (all present, all unique)
 SOURCE_QUALS: note-orgmod (all present, all unique)
-SOURCE_QUALS: taxid (all present, all unique)
 SOURCE_QUALS: taxname (all present, all unique)
+SOURCE_QUALS: taxid (all present, all unique)
+SOURCE_QUALS: location (all present, all unique)
 
 Detailed Report
 
 SOURCE_QUALS: culture-collection (all present, all unique)
-SOURCE_QUALS: 1 biosource has qualifier culture-collection = SAG:2007
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KM462871.asn:KM462871 (79 components):Lobosphaera incisa
-
-SOURCE_QUALS: location (all present, all unique)
-SOURCE_QUALS: 1 biosource has qualifier location = chloroplast
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KM462871.asn:KM462871 (79 components):Lobosphaera incisa
+SOURCE_QUALS: 1 source has culture-collection = SAG:2007
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\KM462871.asn:KM462871 (79 components):Lobosphaera incisa
 
 SOURCE_QUALS: note-orgmod (all present, all unique)
-SOURCE_QUALS: 1 biosource has qualifier note-orgmod = Lobosphaera incisa is the revised name of Myrmecia incisa (see Karsten et al. J. Phycol. (2005) 41:557-566)
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KM462871.asn:KM462871 (79 components):Lobosphaera incisa
-
-SOURCE_QUALS: taxid (all present, all unique)
-SOURCE_QUALS: 1 biosource has qualifier taxid = 312850
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KM462871.asn:KM462871 (79 components):Lobosphaera incisa
+SOURCE_QUALS: 1 source has note-orgmod = Lobosphaera incisa is the revised name of Myrmecia incisa (see Karsten et al. J. Phycol. (2005) 41:557-566)
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\KM462871.asn:KM462871 (79 components):Lobosphaera incisa
 
 SOURCE_QUALS: taxname (all present, all unique)
-SOURCE_QUALS: 1 biosource has qualifier taxname = Lobosphaera incisa
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\KM462871.asn:KM462871 (79 components):Lobosphaera incisa
+SOURCE_QUALS: 1 source has taxname = Lobosphaera incisa
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\KM462871.asn:KM462871 (79 components):Lobosphaera incisa
+
+SOURCE_QUALS: taxid (all present, all unique)
+SOURCE_QUALS: 1 source has taxid = 312850
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\KM462871.asn:KM462871 (79 components):Lobosphaera incisa
+
+SOURCE_QUALS: location (all present, all unique)
+SOURCE_QUALS: 1 source has location = chloroplast
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\KM462871.asn:KM462871 (79 components):Lobosphaera incisa
 
