@@ -716,7 +716,7 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, CBioSource, eDisc, "Find tRNAs on the same s
                         ENa_strand cur_strand = (*feat)->GetLocation().GetStrand();
                         if ((strand == eNa_strand_minus && cur_strand != eNa_strand_minus)
                             || (strand != eNa_strand_minus && cur_strand == eNa_strand_minus))
-                            mixed_strand = TRUE;
+                            mixed_strand = true;
                     }
 
                     trnas.push_back(CConstRef<CSeq_feat>(*feat));
