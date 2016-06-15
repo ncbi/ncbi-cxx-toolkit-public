@@ -375,7 +375,7 @@ SLbosConfigure ParseLbosConfigureAnswer(const char* lbos_answer)
 }
 
 
-string LBOS::GetServiceVersion(const string&  service,
+string LBOSPrivate::GetServiceVersion(const string&  service,
                                bool* exists) 
 {
     char* body_str = NULL, *status_message_str = NULL;
@@ -392,7 +392,7 @@ string LBOS::GetServiceVersion(const string&  service,
 }
 
 
-string LBOS::SetServiceVersion(const string&  service,
+string LBOSPrivate::SetServiceVersion(const string&  service,
                                const string&  new_version,
                                bool* existed)
 {
@@ -412,7 +412,7 @@ string LBOS::SetServiceVersion(const string&  service,
 }
 
 
-string LBOS::DeleteServiceVersion(const string&  service,
+string LBOSPrivate::DeleteServiceVersion(const string&  service,
                                   bool* existed)
 {
     char* body_str = NULL, *status_message_str = NULL;

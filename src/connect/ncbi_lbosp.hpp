@@ -90,6 +90,50 @@ private:
 };
 
 
+/* Private API of LBOS */
+class LBOSPrivate
+{
+public:
+   /** Get global config for a service name. 
+    * @note It does not change anything in the global DTab configuration.
+    * @param service[in]
+    *  Name of service for which to get default version.
+    * @return
+    *  Current default version. Can be an empty string
+    * @exception CLBOSException
+    *  Throw on any error.  Note: if the service is present in DTab but it has
+    *  no default version, then "eBadVersion" code will be used.
+    * @note 
+    *  Config can be of 3 types: empty string, path or version
+    */
+    static string GetServiceVersion(const string& service,
+                                    bool* exists = NULL);
+
+
+   /** Set default version for a service in the global DTab configuration.
+    * @param[in] service
+    *  Name of service for which to change the default version.
+    * @param new_version[out]
+    *  Version that will be used by default for specified service.
+    * @return
+    *  Previously set default version.
+    */
+    static string SetServiceVersion(const string& service,
+                                    const string& new_version,
+                                    bool* existed = NULL);
+
+
+   /** Remove service from the global DTab configuration configuration.
+    * @note Its default version will become empty.
+    * @param[in] service
+    *  Name of service to delete from the global DTab configuration.
+    * @return
+    *  Previously set default version.
+    */
+    static string DeleteServiceVersion(const string& service,
+                                       bool* existed = NULL);
+};
+
 
 END_NCBI_SCOPE
 

@@ -1002,7 +1002,7 @@ static int  s_FindAnnouncedServer(const string&     service,
 static bool s_CheckServiceKnown(const string& service)
 {
     bool exists;
-    LBOS::GetServiceVersion(service, &exists);
+    LBOSPrivate::GetServiceVersion(service, &exists);
     return exists;
 }
 
@@ -1057,7 +1057,7 @@ static void s_CleanDTabs() {
     
     vector<string>::iterator it;
     for (it = nodes_to_delete.begin();  it != nodes_to_delete.end();  it++ ) {
-        LBOS::DeleteServiceVersion(*it);
+        LBOSPrivate::DeleteServiceVersion(*it);
     }
 }
 
@@ -7184,14 +7184,14 @@ void SetThenCheck__ShowsSetVersion()
     string node_name = s_GetUnknownService();
         
     /* Set version */
-    LBOS::SetServiceVersion(node_name, "1.0.0");
+    LBOSPrivate::SetServiceVersion(node_name, "1.0.0");
 
     /* Check version */
-    string conf_data = LBOS::GetServiceVersion(node_name);
+    string conf_data = LBOSPrivate::GetServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_data, "1.0.0");
 
     /* Cleanup */
-    LBOS::DeleteServiceVersion(node_name);
+    LBOSPrivate::DeleteServiceVersion(node_name);
 }
 
 /* 2. Check version, then set different version, then check version -
@@ -7203,19 +7203,19 @@ void CheckSetNewCheck__ChangesVersion()
     string node_name = s_GetUnknownService();
 
     /* Check version and save it */
-    string conf_data = LBOS::GetServiceVersion(node_name);
+    string conf_data = LBOSPrivate::GetServiceVersion(node_name);
     string prev_version = conf_data;
 
     /* Set different version */
-    conf_data = LBOS::SetServiceVersion(node_name, prev_version + ".0");
+    conf_data = LBOSPrivate::SetServiceVersion(node_name, prev_version + ".0");
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_data, prev_version);
 
     /* Check version */
-    conf_data = LBOS::GetServiceVersion(node_name);
+    conf_data = LBOSPrivate::GetServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_data, prev_version + ".0");
 
     /* Cleanup */
-    LBOS::DeleteServiceVersion(node_name);
+    LBOSPrivate::DeleteServiceVersion(node_name);
 }
 
 /* 3. Set version, check that it was set, then delete version - check
@@ -7230,18 +7230,18 @@ void DeleteThenCheck__SetExistsFalse()
                                                                   comp("404\n");
 
     /* Set version */
-    LBOS::SetServiceVersion(node_name, "1.0.0", &exists);
+    LBOSPrivate::SetServiceVersion(node_name, "1.0.0", &exists);
 
     /* Delete version */
-    string conf_data = LBOS::DeleteServiceVersion(node_name);
+    string conf_data = LBOSPrivate::DeleteServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_data, "1.0.0");
 
     /* Check version */
-    LBOS::GetServiceVersion(node_name, &exists);
+    LBOSPrivate::GetServiceVersion(node_name, &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, false);
 
     /* Cleanup */
-    LBOS::DeleteServiceVersion(node_name);
+    LBOSPrivate::DeleteServiceVersion(node_name);
 }
 
 /* 4. Announce two servers with different version. First, set one version
@@ -7263,7 +7263,7 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
     s_AnnounceCPPSafe(node_name, "v2", "", port2, health.c_str());
 
     /* Set first version */
-    LBOS::SetServiceVersion(node_name, "v1");
+    LBOSPrivate::SetServiceVersion(node_name, "v1");
     unsigned int servers_found =
         s_CountServersWithExpectation(node_name, port1, 1, __LINE__,
                                       kDiscoveryDelaySec, "");
@@ -7274,7 +7274,7 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 0U);
 
     /* Set second version and discover  */
-    LBOS::SetServiceVersion(node_name, "v2");
+    LBOSPrivate::SetServiceVersion(node_name, "v2");
     servers_found =
         s_CountServersWithExpectation(node_name, port1, 0, __LINE__,
                                       kDiscoveryDelaySec, "");
@@ -7287,7 +7287,7 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
     /* Cleanup */
     s_DeannounceCPP(node_name, "v1", "", port1);
     s_DeannounceCPP(node_name, "v2", "", port2);
-    LBOS::DeleteServiceVersion(node_name);
+    LBOSPrivate::DeleteServiceVersion(node_name);
 
 }
 
@@ -7301,7 +7301,7 @@ void AnnounceThenDeleteVersion__DiscoverFindsNothing()
     unsigned short port;
 
     /* Set version */
-    LBOS::SetServiceVersion(node_name, "1.0.0");
+    LBOSPrivate::SetServiceVersion(node_name, "1.0.0");
     
     /* Announce and discover */
     string health = string("http://") + ANNOUNCEMENT_HOST + ":" + 
@@ -7315,14 +7315,14 @@ void AnnounceThenDeleteVersion__DiscoverFindsNothing()
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 1U);
 
     /* Delete version and not discover */
-    LBOS::DeleteServiceVersion(node_name);
+    LBOSPrivate::DeleteServiceVersion(node_name);
     servers_found =
         s_CountServersWithExpectation(node_name, port, 0, __LINE__,
                                       kDiscoveryDelaySec, "");
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 0U);
 
     /* Cleanup */
-    LBOS::DeleteServiceVersion(node_name);
+    LBOSPrivate::DeleteServiceVersion(node_name);
     s_DeannounceCPP(node_name, "1.0.0", "", port);
 }
 
@@ -7334,7 +7334,7 @@ void SetNoService__InvalidArgs()
                                                                   comp("452\n");
 
     /* Set version */
-    BOOST_CHECK_EXCEPTION(LBOS::SetServiceVersion("", "1.0.0"),
+    BOOST_CHECK_EXCEPTION(LBOSPrivate::SetServiceVersion("", "1.0.0"),
                           CLBOSException, 
                           comp);
 }
@@ -7347,7 +7347,7 @@ void GetNoService__InvalidArgs()
                                                                   comp("452\n");
 
     /* Set version */
-    BOOST_CHECK_EXCEPTION(LBOS::GetServiceVersion(""),
+    BOOST_CHECK_EXCEPTION(LBOSPrivate::GetServiceVersion(""),
                           CLBOSException, 
                           comp);
 }
@@ -7360,7 +7360,7 @@ void DeleteNoService__InvalidArgs()
                                                                   comp("452\n");
 
     /* Set version */
-    BOOST_CHECK_EXCEPTION(LBOS::DeleteServiceVersion(""),
+    BOOST_CHECK_EXCEPTION(LBOSPrivate::DeleteServiceVersion(""),
                           CLBOSException, 
                           comp);
 }
@@ -7374,15 +7374,15 @@ void SetEmptyVersion__OK()
                                                                   comp("452\n");
 
     /* Set version */
-    BOOST_CHECK_EXCEPTION(LBOS::SetServiceVersion(node_name, ""),
+    BOOST_CHECK_EXCEPTION(LBOSPrivate::SetServiceVersion(node_name, ""),
                           CLBOSException, comp);
 
     /* Check empty version */
-    string cur_version = LBOS::GetServiceVersion(node_name);
+    string cur_version = LBOSPrivate::GetServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(cur_version, "");
 
     /* Cleanup */
-    LBOS::DeleteServiceVersion(node_name);
+    LBOSPrivate::DeleteServiceVersion(node_name);
 }
 
 /* 10. Set with empty version no service - invalid args */
@@ -7393,7 +7393,7 @@ void SetNoServiceEmptyVersion__InvalidArgs()
                                                                   comp("452\n");
 
     /* Set version */
-    BOOST_CHECK_EXCEPTION(LBOS::SetServiceVersion("", ""),
+    BOOST_CHECK_EXCEPTION(LBOSPrivate::SetServiceVersion("", ""),
                           CLBOSException, 
                           comp);
 }
@@ -7409,28 +7409,28 @@ void ServiceNotExistsAndBoolProvided__EqualsFalse()
     string conf_version = "1";
 
     /* Get version */
-    conf_version = LBOS::GetServiceVersion(node_name, &exists);
+    conf_version = LBOSPrivate::GetServiceVersion(node_name, &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, false);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
     exists = true;
 
     /* Delete */
-    conf_version = LBOS::DeleteServiceVersion(node_name, &exists);
+    conf_version = LBOSPrivate::DeleteServiceVersion(node_name, &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, false);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
     exists = true;
 
     /* Set version */
-    conf_version = LBOS::SetServiceVersion(node_name, "1.0.0", &exists);
+    conf_version = LBOSPrivate::SetServiceVersion(node_name, "1.0.0", &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, false);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
     exists = true;
 
     /* Cleanup */
-    LBOS::DeleteServiceVersion(node_name);
+    LBOSPrivate::DeleteServiceVersion(node_name);
 }
 
 /* 12. Get, set, delete with service that does exist, providing
@@ -7442,24 +7442,24 @@ void ServiceExistsAndBoolProvided__EqualsTrue()
     string node_name = s_GetUnknownService();
     bool exists = false;
     string conf_version = "1";
-    LBOS::SetServiceVersion(node_name, "1.0.0", &exists);
+    LBOSPrivate::SetServiceVersion(node_name, "1.0.0", &exists);
 
     /* Get version */
-    conf_version = LBOS::GetServiceVersion(node_name, &exists);
+    conf_version = LBOSPrivate::GetServiceVersion(node_name, &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, true);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
     exists = false;
 
     /* Set version */
-    conf_version = LBOS::SetServiceVersion(node_name, "1.0.0", &exists);
+    conf_version = LBOSPrivate::SetServiceVersion(node_name, "1.0.0", &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, true);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
     exists = false;
 
     /* Delete (and also a cleanup) */
-    conf_version = LBOS::DeleteServiceVersion(node_name, &exists);
+    conf_version = LBOSPrivate::DeleteServiceVersion(node_name, &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, true);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
@@ -7476,22 +7476,22 @@ void ServiceNotExistsAndBoolNotProvided__NoCrash()
     string conf_version = "1";
 
     /* Get version */
-    conf_version = LBOS::GetServiceVersion(node_name);
+    conf_version = LBOSPrivate::GetServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
 
     /* Delete */
-    conf_version = LBOS::DeleteServiceVersion(node_name);
+    conf_version = LBOSPrivate::DeleteServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
 
     /* Set version */
-    conf_version = LBOS::SetServiceVersion(node_name, "1.0.0");
+    conf_version = LBOSPrivate::SetServiceVersion(node_name, "1.0.0");
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
 
     /* Cleanup */
-    LBOS::DeleteServiceVersion(node_name);
+    LBOSPrivate::DeleteServiceVersion(node_name);
 }
 
 /* 14. Get, set, delete with service that does exist, not providing
@@ -7502,20 +7502,20 @@ void ServiceExistsAndBoolNotProvided__NoCrash()
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
     string conf_version = "1";
-    LBOS::SetServiceVersion(node_name, "1.0.0");
+    LBOSPrivate::SetServiceVersion(node_name, "1.0.0");
 
     /* Get version */
-    conf_version = LBOS::GetServiceVersion(node_name);
+    conf_version = LBOSPrivate::GetServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
 
     /* Set version */
-    conf_version = LBOS::SetServiceVersion(node_name, "1.0.0");
+    conf_version = LBOSPrivate::SetServiceVersion(node_name, "1.0.0");
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
 
     /* Delete (and also a cleanup) */
-    conf_version = LBOS::DeleteServiceVersion(node_name);
+    conf_version = LBOSPrivate::DeleteServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
 }
