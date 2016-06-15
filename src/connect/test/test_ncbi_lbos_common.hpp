@@ -1095,7 +1095,7 @@ public:
         }
         if (s_ListeningPorts->size() < kPortsNeeded) {
             throw CLBOSException(CDiagCompileInfo(), NULL, 
-                                 CLBOSException::EErrCode::eUnknown,
+                                 CLBOSException::eUnknown,
                                  "Not enough vacant ports to start listening", 
                                  0);
         }
@@ -1925,34 +1925,34 @@ void CheckCodes()
 {    
     CLBOSException::EErrCode code;
     code = CLBOSException::s_HTTPCodeToEnum(400);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eBadRequest);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eBadRequest);
     code = CLBOSException::s_HTTPCodeToEnum(404);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eNotFound);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eNotFound);
     code = CLBOSException::s_HTTPCodeToEnum(450);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eLBOSNotFound);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eLBOSNotFound);
     code = CLBOSException::s_HTTPCodeToEnum(451);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eDNSResolve);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eDNSResolve);
     code = CLBOSException::s_HTTPCodeToEnum(452);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eInvalidArgs);
     code = CLBOSException::s_HTTPCodeToEnum(453);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eMemAlloc);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eMemAlloc);
     code = CLBOSException::s_HTTPCodeToEnum(454);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eProtocol);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eProtocol);
     code = CLBOSException::s_HTTPCodeToEnum(500);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eServer);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eServer);
     code = CLBOSException::s_HTTPCodeToEnum(550);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eDisabled);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eDisabled);
     /* 
      * Some unknown 
      */
     code = CLBOSException::s_HTTPCodeToEnum(200);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eUnknown);
     code = CLBOSException::s_HTTPCodeToEnum(204);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eUnknown);
     code = CLBOSException::s_HTTPCodeToEnum(401);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eUnknown);
     code = CLBOSException::s_HTTPCodeToEnum(503);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eUnknown);
 }
 
 
@@ -1964,31 +1964,31 @@ void CheckErrorCodeStrings()
 
     /* 400 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::eBadRequest, "",
+                                  CLBOSException::eBadRequest, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 404 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::eLBOSNotFound, "",
+                                  CLBOSException::eLBOSNotFound, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
     
     /* 500 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::eServer, "",
+                                  CLBOSException::eServer, "",
                                   eLBOSServerError).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 450 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::eLBOSNotFound, "",
+                                  CLBOSException::eLBOSNotFound, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "LBOS was not found");
 
     /* 451 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::
+                                  CLBOSException::
                                   eDNSResolve, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "DNS error. Possibly, cannot "
@@ -1996,7 +1996,7 @@ void CheckErrorCodeStrings()
                                  "provided hostname for the server");
     /* 452 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::eInvalidArgs, "",
+                                  CLBOSException::eInvalidArgs, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, 
                                  "Invalid arguments were provided. No "
@@ -2004,27 +2004,27 @@ void CheckErrorCodeStrings()
 
     /* 453 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::eMemAlloc, "",
+                                  CLBOSException::eMemAlloc, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Memory allocation error happened "
                                                "while performing request");
 
     /* 454 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::eProtocol, "",
+                                  CLBOSException::eProtocol, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Failed to parse LBOS output.");
 
     /* 550 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::eDisabled, "",
+                                  CLBOSException::eDisabled, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, 
                                  "LBOS functionality is turned OFF. Check "
                                  "config file or connection to LBOS.");
     /* unknown */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::eUnknown, "",
+                                  CLBOSException::eUnknown, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Unknown LBOS error code");
 }
@@ -2193,7 +2193,7 @@ void ResolveIP__TryFindReturnsIP()
  *  themselves */
 void ResolveEmpty__Error()
 {
-    ExceptionComparator<CLBOSException::EErrCode::eUnknown, 400> 
+    ExceptionComparator<CLBOSException::eUnknown, 400> 
     comparator("Internal error in LBOS Client IP Cache. Please contact developer\n");
     BOOST_CHECK_EXCEPTION(s_LBOSIPCacheTest("", s_GetMyIP()),
                          CLBOSException, comparator);
@@ -5930,7 +5930,7 @@ void NoLBOS__ThrowNoLBOSAndNotFind()
     WRITE_LOG("Expected exception with error code \"" << "eLBOSNotFound" <<
                 "\", status code \"" << 450 << 
                 "\", message \"" << "450\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eLBOSNotFound, 450> comparator("450\n");
+    ExceptionComparator<CLBOSException::eLBOSNotFound, 450> comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -5960,7 +5960,7 @@ void LBOSError__ThrowServerError()
                 "\", status code \"" << 507 << 
                 "\", message \"" << 
                 "507 LBOS STATUS Those lbos errors are scaaary\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eUnknown, 507> comparator(
+    ExceptionComparator<CLBOSException::eUnknown, 507> comparator(
         "507 LBOS STATUS Those lbos errors are scaaary\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6000,7 +6000,7 @@ void LBOSError__LBOSAnswerProvided()
     catch(const CLBOSException& ex) {
         /* Checking that message in exception is exactly what LBOS sent*/
         NCBITEST_CHECK_MESSAGE_MT_SAFE(
-            ex.GetErrCode() == CLBOSException::EErrCode::eUnknown,
+            ex.GetErrCode() == CLBOSException::eUnknown,
             "LBOS exception contains wrong error type");
         const char* ex_message =
             strstr(ex.what(), "Error: ") + strlen("Error: ");
@@ -6078,7 +6078,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
 /* Test is thread-safe. */
 void IncorrectURL__ThrowInvalidArgs()
 {
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                            comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6120,7 +6120,7 @@ void IncorrectPort__ThrowInvalidArgs()
     WRITE_LOG("Expected exception with error code \"" << "eInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                            comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6148,7 +6148,7 @@ void IncorrectVersion__ThrowInvalidArgs()
     WRITE_LOG("Expected exception with error code \"" << "eInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                            comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6175,7 +6175,7 @@ void IncorrectVersion__ThrowInvalidArgs()
 /* Test is thread-safe. */
 void IncorrectServiceName__ThrowInvalidArgs()
 {
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                            comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6234,7 +6234,7 @@ void RealLife__VisibleAfterAnnounce()
 /* Test is NOT thread-safe. */
 void IP0000__ReplaceWithIP()
 {
-    ExceptionComparator<CLBOSException::EErrCode::eDNSResolve, 451> 
+    ExceptionComparator<CLBOSException::eDNSResolve, 451> 
                                                            comparator ("451\n");
     CLBOSStatus lbos_status(true, true);
     /* Here we mock SOCK_gethostbyaddrEx to specify IP address that we want to
@@ -6282,7 +6282,7 @@ void IP0000__ReplaceWithIP()
 /* Test is NOT thread-safe. */
 void ResolveLocalIPError__ReturnDNSError()
 {
-    ExceptionComparator<CLBOSException::EErrCode::eDNSResolve, 451>
+    ExceptionComparator<CLBOSException::eDNSResolve, 451>
                                                             comparator("451\n");
     CLBOSStatus lbos_status(true, true);
     WRITE_LOG("If healthcheck has 0.0.0.0 specified as host, "
@@ -6309,7 +6309,7 @@ void ResolveLocalIPError__ReturnDNSError()
 /* Test is NOT thread-safe. */
 void LBOSOff__ThrowKLBOSOff()
 {
-    ExceptionComparator<CLBOSException::EErrCode::eDisabled, 550> 
+    ExceptionComparator<CLBOSException::eDisabled, 550> 
                                                             comparator("550\n");
     CLBOSStatus lbos_status(true, false);
     WRITE_LOG("LBOS mapper is OFF (maybe it is not turned ON in registry " 
@@ -6329,7 +6329,7 @@ void LBOSOff__ThrowKLBOSOff()
       return 454 and exact answer of LBOS                                    */
 void LBOSAnnounceCorruptOutput__ThrowServerError()
 {
-    ExceptionComparator<CLBOSException::EErrCode::eProtocol, 454>
+    ExceptionComparator<CLBOSException::eProtocol, 454>
                                             comparator ("454 Corrupt output\n");
     WRITE_LOG("Announced successfully, but LBOS returns corrupted answer.");
     WRITE_LOG("Expected exception with error code \"" << 
@@ -6374,7 +6374,7 @@ void HealthcheckDead__ThrowE_NotFound()
                 "eBadRequest" <<
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eBadRequest, 400> 
+    ExceptionComparator<CLBOSException::eBadRequest, 400> 
                                                 comparator("400 Bad Request\n");
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPP(node_name, "1.0.0", "", port, "http://badhealth.gov"), 
@@ -6492,7 +6492,7 @@ void ParamsGood__ReturnSuccess()
 /*  2.  Custom section has nothing in config - return eLBOSInvalidArgs       */
 void CustomSectionNoVars__ThrowInvalidArgs()
 {
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                             comparator("452\n");
     WRITE_LOG("Testing custom section that has nothing in config");
     WRITE_LOG("Expected exception with error code \"" << 
@@ -6523,7 +6523,7 @@ void CustomSectionEmptyOrNullAndSectionIsOk__AllOK()
 
 void TestNullOrEmptyField(const char* field_tested)
 {
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                             comparator("452\n");
     CLBOSStatus lbos_status(true, true);
     string null_section = "SECTION_WITHOUT_";
@@ -6578,7 +6578,7 @@ void PortEmptyOrNull__ThrowInvalidArgs()
 void PortOutOfRange__ThrowInvalidArgs()
 {
     WRITE_LOG("Port is out of range - return eLBOSInvalidArgs");
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                             comparator("452\n");
     /*
      * I. port = 0 
@@ -6622,7 +6622,7 @@ void PortContainsLetters__ThrowInvalidArgs()
                 "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                             comparator("452\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
@@ -6644,7 +6644,7 @@ void HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs()
                 "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                             comparator("452\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
@@ -6669,7 +6669,7 @@ void HealthcheckDead__ThrowE_NotFound()
                 "eBadRequest" <<
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eBadRequest, 400> 
+    ExceptionComparator<CLBOSException::eBadRequest, 400> 
                                                 comparator("400 Bad Request\n");
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPPFromRegistry("SECTION_WITH_HEALTHCHECK_DNS_ERROR"),
@@ -6837,7 +6837,7 @@ void NoLBOS__Return0()
                 "eLBOSNotFound" <<
                 "\", status code \"" << 450 <<
                 "\", message \"" << "450\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eLBOSNotFound, 450> 
+    ExceptionComparator<CLBOSException::eLBOSNotFound, 450> 
                                                             comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6861,7 +6861,7 @@ void LBOSExistsDeannounceError__Return0()
                 "eBadRequest" <<
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eBadRequest, 400> 
+    ExceptionComparator<CLBOSException::eBadRequest, 400> 
                                                 comparator("400 Bad Request\n");
     CLBOSStatus lbos_status(true, true);
     /* Currently LBOS does not return any errors */
@@ -6946,7 +6946,7 @@ void LBOSOff__ThrowKLBOSOff()
                 "eDisabled" <<
                 "\", status code \"" << 550 <<
                 "\", message \"" << "550\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eDisabled, 550> 
+    ExceptionComparator<CLBOSException::eDisabled, 550> 
                                                             comparator("550\n");
     CLBOSStatus lbos_status(true, false);
     BOOST_CHECK_EXCEPTION(
@@ -6964,7 +6964,7 @@ void NotExists__ThrowE_NotFound()
                 "eLBOSNotFound" <<
                 "\", status code \"" << 404 <<
                 "\", message \"" << "404 Not Found\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::eLBOSNotFound, 404> 
+    ExceptionComparator<CLBOSException::eLBOSNotFound, 404> 
                                                   comparator("404 Not Found\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
@@ -7226,7 +7226,7 @@ void DeleteThenCheck__SetExistsFalse()
     bool exists;
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
-    ExceptionComparator<CLBOSException::EErrCode::eLBOSNotFound, 404> 
+    ExceptionComparator<CLBOSException::eLBOSNotFound, 404> 
                                                                   comp("404\n");
 
     /* Set version */
@@ -7330,7 +7330,7 @@ void AnnounceThenDeleteVersion__DiscoverFindsNothing()
 void SetNoService__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                                   comp("452\n");
 
     /* Set version */
@@ -7343,7 +7343,7 @@ void SetNoService__InvalidArgs()
 void GetNoService__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                                   comp("452\n");
 
     /* Set version */
@@ -7356,7 +7356,7 @@ void GetNoService__InvalidArgs()
 void DeleteNoService__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                                   comp("452\n");
 
     /* Set version */
@@ -7370,7 +7370,7 @@ void SetEmptyVersion__OK()
 {
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                                   comp("452\n");
 
     /* Set version */
@@ -7389,7 +7389,7 @@ void SetEmptyVersion__OK()
 void SetNoServiceEmptyVersion__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                                   comp("452\n");
 
     /* Set version */

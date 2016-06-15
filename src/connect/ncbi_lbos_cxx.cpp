@@ -135,7 +135,7 @@ std::string CLBOSIpCache::HostnameResolve(string service, string hostname,
     /* Hostname should not be empty in any case */
     if (hostname == "") {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-            CLBOSException::EErrCode::eUnknown, 
+            CLBOSException::eUnknown, 
             "Internal error in LBOS Client IP Cache. Please contact developer",
             eLBOSBadRequest);
     }
@@ -231,7 +231,7 @@ void LBOS::Announce(const string& service, const string& version,
         if (cur_host == "") {
             ConnNetInfo_Destroy(healthcheck_info);
             throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                 CLBOSException::EErrCode::eInvalidArgs,
+                                 CLBOSException::eInvalidArgs,
                                  NStr::IntToString(eLBOSInvalidArgs),
                                  eLBOSInvalidArgs);
         }
@@ -273,14 +273,14 @@ void LBOS::AnnounceFromRegistry(string reg_section)
     }
     catch (...) {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                             CLBOSException::EErrCode::eInvalidArgs,
+                             CLBOSException::eInvalidArgs,
                              NStr::IntToString(eLBOSInvalidArgs),
                              eLBOSInvalidArgs);
     }
     if (port_int < 1 || port_int > 65535)
     {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                             CLBOSException::EErrCode::eInvalidArgs, 
+                             CLBOSException::eInvalidArgs, 
                              NStr::IntToString(eLBOSInvalidArgs),
                              eLBOSInvalidArgs);
     }
@@ -435,25 +435,25 @@ CLBOSException::EErrCode
 {
     switch (http_code) {
     case eLBOSNoLBOS:
-        return EErrCode::eLBOSNotFound;
+        return eLBOSNotFound;
     case eLBOSNotFound:
-        return EErrCode::eNotFound;
+        return eNotFound;
     case eLBOSBadRequest:
-        return EErrCode::eBadRequest;
+        return eBadRequest;
     case eLBOSOff:
-        return EErrCode::eDisabled;
+        return eDisabled;
     case eLBOSInvalidArgs:
-        return EErrCode::eInvalidArgs;
+        return eInvalidArgs;
     case eLBOSDNSResolveError:
-        return EErrCode::eInvalidArgs;
+        return eInvalidArgs;
     case eLBOSMemAllocError:
-        return EErrCode::eMemAlloc;
+        return eMemAlloc;
     case eLBOSCorruptOutput:
-        return EErrCode::eProtocol;
+        return eProtocol;
     case eLBOSServerError:
-        return EErrCode::eServer;
+        return eServer;
     default:
-        return EErrCode::eUnknown;
+        return eUnknown;
     }
 }
 
@@ -467,32 +467,32 @@ const char* CLBOSException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
     /* 400 */
-    case EErrCode::eBadRequest:
+    case eBadRequest:
         return "";
     /* 404 */
-    case EErrCode::eNotFound:
+    case eNotFound:
         return "";
     /* 500 */
-    case EErrCode::eServer:
+    case eServer:
         return "";
     /* 450 */
-    case EErrCode::eLBOSNotFound:
+    case eLBOSNotFound:
         return "LBOS was not found";
     /* 451 */
-    case EErrCode::eDNSResolve:
+    case eDNSResolve:
         return "DNS error. Possibly, cannot get IP of current machine or "
                "resolve provided hostname for the server";
     /* 452 */
-    case EErrCode::eInvalidArgs:
+    case eInvalidArgs:
         return "Invalid arguments were provided. No request to LBOS was sent";
     /* 453 */
-    case EErrCode::eMemAlloc:
+    case eMemAlloc:
         return "Memory allocation error happened while performing request";
     /* 454 */
-    case EErrCode::eProtocol:
+    case eProtocol:
         return "Failed to parse LBOS output.";
     /* 550 */
-    case EErrCode::eDisabled:
+    case eDisabled:
         return "LBOS functionality is turned OFF. Check config file or "
                "connection to LBOS.";
     default:
