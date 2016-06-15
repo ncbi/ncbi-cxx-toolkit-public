@@ -111,11 +111,11 @@ NCBITEST_AUTO_INIT()
                            &status_message.Get());
     lbos_answer = NULL;
     status_message = NULL;
-    string lbostest_version = LBOS::ServiceVersionGet("/lbostest");
+    string lbostest_version = LBOS::GetServiceVersion("/lbostest");
     LOG_POST(Error << "Current /lbostest version is " << lbostest_version);
     if (lbostest_version != "1.0.0") {
         LOG_POST(Error << "Updating /lbostest version to 1.0.0...");
-        LBOS::ServiceVersionSet("/lbostest", "1.0.0");
+        LBOS::SetServiceVersion("/lbostest", "1.0.0");
         LOG_POST(Error << "/lbostest version successfully updated!");
     }
     s_HealthcheckThread = new CHealthcheckThread;

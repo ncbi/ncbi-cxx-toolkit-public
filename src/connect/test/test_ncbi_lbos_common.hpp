@@ -1002,7 +1002,7 @@ static int  s_FindAnnouncedServer(const string&     service,
 static bool s_CheckServiceKnown(const string& service)
 {
     bool exists;
-    LBOS::ServiceVersionGet(service, &exists);
+    LBOS::GetServiceVersion(service, &exists);
     return exists;
 }
 
@@ -1057,7 +1057,7 @@ static void s_CleanDTabs() {
     
     vector<string>::iterator it;
     for (it = nodes_to_delete.begin();  it != nodes_to_delete.end();  it++ ) {
-        LBOS::ServiceVersionDelete(*it);
+        LBOS::DeleteServiceVersion(*it);
     }
 }
 
@@ -1095,7 +1095,7 @@ public:
         }
         if (s_ListeningPorts->size() < kPortsNeeded) {
             throw CLBOSException(CDiagCompileInfo(), NULL, 
-                                 CLBOSException::EErrCode::e_LBOSUnknown,
+                                 CLBOSException::EErrCode::eUnknown,
                                  "Not enough vacant ports to start listening", 
                                  0);
         }
@@ -1925,39 +1925,34 @@ void CheckCodes()
 {    
     CLBOSException::EErrCode code;
     code = CLBOSException::s_HTTPCodeToEnum(400);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code,
-                                 CLBOSException::EErrCode::e_LBOSBadRequest);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eBadRequest);
     code = CLBOSException::s_HTTPCodeToEnum(404);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code,
-                                 CLBOSException::EErrCode::e_LBOSNotFound);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eNotFound);
     code = CLBOSException::s_HTTPCodeToEnum(450);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSNoLBOS);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eLBOSNotFound);
     code = CLBOSException::s_HTTPCodeToEnum(451);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code,
-                                 CLBOSException::EErrCode::e_LBOSDNSResolveError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eDNSResolve);
     code = CLBOSException::s_HTTPCodeToEnum(452);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code,
-                                 CLBOSException::EErrCode::e_LBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eInvalidArgs);
     code = CLBOSException::s_HTTPCodeToEnum(453);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code,
-                                 CLBOSException::EErrCode::e_LBOSMemAllocError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eMemAlloc);
     code = CLBOSException::s_HTTPCodeToEnum(454);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code,
-                                 CLBOSException::EErrCode::e_LBOSCorruptOutput);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eProtocol);
     code = CLBOSException::s_HTTPCodeToEnum(500);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code,
-                                 CLBOSException::EErrCode::e_LBOSServerError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eServer);
     code = CLBOSException::s_HTTPCodeToEnum(550);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSOff);
-    /* Some unknown */
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eDisabled);
+    /* 
+     * Some unknown 
+     */
     code = CLBOSException::s_HTTPCodeToEnum(200);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eUnknown);
     code = CLBOSException::s_HTTPCodeToEnum(204);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eUnknown);
     code = CLBOSException::s_HTTPCodeToEnum(401);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eUnknown);
     code = CLBOSException::s_HTTPCodeToEnum(503);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::e_LBOSUnknown);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::EErrCode::eUnknown);
 }
 
 
@@ -1969,39 +1964,39 @@ void CheckErrorCodeStrings()
 
     /* 400 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::e_LBOSBadRequest, "",
+                                  CLBOSException::EErrCode::eBadRequest, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 404 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::e_LBOSNotFound, "",
+                                  CLBOSException::EErrCode::eLBOSNotFound, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
     
     /* 500 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::e_LBOSServerError, "",
+                                  CLBOSException::EErrCode::eServer, "",
                                   eLBOSServerError).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 450 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::e_LBOSNoLBOS, "",
+                                  CLBOSException::EErrCode::eLBOSNotFound, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "LBOS was not found");
 
     /* 451 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::EErrCode::
-                                  e_LBOSDNSResolveError, "",
+                                  eDNSResolve, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "DNS error. Possibly, cannot "
                                  "get IP of current machine or resolve "
                                  "provided hostname for the server");
     /* 452 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::e_LBOSInvalidArgs, "",
+                                  CLBOSException::EErrCode::eInvalidArgs, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, 
                                  "Invalid arguments were provided. No "
@@ -2009,27 +2004,27 @@ void CheckErrorCodeStrings()
 
     /* 453 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::e_LBOSMemAllocError, "",
+                                  CLBOSException::EErrCode::eMemAlloc, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Memory allocation error happened "
                                                "while performing request");
 
     /* 454 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::e_LBOSCorruptOutput, "",
+                                  CLBOSException::EErrCode::eProtocol, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Failed to parse LBOS output.");
 
     /* 550 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::e_LBOSOff, "",
+                                  CLBOSException::EErrCode::eDisabled, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, 
                                  "LBOS functionality is turned OFF. Check "
                                  "config file or connection to LBOS.");
     /* unknown */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::EErrCode::e_LBOSUnknown, "",
+                                  CLBOSException::EErrCode::eUnknown, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Unknown LBOS error code");
 }
@@ -2198,7 +2193,7 @@ void ResolveIP__TryFindReturnsIP()
  *  themselves */
 void ResolveEmpty__Error()
 {
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSUnknown, 400> 
+    ExceptionComparator<CLBOSException::EErrCode::eUnknown, 400> 
     comparator("Internal error in LBOS Client IP Cache. Please contact developer\n");
     BOOST_CHECK_EXCEPTION(s_LBOSIPCacheTest("", s_GetMyIP()),
                          CLBOSException, comparator);
@@ -5932,10 +5927,10 @@ void AllOK__AnnouncedServerSaved()
 void NoLBOS__ThrowNoLBOSAndNotFind()
 {
     WRITE_LOG("Testing behavior of LBOS when no LBOS is found.");
-    WRITE_LOG("Expected exception with error code \"" << "e_LBOSNoLBOS" <<
+    WRITE_LOG("Expected exception with error code \"" << "eLBOSNotFound" <<
                 "\", status code \"" << 450 << 
                 "\", message \"" << "450\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSNoLBOS, 450> comparator("450\n");
+    ExceptionComparator<CLBOSException::EErrCode::eLBOSNotFound, 450> comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -5961,11 +5956,11 @@ void LBOSError__ThrowServerError()
 {
     WRITE_LOG("LBOS returned unknown error: "
                 " Should throw exception with received code (507)");
-    WRITE_LOG("Expected exception with error code \"" << "e_LBOSUnknown" <<
+    WRITE_LOG("Expected exception with error code \"" << "eUnknown" <<
                 "\", status code \"" << 507 << 
                 "\", message \"" << 
                 "507 LBOS STATUS Those lbos errors are scaaary\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSUnknown, 507> comparator(
+    ExceptionComparator<CLBOSException::EErrCode::eUnknown, 507> comparator(
         "507 LBOS STATUS Those lbos errors are scaaary\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -5987,7 +5982,7 @@ void LBOSError__LBOSAnswerProvided()
 {
     WRITE_LOG("LBOS returned unknown error: "
                 " Exact message from LBOS should be provided");
-    WRITE_LOG("Expected exception with error code \"" << "e_LBOSUnknown" <<
+    WRITE_LOG("Expected exception with error code \"" << "eUnknown" <<
                 "\", status code \"" << 507 << 
                 "\", message \"" << 
                 "507 LBOS STATUS Those lbos errors are scaaary\\n" << "\".");
@@ -6005,7 +6000,7 @@ void LBOSError__LBOSAnswerProvided()
     catch(const CLBOSException& ex) {
         /* Checking that message in exception is exactly what LBOS sent*/
         NCBITEST_CHECK_MESSAGE_MT_SAFE(
-            ex.GetErrCode() == CLBOSException::EErrCode::e_LBOSUnknown,
+            ex.GetErrCode() == CLBOSException::EErrCode::eUnknown,
             "LBOS exception contains wrong error type");
         const char* ex_message =
             strstr(ex.what(), "Error: ") + strlen("Error: ");
@@ -6083,14 +6078,14 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
 /* Test is thread-safe. */
 void IncorrectURL__ThrowInvalidArgs()
 {
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                            comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
     WRITE_LOG("Testing behavior of LBOS "
              "mapper when passed incorrect healthcheck URL");
-    WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
+    WRITE_LOG("Expected exception with error code \"" << "eInvalidArgs" <<
               "\", status code \"" << 452 <<
               "\", message \"" << "452\\n" << "\".");
     /* Count how many servers there are before we announce */
@@ -6122,10 +6117,10 @@ void IncorrectPort__ThrowInvalidArgs()
 {
     WRITE_LOG("Testing behavior of LBOS "
               "mapper when passed incorrect port (zero)");
-    WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
+    WRITE_LOG("Expected exception with error code \"" << "eInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                            comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6150,10 +6145,10 @@ void IncorrectVersion__ThrowInvalidArgs()
     WRITE_LOG("Testing behavior of LBOS "
              "mapper when passed incorrect version - should return "
              "eLBOSInvalidArgs");
-    WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
+    WRITE_LOG("Expected exception with error code \"" << "eInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                            comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6180,7 +6175,7 @@ void IncorrectVersion__ThrowInvalidArgs()
 /* Test is thread-safe. */
 void IncorrectServiceName__ThrowInvalidArgs()
 {
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                            comparator ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6188,7 +6183,7 @@ void IncorrectServiceName__ThrowInvalidArgs()
     WRITE_LOG("Testing behavior of LBOS "
               "mapper when passed incorrect service name - should return "
               "eLBOSInvalidArgs");
-    WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
+    WRITE_LOG("Expected exception with error code \"" << "eInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
     /*
@@ -6239,7 +6234,7 @@ void RealLife__VisibleAfterAnnounce()
 /* Test is NOT thread-safe. */
 void IP0000__ReplaceWithIP()
 {
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSDNSResolveError, 451> 
+    ExceptionComparator<CLBOSException::EErrCode::eDNSResolve, 451> 
                                                            comparator ("451\n");
     CLBOSStatus lbos_status(true, true);
     /* Here we mock SOCK_gethostbyaddrEx to specify IP address that we want to
@@ -6287,7 +6282,7 @@ void IP0000__ReplaceWithIP()
 /* Test is NOT thread-safe. */
 void ResolveLocalIPError__ReturnDNSError()
 {
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSDNSResolveError, 451>
+    ExceptionComparator<CLBOSException::EErrCode::eDNSResolve, 451>
                                                             comparator("451\n");
     CLBOSStatus lbos_status(true, true);
     WRITE_LOG("If healthcheck has 0.0.0.0 specified as host, "
@@ -6314,12 +6309,12 @@ void ResolveLocalIPError__ReturnDNSError()
 /* Test is NOT thread-safe. */
 void LBOSOff__ThrowKLBOSOff()
 {
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSOff, 550> 
+    ExceptionComparator<CLBOSException::EErrCode::eDisabled, 550> 
                                                             comparator("550\n");
     CLBOSStatus lbos_status(true, false);
     WRITE_LOG("LBOS mapper is OFF (maybe it is not turned ON in registry " 
               "or it could not initialize at start) - return eLBOSOff");
-    WRITE_LOG("Expected exception with error code \"" << "e_LBOSOff" <<
+    WRITE_LOG("Expected exception with error code \"" << "eDisabled" <<
               "\", status code \"" << 550 <<
                 "\", message \"" << "550\\n" << "\".");
     BOOST_CHECK_EXCEPTION(
@@ -6334,11 +6329,11 @@ void LBOSOff__ThrowKLBOSOff()
       return 454 and exact answer of LBOS                                    */
 void LBOSAnnounceCorruptOutput__ThrowServerError()
 {
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSCorruptOutput, 454>
+    ExceptionComparator<CLBOSException::EErrCode::eProtocol, 454>
                                             comparator ("454 Corrupt output\n");
     WRITE_LOG("Announced successfully, but LBOS returns corrupted answer.");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSCorruptOutput" << 
+                "eProtocol" << 
                 "\", status code \"" << 454 <<
                 "\", message \"" << "454 Corrupt output\\n" << "\".");
     CLBOSStatus lbos_status(true, true);
@@ -6376,10 +6371,10 @@ void HealthcheckDead__ThrowE_NotFound()
                 "return  eLBOSBadRequest");
     SELECT_PORT(count_before, node_name, port);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSBadRequest" <<
+                "eBadRequest" <<
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSBadRequest, 400> 
+    ExceptionComparator<CLBOSException::EErrCode::eBadRequest, 400> 
                                                 comparator("400 Bad Request\n");
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPP(node_name, "1.0.0", "", port, "http://badhealth.gov"), 
@@ -6497,11 +6492,11 @@ void ParamsGood__ReturnSuccess()
 /*  2.  Custom section has nothing in config - return eLBOSInvalidArgs       */
 void CustomSectionNoVars__ThrowInvalidArgs()
 {
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                             comparator("452\n");
     WRITE_LOG("Testing custom section that has nothing in config");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSInvalidArgs" <<
+                "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
     CLBOSStatus lbos_status(true, true);
@@ -6528,7 +6523,7 @@ void CustomSectionEmptyOrNullAndSectionIsOk__AllOK()
 
 void TestNullOrEmptyField(const char* field_tested)
 {
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                             comparator("452\n");
     CLBOSStatus lbos_status(true, true);
     string null_section = "SECTION_WITHOUT_";
@@ -6539,7 +6534,7 @@ void TestNullOrEmptyField(const char* field_tested)
      */
     WRITE_LOG("Part I. " << field_tested << " is not in section (NULL)");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSInvalidArgs" <<
+                "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
     BOOST_CHECK_EXCEPTION(
@@ -6550,7 +6545,7 @@ void TestNullOrEmptyField(const char* field_tested)
      */
     WRITE_LOG("Part II. " << field_tested << " is an empty string");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSInvalidArgs" <<
+                "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
     BOOST_CHECK_EXCEPTION(
@@ -6583,14 +6578,14 @@ void PortEmptyOrNull__ThrowInvalidArgs()
 void PortOutOfRange__ThrowInvalidArgs()
 {
     WRITE_LOG("Port is out of range - return eLBOSInvalidArgs");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                             comparator("452\n");
     /*
      * I. port = 0 
      */
     WRITE_LOG("Part I. Port is 0");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSInvalidArgs" <<
+                "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
     BOOST_CHECK_EXCEPTION(
@@ -6601,7 +6596,7 @@ void PortOutOfRange__ThrowInvalidArgs()
      */
     WRITE_LOG("Part II. Port is 100000");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSInvalidArgs" <<
+                "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
     BOOST_CHECK_EXCEPTION(
@@ -6612,7 +6607,7 @@ void PortOutOfRange__ThrowInvalidArgs()
      */
     WRITE_LOG("Part III. Port is 65536");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSInvalidArgs" <<
+                "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
     BOOST_CHECK_EXCEPTION(
@@ -6624,10 +6619,10 @@ void PortContainsLetters__ThrowInvalidArgs()
 {
     WRITE_LOG("Port contains letters");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSInvalidArgs" <<
+                "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                             comparator("452\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
@@ -6646,10 +6641,10 @@ void HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs()
 {
     WRITE_LOG("Healthcheck does not start with http:// or https://");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSInvalidArgs" <<
+                "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                             comparator("452\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
@@ -6671,10 +6666,10 @@ void HealthcheckDead__ThrowE_NotFound()
     WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
               "return  eLBOSBadRequest");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSBadRequest" <<
+                "eBadRequest" <<
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSBadRequest, 400> 
+    ExceptionComparator<CLBOSException::EErrCode::eBadRequest, 400> 
                                                 comparator("400 Bad Request\n");
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPPFromRegistry("SECTION_WITH_HEALTHCHECK_DNS_ERROR"),
@@ -6839,10 +6834,10 @@ void NoLBOS__Return0()
 {
     WRITE_LOG("Could not connect to provided LBOS");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSNoLBOS" <<
+                "eLBOSNotFound" <<
                 "\", status code \"" << 450 <<
                 "\", message \"" << "450\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSNoLBOS, 450> 
+    ExceptionComparator<CLBOSException::EErrCode::eLBOSNotFound, 450> 
                                                             comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6863,10 +6858,10 @@ void LBOSExistsDeannounceError__Return0()
 {
     WRITE_LOG("Could not connect to provided LBOS");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSBadRequest" <<
+                "eBadRequest" <<
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSBadRequest, 400> 
+    ExceptionComparator<CLBOSException::EErrCode::eBadRequest, 400> 
                                                 comparator("400 Bad Request\n");
     CLBOSStatus lbos_status(true, true);
     /* Currently LBOS does not return any errors */
@@ -6948,10 +6943,10 @@ void LBOSOff__ThrowKLBOSOff()
 {
     WRITE_LOG("Deannonce when LBOS mapper is OFF");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSOff" <<
+                "eDisabled" <<
                 "\", status code \"" << 550 <<
                 "\", message \"" << "550\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSOff, 550> 
+    ExceptionComparator<CLBOSException::EErrCode::eDisabled, 550> 
                                                             comparator("550\n");
     CLBOSStatus lbos_status(true, false);
     BOOST_CHECK_EXCEPTION(
@@ -6960,16 +6955,16 @@ void LBOSOff__ThrowKLBOSOff()
 }
 
 
-/* 9. Trying to deannounce non-existent service - throw e_LBOSNotFound           */
+/* 9. Trying to deannounce non-existent service - throw eLBOSNotFound           */
 /*    Test is thread-safe. */
 void NotExists__ThrowE_NotFound()
 {
     WRITE_LOG("Deannonce non-existent service");
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_LBOSNotFound" <<
+                "eLBOSNotFound" <<
                 "\", status code \"" << 404 <<
                 "\", message \"" << "404 Not Found\\n" << "\".");
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSNotFound, 404> 
+    ExceptionComparator<CLBOSException::EErrCode::eLBOSNotFound, 404> 
                                                   comparator("404 Not Found\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
@@ -7189,14 +7184,14 @@ void SetThenCheck__ShowsSetVersion()
     string node_name = s_GetUnknownService();
         
     /* Set version */
-    LBOS::ServiceVersionSet(node_name, "1.0.0");
+    LBOS::SetServiceVersion(node_name, "1.0.0");
 
     /* Check version */
-    string conf_data = LBOS::ServiceVersionGet(node_name);
+    string conf_data = LBOS::GetServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_data, "1.0.0");
 
     /* Cleanup */
-    LBOS::ServiceVersionDelete(node_name);
+    LBOS::DeleteServiceVersion(node_name);
 }
 
 /* 2. Check version, then set different version, then check version -
@@ -7208,19 +7203,19 @@ void CheckSetNewCheck__ChangesVersion()
     string node_name = s_GetUnknownService();
 
     /* Check version and save it */
-    string conf_data = LBOS::ServiceVersionGet(node_name);
+    string conf_data = LBOS::GetServiceVersion(node_name);
     string prev_version = conf_data;
 
     /* Set different version */
-    conf_data = LBOS::ServiceVersionSet(node_name, prev_version + ".0");
+    conf_data = LBOS::SetServiceVersion(node_name, prev_version + ".0");
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_data, prev_version);
 
     /* Check version */
-    conf_data = LBOS::ServiceVersionGet(node_name);
+    conf_data = LBOS::GetServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_data, prev_version + ".0");
 
     /* Cleanup */
-    LBOS::ServiceVersionDelete(node_name);
+    LBOS::DeleteServiceVersion(node_name);
 }
 
 /* 3. Set version, check that it was set, then delete version - check
@@ -7231,22 +7226,22 @@ void DeleteThenCheck__SetExistsFalse()
     bool exists;
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSNotFound, 404> 
+    ExceptionComparator<CLBOSException::EErrCode::eLBOSNotFound, 404> 
                                                                   comp("404\n");
 
     /* Set version */
-    LBOS::ServiceVersionSet(node_name, "1.0.0", &exists);
+    LBOS::SetServiceVersion(node_name, "1.0.0", &exists);
 
     /* Delete version */
-    string conf_data = LBOS::ServiceVersionDelete(node_name);
+    string conf_data = LBOS::DeleteServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_data, "1.0.0");
 
     /* Check version */
-    LBOS::ServiceVersionGet(node_name, &exists);
+    LBOS::GetServiceVersion(node_name, &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, false);
 
     /* Cleanup */
-    LBOS::ServiceVersionDelete(node_name);
+    LBOS::DeleteServiceVersion(node_name);
 }
 
 /* 4. Announce two servers with different version. First, set one version
@@ -7268,7 +7263,7 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
     s_AnnounceCPPSafe(node_name, "v2", "", port2, health.c_str());
 
     /* Set first version */
-    LBOS::ServiceVersionSet(node_name, "v1");
+    LBOS::SetServiceVersion(node_name, "v1");
     unsigned int servers_found =
         s_CountServersWithExpectation(node_name, port1, 1, __LINE__,
                                       kDiscoveryDelaySec, "");
@@ -7279,7 +7274,7 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 0U);
 
     /* Set second version and discover  */
-    LBOS::ServiceVersionSet(node_name, "v2");
+    LBOS::SetServiceVersion(node_name, "v2");
     servers_found =
         s_CountServersWithExpectation(node_name, port1, 0, __LINE__,
                                       kDiscoveryDelaySec, "");
@@ -7292,7 +7287,7 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
     /* Cleanup */
     s_DeannounceCPP(node_name, "v1", "", port1);
     s_DeannounceCPP(node_name, "v2", "", port2);
-    LBOS::ServiceVersionDelete(node_name);
+    LBOS::DeleteServiceVersion(node_name);
 
 }
 
@@ -7306,7 +7301,7 @@ void AnnounceThenDeleteVersion__DiscoverFindsNothing()
     unsigned short port;
 
     /* Set version */
-    LBOS::ServiceVersionSet(node_name, "1.0.0");
+    LBOS::SetServiceVersion(node_name, "1.0.0");
     
     /* Announce and discover */
     string health = string("http://") + ANNOUNCEMENT_HOST + ":" + 
@@ -7320,14 +7315,14 @@ void AnnounceThenDeleteVersion__DiscoverFindsNothing()
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 1U);
 
     /* Delete version and not discover */
-    LBOS::ServiceVersionDelete(node_name);
+    LBOS::DeleteServiceVersion(node_name);
     servers_found =
         s_CountServersWithExpectation(node_name, port, 0, __LINE__,
                                       kDiscoveryDelaySec, "");
     NCBITEST_CHECK_EQUAL_MT_SAFE(servers_found, 0U);
 
     /* Cleanup */
-    LBOS::ServiceVersionDelete(node_name);
+    LBOS::DeleteServiceVersion(node_name);
     s_DeannounceCPP(node_name, "1.0.0", "", port);
 }
 
@@ -7335,11 +7330,11 @@ void AnnounceThenDeleteVersion__DiscoverFindsNothing()
 void SetNoService__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                                   comp("452\n");
 
     /* Set version */
-    BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionSet("", "1.0.0"),
+    BOOST_CHECK_EXCEPTION(LBOS::SetServiceVersion("", "1.0.0"),
                           CLBOSException, 
                           comp);
 }
@@ -7348,11 +7343,11 @@ void SetNoService__InvalidArgs()
 void GetNoService__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                                   comp("452\n");
 
     /* Set version */
-    BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionGet(""),
+    BOOST_CHECK_EXCEPTION(LBOS::GetServiceVersion(""),
                           CLBOSException, 
                           comp);
 }
@@ -7361,11 +7356,11 @@ void GetNoService__InvalidArgs()
 void DeleteNoService__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                                   comp("452\n");
 
     /* Set version */
-    BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionDelete(""),
+    BOOST_CHECK_EXCEPTION(LBOS::DeleteServiceVersion(""),
                           CLBOSException, 
                           comp);
 }
@@ -7375,30 +7370,30 @@ void SetEmptyVersion__OK()
 {
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                                   comp("452\n");
 
     /* Set version */
-    BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionSet(node_name, ""),
+    BOOST_CHECK_EXCEPTION(LBOS::SetServiceVersion(node_name, ""),
                           CLBOSException, comp);
 
     /* Check empty version */
-    string cur_version = LBOS::ServiceVersionGet(node_name);
+    string cur_version = LBOS::GetServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(cur_version, "");
 
     /* Cleanup */
-    LBOS::ServiceVersionDelete(node_name);
+    LBOS::DeleteServiceVersion(node_name);
 }
 
 /* 10. Set with empty version no service - invalid args */
 void SetNoServiceEmptyVersion__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::EErrCode::e_LBOSInvalidArgs, 452> 
+    ExceptionComparator<CLBOSException::EErrCode::eInvalidArgs, 452> 
                                                                   comp("452\n");
 
     /* Set version */
-    BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionSet("", ""),
+    BOOST_CHECK_EXCEPTION(LBOS::SetServiceVersion("", ""),
                           CLBOSException, 
                           comp);
 }
@@ -7414,28 +7409,28 @@ void ServiceNotExistsAndBoolProvided__EqualsFalse()
     string conf_version = "1";
 
     /* Get version */
-    conf_version = LBOS::ServiceVersionGet(node_name, &exists);
+    conf_version = LBOS::GetServiceVersion(node_name, &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, false);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
     exists = true;
 
     /* Delete */
-    conf_version = LBOS::ServiceVersionDelete(node_name, &exists);
+    conf_version = LBOS::DeleteServiceVersion(node_name, &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, false);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
     exists = true;
 
     /* Set version */
-    conf_version = LBOS::ServiceVersionSet(node_name, "1.0.0", &exists);
+    conf_version = LBOS::SetServiceVersion(node_name, "1.0.0", &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, false);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
     exists = true;
 
     /* Cleanup */
-    LBOS::ServiceVersionDelete(node_name);
+    LBOS::DeleteServiceVersion(node_name);
 }
 
 /* 12. Get, set, delete with service that does exist, providing
@@ -7447,24 +7442,24 @@ void ServiceExistsAndBoolProvided__EqualsTrue()
     string node_name = s_GetUnknownService();
     bool exists = false;
     string conf_version = "1";
-    LBOS::ServiceVersionSet(node_name, "1.0.0", &exists);
+    LBOS::SetServiceVersion(node_name, "1.0.0", &exists);
 
     /* Get version */
-    conf_version = LBOS::ServiceVersionGet(node_name, &exists);
+    conf_version = LBOS::GetServiceVersion(node_name, &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, true);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
     exists = false;
 
     /* Set version */
-    conf_version = LBOS::ServiceVersionSet(node_name, "1.0.0", &exists);
+    conf_version = LBOS::SetServiceVersion(node_name, "1.0.0", &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, true);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
     exists = false;
 
     /* Delete (and also a cleanup) */
-    conf_version = LBOS::ServiceVersionDelete(node_name, &exists);
+    conf_version = LBOS::DeleteServiceVersion(node_name, &exists);
     NCBITEST_CHECK_EQUAL_MT_SAFE(exists, true);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
@@ -7481,22 +7476,22 @@ void ServiceNotExistsAndBoolNotProvided__NoCrash()
     string conf_version = "1";
 
     /* Get version */
-    conf_version = LBOS::ServiceVersionGet(node_name);
+    conf_version = LBOS::GetServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
 
     /* Delete */
-    conf_version = LBOS::ServiceVersionDelete(node_name);
+    conf_version = LBOS::DeleteServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
 
     /* Set version */
-    conf_version = LBOS::ServiceVersionSet(node_name, "1.0.0");
+    conf_version = LBOS::SetServiceVersion(node_name, "1.0.0");
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "");
     conf_version = "1";
 
     /* Cleanup */
-    LBOS::ServiceVersionDelete(node_name);
+    LBOS::DeleteServiceVersion(node_name);
 }
 
 /* 14. Get, set, delete with service that does exist, not providing
@@ -7507,20 +7502,20 @@ void ServiceExistsAndBoolNotProvided__NoCrash()
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
     string conf_version = "1";
-    LBOS::ServiceVersionSet(node_name, "1.0.0");
+    LBOS::SetServiceVersion(node_name, "1.0.0");
 
     /* Get version */
-    conf_version = LBOS::ServiceVersionGet(node_name);
+    conf_version = LBOS::GetServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
 
     /* Set version */
-    conf_version = LBOS::ServiceVersionSet(node_name, "1.0.0");
+    conf_version = LBOS::SetServiceVersion(node_name, "1.0.0");
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
 
     /* Delete (and also a cleanup) */
-    conf_version = LBOS::ServiceVersionDelete(node_name);
+    conf_version = LBOS::DeleteServiceVersion(node_name);
     NCBITEST_CHECK_EQUAL_MT_SAFE(conf_version, "1.0.0");
     conf_version = "1";
 }
