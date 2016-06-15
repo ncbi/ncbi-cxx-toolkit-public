@@ -285,8 +285,8 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
             if (loc->IsWhole()) {
                 loc.Reset();
             } else if (loc->IsInt()) {
-                CSeq_loc::TRange range = loc->GetTotalRange();
-                if (range.GetFrom() == 0  &&  range.GetTo() == m_Handle.GetInst_Length() - 1) {
+                CSeq_loc::TRange range = loc->GetTotalRange();               
+                if (!IsReverse(loc->GetStrand()) && range.GetFrom() == 0 && range.GetTo() == m_Handle.GetInst_Length() - 1) {
                     loc.Reset();
                 }
             }
