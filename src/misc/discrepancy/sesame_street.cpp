@@ -293,7 +293,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                             const vector<CRef<CReportObj> >& v = x->second;
                             ITERATE(vector<CRef<CReportObj> >, o, v) {
                                 CRef<CReportObj> r = *o;
-                                report[diagnosis]["[n] biosource[s] [has] qualifier " + it->first + " = " + x->first].Add(*r);
+                                report[diagnosis]["[n] source[s] [has] " + it->first + " = " + x->first].Add(*r);
                             }
                         }
                         continue;
@@ -312,7 +312,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                     ITERATE (TStringObjVectorMap, x, mmm) {
                         const vector<CRef<CReportObj> >& v = x->second;
                         ITERATE (vector<CRef<CReportObj> >, o, v) {
-                            report[diagnosis]["[n] biosource[s] may have inconsistent capitalization: " + it->first + " (" + x->first + ")"].Add(*((const CDiscrepancyObject&)**o).Clone(true, CRef<CObject>(fix.GetNCPointer())));
+                            report[diagnosis]["[n] source[s] [has] inconsistent capitalization: " + it->first + " (" + x->first + ")"].Add(*((const CDiscrepancyObject&)**o).Clone(true, CRef<CObject>(fix.GetNCPointer())));
                         }
                     }
                 }
@@ -322,7 +322,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                     TReportObjectList& obj = jj->second->GetObjects();
                     ITERATE(TReportObjectList, o, obj) {
                         CRef<CReportObj> r = *o;
-                        report[diagnosis]["[n] biosource[s] [has] qualifier " + it->first + " = " + jj->first].Add(*r);
+                        report[diagnosis]["[n] source[s] [has] " + it->first + " = " + jj->first].Add(*r);
                     }
                 }
             }
@@ -335,7 +335,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                         fix->m_User = context.GetUserData();
                     }
                     ITERATE (TReportObjPtrMap, o, missing) {
-                        report[diagnosis]["[n] biosource[s] may have missing qualifier: " + it->first + " (" + sub.begin()->first + ")"].Add(*((const CDiscrepancyObject&)*o->second).Clone(true, CRef<CObject>(fix.GetNCPointer())));
+                        report[diagnosis]["[n] source[s] [has] missing " + it->first + " (" + sub.begin()->first + ")"].Add(*((const CDiscrepancyObject&)*o->second).Clone(true, CRef<CObject>(fix.GetNCPointer())));
                     }
                 }
             }
@@ -345,12 +345,12 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                 TReportObjectList& obj = jj->second->GetObjects();
                 ITERATE (TReportObjectList, o, obj) {
                     CRef<CReportObj> r = *o;
-                    report[diagnosis]["[n] biosource[s] [has] qualifier " + it->first + " = " + jj->first].Add(*r);
+                    report[diagnosis]["[n] source[s] [has] " + it->first + " = " + jj->first].Add(*r);
                 }
             }
             ITERATE(TReportObjPtrMap, o, missing) {
                 CRef<CReportObj> r = o->second;
-                report[diagnosis]["[n] biosource[s] [has] missing qualifier: " + it->first].Add(*r);
+                report[diagnosis]["[n] source[s] [has] missing " + it->first].Add(*r);
             }
         }
     }
