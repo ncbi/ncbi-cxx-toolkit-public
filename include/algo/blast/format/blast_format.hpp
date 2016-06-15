@@ -47,6 +47,7 @@ Author: Jason Papadopoulos
 #include <objtools/align_format/tabular.hpp>
 #include <objtools/align_format/showalign.hpp>
 #include <objtools/align_format/showdefline.hpp>
+#include <objtools/align_format/taxFormat.hpp>
 #include <algo/blast/format/blastfmtutil.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
@@ -54,6 +55,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/api/blast_seqinfosrc.hpp>
 #include <algo/blast/format/sam.hpp>
 #include <objects/blast/blast__.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(align_format);
@@ -81,6 +83,7 @@ public:
 
     /// The line length of pairwise blast output
     static const int kFormatLineLength = 68;
+    static const int kMinTaxFormatLineLength = 100;
 
     /// Constructor
     /// @param opts BLAST options used in the search [in]
@@ -478,6 +481,7 @@ private:
    void x_WriteXML2(CCmdLineBlastXML2ReportData & report_data);
 
    void x_InitSAMFormatter();
+   void x_PrintTaxReport(const blast::CSearchResults& results);
 };
 
 END_NCBI_SCOPE
