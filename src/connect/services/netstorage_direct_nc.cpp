@@ -220,7 +220,10 @@ void SNetStorage_NetCacheBlob::SetExpiration(const CTimeout& ttl)
             ": infinite ttl for NetCache blobs is not implemented");
     }
 
-    m_NetCacheAPI.ProlongBlobLifetime(m_BlobKey, (unsigned)ttl.GetAsDouble());
+    try {
+        m_NetCacheAPI.ProlongBlobLifetime(m_BlobKey, (unsigned)ttl.GetAsDouble());
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on setting ttl " + m_BlobKey)
 }
 
 string SNetStorage_NetCacheBlob::FileTrack_Path()
