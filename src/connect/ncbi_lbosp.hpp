@@ -91,7 +91,7 @@ private:
 
 
 /* Private API of LBOS */
-class LBOSPrivate
+class NCBI_XCONNECT_EXPORT LBOSPrivate
 {
 public:
    /** Get global config for a service name. 
