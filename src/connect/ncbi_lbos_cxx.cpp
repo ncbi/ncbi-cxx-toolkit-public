@@ -435,7 +435,7 @@ CLBOSException::EErrCode
 {
     switch (http_code) {
     case eLBOSNoLBOS:
-        return eLBOSNotFound;
+        return eLbosNotFound;
     case eLBOSNotFound:
         return eNotFound;
     case eLBOSBadRequest:
@@ -445,7 +445,7 @@ CLBOSException::EErrCode
     case eLBOSInvalidArgs:
         return eInvalidArgs;
     case eLBOSDNSResolveError:
-        return eInvalidArgs;
+        return eDNSResolve;
     case eLBOSMemAllocError:
         return eMemAlloc;
     case eLBOSCorruptOutput:
@@ -476,7 +476,7 @@ const char* CLBOSException::GetErrCodeString(void) const
     case eServer:
         return "";
     /* 450 */
-    case eLBOSNotFound:
+    case eLbosNotFound:
         return "LBOS was not found";
     /* 451 */
     case eDNSResolve:

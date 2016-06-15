@@ -151,7 +151,7 @@ class NCBI_XNCBI_EXPORT CLBOSException : public CException
 public:
     typedef int TErrCode;
     enum EErrCode {
-        eLBOSNotFound,  /**< LBOS server was not found           */
+        eLbosNotFound,  /**< LBOS server was not found           */
         eDNSResolve,    /**< Local address not resolved          */
         eInvalidArgs,   /**< Arguments not valid                 */
         eNotFound,      /**< For de-announcement only. Did not

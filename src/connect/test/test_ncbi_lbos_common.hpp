@@ -1617,7 +1617,7 @@ namespace Announcement
  * 21. Announced successfully, but LBOS return corrupted answer - 
  *     return SERVER_ERROR                                                   
  * 22. Trying to announce server and providing dead healthcheck URL -
- *     return eLBOSNotFound       
+ *     return eLbosNotFound       
  * 23. Trying to announce server and providing dead healthcheck URL -
  *     server should not be announced                                        
  * 24. Announce server with separate host and healtcheck - should be found in 
@@ -1929,7 +1929,7 @@ void CheckCodes()
     code = CLBOSException::s_HTTPCodeToEnum(404);
     NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eNotFound);
     code = CLBOSException::s_HTTPCodeToEnum(450);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eLBOSNotFound);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eLbosNotFound);
     code = CLBOSException::s_HTTPCodeToEnum(451);
     NCBITEST_CHECK_EQUAL_MT_SAFE(code, CLBOSException::eDNSResolve);
     code = CLBOSException::s_HTTPCodeToEnum(452);
@@ -1970,7 +1970,7 @@ void CheckErrorCodeStrings()
 
     /* 404 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::eLBOSNotFound, "",
+                                  CLBOSException::eNotFound, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
     
@@ -1982,7 +1982,7 @@ void CheckErrorCodeStrings()
 
     /* 450 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                                  CLBOSException::eLBOSNotFound, "",
+                                  CLBOSException::eLbosNotFound, "",
                                   eLBOSBadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "LBOS was not found");
 
@@ -5361,11 +5361,11 @@ void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs()
     lbos_answer = NULL;    
 }
 /*  11. Trying to announce server providing dead healthcheck URL -
-        return eLBOSSuccess (previously was eLBOSNotFound)                    */
+        return eLBOSSuccess (previously was eLbosNotFound)                    */
 void HealthcheckDead__ReturnKLBOSSuccess()
 {
     WRITE_LOG("Trying to announce server providing dead healthcheck URL - "
-              "return eLBOSSuccess(previously was eLBOSNotFound)");
+              "return eLBOSSuccess(previously was eLbosNotFound)");
     CLBOSStatus         lbos_status         (true, true);
     CCObjHolder<char>   lbos_answer         (NULL);
     CCObjHolder<char>   lbos_status_message (NULL);
@@ -5765,11 +5765,11 @@ void LBOSOff__ReturnKLBOSOff()
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
                            "Answer from LBOS was not NULL");
 }
-/* 9. Trying to deannounce non-existent service - return eLBOSNotFound      */
+/* 9. Trying to deannounce non-existent service - return eLbosNotFound      */
 /*    Test is thread-safe. */
 void NotExists__ReturnKLBOSNotFound()
 {
-    WRITE_LOG("Deannonce non-existent service - return eLBOSNotFound");
+    WRITE_LOG("Deannonce non-existent service - return eLbosNotFound");
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> lbos_status_message(NULL);
@@ -5927,10 +5927,10 @@ void AllOK__AnnouncedServerSaved()
 void NoLBOS__ThrowNoLBOSAndNotFind()
 {
     WRITE_LOG("Testing behavior of LBOS when no LBOS is found.");
-    WRITE_LOG("Expected exception with error code \"" << "eLBOSNotFound" <<
+    WRITE_LOG("Expected exception with error code \"" << "eLbosNotFound" <<
                 "\", status code \"" << 450 << 
                 "\", message \"" << "450\\n" << "\".");
-    ExceptionComparator<CLBOSException::eLBOSNotFound, 450> comparator("450\n");
+    ExceptionComparator<CLBOSException::eLbosNotFound, 450> comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -6353,7 +6353,7 @@ void LBOSAnnounceCorruptOutput__ThrowServerError()
 
 
 /*22. Trying to announce server and providing dead healthcheck URL - 
-      return eLBOSNotFound                                                  */
+      return eLbosNotFound                                                  */
 void HealthcheckDead__ThrowE_NotFound()
 {
     CLBOSStatus lbos_status(true, true);
@@ -6652,7 +6652,7 @@ void HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs()
         CLBOSException, comparator);
 }
 /*  11. Trying to announce server and providing dead healthcheck URL -
-        return eLBOSNotFound                                                */
+        return eLbosNotFound                                                */
 void HealthcheckDead__ThrowE_NotFound()
 {
     WRITE_LOG("Trying to announce server providing dead healthcheck URL - "
@@ -6834,10 +6834,10 @@ void NoLBOS__Return0()
 {
     WRITE_LOG("Could not connect to provided LBOS");
     WRITE_LOG("Expected exception with error code \"" << 
-                "eLBOSNotFound" <<
+                "eLbosNotFound" <<
                 "\", status code \"" << 450 <<
                 "\", message \"" << "450\\n" << "\".");
-    ExceptionComparator<CLBOSException::eLBOSNotFound, 450> 
+    ExceptionComparator<CLBOSException::eLbosNotFound, 450> 
                                                             comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -6955,16 +6955,16 @@ void LBOSOff__ThrowKLBOSOff()
 }
 
 
-/* 9. Trying to deannounce non-existent service - throw eLBOSNotFound           */
+/* 9. Trying to deannounce non-existent service - throw eLbosNotFound           */
 /*    Test is thread-safe. */
 void NotExists__ThrowE_NotFound()
 {
     WRITE_LOG("Deannonce non-existent service");
     WRITE_LOG("Expected exception with error code \"" << 
-                "eLBOSNotFound" <<
+                "eLbosNotFound" <<
                 "\", status code \"" << 404 <<
                 "\", message \"" << "404 Not Found\\n" << "\".");
-    ExceptionComparator<CLBOSException::eLBOSNotFound, 404> 
+    ExceptionComparator<CLBOSException::eNotFound, 404> 
                                                   comparator("404 Not Found\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
@@ -7226,7 +7226,7 @@ void DeleteThenCheck__SetExistsFalse()
     bool exists;
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
-    ExceptionComparator<CLBOSException::eLBOSNotFound, 404> 
+    ExceptionComparator<CLBOSException::eLbosNotFound, 404> 
                                                                   comp("404\n");
 
     /* Set version */
