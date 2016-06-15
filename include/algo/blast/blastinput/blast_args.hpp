@@ -879,6 +879,8 @@ public:
         eXml2_S,
         /// SAM format
         eSAM,
+
+        eTaxFormat,
         /// Sentinel value for error checking
         eEndValue
     };
