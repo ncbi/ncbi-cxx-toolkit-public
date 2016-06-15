@@ -247,6 +247,7 @@ void NSTValidateMetadataSection(const IRegistry &  reg,
     NSTValidateTTLValue(reg, section, "ttl", warnings);
     NSTValidateProlongValue(reg, section, "prolong_on_read", warnings);
     NSTValidateProlongValue(reg, section, "prolong_on_write", warnings);
+    NSTValidateProlongValue(reg, section, "prolong_on_relocate", warnings);
 }
 
 
@@ -293,6 +294,7 @@ void NSTValidateServices(const IRegistry &  reg, vector<string> &  warnings)
         NSTValidateTTLValue(reg, *k, "ttl", warnings);
         NSTValidateProlongValue(reg, *k, "prolong_on_read", warnings);
         NSTValidateProlongValue(reg, *k, "prolong_on_write", warnings);
+        NSTValidateProlongValue(reg, *k, "prolong_on_relocate", warnings);
     }
 }
 
@@ -305,9 +307,19 @@ void NSTValidateProlongValue(const IRegistry &  reg,
     bool            ok = NSTValidateString(reg, section, entry, warnings);
     if (ok) {
         string      value = reg.GetString(section, entry, "");
+        NStr::TruncateSpacesInPlace(value);
+
         if (!value.empty()) {
             try {
-                ReadTimeSpan(value, false);  // no infinity
+                if (NStr::EndsWith(value, "ttl", NStr::eNocase)) {
+                    // Try to convert to double not forgetting that the 'ttl'
+                    // suffix needs to be stripped and that spaces between the
+                    // value and the suffix are allowed
+                    NStr::StringToDouble(value.substr(0, value.size() - 3),
+                                         NStr::fAllowTrailingSpaces);
+                } else {
+                    ReadTimeSpan(value, false);  // no infinity
+                }
             } catch (const exception &  ex) {
                 warnings.push_back("Exception while validating " +
                         NSTRegValName(section, entry) +

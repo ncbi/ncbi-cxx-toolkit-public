@@ -51,8 +51,12 @@ CNSTServiceProperties::CNSTServiceProperties()
     // m_TTL default value is infinity, i.e. NULL in the DB
     m_TTL.m_IsNull = true;
 
-    // m_ProlongOnRead and m_ProlongOnWrite default values are 0
-    // so a default constructor is fine.
+    // m_ProlongOnRead and m_ProlongOnWrite and m_ProlongOnRelocate default
+    // values are 0 so a default constructor is fine.
+
+    m_ProlongOnReadInTTLs = k_ProlongInTTLsNotConfigured;
+    m_ProlongOnWriteInTTLs = k_ProlongInTTLsNotConfigured;
+    m_ProlongOnRelocateInTTLs = k_ProlongInTTLsNotConfigured;
 }
 
 
@@ -62,12 +66,16 @@ CNSTServiceProperties::Serialize(void) const
     CJsonNode       service(CJsonNode::NewObjectNode());
 
     service.SetString("TTL", GetTTLAsString());
+
     service.SetString("ProlongOnRead",
-                      m_ProlongOnRead.AsSmartString(kTimeSpanFlags));
+                      x_GetProlongAsString(m_ProlongOnRead,
+                                           m_ProlongOnReadInTTLs));
     service.SetString("ProlongOnWrite",
-                      m_ProlongOnWrite.AsSmartString(kTimeSpanFlags));
+                      x_GetProlongAsString(m_ProlongOnWrite,
+                                           m_ProlongOnWriteInTTLs));
     service.SetString("ProlongOnRelocate",
-                      m_ProlongOnRelocate.AsSmartString(kTimeSpanFlags));
+                      x_GetProlongAsString(m_ProlongOnRelocate,
+                                           m_ProlongOnRelocateInTTLs));
 
     return service;
 }
@@ -81,6 +89,15 @@ CNSTServiceProperties::GetTTLAsString(void) const
     return m_TTL.m_Value.AsSmartString(kTimeSpanFlags);
 }
 
+
+string
+CNSTServiceProperties::x_GetProlongAsString(const CTimeSpan &  as_time_span,
+                                            double             in_ttls) const
+{
+    if (in_ttls == k_ProlongInTTLsNotConfigured)
+        return as_time_span.AsSmartString(kTimeSpanFlags);
+    return NStr::NumericToString(in_ttls) + " ttl";
+}
 
 CNSTServiceRegistry::CNSTServiceRegistry()
 {
@@ -143,8 +160,8 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
 
     CJsonNode           diff = CJsonNode::NewObjectNode();
 
-    if (m_DefaultProperties.GetTTL() !=
-            new_default_service_props.GetTTL()) {
+    if (m_DefaultProperties.GetTTLAsString() !=
+            new_default_service_props.GetTTLAsString()) {
         CJsonNode   ttl_diff = CJsonNode::NewObjectNode();
         ttl_diff.SetByKey("Old",
                           CJsonNode::NewStringNode(
@@ -155,51 +172,39 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
         diff.SetByKey("TTL", ttl_diff);
     }
 
-    if (m_DefaultProperties.GetProlongOnRead() !=
-            new_default_service_props.GetProlongOnRead()) {
+    if (m_DefaultProperties.GetProlongOnReadAsString() !=
+            new_default_service_props.GetProlongOnReadAsString()) {
         CJsonNode   prolong_diff = CJsonNode::NewObjectNode();
-        prolong_diff.SetByKey("Old",
-                              CJsonNode::NewStringNode(
-                                  m_DefaultProperties.
-                                            GetProlongOnRead().
-                                                AsSmartString(kTimeSpanFlags)));
-        prolong_diff.SetByKey("New",
-                              CJsonNode::NewStringNode(
-                                  new_default_service_props.
-                                            GetProlongOnRead().
-                                                AsSmartString(kTimeSpanFlags)));
+        prolong_diff.SetByKey(
+            "Old", CJsonNode::NewStringNode(
+                    m_DefaultProperties.GetProlongOnReadAsString()));
+        prolong_diff.SetByKey(
+            "New", CJsonNode::NewStringNode(
+                    new_default_service_props.GetProlongOnReadAsString()));
         diff.SetByKey("ProlongOnRead", prolong_diff);
     }
 
-    if (m_DefaultProperties.GetProlongOnWrite() !=
-            new_default_service_props.GetProlongOnWrite()) {
+    if (m_DefaultProperties.GetProlongOnWriteAsString() !=
+            new_default_service_props.GetProlongOnWriteAsString()) {
         CJsonNode   prolong_diff = CJsonNode::NewObjectNode();
-        prolong_diff.SetByKey("Old",
-                              CJsonNode::NewStringNode(
-                                  m_DefaultProperties.
-                                            GetProlongOnWrite().
-                                                AsSmartString(kTimeSpanFlags)));
-        prolong_diff.SetByKey("New",
-                              CJsonNode::NewStringNode(
-                                  new_default_service_props.
-                                            GetProlongOnWrite().
-                                                AsSmartString(kTimeSpanFlags)));
+        prolong_diff.SetByKey(
+            "Old", CJsonNode::NewStringNode(
+                    m_DefaultProperties.GetProlongOnWriteAsString()));
+        prolong_diff.SetByKey(
+            "New", CJsonNode::NewStringNode(
+                    new_default_service_props.GetProlongOnWriteAsString()));
         diff.SetByKey("ProlongOnWrite", prolong_diff);
     }
 
-    if (m_DefaultProperties.GetProlongOnRelocate() !=
-            new_default_service_props.GetProlongOnRelocate()) {
+    if (m_DefaultProperties.GetProlongOnRelocateAsString() !=
+            new_default_service_props.GetProlongOnRelocateAsString()) {
         CJsonNode   prolong_diff = CJsonNode::NewObjectNode();
-        prolong_diff.SetByKey("Old",
-                              CJsonNode::NewStringNode(
-                                  m_DefaultProperties.
-                                            GetProlongOnRelocate().
-                                                AsSmartString(kTimeSpanFlags)));
-        prolong_diff.SetByKey("New",
-                              CJsonNode::NewStringNode(
-                                  new_default_service_props.
-                                            GetProlongOnRelocate().
-                                                AsSmartString(kTimeSpanFlags)));
+        prolong_diff.SetByKey(
+            "Old", CJsonNode::NewStringNode(
+                    m_DefaultProperties.GetProlongOnRelocateAsString()));
+        prolong_diff.SetByKey(
+            "New", CJsonNode::NewStringNode(
+                    new_default_service_props.GetProlongOnRelocateAsString()));
         diff.SetByKey("ProlongOnRelocate", prolong_diff);
     }
 
@@ -228,7 +233,8 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
                     k != modified.end(); ++k) {
                 CJsonNode       mod_diff = CJsonNode::NewObjectNode();
 
-                if (m_Services[*k].GetTTL() != new_service_conf[*k].GetTTL()) {
+                if (m_Services[*k].GetTTLAsString() !=
+                        new_service_conf[*k].GetTTLAsString()) {
                     CJsonNode       val_diff = CJsonNode::NewObjectNode();
                     val_diff.SetByKey("Old",
                                       CJsonNode::NewStringNode(
@@ -239,45 +245,39 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
                     mod_diff.SetByKey("TTL", val_diff);
                 }
 
-                if (m_Services[*k].GetProlongOnRead() !=
-                                    new_service_conf[*k].GetProlongOnRead()) {
+                if (m_Services[*k].GetProlongOnReadAsString() !=
+                            new_service_conf[*k].GetProlongOnReadAsString()) {
                     CJsonNode       val_diff = CJsonNode::NewObjectNode();
                     val_diff.SetByKey("Old",
                                       CJsonNode::NewStringNode(
-                        m_Services[*k].GetProlongOnRead().
-                                                AsSmartString(kTimeSpanFlags)));
+                        m_Services[*k].GetProlongOnReadAsString()));
                     val_diff.SetByKey("New",
                                       CJsonNode::NewStringNode(
-                        new_service_conf[*k].GetProlongOnRead().
-                                                AsSmartString(kTimeSpanFlags)));
+                        new_service_conf[*k].GetProlongOnReadAsString()));
                     mod_diff.SetByKey("ProlongOnRead", val_diff);
                 }
 
-                if (m_Services[*k].GetProlongOnWrite() !=
-                                    new_service_conf[*k].GetProlongOnWrite()) {
+                if (m_Services[*k].GetProlongOnWriteAsString() !=
+                            new_service_conf[*k].GetProlongOnWriteAsString()) {
                     CJsonNode       val_diff = CJsonNode::NewObjectNode();
                     val_diff.SetByKey("Old",
                                       CJsonNode::NewStringNode(
-                        m_Services[*k].GetProlongOnWrite().
-                                                AsSmartString(kTimeSpanFlags)));
+                        m_Services[*k].GetProlongOnWriteAsString()));
                     val_diff.SetByKey("New",
                                       CJsonNode::NewStringNode(
-                        new_service_conf[*k].GetProlongOnWrite().
-                                                AsSmartString(kTimeSpanFlags)));
+                        new_service_conf[*k].GetProlongOnWriteAsString()));
                     mod_diff.SetByKey("ProlongOnWrite", val_diff);
                 }
 
-                if (m_Services[*k].GetProlongOnRelocate() !=
-                                new_service_conf[*k].GetProlongOnRelocate()){
+                if (m_Services[*k].GetProlongOnRelocateAsString() !=
+                        new_service_conf[*k].GetProlongOnRelocateAsString()) {
                     CJsonNode       val_diff = CJsonNode::NewObjectNode();
                     val_diff.SetByKey("Old",
                                       CJsonNode::NewStringNode(
-                        m_Services[*k].GetProlongOnRelocate().
-                                                AsSmartString(kTimeSpanFlags)));
+                        m_Services[*k].GetProlongOnRelocateAsString()));
                     val_diff.SetByKey("New",
                                       CJsonNode::NewStringNode(
-                        new_service_conf[*k].GetProlongOnRelocate().
-                                                AsSmartString(kTimeSpanFlags)));
+                        new_service_conf[*k].GetProlongOnRelocateAsString()));
                     mod_diff.SetByKey("ProlongOnRelocate", val_diff);
                 }
 
@@ -460,10 +460,12 @@ CNSTServiceRegistry::x_ReadServiceProperties(
                                             )
 {
     CNSTServiceProperties       result = defaults;
+    string                      value;
 
     if (reg.HasEntry(section, "ttl")) {
         TNSTDBValue<CTimeSpan>      new_val;
-        string                      value = reg.GetString(section, "ttl", "");
+
+        value = reg.GetString(section, "ttl", "");
         try {
             new_val = ReadTimeSpan(value, true); // allow infinity
         } catch (...) {
@@ -472,28 +474,54 @@ CNSTServiceRegistry::x_ReadServiceProperties(
         result.SetTTL(new_val);
     }
 
-    if (reg.HasEntry(section, "prolong_on_read"))
-        result.SetProlongOnRead(x_ReadProlongProperty(reg, section,
-                                                      "prolong_on_read"));
-    if (reg.HasEntry(section, "prolong_on_write"))
-        result.SetProlongOnWrite(x_ReadProlongProperty(reg, section,
-                                                       "prolong_on_write"));
-    if (reg.HasEntry(section, "prolong_on_relocate"))
-        result.SetProlongOnRelocate(x_ReadProlongProperty(reg, section,
-                                                      "prolong_on_relocate"));
+    if (reg.HasEntry(section, "prolong_on_read")) {
+        value = reg.GetString(section, "prolong_on_read", "");
+        NStr::TruncateSpacesInPlace(value);
+
+        if (NStr::EndsWith(value, "ttl", NStr::eNocase))
+            result.SetProlongOnRead(x_ReadProlongInTTLs(value));
+        else
+            result.SetProlongOnRead(x_ReadProlongProperty(value));
+    }
+    if (reg.HasEntry(section, "prolong_on_write")) {
+        value = reg.GetString(section, "prolong_on_write", "");
+        NStr::TruncateSpacesInPlace(value);
+
+        if (NStr::EndsWith(value, "ttl", NStr::eNocase))
+            result.SetProlongOnWrite(x_ReadProlongInTTLs(value));
+        else
+            result.SetProlongOnWrite(x_ReadProlongProperty(value));
+    }
+    if (reg.HasEntry(section, "prolong_on_relocate")) {
+        value = reg.GetString(section, "prolong_on_relocate", "");
+        NStr::TruncateSpacesInPlace(value);
+
+        if (NStr::EndsWith(value, "ttl", NStr::eNocase))
+            result.SetProlongOnRelocate(x_ReadProlongInTTLs(value));
+        else
+            result.SetProlongOnRelocate(x_ReadProlongProperty(value));
+    }
 
     return result;
 }
 
 
+double
+CNSTServiceRegistry::x_ReadProlongInTTLs(string &  value) const
+{
+    return NStr::StringToDouble(
+                value.substr(0, value.size() - 3),  // Strip the 'ttl' suffix
+                NStr::fAllowTrailingSpaces);        // There could be spaces
+                                                    // between the value and
+                                                    // the suffix
+}
+
+
 CTimeSpan
-CNSTServiceRegistry::x_ReadProlongProperty(const IRegistry &  reg,
-                                           const string &  section,
-                                           const string &  entry)
+CNSTServiceRegistry::x_ReadProlongProperty(const string &  value)
 {
     CTimeSpan       new_val;    // default constructor sets it to 0 which
                                 // is the default
-    string          value = reg.GetString(section, entry, "");
     if (!value.empty()) {
         try {
             TNSTDBValue<CTimeSpan>  val = ReadTimeSpan(value,

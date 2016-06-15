@@ -1695,28 +1695,37 @@ CNSTDatabase::x_CalculateExpiration(
                             TNSTDBValue<CTime> &  exp_record_not_found)
 {
     if (prolong.IsEmpty()) {
+        // Prolong time has NOT been configured
         if (object_expiration.m_IsNull) {
             exp_record_found.m_IsNull = true;
-            if (ttl.m_IsNull)
+            if (ttl.m_IsNull) {
                 exp_record_not_found.m_IsNull = true;
-            else {
+            } else {
                 exp_record_not_found.m_IsNull = false;
                 exp_record_not_found.m_Value = current_time + ttl.m_Value;
             }
         } else {
-            // May not happened but the upper level code is generic so to
-            // be on the safe side set exp_record_not_found to NULL
-            exp_record_not_found.m_IsNull = true;
-
             exp_record_found.m_IsNull = false;
             exp_record_found.m_Value = object_expiration.m_Value;
+
+            // Record exists (otherwise the object_expiration is NULL).
+            // So the expiration for the case the record is not found is
+            // not strictly required. However, to be on the safe side set it
+            // too.
+            if (ttl.m_IsNull) {
+                exp_record_not_found.m_IsNull = true;
+            } else {
+                exp_record_not_found.m_IsNull = false;
+                exp_record_not_found.m_Value = current_time + ttl.m_Value;
+            }
         }
     } else {
+        // Prolong time has been configured
         if (object_expiration.m_IsNull) {
             exp_record_found.m_IsNull = true;
-            if (ttl.m_IsNull)
+            if (ttl.m_IsNull) {
                 exp_record_not_found.m_IsNull = true;
-            else {
+            } else {
                 exp_record_not_found.m_IsNull = false;
                 if (ttl.m_Value > prolong)
                     exp_record_not_found.m_Value = current_time + ttl.m_Value;
@@ -1724,15 +1733,25 @@ CNSTDatabase::x_CalculateExpiration(
                     exp_record_not_found.m_Value = current_time + prolong;
             }
         } else {
-            // May not happened but the upper level code is generic so to
-            // be on the safe side set exp_record_not_found to NULL
-            exp_record_not_found.m_IsNull = true;
-
             exp_record_found.m_IsNull = false;
             if (object_expiration.m_Value > current_time + prolong)
                 exp_record_found.m_Value = object_expiration.m_Value;
             else
                 exp_record_found.m_Value = current_time + prolong;
+
+            // Record exists (otherwise the object_expiration is NULL).
+            // So the expiration for the case the record is not found is
+            // not strictly required. However, to be on the safe side set it
+            // too.
+            if (ttl.m_IsNull) {
+                exp_record_not_found.m_IsNull = true;
+            } else {
+                exp_record_not_found.m_IsNull = false;
+                if (ttl.m_Value > prolong)
+                    exp_record_not_found.m_Value = current_time + ttl.m_Value;
+                else
+                    exp_record_not_found.m_Value = current_time + prolong;
+            }
         }
     }
 }

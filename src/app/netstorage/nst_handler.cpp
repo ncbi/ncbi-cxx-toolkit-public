@@ -3014,7 +3014,7 @@ CNetStorageHandler::x_ProcessLockFTPath(
     if (x_DetectMetaDBNeedOnGetObjectInfo(message)) {
         // The only required check in the DB is if the object is expired
         int  status = m_Server->GetDb().ExecSP_DoesObjectExist(object_key);
-            x_CheckExpirationStatus(status);
+        x_CheckExpirationStatus(status);
     }
 
 

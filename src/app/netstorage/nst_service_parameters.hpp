@@ -47,6 +47,7 @@ BEGIN_NCBI_SCOPE
 // So this constant can use any letters - the test statements are case
 // insensitive throughout the code
 const string    k_LBSMDNSTTestService = "LBSMDNSTTestService";
+const double    k_ProlongInTTLsNotConfigured = -1.0;
 
 
 
@@ -62,44 +63,95 @@ class CNSTServiceProperties
                               const CTimeSpan &  prolong_on_write,
                               const CTimeSpan &  prolomg_on_relocate) :
             m_TTL(ttl), m_ProlongOnRead(prolong_on_read),
+            m_ProlongOnReadInTTLs(k_ProlongInTTLsNotConfigured),
             m_ProlongOnWrite(prolong_on_write),
-            m_ProlongOnRelocate(prolomg_on_relocate)
+            m_ProlongOnWriteInTTLs(k_ProlongInTTLsNotConfigured),
+            m_ProlongOnRelocate(prolomg_on_relocate),
+            m_ProlongOnRelocateInTTLs(k_ProlongInTTLsNotConfigured)
         {}
 
         TNSTDBValue<CTimeSpan>  GetTTL(void) const
         { return m_TTL; }
         string  GetTTLAsString(void) const;
+        string  GetProlongOnReadAsString(void) const
+        { return x_GetProlongAsString(m_ProlongOnRead,
+                                      m_ProlongOnReadInTTLs); }
+        string  GetProlongOnWriteAsString(void) const
+        { return x_GetProlongAsString(m_ProlongOnWrite,
+                                      m_ProlongOnWriteInTTLs); }
+        string  GetProlongOnRelocateAsString(void) const
+        { return x_GetProlongAsString(m_ProlongOnRelocate,
+                                      m_ProlongOnRelocateInTTLs); }
         CTimeSpan  GetProlongOnRead(void) const
-        { return m_ProlongOnRead; }
+        { if (m_ProlongOnReadInTTLs == k_ProlongInTTLsNotConfigured)
+            return m_ProlongOnRead;
+          return x_GetProlongInTTLs(m_ProlongOnReadInTTLs); }
         CTimeSpan  GetProlongOnWrite(void) const
-        { return m_ProlongOnWrite; }
+        { if (m_ProlongOnWriteInTTLs == k_ProlongInTTLsNotConfigured)
+            return m_ProlongOnWrite;
+          return x_GetProlongInTTLs(m_ProlongOnWriteInTTLs); }
         CTimeSpan  GetProlongOnRelocate(void) const
-        { return m_ProlongOnRelocate; }
+        { if (m_ProlongOnRelocateInTTLs == k_ProlongInTTLsNotConfigured)
+            return m_ProlongOnRelocate;
+          return x_GetProlongInTTLs(m_ProlongOnRelocateInTTLs); }
 
         void SetTTL(const TNSTDBValue<CTimeSpan> & new_val)
         { m_TTL = new_val; }
         void SetProlongOnRead(const CTimeSpan &  new_val)
-        { m_ProlongOnRead = new_val; }
+        { m_ProlongOnRead = new_val;
+          m_ProlongOnReadInTTLs = k_ProlongInTTLsNotConfigured; }
+        void SetProlongOnRead(double  inTTLs)
+        { m_ProlongOnRead = CTimeSpan(0L);
+          m_ProlongOnReadInTTLs = inTTLs; }
         void SetProlongOnWrite(const CTimeSpan &  new_val)
-        { m_ProlongOnWrite = new_val; }
+        { m_ProlongOnWrite = new_val;
+          m_ProlongOnWriteInTTLs = k_ProlongInTTLsNotConfigured; }
+        void SetProlongOnWrite(double  inTTLs)
+        { m_ProlongOnWrite = CTimeSpan(0L);
+          m_ProlongOnWriteInTTLs = inTTLs; }
         void SetProlongOnRelocate(const CTimeSpan &  new_val)
-        { m_ProlongOnRelocate = new_val; }
+        { m_ProlongOnRelocate = new_val;
+          m_ProlongOnRelocateInTTLs = k_ProlongInTTLsNotConfigured; }
+        void SetProlongOnRelocate(double  inTTLs)
+        { m_ProlongOnRelocate = CTimeSpan(0L);
+          m_ProlongOnRelocateInTTLs = inTTLs; }
 
         CJsonNode  Serialize(void) const;
 
         bool operator==(const CNSTServiceProperties &  other) const
-        { return (m_TTL == other.m_TTL) &&
-                 (m_ProlongOnRead == other.m_ProlongOnRead) &&
-                 (m_ProlongOnWrite == other.m_ProlongOnWrite) &&
-                 (m_ProlongOnRelocate == other.m_ProlongOnRelocate); }
+        { return
+            (m_TTL == other.m_TTL) &&
+            (m_ProlongOnRead == other.m_ProlongOnRead) &&
+            (m_ProlongOnReadInTTLs == other.m_ProlongOnReadInTTLs) &&
+            (m_ProlongOnWrite == other.m_ProlongOnWrite) &&
+            (m_ProlongOnWriteInTTLs == other.m_ProlongOnWriteInTTLs) &&
+            (m_ProlongOnRelocate == other.m_ProlongOnRelocate) &&
+            (m_ProlongOnRelocateInTTLs == other.m_ProlongOnRelocateInTTLs); }
         bool operator!=(const CNSTServiceProperties &  other) const
         { return !this->operator==(other); }
 
     private:
         TNSTDBValue<CTimeSpan>      m_TTL;
         CTimeSpan                   m_ProlongOnRead;
+        double                      m_ProlongOnReadInTTLs;
         CTimeSpan                   m_ProlongOnWrite;
+        double                      m_ProlongOnWriteInTTLs;
         CTimeSpan                   m_ProlongOnRelocate;
+        double                      m_ProlongOnRelocateInTTLs;
+
+    private:
+        string  x_GetProlongAsString(const CTimeSpan &  as_time_span,
+                                     double  in_ttls) const;
+        CTimeSpan  x_GetProlongInTTLs(double  multiplier) const
+        {
+            if (multiplier == 0)
+                return CTimeSpan(0L);
+            if (m_TTL.m_IsNull)
+                return CTimeSpan(LONG_MAX); // Effective infinity
+
+            double      secs = m_TTL.m_Value.GetAsDouble() * multiplier;
+            return CTimeSpan(secs);
+        }
 };
 
 
@@ -130,9 +182,8 @@ class CNSTServiceRegistry
             x_ReadServiceProperties(const IRegistry &  reg,
                                     const string &  section,
                                     const CNSTServiceProperties &  defaults);
-        CTimeSpan  x_ReadProlongProperty(const IRegistry &  reg,
-                                         const string &  section,
-                                         const string &  entry);
+        CTimeSpan  x_ReadProlongProperty(const string &  value);
+        double  x_ReadProlongInTTLs(string &  value) const;
         list<string>  x_GetMetadataServices(const IRegistry &  reg);
 
     private:
