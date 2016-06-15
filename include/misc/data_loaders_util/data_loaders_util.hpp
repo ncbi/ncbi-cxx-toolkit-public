@@ -49,18 +49,57 @@ class CObjectManager;
 class CDataLoadersUtil
 {
 public:
+    enum ELoaders
+    {
+        fGenbank    = 1 << 0,
+        fVDB        = 1 << 1,
+        fSRA        = 1 << 2,
+        fLDS2       = 1 << 3,
+        fAsnCache   = 1 << 4,
+        fBLAST      = 1 << 5,
+
+        fDefault    = 0xffffffff
+    };
+    typedef unsigned int TLoaders;
 
     /// Add a standard set of arguments used to configure the object manager
-    static void AddArgumentDescriptions(CArgDescriptions& arg_desc);
+    static void AddArgumentDescriptions(CArgDescriptions& arg_desc,
+                                        TLoaders loaders = fDefault);
+
+    /// Set up just the GenBank data loader.  This is separated out from the
+    /// main setup function to permit its use separately.
+    static void SetupGenbankDataLoader(const CArgs& args,
+                                       objects::CObjectManager& obj_mgr);
 
     /// Set up the standard object manager data loaders according to the
     /// arguments provided above
     static void SetupObjectManager(const CArgs& args,
-                                   objects::CObjectManager& obj_mgr);
+                                   objects::CObjectManager& obj_mgr,
+                                   TLoaders loaders = fDefault);
 
     // initialize object manager using SetupObjectManager, and create CScope
     // with default loaders
     static CRef<objects::CScope> GetDefaultScope(const CArgs& args);
+
+private:
+    static void x_SetupGenbankDataLoader(const CArgs& args,
+                                         objects::CObjectManager& obj_mgr,
+                                         int& priority);
+    static void x_SetupVDBDataLoader(const CArgs& args,
+                                     objects::CObjectManager& obj_mgr,
+                                     int& priority);
+    static void x_SetupSRADataLoader(const CArgs& args,
+                                     objects::CObjectManager& obj_mgr,
+                                     int& priority);
+    static void x_SetupBlastDataLoader(const CArgs& args,
+                                       objects::CObjectManager& obj_mgr,
+                                       int& priority);
+    static void x_SetupLDS2DataLoader(const CArgs& args,
+                                      objects::CObjectManager& obj_mgr,
+                                      int& priority);
+    static void x_SetupASNCacheDataLoader(const CArgs& args,
+                                          objects::CObjectManager& obj_mgr,
+                                          int& priority);
 };
 
 
