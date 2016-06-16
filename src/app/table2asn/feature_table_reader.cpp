@@ -1570,7 +1570,8 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
         gap_length++;
     }
 
-    return CGapsEditor::CreateGap((CBioseq&)*bsh.GetEditHandle().GetCompleteBioseq(), gap_start, gap_length, gap_type, evidences);
+    CGapsEditor gap_edit(gap_type, evidences, 0, 0);
+    return gap_edit.CreateGap((CBioseq&)*bsh.GetEditHandle().GetCompleteBioseq(), gap_start, gap_length);
 }
 
 void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)

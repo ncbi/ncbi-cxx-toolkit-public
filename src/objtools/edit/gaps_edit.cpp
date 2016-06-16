@@ -213,9 +213,14 @@ CRef<CDelta_seq> MakeGap(CBioseq::TInst& inst, TSeqPos gap_start, TSeqPos gap_le
 
 }
 
+CGapsEditor::CGapsEditor(CSeq_gap::EType gap_type, const TEvidenceSet& evidences,
+    TSeqPos gapNmin, TSeqPos gap_Unknown_length)
+    :m_gap_type(gap_type), m_evidences(evidences), m_gapNmin(gapNmin), m_gap_Unknown_length(gap_Unknown_length)
+{
+}
+
 CRef<CDelta_seq> 
-CGapsEditor::CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length, CSeq_gap::EType gap_type,
-   const TEvidenceSet& evidences)
+CGapsEditor::CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length)
 {
     if (!bioseq.IsSetInst())
         return CRef<CDelta_seq>();
@@ -224,24 +229,12 @@ CGapsEditor::CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length, C
     if (seq.NotEmpty())
     {
         CDelta_seq::TLiteral& lit = seq->SetLiteral();
-
-        lit.SetSeq_data().SetGap().SetType(gap_type);
-        if (evidences.size() > 0)
-        {
-            lit.SetSeq_data().SetGap().SetLinkage_evidence().clear();
-            ITERATE(TEvidenceSet, it, evidences)
-            {
-                CRef<CLinkage_evidence> le(new CLinkage_evidence);
-                le->SetType(*it);
-                lit.SetSeq_data().SetGap().SetLinkage_evidence().push_back(le);
-            }
-            lit.SetSeq_data().SetGap().SetLinkage(CSeq_gap::eLinkage_linked);
-        }
+        x_SetGapParameters(*seq);
     }
     return seq;
 }
 
-void  CGapsEditor::ConvertNs2Gaps(const CSeq_data& data, TSeqPos len, CDelta_ext& ext, TSeqPos gap_min)
+void  CGapsEditor::ConvertNs2Gaps(const CSeq_data& data, TSeqPos len, CDelta_ext& ext)
 {
     string decoded;
     if (!Make_Iupacna(data, decoded, len))
@@ -251,18 +244,18 @@ void  CGapsEditor::ConvertNs2Gaps(const CSeq_data& data, TSeqPos len, CDelta_ext
         size_t index = 0;
         CTempString current(decoded);
         size_t start;
-        while (index + gap_min <= current.length() && ((start = current.find_first_of("Nn", index)) != CTempString::npos))
+        while (index + m_gapNmin <= current.length() && ((start = current.find_first_of("Nn", index)) != CTempString::npos))
         {
             size_t end = current.find_first_not_of("Nn", start);
             if (end == CTempString::npos)
                 end = current.length();
-            if (end - start >= gap_min)
+            if (end - start >= m_gapNmin)
             {
                 if (start > 0)
                     ext.AddAndSplit(current, CSeq_data::e_Iupacna, TSeqPos(start), false, true);
 
                 CDelta_seq& gap = ext.AddLiteral(TSeqPos(end-start));
-                gap.SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
+                x_SetGapParameters(gap);
                 current.assign(current.data(), end, current.length() - end);
                 end = 0;
             }
@@ -273,7 +266,7 @@ void  CGapsEditor::ConvertNs2Gaps(const CSeq_data& data, TSeqPos len, CDelta_ext
     }
 }
 
-void CGapsEditor::ConvertNs2Gaps(CBioseq::TInst& inst, TSeqPos gap_min)
+void CGapsEditor::ConvertNs2Gaps(CBioseq::TInst& inst)
 {
     if (inst.IsAa()  ||  !inst.IsSetSeq_data()  ||  inst.IsSetExt()) {
         return;
@@ -282,7 +275,7 @@ void CGapsEditor::ConvertNs2Gaps(CBioseq::TInst& inst, TSeqPos gap_min)
 
     CDelta_ext& ext = inst.SetExt().SetDelta();
 
-    ConvertNs2Gaps(data, inst.GetLength(), ext, gap_min);
+    ConvertNs2Gaps(data, inst.GetLength(), ext);
 
     if (ext.Get().size() > 1) { // finalize
         inst.SetRepr(CSeq_inst::eRepr_delta);
@@ -292,14 +285,11 @@ void CGapsEditor::ConvertNs2Gaps(CBioseq::TInst& inst, TSeqPos gap_min)
     }
 }
 
-void CGapsEditor::ConvertNs2Gaps(CBioseq& bioseq, 
-    TSeqPos gapNmin, TSeqPos gap_Unknown_length, 
-    CSeq_gap::EType gap_type,
-    const TEvidenceSet& evidences)
+void CGapsEditor::ConvertNs2Gaps(CBioseq& bioseq)
 {
     if (bioseq.IsSetInst() && bioseq.GetInst().IsSetSeq_data() && !bioseq.GetInst().GetSeq_data().IsGap())
     {
-        ConvertNs2Gaps(bioseq.SetInst(), gapNmin);
+        ConvertNs2Gaps(bioseq.SetInst());
     }
 
 
@@ -330,53 +320,56 @@ void CGapsEditor::ConvertNs2Gaps(CBioseq& bioseq,
         // split a literal to elements if needed
         if (lit.IsSetSeq_data() && !lit.GetSeq_data().IsGap())
         {
-            ConvertNs2Gaps(lit.GetSeq_data(), lit.GetLength(), dst_data, gapNmin);
-            continue;
+            ConvertNs2Gaps(lit.GetSeq_data(), lit.GetLength(), dst_data);
         }
-
-        // otherwise add it as is and possible update some parameters
-        dst_data.Set().push_back(*it);
-
-        if (lit.IsSetLength() && lit.GetLength() == gap_Unknown_length)
+        else
         {
-            lit.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-        }
-        if (evidences.size() > 0)
-        {
-            if (lit.IsSetSeq_data() && lit.GetSeq_data().IsGap() && lit.GetSeq_data().GetGap().GetLinkage_evidence().size() > 0)
-                continue;
-
-            ITERATE(TEvidenceSet, it, evidences)
-            {
-                CRef<CLinkage_evidence> le(new CLinkage_evidence);
-                le->SetType(*it);
-                lit.SetSeq_data().SetGap().SetLinkage_evidence().push_back(le);
-            }
-            lit.SetSeq_data().SetGap().SetLinkage(CSeq_gap::eLinkage_linked);
-            lit.SetSeq_data().SetGap().SetType(gap_type);
+            // otherwise add it as is and possible update some parameters
+            dst_data.Set().push_back(*it);
+            x_SetGapParameters(**it);
         }
     }
 }
 
-void CGapsEditor::ConvertNs2Gaps(
-    objects::CSeq_entry& entry, TSeqPos gapNmin, TSeqPos gap_Unknown_length,
-    CSeq_gap::EType gap_type,
-    const TEvidenceSet& evidences)
+void CGapsEditor::x_SetGapParameters(CDelta_seq& lit)
 {
-    if (gapNmin==0 && gap_Unknown_length > 0)
+    CDelta_seq::TLiteral& gap = lit.SetLiteral();
+    if (gap.IsSetLength() && gap.GetLength() == m_gap_Unknown_length)
+    {
+        gap.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+    }
+    if (m_evidences.size() > 0)
+    {
+        if (gap.IsSetSeq_data() && gap.GetSeq_data().IsGap() && gap.GetSeq_data().GetGap().GetLinkage_evidence().size() > 0)
+            return;
+
+        ITERATE(TEvidenceSet, it, m_evidences)
+        {
+            CRef<CLinkage_evidence> le(new CLinkage_evidence);
+            le->SetType(*it);
+            gap.SetSeq_data().SetGap().SetLinkage_evidence().push_back(le);
+        }
+        gap.SetSeq_data().SetGap().SetLinkage(CSeq_gap::eLinkage_linked);
+        gap.SetSeq_data().SetGap().SetType(m_gap_type);
+    }
+}
+
+void CGapsEditor::ConvertNs2Gaps(objects::CSeq_entry& entry)
+{
+    if (m_gapNmin == 0 && m_gap_Unknown_length > 0)
         return;
 
     switch(entry.Which())
     {
     case CSeq_entry::e_Seq:
         {
-            ConvertNs2Gaps(entry.SetSeq(), gapNmin, gap_Unknown_length, gap_type, evidences);
+            ConvertNs2Gaps(entry.SetSeq());
         }
         break;
     case CSeq_entry::e_Set:
         NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
         {
-            ConvertNs2Gaps(**it, gapNmin, gap_Unknown_length, gap_type, evidences);
+            ConvertNs2Gaps(**it);
         }
         break;
     default:

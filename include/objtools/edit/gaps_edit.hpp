@@ -51,25 +51,24 @@ public:
     // optionally specify linkage evidence or leave it default
     //CLinkage_evidence::EType
     typedef set<int> TEvidenceSet;
-    static
-        void ConvertNs2Gaps(CSeq_entry& entry,
-        TSeqPos gapNmin, TSeqPos gap_Unknown_length,
-        CSeq_gap::EType gap_type = (CSeq_gap::EType) - 1,
-        const TEvidenceSet& evidences = TEvidenceSet() );
+    CGapsEditor(CSeq_gap::EType gap_type, const TEvidenceSet& evidences,
+        TSeqPos gapNmin, TSeqPos gap_Unknown_length);
 
-    static
-    void ConvertNs2Gaps(CBioseq& bioseq, 
-       TSeqPos gapNmin, TSeqPos gap_Unknown_length, 
-       CSeq_gap::EType gap_type,
-       const TEvidenceSet& evidences);
+    void ConvertNs2Gaps(CSeq_entry& entry);
 
-    static 
-    void ConvertNs2Gaps(CBioseq::TInst& inst, TSeqPos gap_min);
-    static
-    void ConvertNs2Gaps(const CSeq_data& data, TSeqPos len, CDelta_ext& ext, TSeqPos gap_min);
-    static
-    CRef<CDelta_seq> CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length, 
-        CSeq_gap::EType gap_type, const TEvidenceSet& evidences);
+    void ConvertNs2Gaps(CBioseq& bioseq);
+
+    void ConvertNs2Gaps(CBioseq::TInst& inst);
+    void ConvertNs2Gaps(const CSeq_data& data, TSeqPos len, CDelta_ext& ext);
+    CRef<CDelta_seq> CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length);
+
+private:
+    void x_SetGapParameters(CDelta_seq& gap);
+
+    CSeq_gap::EType m_gap_type;
+    TEvidenceSet    m_evidences;
+    TSeqPos         m_gapNmin;
+    TSeqPos         m_gap_Unknown_length;
 };
 
 END_SCOPE(objects)

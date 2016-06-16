@@ -206,10 +206,10 @@ CMultiReader::xReadASN1(CFormatGuess::EFormat format, CNcbiIstream& instream, CR
     }
 
     if (m_context.m_gapNmin > 0)
-        CGapsEditor::ConvertNs2Gaps(*entry, m_context.m_gapNmin, m_context.m_gap_Unknown_length, 
-        (CSeq_gap::EType)m_context.m_gap_type,
-        //(CLinkage_evidence::EType)
-        m_context.m_gap_evidences);
+    {
+        CGapsEditor gap_edit((CSeq_gap::EType)m_context.m_gap_type, m_context.m_gap_evidences, m_context.m_gapNmin, m_context.m_gap_Unknown_length);
+        gap_edit.ConvertNs2Gaps(*entry);
+    }
 
     return entry.NotNull();
 }
