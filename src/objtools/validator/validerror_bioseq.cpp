@@ -6311,6 +6311,9 @@ void CValidError_bioseq::x_CheckForMultiplemRNAs(const CCdsMatchInfo& cds_match,
 
 
     for (const auto& mrna : unmatched_mrnas) {
+        if (!cds_match.Overlaps(mrna->GetSeqfeat())) {
+            continue;
+        }
         auto product_string = s_GetMrnaProductString(mrna->GetSeqfeat());
         product_strings.push_back(product_string);
         ++mrna_count;
