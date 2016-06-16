@@ -36,6 +36,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <serial/serial.hpp>
+#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 
