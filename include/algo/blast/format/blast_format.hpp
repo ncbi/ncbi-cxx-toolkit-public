@@ -80,10 +80,11 @@ public:
     };
 
     
-
-    /// The line length of pairwise blast output
-    static const int kFormatLineLength = 68;
-    static const int kMinTaxFormatLineLength = 100;
+    enum {
+        /// The line length of pairwise blast output
+        kFormatLineLength = 68,
+        kMinTaxFormatLineLength = 100
+    };
 
     /// Constructor
     /// @param opts BLAST options used in the search [in]
