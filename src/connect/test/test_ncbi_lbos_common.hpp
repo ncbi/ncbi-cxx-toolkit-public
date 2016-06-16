@@ -379,7 +379,7 @@ DEFINE_STATIC_FAST_MUTEX(s_WriteLogLock);
 
 #ifdef NCBI_OS_MSWIN
 #   define LBOSRESOLVER_PATH "C:\\Apps\\Admin_Installs\\etc\\ncbi\\lbosresolver"
-#else
+#elif defined NCBI_OS_LINUX
 #   define LBOSRESOLVER_PATH "/etc/ncbi/lbosresolver"
 #endif
 
@@ -3268,6 +3268,7 @@ void SpecificMethod__FirstInResult()
     /* We have to fake last method, because its result is dependent on
      * location */
     /* III. etc/ncbi address (should be 127.0.0.1) */
+#if defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN
     WRITE_LOG("Part 3. Testing " LBOSRESOLVER_PATH);
     size_t buffer_size = 1024;
     size_t size;
@@ -3283,6 +3284,7 @@ void SpecificMethod__FirstInResult()
     lbosresolver = lbosresolver.erase(lbosresolver.length() - 5);
     addresses = g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_Lbosresolve, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), lbosresolver);
+#endif /* defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN */
 }
 
 void CustomHostNotProvided__SkipCustomHost()
@@ -3308,6 +3310,7 @@ void NoConditions__AddressDefOrder()
 
     /* II. Registry has no entries - check that LBOS is read from
      *     LBOSRESOLVER_PATH */
+#if defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN
     WRITE_LOG("2. Checking LBOS address when registry LBOS is not provided");
     size_t buffer_size = 1024;
     size_t size;
@@ -3324,6 +3327,7 @@ void NoConditions__AddressDefOrder()
     registry.Unset("CONN", "lbos");
     addresses = g_LBOS_GetLBOSAddress();
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), lbosresolver);
+#endif /* defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN */
 
     /* Cleanup */
     registry.Set("CONN", "lbos", lbos);
@@ -6982,7 +6986,7 @@ namespace DeannouncementAll_CXX
       No Multithread!                                                        */
 void AllDeannounced__NoSavedLeft()
 {
-    WRITE_LOG("DeannonceAll - should deannounce everyrithing "
+    WRITE_LOG("DeannonceAll - should deannounce everything "
               "that was announced");
     CLBOSStatus lbos_status(true, true);
     /* First, announce some random servers */
