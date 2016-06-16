@@ -124,13 +124,19 @@ CJsonNode g_GetWorkerNodeInfo(CNetScheduleAPI api)
     s_GetWorkerNodes(api, worker_nodes);
 
     ITERATE(list<CNetScheduleAdmin::SWorkerNodeInfo>, wn_info, worker_nodes) {
-        CNetScheduleAPI wn_api(wn_info->host + ':' +
-                NStr::NumericToString(wn_info->port),
-                api->m_Service->GetClientName(),
-                kEmptyStr);
+        string wn_address = wn_info->host + ':' +
+                NStr::NumericToString(wn_info->port);
+        try {
+            CNetScheduleAPI wn_api(wn_address,
+                    api->m_Service->GetClientName(),
+                    kEmptyStr);
 
-        result.SetByKey(wn_info->prog, s_WorkerNodeInfoToJson(
-                wn_api.GetService().Iterate().GetServer()));
+            result.SetByKey(wn_info->prog, s_WorkerNodeInfoToJson(
+                    wn_api.GetService().Iterate().GetServer()));
+        }
+        catch (CException& e) {
+            LOG_POST(Error << e);
+        }
     }
 
     return result;
