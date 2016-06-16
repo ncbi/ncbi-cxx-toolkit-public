@@ -155,6 +155,7 @@ int CNCBITestApp::Run(void)
     CORE_LOGF(eLOG_Note, ("Random SEED = %u", g_NCBI_ConnectRandomSeed));
     srand(g_NCBI_ConnectRandomSeed);
 
+
     LOG_POST(Info << "Test 0 of 9: Checking error log setup");
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
@@ -292,7 +293,6 @@ int CNCBITestApp::Run(void)
              << (int) m    << " iteration(s) with "
              << (int) size << " byte(s) transferred\n");
 
-    LOG_POST(Info << "Test 2 of 9: FTP download");
 
     if (rand() & 1)
         flag |= fFTP_DelayRestart;
@@ -307,6 +307,8 @@ int CNCBITestApp::Run(void)
         flag |= strcasecmp(val, "all") == 0 ? fFTP_LogAll : fFTP_LogData;
     }
 
+
+    LOG_POST(Info << "Test 2 of 9: FTP download");
     CConn_FTPDownloadStream download(CONN_NCBI_FTP_PUBLIC_HOST,
                                      "Misc/test_ncbi_conn_stream.FTP.data",
                                      "ftp"/*default*/, "-none"/*default*/,
@@ -339,7 +341,9 @@ int CNCBITestApp::Run(void)
     LOG_POST(Info << "Test 2 passed: 1024+" << size << '=' << n
              << " byte(s) downloaded via FTP\n");
 
+
     LOG_POST(Info << "Test 3 of 9: FTP upload");
+
     string ftpuser, ftppass, ftpfile;
     if (s_GetFtpCreds(ftpuser, ftppass)) {
         CTime start(CTime::eCurrent);
@@ -428,6 +432,7 @@ int CNCBITestApp::Run(void)
     } else
         LOG_POST(Info << "Test 3 skipped\n");
 
+
     LOG_POST(Info << "Test 4 of 9: FTP peculiarities");
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
         _ASSERT(!ftpfile.empty());
@@ -489,7 +494,9 @@ int CNCBITestApp::Run(void)
     } else
         LOG_POST(Info << "Test 4 skipped\n");
 
+
     ConnNetInfo_Destroy(net_info);
+
 
     {{
         // Silent test for timeouts and memory leaks in an unused stream
@@ -669,6 +676,7 @@ int CNCBITestApp::Run(void)
         ERR_POST(Fatal << "Test 9 failed");
 
     LOG_POST(Info << "Test 9 passed\n");
+
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     return 0/*okay*/;
