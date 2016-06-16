@@ -48,10 +48,6 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaIdentityVarref(const CNtLocati
 
     auto length = nucleotide.empty() ? 1 : nucleotide.size();
 
-    if (length > 1) {
-        // Throw an exception
-    }
-
     nt_literal->SetLength(length);
     if (!nucleotide.empty()) {
         nt_literal->SetSeq_data().SetIupacna(CIUPACna(nucleotide));
@@ -72,7 +68,9 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaSubVarref(const CNtLocation& n
 
     if (!initial_nt.empty() &&
         (initial_nt.size() != final_nt.size())) {
-      // Throw an exception
+        string err_msg = "Invalid nucleotide substitution.";
+        err_msg += " Reference subsequence and variant subsequence differ in length";
+        NCBI_THROW(CVariationIrepException, eInvalidVariation, err_msg);
     }
 
 
@@ -484,10 +482,15 @@ CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(const CVariantExpression& varia
     CRef<CVariant> subvariant = variant_expr.GetSequence_variant().GetSubvariants().front();
     const auto seq_type = variant_expr.GetSequence_variant().GetSeqtype();
 
-    if (seq_type == eVariantSeqType_p || 
-        seq_type == eVariantSeqType_u) {
-        // Throw an exception - invalid sequence type
+    if (seq_type != eVariantSeqType_c &&
+        seq_type != eVariantSeqType_g &&
+        seq_type != eVariantSeqType_r &&
+        seq_type != eVariantSeqType_m &&
+        seq_type != eVariantSeqType_n) {
+
+        NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Nucleotide sequence expected");
     }
+
 
     if (subvariant->IsSpecial()) {
         CConstRef<CSeq_id> seq_id = m_IdResolver->GetAccessionVersion(variant_expr.GetReference_id()).GetSeqId();
@@ -631,8 +634,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         return seq_loc;
     }
 
-    const ENa_strand strand = nt_site.GetStrand_minus() ? eNa_strand_minus : eNa_strand_plus;
-
+    const ENa_strand strand = x_GetStrand(nt_site);
     seq_loc->SetPnt().SetPoint(site_index);
     seq_loc->SetPnt().SetId().Assign(seq_id);
     seq_loc->SetPnt().SetStrand(strand);
@@ -748,7 +750,6 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
     seq_loc->SetInt().SetId().Assign(seq_id);
     
     TSeqPos start_index, stop_index;
-
     bool know_start = x_ComputeSiteIndex(seq_id,
                                          nt_int.GetStart(),
                                          seq_type,
@@ -764,8 +765,8 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
                                         stop_index);
 
     if ( (know_start && know_stop) && (start_index > stop_index) ) {
-        string err_string = "Reversed interval limits";
-        ERR_POST(Warning << err_string);
+        string err_msg = "Reversed interval limits";
+        ERR_POST(Warning << err_msg);
         const auto temp = start_index;
         stop_index = start_index;
         start_index = temp;
@@ -783,10 +784,10 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
                  !nt_int.GetStart().GetRange().GetStart().IsSetOffset() &&
                  !nt_int.GetStart().GetRange().GetStop().IsSetOffset()) {
 
-            auto fuzz_from = CNtSeqlocHelper::x_CreateIntFuzz(seq_id,
-                                                              nt_int.GetStart().GetRange(),
-                                                              seq_type,
-                                                              scope);
+            CRef<CInt_fuzz> fuzz_from = CNtSeqlocHelper::x_CreateIntFuzz(seq_id,
+                                                                         nt_int.GetStart().GetRange(),
+                                                                         seq_type,
+                                                                         scope);
             seq_loc->SetInt().SetFuzz_from(*fuzz_from);  
         } 
         else if (nt_int.GetStart().IsRange() &&
@@ -812,10 +813,10 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
                 !nt_int.GetStop().GetRange().GetStart().IsSetOffset() &&
                 !nt_int.GetStop().GetRange().GetStop().IsSetOffset()) {
 
-            auto fuzz_to = CNtSeqlocHelper::x_CreateIntFuzz(seq_id,
-                                                            nt_int.GetStop().GetRange(),
-                                                            seq_type,
-                                                            scope);
+            CRef<CInt_fuzz> fuzz_to = CNtSeqlocHelper::x_CreateIntFuzz(seq_id,
+                                                                       nt_int.GetStop().GetRange(),
+                                                                       seq_type,
+                                                                       scope);
             seq_loc->SetInt().SetFuzz_to(*fuzz_to); 
         }
         else if (nt_int.GetStop().IsRange() &&
@@ -843,7 +844,6 @@ CRef<CInt_fuzz> CNtSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
                                                  CScope& scope)
 {
     auto int_fuzz = Ref(new CInt_fuzz());
- 
     TSeqPos start_index = 0;
     bool know_start = x_ComputeSiteIndex(seq_id,
                                          nt_range.GetStart(),
@@ -873,7 +873,6 @@ CRef<CInt_fuzz> CNtSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
         int_fuzz->SetLim(CInt_fuzz::eLim_other);
     }
 
-
     return int_fuzz;
 }
 
@@ -884,7 +883,7 @@ bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          CScope& scope,
                                          TSeqPos& site_index)
 {
-   // Interval limits have to be either of type NtSite or NtRange
+   // Interval limits must be either of type NtSite or NtRange
    if (nt_limit.IsSite()) {
        return x_ComputeSiteIndex(seq_id, 
                                  nt_limit.GetSite(),
@@ -922,70 +921,120 @@ bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
 }
 
 
+// Given a seq-id and scope, return a reference to the unique CDS on that sequence. 
+// Throw an exception if a unique CDS is not found.
+const CSeq_feat& CNtSeqlocHelper::x_GetCDS(const CSeq_id& seq_id, CScope& scope) {
+    
+    auto bioseq_handle = scope.GetBioseqHandle(seq_id);
+    if (!bioseq_handle) {
+        NCBI_THROW(CVariationIrepException, eInvalidSeqId, "Cannot resolve bioseq from seq ID");
+    }
+    SAnnotSelector selector;
+    selector.SetResolveTSE();
+    selector.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    CConstRef<CSeq_feat> coding_seq;
+
+    for(CFeat_CI it(bioseq_handle, selector); it; ++it) {
+        const auto& mapped_feat = *it;
+        if (mapped_feat.GetData().IsCdregion()) {
+            if (coding_seq.NotNull()) {
+                NCBI_THROW(CVariationIrepException, eCDSError, "Multiple CDS features on sequence");
+            }
+            coding_seq = mapped_feat.GetSeq_feat();
+        }
+    }
+
+    if (coding_seq.IsNull()) {
+        NCBI_THROW(CVariationIrepException, eCDSError, "Could not find CDS feature");
+    }
+
+    return *coding_seq;
+}
+
+//
+// The following method translates the nucleotide site specified in the HGVS expression
+// into a bioseq site index. 
+// For non-CDS variants, translation is trivial.
+// HGVS convention is to use index 1 to denote the starting nucleotide in a sequence 
+// whereas NCBI convention is to assign index 0 to the starting nucleotide.
+// Therefore, we simply subtract 1 from the HGVS nucleotide index to obtain the 
+// corresponding NCBI site index.
+//
+// For CDS variants, things are a little complicated since the HGVS indexing scheme makes 
+// reference to the beginning and end of the coding region. 
+// Hence, index 1 refers to the position of nucleotide A in the start codon. 
+// Index -1 refers to the nucleotide site immediately preceding the start codon, 
+// and index -2 is the site immediately preceding that. 
+// Similarly, *1 refers to the nucleotide site immediately 3' of the stop codon,
+// and index *2 is the site immediately 3' of that. 
+//  
+// On the other hand, the NCBI indexing scheme makes no reference to the CDS location;
+// As in the non-CDS case, NCBI index 0 simply refers to the location of the first nucleotide 
+// in the underlying bioseq. 
+//
+// Therefore, for CDS variants, translation of a HGVS index into a bioseq index involves an 
+// additional offset, and the value of that offset depends on whether the 
+// nucleotide location is 5' of the CDS, 3' prime of the CDS, or falls within the CDS limits.
+//
+//
 bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          const CNtSite& nt_site,
                                          const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope,
                                          TSeqPos& site_index) 
 {
-    TSeqPos offset = 0;
-    if (seq_type == eVariantSeqType_c) {
-        auto bioseq_handle = scope.GetBioseqHandle(seq_id);
-        if (!bioseq_handle) {
-            NCBI_THROW(CVariationIrepException, eInvalidSeqId, "Cannot resolve bioseq from seq ID");
-        }
-        SAnnotSelector selector;
-        selector.SetResolveTSE();
-        selector.IncludeFeatType(CSeqFeatData::e_Cdregion);
-        CConstRef<CSeq_feat> coding_seq;
-        for(CFeat_CI it(bioseq_handle, selector); it; ++it) {
-            const auto& mapped_feat = *it;
-            if (mapped_feat.GetData().IsCdregion()) {
-                if (coding_seq.NotNull()) {
-                    NCBI_THROW(CVariationIrepException, eCDSError, "Multiple CDS features on sequence");
-                }
-                coding_seq = mapped_feat.GetSeq_feat();
-            }
-        }
-        if (coding_seq.IsNull()) {
-            // Not sure about the wording here
-            NCBI_THROW(CVariationIrepException, eCDSError, "Could not find CDS feature");
-        }
-        if (nt_site.IsSetUtr() && nt_site.GetUtr().IsThree_prime()) {
-            offset = coding_seq->GetLocation().GetStop(eExtreme_Biological) + 1;
-        }
-        else {
-            offset = coding_seq->GetLocation().GetStart(eExtreme_Biological);
-        }
-    }
-
-    if (nt_site.IsSetBase() && nt_site.GetBase().IsVal()) { 
-        site_index = nt_site.GetBase().GetVal();
-        if (nt_site.IsSetUtr() && nt_site.GetUtr().IsFive_prime()) {
-            if (site_index >= offset) {
-               NCBI_THROW(CVariationIrepException, eInvalidLocation, "Error deducing 5' UTR location");
-            }
-            site_index = offset - site_index;
-        }
-        else {
-            if (site_index == 0 ) {
-                NCBI_THROW(CVariationIrepException, eInvalidLocation, "Invalid site index: 0");
-            }
-            site_index = site_index + offset-1;
-        }
-    } 
-    else { 
+    // Can't do anything if the HGVS base value hasn't been specified
+    if (!nt_site.IsSetBase() || !nt_site.GetBase().IsVal()) {
         return false;
     }
 
+    TSeqPos offset = 0;
+    if (seq_type == eVariantSeqType_c) {
+        const CSeq_feat& coding_seq = x_GetCDS(seq_id, scope);
+
+        if (nt_site.IsSetUtr() && nt_site.GetUtr().IsThree_prime()) {
+            offset = coding_seq.GetLocation().GetStop(eExtreme_Biological) + 1;
+        }
+        else {
+            offset = coding_seq.GetLocation().GetStart(eExtreme_Biological);
+        }
+    }
+
+    site_index = nt_site.GetBase().GetVal();
+    if (site_index == 0 ) {
+        NCBI_THROW(CVariationIrepException, eInvalidLocation, "Invalid HGVS site index: 0");
+    }
+
+    // If this is a CDS variant and the referenced site lies 5' of the CDS start codon
+    if (nt_site.IsSetUtr() && nt_site.GetUtr().IsFive_prime()) {
+        // offset is the NCBI index referring to nucleotide A of the start codon
+        if (site_index > offset) {
+           NCBI_THROW(CVariationIrepException, eInvalidLocation, "Error deducing 5' UTR location");
+        }
+        site_index = offset - site_index;
+        return true;
+    }
+    
+    // To reach this point, one of the following MUST be true:
+    //
+    //     1) The reference sequence is not a CDS. 
+    //        In this case, offset = 0
+    //
+    //     2) The referenced site lies within the limits of the CDS.
+    //        In this case, offset is the NCBI index for the A nucleotide in the start codon.
+    //
+    //     3) The reference site lies 3' of the CDS.
+    //        In this case, offset is the NCBI index referencing the site immediately 3' of the stop codon.       
+    
+    site_index = site_index-1 + offset;
     return true;
 }
 
 
-void s_SetDeltaItemOffset(const TSeqPos length, 
-                          const CDelta_item::TMultiplier multiplier, 
-                          const bool fuzzy,
-                          CDelta_item& delta_item)
+void CHgvsNaDeltaHelper::x_SetDeltaItemOffset(const TSeqPos length, 
+                                              const CDelta_item::TMultiplier multiplier, 
+                                              const bool fuzzy,
+                                              CDelta_item& delta_item)
  {
      delta_item.SetAction(CDelta_item::eAction_offset);
 
@@ -1033,8 +1082,7 @@ CRef<CDelta_item> CHgvsNaDeltaHelper::GetIntronOffset(const CNtSite& nt_site)
         else if (nt_site.GetOffset().IsMinus_unknown()) {
             multiplier = -1;
         }
-        s_SetDeltaItemOffset(offset_length, multiplier, fuzzy, *delta_item);
-       // delta_item->SetOffset(offset_length, multiplier, fuzzy);
+        x_SetDeltaItemOffset(offset_length, multiplier, fuzzy, *delta_item);
     }
 
     return delta_item;

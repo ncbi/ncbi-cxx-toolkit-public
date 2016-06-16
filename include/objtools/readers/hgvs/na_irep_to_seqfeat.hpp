@@ -29,6 +29,12 @@ public:
     static CRef<CDelta_item> GetStopIntronOffset(const CNtLocation& nt_loc);
     static CRef<CDelta_item> GetStartIntronOffset(const CNtInterval& nt_int);
     static CRef<CDelta_item> GetStopIntronOffset(const CNtInterval& nt_int);
+
+private:
+    static void x_SetDeltaItemOffset(TSeqPos length,
+                                     const CDelta_item::TMultiplier multiplier,
+                                     bool fuzzy, 
+                                     CDelta_item& delta_item);   
 };
 
 
@@ -88,6 +94,9 @@ private:
                                            const CNtSiteRange& nt_range,
                                            const CSequenceVariant::TSeqtype& seq_type,
                                            CScope& scope);
+
+    static const CSeq_feat& x_GetCDS(const CSeq_id& seq_id,
+                                     CScope& scope);
 
     static ENa_strand x_GetStrand(const CNtInterval& nt_int);
 
