@@ -9901,7 +9901,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
                                                  "Nucleotide bioseq should be product of mRNA feature on contig, but is not"));
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CDSwithNoMRNAOverlap",
-                                                 "1 out of 2 CDSs overlapped by 0 mRNAs"));
+                                                 "1 out of 2 CDSs unmatched"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     expected_errors.pop_back();
@@ -14569,7 +14569,7 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CDSwithNoMRNAOverlap)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSwithNoMRNAOverlap",
-                "11 out of 12 CDSs overlapped by 0 mRNAs"));
+                "11 out of 12 CDSs unmatched"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14588,7 +14588,7 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CDSwithNoMRNAOverlap)
     }
 */
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSwithNoMRNAOverlap",
-                "8 out of 12 CDSs overlapped by 0 mRNAs"));
+                "8 out of 12 CDSs unmatched"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
