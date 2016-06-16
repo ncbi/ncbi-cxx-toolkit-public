@@ -667,6 +667,72 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
 
 
 int
+CNSTDatabase::UpdateExpirationOnLockFTPath(
+                        const string &  object_key,
+                        const TNSTDBValue<CTimeSpan> &  ttl,
+                        const CTimeSpan &  prolong_on_read,
+                        const TNSTDBValue<CTime> &  object_expiration)
+{
+    // Here the only expiration for the case a record is found needs to be
+    // calculated. The procedure however is a generic one and calculates the
+    // expiration for a not found record. Use it and ignore the second
+    // calculated value.
+    CTime                   current_time(CTime::eCurrent);
+    TNSTDBValue<CTime>      exp_record_found;
+    TNSTDBValue<CTime>      exp_record_not_found;
+    x_CalculateExpiration(current_time, ttl, prolong_on_read, object_expiration,
+                          exp_record_found, exp_record_not_found);
+
+    const string        proc_name = "SetObjectExpiration";
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        x_PreCheckConnection();
+
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
+
+            query.SetParameter("@object_key", object_key);
+
+            if (exp_record_found.m_IsNull)
+                query.SetNullParameter("@expiration", eSDB_DateTime);
+            else
+                query.SetParameter("@expiration", exp_record_found.m_Value);
+            query.SetParameter("@create_if_not_found", 0, eSDB_Int4);
+
+            query.SetNullParameter("@object_loc", eSDB_String);
+            query.SetNullParameter("@client_id", eSDB_Int8);
+            query.SetOutputParameter("@object_size", eSDB_Int8);
+
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
+    } catch (...) {
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
+        throw;
+    }
+}
+
+
+int
 CNSTDatabase::ExecSP_UpdateUserIDForObject(const string &  object_key,
                                            Int8  user_id)
 {

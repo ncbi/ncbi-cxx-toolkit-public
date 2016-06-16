@@ -277,7 +277,9 @@ private:
     bool x_DetectMetaDBNeedUpdate(const CJsonNode &  message,
                                   CNSTServiceProperties &  props) const;
     bool x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags);
-    bool x_DetectMetaDBNeedOnGetObjectInfo(const CJsonNode & message) const;
+    bool x_DetectMetaDBNeedOnGetObjectInfo(
+                                        const CJsonNode & message,
+                                        CNSTServiceProperties &  props) const;
     void x_CreateClient(void);
     Int8 x_GetClientID(const string &  client);
     void x_CreateUser(void);

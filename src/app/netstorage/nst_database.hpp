@@ -132,6 +132,11 @@ public:
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_relocate,
             const TNSTDBValue<CTime> &  object_expiration);
+    int  UpdateExpirationOnLockFTPath(
+            const string &  object_key,
+            const TNSTDBValue<CTimeSpan> &  ttl,
+            const CTimeSpan &  prolong_on_read,
+            const TNSTDBValue<CTime> &  object_expiration);
     int  ExecSP_UpdateUserIDForObject(
             const string &  object_key, Int8  user_id);
     int  ExecSP_RemoveObject(const string &  object_key);

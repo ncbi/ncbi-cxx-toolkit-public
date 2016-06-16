@@ -1536,9 +1536,11 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                                              CNSTClient::eReader);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
-    bool        need_db_access = true;
+    bool                        need_db_access = true;
+    CNSTServiceProperties       service_properties;     // not used here
     if (m_MetadataOption != eMetadataMonitoring)
-        need_db_access = x_DetectMetaDBNeedOnGetObjectInfo(message);
+        need_db_access = x_DetectMetaDBNeedOnGetObjectInfo(message,
+                                                           service_properties);
     CDirectNetStorageObject     direct_object = x_GetObject(message); 
     // First source of data - MS SQL database at hand
     TNSTDBValue<string>     user_namespace;
@@ -2644,9 +2646,11 @@ CNetStorageHandler::x_ProcessExists(
     CJsonNode                   reply = CreateResponseMessage(
                                                     common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
-    bool                        need_db_access =
-                                    x_DetectMetaDBNeedOnGetObjectInfo(message);
-    string                      locator_from_db;
+    CNSTServiceProperties       service_properties; // not used here
+    bool        need_db_access =
+                        x_DetectMetaDBNeedOnGetObjectInfo(message,
+                                                          service_properties);
+    string      locator_from_db;
 
     // Part I. MS SQL db access if needed
     if (need_db_access) {
@@ -2739,8 +2743,11 @@ CNetStorageHandler::x_ProcessGetSize(
     string                      object_key =
                                         direct_object.Locator().GetUniqueKey();
 
-    bool        object_size_is_null = false;
-    bool        need_db_access = x_DetectMetaDBNeedOnGetObjectInfo(message);
+    bool                        object_size_is_null = false;
+    CNSTServiceProperties       service_properties; // not used here
+    bool                        need_db_access =
+                        x_DetectMetaDBNeedOnGetObjectInfo(message,
+                                                          service_properties);
 
     if (need_db_access) {
         TNSTDBValue<Int8>   db_object_size;
@@ -3010,11 +3017,35 @@ CNetStorageHandler::x_ProcessLockFTPath(
     CDirectNetStorageObject     direct_object = x_GetObject(message);
     string                      object_key =
                                         direct_object.Locator().GetUniqueKey();
+    CNSTServiceProperties       service_properties;
 
-    if (x_DetectMetaDBNeedOnGetObjectInfo(message)) {
+    if (x_DetectMetaDBNeedOnGetObjectInfo(message, service_properties)) {
         // The only required check in the DB is if the object is expired
-        int  status = m_Server->GetDb().ExecSP_DoesObjectExist(object_key);
+        TNSTDBValue<CTime>  object_expiration;
+        int  status = m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
+                                                        object_expiration);
         x_CheckExpirationStatus(status);
+
+        if (status == kSPStatusOK) {
+            // Only if the object exists and not expired its expiration time
+            // should be updated
+            if (!service_properties.GetTTL().m_IsNull &&
+                !object_expiration.m_IsNull) {
+                try {
+                    m_Server->GetDb().UpdateExpirationOnLockFTPath(
+                                        object_key,
+                                        service_properties.GetTTL(),
+                                        service_properties.GetProlongOnRead(),
+                                        object_expiration);
+                } catch (const std::exception &  ex) {
+                    ERR_POST("Error updating object expiration on LOCKFTPATH. "
+                             "Ignore and continue. " << ex);
+                } catch (...) {
+                    ERR_POST("Unknown error updating object "
+                             "expiration on LOCKFTPATH.");
+                }
+            }
+        }
     }
 
 
@@ -3343,6 +3374,9 @@ CNetStorageHandler::x_DetectMetaDBNeedUpdate(
                                     const CJsonNode &  message,
                                     CNSTServiceProperties &  props) const
 {
+    if (m_MetadataOption == eMetadataDisabled)
+        return false;
+
     if (message.HasKey("ObjectLoc")) {
         // Object locator has a metadata flag and a service name
         string  object_loc = message.GetString("ObjectLoc");
@@ -3422,7 +3456,8 @@ CNetStorageHandler::x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags)
 // Returns true if the metainfo DB should be accessed
 bool
 CNetStorageHandler::x_DetectMetaDBNeedOnGetObjectInfo(
-                                    const CJsonNode & message) const
+                                    const CJsonNode & message,
+                                    CNSTServiceProperties &  props) const
 {
     if (m_MetadataOption == eMetadataDisabled)
         return false;
@@ -3441,18 +3476,24 @@ CNetStorageHandler::x_DetectMetaDBNeedOnGetObjectInfo(
             return false;
 
         string  service = object_loc_struct.GetServiceName();
-        if (!service.empty())
-            return m_Server->InMetadataServices(service);
-    } else {
-        // This is user key identification
-        TNetStorageFlags    flags = ExtractStorageFlags(message);
-        if (flags & fNST_NoMetaData)
-            return false;
+        if (service.empty())
+            service = m_Service;
+
+        bool    service_configured = m_Server->GetServiceProperties(service,
+                                                                    props);
+        return service_configured;
     }
 
-    // In all the other cases the access depends on if the HELLO service is
-    // configured for the metadata option
-    return m_Server->InMetadataServices(m_Service);
+    // This is user key identification
+    TNetStorageFlags    flags = ExtractStorageFlags(message);
+    if (flags & fNST_NoMetaData)
+        return false;
+
+    // There is no knowledge of the service and metadata request from the
+    // object identifier
+    bool    service_configured = m_Server->GetServiceProperties(m_Service,
+                                                                props);
+    return service_configured;
 }
 
 
