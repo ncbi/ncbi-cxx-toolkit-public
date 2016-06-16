@@ -38,7 +38,7 @@ private:
 };
 
 
-class CNtSeqlocHelper
+class CNaSeqlocHelper
 {
 public:
 

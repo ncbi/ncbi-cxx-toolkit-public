@@ -330,7 +330,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateConversionVarref(const CConversi
 
     auto seq_id = m_IdResolver->GetAccessionVersion(id_string).GetSeqId();
 
-    auto seq_loc = CNtSeqlocHelper::CreateSeqloc(*seq_id,
+    auto seq_loc = CNaSeqlocHelper::CreateSeqloc(*seq_id,
                                                   conv.GetDst(),
                                                   seq_type,
                                                   m_Scope);
@@ -451,7 +451,7 @@ CRef<CSeq_feat> CHgvsNaIrepReader::x_CreateSimpleVariantFeat(const string& var_n
 
     auto seq_id = m_IdResolver->GetAccessionVersion(id_string).GetSeqId();
 
-    CRef<CSeq_loc> seq_loc = CNtSeqlocHelper::CreateSeqloc(*seq_id, 
+    CRef<CSeq_loc> seq_loc = CNaSeqlocHelper::CreateSeqloc(*seq_id, 
                                                            simple_var,
                                                            seq_type,
                                                            m_Scope);
@@ -512,7 +512,7 @@ CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(const CVariantExpression& varia
 
 
 
-CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
+CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CSimpleVariant& simple_var,
         const CSequenceVariant::TSeqtype& seq_type,
         CScope& scope)
@@ -585,7 +585,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 
 
-CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
+CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtLocation& nt_loc,
         const CSequenceVariant::TSeqtype& seq_type,
         CScope& scope)
@@ -617,7 +617,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 }
 
 
-CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
+CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtSite& nt_site,
         const CSequenceVariant::TSeqtype& seq_type,
         CScope& scope)
@@ -649,7 +649,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 
 
-CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
+CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtSiteRange& nt_range,
         const CSequenceVariant::TSeqtype& seq_type,
         CScope& scope)
@@ -686,7 +686,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 }
 
 
-ENa_strand CNtSeqlocHelper::x_GetStrand(const CNtSite& nt_site)
+ENa_strand CNaSeqlocHelper::x_GetStrand(const CNtSite& nt_site)
 {
     ENa_strand strand = nt_site.GetStrand_minus() ? eNa_strand_minus : eNa_strand_plus;
 
@@ -694,7 +694,7 @@ ENa_strand CNtSeqlocHelper::x_GetStrand(const CNtSite& nt_site)
 }
 
 
-ENa_strand CNtSeqlocHelper::x_GetStrand(const CNtSiteRange& nt_range)
+ENa_strand CNaSeqlocHelper::x_GetStrand(const CNtSiteRange& nt_range)
 {
     ENa_strand strand = eNa_strand_unknown;
     if (nt_range.IsSetStart()) {
@@ -708,7 +708,7 @@ ENa_strand CNtSeqlocHelper::x_GetStrand(const CNtSiteRange& nt_range)
 }
 
 
-ENa_strand CNtSeqlocHelper::x_GetStrand(const CNtInterval& nt_int) 
+ENa_strand CNaSeqlocHelper::x_GetStrand(const CNtInterval& nt_int) 
 {
     if (nt_int.IsSetStart()) {
         if (nt_int.GetStart().IsSite()) {
@@ -735,7 +735,7 @@ ENa_strand CNtSeqlocHelper::x_GetStrand(const CNtInterval& nt_int)
 
 
 
-CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
+CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CNtInterval& nt_int,
         const CSequenceVariant::TSeqtype& seq_type,
         CScope& scope)
@@ -784,7 +784,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
                  !nt_int.GetStart().GetRange().GetStart().IsSetOffset() &&
                  !nt_int.GetStart().GetRange().GetStop().IsSetOffset()) {
 
-            CRef<CInt_fuzz> fuzz_from = CNtSeqlocHelper::x_CreateIntFuzz(seq_id,
+            CRef<CInt_fuzz> fuzz_from = CNaSeqlocHelper::x_CreateIntFuzz(seq_id,
                                                                          nt_int.GetStart().GetRange(),
                                                                          seq_type,
                                                                          scope);
@@ -813,7 +813,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
                 !nt_int.GetStop().GetRange().GetStart().IsSetOffset() &&
                 !nt_int.GetStop().GetRange().GetStop().IsSetOffset()) {
 
-            CRef<CInt_fuzz> fuzz_to = CNtSeqlocHelper::x_CreateIntFuzz(seq_id,
+            CRef<CInt_fuzz> fuzz_to = CNaSeqlocHelper::x_CreateIntFuzz(seq_id,
                                                                        nt_int.GetStop().GetRange(),
                                                                        seq_type,
                                                                        scope);
@@ -838,7 +838,7 @@ CRef<CSeq_loc> CNtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 
 
-CRef<CInt_fuzz> CNtSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
+CRef<CInt_fuzz> CNaSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
                                                  const CNtSiteRange& nt_range,
                                                  const CSequenceVariant::TSeqtype& seq_type,
                                                  CScope& scope)
@@ -877,7 +877,7 @@ CRef<CInt_fuzz> CNtSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
 }
 
 
-bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
+bool CNaSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          const CNtIntLimit& nt_limit,
                                          const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope,
@@ -901,7 +901,7 @@ bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
 }
 
 
-bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
+bool CNaSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          const CNtSiteRange& nt_range,
                                          const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope,
@@ -923,7 +923,7 @@ bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
 
 // Given a seq-id and scope, return a reference to the unique CDS on that sequence. 
 // Throw an exception if a unique CDS is not found.
-const CSeq_feat& CNtSeqlocHelper::x_GetCDS(const CSeq_id& seq_id, CScope& scope) {
+const CSeq_feat& CNaSeqlocHelper::x_GetCDS(const CSeq_id& seq_id, CScope& scope) {
     
     auto bioseq_handle = scope.GetBioseqHandle(seq_id);
     if (!bioseq_handle) {
@@ -977,7 +977,7 @@ const CSeq_feat& CNtSeqlocHelper::x_GetCDS(const CSeq_id& seq_id, CScope& scope)
 // nucleotide location is 5' of the CDS, 3' prime of the CDS, or falls within the CDS limits.
 //
 //
-bool CNtSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
+bool CNaSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
                                          const CNtSite& nt_site,
                                          const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope,

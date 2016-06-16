@@ -19,7 +19,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CAaSeqlocHelper 
+class CProtSeqlocHelper 
 {
 public: 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,

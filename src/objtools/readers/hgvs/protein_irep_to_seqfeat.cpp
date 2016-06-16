@@ -147,7 +147,7 @@ CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSeqfeat(const string& var_name,
 
     const auto seq_id = m_IdResolver->GetAccessionVersion(identifier).GetSeqId();
 
-    auto seq_loc = CAaSeqlocHelper::CreateSeqloc(*seq_id, simple_var);
+    auto seq_loc = CProtSeqlocHelper::CreateSeqloc(*seq_id, simple_var);
     seq_feat->SetLocation(*seq_loc);
     return seq_feat;
 }
@@ -429,7 +429,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateFrameshiftVarref(const string&
 }
 
 
-CRef<CSeq_loc> CAaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id, 
+CRef<CSeq_loc> CProtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id, 
         const CSimpleVariant& var_desc)
 {
     CRef<CSeq_loc> seq_loc;
@@ -472,7 +472,7 @@ CRef<CSeq_loc> CAaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 }
 
 
-CRef<CSeq_loc> CAaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
+CRef<CSeq_loc> CProtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CAaLocation& aa_loc)
 {
     if ( aa_loc.IsSite() ) {
@@ -486,7 +486,7 @@ CRef<CSeq_loc> CAaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 }
 
 
-CRef<CSeq_loc> CAaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
+CRef<CSeq_loc> CProtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CAaSite& aa_site)
 {
     const auto site_index = aa_site.GetIndex()-1;
@@ -504,7 +504,7 @@ CRef<CSeq_loc> CAaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 }
 
 
-CRef<CSeq_loc> CAaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
+CRef<CSeq_loc> CProtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CAaInterval& aa_int)
 {
     if ( !aa_int.IsSetStart() || !aa_int.IsSetStop() ) {
