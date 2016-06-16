@@ -441,6 +441,18 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 
     if(!m_terminate) {
         x_SWDoBackTrace(backtrace_matrix, data);
+        //check back trace
+        if(m_SmithWaterman) {
+            if( best_V != ScoreFromTranscript(data->m_transcript) ) {
+                NCBI_THROW(CAlgoAlignException, eInternal,
+                           "CNWAligner: error in back trace");
+            }
+        } else {
+            if( V != ScoreFromTranscript(data->m_transcript) ) {
+                NCBI_THROW(CAlgoAlignException, eInternal,
+                           "CNWAligner: error in back trace");
+            }
+        }
     }
 
     if(m_SmithWaterman) {
@@ -794,7 +806,7 @@ void CNWAligner::x_SWDoBackTrace(const CBacktraceMatrix4 & backtrace,
             k -= N2 + 1;
         }
         else if (Key & kMaskE) {
-            score -= m_Wg;
+            score -= m_Wg + m_Ws;
             data->m_transcript.push_back(eTS_Insert);
             --k;
             --i2;
@@ -806,7 +818,7 @@ void CNWAligner::x_SWDoBackTrace(const CBacktraceMatrix4 & backtrace,
             }
          }
         else {
-            score -= m_Wg;
+            score -= m_Wg + m_Ws;
             data->m_transcript.push_back(eTS_Delete);
             k -= N2;
             --i1;
@@ -819,7 +831,7 @@ void CNWAligner::x_SWDoBackTrace(const CBacktraceMatrix4 & backtrace,
             }
         }
     }
-    if( m_SmithWaterman && score < 0 ) {
+    if( m_SmithWaterman && score != 0 ) {
         NCBI_THROW(CAlgoAlignException, eInternal,
                    "negative score in Smith-Waterman back trace");
     }
@@ -1139,7 +1151,7 @@ CNWAligner::TScore CNWAligner::ScoreFromTranscript(
                    g_msg_InconsistentArguments);
     }
 
-    const size_t dim (transcript.size());
+    size_t dim (transcript.size());
     if(dim == 0) {
         return 0;
     }
@@ -1149,30 +1161,41 @@ CNWAligner::TScore CNWAligner::ScoreFromTranscript(
     const char* p1 (m_Seq1 + start1);
     const char* p2 (m_Seq2 + start2);
 
-    int state1;   // 0 = normal, 1 = gap;
-    int state2;   // 0 = normal, 1 = gap;
+    int state1(0);   // 0 = normal, 1 = gap;
+    int state2(0);   // 0 = normal, 1 = gap;
 
     size_t i (0);
-    switch(transcript[i]) {
-
-    case eTS_Match:
-    case eTS_Replace:
-        state1 = state2 = 0;
-        break;
-
-    case eTS_Insert:
-        state1 = 1; state2 = 0; score += m_Wg;
-        break;
-
-    case eTS_Delete:
-        state1 = 0; state2 = 1; score += m_Wg;
-        break;
-
-    default:
-        NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidTranscriptSymbol);
-    }
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
+
+    ///SmithWaterman alterations
+    if( IsSmithWaterman() ) {
+        //cut beginning gaps
+        for(; i<dim; ++i) {
+            if( transcript[i] == eTS_Insert ) {
+                ++p2;
+            } else if( transcript[i] == eTS_Delete ) {
+                ++p1;
+            } else if( transcript[i] == eTS_Match ||
+                       transcript[i] == eTS_Replace ) {
+                break;
+            } else {
+                NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidTranscriptSymbol);
+            }
+        }
+        if( i == dim ) {//alignment consists of gaps only
+            return score;
+        }
+        //cut trailing gaps
+        for(size_t endi = dim-1; endi >=0; --endi) {
+            if( transcript[endi] == eTS_Match || transcript[endi] == eTS_Replace ) {
+                dim = endi + 1;
+                break;
+            } else if( transcript[endi] != eTS_Insert  && transcript[endi] != eTS_Delete ) {
+                NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidTranscriptSymbol);
+            }
+        }
+    }
 
     for(; i < dim; ++i) {
 
@@ -1216,6 +1239,10 @@ CNWAligner::TScore CNWAligner::ScoreFromTranscript(
         default:
             NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidTranscriptSymbol);
         }
+    }
+
+    if( IsSmithWaterman() ) {//end gap scores are already excluded
+        return score;
     }
 
     if(m_esf_L1) {
