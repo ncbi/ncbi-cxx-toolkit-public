@@ -647,31 +647,6 @@ BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
     }}
 }
 
-BOOST_AUTO_TEST_CASE(CDS_TRNA_OVERLAP)
-{
-    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/cds_trna_overlap.asn");
-    BOOST_REQUIRE(entry);
-
-    CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-    scope.AddTopLevelSeqEntry(*entry);
-
-    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
-    set->AddTest("CDS_TRNA_OVERLAP");
-    set->Parse(*entry);
-    set->Summarize();
-
-    const TDiscrepancyCaseMap& tests = set->GetTests();
-    BOOST_REQUIRE_EQUAL(tests.size(), 1);
-    TReportItemList report = tests.at("CDS_TRNA_OVERLAP")->GetReport();
-    BOOST_REQUIRE_EQUAL(report.size(), 2);
-    BOOST_CHECK_EQUAL(report[0]->GetMsg(), 
-        "tRNA at 1501..1550 overlaps with at least one CDS");
-    BOOST_CHECK_EQUAL(report[1]->GetMsg(),
-        "tRNA at 201..250 overlaps with at least one CDS");
-}
-
-
 BOOST_AUTO_TEST_CASE(LONG_NO_ANNOTATION)
 {
     {{
