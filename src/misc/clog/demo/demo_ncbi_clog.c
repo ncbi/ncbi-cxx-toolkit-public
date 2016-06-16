@@ -40,7 +40,9 @@
  *  MT-locking
  */
 
-/* Fake MT-lock handler -- for display purposes only */
+/* Fake MT-lock handler -- for display purposes only 
+   Used by NcbiLog_Init() method only.
+*/
 static int Test_MT_Handler(void* user_data, ENcbiLog_MTLock_Action action)
 {
     /*
@@ -56,7 +58,9 @@ static int Test_MT_Handler(void* user_data, ENcbiLog_MTLock_Action action)
 
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, Test_MT_Handler); 
+    /* Uncomment for NcbiLog_Init() method below
+       TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, Test_MT_Handler); 
+    */
 
     /* Initialize logging API 
     */

@@ -1873,10 +1873,11 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
     sx_Info->message[n_write] = '\0';
     n = s_Write(f, sx_Info->message, n_write);
     VERIFY(n == n_write);
+    fsync(f);    
 #else
     n = fprintf(f, "%s\n", sx_Info->message);
-    fflush(f);
     VERIFY(n > 0);
+    fflush(f);
 #endif
 
     /* Increase posting serial numbers */
@@ -3513,10 +3514,11 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
     VERIFY(n == len);
     n = s_Write(f, "\n", 1);
     VERIFY(n == 1);
+    fsync(f);    
 #else
     n = fprintf(f, "%s\n", line);
-    fflush(f);
     VERIFY(n > 0);
+    fflush(f);
 #endif
 
     MT_UNLOCK;
