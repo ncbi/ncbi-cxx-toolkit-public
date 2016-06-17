@@ -714,7 +714,7 @@ static const int kGoodDescrMask = kForceDescrMask | kOptionalDescrMask;
 
 
 static
-bool s_IsGoodDescr(const CSeqdesc& desc)
+bool s_IsGoodDescr(const CSeqdesc& desc, int mask)
 {
     if ( desc.Which() == CSeqdesc::e_User ) {
         const CObject_id& type = desc.GetUser().GetType();
@@ -728,7 +728,7 @@ bool s_IsGoodDescr(const CSeqdesc& desc)
             }
         }
     }
-    else if ( (1 << desc.Which()) & kGoodDescrMask ) {
+    else if ( (1 << desc.Which()) & mask ) {
         return true;
     }
     return false;
@@ -761,7 +761,8 @@ void s_AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& src)
 
 static
 CRef<CSeq_descr> s_GetWGSMasterDescr(CDataLoader* loader,
-                                     const CSeq_id_Handle& master_idh)
+                                     const CSeq_id_Handle& master_idh,
+                                     int mask)
 {
     CRef<CSeq_descr> ret;
     CDataLoader::TTSE_LockSet locks =
@@ -775,7 +776,7 @@ CRef<CSeq_descr> s_GetWGSMasterDescr(CDataLoader* loader,
         if ( bs_info->IsSetDescr() ) {
             const CSeq_descr::Tdata& descr = bs_info->GetDescr().Get();
             ITERATE ( CSeq_descr::Tdata, it, descr ) {
-                if ( s_IsGoodDescr(**it) ) {
+                if ( s_IsGoodDescr(**it, mask) ) {
                     if ( !ret ) {
                         ret = new CSeq_descr;
                     }
@@ -857,26 +858,40 @@ private:
 class CWGSMasterChunkInfo : public CTSE_Chunk_Info
 {
 public:
-    CWGSMasterChunkInfo(const CSeq_id_Handle& master_idh)
+    CWGSMasterChunkInfo(const CSeq_id_Handle& master_idh,
+                        int mask)
         : CTSE_Chunk_Info(kMasterWGS_ChunkId),
-          m_MasterId(master_idh)
+          m_MasterId(master_idh),
+          m_DescrMask(mask)
         {
         }
 
     CSeq_id_Handle m_MasterId;
+    int m_DescrMask;
 };
 
 
 END_LOCAL_NAMESPACE;
 
 
+const bool kAddMasterDescrToTSE = true;
+
+
 void CProcessor::LoadWGSMaster(CDataLoader* loader,
                                CRef<CTSE_Chunk_Info> chunk)
 {
-    CSeq_id_Handle id = dynamic_cast<CWGSMasterChunkInfo&>(*chunk).m_MasterId;
-    CRef<CSeq_descr> descr = s_GetWGSMasterDescr(loader, id);
-    CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterDescr(id, descr));
-    const_cast<CTSE_Split_Info&>(chunk->GetSplitInfo()).x_SetBioseqUpdater(upd);
+    CWGSMasterChunkInfo& chunk_info =
+        dynamic_cast<CWGSMasterChunkInfo&>(*chunk);
+    CSeq_id_Handle id = chunk_info.m_MasterId;
+    int mask = chunk_info.m_DescrMask;
+    CRef<CSeq_descr> descr = s_GetWGSMasterDescr(loader, id, mask);
+    if ( kAddMasterDescrToTSE ) {
+        chunk->x_LoadDescr(CTSE_Chunk_Info::TPlace(), *descr);
+    }
+    else {
+        CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterDescr(id, descr));
+        const_cast<CTSE_Split_Info&>(chunk->GetSplitInfo()).x_SetBioseqUpdater(upd);
+    }
     chunk->SetLoaded();
 }
 
@@ -888,10 +903,20 @@ void CProcessor::AddWGSMaster(CLoadLockSetter& blob)
     lock->GetBioseqsIds(ids);
     ITERATE ( CTSE_Info::TSeqIds, it, ids ) {
         if ( CSeq_id_Handle id = s_GetWGSMasterSeq_id(*it) ) {
-            CRef<CTSE_Chunk_Info> chunk(new CWGSMasterChunkInfo(id));
+            int mask = kGoodDescrMask;
+            if ( kAddMasterDescrToTSE ) {
+                // exclude existing descr types
+                mask &= ~lock->x_GetBaseInfo().x_GetExistingDescrMask();
+            }
+            CRef<CTSE_Chunk_Info> chunk(new CWGSMasterChunkInfo(id, mask));
             lock->GetSplitInfo().AddChunk(*chunk);
-            CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterChunk(id));
-            lock->SetBioseqUpdater(upd);
+            if ( kAddMasterDescrToTSE ) {
+                chunk->x_AddDescInfo(mask, 0);
+            }
+            else {
+                CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterChunk(id));
+                lock->SetBioseqUpdater(upd);
+            }
             break;
         }
     }
