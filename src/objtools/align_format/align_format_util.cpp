@@ -3038,6 +3038,19 @@ string CAlignFormatUtil::AddSpaces(string paramVal, unsigned int maxParamValLeng
     return paramVal;
 }
 
+string CAlignFormatUtil::GetProtocol()
+{
+    CNcbiIfstream  config_file(".ncbirc");
+    CNcbiRegistry config_reg(config_file);
+    string httpProt = "https:";
+    if(!config_reg.Empty()) {
+        if(config_reg.HasEntry("BLASTFMTUTIL","PROTOCOL")) {
+            httpProt = config_reg.Get("BLASTFMTUTIL","PROTOCOL");
+        }
+    }        
+    return httpProt;
+}
+
 static string s_MapCommonUrlParams(string urlTemplate, CAlignFormatUtil::SSeqURLInfo *seqUrlInfo)
 {
     string db,logstr_moltype;
