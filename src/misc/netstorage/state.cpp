@@ -843,6 +843,7 @@ public:
 
     ILocation* First();
     ILocation* Next();
+    void Restart();
     const TObjLoc& Locator();
     void SetLocator();
     ISelector* Clone(TNetStorageFlags);
@@ -856,7 +857,8 @@ private:
     CLocatorHolding<CNotFound> m_NotFound;
     CLocatorHolding<CNetCache> m_NetCache;
     CLocatorHolding<CFileTrack> m_FileTrack;
-    stack<CLocation*> m_Locations;
+    vector<CLocation*> m_Locations;
+    size_t m_CurrentLocation;
 };
 
 
@@ -895,47 +897,47 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
     bool secondary_ft = flags & (fNST_FileTrack | fNST_Persistent);
     LOG_POST(Trace << "location: " << location << ", flags: " << flags);
 
-    m_Locations.push(&m_NotFound);
+    m_Locations.push_back(&m_NotFound);
 
     if (!primary_nc && !secondary_nc && (flags & fNST_Movable)) {
         if (m_NetCache.Init()) {
             LOG_POST(Trace << "NetCache (movable)");
-            m_Locations.push(&m_NetCache);
+            m_Locations.push_back(&m_NetCache);
         }
     }
 
     if (!primary_ft && !secondary_ft && (flags & fNST_Movable)) {
         if (m_FileTrack.Init()) {
             LOG_POST(Trace << "FileTrack (movable)");
-            m_Locations.push(&m_FileTrack);
+            m_Locations.push_back(&m_FileTrack);
         }
     }
 
     if (!primary_nc && secondary_nc) {
         if (m_NetCache.Init()) {
             LOG_POST(Trace << "NetCache (flag)");
-            m_Locations.push(&m_NetCache);
+            m_Locations.push_back(&m_NetCache);
         }
     }
 
     if (!primary_ft && secondary_ft) {
         if (m_FileTrack.Init()) {
             LOG_POST(Trace << "FileTrack (flag)");
-            m_Locations.push(&m_FileTrack);
+            m_Locations.push_back(&m_FileTrack);
         }
     }
 
     if (primary_nc) {
         if (m_NetCache.Init()) {
             LOG_POST(Trace << "NetCache (location)");
-            m_Locations.push(&m_NetCache);
+            m_Locations.push_back(&m_NetCache);
         }
     }
     
     if (primary_ft) {
         if (m_FileTrack.Init()) {
             LOG_POST(Trace << "FileTrack (location)");
-            m_Locations.push(&m_FileTrack);
+            m_Locations.push_back(&m_FileTrack);
         }
     }
 
@@ -945,19 +947,21 @@ void CSelector::InitLocations(ENetStorageObjectLocation location,
                 "No storages available for locator=\"" <<
                 m_ObjectLoc.GetLocator() << "\" and flags=" << flags);
     }
+
+    Restart();
 }
 
 
 ILocation* CSelector::First()
 {
-    return m_Locations.size() ? Top() : NULL;
+    return Top();
 }
 
 
 ILocation* CSelector::Next()
 {
-    if (m_Locations.size() > 1) {
-        m_Locations.pop();
+    if (m_CurrentLocation) {
+        --m_CurrentLocation;
         return Top();
     }
    
@@ -967,10 +971,16 @@ ILocation* CSelector::Next()
 
 CLocation* CSelector::Top()
 {
-    _ASSERT(m_Locations.size());
-    CLocation* location = m_Locations.top();
+    _ASSERT(m_Locations.size() > m_CurrentLocation);
+    CLocation* location = m_Locations[m_CurrentLocation];
     _ASSERT(location);
     return location;
+}
+
+
+void CSelector::Restart()
+{
+    m_CurrentLocation = m_Locations.size() - 1;
 }
 
 

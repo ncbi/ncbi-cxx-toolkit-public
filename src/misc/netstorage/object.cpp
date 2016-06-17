@@ -66,6 +66,23 @@ ERW_Result CObj::Write(const void* buf, size_t count, size_t* bytes_written)
 }
 
 
+template <class TR, TR (ILocation::*TMethod)()>
+struct TCaller
+{
+    typedef TR TReturn;
+    TR operator()(ILocation* l) const { return (l->*TMethod)(); }
+};
+
+
+struct TSetExpirationCaller
+{
+    typedef void TReturn;
+    const CTimeout& ttl;
+    TSetExpirationCaller(const CTimeout& t) : ttl(t) {}
+    void operator()(ILocation* l) const { return l->SetExpirationImpl(ttl); }
+};
+
+
 Uint8 CObj::GetSize()
 {
     return m_Location->GetSizeImpl();
@@ -248,7 +265,7 @@ IState* CObj::StartWrite(const void*, size_t, size_t*, ERW_Result*)
 
 
 template <class TCaller>
-inline typename TCaller::TReturn CObj::MetaMethod(const TCaller& caller)
+inline typename TCaller::TReturn CObj::MetaImpl(const TCaller& caller)
 {
     if (ILocation* l = m_Selector->First()) {
         for (;;) {
@@ -273,61 +290,44 @@ inline typename TCaller::TReturn CObj::MetaMethod(const TCaller& caller)
 }                                                                    
 
 
-template <class TR, TR (ILocation::*TMethod)()>
-struct TCaller
-{
-    typedef TR TReturn;
-    TR operator()(ILocation* l) const { return (l->*TMethod)(); }
-};
-
-
 Uint8 CObj::GetSizeImpl() {
-    return MetaMethod(TCaller<Uint8, &ILocation::GetSizeImpl>());
+    return MetaImpl(TCaller<Uint8, &ILocation::GetSizeImpl>());
 }
 
 
 CNetStorageObjectInfo CObj::GetInfoImpl()
 {
-    return MetaMethod(TCaller<CNetStorageObjectInfo, &ILocation::GetInfoImpl>());
+    return MetaImpl(TCaller<CNetStorageObjectInfo, &ILocation::GetInfoImpl>());
 }
 
 
 bool CObj::ExistsImpl()
 {
-    return MetaMethod(TCaller<bool, &ILocation::ExistsImpl>());
+    return MetaImpl(TCaller<bool, &ILocation::ExistsImpl>());
 }
 
 
 ENetStorageRemoveResult CObj::RemoveImpl()
 {
-    return MetaMethod(TCaller<ENetStorageRemoveResult, &ILocation::RemoveImpl>());
+    return MetaImpl(TCaller<ENetStorageRemoveResult, &ILocation::RemoveImpl>());
 }
-
-
-struct TSetExpirationCaller
-{
-    typedef void TReturn;
-    const CTimeout& ttl;
-    TSetExpirationCaller(const CTimeout& t) : ttl(t) {}
-    void operator()(ILocation* l) const { return l->SetExpirationImpl(ttl); }
-};
 
 
 void CObj::SetExpirationImpl(const CTimeout& ttl)
 {
-    return MetaMethod(TSetExpirationCaller(ttl));
+    return MetaImpl(TSetExpirationCaller(ttl));
 }
 
 
 string CObj::FileTrack_PathImpl()
 {
-    return MetaMethod(TCaller<string, &ILocation::FileTrack_PathImpl>());
+    return MetaImpl(TCaller<string, &ILocation::FileTrack_PathImpl>());
 }
 
 
 ILocation::TUserInfo CObj::GetUserInfoImpl()
 {
-    return MetaMethod(TCaller<TUserInfo, &ILocation::GetUserInfoImpl>());
+    return MetaImpl(TCaller<TUserInfo, &ILocation::GetUserInfoImpl>());
 }
 
 
