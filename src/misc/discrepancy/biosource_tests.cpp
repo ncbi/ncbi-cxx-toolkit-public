@@ -663,56 +663,55 @@ DISCREPANCY_SUMMARIZE(MULTISRC)
 
 // FIND_STRAND_TRNAS
 
-const string kMinusStrand = "[n] tRNAs on minus strand";
-const string kPlusStrand = "[n] tRNAs on plus strand";
+const string kMinusStrand = "[n] tRNA[s] on minus strand";
+const string kPlusStrand = "[n] tRNA[s] on plus strand";
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(FIND_STRAND_TRNAS, CBioSource, eDisc, "Find tRNAs on the same strand")
 //  ----------------------------------------------------------------------------
 {
-    if (!obj.IsSetGenome())
+    if (!obj.IsSetGenome()) {
         return;
+    }
 
     CBioSource::TGenome genome = obj.GetGenome();
-    if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid)
+    if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) {
         return;
+    }
 
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
-    if (!bioseq)
+    if (!bioseq) {
         return;
+    }
 
     const CSeq_annot* annot = nullptr;
-    ITERATE(CBioseq::TAnnot, annot_it, bioseq->GetAnnot())
-    {
-        if ((*annot_it)->IsFtable())
-        {
+    ITERATE(CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
+        if ((*annot_it)->IsFtable()) {
             annot = *annot_it;
             break;
         }
     }
 
-    if (annot)
-    {
+    if (annot) {
         bool mixed_strand = false,
-             first = true;
+            first = true;
 
         ENa_strand strand = eNa_strand_unknown;
 
         list< CConstRef< CSeq_feat > > trnas;
-        ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable())
-        {
-            if ((*feat)->IsSetLocation() && (*feat)->IsSetData() && (*feat)->GetData().IsRna())
-            {
+        ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
+
+            if ((*feat)->IsSetLocation() && (*feat)->IsSetData() && (*feat)->GetData().IsRna()) {
+
                 const CSeqFeatData::TRna& rna = (*feat)->GetData().GetRna();
-                if (rna.IsSetType() && rna.GetType() == CRNA_ref::eType_tRNA)
-                {
-                    if (first)
-                    {
+
+                if (rna.IsSetType() && rna.GetType() == CRNA_ref::eType_tRNA) {
+
+                    if (first) {
                         strand = (*feat)->GetLocation().GetStrand();
                         first = false;
                     }
-                    else
-                    {
+                    else {
                         ENa_strand cur_strand = (*feat)->GetLocation().GetStrand();
                         if ((strand == eNa_strand_minus && cur_strand != eNa_strand_minus)
                             || (strand != eNa_strand_minus && cur_strand == eNa_strand_minus))
@@ -723,17 +722,16 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, CBioSource, eDisc, "Find tRNAs on the same s
                 }
             }
 
-            if (mixed_strand)
+            if (mixed_strand) {
                 break;
+            }
         }
 
-        if (!mixed_strand && !trnas.empty())
-        {
+        if (!mixed_strand && !trnas.empty()) {
             const string& msg = (strand == eNa_strand_minus) ? kMinusStrand : kPlusStrand;
-            
-            for (auto trna = trnas.begin(); trna != trnas.end(); ++trna)
-            {
-                m_Objs[msg].Add(*context.NewDiscObj(*trna));
+
+            for (auto trna = trnas.begin(); trna != trnas.end(); ++trna) {
+                m_Objs[msg].Add(*context.NewDiscObj(*trna), false);
             }
         }
     }
@@ -750,6 +748,83 @@ DISCREPANCY_SUMMARIZE(FIND_STRAND_TRNAS)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// REQUIRED_CLONE
+
+static bool IsMissingRequiredClone(const CBioSource& biosource)
+{
+    if (HasAmplifiedWithSpeciesSpecificPrimerNote(biosource)) {
+        return false;
+    }
+
+    bool needs_clone = biosource.IsSetOrg() && biosource.GetOrg().IsSetTaxname() &&
+                       NStr::StartsWith(biosource.GetOrg().GetTaxname(), "uncultured", NStr::eNocase);
+
+    bool has_clone = false;
+
+    if (biosource.IsSetSubtype()) {
+
+        ITERATE(CBioSource::TSubtype, subtype_it, biosource.GetSubtype())
+        {
+            if ((*subtype_it)->IsSetSubtype()) {
+
+                CSubSource::TSubtype subtype = (*subtype_it)->GetSubtype();
+
+                if (subtype == CSubSource::eSubtype_environmental_sample) {
+                    needs_clone = true;
+                }
+                else if (subtype == CSubSource::eSubtype_clone) {
+                    has_clone = true;
+                }
+            }
+        }
+    }
+
+    if (needs_clone && !has_clone) {
+        
+        // look for gel band isolate
+        bool has_gel_band_isolate = false;
+        if (biosource.IsSetOrg() && biosource.GetOrg().IsSetOrgname() && biosource.GetOrg().GetOrgname().IsSetMod()) {
+
+            ITERATE(COrgName::TMod, mod_it, biosource.GetOrg().GetOrgname().GetMod()) {
+
+                if ((*mod_it)->IsSetSubtype() && (*mod_it)->GetSubtype() == COrgMod::eSubtype_isolate) {
+                    if ((*mod_it)->IsSetSubname() && NStr::FindNoCase((*mod_it)->GetSubname(), "gel band") != NPOS) {
+                        has_gel_band_isolate = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (has_gel_band_isolate) {
+            needs_clone = false;
+        }
+    }
+
+    return (needs_clone && !has_clone);
+}
+
+const string kMissingRequiredClone = "[n] biosource[s] [is] missing required clone value";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(REQUIRED_CLONE, CBioSource, eOncaller, "Uncultured or environmental sources should have clone")
+//  ----------------------------------------------------------------------------
+{
+    if (IsMissingRequiredClone(obj)) {
+        AddObjSource(m_Objs, context, kMissingRequiredClone);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(REQUIRED_CLONE)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
