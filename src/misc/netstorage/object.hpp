@@ -84,6 +84,9 @@ private:
     void AbortImpl() {}
 
     template <class TCaller>
+    typename TCaller::TReturn Meta(const TCaller& caller);
+
+    template <class TCaller>
     typename TCaller::TReturn MetaImpl(const TCaller& caller);
 
     IState* StartRead(void*, size_t, size_t*, ERW_Result*);

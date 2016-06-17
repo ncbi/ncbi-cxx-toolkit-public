@@ -83,9 +83,28 @@ struct TSetExpirationCaller
 };
 
 
+template <class TCaller>
+inline typename TCaller::TReturn CObj::Meta(const TCaller& caller)
+{
+    try {
+        return caller(m_Location);
+    }
+    catch (CNetStorageException& e) {
+        if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
+        if (m_Location == static_cast<ILocation*>(this)) throw;
+    }
+
+    // Restarting location search,
+    // as object location might be changed while we were using it.
+    m_Location = this;
+    m_Selector->Restart();
+    return caller(m_Location);
+}                                                                    
+
+
 Uint8 CObj::GetSize()
 {
-    return m_Location->GetSizeImpl();
+    return Meta(TCaller<Uint8, &ILocation::GetSizeImpl>());
 }
 
 
@@ -112,25 +131,25 @@ void CObj::SetAttribute(const string& attr_name, const string& attr_value)
 
 CNetStorageObjectInfo CObj::GetInfo()
 {
-    return m_Location->GetInfoImpl();
+    return Meta(TCaller<CNetStorageObjectInfo, &ILocation::GetInfoImpl>());
 }
 
 
 void CObj::SetExpiration(const CTimeout& ttl)
 {
-    m_Location->SetExpirationImpl(ttl);
+    return Meta(TSetExpirationCaller(ttl));
 }
 
 
 string CObj::FileTrack_Path()
 {
-    return m_Location->FileTrack_PathImpl();
+    return Meta(TCaller<string, &ILocation::FileTrack_PathImpl>());
 }
 
 
 ILocation::TUserInfo CObj::GetUserInfo()
 {
-    return m_Location->GetUserInfoImpl();
+    return Meta(TCaller<TUserInfo, &ILocation::GetUserInfoImpl>());
 }
 
 
@@ -173,13 +192,13 @@ string CObj::Relocate(TNetStorageFlags flags)
 
 bool CObj::Exists()
 {
-    return m_Location->ExistsImpl();
+    return Meta(TCaller<bool, &ILocation::ExistsImpl>());
 }
 
 
 ENetStorageRemoveResult CObj::Remove()
 {
-    return m_Location->RemoveImpl();
+    return Meta(TCaller<ENetStorageRemoveResult, &ILocation::RemoveImpl>());
 }
 
 
