@@ -34,6 +34,7 @@ misc/hydra_client$
 misc/discrepancy$
 misc/discrepancy_report$
 misc/biosample_util$
+misc/data_loaders_util$
 objects
 objmgr
 objtools
