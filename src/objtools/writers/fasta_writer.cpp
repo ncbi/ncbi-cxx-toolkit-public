@@ -63,7 +63,7 @@ CRef<CSeq_loc> CFastaOstreamEx::x_TrimLocation(const TSeqPos frame,
                                                const CSeq_loc& loc)
 {
     if (frame !=2 && frame != 3) {
-        string err_msg = "Unexpected frame value : " + frame;
+        string err_msg = "Unexpected frame value : " + to_string(frame);
         NCBI_THROW(CObjWriterException, eInternal, err_msg);
     }
 
@@ -186,7 +186,7 @@ CRef<CSeq_loc> CFastaOstreamEx::x_TrimLocation(const TSeqPos frame,
                                                const CSeq_loc& loc)
 {
     if (frame !=2 && frame != 3) {
-        string err_msg = "Unexpected frame value : " + frame;
+        string err_msg = "Unexpected frame value : " + to_string(frame);
         NCBI_THROW(CObjWriterException, eInternal, err_msg);
     }
 
