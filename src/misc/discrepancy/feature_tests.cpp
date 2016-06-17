@@ -1372,7 +1372,6 @@ DISCREPANCY_SUMMARIZE(CDS_HAS_NEW_EXCEPTION)
 
 // SHORT_LNCRNA
 
-//  {"Short lncRNA sequences", "TEST_SHORT_LNCRNA", FindShortlncRNA, NULL},
 //  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(SHORT_LNCRNA, CSeq_feat, eOncaller | eDisc, "Short lncRNA sequences")
 //  ----------------------------------------------------------------------------
@@ -1407,6 +1406,48 @@ DISCREPANCY_SUMMARIZE(SHORT_LNCRNA)
     }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
+
+
+// JOINED_FEATURES
+
+const string& kJoinedFeatures = "[n] feature[s] [has] joined location[s].";
+const string& kJoinedFeaturesNoException = "[n] feature[s] [has] joined location but no exception";
+const string& kJoinedFeaturesException = "[n] feature[s] [has] joined location but exception '";
+const string& kJoinedFeaturesBlankException = "[n] feature[s] [has] joined location but a blank exception";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(JOINED_FEATURES, CSeq_feat_BY_BIOSEQ, eDisc, "Joined Features: on when non-eukaryote")
+//  ----------------------------------------------------------------------------
+{
+    if (context.IsEukaryotic() || !obj.IsSetLocation()) {
+        return;
+    }
+
+    if (obj.GetLocation().IsMix() || obj.GetLocation().IsPacked_int()) {
+        if (obj.IsSetExcept_text()) {
+            if (NStr::IsBlank(obj.GetExcept_text())) {
+                m_Objs[kJoinedFeatures][kJoinedFeaturesBlankException].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            } else {
+                m_Objs[kJoinedFeatures][kJoinedFeaturesException + obj.GetExcept_text() + "'"].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            }
+        } else if (obj.IsSetExcept() && obj.GetExcept()) {
+            m_Objs[kJoinedFeatures][kJoinedFeaturesBlankException].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+        } else {
+            m_Objs[kJoinedFeatures][kJoinedFeaturesNoException].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(JOINED_FEATURES)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
