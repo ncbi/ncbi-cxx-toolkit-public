@@ -1351,8 +1351,6 @@ CNCActiveHandler::x_SendCopyPutCmd(void)
     m_CmdToSend += "\" \"";
     m_CmdToSend += GetDiagCtx()->GetSessionID();
     m_CmdToSend.append(1, '"');
-
-    x_SetStateAndStartProcessing(&CNCActiveHandler::x_SendCmdToExecute);
     return &CNCActiveHandler::x_SendCmdToExecute;
 }
 
@@ -1771,6 +1769,7 @@ CNCActiveHandler::x_ReadEventsListBody(void)
 
     m_SizeToRead -= rec_size;
     if (!m_SyncCtrl->AddStartEvent(evt)) {
+        delete evt;
         x_FinishSyncCmd(eSynAborted, NC_SYNC_HINT);
         return &CNCActiveHandler::x_FinishCommand;
     }
@@ -1877,8 +1876,6 @@ CNCActiveHandler::x_SendSyncGetCmd(void)
     m_CmdToSend += NStr::UInt8ToString(m_BlobAccess->GetCurCreateServer());
     m_CmdToSend.append(1, ' ');
     m_CmdToSend += NStr::Int8ToString(m_BlobAccess->GetCurCreateId());
-
-    x_SetStateAndStartProcessing(&CNCActiveHandler::x_SendCmdToExecute);
     return &CNCActiveHandler::x_SendCmdToExecute;
 }
 

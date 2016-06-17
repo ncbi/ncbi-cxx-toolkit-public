@@ -177,8 +177,7 @@ s_CommitSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, int hint)
     slot_srv->last_success_time = CSrvTime::CurSecs();
     CNCStat::PeerSyncFinished(slot_srv->peer->GetSrvId(), slot_data->slot, slot_srv->cnt_sync_ops, true);
     slot_srv->peer->ConnOk();
-    if (slot_srv->is_by_blobs)
-        slot_srv->was_blobs_sync = true;
+    slot_srv->was_blobs_sync = slot_srv->is_by_blobs;
     if (!slot_srv->made_initial_sync)
     {
         slot_srv->made_initial_sync = true;
@@ -456,18 +455,10 @@ CNCPeriodicSync::Initiate(Uint8  server_id,
                                                        local_start_rec_no,
                                                        remote_start_rec_no,
                                                        events);
-#if 0
-    if (CSrvTime::CurSecs() - slot_srv->last_success_time
-                > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) {
-        slot_srv->is_by_blobs = true;
-        return eProceedWithBlobs;
-    }
-#else
     if (slot_srv->last_success_time == 0) {
         slot_srv->is_by_blobs = true;
         return eProceedWithBlobs;
     }
-#endif
     if (records_available
         ||  (CNCSyncLog::GetLogSize(slot) == 0  &&  slot_srv->was_blobs_sync))
     {
@@ -993,6 +984,7 @@ CNCActiveSyncControl::x_PrepareSyncByEvents(void)
     m_Events2Get.clear();
     m_Events2Send.clear();
     m_SlotSrv->last_active_time = CSrvTime::CurSecs();
+#if 0
     if (CNCSyncLog::GetSyncOperations(m_SrvId, m_Slot,
                                       m_LocalStartRecNo,
                                       m_RemoteStartRecNo,
@@ -1022,6 +1014,19 @@ CNCActiveSyncControl::x_PrepareSyncByEvents(void)
     conn->SyncBlobsList(this);
     m_SlotSrv->last_active_time = CSrvTime::CurSecs();
     return &CNCActiveSyncControl::x_WaitForBlobList;
+#else
+    CNCSyncLog::GetSyncOperations(m_SrvId, m_Slot,
+                                      m_LocalStartRecNo,
+                                      m_RemoteStartRecNo,
+                                      m_RemoteEvents,
+                                      &m_Events2Get,
+                                      &m_Events2Send,
+                                      &m_LocalSyncedRecNo,
+                                      &m_RemoteSyncedRecNo);
+    m_CurGetEvent = m_Events2Get.begin();
+    m_CurSendEvent = m_Events2Send.begin();
+    return &CNCActiveSyncControl::x_ExecuteSyncCommands;
+#endif
 }
 
 CNCActiveSyncControl::State

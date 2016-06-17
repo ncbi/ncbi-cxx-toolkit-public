@@ -746,9 +746,8 @@ CNCSyncLog::Clean(Uint2 slot)
     Uint4 cleaned_cnt = 0;
     Uint8 limit = s_GetMinLocalSyncedRecordNo(slot, data);
     while (cleaned_cnt < max_clean_cnt) {
-        if (data.events.empty()  ||  data.events.front()->rec_no >= limit)
+        if (data.events.empty()  ||  data.events.front()->rec_no > limit)
             break;       // Records are younger that should be deleted
-
         // Delete the record, it is not required any more
         delete data.events.front();
         data.events.pop_front();
