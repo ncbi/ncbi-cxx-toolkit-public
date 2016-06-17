@@ -1106,6 +1106,7 @@ u2tl needs3party $(SYBASE_LIBS)
 u2tl needs3party $(Z_LIBS)
 uilist needs xser
 unicoll_dump_access needs gpipe_sqlite
+univ_prot_access needs gpipe_common
 univ_prot_access needs xser
 uudutil needs $(COMPRESS_LIBS)
 uudutil needs gbproj
