@@ -1123,6 +1123,9 @@ public:
     ///@return:string containing paramVal and spaces place appropriately
     static string AddSpaces(string paramVal, unsigned int maxParamLength, int spacesFormatFlag = eSpacePosToCenter);
 
+
+    static string GetProtocol(void);
+
     ///Create URL for seqid
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
     ///@param id: seqid CSeq_id
