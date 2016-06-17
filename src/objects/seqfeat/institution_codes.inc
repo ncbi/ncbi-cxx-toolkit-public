@@ -912,6 +912,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCTCC	c	China Center for Type Culture Collection",
 "CCTM	c	Centre de Collection de Type Microbien, Institut de Microbiologie, Universite de Lausanne",
 "CCTR	c	Culture Collection Trutnov",
+"CCTU	c	Culture Collection of Tabriz University",
 "CCUF	s	Universidade Federal de Alagoas, Centro de Ciencias Biologicas",
 "CCUG	c	Culture Collection, University of Goteborg, Department of Clinical Bacteriology",
 "CCVC	s	Centenary College, Vertebrate Collection",
