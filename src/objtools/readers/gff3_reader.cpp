@@ -343,8 +343,10 @@ bool CGff3Reader::xUpdateAnnotCds(
         }
 
         //generate applicable CDS ID:
-        string siblingId("cds:");
-        siblingId += parentId;
+        string siblingId;
+        if (!record.GetAttribute("ID", siblingId)) {
+            siblingId = string("cds:") + parentId;
+        }
         impliedCdsFeats[siblingId] = parentId;
     }
     // deal with unparented cds
@@ -682,6 +684,9 @@ bool CGff3Reader::xIsIgnoredFeatureType(
     }
 
     /* -genbank mode:*/
+    if (ftype == "stop_codon_read_through"  ||  ftype == "selenocysteine") {
+        return false;
+    }
     cit = std::find(ignoredTypesGenbank.begin(), ignoredTypesGenbank.end(), ftype);
     if (cit != ignoredTypesGenbank.end()) {
         return true;
