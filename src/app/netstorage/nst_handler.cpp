@@ -761,9 +761,11 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 // two requests which is technically not safe in multiple
                 // access scenario...
                 TNSTDBValue<CTime>  object_expiration;
+                TNSTDBValue<Int8>   individual_object_ttl;
                 string  object_key = object_loc_struct.GetUniqueKey();
-                m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
-                                                             object_expiration);
+                m_Server->GetDb().ExecSP_GetObjectExpiration(
+                                            object_key, object_expiration,
+                                            individual_object_ttl);
 
                 // The record will be created if it does not exist
                 m_Server->GetDb().ExecSP_UpdateObjectOnWrite(
@@ -772,7 +774,8 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                                     m_DBClientID, m_DBUserID,
                                     m_WriteServiceProps.GetTTL(),
                                     m_WriteServiceProps.GetProlongOnWrite(),
-                                    object_expiration, size_was_null);
+                                    object_expiration, individual_object_ttl,
+                                    size_was_null);
             } catch (const exception &  ex) {
                 string  message = "Error while updating meta info DB for " +
                                   locator + " upon writing: " + ex.what();
@@ -2405,14 +2408,17 @@ CNetStorageHandler::x_ProcessRead(
             // time in MS SQL server so it is done in C++ via two requests
             // which is technically not safe in multiple access scenario...
             TNSTDBValue<CTime>              object_expiration;
+            TNSTDBValue<Int8>               individual_object_ttl;
             m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
-                                                         object_expiration);
+                                                         object_expiration,
+                                                         individual_object_ttl);
 
             m_Server->GetDb().ExecSP_UpdateObjectOnRead(
                     object_key, locator, total_bytes, m_DBClientID,
                     service_properties.GetTTL(),
                     service_properties.GetProlongOnRead(),
-                    object_expiration, size_was_null);
+                    object_expiration, individual_object_ttl,
+                    size_was_null);
         } catch (const exception &  ex) {
             ERR_POST(ex);
 
@@ -2454,13 +2460,16 @@ CNetStorageHandler::x_ProlongObjectOnFailure(
 {
     try {
         TNSTDBValue<CTime>              object_expiration;
+        TNSTDBValue<Int8>               individual_object_ttl;
         m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
-                                                     object_expiration);
+                                                     object_expiration,
+                                                     individual_object_ttl);
 
         if (!object_expiration.m_IsNull)
             m_Server->GetDb().UpdateExpirationIfExists(
                                     object_key,
-                                    ttl, prolong, object_expiration);
+                                    ttl, prolong, object_expiration,
+                                    individual_object_ttl);
     } catch (const std::exception &  ex) {
         ERR_POST("Error updating object expiration on " << operation <<
                  " failure. Ignore and continue. " << ex);
@@ -2640,8 +2649,10 @@ CNetStorageHandler::x_ProcessRelocate(
             // time in MS SQL server so it is done in C++ via two requests
             // which is technically not safe in multiple access scenario...
             TNSTDBValue<CTime>              object_expiration;
+            TNSTDBValue<Int8>               individual_object_ttl;
             m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
-                                                         object_expiration);
+                                                         object_expiration,
+                                                         individual_object_ttl);
 
             // The record is created if does not exist
             m_Server->GetDb().ExecSP_UpdateObjectOnRelocate(
@@ -2650,7 +2661,7 @@ CNetStorageHandler::x_ProcessRelocate(
                                     m_DBClientID,
                                     service_properties.GetTTL(),
                                     service_properties.GetProlongOnRelocate(),
-                                    object_expiration);
+                                    object_expiration, individual_object_ttl);
         } catch (const exception &  ex) {
             // Append error however the overall reply must be OK
             ERR_POST(ex);
@@ -3080,8 +3091,10 @@ CNetStorageHandler::x_ProcessLockFTPath(
     if (x_DetectMetaDBNeedOnGetObjectInfo(message, service_properties)) {
         // The only required check in the DB is if the object is expired
         TNSTDBValue<CTime>  object_expiration;
+        TNSTDBValue<Int8>   individual_object_ttl;
         int  status = m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
-                                                        object_expiration);
+                                                        object_expiration,
+                                                        individual_object_ttl);
         x_CheckExpirationStatus(status);
 
         if (status == kSPStatusOK) {
@@ -3093,7 +3106,8 @@ CNetStorageHandler::x_ProcessLockFTPath(
                                         object_key,
                                         service_properties.GetTTL(),
                                         service_properties.GetProlongOnRead(),
-                                        object_expiration);
+                                        object_expiration,
+                                        individual_object_ttl);
                 } catch (const std::exception &  ex) {
                     ERR_POST("Error updating object expiration on LOCKFTPATH. "
                              "Ignore and continue. " << ex);

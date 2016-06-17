@@ -111,13 +111,15 @@ public:
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
             const TNSTDBValue<CTime> &  object_expiration,
+            const TNSTDBValue<Int8> &  individual_object_ttl,
             bool &  size_was_null);
     int  ExecSP_UpdateUserKeyObjectOnWrite(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_write,
-            const TNSTDBValue<CTime> &  object_expiration);
+            const TNSTDBValue<CTime> &  object_expiration,
+            const TNSTDBValue<Int8> &  individual_object_ttl);
     int  ExecSP_UpdateObjectOnRead(
             const string &  object_key,
             const string &  object_loc,
@@ -125,18 +127,21 @@ public:
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_read,
             const TNSTDBValue<CTime> &  object_expiration,
+            const TNSTDBValue<Int8> &  individual_object_ttl,
             bool &  size_was_null);
     int  ExecSP_UpdateObjectOnRelocate(
             const string &  object_key,
             const string &  object_loc, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_relocate,
-            const TNSTDBValue<CTime> &  object_expiration);
-    int  UpdateExpirationOnLockFTPath(
+            const TNSTDBValue<CTime> &  object_expiration,
+            const TNSTDBValue<Int8> &  individual_object_ttl);
+    int  UpdateExpirationIfExists(
             const string &  object_key,
             const TNSTDBValue<CTimeSpan> &  ttl,
             const CTimeSpan &  prolong_on_read,
-            const TNSTDBValue<CTime> &  object_expiration);
+            const TNSTDBValue<CTime> &  object_expiration,
+            const TNSTDBValue<Int8> &  individual_object_ttl);
     int  ExecSP_UpdateUserIDForObject(
             const string &  object_key, Int8  user_id);
     int  ExecSP_RemoveObject(const string &  object_key);
@@ -174,7 +179,8 @@ public:
                                          TNSTDBValue<string> & user_namespace,
                                          TNSTDBValue<string> & user_name);
     int  ExecSP_GetObjectExpiration(const string &        object_key,
-                                    TNSTDBValue<CTime> &  expiration);
+                                    TNSTDBValue<CTime> &  expiration,
+                                    TNSTDBValue<Int8> &  individual_object_ttl);
     map<string, string>  ExecSP_GetGeneralDBInfo(void);
     map<string, string>  ExecSP_GetStatDBInfo(void);
     int  ExecSP_GetClientObjects(const string &  client_name,
@@ -203,6 +209,7 @@ private:
                                const TNSTDBValue<CTimeSpan> &  ttl,
                                const CTimeSpan &  prolong,
                                const TNSTDBValue<CTime> &  object_expiration,
+                               const TNSTDBValue<Int8> &  individual_object_ttl,
                                TNSTDBValue<CTime> &  exp_record_found,
                                TNSTDBValue<CTime> &  exp_record_not_found);
 

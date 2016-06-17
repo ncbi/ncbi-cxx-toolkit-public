@@ -237,6 +237,112 @@ END
 GO
 
 
+ALTER TABLE Objects
+ADD ttl BIGINT DEFAULT NULL;
+GO
+
+
+-- Note: the procedure lets to reduce the expiration time
+--       it is the C++ code which does not let to reduce the expiration
+ALTER PROCEDURE SetObjectExpiration
+    @object_key             VARCHAR(289),
+    @expiration             DATETIME,
+
+    -- backward compatible
+
+    @create_if_not_found    INT = 0,    -- to make it compatible with
+                                        -- the previous implementation
+    @object_loc             VARCHAR(900) = NULL,
+    @client_id              BIGINT = NULL,
+    @object_size            BIGINT = NULL OUT,
+    @ttl                    BIGINT = NULL
+AS
+BEGIN
+    BEGIN TRANSACTION
+    BEGIN TRY
+        DECLARE @row_count          INT;
+        DECLARE @error              INT;
+        DECLARE @old_expiration     DATETIME;
+
+
+        -- Note: T-SQL lets to save the old value of a column
+        UPDATE Objects SET @old_expiration = tm_expiration,
+                           @object_size = size,
+                           tm_expiration = @expiration,
+                           ttl = ( CASE
+                                        WHEN @ttl is NULL THEN ttl
+                                        ELSE @ttl
+                                   END )
+                       WHERE object_key = @object_key;
+        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR;
+        IF @error != 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+            RETURN 1;
+        END
+
+        IF @row_count = 1 AND @old_expiration IS NOT NULL
+        BEGIN
+            IF @old_expiration < GETDATE()
+            BEGIN
+                ROLLBACK TRANSACTION;
+                RETURN -4;          -- object is expired
+                                    -- -4 is to make it unified with the other SPs
+            END
+        END
+        IF @row_count = 0 AND @create_if_not_found = 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+            RETURN -1;              -- object is not found
+        END
+
+
+        IF @row_count = 0
+        BEGIN
+            -- need to create an object
+            DECLARE @ret_code   BIGINT;
+            DECLARE @object_id  BIGINT;
+            EXECUTE @ret_code = GetNextObjectID @object_id OUTPUT;
+
+            IF @ret_code != 0
+            BEGIN
+                ROLLBACK TRANSACTION;
+                RETURN 1;
+            END
+
+            INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_expiration, read_count, write_count, ttl)
+            VALUES (@object_id, @object_key, @object_loc, @client_id, @expiration, 0, 0, @ttl);
+            SELECT @row_count = @@ROWCOUNT, @error = @@ERROR;
+
+            IF @error != 0 OR @row_count = 0
+            BEGIN
+                ROLLBACK TRANSACTION;
+                RETURN 1;
+            END
+
+            -- object size is unknown here
+            SET @object_size = NULL;
+
+        END
+
+        COMMIT TRANSACTION;
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @error_severity INT = ERROR_SEVERITY();
+        DECLARE @error_state INT = ERROR_STATE();
+
+        RAISERROR( @error_message, @error_severity, @error_state );
+        RETURN 1;
+    END CATCH
+END
+GO
+
+
+
 
 
 
@@ -255,4 +361,5 @@ GO
 -- Restore if it was changed
 SET NOEXEC OFF
 GO
+
 
