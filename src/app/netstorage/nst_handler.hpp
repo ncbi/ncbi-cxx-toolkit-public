@@ -300,6 +300,11 @@ private:
     void x_CheckExistanceStatus(int  status);
     void x_CheckExpirationStatus(int  status);
     void x_CheckNonAnonymousClient(const string &  op) const;
+
+    void x_ProlongObjectOnFailure(const string &  operation,
+                                  const string &  object_key,
+                                  const TNSTDBValue<CTimeSpan> &  ttl,
+                                  const CTimeSpan &  prolong);
 }; // CNetStorageHandler
 
 

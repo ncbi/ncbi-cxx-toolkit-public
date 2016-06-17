@@ -587,6 +587,15 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
             m_Timing.Append("NetStorageAPI writing error (" +
                             NStr::NumericToString(data_size) +
                             " bytes to write)", start);
+
+        if (m_WriteCreateNeedMetaDBUpdate && !m_CreateRequest) {
+            // Prolong makes sense only for the WRITE operation
+            x_ProlongObjectOnFailure("WRITE",
+                                m_ObjectBeingWritten.Locator().GetUniqueKey(),
+                                m_WriteServiceProps.GetTTL(),
+                                m_WriteServiceProps.GetProlongOnWrite());
+        }
+
         m_ObjectBeingWritten = eVoid;
         m_DataMessageSN = -1;
 
@@ -609,8 +618,8 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
                                     message, kScopeStdException,
                                     CNetStorageServerException::eWriteError);
         x_SendSyncMessage(response);
-    }
-    catch (...) {
+
+    } catch (...) {
         string  message = "Unknown exception while writing " +
                           NStr::NumericToString(data_size) +
                           " bytes into " + m_ObjectBeingWritten.GetLoc();
@@ -618,6 +627,15 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
             m_Timing.Append("NetStorageAPI writing error (" +
                             NStr::NumericToString(data_size) +
                             " bytes to write)", start);
+
+        if (m_WriteCreateNeedMetaDBUpdate && !m_CreateRequest) {
+            // Prolong makes sense only for the WRITE operation
+            x_ProlongObjectOnFailure("WRITE",
+                                m_ObjectBeingWritten.Locator().GetUniqueKey(),
+                                m_WriteServiceProps.GetTTL(),
+                                m_WriteServiceProps.GetProlongOnWrite());
+        }
+
         m_ObjectBeingWritten = eVoid;
         m_DataMessageSN = -1;
 
@@ -2336,9 +2354,6 @@ CNetStorageHandler::x_ProcessRead(
 
         reply = CreateResponseMessage(common_args.m_SerialNumber);
     } catch (const exception &  ex) {
-        // Prevent creation of an object in the database if there was none.
-        // NB: the object TTL will not be updated if there was an object
-        need_meta_db_update = false;
 
         string          error_scope;
         Int8            error_code;
@@ -2354,10 +2369,24 @@ CNetStorageHandler::x_ProcessRead(
         ERR_POST(message);
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI read (exception)", start);
+
+        if (need_meta_db_update)
+            x_ProlongObjectOnFailure("READ", object_key,
+                                     service_properties.GetTTL(),
+                                     service_properties.GetProlongOnRead());
+
+        // Prevent creation of an object in the database if there was none.
+        // NB: the object TTL will not be updated if there was an object
+        need_meta_db_update = false;
     } catch (...) {
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI read (unknown exception)", start);
         m_UTTPWriter.SendControlSymbol('\n');
+
+        if (need_meta_db_update)
+            x_ProlongObjectOnFailure("READ", object_key,
+                                     service_properties.GetTTL(),
+                                     service_properties.GetProlongOnRead());
         throw;
     }
 
@@ -2413,6 +2442,32 @@ CNetStorageHandler::x_ProcessRead(
 
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProlongObjectOnFailure(
+                                const string &  operation,
+                                const string &  object_key,
+                                const TNSTDBValue<CTimeSpan> &  ttl,
+                                const CTimeSpan &  prolong)
+{
+    try {
+        TNSTDBValue<CTime>              object_expiration;
+        m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
+                                                     object_expiration);
+
+        if (!object_expiration.m_IsNull)
+            m_Server->GetDb().UpdateExpirationIfExists(
+                                    object_key,
+                                    ttl, prolong, object_expiration);
+    } catch (const std::exception &  ex) {
+        ERR_POST("Error updating object expiration on " << operation <<
+                 " failure. Ignore and continue. " << ex);
+    } catch (...) {
+        ERR_POST("Unknown error updating object expiration on " <<
+                 operation << " failure. Ignore and continue.");
+    }
 }
 
 
@@ -2571,6 +2626,9 @@ CNetStorageHandler::x_ProcessRelocate(
     } catch (...) {
         if (m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI Relocate exception", start);
+        x_ProlongObjectOnFailure("RELOCATE", object_key,
+                                 service_properties.GetTTL(),
+                                 service_properties.GetProlongOnRelocate());
         throw;
     }
 
@@ -3029,10 +3087,9 @@ CNetStorageHandler::x_ProcessLockFTPath(
         if (status == kSPStatusOK) {
             // Only if the object exists and not expired its expiration time
             // should be updated
-            if (!service_properties.GetTTL().m_IsNull &&
-                !object_expiration.m_IsNull) {
+            if (!object_expiration.m_IsNull) {
                 try {
-                    m_Server->GetDb().UpdateExpirationOnLockFTPath(
+                    m_Server->GetDb().UpdateExpirationIfExists(
                                         object_key,
                                         service_properties.GetTTL(),
                                         service_properties.GetProlongOnRead(),
