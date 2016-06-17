@@ -1973,10 +1973,13 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     " 14 = Multiple-file BLAST XML2,\n"
     " 15 = Single-file BLAST JSON,\n"
     " 16 = Single-file BLAST XML2");
-
+    
     if(m_FormatFlags & eIsSAM) {
-    	kOutputFormatDescription +=
-    			",\n 17 = Sequence Alignment/Map (SAM)\n\n"
+    	kOutputFormatDescription += ",\n 17 = Sequence Alignment/Map (SAM)";                
+    }    
+    kOutputFormatDescription += ",\n 18 = Tax BLAST\n\n";
+    if(m_FormatFlags & eIsSAM) {
+    	kOutputFormatDescription +=    			
                 "Options 6, 7, 10 and 17 "
     			"can be additionally configured to produce\n"
     		    "a custom format specified by space delimited format specifiers.\n"
@@ -1984,11 +1987,12 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
     else {
     	kOutputFormatDescription +=
-    			"\n\nOptions 6, 7 and 10 "
+    			"Options 6, 7 and 10 "
     			"can be additionally configured to produce\n"
     		    "a custom format specified by space delimited format specifiers.\n"
     		    "The supported format specifiers are:\n";
     }
+
     kOutputFormatDescription += DescribeTabularOutputFormatSpecifiers() +  string("\n");
 
     if(m_FormatFlags & eIsSAM) {
