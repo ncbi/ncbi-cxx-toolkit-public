@@ -179,7 +179,7 @@ cdd needs cn3d
 cdd needs scoremat
 clog needs3party $(ORIG_LIBS)
 cluster_assignment needs xser
-cluster_utils needs data_loaders_util
+cluster_utils needs gpipe_objutil
 clustering needs cobalt
 cn3d needs mmdb
 cobalt needs $(BLAST_LIBS)
@@ -210,8 +210,8 @@ ctutils needs3party $(VDB_LIBS)
 ctutils needs3party ncbiobj
 curl needs3party $(ORIG_LIBS)
 data_loaders_util needs $(OBJMGR_LIBS)
-data_loaders_util needs $(SDBAPI_LIB)
 data_loaders_util needs $(ncbi_xreader_pubseqos2)
+data_loaders_util needs ncbi_xdbapi_ftds
 data_loaders_util needs ncbi_xloader_asn_cache
 data_loaders_util needs ncbi_xloader_blastdb
 data_loaders_util needs ncbi_xloader_csra
@@ -447,9 +447,9 @@ gpipe_kmer needs sampling
 gpipe_kpi needs xmlwrapp
 gpipe_meta_access needs gpipe_common
 gpipe_object_edit needs xalgoalignutil
-gpipe_objutil includes data_loaders_util
 gpipe_objutil needs $(OBJEDIT_LIBS)
 gpipe_objutil needs $(XFORMAT_LIBS)
+gpipe_objutil needs data_loaders_util
 gpipe_objutil needs gpipe_attr
 gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
@@ -723,9 +723,9 @@ ncbi_xdbapi_dblib needs3party $(NETWORK_LIBS)
 ncbi_xdbapi_dblib needs3party $(SYBASE_DBLIBS)
 ncbi_xdbapi_dblib needs3party $(SYBASE_DLLS)
 ncbi_xdbapi_dblib needs3party $(SYBASE_LIBS)
-ncbi_xdbapi_ftds needs $(FTDS_LIB)
+ncbi_xdbapi_ftds needs $(FTDS95_LIB)
 ncbi_xdbapi_ftds needs dbapi_driver
-ncbi_xdbapi_ftds needs3party $(FTDS_LIBS)
+ncbi_xdbapi_ftds needs3party $(FTDS95_LIBS)
 ncbi_xdbapi_ftds64 needs $(FTDS_LIB)
 ncbi_xdbapi_ftds64 needs dbapi_driver
 ncbi_xdbapi_ftds64 needs3party $(FTDS_LIBS)
