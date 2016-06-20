@@ -520,6 +520,16 @@ VDB_LIBS        = @VDB_LIBS@
 VDB_STATIC_LIBS = @VDB_STATIC_LIBS@
 VDB_REQ         = @VDB_REQ@
 VDB_POST_LINK   = @VDB_POST_LINK@
+bamread               = @bamread@
+sraread               = @sraread@
+ncbi_id2proc_snp      = @ncbi_id2proc_snp@
+ncbi_id2proc_wgs      = @ncbi_id2proc_wgs@
+ncbi_xloader_bam      = @ncbi_xloader_bam@
+ncbi_xloader_csra     = @ncbi_xloader_csra@
+ncbi_xloader_snp      = @ncbi_xloader_snp@
+ncbi_xloader_sra      = @ncbi_xloader_sra@
+ncbi_xloader_vdbgraph = @ncbi_xloader_vdbgraph@
+ncbi_xloader_wgs      = @ncbi_xloader_wgs@
 
 # SP:  headers, libraries
 SP_INCLUDE = @SP_INCLUDE@

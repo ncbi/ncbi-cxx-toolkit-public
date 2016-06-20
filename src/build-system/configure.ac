@@ -6878,10 +6878,32 @@ if test "$with_vdb" != "no" ; then
                esac
                ;;
          esac
+         AC_DEFINE(HAVE_NCBI_VDB, 1,
+            [Define to 1 if you have NCBI's SRA/VDB SDK/Toolkit.])
+         bamread=bamread
+         sraread=sraread
+         ncbi_id2proc_snp=ncbi_id2proc_snp
+         ncbi_id2proc_wgs=ncbi_id2proc_wgs
+         ncbi_xloader_bam=ncbi_xloader_bam
+         ncbi_xloader_csra=ncbi_xloader_csra
+         ncbi_xloader_snp=ncbi_xloader_snp
+         ncbi_xloader_sra=ncbi_xloader_sra
+         ncbi_xloader_vdbgraph=ncbi_xloader_vdbgraph
+         ncbi_xloader_wgs=ncbi_xloader_wgs
       else
          VDB_INCLUDE=
          VDB_LIBS=
          VDB_STATIC_LIBS=
+         bamread=
+         sraread=
+         ncbi_id2proc_snp=
+         ncbi_id2proc_wgs=
+         ncbi_xloader_bam=
+         ncbi_xloader_csra=
+         ncbi_xloader_snp=
+         ncbi_xloader_sra=
+         ncbi_xloader_vdbgraph=
+         ncbi_xloader_wgs=
       fi
    # else ...
    # fi
@@ -8031,6 +8053,16 @@ AC_SUBST(sssutils)
 AC_SUBST(VDB_INCLUDE)
 AC_SUBST(VDB_LIBS)
 AC_SUBST(VDB_STATIC_LIBS)
+AC_SUBST(bamread)
+AC_SUBST(sraread)
+AC_SUBST(ncbi_id2proc_snp)
+AC_SUBST(ncbi_id2proc_wgs)
+AC_SUBST(ncbi_xloader_bam)
+AC_SUBST(ncbi_xloader_csra)
+AC_SUBST(ncbi_xloader_snp)
+AC_SUBST(ncbi_xloader_sra)
+AC_SUBST(ncbi_xloader_vdbgraph)
+AC_SUBST(ncbi_xloader_wgs)
 AC_SUBST(VDB_REQ)
 AC_SUBST(VDB_POST_LINK)
 AC_SUBST(SP_INCLUDE)

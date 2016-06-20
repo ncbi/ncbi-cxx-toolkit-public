@@ -1008,6 +1008,16 @@ sssutils
 VDB_INCLUDE
 VDB_LIBS
 VDB_STATIC_LIBS
+bamread
+sraread
+ncbi_id2proc_snp
+ncbi_id2proc_wgs
+ncbi_xloader_bam
+ncbi_xloader_csra
+ncbi_xloader_snp
+ncbi_xloader_sra
+ncbi_xloader_vdbgraph
+ncbi_xloader_wgs
 VDB_REQ
 VDB_POST_LINK
 SP_INCLUDE
@@ -41150,10 +41160,35 @@ echo "${ECHO_T}$ncbi_cv_lib_ncbi_vdb" >&6; }
                esac
                ;;
          esac
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NCBI_VDB 1
+_ACEOF
+
+         bamread=bamread
+         sraread=sraread
+         ncbi_id2proc_snp=ncbi_id2proc_snp
+         ncbi_id2proc_wgs=ncbi_id2proc_wgs
+         ncbi_xloader_bam=ncbi_xloader_bam
+         ncbi_xloader_csra=ncbi_xloader_csra
+         ncbi_xloader_snp=ncbi_xloader_snp
+         ncbi_xloader_sra=ncbi_xloader_sra
+         ncbi_xloader_vdbgraph=ncbi_xloader_vdbgraph
+         ncbi_xloader_wgs=ncbi_xloader_wgs
       else
          VDB_INCLUDE=
          VDB_LIBS=
          VDB_STATIC_LIBS=
+         bamread=
+         sraread=
+         ncbi_id2proc_snp=
+         ncbi_id2proc_wgs=
+         ncbi_xloader_bam=
+         ncbi_xloader_csra=
+         ncbi_xloader_snp=
+         ncbi_xloader_sra=
+         ncbi_xloader_vdbgraph=
+         ncbi_xloader_wgs=
       fi
    # else ...
    # fi
@@ -46671,6 +46706,16 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
+
+
+
+
+
+
+
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -47911,6 +47956,16 @@ sssutils!$sssutils$ac_delim
 VDB_INCLUDE!$VDB_INCLUDE$ac_delim
 VDB_LIBS!$VDB_LIBS$ac_delim
 VDB_STATIC_LIBS!$VDB_STATIC_LIBS$ac_delim
+bamread!$bamread$ac_delim
+sraread!$sraread$ac_delim
+ncbi_id2proc_snp!$ncbi_id2proc_snp$ac_delim
+ncbi_id2proc_wgs!$ncbi_id2proc_wgs$ac_delim
+ncbi_xloader_bam!$ncbi_xloader_bam$ac_delim
+ncbi_xloader_csra!$ncbi_xloader_csra$ac_delim
+ncbi_xloader_snp!$ncbi_xloader_snp$ac_delim
+ncbi_xloader_sra!$ncbi_xloader_sra$ac_delim
+ncbi_xloader_vdbgraph!$ncbi_xloader_vdbgraph$ac_delim
+ncbi_xloader_wgs!$ncbi_xloader_wgs$ac_delim
 VDB_REQ!$VDB_REQ$ac_delim
 VDB_POST_LINK!$VDB_POST_LINK$ac_delim
 SP_INCLUDE!$SP_INCLUDE$ac_delim
@@ -47984,7 +48039,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 83; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 93; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

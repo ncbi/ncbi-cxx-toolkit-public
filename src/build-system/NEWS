@@ -19,3 +19,5 @@ installations.
 2015-06-01: additional @VDB_*@ variables @VDB_REQ@ and @VDB_POST_LINK@.
 
 2015-12-17: new variables for FreeTDS 0.95.
+
+2016-06-20: variables for libraries dependent on SRA/VDB.
