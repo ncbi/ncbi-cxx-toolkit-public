@@ -63,21 +63,21 @@ BEGIN_SCOPE(align_format)
  * @endcode
  */
  
- const string kTaxBrowserURL           = "//www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi";
+ const string kTaxBrowserURL           = "<@protocol@>//www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi";
  const string kBlastNameLink           = "<a href=\"<@taxBrowserURL@>?id=<@bl_taxid@>\" target=\"lnktx<@rid@>\" title=\"Show taxonomy info for <@blast_name@> (taxid <@bl_taxid@>)\"><@blast_name@></a>";
 
  const string kOrgReportTable          = "<table><caption><h2>Organism Report</h2></caption><tr><th>Accession</th><th>Descr</th><th>Score</th><th>E-value</th></tr><@table_rows@></table><@taxidToSeqsMap@>";
- const string kOrgReportOrganismHeader = "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@>[<@blast_name_link@>] taxid <@taxid@></th></tr>";
- const string kOrgReportOrganismHeaderNoTaxConnect = "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@>[<@blast_name@>]</th></tr>";
+ const string kOrgReportOrganismHeader = "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@> <@common_name@> [<@blast_name_link@>] taxid <@taxid@></th></tr>";
+ const string kOrgReportOrganismHeaderNoTaxConnect = "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@> <@common_name@> [<@blast_name@>]</th></tr>";
  const string kOrgReportTableHeader    = "<tr><th>Accession</th><th>Description</th><th>Score</th><th>E-value</th></tr>";
- const string kOrgReportTableRow       = "<tr><td><a title=\"Show report for <@acc@>\" target=\"lnktx<@rid@>\" href=\"//www.ncbi.nlm.nih.gov/protein/<@gi@>?report=fwwwtax&amp;log$=taxrep&amp;RID=<@rid@>\"><@acc@></a></td><td><@descr_abbr@></td><td><@score@></td><td><@evalue@></td></tr>";
+ const string kOrgReportTableRow       = "<tr><td><a title=\"Show report for <@acc@>\" target=\"lnktx<@rid@>\" href=\"<@protocol@>//www.ncbi.nlm.nih.gov/protein/<@gi@>?report=fwwwtax&amp;log$=taxrep&amp;RID=<@rid@>\"><@acc@></a></td><td><@descr_abbr@></td><td><@score@></td><td><@evalue@></td></tr>";
 
  const string kTaxIdToSeqsMap          = "<input type=\"hidden\" id=\"txForSeq_<@taxid@>\" value=\"<@giList@>\" />";
 
  const string kLineageReportTable          = "<table><caption><h2>Linage Report</h2><caption><@table_rows@></table>";
  const string kLineageReportTableHeader    = "<tr><th>Organism</th><th>Blast Name</th><th>Score</th><th>Number of Hits</th><th>Description</th></tr>";
  const string kLineageReportOrganismHeader = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a><td><@blast_name_link@></td><td colspan =\"3\"></td></tr>";
- const string kLineageReportTableRow       = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@blast_name_link@></td><td><@score@></td><td><a href=\"#<@taxid@>\" title=\"Show organism report for <@scientific_name@>\"><@numhits@></a></td><td><a title=\"Show report for <@acc@> <@descr_abbr@>\" target=\"lnktx<@rid@>\" href=\"//www.ncbi.nlm.nih.gov/protein/<@gi@>?report=genbank&amp;log$=taxrep&amp;RID=<@rid@>\"><@descr_abbr@></a></td></tr>";
+ const string kLineageReportTableRow       = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@blast_name_link@></td><td><@score@></td><td><a href=\"#<@taxid@>\" title=\"Show organism report for <@scientific_name@>\"><@numhits@></a></td><td><a title=\"Show report for <@acc@> <@descr_abbr@>\" target=\"lnktx<@rid@>\" href=\"<@protocol@>//www.ncbi.nlm.nih.gov/protein/<@gi@>?report=genbank&amp;log$=taxrep&amp;RID=<@rid@>\"><@descr_abbr@></a></td></tr>";
 
 
  const string kTaxonomyReportTable          = "<table><caption><h2>Taxonomy Report</h2><caption><@table_rows@></table>";
@@ -295,6 +295,8 @@ protected:
 
     unsigned int m_LineLength;
     unsigned int m_DisplayOption;
+
+    string   m_Protocol; ///< protocol, default https otherwise get from .ncbirc
     
     CTaxFormat::SSeqInfo *x_FillTaxDispParams(const CRef< objects::CBlast_def_line > &bdl,
                                   const objects::CBioseq_Handle& bsp_handle,
