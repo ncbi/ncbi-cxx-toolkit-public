@@ -132,7 +132,8 @@ s_AdjustFirstContext(BlastQueryInfo* query_info,
     _ASSERT(query_info);
 
 #if _DEBUG      /* to eliminate compiler warning in release mode */
-    bool is_na = (prog == eBlastTypeBlastn) ? true : false;
+    bool is_na = (prog == eBlastTypeBlastn || prog == eBlastTypeMapping)
+        ? true : false;
 #endif
 	bool translate = Blast_QueryIsTranslated(prog) ? true : false;
 
@@ -161,7 +162,9 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
     }
 
     const unsigned int kNumContexts = GetNumberOfContexts(prog);
-    bool is_na = (prog == eBlastTypeBlastn) ? true : false;
+    bool is_na = (prog == eBlastTypeBlastn || prog == eBlastTypeMapping)
+        ? true : false;
+
 	bool translate = Blast_QueryIsTranslated(prog) ? true : false;
 
     if (is_na || translate) {
@@ -173,6 +176,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
     unsigned int ctx_index = 0; // index into BlastQueryInfo::contexts array
     // Longest query length, to be saved in the query info structure
     Uint4 max_length = 0;
+    Uint4 min_length = INT4_MAX;
 
     for(TSeqPos j = 0; j < queries.Size(); j++) {
         TSeqPos length = 0;
@@ -190,6 +194,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                 unsigned int prot_length = 
                     BLAST_GetTranslatedProteinLength(length, i);
                 max_length = MAX(max_length, prot_length);
+                min_length = MIN(min_length, prot_length);
                 
                 Uint4 ctx_len(0);
                 
@@ -216,6 +221,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
             }
         } else {
             max_length = MAX(max_length, length);
+            min_length = MIN(min_length, length);
             
             if (is_na) {
                 switch (strand) {
@@ -242,9 +248,17 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                 s_QueryInfo_SetContext(query_info, ctx_index, length);
             }
         }
+
+        // mark queries that have pairs (for mapping)
+        if (Blast_ProgramIsMapping(prog) && queries.IsFirstOfAPair(j)) {
+            _ASSERT(!translate);
+            query_info->contexts[ctx_index].has_pair = true;
+            query_info->contexts[ctx_index + 1].has_pair = true;
+        }
         ctx_index += kNumContexts;
     }
     query_info->max_length = max_length;
+    query_info->min_length = min_length;
     *qinfo = query_info.Release();
 }
 
@@ -481,7 +495,9 @@ SetupQueries_OMF(IBlastQuerySource& queries,
                    "Query sequence buffer");
     }
 
-    bool is_na = (prog == eBlastTypeBlastn) ? true : false;
+    bool is_na = (prog == eBlastTypeBlastn || prog == eBlastTypeMapping)
+        ? true : false;
+
 	bool translate = Blast_QueryIsTranslated(prog) ? true : false;
 
     unsigned int ctx_index = 0;      // index into context_offsets array
@@ -1068,6 +1084,7 @@ GetQueryEncoding(EBlastProgramType program)
     switch (program) {
     case eBlastTypeBlastn:
     case eBlastTypePhiBlastn: 
+    case eBlastTypeMapping:
         retval = eBlastEncodingNucleotide; 
         break;
 
@@ -1100,6 +1117,7 @@ GetSubjectEncoding(EBlastProgramType program)
 
     switch (program) {
     case eBlastTypeBlastn: 
+    case eBlastTypeMapping:
         retval = eBlastEncodingNucleotide; 
         break;
 
@@ -1637,6 +1655,7 @@ void CBlastQueryFilteredFrames::x_VerifyFrame(int frame)
         break;
         
     case eBlastTypeBlastn:
+    case eBlastTypeMapping:
         if ((frame != CSeqLocInfo::eFramePlus1) &&
             (frame != CSeqLocInfo::eFrameMinus1)) {
             okay = false;
@@ -1685,6 +1704,7 @@ bool CBlastQueryFilteredFrames::QueryHasMultipleFrames() const
     case eBlastTypeBlastx:
     case eBlastTypeTblastx:
     case eBlastTypeRpsTblastn:
+    case eBlastTypeMapping:
         return true;
         
     default:
@@ -1699,7 +1719,9 @@ void CBlastQueryFilteredFrames::AddSeqLoc(const objects::CSeq_interval & intv,
                                           int frame)
 {
     _ASSERT( m_Frames.empty() );
-    if ((frame == 0) && (m_Program == eBlastTypeBlastn)) {
+    if ((frame == 0) && (m_Program == eBlastTypeBlastn
+                         || m_Program == eBlastTypeMapping)) {
+
         x_VerifyFrame(CSeqLocInfo::eFramePlus1);
         x_VerifyFrame(CSeqLocInfo::eFrameMinus1);
         static const CSeqLocInfo::ETranslationFrame kFrames[] = {

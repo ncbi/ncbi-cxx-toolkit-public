@@ -223,7 +223,7 @@ void
 CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args, 
                                             CBlastOptions& opt)
 {
-    if (args[kArgEvalue]) {
+    if (args.Exist(kArgEvalue) && args[kArgEvalue]) {
         opt.SetEvalueThreshold(args[kArgEvalue].AsDouble());
     }
 
@@ -246,7 +246,7 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetGapExtensionCost(gap_extend);
     }
 
-    if (args[kArgUngappedXDropoff]) {
+    if (args.Exist(kArgUngappedXDropoff) && args[kArgUngappedXDropoff]) {
         opt.SetXDropoff(args[kArgUngappedXDropoff].AsDouble());
     }
 
@@ -264,7 +264,7 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetWordSize(args[kArgWordSize].AsInteger());
     }
 
-    if (args[kArgEffSearchSpace]) {
+    if (args.Exist(kArgEffSearchSpace) && args[kArgEffSearchSpace]) {
         CNcbiEnvironment env;
         env.Set("OLD_FSC", "true");
         opt.SetEffectiveSearchSpace(args[kArgEffSearchSpace].AsInt8());
@@ -278,7 +278,7 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetQueryCovHspPerc(args[kArgQueryCovHspPerc].AsDouble());
     }
 
-    if (args[kArgMaxHSPsPerSubject]) {
+    if (args.Exist(kArgMaxHSPsPerSubject) && args[kArgMaxHSPsPerSubject]) {
         opt.SetMaxHspsPerSubject(args[kArgMaxHSPsPerSubject].AsInteger());
     }
 
@@ -633,14 +633,15 @@ void
 CNuclArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                    CBlastOptions& options)
 {
-    if (cmd_line_args[kArgMismatch]) {
+    if (cmd_line_args.Exist(kArgMismatch) && cmd_line_args[kArgMismatch]) {
         options.SetMismatchPenalty(cmd_line_args[kArgMismatch].AsInteger());
     }
-    if (cmd_line_args[kArgMatch]) {
+    if (cmd_line_args.Exist(kArgMatch) && cmd_line_args[kArgMatch]) {
         options.SetMatchReward(cmd_line_args[kArgMatch].AsInteger());
     }
 
-    if (cmd_line_args[kArgNoGreedyExtension]) {
+    if (cmd_line_args.Exist(kArgNoGreedyExtension) &&
+        cmd_line_args[kArgNoGreedyExtension]) {
         options.SetGapExtnAlgorithm(eDynProgScoreOnly);
         options.SetGapTracebackAlgorithm(eDynProgTbck);
     }
@@ -1394,6 +1395,76 @@ CDeltaBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
 }
 
 void
+CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+
+    arg_desc.SetCurrentGroup("Mapping options");
+    arg_desc.AddOptionalKey(kArgScore, "num", "Cutoff score for accepting a "
+                            "single non-spliced alignment",
+                            CArgDescriptions::eInteger);
+    arg_desc.AddOptionalKey(kArgSplice, "TF", "Search for spliced alignments",
+                            CArgDescriptions::eBoolean);
+    arg_desc.AddDefaultKey(kArgRefType, "type", "Type of the reference: "
+                           "genome or transcriptome",
+                           CArgDescriptions::eString, "genome");
+    arg_desc.SetConstraint(kArgRefType,
+                        &(*new CArgAllow_Strings, "genome", "transcriptome"));
+
+    arg_desc.SetCurrentGroup("Query filtering options");
+    arg_desc.AddOptionalKey(kArgLimitLookup, "TF", "Remove word seeds with "
+                            "high frequency in the searched database",
+                            CArgDescriptions::eBoolean);
+    arg_desc.AddDefaultKey(kArgLookupStride, "num", "Number of words to skip "
+			    "after collecting one while creating a lookup table",
+                 CArgDescriptions::eInteger, "0");
+
+    arg_desc.SetCurrentGroup("");
+}
+
+
+void
+CMappingArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                      CBlastOptions& opt)
+{
+    if (args.Exist(kArgScore)) {
+        if (args[kArgScore]) {
+            opt.SetCutoffScore(args[kArgScore].AsInteger());
+        }
+        else {
+            // if not present in command line, cutoff score is equal to word
+            // size
+            if (args.Exist(kArgWordSize) && args[kArgWordSize]) {
+                opt.SetCutoffScore(args[kArgWordSize].AsInteger());
+            }
+            else {
+                opt.SetCutoffScore(opt.GetWordSize());
+            }
+        }
+    }
+
+    if (args.Exist(kArgSplice) && args[kArgSplice]) {
+        opt.SetSpliceAlignments(args[kArgSplice].AsBoolean());
+    }
+
+    string ref_type = "genome";
+    if (args.Exist(kArgRefType) && args[kArgRefType]) {
+        ref_type = args[kArgRefType].AsString();
+    }
+
+    if (args.Exist(kArgLimitLookup) && args[kArgLimitLookup]) {
+        opt.SetLookupDbFilter(args[kArgLimitLookup].AsBoolean());
+    }
+    else {
+        opt.SetLookupDbFilter(ref_type == "genome");
+    }
+
+    if (args.Exist(kArgLookupStride) && args[kArgLookupStride]) {
+        opt.SetLookupTableStride(args[kArgLookupStride].AsInteger());
+    }
+}
+
+
+void
 CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Ig-BLAST options");
@@ -1677,11 +1748,11 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "(Format: start-stop)",
                             CArgDescriptions::eString);
 
-    if ( !m_QueryCannotBeNucl ) {
+    if ( !m_QueryCannotBeNucl) {
         // search strands
         arg_desc.AddDefaultKey(kArgStrand, "strand", 
-                         "Query strand(s) to search against database/subject",
-                         CArgDescriptions::eString, kDfltArgStrand);
+                     "Query strand(s) to search against database/subject",
+                               CArgDescriptions::eString, kDfltArgStrand);
         arg_desc.SetConstraint(kArgStrand, &(*new CArgAllow_Strings, 
                                              kDfltArgStrand, "plus", "minus"));
     }
@@ -1701,37 +1772,164 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
     {
         m_Strand = eNa_strand_unknown;
 
-        if (!Blast_QueryIsProtein(opt.GetProgramType()) && args[kArgStrand]) {
-            const string& kStrand = args[kArgStrand].AsString();
-            if (kStrand == "both") {
+        if (!Blast_QueryIsProtein(opt.GetProgramType())) {
+
+            if (args.Exist(kArgStrand) && args[kArgStrand]) {
+                const string& kStrand = args[kArgStrand].AsString();
+                if (kStrand == "both") {
+                    m_Strand = eNa_strand_both;
+                } else if (kStrand == "plus") {
+                    m_Strand = eNa_strand_plus;
+                } else if (kStrand == "minus") {
+                    m_Strand = eNa_strand_minus;
+                } else {
+                    abort();
+                }
+            }
+            else {
                 m_Strand = eNa_strand_both;
-            } else if (kStrand == "plus") {
-                m_Strand = eNa_strand_plus;
-            } else if (kStrand == "minus") {
-                m_Strand = eNa_strand_minus;
-            } else {
-                abort();
             }
         }
     }
 
     // set the sequence range
-    if (args[kArgQueryLocation]) {
+    if (args.Exist(kArgQueryLocation) && args[kArgQueryLocation]) {
         m_Range = ParseSequenceRange(args[kArgQueryLocation].AsString(), 
                                      "Invalid specification of query location");
     }
 
-    m_UseLCaseMask = static_cast<bool>(args[kArgUseLCaseMasking]);
-    m_ParseDeflines = static_cast<bool>(args[kArgParseDeflines]);
+    m_UseLCaseMask = args.Exist(kArgUseLCaseMasking) &&
+        static_cast<bool>(args[kArgUseLCaseMasking]);
+    m_ParseDeflines = args.Exist(kArgParseDeflines) &&
+        static_cast<bool>(args[kArgParseDeflines]);
 }
+
+void
+CMapperQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+
+    arg_desc.SetCurrentGroup("Query filtering options");
+    // lowercase masking
+    arg_desc.AddFlag(kArgUseLCaseMasking, 
+                     "Use lower case filtering in subject sequence(s)?", true);
+    arg_desc.AddDefaultKey(kArgQualityFilter, "TF", "Reject low quality "
+                           "sequences ", CArgDescriptions::eBoolean, "true");
+
+    arg_desc.SetCurrentGroup("Input query options");
+    arg_desc.AddDefaultKey(kArgInputFormat, "format", "Input format for "
+                           "sequences", CArgDescriptions::eString, "fasta");
+    arg_desc.SetConstraint(kArgInputFormat, &(*new CArgAllow_Strings,
+                                              "fasta", "fastc", "fastq",
+                                              "asn1", "asn1b"));
+    arg_desc.AddFlag(kArgPaired, "Input query sequences are paired", true);
+    arg_desc.AddOptionalKey(kArgQueryMate, "infile", "FASTA file with "
+                            "mates for query sequences (if given in "
+                            "another file)", CArgDescriptions::eInputFile);
+    arg_desc.SetDependency(kArgQueryMate, CArgDescriptions::eRequires,
+                           kArgQuery);
+
+    arg_desc.AddOptionalKey(kArgSraAccession, "accession",
+                            "Comma-separated SRA accessions",
+                            CArgDescriptions::eString);
+    arg_desc.SetDependency(kArgSraAccession, CArgDescriptions::eExcludes,
+                           kArgQuery);
+    arg_desc.SetDependency(kArgSraAccession, CArgDescriptions::eExcludes,
+                          kArgInputFormat);
+
+    arg_desc.SetCurrentGroup("Miscellaneous options");
+    arg_desc.AddDefaultKey(kArgParseDeflines, "TF", "Should the query and "
+                           "subject defline(s) be parsed?",
+                           CArgDescriptions::eBoolean, "true");
+
+    arg_desc.SetCurrentGroup("");
+}
+
+void
+CMapperQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                                 CBlastOptions& opt)
+{
+    CQueryOptionsArgs::ExtractAlgorithmOptions(args, opt);
+
+    if (args.Exist(kArgPaired) && args[kArgPaired]) {
+        opt.SetPaired(true);
+        m_IsPaired = true;
+    }
+
+    if (args.Exist(kArgInputFormat) && args[kArgInputFormat]) {
+        if (args[kArgInputFormat].AsString() == "fasta") {
+            m_InputFormat = eFasta;
+        }
+        else if (args[kArgInputFormat].AsString() == "fastc") {
+            m_InputFormat = eFastc;
+        }
+        else if (args[kArgInputFormat].AsString() == "fastq") {
+            m_InputFormat = eFastq;
+        }
+        else if (args[kArgInputFormat].AsString() == "asn1") {
+            m_InputFormat = eASN1text;
+        }
+        else if (args[kArgInputFormat].AsString() == "asn1b") {
+            m_InputFormat = eASN1bin;
+        }
+        else {
+            NCBI_THROW(CInputException, eInvalidInput,
+                       "Unexpected input format: " +
+                       args[kArgInputFormat].AsString());
+        }
+    }
+
+    if (m_InputFormat == eFastc) {
+        // FASTC format always has pairs in a single file
+        opt.SetPaired(true);
+        m_IsPaired = true;
+    }
+
+    if (args.Exist(kArgQualityFilter) && args[kArgQualityFilter]) {
+        m_QualityFilter = args[kArgQualityFilter].AsBoolean();
+    }
+
+    if (args.Exist(kArgQueryMate) && args[kArgQueryMate]) {
+        // create a decompress stream is the file is compressed
+        // (the primary query file is handeled by CStdCmdLieArgs object)
+        if (NStr::EndsWith(args[kArgQueryMate].AsString(), ".gz",
+                           NStr::eNocase)) {
+            m_DecompressIStream.reset(new CDecompressIStream(
+                                            args[kArgQueryMate].AsInputFile(),
+                                            CDecompressIStream::eGZipFile));
+            m_MateInputStream = m_DecompressIStream.get();
+        }
+        else {
+            m_MateInputStream = &args[kArgQueryMate].AsInputFile();
+        }
+
+        // queries have pairs in the mate stream
+        opt.SetPaired(true);
+        m_IsPaired = true;
+    }
+
+    if (args.Exist(kArgSraAccession) && args[kArgSraAccession]) {
+        NStr::Split((CTempString)args[kArgSraAccession].AsString(), ",",
+                    m_SraAccessions);
+
+        m_InputFormat = eSra;
+        // assume SRA input is paired, that information for each read is in
+        // SRA database, this option will trigger checking for pairs
+        opt.SetPaired(true);
+        m_IsPaired = true;
+    }
+}
+
+
 
 CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
                                        bool is_rpsblast /* = false */,
-                                       bool is_igblast  /* = false */)
+                                       bool is_igblast  /* = false */,
+                                       bool is_mapper   /* = false */)
     : m_RequestMoleculeType(request_mol_type), 
       m_IsRpsBlast(is_rpsblast),
       m_IsIgBlast(is_igblast),
       m_IsProtein(true), 
+      m_IsMapper(is_mapper),
       m_SupportsDatabaseMasking(false)
 {}
 
@@ -1773,10 +1971,12 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
     // DB size
-    arg_desc.SetCurrentGroup("Statistical options");
-    arg_desc.AddOptionalKey(kArgDbSize, "num_letters", 
-                            "Effective length of the database ",
-                            CArgDescriptions::eInt8);
+    if (!m_IsMapper) {
+        arg_desc.SetCurrentGroup("Statistical options");
+        arg_desc.AddOptionalKey(kArgDbSize, "num_letters", 
+                                "Effective length of the database ",
+                                CArgDescriptions::eInt8);
+    }
 
     arg_desc.SetCurrentGroup("Restrict search or results");
     // GI list
@@ -1811,13 +2011,15 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
     // Entrez Query
-    arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
-                            "Restrict search with the given Entrez query",
-                            CArgDescriptions::eString);
+    if (!m_IsMapper) {
+        arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
+                                "Restrict search with the given Entrez query",
+                                CArgDescriptions::eString);
 
-    // Entrez query currently requires the -remote option
-    arg_desc.SetDependency(kArgEntrezQuery, CArgDescriptions::eRequires, 
-                           kArgRemote);
+        // Entrez query currently requires the -remote option
+        arg_desc.SetDependency(kArgEntrezQuery, CArgDescriptions::eRequires, 
+                               kArgRemote);
+    }
 
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -1912,7 +2114,19 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 #endif
     } else if (args.Exist(kArgSubject) && args[kArgSubject]) {
 
-        CNcbiIstream& subj_input_stream = args[kArgSubject].AsInputFile();
+        CNcbiIstream* subj_input_stream = NULL;
+        auto_ptr<CDecompressIStream> decompress_stream;
+        if (m_IsMapper &&
+            NStr::EndsWith(args[kArgSubject].AsString(), ".gz", NStr::eNocase)) {
+            decompress_stream.reset(
+                        new CDecompressIStream(args[kArgSubject].AsInputFile(),
+                        CDecompressIStream::eGZipFile));
+            subj_input_stream = decompress_stream.get();
+        }
+        else {
+            subj_input_stream = &args[kArgSubject].AsInputFile();
+        }
+
         TSeqRange subj_range;
         if (args.Exist(kArgSubjectLocation) && args[kArgSubjectLocation]) {
             subj_range = 
@@ -1921,15 +2135,15 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         }
 
         const bool parse_deflines = args.Exist(kArgParseDeflines) 
-	    ? bool(args[kArgParseDeflines])
+            ? args[kArgParseDeflines].AsBoolean()
             : kDfltArgParseDeflines;
         const bool use_lcase_masks = args.Exist(kArgUseLCaseMasking)
 	    ? bool(args[kArgUseLCaseMasking])
             : kDfltArgUseLCaseMasking;
         CRef<blast::CBlastQueryVector> subjects;
-        m_Scope = ReadSequencesToBlast(subj_input_stream, IsProtein(),
+        m_Scope = ReadSequencesToBlast(*subj_input_stream, IsProtein(),
                                        subj_range, parse_deflines,
-                                       use_lcase_masks, subjects);
+                                       use_lcase_masks, subjects, m_IsMapper);
         m_Subjects.Reset(new blast::CObjMgr_QueryFactory(*subjects));
 
     } else if (!m_IsIgBlast){
@@ -1943,7 +2157,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         return;
     }
 
-    if (args[kArgDbSize]) {
+    if (args.Exist(kArgDbSize) && args[kArgDbSize]) {
         opts.SetDbLength(args[kArgDbSize].AsInt8());
     }
 
@@ -2001,6 +2215,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         		DescribeSAMOutputFormatSpecifiers();
     }
 
+
     int dft_outfmt = kDfltArgOutputFormat;
 
     // Igblast shows extra column of gaps
@@ -2057,6 +2272,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if(!m_IsIgBlast){
         arg_desc.AddFlag(kArgProduceHtml, "Produce HTML output?", true);
     }
+
     /// Hit list size, listed here for convenience only
     arg_desc.SetCurrentGroup("Restrict search or results");
     arg_desc.AddOptionalKey(kArgMaxTargetSequences, "num_sequences",
@@ -2149,7 +2365,8 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     // we need to increase the  num_ descriptions and num_alignemtns
     if(hitlist_size > BLAST_HITLIST_SIZE )
     {
-    	if(!args[kArgNumDescriptions] && !args[kArgNumAlignments] &&
+    	if((!args.Exist(kArgNumDescriptions) || !args[kArgNumDescriptions]) &&
+           (!args.Exist(kArgNumAlignments) || !args[kArgNumAlignments]) &&
     	   (m_OutputFormat <= eFlatQueryAnchoredNoIdentities)) {
     		m_NumDescriptions = hitlist_size;
     		m_NumAlignments = hitlist_size/ 2;
@@ -2158,7 +2375,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if(m_OutputFormat <= eFlatQueryAnchoredNoIdentities) {
-    	 if (args[kArgMaxTargetSequences]) {
+        if (args.Exist(kArgMaxTargetSequences) && args[kArgMaxTargetSequences]) {
     		 ERR_POST(Warning << "The parameter -max_target_seqs is ignored for "
     				    "output formats, 0,1,2,3. Use -num_descriptions "
     				    "and -num_alignments to control output");
@@ -2167,18 +2384,20 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     	 m_NumDescriptions = m_DfltNumDescriptions;
     	 m_NumAlignments = m_DfltNumAlignments;
 
-    	 if (args[kArgNumDescriptions]) {
+    	 if (args.Exist(kArgNumDescriptions) && args[kArgNumDescriptions]) {
     	    m_NumDescriptions = args[kArgNumDescriptions].AsInteger();
     	 }
 
-    	if (args[kArgNumAlignments]) {
+         if (args.Exist(kArgNumAlignments) && args[kArgNumAlignments]) {
     		m_NumAlignments = args[kArgNumAlignments].AsInteger();
     	}
 
     	// The If clause is for handling import_search_strategy hitlist size < 500
     	// We want to preserve the hitlist size in iss if no formatting input is entered in cmdline
     	// If formmating option(s) is entered than the iss hitlist size is overridden.
-    	if (args[kArgNumDescriptions] || args[kArgNumAlignments]) {
+         // FIXME: does this work with import search strategies?
+         if ((args.Exist(kArgNumDescriptions) && args[kArgNumDescriptions]) ||
+             (args.Exist(kArgNumAlignments) && args[kArgNumAlignments])) {
     		hitlist_size = max(m_NumDescriptions, m_NumAlignments);
     	}
 
@@ -2188,7 +2407,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
     else
     {
-    	if (args[kArgNumDescriptions]) {
+    	if (args.Exist(kArgNumDescriptions) && args[kArgNumDescriptions]) {
    		 ERR_POST(Warning << "The parameter -num_descriptions is ignored for "
    				    		 "output formats > 4 . Use -max_target_seqs "
    				             "to control output");
@@ -2199,10 +2418,10 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
    				    		 "output formats > 4 .");
     	}
 
-    	if (args[kArgMaxTargetSequences]) {
+    	if (args.Exist(kArgMaxTargetSequences) && args[kArgMaxTargetSequences]) {
     		hitlist_size = args[kArgMaxTargetSequences].AsInteger();
     	}
-    	else if (args[kArgNumAlignments]) {
+    	else if (args.Exist(kArgNumAlignments) && args[kArgNumAlignments]) {
     		hitlist_size = args[kArgNumAlignments].AsInteger();
     	}
 
@@ -2495,6 +2714,10 @@ CStdCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                    "Output file name",
                    CArgDescriptions::eOutputFile, "-");
 
+    if (m_GzipEnabled) {
+        arg_desc.AddFlag(kArgOutputGzip, "Output will be compressed");
+    }
+
     arg_desc.SetCurrentGroup("");
 }
 
@@ -2504,9 +2727,28 @@ CStdCmdLineArgs::ExtractAlgorithmOptions(const CArgs& args,
 {
     if (args.Exist(kArgQuery) && args[kArgQuery].HasValue() &&
         m_InputStream == NULL) {
-        m_InputStream = &args[kArgQuery].AsInputFile();
+
+        if (m_GzipEnabled &&
+            NStr::EndsWith(args[kArgQuery].AsString(), ".gz", NStr::eNocase)) {
+            m_DecompressIStream.reset(new CDecompressIStream(
+                                               args[kArgQuery].AsInputFile(),
+                                               CDecompressIStream::eGZipFile));
+            m_InputStream = m_DecompressIStream.get();
+        }
+        else {
+            m_InputStream = &args[kArgQuery].AsInputFile();
+        }
     }
-    m_OutputStream = &args[kArgOutput].AsOutputFile();
+
+    if (args.Exist(kArgOutputGzip) && args[kArgOutputGzip]) {
+        m_CompressOStream.reset(new CCompressOStream(
+                                              args[kArgOutput].AsOutputFile(),
+                                              CCompressOStream::eGZipFile));
+        m_OutputStream = m_CompressOStream.get();
+    }
+    else {
+        m_OutputStream = &args[kArgOutput].AsOutputFile();
+    }
 }
 
 CNcbiIstream&
@@ -2566,7 +2808,8 @@ CNcbiIstream*
 CSearchStrategyArgs::GetImportStream(const CArgs& args) const
 {
     CNcbiIstream* retval = NULL;
-    if (args[kArgInputSearchStrategy].HasValue()) {
+    if (args.Exist(kArgInputSearchStrategy) &&
+        args[kArgInputSearchStrategy].HasValue()) {
         retval = &args[kArgInputSearchStrategy].AsInputFile();
     }
     return retval;
@@ -2576,7 +2819,8 @@ CNcbiOstream*
 CSearchStrategyArgs::GetExportStream(const CArgs& args) const
 {
     CNcbiOstream* retval = NULL;
-    if (args[kArgOutputSearchStrategy].HasValue()) {
+    if (args.Exist(kArgOutputSearchStrategy) &&
+        args[kArgOutputSearchStrategy].HasValue()) {
         retval = &args[kArgOutputSearchStrategy].AsOutputFile();
     }
     return retval;

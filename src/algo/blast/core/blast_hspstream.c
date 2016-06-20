@@ -206,6 +206,29 @@ void BlastHSPStreamClose(BlastHSPStream* hsp_stream)
    hsp_stream->x_lock = MT_LOCK_Delete(hsp_stream->x_lock);
 }
 
+void BlastHSPStreamMappingClose(BlastHSPStream* hsp_stream,
+                                BlastMappingResults* results)
+{
+   if (!hsp_stream || !hsp_stream->writer)
+      return;
+
+   (hsp_stream->writer->FinalFnPtr)
+       (hsp_stream->writer->data, results);
+
+   hsp_stream->writer_finalized = TRUE;
+   hsp_stream->x_lock = MT_LOCK_Delete(hsp_stream->x_lock);
+}
+
+void BlastHSPStreamSimpleClose(BlastHSPStream* hsp_stream)
+{
+   if (!hsp_stream)
+      return;
+
+   s_FinalizeWriter(hsp_stream);
+
+   hsp_stream->x_lock = MT_LOCK_Delete(hsp_stream->x_lock);
+}
+
 /** Closing the HSP after traceback is done.
  * This is mainly to provide a chance to apply post-traceback pipes.
  * @param hsp_stream The HSP stream to close [in] [out]
@@ -639,6 +662,9 @@ BlastHSPStreamNew(EBlastProgramType program,
     hsp_stream->sorted_hsplists = (BlastHSPList **)malloc(
                                            hsp_stream->num_hsplists_alloc *
                                            sizeof(BlastHSPList *));
+
+    /* FIXME: This will not be needed for mapper when the new mapping
+       results structure is implemented */
     hsp_stream->results = Blast_HSPResultsNew(num_queries);
 
     hsp_stream->results_sorted = FALSE;
@@ -716,11 +742,13 @@ int BlastHSPStreamRegisterPipe(BlastHSPStream* hsp_stream,
 
 BlastHSPWriter*
 BlastHSPWriterNew (BlastHSPWriterInfo** writer_info,
-                   BlastQueryInfo* query_info)
+                   BlastQueryInfo* query_info,
+                   BLAST_SequenceBlk* query)
 {
     BlastHSPWriter * writer = NULL;
     if(writer_info && *writer_info) {
-        writer = ((*writer_info)->NewFnPtr) ((*writer_info)->params, query_info);
+        writer = ((*writer_info)->NewFnPtr) ((*writer_info)->params, query_info,
+                                             query);
         sfree(*writer_info);
     }
     ASSERT(writer_info && *writer_info == NULL);

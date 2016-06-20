@@ -1384,7 +1384,7 @@ static void s_SmallNaChooseScanSubject(LookupTableWrap *lookup_wrap)
 * @return 1 if there are hits, 0 otherwise.
 */
 static NCBI_INLINE Int4 s_BlastMBLookupHasHits(BlastMBLookupTable * lookup,
-                                               Int4 index)
+                                               Int8 index)
 {
     PV_ARRAY_TYPE *pv = lookup->pv_array;
     Int4 pv_array_bts = lookup->pv_array_bts;
@@ -1404,7 +1404,7 @@ static NCBI_INLINE Int4 s_BlastMBLookupHasHits(BlastMBLookupTable * lookup,
 * @return The number of hits copied.
 */
 static NCBI_INLINE Int4 s_BlastMBLookupRetrieve(BlastMBLookupTable * lookup,
-                                                Int4 index,
+                                                Int8 index,
                                                 BlastOffsetPair * offset_pairs,
                                                 Int4 s_off)
 {
@@ -1428,7 +1428,7 @@ static NCBI_INLINE Int4 s_BlastMBLookupRetrieve(BlastMBLookupTable * lookup,
 * @return The number of hits copied.
 */
 static NCBI_INLINE Int4 s_BlastMBLookupRetrieve2(BlastMBLookupTable * lookup,
-                                                 Int4 index,
+                                                 Int8 index,
                                                  BlastOffsetPair * offset_pairs,
                                                  Int4 s_off)
 {
@@ -1488,8 +1488,8 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
    Uint1* s;
    Uint1* abs_start = subject->sequence;
    Int4 s_off;
-   Int4 index;
-   Int4 mask = mb_lt->hashsize - 1;
+   Int8 index;
+   Int8 mask = mb_lt->hashsize - 1;
    Int4 total_hits = 0;
    Int4 lut_word_length = mb_lt->lut_word_length;
    Int4 scan_step = mb_lt->scan_step;
@@ -1498,7 +1498,8 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
    ASSERT(lut_word_length == 9 || 
           lut_word_length == 10 ||
           lut_word_length == 11 ||
-          lut_word_length == 12);
+          lut_word_length == 12 ||
+          lut_word_length == 16);
 
    /* Since the test for number of hits here is done after adding them, 
       subtract the longest chain length from the allowed offset array size. */
@@ -1536,7 +1537,48 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
       }
       scan_range[0] = (s - abs_start)*COMPRESSION_RATIO;
 
+   } else if (lut_word_length == 16 && scan_step == 1) {
+       /* scan for lookup table width 16 and stride 1 */
+       Int8 w;
+       Int4 shift; 
+
+       s = abs_start + (scan_range[0] / COMPRESSION_RATIO);
+       w = (Int8)s[0] << 24 | (Int8)s[1] << 16 | (Int8)s[2] << 8 | s[3];
+       if (scan_range[0] % COMPRESSION_RATIO != 0) {
+           w = (w << 8) | (Int8)s[4];
+       }
+       shift = 2 * (COMPRESSION_RATIO - (scan_range[0] % COMPRESSION_RATIO));
+       for (; scan_range[0] <= scan_range[1]; scan_range[0] += scan_step) {
+
+           if (scan_range[0] % COMPRESSION_RATIO == 0) {
+               s = abs_start + (scan_range[0] / COMPRESSION_RATIO);
+               w = (w << 8) | (Int8)s[4];
+               shift = 8;
+           }
+
+           index = (w >> shift) & mask;
+
+           shift -= 2;
+           ASSERT(shift >= 0);
+           MB_ACCESS_HITS();
+       }
+
+   } else if (lut_word_length == 16) {
+       /* scan for lookup table width 16 and any stride */
+       for (; scan_range[0] <= scan_range[1]; scan_range[0] += scan_step) {
+
+           Int4 shift = 2 * (COMPRESSION_RATIO - (scan_range[0] % COMPRESSION_RATIO));
+           s = abs_start + (scan_range[0] / COMPRESSION_RATIO);
+           Int8 w = (Int8)s[0] << 32 | (Int8)s[1] << 24 | (Int8)s[2] << 16 |
+               (Int8)s[3] << 8 | s[4];
+
+           index = (w >> shift) & mask;
+
+           MB_ACCESS_HITS();
+       }
+
    } else if (lut_word_length > 9) {
+       ASSERT (lut_word_length <= 12);
 
       /* when the stride is not a multiple of 4, extra bases
          may occur both before and after every word read from
@@ -2625,6 +2667,7 @@ static void s_MBChooseScanSubject(LookupTableWrap *lookup_wrap)
             break;
 
         case 12:
+        case 16:
             /* lookup tables of width 12 are only used
                for very large queries, and the latency of
                cache misses dominates the runtime in that
@@ -2636,12 +2679,264 @@ static void s_MBChooseScanSubject(LookupTableWrap *lookup_wrap)
     }
 }
 
+
+/** Scan the compressed subject sequence, returning 9-to-12 letter word hits
+ * with arbitrary stride. Assumes a megablast lookup table
+ * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
+ * @param subject The (compressed) sequence to be scanned for words [in]
+ * @param offset_pairs Array of query and subject positions where words are 
+ *                found [out]
+ * @param max_hits The allocated size of the above array - how many offsets 
+ *        can be returned [in]
+ * @param scan_range The starting and ending pos to be scanned [in] 
+ *        on exit, scan_range[0] is updated to be the stopping pos [out]
+*/
+static Int4 s_BlastNaHashScanSubject_Any(const LookupTableWrap* lookup_wrap,
+       const BLAST_SequenceBlk* subject, 
+       BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits,  
+       Int4* scan_range)
+{
+   BlastNaHashLookupTable* lookup = (BlastNaHashLookupTable*) lookup_wrap->lut;
+   Uint1* s;
+   Uint1* abs_start = subject->sequence;
+   Int8 mask = (1l << 32) - 1;
+   Int4 total_hits = 0;
+   Int4 lut_word_length = lookup->lut_word_length;
+   Int4 scan_step = lookup->scan_step;
+   TNaLookupHashFunction hash_func = NULL;
+   const Uint4 kMask = lookup->mask;
+   const Int4 pv_array_bts = lookup->pv_array_bts;
+#ifdef SCAN_VERBOSE
+   Int4 not_pv = 0;
+   Int4 not_backbone = 0;
+   Int4 hits = 0;
+   Int4 h_num_words[5] = {0,};
+   Int4 missed = 0;
+   Int4 present = 0;
+#endif
+   
+   ASSERT(lookup_wrap->lut_type == eNaHashLookupTable);
+   ASSERT(lut_word_length == 16);
+
+   hash_func = (TNaLookupHashFunction)lookup->hash_callback;
+
+   /* Since the test for number of hits here is done after adding them, 
+      subtract the longest chain length from the allowed offset array size. */
+   max_hits -= lookup->longest_chain;
+
+   if (lut_word_length == 16 && scan_step == 1) {
+       /* scan for lookup table width 16 and stride 1 */
+
+       Int8 w;
+       Int4 shift; 
+       Uint4 index;
+       Int8 hashed_index;
+
+       s = abs_start + (scan_range[0] / COMPRESSION_RATIO);
+       w = (Int8)s[0] << 24 | (Int8)s[1] << 16 | (Int8)s[2] << 8 | s[3];
+       if (scan_range[0] % COMPRESSION_RATIO != 0) {
+           w = (w << 8) | (Int8)s[4];
+       }
+       shift = 2 * (COMPRESSION_RATIO - (scan_range[0] % COMPRESSION_RATIO));
+       for (; scan_range[0] <= scan_range[1]; scan_range[0] += scan_step) {
+
+           if (scan_range[0] % COMPRESSION_RATIO == 0) {
+               s = abs_start + (scan_range[0] / COMPRESSION_RATIO);
+               w = (w << 8) | (Int8)s[4];
+               shift = 8;
+           }
+
+           index = (Uint4)((w >> shift) & mask);
+
+           shift -= 2;
+           ASSERT(shift >= 0);
+
+           if (total_hits >= max_hits)
+               break;
+
+           /* test word in pv array */
+           if (!PV_TEST(lookup->pv, (Int8)index, pv_array_bts)) {
+#ifdef SCAN_VERBOSE
+               not_pv++;
+#endif
+               continue;
+           }
+
+           /* access words in lookup table */
+           hashed_index = hash_func((Uint1*)&index, kMask);
+           if (lookup->thick_backbone[hashed_index].num_words > 0) {
+               NaHashLookupBackboneCell* cell =
+                   lookup->thick_backbone + hashed_index;
+               Int4 cursor = -1;
+
+#ifdef SCAN_VERBOSE
+               hits++;
+               h_num_words[
+                     ((lookup->thick_backbone[hashed_index].num_words < 5) ?
+                      lookup->thick_backbone[hashed_index].num_words - 1 :
+                      4)]++;
+#endif
+
+               /* if words are in thick backbone */
+               if (cell->num_words <= NA_WORDS_PER_HASH) {
+                   Int4 i;
+                   for (i = 0; i < cell->num_words; i++) {
+
+                       if (cell->words[i] == (Uint4)index) {
+
+                           /* if offsets are in thick backbone, access them */
+                           if (cell->num_offsets[i] > 0) {
+                               /* get offsets */
+                               Int4 j;
+                               Int4 start = 0;
+
+#ifdef SCAN_VERBOSE
+                               present++;
+#endif
+                               
+                               for (j = 0;j < i;j++) {
+                                   start += cell->num_offsets[j];
+                               }
+
+                               for (j = 0;j < cell->num_offsets[i];j++) {
+                                   ASSERT(start + j <= NA_OFFSETS_PER_HASH);
+                                   offset_pairs[total_hits].qs_offsets.q_off
+                                       = cell->offsets[start + j];
+
+                                   offset_pairs[total_hits].qs_offsets.s_off
+                                       = scan_range[0];
+
+                                   ASSERT(offset_pairs[total_hits].
+                                          qs_offsets.q_off >= 0);
+
+                                   total_hits++;
+                               }
+                                   
+                           }
+                           else {
+                               /* otherwise get pointer to the overflow array */
+                               cursor = cell->offsets[0];
+                           }
+                           
+#ifdef SCAN_VERBOSE
+                           missed--;
+#endif
+                           break;
+                       }
+                   }
+#ifdef SCAN_VERBOSE
+                   missed++;
+#endif
+
+               }
+               else {
+                   /* otherwise get pointer to the overflow array */
+                   cursor = cell->offsets[0];
+               }
+
+               /* aceess overflow array */
+               if (cursor >= 0) {
+                   Int4 k = 0;
+                   Int4* overflow = lookup->overflow + cell->offsets[0];
+
+                   /* cursor points to beginning of data for a given hashed
+                      word; the data are: word, number of offsets, offsets,
+                      next word, ... */
+                   for (k = 0; k < cell->num_words; k++) {
+                       Uint4 word = *(Uint4*)(overflow);
+                       Int4 num_offsets = overflow[1];
+                       Int4 i;
+
+                       if (word != index) {
+                           overflow += num_offsets + 2;
+                           continue;
+                       }
+
+#ifdef SCAN_VERBOSE
+                       present++;
+#endif
+
+                       overflow += 2;
+                       for (i = 0;i < num_offsets;i++) {
+                           offset_pairs[total_hits + i].qs_offsets.q_off =
+                               overflow[i];
+
+                           offset_pairs[total_hits + i].qs_offsets.s_off =
+                               scan_range[0];
+
+                           ASSERT(offset_pairs[total_hits + i].
+                                  qs_offsets.q_off <= INT4_MAX);
+                       }
+                       total_hits += i;
+
+#ifdef SCAN_VERBOSE
+                       missed--;
+#endif
+                       break;
+                   }
+#ifdef SCAN_VERBOSE
+                   missed++;
+#endif
+               }
+           }
+#ifdef SCAN_VERBOSE
+           else {
+               not_backbone++;
+           }
+#endif
+       }
+
+   } 
+   else {
+       /* scanning modes with different strides are not implemented */
+       ASSERT(0);
+
+       return -1;
+   }
+
+#ifdef SCAN_VERBOSE
+   printf("Num words not in PV:\t%d\n", not_pv);
+   printf("Num words not in backbone\t%d\n", not_backbone);
+   printf("Num hash value hits in backbone:\t%d\n", hits);
+   printf("\tNum query words with the same hash value\tCount\n");
+   {
+       Int4 ii;
+       for (ii = 0;ii < 5;ii++) {
+           printf("\t%d\t%d\n", ii + 1, h_num_words[ii]);
+       }
+   }
+   printf("Num backbone misses:\t%d\n", missed);
+   printf("Num word hits:\t%d\n", present);
+   printf("Total hits:\t%d\n", total_hits);
+   printf("\n");
+#endif
+
+   return total_hits;
+}
+
+
+/** Choose the most appropriate function to scan through
+ * subject sequences, assuming a standard blastn lookup table
+ * @param lookup_wrap Structure containing lookup table [in][out]
+ */
+static void s_NaHashChooseScanSubject(LookupTableWrap *lookup_wrap)
+{
+    BlastNaHashLookupTable *lookup = (BlastNaHashLookupTable *)lookup_wrap->lut;
+
+    ASSERT(lookup_wrap->lut_type == eNaHashLookupTable);
+
+    lookup->scansub_callback = (void*)s_BlastNaHashScanSubject_Any;
+}
+
+
 void BlastChooseNucleotideScanSubject(LookupTableWrap *lookup_wrap)
 {
     if (lookup_wrap->lut_type == eNaLookupTable)
         s_NaChooseScanSubject(lookup_wrap);
     else if (lookup_wrap->lut_type == eSmallNaLookupTable)
         s_SmallNaChooseScanSubject(lookup_wrap);
+    else if (lookup_wrap->lut_type == eNaHashLookupTable)
+        s_NaHashChooseScanSubject(lookup_wrap);
     else
         s_MBChooseScanSubject(lookup_wrap);
 }
@@ -2653,6 +2948,10 @@ void * BlastChooseNucleotideScanSubjectAny(LookupTableWrap *lookup_wrap)
 
     if (lookup_wrap->lut_type == eSmallNaLookupTable)
         return (void *)s_BlastSmallNaScanSubject_Any;
+
+    if (lookup_wrap->lut_type == eNaHashLookupTable) {
+        return (void*)s_BlastNaHashScanSubject_Any;
+    }
  
     return (void *)s_MBScanSubject_Any;
 }

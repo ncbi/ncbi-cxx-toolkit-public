@@ -73,6 +73,17 @@ Boolean Blast_ProgramIsPhiBlast(EBlastProgramType p)
 Boolean Blast_ProgramIsRpsBlast(EBlastProgramType p)
 { return SAFE_CAST_INT_TO_BOOLEAN(p & PSSM_SUBJECT_MASK); }
 
+Boolean Blast_ProgramIsMapping(EBlastProgramType p)
+{ return SAFE_CAST_INT_TO_BOOLEAN(p & MAPPING_MASK); }
+
+Boolean Blast_QueryIsPattern(EBlastProgramType p)
+{ return SAFE_CAST_INT_TO_BOOLEAN(p & PATTERN_QUERY_MASK); }
+
+Boolean Blast_ProgramIsNucleotide(EBlastProgramType p)
+{ return Blast_QueryIsNucleotide(p) && Blast_SubjectIsNucleotide(p) &&
+        !Blast_QueryIsTranslated(p) && !Blast_SubjectIsTranslated(p);}
+
+
 Boolean Blast_ProgramIsValid(EBlastProgramType p)
 {
     switch (p) {
@@ -87,6 +98,7 @@ Boolean Blast_ProgramIsValid(EBlastProgramType p)
     case eBlastTypeRpsTblastn:
     case eBlastTypePhiBlastp:
     case eBlastTypePhiBlastn:
+    case eBlastTypeMapping:
         return TRUE;
         break;
     default:

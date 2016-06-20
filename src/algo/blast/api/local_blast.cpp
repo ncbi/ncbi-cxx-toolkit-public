@@ -67,6 +67,7 @@ SplitQuery_GetChunkSize(EProgram program)
             break;
         case eMegablast:
         case eDiscMegablast:
+        case eMapper:
             retval = 5000000;
             break;
         case eTblastn:

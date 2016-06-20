@@ -306,7 +306,7 @@ s_GetInitialWordParameters(EBlastProgramType program_number,
 
    LookupTableOptionsNew(program_number, &lookup_options);
    LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc,
-                       sbp, &lookup_wrap, NULL, NULL);
+                       sbp, &lookup_wrap, NULL, NULL, NULL);
    BlastInitialWordParametersNew(program_number, word_options, hit_params,
       lookup_wrap, sbp, query_info, subject_length, &word_params);
 

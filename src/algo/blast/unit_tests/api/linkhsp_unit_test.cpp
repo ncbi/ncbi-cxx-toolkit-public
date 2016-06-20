@@ -477,7 +477,7 @@ struct LinkHspTestFixture {
         LookupTableOptions* lookup_options = NULL;
         BlastSeqLoc* blast_seq_loc = BlastSeqLocNew(NULL, 0, m_QueryInfo->contexts[0].query_length-1);
         LookupTableOptionsNew(m_ProgramType, &lookup_options);
-        LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc, m_ScoreBlk, &lookup_wrap, NULL, NULL);
+        LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc, m_ScoreBlk, &lookup_wrap, NULL, NULL, NULL);
         query_options = BlastQuerySetUpOptionsFree(query_options);
         BOOST_REQUIRE(query_options == NULL);
 

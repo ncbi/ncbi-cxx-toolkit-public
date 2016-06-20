@@ -144,6 +144,12 @@ public:
     int GetWordSize() const;
     void SetWordSize(int ws);
 
+    Uint4 GetLookupTableStride() const;
+    void SetLookupTableStride(Uint4 val);
+
+    bool GetLookupDbFilter(void) const;
+    void SetLookupDbFilter(bool val);
+
     /// Megablast only lookup table options
     unsigned char GetMBTemplateLength() const;
     void SetMBTemplateLength(unsigned char len);
@@ -277,6 +283,12 @@ public:
     int GetUnifiedP() const;
     void SetUnifiedP(int u = 0);
 
+    int GetMaxMismatches() const;
+    void SetMaxMismatches(int m);
+
+    int GetMismatchWindow() const;
+    void SetMismatchWindow(int w);
+
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);
@@ -340,6 +352,14 @@ public:
     /// Sets a low score to drop ungapped alignments if hit list is full.
     double GetLowScorePerc() const;
     void SetLowScorePerc(double p = 0.0);
+
+    // Return only paired reads, for mapping
+    bool GetPaired() const;
+    void SetPaired(bool p);
+
+    /// Splice HSPs for each query (for mappring RNA-Seq reads to a genome)
+    bool GetSpliceAlignments() const;
+    void SetSpliceAlignments(bool s);
 
     /************************ Scoring options ************************/
     const char* GetMatrixName() const;

@@ -41,8 +41,10 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
 #include <serial/iterator.hpp>
 #include <objmgr/util/seq_align_util.hpp>
+#include "../core/jumper.h"
 
 #include <algorithm>
 
@@ -393,6 +395,123 @@ s_CorrectUASequence(BlastHSP* hsp)
     return;
 }
 
+
+void MakeSplicedSeg(CSpliced_seg& spliced_seg,
+                    CRef<CSeq_id> product_id,
+                    CRef<CSeq_id> genomic_id,
+                    int product_length,
+                    const BlastHSPChain* chain)
+{
+    spliced_seg.SetProduct_id(*product_id);
+    spliced_seg.SetGenomic_id(*genomic_id);
+    
+    _ASSERT(chain->num_hsps > 0);
+    _ASSERT(chain->hsp_array[0]);
+    ENa_strand product_strand = s_Frame2Strand(chain->hsp_array[0]->query.frame);
+    ENa_strand genomic_strand = s_Frame2Strand(
+                                        chain->hsp_array[0]->subject.frame);
+
+    spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+    spliced_seg.SetProduct_length(product_length);
+
+    CSpliced_seg::TExons& exons = spliced_seg.SetExons();
+    const Uint1 kGap = 15; // Gap in BLASTNA
+
+    for (int k=0;k < chain->num_hsps;k++) {
+        BlastHSP* hsp = chain->hsp_array[k];
+        _ASSERT(hsp);
+
+        _ASSERT(hsp->gap_info->size > 1 ||
+                hsp->query.end - hsp->query.offset ==
+                hsp->subject.end - hsp->subject.offset);
+
+        CRef<CSpliced_exon> exon(new CSpliced_exon);
+        exon->SetProduct_start().SetNucpos(hsp->query.offset);
+        exon->SetProduct_end().SetNucpos(hsp->query.end - 1);
+        exon->SetGenomic_start(hsp->subject.offset);
+        exon->SetGenomic_end(hsp->subject.end - 1);
+
+        exon->SetProduct_strand(product_strand);
+        exon->SetGenomic_strand(genomic_strand);
+
+        const JumperEditsBlock* hsp_edits = hsp->map_info->edits;
+        int query_pos = hsp->query.offset;
+        int subject_pos = hsp->subject.offset;
+        int num_matches = 0;
+
+        // save splice signal before next exon
+        if (hsp->map_info->left_edge & MAPPER_SPLICE_SIGNAL) {
+            CSpliced_exon::TAcceptor_before_exon::TBases l_bases(2u, ' ');
+            l_bases[0] = BLASTNA_TO_IUPACNA[
+                   (int)((hsp->map_info->left_edge >> 2) & 3)];
+            l_bases[1] = BLASTNA_TO_IUPACNA[
+                   (int)(hsp->map_info->left_edge & 3)];
+            exon->SetAcceptor_before_exon().SetBases(l_bases);
+        }
+
+        // save splice signal after exon
+        if (hsp->map_info->right_edge & MAPPER_SPLICE_SIGNAL) {
+            CSpliced_exon::TDonor_after_exon::TBases r_bases(2u, ' ');
+            r_bases[0] = BLASTNA_TO_IUPACNA[
+                (int)((hsp->map_info->right_edge >> 2) & 3)];
+            r_bases[1] = BLASTNA_TO_IUPACNA[
+                (int)(hsp->map_info->right_edge & 3)];
+            exon->SetDonor_after_exon().SetBases(r_bases);
+        }
+
+        for (int i=0;i < hsp_edits->num_edits;i++) {
+            num_matches = hsp_edits->edits[i].query_pos - query_pos;
+            query_pos += num_matches;
+            subject_pos += num_matches;
+            _ASSERT(num_matches >= 0);
+            if (num_matches > 0) {
+                // record number of matches
+                CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+                chunk->SetMatch(num_matches);
+                exon->SetParts().push_back(chunk);
+            }
+
+            // record mismatch or gap
+            CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+            _ASSERT(hsp_edits->edits[i].query_base != kGap ||
+                    hsp_edits->edits[i].subject_base != kGap);
+
+            if (hsp_edits->edits[i].query_base == kGap) {
+                chunk->SetGenomic_ins(1);
+                subject_pos++;
+            }
+            else if (hsp_edits->edits[i].subject_base == kGap) {
+                chunk->SetProduct_ins(1);
+                query_pos++;
+            }
+            else {
+                chunk->SetMismatch(1);
+                query_pos++;
+                subject_pos++;
+            }
+
+            exon->SetParts().push_back(chunk);
+        }
+
+        num_matches = MAX(hsp->query.end - query_pos, 0);
+        _ASSERT(hsp->query.end - query_pos >= -1);
+        // an HSP may end with a mismatch or a gap, if a splice signal was
+        // found and HSP extent was updated (mapping reads to a genome)
+        _ASSERT(num_matches >= 0);
+        if (num_matches > 0) {
+            CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+            chunk->SetMatch(num_matches);
+            exon->SetParts().push_back(chunk);
+        }
+
+        exons.push_back(exon);
+    }
+
+#if _DEBUG
+    spliced_seg.Validate(true);
+#endif
+}
+
 /// Creates a Seq-align for a single HSP from precalculated vectors of start 
 /// positions, lengths and strands of segments, sequence identifiers and other 
 /// information.
@@ -528,8 +647,11 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                               strands, query_length, subject_length,
                               translate1, translate2);
 
-        return s_CreateSeqAlign(id1, id2, starts, lengths, strands,
-                                translate1, translate2);
+        CRef<CSeq_align> retval =  s_CreateSeqAlign(id1, id2, starts, lengths,
+                                                    strands, translate1,
+                                                    translate2);
+
+        return retval;
     }
 }
 
@@ -1260,7 +1382,7 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
     return;
 }
 
-CRef<CSeq_align_set> CreateEmptySeq_align_set()
+CRef<CSeq_align_set> CreateEmptySeq_align_set(void)
 {
     CRef<CSeq_align_set> retval(new CSeq_align_set);
     retval->Set().clear();
@@ -1477,7 +1599,8 @@ static void s_AdjustNegativeSubjFrameInBlastn(ENa_strand subj_strand,
                                      BlastHSPList* hsp_list)
 {
     _ASSERT(hsp_list);
-    if (subj_strand != eNa_strand_minus || program != eBlastTypeBlastn)
+    if (subj_strand != eNa_strand_minus ||
+        (program != eBlastTypeBlastn && program != eBlastTypeMapping))
         return;
 
     for (int index = 0; index < hsp_list->hspcnt; index++) { 

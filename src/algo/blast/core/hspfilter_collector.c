@@ -51,9 +51,10 @@ typedef struct BlastHSPCollectorData {
  * @param results The HSP results to operate on  [in]
  */ 
 static int 
-s_BlastHSPCollectorInit(void* data, BlastHSPResults* results)
+s_BlastHSPCollectorInit(void* data, void* hsp_results)
 {
    BlastHSPCollectorData * col_data = data;
+   BlastHSPResults* results = (BlastHSPResults*)hsp_results;
    /* grab the results as destination to store collected hsps */
    col_data->results = results;
    return 0;
@@ -64,7 +65,7 @@ s_BlastHSPCollectorInit(void* data, BlastHSPResults* results)
  * @param results The HSP results to propagate [in][out]
  */ 
 static int 
-s_BlastHSPCollectorFinal(void* data, BlastHSPResults* results)
+s_BlastHSPCollectorFinal(void* data, void* results)
 {
    BlastHSPCollectorData * col_data = data;
    /* results already stored during run, no action needed */
@@ -291,7 +292,8 @@ s_BlastHSPCollectorFree(BlastHSPWriter* writer)
  */
 static
 BlastHSPWriter* 
-s_BlastHSPCollectorNew(void* params, BlastQueryInfo* query_info)
+s_BlastHSPCollectorNew(void* params, BlastQueryInfo* query_info,
+                       BLAST_SequenceBlk* sequence)
 {
    BlastHSPWriter * writer = NULL;
    BlastHSPCollectorData * data = NULL;

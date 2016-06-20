@@ -121,7 +121,7 @@ public:
         lookup_options->phi_pattern = strdup(pattern.c_str());
         // Lookup segments and rps info arguments are irrelevant and passed as 
         // NULL.
-        LookupTableWrapInit(NULL, lookup_options, NULL, NULL, m_ScoreBlk, &m_Lookup, NULL, NULL);
+        LookupTableWrapInit(NULL, lookup_options, NULL, NULL, m_ScoreBlk, &m_Lookup, NULL, NULL, NULL);
     }
 
     ~CPhiblastTestFixture() {

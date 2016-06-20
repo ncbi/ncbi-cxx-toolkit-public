@@ -449,7 +449,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                   optimization for OOF */
                gap_align->subject_start = 0;
                gap_align->query_start = 0;
-            } else if (program_number == eBlastTypeBlastn) {
+            } else if (program_number == eBlastTypeBlastn ||
+                       program_number == eBlastTypeMapping) {
                /* Find the optimal starting offset */
                BlastGetStartForGappedAlignmentNucl(query, subject, hsp);
             }

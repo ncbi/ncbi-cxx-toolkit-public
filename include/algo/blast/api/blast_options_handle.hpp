@@ -111,6 +111,7 @@ public:
     enum ETaskSets {
         eNuclNucl,      ///< Nucleotide-nucleotide tasks
         eProtProt,      ///< Protein-protein tasks
+        eMapping,       ///< Mapping tasks
         eAll            ///< Retrieve all available tasks
     };
 

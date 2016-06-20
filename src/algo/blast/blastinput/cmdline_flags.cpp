@@ -218,6 +218,18 @@ const string kArgArchive("archive");
 const string kArgQueryCovHspPerc("qcov_hsp_perc");
 const string kArgLineLength("line_length");
 
+const string kArgPaired("paired");
+const string kArgScore("score");
+const string kArgLimitLookup("limit_lookup");
+const string kArgSplice("splice");
+const string kArgLookupStride("lookup_stride");
+const string kArgInputFormat("infmt");
+const string kArgQualityFilter("validate_seqs");
+const string kArgQueryMate("query_mate");
+const string kArgRefType("reftype");
+const string kArgOutputGzip("gzo");
+const string kArgSraAccession("sra");
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

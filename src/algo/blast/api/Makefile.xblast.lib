@@ -72,7 +72,9 @@ rpsblast_local \
 seedtop \
 cdd_pssm_input \
 deltablast_options \
-deltablast
+deltablast \
+magicblast_options \
+magicblast
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 

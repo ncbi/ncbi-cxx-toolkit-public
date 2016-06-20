@@ -52,6 +52,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/general/User_object.hpp> // for has_pair
 
 // Private BLAST API headers
 #include "blast_setup.hpp"
@@ -363,6 +364,26 @@ CBlastQuerySourceBioseqSet::GetTitle(int index) const
             title.erase(title.end() - 1);
         }
         retval.assign(title);
+    }
+
+    return retval;
+}
+
+bool
+CBlastQuerySourceBioseqSet::IsFirstOfAPair(int index) const
+{
+    // FIXME: this is a hack, a better field in Bioseq may be needed to store
+    // this information
+    CConstRef<CBioseq> bioseq = m_Bioseqs[index];
+    bool retval = false;
+    if (!bioseq->CanGetDescr()) {
+        return retval;
+    }
+    const CSeq_descr::Tdata& descr = bioseq->GetDescr().Get();
+    ITERATE(CSeq_descr::Tdata, desc, descr) {
+        if ((*desc)->Which() == CSeqdesc::e_User) {
+            retval = (*desc)->GetUser().HasField("has_pair");
+        }
     }
 
     return retval;

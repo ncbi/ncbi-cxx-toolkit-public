@@ -379,7 +379,8 @@ CBlastOptionsLocal::Validate() const
     else
         // Index validation.
         if( m_UseMBIndex && 
-                (m_Program != eMegablast && m_Program != eBlastn) ) {
+                (m_Program != eMegablast && m_Program != eBlastn
+                 && m_Program != eMapper) ) {
             NCBI_THROW(CBlastException, eInvalidOptions, 
                     "Database index can be used only with contiguous megablast." );
         }

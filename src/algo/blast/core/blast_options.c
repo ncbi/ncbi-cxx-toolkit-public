@@ -422,7 +422,8 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
 
        if (filter_options->repeatFilterOptions)
        {
-           if (program_number != eBlastTypeBlastn)
+           if (program_number != eBlastTypeBlastn &&
+               program_number != eBlastTypeMapping)
            {
                if (blast_message)
                   Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
@@ -441,7 +442,8 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
 
        if (filter_options->dustOptions)
        {
-           if (program_number != eBlastTypeBlastn)
+           if (program_number != eBlastTypeBlastn &&
+               program_number != eBlastTypeMapping)
            {
                if (blast_message)
                   Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
@@ -452,7 +454,8 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
   
        if (filter_options->segOptions)
        {
-           if (program_number == eBlastTypeBlastn)
+           if (program_number == eBlastTypeBlastn &&
+               program_number != eBlastTypeMapping)
            {
                if (blast_message)
                   Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
@@ -509,7 +512,8 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
    
    if (strand_option && 
        (program == eBlastTypeBlastn || program == eBlastTypePhiBlastn || 
-        program == eBlastTypeBlastx || program == eBlastTypeTblastx)) {
+        program == eBlastTypeBlastx || program == eBlastTypeTblastx ||
+        program == eBlastTypeMapping)) {
       options->strand_option = strand_option;
    }
 
@@ -545,8 +549,9 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
    if (*options == NULL)
       return BLASTERR_MEMORY;
 
-   if (program != eBlastTypeBlastn &&
-       program != eBlastTypePhiBlastn) {	/* protein-protein options. */
+   if (/*program != eBlastTypeBlastn &&
+         program != eBlastTypePhiBlastn */
+       !Blast_ProgramIsNucleotide(program)) {	/* protein-protein options. */
       (*options)->window_size = BLAST_WINDOW_SIZE_PROT;
       (*options)->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
       (*options)->gap_trigger = BLAST_GAP_TRIGGER_PROT;
@@ -574,6 +579,7 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
    /* PHI-BLAST has no ungapped extension phase.  Megablast may not have it,
     but generally does now. */
    if (program_number != eBlastTypeBlastn  &&
+       program_number != eBlastTypeMapping &&
        (!Blast_ProgramIsPhiBlast(program_number)) &&
        options->x_dropoff <= 0.0)
    {
@@ -631,8 +637,9 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
 	if (*options == NULL)
 		return BLASTERR_MEMORY;
 
-	if (program != eBlastTypeBlastn &&
-        program != eBlastTypePhiBlastn) /* protein-protein options. */
+	if (/* program != eBlastTypeBlastn &&
+           program != eBlastTypePhiBlastn*/
+        !Blast_ProgramIsNucleotide(program)) /* protein-protein options. */
 	{
 		(*options)->gap_x_dropoff = BLAST_GAP_X_DROPOFF_PROT;
 		(*options)->gap_x_dropoff_final = 
@@ -652,6 +659,8 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
         (*options)->compositionBasedStats = eCompositionBasedStats;
     }
 
+    (*options)->max_mismatches = 5;
+    (*options)->mismatch_window = 10;
     (*options)->program_number = program;
 
 	return 0;
@@ -665,7 +674,8 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
    if (!options)
       return BLASTERR_INVALIDPARAM;
 
-   if (program == eBlastTypeBlastn || program == eBlastTypePhiBlastn) {
+   if (/*program == eBlastTypeBlastn || program == eBlastTypePhiBlastn*/
+       Blast_ProgramIsNucleotide(program)) {
       if (greedy) {
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
          options->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
@@ -706,6 +716,7 @@ BlastExtensionOptionsValidate(EBlastProgramType program_number,
 		return  BLASTERR_INVALIDPARAM;
 
 	if (program_number != eBlastTypeBlastn &&
+        program_number != eBlastTypeMapping &&
             (options->ePrelimGapExt == eGreedyScoreOnly ||
              options->eTbackExt == eGreedyTbck))
 	{
@@ -752,8 +763,9 @@ BlastScoringOptionsNew(EBlastProgramType program_number, BlastScoringOptions* *o
    if (*options == NULL)
       return BLASTERR_INVALIDPARAM;
    
-   if (program_number != eBlastTypeBlastn &&
-       program_number != eBlastTypePhiBlastn) {	/* protein-protein options. */
+   if (/*program_number != eBlastTypeBlastn &&
+         program_number != eBlastTypePhiBlastn*/
+       !Blast_ProgramIsNucleotide(program_number)) {/*protein-protein options.*/
       (*options)->shift_pen = INT2_MAX;
       (*options)->is_ooframe = FALSE;
       (*options)->gap_open = BLAST_GAP_OPEN_PROT;
@@ -786,8 +798,9 @@ BLAST_FillScoringOptions(BlastScoringOptions* options,
    if (!options)
       return BLASTERR_INVALIDPARAM;
 
-   if (program_number != eBlastTypeBlastn &&
-       program_number != eBlastTypePhiBlastn) {	/* protein-protein options. */
+   if (/*program_number != eBlastTypeBlastn &&
+         program_number != eBlastTypePhiBlastn*/
+       !Blast_ProgramIsNucleotide(program_number)) {/* protein-protein options. */
       /* If matrix name is not provided, keep the default "BLOSUM62" value filled in 
          BlastScoringOptionsNew, otherwise reset it. */
       if (matrix)
@@ -831,7 +844,8 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 		return BLASTERR_OPTION_PROGRAM_INVALID;
         }
 
-	if (program_number == eBlastTypeBlastn || program_number == eBlastTypePhiBlastn)
+        if (/*program_number == eBlastTypeBlastn || program_number == eBlastTypePhiBlastn*/
+            Blast_ProgramIsNucleotide(program_number))
 	{
            // A penalty/reward of 0/0 is a signal that this is rmblastn
            // which allows specification of penalties as positive integers.
@@ -844,7 +858,10 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 			return BLASTERR_OPTION_VALUE_INVALID;
 		}
 
-                if (options->gapped_calculation && !BLAST_CheckRewardPenaltyScores(options->reward, options->penalty))
+        /* !!! this is temporary until there is jumper or mapping options handle */
+        if (0 && options->gapped_calculation &&
+            !Blast_ProgramIsMapping(program_number) &&
+            !BLAST_CheckRewardPenaltyScores(options->reward, options->penalty))
                 {
 			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
                             "BLASTN reward/penalty combination not supported for gapped search");
@@ -1036,6 +1053,7 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
       return BLASTERR_INVALIDPARAM;
    
    switch (program_number) {
+   case eBlastTypeMapping:
    case eBlastTypeBlastn:
        /* Blastn default is megablast. */
        (*options)->word_size = BLAST_WORDSIZE_MEGABLAST;
@@ -1072,6 +1090,7 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
    }
 
    (*options)->program_number = program_number;
+   (*options)->stride = 0;
 
    return 0;
 }
@@ -1084,7 +1103,9 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    if (!options)
       return BLASTERR_INVALIDPARAM;
 
-   if (program_number == eBlastTypeBlastn) {
+   if (program_number == eBlastTypeBlastn ||
+       program_number == eBlastTypeMapping) {
+
       if (is_megablast)	{
          options->lut_type = eMBLookupTable;
          options->word_size = BLAST_WORDSIZE_MEGABLAST;
@@ -1122,7 +1143,8 @@ Int2 BLAST_GetSuggestedThreshold(EBlastProgramType program_number, const char* m
 
     const double kB62_threshold = 11;
 
-    if (program_number == eBlastTypeBlastn)
+    if (program_number == eBlastTypeBlastn ||
+        program_number == eBlastTypeMapping)
       return 0;
 
     if (matrixName == NULL)
@@ -1157,7 +1179,8 @@ Int2 BLAST_GetSuggestedWindowSize(EBlastProgramType program_number, const char* 
 {
     const Int4 kB62_windowsize = 40;
 
-    if (program_number == eBlastTypeBlastn)
+    if (program_number == eBlastTypeBlastn ||
+        program_number == eBlastTypeMapping)
       return 0;
 
     if (matrixName == NULL)
@@ -1245,6 +1268,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
         return 0;
 
     if (program_number != eBlastTypeBlastn && 
+        program_number != eBlastTypeMapping &&
         (!Blast_ProgramIsRpsBlast(program_number)) &&
         options->threshold <= 0)
     {
@@ -1260,12 +1284,15 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
                                      "Word-size must be greater than zero");
             return BLASTERR_OPTION_VALUE_INVALID;
         }
-    } else if (program_number == eBlastTypeBlastn && options->word_size < 4)
+    } else if (/*program_number == eBlastTypeBlastn*/
+               Blast_ProgramIsNucleotide(program_number) &&
+               !Blast_QueryIsPattern(program_number) && options->word_size < 4)
     {
         Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext, 
                   "Word-size must be 4 or greater for nucleotide comparison");
         return BLASTERR_OPTION_VALUE_INVALID;
-    } else if (program_number != eBlastTypeBlastn && options->word_size > 5)
+    } else if (program_number != eBlastTypeBlastn &&
+               program_number != eBlastTypeMapping && options->word_size > 5)
     {
         if (program_number == eBlastTypeBlastp ||
             program_number == eBlastTypeTblastn ||
@@ -1288,7 +1315,8 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
         }
     }
 
-    if (program_number != eBlastTypeBlastn && 
+    if (program_number != eBlastTypeBlastn &&
+        program_number != eBlastTypeMapping &&
        options->lut_type == eMBLookupTable)
     {
         Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
@@ -1318,7 +1346,10 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
         }
     }
 
-   if (program_number == eBlastTypeBlastn && options->mb_template_length > 0) {
+    if (/*program_number == eBlastTypeBlastn &&*/
+        Blast_ProgramIsNucleotide(program_number) &&
+        !Blast_QueryIsPattern(program_number) &&
+        options->mb_template_length > 0) {
       if (!s_DiscWordOptionsValidate(options->word_size,
               options->mb_template_length, 
               options->mb_template_type,
@@ -1330,6 +1361,21 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
          return BLASTERR_OPTION_VALUE_INVALID;
       } 
    }
+
+   if (!Blast_ProgramIsNucleotide(program_number) && options->db_filter) {
+       Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
+                          "The limit_lookup option can only be used for "
+                          "nucleotide searches");
+       return BLASTERR_OPTION_VALUE_INVALID;
+   }
+
+   if (options->db_filter && options->word_size < BLAST_WORD_SIZE_MAPPER) {
+       Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
+                          "The limit_lookup option can only be used with "
+                          "word size >= 16");
+       return BLASTERR_OPTION_VALUE_INVALID;
+   }
+
     return 0;
 }
 
@@ -1426,7 +1472,8 @@ BlastHitSavingOptionsValidate(EBlastProgramType program_number,
    if (options->longest_intron != 0 &&
        program_number != eBlastTypeTblastn &&
        program_number != eBlastTypePsiTblastn &&
-       program_number != eBlastTypeBlastx) {
+       program_number != eBlastTypeBlastx &&
+       program_number != eBlastTypeMapping) {
                 Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
          "Uneven gap linking of HSPs is allowed for blastx, "
          "tblastn, and psitblastn only");
@@ -1600,32 +1647,44 @@ static Int2 s_BlastExtensionScoringOptionsValidate(EBlastProgramType program_num
     {
         if (score_options->gap_open == 0 && score_options->gap_extend == 0)
         {
-	    if (ext_options->ePrelimGapExt != eGreedyScoreOnly && 
+            if (ext_options->ePrelimGapExt != eGreedyScoreOnly && 
                 ext_options->eTbackExt != eGreedyTbck)
-	    {
-			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
-                            "Greedy extension must be used if gap existence and extension options are zero");
-			return BLASTERR_OPTION_VALUE_INVALID;
-	    }
-	}
+                {
+                    Blast_MessageWrite(blast_msg, eBlastSevWarning,
+                                       kBlastMessageNoContext,
+                                       "Greedy extension must be used if gap existence and extension options are zero");
+                    return BLASTERR_OPTION_VALUE_INVALID;
+                }
+        }
+    }
+
+    if (program_number == eBlastTypeMapping) {
+        if (ext_options->ePrelimGapExt != eJumperWithTraceback) {
+
+            Blast_MessageWrite(blast_msg, eBlastSevWarning,
+                               kBlastMessageNoContext,
+                               "Jumper extension must be used for mapping");
+
+            return BLASTERR_OPTION_VALUE_INVALID;
+        }
     }
 
     if (ext_options->compositionBasedStats != eNoCompositionBasedStats)
     {
-            if (!Blast_QueryIsPssm(program_number) && program_number != eBlastTypeTblastn && 
-                 program_number != eBlastTypeBlastp &&
-                 program_number != eBlastTypeBlastx &&
-                 program_number != eBlastTypeRpsBlast &&
-                 program_number != eBlastTypePsiBlast) {
+        if (!Blast_QueryIsPssm(program_number) && program_number != eBlastTypeTblastn && 
+            program_number != eBlastTypeBlastp &&
+            program_number != eBlastTypeBlastx &&
+            program_number != eBlastTypeRpsBlast &&
+            program_number != eBlastTypePsiBlast) {
 			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
                             "Compositional adjustments are only supported with blastp, blastx, or tblastn");
 			return BLASTERR_OPTION_VALUE_INVALID;
-            }
-            if (!score_options->gapped_calculation) {
+        }
+        if (!score_options->gapped_calculation) {
 			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
                             "Compositional adjustments are only supported for gapped searches");
 			return BLASTERR_OPTION_VALUE_INVALID;
-            }
+        }
             
     }
 

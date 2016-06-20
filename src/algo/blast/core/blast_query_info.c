@@ -165,7 +165,7 @@ Int4 BlastQueryInfoGetQueryLength(const BlastQueryInfo* qinfo,
 
     if (Blast_QueryIsTranslated(program)) {
         return s_GetTranslatedQueryDNALength(qinfo, query_index);
-    } else if (program == eBlastTypeBlastn) {
+    } else if (program == eBlastTypeBlastn || program == eBlastTypeMapping) {
         Int4 retval = qinfo->contexts[query_index*kNumContexts].query_length;
         if (retval <= 0) {
             retval = qinfo->contexts[query_index*kNumContexts+1].query_length;
@@ -217,9 +217,17 @@ Int4 BSearchContextInfo(Int4 n, const BlastQueryInfo * A)
     Int4 m=0, b=0, e=0, size=0;
     
     size = A->last_context+1;
-    
-    b = 0;
-    e = size;
+
+    if (A->min_length > 0 && A->max_length > 0 && A->first_context == 0) {
+        b = n / (A->max_length + 1);
+        e = MIN(n / (A->min_length + 1) + 1, size);
+        ASSERT(e <= size);
+    }
+    else {
+        b = 0;
+        e = size;
+    }
+
     while (b < e - 1) {
 	m = (b + e) / 2;
 	if (A->contexts[m].query_offset > n)

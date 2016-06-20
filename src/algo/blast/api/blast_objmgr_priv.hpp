@@ -149,6 +149,11 @@ public:
     /// Return the title of a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual string GetTitle(int index) const;
+
+    /// Is this sequence followed by a mate (for mapping short reads)
+    virtual bool IsFirstOfAPair(int index) const
+    { NCBI_THROW(CException, eInvalid, "Function "
+                 "CBlasyQuerySourceOM::IsFirstOfAPair was not implemented");}
     
 protected:
     /// Reference to input CBlastQueryVector (or empty if not used)

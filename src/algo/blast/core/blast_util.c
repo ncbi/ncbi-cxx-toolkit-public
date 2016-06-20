@@ -303,6 +303,8 @@ Int2 BlastProgram2Number(const char *program, EBlastProgramType *number)
         *number = eBlastTypePhiBlastn;
     else if (strcasecmp("phiblastp", program) == 0)
         *number = eBlastTypePhiBlastp;
+    else if (strcasecmp("mapper", program) == 0)
+        *number = eBlastTypeMapping;
 
 	return 0;
 }
@@ -347,6 +349,9 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
         case eBlastTypePhiBlastn:
 			*program = strdup("phiblastn");
 			break;
+        case eBlastTypeMapping:
+            *program = strdup("mapper");
+            break;
         default:
 			*program = strdup("unknown");
 			break;
@@ -831,7 +836,7 @@ Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
 {
    Int1 frame = INT1_MAX;	/* INT1_MAX is used to indicate error */
 
-   if (prog_number == eBlastTypeBlastn) {
+   if (prog_number == eBlastTypeBlastn || prog_number == eBlastTypeMapping) {
       if (context_number % NUM_STRANDS == 0)
          frame = 1;
       else

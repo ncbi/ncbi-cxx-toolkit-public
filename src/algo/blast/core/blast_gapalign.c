@@ -37,6 +37,7 @@
 #include "blast_gapalign_priv.h"
 #include "blast_hits_priv.h"
 #include "blast_itree.h"
+#include "jumper.h"
 
 static Int2 s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, BlastGapAlignStruct* gap_align, 
@@ -276,6 +277,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align)
       s_BlastGreedyAlignsFree(gap_align->greedy_align_mem);
    GapStateFree(gap_align->state_struct);
    sfree(gap_align->dp_mem);
+   JumperGapAlignFree(gap_align->jumper);
 
    sfree(gap_align);
    return NULL;
@@ -301,25 +303,33 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
    gap_align->sbp = sbp;
 
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff;
+   gap_align->max_mismatches = ext_params->options->max_mismatches;
+   gap_align->mismatch_window = ext_params->options->mismatch_window;
 
-   if (ext_params->options->ePrelimGapExt == eDynProgScoreOnly) {
-      /* allocate structures for ordinary dynamic programming */
-      gap_align->dp_mem_alloc = 1000;
-      gap_align->dp_mem = (BlastGapDP *)malloc(gap_align->dp_mem_alloc *
-                                               sizeof(BlastGapDP));
-      if (!gap_align->dp_mem)
-         gap_align = BLAST_GapAlignStructFree(gap_align);
+   /* allocate memory either for dynamic programming or jumper */
+   if (ext_params->options->ePrelimGapExt != eJumperWithTraceback) {
+       if (ext_params->options->ePrelimGapExt == eDynProgScoreOnly) {
+	   /* allocate structures for ordinary dynamic programming */
+	   gap_align->dp_mem_alloc = 1000;
+	   gap_align->dp_mem = (BlastGapDP *)malloc(gap_align->dp_mem_alloc *
+						    sizeof(BlastGapDP));
+	   if (!gap_align->dp_mem)
+	       gap_align = BLAST_GapAlignStructFree(gap_align);
+       }
+       else {
+	   /* allocate structures for greedy dynamic programming */
+	   max_subject_length = MIN(max_subject_length, MAX_DBSEQ_LEN);
+	   max_subject_length = MIN(GREEDY_MAX_COST,
+			    max_subject_length / GREEDY_MAX_COST_FRACTION + 1);
+	   gap_align->greedy_align_mem = 
+	       s_BlastGreedyAlignMemAlloc(score_params, ext_params, 
+					  max_subject_length, 0);
+	   if (!gap_align->greedy_align_mem)
+	       gap_align = BLAST_GapAlignStructFree(gap_align);
+       }
    }
    else {
-      /* allocate structures for greedy dynamic programming */
-      max_subject_length = MIN(max_subject_length, MAX_DBSEQ_LEN);
-      max_subject_length = MIN(GREEDY_MAX_COST,
-                      max_subject_length / GREEDY_MAX_COST_FRACTION + 1);
-      gap_align->greedy_align_mem = 
-         s_BlastGreedyAlignMemAlloc(score_params, ext_params, 
-                                    max_subject_length, 0);
-      if (!gap_align->greedy_align_mem)
-         gap_align = BLAST_GapAlignStructFree(gap_align);
+       gap_align->jumper = JumperGapAlignNew(200);
    }
 
    if (!gap_align)
@@ -3439,7 +3449,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       return 0;
 
    is_prot = (program_number != eBlastTypeBlastn &&
-              program_number != eBlastTypePhiBlastn);
+              program_number != eBlastTypePhiBlastn &&
+              program_number != eBlastTypeMapping);
    is_greedy = (ext_params->options->ePrelimGapExt == eGreedyScoreOnly);
 
    /* turn on approximate gapped alignment if 1) the search 

@@ -656,6 +656,7 @@ s_GetBlastPublication(EProgram program)
 
     switch (program) {
     case eMegablast:
+    case eMapper:
         publication = CReference::eMegaBlast; break;
     case ePHIBlastp: case ePHIBlastn:
         publication = CReference::ePhiBlast; break;

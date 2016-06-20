@@ -364,6 +364,32 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgQueryCovHspPerc;
 /// Argument to specify line length for displaying alignments
 NCBI_BLASTINPUT_EXPORT extern const string kArgLineLength;
 
+
+// Mapper arguments
+/// Argument to specify whether mapped reads are paired
+NCBI_BLASTINPUT_EXPORT extern const string kArgPaired;
+/// Argument to specify cutoff score for accepting non-spliced alignment
+NCBI_BLASTINPUT_EXPORT extern const string kArgScore;
+/// Argument to specify filtering lookup tables words by frequency in the
+/// searched database
+NCBI_BLASTINPUT_EXPORT extern const string kArgLimitLookup;
+/// Argument to specify whether to search for spliced alignments
+NCBI_BLASTINPUT_EXPORT extern const string kArgSplice;
+/// Argument to sepcify the stride when creating a lookup table
+NCBI_BLASTINPUT_EXPORT extern const string kArgLookupStride;
+/// Argument to specify input format
+NCBI_BLASTINPUT_EXPORT extern const string kArgInputFormat;
+/// Argyment to specify whether quality filtering is to be done
+NCBI_BLASTINPUT_EXPORT extern const string kArgQualityFilter;
+/// Mates for the query sequences if given in a separate file
+NCBI_BLASTINPUT_EXPORT extern const string kArgQueryMate;
+/// Reference type: genome or transcriptome
+NCBI_BLASTINPUT_EXPORT extern const string kArgRefType;
+/// Argument to specify that the output will be compressed with gzip
+NCBI_BLASTINPUT_EXPORT extern const string kArgOutputGzip;
+/// Argument to specify SRA accessions
+NCBI_BLASTINPUT_EXPORT extern const string kArgSraAccession;
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

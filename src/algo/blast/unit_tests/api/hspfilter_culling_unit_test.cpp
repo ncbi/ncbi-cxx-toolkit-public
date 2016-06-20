@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(HSPCullingWriter)
     BOOST_REQUIRE(writer_info);
     BOOST_REQUIRE(writer_info->NewFnPtr);
     BOOST_REQUIRE(writer_info->params);
-    BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, &query_info);
+    BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, &query_info, NULL);
     BOOST_REQUIRE(writer_info == NULL);
     BOOST_REQUIRE(writer);
     // Following call also frees culling_params

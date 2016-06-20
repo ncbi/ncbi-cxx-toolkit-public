@@ -86,7 +86,7 @@ void CSeedTop::x_MakeLookupTable()
     // Lookup segments, scoreblk, and rps info arguments are irrelevant 
     // and passed as NULL.
     LookupTableWrapInit(NULL, lookup_options, NULL, NULL, 
-                        m_ScoreBlk, &m_Lookup, NULL, NULL);
+                        m_ScoreBlk, &m_Lookup, NULL, NULL, NULL);
 }
 
 void CSeedTop::x_MakeScoreBlk()

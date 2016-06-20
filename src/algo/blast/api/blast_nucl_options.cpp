@@ -139,6 +139,7 @@ CBlastNucleotideOptionsHandle::SetLookupTableDefaults()
     SetLookupTableType(eNaLookupTable);
     SetWordSize(BLAST_WORDSIZE_NUCL);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTN);
+    m_Opts->SetLookupTableStride(0);
 }
 
 void 
@@ -147,6 +148,7 @@ CBlastNucleotideOptionsHandle::SetMBLookupTableDefaults()
     SetLookupTableType(eMBLookupTable);
     SetWordSize(BLAST_WORDSIZE_MEGABLAST);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_MEGABLAST);
+    m_Opts->SetLookupTableStride(0);
 }
 
 void

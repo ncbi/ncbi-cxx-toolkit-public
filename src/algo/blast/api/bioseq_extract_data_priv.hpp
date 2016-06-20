@@ -179,6 +179,9 @@ public:
     /// @param index index of the sequence in the sequence container [in]
     virtual string GetTitle(int index) const;
 
+    /// Is this sequence followed by a mate (for mapping short reads)
+    virtual bool IsFirstOfAPair(int index) const;
+
 private:
     /// True if the data contained in this object is protein
     bool m_IsProt;

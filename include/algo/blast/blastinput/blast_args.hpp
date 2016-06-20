@@ -49,6 +49,8 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 
+#include <util/compress/stream_util.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
@@ -108,7 +110,8 @@ class NCBI_BLASTINPUT_EXPORT CStdCmdLineArgs : public IBlastCmdLineArgs
 {
 public:
     /** Default constructor */
-    CStdCmdLineArgs() : m_InputStream(0), m_OutputStream(0) {};
+    CStdCmdLineArgs() : m_InputStream(0), m_OutputStream(0),
+                        m_GzipEnabled(false) {};
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -121,13 +124,26 @@ public:
     /** Set the input stream if read from a saved search strategy */
     void SetInputStream(CRef<CTmpFile> input_file);
 
+    /** Set automatic decompression of the input file is file name is
+     * recognized
+     * @param g If true input file will be unzgipped if the file name ends with
+     *          ".gz" [in]
+     */
+    void SetGzipEnabled(bool g) {m_GzipEnabled = g;}
+
 private:
     CNcbiIstream* m_InputStream;    ///< Application's input stream
     CNcbiOstream* m_OutputStream;   ///< Application's output stream
+    auto_ptr<CDecompressIStream> m_DecompressIStream;
+    auto_ptr<CCompressOStream> m_CompressOStream;
 
     /// ASN.1 specification of query sequences when read from a saved search
     /// strategy
     CRef<CTmpFile> m_QueryTmpInputFile;
+
+    /// If true input file will be decompressed with gzip if filename ends
+    /// with ".gz"
+    bool m_GzipEnabled;
 };
 
 /** Argument class to populate an application's name and description */
@@ -145,7 +161,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
 
-private:
+protected:
     string m_ProgName;  ///< Application's name
     string m_ProgDesc;  ///< Application's description
 };
@@ -654,6 +670,20 @@ private:
     bool m_ShowDomainHits;
 };
 
+
+class NCBI_BLASTINPUT_EXPORT CMappingArgs : public IBlastCmdLineArgs
+{
+public:
+    CMappingArgs(void) {}
+
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+
+};
+
 /*****************************************************************************/
 // Input options
 
@@ -692,6 +722,7 @@ public:
 
     /// Is the query sequence protein?
     bool QueryIsProtein() const { return m_QueryCannotBeNucl; }
+
 private:
     /// Strand(s) to search
     objects::ENa_strand m_Strand;
@@ -704,8 +735,68 @@ private:
 
     /// only false for blast[xn], and tblastx
     /// true in case of PSI-BLAST
-    bool m_QueryCannotBeNucl;  
+    bool m_QueryCannotBeNucl;
 };
+
+/// Argument class to collect query options for BLAST Mapper
+class NCBI_BLASTINPUT_EXPORT CMapperQueryOptionsArgs : public CQueryOptionsArgs
+{
+public:
+
+    /// Input formats
+    enum EInputFormat {
+        eFasta = 0,
+        eFastc,
+        eFastq,
+        eASN1text,
+        eASN1bin,
+        eSra
+    };
+
+
+    CMapperQueryOptionsArgs(void)
+        : CQueryOptionsArgs(false),
+          m_IsPaired(false),
+          m_InputFormat(eFasta),
+          m_QualityFilter(false),
+          m_MateInputStream(NULL)
+    {}
+
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt);
+
+    /// Are query sequences paired
+    bool IsPaired(void) const {return m_IsPaired;}
+
+    /// Are queries provided in Fastc format
+    EInputFormat GetInputFormat(void) const
+    {return m_InputFormat;}
+
+    /// Should low quality sequences be rejected
+    bool DoQualityFilter(void) const {return m_QualityFilter;}
+
+    /// Does the mate input stream exits
+    bool HasMateInputStream(void) const {return m_MateInputStream;}
+
+    /// Get input stream for query mates
+    CNcbiIstream* GetMateInputStream(void) const {return m_MateInputStream;}
+
+    /// Get a list of SRA accessions
+    const vector<string>& GetSraAccessions(void) const
+    {return m_SraAccessions;}
+
+private:
+    bool m_IsPaired;
+    EInputFormat m_InputFormat;
+    bool m_QualityFilter;
+    vector<string> m_SraAccessions;
+
+    CNcbiIstream* m_MateInputStream;
+    auto_ptr<CDecompressIStream> m_DecompressIStream;
+};
+
 
 /// Argument class to collect database/subject arguments
 class NCBI_BLASTINPUT_EXPORT CBlastDatabaseArgs : public IBlastCmdLineArgs
@@ -731,7 +822,8 @@ public:
     /// @param is_deltablast is it DELTA-BLAST?
     CBlastDatabaseArgs(bool request_mol_type = false, 
                        bool is_rpsblast = false,
-                       bool is_igblast = false);
+                       bool is_igblast = false,
+                       bool is_mapper = false);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -796,6 +888,7 @@ protected:
     bool m_IsIgBlast;               /**< true if the search is Ig-BLAST */
 
     bool m_IsProtein;               /**< Is the database/subject(s) protein? */
+    bool m_IsMapper;                /**< true for short read mapper */
     CRef<IQueryFactory> m_Subjects; /**< The subject sequences */
     CRef<objects::CScope> m_Scope;  /**< CScope object in which all subject
                                       sequences read are kept */
@@ -974,12 +1067,12 @@ public:
         return m_CustomOutputFormatSpec; 
     }
 
-    bool ArchiveFormatRequested(const CArgs& args) const;
+    virtual bool ArchiveFormatRequested(const CArgs& args) const;
 
     size_t GetLineLength() const {
     	return m_LineLength;
     }
-private:
+protected:
     EOutputFormat m_OutputFormat;   ///< Choice of formatting output
     bool m_ShowGis;                 ///< Display NCBI GIs?
     TSeqPos m_NumDescriptions;      ///< Number of 1-line descr. to show
@@ -992,9 +1085,7 @@ private:
     /// comma-separated value (populated if applicable)
     string m_CustomOutputFormatSpec;
     size_t m_LineLength;
-
     EFormatFlags m_FormatFlags;
-
 };
 
 /// Argument class to collect multi-threaded arguments

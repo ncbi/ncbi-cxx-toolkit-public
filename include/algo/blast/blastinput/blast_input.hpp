@@ -184,6 +184,16 @@ public:
         m_SeqLenThreshold2Guess = val;
     }
 
+    /// Retrieve gaps to Ns converstion option value
+    bool GetConvertGapsToNs(void) const {
+        return m_GapsToNs;
+    }
+
+    /// Turn on/off converting gaps to Ns in read FASTA sequences
+    void SetConvertGapsToNs(bool val) {
+        m_GapsToNs = val;
+    }
+
 private:
     /// Strand to assign to sequences
     objects::ENa_strand m_Strand;  
@@ -203,6 +213,8 @@ private:
     unsigned int m_SeqLenThreshold2Guess;
     /// Custom prefix string passed to CSeqidGenerator
     string m_LocalIdPrefix;
+    /// Convert gaps to Ns in FASTA sequences
+    bool m_GapsToNs;
 };
 
 
@@ -381,6 +393,43 @@ public:
 private:
     /// Scope object used to retrieve the bioseqs
     CRef<CScope> m_scope;
+};
+
+
+class NCBI_BLASTINPUT_EXPORT CBlastInputSourceOMF : public CObject
+{
+protected:
+    virtual ~CBlastInputSourceOMF() {}
+    virtual void GetNextNumSequences(CBioseq_set& bioseq_set,
+                                     TSeqPos num_seqs) = 0;
+
+    virtual bool End(void) = 0;
+
+    friend class CBlastInputOMF;
+};
+
+
+class NCBI_BLASTINPUT_EXPORT CBlastInputOMF : public CObject
+{
+public:
+    CBlastInputOMF(CRef<CBlastInputSourceOMF> source,
+                   TSeqPos num_seqs_in_batch = kMax_Int);
+
+    void GetNextSeqBatch(CBioseq_set& bioseq_set);
+    CRef<CBioseq_set> GetNextSeqBatch(void);
+
+    void SetNumSeqsInBatch(TSeqPos num) {m_NumSeqsInBatch = num;}
+    TSeqPos GetNumSeqsInBatch(void) {return m_NumSeqsInBatch;}
+
+    bool End(void) {return m_Source->End();}
+
+private:
+    CBlastInputOMF(const CBlastInputOMF& rhs);
+    CBlastInputOMF& operator=(const CBlastInputOMF& rhs);
+
+    CRef<CBlastInputSourceOMF> m_Source;
+    TSeqPos m_NumSeqsInBatch;
+    CRef<CBioseq_set> m_BioseqSet;
 };
 
 END_SCOPE(blast)

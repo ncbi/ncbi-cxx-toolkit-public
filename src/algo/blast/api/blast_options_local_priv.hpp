@@ -87,12 +87,20 @@ public:
     int GetWordSize() const;
     void SetWordSize(int ws);
 
+    /// Skip words after each collected one while creating a lookup table
+    /// (currently only for megablast)
+    Uint4 GetLookupTableStride() const;
+    void SetLookupTableStride(Uint4 val);
+
     /// Megablast only lookup table options
     unsigned char GetMBTemplateLength() const;
     void SetMBTemplateLength(unsigned char len);
 
     unsigned char GetMBTemplateType() const;
     void SetMBTemplateType(unsigned char type);
+
+    bool GetLookupDbFilter(void) const;
+    void SetLookupDbFilter(bool val);
 
     /******************* Query setup options ************************/
     char* GetFilterString() const;
@@ -175,6 +183,12 @@ public:
     int GetUnifiedP() const;
     void SetUnifiedP(int u = 0);
 
+    int GetMaxMismatches() const;
+    void SetMaxMismatches(int m);
+
+    int GetMismatchWindow() const;
+    void SetMismatchWindow(int w);
+
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);
@@ -229,6 +243,14 @@ public:
     /// Sets low score percentages.
     double GetLowScorePerc() const;
     void SetLowScorePerc(double p = 0.0);
+
+    // Paired reads only if set to true
+    bool GetPaired() const;
+    void SetPaired(bool p);
+
+    /// Splice HSPs for each query
+    bool GetSplice() const;
+    void SetSplice(bool p);
 
     /// Returns true if cross_match-like complexity adjusted
     //  scoring is required, false otherwise. -RMH-
@@ -572,6 +594,18 @@ CBlastOptionsLocal::SetWordSize(int ws)
 	m_LutOpts->lut_type = eCompressedAaLookupTable;
 }
 
+inline Uint4
+CBlastOptionsLocal::GetLookupTableStride() const
+{
+    return m_LutOpts->stride;
+}
+
+inline void
+CBlastOptionsLocal::SetLookupTableStride(Uint4 val)
+{
+    m_LutOpts->stride = val;
+}
+
 inline unsigned char
 CBlastOptionsLocal::GetMBTemplateLength() const
 {
@@ -594,6 +628,18 @@ inline void
 CBlastOptionsLocal::SetMBTemplateType(unsigned char type)
 {
     m_LutOpts->mb_template_type = type;
+}
+
+inline bool
+CBlastOptionsLocal::GetLookupDbFilter(void) const
+{
+    return m_LutOpts->db_filter;
+}
+
+inline void
+CBlastOptionsLocal::SetLookupDbFilter(bool val)
+{
+    m_LutOpts->db_filter = val;
 }
 
 /******************* Query setup options ************************/
@@ -638,7 +684,8 @@ CBlastOptionsLocal::SetFilterString(const char* f)
    }
 
    // Repeat filtering is only allowed for blastn.
-   if (GetProgramType() != eBlastTypeBlastn && 
+   if (GetProgramType() != eBlastTypeBlastn &&
+       GetProgramType() != eBlastTypeMapping && 
        m_QueryOpts->filtering_options->repeatFilterOptions)
        m_QueryOpts->filtering_options->repeatFilterOptions =
            SRepeatFilterOptionsFree(m_QueryOpts->filtering_options->repeatFilterOptions);
@@ -1077,6 +1124,30 @@ CBlastOptionsLocal::SetUnifiedP(int u)
    m_ExtnOpts->unifiedP = u;
 }
 
+inline int
+CBlastOptionsLocal::GetMaxMismatches() const
+{
+    return m_ExtnOpts->max_mismatches;
+}
+
+inline void
+CBlastOptionsLocal::SetMaxMismatches(int m)
+{
+    m_ExtnOpts->max_mismatches = m;
+}
+
+inline int
+CBlastOptionsLocal::GetMismatchWindow() const
+{
+    return m_ExtnOpts->mismatch_window;
+}
+
+inline void
+CBlastOptionsLocal::SetMismatchWindow(int w)
+{
+    m_ExtnOpts->mismatch_window = w;
+}
+
 /******************* Hit saving options *************************/
 inline int
 CBlastOptionsLocal::GetHitlistSize() const
@@ -1333,6 +1404,30 @@ inline void
 CBlastOptionsLocal::SetLowScorePerc(double p)
 {
     m_HitSaveOpts->low_score_perc = p;
+}
+
+inline bool
+CBlastOptionsLocal::GetPaired() const
+{
+    return m_HitSaveOpts->paired;
+}
+
+inline void
+CBlastOptionsLocal::SetPaired(bool p)
+{
+    m_HitSaveOpts->paired = p;
+}
+
+inline bool
+CBlastOptionsLocal::GetSplice() const
+{
+    return m_HitSaveOpts->splice;
+}
+
+inline void
+CBlastOptionsLocal::SetSplice(bool s)
+{
+    m_HitSaveOpts->splice = s;
 }
 
 /* Flag to indicate if cross_match-like complexity adjusted

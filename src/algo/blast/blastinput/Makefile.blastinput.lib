@@ -18,7 +18,10 @@ rpsblast_args \
 rpstblastn_args \
 igblastn_args \
 igblastp_args \
-deltablast_args
+deltablast_args \
+magicblast_args \
+blast_asn1_input \
+blast_sra_input
 
 SRC  = $(SRC_CXX)
 
@@ -30,7 +33,7 @@ DLL_LIB = xblast align_format ncbi_xloader_blastdb_rmt ncbi_xloader_blastdb seqd
 ASN_DEP = seqset xnetblast
 
 CFLAGS   = $(FAST_CFLAGS)
-CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLAST $(SRA_INCLUDE) $(ORIG_CPPFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 

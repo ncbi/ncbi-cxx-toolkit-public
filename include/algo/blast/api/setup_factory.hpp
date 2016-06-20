@@ -262,9 +262,11 @@ public:
 
     /// Create a writer to be registered for use by stream
     /// @param opts_memento Memento options object [in]
+    /// @param query Concatenanted query sequence [in]
     /// @param query_info Information about queries [in]
     static BlastHSPWriter* 
     CreateHspWriter(const CBlastOptionsMemento* opts_memento,
+                    BLAST_SequenceBlk* query,
                     BlastQueryInfo* query_info);
 
     /// Create a pipe to be registered for use by stream

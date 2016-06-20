@@ -68,7 +68,7 @@ iexp(Int4 x,
 }
 
 Int4
-ilog2(Int4 x)
+ilog2(Int8 x)
 {
     Int4 lg = 0;
 

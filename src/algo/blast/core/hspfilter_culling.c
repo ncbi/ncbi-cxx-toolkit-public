@@ -496,7 +496,7 @@ typedef struct BlastHSPCullingData {
  * @param results The HSP results to operate on  [in]
  */ 
 static int 
-s_BlastHSPCullingInit(void* data, BlastHSPResults* results)
+s_BlastHSPCullingInit(void* data, void* results)
 {
     BlastHSPCullingData * cull_data = data;
     cull_data->c_tree = calloc(cull_data->num_contexts, sizeof(CTreeNode *));
@@ -508,10 +508,11 @@ s_BlastHSPCullingInit(void* data, BlastHSPResults* results)
  * @param results The HSP results to propagate [in][out]
  */ 
 static int 
-s_BlastHSPCullingFinal(void* data, BlastHSPResults* results)
+s_BlastHSPCullingFinal(void* data, void* hsp_results)
 {
    int cid, qid, sid, id, new_allocated;
    BlastHSPCullingData* cull_data = data;
+   BlastHSPResults* results = (BlastHSPResults*)hsp_results;
    BlastHSPCullingParams* params = cull_data->params;
    CTreeNode **c_tree = cull_data->c_tree;
    LinkedHSP *cull_list, *p;
@@ -670,7 +671,8 @@ s_BlastHSPCullingFree(BlastHSPWriter* writer)
  */
 static
 BlastHSPWriter* 
-s_BlastHSPCullingNew(void* params, BlastQueryInfo* query_info)
+s_BlastHSPCullingNew(void* params, BlastQueryInfo* query_info,
+                     BLAST_SequenceBlk* sequence)
 {
    BlastHSPWriter * writer = NULL;
    BlastHSPCullingData data;

@@ -78,6 +78,10 @@ SplitQuery_ShouldSplit(EBlastProgramType program,
     // TODO: need to model mem usage and when it's advantageous to split
     bool retval = true;
 
+    if (program == eBlastTypeMapping) {
+        return false;
+    }
+
     // if ((concatenated_query_length <= chunk_size+SplitQuery_GetOverlapChunkSize(program)) ||
    //  if ((concatenated_query_length <= chunk_size) ||
         // do not split RPS-BLAST

@@ -47,6 +47,7 @@
 #include <algo/blast/api/phiblast_nucl_options.hpp>
 #include <algo/blast/api/phiblast_prot_options.hpp>
 #include <algo/blast/api/deltablast_options.hpp>
+#include <algo/blast/api/magicblast_options.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -186,6 +187,10 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
         break;
 	}
 
+    case eMapper:
+        retval = new CMagicBlastOptionsHandle(locality);
+        break;
+
     case eBlastNotSet:
         NCBI_THROW(CBlastException, eInvalidArgument,
                    "eBlastNotSet may not be used as argument");
@@ -231,6 +236,13 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
         retval.insert("tblastn-fast");
         retval.insert("psitblastn");
         retval.insert("tblastx");
+    }
+
+    if (choice == eMapping || choice == eAll) {
+        retval.insert("mapper");
+        retval.insert("mapr2g");
+        retval.insert("mapr2r");
+        retval.insert("mapg2g");
     }
 
     return retval;
@@ -298,6 +310,14 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
     } else if (task == "deltablast") {
         retval.assign("DELTA-BLAST builds profile using conserved domain ");
         retval += "and uses this profile to search protein database";
+    } else if (task == "mapper") {
+        retval.assign("Map short reads to a genome");
+    } else if (task == "mapr2g") {
+        retval.assign("Map RNA-seq sequence to a genome");
+    } else if (task == "mapr2r") {
+        retval.assign("Map RNA-seq sequences to an mRNA database");
+    } else if (task == "mapg2g") {
+        retval.assign("Map genomic reads to a genome");
     } else {
         retval.assign("Unknown task");
     }
@@ -423,6 +443,27 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     else if (!NStr::CompareNocase(task, "deltablast"))
     {
          retval = CBlastOptionsFactory::Create(eDeltaBlast, locality);
+    }
+    else if (!NStr::CompareNocase(task, "mapper") ||
+             !NStr::CompareNocase(task, "mapr2g") ||
+             !NStr::CompareNocase(task, "mapr2r") ||
+             !NStr::CompareNocase(task, "mapg2g")) {
+
+        CMagicBlastOptionsHandle* opts =
+            dynamic_cast<CMagicBlastOptionsHandle*>
+            (CBlastOptionsFactory::Create(eMapper, locality));
+
+        if (!NStr::CompareNocase(task, "mapr2g")) {
+            opts->SetRNAToGenomeDefaults();
+        }
+        else if (!NStr::CompareNocase(task, "mapr2r")) {
+            opts->SetRNAToRNADefaults();
+        }
+        else {
+            opts->SetGenomeToGenomeDefaults();
+        }
+
+        retval = opts;
     }
     else
     {

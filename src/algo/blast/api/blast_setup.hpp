@@ -156,6 +156,9 @@ public:
     /// @param index index of the sequence in the sequence container [in]
     /// @return the sequence title or kEmptyStr if not available
     virtual string GetTitle(int index) const = 0;
+
+    /// Is this sequence followed by a mate (for mapping short reads)
+    virtual bool IsFirstOfAPair(int index) const = 0;
 };
 
 /// Choose between a Seq-loc specified query strand and the strand obtained

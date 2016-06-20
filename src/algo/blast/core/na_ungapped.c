@@ -36,6 +36,7 @@
 
 #include "index_ungapped.h"
 #include "masksubj.inl"
+#include "jumper.h"
 
 /** Check to see if an index->q_pos pair exists in MB lookup table 
  * @param lookup_wrap The lookup table wrap structure [in]
@@ -635,7 +636,8 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
                              const BlastInitialWordParameters * word_params,
                              Int4 ** matrix, 
                              BLAST_DiagTable * diag_table,
-                             BlastInitHitList * init_hitlist)
+                             BlastInitHitList * init_hitlist,
+                             Boolean check_masks)
 {
     Int4 diag, real_diag;
     Int4 s_end, s_off_pos, s_end_pos;
@@ -710,7 +712,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
                 hit_ready = 0;
             }
         }
-    } else {
+    } else if (check_masks) {
         /* check the masks for the word */
         if(!s_TypeOfWord(query, subject, &q_off, &s_off,
                         query_mask, query_info, s_range, 
@@ -802,7 +804,8 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                                const BlastInitialWordParameters * word_params,
                                Int4 ** matrix,
                                BLAST_DiagHash * hash_table,
-                               BlastInitHitList * init_hitlist)
+			       BlastInitHitList * init_hitlist,
+			       Boolean check_masks)
 {
     Int4 diag;
     Int4 s_end, s_off_pos, s_end_pos, s_l;
@@ -878,8 +881,8 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                 hit_ready = 0;
             }
         }
-    } else {
-        /* check the masks for the word */
+    }  else if (check_masks) {
+	 /* check the masks for the word */
         if (!s_TypeOfWord(query, subject, &q_off, &s_off,
                           query_mask, query_info, s_range,
                           word_length, lut_word_length, lut, FALSE, &extended)) return 0;
@@ -968,11 +971,13 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     Int4 index = 0;
     Int4 hits_extended = 0;
     Int4 word_length;
+    Boolean check_masks = TRUE;
 
     if (lookup_wrap->lut_type == eMBLookupTable) {
         BlastMBLookupTable *lut = (BlastMBLookupTable *) lookup_wrap->lut;
         word_length = (lut->discontiguous) ? lut->template_length : lut->word_length;
         ASSERT(word_length == lut->lut_word_length || lut->discontiguous);
+        check_masks = !lut->stride;
     } 
     else if (lookup_wrap->lut_type == eSmallNaLookupTable) {
         BlastSmallNaLookupTable *lut = 
@@ -997,7 +1002,8 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->hash_table,
-                                                init_hitlist);
+                                                init_hitlist,
+                                                check_masks);
         }
     } 
     else {
@@ -1013,7 +1019,8 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->diag_table,
-                                                init_hitlist);
+                                                init_hitlist,
+                                                check_masks);
         }
     }
     return hits_extended;
@@ -1053,12 +1060,14 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     Int4 hits_extended = 0;
     Int4 word_length, lut_word_length, ext_to;
     BlastSeqLoc* masked_locations = NULL;
+    Boolean check_masks = TRUE;
 
     if (lookup_wrap->lut_type == eMBLookupTable) {
         BlastMBLookupTable *lut = (BlastMBLookupTable *) lookup_wrap->lut;
         word_length = lut->word_length;
         lut_word_length = lut->lut_word_length;
         masked_locations = lut->masked_locations;
+        check_masks = !lut->stride;
     } 
     else {
         BlastNaLookupTable *lut = (BlastNaLookupTable *) lookup_wrap->lut;
@@ -1143,7 +1152,8 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->hash_table,
-                                                init_hitlist);
+                                                init_hitlist,
+                                                check_masks);
         } else {
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
@@ -1153,7 +1163,8 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->diag_table,
-                                                init_hitlist);
+                                                init_hitlist,
+                                                check_masks);
         }
     }
     return hits_extended;
@@ -1192,12 +1203,14 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     Int4 hits_extended = 0;
     Int4 word_length, lut_word_length, ext_to;
     BlastSeqLoc* masked_locations = NULL;
+    Boolean check_masks = TRUE;
 
     if (lookup_wrap->lut_type == eMBLookupTable) {
         BlastMBLookupTable *lut = (BlastMBLookupTable *) lookup_wrap->lut;
         word_length = lut->word_length;
         lut_word_length = lut->lut_word_length;
         masked_locations = lut->masked_locations;
+        check_masks = !lut->stride;
     } 
     else {
         BlastNaLookupTable *lut = (BlastNaLookupTable *) lookup_wrap->lut;
@@ -1289,7 +1302,8 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->hash_table,
-                                                init_hitlist);
+                                                init_hitlist,
+                                                check_masks);
         } else {
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
@@ -1299,7 +1313,8 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->diag_table,
-                                                init_hitlist);
+                                                init_hitlist,
+                                                check_masks);
         }
     }
     return hits_extended;
@@ -1425,7 +1440,8 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
                                                 lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->hash_table,
-                                                init_hitlist);
+                    					        init_hitlist,
+					                        	TRUE);
         }
         else {
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
@@ -1436,7 +1452,8 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
                                                 lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->diag_table,
-                                                init_hitlist);
+                                                init_hitlist,
+                                                TRUE);
         }
     }
     return hits_extended;
@@ -1554,7 +1571,8 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->hash_table,
-                                                init_hitlist);
+                                                init_hitlist,
+                                                TRUE);
         } else {
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
@@ -1564,7 +1582,8 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                                                 lookup_wrap,
                                                 word_params, matrix,
                                                 ewp->diag_table,
-                                                init_hitlist);
+                                                init_hitlist,
+                                                TRUE);
         }
     }
     return hits_extended;
@@ -1795,6 +1814,9 @@ void BlastChooseNaExtend(LookupTableWrap * lookup_wrap)
         else
             lut->extend_callback = (void *)s_BlastSmallNaExtend;
     }
+    else if (lookup_wrap->lut_type == eNaHashLookupTable) {
+        lookup_wrap->lookup_callback = NULL;
+    }
     else {
         BlastNaLookupTable *lut;
         lookup_wrap->lookup_callback = (void *)s_NaLookup;
@@ -1809,3 +1831,495 @@ void BlastChooseNaExtend(LookupTableWrap * lookup_wrap)
             lut->extend_callback = (void *)s_BlastNaExtend;
     }
 }
+
+
+MapperWordHits* MapperWordHitsFree(MapperWordHits* wh)
+{
+    if (wh) {
+        if (wh->pair_arrays) {
+            if (wh->pair_arrays[0]) {
+                sfree(wh->pair_arrays[0]);
+            }
+            sfree(wh->pair_arrays);
+        }
+
+        if (wh->num) {
+            sfree(wh->num);
+        }
+
+        if (wh->last_diag) {
+            sfree(wh->last_diag);
+        }
+
+        if (wh->last_pos) {
+            sfree(wh->last_pos);
+        }
+
+        sfree(wh);
+    }
+
+    return NULL;
+}
+
+MapperWordHits* MapperWordHitsNew(const BLAST_SequenceBlk* query,
+                                  const BlastQueryInfo* query_info)
+{
+    MapperWordHits* wh = NULL;
+    Int4 num_arrays;
+    Int4 array_size;
+    Int4 i;
+
+    num_arrays = MAX(query_info->num_queries / 100, 1);
+    array_size = 1000;
+
+    wh = calloc(1, sizeof(MapperWordHits));
+    if (!wh) {
+        return NULL;
+    }
+
+    wh->pair_arrays = calloc(num_arrays, sizeof(BlastOffsetPair*));
+    if (!wh->pair_arrays) {
+        MapperWordHitsFree(wh);
+        return NULL;
+    }
+
+    wh->pair_arrays[0] =
+        malloc(num_arrays * array_size * sizeof(BlastOffsetPair));
+    if (!wh->pair_arrays[0]) {
+        MapperWordHitsFree(wh);
+        return NULL;
+    }
+
+    for (i = 1;i < num_arrays;i++) {
+        wh->pair_arrays[i] = wh->pair_arrays[0] + (i * array_size);
+    }
+
+    wh->num = calloc(num_arrays, sizeof(Int4));
+    if (!wh->num) {
+        MapperWordHitsFree(wh);
+        return NULL;
+    }
+
+    wh->num_arrays = num_arrays;
+    wh->array_size = array_size;
+    wh->divisor = query->length / wh->num_arrays + 1;
+
+    wh->last_diag = calloc(query_info->last_context + 1, sizeof(Int4));
+    if (!wh) {
+        MapperWordHitsFree(wh);
+        return NULL;
+    }
+
+    wh->last_pos = malloc((query_info->last_context + 1) * sizeof(Int4));
+    if (!wh) {
+        MapperWordHitsFree(wh);
+        return NULL;
+    }
+    for (i = 0;i < query_info->num_queries;i++) {
+        wh->last_pos[i] = INT4_MIN;
+    }
+
+    return wh;
+}
+
+
+Int2
+JumperNaWordFinder(BLAST_SequenceBlk * subject,
+                   BLAST_SequenceBlk * query,
+                   BlastQueryInfo * query_info,
+                   LookupTableWrap * lookup_wrap,
+                   const BlastInitialWordParameters * word_params,
+                   const BlastScoringParameters* score_params,
+                   const BlastHitSavingParameters* hit_params,
+                   BlastOffsetPair * offset_pairs,
+                   MapperWordHits* word_hits,
+                   Int4 max_hits,
+                   BlastGapAlignStruct* gap_align,
+                   BlastInitHitList* init_hitlist,
+                   BlastHSPList** hsp_list_ptr,
+                   BlastUngappedStats * ungapped_stats,
+                   BlastGappedStats* gapped_stats)
+{
+    Int4 hitsfound, total_hits = 0;
+    Int4 hits_extended = 0;
+    TNaScanSubjectFunction scansub = NULL;
+    Int4 scan_range[3];
+    Int4 word_length;
+    Int4 lut_word_length;
+    BlastHSPList* hsp_list = NULL;
+    Boolean read_is_query = query_info->max_length < subject->length;
+    SubjectIndex* s_index = NULL;
+    Int4 i;
+
+    if (*hsp_list_ptr == NULL) {
+        *hsp_list_ptr = hsp_list = Blast_HSPListNew(BlastHspNumMax(TRUE,
+                                                         hit_params->options));
+    }
+    else {
+        hsp_list = *hsp_list_ptr;
+    }
+
+    if (word_hits) {
+        memset(word_hits->num, 0, word_hits->num_arrays * sizeof(Int4));
+    }
+
+    if (lookup_wrap->lut_type == eSmallNaLookupTable) {
+        BlastSmallNaLookupTable *lookup = 
+                                (BlastSmallNaLookupTable *) lookup_wrap->lut;
+        word_length = lookup->word_length;
+        lut_word_length = lookup->lut_word_length;
+        scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
+    }
+    else if (lookup_wrap->lut_type == eMBLookupTable) {
+        BlastMBLookupTable *lookup = 
+                                (BlastMBLookupTable *) lookup_wrap->lut;
+        if (lookup->discontiguous) {
+            word_length = lookup->template_length;
+            lut_word_length = lookup->template_length;
+        } else {
+            word_length = lookup->word_length;
+            lut_word_length = lookup->lut_word_length;
+        }
+        scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
+    }
+    else if (lookup_wrap->lut_type == eNaHashLookupTable) {
+        BlastNaHashLookupTable *lookup = 
+                                (BlastNaHashLookupTable *) lookup_wrap->lut;
+
+        word_length = lookup->word_length;
+        lut_word_length = lookup->lut_word_length;
+        scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
+    }
+    else {
+        BlastNaLookupTable *lookup = 
+                                (BlastNaLookupTable *) lookup_wrap->lut;
+        word_length = lookup->word_length;
+        lut_word_length = lookup->lut_word_length;
+        scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
+    }
+
+    scan_range[0] = 0;  /* subject seq mask index */
+    scan_range[1] = 0;	/* start pos of scan */
+    scan_range[2] = subject->length - lut_word_length; /*end pos (inclusive) of scan*/
+
+    /* if sequence is masked, fall back to generic scanner and extender */
+    if (subject->mask_type != eNoSubjMasking) {
+        if (lookup_wrap->lut_type == eMBLookupTable &&
+            ((BlastMBLookupTable *) lookup_wrap->lut)->discontiguous) {
+            /* discontiguous scan subs assumes any (non-aligned starting offset */
+        } else {
+            scansub = (TNaScanSubjectFunction) 
+                  BlastChooseNucleotideScanSubjectAny(lookup_wrap);
+        }
+        /* generic scanner permits any (non-aligned) starting offset */
+        scan_range[1] = subject->seq_ranges[0].left + word_length - lut_word_length;
+        scan_range[2] = subject->seq_ranges[0].right - lut_word_length;
+    }
+
+    ASSERT(scansub);
+
+    if (getenv("MAPPER_USE_SMALL_WORDS")) {
+        s_index = SubjectIndexNew(subject, 10000, SUBJECT_INDEX_WORD_LENGTH);
+    }
+    while(s_DetermineScanningOffsets(subject, word_length, lut_word_length, scan_range)) {
+
+
+        hitsfound = scansub(lookup_wrap, subject, offset_pairs, max_hits, &scan_range[1]);
+
+        if (hitsfound >= 0) {
+
+            /* if the extended word hits structure is allocated */
+            if (word_hits) {
+
+                /* Distribute each word hit into lists that correspond to
+                   a group of queries, ensuring that most word hits for each
+                   query are extended in the same batch. */
+                for (i = 0; i < hitsfound;i++) {
+                    Int4 q_off = offset_pairs[i].qs_offsets.q_off;
+                    Int4 s_off = offset_pairs[i].qs_offsets.s_off;
+                    Int4 index = q_off / word_hits->divisor;
+
+                    Int4 context = BSearchContextInfo(q_off, query_info);
+                    Int4 diag = s_off - q_off;
+                    Int4 last_d = word_hits->last_diag[context];
+                    Int4 last_p = word_hits->last_pos[context];
+
+                    word_hits->last_diag[context] = diag;
+                    word_hits->last_pos[context] = s_off;
+
+                    /* Discard word hits on the same diagnol and with adjacent
+                       positions, allowing up to 2 mismatches, as the last one
+                       saved. All these word hits will produce the same
+                       alignment. There is another check for this situation
+                       before extension, but doing it here helps keeping
+                       numer of word hits managable. The other check is still
+                       necessary, because depending on extension more
+                       word hits can be discarded. */
+                    if (last_d == diag && s_off - last_p < lut_word_length + 3) {
+                        continue;
+                    }
+                    ASSERT(index < word_hits->num_arrays);
+
+
+                    /* if the word hit list for the current word hit is full,
+                       then extend hits from this list */
+                    if (word_hits->num[index] >= word_hits->array_size) {
+                        Int4 range = word_hits->pair_arrays[index][
+                              word_hits->num[index] - 1].qs_offsets.s_off +
+                            lut_word_length;
+                        hits_extended += BlastNaExtendJumper(
+                                                word_hits->pair_arrays[index],
+                                                word_hits->num[index],
+                                                word_params, score_params,
+                                                hit_params,
+                                                lookup_wrap,
+                                                query, subject, 
+                                                query_info,
+                                                gap_align,
+                                                hsp_list,
+                                                range,
+                                                s_index);
+
+                        word_hits->num[index] = 0;
+
+                    }
+
+                    /* add new word hit */
+                    word_hits->pair_arrays[index][word_hits->num[index]++] =
+                        offset_pairs[i];
+                }
+            }
+            else {
+                /* otherwise extend collected word hits */
+
+                total_hits += hitsfound;
+                hits_extended += BlastNaExtendJumper(offset_pairs, hitsfound,
+                                             word_params, score_params,
+                                             hit_params,
+                                             lookup_wrap,
+                                             query, subject, 
+                                             query_info,
+                                             gap_align,
+                                             hsp_list,
+                                             scan_range[2] + lut_word_length,
+                                             s_index);
+
+            }
+        }
+
+        if (!read_is_query) {
+            break;
+        }
+    }
+
+    if (word_hits) {
+
+        /* extend word hits from all lists */
+        for (i = 0;i < word_hits->num_arrays;i++) {
+            if (word_hits->num[i] > 0) {
+                Int4 range = word_hits->pair_arrays[i][
+                                word_hits->num[i] - 1].qs_offsets.s_off +
+                    lut_word_length;
+                hits_extended += BlastNaExtendJumper(word_hits->pair_arrays[i],
+                                                 word_hits->num[i],
+                                                 word_params, score_params,
+                                                 hit_params,
+                                                 lookup_wrap,
+                                                 query, subject, 
+                                                 query_info,
+                                                 gap_align,
+                                                 hsp_list,
+                                                 range,
+                                                 s_index);
+                
+            }
+            word_hits->num[i] = 0;
+        }
+    }
+
+    Blast_UngappedStatsUpdate(ungapped_stats, total_hits, 0, 0);
+    
+    if (gapped_stats) {
+        gapped_stats->extensions = hits_extended;
+        /* this is needed for adaptive batch size */
+        ungapped_stats->good_init_extends = hits_extended;
+    }
+
+    if (s_index) {
+        s_index = SubjectIndexFree(s_index);
+    }
+
+    if (getenv("GET_NUMBERS")) {
+	fprintf(stderr, "Number of look-up table hits: %lu\n", ungapped_stats->lookup_hits);
+	fprintf(stderr, "Number of ungapped extensions: %d\n", ungapped_stats->init_extends);
+	fprintf(stderr, "Number of good initial extensions: %d\n", ungapped_stats->good_init_extends);
+    }
+
+    return 0;
+
+}
+
+
+/* read is a qurey, reference is a subject */
+Int2 ShortRead_IndexedWordFinder( 
+        BLAST_SequenceBlk * subject,
+        BLAST_SequenceBlk * query,
+        BlastQueryInfo * query_info,
+        LookupTableWrap * lookup_wrap,
+        const BlastInitialWordParameters * word_params,
+        const BlastScoringParameters* score_params,
+        const BlastHitSavingParameters* hit_params,
+        BlastOffsetPair * offset_pairs,
+        MapperWordHits* word_hits,
+        Int4 max_hits,
+        BlastGapAlignStruct* gap_align,
+        BlastInitHitList* init_hitlist,
+        BlastHSPList** hsp_list,
+        BlastUngappedStats* ungapped_stats,
+        BlastGappedStats* gapped_stats)
+{ 
+    BlastInitHSP * hsp, /* *new_hsp,*/ * hsp_end;
+    ir_diag_hash * hash = 0;
+    ir_hash_entry * e = 0;
+    Uint4 word_size;
+    Uint4 q_off, s_off;
+    Uint4 diag, key;
+    Int4 oid = subject->oid;
+    Int4 chunk = subject->chunk;
+    T_MB_IdbCheckOid check_oid = 
+        (T_MB_IdbCheckOid)lookup_wrap->check_index_oid;
+    T_MB_IdbGetResults get_results = 
+                        (T_MB_IdbGetResults)lookup_wrap->read_indexed_db;
+    Int4 last_vol_idx = LAST_VOL_IDX_NULL;
+
+    /* In the case oid belongs to the non-indexed part of the
+       database, route the call to the original word finder.
+    */
+    if( check_oid( oid, &last_vol_idx ) == eNotIndexed ) {
+        return JumperNaWordFinder(
+                subject, query, query_info, lookup_wrap, word_params,
+                score_params, hit_params, offset_pairs, word_hits, max_hits,
+                gap_align, init_hitlist, hsp_list, ungapped_stats,
+                gapped_stats);
+    }
+
+    ASSERT(get_results);
+    word_size = get_results(oid, chunk, init_hitlist);
+
+    if (*hsp_list == NULL) {
+        *hsp_list = Blast_HSPListNew(BlastHspNumMax(TRUE,
+                                                    hit_params->options));
+    }
+
+    if( word_size > 0) {
+
+        hash = ir_hash_create();
+        hsp = init_hitlist->init_hsp_array;
+        hsp_end = hsp + init_hitlist->total;
+
+        for( ; hsp < hsp_end; ++hsp ) {
+            q_off = hsp->offsets.qs_offsets.q_off;
+            s_off = hsp->offsets.qs_offsets.s_off;
+
+
+            diag = IR_DIAG( q_off, s_off );
+            key  = IR_KEY( diag );
+            e = IR_LOCATE( hash, diag, key );
+
+            if( e != 0 ) {
+
+
+                Int4 context = BSearchContextInfo(q_off, query_info);
+                Int4 query_start = query_info->contexts[context].query_offset;
+                Int4 query_len = query_info->contexts[context].query_length;
+                Uint1* query_seq = query->sequence + query_start;
+
+                if( q_off + word_size - 1 > e->diag_data.qend ) {
+
+                    Int4 num_identical = 0;
+                    Int4 right_ungapped_ext_len = 0;
+                    gapped_stats->extensions++;
+
+                    JumperGappedAlignmentCompressedWithTraceback(query_seq,
+                                                         subject->sequence,
+                                                         query_len,
+                                                         subject->length,
+                                                         q_off - query_start,
+                                                         s_off,
+                                                         gap_align,
+                                                         score_params, 
+                                                         &num_identical,
+                                                         &right_ungapped_ext_len);
+
+
+                    if (JumperGoodAlign(gap_align, hit_params, num_identical,
+                                        &query_info->contexts[context])) {
+
+                        BlastHSP* new_hsp;
+                        int status;
+
+                        gap_align->edit_script =
+                            JumperPrelimEditBlockToGapEditScript(
+                                        gap_align->jumper->left_prelim_block,
+                                        gap_align->jumper->right_prelim_block);
+
+                        status = Blast_HSPInit(gap_align->query_start,
+                                       gap_align->query_stop,
+                                       gap_align->subject_start,
+                                       gap_align->subject_stop,
+                                       q_off - query_start, s_off,
+                                       context,
+                                       query_info->contexts[context].frame,
+                                       subject->frame,
+                                       gap_align->score,
+                                       &(gap_align->edit_script),
+                                       &new_hsp);
+                        if (!new_hsp) {
+                            return -1;
+                        }
+                        new_hsp->map_info = BlastHSPMappingInfoNew();
+                        if (!new_hsp->map_info) {
+                            return -1;
+                        }
+                        new_hsp->num_ident = num_identical;
+                        new_hsp->evalue = 0.0;
+                        new_hsp->map_info->edits = JumperFindEdits(query_seq,
+                                                         subject->sequence,
+                                                         gap_align);
+
+                        if (hit_params->options->splice) {
+                            JumperFindSpliceSignals(new_hsp, query_len,
+                                                    subject->sequence,
+                                                    subject->length);
+                        }
+
+                        status = Blast_HSPListSaveHSP(*hsp_list, new_hsp);
+                        if (status) {
+                            break;
+                        }
+                    }
+
+                    if (e->diag_data.diag != diag) {
+                        e->diag_data.diag = diag;
+                    }
+                    e->diag_data.qend = q_off + right_ungapped_ext_len - 1;
+
+                }
+
+
+            }
+/*
+            else {
+                if( new_hsp != hsp ) *new_hsp = *hsp;
+                ++new_hsp;
+            }
+*/
+        }
+
+        hash = ir_hash_destroy( hash );
+    }
+
+    return 0;
+}
+
+

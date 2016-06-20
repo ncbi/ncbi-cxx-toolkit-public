@@ -91,9 +91,14 @@ typedef struct BlastCoreAuxStruct {
     BlastWordFinderType WordFinder; /**< Word finder function pointer */
     BlastGetGappedScoreType GetGappedScore; /**< Gapped extension function
                                               pointer */
+    JumperGappedType JumperGapped; /**< Word finder and gapped extension
+                                      for mapping short reads */
+
     BlastInitHitList* init_hitlist; /**< Placeholder for HSPs after 
                                         ungapped extension */
     BlastOffsetPair* offset_pairs; /**< Array of offset pairs for initial seeds. */
+    MapperWordHits* mapper_wordhits;
+
     Uint1* translation_buffer; /**< Placeholder for translated subject
                                    sequences */
     Uint1* translation_table; /**< Translation table for forward strand */
@@ -108,6 +113,7 @@ s_BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
     BlastExtendWordFree(aux_struct->ewp);
     BLAST_InitHitListFree(aux_struct->init_hitlist);
     sfree(aux_struct->offset_pairs);
+    MapperWordHitsFree(aux_struct->mapper_wordhits);
     
     sfree(aux_struct);
     return NULL;
@@ -214,9 +220,18 @@ const Int2 SUBJECT_SPLIT_NO_RANGE = 2;  /**< return value indicating all masked 
 
 static Int2 s_GetNextSubjectChunk(BLAST_SequenceBlk* subject,
                                   SubjectSplitStruct *backup,
-                                  Boolean is_nucleotide)
+                                  Boolean is_nucleotide,
+                                  int chunk_overlap)
 {
     int start, len, i, residual;
+    int dbseq_chunk_overlap;
+
+    if (chunk_overlap > 0) {
+        dbseq_chunk_overlap = chunk_overlap;
+    }
+    else {
+        dbseq_chunk_overlap = DBSEQ_CHUNK_OVERLAP;
+    }
 
     ASSERT(subject);
     ASSERT(backup);
@@ -232,7 +247,7 @@ static Int2 s_GetNextSubjectChunk(BLAST_SequenceBlk* subject,
         backup->hard_ranges[backup->hm_index].right) {
 
         subject->length = MAX_DBSEQ_LEN;
-        backup->next = backup->offset + MAX_DBSEQ_LEN - DBSEQ_CHUNK_OVERLAP;
+        backup->next = backup->offset + MAX_DBSEQ_LEN - dbseq_chunk_overlap;
 
     } else {
 
@@ -381,6 +396,133 @@ s_RPSOffsetArrayToContextOffsets(BlastQueryInfo    * info,
     OffsetArrayToContextOffsets(info, new_offsets, kProgram);
 }
 
+static int
+s_CompareHSPsBySubjectEnd(const void* a, const void* b)
+{
+    BlastHSP* h1, * h2;
+    BlastHSP** hp1, ** hp2;
+
+    hp1 = (BlastHSP**)a;
+    hp2 = (BlastHSP**)b;
+    h1 = *hp1;
+    h2 = *hp2;
+
+    if (!h1 && !h2) {
+        return 0;
+    }
+    else if (!h1) {
+        return -1;
+    }
+    else if (!h2) {
+        return 1;
+    }
+
+    if (h1->subject.end < h2->subject.end) {
+        return -1;
+    }
+    else if (h1->subject.end > h2->subject.end) {
+        return 1;
+    }
+    
+    return 0;
+}
+
+/* Write HSPs for a single subject chunk to HSP stream, implemented for mapper.
+   A single read may align to several exons that fall in two subject chunks.
+   This is a problem because combining HSPs into exon chains is done for each
+   HSP list write independently.
+   Given the maximum intron length we can write HSPs with positions on the
+   subject too far from subject chunk end to be combined with HSPs aligned to
+   the next subject chunk. */
+static Int2
+s_WriteHSPsForChunk(BlastHSPList* hsp_list,
+                    const SubjectSplitStruct* backup,
+                    const BlastHitSavingParameters* hit_params,
+                    BlastHSPStream* hsp_stream,
+                    Int4 chunk_length,
+                    Int4 full_subject_length)
+{
+    BlastHSP** hsp_array = NULL;
+    BlastHSP** new_hsp_array = NULL;
+    BlastHSPList* hsp_list_to_write = NULL;
+    Int4 max_intron_len;
+    Int4 new_allocated;
+    Int4 last_pos_to_move;
+    Int4 status;
+    Int4 i, n = 0;
+
+    if (!hsp_list || !backup || !hit_params || !hsp_stream) {
+        return -1;
+    }
+
+    if (backup->next >= full_subject_length) {
+        /* HSPs for the last subject chunk will be written to HSP stream at
+           the end of subject processing */
+
+        return 0;
+    }
+
+    max_intron_len = hit_params->options->longest_intron;
+
+    /* HSPs up to this subject offset will be removed from hsp_list and
+       written to HSP stream */
+    /* FIXME: shoule this be until 1 * max_intron_length? */
+    last_pos_to_move = backup->offset + chunk_length - max_intron_len - 1;
+
+    hsp_array = hsp_list->hsp_array;
+
+    /* sort HSPs by subject offset */
+    qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
+          s_CompareHSPsBySubjectEnd);
+
+    /* separate HSPs with subject offset smaller than last chunk position -
+       max intron length */
+    i = 0;
+    while (i < hsp_list->hspcnt &&
+           hsp_array[i]->subject.end < last_pos_to_move) {
+        i++;
+    }
+    
+    /* copy HSPs with sbubject positions between max intron lengths and
+       chunk end */
+    new_allocated = hsp_list->hspcnt - i + 1;
+    new_hsp_array = calloc(new_allocated, sizeof(BlastHSP*));
+    if (!new_hsp_array) {
+        return -1;
+    }
+    for (;i < hsp_list->hspcnt;i++) {
+        new_hsp_array[n++] = Blast_HSPClone(hsp_array[i]);
+    }
+    ASSERT(i == hsp_list->hspcnt);
+
+    hsp_list_to_write = Blast_HSPListNew(1);
+    if (!hsp_list_to_write) {
+        return -1;
+    }
+
+    if (hsp_list_to_write->hsp_array) {
+        sfree(hsp_list_to_write->hsp_array);
+    }
+
+    hsp_list_to_write->hsp_array = hsp_array;
+    hsp_list_to_write->hspcnt = hsp_list->hspcnt /*hspcnt_to_write*/;
+    hsp_list_to_write->allocated = hsp_list->allocated;
+    hsp_list_to_write->oid = hsp_list->oid;
+
+    hsp_list->hsp_array = new_hsp_array;
+    hsp_list->hspcnt = n;
+    hsp_list->allocated = new_allocated;
+
+    /* write hsp_list_to_write */
+    status = BlastHSPStreamWrite(hsp_stream, &hsp_list_to_write);
+    if (hsp_list_to_write) {
+        hsp_list_to_write = Blast_HSPListFree(hsp_list_to_write);
+    }
+
+    return status;
+}
+
+
 /** Searches only one context of a database sequence, but does all chunks if it is split.
  * @param program_number BLAST program type [in]
  * @param query Query sequence structure [in]
@@ -416,6 +558,7 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
         BlastDiagnostics* diagnostics,
         BlastCoreAuxStruct* aux_struct,
         BlastHSPList** hsp_list_out_ptr,
+        BlastHSPStream* hsp_stream,
         TInterruptFnPtr interrupt_search, 
         SBlastProgress* progress_info)
 {
@@ -431,14 +574,27 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
                      gap_align->sbp->matrix->data;
     const Boolean kTranslatedSubject = 
        (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
-    const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
-       program_number == eBlastTypePhiBlastn);
+    const Boolean kNucleotide = Blast_ProgramIsNucleotide(program_number);
     const int kHspNumMax = BlastHspNumMax(score_options->gapped_calculation, hit_params->options);
     const int kScanSubjectOffsetArraySize = GetOffsetArraySize(lookup);
+    Int4 dbseq_chunk_overlap;
     Int4 overlap;
 
     SubjectSplitStruct backup; 
     backup.sequence = NULL;
+
+    /* increase overlap on db chunks for mapping to 1.5 times the longest
+       query */
+
+    if (Blast_ProgramIsMapping(program_number) &&
+        (Int4)query_info->max_length < 110) {
+
+        dbseq_chunk_overlap = (Int4)query_info->max_length
+            + (query_info->max_length / 2);
+    }
+    else {
+        dbseq_chunk_overlap = DBSEQ_CHUNK_OVERLAP;
+    }
 
     if (diagnostics) {
         ungapped_stats = diagnostics->ungapped_stat;
@@ -448,7 +604,9 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
     s_BackupSubject(subject, &backup);
 
     while (TRUE) {
-        status = s_GetNextSubjectChunk(subject, &backup, kNucleotide);
+        status = s_GetNextSubjectChunk(subject, &backup, kNucleotide,
+                                       dbseq_chunk_overlap);
+
         if (status == SUBJECT_SPLIT_DONE) break;
         if (status == SUBJECT_SPLIT_NO_RANGE) continue;
         ASSERT(status == SUBJECT_SPLIT_OK);
@@ -489,17 +647,42 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
           * are saved.
           */
         /* fence_hit is null, since this is only for prelim stage. */
-        status = aux_struct->GetGappedScore(program_number, query, query_info, 
+        if (aux_struct->GetGappedScore) {
+            status = aux_struct->GetGappedScore(program_number, query,
+                    query_info, 
                     subject, gap_align, score_params, ext_params, hit_params, 
                     init_hitlist, &hsp_list, gapped_stats, NULL);
+        }
+        else if (aux_struct->JumperGapped) {
+            status = aux_struct->JumperGapped(subject, query, query_info,
+                                              lookup, word_params,
+                                              score_params, hit_params,
+                                              aux_struct->offset_pairs,
+                                              aux_struct->mapper_wordhits,
+                                              kScanSubjectOffsetArraySize,
+                                              gap_align, init_hitlist,
+                                              &hsp_list, ungapped_stats,
+                                              gapped_stats);
+        }
         if (status) break;
 
-        /* Removes redundant HSPs. */
-        Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list, TRUE);
+	if (getenv("GET_NUMBERS")) {
+	    fprintf(stderr, "Num gapped extensions %d\n", gapped_stats->extensions);
+	    fprintf(stderr, "Num HSPs: %d\n", hsp_list->hspcnt);
+	}
 
-        /* For nucleotide search, if match score is = 2, the odd scores
-           are rounded down to the nearest even number. */
-        Blast_HSPListAdjustOddBlastnScores(hsp_list, score_options->gapped_calculation, gap_align->sbp);
+
+        /* No need to do this for short reads */
+        if (aux_struct->GetGappedScore) {
+
+            /* Removes redundant HSPs. */
+            Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list, TRUE);
+
+            /* For nucleotide search, if match score is = 2, the odd scores
+               are rounded down to the nearest even number. */
+            Blast_HSPListAdjustOddBlastnScores(hsp_list, score_options->gapped_calculation, gap_align->sbp);
+
+        }
 
         Blast_HSPListSortByScore(hsp_list);
 
@@ -525,10 +708,19 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
 
         Blast_HSPListAdjustOffsets(hsp_list, backup.offset);
         overlap = (backup.offset == backup.hard_ranges[backup.hm_index].left) ?
-                  0 : DBSEQ_CHUNK_OVERLAP;
+                  0 : dbseq_chunk_overlap;
         status = Blast_HSPListsMerge(&hsp_list, &combined_hsp_list,  
                      kHspNumMax, &(backup.offset), INT4_MIN,
-                     overlap, score_options->gapped_calculation);
+                     overlap, score_options->gapped_calculation,
+                     Blast_ProgramIsMapping(program_number));
+
+        if (getenv("MAPPER_WRITE_SUBJECT_CHUNK")) {
+            s_WriteHSPsForChunk(combined_hsp_list, &backup, hit_params,
+                                hsp_stream, subject->length,
+                                backup.full_range.right -
+                                backup.full_range.left);
+        }
+
     } /* End loop on chunks of subject sequence */
 
     s_RestoreSubject(subject, &backup);
@@ -652,6 +844,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
         BlastDiagnostics* diagnostics,
         BlastCoreAuxStruct* aux_struct,
         BlastHSPList** hsp_list_out_ptr,
+        BlastHSPStream* hsp_stream,
         TInterruptFnPtr interrupt_search, 
         SBlastProgress* progress_info)
 {
@@ -671,8 +864,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
 
     const Boolean kTranslatedSubject = 
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
-    const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
-                                program_number == eBlastTypePhiBlastn);
+    const Boolean kNucleotide = Blast_ProgramIsNucleotide(program_number);
     const int kHspNumMax = BlastHspNumMax(score_options->gapped_calculation, hit_options);
     Boolean isRPS = FALSE;
     SubjectSplitStruct backup = {0,};
@@ -778,7 +970,8 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
                                                word_params, ext_params, 
                                                hit_params, diagnostics, 
                                                aux_struct, &hsp_list_for_chunks,
-                                               interrupt_search, progress_info);
+                                               hsp_stream, interrupt_search,
+                                               progress_info);
         if (status != 0)  break;
      
         if (Blast_HSPListAppend(&hsp_list_for_chunks, &hsp_list_out, kHspNumMax)) {
@@ -812,7 +1005,9 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
                   subject->length, gap_align->sbp, hit_params->link_hsp_params, 
                   score_options->gapped_calculation);
     } else if (!Blast_ProgramIsPhiBlast(program_number)
-           && !(isRPS && !sbp->gbp) ){
+           && !(isRPS && !sbp->gbp)
+           /* do not calculate E-values for mapping */
+           && program_number != eBlastTypeMapping ) {
         /* Calculate e-values for all HSPs. Skip this step
            for PHI or RPS with old FSC, since calculating the E values 
            requires precomputation that has not been done yet */
@@ -911,7 +1106,8 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
     const BlastInitialWordParameters* word_params,
     const BlastExtensionOptions* ext_options,
     const BlastHitSavingOptions* hit_options,
-    BLAST_SequenceBlk* query, BlastCoreAuxStruct** aux_struct_ptr)
+    BLAST_SequenceBlk* query,
+    const BlastQueryInfo* query_info, BlastCoreAuxStruct** aux_struct_ptr)
 {
     Int2 status = 0;
     BlastCoreAuxStruct* aux_struct;
@@ -924,6 +1120,8 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
                          lookup_wrap->lut_type == ePhiNaLookupTable);
     Boolean smith_waterman = 
                  (ext_options->ePrelimGapExt == eSmithWatermanScoreOnly);
+
+    Boolean jumper = (ext_options->ePrelimGapExt == eJumperWithTraceback);
     Int4 offset_array_size = GetOffsetArraySize(lookup_wrap);
 
     ASSERT(seq_src);
@@ -934,6 +1132,9 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
     if ((status = BlastExtendWordNew(query->length, word_params, 
                                     &aux_struct->ewp)) != 0)
       return status;
+
+    aux_struct->JumperGapped = NULL;
+    aux_struct->mapper_wordhits = NULL;
 
     if (smith_waterman) {
         aux_struct->WordFinder = NULL;
@@ -960,6 +1161,10 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
         else {
             aux_struct->WordFinder = BlastNaWordFinder;
         }
+
+        if (jumper) {
+            aux_struct->WordFinder = NULL;
+        }
     }
     
     aux_struct->offset_pairs = 
@@ -971,6 +1176,22 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
         aux_struct->GetGappedScore = PHIGetGappedScore;
     else if (smith_waterman)
         aux_struct->GetGappedScore = BLAST_SmithWatermanGetGappedScore;
+    else if (jumper) {
+        aux_struct->GetGappedScore = NULL;
+
+        /* Create several lists of word hits for mapper with large number of
+           queries */
+        if (query_info->num_queries > 1000) {
+            aux_struct->mapper_wordhits = MapperWordHitsNew(query, query_info);
+        }
+
+        if (indexed_mb_lookup) {
+            aux_struct->JumperGapped = ShortRead_IndexedWordFinder;
+        }
+        else {
+            aux_struct->JumperGapped = JumperNaWordFinder;
+        }
+    }
     else 
         aux_struct->GetGappedScore = BLAST_GetGappedScore;
 
@@ -1080,7 +1301,7 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
           s_BlastSearchEngineCore(program_number, &concat_db, one_query_info, 
              one_query, lookup_wrap, gap_align, score_params, 
              word_params, ext_params, hit_params, NULL, 
-             diagnostics, aux_struct, &hsp_list, interrupt_search, 
+             diagnostics, aux_struct, &hsp_list, NULL, interrupt_search, 
              progress_info);
 
         if (interrupt_search && (*interrupt_search)(progress_info) == TRUE) {
@@ -1251,8 +1472,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
     Boolean gapped_calculation = score_options->gapped_calculation;
     BlastScoreBlk* sbp = gap_align->sbp;
     BlastSeqSrcIterator* itr;
-    const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
-                                program_number == eBlastTypePhiBlastn);
+    const Boolean kNucleotide = Blast_ProgramIsNucleotide(program_number);
 
     T_MB_IdbCheckOid check_index_oid = 
         (T_MB_IdbCheckOid)lookup_wrap->check_index_oid;
@@ -1264,7 +1484,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
     if ((status = 
        s_BlastSetUpAuxStructures(seq_src, lookup_wrap, word_params, 
-          ext_options, hit_options, query, &aux_struct)) != 0)
+          ext_options, hit_options, query, query_info, &aux_struct)) != 0)
       return status;
 
     /* remember the current search state */
@@ -1350,10 +1570,12 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
           stat_length /= CODON_LENGTH;
       }
       status = 
-         s_BlastSearchEngineCore(program_number, query, query_info,
-            seq_arg.seq, lookup_wrap, gap_align, score_params, word_params, 
-            ext_params, hit_params, db_options, diagnostics, aux_struct, 
-            &hsp_list, interrupt_search, progress_info);
+          s_BlastSearchEngineCore(program_number, query, query_info,
+                                  seq_arg.seq, lookup_wrap, gap_align,
+                                  score_params, word_params, ext_params,
+                                  hit_params, db_options, diagnostics,
+                                  aux_struct, &hsp_list, hsp_stream,
+                                  interrupt_search, progress_info);
       if (status) {
           break;
       }

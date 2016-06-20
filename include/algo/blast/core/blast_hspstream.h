@@ -146,6 +146,23 @@ BlastHSPStream* BlastHSPStreamFree(BlastHSPStream* hsp_stream);
 NCBI_XBLAST_EXPORT
 void BlastHSPStreamClose(BlastHSPStream* hsp_stream);
 
+/** Closes the BlastHSPStream structure for writing without any sorting as done
+ * in BlastHSPStreamClose. Any subsequent attempt to write to the stream will
+ * return error.
+ * @param hsp_stream The stream to close [in] [out]
+ */
+NCBI_XBLAST_EXPORT
+void BlastHSPStreamSimpleClose(BlastHSPStream* hsp_stream);
+
+/** Closes BlastHSPStream structure for mapping and produces
+ *  BlastMappingResults
+ * @param hsp_stream The stream to close [in] [out]
+ * @param results The results [in] [out]
+*/
+NCBI_XBLAST_EXPORT
+void BlastHSPStreamMappingClose(BlastHSPStream* hsp_stream,
+                                BlastMappingResults* results);
+
 /** Closes the BlastHSPStream structure after traceback. 
  * This is mainly to provide a chance to apply post-traceback pipes.
  * @param hsp_stream The stream to close [in] [out]

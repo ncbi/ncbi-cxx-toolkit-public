@@ -70,6 +70,7 @@ enum EProgram {
     ePHIBlastn,         ///< Nucleotide PHI BLAST
     eDeltaBlast,        ///< Delta Blast
     eVecScreen,         ///< Vector screening
+    eMapper,            ///< Jumper alignment for mapping
     eBlastProgramMax    ///< Undefined program
 };
 

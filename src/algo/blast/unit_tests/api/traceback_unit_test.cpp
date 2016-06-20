@@ -125,7 +125,7 @@ public:
                                              opt.GetExtnOpts()->compositionBasedStats, 
                                              opt.GetScoringOpts()->gapped_calculation));
 
-        BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+        BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL, NULL);
         BOOST_REQUIRE(writer_info == NULL);
         return BlastHSPStreamNew(opt.GetProgramType(), opt.GetExtnOpts(), 
                                  FALSE, 1, writer);
@@ -795,7 +795,7 @@ BOOST_AUTO_TEST_CASE(testNoHSPEvalueCutoffBeforeLink) {
 			hit_options, ext_options->compositionBasedStats,
             scoring_options->gapped_calculation));
 
-	BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+	BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL, NULL);
     BOOST_REQUIRE(writer_info == NULL);
     BlastHSPStream* hsp_stream = BlastHSPStreamNew(
 			kProgramType, ext_options, FALSE, 1, writer);

@@ -70,6 +70,9 @@ extern "C" {
                                           the word size is explicitly 
                                           overridden) */
 
+#define BLAST_WORD_SIZE_MAPPER 16  /**< default word size for mapping rna-seq
+                                        to a genome */
+
 /** Default matrix name: BLOSUM62 */
 #define BLAST_DEFAULT_MATRIX "BLOSUM62"
 
@@ -83,6 +86,7 @@ extern "C" {
 #define BLAST_GAP_OPEN_NUCL 5 /**< default gap open penalty (blastn) */
 #define BLAST_GAP_OPEN_MEGABLAST 0 /**< default gap open penalty (megablast
                                         with greedy gapped alignment) */
+#define BLAST_GAP_OPEN_MAPPER 0
 
 /** cost to extend a gap. */
 #define BLAST_GAP_EXTN_PROT 1 /**< default gap open penalty (all 
@@ -90,6 +94,8 @@ extern "C" {
 #define BLAST_GAP_EXTN_NUCL 2 /**< default gap open penalty (blastn) */
 #define BLAST_GAP_EXTN_MEGABLAST 0 /**< default gap open penalty (megablast)
                                         with greedy gapped alignment) */
+
+#define BLAST_GAP_EXTN_MAPPER 8
 
 /** neighboring word score thresholds; a threshold of zero
  *  means that only query and subject words that match exactly
@@ -141,6 +147,9 @@ extern "C" {
 #define BLAST_PENALTY -3        /**< default nucleotide mismatch score */
 #define BLAST_REWARD 1          /**< default nucleotide match score */
 
+#define BLAST_PENALTY_MAPPER -8
+#define BLAST_REWARD_MAPPER 1
+
 /** Default parameters for saving hits */
 #define BLAST_EXPECT_VALUE 10.0 /**< by default, alignments whose expect
                                      value exceeds this number are discarded */
@@ -172,8 +181,9 @@ typedef enum {
     ePhiNaLookupTable,  /**< nucleotide lookup table for phi-blast */
     eRPSLookupTable, /**< RPS lookup table (rpsblast and rpstblastn) */
     eIndexedMBLookupTable, /**< use database index as a lookup structure */
-    eMixedMBLookupTable /**< use when some volumes are searched with index and 
+    eMixedMBLookupTable, /**< use when some volumes are searched with index and 
                              some are not */
+    eNaHashLookupTable  /**< used for 16-base words */
 } ELookupTableType;
 
 /** Options needed to construct a lookup table 
@@ -189,6 +199,11 @@ typedef struct LookupTableOptions {
    Int4 mb_template_type; /**< Type of a discontiguous word template */
    char* phi_pattern;  /**< PHI-BLAST pattern */
    EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
+   Uint4 stride; /**< number of words to skip after collecting each word */
+   Boolean db_filter; /**< scan the database and include only words that appear
+                           in the database between 1 and 9 times
+                           (currently implemented only for MB lookuptable
+                           and lookup table word size 16) */
 } LookupTableOptions;
 
 /** Options for dust algorithm, applies only to nucl.-nucl. comparisons.
@@ -270,6 +285,7 @@ typedef struct BlastInitialWordOptions {
 typedef enum EBlastPrelimGapExt {
     eDynProgScoreOnly,          /**< standard affine gapping */
     eGreedyScoreOnly,           /**< Greedy extension (megaBlast) */
+    eJumperWithTraceback,       /**< Jumper extension (mapping) */
     eSmithWatermanScoreOnly     /**< Score-only smith-waterman */
 } EBlastPrelimGapExt;
 
@@ -302,6 +318,11 @@ typedef struct BlastExtensionOptions {
                                    if zero then compositional adjustment is
                                    not used */
    Int4 unifiedP; /**< Indicates unified P values to be used in blastp or tblastn */
+
+    Int4 max_mismatches;    /**< Maximum number of mismatches allowed for Jumper */
+
+    Int4 mismatch_window;   /**< Widnow for counting mismatches for Jumper */
+
    EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } BlastExtensionOptions;
 
@@ -385,6 +406,11 @@ typedef struct BlastHitSavingOptions {
      * it does not guarantee best hsp per query due to query concatenation
      */
    Int4 max_hsps_per_subject;
+
+   /**< Queries are paired reads, for mapping */
+   Boolean paired;
+   /**< Splice HSPs for each query (for mapping RNA-Seq to a genome) */
+   Boolean splice;
 
 } BlastHitSavingOptions;
 

@@ -49,7 +49,8 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
         const QuerySetUpOptions* query_options,
         BlastSeqLoc* lookup_segments, BlastScoreBlk* sbp, 
         LookupTableWrap** lookup_wrap_ptr, const BlastRPSInfo *rps_info,
-        Blast_Message* *error_msg)
+        Blast_Message* *error_msg,
+        BlastSeqSrc* seqsrc)
 {
    Int2 status = 0;
    LookupTableWrap* lookup_wrap;
@@ -116,7 +117,8 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
              BlastMBLookupTableNew(query, lookup_segments, 
                                (BlastMBLookupTable* *) &(lookup_wrap->lut), 
                                lookup_options, query_options,
-                               num_table_entries, lut_width);
+                               num_table_entries, lut_width,
+                               seqsrc);
           }
           else if (lookup_wrap->lut_type == eSmallNaLookupTable) {
              status = BlastSmallNaLookupTableNew(query, lookup_segments,
@@ -137,6 +139,13 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
       }
       ASSERT( lookup_wrap->lut_type != eMixedMBLookupTable );
       break;
+
+   case eNaHashLookupTable:
+           BlastNaHashLookupTableNew(query, lookup_segments,
+                             (BlastNaHashLookupTable**) &(lookup_wrap->lut), 
+                             lookup_options, query_options, seqsrc);
+       break;
+
 
    case ePhiLookupTable: case ePhiNaLookupTable:
        {
@@ -205,6 +214,11 @@ LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup)
          BlastNaLookupTableDestruct((BlastNaLookupTable*)lookup->lut);
       break;
 
+   case eNaHashLookupTable:
+      lookup->lut = (void*) 
+         BlastNaHashLookupTableDestruct((BlastNaHashLookupTable*)lookup->lut);
+      break;
+
    case eAaLookupTable:
       lookup->lut = (void*) 
          BlastAaLookupTableDestruct((BlastAaLookupTable*)lookup->lut);
@@ -245,6 +259,10 @@ Int4 GetOffsetArraySize(LookupTableWrap* lookup)
    case eNaLookupTable:
       offset_array_size = OFFSET_ARRAY_SIZE + 
          ((BlastNaLookupTable*)lookup->lut)->longest_chain;
+      break;
+   case eNaHashLookupTable:
+      offset_array_size = OFFSET_ARRAY_SIZE + 
+         ((BlastNaHashLookupTable*)lookup->lut)->longest_chain;
       break;
    default:
       offset_array_size = OFFSET_ARRAY_SIZE;

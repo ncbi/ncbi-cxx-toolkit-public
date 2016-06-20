@@ -37,6 +37,7 @@
 #include <algo/blast/core/blast_hspstream.h>
 #include "blast_hits_priv.h"
 #include "blast_itree.h"
+#include "jumper.h"
 
 NCBI_XBLAST_EXPORT
 Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
@@ -106,6 +107,7 @@ BlastHSP* Blast_HSPFree(BlastHSP* hsp)
    if (!hsp)
       return NULL;
    hsp->gap_info = GapEditScriptDelete(hsp->gap_info);
+   hsp->map_info = BlastHSPMappingInfoFree(hsp->map_info);
    sfree(hsp->pat_info);
    sfree(hsp);
    return NULL;
@@ -161,6 +163,28 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start,
    return 0;
 }
 
+
+BlastHSPMappingInfo* BlastHSPMappingInfoFree(BlastHSPMappingInfo* info)
+{
+   if (!info) {
+       return NULL;
+   }
+
+   info->edits = JumperEditsBlockFree(info->edits);
+   if (info->subject_overhangs) {
+       SequenceOverhangsFree(info->subject_overhangs);
+   }
+   sfree(info);
+
+   return NULL;
+}
+
+BlastHSPMappingInfo* BlastHSPMappingInfoNew(void)
+{
+    BlastHSPMappingInfo* retval = calloc(1, sizeof(BlastHSPMappingInfo));
+    return retval;
+}
+
 Int4 BlastHspNumMax(Boolean gapped_calculation, const BlastHitSavingOptions* options)
 {
    Int4 retval=0;
@@ -209,6 +233,98 @@ s_BlastHSPCopy(const BlastHSP* hsp)
             (SPHIHspInfo*) BlastMemDup(hsp->pat_info, sizeof(SPHIHspInfo));
     }
     return new_hsp;
+}
+
+/* Make a deep copy of an HSP */
+BlastHSP* Blast_HSPClone(const BlastHSP* hsp)
+{
+    BlastHSP* retval = NULL;
+
+    if (!hsp) {
+        return NULL;
+    }
+
+    retval = Blast_HSPNew();
+    if (retval) {
+        retval->score = hsp->score;
+        retval->num_ident = hsp->num_ident;
+        memcpy(&retval->query, &hsp->query, sizeof(BlastSeg));
+        memcpy(&retval->subject, &hsp->subject, sizeof(BlastSeg));
+        retval->context = hsp->context;
+        retval->evalue = hsp->evalue;
+        retval->bit_score = hsp->bit_score;
+        retval->num = hsp->num;
+        retval->comp_adjustment_method = hsp->comp_adjustment_method;
+        retval->num_positives = hsp->num_positives;
+
+        /* copy gapped traceback */
+        if (hsp->gap_info) {
+            retval->gap_info = GapEditScriptDup(hsp->gap_info);
+            if (!retval->gap_info) {
+                Blast_HSPFree(retval);
+                return NULL;
+            }
+        }
+
+        /* copy short read mapping data */
+        if (hsp->map_info) {
+            retval->map_info = BlastHSPMappingInfoNew();
+            if (!retval->map_info) {
+                Blast_HSPFree(retval);
+                return NULL;
+            }
+            retval->map_info->edits =
+                JumperEditsBlockDup(hsp->map_info->edits);
+            if (!retval->map_info->edits) {
+                Blast_HSPFree(retval);
+                return NULL;
+            }
+            retval->map_info->left_edge = hsp->map_info->left_edge;
+            retval->map_info->right_edge = hsp->map_info->right_edge;
+
+            if (hsp->map_info->subject_overhangs) {
+                SequenceOverhangs* old = hsp->map_info->subject_overhangs;
+                SequenceOverhangs* copy = calloc(1, sizeof(SequenceOverhangs));
+                if (!copy) {
+                    Blast_HSPFree(retval);
+                    return NULL;
+                }
+
+                if (old->left && old->left_len > 0) {
+                    copy->left_len = old->left_len;
+                    copy->left = malloc(copy->left_len * sizeof(Uint1));
+                    if (!copy->left) {
+                        SequenceOverhangsFree(copy);
+                        Blast_HSPFree(retval);
+                        return NULL;
+                    }
+                    memcpy(copy->left, old->left,
+                           copy->left_len * sizeof(Uint1));
+                }
+
+                if (old->right && old->right_len > 0) {
+                    copy->right_len = old->right_len;
+                    copy->right = malloc(copy->right_len * sizeof(Uint1));
+                    if (!copy->right) {
+                        SequenceOverhangsFree(copy);
+                        Blast_HSPFree(retval);
+                    }
+                    memcpy(copy->right, old->right,
+                           copy->right_len * sizeof(Uint1));
+                }
+
+                retval->map_info->subject_overhangs = copy;
+            }
+        }
+
+        /* copy phi-blast pattern data */
+        if (hsp->pat_info) {
+            retval->pat_info = 
+                (SPHIHspInfo*) BlastMemDup(hsp->pat_info, sizeof(SPHIHspInfo));
+        }
+    }
+
+    return retval;
 }
 
 /** Count the number of occurrences of pattern in sequence, which
@@ -2030,7 +2146,7 @@ Int2 Blast_HitListMerge(BlastHitList** old_hit_list_ptr,
                                     hsplist2->hsp_max, split_offsets,
                                     contexts_per_query,
                                     chunk_overlap_size,
-                                    allow_gap);
+                                    allow_gap, FALSE);
             }
             else {
                 Blast_HSPListAppend(hitlist1->hsplist_array + i,
@@ -2627,7 +2743,7 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr,
                    BlastHSPList** combined_hsp_list_ptr,
                    Int4 hsp_num_max, Int4 *split_offsets,
                    Int4 contexts_per_query, Int4 chunk_overlap_size,
-                   Boolean allow_gap)
+                   Boolean allow_gap, Boolean short_reads)
 {
    BlastHSPList* combined_hsp_list = *combined_hsp_list_ptr;
    BlastHSPList* hsp_list = *hsp_list_ptr;
@@ -2737,6 +2853,13 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr,
             /* Skip already deleted HSPs, or HSPs from different contexts */
             if (!hsp2 || hsp1->context != hsp2->context)
                continue;
+
+            /* Short read qureies are shorter than the overlap region and may
+               already have a traceback */
+            if (short_reads) {
+                hspp2[index2] = Blast_HSPFree(hsp2);
+                continue;
+            }
 
             /* we have to determine the starting diagonal of one HSP
                and the ending diagonal of the other */
@@ -3649,4 +3772,52 @@ Blast_HSPResultsFromHSPStreamWithLimitEx(BlastHSPStream* hsp_stream,
         *removed_hsps = rm_hsps;
     }
     return retval;
+}
+
+
+BlastHSPChain* Blast_HSPChainNew(void)
+{
+    BlastHSPChain* chain = calloc(1, sizeof(BlastHSPChain));
+    return chain;
+}
+
+BlastHSPChain* Blast_HSPChainFree(BlastHSPChain* ch)
+{
+    Int4 i;
+
+    if (!ch) {
+        return NULL;
+    }
+
+    for (i = 0;i < ch->num_hsps;i++) {
+        Blast_HSPFree(ch->hsp_array[i]);
+    }
+    sfree(ch->hsp_array);
+    sfree(ch);
+
+    return NULL;
+}
+
+BlastMappingResults* Blast_MappingResultsNew(void)
+{
+    BlastMappingResults* retval = calloc(1, sizeof(BlastMappingResults));
+    return retval;
+}
+
+BlastMappingResults* Blast_MappingResultsFree(BlastMappingResults* results)
+{
+    if (!results) {
+        return NULL;
+    }
+
+    if (results->chain_array) {
+        Int4 i;
+        for (i = 0;i < results->num_results;i++) {
+            Blast_HSPChainFree(results->chain_array[i]);
+        }
+        sfree(results->chain_array);
+    }
+    sfree(results);
+
+    return NULL;
 }

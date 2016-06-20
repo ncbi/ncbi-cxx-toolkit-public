@@ -36,6 +36,8 @@
 #include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/blast_options.h>
 
+#include <algo/blast/core/blast_seqsrc.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -237,7 +239,7 @@ typedef struct BlastMBLookupTable {
     Int4 word_length;      /**< number of exact letter matches that will trigger
                               an ungapped extension */
     Int4 lut_word_length;  /**< number of letters in a lookup table word */
-    Int4 hashsize;       /**< = 4^(lut_word_length) */ 
+    Int8 hashsize;       /**< = 4^(lut_word_length) */ 
     Boolean discontiguous; /**< Are discontiguous words used? */
     Int4 template_length; /**< Length of the discontiguous word template */
     EDiscTemplateType template_type; /**< Type of the discontiguous 
@@ -245,6 +247,8 @@ typedef struct BlastMBLookupTable {
     Boolean two_templates; /**< Use two templates simultaneously */
     EDiscTemplateType second_template_type; /**< Type of the second 
                                                 discontiguous word template */
+
+    Boolean stride;     /**< is lookup table created with a stride */
     Int4 scan_step;     /**< Step size for scanning the database */
     Int4* hashtable;   /**< Array of positions              */
     Int4* hashtable2;  /**< Array of positions for second template */
@@ -262,7 +266,6 @@ typedef struct BlastMBLookupTable {
     Int4 num_unique_pos_added; /**< Number of positions added to the l.t. */
     Int4 num_words_added; /**< Number of words added to the l.t. */
     BlastSeqLoc* masked_locations; /**< masked locations, only non-NULL for soft-masking. */
-
 } BlastMBLookupTable;
 
 /**
@@ -277,13 +280,15 @@ typedef struct BlastMBLookupTable {
  * @param approx_table_entries An upper bound on the number of words
  *        that must be added to the lookup table [in]
  * @param lut_width The number of nucleotides in one lookup table word [in]
+ * @param seqsrc Database sequences [in]
  */
 Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
                            BlastMBLookupTable** mb_lt_ptr,
                            const LookupTableOptions* lookup_options,
                            const QuerySetUpOptions* query_options,
                            Int4 approx_table_entries,
-                           Int4 lut_width);
+                           Int4 lut_width,
+                           BlastSeqSrc* seqsrc);
 
 /** 
  * Deallocate memory used by the Mega BLAST lookup table
@@ -581,6 +586,105 @@ static NCBI_INLINE Int4 ComputeDiscontiguousIndex(Uint8 accum,
 
    return index;
 }
+
+/** Find an index into a sparse array using pv_array as a bit field
+ * @param index Index to translate [in]
+ * @param pv_array Bit field (lookup table pv_array) [in]
+ * @param pv_array_bts Log2 of pv_array size [in]
+ * @param pv_counts Array of set bit counts, where pv_counts[i] is the number
+ *                   of bits set in pv_array[0..i-1] [in]
+ * @param words_per_bit Number of words represented by one bit in the
+ *                       pv_array [in]
+ * @return Index into the sparse array
+ */
+Int8 FindSparseIndex(Int8 index, PV_ARRAY_TYPE* pv_array, Int4 pv_array_bts,
+                     Int4* pv_counts, Int4 words_per_bit);
+
+
+/** Find an index into a sparse array using pv_array as a bit field, for a
+ * batch of indices
+ * @param in_array Input array of indices to translate [in]
+ * @param out_array Output array of indices to translate [out]
+ * @param length Number of indices to translate [in]
+ * @param pv_array Bit field (lookup table pv_array) [in]
+ * @param pv_array_bts Log2 of pv_array size [in]
+ * @param pv_counts Array of set bit counts, where pv_counts[i] is the number
+ *                   of bits set in pv_array[0..i-1] [in]
+ * @param words_per_bit Number of words represented by one bit in the
+ *                       pv_array [in]
+ * @return Index into the sparse array
+ */
+Int2 FindSparseIndices(Int8* NCBI_RESTRICT in_array, Int8* out_array, Int4 length,
+                       PV_ARRAY_TYPE* pv_array, Int4 pv_array_bts,
+                       Int4* counts, Int4 elems_per_bit);
+
+
+/*----------------------- Hashed Na lookup table -------------------------*/
+
+/** Structure defining one cell of the compacted lookup table */
+typedef struct NaHashLookupBackboneCell {
+
+    Int1 num_words;      /**< number of words stored under the same hash value */
+    Int1 num_offsets[3]; /**< number of offsets for each word if there are
+                              fewer than 3 */
+
+    Uint4 words[3];      /**< words stored under this hash value */
+    Int4 offsets[9];     /**< offset locations for each word */
+
+} NaHashLookupBackboneCell;
+
+
+typedef struct BlastNaHashLookupTable {
+    Int4 mask;             /**< part of index to mask off, that is, top 
+                                (wordsize*charsize) bits should be discarded. */
+    Int4 word_length;      /**< Length in bases of the full word match 
+                                required to trigger extension */
+    Int4 lut_word_length;  /**< Length in bases of a word indexed by the
+                                lookup table */
+    Int4 scan_step;        /**< number of bases between successive words */
+    Int4 backbone_size;    /**< number of cells in the backbone */
+    Int4 longest_chain;    /**< length of the longest chain on the backbone */
+    NaHashLookupBackboneCell * thick_backbone; /**< the "thick" backbone. after 
+                                              queries are indexed, compact the 
+                                              backbone to put at most 
+                                              NA_HITS_PER_CELL hits on the 
+                                              backbone, otherwise point to 
+                                              some overflow storage */
+    Int4* overflow;        /**< the overflow array for the compacted 
+                                lookup table */
+    Int4 offsets_size;     /**< Number of elements in the overflow array */
+    PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
+                                are set indicate that the corresponding thick
+                                backbone cell contains hits */
+    Int4 pv_array_bts;     /**< power of 2 by which to divide a word to access
+                                PV_ARRAY_TYPE element in pv array */
+    void *scansub_callback; /**< function for scanning subject sequences */
+    void *hash_callback;    /**< hash function to be used for hash table */
+    BlastSeqLoc* masked_locations; /**< masked locations, only non-NULL for
+                                      soft-masking. */
+} BlastNaHashLookupTable;
+
+/* Maximum number of words and offsets that can be strored in thich backbone */
+#define NA_WORDS_PER_HASH 3
+#define NA_OFFSETS_PER_HASH 9
+
+
+Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
+                               BlastSeqLoc* locations,
+                               BlastNaHashLookupTable** lut,
+                               const LookupTableOptions* opt, 
+                               const QuerySetUpOptions* query_options,
+                               BlastSeqSrc* seqsrc);
+
+
+/** Free a nucleotide lookup table.
+ *  @param lookup The lookup table structure to be freed
+ *  @return NULL
+ */
+BlastNaHashLookupTable*
+BlastNaHashLookupTableDestruct(BlastNaHashLookupTable* lookup);
+
+
 
 #ifdef __cplusplus
 }

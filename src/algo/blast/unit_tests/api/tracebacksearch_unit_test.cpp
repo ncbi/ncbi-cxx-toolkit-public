@@ -93,7 +93,7 @@ public:
                                 opts->GetExtnOpts()->compositionBasedStats,
                                 opts->GetScoringOpts()->gapped_calculation));
         
-        BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+    BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL, NULL);
         BOOST_REQUIRE(writer_info == NULL);
         
         BlastHSPStream* hsp_stream = BlastHSPStreamNew(
@@ -177,7 +177,7 @@ public:
                                     opts->GetExtnOpts()->compositionBasedStats,
                                     opts->GetScoringOpts()->gapped_calculation));
 
-        BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+        BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL, NULL);
         BOOST_REQUIRE(writer_info == NULL);
         
         BlastHSPStream* hsp_stream = BlastHSPStreamNew(

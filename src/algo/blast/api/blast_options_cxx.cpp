@@ -915,6 +915,37 @@ CBlastOptions::SetWordSize(int ws)
     }
 }
 
+Uint4 CBlastOptions::GetLookupTableStride() const
+{
+	if (!m_Local) {
+        x_Throwx("Error: GetLookupTableStride not available.");
+	}
+    return m_Local->GetLookupTableStride();
+}
+void CBlastOptions::SetLookupTableStride(Uint4 val)
+{
+	if (!m_Local) {
+        x_Throwx("Error: SetLookupTableStride not available.");
+	}
+    m_Local->SetLookupTableStride(val);
+}
+
+bool CBlastOptions::GetLookupDbFilter() const
+{
+	if (!m_Local) {
+        x_Throwx("Error: GetLookupDbFilter not available.");
+	}
+    return m_Local->GetLookupDbFilter();
+}
+
+void CBlastOptions::SetLookupDbFilter(bool val)
+{
+	if (!m_Local) {
+        x_Throwx("Error: SetLookupDbFilter not yet available.");
+	}
+    m_Local->SetLookupDbFilter(val);
+}
+
 /// Megablast only lookup table options
 unsigned char 
 CBlastOptions::GetMBTemplateLength() const
@@ -1579,6 +1610,49 @@ CBlastOptions::SetUnifiedP(int u)
       m_Remote->SetValue(eBlastOpt_UnifiedP, u);
    }
 }
+
+int
+CBlastOptions::GetMaxMismatches() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetMaxMismatches() not available.");
+    }
+
+    return m_Local->GetMaxMismatches();
+}
+
+void
+CBlastOptions::SetMaxMismatches(int m)
+{
+    if (m_Local) {
+	m_Local->SetMaxMismatches(m);
+    }
+    else {
+        x_Throwx("Error: GetMaxMismatches() not supported for remote searches");
+    }
+}
+
+
+int
+CBlastOptions::GetMismatchWindow() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetMismatchWindow() not available.");
+    }
+
+    return m_Local->GetMismatchWindow();
+}
+
+void
+CBlastOptions::SetMismatchWindow(int w)
+{
+    if (m_Local) {
+	m_Local->SetMismatchWindow(w);
+    }
+    else {
+        x_Throwx("Error: GetMismatchWindow() not supported for remote searches");
+    }
+}
  
 
 /******************* Hit saving options *************************/
@@ -1908,6 +1982,47 @@ CBlastOptions::SetLowScorePerc(double p)
         m_Local->SetLowScorePerc(p);
 }
 
+
+bool
+CBlastOptions::GetPaired() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetPaired() not available.");
+    }
+    return m_Local->GetPaired();
+}
+
+void
+CBlastOptions::SetPaired(bool p)
+{
+    if (m_Local) {
+        m_Local->SetPaired(p);
+    }
+    else {
+        x_Throwx("Error: SetPaired() not available.");
+    }
+}
+
+
+bool
+CBlastOptions::GetSpliceAlignments() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetSplice() not available.");
+    }
+    return m_Local->GetSplice();
+}
+
+void
+CBlastOptions::SetSpliceAlignments(bool s)
+{
+    if (m_Local) {
+        m_Local->SetSplice(s);
+    }
+    else {
+        x_Throwx("Error: SetSplice() not available.");
+    }
+}
 
 
 /************************ Scoring options ************************/

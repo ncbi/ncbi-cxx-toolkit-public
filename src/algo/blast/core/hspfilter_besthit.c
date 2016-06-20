@@ -65,10 +65,11 @@ typedef struct BlastHSPBestHitData {
  * @param results The HSP results to operate on  [in]
  */ 
 static int 
-s_BlastHSPBestHitInit(void* data, BlastHSPResults* results)
+s_BlastHSPBestHitInit(void* data, void* hsp_results)
 {
    int i;
    BlastHSPBestHitData * bh_data = data;
+   BlastHSPResults* results = (BlastHSPResults*)hsp_results;
    bh_data->best_list = calloc(results->num_queries, sizeof(LinkedHSP_BH *));
    bh_data->num_hsps = calloc(results->num_queries, sizeof(Int4));
    bh_data->max_hsps = calloc(results->num_queries, sizeof(Int4));
@@ -191,10 +192,11 @@ s_ImportFromHitlist(int qid,
  * @param results The HSP results to propagate [in][out]
  */ 
 static int 
-s_BlastHSPBestHitFinal(void* data, BlastHSPResults* results)
+s_BlastHSPBestHitFinal(void* data, void* hsp_results)
 {
    int qid, sid;
    BlastHSPBestHitData *bh_data = data;
+   BlastHSPResults* results = (BlastHSPResults*)hsp_results;
    LinkedHSP_BH **best_list = bh_data->best_list;
    BlastHitList* hitlist;
 
@@ -480,7 +482,8 @@ s_BlastHSPBestHitFree(BlastHSPWriter* writer)
  */
 static
 BlastHSPWriter* 
-s_BlastHSPBestHitNew(void* params, BlastQueryInfo* query_info)
+s_BlastHSPBestHitNew(void* params, BlastQueryInfo* query_info,
+                     BLAST_SequenceBlk* sequence)
 {
    BlastHSPWriter * writer = NULL;
    BlastHSPBestHitData data;

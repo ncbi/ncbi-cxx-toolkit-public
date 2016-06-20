@@ -62,6 +62,8 @@ extern "C" {
 #define PSSM_SUBJECT_MASK       (0x1<<7)
 /** This bit is on if the query includes a pattern (PHI-BLAST) */
 #define PATTERN_QUERY_MASK      (0x1<<8)
+/** This bit is on for fast mapping of short reads */
+#define MAPPING_MASK            (0x1<<9)
 
 /******************** Main BLAST program definitions ***********************/
 
@@ -83,6 +85,7 @@ typedef enum {
     eBlastTypeRpsTblastn    = (PSSM_SUBJECT_MASK | eBlastTypeBlastx),
     eBlastTypePhiBlastp     = (PATTERN_QUERY_MASK | eBlastTypeBlastp),
     eBlastTypePhiBlastn     = (PATTERN_QUERY_MASK | eBlastTypeBlastn),
+    eBlastTypeMapping       = (eBlastTypeBlastn | MAPPING_MASK),
     eBlastTypeUndefined     = 0x0
 } EBlastProgramType;
 
@@ -160,11 +163,21 @@ Boolean Blast_ProgramIsPhiBlast(EBlastProgramType p);
 NCBI_XBLAST_EXPORT 
 Boolean Blast_ProgramIsRpsBlast(EBlastProgramType p);
 
+NCBI_XBLAST_EXPORT 
+Boolean Blast_ProgramIsMapping(EBlastProgramType p);
+
+NCBI_XBLAST_EXPORT
+Boolean Blast_QueryIsPattern(EBlastProgramType p);
+
+NCBI_XBLAST_EXPORT 
+Boolean Blast_ProgramIsNucleotide(EBlastProgramType p);
+
 /** Returns true if program is not undefined
  * @param p program type [in]
  */
 NCBI_XBLAST_EXPORT 
 Boolean Blast_ProgramIsValid(EBlastProgramType p);
+
 
 #ifdef __cplusplus
 }

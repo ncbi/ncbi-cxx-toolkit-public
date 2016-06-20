@@ -110,6 +110,86 @@ private:
     void x_InitInputReader();
 };
 
+
+class NCBI_BLASTINPUT_EXPORT CShortReadFastaInputSource
+    : public CBlastInputSourceOMF
+{
+public:
+    /// Input formats
+    enum EInputFormat {
+        eFasta = 0,
+        eFastc,
+        eFastq
+    };
+
+
+    CShortReadFastaInputSource(CNcbiIstream& infile, TSeqPos num_seqs_in_bacth,
+                               EInputFormat format = eFasta,
+                               bool paired = false, bool validate = true);
+
+    CShortReadFastaInputSource(CNcbiIstream& infile1, CNcbiIstream& infile2,
+                               TSeqPos num_seqs_in_bacth,
+                               EInputFormat format = eFasta,
+                               bool validate = true);
+
+    virtual ~CShortReadFastaInputSource() {}
+
+    virtual void GetNextNumSequences(CBioseq_set& bioseq_set, TSeqPos num_seqs);
+    virtual bool End(void) {return m_LineReader->AtEOF();}
+
+    /// Get number of rejected queries
+    Int4 GetNumRejected(void) const {return m_NumRejected;}
+
+private:
+    CShortReadFastaInputSource(const CShortReadFastaInputSource&);
+    CShortReadFastaInputSource& operator=(const CShortReadFastaInputSource&);
+
+    CTempString x_ParseDefline(CTempString& line);
+    bool x_ValidateSequence(const char* sequence, int length);
+
+    /// Read sequences in FASTA format
+    void x_ReadFasta(CBioseq_set& bioseq_set);
+
+    /// Read sequences in FASTQ format
+    void x_ReadFastq(CBioseq_set& bioseq_set);
+
+    /// Read one sequence from a FASTA file
+    int x_ReadFastaOneSeq(CRef<ILineReader> line_reader);
+
+    /// Read one sequence from a FASTQ file
+    int x_ReadFastqOneSeq(CRef<ILineReader> line_reader);
+
+    /// Read sequences from two FASTA or FASTQ files (for paired reads)
+    bool x_ReadFromTwoFiles(CBioseq_set& bioseq_set, EInputFormat format);
+
+    /// Read sequences in FASTC format: defline, new line, a pair of sequences
+    /// on a single line separated by '><'
+    void x_ReadFastc(CBioseq_set& bioseq_set);
+
+    TSeqPos m_NumSeqsInBatch;
+    /// string::capacity() can be used instead
+    TSeqPos m_SeqBuffLen;
+    CRef<ILineReader> m_LineReader;
+    // for reading paired reads from two FASTA files
+    CRef<ILineReader> m_SecondLineReader;
+    string m_Sequence;
+    CTempString m_Line;
+    /// Are paired sequences in the input
+    bool m_IsPaired;
+    /// Validate quereis and reject those that do not pass
+    bool m_Validate;
+    /// Number of queries that did not pass validation and were rejected
+    Int4 m_NumRejected;
+    /// Input format: FASTA, FASTQ, FASTC
+    EInputFormat m_Format;
+    /// Used for indexing Seq-entries when reading from two files
+    int m_Index;
+
+    vector< CRef<CSeq_id> > m_SeqIds;
+    vector< CRef<CSeq_entry> > m_Entries;
+};
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

@@ -127,6 +127,57 @@ static NCBI_INLINE Int4 ComputeTableIndexIncremental(Int4 wordsize,
   return ((index << charsize) | word[wordsize - 1]) & mask;
 }
 
+
+/** Thin backbone cell for nucleotide lookup table with hashed words */
+typedef struct BackboneCell
+{
+    Uint4 word;
+    Int4* offsets;
+    Int4 num_offsets;
+    Int4 allocated;
+    struct BackboneCell* next;
+} BackboneCell;
+
+
+/** Hash function type for the lookup table */
+typedef Uint4 (*TNaLookupHashFunction)(Uint1*, Uint4);
+
+
+BackboneCell* BackboneCellFree(BackboneCell* cell);
+
+/** Create a new cell for a given word and offset
+ *@param word Nucleotide word in 2na [in]
+ *@param offset Offset for the word [in]
+ *@param size Size of the offset array to be allocated [in]
+ */
+BackboneCell* BackboneCellNew(Uint4 word, Int4 offset, Int4 size);
+
+
+/** Add all applicable query offsets to a hashed lookup table
+ *
+ * @param backbone The current list of hashtable cells [in][out]
+ * @param word_length Number of letters in a word [in]
+ * @param charsize Number of bits in one letter [in]
+ * @param lut_word_length Width of the lookup table in letters
+ *                      (must be <= word_length) [in]
+ * @param query The query sequence [in]
+ * @param locations What locations on the query sequence to index? [in]
+ * @param hash_func Hash function for words in 2na [in]
+ * @param counts Word counts in a database, to limit lookup table by databse
+ *               word frequency [in]
+ */
+void BlastHashLookupIndexQueryExactMatches(BackboneCell **backbone,
+                                           Int4 word_length,
+                                           Int4 charsize,
+                                           Int4 lut_word_length,
+                                           BLAST_SequenceBlk* query,
+                                           BlastSeqLoc* locations,
+                                           TNaLookupHashFunction hash_func,
+                                           Uint4 mask,
+                                           Uint1* counts);
+
+
+
 #ifdef __cplusplus
 }
 #endif

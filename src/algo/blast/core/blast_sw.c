@@ -651,7 +651,8 @@ Int2 BLAST_SmithWatermanGetGappedScore (EBlastProgramType program_number,
       return 1;
 
    is_prot = (program_number != eBlastTypeBlastn &&
-              program_number != eBlastTypePhiBlastn);
+              program_number != eBlastTypePhiBlastn &&
+              program_number != eBlastTypeMapping);
 
    if (Blast_ProgramIsRpsBlast(program_number)) {
       Int4 rps_context = subject->oid;

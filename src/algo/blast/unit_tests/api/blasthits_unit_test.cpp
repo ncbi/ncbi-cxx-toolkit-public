@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
             setupHSPList(&hsp_list, chunk);
             Blast_HSPListsMerge(&hsp_list, &combined_hsp_list,
                                 hsp_num_max, &offset, INT4_MIN,
-                                DBSEQ_CHUNK_OVERLAP, TRUE);
+                                DBSEQ_CHUNK_OVERLAP, TRUE, FALSE);
             offset += kOffsetIncrement;
         }
 
@@ -544,7 +544,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastSeqLoc* blast_seq_loc = BlastSeqLocNew(NULL, 0, query_info->contexts[0].query_length-1);
 
         LookupTableOptionsNew(program_number, &lookup_options);
-        LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc, sbp, &lookup_wrap, NULL, NULL);
+        LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc, sbp, &lookup_wrap, NULL, NULL, NULL);
         query_options = BlastQuerySetUpOptionsFree(query_options);
         BOOST_REQUIRE(query_options == NULL);
         BlastInitialWordOptionsNew(program_number, &word_options);
@@ -693,7 +693,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastSeqLoc* blast_seq_loc = BlastSeqLocNew(NULL, 0, query_info->contexts[0].query_length-1);
 
         LookupTableOptionsNew(program_number, &lookup_options);
-        LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc, sbp, &lookup_wrap, NULL, NULL);
+        LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc, sbp, &lookup_wrap, NULL, NULL, NULL);
         query_options = BlastQuerySetUpOptionsFree(query_options);
         BOOST_REQUIRE(query_options == NULL);
         BlastInitialWordOptionsNew(program_number, &word_options);

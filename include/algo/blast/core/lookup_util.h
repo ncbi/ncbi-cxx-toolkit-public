@@ -57,7 +57,7 @@ Int4 iexp(Int4 x, Int4 n);
  */
 
 NCBI_XBLAST_EXPORT
-Int4 ilog2(Int4 x);
+Int4 ilog2(Int8 x);
 
 /**
  * generates a de Bruijn sequence containing all substrings

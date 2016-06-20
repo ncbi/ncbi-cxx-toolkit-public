@@ -55,6 +55,8 @@ typedef struct BlastContextInfo {
                               This field should be set only by the setup code
                               and read by subsequent stages of the BLAST search
                               */
+    Boolean has_pair;       /**< If true, this query has a pair in the contexts
+                                 for the next sequence (for mapping) */
 } BlastContextInfo;
 
 /** Forward declaration of SPHIQueryInfo */
@@ -68,6 +70,8 @@ typedef struct BlastQueryInfo {
     int num_queries;     /**< Number of query sequences */
     BlastContextInfo * contexts; /**< Information per context */
     Uint4 max_length;    /**< Length of the longest among the concatenated
+                            queries */
+    Uint4 min_length;    /**< Length of the shortest among the concatenated
                             queries */
     struct SPHIQueryInfo* pattern_info; /**< Counts of PHI BLAST pattern
                                       occurrences, used in PHI BLAST only. */

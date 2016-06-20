@@ -686,6 +686,7 @@ string EProgramToTaskName(EProgram p)
     case ePHIBlastn:        retval.assign("phiblastn"); break;
     case eDeltaBlast:       retval.assign("deltablast"); break;
     case eVecScreen:        retval.assign("vecscreen"); break;
+    case eMapper:           retval.assign("mapr2g"); break;
     default:
         cerr << "Invalid EProgram value: " << (int)p << endl;
         abort();
@@ -707,6 +708,9 @@ EProgramToEBlastProgramType(EProgram p)
     case eDiscMegablast:
     case eVecScreen:
         return eBlastTypeBlastn;
+
+    case eMapper:
+        return eBlastTypeMapping;
         
     case eBlastp:
         return eBlastTypeBlastp;
@@ -784,6 +788,16 @@ EProgram ProgramNameToEnum(const std::string& program_name)
         return eDeltaBlast;
     } else if (lowercase_program_name == "vecscreen") {
         return eVecScreen;
+    // FIXME: mapper is used in core as a single program name for all tasks,
+    // we may need a better approach to mapping tasks with fewer program names
+    } else if (lowercase_program_name == "mapper") {
+        return eMapper;
+    } else if (lowercase_program_name == "mapr2g") {
+        return eMapper;
+    } else if (lowercase_program_name == "mapr2r") {
+        return eMapper;
+    } else if (lowercase_program_name == "mapg2g") {
+        return eMapper;
     } else {
         NCBI_THROW(CBlastException, eNotSupported, 
                    "Program type '" + program_name + "' not supported");
@@ -898,7 +912,7 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
         NCBI_THROW(CBlastException, eInvalidArgument, msg);
     }
 
-    if (program == eBlastTypeBlastn) {
+    if (program == eBlastTypeBlastn || program == eBlastTypeMapping) {
         s_ConvertBlastnMasks(query_intervals, mask, mask_v);
         return;
     }

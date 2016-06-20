@@ -132,6 +132,7 @@ static double
 s_GetCutoffEvalue(EBlastProgramType program)
 {
    switch(program) {
+   case eBlastTypeMapping:
    case eBlastTypeBlastn:
       return CUTOFF_E_BLASTN;
    case eBlastTypeBlastp: 
@@ -219,9 +220,10 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
       }
    }
 
-   if (program_number == eBlastTypeBlastn &&
-      (query_info->contexts[query_info->last_context].query_offset +
-            query_info->contexts[query_info->last_context].query_length) > kQueryLenForHashTable)
+   if (Blast_ProgramIsNucleotide(program_number) &&
+       !Blast_QueryIsPattern(program_number) &&
+       (query_info->contexts[query_info->last_context].query_offset +
+        query_info->contexts[query_info->last_context].query_length) > kQueryLenForHashTable)
        p->container_type = eDiagHash;
    else
        p->container_type = eDiagArray;
@@ -229,7 +231,7 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
    status = BlastInitialWordParametersUpdate(program_number,
                hit_params, sbp, query_info, subject_length, p);
 
-   if (program_number == eBlastTypeBlastn) {
+   if (program_number == eBlastTypeBlastn || program_number == eBlastTypeMapping) {
       Int4 i;
       Int4 reward = sbp->reward;
       Int4 penalty = sbp->penalty;
@@ -347,7 +349,8 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
 
          /* include the length of reverse complement for blastn searchs. */
          ASSERT(query_length > 0);
-         if (program_number == eBlastTypeBlastn)
+         if (program_number == eBlastTypeBlastn ||
+             program_number == eBlastTypeMapping)
             query_length *= 2;
       
          kbp = kbp_array[context];
@@ -402,7 +405,8 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
 
       /* Nucleotide searches first compute an approximate ungapped
          alignment and compare it to a reduced ungapped cutoff score */
-      if (program_number == eBlastTypeBlastn) {
+      if (program_number == eBlastTypeBlastn ||
+          program_number == eBlastTypeMapping) {
          curr_cutoffs->reduced_nucl_cutoff_score = (Int4)(0.8 * new_cutoff);
       }
    }
@@ -858,7 +862,8 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
     params->prelim_evalue = options->expect_value;  /* evalue and prelim_evalue same if no CBS. */
 
    // Set masklevel parameter -RMH-
-   if ( program_number == eBlastTypeBlastn && options->mask_level >= 0 )
+    if ((program_number == eBlastTypeBlastn ||
+         program_number == eBlastTypeMapping) && options->mask_level >= 0 )
      params->mask_level = options->mask_level;
 
    /* Calculate cutoffs based on effective length information */

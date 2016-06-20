@@ -40,6 +40,8 @@
 #include <algo/blast/core/blast_rps.h>
 #include <algo/blast/core/blast_stat.h>
 
+#include <algo/blast/core/blast_seqsrc.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -73,6 +75,7 @@ typedef Boolean (*T_Lookup_Callback)(const LookupTableWrap *, Int4, Int4);
  * @param lookup_wrap_ptr The initialized lookup table [out]
  * @param rps_info Structure containing RPS blast setup information [in]
  * @param error_msg message with warning or errors [in|out]
+ * @param seqsrc Database sequences [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
@@ -80,7 +83,8 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
         const QuerySetUpOptions* query_options,
         BlastSeqLoc* lookup_segments, BlastScoreBlk* sbp, 
         LookupTableWrap** lookup_wrap_ptr, const BlastRPSInfo *rps_info,
-        Blast_Message* *error_msg);
+        Blast_Message* *error_msg,
+        BlastSeqSrc* seqsrc);
 
 /** Deallocate memory for the lookup table */
 NCBI_XBLAST_EXPORT

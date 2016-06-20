@@ -113,7 +113,7 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
 
         /* For right now, copy the contents from kbp_gap_std to 
          * kbp_gap_psi (as in old code - BLASTSetUpSearchInternalByLoc) */
-        if (program != eBlastTypeBlastn) {
+        if (program != eBlastTypeBlastn && program != eBlastTypeMapping) {
             sbp->kbp_gap_psi[index] = Blast_KarlinBlkNew();
             Blast_KarlinBlkCopy(sbp->kbp_gap_psi[index], 
                                 sbp->kbp_gap_std[index]);
@@ -343,7 +343,8 @@ Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
        currently only turned on in RMBlastN -RMH-  */
     sbp->matrix_only_scoring = FALSE;
 
-    if (program_number == eBlastTypeBlastn) {
+    if (program_number == eBlastTypeBlastn ||
+        program_number == eBlastTypeMapping) {
 
         BLAST_ScoreSetAmbigRes(sbp, 'N');
         BLAST_ScoreSetAmbigRes(sbp, '-');
@@ -391,6 +392,66 @@ Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
     return status;
 }
 
+static Int2
+s_JumperScoreBlkFill(BlastScoreBlk* sbp, const BlastQueryInfo* query_info,
+                     Blast_Message** error_return)
+{
+    Int4 context;
+    Blast_KarlinBlk* kbp;
+    Int2 status;
+
+    /* Create ungapped block */
+    status = Blast_ScoreBlkKbpIdealCalc(sbp);
+    if (status) {
+        return status;
+    }
+
+    for (context = query_info->first_context;
+         context <= query_info->last_context; ++context) {
+
+        if (!query_info->contexts[context].is_valid) {
+            continue;
+        }
+
+        sbp->sfp[context] = NULL;
+        sbp->kbp_std[context] = Blast_KarlinBlkNew();
+        Blast_KarlinBlkCopy(sbp->kbp_std[context], sbp->kbp_ideal);
+    }
+    sbp->kbp = sbp->kbp_std;
+
+    /* Create gapped block */
+    context = query_info->first_context;
+    while (!query_info->contexts[context].is_valid) {
+        context++;
+    }
+
+    sbp->kbp_gap_std[context] = kbp = Blast_KarlinBlkNew();
+    status = Blast_KarlinBlkNuclGappedCalc(kbp, BLAST_GAP_OPEN_MEGABLAST,
+                                           BLAST_GAP_EXTN_MEGABLAST,
+                                           BLAST_REWARD,
+                                           BLAST_PENALTY,
+                                           sbp->kbp_std[context],
+                                           &(sbp->round_down),
+                                           error_return);
+    if (status){
+        return status;
+    }
+
+    for (++context;context <= query_info->last_context; ++context) {
+
+        if (!query_info->contexts[context].is_valid) {
+            continue;
+        }
+
+        sbp->kbp_gap_std[context] = Blast_KarlinBlkNew();
+        Blast_KarlinBlkCopy(sbp->kbp_gap_std[context], kbp);
+    }
+    sbp->kbp_gap = sbp->kbp_gap_std;
+
+    return status;
+}
+
+
 Int2 
 BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk, 
                         const BlastQueryInfo* query_info, 
@@ -408,7 +469,9 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     if (sbpp == NULL)
        return 1;
 
-    if (program_number == eBlastTypeBlastn) {
+    if (program_number == eBlastTypeBlastn ||
+        program_number == eBlastTypeMapping) {
+
        sbp = BlastScoreBlkNew(BLASTNA_SEQ_CODE, query_info->last_context + 1);
        /* disable new FSC rules for nucleotide case for now */
        if (sbp && sbp->gbp) {
@@ -441,6 +504,12 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     /* Fills in block for gapped blast. */
     if (Blast_ProgramIsPhiBlast(program_number)) {
        status = s_PHIScoreBlkFill(sbp, scoring_options, blast_message, get_path);
+    } else if (Blast_ProgramIsMapping(program_number)) {
+        /* Create fake score blocks for each query without computing base
+           frequencies. We do not compute e-values for mapping, so the
+           KA statistics are not needed, but the data structures are checked
+           and used in BLAST engine. */
+        status = s_JumperScoreBlkFill(sbp, query_info, blast_message);
     } else {
        status = Blast_ScoreBlkKbpUngappedCalc(program_number, sbp, query_blk->sequence, 
                query_info, blast_message);
@@ -670,6 +739,17 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    else
       db_num_seqs = eff_len_params->real_num_seqs;
    
+   /* Mapping does not need length correction */
+   if (Blast_ProgramIsMapping(program_number)) {
+        for (index = query_info->first_context;
+           index <= query_info->last_context;
+           index++) {
+           query_info->contexts[index].eff_searchsp = db_length;
+        }
+
+        return 0;
+   }
+
    /* PHI BLAST search space calculation is different. */
    if (Blast_ProgramIsPhiBlast(program_number))
    {

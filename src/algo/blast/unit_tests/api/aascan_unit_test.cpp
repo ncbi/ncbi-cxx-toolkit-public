@@ -215,6 +215,7 @@ struct AascanTestFixture {
                             sbp,
                             &lookup_wrap_ptr,
                             NULL /* RPS Info */,
+                            NULL,
                             NULL);
         BOOST_REQUIRE_EQUAL(0, status);
 

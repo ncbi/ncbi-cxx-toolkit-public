@@ -67,8 +67,8 @@ RemapToQueryLoc(CRef<CSeq_align> sar, const CSeq_loc & query);
 /// @param sas Pointer to a Seq-align-set, to which new object should be 
 ///            appended (if not NULL).
 /// @return Resulting Seq-align-set. 
-CSeq_align_set*
-CreateEmptySeq_align_set(CSeq_align_set* sas);
+CRef<CSeq_align_set>
+CreateEmptySeq_align_set(void);
 
 void
 BLASTHspListToSeqAlign(EBlastProgramType program, 
@@ -149,6 +149,19 @@ BLASTPrelminSearchHitListToStdSeg(EBlastProgramType 	   program,
                      	 	 	  TSeqPos				   query_length,
                      	 	 	  const IBlastSeqInfoSrc * subject_seqinfo,
                      	 	 	  list<CRef<CStd_seg > > & seg_list);
+
+
+/// Convert a spliced alignmeny in BlastHSPChain into Spliced_seg
+/// @param spliced_seg Spliced_seg object [in] [out]
+/// @param product_id Sequence id of a read/query [in]
+/// @param genomic_id Sequence id a genome/subject [in]
+/// @param chain Alignment to be converted [in]
+void MakeSplicedSeg(CSpliced_seg& spliced_seg,
+                    CRef<CSeq_id> product_id,
+                    CRef<CSeq_id> genomic_id,
+                    int product_length,
+                    const BlastHSPChain* chain);
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

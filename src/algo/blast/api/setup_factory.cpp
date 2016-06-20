@@ -55,8 +55,10 @@
 #include <algo/blast/core/hspfilter_collector.h>
 #include <algo/blast/core/hspfilter_besthit.h>
 #include <algo/blast/core/hspfilter_culling.h>
+#include <algo/blast/core/hspfilter_mapper.h>
 
 #include <sstream>
+#include "../core/jumper.h"
 
 /** @addtogroup AlgoBlast
  *
@@ -215,7 +217,8 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
                                       score_blk,
                                       &retval,
                                       rps_info ? (*rps_info)() : 0,
-                                      &blast_msg);
+                                      &blast_msg,
+                                      seqsrc);
     if (status != 0) {
          TSearchMessages search_messages;
          Blast_Message2TSearchMessages(blast_msg.Get(), 
@@ -290,6 +293,7 @@ CSetupFactory::CreateHspStream(const CBlastOptionsMemento* opts_memento,
 
 BlastHSPWriter*
 CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
+                               BLAST_SequenceBlk* query,
                                BlastQueryInfo* query_info)
 {
     BlastHSPWriterInfo* writer_info = NULL;
@@ -300,7 +304,16 @@ CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
     	//We want to only do score edge in prelimiary stage, skip if score edge in 0
     	filt_opts = NULL;
     }
-    if (filt_opts) {
+
+    if (Blast_ProgramIsMapping(opts_memento->m_ProgramType)) {
+
+        BlastHSPMapperParams* params =
+            BlastHSPMapperParamsNew(opts_memento->m_HitSaveOpts,
+                                    opts_memento->m_ScoringOpts);
+
+        writer_info = BlastHSPMapperInfoNew(params);
+    }
+    else if (filt_opts) {
         bool hsp_writer_found = false;
         if (filt_opts->best_hit && (filt_opts->best_hit_stage & ePrelimSearch))
         {
@@ -336,7 +349,7 @@ CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
         writer_info = BlastHSPCollectorInfoNew(params);
     }
     
-    BlastHSPWriter* retval = BlastHSPWriterNew(&writer_info, query_info);
+    BlastHSPWriter* retval = BlastHSPWriterNew(&writer_info, query_info, query);
     _ASSERT(writer_info == NULL);
     return retval;
 }
@@ -416,7 +429,8 @@ CSetupFactory::InitializeMegablastDbIndex(CRef<CBlastOptions> options)
     string errstr = "";
     bool partial( false );
 
-    if( options->GetProgramType() != eBlastTypeBlastn ) {
+    if( options->GetProgramType() != eBlastTypeBlastn
+        && options->GetProgramType() != eBlastTypeMapping) {
         errstr = "Database indexing is available for blastn only.";
     }
     else if( options->GetMBTemplateLength() > 0 ) {

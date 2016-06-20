@@ -193,6 +193,7 @@ struct AalookupTestFixture {
 			sbp,
 			&lookup_wrap_ptr,
                       NULL /* RPS info */,
+                      NULL,
                       NULL);
     lookup = (BlastAaLookupTable*) lookup_wrap_ptr->lut;
   }

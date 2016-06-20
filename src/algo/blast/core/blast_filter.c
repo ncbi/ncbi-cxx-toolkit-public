@@ -570,7 +570,9 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number,
                 }
 		else if (*ptr == 'L' || *ptr == 'T')
 		{ /* do low-complexity filtering; dust for blastn, otherwise seg.*/
-                        if (program_number == eBlastTypeBlastn)
+                        if (program_number == eBlastTypeBlastn
+                            || program_number == eBlastTypeMapping)
+
                             SDustOptionsNew(&dustOptions);
                         else
                             SSegOptionsNew(&segOptions);
@@ -1016,7 +1018,8 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
    const BlastMaskLoc* mask_loc, BlastSeqLoc* *complement_mask) 
 {
    Int4 context;
-   const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
+   const Boolean kIsNucl = (program_number == eBlastTypeBlastn ||
+                            program_number == eBlastTypeMapping);
    BlastSeqLoc* tail = NULL;    /* Pointer to the tail of the complement_mask
                                    linked list */
 
@@ -1191,7 +1194,8 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk,
     Int4 context_offset;
     Uint1 *buffer;              /* holds sequence for plus strand or protein. */
 
-    const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
+    const Boolean kIsNucl = (program_number == eBlastTypeBlastn ||
+                             program_number == eBlastTypeMapping);
 
     context_offset = query_info->contexts[context].query_offset;
     buffer = &query_blk->sequence[context_offset];
@@ -1340,7 +1344,8 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk,
                      const BlastMaskLoc *filter_maskloc, 
                      EBlastProgramType program_number)
 {
-    const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
+    const Boolean kIsNucl = (program_number == eBlastTypeBlastn
+                             || program_number == eBlastTypeMapping);
     Int4 context; /* loop variable. */
     Int4 total_length;
     Boolean has_mask = FALSE; /* Check for whether filter_maskloc is empty. */

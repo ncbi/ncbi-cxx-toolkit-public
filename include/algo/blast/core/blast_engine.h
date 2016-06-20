@@ -46,6 +46,7 @@
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_diagnostics.h>   
 #include <algo/blast/core/blast_hspstream.h>
+#include <algo/blast/core/na_ungapped.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -236,6 +237,26 @@ typedef Int2 (*BlastWordFinderType)
       Int4, 
       BlastInitHitList*,
       BlastUngappedStats*);
+
+/** Short read mapper function pointer type */
+typedef Int2 (*JumperGappedType)
+     (BLAST_SequenceBlk*,
+      BLAST_SequenceBlk*,
+      BlastQueryInfo*,
+      LookupTableWrap*,
+      const BlastInitialWordParameters*,
+      const BlastScoringParameters*,
+      const BlastHitSavingParameters*,
+      BlastOffsetPair* offset_pairs,
+      MapperWordHits* mapper_wordhits,
+      Int4,
+      BlastGapAlignStruct*,
+      BlastInitHitList*,
+      BlastHSPList**,
+      BlastUngappedStats*,
+      BlastGappedStats*);
+    
+
 
 #ifdef __cplusplus
 }

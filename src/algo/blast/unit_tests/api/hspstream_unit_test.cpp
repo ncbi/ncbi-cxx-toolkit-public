@@ -84,7 +84,7 @@ void testHSPStream(EHSPStreamType stream_type) {
 
     BlastHSPWriterInfo * writer_info = BlastHSPCollectorInfoNew(col_params);
 
-	BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+	BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL, NULL);
     BOOST_REQUIRE(writer_info == NULL);
 
     BlastHSPStream* hsp_stream = BlastHSPStreamNew(kProgram, ext_options, TRUE,
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(testMultiSeqHSPCollector) {
         hit_options, ext_options->compositionBasedStats,
         scoring_options->gapped_calculation));
 
-	BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+	BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL, NULL);
     BOOST_REQUIRE(writer_info == NULL);
 
     BlastHSPStream* hsp_stream = BlastHSPStreamNew(

@@ -62,6 +62,9 @@ typedef struct {
 } BlastGapDP;
 
 
+typedef struct JumperGapAlign JumperGapAlign;
+
+
 /** Structure supporting the gapped alignment */
 typedef struct BlastGapAlignStruct {
    Boolean positionBased; /**< Is this PSI-BLAST? */
@@ -76,6 +79,8 @@ typedef struct BlastGapAlignStruct {
    Int4 dp_mem_alloc;  /**< current number of structures allocated */
    BlastScoreBlk* sbp; /**< Pointer to the scoring information block */
    Int4 gap_x_dropoff; /**< X-dropoff parameter to use */
+   Int4 max_mismatches;  /**< Max number of mismatches for jumper */
+   Int4 mismatch_window; /**< Window sie for mismatches for jumper */
    Int4 query_start; /**< query start offset of current alignment */
    Int4 query_stop; /**< query end offseet of current alignment */
    Int4 subject_start;  /**< subject start offset current alignment */
@@ -85,6 +90,8 @@ typedef struct BlastGapAlignStruct {
    Int4 greedy_subject_seed_start;  /**< for greedy alignments, the subject
                                          offset of the gapped start point */
    Int4 score;   /**< Return value: alignment score */
+
+   JumperGapAlign* jumper;   /**< data for jumper alignment */
 } BlastGapAlignStruct;
 
 /** Initializes the BlastGapAlignStruct structure 

@@ -58,7 +58,8 @@ CBlastInputSourceConfig::CBlastInputSourceConfig
   m_BelieveDeflines(believe_defline), m_Range(range), m_DLConfig(dlconfig),
   m_RetrieveSeqData(retrieve_seq_data),
   m_LocalIdCounter(local_id_counter),
-  m_SeqLenThreshold2Guess(seqlen_thresh2guess)
+  m_SeqLenThreshold2Guess(seqlen_thresh2guess),
+  m_GapsToNs(false)
 {
     // Set an appropriate default for the strand
     if (m_Strand == eNa_strand_other) {
@@ -274,6 +275,29 @@ CBlastBioseqMaker::IsEmptyBioseq(const CBioseq& bioseq)
     return false;
 
 }
+
+CBlastInputOMF::CBlastInputOMF(CRef<CBlastInputSourceOMF> source,
+                               TSeqPos num_seqs)
+    : m_Source(source),
+      m_NumSeqsInBatch(num_seqs),
+      m_BioseqSet(new CBioseq_set)
+    
+{}
+
+void
+CBlastInputOMF::GetNextSeqBatch(CBioseq_set& bioseq_set)
+{
+    m_Source->GetNextNumSequences(bioseq_set, m_NumSeqsInBatch);
+}
+
+CRef<CBioseq_set>
+CBlastInputOMF::GetNextSeqBatch(void)
+{
+    m_BioseqSet->SetSeq_set().clear();
+    m_Source->GetNextNumSequences(*m_BioseqSet, m_NumSeqsInBatch);
+    return m_BioseqSet;
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -231,10 +231,40 @@ private:
 
 };
 
+/// Stream line reader that converts gaps to Ns before returning each line
+class CStreamLineReaderConverter : public CStreamLineReader
+{
+public:
+
+    CStreamLineReaderConverter(CNcbiIstream& instream)
+        : CStreamLineReader(instream) {}
+
+    CStreamLineReaderConverter& operator++(void){
+        CStreamLineReader::operator++();
+        CTempString line = CStreamLineReader::operator*();
+        if (NStr::StartsWith(line, ">")) {
+            m_ConvLine = line;
+        }
+        else {
+            m_ConvLine = NStr::Replace(line, "-", "N");
+        }
+        return *this;
+    }
+
+    CTempString operator*(void) const {
+        return CTempString(m_ConvLine);
+    }
+
+private:
+    string m_ConvLine;
+};
+
 CBlastFastaInputSource::CBlastFastaInputSource(CNcbiIstream& infile,
                                        const CBlastInputSourceConfig& iconfig)
     : m_Config(iconfig),
-      m_LineReader(new CStreamLineReader(infile)),
+      m_LineReader(iconfig.GetConvertGapsToNs() ?
+                   new CStreamLineReaderConverter(infile) :
+                   new CStreamLineReader(infile)),
       m_ReadProteins(iconfig.IsProteinInput())
 {
     x_InitInputReader();
@@ -293,6 +323,7 @@ CBlastFastaInputSource::x_InitInputReader()
 
     m_InputReader->IgnoreProblem(ILineError::eProblem_ModifierFoundButNoneExpected);
     m_InputReader->IgnoreProblem(ILineError::eProblem_TooLong);
+    m_InputReader->IgnoreProblem(ILineError::eProblem_TooManyAmbiguousResidues);
     //m_InputReader->IgnoreProblem(ILineError::eProblem_InvalidResidue);
     //m_InputReader->IgnoreProblem(ILineError::eProblem_IgnoredResidue);
 
@@ -435,6 +466,605 @@ CBlastFastaInputSource::GetNextSequence(CScope& scope)
     }
     return CRef<CBlastSearchQuery>
         (new CBlastSearchQuery(*seqloc, scope, masks_in_query));
+}
+
+
+CShortReadFastaInputSource::CShortReadFastaInputSource(CNcbiIstream& infile,
+                               TSeqPos num_seqs,
+                               CShortReadFastaInputSource::EInputFormat format,
+                               bool paired,
+                               bool validate)
+    : m_NumSeqsInBatch(num_seqs),
+      m_SeqBuffLen(550),
+      m_LineReader(new CStreamLineReader(infile)),
+      m_IsPaired(paired),
+      m_Validate(validate),
+      m_NumRejected(0),
+      m_Format(format)
+{
+    // allocate sequence buffer
+    m_Sequence.reserve(m_SeqBuffLen + 1);
+
+    // read the first line for FASTA input
+    if (m_Format == eFasta) {
+        do {
+            ++(*m_LineReader);
+            m_Line = **m_LineReader;
+        } while (m_Line.empty() && !m_LineReader->AtEOF());
+
+        if (m_Line[0] != '>') {
+            NCBI_THROW(CInputException, eInvalidInput, "FASTA parse error: "
+                       "defline expected");
+        }
+    }
+}
+
+CShortReadFastaInputSource::CShortReadFastaInputSource(CNcbiIstream& infile1,
+                               CNcbiIstream& infile2,
+                               TSeqPos num_seqs,
+                               CShortReadFastaInputSource::EInputFormat format,
+                               bool validate)
+    : m_NumSeqsInBatch(num_seqs),
+      m_SeqBuffLen(550),
+      m_LineReader(new CStreamLineReader(infile1)),
+      m_SecondLineReader(new CStreamLineReader(infile2)),
+      m_IsPaired(true),
+      m_Validate(validate),
+      m_NumRejected(0),
+      m_Format(format)
+{
+    if (m_Format == eFastc) {
+        m_LineReader.Reset();
+        m_SecondLineReader.Reset();
+
+        NCBI_THROW(CInputException, eInvalidInput, "FASTC format cannot be "
+                   "used with two input files");
+    }
+
+    // allocate sequence buffer
+    m_Sequence.reserve(m_SeqBuffLen + 1);
+
+    // read the first line for FASTA input
+    if (m_Format == eFasta) {
+        CTempString line;
+        do {
+            ++(*m_LineReader);
+            line = **m_LineReader;
+        } while (line.empty() && !m_LineReader->AtEOF());
+
+        if (line[0] != '>') {
+            NCBI_THROW(CInputException, eInvalidInput, "FASTA parse error: "
+                       "defline expected");
+        }
+    
+        do {
+            ++(*m_SecondLineReader);
+            line = **m_SecondLineReader;
+        } while (line.empty() && !m_SecondLineReader->AtEOF());
+
+        if (line[0] != '>') {
+            NCBI_THROW(CInputException, eInvalidInput, "FASTA parse error: "
+                       "defline expected");
+        }
+    }
+}
+
+void
+CShortReadFastaInputSource::GetNextNumSequences(CBioseq_set& bioseq_set,
+                                                TSeqPos /* num_seqs */)
+{
+    // preallocate and initialize objects for sequences to be read
+    m_SeqIds.clear();
+    m_Entries.clear();
+
+    // +1 in case we need to read one more sequence so that a pair is not
+    // broken
+    m_SeqIds.resize(m_NumSeqsInBatch + 1);
+    m_Entries.resize(m_NumSeqsInBatch + 1);
+
+    // allocate seq_id and seq_entry objects, they will be reused to minimize
+    // time spent on memory management
+    for (TSeqPos i=0;i < m_NumSeqsInBatch + 1;i++) {
+        m_SeqIds[i].Reset(new CSeq_id);
+        m_Entries[i].Reset(new CSeq_entry);
+        m_Entries[i]->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
+        m_Entries[i]->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    }
+
+    // read sequernces
+    switch (m_Format) {
+    case eFasta:
+        if (m_SecondLineReader.NotEmpty()) {
+            x_ReadFromTwoFiles(bioseq_set, m_Format);
+        }
+        else {
+            x_ReadFasta(bioseq_set);
+        }
+        break;
+
+    case eFastq:
+        if (m_SecondLineReader.NotEmpty()) {
+            x_ReadFromTwoFiles(bioseq_set, m_Format);
+        }
+        else {
+            x_ReadFastq(bioseq_set);
+        }
+        break;
+
+    case eFastc:
+        x_ReadFastc(bioseq_set);
+        break;
+
+    default:
+        NCBI_THROW(CInputException, eInvalidInput, "Unexpected input format");
+
+    };
+
+    // detach CRefs from in m_Entries and m_SeqIds from objects in bioseq_set
+    // for thread safety
+    m_Entries.clear();
+    m_SeqIds.clear();
+}
+
+void
+CShortReadFastaInputSource::x_ReadFasta(CBioseq_set& bioseq_set)
+{
+    TSeqPos index = 0;
+    int start = 0;
+    // parse the last read defline
+    CTempString id = x_ParseDefline(m_Line);
+    m_SeqIds[0]->Set(CSeq_id::e_Local, id);
+    int current_read = 0;
+    bool first_added = false;
+
+    // tag to indicate taht a sequence has a pair
+    CRef<CSeqdesc> seqdesc(new CSeqdesc);
+    seqdesc->SetUser().SetType().SetStr("Mapping");
+    seqdesc->SetUser().AddField("has_pair", true);
+
+    while (index < m_NumSeqsInBatch && !m_LineReader->AtEOF()) {
+        ++(*m_LineReader);
+        m_Line = **m_LineReader;
+
+        // ignore empty lines
+        if (m_Line.empty()) {
+            continue;
+        }
+
+        // if defline
+        if (m_Line[0] == '>') {
+
+            // set up sequence
+            if (!m_Validate || x_ValidateSequence(m_Sequence.data(), start)) {
+                CBioseq& bioseq = m_Entries[index]->SetSeq();
+                bioseq.SetId().clear();
+                bioseq.SetId().push_back(m_SeqIds[index]);
+                bioseq.SetDescr().Reset();
+                bioseq.SetInst().SetLength(start);
+                m_Sequence[start] = 0;
+                bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(
+                                                            &m_Sequence[0]));
+
+                if (m_IsPaired && (current_read & 1) == 0) {
+                    first_added = true;
+                }
+
+                if (m_IsPaired && (current_read & 1) == 1) {
+                    if (first_added) {
+                        // add the tag for paired reads
+                        bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().
+                            Set().push_back(seqdesc);
+                    }
+                    first_added = false;
+                }
+
+                // add a sequence to the batch
+                bioseq_set.SetSeq_set().push_back(m_Entries[index]);
+
+                index++;
+            }
+            else {
+                m_NumRejected++;
+                first_added = false;
+            }
+            current_read++;
+
+            start = 0;
+
+            // set sequence id for the new sequence
+            if (index < m_NumSeqsInBatch) {
+                id = x_ParseDefline(m_Line);
+                m_SeqIds[index]->Set(CSeq_id::e_Local, id);
+            }
+        }
+        else {
+            // otherwise copy the sequence
+            // increase the sequence buffer if necessary
+            if (start + m_Line.length() + 1 > m_SeqBuffLen) {
+                string tmp;
+                m_SeqBuffLen = 2 * (start + m_Line.length() + 1);
+                tmp.reserve(m_SeqBuffLen);
+                memcpy(&tmp[0], &m_Sequence[0], start);
+                m_Sequence.swap(tmp);
+            }
+            memcpy(&m_Sequence[start], m_Line.data(), m_Line.length());
+            start += m_Line.length();
+        }
+    }
+
+    if (!m_LineReader->AtEOF()) {
+        return;
+    }
+
+    if (m_Validate && (!x_ValidateSequence(m_Sequence.data(), start))) {
+        m_NumRejected++;
+        if (m_IsPaired && (index & 1)) {
+            m_NumRejected++;
+            bioseq_set.SetSeq_set().back().Reset();
+            bioseq_set.SetSeq_set().pop_back();
+        }
+
+        return;
+    }
+
+    if (m_IsPaired && (current_read & 1) == 1 && first_added) {
+        // add the tag for paired reads
+        bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
+            push_back(seqdesc);
+    }
+
+    // set up the last sequence read
+    CBioseq& bioseq = m_Entries[index]->SetSeq();
+    bioseq.SetId().clear();
+    bioseq.SetId().push_back(m_SeqIds[index]);
+    bioseq.SetDescr().Reset();
+    bioseq.SetInst().SetLength(start);
+    m_Sequence[start] = 0;
+    bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(&m_Sequence[0]));
+    bioseq_set.SetSeq_set().push_back(m_Entries[index]);    
+}
+
+
+void
+CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
+{
+    TSeqPos index = 0;
+    string id;
+    while (index < m_NumSeqsInBatch && !m_LineReader->AtEOF()) {
+        ++(*m_LineReader);
+        m_Line = **m_LineReader;
+
+        // ignore empty lines
+        if (m_Line.empty()) {
+            continue;
+        }
+
+        // if defline
+        if (m_Line[0] == '>') {
+            id = x_ParseDefline(m_Line);
+        }
+        else {
+            // otherwise sequence
+
+            // make sure that a defline was read first
+            if (id.empty()) {
+                NCBI_THROW(CInputException, eInvalidInput,
+                           (string)"Missing defline before line: " +
+                           NStr::IntToString(m_LineReader->GetLineNumber()));
+            }
+
+            // find '><' that separate reads of a pair
+            size_t p = m_Line.find('>');
+            if (p == CTempString::npos || m_Line[p + 1] != '<') {
+
+                NCBI_THROW(CInputException, eInvalidInput,
+                           (string)"FASTC parse error: Sequence separator '><'"
+                           " was not found in line: " +
+                           NStr::IntToString(m_LineReader->GetLineNumber()));
+            }
+
+            // set up reads, there are two sequences in the same line separated
+            char* first = (char*)m_Line.data();
+            char* second = (char*)m_Line.data() + p + 2;
+            size_t first_len = p;
+            size_t second_len = m_Line.length() - p - 2;
+
+            if (x_ValidateSequence(first, first_len) &&
+                x_ValidateSequence(second, second_len)) {
+
+                {{
+                    CBioseq& bioseq = m_Entries[index]->SetSeq();
+                    bioseq.SetId().clear();
+                    bioseq.SetDescr().Reset();
+                    m_SeqIds[index]->Set(CSeq_id::e_Local, id + ".1");
+                    bioseq.SetId().push_back(m_SeqIds[index]);
+                    bioseq.SetInst().SetLength(first_len);
+                    first[first_len] = 0;
+                    bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(first));
+                }}
+                // add a sequence to the batch
+                bioseq_set.SetSeq_set().push_back(m_Entries[index]);
+                index++;
+
+                {{
+                    CBioseq& bioseq = m_Entries[index]->SetSeq();
+                    bioseq.SetId().clear();
+                    bioseq.SetDescr().Reset();
+                    m_SeqIds[index]->Set(CSeq_id::e_Local, id + ".2");
+                    bioseq.SetId().push_back(m_SeqIds[index]);
+                    bioseq.SetInst().SetLength(second_len);
+                    second[second_len] = 0;
+                    bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(second));
+                }}
+                // add a sequence to the batch
+                bioseq_set.SetSeq_set().push_back(m_Entries[index]);
+                index++;
+            }
+            else {
+                m_NumRejected++;
+            }
+            id.clear();
+        }
+    }
+}
+
+
+void
+CShortReadFastaInputSource::x_ReadFastq(CBioseq_set& bioseq_set)
+{
+    int current_read = 0;
+    bool first_added = false;
+
+    CRef<CSeqdesc> seqdesc(new CSeqdesc);
+    seqdesc->SetUser().SetType().SetStr("Mapping");
+    seqdesc->SetUser().AddField("has_pair", true);
+
+    m_Index = 0;
+    while (m_Index < (int)m_NumSeqsInBatch && !m_LineReader->AtEOF()) {
+        int index = x_ReadFastqOneSeq(m_LineReader);
+
+        if (index >= 0) {
+
+            if (m_IsPaired && (current_read & 1) == 0) {
+                first_added = true;
+            }
+
+            if (m_IsPaired && (current_read & 1) == 1) {
+                if (first_added) {
+                    // this field indicates that this sequence has a pair
+                    bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(seqdesc);
+                }
+                first_added = false;
+            }
+
+            bioseq_set.SetSeq_set().push_back(m_Entries[index]);
+        }
+        else {
+            m_NumRejected++;
+            first_added = false;
+        }
+        current_read++;
+    }
+
+}
+
+
+int
+CShortReadFastaInputSource::x_ReadFastaOneSeq(CRef<ILineReader> line_reader)
+{
+    int start = 0;
+    // parse the last read defline
+    CTempString line = **line_reader;
+    CTempString id = x_ParseDefline(line);
+    m_SeqIds[m_Index]->Set(CSeq_id::e_Local, id);
+    ++(*line_reader);
+    line = **line_reader;
+    while (line[0] != '>') {
+
+        // ignore empty lines
+        if (line.empty()) {
+            continue;
+        }
+
+        // copy the sequence
+        // increase the sequence buffer if necessary
+        if (start + line.length() + 1 > m_SeqBuffLen) {
+            string tmp;
+            m_SeqBuffLen = 2 * (start + line.length() + 1);
+            tmp.reserve(m_SeqBuffLen);
+            memcpy(&tmp[0], &m_Sequence[0], start);
+            m_Sequence.swap(tmp);
+        }
+        memcpy(&m_Sequence[start], line.data(), line.length());
+        start += line.length();
+
+        if (m_LineReader->AtEOF()) {
+            break;
+        }
+
+        // read next line
+        ++(*line_reader);
+        line = **line_reader;
+    }
+
+    // set up sequence
+    if (!m_Validate || x_ValidateSequence(m_Sequence.data(), start)) {
+
+        CBioseq& bioseq = m_Entries[m_Index]->SetSeq();
+        bioseq.SetId().clear();
+        bioseq.SetId().push_back(m_SeqIds[m_Index]);
+        bioseq.SetDescr().Reset();
+        bioseq.SetInst().SetLength(start);
+        m_Sequence[start] = 0;
+        bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(&m_Sequence[0]));
+
+        m_Index++;
+        return m_Index - 1;
+    }
+
+    return -1;
+}
+
+
+int
+CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
+{
+    CTempString line;
+    CTempString id;
+    int retval = -1;
+
+    // first read defline
+    ++(*line_reader);
+    line = **line_reader;
+
+    // skip empty lines
+    while (!line_reader->AtEOF() && line.empty()) {
+        ++(*line_reader);
+        line = **line_reader;
+    }
+
+    if (line[0] != '@') {
+        NCBI_THROW(CInputException, eInvalidInput, (string)"FASTQ parse error:"
+                   " defline expected at line: " +
+                   NStr::IntToString(line_reader->GetLineNumber()));
+    }
+
+    id = x_ParseDefline(line);
+    m_SeqIds[m_Index]->Set(CSeq_id::e_Local, id);
+
+    // read sequence
+    ++(*line_reader);
+    line = **line_reader;
+    // skip empty lines
+    while (!line_reader->AtEOF() && line.empty()) {
+        ++(*line_reader);
+        line = **line_reader;
+    }
+
+    // set up sequence
+    if (!m_Validate || x_ValidateSequence(line.data(), line.length())) {
+
+        CBioseq& bioseq = m_Entries[m_Index]->SetSeq();
+        bioseq.SetId().clear();
+        bioseq.SetId().push_back(m_SeqIds[m_Index]);
+        bioseq.SetDescr().Reset();
+        bioseq.SetInst().SetLength(line.length());
+        bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(line.data()));
+
+        m_Index++;
+        retval =  m_Index - 1;
+    }
+    
+    // read and skip second defline
+    ++(*line_reader);
+    line = **line_reader;
+    // skip empty lines
+    while (!line_reader->AtEOF() && line.empty()) {
+        ++(*line_reader);
+        line = **line_reader;
+    }
+
+    if (line[0] != '+') {
+        NCBI_THROW(CInputException, eInvalidInput, (string)"FASTQ parse error:"
+                   " defline expected at line: " +
+                   NStr::IntToString(line_reader->GetLineNumber()));
+    }
+
+    // read and skip quality scores
+    ++(*line_reader);
+    line = **line_reader;
+    // skip empty lines
+    while (!line_reader->AtEOF() && line.empty()) {
+        ++(*line_reader);
+        line = **line_reader;
+    }
+
+    return retval;
+}
+
+
+bool
+CShortReadFastaInputSource::x_ReadFromTwoFiles(CBioseq_set& bioseq_set,
+                            CShortReadFastaInputSource::EInputFormat format)
+{
+    if (format == eFastc) {
+        NCBI_THROW(CInputException, eInvalidInput, "FASTC format cannot be "
+                   "used with two files");
+    }
+
+    CRef<CSeqdesc> seqdesc(new CSeqdesc);
+    seqdesc->SetUser().SetType().SetStr("Mapping");
+    seqdesc->SetUser().AddField("has_pair", true);
+
+    int index1;
+    int index2;
+    m_Index = 0;
+    while (m_Index < (int)m_NumSeqsInBatch && !m_LineReader->AtEOF() &&
+           !m_SecondLineReader->AtEOF()) {
+
+        if (format == eFasta) {
+            index1 = x_ReadFastaOneSeq(m_LineReader); 
+            index2 = x_ReadFastaOneSeq(m_SecondLineReader);
+        }
+        else {
+            index1 = x_ReadFastqOneSeq(m_LineReader);
+            index2 = x_ReadFastqOneSeq(m_SecondLineReader);
+        }
+
+        // if both sequences were read and sequence ids match, mark the pair
+        // in the first sequence
+        if (index1 >= 0 && index2 >= 0) {
+            const CSeq_id* id1 = m_Entries[index1]->GetSeq().GetFirstId();
+            const CSeq_id* id2 = m_Entries[index2]->GetSeq().GetFirstId();
+            ASSERT(id1 && id2);
+            
+            if (id1->Match(*id2)) {
+                CBioseq& bioseq = m_Entries[index1]->SetSeq();
+                bioseq.SetDescr().Set().push_back(seqdesc);
+            }
+        }
+
+        if (index1 >= 0) {
+            bioseq_set.SetSeq_set().push_back(m_Entries[index1]);
+        }
+
+        if (index2 >= 0) {
+            bioseq_set.SetSeq_set().push_back(m_Entries[index2]);
+        }
+    }
+
+    return true;
+}
+
+
+CTempString CShortReadFastaInputSource::x_ParseDefline(CTempString& line)
+{
+    // set local sequence id for the new sequence as the string between '>'
+    // and the first space
+    size_t begin = 1;
+    size_t end = line.find(' ', 1);
+    CTempString id = line.substr(begin, end - begin);
+    return id;
+}
+
+
+bool CShortReadFastaInputSource::x_ValidateSequence(const char* sequence,
+                                                    int length)
+{
+    const char* s = sequence;
+    const int kNBase = (int)'N';
+    const double kMaxFractionAmbiguousBases = 0.5;
+    int num = 0;
+    for (int i=0;i < length;i++) {
+        num += (toupper((int)s[i]) == kNBase);
+    }
+
+    if ((double)num / length > kMaxFractionAmbiguousBases) {
+        return false;
+    }
+
+    int entropy = FindDimerEntropy(sequence, length);
+    return entropy > 16;
 }
 
 END_SCOPE(blast)

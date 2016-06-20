@@ -265,6 +265,8 @@ GetQueryBatchSize(EProgram program, bool is_ungapped = false, bool remote = fals
  * @param use_lcase_masking true if the subject lowercase sequence characters
  * should be interpreted as masked regions [in]
  * @param sequences output will be placed here [in|out]
+ * @praram gaps_to_Ns convert all gaps in the sequences to Ns (only for
+ * nucleotide sequences) [in]
  * @return CScope object which contains all the sequences read
  */
 NCBI_BLASTINPUT_EXPORT
@@ -274,7 +276,8 @@ ReadSequencesToBlast(CNcbiIstream& in,
                      const TSeqRange& range, 
                      bool parse_deflines,
                      bool use_lcase_masking,
-                     CRef<CBlastQueryVector>& sequences);
+                     CRef<CBlastQueryVector>& sequences,
+                     bool gaps_to_Ns = false);
 
 /// Calculates the formatting parameters based on the maximum number of target
 /// sequences selected (a.k.a.: hitlist size).
@@ -326,6 +329,14 @@ CheckForEmptySequences(CRef<CBlastQueryVector> sequences, string& warnings);
 /// @throw CInputException if there is only 1 empty sequence
 NCBI_BLASTINPUT_EXPORT void
 CheckForEmptySequences(CRef<objects::CBioseq_set> sequences, string& warnings);
+
+/// Compute entropy of 2-mers in a nucleotide IUPACNA sequence
+/// @param sequence Nucleotide sequence [in]
+/// @param length Sequence length [in]
+/// @return Entropy of 2-base words
+NCBI_BLASTINPUT_EXPORT int
+FindDimerEntropy(const char* sequence, int length);
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

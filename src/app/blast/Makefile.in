@@ -55,4 +55,6 @@ seedtop: lib
 	${MAKE} ${MFLAGS} -f Makefile.seedtop_app
 deltablast: lib
 	${MAKE} ${MFLAGS} -f Makefile.deltablast_app
+magicblast: lib
+	${MAKE} ${MFLAGS} -f Makefile.magicblast_app
 
