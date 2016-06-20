@@ -139,8 +139,7 @@ void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat,
     }
 
     if (!IsCdregion ||
-        !feat.GetData().GetCdregion().IsSetFrame() ||
-        feat.GetData().GetCdregion().GetFrame()==1) {
+        feat.GetData().GetCdregion().GetFrame()<=1) {
         WriteSequence(bsh, &(feat.GetLocation()), CSeq_loc::fMerge_AbuttingOnly);
         return;
     }
