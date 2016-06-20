@@ -48,7 +48,9 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("M", "Match locus_tag against General ID");
     argdescr->AddFlag("Y", "Check Against Old IDs");
     argdescr->AddFlag("e", "Ignore Transcription/Translation Exceptions");
-    argdescr->AddFlag("r", "Remote Fetching from ID");
+    if ( !argdescr->Exist("r") ) {
+        argdescr->AddFlag("r", "Remote Fetching from ID");
+    }
     argdescr->AddFlag("y", "Special Indexer Tests");
     argdescr->AddFlag("U", "Genome Center Submission");
     argdescr->AddFlag("T", "Validate Taxonomy");

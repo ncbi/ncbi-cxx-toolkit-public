@@ -70,9 +70,7 @@
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-
-#include <sra/data_loaders/wgs/wgsloader.hpp>
+#include <misc/data_loaders_util/data_loaders_util.hpp>
 
 #include <serial/objostrxml.hpp>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
@@ -274,6 +272,10 @@ void CAsnvalApp::Init(void)
     arg_desc->SetConstraint("v", v_constraint);
 
     arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
+
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc,
+                                              CDataLoadersUtil::fDefault |
+                                              CDataLoadersUtil::fGenbankOffByDefault);
 
     // Program description
     string prog_description = "ASN Validator\n";
@@ -905,15 +907,7 @@ void CAsnvalApp::Setup(const CArgs& args)
 
     // Create object manager
     m_ObjMgr = CObjectManager::GetInstance();
-    if ( args["r"] ) {
-        // Create GenBank data loader and register it with the OM.
-        // The last argument "eDefault" informs the OM that the loader must
-        // be included in scopes during the CScope::AddDefaults() call.
-        CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
-        CWGSDataLoader::RegisterInObjectManager(*m_ObjMgr,
-                                                CObjectManager::eDefault,
-                                                88);
-    }
+    CDataLoadersUtil::SetupObjectManager(args, *m_ObjMgr);
 
     m_OnlyAnnots = args["annot"];
 
