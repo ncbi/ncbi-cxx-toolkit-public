@@ -95,10 +95,6 @@ void CDataLoadersUtil::AddArgumentDescriptions(CArgDescriptions& arg_desc,
             arg_desc.AddFlag("nogenbank",
                              "Do not use GenBank data loader.");
         }
-        if(!arg_desc.Exist("override-idload")) {
-            arg_desc.AddFlag("override-idload",
-                             "Use IDMAIN if replication is suspended (not to be used on the farm!)");
-        }
     }
 
     if (loaders & fVDB) {
