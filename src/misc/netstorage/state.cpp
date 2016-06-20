@@ -843,6 +843,7 @@ public:
 
     ILocation* First();
     ILocation* Next();
+    bool InProgress() const;
     void Restart();
     const TObjLoc& Locator();
     void SetLocator();
@@ -975,6 +976,12 @@ CLocation* CSelector::Top()
     CLocation* location = m_Locations[m_CurrentLocation];
     _ASSERT(location);
     return location;
+}
+
+
+bool CSelector::InProgress() const
+{
+    return m_CurrentLocation != m_Locations.size() - 1;
 }
 
 

@@ -86,12 +86,14 @@ struct TSetExpirationCaller
 template <class TCaller>
 inline typename TCaller::TReturn CObj::Meta(const TCaller& caller)
 {
+    const bool restartable = m_Location == static_cast<ILocation*>(this);
+
     try {
         return caller(m_Location);
     }
     catch (CNetStorageException& e) {
         if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
-        if (m_Location == static_cast<ILocation*>(this)) throw;
+        if (!restartable) throw;
     }
 
     // Restarting location search,
@@ -226,18 +228,22 @@ string CObj::GetLoc()
 
 ERW_Result CObj::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 {
+    const bool restartable = m_Selector->InProgress();
     ERW_Result result = eRW_Error;
-    for (ILocation* l = m_Selector->First(); l; l = m_Selector->Next()) {
-        IState* rw_state = l->StartRead(buf, count, bytes_read, &result);
-        if (rw_state) {
-            m_Location = l;
-            m_State = rw_state;
-            return result;
-        }
+
+    try {
+        StartRead(buf, count, bytes_read, &result);
+        return result;
     }
-    NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Cannot open \"" << GetLoc() << "\" for reading.");
-    // Not reached
+    catch (CNetStorageException& e) {
+        if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
+        if (!restartable) throw;
+    }
+
+    // Restarting location search,
+    // as object location might be changed while we were using it.
+    m_Selector->Restart();
+    StartRead(buf, count, bytes_read, &result);
     return result;
 }
 
@@ -267,11 +273,20 @@ ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
 }
 
 
-IState* CObj::StartRead(void*, size_t, size_t*, ERW_Result*)
+IState* CObj::StartRead(void* buf, size_t count, size_t* bytes_read,
+        ERW_Result* result)
 {
-    // This just cannot happen
-    _TROUBLE;
-    return NULL;
+    for (ILocation* l = m_Selector->First(); l; l = m_Selector->Next()) {
+        IState* rw_state = l->StartRead(buf, count, bytes_read, result);
+        if (rw_state) {
+            m_Location = l;
+            m_State = rw_state;
+            break;
+        }
+    }
+
+    // Not used
+    return nullptr;
 }
 
 
