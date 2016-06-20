@@ -680,7 +680,7 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, CBioSource, eDisc, "Find tRNAs on the same s
     }
 
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
-    if (!bioseq) {
+    if (!bioseq || !bioseq->IsSetAnnot()) {
         return;
     }
 

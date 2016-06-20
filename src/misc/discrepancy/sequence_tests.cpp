@@ -33,6 +33,10 @@
 #include <objects/valid/Comment_rule.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
 
 #include "discrepancy_core.hpp"
 
@@ -339,6 +343,73 @@ DISCREPANCY_SUMMARIZE(mRNA_ON_WRONG_SEQUENCE_TYPE)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// DISC_GAPS
+
+const string kSequencesWithGaps = "[n] sequence[s] contain[s] gaps";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(DISC_GAPS, CSeq_inst, eDisc, "Sequences with gaps")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetRepr() && obj.GetRepr() == CSeq_inst::eRepr_delta) {
+
+        bool has_gaps = false;
+        if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
+
+            ITERATE(CDelta_ext::Tdata, it, obj.GetExt().GetDelta().Get()) {
+
+                if ((*it)->IsLiteral() && (*it)->GetLiteral().IsSetSeq_data() && (*it)->GetLiteral().GetSeq_data().IsGap()) {
+
+                    has_gaps = true;
+                    break;
+                }
+            }
+        }
+
+        if (!has_gaps) {
+
+            CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+            if (!bioseq || !bioseq->IsSetAnnot()) {
+                return;
+            }
+
+            const CSeq_annot* annot = nullptr;
+            ITERATE(CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
+                if ((*annot_it)->IsFtable()) {
+                    annot = *annot_it;
+                    break;
+                }
+            }
+
+            if (annot) {
+
+                ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
+
+                    if ((*feat)->IsSetData() && (*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_gap) {
+                        has_gaps = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (has_gaps) {
+            m_Objs[kSequencesWithGaps].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(DISC_GAPS)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
