@@ -525,6 +525,13 @@ static streamsize s_Readsome(CNcbiIstream& is,
     return count;
 #else
     // Try to read data
+#  ifdef __llvm__
+    // https://llvm.org/bugs/show_bug.cgi?id=28217
+    if ( !is.good() ) {
+        is.setstate(is.rdstate() | NcbiFailbit);
+        return 0; // simulate construction of sentry in standard readsome()
+    }
+#  endif //__llvm__
     streamsize n = x_Readsome(is, buf, buf_size);
     if (n != 0  ||  !is.good())
         return n;
