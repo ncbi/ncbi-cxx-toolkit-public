@@ -91,9 +91,20 @@ void CDataLoadersUtil::AddArgumentDescriptions(CArgDescriptions& arg_desc,
 
     // ID retrieval options
     if (loaders & fGenbank) {
-        if(!arg_desc.Exist("nogenbank")) {
-            arg_desc.AddFlag("nogenbank",
-                             "Do not use GenBank data loader.");
+        if (loaders & fGenbankOffByDefault) {
+            // VR-623:
+            // Compromise to be able to use this class for public ASN.1 tools
+            if ( !arg_desc.Exist("r")) {
+                arg_desc.AddFlag("r",
+                                 "Enable remote data retrieval using the Genbank data loader");
+                arg_desc.AddAlias("genbank", "r");
+            }
+        }
+        else {
+            if(!arg_desc.Exist("nogenbank")) {
+                arg_desc.AddFlag("nogenbank",
+                                 "Do not use GenBank data loader.");
+            }
         }
     }
 
@@ -135,7 +146,15 @@ void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
                                                 CObjectManager& obj_mgr,
                                                 int& priority)
 {
+    bool is_public_asn_tools = args.Exist("genbank");
+
+    bool genbank = args.Exist("genbank") && args["genbank"];
     bool nogenbank = args.Exist("nogenbank") && args["nogenbank"];
+
+    if (is_public_asn_tools) {
+        nogenbank = !genbank;
+    }
+
     if ( ! nogenbank ) {
         // pubseqos* drivers require this
         DBAPI_RegisterDriver_FTDS();

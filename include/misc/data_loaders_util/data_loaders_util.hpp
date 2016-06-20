@@ -59,7 +59,9 @@ public:
         fAsnCache   = 1 << 4,
         fBLAST      = 1 << 5,
 
-        fDefault    = 0xffffffff
+        fDefault    = 0x0fff,
+
+        fGenbankOffByDefault = 1<<16
     };
     typedef unsigned int TLoaders;
 
