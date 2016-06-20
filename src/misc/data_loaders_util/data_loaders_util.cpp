@@ -146,9 +146,9 @@ void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
                                                 CObjectManager& obj_mgr,
                                                 int& priority)
 {
-    bool is_public_asn_tools = args.Exist("genbank");
+    bool is_public_asn_tools = args.Exist("r");
 
-    bool genbank = args.Exist("genbank") && args["genbank"];
+    bool genbank = args.Exist("r") && args["r"];
     bool nogenbank = args.Exist("nogenbank") && args["nogenbank"];
 
     if (is_public_asn_tools) {
@@ -197,6 +197,12 @@ void CDataLoadersUtil::x_SetupVDBDataLoader(const CArgs& args,
     if (args.Exist("novdb") && args["novdb"]) {
         use_vdb_loader = false;
     }
+    if (use_vdb_loader  &&
+        args.Exist("r")  &&  !args["r"]  &&
+         args.Exist("vdb") && !args["vdb"]) {
+        use_vdb_loader = false;
+    }
+
     if (use_vdb_loader) {
         string vdbpath = reg.Get("Gpipe", "VDB_PATH");
         if (args.Exist("vdb-path") && args["vdb-path"]) {
