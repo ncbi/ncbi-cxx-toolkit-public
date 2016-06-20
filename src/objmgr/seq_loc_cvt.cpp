@@ -998,7 +998,12 @@ void CSeq_loc_Conversion::ConvertCdregion(CAnnotObject_Ref& ref,
     else {
         new_cd.ResetOrf();
     }
-    new_cd.SetFrame(src_cd.GetFrame());
+    if ( src_cd.IsSetFrame() ) {
+        new_cd.SetFrame(src_cd.GetFrame());
+    }
+    else {
+        new_cd.ResetFrame();
+    }
     if ( src_cd.IsSetConflict() ) {
         new_cd.SetConflict(src_cd.GetConflict());
     }
@@ -1555,7 +1560,12 @@ void CSeq_loc_Conversion_Set::ConvertCdregion(CAnnotObject_Ref& ref,
     else {
         new_cd.ResetOrf();
     }
-    new_cd.SetFrame(src_cd.GetFrame());
+    if ( src_cd.IsSetFrame() ) {
+        new_cd.SetFrame(src_cd.GetFrame());
+    }
+    else {
+        new_cd.ResetFrame();
+    }
     if ( src_cd.IsSetConflict() ) {
         new_cd.SetConflict(src_cd.GetConflict());
     }
