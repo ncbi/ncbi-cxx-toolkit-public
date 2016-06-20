@@ -26,13 +26,14 @@
 *
 * ===========================================================================
 *
-* Author:  Yuri Kapustin, Alexander Souvorov
+* Author:  Yuri Kapustin, Alexander Souvorov, Boris Kiryutin
 *
 * File Description:
 *   CNWAligner class definition
 *
 *   CNWAligner encapsulates a generic global (Needleman-Wunsch)
-*   alignment algorithm with affine gap penalty model.
+*   and local Smith-Waterman  alignment algorithms 
+*   with affine gap penalty model.
 *
 */
 
@@ -89,6 +90,8 @@ public:
     // Compute the alignment
     virtual TScore Run(void);
 
+    //See CNWFormatter class for output options
+
     // Compte an alignment based on two Seq-locs
     CRef<objects::CSeq_align> Run(objects::CScope &scope,
                                   const objects::CSeq_loc &loc1,
@@ -128,6 +131,8 @@ public:
 
     /// Control preference for where to place a gap if there is a choice;
     /// default is eEarlier, placing the gap as early as possible
+    //note: implemented for SNWAligner only so far.
+    // Not implemented for the derived classes.
     void SetGapPreference(EGapPreference p);
 
     // alignment pattern (guides)

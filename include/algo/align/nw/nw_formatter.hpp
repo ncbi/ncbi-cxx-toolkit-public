@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author:  Yuri Kapustin
+* Author:  Yuri Kapustin, Boris Kiryutin
 *
 * File Description:
 *   Library's formatting functionality.
@@ -64,6 +64,7 @@ public:
         eFormatType1,
         eFormatType2,
         eFormatAsn,
+        eFormatDenseSeg,
         eFormatFastA,
         eFormatExonTable,  // spliced alignments
         eFormatExonTableEx //
@@ -73,7 +74,8 @@ public:
     enum ESeqAlignFormatFlags {
         eSAFF_None = 0,
         eSAFF_DynProgScore = 1,
-        eSAFF_Identity = 2
+        eSAFF_Identity = 2,
+        eSAFF_TrimEndGaps = 4
     };
 
     // setters
@@ -86,11 +88,18 @@ public:
     void AsText(string* output, ETextFormatType type,
                 size_t line_width = 100) const;
 
-    CRef<objects::CSeq_align> AsSeqAlign (
-        TSeqPos query_start, objects::ENa_strand query_strand,
-        TSeqPos subj_start,  objects::ENa_strand subj_strand,
-        ESeqAlignFormatFlags flags = eSAFF_None) const;
+    // formatters in case the sequences were taken from a Seq_loc
+    // default arguments are for the whole sequence alignment
 
+    CRef<objects::CSeq_align> AsSeqAlign (
+        TSeqPos query_start = 0, objects::ENa_strand query_strand = objects::eNa_strand_plus,
+        TSeqPos subj_start = 0,  objects::ENa_strand subj_strand = objects::eNa_strand_plus,
+        int SAFF_flags = eSAFF_None) const;
+
+    CRef<objects::CDense_seg> AsDenseSeg (
+        TSeqPos query_start = 0, objects::ENa_strand query_strand = objects::eNa_strand_plus,
+        TSeqPos subj_start = 0,  objects::ENa_strand subj_strand = objects::eNa_strand_plus,
+        int SAFF_flags = eSAFF_None) const;
 
     // SSegment is a structural unit of a spliced alignment. It represents
     // either an exon or an unaligned segment.

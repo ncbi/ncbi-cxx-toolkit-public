@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Yuri Kapustin
+ * Author:  Yuri Kapustin, Boris Kiryutin
  *
  * ===========================================================================
  *
@@ -64,151 +64,121 @@ void CNWFormatter::SetSeqIds(CConstRef<CSeq_id> id1, CConstRef<CSeq_id> id2)
     m_Seq2Id = id2;
 }
 
-
 CRef<CSeq_align> CNWFormatter::AsSeqAlign(
     TSeqPos query_start, ENa_strand query_strand,
     TSeqPos subj_start,  ENa_strand subj_strand,
-    ESeqAlignFormatFlags flags) const
+    int flags) const
 {
 
-#ifdef USE_RAW_TRANSCRIPT
-    const vector<CNWAligner::ETranscriptSymbol>& transcript = 
-        *(m_aligner->GetTranscript());
-#else
-    const string transcript = m_aligner->GetTranscriptString();
-#endif
-
-    if(transcript.size() == 0) {
-        NCBI_THROW(CAlgoAlignException, eNoSeqData, g_msg_NoAlignment);
-    }
+    bool trim_end_gaps = ( flags & eSAFF_TrimEndGaps ) || m_aligner->IsSmithWaterman();
 
     CRef<CSeq_align> seqalign (new CSeq_align);
 
     // the alignment is pairwise
     seqalign->SetDim(2);
 
-    // this is a global alignment
-    seqalign->SetType(CSeq_align::eType_global);
-
-    CSeq_align::TScore& scorelist = seqalign->SetScore();
+    // NW is a global alignment; SW is local
+    if(m_aligner->IsSmithWaterman()) {
+        seqalign->SetType(CSeq_align::eType_partial);
+    }
+    else {
+        seqalign->SetType(CSeq_align::eType_global);
+    }
 
     // add dynprog score
     if(flags & eSAFF_DynProgScore) {
         CRef<CScore> score (new CScore);
         score->SetId().SetStr("global_score");
         score->SetValue().SetInt(m_aligner->GetScore());
-        scorelist.push_back(score);
+        seqalign->SetScore().push_back(score);
     }
 
     // add identity score
     if(flags & eSAFF_Identity) {
-
+        const string transcript = m_aligner->GetTranscriptString();
         TSeqPos matches = 0;
         ITERATE(string, ii, transcript) { 
-            if(*ii == 'M') {
-                ++matches;  // std::count() not supported by some compilers
+            if(*ii == CNWAligner::eTS_Match) {
+                ++matches;
             }
         }
 
-        const double idty = double(matches) / transcript.size();
+        TSeqPos length; 
+        if(trim_end_gaps) {
+
+            int endi = transcript.size() - 1;
+            while( endi>=0 && ( transcript[endi] != CNWAligner::eTS_Match &&  transcript[endi] != CNWAligner::eTS_Replace ) ) --endi;
+
+            int ind = 0;
+            for( ;ind < endi; ++ind) {
+                if(transcript[ind] == CNWAligner::eTS_Match ||  transcript[ind] == CNWAligner::eTS_Replace ) break;
+        }
+
+            if( ind <= endi ) {
+                length = endi + 1 - ind;
+            }
+
+        } else {            
+            length = transcript.size();
+        }
+            
+
+
+
+        double idty = 0;
+        if( length > 0 ) {
+            idty = double(matches) / length;
+        }            
         CRef<CScore> score (new CScore);
         score->SetId().SetStr("identity");
         score->SetValue().SetReal(idty);
-        scorelist.push_back(score);
+        seqalign->SetScore().push_back(score);
     }
 
-    // create segments and add them to this seq-align
-    CRef< CSeq_align::C_Segs > segs(&seqalign->SetSegs());
-    CDense_seg& ds = segs->SetDenseg();
+    seqalign->SetSegs().SetDenseg(*AsDenseSeg(query_start, query_strand,
+                                     subj_start, subj_strand, flags));
+
+    return seqalign;
+}
+
+CRef<CDense_seg> CNWFormatter::AsDenseSeg(
+    TSeqPos query_start, ENa_strand query_strand,
+    TSeqPos subj_start,  ENa_strand subj_strand,
+    int flags) const
+{
+
+    bool trim_end_gaps = ( flags & eSAFF_TrimEndGaps ) || m_aligner->IsSmithWaterman();
+
+    const string transcript = m_aligner->GetTranscriptString();
+
+    if(transcript.size() == 0) {
+        NCBI_THROW(CAlgoAlignException, eNoSeqData, g_msg_NoAlignment);
+    }
+
+    CRef<CDense_seg> rds(new CDense_seg);
+    CDense_seg& ds = *rds;
 
     ds.FromTranscript(query_start, query_strand,
                       subj_start,  subj_strand,
                       transcript);
     
     CDense_seg::TIds& ids = ds.SetIds();
-
-    CRef<CSeq_id> id_query (new CSeq_id);
-    id_query->Assign(*m_Seq1Id);
-    ids.push_back(id_query);
-
-    CRef<CSeq_id> id_subj (new CSeq_id);
-    id_subj->Assign(*m_Seq2Id);
-    ids.push_back(id_subj);
-
-
-#ifdef USE_RAW_TRANSCRIPT
-
-    // this will treat introns as long inserts;
-    // plus strand is assumed on query and subj
-
-    ds.SetDim(2);
-
-    CDense_seg::TIds& ids = ds.SetIds();
-    ids.push_back( m_Seq1Id );
-    ids.push_back( m_Seq2Id );
-
-    CDense_seg::TStarts&  starts  = ds.SetStarts();
-    CDense_seg::TLens&    lens    = ds.SetLens();
-    CDense_seg::TStrands& strands = ds.SetStrands();
-    
-    // iterate through transcript
-    size_t seg_count = 0;
-    {{ 
-        const char * const S1 = m_aligner->GetSeq1();
-        const char * const S2 = m_aligner->GetSeq2();
-        const char *seq1 = S1, *seq2 = S2;
-        const char *start1 = seq1, *start2 = seq2;
-
-        vector<CNWAligner::ETranscriptSymbol>::const_reverse_iterator
-            ib = transcript.rbegin(),
-            ie = transcript.rend(),
-            ii;
+    if( m_Seq1Id && m_Seq2Id ) {
         
-        CNWAligner::ETranscriptSymbol ts = *ib;
-        bool intron = (ts == CNWAligner::eTS_Intron);
-        char seg_type0 = ((ts == CNWAligner::eTS_Insert || intron )? 1:
-                          (ts == CNWAligner::eTS_Delete)? 2: 0);
-        size_t seg_len = 0;
+        CRef<CSeq_id> id_query (new CSeq_id);
+        id_query->Assign(*m_Seq1Id);
+        ids.push_back(id_query);
+        
+        CRef<CSeq_id> id_subj (new CSeq_id);
+        id_subj->Assign(*m_Seq2Id);
+        ids.push_back(id_subj);
+    }
 
-        for (ii = ib;  ii != ie; ++ii) {
-            ts = *ii;
-            intron = (ts == CNWAligner::eTS_Intron);
-            char seg_type = ((ts == CNWAligner::eTS_Insert || intron )? 1:
-                             (ts == CNWAligner::eTS_Delete)? 2: 0);
-            if(seg_type0 != seg_type) {
-                starts.push_back( (seg_type0 == 1)? -1: start1 - S1 );
-                starts.push_back( (seg_type0 == 2)? -1: start2 - S2 );
-                lens.push_back(seg_len);
-                strands.push_back(eNa_strand_plus);
-                strands.push_back(eNa_strand_plus);
-                ++seg_count;
-                start1 = seq1;
-                start2 = seq2;
-                seg_type0 = seg_type;
-                seg_len = 1;
-            }
-            else {
-                ++seg_len;
-            }
+    if(trim_end_gaps) {
+        ds.TrimEndGaps();
+    }
 
-            if(seg_type != 1) ++seq1;
-            if(seg_type != 2) ++seq2;
-        }
-
-        // the last one
-        starts.push_back( (seg_type0 == 1)? -1: start1 - S1 );
-        starts.push_back( (seg_type0 == 2)? -1: start2 - S2 );
-        lens.push_back(seg_len);
-        strands.push_back(eNa_strand_plus);
-        strands.push_back(eNa_strand_plus);
-        ++seg_count;
-    }}
-
-    ds.SetNumseg(seg_count);
-
-#endif
-
-    return seqalign;
+    return rds;
 }
 
 static const char s_kGap [] = "<GAP>";
@@ -1113,7 +1083,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_widt
                 ss << c2;
                 if(c2 != '-' && c2 != '+' && c2 != 'x')
                     i2++;
-                if( c2 != '-' && c1 != '-' && c1 != '+' && c1 != 'x' && ( toupper(c2) != toupper(c1) || m_aligner->GetScoreMatrix().s[c1][c2] <= 0 ))
+                if( c2 != '-' && c1 != '-' && c1 != '+' && c1 != 'x' && ( toupper(c2) != toupper(c1) || m_aligner->GetScoreMatrix().s[(size_t)c1][(size_t)c2] <= 0 ))
                     marker_line[jPos] = '^';
             }
             ss << endl << marker_line << endl;
@@ -1145,7 +1115,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_widt
                 char c1 (v1[i0 + jPos]);
                 char c2 (v2[i0 + jPos]);
                 if(c2 != '-' && c2 != '+' && c2 != 'x') i2++;
-                if( toupper(c2) == toupper(c1) && m_aligner-> GetScoreMatrix().s[c1][c2] > 0 )  line2[jPos] = '|';
+                if( toupper(c2) == toupper(c1) && m_aligner-> GetScoreMatrix().s[(size_t)c1][(size_t)c2] > 0 )  line2[jPos] = '|';
                 line3[jPos] = c2;
             }
             ss << line2 << endl << line3 << endl << endl;
@@ -1155,10 +1125,18 @@ void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_widt
 
     case eFormatAsn: {
 
-        CRef<CSeq_align> sa = AsSeqAlign(0, eNa_strand_plus,
-                                         0, eNa_strand_plus);
+        CRef<CSeq_align> sa = AsSeqAlign();
         CObjectOStreamAsn asn_stream (ss);
         asn_stream << *sa;
+        asn_stream << Separator;
+    }
+    break;
+
+    case eFormatDenseSeg: {
+
+        CRef<CDense_seg> ds = AsDenseSeg();
+        CObjectOStreamAsn asn_stream (ss);
+        asn_stream << *ds;
         asn_stream << Separator;
     }
     break;

@@ -39,6 +39,7 @@
 
 #include <corelib/ncbi_system.hpp>
 #include <algo/align/nw/align_exception.hpp>
+#include <algo/align/nw/nw_formatter.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
@@ -1720,13 +1721,17 @@ CRef<CDense_seg> CNWAligner::GetDense_seg(TSeqPos query_start,
                                           ENa_strand subj_strand,
                                           bool trim_end_gaps) const
 {
-    CRef<CDense_seg> ds(new CDense_seg);
-    ds->FromTranscript(query_start, query_strand, subj_start, subj_strand,
-                       GetTranscriptString());
-    if (trim_end_gaps) {
-        ds->TrimEndGaps();
+    CNWFormatter::ESeqAlignFormatFlags  flags;
+    if(trim_end_gaps) {
+        flags = CNWFormatter::eSAFF_TrimEndGaps;
+    } else {
+        flags = CNWFormatter::eSAFF_None;
     }
-    return ds;
+
+    CNWFormatter fmt(*this);
+
+    return fmt.AsDenseSeg(query_start, query_strand,
+                          subj_start, subj_strand, flags);
 }
 
 
@@ -1738,16 +1743,21 @@ CRef<CDense_seg> CNWAligner::GetDense_seg(TSeqPos query_start,
                                           const CSeq_id& subj_id,
                                           bool trim_end_gaps) const
 {
-    CRef<CDense_seg> ds = GetDense_seg(query_start, query_strand,
-                                       subj_start, subj_strand,
-                                       trim_end_gaps);
-    CRef<CSeq_id> id0(new CSeq_id);
-    CRef<CSeq_id> id1(new CSeq_id);
-    id0->Assign(query_id);
-    id1->Assign(subj_id);
-    ds->SetIds().push_back(id0);
-    ds->SetIds().push_back(id1);
-    return ds;
+    CNWFormatter::ESeqAlignFormatFlags  flags;
+    if(trim_end_gaps) {
+        flags = CNWFormatter::eSAFF_TrimEndGaps;
+    } else {
+        flags = CNWFormatter::eSAFF_None;
+    }
+
+    CNWFormatter fmt(*this);
+
+    CConstRef<CSeq_id> id0(&query_id);
+    CConstRef<CSeq_id> id1(&subj_id);
+    fmt.SetSeqIds(id0, id1);
+
+    return fmt.AsDenseSeg(query_start, query_strand,
+                          subj_start, subj_strand, flags);
 }
 
 END_NCBI_SCOPE
