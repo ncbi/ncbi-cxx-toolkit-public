@@ -56,42 +56,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
 
-/*
-CRef<CSeq_loc> CFastaOstreamEx::x_TrimLocation(const TSeqPos frame, 
-                                               const ENa_strand strand,
-                                               CScope& scope,
-                                               const CSeq_loc& loc)
-{
-    if (frame !=2 && frame != 3) {
-        string err_msg = "Unexpected frame value : " + to_string(frame);
-        NCBI_THROW(CObjWriterException, eInternal, err_msg);
-    }
-
-    auto seq_id = Ref(new CSeq_id());
-    seq_id->Assign(*loc.GetId());
-
-    auto start_trim = loc.GetStart(eExtreme_Biological);
-    auto stop_trim = start_trim;
-    if (frame == 3) {
-        if (strand == eNa_strand_minus) {
-            if (!start_trim) {
-                string err_msg = "Expected a positive start index\n";
-                NCBI_THROW(CObjWriterException, eInternal, err_msg);
-            }
-            --start_trim;
-        } else {
-            stop_trim++;
-        }
-    }
-
-    auto trim_interval = Ref(new CSeq_loc(*seq_id, start_trim, stop_trim, strand));
-
-    return sequence::Seq_loc_Subtract(loc, 
-                                      *trim_interval, 
-                                      CSeq_loc::fMerge_AbuttingOnly,
-                                      &scope);
-}
-*/
 
 CFastaOstreamEx::CFastaOstreamEx(CNcbiOstream& out) : 
     CFastaOstream(out), 
@@ -650,7 +614,7 @@ void CFastaOstreamEx::x_AddReadingFrameAttribute(const CSeq_feat& feat,
 
     if (feat.GetData().IsCdregion() &&
         feat.GetData().GetCdregion().IsSetFrame()) {
-        auto frame = feat.GetData().GetCdregion().GetFrame();
+        const auto frame = feat.GetData().GetCdregion().GetFrame();
         if (frame > 1) {
             x_AddDeflineAttribute("frame", to_string(frame), defline);
         }
