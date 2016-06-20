@@ -317,6 +317,8 @@ public:
     void Parse(const CSerialObject& root);
     void Summarize(void);
     const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
+    void OutputText(ostream& out, bool summary, bool ext);  // ugly!
+    void OutputXML(ostream& out, bool ext);                 // ugly!
 
     template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this);}
 
