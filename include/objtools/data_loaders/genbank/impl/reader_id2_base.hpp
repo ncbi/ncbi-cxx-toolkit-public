@@ -65,9 +65,11 @@ class CID2S_Reply_Get_Chunk;
 class CID2S_Chunk_Id;
 class CID2S_Chunk;
 class CID2Processor;
-
+class CId2ReaderProcessorResolver;
 class CReaderRequestResult;
 struct SId2LoadedSet;
+struct SId2PacketInfo;
+struct SId2PacketReplies;
 
 class NCBI_XREADER_EXPORT CId2ReaderBase : public CReader
 {
@@ -249,7 +251,26 @@ protected:
     bool x_LoadSeq_idBlob_idsSet(CReaderRequestResult& result,
                                  const TSeqIds& seq_ids);
 
+    friend class CId2ReaderProcessorResolver;
+
+    void x_DumpPacket(TConn conn, const CID2_Request_Packet& packet);
+    void x_DumpReply(TConn conn, const char* source, CID2_Reply& reply);
     void x_SetContextData(CID2_Request& request);
+    void x_SendToConnection(TConn conn, CID2_Request_Packet& packet);
+    CRef<CID2_Reply> x_ReceiveFromConnection(TConn conn);
+    void x_AssignSerialNumbers(SId2PacketInfo& info,
+                               CID2_Request_Packet& packet);
+    int x_GetReplyIndex(CReaderRequestResult& result,
+                        CConn* conn,
+                        SId2PacketInfo& packet,
+                        const CID2_Reply& reply);
+    bool x_DoneReply(SId2PacketInfo& info,
+                     int num,
+                     const CID2_Reply& reply);
+
+    void x_GetPacketReplies(CReaderRequestResult& result,
+                            SId2PacketReplies& replies,
+                            CID2_Request_Packet& packet);
 
 private:
     CAtomicCounter_WithAutoInit m_RequestSerialNumber;

@@ -50,8 +50,12 @@ public:
     virtual ~CID2ProcessorResolver(void);
 
     typedef vector<CConstRef<CSeq_id> > TIds;
+    typedef vector<CRef<CID2_Reply> > TReplies;
 
     virtual TIds GetIds(const CSeq_id& id) = 0;
+
+    virtual void ProcessPacket(TReplies& replies,
+                               CID2_Request_Packet& packet) = 0;
 };
 
 

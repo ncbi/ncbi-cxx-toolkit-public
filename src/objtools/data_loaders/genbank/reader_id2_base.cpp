@@ -1573,15 +1573,27 @@ void CId2ReaderBase::x_ProcessRequest(CReaderRequestResult& result,
 }
 
 
-BEGIN_LOCAL_NAMESPACE;
+struct SId2PacketInfo
+{
+    int request_count, remaining_count;
+    int start_serial_num;
+    vector<char> done;
+};
 
 
-class CProcessorResolver : public CID2ProcessorResolver
+struct SId2PacketReplies
+{
+    typedef vector< CRef<CID2_Reply> > TRequestReplies;
+    vector<TRequestReplies> replies;
+};
+
+
+class CId2ReaderProcessorResolver : public CID2ProcessorResolver
 {
 public:
-    CProcessorResolver(CReadDispatcher& dispatcher,
-                       CReaderRequestResult& result)
-        : m_Dispatcher(dispatcher),
+    CId2ReaderProcessorResolver(CId2ReaderBase& reader,
+                                CReaderRequestResult& result)
+        : m_Reader(reader),
           m_RequestResult(result)
         {
         }
@@ -1593,7 +1605,7 @@ public:
             CLoadLockSeqIds lock(m_RequestResult, idh);
             if ( !lock.IsLoaded() ) {
                 CReaderRequestResultRecursion recurse(m_RequestResult, true);
-                m_Dispatcher.LoadSeq_idSeq_ids(m_RequestResult, idh);
+                m_Reader.m_Dispatcher->LoadSeq_idSeq_ids(m_RequestResult, idh);
             }
             CFixedSeq_ids ids = lock.GetSeq_ids();
             ITERATE ( CFixedSeq_ids, it, ids ) {
@@ -1602,13 +1614,69 @@ public:
             return ret;
         }
 
+    /*
+    CRef<CID2_Reply> MakeReply(const CID2_Request& req)
+        {
+            CRef<CID2_Reply> reply(new CID2_Reply);
+            if ( req.IsSetSerial_number() ) {
+                reply->SetSerial_number(req.GetSerial_number());
+            }
+            return reply;
+        }
+
+    void ProcessGetBlobIds(TReplies& replies,
+                           const CID2_Request& req)
+        {
+            auto reply = MakeReply(req);
+
+            CRef<CID2_Error> error(new CID2_Error);
+            error->SetSeverity(CID2_Error::eSeverity_unsupported_command);
+            reply->SetError().push_back(error);
+            reply->SetReply().SetEmpty();
+
+            replies.push_back(reply);
+            replies.back()->SetEnd_of_reply();
+        }
+
+    void ProcessOther(TReplies& replies,
+                      const CID2_Request& req)
+        {
+            auto reply = MakeReply(req);
+
+            CRef<CID2_Error> error(new CID2_Error);
+            error->SetSeverity(CID2_Error::eSeverity_unsupported_command);
+            reply->SetError().push_back(error);
+            reply->SetReply().SetEmpty();
+
+            replies.push_back(reply);
+            replies.back()->SetEnd_of_reply();
+        }
+
+    void ProcessRequest(TReplies& replies,
+                        const CID2_Request& req)
+        {
+            switch ( req.GetRequest().Which() ) {
+            case CID2_Request::TRequest::e_Get_blob_id:
+                ProcessGetBlobIds(replies, req);
+                break;
+            default:
+                ProcessOther(replies, req);
+                break;
+            }
+        }
+    */
+
+    virtual void ProcessPacket(TReplies& replies,
+                               CID2_Request_Packet& packet)
+        {
+            SId2PacketReplies replies2;
+            m_Reader.x_GetPacketReplies(m_RequestResult, replies2, packet);
+        }
+
 private:
-    CReadDispatcher& m_Dispatcher;
+    CId2ReaderBase& m_Reader;
     CReaderRequestResult& m_RequestResult;
 };
-
-
-END_LOCAL_NAMESPACE;
 
 
 void CId2ReaderBase::x_SetContextData(CID2_Request& request)
@@ -1646,9 +1714,121 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
 }
 
 
-void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
-                                     CID2_Request_Packet& packet,
-                                     const SAnnotSelector* sel)
+void CId2ReaderBase::x_DumpPacket(TConn conn,
+                                  const CID2_Request_Packet& packet)
+{
+    if ( GetDebugLevel() >= eTraceConn ) {
+        CDebugPrinter s(conn, "CId2Reader");
+        s << "Sending";
+        if ( GetDebugLevel() >= eTraceASN ) {
+            s << ": " << MSerial_AsnText << packet;
+        }
+        else {
+            s << " ID2-Request-Packet";
+        }
+        s << "...";
+    }
+}
+
+
+void CId2ReaderBase::x_DumpReply(TConn conn,
+                                 const char* source,
+                                 CID2_Reply& reply)
+{
+    if ( GetDebugLevel() >= eTraceConn   ) {
+        CDebugPrinter s(0, "CId2Reader");
+        s << "Received" << source;
+        if ( GetDebugLevel() >= eTraceASN ) {
+            if ( GetDebugLevel() >= eTraceBlobData ) {
+                s << ": " << MSerial_AsnText << reply;
+            }
+            else {
+                CTypeIterator<CID2_Reply_Data> iter = Begin(reply);
+                if ( iter && iter->IsSetData() ) {
+                    CID2_Reply_Data::TData save;
+                    save.swap(iter->SetData());
+                    size_t size = 0, count = 0, max_chunk = 0;
+                    ITERATE ( CID2_Reply_Data::TData, i, save ) {
+                        ++count;
+                        size_t chunk = (*i)->size();
+                        size += chunk;
+                        max_chunk = max(max_chunk, chunk);
+                    }
+                    s << ": " << MSerial_AsnText << reply <<
+                        "Data: " << size << " bytes in " <<
+                        count << " chunks with " <<
+                        max_chunk << " bytes in chunk max";
+                    save.swap(iter->SetData());
+                }
+                else {
+                    s << ": " << MSerial_AsnText << reply;
+                }
+            }
+        }
+        else {
+            s << " ID2-Reply.";
+        }
+    }
+    if ( GetDebugLevel() >= eTraceBlob ) {
+        for ( CTypeConstIterator<CID2_Reply_Data> it(Begin(reply));
+              it; ++it ) {
+            if ( it->IsSetData() ) {
+                try {
+                    CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
+                }
+                catch ( CException& exc ) {
+                    ERR_POST_X(1, "Exception while dumping data: "
+                               <<exc);
+                }
+            }
+        }
+    }
+}
+
+
+void CId2ReaderBase::x_SendToConnection(TConn conn,
+                                        CID2_Request_Packet& packet)
+{
+    CProcessor::OffsetAllGisFromOM(packet);
+    x_DumpPacket(conn, packet);
+    try {
+        x_SendPacket(conn, packet);
+    }
+    catch ( CException& exc ) {
+        NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
+                     "failed to send request: "+
+                     x_ConnDescription(conn));
+    }
+    if ( GetDebugLevel() >= eTraceConn ) {
+        CDebugPrinter s(conn, "CId2Reader");
+        s << "Sent ID2-Request-Packet.";
+    }
+}
+
+
+CRef<CID2_Reply> CId2ReaderBase::x_ReceiveFromConnection(TConn conn)
+{
+    if ( GetDebugLevel() >= eTraceConn ) {
+        CDebugPrinter s(conn, "CId2Reader");
+        s << "Receiving ID2-Reply...";
+    }
+    CRef<CID2_Reply> reply(new CID2_Reply);
+    try {
+        x_ReceiveReply(conn, *reply);
+    }
+    catch ( CException& exc ) {
+        NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
+                     "reply deserialization failed: "+
+                     x_ConnDescription(conn));
+    }
+    x_DumpReply(conn, "", *reply);
+    CProcessor::OffsetAllGisToOM(*reply);
+    return reply;
+}
+
+
+void CId2ReaderBase::x_AssignSerialNumbers(SId2PacketInfo& info,
+                                           CID2_Request_Packet& packet)
 {
     // Fill request context information
     if ( !packet.Get().empty() ) {
@@ -1656,113 +1836,181 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     }
 
     // prepare serial nums and result state
-    int request_count = static_cast<int>(packet.Get().size());
-    int end_serial_num = static_cast<int>(m_RequestSerialNumber.Add(request_count));
-    while ( end_serial_num <= request_count ) {
+    info.request_count = static_cast<int>(packet.Get().size());
+    info.remaining_count = info.request_count;
+    int end_serial_num =
+        static_cast<int>(m_RequestSerialNumber.Add(info.request_count));
+    while ( end_serial_num <= info.request_count ) {
         // int overflow, adjust to 1
         {{
             DEFINE_STATIC_FAST_MUTEX(sx_Mutex);
             CFastMutexGuard guard(sx_Mutex);
             int num = static_cast<int>(m_RequestSerialNumber.Get());
-            if ( num <= request_count ) {
+            if ( num <= info.request_count ) {
                 m_RequestSerialNumber.Set(1);
             }
         }}
-        end_serial_num = static_cast<int>(m_RequestSerialNumber.Add(request_count));
+        end_serial_num =
+            static_cast<int>(m_RequestSerialNumber.Add(info.request_count));
     }
-    int start_serial_num = end_serial_num - request_count;
+    info.start_serial_num = end_serial_num - info.request_count;
     {{
-        int cur_serial_num = start_serial_num;
+        int cur_serial_num = info.start_serial_num;
         NON_CONST_ITERATE ( CID2_Request_Packet::Tdata, it, packet.Set() ) {
             (*it)->SetSerial_number(cur_serial_num++);
         }
     }}
-    vector<char> done(request_count);
-    vector<SId2LoadedSet> loaded_sets(request_count);
+    info.done.assign(info.request_count, false);
+}
+
+
+int CId2ReaderBase::x_GetReplyIndex(CReaderRequestResult& result,
+                                    CConn* conn,
+                                    SId2PacketInfo& packet,
+                                    const CID2_Reply& reply)
+{
+    int num = reply.GetSerial_number() - packet.start_serial_num;
+    if ( reply.IsSetDiscard() ) {
+        // discard whole reply for now
+        return -1;
+    }
+    if ( num < 0 || num >= packet.request_count || packet.done[num] ) {
+        // unknown serial num - bad reply
+        string descr;
+        if ( conn ) {
+            descr = x_ConnDescription(*conn);
+        }
+        else {
+            descr = " (processor)";
+        }
+        if ( TErrorFlags error = x_GetError(result, reply) ) {
+            if ( error & fError_inactivity_timeout ) {
+                if ( conn ) {
+                    conn->Restart();
+                }
+                NCBI_THROW_FMT(CLoaderException, eRepeatAgain,
+                               "CId2ReaderBase: connection timed out"<<descr);
+            }
+            if ( error & fError_bad_connection ) {
+                NCBI_THROW_FMT(CLoaderException, eConnectionFailed,
+                               "CId2ReaderBase: connection failed"<<descr);
+            }
+        }
+        else if ( reply.GetReply().IsEmpty() ) {
+            ERR_POST_X(8, "CId2ReaderBase: bad reply serial number: "<<descr);
+            return num;
+        }
+        NCBI_THROW_FMT(CLoaderException, eOtherError,
+                       "CId2ReaderBase: bad reply serial number: "<<descr);
+    }
+    return num;
+}
+
+
+bool CId2ReaderBase::x_DoneReply(SId2PacketInfo& info,
+                                 int num,
+                                 const CID2_Reply& reply)
+{
+    if ( reply.IsSetEnd_of_reply() ) {
+        info.done[num] = true;
+        --info.remaining_count;
+        return true;
+    }
+    return false;
+}
+
+
+void CId2ReaderBase::x_GetPacketReplies(CReaderRequestResult& result,
+                                        SId2PacketReplies& replies,
+                                        CID2_Request_Packet& packet)
+{
+    SId2PacketInfo packet_info;
+    x_AssignSerialNumbers(packet_info, packet);
+    replies.replies.resize(packet_info.request_count);
+
+    CConn conn(result, this);
+    CRef<CID2_Reply> reply;
+    try {
+        // send request
+        x_SendToConnection(conn, packet);
+
+        // process replies
+        while ( packet_info.remaining_count ) {
+            reply = x_ReceiveFromConnection(conn);
+            int num = x_GetReplyIndex(result, &conn, packet_info, *reply);
+            if ( num >= 0 ) {
+                replies.replies[num].push_back(reply);
+                if ( x_DoneReply(packet_info, num, *reply) ) {
+                    // do nothing
+                }
+            }
+            reply = null;
+        }
+        if ( conn.IsAllocated() ) {
+            x_EndOfPacket(conn);
+        }
+    }
+    catch ( exception& /*rethrown*/ ) {
+        if ( GetDebugLevel() >= eTraceError ) {
+            CDebugPrinter s(conn, "CId2Reader");
+            s << "Error processing request: " << MSerial_AsnText << packet;
+            if ( reply &&
+                 (reply->IsSetSerial_number() ||
+                  reply->IsSetParams() ||
+                  reply->IsSetError() ||
+                  reply->IsSetEnd_of_reply() ||
+                  reply->IsSetReply()) ) {
+                try {
+                    s << "Last reply: " << MSerial_AsnText << *reply;
+                }
+                catch ( exception& /*ignored*/ ) {
+                }
+            }
+        }
+        throw;
+    }
+    conn.Release();
+}
+
+
+void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
+                                     CID2_Request_Packet& packet,
+                                     const SAnnotSelector* sel)
+{
+    SId2PacketInfo packet_info;
+    x_AssignSerialNumbers(packet_info, packet);
+
+    vector<SId2LoadedSet> loaded_sets(packet_info.request_count);
     
-    int remaining_count = request_count;
     NON_CONST_ITERATE ( TProcessors, it, m_Processors ) {
         if ( result.IsInProcessor() ) {
             break;
         }
-        CProcessorResolver resolver(*m_Dispatcher, result);
+        CId2ReaderProcessorResolver resolver(*this, result);
         CID2Processor::TReplies replies =
             (*it)->ProcessSomeRequests(packet, &resolver);
         ITERATE ( CID2Processor::TReplies, it, replies ) {
             CRef<CID2_Reply> reply = *it;
-            if ( GetDebugLevel() >= eTraceConn   ) {
-                CDebugPrinter s(0, "CId2Reader");
-                s << "Received from processor";
-                if ( GetDebugLevel() >= eTraceASN ) {
-                    if ( GetDebugLevel() >= eTraceBlobData ) {
-                        s << ": " << MSerial_AsnText << *reply;
-                    }
-                    else {
-                        CTypeIterator<CID2_Reply_Data> iter = Begin(*reply);
-                        if ( iter && iter->IsSetData() ) {
-                            CID2_Reply_Data::TData save;
-                            save.swap(iter->SetData());
-                            size_t size = 0, count = 0, max_chunk = 0;
-                            ITERATE ( CID2_Reply_Data::TData, i, save ) {
-                                ++count;
-                                size_t chunk = (*i)->size();
-                                size += chunk;
-                                max_chunk = max(max_chunk, chunk);
-                            }
-                            s << ": " << MSerial_AsnText << *reply <<
-                                "Data: " << size << " bytes in " <<
-                                count << " chunks with " <<
-                                max_chunk << " bytes in chunk max";
-                            save.swap(iter->SetData());
-                        }
-                        else {
-                            s << ": " << MSerial_AsnText << *reply;
-                        }
-                    }
+            x_DumpReply(0, " from processor", *reply);
+            int num = x_GetReplyIndex(result, 0, packet_info, *reply);
+            if ( num >= 0 ) {
+                try {
+                    x_ProcessReply(result, loaded_sets[num], *reply);
                 }
-                else {
-                    s << " ID2-Reply.";
+                catch ( CException& exc ) {
+                    NCBI_RETHROW(exc, CLoaderException, eOtherError,
+                                 "CId2ReaderBase: failed to process reply");
                 }
-            }
-            if ( GetDebugLevel() >= eTraceBlob ) {
-                for ( CTypeConstIterator<CID2_Reply_Data> it(Begin(*reply));
-                      it; ++it ) {
-                    if ( it->IsSetData() ) {
-                        try {
-                            CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
-                        }
-                        catch ( CException& exc ) {
-                            ERR_POST_X(1, "Exception while dumping data: "
-                                       <<exc);
-                        }
-                    }
+                if ( x_DoneReply(packet_info, num, *reply) ) {
+                    x_UpdateLoadedSet(result, loaded_sets[num], sel);
                 }
-            }
-            int num = reply->GetSerial_number() - start_serial_num;
-            if ( reply->IsSetDiscard() ||
-                 num < 0 || num >= request_count || done[num] ) {
-                // unknown serial num - bad reply
-                NCBI_THROW_FMT(CLoaderException, eOtherError,
-                               "CId2ReaderBase: bad reply serial number");
-            }
-            try {
-                x_ProcessReply(result, loaded_sets[num], *reply);
-            }
-            catch ( CException& exc ) {
-                NCBI_RETHROW(exc, CLoaderException, eOtherError,
-                             "CId2ReaderBase: failed to process reply");
-            }
-            if ( reply->IsSetEnd_of_reply() ) {
-                done[num] = true;
-                x_UpdateLoadedSet(result, loaded_sets[num], sel);
-                --remaining_count;
             }
         }
-        if ( size_t(remaining_count) != packet.Get().size() ) {
+        if ( size_t(packet_info.remaining_count) != packet.Get().size() ) {
             NCBI_THROW(CLoaderException, eOtherError,
                        "CId2ReaderBase: processor discrepancy");
         }
-        if ( packet.Get().empty() ) {
+        if ( packet_info.remaining_count == 0 ) {
             return;
         }
     }
@@ -1771,142 +2019,27 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     CRef<CID2_Reply> reply;
     try {
         // send request
-
-        CProcessor::OffsetAllGisFromOM(packet);
-        {{
-            if ( GetDebugLevel() >= eTraceConn ) {
-                CDebugPrinter s(conn, "CId2Reader");
-                s << "Sending";
-                if ( GetDebugLevel() >= eTraceASN ) {
-                    s << ": " << MSerial_AsnText << packet;
-                }
-                else {
-                    s << " ID2-Request-Packet";
-                }
-                s << "...";
-            }
-            try {
-                x_SendPacket(conn, packet);
-            }
-            catch ( CException& exc ) {
-                NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
-                             "failed to send request: "+
-                             x_ConnDescription(conn));
-            }
-            if ( GetDebugLevel() >= eTraceConn ) {
-                CDebugPrinter s(conn, "CId2Reader");
-                s << "Sent ID2-Request-Packet.";
-            }
-        }}
+        x_SendToConnection(conn, packet);
 
         // process replies
-        while ( remaining_count > 0 ) {
-            reply.Reset(new CID2_Reply);
-            if ( GetDebugLevel() >= eTraceConn ) {
-                CDebugPrinter s(conn, "CId2Reader");
-                s << "Receiving ID2-Reply...";
-            }
-            try {
-                x_ReceiveReply(conn, *reply);
-            }
-            catch ( CException& exc ) {
-                NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
-                             "reply deserialization failed: "+
-                             x_ConnDescription(conn));
-            }
-            if ( GetDebugLevel() >= eTraceConn   ) {
-                CDebugPrinter s(conn, "CId2Reader");
-                s << "Received";
-                if ( GetDebugLevel() >= eTraceASN ) {
-                    if ( GetDebugLevel() >= eTraceBlobData ) {
-                        s << ": " << MSerial_AsnText << *reply;
-                    }
-                    else {
-                        CTypeIterator<CID2_Reply_Data> iter = Begin(*reply);
-                        if ( iter && iter->IsSetData() ) {
-                            CID2_Reply_Data::TData save;
-                            save.swap(iter->SetData());
-                            size_t size = 0, count = 0, max_chunk = 0;
-                            ITERATE ( CID2_Reply_Data::TData, i, save ) {
-                                ++count;
-                                size_t chunk = (*i)->size();
-                                size += chunk;
-                                max_chunk = max(max_chunk, chunk);
-                            }
-                            s << ": " << MSerial_AsnText << *reply <<
-                                "Data: " << size << " bytes in " <<
-                                count << " chunks with " <<
-                                max_chunk << " bytes in chunk max";
-                            save.swap(iter->SetData());
-                        }
-                        else {
-                            s << ": " << MSerial_AsnText << *reply;
-                        }
-                    }
+        while ( packet_info.remaining_count > 0 ) {
+            reply = x_ReceiveFromConnection(conn);
+            int num = x_GetReplyIndex(result, &conn, packet_info, *reply);
+            if ( num >= 0 ) {
+                try {
+                    x_ProcessReply(result, loaded_sets[num], *reply);
                 }
-                else {
-                    s << " ID2-Reply.";
+                catch ( CException& exc ) {
+                    NCBI_RETHROW(exc, CLoaderException, eOtherError,
+                                 "CId2ReaderBase: failed to process reply: "+
+                                 x_ConnDescription(conn));
+                }
+                if ( x_DoneReply(packet_info, num, *reply) ) {
+                    x_UpdateLoadedSet(result, loaded_sets[num], sel);
                 }
             }
-            if ( GetDebugLevel() >= eTraceBlob ) {
-                for ( CTypeConstIterator<CID2_Reply_Data> it(Begin(*reply));
-                      it; ++it ) {
-                    if ( it->IsSetData() ) {
-                        try {
-                            CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
-                        }
-                        catch ( CException& exc ) {
-                            ERR_POST_X(1, "Exception while dumping data: "
-                                       <<exc);
-                        }
-                    }
-                }
-            }
-            CProcessor::OffsetAllGisToOM(*reply);
-            int num = reply->GetSerial_number() - start_serial_num;
-            if ( reply->IsSetDiscard() ) {
-                // discard whole reply for now
-                continue;
-            }
-            if ( num < 0 || num >= request_count || done[num] ) {
-                // unknown serial num - bad reply
-                if ( TErrorFlags error = x_GetError(result, *reply) ) {
-                    if ( error & fError_inactivity_timeout ) {
-                        conn.Restart();
-                        NCBI_THROW_FMT(CLoaderException, eRepeatAgain,
-                                       "CId2ReaderBase: connection timed out"<<
-                                       x_ConnDescription(conn));
-                    }
-                    if ( error & fError_bad_connection ) {
-                        NCBI_THROW_FMT(CLoaderException, eConnectionFailed,
-                                       "CId2ReaderBase: connection failed"<<
-                                       x_ConnDescription(conn));
-                    }
-                }
-                else if ( reply->GetReply().IsEmpty() ) {
-                    ERR_POST_X(8, "CId2ReaderBase: bad reply serial number: "<<
-                               x_ConnDescription(conn));
-                    continue;
-                }
-                NCBI_THROW_FMT(CLoaderException, eOtherError,
-                               "CId2ReaderBase: bad reply serial number: "<<
-                               x_ConnDescription(conn));
-            }
-            try {
-                x_ProcessReply(result, loaded_sets[num], *reply);
-            }
-            catch ( CException& exc ) {
-                NCBI_RETHROW(exc, CLoaderException, eOtherError,
-                             "CId2ReaderBase: failed to process reply: "+
-                             x_ConnDescription(conn));
-            }
-            if ( reply->IsSetEnd_of_reply() ) {
-                done[num] = true;
-                x_UpdateLoadedSet(result, loaded_sets[num], sel);
-                --remaining_count;
-            }
+            reply.Reset();
         }
-        reply.Reset();
         if ( conn.IsAllocated() ) {
             x_EndOfPacket(conn);
         }
