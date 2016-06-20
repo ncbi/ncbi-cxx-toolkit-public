@@ -1006,7 +1006,6 @@ LIBSSSUTILS
 LIBSSSDB
 sssutils
 VDB_INCLUDE
-VDB_LIB
 VDB_LIBS
 VDB_STATIC_LIBS
 VDB_REQ
@@ -41133,7 +41132,6 @@ fi
 echo "${ECHO_T}$ncbi_cv_lib_ncbi_vdb" >&6; }
       if test "$ncbi_cv_lib_ncbi_vdb" = yes; then
                    WithPackages="$WithPackages${WithPackagesSep}VDB"; WithPackagesSep=" "
-         VDB_LIB=
          if test -f "$VDB_LIBDIR/libncbi-vdb-static.a"; then
             VDB_STATIC_LIBS="-L$VDB_LIBDIR -lncbi-vdb-static $vdb_deps"
          else
@@ -46673,7 +46671,6 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
-
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -47912,7 +47909,6 @@ LIBSSSUTILS!$LIBSSSUTILS$ac_delim
 LIBSSSDB!$LIBSSSDB$ac_delim
 sssutils!$sssutils$ac_delim
 VDB_INCLUDE!$VDB_INCLUDE$ac_delim
-VDB_LIB!$VDB_LIB$ac_delim
 VDB_LIBS!$VDB_LIBS$ac_delim
 VDB_STATIC_LIBS!$VDB_STATIC_LIBS$ac_delim
 VDB_REQ!$VDB_REQ$ac_delim
@@ -47988,7 +47984,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 84; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 83; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

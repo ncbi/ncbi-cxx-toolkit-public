@@ -6860,7 +6860,6 @@ if test "$with_vdb" != "no" ; then
             [ncbi_cv_lib_ncbi_vdb=yes], [ncbi_cv_lib_ncbi_vdb=no]))
       if test "$ncbi_cv_lib_ncbi_vdb" = yes; then
          NCBI_PACKAGE(VDB)
-         VDB_LIB=
          if test -f "$VDB_LIBDIR/libncbi-vdb-static.a"; then
             VDB_STATIC_LIBS="-L$VDB_LIBDIR -lncbi-vdb-static $vdb_deps"
          else
@@ -8030,7 +8029,6 @@ AC_SUBST(LIBSSSUTILS)
 AC_SUBST(LIBSSSDB)
 AC_SUBST(sssutils)
 AC_SUBST(VDB_INCLUDE)
-AC_SUBST(VDB_LIB)
 AC_SUBST(VDB_LIBS)
 AC_SUBST(VDB_STATIC_LIBS)
 AC_SUBST(VDB_REQ)
