@@ -20,8 +20,7 @@ igblastn_args \
 igblastp_args \
 deltablast_args \
 magicblast_args \
-blast_asn1_input \
-blast_sra_input
+blast_asn1_input
 
 SRC  = $(SRC_CXX)
 
