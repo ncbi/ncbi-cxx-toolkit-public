@@ -256,6 +256,11 @@ bool CObj::EofImpl()
 
 ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
 {
+    // If object already exists, it will be overwritten in the same backend
+    if (!Exists()) {
+        m_Selector->Restart();
+    }
+
     ERW_Result result = eRW_Error;
     if (ILocation* l = m_Selector->First()) {
         IState* rw_state = l->StartWrite(buf, count, bytes_written, &result);
@@ -266,9 +271,8 @@ ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
             return result;
         }
     }
-    NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Cannot open \"" << GetLoc() << "\" for writing.");
-    // Not reached
+
+    // Not reached (CNotFound location always throws exception)
     return result;
 }
 
