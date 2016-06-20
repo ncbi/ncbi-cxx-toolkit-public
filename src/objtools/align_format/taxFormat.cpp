@@ -83,6 +83,8 @@ CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign,
     m_MaxScoreLength = 0;
     m_MaxEvalLength = 0;
     m_LineLength = (m_LineLength < kMinLineLength) ? kMinLineLength : m_LineLength;
+
+    m_Protocol = CAlignFormatUtil::GetProtocol();
     
     if(m_ConnectToTaxServer) {        
         x_InitTaxClient();        
@@ -99,6 +101,7 @@ CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign,
         m_TaxBrowserURL = m_Reg->Get("TAX_BROWSER","BLASTFMTUTIL");
     }
     m_TaxBrowserURL = (m_TaxBrowserURL.empty()) ? kTaxBrowserURL : m_TaxBrowserURL;
+    m_TaxBrowserURL = CAlignFormatUtil::MapTemplate(m_TaxBrowserURL,"protocol",m_Protocol);
 
     
         
@@ -967,6 +970,7 @@ string CTaxFormat::x_MapSeqTemplate(string seqTemplate, SSeqInfo *seqInfo)
         reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"descr",seqInfo->title);
         reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"score",seqInfo->bit_score);
         reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"evalue",seqInfo->evalue);           
+        reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"protocol",m_Protocol);
     }
     return reportTableRow;
 }
