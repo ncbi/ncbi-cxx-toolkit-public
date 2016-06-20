@@ -86,7 +86,7 @@ struct TSetExpirationCaller
 template <class TCaller>
 inline typename TCaller::TReturn CObj::Meta(const TCaller& caller)
 {
-    const bool restartable = m_Location == static_cast<ILocation*>(this);
+    const bool restartable = m_Location != static_cast<ILocation*>(this);
 
     try {
         return caller(m_Location);
