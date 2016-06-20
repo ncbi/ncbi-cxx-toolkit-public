@@ -37,6 +37,7 @@
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include "discrepancy_core.hpp"
 
@@ -403,6 +404,50 @@ DISCREPANCY_CASE(DISC_GAPS, CSeq_inst, eDisc, "Sequences with gaps")
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(DISC_GAPS)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// ONCALLER_BIOPROJECT_ID
+
+const string kSequencesWithBioProjectIDs = "[n] sequence[s] contain[s] BioProject IDs";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(ONCALLER_BIOPROJECT_ID, CSeq_inst, eOncaller, "Sequences with BioProject IDs")
+//  ----------------------------------------------------------------------------
+{
+    CBioseq_Handle bioseq = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
+    CSeqdesc_CI user_desc_it(bioseq, CSeqdesc::E_Choice::e_User);
+    for (; user_desc_it; ++user_desc_it) {
+
+        const CUser_object& user = user_desc_it->GetUser();
+        if (user.IsSetData() && user.IsSetType() && user.GetType().IsStr() && user.GetType().GetStr() == "DBLink") {
+
+            ITERATE(CUser_object::TData, user_field, user.GetData()) {
+
+                if ((*user_field)->IsSetLabel() && (*user_field)->GetLabel().IsStr() && (*user_field)->GetLabel().GetStr() == "BioProject" &&
+                    (*user_field)->IsSetData() && (*user_field)->GetData().IsStrs()) {
+
+                    const CUser_field::C_Data::TStrs& strs = (*user_field)->GetData().GetStrs();
+                    if (!strs.empty() && !strs[0].empty()) {
+
+                        m_Objs[kSequencesWithBioProjectIDs].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(ONCALLER_BIOPROJECT_ID)
 //  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
