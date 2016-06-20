@@ -172,7 +172,8 @@ ALTER PROCEDURE GetObjectFixedAttributes
 
     -- backward compatibility
     @user_namespace     VARCHAR(64) = NULL OUT,
-    @user_name          VARCHAR(64) = NULL OUT
+    @user_name          VARCHAR(64) = NULL OUT,
+    @obj_ttl            BIGINT = NULL OUT
 AS
 BEGIN
     DECLARE @object_id      BIGINT = NULL;
@@ -186,7 +187,7 @@ BEGIN
                @obj_read = tm_read, @obj_write = tm_write,
                @attr_read = tm_attr_read, @attr_write = tm_attr_write,
                @read_cnt = read_count, @write_cnt = write_count,
-               @cl_id = client_id, @u_id = user_id
+               @cl_id = client_id, @u_id = user_id, @obj_ttl = ttl
                FROM Objects WHERE object_key = @object_key;
         IF @@ERROR != 0
         BEGIN
@@ -342,6 +343,60 @@ END
 GO
 
 
+
+ALTER PROCEDURE GetObjectExpiration
+    @object_key     VARCHAR(289),
+    @expiration     DATETIME OUT,
+
+    -- backward compatibility
+
+    @ttl            BIGINT = NULL OUT
+AS
+BEGIN
+    DECLARE @row_count      INT;
+    DECLARE @error          INT;
+
+    -- To have a definitive value returned from the procedure even if
+    -- there is no object
+    SET @expiration = NULL;
+
+    BEGIN TRANSACTION
+    BEGIN TRY
+        SELECT @expiration = tm_expiration,
+               @ttl = ttl FROM Objects WHERE object_key = @object_key;
+        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR;
+        COMMIT TRANSACTION;
+
+        IF @error != 0
+        BEGIN
+            RETURN 1;               -- SQL execution error
+        END
+        IF @row_count = 0
+        BEGIN
+            RETURN -1;              -- object is not found
+        END
+        IF @expiration IS NOT NULL
+        BEGIN
+            IF @expiration < GETDATE()
+            BEGIN
+                RETURN -4;          -- object is expired
+                                    -- -4 is to make it unified with the other SPs
+            END
+        END
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @error_severity INT = ERROR_SEVERITY();
+        DECLARE @error_state INT = ERROR_STATE();
+
+        RAISERROR( @error_message, @error_severity, @error_state );
+        RETURN 1;
+    END CATCH
+END
+GO
 
 
 

@@ -1577,6 +1577,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             TNSTDBValue<Int8>   read_count;
             TNSTDBValue<Int8>   write_count;
             TNSTDBValue<string> client_name;
+            TNSTDBValue<Int8>   obj_ttl;
 
             // The parameters are output only (from the SP POV) however the
             // integer values should be initialized to avoid valgrind complains
@@ -1590,7 +1591,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                                         attr_read, attr_write,
                                         read_count, write_count,
                                         client_name,
-                                        user_namespace, user_name);
+                                        user_namespace, user_name,
+                                        obj_ttl);
 
             if (status != kSPStatusOK) {
                 // The record in the meta DB for the object is not found
@@ -1618,6 +1620,18 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                 x_SetObjectInfoReply(reply, "ClientName", client_name);
                 x_SetObjectInfoReply(reply, "UserNamespace", user_namespace);
                 x_SetObjectInfoReply(reply, "UserName", user_name);
+
+                if (obj_ttl.m_IsNull) {
+                    if (service_properties.GetTTL().m_IsNull)
+                        reply.SetString("TTL", "infinity");
+                    else
+                        reply.SetString("TTL", service_properties.
+                                                GetTTL().m_Value.
+                                                AsSmartString(kTimeSpanFlags));
+                } else {
+                    CTimeSpan   ttl(static_cast<long>(obj_ttl.m_Value));
+                    reply.SetString("TTL", ttl.AsSmartString(kTimeSpanFlags));
+                }
             }
         } catch (const CNetStorageServerException &  ex) {
             // eDatabaseError => no connection or MS SQL error
@@ -1749,6 +1763,7 @@ void CNetStorageHandler::x_FillObjectInfo(CJsonNode &  reply,
     reply.SetString("ClientName", val);
     reply.SetString("UserName", val);
     reply.SetString("UserNamespace", val);
+    reply.SetString("TTL", val);
 }
 
 

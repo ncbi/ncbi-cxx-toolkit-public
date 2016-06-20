@@ -49,6 +49,10 @@ BEGIN_NCBI_SCOPE
 const string    k_LBSMDNSTTestService = "LBSMDNSTTestService";
 const double    k_ProlongInTTLsNotConfigured = -1.0;
 
+const CTimeSpan::TSmartStringFlags   kTimeSpanFlags =
+                                                CTimeSpan::fSS_Nanosecond |
+                                                CTimeSpan::fSS_SkipZero |
+                                                CTimeSpan::fSS_Short;
 
 
 // Note: access to the instances of this class is possible only via the service

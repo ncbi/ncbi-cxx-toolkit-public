@@ -40,11 +40,6 @@
 USING_NCBI_SCOPE;
 
 
-CTimeSpan::TSmartStringFlags   kTimeSpanFlags = CTimeSpan::fSS_Nanosecond |
-                                                CTimeSpan::fSS_SkipZero |
-                                                CTimeSpan::fSS_Short;
-
-
 
 CNSTServiceProperties::CNSTServiceProperties()
 {

@@ -1108,7 +1108,8 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(
                                 TNSTDBValue<Int8> &     write_count,
                                 TNSTDBValue<string> &   client_name,
                                 TNSTDBValue<string> &   user_namespace,
-                                TNSTDBValue<string> &   user_name
+                                TNSTDBValue<string> &   user_name,
+                                TNSTDBValue<Int8> &     obj_ttl
                                               )
 {
     const string        proc_name = "GetObjectFixedAttributes";
@@ -1133,6 +1134,7 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(
             query.SetOutputParameter("@client_name", eSDB_String);
             query.SetOutputParameter("@user_namespace", eSDB_String);
             query.SetOutputParameter("@user_name", eSDB_String);
+            query.SetOutputParameter("@obj_ttl", eSDB_Int8);
 
             query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
@@ -1190,6 +1192,12 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(
                 if (!user_name.m_IsNull)
                     user_name.m_Value = query.GetParameter("@user_name").
                                                                 AsString();
+
+                obj_ttl.m_IsNull = query.GetParameter("@obj_ttl").
+                                                                IsNull();
+                if (!obj_ttl.m_IsNull)
+                    obj_ttl.m_Value = query.GetParameter("@obj_ttl").
+                                                                AsInt8();
             }
             g_DoPerfLogging("MS_SQL_" + proc_name,
                             CNSTPreciseTime::Current() - start,
@@ -1789,7 +1797,8 @@ CNSTDatabase::x_CalculateExpiration(
         effective_ttl = service_ttl;
     else {
         effective_ttl.m_IsNull = false;
-        effective_ttl.m_Value = CTimeSpan(individual_object_ttl.m_Value);
+        effective_ttl.m_Value = CTimeSpan(
+                            static_cast<long>(individual_object_ttl.m_Value));
     }
 
 

@@ -177,7 +177,8 @@ public:
                                          TNSTDBValue<Int8> &   write_count,
                                          TNSTDBValue<string> & client_name,
                                          TNSTDBValue<string> & user_namespace,
-                                         TNSTDBValue<string> & user_name);
+                                         TNSTDBValue<string> & user_name,
+                                         TNSTDBValue<Int8> &  obj_ttl);
     int  ExecSP_GetObjectExpiration(const string &        object_key,
                                     TNSTDBValue<CTime> &  expiration,
                                     TNSTDBValue<Int8> &  individual_object_ttl);
