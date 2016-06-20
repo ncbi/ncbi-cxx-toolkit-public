@@ -7343,9 +7343,9 @@ if test "$ac_cv_header_clapack_h:$ac_cv_header_Accelerate_Accelerate_h" != no:no
    AC_CHECK_TYPES([__CLPK_integer], [], [],
       [[#ifdef HAVE_CLAPACK_H
         #  include <clapack.h>
-	#else
-	#  include <Accelerate/Accelerate.h>
-	#endif]])
+        #else
+        #  include <Accelerate/Accelerate.h>
+        #endif]])
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(lapack,
