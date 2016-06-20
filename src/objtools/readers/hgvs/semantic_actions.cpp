@@ -36,7 +36,6 @@ void AssignRefSeqIdentifier(const string& identifier, CRef<CVariantExpression>& 
 void AssignSequenceVariant(CRef<CSequenceVariant>& variant, CRef<CVariantExpression>& result)
 {
     result = CreateResultIfNull(result);
-    //result->SetSeqvars().push_back(variant);
     result->SetSequence_variant(variant.GetNCObject());
 }
 
@@ -643,18 +642,19 @@ void AssignNtInvSize(CRef<CNtLocation>& nt_loc,  string size,  CRef<CSimpleVaria
 }
 
 
-void AssignNtConversion(CRef<CNtLocation>& src_int, CRef<CNtLocation>& dst_int, CRef<CSimpleVariant>& result)
+void AssignNtConversion(CRef<CNtLocation>& nt_loc, CRef<CNtLocation>& origin, CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
-    result->SetType().SetConv().SetSrc(src_int->SetInt());
-    result->SetType().SetConv().SetDst(dst_int->SetInt());
+    result->SetType().SetConv().SetLoc(nt_loc.GetNCObject());
+    result->SetType().SetConv().SetOrigin(origin.GetNCObject());
 }
 
-void AssignNtConversion(CRef<CNtLocation>& src_int, const string& seq_id, CRef<CNtLocation>& dst_int, CRef<CSimpleVariant>& result)
+
+void AssignNtConversion(CRef<CNtLocation>& nt_loc, const string& seq_id, CRef<CNtLocation>& origin, CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
-    result->SetType().SetConv().SetSrc(src_int->SetInt());
-    result->SetType().SetConv().SetDst(dst_int->SetInt());
+    result->SetType().SetConv().SetLoc(nt_loc.GetNCObject());
+    result->SetType().SetConv().SetOrigin(origin.GetNCObject());
 }
 
 

@@ -16,7 +16,8 @@ class CHgvsIrepReader
 public: 
     CHgvsIrepReader(CScope& scope) :
                     m_Scope(scope),
-                    m_IdResolver(Ref(new CIdResolver(scope))) {}
+                    m_IdResolver(Ref(new CIdResolver(scope))),
+                    m_MethodUnknown(CVariation_ref::eMethod_E_unknown) {}
 
     virtual ~CHgvsIrepReader() {}
 
@@ -32,6 +33,7 @@ protected:
 
     CScope& m_Scope;
     CRef<CIdResolver> m_IdResolver;
+    const CVariation_ref::EMethod_E m_MethodUnknown;
 };
 
 END_SCOPE(objects)

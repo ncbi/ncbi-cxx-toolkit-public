@@ -169,8 +169,8 @@ Insertion ::= SEQUENCE {
 
 
 Conversion ::= SEQUENCE {
-    src NtInterval,
-    dst NtInterval
+    loc NtLocation,
+    origin NtLocation
 }
 
 

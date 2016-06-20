@@ -9,7 +9,18 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(NHgvsTestUtils)
 
+void s_SetVariationMethod(CRef<CVariation_ref> var_ref, 
+                          const CVariation_ref::EMethod_E method)
+{
+    if (method == CVariation_ref::eMethod_E_unknown) {
+        return;
+    }
+    var_ref->SetMethod().push_back(method);
+}
+
+
 CRef<CVariation_ref> g_CreateSNV(const CSeq_data& nucleotide,
+                                 const CVariation_ref::EMethod_E method,
                                  const CRef<CDelta_item> offset)
 {
     auto var_ref = Ref(new CVariation_ref());
@@ -27,12 +38,14 @@ CRef<CVariation_ref> g_CreateSNV(const CSeq_data& nucleotide,
     seq_literal.SetLength(1);
     inst.SetDelta().push_back(delta_item);
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
 CRef<CVariation_ref> g_CreateMNP(const CSeq_data& nucleotide,
                                  const TSeqPos length,
+                                 const CVariation_ref::EMethod_E method,
                                  const CRef<CDelta_item> offset)
 {
     auto var_ref = Ref(new CVariation_ref());
@@ -51,11 +64,13 @@ CRef<CVariation_ref> g_CreateMNP(const CSeq_data& nucleotide,
     seq_literal.SetLength(length);
     inst.SetDelta().push_back(delta_item);
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
-CRef<CVariation_ref> g_CreateMissense(const CSeq_data& amino_acid)
+CRef<CVariation_ref> g_CreateMissense(const CSeq_data& amino_acid,
+                                      const CVariation_ref::EMethod_E method)
 {
     auto var_ref = Ref(new CVariation_ref());
 
@@ -67,11 +82,13 @@ CRef<CVariation_ref> g_CreateMissense(const CSeq_data& amino_acid)
     delta_item->SetSeq().SetLiteral().SetLength() = 1;
     inst.SetDelta().push_back(delta_item);
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
-CRef<CVariation_ref> g_CreateDeletion(CRef<CDelta_item> start_offset,
+CRef<CVariation_ref> g_CreateDeletion(const CVariation_ref::EMethod_E method,
+                                      CRef<CDelta_item> start_offset,
                                       CRef<CDelta_item> stop_offset)
 {
     auto var_ref = Ref(new CVariation_ref());
@@ -94,11 +111,13 @@ CRef<CVariation_ref> g_CreateDeletion(CRef<CDelta_item> start_offset,
         inst.SetDelta().push_back(stop_offset);
     }
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
-CRef<CVariation_ref> g_CreateDuplication(CRef<CDelta_item> start_offset,
+CRef<CVariation_ref> g_CreateDuplication(const CVariation_ref::EMethod_E method,
+                                         CRef<CDelta_item> start_offset,
                                          CRef<CDelta_item> stop_offset)
 {
     auto var_ref = Ref(new CVariation_ref());
@@ -118,11 +137,13 @@ CRef<CVariation_ref> g_CreateDuplication(CRef<CDelta_item> start_offset,
         inst.SetDelta().push_back(stop_offset);
     }
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
 CRef<CVariation_ref> g_CreateIdentity(CRef<CSeq_literal> seq_literal,
+                                      const CVariation_ref::EMethod_E method,
                                       const CRef<CDelta_item> start_offset,
                                       const CRef<CDelta_item> stop_offset,
                                       const bool enforce_assert)
@@ -149,11 +170,13 @@ CRef<CVariation_ref> g_CreateIdentity(CRef<CSeq_literal> seq_literal,
         inst.SetDelta().push_back(stop_offset);
     }
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
 CRef<CVariation_ref> g_CreateDelins(CSeq_literal& insertion,
+                                    const CVariation_ref::EMethod_E method,
                                     const CRef<CDelta_item> start_offset,
                                     const CRef<CDelta_item> stop_offset)
 {
@@ -175,11 +198,13 @@ CRef<CVariation_ref> g_CreateDelins(CSeq_literal& insertion,
         inst.SetDelta().push_back(stop_offset);
     } 
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
 CRef<CVariation_ref> g_CreateInsertion(CSeq_literal& insertion,
+                                       const CVariation_ref::EMethod_E method,
                                        const CRef<CDelta_item> start_offset,
                                        const CRef<CDelta_item> stop_offset)
 {
@@ -202,11 +227,13 @@ CRef<CVariation_ref> g_CreateInsertion(CSeq_literal& insertion,
         inst.SetDelta().push_back(stop_offset);
     }
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
-CRef<CVariation_ref> g_CreateInversion(const CRef<CDelta_item> start_offset,
+CRef<CVariation_ref> g_CreateInversion(const CVariation_ref::EMethod_E method,
+                                       const CRef<CDelta_item> start_offset,
                                        const CRef<CDelta_item> stop_offset)
 {
     auto var_ref = Ref(new CVariation_ref());
@@ -222,11 +249,13 @@ CRef<CVariation_ref> g_CreateInversion(const CRef<CDelta_item> start_offset,
         inst.SetDelta().push_back(stop_offset);
     }
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
 CRef<CVariation_ref> g_CreateMicrosatellite(const CRef<CDelta_item> repeat_info,
+                                            const CVariation_ref::EMethod_E method,
                                             const CRef<CDelta_item> start_offset,
                                             const CRef<CDelta_item> stop_offset)
 {
@@ -245,11 +274,13 @@ CRef<CVariation_ref> g_CreateMicrosatellite(const CRef<CDelta_item> repeat_info,
         inst.SetDelta().push_back(stop_offset);
     }
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
 CRef<CVariation_ref> g_CreateConversion(const CSeq_loc& interval,
+                                        const CVariation_ref::EMethod_E method,
                                         const CRef<CDelta_item> start_offset,
                                         const CRef<CDelta_item> stop_offset)
 {
@@ -269,11 +300,12 @@ CRef<CVariation_ref> g_CreateConversion(const CSeq_loc& interval,
         inst.SetDelta().push_back(stop_offset);
     }
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
 
 
-CRef<CVariation_ref> g_CreateFrameshift(void)
+CRef<CVariation_ref> g_CreateFrameshift(const CVariation_ref::EMethod_E method)
 {
     auto var_ref = Ref(new CVariation_ref());
     
@@ -286,9 +318,9 @@ CRef<CVariation_ref> g_CreateFrameshift(void)
     cons->SetFrameshift();
     var_ref->SetConsequence().push_back(cons);
 
+    s_SetVariationMethod(var_ref, method);
     return var_ref;
 }
-
 
 
 END_SCOPE(NHgvsTestUtils)

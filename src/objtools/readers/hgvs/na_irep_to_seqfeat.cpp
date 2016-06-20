@@ -52,18 +52,17 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaIdentityVarref(const CNtLocati
     if (!nucleotide.empty()) {
         nt_literal->SetSeq_data().SetIupacna(CIUPACna(nucleotide));
     }
-    auto offset = CHgvsNaDeltaHelper::GetIntronOffset(nt_loc.GetSite());
-    CRef<CVariation_ref> var_ref = g_CreateIdentity(nt_literal, offset);
-    x_SetMethod(var_ref, method);
+    auto offset = CIntronOffsetHelper::GetIntronOffset(nt_loc.GetSite());
+    CRef<CVariation_ref> var_ref = g_CreateIdentity(nt_literal, method, offset);
 
     return var_ref;
 }
 
 
-CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaSubVarref(const CNtLocation& nt_loc, 
-                                                            const string& initial_nt,
-                                                            const string& final_nt,
-                                                            const CVariation_ref::EMethod_E method) const 
+CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSubVarref(const CNtLocation& nt_loc, 
+                                                          const string& initial_nt,
+                                                          const string& final_nt,
+                                                          const CVariation_ref::EMethod_E method) const 
 {
 
     if (!initial_nt.empty() &&
@@ -80,7 +79,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaSubVarref(const CNtLocation& n
 
     CRef<CDelta_item> offset;
     if (nt_loc.IsSite()) {
-        offset = CHgvsNaDeltaHelper::GetIntronOffset(nt_loc.GetSite());
+        offset = CIntronOffsetHelper::GetIntronOffset(nt_loc.GetSite());
     }
 
     { 
@@ -90,11 +89,11 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaSubVarref(const CNtLocation& n
         if (final_nt.size() > 1) {
             subvar_ref = g_CreateMNP(result,
                                      final_nt.size(),
+                                     method,
                                      offset);
         } else {
-            subvar_ref = g_CreateSNV(result, offset);
+            subvar_ref = g_CreateSNV(result, method, offset);
         }
-        x_SetMethod(subvar_ref, method);
         var_set.SetVariations().push_back(subvar_ref);
     }
 
@@ -106,7 +105,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaSubVarref(const CNtLocation& n
         } else {
             initial = x_CreateNtSeqLiteral(initial_nt);
         }
-        auto subvar_ref = g_CreateIdentity(initial, offset);
+        auto subvar_ref = g_CreateIdentity(initial, m_MethodUnknown, offset);
         var_set.SetVariations().push_back(subvar_ref);
     }
     return var_ref;
@@ -114,17 +113,17 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaSubVarref(const CNtLocation& n
 
 
 
-CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaSubVarref(const CNaSub& sub,
-                                                            const CVariation_ref::EMethod_E method) const
+CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSubVarref(const CNaSub& sub,
+                                                          const CVariation_ref::EMethod_E method) const
 {
     const auto& nt_loc = sub.GetLoc();
     const auto initial_nt = sub.GetInitial();
     const auto final_nt = sub.GetFinal();
 
-    return x_CreateNaSubVarref(nt_loc, 
-                               initial_nt,
-                               final_nt,
-                               method);
+    return x_CreateSubVarref(nt_loc, 
+                             initial_nt,
+                             final_nt,
+                             method);
 }
 
 
@@ -135,29 +134,29 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDeletionVarref(const CDeletion& 
 {
     const auto& nt_loc = del.GetLoc().GetNtloc();
 
-    auto start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(nt_loc);
+    CRef<CDelta_item> start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_loc);
+    CRef<CDelta_item> stop_offset = CIntronOffsetHelper::GetStopIntronOffset(nt_loc);
 
-    auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_loc);
 
-
+    // The case where the HGVS expression includes the deleted sequence explicitly
     if (del.IsSetRaw_seq()) {
         auto var_ref = Ref(new CVariation_ref());
         auto& var_set = var_ref->SetData().SetSet();
         var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
         {
-            auto subvar_ref = g_CreateDeletion(start_offset, stop_offset);
-            x_SetMethod(subvar_ref, method);
+            auto subvar_ref = g_CreateDeletion(method, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         }
         {
             auto raw_seq = x_CreateNtSeqLiteral(del.GetRaw_seq());
-            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(raw_seq, start_offset, stop_offset);
+            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(raw_seq, m_MethodUnknown, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         }
         return var_ref;
     }
-    
-    return g_CreateDeletion(start_offset, stop_offset);
+   
+    // The case where the HGVS expression does not include the deleted sequence explicitly
+    return g_CreateDeletion(method, start_offset, stop_offset);
 }
 
 
@@ -166,15 +165,14 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateInsertionVarref(const CInsertion
 {
     const auto& nt_int = ins.GetInt().GetNtint();
 
-    auto start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(nt_int);
+    // Construct the CDeltaItem instances that specify the intronic offsets 
+    CRef<CDelta_item> start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_int);
+    CRef<CDelta_item> stop_offset = CIntronOffsetHelper::GetStopIntronOffset(nt_int);
 
-    auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_int);
-
+    // The inserted sequence is specified by a CSeq_literal instance
     auto raw_seq = x_CreateNtSeqLiteral(ins.GetSeqinfo().GetRaw_seq());
-    CRef<CVariation_ref> var_ref = g_CreateInsertion(*raw_seq, start_offset, stop_offset);
-    x_SetMethod(var_ref, method);
 
-    return var_ref;
+    return g_CreateInsertion(*raw_seq, method, start_offset, stop_offset);
 }
 
 
@@ -203,36 +201,39 @@ bool CHgvsNaIrepReader::x_LooksLikePolymorphism(const CDelins& delins) const
 }
                                         
 
-// Need to refactor since this repeats most of x_CreateInsertionVarref
 CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDelinsVarref(const CDelins& delins,
                                                              const CVariation_ref::EMethod_E method) const
 {
 
     const auto& nt_loc = delins.GetLoc().GetNtloc();
 
-    auto start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(nt_loc);
-    auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_loc);
+    // Construct the CDeltaItem instances specifying the intronic offsets in the limits 
+    // of the deleted interval.
+    CRef<CDelta_item> start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_loc);
+    CRef<CDelta_item> stop_offset = CIntronOffsetHelper::GetStopIntronOffset(nt_loc);
 
+    // The insertion is specified by a CSeq_literal instance
     auto inserted_seq = x_CreateNtSeqLiteral(delins.GetInserted_seq_info().GetRaw_seq());
 
+    // The following code handles the case where the HGVS expression contains the deleted sequence explicitly
     if (delins.IsSetDeleted_raw_seq()) {
         auto var_ref = Ref(new CVariation_ref());
         auto& var_set = var_ref->SetData().SetSet();
         var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
         {
-            CRef<CVariation_ref> subvar_ref = g_CreateDelins(*inserted_seq, start_offset, stop_offset);
-            x_SetMethod(subvar_ref, method);
+            CRef<CVariation_ref> subvar_ref = g_CreateDelins(*inserted_seq, method, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         }
         {
             auto deleted_seq = x_CreateNtSeqLiteral(delins.GetDeleted_raw_seq());
-            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(deleted_seq, start_offset, stop_offset);
+            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(deleted_seq, m_MethodUnknown, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         }
         return var_ref;
     }
 
-    return g_CreateDelins(*inserted_seq, start_offset, stop_offset);
+    // The case where the HGVS expression does not show the deleted sequence explicitly
+    return g_CreateDelins(*inserted_seq, m_MethodUnknown, start_offset, stop_offset);
 }
 
 
@@ -242,101 +243,107 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDuplicationVarref(const CDuplica
 
     const auto& nt_loc = dup.GetLoc().GetNtloc();
 
-    auto start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(nt_loc);
+    // Construct the CDelta_item instances specifying the intronic offsets in the limits 
+    // of the duplicated interval.
+    CRef<CDelta_item> start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_loc);
+    CRef<CDelta_item> stop_offset = CIntronOffsetHelper::GetStopIntronOffset(nt_loc);
 
-    auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_loc);
-
+    // A HGVS duplication expression may include the reference subsequence that is 
+    // duplicated. The following code handles this case.
     if (dup.IsSetRaw_seq()) {
         auto var_ref = Ref(new CVariation_ref());
         auto& var_set = var_ref->SetData().SetSet();
         var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
         {
-            CRef<CVariation_ref> subvar_ref = g_CreateDuplication(start_offset, stop_offset);
-            x_SetMethod(subvar_ref, method);
+            CRef<CVariation_ref> subvar_ref = g_CreateDuplication(method, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         }
         {
             auto duplicated_seq = x_CreateNtSeqLiteral(dup.GetRaw_seq());
-            auto subvar_ref = g_CreateIdentity(duplicated_seq, start_offset, stop_offset);
+            auto subvar_ref = g_CreateIdentity(duplicated_seq, m_MethodUnknown, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         }
         return var_ref;
     } 
     
-    return g_CreateDuplication(start_offset, stop_offset);
+    // method needs to be incorporated into this   
+    return g_CreateDuplication(method, start_offset, stop_offset);
 }
 
 
 CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateInversionVarref(const CInversion& inv,
                                                                 const CVariation_ref::EMethod_E method) const
 {
-
+    // Get the inverted interval
     const auto& nt_int = inv.GetNtint();
 
-    auto start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(nt_int);
+    // Construct the CDelta_item instances specifying the intronic offsets in the interval limits.
+    CRef<CDelta_item> start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_int);
+    CRef<CDelta_item> stop_offset = CIntronOffsetHelper::GetStopIntronOffset(nt_int);
 
-    auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_int);
-
+    // The HGVS inversion expression may include the reference sequence that is inverted or 
+    // the size of the inverted sequence. The following lines of code handles these cases.
     if (inv.IsSetRaw_seq() || inv.IsSetSize()) {
         auto var_ref = Ref(new CVariation_ref());
         auto& var_set = var_ref->SetData().SetSet();
         var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
         {
-            CRef<CVariation_ref> subvar_ref = g_CreateInversion(start_offset, stop_offset);
-            x_SetMethod(subvar_ref, method);
+            CRef<CVariation_ref> subvar_ref = g_CreateInversion(method, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         }
         if (inv.IsSetRaw_seq()) {
             auto inverted_seq = x_CreateNtSeqLiteral(inv.GetRaw_seq());
-            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(inverted_seq, start_offset, stop_offset);
+            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(inverted_seq, m_MethodUnknown, start_offset, stop_offset);
             var_set.SetVariations().push_back(subvar_ref);
         } else if (inv.IsSetSize()) {
             auto inversion_size = x_CreateNtSeqLiteral(inv.GetSize());
             const bool enforce_assert = true;
-            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(inversion_size, start_offset, stop_offset, enforce_assert);
+            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(inversion_size, m_MethodUnknown, start_offset, stop_offset, enforce_assert);
             var_set.SetVariations().push_back(subvar_ref);
         }
         return var_ref;
     } 
    
-    return g_CreateInversion(start_offset, stop_offset);
+    // The HGVS expression contains neither raw sequence in the inverted region 
+    // nor the size of the inverted sequence.
+    return g_CreateInversion(m_MethodUnknown, start_offset, stop_offset);
 }
 
 
 CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateConversionVarref(const CConversion& conv,
                                                                  const CVariation_ref::EMethod_E method) const
 {
-    {
-        const auto& replacement_int = conv.GetDst();
-        const auto start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(replacement_int);
-        const auto stop_offset  = CHgvsNaDeltaHelper::GetStopIntronOffset(replacement_int);
+    {   // Don't have a Seq-feat representation for the case where the conversion origin 
+        // involves intronic offsets. Throw an exception in this case.
+        const auto& replacement_int = conv.GetOrigin();
+        const CRef<CDelta_item> start_offset = CIntronOffsetHelper::GetStartIntronOffset(replacement_int);
+        const CRef<CDelta_item> stop_offset  = CIntronOffsetHelper::GetStopIntronOffset(replacement_int);
 
         if (start_offset || stop_offset) {
-            string message = "Nucleotide conversions with replacement intervals that begin or end in an intron are not currently supported.";
-            message += " Please report to variation-services@ncbi.nlm.nih.gov";
-            NCBI_THROW(CVariationIrepException, eUnsupported, message);
+            string err_msg = "Nucleotide conversions with origin intervals that begin or end in an intron are not currently supported.";
+            err_msg += " Please report to variation-services@ncbi.nlm.nih.gov";
+            NCBI_THROW(CVariationIrepException, eUnsupported, err_msg);
         }
     }
 
-    const auto& nt_int = conv.GetSrc();
+    // Construct the Seq-loc for the conversion location. 
+    // The code currently assumes that the location is an interval.
+    const auto& nt_loc = conv.GetLoc();
+    const string id_string = conv.GetOrigin().GetInt().GetStart().GetSite().GetSeqid(); 
+    auto seq_type = conv.GetOrigin().GetInt().GetStart().GetSite().GetSeqtype();
 
-    auto start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(nt_int);
-    auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_int);
+    CConstRef<CSeq_id> seq_id = m_IdResolver->GetAccessionVersion(id_string).GetSeqId();
 
-
-
-    auto id_string = conv.GetDst().GetStart().GetSite().GetSeqid(); 
-    auto seq_type = conv.GetDst().GetStart().GetSite().GetSeqtype();
-
-    auto seq_id = m_IdResolver->GetAccessionVersion(id_string).GetSeqId();
-
-    auto seq_loc = CNaSeqlocHelper::CreateSeqloc(*seq_id,
-                                                  conv.GetDst(),
-                                                  seq_type,
-                                                  m_Scope);
+    CRef<CSeq_loc> seq_loc = CNaSeqlocHelper::CreateSeqloc(*seq_id,
+                                                           conv.GetOrigin(),
+                                                           seq_type,
+                                                           m_Scope);
     
-    CRef<CVariation_ref> var_ref = g_CreateConversion(*seq_loc, start_offset, stop_offset);
-    x_SetMethod(var_ref, method);
+    // Compute the intronic offsets for the interval limits.
+    CRef<CDelta_item> start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_loc);
+    CRef<CDelta_item> stop_offset = CIntronOffsetHelper::GetStopIntronOffset(nt_loc);
+
+    CRef<CVariation_ref> var_ref = g_CreateConversion(*seq_loc, method, start_offset, stop_offset);
     return var_ref;
 }
 
@@ -354,13 +361,12 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSSRVarref(const CRepeat& ssr,
 
     const auto& nt_loc = ssr.GetLoc().GetNtloc();
 
-    auto start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(nt_loc);
+    auto start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_loc);
 
-    auto stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_loc);
+    auto stop_offset = CIntronOffsetHelper::GetStopIntronOffset(nt_loc);
 
     auto delta = CDeltaHelper::CreateSSR(ssr.GetCount(), seq_literal);
-    CRef<CVariation_ref> var_ref = g_CreateMicrosatellite(delta, start_offset, stop_offset);
-    x_SetMethod(var_ref, method);
+    CRef<CVariation_ref> var_ref = g_CreateMicrosatellite(delta, method, start_offset, stop_offset);
     return var_ref;
 }
 
@@ -395,7 +401,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
                }
            }
            // Not identity - non-trivial substitution
-           var_ref = x_CreateNaSubVarref(var_type.GetNa_sub(), method);
+           var_ref = x_CreateSubVarref(var_type.GetNa_sub(), method);
            break;
        case CSimpleVariant::TType::e_Dup:
            var_ref = x_CreateDuplicationVarref(var_type.GetDup(), method);
@@ -407,6 +413,8 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
            var_ref = x_CreateInsertionVarref(var_type.GetIns(), method);
            break;
        case CSimpleVariant::TType::e_Delins:
+           // If the deleted subsequence and the insertion are the 
+           // same size relabel as a substitution.
            if (x_LooksLikePolymorphism(var_type.GetDelins())) {
                const auto& delins = var_type.GetDelins();
 
@@ -414,10 +422,10 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
                                      delins.GetDeleted_raw_seq() : 
                                      "";
 
-               var_ref = x_CreateNaSubVarref(delins.GetLoc().GetNtloc(),
-                                             deleted,
-                                             delins.GetInserted_seq_info().GetRaw_seq(),
-                                             method);
+               var_ref = x_CreateSubVarref(delins.GetLoc().GetNtloc(),
+                                           deleted,
+                                           delins.GetInserted_seq_info().GetRaw_seq(),
+                                           method);
                break;
            }
            var_ref = x_CreateDelinsVarref(var_type.GetDelins(), method);
@@ -511,11 +519,11 @@ CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(const CVariantExpression& varia
 
 
 
-
+// Create the CSeq_loc instance for different variant types
 CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
-        const CSimpleVariant& simple_var,
-        const CSequenceVariant::TSeqtype& seq_type,
-        CScope& scope)
+                                             const CSimpleVariant& simple_var,
+                                             const CSequenceVariant::TSeqtype& seq_type,
+                                             CScope& scope)
 {
     CRef<CSeq_loc> seq_loc;
     const auto& var_type = simple_var.GetType();
@@ -523,57 +531,57 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
     switch (var_type.Which()) {
         default:
             NCBI_THROW(CVariationIrepException, eUnknownVariation, "Unsupported variation type");
-        case CSimpleVariant::TType::e_Na_identity:
+        case CSimpleVariant::TType::e_Na_identity:  // No change
             seq_loc = CreateSeqloc(seq_id,
                                    var_type.GetNa_identity().GetLoc(),
                                    seq_type,
                                    scope);
             break;
-        case CSimpleVariant::TType::e_Na_sub:
-            seq_loc = CreateSeqloc(seq_id,
+        case CSimpleVariant::TType::e_Na_sub: // Nucleotide substitution - SNP or MNP 
+            seq_loc = CreateSeqloc(seq_id, 
                                    var_type.GetNa_sub().GetLoc(),
                                    seq_type,
                                    scope);
             break;
-        case CSimpleVariant::TType::e_Dup:     
+        case CSimpleVariant::TType::e_Dup: // Duplication     
             seq_loc = CreateSeqloc(seq_id, 
                                    var_type.GetDup().GetLoc().GetNtloc(),
                                    seq_type, 
                                    scope);
             break; 
-        case CSimpleVariant::TType::e_Del:     
+        case CSimpleVariant::TType::e_Del: // Deletion    
             seq_loc = CreateSeqloc(seq_id, 
                                    var_type.GetDel().GetLoc().GetNtloc(),
                                    seq_type, 
                                    scope);
             break; 
-        case CSimpleVariant::TType::e_Ins:
-            seq_loc = CreateSeqloc(seq_id,
-                                   var_type.GetIns().GetInt().GetNtint(),
-                                   seq_type,
-                                   scope);
+        case CSimpleVariant::TType::e_Ins: // Insertion
+            seq_loc = x_CreateSeqloc(seq_id,
+                                     var_type.GetIns().GetInt().GetNtint(),
+                                     seq_type,
+                                     scope);
             break;
-        case CSimpleVariant::TType::e_Delins:     
+        case CSimpleVariant::TType::e_Delins: // Deletion-insertion    
             seq_loc = CreateSeqloc(seq_id, 
                                    var_type.GetDelins().GetLoc().GetNtloc(),
                                    seq_type, 
                                    scope);
             break; 
 
-        case CSimpleVariant::TType::e_Inv:     
-            seq_loc = CreateSeqloc(seq_id, 
-                                   var_type.GetInv().GetNtint(),
-                                   seq_type, 
-                                   scope);
+        case CSimpleVariant::TType::e_Inv:  // Inversion    
+            seq_loc = x_CreateSeqloc(seq_id, 
+                                    var_type.GetInv().GetNtint(),
+                                    seq_type, 
+                                    scope);
             break; 
 
-        case CSimpleVariant::TType::e_Conv:
+        case CSimpleVariant::TType::e_Conv: // Conversion
             seq_loc = CreateSeqloc(seq_id, 
-                                   var_type.GetConv().GetSrc(),
+                                   var_type.GetConv().GetLoc(),
                                    seq_type, 
                                    scope);
             break;
-       case CSimpleVariant::TType::e_Repeat:
+       case CSimpleVariant::TType::e_Repeat: // SSR
             seq_loc = CreateSeqloc(seq_id,
                                    var_type.GetRepeat().GetLoc().GetNtloc(),
                                    seq_type,
@@ -585,24 +593,26 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 
 
+// Create a CSeq_loc instance given a CSeq_id, a CNtLocation object, and the 
+// sequence type (CDS, genomic, etc).
 CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
-        const CNtLocation& nt_loc,
-        const CSequenceVariant::TSeqtype& seq_type,
-        CScope& scope)
+                                             const CNtLocation& nt_loc,
+                                             const CSequenceVariant::TSeqtype& seq_type,
+                                             CScope& scope)
 {
     if (nt_loc.IsSite()) {
-        return CreateSeqloc(seq_id,
-                            nt_loc.GetSite(),
-                            seq_type,
-                            scope);
+        return x_CreateSeqloc(seq_id,
+                              nt_loc.GetSite(),
+                              seq_type,
+                              scope);
     }
 
     
     if (nt_loc.IsRange()) {
-        return CreateSeqloc(seq_id,
-                            nt_loc.GetRange(),
-                            seq_type,
-                            scope);
+        return x_CreateSeqloc(seq_id,
+                              nt_loc.GetRange(),
+                              seq_type,
+                              scope);
     }
 
 
@@ -610,17 +620,17 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         NCBI_THROW(CVariationIrepException, eInvalidLocation, "Invalid nucleotide sequence location");
     }
 
-    return CreateSeqloc(seq_id,
-                        nt_loc.GetInt(),
-                        seq_type,
-                        scope);
+    return x_CreateSeqloc(seq_id,
+                          nt_loc.GetInt(),
+                          seq_type,
+                          scope);
 }
 
 
-CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
-        const CNtSite& nt_site,
-        const CSequenceVariant::TSeqtype& seq_type,
-        CScope& scope)
+CRef<CSeq_loc> CNaSeqlocHelper::x_CreateSeqloc(const CSeq_id& seq_id,
+                                               const CNtSite& nt_site,
+                                               const CSequenceVariant::TSeqtype& seq_type,
+                                               CScope& scope)
 {
     TSeqPos site_index;
     const bool know_site = x_ComputeSiteIndex(seq_id,
@@ -649,10 +659,10 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 
 
-CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
-        const CNtSiteRange& nt_range,
-        const CSequenceVariant::TSeqtype& seq_type,
-        CScope& scope)
+CRef<CSeq_loc> CNaSeqlocHelper::x_CreateSeqloc(const CSeq_id& seq_id,
+                                               const CNtSiteRange& nt_range,
+                                               const CSequenceVariant::TSeqtype& seq_type,
+                                               CScope& scope)
 {
     TSeqPos site_index;
     bool know_site = x_ComputeSiteIndex(seq_id, 
@@ -666,7 +676,6 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         seq_loc->SetEmpty().Assign(seq_id);
         return seq_loc;
     }
-
 
     ENa_strand strand = x_GetStrand(nt_range);
     seq_loc->SetPnt().SetPoint(site_index);
@@ -688,9 +697,7 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 ENa_strand CNaSeqlocHelper::x_GetStrand(const CNtSite& nt_site)
 {
-    ENa_strand strand = nt_site.GetStrand_minus() ? eNa_strand_minus : eNa_strand_plus;
-
-    return strand;
+    return (nt_site.GetStrand_minus() ? eNa_strand_minus : eNa_strand_plus);
 }
 
 
@@ -735,10 +742,10 @@ ENa_strand CNaSeqlocHelper::x_GetStrand(const CNtInterval& nt_int)
 
 
 
-CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
-        const CNtInterval& nt_int,
-        const CSequenceVariant::TSeqtype& seq_type,
-        CScope& scope)
+CRef<CSeq_loc> CNaSeqlocHelper::x_CreateSeqloc(const CSeq_id& seq_id,
+                                               const CNtInterval& nt_int,
+                                               const CSequenceVariant::TSeqtype& seq_type,
+                                               CScope& scope)
 {
 
     if ( !nt_int.IsSetStart() || !nt_int.IsSetStop() ) {
@@ -748,16 +755,17 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
     auto seq_loc = Ref(new CSeq_loc());
     seq_loc->SetInt().SetId().Assign(seq_id);
-    
-    TSeqPos start_index, stop_index;
+   
+    // Attempt to compute the bioseq site index for the beginning of the interval.
+    TSeqPos start_index;
     bool know_start = x_ComputeSiteIndex(seq_id,
                                          nt_int.GetStart(),
                                          seq_type,
                                          scope,
                                          start_index);
 
-    
-
+    // Attempt to compute the bioseq site index for the end of the interval
+    TSeqPos stop_index;
     bool know_stop = x_ComputeSiteIndex(seq_id, 
                                         nt_int.GetStop(),
                                         seq_type,
@@ -772,8 +780,10 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         start_index = temp;
     }
 
-    if (know_start) {
+    if (know_start) { 
         seq_loc->SetInt().SetFrom(start_index);
+        // The following code handles the cases where the start site contains 
+        // some uncertainty, or "fuzziness".
         if (nt_int.GetStart().IsSite()) {
             if(nt_int.GetStart().GetSite().IsSetFuzzy() &&
                nt_int.GetStart().GetSite().GetFuzzy()) {
@@ -795,14 +805,16 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
             seq_loc->SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_tl);
         }
     }
-    else { // don't know start site
+    else { // Could not determine start site
         seq_loc->SetInt().SetFrom(kInvalidSeqPos);
         seq_loc->SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_other);
     }
 
 
-    if (know_stop) {
+    if (know_stop) { 
         seq_loc->SetInt().SetTo(stop_index);
+        // The following code handles the cases where the stop site contains 
+        // some uncertainty, or "fuzziness".
         if (nt_int.GetStop().IsSite()) {
             if(nt_int.GetStop().GetSite().IsSetFuzzy() &&
                nt_int.GetStop().GetSite().GetFuzzy()) {
@@ -824,7 +836,7 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
             seq_loc->SetInt().SetFuzz_to().SetLim(CInt_fuzz::eLim_tr);
         } 
     } 
-    else { 
+    else { // Could not determine stop site
         seq_loc->SetInt().SetTo(kInvalidSeqPos);
         seq_loc->SetInt().SetFuzz_to().SetLim(CInt_fuzz::eLim_other);
     }
@@ -1031,11 +1043,11 @@ bool CNaSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
 }
 
 
-void CHgvsNaDeltaHelper::x_SetDeltaItemOffset(const TSeqPos length, 
+void CIntronOffsetHelper::x_SetDeltaItemOffset(const TSeqPos length, 
                                               const CDelta_item::TMultiplier multiplier, 
                                               const bool fuzzy,
                                               CDelta_item& delta_item)
- {
+{
      delta_item.SetAction(CDelta_item::eAction_offset);
 
      if (length < kInvalidSeqPos) {
@@ -1055,11 +1067,11 @@ void CHgvsNaDeltaHelper::x_SetDeltaItemOffset(const TSeqPos length,
                                                      : CInt_fuzz::eLim_lt;
 
      delta_item.SetSeq().SetLiteral().SetFuzz().SetLim(fuzz_lim);
- }
+}
 
 
-
-CRef<CDelta_item> CHgvsNaDeltaHelper::GetIntronOffset(const CNtSite& nt_site)
+// Return the CDelta_item instance encapsulating the intronic offset at a nucleotide site.
+CRef<CDelta_item> CIntronOffsetHelper::GetIntronOffset(const CNtSite& nt_site)
 {
     CRef<CDelta_item> delta_item;
 
@@ -1088,16 +1100,22 @@ CRef<CDelta_item> CHgvsNaDeltaHelper::GetIntronOffset(const CNtSite& nt_site)
     return delta_item;
 }
 
-
-CRef<CDelta_item> CHgvsNaDeltaHelper::GetIntronOffset(const CNtSiteRange& nt_range)
+// Return the CDelta_item instance specifying the intronic offsets appearing in 
+// a nucleotide site range.
+CRef<CDelta_item> CIntronOffsetHelper::GetIntronOffset(const CNtSiteRange& nt_range)
 {
     CRef<CDelta_item> delta_item;
 
+    // If the range does not involve intronic offsets
+    // return a null CRef
     if (!nt_range.GetStart().IsSetOffset() &&
         !nt_range.GetStop().IsSetOffset()) {
         return delta_item;
     }
 
+    // The following is due to limitations 
+    // in the Seq-feat representation of variants. 
+    // The base values in intronic ranges must be equal.
     if (nt_range.GetStart().IsSetBase() &&
         nt_range.GetStart().GetBase().IsVal() &&
         nt_range.GetStop().IsSetBase() &&
@@ -1110,7 +1128,10 @@ CRef<CDelta_item> CHgvsNaDeltaHelper::GetIntronOffset(const CNtSiteRange& nt_ran
 
     delta_item = Ref(new CDelta_item());
     delta_item->SetAction(CDelta_item::eAction_offset);
-
+    
+    // The following code handles ranges of the form 
+    // (?_base+offset). The range starts at an unknown point 
+    // and ends at base+offset
     TSignedSeqPos offset_length = 0;
     if (nt_range.GetStart().IsSetBase() &&
         nt_range.GetStart().GetBase().IsUnknown() &&
@@ -1121,7 +1142,9 @@ CRef<CDelta_item> CHgvsNaDeltaHelper::GetIntronOffset(const CNtSiteRange& nt_ran
         return delta_item;
     }
 
-
+    // The following code handles ranges of the form
+    // (base+offset_?). The range starts at base+offset and 
+    // ends at an unknown point.
     if (nt_range.GetStop().IsSetBase() &&
         nt_range.GetStop().GetBase().IsUnknown() &&
         nt_range.GetStart().IsSetOffset() &&
@@ -1131,6 +1154,10 @@ CRef<CDelta_item> CHgvsNaDeltaHelper::GetIntronOffset(const CNtSiteRange& nt_ran
         return delta_item;
     }
 
+    // At this point, both the beginning and end of the range are 
+    // known. Get the values of the offsets on range limits. 
+    // The offsets can take positive or negative integer values,
+    // but two non-zero offsets are required to have the same sign.
     TSignedSeqPos start_offset=0;
     TSignedSeqPos stop_offset=0;
 
@@ -1144,11 +1171,14 @@ CRef<CDelta_item> CHgvsNaDeltaHelper::GetIntronOffset(const CNtSiteRange& nt_ran
         stop_offset = nt_range.GetStop().GetOffset().GetVal();
     }
 
-    if (start_offset*stop_offset < 0) {
+    // Check to see if start_offset and stop_offset have opposite sign 
+    if ((start_offset && stop_offset) &&
+        ((start_offset^stop_offset) < 0)) {
         NCBI_THROW(CVariationIrepException, eUnsupported, 
                 "Offsets in intronic fuzzy location cannot differ in sign");
     }
 
+    // Construct the CDelta_item instance for the range offsets
     if (start_offset >= 0) {
         delta_item->SetSeq().SetLiteral().SetLength(start_offset);
         delta_item->SetSeq().SetLiteral().SetFuzz().SetRange().SetMin(start_offset);
@@ -1168,61 +1198,62 @@ CRef<CDelta_item> CHgvsNaDeltaHelper::GetIntronOffset(const CNtSiteRange& nt_ran
         delta_item->SetMultiplier(-1);
     }
 
-
     return delta_item;
 }
 
 
-CRef<CDelta_item> CHgvsNaDeltaHelper::GetStartIntronOffset(const CNtInterval& nt_int)
+// Return a CRef to the CDelta_item instance specifying the intron offset at an interval start point
+// Return an empty reference if no offset is found
+CRef<CDelta_item> CIntronOffsetHelper::GetStartIntronOffset(const CNtInterval& nt_int)
 {
     if (nt_int.IsSetStart() &&
         nt_int.GetStart().IsSite()) {
-        return CHgvsNaDeltaHelper::GetIntronOffset(nt_int.GetStart().GetSite());
+        return CIntronOffsetHelper::GetIntronOffset(nt_int.GetStart().GetSite());
     } 
     else if (nt_int.IsSetStart() &&
              nt_int.GetStart().IsRange()) {
-        return CHgvsNaDeltaHelper::GetIntronOffset(nt_int.GetStart().GetRange());
+        return CIntronOffsetHelper::GetIntronOffset(nt_int.GetStart().GetRange());
     }
     return CRef<CDelta_item>();
 }
 
 
-CRef<CDelta_item> CHgvsNaDeltaHelper::GetStopIntronOffset(const CNtInterval& nt_int)
+// Return a CRef to the CDelta_item instance specifying the intron offset an interval end point
+// Return an empty reference if no offset is found
+CRef<CDelta_item> CIntronOffsetHelper::GetStopIntronOffset(const CNtInterval& nt_int)
 {
-
-    // Need to extend this to handle ranges
     if (nt_int.IsSetStop() &&
         nt_int.GetStop().IsSite()) {
-        return CHgvsNaDeltaHelper::GetIntronOffset(nt_int.GetStop().GetSite());
+        return CIntronOffsetHelper::GetIntronOffset(nt_int.GetStop().GetSite());
     }
     else if (nt_int.IsSetStop() &&
              nt_int.GetStop().IsRange()) {
-        return CHgvsNaDeltaHelper::GetIntronOffset(nt_int.GetStop().GetRange());
+        return CIntronOffsetHelper::GetIntronOffset(nt_int.GetStop().GetRange());
     }
     return CRef<CDelta_item>();
 }
 
 
-CRef<CDelta_item> CHgvsNaDeltaHelper::GetStartIntronOffset(const CNtLocation& nt_loc)
+CRef<CDelta_item> CIntronOffsetHelper::GetStartIntronOffset(const CNtLocation& nt_loc)
 {
 
     CRef<CDelta_item> start_offset;
     if (nt_loc.IsSite()) {
-        start_offset = CHgvsNaDeltaHelper::GetIntronOffset(nt_loc.GetSite());
+        start_offset = CIntronOffsetHelper::GetIntronOffset(nt_loc.GetSite());
     } 
     else if (nt_loc.IsInt()) {
-        start_offset = CHgvsNaDeltaHelper::GetStartIntronOffset(nt_loc.GetInt());
+        start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_loc.GetInt());
     }
     return start_offset;
 }
 
 
 
-CRef<CDelta_item> CHgvsNaDeltaHelper::GetStopIntronOffset(const CNtLocation& nt_loc)
+CRef<CDelta_item> CIntronOffsetHelper::GetStopIntronOffset(const CNtLocation& nt_loc)
 {
     CRef<CDelta_item> stop_offset;
     if (nt_loc.IsInt()) {
-        stop_offset = CHgvsNaDeltaHelper::GetStopIntronOffset(nt_loc.GetInt());
+        stop_offset = CIntronOffsetHelper::GetStopIntronOffset(nt_loc.GetInt());
     }
     return stop_offset;
 }

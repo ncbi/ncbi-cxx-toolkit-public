@@ -255,8 +255,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinDelVarref(const string&
     auto& var_set = var_ref->SetData().SetSet();
     var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package); // CVariation_ref needs a SetPackage method, I think.
 
-    CRef<CVariation_ref> subvar_ref = g_CreateDeletion();
-    x_SetMethod(subvar_ref, method);
+    CRef<CVariation_ref> subvar_ref = g_CreateDeletion(method);
     var_set.SetVariations().push_back(subvar_ref);
 
     // Add Identity Variation-ref
@@ -323,8 +322,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateSSRVarref(const string& identi
 
     CRef<CSeq_literal> dummy_literal;
     auto delta =  CDeltaHelper::CreateSSR(ssr.GetCount(), dummy_literal);
-    CRef<CVariation_ref> subvar_ref = g_CreateMicrosatellite(delta);
-    x_SetMethod(subvar_ref, method);
+    CRef<CVariation_ref> subvar_ref = g_CreateMicrosatellite(delta, method);
     var_set.SetVariations().push_back(subvar_ref);
 
     // Identity Variation-ref
@@ -345,8 +343,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinDupVarref(const string&
     var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
 
     // Add first subvariation
-    CRef<CVariation_ref> subvar_ref = g_CreateDuplication();
-    x_SetMethod(subvar_ref, method);
+    CRef<CVariation_ref> subvar_ref = g_CreateDuplication(method);
     var_set.SetVariations().push_back(subvar_ref); 
 
     // Add identity Variation-ref
@@ -386,14 +383,13 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinSubVarref(const string&
     if ( aa_sub.GetType() == CProteinSub::eType_unknown) {
         subvar_ref = Ref(new CVariation_ref());
         subvar_ref->SetData().SetUnknown();
+        x_SetMethod(subvar_ref, method);
     } else {
-        //auto seq_data = Ref(new CSeq_data());
         const auto final_ncbieaa = x_ConvertToNcbieaa(final_aa);
         CSeq_data seq_data;
         seq_data.SetNcbieaa().Set(final_ncbieaa);
-        subvar_ref = g_CreateMissense(seq_data);
+        subvar_ref = g_CreateMissense(seq_data, method);
     }
-    x_SetMethod(subvar_ref, method);
     var_set.SetVariations().push_back(subvar_ref);
 
     // Add Identity Variation-ref
@@ -415,8 +411,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateFrameshiftVarref(const string&
     var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
 
     // Add first subvariation
-    CRef<CVariation_ref> subvar_ref = g_CreateFrameshift();
-    x_SetMethod(subvar_ref, method);
+    CRef<CVariation_ref> subvar_ref = g_CreateFrameshift(method);
     var_set.SetVariations().push_back(subvar_ref);
 
     // Add Identity Variation-ref

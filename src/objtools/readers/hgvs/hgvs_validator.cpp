@@ -131,8 +131,8 @@ void CHgvsVariantValidator::x_ValidateSimpleNAVariant(const CSimpleVariant& simp
             }
             break;
         case CSimpleVariant::TType::e_Conv:
-            x_ValidateNtLocation(var_type.GetConv().GetSrc(), seq_type); // Src -> Src_int ??
-            x_ValidateNtLocation(var_type.GetConv().GetDst(), seq_type);
+            x_ValidateNtLocation(var_type.GetConv().GetLoc(), seq_type); 
+            x_ValidateNtLocation(var_type.GetConv().GetOrigin(), seq_type);
             break;
         case CSimpleVariant::TType::e_Repeat:
             x_ValidateNtLocation(var_type.GetRepeat().GetLoc().GetNtloc(), seq_type);
