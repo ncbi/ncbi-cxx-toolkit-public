@@ -87,10 +87,12 @@ public:
 private:
     static void x_SetupGenbankDataLoader(const CArgs& args,
                                          objects::CObjectManager& obj_mgr,
-                                         int& priority);
+                                         int& priority,
+                                         TLoaders loaders);
     static void x_SetupVDBDataLoader(const CArgs& args,
                                      objects::CObjectManager& obj_mgr,
-                                     int& priority);
+                                     int& priority,
+                                     TLoaders loaders);
     static void x_SetupSRADataLoader(const CArgs& args,
                                      objects::CObjectManager& obj_mgr,
                                      int& priority);

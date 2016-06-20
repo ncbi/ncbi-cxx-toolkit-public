@@ -144,15 +144,14 @@ void CDataLoadersUtil::AddArgumentDescriptions(CArgDescriptions& arg_desc,
 
 void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
                                                 CObjectManager& obj_mgr,
-                                                int& priority)
+                                                int& priority,
+                                                TLoaders loaders)
 {
-    bool is_public_asn_tools = args.Exist("r");
-
-    bool genbank = args.Exist("r") && args["r"];
     bool nogenbank = args.Exist("nogenbank") && args["nogenbank"];
-
-    if (is_public_asn_tools) {
-        nogenbank = !genbank;
+    if (loaders & fGenbankOffByDefault) {
+        // VR-623:
+        // invert the meaning here, checking for a different flag
+        nogenbank = args.Exist("r")  &&  !args["r"];
     }
 
     if ( ! nogenbank ) {
@@ -184,7 +183,8 @@ void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
 
 void CDataLoadersUtil::x_SetupVDBDataLoader(const CArgs& args,
                                             CObjectManager& obj_mgr,
-                                            int& priority)
+                                            int& priority,
+                                            TLoaders loaders)
 {
     CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
     bool use_vdb_loader = args.Exist("vdb") && args["vdb"];
@@ -197,10 +197,12 @@ void CDataLoadersUtil::x_SetupVDBDataLoader(const CArgs& args,
     if (args.Exist("novdb") && args["novdb"]) {
         use_vdb_loader = false;
     }
-    if (use_vdb_loader  &&
-        args.Exist("r")  &&  !args["r"]  &&
-         args.Exist("vdb") && !args["vdb"]) {
-        use_vdb_loader = false;
+
+    if (loaders & fGenbankOffByDefault) {
+        if (args.Exist("r")  &&  !args["r"]  &&
+            args.Exist("vdb") && !args["vdb"]) {
+            use_vdb_loader = false;
+        }
     }
 
     if (use_vdb_loader) {
@@ -379,7 +381,8 @@ void CDataLoadersUtil::SetupGenbankDataLoader(const CArgs& args,
                                               CObjectManager& obj_mgr)
 {
     int priority = 0;
-    x_SetupGenbankDataLoader(args, obj_mgr, priority);
+    x_SetupGenbankDataLoader(args, obj_mgr, priority,
+                             fDefault);
 }
 
 
@@ -436,7 +439,7 @@ void CDataLoadersUtil::SetupObjectManager(const CArgs& args,
 
     // VDB data loader
     if (loaders & fVDB) {
-        x_SetupVDBDataLoader(args, obj_mgr, priority);
+        x_SetupVDBDataLoader(args, obj_mgr, priority, loaders);
     }
 
     //
@@ -450,7 +453,7 @@ void CDataLoadersUtil::SetupObjectManager(const CArgs& args,
     // and ICache service, but even then, performance is comparable
     // so there is limited penalty for being last priority.)
     if (loaders & fGenbank) {
-        x_SetupGenbankDataLoader(args, obj_mgr, priority);
+        x_SetupGenbankDataLoader(args, obj_mgr, priority, loaders);
     }
 }
 
