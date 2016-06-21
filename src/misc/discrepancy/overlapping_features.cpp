@@ -23,18 +23,58 @@
  *
  * =========================================================================
  *
- * Authors: Frank Ludwig, based on similar discrepancy tests
+ * Authors: Sema Kachalo
  *
  */
 
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(cds_trna_overlap);
+DISCREPANCY_MODULE(overlapping_features);
+
+// OVERLAPPING_RRNAS
+
+DISCREPANCY_CASE(OVERLAPPING_RRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Overlapping rRNAs")
+{
+    if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
+        return;
+    }
+
+    // See if we have moved to the "next" Bioseq
+    if (m_Count != context.GetCountBioseq()) {
+        m_Count = context.GetCountBioseq();
+        m_Objs["rRNAs"].clear();
+    }
+
+    // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
+    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef));
+    const CSeq_loc& this_location = obj.GetLocation();
+
+    NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["rRNAs"].GetObjects())
+    {
+        const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
+        const CSeq_feat* other_seq_feat = dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer());
+        const CSeq_loc& other_location = other_seq_feat->GetLocation();
+
+        if (sequence::Compare(this_location, other_location, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
+            m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."].Add(**robj).Add(*this_disc_obj);
+        }
+    }
+
+    m_Objs["rRNAs"].Add(*this_disc_obj);
+}
+
+
+DISCREPANCY_SUMMARIZE(OVERLAPPING_RRNAS)
+{
+    m_Objs.GetMap().erase("rRNAs");
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 
 // CDS_TRNA_OVERLAP

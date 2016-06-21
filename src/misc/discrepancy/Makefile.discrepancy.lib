@@ -4,8 +4,8 @@
 ###############################
 
 SRC = discrepancy_core report_object discrepancy_context utils text_output \
-      discrepancy_case suspect_product_names division_code_conflicts feature_per_bioseq gene_names rna_names spell_check \
-      transl_too_long sesame_street cds_trna_overlap transl_note feature_tests \
+      discrepancy_case overlapping_features suspect_product_names division_code_conflicts feature_per_bioseq gene_names rna_names spell_check \
+      transl_too_long sesame_street transl_note feature_tests \
       sequence_tests pub_tests biosource_tests
 
 LIB = xdiscrepancy
