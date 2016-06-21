@@ -1131,14 +1131,24 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& obj, CNcbiIstream& in)
                 continue;
             }
 
-            CBioseq_Handle bioseq_h = scope.GetBioseqHandle(id);
+            CBioseq_Handle bioseq_h = scope.GetBioseqHandle(id, CScope::eGetBioseq_Loaded);
             if (!bioseq_h && annot_id.IsLocal() && annot_id.GetLocal().IsStr())
             {
                 CBioseq::TId ids;
                 CSeq_id::ParseIDs(ids, annot_id.GetLocal().GetStr());
                 if (ids.size() == 1)
                 {
-                    bioseq_h = scope.GetBioseqHandle(*ids.front());
+                    bioseq_h = scope.GetBioseqHandle(*ids.front(), CScope::eGetBioseq_Loaded);
+                }
+                if (!bioseq_h && !m_context.m_genome_center_id.empty())
+                {
+                    string id = "gnl|" + m_context.m_genome_center_id + "|" + annot_id.GetLocal().GetStr();
+                    ids.clear();
+                    CSeq_id::ParseIDs(ids, id);
+                    if (ids.size() == 1)
+                    {
+                        bioseq_h = scope.GetBioseqHandle(*ids.front(), CScope::eGetBioseq_Loaded);
+                    }
                 }
             }
             if (bioseq_h)
