@@ -2476,25 +2476,6 @@ next_jp:
 } /* JumperExtendLeft */
 
 
-static void s_ReverseTback(GapPrelimEditBlock* tback)
-{
-    GapPrelimEditScript tmp;
-    int i, max_i;
-
-    if (!tback || !tback->num_ops || tback->num_ops == 1) {
-        return;
-    }
-
-    max_i = (tback->num_ops & 1) ? tback->num_ops / 2 : tback->num_ops / 2 - 1;
-    for (i = 0; i < max_i; i++) {
-        int rindex = tback->num_ops - i - 1;
-        tmp = tback->edit_ops[i];
-        tback->edit_ops[i] = tback->edit_ops[rindex];
-        tback->edit_ops[rindex] = tmp;
-    }
-}
-
-
 int JumperGappedAlignmentCompressedWithTraceback(const Uint1* query,
                                const Uint1* subject,
                                Int4 query_length, Int4 subject_length,

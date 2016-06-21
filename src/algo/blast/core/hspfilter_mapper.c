@@ -379,6 +379,7 @@ static Boolean s_TestChains(HSPChain* chain)
     return TRUE;
 }
 
+#if _DEBUG
 static Boolean s_TestChainsSorted(HSPChain* chain)
 {
     HSPChain* prev;
@@ -393,7 +394,7 @@ static Boolean s_TestChainsSorted(HSPChain* chain)
 
     return TRUE;
 }
-
+#endif
 
 /** Data structure used by the writer */
 typedef struct BlastHSPMapperData {
@@ -680,7 +681,6 @@ static Int4 s_TrimHSP(BlastHSP* hsp, Int4 num, Boolean is_query,
     Boolean is_subject = !is_query;
     Boolean is_end = !is_start;
     Int4 k;
-    const Uint1 kGap = 15;
 
     ASSERT(hsp /* */ && num > 0 /* */);
     ASSERT((is_query && num <= hsp->query.end - hsp->query.offset) ||
@@ -1550,7 +1550,6 @@ static int s_FindRearrangedPairs(HSPChain** saved,
     for (query_idx = 0;query_idx + 1 < query_info->num_queries; query_idx++) {
         HSPChain* chain = saved[query_idx];
         HSPChain* thepair = saved[query_idx + 1];
-        HSPContainer* hc = NULL;
 
         /* skip queries with no results */
         if (!chain || !thepair) {
@@ -2246,7 +2245,6 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
     Boolean found = FALSE;
     Uint1* subject = NULL;
     Int4 overlap_len;
-    Int4 pos;
     const Uint1 kGap = 15;
 
     /* HSPs must be sorted and must overlap only on the query */
@@ -2666,7 +2664,7 @@ s_FindSpliceJunctionsForGap(BlastHSP* first, BlastHSP* second,
     Boolean found = FALSE;
     Int4 k;
     Int4 q;
-    Uint1 signal;
+    Uint1 signal = 0;
     /* use only cannonical splice signals here */
     Uint1 signals[NUM_SIGNALS_CONSENSUS] = {0xb2, /* GTAG */
                                             0x71  /* CTAC */};
