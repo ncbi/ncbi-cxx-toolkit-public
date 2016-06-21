@@ -255,6 +255,7 @@ void AugmentPartialness(CSeq_loc& loc, T53Partialness partialness)
 }
 
 
+#if 0
 
 /* 
  * GP-13080
@@ -459,7 +460,6 @@ private:
         return (g % 3) == 0;
     }
 
-
     // can be negative in case of overlap
     static TSignedSeqPos GetGapLength(
             const CSeq_interval& prev,
@@ -629,8 +629,7 @@ private:
                       seqints.end());
     }
 
-
-
+public:
     // It's difficult to make sense of a printed seq-loc ASN 
     // or label the way it is done in the toolkit, especially 
     // when the coordinates are large.
@@ -749,7 +748,7 @@ private:
 
 
 // Project exon to genomic coordinates, preserving discontinuities.
-CRef<CSeq_loc> ProjectExon(
+static CRef<CSeq_loc> ProjectExon_oldlogic(
         const CSpliced_exon& spliced_exon, 
         const CSeq_id& aln_genomic_id,  //of the parent alignment (if not specified in spliced_exon)
         ENa_strand aln_genomic_strand)  //of the parent alignment (if not specified in spliced_exon)
@@ -850,6 +849,325 @@ CRef<CSeq_loc> ProjectExon(
     exon_loc = NTweakExon::TweakExon(*exon_loc);
     return exon_loc;
 }
+
+#endif
+
+
+// Each block represents a diag followed by downstream gap(s)
+// A gap-only or diag-only blocks are possible.
+//
+// The block is frameshifting iff the difference in 
+// projection-on-query vs projection-on-subject is not 
+// a multiple of 3, or, equivalently, the projections
+// are not congruent mod-3.
+//
+// (diag + q_ins) % 3  !=  (diag + s_ins ) % 3
+//          q_ins % 3  !=  s_ins % 3;
+struct SBlock
+{
+    int diag;  // matches and/or mismatches
+
+    int q_ins; // gap(s) following the diag.
+    int s_ins; // on query and subject respectively.
+
+    SBlock() : 
+        diag(0), 
+        q_ins(0), 
+        s_ins(0)
+    {}
+
+    bool HasGap() const
+    {
+        return q_ins > 0 || s_ins > 0;
+    }
+
+    bool IsFrameshifting() const
+    {
+        return (q_ins - s_ins) % 3 != 0;
+    }
+
+    void Add(const SBlock& other) 
+    {
+        diag  += other.diag;
+        q_ins += other.q_ins;
+        s_ins += other.s_ins;
+    }
+
+    // Return length of block's projection on
+    // subject minimally truncated as to be
+    // congruent mod-3 with projection on query.
+    //
+    // Note: in very rare cases where we need 
+    // to truncate by more bases than we have
+    // available, we'll extend by 1 or 2 bases
+    // instead as to preserve frame.
+    size_t GetFramePreservingSubjLen() const
+    {
+        const int q_len = diag + q_ins;
+              int s_len = diag + s_ins;
+
+        // Now truncate s_len by 0, 1, or 2 bases
+        // until the length is congruent mod-3 with q_len.
+        //
+        // Note: s_len can become 0 or negative, e.g.
+        // q_len = 2, and s_len = 1, (arising
+        // from a degenerate case where we have an
+        // exon consisting of a single-base diag and 
+        // query-ins of 1)
+
+        while( (q_len - s_len) % 3 ) {
+            s_len--;
+        }
+
+        while(s_len < 0) {
+            s_len += 3;
+        }
+
+        return s_len;
+    }
+};
+
+
+struct SBlocks : public vector<SBlock>
+{
+public:
+
+    SBlocks(const CSpliced_exon& spliced_exon)
+    {
+        SBlocks& blocks = *this;
+        blocks.clear();
+
+        bool last_is_diag = false;
+        ITERATE(CSpliced_exon::TParts, it, spliced_exon.GetParts()) {
+            const CSpliced_exon_chunk& chunk = **it;
+
+            const int len = 
+                chunk.IsMatch()       ? chunk.GetMatch()
+              : chunk.IsMismatch()    ? chunk.GetMismatch()
+              : chunk.IsDiag()        ? chunk.GetDiag()
+              : chunk.IsGenomic_ins() ? chunk.GetGenomic_ins()
+              : chunk.IsProduct_ins() ? chunk.GetProduct_ins()
+              : 0;
+
+            bool is_diag = chunk.IsMatch() 
+                        || chunk.IsMismatch() 
+                        || chunk.IsDiag();
+            
+            const bool start_new_block = 
+                blocks.empty() ? true  // need non-empty blocks
+              : len == 0       ? false // will be a no-op
+              : !is_diag       ? false // gaps go into current block
+              : last_is_diag   ? false // abutting diags get merged
+              :                  true; // new non-abutting diag
+
+            blocks.resize(blocks.size() + start_new_block);
+                
+            int& block_len = 
+                  chunk.IsProduct_ins() ? blocks.back().q_ins
+                : chunk.IsGenomic_ins() ? blocks.back().s_ins
+                :                         blocks.back().diag;
+
+            block_len += len;
+
+            last_is_diag = is_diag;
+        }
+
+        // If spliced-exon has terminal subject-ins, then exon
+        // projected with details will have missing bases at
+        // the terminal. We need to modify the alignment
+        // (i.e. the blocks-based representations thereof)
+        // to insert anchor diags at the beginning and/or
+        // end of the alignment, and truncate the alignment 
+        // inward accordingly, such that exon terminals are 
+        // exactly preserved despite terminal gaps.
+        //
+        // Note: this wouldn't be a problem if seq-locs with 
+        // 0-base intervals were allowed, so we wolud have a 
+        // 0-base interval in the beginning of packed-int, 
+        // followed by int-loc separated by a gap, thus capturing
+        // the original terminal gap while preserving extremes.
+
+        while(   blocks.size() > 1 
+              && blocks.front().diag < 3)
+        {
+            // The first block may be followed by a gap, and so
+            // may need to be truncated by 1 or 2 bases to make
+            // it frame-preserving, so we need it to be at least 3.
+            if(blocks[1].diag > 0) {
+                blocks[0].diag++;
+                blocks[1].diag--;
+            } else {
+                // next block ran out
+                blocks[1].Add(blocks[0]);
+                blocks.erase(blocks.begin());
+            }
+        }
+
+        if(   !blocks.empty()
+           &&  blocks.back().diag > 0
+           &&  blocks.back().HasGap())
+        {
+            // Handling the last block is similar, except
+            // since the artificial diag will not have
+            // gaps following it, we know that it will never
+            // need truncation, and so we only need to borrow
+            // one base from the alignment.
+            blocks.back().diag--;
+            blocks.push_back(SBlock());
+            blocks.back().diag = 1;
+        }
+
+        // Fold abutting blocks if either of:
+        //   * one of them does not have a diag 
+        //     (essentially, absorbing the neigbor's gaps),
+        //
+        //   * gap between them (i.e. that of upstream's block) 
+        //     is non-frameshifting.
+        //
+        //   * the downstream block's diag is 3 bases or less, except
+        //     for the case of final diag that must be preserved.
+        SBlocks::iterator dest = this->begin();
+        ITERATE(SBlocks, it, *this) {
+            if(it == dest) {
+                ;
+            } else if(   !it->diag 
+                      || !dest->diag 
+                      || !dest->IsFrameshifting()
+                      || (   it->diag <= 3 
+                          && &(*it) != &back()
+                          && &(*it) != &front() ) )
+            {
+                dest->Add(*it);
+            } else {
+                ++dest;
+                *dest = *it;
+            }
+        }
+        EraseAfter(dest);
+    }
+
+private:
+    void EraseAfter(SBlocks::iterator it)
+    {
+        if(it != this->end()) {
+            ++it;
+        }
+        this->erase(it, this->end());
+    }
+};
+
+
+// Project exon to genomic coordinates, preserving discontinuities.
+//
+// aln_genomic* params are only used if not specified within exon
+static CRef<CSeq_loc> ProjectExon(
+        const CSpliced_exon& exon, 
+        const CSeq_id& aln_genomic_id, 
+        ENa_strand aln_genomic_strand)  
+{
+    CRef<CSeq_loc> exon_loc(new CSeq_loc(CSeq_loc::e_Packed_int));
+
+    const CSeq_id& genomic_id = 
+            exon.IsSetGenomic_id() ? exon.GetGenomic_id() 
+                                   : aln_genomic_id;
+
+    const ENa_strand genomic_strand = 
+            exon.IsSetGenomic_strand() ? exon.GetGenomic_strand() 
+                                       : aln_genomic_strand;
+
+    //Don't have exon details - create based on exon boundaries and return.
+    if(!exon.IsSetParts()) {
+        exon_loc->SetInt().SetId().Assign( genomic_id);
+        exon_loc->SetInt().SetStrand(      genomic_strand);
+        exon_loc->SetInt().SetFrom(        exon.GetGenomic_start());
+        exon_loc->SetInt().SetTo(          exon.GetGenomic_end());
+        return exon_loc;
+    } else {
+        exon_loc->SetPacked_int();
+    }
+
+    const int genomic_sign = (genomic_strand == eNa_strand_minus) ? -1 : 1;
+
+    const TSeqPos exon_bio_start_pos = 
+        genomic_sign > 0 ? exon.GetGenomic_start() 
+                         : exon.GetGenomic_end(); 
+
+    // chunk's start in exon-local coords
+    size_t exon_relative_subj_start = 0;
+
+    const SBlocks blocks(exon);
+    ITERATE(SBlocks, it, blocks) {
+
+        const TSeqPos bio_start = exon_bio_start_pos 
+                                + (exon_relative_subj_start * genomic_sign);
+
+        const size_t len = it->GetFramePreservingSubjLen();
+
+        const TSeqPos bio_stop = bio_start + ((len - 1) * genomic_sign);
+            // -1 because stop is inclusive
+ 
+        CRef<CSeq_interval> chunk(new CSeq_interval);
+        chunk->SetId().Assign(genomic_id);
+        chunk->SetStrand( genomic_strand);
+        chunk->SetFrom(   genomic_sign > 0 ? bio_start : bio_stop);
+        chunk->SetTo(     genomic_sign > 0 ? bio_stop : bio_start);
+
+        if(len > 0) {
+            exon_loc->SetPacked_int().Set().push_back(chunk);
+        }
+        
+        exon_relative_subj_start += it->diag + it->s_ins;
+    }
+
+#if 0
+    {{
+         CRef<CSeq_loc> tmploc = ProjectExon_oldlogic(exon, aln_genomic_id, aln_genomic_strand);
+         if(!exon_loc->Equals(*tmploc)) {
+            NcbiCerr << MSerial_AsnText 
+                     << exon
+                     << "old: " << NTweakExon::AsString(tmploc->GetPacked_int())
+                     << "\nnew: " << NTweakExon::AsString(exon_loc->GetPacked_int())
+                     << "\n";
+         }
+
+     }}
+#endif
+
+    try { 
+        // Validate 
+        const size_t exon_product_len = 
+            exon.GetProduct_end().GetNucpos()
+          - exon.GetProduct_start().GetNucpos() + 1;
+
+        const size_t loc_len = sequence::GetLength(*exon_loc, NULL);
+
+        if(loc_len % 3 != exon_product_len % 3) {
+            NCBI_THROW(CException, eUnknown, 
+                       "Logic error - frame not preserved");
+        }
+
+        if(   exon.GetGenomic_start() 
+           != exon_loc->GetStart(eExtreme_Positional)) 
+        {
+            NCBI_USER_THROW("Change in positional-starts");
+        }
+
+        if(exon.GetGenomic_end() 
+           != exon_loc->GetStop(eExtreme_Positional)) 
+        {
+            NCBI_USER_THROW("Change in positional-stops");
+        }
+
+    } catch (CException& e) {
+        NcbiCerr << MSerial_AsnText << exon;
+        NcbiCerr << MSerial_AsnText << *exon_loc;
+        NCBI_RETHROW_SAME(e, "Invalid result");
+    }
+
+    return exon_loc;
+}
+
+
 
 
 /// Create an exon with the structure consisting of 
@@ -1046,6 +1364,7 @@ CRef<CSeq_loc> ProjectCDSExon(
                 *truncated_exon_aln->GetSegs().GetSpliced().GetExons().front(),
                 spliced_aln.GetSeq_id(1),
                 spliced_aln.GetSeqStrand(1));
+
 
 #if 0
         // GP-15635 
