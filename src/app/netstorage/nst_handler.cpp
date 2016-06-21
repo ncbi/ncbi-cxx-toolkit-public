@@ -926,6 +926,14 @@ void CNetStorageHandler::x_SetQuickAcknowledge(void)
 }
 
 
+string  CNetStorageHandler::x_GetConnRef(void)
+{
+    // See CXX-8252
+    return GetDiagContext().GetStringUID() + "_" +
+           NStr::NumericToString(m_ConnContext->GetRequestID());
+}
+
+
 void CNetStorageHandler::x_CreateConnContext(void)
 {
     m_ConnContext.Reset(new CRequestContext());
@@ -939,7 +947,8 @@ void CNetStorageHandler::x_CreateConnContext(void)
     // Set the connection request as the current one and print request start
     CDiagContext::SetRequestContext(m_ConnContext);
     GetDiagContext().PrintRequestStart()
-                    .Print("_type", "conn");
+                    .Print("_type", "conn")
+                    .Print("conn", x_GetConnRef());
     m_ConnContext->SetRequestStatus(eStatus_OK);
     CDiagContext::SetRequestContext(NULL);
 }
@@ -993,7 +1002,7 @@ CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
         CDiagContext_Extra    ctxt_extra =
             GetDiagContext().PrintRequestStart()
                             .Print("_type", "message")
-                            .Print("conn", m_ConnContext->GetRequestID());
+                            .Print("conn", x_GetConnRef());
 
         for (CJsonIterator it = message.Iterate(); it; ++it) {
             string      key = it.GetKey();

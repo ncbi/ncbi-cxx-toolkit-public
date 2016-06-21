@@ -300,6 +300,7 @@ private:
     void x_CheckExistanceStatus(int  status);
     void x_CheckExpirationStatus(int  status);
     void x_CheckNonAnonymousClient(const string &  op) const;
+    string x_GetConnRef(void);
 
 private:
     enum EOp {
