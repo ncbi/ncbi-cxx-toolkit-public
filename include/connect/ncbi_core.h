@@ -283,6 +283,7 @@ typedef struct LOG_tag* LOG;
 typedef enum {
     eLOG_Trace = 0,
     eLOG_Note,
+    eLOG_Info = eLOG_Note,  /**< In C++ Toolkit "Info" is used, not "Note" */
     eLOG_Warning,
     eLOG_Error,
     eLOG_Critical,
