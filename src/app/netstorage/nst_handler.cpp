@@ -500,15 +500,15 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         error = false;
     }
     catch (const CNetStorageServerException &  ex) {
-        if (ex.GetErrCode() !=
+        error_sub_code = ex.GetErrCode();
+        if (error_sub_code !=
                 CNetStorageServerException::eNetStorageAttributeNotFound &&
-            ex.GetErrCode() !=
+            error_sub_code !=
                 CNetStorageServerException::eNetStorageAttributeValueNotFound) {
-            // Choke the error printout for this specific case, see CXX-5818
+            // Choke the error printout for these specific cases, see CXX-5818
             ERR_POST(ex);
         }
         http_error_code = ex.ErrCodeToHTTPStatusCode();
-        error_sub_code = ex.GetErrCode();
         error_client_message = ex.what();
         error_scope = ex.GetType();
 
