@@ -1711,5 +1711,34 @@ DISCREPANCY_AUTOFIX(SHORT_INTRON)
 #endif
 
 
+// UNNECESSARY_VIRUS_GENE
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(UNNECESSARY_VIRUS_GENE, CSeq_feat, eOncaller, "Unnecessary gene features on virus: on when lineage is not Picornaviridae,Potyviridae,Flaviviridae and Togaviridae")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData() || !obj.GetData().IsGene()) {
+        return;
+    }
+    if (context.HasLineage("Picornaviridae") ||
+        context.HasLineage("Potyviridae") ||
+        context.HasLineage("Flaviviridae") ||
+        context.HasLineage("Togaviridae")) {
+        m_Objs["[n] virus gene[s] need to be removed"].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+    }
+
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(UNNECESSARY_VIRUS_GENE)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
