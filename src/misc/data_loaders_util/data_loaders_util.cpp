@@ -47,8 +47,10 @@
 #include <dbapi/driver/drivers.hpp>
 #include <dbapi/simple/sdbapi.hpp>
 
-#include <sra/data_loaders/csra/csraloader.hpp>
-#include <sra/data_loaders/wgs/wgsloader.hpp>
+#ifdef HAVE_NCBI_VDB
+#  include <sra/data_loaders/csra/csraloader.hpp>
+#  include <sra/data_loaders/wgs/wgsloader.hpp>
+#endif
 
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 
@@ -108,6 +110,7 @@ void CDataLoadersUtil::AddArgumentDescriptions(CArgDescriptions& arg_desc,
         }
     }
 
+#ifdef HAVE_NCBI_VDB
     if (loaders & fVDB) {
         arg_desc.AddFlag("vdb", "Use VDB data loader.");
         arg_desc.AddFlag("novdb", "Do not use VDB data loader.");
@@ -133,6 +136,12 @@ void CDataLoadersUtil::AddArgumentDescriptions(CArgDescriptions& arg_desc,
         arg_desc.SetDependency("sra", CArgDescriptions::eExcludes, "sra-file");
         arg_desc.SetDependency("sra-acc", CArgDescriptions::eExcludes, "sra-file");
     }
+#else
+    // still accept explicit -novdb
+    if (loaders & fVDB) {
+        arg_desc.AddFlag("novdb", "Do not use VDB data loader.");
+    }
+#endif
 
     // All remaining arguments as added by the C++ Toolkit application
     // framework are grouped after the above, by default. If the caller
@@ -186,6 +195,7 @@ void CDataLoadersUtil::x_SetupVDBDataLoader(const CArgs& args,
                                             int& priority,
                                             TLoaders loaders)
 {
+#ifdef HAVE_NCBI_VDB
     CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
     bool use_vdb_loader = args.Exist("vdb") && args["vdb"];
     if ( !use_vdb_loader ) {
@@ -220,6 +230,7 @@ void CDataLoadersUtil::x_SetupVDBDataLoader(const CArgs& args,
                 (obj_mgr,params,CObjectManager::eDefault, priority++);
         }
     }
+#endif
 }
 
 
@@ -227,6 +238,7 @@ void CDataLoadersUtil::x_SetupSRADataLoader(const CArgs& args,
                                             CObjectManager& obj_mgr,
                                             int& priority)
 {
+#ifdef HAVE_NCBI_VDB
     if(args.Exist("sra") && args["sra"]) {
         CCSRADataLoader::RegisterInObjectManager(obj_mgr,
                                                  CObjectManager::eDefault,
@@ -246,6 +258,7 @@ void CDataLoadersUtil::x_SetupSRADataLoader(const CArgs& args,
                                                  CObjectManager::eDefault,
                                                  priority++);
     }
+#endif
 }
 
 
@@ -432,6 +445,7 @@ void CDataLoadersUtil::SetupObjectManager(const CArgs& args,
         x_SetupBlastDataLoader(args, obj_mgr, priority);
     }
 
+#ifdef HAVE_NCBI_VDB
     // SRA
     if (loaders & fSRA) {
         x_SetupSRADataLoader(args, obj_mgr, priority);
@@ -441,6 +455,7 @@ void CDataLoadersUtil::SetupObjectManager(const CArgs& args,
     if (loaders & fVDB) {
         x_SetupVDBDataLoader(args, obj_mgr, priority, loaders);
     }
+#endif
 
     //
     // ID retrieval: last priority
