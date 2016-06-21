@@ -551,5 +551,32 @@ DISCREPANCY_SUMMARIZE(N_RUNS_14)
 }
 
 
+
+// 10_PERCENTN
+
+const string kMoreThan10PercentsN = "[n] sequence[s] [has] > 10%% Ns";
+const double MIN_N_PERCENTAGE = 10.0;
+
+DISCREPANCY_CASE(10_PERCENTN, CSeq_inst, eDisc, "Greater than 10 percent Ns")
+{
+    if (obj.IsAa() || context.SequenceHasFarPointers()) {
+        return;
+    }
+
+    const CSeqSummary& sum = context.GetNucleotideCount();
+    if (sum.N * 100. / sum.Len > MIN_N_PERCENTAGE) {
+        m_Objs[kMoreThan10PercentsN].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(10_PERCENTN)
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
