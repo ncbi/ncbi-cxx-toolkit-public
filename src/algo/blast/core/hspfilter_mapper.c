@@ -686,7 +686,9 @@ static Int4 s_TrimHSP(BlastHSP* hsp, Int4 num, Boolean is_query,
     ASSERT((is_query && num <= hsp->query.end - hsp->query.offset) ||
            (!is_query && num <= hsp->subject.end - hsp->subject.offset));
 
+#if _DEBUG
     ASSERT(s_TestHSPRanges(hsp));
+#endif
 
     if (num == 0) {
         return 0;
@@ -810,7 +812,10 @@ static Int4 s_TrimHSP(BlastHSP* hsp, Int4 num, Boolean is_query,
     hsp->score = s_ComputeAlignmentScore(hsp, mismatch_score, gap_open_score,
                                          gap_extend_score);
 
+#if _DEBUG
     ASSERT(s_TestHSPRanges(hsp));
+#endif
+
     return 0;
 }
 
@@ -4166,8 +4171,10 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
             }
         }
 
+#if _DEBUG
         ASSERT(!chain_array[0] || s_TestChainsSorted(chain_array[0]));
         ASSERT(!chain_array[1] || s_TestChainsSorted(chain_array[1]));
+#endif
 
         if (is_spliced && chain_array[0]) {
             s_FindSpliceJunctions(chain_array[0], query_blk, query_info,
@@ -4205,8 +4212,10 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
             HSPChainListTrim(saved_chains[query_idx + 1], kPairBonus);
         }
 
+#if _DEBUG
         ASSERT(!chain_array[0] || s_TestChainsSorted(saved_chains[query_idx]));
         ASSERT(!chain_array[1] || s_TestChainsSorted(saved_chains[query_idx + 1]));
+#endif
 
         /* make temporary lists empty */
         chain_array[0] = chain_array[1] = NULL;
