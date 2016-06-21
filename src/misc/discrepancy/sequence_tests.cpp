@@ -40,6 +40,7 @@
 #include <objects/general/Object_id.hpp>
 
 #include "discrepancy_core.hpp"
+#include "utils.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -347,7 +348,7 @@ DISCREPANCY_SUMMARIZE(mRNA_ON_WRONG_SEQUENCE_TYPE)
 
 // DISC_GAPS
 
-const string kSequencesWithGaps = "[n] sequence[s] contain[s] gaps";
+const string kSequencesWithGaps = "[n] sequence[s] contain[S] gaps";
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(DISC_GAPS, CSeq_inst, eDisc, "Sequences with gaps")
@@ -415,7 +416,7 @@ DISCREPANCY_SUMMARIZE(DISC_GAPS)
 
 // ONCALLER_BIOPROJECT_ID
 
-const string kSequencesWithBioProjectIDs = "[n] sequence[s] contain[s] BioProject IDs";
+const string kSequencesWithBioProjectIDs = "[n] sequence[s] contain[S] BioProject IDs";
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(ONCALLER_BIOPROJECT_ID, CSeq_inst, eOncaller, "Sequences with BioProject IDs")
@@ -457,7 +458,7 @@ DISCREPANCY_SUMMARIZE(ONCALLER_BIOPROJECT_ID)
 }
 
 
-// ONCALLER_BIOPROJECT_ID
+// MISSING_DEFLINES
 
 const string kMissingDeflines = "[n] bioseq[s] [has] no definition line";
 
@@ -494,6 +495,61 @@ DISCREPANCY_SUMMARIZE(MISSING_DEFLINES)
     }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
+
+// N_RUNS_14
+
+const string kMoreThan14NRuns = "[n] sequence[s] [has] runs of 15 or more Ns";
+const TSeqPos MIN_BAD_RUN_LEN = 15;
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc, "Runs of more than 14 Ns")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsNa()) {
+
+        if (obj.IsSetSeq_data()) {
+            vector<CRange<TSeqPos> > runs;
+            FindNRuns(runs, obj.GetSeq_data(), 0, MIN_BAD_RUN_LEN);
+
+            if (!runs.empty()) {
+                m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+            }
+        }
+        else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
+
+            const CSeq_ext::TDelta& deltas = obj.GetExt().GetDelta();
+            if (deltas.IsSet()) {
+
+                ITERATE(CDelta_ext::Tdata, delta, deltas.Get()) {
+
+                    if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
+
+                        vector<CRange<TSeqPos> > runs;
+                        FindNRuns(runs, (*delta)->GetLiteral().GetSeq_data(), 0, MIN_BAD_RUN_LEN);
+
+                        if (!runs.empty()) {
+                            m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(N_RUNS_14)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
