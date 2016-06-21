@@ -29,6 +29,7 @@
  *
  */
 
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_gapalign.h>

@@ -29,7 +29,6 @@
  *
  */
 
-#include <corelib/ncbitype.h>
 #include "blast_gapalign_priv.h"
 
 #include <algo/blast/core/blast_nalookup.h>
