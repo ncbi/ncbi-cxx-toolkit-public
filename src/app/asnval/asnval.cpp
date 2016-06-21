@@ -128,7 +128,7 @@ private:
 
     CConstRef<CValidError> ValidateInput (void);
     void ValidateOneDirectory(string dir_name, bool recurse);
-    void ValidateOneFile(string fname);
+    void ValidateOneFile(const string& fname);
     void ProcessReleaseFile(const CArgs& args);
 
     void ConstructOutputStreams();
@@ -343,7 +343,7 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput (void)
 }
 
 
-void CAsnvalApp::ValidateOneFile(string fname)
+void CAsnvalApp::ValidateOneFile(const string& fname)
 {
     const CArgs& args = GetArgs();
 
@@ -352,6 +352,8 @@ void CAsnvalApp::ValidateOneFile(string fname)
     }
     time_t start_time = time(NULL);
     auto_ptr<CNcbiOfstream> local_stream;
+
+    bool close_error_stream = false;
 
     try {
     if (!m_ValidErrorStream) {
@@ -366,6 +368,7 @@ void CAsnvalApp::ValidateOneFile(string fname)
         m_ValidErrorStream = local_stream.get();
 
         ConstructOutputStreams();
+        close_error_stream = true;
     }
     } catch (CException) {
     }
@@ -411,7 +414,9 @@ void CAsnvalApp::ValidateOneFile(string fname)
         m_LongestId = m_CurrentId;
     }
     m_NumFiles++;
-    DestroyOutputStreams();
+    if (close_error_stream) {
+        DestroyOutputStreams();
+    }
     m_In.reset();
 }
 
