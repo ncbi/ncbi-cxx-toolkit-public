@@ -65,12 +65,12 @@ class CNSTServiceProperties
         CNSTServiceProperties(const TNSTDBValue<CTimeSpan> &  ttl,
                               const CTimeSpan &  prolong_on_read,
                               const CTimeSpan &  prolong_on_write,
-                              const CTimeSpan &  prolomg_on_relocate) :
+                              const CTimeSpan &  prolong_on_relocate) :
             m_TTL(ttl), m_ProlongOnRead(prolong_on_read),
             m_ProlongOnReadInTTLs(k_ProlongInTTLsNotConfigured),
             m_ProlongOnWrite(prolong_on_write),
             m_ProlongOnWriteInTTLs(k_ProlongInTTLsNotConfigured),
-            m_ProlongOnRelocate(prolomg_on_relocate),
+            m_ProlongOnRelocate(prolong_on_relocate),
             m_ProlongOnRelocateInTTLs(k_ProlongInTTLsNotConfigured)
         {}
 
@@ -86,18 +86,13 @@ class CNSTServiceProperties
         string  GetProlongOnRelocateAsString(void) const
         { return x_GetProlongAsString(m_ProlongOnRelocate,
                                       m_ProlongOnRelocateInTTLs); }
-        CTimeSpan  GetProlongOnRead(void) const
-        { if (m_ProlongOnReadInTTLs == k_ProlongInTTLsNotConfigured)
-            return m_ProlongOnRead;
-          return x_GetProlongInTTLs(m_ProlongOnReadInTTLs); }
-        CTimeSpan  GetProlongOnWrite(void) const
-        { if (m_ProlongOnWriteInTTLs == k_ProlongInTTLsNotConfigured)
-            return m_ProlongOnWrite;
-          return x_GetProlongInTTLs(m_ProlongOnWriteInTTLs); }
-        CTimeSpan  GetProlongOnRelocate(void) const
-        { if (m_ProlongOnRelocateInTTLs == k_ProlongInTTLsNotConfigured)
-            return m_ProlongOnRelocate;
-          return x_GetProlongInTTLs(m_ProlongOnRelocateInTTLs); }
+
+        TNSTDBValue<CTimeSpan>  GetProlongOnRead(
+                        const TNSTDBValue<Int8> &  individual_obj_ttl) const;
+        TNSTDBValue<CTimeSpan>  GetProlongOnWrite(
+                        const TNSTDBValue<Int8> &  individual_obj_ttl) const;
+        TNSTDBValue<CTimeSpan>  GetProlongOnRelocate(
+                        const TNSTDBValue<Int8> &  individual_obj_ttl) const;
 
         void SetTTL(const TNSTDBValue<CTimeSpan> & new_val)
         { m_TTL = new_val; }
@@ -146,16 +141,9 @@ class CNSTServiceProperties
     private:
         string  x_GetProlongAsString(const CTimeSpan &  as_time_span,
                                      double  in_ttls) const;
-        CTimeSpan  x_GetProlongInTTLs(double  multiplier) const
-        {
-            if (multiplier == 0)
-                return CTimeSpan(0L);
-            if (m_TTL.m_IsNull)
-                return CTimeSpan(LONG_MAX); // Effective infinity
-
-            double      secs = m_TTL.m_Value.GetAsDouble() * multiplier;
-            return CTimeSpan(secs);
-        }
+        TNSTDBValue<CTimeSpan>
+        x_GetProlongInTTLs(double  multiplier,
+                           const TNSTDBValue<Int8> &  individual_obj_ttl) const;
 };
 
 
@@ -171,12 +159,18 @@ class CNSTServiceRegistry
         bool  IsKnown(const string &  service) const;
         bool  GetTTL(const string &            service,
                      TNSTDBValue<CTimeSpan> &  ttl) const;
-        bool  GetProlongOnRead(const string &  service,
-                               CTimeSpan &     prolong_on_read) const;
-        bool  GetProlongOnWrite(const string &  service,
-                                CTimeSpan &     prolong_on_write) const;
-        bool  GetProlongOnRelocate(const string &  service,
-                                   CTimeSpan &  prolong_on_relocate) const;
+        bool  GetProlongOnRead(
+                   const string &  service,
+                   const TNSTDBValue<Int8> &  individual_obj_ttl,
+                   TNSTDBValue<CTimeSpan> &  prolong_on_read) const;
+        bool  GetProlongOnWrite(
+                   const string &  service,
+                   const TNSTDBValue<Int8> &  individual_obj_ttl,
+                   TNSTDBValue<CTimeSpan> &  prolong_on_write) const;
+        bool  GetProlongOnRelocate(
+                   const string &  service,
+                   const TNSTDBValue<Int8> &  individual_obj_ttl,
+                   TNSTDBValue<CTimeSpan> &  prolong_on_relocate) const;
         bool  GetServiceProperties(const string &  service,
                                    CNSTServiceProperties &  props) const;
         CNSTServiceProperties  GetDefaultProperties(void) const;

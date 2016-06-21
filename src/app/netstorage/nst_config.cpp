@@ -315,8 +315,13 @@ void NSTValidateProlongValue(const IRegistry &  reg,
                     // Try to convert to double not forgetting that the 'ttl'
                     // suffix needs to be stripped and that spaces between the
                     // value and the suffix are allowed
-                    NStr::StringToDouble(value.substr(0, value.size() - 3),
+                    double  val = NStr::StringToDouble(
+                                         value.substr(0, value.size() - 3),
                                          NStr::fAllowTrailingSpaces);
+                    if (val < 0.0)
+                        warnings.push_back("The " +
+                            NSTRegValName(section, entry) + " multiplier must "
+                            "be a positive value.");
                 } else {
                     ReadTimeSpan(value, false);  // no infinity
                 }

@@ -244,7 +244,8 @@ GO
 
 
 -- Note: the procedure lets to reduce the expiration time
---       it is the C++ code which does not let to reduce the expiration
+--       in the contrary to the prolonging functionality which never reduces
+--       the expiration.
 ALTER PROCEDURE SetObjectExpiration
     @object_key             VARCHAR(289),
     @expiration             DATETIME,

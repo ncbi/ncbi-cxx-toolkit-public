@@ -109,39 +109,34 @@ public:
             const string &  object_loc, Int8  size,
             Int8  client_id, Int8  user_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
-            const CTimeSpan &  prolong_on_write,
+            const TNSTDBValue<CTimeSpan> &  prolong_on_write,
             const TNSTDBValue<CTime> &  object_expiration,
-            const TNSTDBValue<Int8> &  individual_object_ttl,
             bool &  size_was_null);
     int  ExecSP_UpdateUserKeyObjectOnWrite(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
-            const CTimeSpan &  prolong_on_write,
-            const TNSTDBValue<CTime> &  object_expiration,
-            const TNSTDBValue<Int8> &  individual_object_ttl);
+            const TNSTDBValue<CTimeSpan> &  prolong_on_write,
+            const TNSTDBValue<CTime> &  object_expiration);
     int  ExecSP_UpdateObjectOnRead(
             const string &  object_key,
             const string &  object_loc,
             Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
-            const CTimeSpan &  prolong_on_read,
+            const TNSTDBValue<CTimeSpan> &  prolong_on_read,
             const TNSTDBValue<CTime> &  object_expiration,
-            const TNSTDBValue<Int8> &  individual_object_ttl,
             bool &  size_was_null);
     int  ExecSP_UpdateObjectOnRelocate(
             const string &  object_key,
             const string &  object_loc, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
-            const CTimeSpan &  prolong_on_relocate,
-            const TNSTDBValue<CTime> &  object_expiration,
-            const TNSTDBValue<Int8> &  individual_object_ttl);
+            const TNSTDBValue<CTimeSpan> &  prolong_on_relocate,
+            const TNSTDBValue<CTime> &  object_expiration);
     int  UpdateExpirationIfExists(
             const string &  object_key,
             const TNSTDBValue<CTimeSpan> &  ttl,
-            const CTimeSpan &  prolong_on_read,
-            const TNSTDBValue<CTime> &  object_expiration,
-            const TNSTDBValue<Int8> &  individual_object_ttl);
+            const TNSTDBValue<CTimeSpan> &  prolong_on_read,
+            const TNSTDBValue<CTime> &  object_expiration);
     int  ExecSP_UpdateUserIDForObject(
             const string &  object_key, Int8  user_id);
     int  ExecSP_RemoveObject(const string &  object_key);
@@ -208,9 +203,8 @@ private:
                        const string &  procedure);
     void x_CalculateExpiration(const CTime &  current_time,
                                const TNSTDBValue<CTimeSpan> &  ttl,
-                               const CTimeSpan &  prolong,
+                               const TNSTDBValue<CTimeSpan> &  prolong,
                                const TNSTDBValue<CTime> &  object_expiration,
-                               const TNSTDBValue<Int8> &  individual_object_ttl,
                                TNSTDBValue<CTime> &  exp_record_found,
                                TNSTDBValue<CTime> &  exp_record_not_found);
 

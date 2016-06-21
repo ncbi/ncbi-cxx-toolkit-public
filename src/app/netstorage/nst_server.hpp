@@ -128,10 +128,14 @@ public:
     bool InMetadataServices(const string &  service) const;
     bool GetServiceTTL(const string &            service,
                        TNSTDBValue<CTimeSpan> &  ttl) const;
-    bool GetServiceProlongOnRead(const string &  service,
-                                 CTimeSpan &     prolong_on_read) const;
-    bool GetServiceProlongOnWrite(const string &  service,
-                                  CTimeSpan &     prolong_on_write) const;
+    bool GetServiceProlongOnRead(
+                    const string &  service,
+                    const TNSTDBValue<Int8> &  individual_obj_ttl,
+                    TNSTDBValue<CTimeSpan> &  prolong_on_read) const;
+    bool GetServiceProlongOnWrite(
+                    const string &  service,
+                    const TNSTDBValue<Int8> &  individual_obj_ttl,
+                    TNSTDBValue<CTimeSpan> &  prolong_on_write) const;
     bool GetServiceProperties(const string &  service,
                               CNSTServiceProperties &  service_props) const;
     CJsonNode ReadMetadataConfiguration(const IRegistry &  reg);

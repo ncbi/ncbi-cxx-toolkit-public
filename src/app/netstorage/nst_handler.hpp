@@ -301,10 +301,15 @@ private:
     void x_CheckExpirationStatus(int  status);
     void x_CheckNonAnonymousClient(const string &  op) const;
 
-    void x_ProlongObjectOnFailure(const string &  operation,
+private:
+    enum EOp {
+        eReadOp,
+        eWriteOp,
+        eRelocateOp
+    };
+    void x_ProlongObjectOnFailure(EOp  operation,
                                   const string &  object_key,
-                                  const TNSTDBValue<CTimeSpan> &  ttl,
-                                  const CTimeSpan &  prolong);
+                                  const CNSTServiceProperties &  service_props);
 }; // CNetStorageHandler
 
 

@@ -85,6 +85,48 @@ CNSTServiceProperties::GetTTLAsString(void) const
 }
 
 
+TNSTDBValue<CTimeSpan>
+CNSTServiceProperties::GetProlongOnRead(
+                        const TNSTDBValue<Int8> &  individual_obj_ttl) const
+{
+    if (m_ProlongOnReadInTTLs == k_ProlongInTTLsNotConfigured) {
+        TNSTDBValue<CTimeSpan>      ret_val;
+        ret_val.m_IsNull = false;
+        ret_val.m_Value = m_ProlongOnRead;
+        return ret_val;
+    }
+    return x_GetProlongInTTLs(m_ProlongOnReadInTTLs, individual_obj_ttl);
+}
+
+
+TNSTDBValue<CTimeSpan>
+CNSTServiceProperties::GetProlongOnWrite(
+                        const TNSTDBValue<Int8> &  individual_obj_ttl) const
+{
+    if (m_ProlongOnWriteInTTLs == k_ProlongInTTLsNotConfigured) {
+        TNSTDBValue<CTimeSpan>      ret_val;
+        ret_val.m_IsNull = false;
+        ret_val.m_Value = m_ProlongOnWrite;
+        return ret_val;
+    }
+    return x_GetProlongInTTLs(m_ProlongOnWriteInTTLs, individual_obj_ttl);
+}
+
+
+TNSTDBValue<CTimeSpan>
+CNSTServiceProperties::GetProlongOnRelocate(
+                        const TNSTDBValue<Int8> & individual_obj_ttl) const
+{
+    if (m_ProlongOnRelocateInTTLs == k_ProlongInTTLsNotConfigured) {
+        TNSTDBValue<CTimeSpan>      ret_val;
+        ret_val.m_IsNull = false;
+        ret_val.m_Value = m_ProlongOnRelocate;
+        return ret_val;
+    }
+    return x_GetProlongInTTLs(m_ProlongOnRelocateInTTLs, individual_obj_ttl);
+}
+
+
 string
 CNSTServiceProperties::x_GetProlongAsString(const CTimeSpan &  as_time_span,
                                             double             in_ttls) const
@@ -93,6 +135,39 @@ CNSTServiceProperties::x_GetProlongAsString(const CTimeSpan &  as_time_span,
         return as_time_span.AsSmartString(kTimeSpanFlags);
     return NStr::NumericToString(in_ttls) + " ttl";
 }
+
+
+
+TNSTDBValue<CTimeSpan>
+CNSTServiceProperties::x_GetProlongInTTLs(
+                    double                      multiplier,
+                    const TNSTDBValue<Int8> &   individual_obj_ttl) const
+{
+    TNSTDBValue<CTimeSpan>      effective_ttl;
+
+    if (individual_obj_ttl.m_IsNull)
+        effective_ttl = m_TTL;
+    else {
+        effective_ttl.m_IsNull = false;
+        effective_ttl.m_Value = CTimeSpan(
+                                static_cast<long>(individual_obj_ttl.m_Value));
+    }
+
+    if (effective_ttl.m_IsNull)
+        return effective_ttl;   // It is an infinite service TTL;
+                                // The infinite prolong should also be
+                                // supported.
+
+    // Zero multiplier will produce 0 seconds
+    double                      secs = effective_ttl.m_Value.GetAsDouble() *
+                                       multiplier;
+    TNSTDBValue<CTimeSpan>      ret_val;
+    ret_val.m_IsNull = false;
+    ret_val.m_Value = CTimeSpan(secs);
+    return ret_val;
+}
+
+
 
 CNSTServiceRegistry::CNSTServiceRegistry()
 {
@@ -350,8 +425,10 @@ CNSTServiceRegistry::GetTTL(const string &            service,
 
 // true if the service is found
 bool
-CNSTServiceRegistry::GetProlongOnRead(const string &  service,
-                                      CTimeSpan &     prolong_on_read) const
+CNSTServiceRegistry::GetProlongOnRead(
+                        const string &  service,
+                        const TNSTDBValue<Int8> &  individual_obj_ttl,
+                        TNSTDBValue<CTimeSpan> &  prolong_on_read) const
 {
     CMutexGuard                         guard(m_Lock);
     TServiceProperties::const_iterator  s = m_Services.find(service);
@@ -359,21 +436,25 @@ CNSTServiceRegistry::GetProlongOnRead(const string &  service,
     if (s == m_Services.end()) {
         // It might be the LBSMD test service
         if (NStr::EqualNocase(service, k_LBSMDNSTTestService)) {
-            prolong_on_read = m_LBSMDTestServiceProperties.GetProlongOnRead();
+            prolong_on_read =
+                    m_LBSMDTestServiceProperties.GetProlongOnRead(
+                                                        individual_obj_ttl);
             return true;
         }
         return false;
     }
 
-    prolong_on_read = s->second.GetProlongOnRead();
+    prolong_on_read = s->second.GetProlongOnRead(individual_obj_ttl);
     return true;
 }
 
 
 // true if the service is found
 bool
-CNSTServiceRegistry::GetProlongOnWrite(const string &  service,
-                                       CTimeSpan &     prolong_on_write) const
+CNSTServiceRegistry::GetProlongOnWrite(
+                        const string &  service,
+                        const TNSTDBValue<Int8> &  individual_obj_ttl,
+                        TNSTDBValue<CTimeSpan> &  prolong_on_write) const
 {
     CMutexGuard                         guard(m_Lock);
     TServiceProperties::const_iterator  s = m_Services.find(service);
@@ -381,13 +462,15 @@ CNSTServiceRegistry::GetProlongOnWrite(const string &  service,
     if (s == m_Services.end()) {
         // It might be the LBSMD test service
         if (NStr::EqualNocase(service, k_LBSMDNSTTestService)) {
-            prolong_on_write = m_LBSMDTestServiceProperties.GetProlongOnWrite();
+            prolong_on_write =
+                    m_LBSMDTestServiceProperties.GetProlongOnWrite(
+                                                        individual_obj_ttl);
             return true;
         }
         return false;
     }
 
-    prolong_on_write = s->second.GetProlongOnWrite();
+    prolong_on_write = s->second.GetProlongOnWrite(individual_obj_ttl);
     return true;
 }
 
@@ -395,8 +478,9 @@ CNSTServiceRegistry::GetProlongOnWrite(const string &  service,
 // true if the service is found
 bool
 CNSTServiceRegistry::GetProlongOnRelocate(
-                                const string &  service,
-                                CTimeSpan &     prolong_on_relocate) const
+                        const string &  service,
+                        const TNSTDBValue<Int8> &  individual_obj_ttl,
+                        TNSTDBValue<CTimeSpan> &  prolong_on_relocate) const
 {
     CMutexGuard                         guard(m_Lock);
     TServiceProperties::const_iterator  s = m_Services.find(service);
@@ -405,13 +489,14 @@ CNSTServiceRegistry::GetProlongOnRelocate(
         // It might be the LBSMD test service
         if (NStr::EqualNocase(service, k_LBSMDNSTTestService)) {
             prolong_on_relocate =
-                        m_LBSMDTestServiceProperties.GetProlongOnRelocate();
+                    m_LBSMDTestServiceProperties.GetProlongOnRelocate(
+                                                        individual_obj_ttl);
             return true;
         }
         return false;
     }
 
-    prolong_on_relocate = s->second.GetProlongOnRelocate();
+    prolong_on_relocate = s->second.GetProlongOnRelocate(individual_obj_ttl);
     return true;
 }
 
@@ -504,11 +589,19 @@ CNSTServiceRegistry::x_ReadServiceProperties(
 double
 CNSTServiceRegistry::x_ReadProlongInTTLs(string &  value) const
 {
-    return NStr::StringToDouble(
+    double  val = NStr::StringToDouble(
                 value.substr(0, value.size() - 3),  // Strip the 'ttl' suffix
                 NStr::fAllowTrailingSpaces);        // There could be spaces
                                                     // between the value and
                                                     // the suffix
+    if (val < 0.0)
+        // No warning here because it has already been produced in the
+        // validating procedure:
+        // - startup: reset to 0.0 (no prolong) at all but would reach this
+        //   point
+        // - RECONFIGURE: invalid config does not go any further
+        return 0.0;
+    return val;
 }
 
 

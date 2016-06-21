@@ -424,19 +424,24 @@ bool  CNetStorageServer::GetServiceTTL(const string &            service,
 
 
 bool
-CNetStorageServer::GetServiceProlongOnRead(const string &  service,
-                                           CTimeSpan &  prolong_on_read) const
+CNetStorageServer::GetServiceProlongOnRead(
+                            const string &  service,
+                            const TNSTDBValue<Int8> &  individual_obj_ttl,
+                            TNSTDBValue<CTimeSpan> &  prolong_on_read) const
 {
-    return m_MetadataServiceRegistry.GetProlongOnRead(service, prolong_on_read);
+    return m_MetadataServiceRegistry.GetProlongOnRead(
+                            service, individual_obj_ttl, prolong_on_read);
 }
 
 
 bool
-CNetStorageServer::GetServiceProlongOnWrite(const string &  service,
-                                            CTimeSpan &  prolong_on_write) const
+CNetStorageServer::GetServiceProlongOnWrite(
+                            const string &  service,
+                            const TNSTDBValue<Int8> &  individual_obj_ttl,
+                            TNSTDBValue<CTimeSpan> &  prolong_on_write) const
 {
-    return m_MetadataServiceRegistry.GetProlongOnWrite(service,
-                                                       prolong_on_write);
+    return m_MetadataServiceRegistry.GetProlongOnWrite(
+                            service, individual_obj_ttl, prolong_on_write);
 }
 
 

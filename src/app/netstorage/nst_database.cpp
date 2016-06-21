@@ -357,9 +357,8 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             const string &  object_loc, Int8  size,
             Int8  client_id, Int8  user_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
-            const CTimeSpan &  prolong_on_write,
+            const TNSTDBValue<CTimeSpan> &  prolong_on_write,
             const TNSTDBValue<CTime> &  object_expiration,
-            const TNSTDBValue<Int8> &  individual_object_ttl,
             bool &  size_was_null)
 {
     // Calculate separate expirations for two cases:
@@ -370,7 +369,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
     TNSTDBValue<CTime>      exp_record_found;
     TNSTDBValue<CTime>      exp_record_not_found;
     x_CalculateExpiration(current_time, ttl, prolong_on_write,
-                          object_expiration, individual_object_ttl,
+                          object_expiration,
                           exp_record_found, exp_record_not_found);
 
     const string        proc_name = "UpdateObjectOnWrite";
@@ -441,9 +440,8 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
-            const CTimeSpan &  prolong_on_write,
-            const TNSTDBValue<CTime> &  object_expiration,
-            const TNSTDBValue<Int8> &  individual_object_ttl)
+            const TNSTDBValue<CTimeSpan> &  prolong_on_write,
+            const TNSTDBValue<CTime> &  object_expiration)
 {
     // Calculate separate expirations for two cases:
     // - record is found
@@ -453,7 +451,7 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
     TNSTDBValue<CTime>      exp_record_found;
     TNSTDBValue<CTime>      exp_record_not_found;
     x_CalculateExpiration(current_time, ttl, prolong_on_write,
-                          object_expiration, individual_object_ttl,
+                          object_expiration,
                           exp_record_found, exp_record_not_found);
 
     const string    proc_name = "UpdateUserKeyObjectOnWrite";
@@ -517,9 +515,8 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             const string &  object_loc,
             Int8  size, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
-            const CTimeSpan &  prolong_on_read,
+            const TNSTDBValue<CTimeSpan> &  prolong_on_read,
             const TNSTDBValue<CTime> &  object_expiration,
-            const TNSTDBValue<Int8> &  individual_object_ttl,
             bool &  size_was_null)
 {
     // Calculate separate expirations for two cases:
@@ -530,7 +527,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
     TNSTDBValue<CTime>      exp_record_found;
     TNSTDBValue<CTime>      exp_record_not_found;
     x_CalculateExpiration(current_time, ttl, prolong_on_read,
-                          object_expiration, individual_object_ttl,
+                          object_expiration,
                           exp_record_found, exp_record_not_found);
 
     const string        proc_name = "UpdateObjectOnRead";
@@ -602,9 +599,8 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
             const string &  object_key,
             const string &  object_loc, Int8  client_id,
             const TNSTDBValue<CTimeSpan> &  ttl,
-            const CTimeSpan &  prolong_on_relocate,
-            const TNSTDBValue<CTime> &  object_expiration,
-            const TNSTDBValue<Int8> &  individual_object_ttl)
+            const TNSTDBValue<CTimeSpan> &  prolong_on_relocate,
+            const TNSTDBValue<CTime> &  object_expiration)
 {
     // Calculate separate expirations for two cases:
     // - record is found
@@ -614,7 +610,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
     TNSTDBValue<CTime>      exp_record_found;
     TNSTDBValue<CTime>      exp_record_not_found;
     x_CalculateExpiration(current_time, ttl, prolong_on_relocate,
-                          object_expiration, individual_object_ttl,
+                          object_expiration,
                           exp_record_found, exp_record_not_found);
 
     const string        proc_name = "UpdateObjectOnRelocate";
@@ -675,9 +671,8 @@ int
 CNSTDatabase::UpdateExpirationIfExists(
                         const string &  object_key,
                         const TNSTDBValue<CTimeSpan> &  ttl,
-                        const CTimeSpan &  prolong_on_read,
-                        const TNSTDBValue<CTime> &  object_expiration,
-                        const TNSTDBValue<Int8> &  individual_object_ttl)
+                        const TNSTDBValue<CTimeSpan> &  prolong_on_read,
+                        const TNSTDBValue<CTime> &  object_expiration)
 {
     // Here the only expiration for the case a record is found needs to be
     // calculated. The procedure however is a generic one and calculates the
@@ -687,7 +682,7 @@ CNSTDatabase::UpdateExpirationIfExists(
     TNSTDBValue<CTime>      exp_record_found;
     TNSTDBValue<CTime>      exp_record_not_found;
     x_CalculateExpiration(current_time, ttl, prolong_on_read,
-                          object_expiration, individual_object_ttl,
+                          object_expiration,
                           exp_record_found, exp_record_not_found);
 
     const string        proc_name = "SetObjectExpiration";
@@ -1782,36 +1777,34 @@ void  CNSTDatabase::x_CreateDatabase(bool  is_initialization)
 void
 CNSTDatabase::x_CalculateExpiration(
                             const CTime &  current_time,
-                            const TNSTDBValue<CTimeSpan> &  service_ttl,
-                            const CTimeSpan &  prolong,
+                            const TNSTDBValue<CTimeSpan> &  ttl,
+                            const TNSTDBValue<CTimeSpan> &  prolong,
                             const TNSTDBValue<CTime> &  object_expiration,
-                            const TNSTDBValue<Int8> &  individual_object_ttl,
                             TNSTDBValue<CTime> &  exp_record_found,
                             TNSTDBValue<CTime> &  exp_record_not_found)
 {
-    // Effective TTL is the service-wide configured value or
-    // an object individual value
-    TNSTDBValue<CTimeSpan>      effective_ttl;
-
-    if (individual_object_ttl.m_IsNull)
-        effective_ttl = service_ttl;
-    else {
-        effective_ttl.m_IsNull = false;
-        effective_ttl.m_Value = CTimeSpan(
-                            static_cast<long>(individual_object_ttl.m_Value));
+    if (prolong.m_IsNull) {
+        // This could happen only if:
+        // - a prolong is configured as a <multiplier> ttl
+        // - service TTL is configured as infinity
+        // - the object individual TTL is not set
+        exp_record_found.m_IsNull = true;
+        exp_record_not_found.m_IsNull = true;
+        return;
     }
 
+    // Here: prolong value is finite
+    CTimeSpan   prolong_val = prolong.m_Value;
 
-    if (prolong.IsEmpty()) {
+    if (prolong_val.IsEmpty()) {
         // Prolong time has NOT been configured
         if (object_expiration.m_IsNull) {
             exp_record_found.m_IsNull = true;
-            if (effective_ttl.m_IsNull) {
+            if (ttl.m_IsNull) {
                 exp_record_not_found.m_IsNull = true;
             } else {
                 exp_record_not_found.m_IsNull = false;
-                exp_record_not_found.m_Value = current_time +
-                                               effective_ttl.m_Value;
+                exp_record_not_found.m_Value = current_time + ttl.m_Value;
             }
         } else {
             exp_record_found.m_IsNull = false;
@@ -1821,48 +1814,45 @@ CNSTDatabase::x_CalculateExpiration(
             // So the expiration for the case the record is not found is
             // not strictly required. However, to be on the safe side set it
             // too.
-            if (effective_ttl.m_IsNull) {
+            if (ttl.m_IsNull) {
                 exp_record_not_found.m_IsNull = true;
             } else {
                 exp_record_not_found.m_IsNull = false;
-                exp_record_not_found.m_Value = current_time +
-                                               effective_ttl.m_Value;
+                exp_record_not_found.m_Value = current_time + ttl.m_Value;
             }
         }
     } else {
         // Prolong time has been configured
         if (object_expiration.m_IsNull) {
             exp_record_found.m_IsNull = true;
-            if (effective_ttl.m_IsNull) {
+            if (ttl.m_IsNull) {
                 exp_record_not_found.m_IsNull = true;
             } else {
                 exp_record_not_found.m_IsNull = false;
-                if (effective_ttl.m_Value > prolong)
-                    exp_record_not_found.m_Value = current_time +
-                                                   effective_ttl.m_Value;
+                if (ttl.m_Value > prolong_val)
+                    exp_record_not_found.m_Value = current_time + ttl.m_Value;
                 else
-                    exp_record_not_found.m_Value = current_time + prolong;
+                    exp_record_not_found.m_Value = current_time + prolong_val;
             }
         } else {
             exp_record_found.m_IsNull = false;
-            if (object_expiration.m_Value > current_time + prolong)
+            if (object_expiration.m_Value > current_time + prolong_val)
                 exp_record_found.m_Value = object_expiration.m_Value;
             else
-                exp_record_found.m_Value = current_time + prolong;
+                exp_record_found.m_Value = current_time + prolong_val;
 
             // Record exists (otherwise the object_expiration is NULL).
             // So the expiration for the case the record is not found is
             // not strictly required. However, to be on the safe side set it
             // too.
-            if (effective_ttl.m_IsNull) {
+            if (ttl.m_IsNull) {
                 exp_record_not_found.m_IsNull = true;
             } else {
                 exp_record_not_found.m_IsNull = false;
-                if (effective_ttl.m_Value > prolong)
-                    exp_record_not_found.m_Value = current_time +
-                                                   effective_ttl.m_Value;
+                if (ttl.m_Value > prolong_val)
+                    exp_record_not_found.m_Value = current_time + ttl.m_Value;
                 else
-                    exp_record_not_found.m_Value = current_time + prolong;
+                    exp_record_not_found.m_Value = current_time + prolong_val;
             }
         }
     }
