@@ -162,5 +162,11 @@ March 01, 2016
 version 6.9.5 (CXX-7908)
 Changed to do blob synchronization after quorum requirement is met.
 
+June 13, 2016
+version 6.9.6 (CXX-8233)
+Corrected task scheduling.
 
+June 17, 2016
+version 6.9.7 (CXX-8248)
+Corrected periodic synchronization bugs.
 
