@@ -456,5 +456,44 @@ DISCREPANCY_SUMMARIZE(ONCALLER_BIOPROJECT_ID)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// ONCALLER_BIOPROJECT_ID
+
+const string kMissingDeflines = "[n] bioseq[s] [has] no definition line";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MISSING_DEFLINES, CSeq_inst, eOncaller, "Missing definition lines")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsAa()) {
+        return;
+    }
+
+    bool has_title = false;
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (seq && seq->IsSetDescr()) {
+        ITERATE(CBioseq::TDescr::Tdata, d, seq->GetDescr().Get()) {
+            if ((*d)->IsTitle()) {
+                has_title = true;
+                break;
+            }
+        }
+    }
+    if (!has_title) {
+        m_Objs[kMissingDeflines].Add(*context.NewDiscObj(seq), false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MISSING_DEFLINES)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

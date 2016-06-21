@@ -1,0 +1,296 @@
+Seq-entry ::= set {
+  class nuc-prot ,
+  descr {
+    source {
+      org {
+        taxname "Picornaviridae str. China/GDFY100/2008" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 664661 } } ,
+        orgname {
+          name
+            virus "Picornaviridae str. China/GDFY100/2008" ,
+          mod {
+            {
+              subtype isolate ,
+              subname "China/GDFY100/2008" } ,
+            {
+              subtype nat-host ,
+              subname "Homo sapiens" } } ,
+          lineage "Viruses; ssRNA viruses; ssRNA positive-strand viruses, no
+ DNA stage; Picornavirales; Picornaviridae" ,
+          gcode 1 ,
+          div "VRL" } } ,
+      subtype {
+        {
+          subtype country ,
+          name "China" } ,
+        {
+          subtype collection-date ,
+          name "May-2008" } } } ,
+    pub {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Wu" ,
+                      first "De" ,
+                      initials "D." } } ,
+                {
+                  name
+                    name {
+                      last "Ke" ,
+                      first "Chang Wen" ,
+                      initials "C.W." } } ,
+                {
+                  name
+                    name {
+                      last "Yan" ,
+                      first "Jin" ,
+                      initials "J." } } ,
+                {
+                  name
+                    name {
+                      last "Zheng" ,
+                      first "Huang Ying" ,
+                      initials "H.Y." } } ,
+                {
+                  name
+                    name {
+                      last "Mo" ,
+                      first "Yan Ling" ,
+                      initials "Y.L." } } ,
+                {
+                  name
+                    name {
+                      last "Guo" ,
+                      first "Xue" ,
+                      initials "X." } } ,
+                {
+                  name
+                    name {
+                      last "Zhang" ,
+                      first "Xin" ,
+                      initials "X." } } } ,
+            affil
+              std {
+                affil "Institute of Microbiology" ,
+                div "Center for Disease Control and Prevention" ,
+                city "Guangzhou" ,
+                sub "Guangdong" ,
+                country "The People's Republic of China" ,
+                street "Xingang West Road 176" ,
+                postal-code "510300" } } ,
+          title "An outbreak of hand-foot-mouth disease due to EV71/CoxA16 in
+ Guangdong, China, in 2008" } } } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Wu" ,
+                      first "De" ,
+                      initials "D." } } ,
+                {
+                  name
+                    name {
+                      last "Ke" ,
+                      first "Chang Wen" ,
+                      initials "C.W." } } ,
+                {
+                  name
+                    name {
+                      last "Yan" ,
+                      first "Jin" ,
+                      initials "J." } } ,
+                {
+                  name
+                    name {
+                      last "Zheng" ,
+                      first "Huang Ying" ,
+                      initials "H.Y." } } ,
+                {
+                  name
+                    name {
+                      last "Mo" ,
+                      first "Yan Ling" ,
+                      initials "Y.L." } } ,
+                {
+                  name
+                    name {
+                      last "Guo" ,
+                      first "Xue" ,
+                      initials "X." } } ,
+                {
+                  name
+                    name {
+                      last "Zhang" ,
+                      first "Xin" ,
+                      initials "X." } } } ,
+            affil
+              std {
+                affil "Institute of Microbiology" ,
+                div "Center for Disease Control and Prevention" ,
+                city "Guangzhou" ,
+                sub "Guangdong" ,
+                country "The People's Republic of China" ,
+                street "Xingang West Road 176" ,
+                postal-code "510300" } } ,
+          date
+            std {
+              year 2008 ,
+              month 12 ,
+              day 29 } } } } ,
+    update-date
+      std {
+        year 2009 ,
+        month 12 ,
+        day 31 } } ,
+  seq-set {
+    seq {
+      id {
+        genbank {
+          accession "FJ598096" ,
+          version 1 } ,
+        gi 260079370 } ,
+      descr {
+        molinfo {
+          biomol genomic } ,
+        create-date
+          std {
+            year 2009 ,
+            month 12 ,
+            day 31 } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 469 ,
+        seq-data
+          ncbi2na '7FB74EBD03FBB342FEC1CEAE542E2C0403BE9D93801DEFD65128AF4BCF0
+B3FC1341CF10A3DE7276A3C100423FF54A353503F11057C9E293C1015A47CED152CF8A7EE8F778
+CA7C240D1CDA83D043041508C771012F7E7CEB83A5E0C5FD24F23944D2F842555557804DE585BF
+F155D28BB90EA39CCD000'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  imp {
+                    key "5'UTR" } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 0 ,
+                    to 40 ,
+                    strand plus ,
+                    id
+                      gi 260079370 ,
+                    fuzz-from
+                      lim lt } } } } } } ,
+    seq {
+      id {
+        genbank {
+          accession "ACX31099" ,
+          version 1 } ,
+        gi 260079371 } ,
+      descr {
+        title "polyprotein, partial [Picornaviridae str. China/GDFY100/2008]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans ,
+          completeness no-right } ,
+        create-date
+          std {
+            year 2009 ,
+            month 12 ,
+            day 31 } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 142 ,
+        seq-data
+          ncbieaa "MGAQVSKQNVGSHENSVSATGGSVIKYFNINYYKDSASSGLTKQDFSQDPSKFTQPLAE
+ALTNPALMSPSIEACGFSDRLKQITIGNSTITTQDTLQTVLAYGEWPEYLSALDATSVDKPPPPETSADRFYPLRSVQ
+WDAIS" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "polyprotein" } } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 0 ,
+                    to 141 ,
+                    id
+                      gi 260079371 ,
+                    fuzz-to
+                      lim gt } } ,
+              {
+                data
+                  prot {
+                    name {
+                      "vp4" ,
+                      "capsid protein" } ,
+                    processed mature } ,
+                location
+                  int {
+                    from 0 ,
+                    to 68 ,
+                    id
+                      gi 260079371 } } ,
+              {
+                data
+                  prot {
+                    name {
+                      "vp2" ,
+                      "capsid protein" } ,
+                    processed mature } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 69 ,
+                    to 141 ,
+                    id
+                      gi 260079371 ,
+                    fuzz-to
+                      lim gt } } } } } } } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              cdregion {
+                frame one ,
+                code {
+                  id 1 } } ,
+            partial TRUE ,
+            product
+              whole
+                gi 260079371 ,
+            location
+              int {
+                from 41 ,
+                to 468 ,
+                strand plus ,
+                id
+                  gi 260079370 ,
+                fuzz-to
+                  lim gt } } } } } }
