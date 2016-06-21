@@ -45,12 +45,13 @@ public:
     void      DumpSeqIds( CNcbiOstream & stream ) const;
     void      DumpIndex( CNcbiOstream & stream ) const;
 
-    CAsnCacheStats( CAsnCache & asn_cache_ref )
-        : m_AsnCacheRef( asn_cache_ref ), m_AsnIndexRef( asn_cache_ref.GetIndexRef() )
+    CAsnCacheStats( CAsnCache & asn_cache_ref, bool include_timestamp = true )
+        : m_AsnCacheRef( asn_cache_ref ), m_AsnIndexRef( asn_cache_ref.GetIndexRef() ), m_IncludeTimestamp(include_timestamp)
             {}
 private:
     CAsnCache & m_AsnCacheRef;
     CAsnIndex & m_AsnIndexRef;
+    bool m_IncludeTimestamp;
 };
 
 

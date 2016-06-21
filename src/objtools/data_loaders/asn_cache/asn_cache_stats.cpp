@@ -66,9 +66,11 @@ void    CAsnCacheStats::DumpSeqIds( CNcbiOstream & stream ) const
     while (cursor.Fetch() == eBDB_Ok) {
         stream << m_AsnIndexRef.GetSeqId() << " | "
             << m_AsnIndexRef.GetVersion() << " | "
-            << m_AsnIndexRef.GetGi() << " | "
-            << m_AsnIndexRef.GetTimestamp()
-            << '\n';
+            << m_AsnIndexRef.GetGi();
+        if (m_IncludeTimestamp) {
+            stream << " | " << m_AsnIndexRef.GetTimestamp();
+        }
+        stream << '\n';
         seqid_count++;
     }
     
@@ -85,9 +87,11 @@ void    CAsnCacheStats::DumpIndex( CNcbiOstream & stream ) const
     while (cursor.Fetch() == eBDB_Ok) {
         stream << m_AsnIndexRef.GetSeqId() << " | "
             << m_AsnIndexRef.GetVersion() << " | "
-            << m_AsnIndexRef.GetGi() << " | "
-            << m_AsnIndexRef.GetTimestamp() << " | "
-            << m_AsnIndexRef.GetChunkId() << " | "
+            << m_AsnIndexRef.GetGi();
+        if (m_IncludeTimestamp) {
+            stream << " | " << m_AsnIndexRef.GetTimestamp();
+        }
+        stream << " | " << m_AsnIndexRef.GetChunkId() << " | "
             << m_AsnIndexRef.GetOffset() << " | "
             << m_AsnIndexRef.GetSize() << " | "
             << m_AsnIndexRef.GetSeqLength() << " | "
