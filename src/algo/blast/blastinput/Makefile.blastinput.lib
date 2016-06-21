@@ -36,7 +36,7 @@ CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = madden camacho fongah2
+WATCHERS = madden camacho fongah2 boratyng
 
 
 USES_LIBRARIES =  \
