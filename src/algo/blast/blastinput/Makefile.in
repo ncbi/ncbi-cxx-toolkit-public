@@ -4,7 +4,7 @@
 #################################
 
 
-LIB_PROJ = blastinput
+LIB_PROJ = blastinput blast_sra_input
 SUB_PROJ = unit_test demo
 #EXPENDABLE_SUB_PROJ = demo
 

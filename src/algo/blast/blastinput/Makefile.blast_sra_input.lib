@@ -1,0 +1,21 @@
+# $Id$
+
+SRC = blast_sra_input
+
+LIB = blast_sra_input
+
+DLL_LIB = xblast align_format ncbi_xloader_blastdb_rmt ncbi_xloader_blastdb seqdb $(SRAREAD_LIBS) $(OBJREAD_LIBS) $(OBJMGR_LIBS) xutil
+
+# should be redundant, given the above :-/
+ASN_DEP = seqset xnetblast
+
+CFLAGS   = $(FAST_CFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLAST $(SRA_INCLUDE) $(ORIG_CPPFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+WATCHERS = boratyng
+
+
+USES_LIBRARIES =  \
+    $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) align_format $(SRAREAD_LIBS)
