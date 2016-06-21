@@ -80,6 +80,8 @@ void CAsnCacheApplication::Init(void)
                             CArgDescriptions::eOutputFile,
                             "-");
 
+    arg_desc->AddFlag("no-timestamp", "Omit timestamp from output");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -105,7 +107,7 @@ int CAsnCacheApplication::Run(void)
     }
 
     CAsnCache   cache( cache_dir.GetPath() );
-    CAsnCacheStats  cache_stats( cache );
+    CAsnCacheStats  cache_stats( cache, !args["no-timestamp"] );
 
     cache_stats.DumpSeqIds( args["o"].AsOutputFile() );
     
