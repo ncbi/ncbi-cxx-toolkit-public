@@ -1873,7 +1873,7 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
     sx_Info->message[n_write] = '\0';
     n = s_Write(f, sx_Info->message, n_write);
     VERIFY(n == n_write);
-    fsync(f);    
+    /* fdatasync(f); */
 #else
     n = fprintf(f, "%s\n", sx_Info->message);
     VERIFY(n > 0);
@@ -3514,7 +3514,7 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
     VERIFY(n == len);
     n = s_Write(f, "\n", 1);
     VERIFY(n == 1);
-    fsync(f);    
+    /* fdatasync(f); */
 #else
     n = fprintf(f, "%s\n", line);
     VERIFY(n > 0);
