@@ -913,6 +913,7 @@ void CAsnvalApp::Setup(const CArgs& args)
     // Create object manager
     m_ObjMgr = CObjectManager::GetInstance();
     CDataLoadersUtil::SetupObjectManager(args, *m_ObjMgr,
+                                         CDataLoadersUtil::fDefault |
                                          CDataLoadersUtil::fGenbankOffByDefault);
 
     m_OnlyAnnots = args["annot"];
