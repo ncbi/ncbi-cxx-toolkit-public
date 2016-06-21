@@ -155,7 +155,7 @@ public:
             // FIXME: This is a hack. Merging should be done by the formatter,
             // but is currently done by HSP stream writer. This is an easy
             // switch until merging is implemented properly.
-            setenv("MAPPER_NO_OVERLAPPED_HSP_MERGE", "1", 0);
+            CNcbiEnvironment().Set("MAPPER_NO_OVERLAPPED_HSP_MERGE", "1");
         }
     }
 
