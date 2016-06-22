@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/stream_utils.hpp>
 #include <serial/iterator.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/blast_options_builder.hpp>
@@ -2493,11 +2494,9 @@ CRemoteBlast::x_GetSearchResultsHTTP(void)
 	bool l_cached_ok = true;
 
     auto_ptr<fstream> tmp_stream( CDirEntry::CreateTmpFile() );
-
     do{
-		ios.readsome(incoming_buffer, read_max);
-		n_read = ios.gcount();
-		if( n_read >= 0 ){
+		n_read = CStreamUtils::Readsome(ios,incoming_buffer, read_max);
+		if( n_read > 0 ){
 			l_total_bytes += n_read;
 			try{
 				tmp_stream->write(incoming_buffer,n_read);
@@ -2513,10 +2512,11 @@ CRemoteBlast::x_GetSearchResultsHTTP(void)
 				LOG_POST(Error << "CRemoteBlast::x_GetSearchResultsHTTP CAN'T WRITE CACHED DATA: "<<err.what() );
 				l_cached_ok = false;
 				m_disk_cache_error_msg = err.what();	
+				break;
 			}
 		}
     }
-    while( ios);
+    while( ios.good() );
 	swatch.Stop();
     
 	if(!l_cached_ok ){
@@ -2530,13 +2530,18 @@ CRemoteBlast::x_GetSearchResultsHTTP(void)
     tmp_stream->seekg(0);
     // read cached answer
 	swatch.Restart();
-    {
+    try {
 		auto_ptr<CObjectIStream> 
 	    in_stream( CObjectIStream::Open(eSerial_AsnBinary,  *tmp_stream) );
 		in_stream->Read(ObjectInfo(*one_reply), CObjectIStream::eNoFileHeader);
 
     }
-    
+    catch(...){
+		LOG_POST(Info << "CRemoteBlast::x_GetSearchResultsHTTP: DISABLE CACHE, CAN'T READ CACHED FILE, RE-READ");
+		m_use_disk_cache = false;
+		m_disk_cache_error_flag = true;
+		return x_GetSearchResults();	
+   }
 	swatch.Stop();
 	
     return one_reply ;
