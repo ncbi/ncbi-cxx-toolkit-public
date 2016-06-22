@@ -177,8 +177,12 @@ void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const 
                     InitOstream(ostream, fname) << label <<
                         (is_split ? "\tEC number split\t" : "\tEC number changed\t")
                         << *val << '\t' << newvalue << endl;
-                    if (!is_split)
+                    if (is_split) {
+                        val = EC.erase(val);
+                        continue;
+                    } else {
                         *val = newvalue;
+                    }
                 }
                 break;
                 case CProt_ref::eEC_unknown:
