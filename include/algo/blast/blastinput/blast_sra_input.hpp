@@ -43,9 +43,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 
-/// Class representing a text or binary file containing sequences in ASN.1
-/// format as a collection of Seq-entry objects
-class NCBI_BLASTINPUT_EXPORT CSraInputSource : public CBlastInputSourceOMF
+/// Class for reading sequences from SRA respository or SRA file
+class CSraInputSource : public CBlastInputSourceOMF
 {
 public:
 
