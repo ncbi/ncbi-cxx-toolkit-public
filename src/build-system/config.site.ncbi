@@ -287,14 +287,14 @@ case "$ncbi_platform" in
             # with_vdb=$local_vdb_base/cxx_toolkit/2
             with_vdb=$net_vdb_base/cxx_toolkit/2-rc
         else
-            : ${VDB_PATH=$local_vdb_base/2.6.2}
+            : ${VDB_PATH=$local_vdb_base/2.6.3}
         fi
         ;;
     *MAC )
         if [ "x$with_vdb" = 'xrc' ]; then
             with_vdb=$net_vdb_base/cxx_toolkit/2-rc
         else
-            : ${VDB_PATH=$net_vdb_base/2.6.2}
+            : ${VDB_PATH=$net_vdb_base/2.6.3}
         fi
         ;;
 esac
