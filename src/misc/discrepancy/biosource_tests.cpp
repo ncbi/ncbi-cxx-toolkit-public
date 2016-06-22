@@ -390,12 +390,20 @@ bool HasStrainForATCCCultureCollection(const COrgName::TMod& mods, const string&
 }
 
 
-void AddObjSource(CReportNode& objs, CDiscrepancyContext& context, const string& category)
+void AddObjSource(CReportNode& objs, CDiscrepancyContext& context, const string& category, bool keepref = false)
 {
     if (context.GetCurrentSeqdesc() != NULL) {
-        objs[category].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
+        if (keepref) {
+            objs[category].Add(*context.NewDiscObj(context.GetCurrentSeqdesc(), eKeepRef), false);
+        } else {
+            objs[category].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
+        }
     } else if (context.GetCurrentSeq_feat() != NULL) {
-        objs[category].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+        if (keepref) {
+            objs[category].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eKeepRef), false);
+        } else {
+            objs[category].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+        }
     }
 }
 
@@ -823,6 +831,108 @@ DISCREPANCY_SUMMARIZE(REQUIRED_CLONE)
     if (m_Objs.empty()) {
         return;
     }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// STRAIN_TAXNAME_MISMATCH
+
+string GetTaxnameFromReportObject(const CReportObj& obj)
+{
+    string taxname = kEmptyStr;
+    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(obj.GetObject().GetPointer());
+    if (desc) {
+        if (desc->IsSource() && desc->GetSource().IsSetOrg() &&
+            desc->GetSource().GetOrg().IsSetTaxname()) {
+            taxname = desc->GetSource().GetOrg().GetTaxname();
+        }
+    } else {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
+        if (sf && sf->IsSetData() && sf->GetData().IsBiosrc() &&
+            sf->GetData().GetBiosrc().IsSetOrg() &&
+            sf->GetData().GetBiosrc().GetOrg().IsSetTaxname()) {
+            taxname = sf->GetData().GetBiosrc().GetOrg().GetTaxname();
+        }
+    }
+    return taxname;
+}
+
+
+bool DoTaxnamesMatchForObjectList(const TReportObjectList& obj_list)
+{
+    TReportObjectList::const_iterator ro = obj_list.cbegin();
+    string taxname = GetTaxnameFromReportObject(**ro);
+    ++ro;
+    while (ro != obj_list.cend()) {
+        string this_taxname = GetTaxnameFromReportObject(**ro);
+        if (!NStr::Equal(taxname, this_taxname)) {
+            return false;
+        }
+        ++ro;
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(STRAIN_TAXNAME_MISMATCH, CBioSource, eDisc|eOncaller, "BioSources with the same strain should have the same taxname")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
+        return;
+    }
+    ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
+        if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_strain &&
+            (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
+            AddObjSource(m_Objs, context, "[n] biosource[s] have strain " + (*om)->GetSubname() + " but do not have the same taxnames", true);
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(STRAIN_TAXNAME_MISMATCH)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    CReportNode::TNodeMap::iterator it = m_Objs.GetMap().begin();
+    while (it != m_Objs.GetMap().end()) {
+        if (it->second->GetObjects().size() < 2) {
+            // only one biosource with this strain
+            it = m_Objs.GetMap().erase(it);
+        } else if (DoTaxnamesMatchForObjectList(it->second->GetObjects())) {
+            // taxnames match
+            it = m_Objs.GetMap().erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    if (m_Objs.GetMap().size() > 1) {
+        // add top level category
+        string new_label = NStr::NumericToString(m_Objs.GetObjects().size()) +
+            " BioSources have " +
+            NStr::NumericToString(m_Objs.GetMap().size()) +
+            "strain / taxname conflicts";
+
+        NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs.GetMap()) {
+            NON_CONST_ITERATE(CReportNode::TNodeMap, s, it->second->GetMap()){
+                NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+                    m_Objs[new_label].Add(**q).Ext();
+                }
+            }
+        }
+        CReportNode::TNodeMap::iterator it = m_Objs.GetMap().begin();
+        while (it != m_Objs.GetMap().end()) {
+            if (!NStr::Equal(it->first, new_label)) {
+                it = m_Objs.GetMap().erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
