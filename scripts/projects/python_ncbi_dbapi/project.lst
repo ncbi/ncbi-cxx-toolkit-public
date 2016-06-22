@@ -22,6 +22,7 @@ dbapi/driver/ftds64/ctlib$
 dbapi/driver/ftds95$
 dbapi/driver/ftds95/impl$ update-only
 dbapi/driver/ftds95/freetds$
+dbapi/driver/ftds95/freetds/freetds$ update-only
 dbapi/driver/ftds95/freetds/tds$
 dbapi/driver/ftds95/freetds/replacements$
 dbapi/driver/ftds95/freetds/ctlib$
