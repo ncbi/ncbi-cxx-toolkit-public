@@ -800,5 +800,54 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLINFO_TECH)
 }
 
 
+// TITLE_ENDS_WITH_SEQUENCE
+
+static bool IsATGC(Char ch)
+{
+    return (ch == 'A' || ch == 'T' || ch == 'G' || ch == 'C');
+}
+
+static bool EndsWithSequence(const string& title)
+{
+    static const size_t MIN_TITLE_SEQ_LEN = 19; // 19 was just copied from C-toolkit
+
+    size_t count = 0;
+    for (string::const_reverse_iterator it = title.rbegin(); it != title.rend(); ++it) {
+        if (IsATGC(*it)) {
+            ++count;
+        }
+        else
+            break;
+
+        if (count >= MIN_TITLE_SEQ_LEN) {
+            break;
+        }
+    }
+
+    return count >= MIN_TITLE_SEQ_LEN;
+}
+
+static const string kEndsWithSeq = "[n] defline[s] appear[S] to end with sequence characters";
+
+DISCREPANCY_CASE(TITLE_ENDS_WITH_SEQUENCE, CSeqdesc, eDisc, "Sequence characters at end of defline")
+{
+    if (!obj.IsTitle()) {
+        return;
+    }
+
+    if (EndsWithSequence(obj.GetTitle())) {
+        m_Objs[kEndsWithSeq].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj)));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(TITLE_ENDS_WITH_SEQUENCE)
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
