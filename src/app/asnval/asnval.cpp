@@ -373,8 +373,9 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     } catch (CException) {
     }
     m_In = OpenFile(fname);
-    if (m_In.get() != 0)
-    {
+    if (m_In.get() == 0) {
+        ERR_POST("Unable to open " + fname);
+    } else {
         try {
             if ( NStr::Equal(args["a"].AsString(), "t")) {          // Release file
                 // Open File 
@@ -497,14 +498,17 @@ int CAsnvalApp::Run(void)
 
         if ( args["p"] ) {
             ValidateOneDirectory (args["p"].AsString(), args["u"]);
+        } else if (args["i"]) {
+            ValidateOneFile (args["i"].AsString());           
         } else {
-            if (args["i"]) {
-                ValidateOneFile (args["i"].AsString());
-            }
+            ValidateOneDirectory(".", args["u"]);
         }
     } catch (CException& e) {
         ERR_POST(Error << e);
         execption_caught = true;
+    }
+    if (m_NumFiles == 0) {
+       ERR_POST("No matching files found");
     }
 
     time_t stop_time = time(NULL);
