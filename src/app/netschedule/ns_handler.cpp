@@ -1420,6 +1420,14 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
 }
 
 
+string CNetScheduleHandler::x_GetConnRef(void) const
+{
+    // See CXX-8253
+    return GetDiagContext().GetStringUID() + "_" +
+           NStr::NumericToString(m_ConnContext->GetRequestID());
+}
+
+
 void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
 {
     // Expecting ENDB
@@ -1475,6 +1483,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
             GetDiagContext().SetRequestContext(ctx);
             GetDiagContext().PrintRequestStart()
                             .Print("_type", "cmd")
+                            .Print("conn", x_GetConnRef())
                             .Print("_queue", m_QueueName)
                             .Print("bsub", m_CmdContext->GetRequestID())
                             .Print("cmd", "BTCH")
@@ -4064,7 +4073,7 @@ void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd &  cmd)
                             .Print("_queue", m_QueueName)
                             .Print("cmd", cmd.command->cmd)
                             .Print("peer", GetSocket().GetPeerAddress(eSAF_IP))
-                            .Print("conn", m_ConnContext->GetRequestID());
+                            .Print("conn", x_GetConnRef());
 
         ITERATE(TNSProtoParams, it, cmd.params) {
             // IP is set before the print request start
@@ -4100,7 +4109,7 @@ void CNetScheduleHandler::x_PrintCmdRequestStart(CTempString  msg)
                 .Print("_queue", m_QueueName)
                 .Print("info", msg)
                 .Print("peer",  GetSocket().GetPeerAddress(eSAF_IP))
-                .Print("conn", m_ConnContext->GetRequestID())
+                .Print("conn", x_GetConnRef())
                 .Flush();
 
         // Workaround:
@@ -4298,7 +4307,8 @@ void CNetScheduleHandler::x_CreateConnContext(void)
     // Set the connection request as the current one and print request start
     CDiagContext::SetRequestContext(m_ConnContext);
     GetDiagContext().PrintRequestStart()
-                    .Print("_type", "conn");
+                    .Print("_type", "conn")
+                    .Print("conn", x_GetConnRef());
     m_ConnContext->SetRequestStatus(eStatus_OK);
 }
 

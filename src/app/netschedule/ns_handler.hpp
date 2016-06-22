@@ -318,6 +318,7 @@ private:
 
     bool x_NeedCmdLogging(void) const;
     void x_SetRequestContext(void);
+    string x_GetConnRef(void) const;
 
 }; // CNetScheduleHandler
 
