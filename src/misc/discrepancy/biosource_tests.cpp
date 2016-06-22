@@ -1004,5 +1004,35 @@ DISCREPANCY_SUMMARIZE(CULTURE_TAXNAME_MISMATCH)
 }
 
 
+// BIOMATERIAL_TAXNAME_MISMATCH
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(BIOMATERIAL_TAXNAME_MISMATCH, CBioSource, eOncaller, "Test BioSources with the same biomaterial but different taxname")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
+        return;
+    }
+    ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
+        if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_bio_material &&
+            (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
+            AddObjSource(m_Objs, context, "[n] biosource[s] have biomaterial " + (*om)->GetSubname() + " but do not have the same taxnames", true);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(BIOMATERIAL_TAXNAME_MISMATCH)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    SummarizeTaxnameConflict(m_Objs, "biomaterial");
+
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
