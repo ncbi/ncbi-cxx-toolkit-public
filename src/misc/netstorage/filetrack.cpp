@@ -142,12 +142,6 @@ THTTP_Flags SFileTrackRequest::GetUploadFlags() const
         kDefaultHttpFlags | fHTTP_WriteThru : kDefaultHttpFlags;
 }
 
-void SFileTrackRequest::SetTimeout()
-{
-    m_HTTPStream.SetTimeout(eIO_Close, &m_Config.read_timeout);
-    m_HTTPStream.SetTimeout(eIO_Read, &m_Config.read_timeout);
-}
-
 SFileTrackRequest::SFileTrackRequest(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
@@ -156,9 +150,8 @@ SFileTrackRequest::SFileTrackRequest(
     m_ObjectLoc(object_loc),
     m_URL(url),
     m_HTTPStream(url, NULL, kEmptyStr, s_HTTPParseHeader_SaveStatus,
-            this, NULL, NULL, kDefaultHttpFlags, &m_Config.write_timeout)
+            this, NULL, NULL, kDefaultHttpFlags, &m_Config.comm_timeout)
 {
-    SetTimeout();
 }
 
 SFileTrackRequest::SFileTrackRequest(
@@ -172,9 +165,8 @@ SFileTrackRequest::SFileTrackRequest(
     m_URL(GetURL()),
     m_HTTPStream(m_URL, m_NetInfo.get(), user_header,
             s_HTTPParseHeader_SaveStatus, this, NULL, NULL, GetUploadFlags(),
-            &m_Config.write_timeout)
+            &m_Config.comm_timeout)
 {
-    SetTimeout();
 }
 
 SFileTrackPostRequest::SFileTrackPostRequest(
@@ -424,7 +416,7 @@ void SFileTrackPostRequest::RenameFile(const string& from, const string& to,
         url.append("/api/2.0/files/").append(from).append("/");
 
         CHttpRequest req = session.NewRequest(url, CHttpSession::ePut);
-        auto& timeout(m_Config.read_timeout);
+        auto& timeout(m_Config.comm_timeout);
         req.SetTimeout(CTimeout(timeout.sec, timeout.usec));
 
         CHttpHeaders& headers = req.Headers();
@@ -616,7 +608,7 @@ string SFileTrackAPI::LoginAndGetSessionKey(const CNetStorageObjectLoc& object_l
 
     CConn_HttpStream http_stream(url,
             NULL, kEmptyStr, s_HTTPParseHeader_GetSID, &session_key, NULL, NULL,
-            fHTTP_AutoReconnect, &config.write_timeout);
+            fHTTP_AutoReconnect, &config.comm_timeout);
 
     string dummy;
     http_stream >> dummy;
@@ -671,7 +663,8 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
 
     const string url(s_GetURL(object_loc, "/api/2.0/pins/"));
     CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
-    req.SetTimeout(CTimeout(config.read_timeout.sec, config.read_timeout.usec));
+    auto& timeout(config.comm_timeout);
+    req.SetTimeout(CTimeout(timeout.sec, timeout.usec));
 
     CHttpHeaders& headers = req.Headers();
     headers.SetValue(CHttpHeaders::eContentType, "application/json");
@@ -753,8 +746,7 @@ const string s_GetDecryptedKey(const string& key)
 }
 
 SFileTrackConfig::SFileTrackConfig(EVoid) :
-    read_timeout(s_GetDefaultTimeout()),
-    write_timeout(s_GetDefaultTimeout())
+    comm_timeout(s_GetDefaultTimeout())
 {
 }
 
@@ -765,8 +757,7 @@ SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) 
                 IRegistry::fPlaintextAllowed)),
     token(reg.GetEncryptedString(s_GetSection(section), "token",
                 IRegistry::fPlaintextAllowed)),
-    read_timeout(s_GetDefaultTimeout()),
-    write_timeout(s_GetDefaultTimeout())
+    comm_timeout(s_GetDefaultTimeout())
 {
     if (token.size()) token.insert(0, kAuthPrefix);
 }

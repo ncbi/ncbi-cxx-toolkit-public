@@ -51,8 +51,7 @@ struct SFileTrackConfig
     CNetStorageObjectLoc::EFileTrackSite site;
     string key;
     string token;
-    const STimeout read_timeout;
-    const STimeout write_timeout;
+    const STimeout comm_timeout;
 
     SFileTrackConfig(EVoid = eVoid); // Means no FileTrack as a backend storage
     SFileTrackConfig(const IRegistry& registry, const string& section = kEmptyStr);
@@ -86,7 +85,6 @@ private:
     SConnNetInfo* GetNetInfo() const;
     string GetURL() const;
     THTTP_Flags GetUploadFlags() const;
-    void SetTimeout();
 
     AutoPtr<SConnNetInfo, CDeleter<SConnNetInfo> > m_NetInfo;
 
@@ -165,8 +163,6 @@ struct SFileTrackAPI
     const SFileTrackConfig config;
 
 private:
-    const STimeout GetTimeout();
-
     CRandom m_Random;
 };
 
