@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
+#include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seq/Seq_ext.hpp>
@@ -1731,6 +1732,40 @@ DISCREPANCY_CASE(UNNECESSARY_VIRUS_GENE, CSeq_feat, eOncaller, "Unnecessary gene
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(UNNECESSARY_VIRUS_GENE)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+// UNNECESSARY_VIRUS_GENE
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(CDS_HAS_CDD_XREF, CSeq_feat, eDisc|eOncaller, "CDS has CDD Xref")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData() || !obj.GetData().IsCdregion() || !obj.IsSetDbxref()) {
+        return;
+    }
+    bool has_cdd_xref = false;
+    ITERATE(CSeq_feat::TDbxref, x, obj.GetDbxref()) {
+        if ((*x)->IsSetDb() && NStr::EqualNocase((*x)->GetDb(), "CDD")) {
+            has_cdd_xref = true;
+            break;
+        }
+    }
+
+    if (has_cdd_xref) {
+        m_Objs["[n] feature[s] [has] CDD Xrefs"].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+    }
+
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(CDS_HAS_CDD_XREF)
 //  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
