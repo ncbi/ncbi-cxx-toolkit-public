@@ -351,7 +351,7 @@ DISCREPANCY_SUMMARIZE(mRNA_ON_WRONG_SEQUENCE_TYPE)
 const string kSequencesWithGaps = "[n] sequence[s] contain[S] gaps";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(DISC_GAPS, CSeq_inst, eDisc, "Sequences with gaps")
+DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc, "Sequences with gaps")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsSetRepr() && obj.GetRepr() == CSeq_inst::eRepr_delta) {
@@ -404,7 +404,7 @@ DISCREPANCY_CASE(DISC_GAPS, CSeq_inst, eDisc, "Sequences with gaps")
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_SUMMARIZE(DISC_GAPS)
+DISCREPANCY_SUMMARIZE(GAPS)
 //  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
@@ -419,7 +419,7 @@ DISCREPANCY_SUMMARIZE(DISC_GAPS)
 const string kSequencesWithBioProjectIDs = "[n] sequence[s] contain[S] BioProject IDs";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(ONCALLER_BIOPROJECT_ID, CSeq_inst, eOncaller, "Sequences with BioProject IDs")
+DISCREPANCY_CASE(BIOPROJECT_ID, CSeq_inst, eOncaller, "Sequences with BioProject IDs")
 //  ----------------------------------------------------------------------------
 {
     CBioseq_Handle bioseq = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
@@ -448,7 +448,7 @@ DISCREPANCY_CASE(ONCALLER_BIOPROJECT_ID, CSeq_inst, eOncaller, "Sequences with B
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_SUMMARIZE(ONCALLER_BIOPROJECT_ID)
+DISCREPANCY_SUMMARIZE(BIOPROJECT_ID)
 //  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {

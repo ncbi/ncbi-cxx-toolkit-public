@@ -110,9 +110,8 @@ CFeatureInspectResults InspectSeqFeat(const CSeq_feat& obj)
 DISCREPANCY_CASE(TRANSL_NO_NOTE, CSeq_feat, eDisc, "Transl_except without Note")
 {
     CFeatureInspectResults result = InspectSeqFeat(obj);
-    if (result.m_hasException && !result.m_hasNote)
-    {
-        m_Objs["[n] feature[s] [has] a translation exception but no note"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true));
+    if (result.m_hasException && !result.m_hasNote) {
+        m_Objs["[n] feature[s] [has] a translation exception but no note"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
     }
 }
 
@@ -127,9 +126,8 @@ DISCREPANCY_SUMMARIZE(TRANSL_NO_NOTE)
 DISCREPANCY_CASE(NOTE_NO_TRANSL, CSeq_feat, eDisc, "Note without Transl_except")
 {
     CFeatureInspectResults result = InspectSeqFeat(obj);
-    if (result.m_hasNote && !result.m_hasException)
-    {
-        m_Objs["[n] feature[s] [has] a note but not translation exception"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true));
+    if (result.m_hasNote && !result.m_hasException) {
+        m_Objs["[n] feature[s] [has] a note but not translation exception"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
     }
 }
 
