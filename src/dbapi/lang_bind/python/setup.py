@@ -68,6 +68,8 @@ def mfv(v):
 unparsed_rx = re.compile(r'\$\(.*?\)')
 for v in ('CXX', 'CXXFLAGS'):
     os.environ.setdefault(v, unparsed_rx.sub('', mfv(v)))
+os.environ.setdefault('CC', unparsed_rx.sub('', mfv('CXX')))
+os.environ.setdefault('CFLAGS', unparsed_rx.sub('', mfv('CXXFLAGS')))
 os.environ.setdefault('CPPFLAGS',
                       unparsed_rx.sub('', mfv('CPPFLAGS'))
                       + ' -DPYDBAPI_SUPPORT_DIR=\\"' + support_dir + '\\"'
