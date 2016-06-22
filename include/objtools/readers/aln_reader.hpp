@@ -134,7 +134,10 @@ public:
     typedef CAlnErrorContainer TErrorList;
 
     // constructor
-    CAlnReader(CNcbiIstream& is) : m_IS(is), m_ReadDone(false) { m_Errors.clear(); };
+    // defaults to protein alphabet and A2M gap characters
+    CAlnReader(CNcbiIstream& is) : m_IS(is), m_ReadDone(false) { m_Errors.clear();
+                                                                 SetAlphabet(eAlpha_Protein);
+                                                                 SetAllGap(".-"); };
 
     // destructor
     ~CAlnReader(void);
