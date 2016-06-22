@@ -285,7 +285,8 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("c", "String", "Cleanup (combine any of the following letters)\n\
       b Basic Cleanup\n\
       e Extended Cleanup\n\
-      f Fix product names", CArgDescriptions::eString);
+      f Fix product names\n\
+      w WGS cleanup", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
@@ -388,7 +389,7 @@ int CTbl2AsnApp::Run(void)
 
     if (args["c"])
     {
-        if (args["c"].AsString().find_first_not_of("bef") != string::npos)
+        if (args["c"].AsString().find_first_not_of("befw") != string::npos)
         {
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized cleanup type " + args["c"].AsString());

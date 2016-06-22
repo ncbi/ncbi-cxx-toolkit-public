@@ -54,6 +54,11 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle h_entry, const string& flags
     CRef<CSeq_entry> entry((CSeq_entry*)(h_entry.GetEditHandle().GetCompleteSeq_entry().GetPointer()));
 
     CCleanup cleanup;
+    if (flags.find('w') != string::npos)
+    {
+        CCleanup::WGSCleanup(h_entry);
+    }
+    else
     if (flags.find('e') != string::npos)
     {
         cleanup.ExtendedCleanup(*entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
