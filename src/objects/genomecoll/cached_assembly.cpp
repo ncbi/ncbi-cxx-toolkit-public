@@ -57,7 +57,7 @@ CRef<CGC_Assembly> UncomressAndCreate(const string& blob, CCompressStream::EMeth
                 >> (*m_assembly);
 
     sw.Stop();
-    LOG_POST(Info << "Assebmly uncomressed and created in (sec): " << sw.Elapsed());
+    LOG_POST(Info << "Assembly uncomressed and created in (sec): " << sw.Elapsed());
     GetDiagContext().Extra().Print("Create-assembly-from-blob-time", sw.Elapsed() * 1000) // need millisecond
                             .Print("compress-method", method)
                             .Print("blob-size", blob.size());
@@ -111,7 +111,6 @@ void CompressAssembly(string& blob, CRef<CGC_Assembly> assembly, CCompressStream
     CStopWatch sw(CStopWatch::eStart);
 
     LOG_POST(Info << "Creating blob with compression: " << method);
-    _ASSERT(blob.empty());
 
     CNcbiOstrstream out;
     CCompressOStream compress(out, method);
@@ -128,56 +127,58 @@ void CompressAssembly(string& blob, CRef<CGC_Assembly> assembly, CCompressStream
 }
 
 static
-string ChangeCompression(const string& blob,
-                         CCompressStream::EMethod from, CCompressStream::EMethod to)
+const string& EnsureCompression(string& blob, CCompressStream::EMethod cur_method, CCompressStream::EMethod new_method)
 {
+    if(cur_method == new_method)
+        return blob;
+
     CStopWatch sw(CStopWatch::eStart);
 
-    LOG_POST(Info << "Changing compression from " << from << " to " << to);
-    _ASSERT(from != to);
+    LOG_POST(Info << "Changing compression from " << cur_method << " to " << new_method);
 
     CNcbiIstrstream in(blob.data(), blob.size());
-    CDecompressIStream from_stream(in, from);
+    CDecompressIStream from_stream(in, cur_method);
     CNcbiOstrstream out;
-    CCompressOStream to_stream(out, to);
+    CCompressOStream to_stream(out, new_method);
 
     to_stream << from_stream.rdbuf();
     to_stream.Finalize();
 
-    string new_blob = CNcbiOstrstreamToString(out);
+    const string new_blob = CNcbiOstrstreamToString(out);
 
     sw.Stop();
     LOG_POST(Info << "Compression done - processed: " << to_stream.GetProcessedSize() << ", old size:" << blob.size() << ", new size: " << to_stream.GetOutputSize());
 
     GetDiagContext().Extra().Print("Change-assembly-compression-time", sw.Elapsed() * 1000) // need millisecond
-                            .Print("compress-method-old", from)
-                            .Print("compress-method-new", to)
+                            .Print("compress-method-old", cur_method)
+                            .Print("compress-method-new", new_method)
                             .Print("blob-size-old",       blob.size())
                             .Print("blob-size-new",   new_blob.size());
 
-    return new_blob;
+    blob = new_blob;
+
+    return blob;
 }
 
 const string& CCachedAssembly::Blob(CCompressStream::EMethod neededCompression)
 {
     _ASSERT(neededCompression == CCompressStream::eBZip2 || neededCompression == CCompressStream::eZip);
     LOG_POST(Info << "Requested blob with compression: " << neededCompression);
-    if (m_blob.empty()) {
+
+    if (ValidBlob(m_blob.size()))
+        return EnsureCompression(m_blob, Compression(m_blob), neededCompression); //TODO: remove it once all be switched to new gc_access (conversion will be done inside CGencollCache)
+
+    if (m_assembly)
         CompressAssembly(m_blob, m_assembly, neededCompression);
-    }
-    else if (neededCompression != Compression(m_blob)) {
-        m_blob = ChangeCompression(m_blob, Compression(m_blob), neededCompression);
-    }
+    else
+        m_blob.clear();
+
     return m_blob;
 }
 
 const string& CCachedAssembly::Blob()
 {
-    LOG_POST(Info << "Requested blob");
-    if (m_blob.empty()) {
-        CompressAssembly(m_blob, m_assembly, CCompressStream::eZip);
-    }
-    return m_blob;
+    return Blob(CCompressStream::eZip);
 }
 
 bool CCachedAssembly::ValidBlob(int blobSize)
