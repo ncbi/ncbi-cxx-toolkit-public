@@ -1741,7 +1741,7 @@ DISCREPANCY_SUMMARIZE(UNNECESSARY_VIRUS_GENE)
 }
 
 
-// UNNECESSARY_VIRUS_GENE
+// CDS_HAS_CDD_XREF
 //  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(CDS_HAS_CDD_XREF, CSeq_feat, eDisc|eOncaller, "CDS has CDD Xref")
 //  ----------------------------------------------------------------------------
@@ -1766,6 +1766,36 @@ DISCREPANCY_CASE(CDS_HAS_CDD_XREF, CSeq_feat, eDisc|eOncaller, "CDS has CDD Xref
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(CDS_HAS_CDD_XREF)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+// SHOW_TRANSL_EXCEPT
+
+static const string kShowTranslExc = "[n] coding region[s] [has] a translation exception";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(SHOW_TRANSL_EXCEPT, CSeq_feat, eDisc, "Show translation exception")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData() || !obj.GetData().IsCdregion()) {
+        return;
+    }
+
+    if (obj.GetData().GetCdregion().IsSetCode_break()) {
+        m_Objs[kShowTranslExc].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+    }
+
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(SHOW_TRANSL_EXCEPT)
 //  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
