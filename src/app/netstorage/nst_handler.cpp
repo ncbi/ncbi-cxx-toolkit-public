@@ -206,9 +206,13 @@ void CNetStorageHandler::OnRead(void)
     case eIO_Interrupt:
         // Will be repeated again later?
         return;
+    case eIO_NotSupported:
+        x_SetConnRequestStatus(eStatus_NotImplemented);
+        m_Server->CloseConnection(&GetSocket());
+        return;
     default:
-        // eIO_InvalidArg, eIO_NotSupported, eIO_Unknown
-        x_SetConnRequestStatus(eStatus_SocketIOError);
+        // eIO_InvalidArg, eIO_Unknown
+        x_SetConnRequestStatus(eStatus_ServerError);
         m_Server->CloseConnection(&GetSocket());
         return;
     }
@@ -233,7 +237,7 @@ void CNetStorageHandler::OnRead(void)
                     break;
             }
         }
-        catch (CJsonOverUTTPException& e) {
+        catch (const CJsonOverUTTPException &  e) {
             // Parsing error
             if (!m_FirstMessage) {
                 // The systems try to attack all the servers and they send
@@ -250,13 +254,13 @@ void CNetStorageHandler::OnRead(void)
         }
         catch (const exception &  ex) {
             ERR_POST("STL exception while processing incoming message: " <<
-                     ex.what());
-            x_SetConnRequestStatus(eStatus_BadRequest);
+                     ex);
+            x_SetConnRequestStatus(eStatus_ServerError);
             m_Server->CloseConnection(&GetSocket());
         }
         catch (...) {
             ERR_POST("Unknown exception while processing incoming message");
-            x_SetConnRequestStatus(eStatus_BadRequest);
+            x_SetConnRequestStatus(eStatus_ServerError);
             m_Server->CloseConnection(&GetSocket());
         }
     }
@@ -302,20 +306,17 @@ void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     switch (peer)
     {
         case IServer_ConnectionHandler::eOurClose:
-            if (m_CmdContext.NotNull()) {
-                m_ConnContext->SetRequestStatus(
-                            m_CmdContext->GetRequestStatus());
-            } else {
-                int status = m_ConnContext->GetRequestStatus();
-                if (status != eStatus_BadRequest &&
-                    status != eStatus_SocketIOError)
-                    m_ConnContext->SetRequestStatus(eStatus_Inactive);
-            }
+            // All the places where the server closes the connection make sure
+            // that the conn and cmd request statuses are set approprietly
             break;
         case IServer_ConnectionHandler::eClientClose:
-            if (m_CmdContext.NotNull())
-                m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
-            m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+            // The only non-synchronous commands are WRITE/CREATE and when we
+            // are in the middle of them, the m_ObjectBeingWritten is not null
+            if (m_ObjectBeingWritten) {
+                m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+                if (m_CmdContext.NotNull())
+                    m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
+            }
             break;
     }
 
@@ -356,7 +357,7 @@ void CNetStorageHandler::OnOverflow(EOverflowReason reason)
     CRequestContextResetter     context_resetter;
     if (m_ConnContext.NotNull()) {
         if (m_CmdContext.NotNull())
-           CDiagContext::SetRequestContext(m_CmdContext);
+            CDiagContext::SetRequestContext(m_CmdContext);
         else
             CDiagContext::SetRequestContext(m_ConnContext);
     }
@@ -419,7 +420,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         common_args = ExtractCommonFields(message);
     }
     catch (const CNetStorageServerException &  ex) {
-        ERR_POST("Error extracting mandatory fields: " << ex.what() << ". "
+        ERR_POST("Error extracting mandatory fields: " << ex << ". "
                  "The connection will be closed.");
 
         CJsonNode   response = CreateErrorResponseMessage(
@@ -528,7 +529,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         }
     }
     catch (const std::exception &  ex) {
-        ERR_POST("STL exception: " << ex.what());
+        ERR_POST("STL exception: " << ex);
         error_sub_code = CNetStorageServerException::eInternalError;
         error_client_message = ex.what();
         error_scope = kScopeStdException;
