@@ -250,6 +250,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     REGISTER_DISCREPANCY_TYPE(CSeq_feat)
     REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
     REGISTER_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
+    REGISTER_DISCREPANCY_TYPE(COverlappingFeatures)
     REGISTER_DISCREPANCY_TYPE(CBioSource)
     REGISTER_DISCREPANCY_TYPE(COrgName)
     REGISTER_DISCREPANCY_TYPE(CRNA_ref)
@@ -307,6 +308,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     // ENABLE_DISCREPANCY_TYPE(CSeq_feat) - don't need!
     ENABLE_DISCREPANCY_TYPE(CSeqFeatData)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ), it is handled separately!
+    // Don't ENABLE_DISCREPANCY_TYPE(COverlappingFeatures), it is handled separately!
     ENABLE_DISCREPANCY_TYPE(CBioSource)
     ENABLE_DISCREPANCY_TYPE(COrgName)
     ENABLE_DISCREPANCY_TYPE(CRNA_ref)
@@ -327,15 +329,25 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
             // CSeq_feat_BY_BIOSEQ cycle
             CFeat_CI feat_ci(m_Current_Bioseq_Handle);
             m_Feat_CI = !!feat_ci;
-            if (m_Enable_CSeq_feat_BY_BIOSEQ) {
+            ClearFeatureList();
+            if (m_Enable_CSeq_feat_BY_BIOSEQ || m_Enable_COverlappingFeatures) {
                 m_Current_Seqdesc.Reset();
                 for (; feat_ci; ++feat_ci) {
-                    const CSeq_feat_BY_BIOSEQ& obj = (const CSeq_feat_BY_BIOSEQ&)*feat_ci->GetSeq_feat();
-                    m_Current_Seq_feat.Reset(feat_ci->GetSeq_feat());
+                    const CSeq_feat *feat = feat_ci->GetSeq_feat();
+                    CollectFeature(*feat);
+                    m_Current_Seq_feat.Reset(feat);
                     m_Count_Seq_feat++;
+                    //const CSeq_feat_BY_BIOSEQ& obj = (const CSeq_feat_BY_BIOSEQ&)*feat;
                     NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeq_feat_BY_BIOSEQ>* >, it, m_All_CSeq_feat_BY_BIOSEQ) {
-                        Call(**it, obj);
+                        Call(**it, (const CSeq_feat_BY_BIOSEQ&)*feat);
                     }
+                }
+            }
+            // COverlappingFeatures
+            if (m_Enable_COverlappingFeatures) {
+                const COverlappingFeatures& obj = (const COverlappingFeatures&)*m_Current_Bioseq;
+                NON_CONST_ITERATE(vector<CDiscrepancyVisitor<COverlappingFeatures>* >, it, m_All_COverlappingFeatures) {
+                    Call(**it, obj);
                 }
             }
         }

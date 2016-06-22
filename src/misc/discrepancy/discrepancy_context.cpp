@@ -512,5 +512,42 @@ const CSeq_feat* CDiscrepancyContext::GetCurrentGene() // todo: optimize
 }
 
 
+void CDiscrepancyContext::ClearFeatureList(void)
+{
+    m_FeatGenes.clear();
+    m_FeatCDS.clear();
+    m_FeatMRNAs.clear();
+    m_FeatRRNAs.clear();
+    m_FeatTRNAs.clear();
+    m_Feat_RNAs.clear();
+}
+
+
+void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
+{
+    switch (feat.GetData().GetSubtype()) {
+        case CSeqFeatData::eSubtype_gene:
+            m_FeatGenes.push_back(CConstRef<CSeq_feat>(&feat));
+            break;
+        case CSeqFeatData::eSubtype_cdregion:
+            m_FeatCDS.push_back(CConstRef<CSeq_feat>(&feat));
+            break;
+        case CSeqFeatData::eSubtype_mRNA:
+            //m_FeatMRNAs.push_back(CConstRef<CSeq_feat>(&feat)); // will add when needed...
+            break;
+        case CSeqFeatData::eSubtype_tRNA:
+            m_FeatTRNAs.push_back(CConstRef<CSeq_feat>(&feat));
+            break;
+        case CSeqFeatData::eSubtype_rRNA:
+            m_FeatRRNAs.push_back(CConstRef<CSeq_feat>(&feat));
+            break;
+        default:
+            if (feat.GetData().IsRna()) {
+                m_Feat_RNAs.push_back(CConstRef<CSeq_feat>(&feat));
+            }
+    }
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

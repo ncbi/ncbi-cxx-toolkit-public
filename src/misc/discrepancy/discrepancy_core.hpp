@@ -271,6 +271,7 @@ public:
 
 
 class CSeq_feat_BY_BIOSEQ : public CSeq_feat {};
+class COverlappingFeatures : public CBioseq {};
 
 struct CSeqSummary
 {
@@ -305,6 +306,7 @@ public:
             INIT_DISCREPANCY_TYPE(CSeq_feat),
             INIT_DISCREPANCY_TYPE(CSeqFeatData),
             INIT_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ),
+            INIT_DISCREPANCY_TYPE(COverlappingFeatures),
             INIT_DISCREPANCY_TYPE(CBioSource),
             INIT_DISCREPANCY_TYPE(CRNA_ref),
             INIT_DISCREPANCY_TYPE(COrgName),
@@ -357,6 +359,14 @@ public:
     bool IsRefseq(void);
     bool IsBGPipe(void);
     const CSeq_feat* GetCurrentGene(void);
+    void CollectFeature(const CSeq_feat& feat);
+    void ClearFeatureList(void);
+    const vector<CConstRef<CSeq_feat> >& FeatGenes() { return m_FeatGenes; }
+    const vector<CConstRef<CSeq_feat> >& FeatCDS() { return m_FeatCDS; }
+    const vector<CConstRef<CSeq_feat> >& FeatMRNAs() { return m_FeatMRNAs; }
+    const vector<CConstRef<CSeq_feat> >& FeatRRNAs() { return m_FeatRRNAs; }
+    const vector<CConstRef<CSeq_feat> >& FeatTRNAs() { return m_FeatTRNAs; }
+    const vector<CConstRef<CSeq_feat> >& Feat_RNAs() { return m_Feat_RNAs; }
 
     CDiscrepancyObject* NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
     CDiscrepancyObject* NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
@@ -380,6 +390,12 @@ protected:
     size_t m_Count_Seq_feat;
     bool m_Feat_CI;
     TReportObjectList m_NaSeqs;
+    vector<CConstRef<CSeq_feat> > m_FeatGenes;
+    vector<CConstRef<CSeq_feat> > m_FeatCDS;
+    vector<CConstRef<CSeq_feat> > m_FeatMRNAs;
+    vector<CConstRef<CSeq_feat> > m_FeatRRNAs;
+    vector<CConstRef<CSeq_feat> > m_FeatTRNAs;
+    vector<CConstRef<CSeq_feat> > m_Feat_RNAs;  // other RNA
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)
@@ -387,6 +403,7 @@ protected:
     ADD_DISCREPANCY_TYPE(CSeq_feat)
     ADD_DISCREPANCY_TYPE(CSeqFeatData)
     ADD_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
+    ADD_DISCREPANCY_TYPE(COverlappingFeatures)
     ADD_DISCREPANCY_TYPE(CBioSource)
     ADD_DISCREPANCY_TYPE(CRNA_ref)
     ADD_DISCREPANCY_TYPE(COrgName)
