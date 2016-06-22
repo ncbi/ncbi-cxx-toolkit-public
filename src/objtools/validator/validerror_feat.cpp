@@ -940,7 +940,7 @@ bool CValidError_feat::IsPlastid(int genome)
 }
 
 
-bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
+bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *scope)
 {
     const CGene_ref* grp = feat.GetGeneXref();
     if ( grp  ) {
@@ -948,7 +948,7 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
     }
 
     // check overlapping gene
-    CConstRef<CSeq_feat> overlap = CValidError_bioseq::GetGeneForFeature(feat, m_Scope);
+    CConstRef<CSeq_feat> overlap = CValidError_bioseq::GetGeneForFeature(feat, scope);
     if ( overlap ) {
         if ( (overlap->CanGetPseudo()  &&  overlap->GetPseudo())  ||
              (overlap->GetData().GetGene().CanGetPseudo()  &&
@@ -1429,7 +1429,7 @@ void CValidError_feat::ValidateCdregion (
 ) 
 {
     bool feat_is_pseudo = feat.CanGetPseudo()  &&  feat.GetPseudo();
-    bool gene_is_pseudo = IsOverlappingGenePseudo(feat);
+    bool gene_is_pseudo = IsOverlappingGenePseudo(feat, m_Scope);
     bool pseudo = feat_is_pseudo  ||  gene_is_pseudo;
     bool nonsense_intron;
 
@@ -1634,7 +1634,7 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
     }
     // bail if pseudo
     bool pseudo = (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
-        IsOverlappingGenePseudo(feat);
+        IsOverlappingGenePseudo(feat, m_Scope);
     if ( pseudo ) {
         return;
     }
@@ -2511,7 +2511,7 @@ void CValidError_feat::ValidateSplice(
     }
 
     // only check for errors if overlapping gene is not pseudo
-    if (!IsOverlappingGenePseudo(feat)) {
+    if (!IsOverlappingGenePseudo(feat, m_Scope)) {
         CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
         switch (subtype) {
         case CSeqFeatData::eSubtype_exon:
@@ -3334,7 +3334,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     */
 
     bool feat_pseudo = feat.IsSetPseudo() && feat.GetPseudo();
-    bool gene_pseudo = IsOverlappingGenePseudo(feat);
+    bool gene_pseudo = IsOverlappingGenePseudo(feat, m_Scope);
     bool pseudo = feat_pseudo || gene_pseudo;
     bool mustbemethionine = false;
 
@@ -4167,7 +4167,7 @@ void CValidError_feat::ValidateImp(
         {
             // impfeat CDS must be pseudo; fail if not
             bool pseudo = (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
-                          IsOverlappingGenePseudo(feat);
+                          IsOverlappingGenePseudo(feat, m_Scope);
             if ( !pseudo ) {
                 PostErr(eDiag_Info, eErr_SEQ_FEAT_ImpCDSnotPseudo,
                     "ImpFeat CDS should be pseudo", feat);
@@ -5533,7 +5533,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
 void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
 {
     if ( (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
-         IsOverlappingGenePseudo(feat) ) {
+         IsOverlappingGenePseudo(feat, m_Scope) ) {
         return;
     }
 
@@ -5644,7 +5644,7 @@ void CValidError_feat::ValidateCommonCDSProduct
 (const CSeq_feat& feat)
 {
     if ( (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
-          IsOverlappingGenePseudo(feat) ) {
+          IsOverlappingGenePseudo(feat, m_Scope) ) {
         return;
     }
     
@@ -5746,7 +5746,7 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
 {
     if (!feat.IsSetData() || !feat.GetData().IsCdregion() 
         || !feat.IsSetLocation() 
-        || feat.IsSetPseudo() || IsOverlappingGenePseudo(feat)) {
+        || feat.IsSetPseudo() || IsOverlappingGenePseudo(feat, m_Scope)) {
         return false;
     }
 
@@ -5782,7 +5782,7 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
         || feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_intron 
         || !feat.IsSetLocation()
         || feat.IsSetPseudo()
-        || IsOverlappingGenePseudo(feat)) {
+        || IsOverlappingGenePseudo(feat, m_Scope)) {
         return false;
     }
 
@@ -6049,7 +6049,7 @@ void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
     bool pseudo = false;
     if (feat.IsSetPseudo()) {
         pseudo = true;
-    } else if (IsOverlappingGenePseudo (feat)) {
+    } else if (IsOverlappingGenePseudo (feat, m_Scope)) {
         pseudo = true;
     }
 
@@ -6331,23 +6331,18 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
             if (far_feat) {
                 bool has_xref = false;
                 bool has_reciprocal_xref = false;
-                const CSeq_feat& ff = *(far_feat.GetSeq_feat());
-                const bool is_cds_mrna = FeaturePairIsTwoTypes(feat, ff,
-                                                               CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_mRNA);
-                const bool is_gene_mrna = FeaturePairIsTwoTypes(feat, ff, 
-                                                                CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_mRNA);
-                const bool is_gene_cdregion = FeaturePairIsTwoTypes(feat, ff,
-                                                                    CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_cdregion);
-
                 FOR_EACH_SEQFEATXREF_ON_SEQFEAT (it, *(far_feat.GetSeq_feat())) {
                     if ((*it)->IsSetId()) {
                         has_xref = true;
                         if (feat.IsSetId() && s_FeatureIdsMatch(feat.GetId(), (*it)->GetId())) {
                             has_reciprocal_xref = true;
-
-                            if (is_cds_mrna ||
-                                is_gene_mrna ||
-                                is_gene_cdregion) {
+                            const CSeq_feat& ff = *(far_feat.GetSeq_feat());
+                            if (FeaturePairIsTwoTypes(feat, ff,
+                                                      CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_mRNA)
+                                || FeaturePairIsTwoTypes(feat, ff,
+                                                      CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_mRNA)
+                                || FeaturePairIsTwoTypes(feat, ff,
+                                                      CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_cdregion)) {
                                 if (feat.GetData().IsCdregion() && far_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
                                     ECompare comp = Compare(feat.GetLocation(), far_feat.GetLocation(),
                                         m_Scope, fCompareOverlapping);
@@ -6380,17 +6375,6 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefNotReciprocal, 
                                 "Cross-referenced feature does not link reciprocally",
                                 feat);
-                }
-                // Try the following if a CDS references an mRNA feature, 
-                // but the mRNA does not have a reciprocal xref.
-                if ((!has_reciprocal_xref) &&
-                    (is_cds_mrna && feat.GetData().IsCdregion())) {
-                    ECompare comp = Compare(feat.GetLocation(), far_feat.GetLocation(),
-                            m_Scope, fCompareOverlapping);
-                    if ( (comp != eContained) && (comp != eSame)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem, 
-                                "CDS not contained within cross-referenced mRNA", feat);
-                    }
                 }
             } else {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefFeatureMissing,
@@ -6502,19 +6486,24 @@ void CValidError_feat::CheckForThreeBaseNonsense (
     TSeqPos start,
     TSeqPos stop,
     ENa_strand strand,
-    bool &nonsense_intron
+    bool &nonsense_intron,
+    CSeq_loc& intron_loc,
+    CScope *scope
 )
 
 {
     CRef<CSeq_feat> tmp_cds (new CSeq_feat());
 
-    tmp_cds->SetLocation().SetInt().SetFrom(start);
-    tmp_cds->SetLocation().SetInt().SetTo(stop);
-    tmp_cds->SetLocation().SetInt().SetStrand(strand);
-    tmp_cds->SetLocation().SetInt().SetId().Assign(id);
+    intron_loc.Reset();
 
-    tmp_cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
-    tmp_cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    intron_loc.SetInt().SetFrom(start);
+    intron_loc.SetInt().SetTo(stop);
+    intron_loc.SetInt().SetStrand(strand);
+    intron_loc.SetInt().SetId().Assign(id);
+
+    intron_loc.SetPartialStart(true, eExtreme_Biological);
+    intron_loc.SetPartialStop(true, eExtreme_Biological);
+    tmp_cds->SetLocation(intron_loc);
     tmp_cds->SetData().SetCdregion();
     if ( cdr.IsSetCode()) {
         tmp_cds->SetData().SetCdregion().SetCode().Assign(cdr.GetCode());
@@ -6526,14 +6515,10 @@ void CValidError_feat::CheckForThreeBaseNonsense (
     bool show_stop = false;
     bool unable_to_translate = true;
 
-    x_FindTranslationStops(*tmp_cds, got_stop, show_stop, unable_to_translate, alt_start, transl_prot);
+    CBioseq_Handle bsh;
+    x_FindTranslationStops(*tmp_cds, got_stop, show_stop, unable_to_translate, alt_start, transl_prot, bsh, scope);
 
     if (NStr::Equal (transl_prot, "*")) {
-        EDiagSev sev = eDiag_Critical;
-        if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
-            sev = eDiag_Error;
-        }
-        PostErr (sev, eErr_SEQ_FEAT_NonsenseIntron, "Triplet intron encodes stop codon", feat);
         nonsense_intron = true;
     }
 }
@@ -6541,7 +6526,9 @@ void CValidError_feat::CheckForThreeBaseNonsense (
 void CValidError_feat::TranslateTripletIntrons (
     const CSeq_feat& feat,
     const CCdregion& cdr,
-    bool &nonsense_intron
+    bool &nonsense_intron,
+    CSeq_loc &nonsense_intron_loc,
+    CScope *scope
 )
 
 {
@@ -6550,7 +6537,7 @@ void CValidError_feat::TranslateTripletIntrons (
     if (feat.IsSetExcept() || feat.IsSetExcept_text()) return;
     if (cdr.IsSetCode_break()) return;
     if (feat.CanGetPseudo()  &&  feat.GetPseudo()) return;
-    if (IsOverlappingGenePseudo(feat)) return;
+    if (IsOverlappingGenePseudo(feat, scope)) return;
 
     const CSeq_loc& loc = feat.GetLocation();
 
@@ -6558,15 +6545,25 @@ void CValidError_feat::TranslateTripletIntrons (
     for (CSeq_loc_CI curr(loc); curr; ++curr) {
         start = curr.GetRange().GetFrom();
         stop = curr.GetRange().GetTo();
-        if ( prev  &&  curr  && IsSameBioseq(curr.GetSeq_id(), prev.GetSeq_id(), m_Scope) ) {
+        if ( prev  &&  curr  && IsSameBioseq(curr.GetSeq_id(), prev.GetSeq_id(), scope) ) {
             ENa_strand strand = curr.GetStrand();
+            bool tmp_nonsense_intron = false;
+            CSeq_loc intron;
             if ( strand == eNa_strand_minus ) {
                 if (last_start - stop == 4) {
-                    CheckForThreeBaseNonsense (feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand, nonsense_intron);
+                    CheckForThreeBaseNonsense (feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand, tmp_nonsense_intron, intron, scope);
                 }
             } else {
                 if (start - last_stop == 4) {
-                    CheckForThreeBaseNonsense (feat, curr.GetSeq_id(), cdr, last_stop + 1, start - 1, strand, nonsense_intron);
+                    CheckForThreeBaseNonsense (feat, curr.GetSeq_id(), cdr, last_stop + 1, start - 1, strand, tmp_nonsense_intron, intron, scope);
+                }
+            }
+            if (tmp_nonsense_intron) {
+                nonsense_intron = true;
+                if (nonsense_intron_loc.IsNull()) {
+                    nonsense_intron_loc.Assign(intron);
+                } else {
+                    nonsense_intron_loc.Add(intron);
                 }
             }
         }
@@ -6624,7 +6621,17 @@ bool CValidError_feat::ValidateCdRegionTranslation
         return true;
     }
 
-    TranslateTripletIntrons (feat, feat.GetData().GetCdregion(), nonsense_intron);
+    CSeq_loc nonsense_intron_loc;
+    TranslateTripletIntrons (feat, feat.GetData().GetCdregion(), nonsense_intron, nonsense_intron_loc, m_Scope);
+    if (nonsense_intron) {
+        for (CSeq_loc_CI curr(nonsense_intron_loc); curr; ++curr) {
+            EDiagSev sev = eDiag_Critical;
+            if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
+                sev = eDiag_Error;
+            }
+            PostErr (sev, eErr_SEQ_FEAT_NonsenseIntron, "Triplet intron encodes stop codon", feat);
+        }
+    }
 
     int gc = GetGcodeForInternalStopErrors(feat.GetData().GetCdregion());
 
@@ -6850,7 +6857,9 @@ void CValidError_feat::x_FindTranslationStops
  bool& show_stop,
  bool& unable_to_translate,
  bool& alt_start,
- string& transl_prot
+ string& transl_prot,
+ CBioseq_Handle bsh,
+ CScope *scope
 )
 {
     CRef<CSeq_feat> tmp_cds(new CSeq_feat());
@@ -6858,45 +6867,45 @@ void CValidError_feat::x_FindTranslationStops
     FixGeneticCode(tmp_cds->SetData().SetCdregion());
     const CCdregion& cdregion = tmp_cds->GetData().GetCdregion();
     try {
-        if (m_Scope) {
-            CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, tmp_cds->GetLocation(), m_Imp.GetTSE_Handle());
-            if (bsh) {
-                if (tmp_cds->GetLocation().IsWhole()) {
-                    size_t start = 0;
-                    if (cdregion.IsSetFrame()) {
-                        if (cdregion.GetFrame() == 2) {
-                            start = 1;
-                        } else if (cdregion.GetFrame() == 3) {
-                            start = 2;
-                        }
+        if (scope) {
+            if (tmp_cds->GetLocation().IsWhole()) {
+                if (!bsh) {
+                    return;
+                }
+                size_t start = 0;
+                if (cdregion.IsSetFrame()) {
+                    if (cdregion.GetFrame() == 2) {
+                        start = 1;
+                    } else if (cdregion.GetFrame() == 3) {
+                        start = 2;
                     }
-                    const CGenetic_code* genetic_code = NULL;
-                    if (cdregion.IsSetCode()) {
-                        genetic_code = &(cdregion.GetCode());
+                }
+                const CGenetic_code* genetic_code = NULL;
+                if (cdregion.IsSetCode()) {
+                    genetic_code = &(cdregion.GetCode());
+                }
+                CRef<CSeq_id> id(new CSeq_id());
+                id->Assign(tmp_cds->GetLocation().GetWhole());
+                CRef<CSeq_loc> tmp(new CSeq_loc(*id, start, bsh.GetInst_Length() - 1));
+                CSeqTranslator::Translate(*tmp, bsh.GetScope(), transl_prot, genetic_code, true, false, &alt_start);
+                unable_to_translate = false;
+                if (!NStr::IsBlank(transl_prot)) {
+                    if (NStr::EndsWith(transl_prot, "*")) {
+                        got_stop = true;
                     }
-                    CRef<CSeq_id> id(new CSeq_id());
-                    id->Assign(tmp_cds->GetLocation().GetWhole());
-                    CRef<CSeq_loc> tmp(new CSeq_loc(*id, start, bsh.GetInst_Length() - 1));
-                    CSeqTranslator::Translate(*tmp, bsh.GetScope(), transl_prot, genetic_code, true, false, &alt_start);
-                    unable_to_translate = false;
-                    if (!NStr::IsBlank(transl_prot)) {
-                        if (NStr::EndsWith(transl_prot, "*")) {
-                            got_stop = true;
-                        }
-                        show_stop = true;
+                    show_stop = true;
+                }
+            } else {
+                CSeqTranslator::Translate(*tmp_cds, *scope, transl_prot,
+                        true,   // include stop codons
+                        false,  // do not remove trailing X/B/Z
+                        &alt_start);
+                unable_to_translate = false;
+                if (!NStr::IsBlank(transl_prot)) {
+                    if (NStr::EndsWith(transl_prot, "*")) {
+                        got_stop = true;
                     }
-                } else {
-                    CSeqTranslator::Translate(*tmp_cds, *m_Scope, transl_prot,
-                                                true,   // include stop codons
-                                                false,  // do not remove trailing X/B/Z
-                                                &alt_start);
-                    unable_to_translate = false;
-                    if (!NStr::IsBlank(transl_prot)) {
-                        if (NStr::EndsWith(transl_prot, "*")) {
-                            got_stop = true;
-                        }
-                        show_stop = true;
-                    }
+                    show_stop = true;
                 }
             }
         }
@@ -7314,7 +7323,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
     bool show_stop = false;
     bool unable_to_translate = true;
 
-    x_FindTranslationStops(feat, got_stop, show_stop, unable_to_translate, alt_start, transl_prot);
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
+    x_FindTranslationStops(feat, got_stop, show_stop, unable_to_translate, alt_start, transl_prot, bsh, m_Scope);
 
     if (unable_to_translate) {
         if (report_errors) {

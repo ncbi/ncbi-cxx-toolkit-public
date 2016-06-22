@@ -1072,6 +1072,7 @@ public:
     bool IsIntronShort(const CSeq_feat& feat);
     void ValidatemRNAGene (const CSeq_feat &feat);
     bool GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const CBioseq& seq);
+    static void TranslateTripletIntrons (const CSeq_feat& feat, const CCdregion& cdr, bool &nonsense_intron, CSeq_loc& nonsense_intron_loc, CScope *scope);
 
 private:
     void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
@@ -1088,8 +1089,7 @@ private:
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat, bool &nonsense_intron);
     void x_ReportUnnecessaryAlternativeStartCodonException(const CSeq_feat& feat);
-    void CheckForThreeBaseNonsense (const CSeq_feat& feat, const CSeq_id& id, const CCdregion& cdr, TSeqPos start, TSeqPos stop, ENa_strand strand, bool &nonsense_intron);
-    void TranslateTripletIntrons (const CSeq_feat& feat, const CCdregion& cdr, bool &nonsense_intron);
+    static void CheckForThreeBaseNonsense (const CSeq_feat& feat, const CSeq_id& id, const CCdregion& cdr, TSeqPos start, TSeqPos stop, ENa_strand strand, bool &nonsense_intron, CSeq_loc& intron_loc, CScope *scope);
     bool ValidateCdRegionTranslation (const CSeq_feat& feat, const string& transl_prot, bool report_errors, bool unclassified_except, bool& has_errors, bool& other_than_mismatch, bool& reported_bad_start_codon, bool& prot_ok, bool &nonsense_intron);
     void x_GetExceptionFlags
         (const string& except_text,
@@ -1108,13 +1108,15 @@ private:
          const bool report_errors,
          bool& has_errors,
          bool& other_than_mismatch);
-    void x_FindTranslationStops
+    static void x_FindTranslationStops
         (const CSeq_feat& feat,
          bool& got_stop,
          bool& show_stop,
          bool& unable_to_translate,
          bool& alt_start,
-         string& transl_prot);
+         string& transl_prot,
+         CBioseq_Handle bsh,
+         CScope *scope);
     const CSeq_id* x_GetCDSProduct
         (const CSeq_feat& feat,
          bool report_errors,
@@ -1213,7 +1215,7 @@ private:
     void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
 
     bool IsPlastid(int genome);
-    bool IsOverlappingGenePseudo(const CSeq_feat& feat);
+    static bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
     unsigned char Residue(unsigned char res);
     int  CheckForRaggedEnd(const CSeq_loc&, const CCdregion& cdr);
     bool SuppressCheck(const string& except_text);
