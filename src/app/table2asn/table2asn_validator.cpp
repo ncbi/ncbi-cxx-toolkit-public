@@ -151,20 +151,23 @@ void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const 
     string label;
     for (CFeat_CI feat_it(seh); feat_it; ++feat_it)
     {
-        const CSeq_feat& feat = feat_it->GetOriginalFeature();
+        CSeq_feat& feat = (CSeq_feat&) feat_it->GetOriginalFeature();
 
         label.clear();
 
-        if (feat.IsSetData() && feat.GetData().IsProt())
+        if (feat.IsSetData() && feat.GetData().IsProt() && feat.GetData().GetProt().IsSetEc())
         {
-            CProt_ref::TEc& EC = (CProt_ref::TEc&)feat.GetData().GetProt().GetEc();
-            NON_CONST_ITERATE(CProt_ref::TEc, val, EC)
+            CProt_ref::TEc& EC = feat.SetData().SetProt().SetEc();
+            CProt_ref::TEc::iterator val = EC.begin();
+            for (; val != EC.end();)
             {
                 switch (CProt_ref::GetECNumberStatus(*val))
                 {
                 case CProt_ref::eEC_deleted:
                     xGetLabel(feat, label);
                     InitOstream(ostream, fname) << label << "\tEC number deleted\t" << *val << '\t' << endl;
+                    val = EC.erase(val);
+                    continue;
                     break;
                 case CProt_ref::eEC_replaced:
                 {
@@ -185,6 +188,11 @@ void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const 
                 default:
                     break;
                 }
+                val++;
+            }
+            if (EC.empty())
+            {
+                feat.SetData().SetProt().ResetEc();
             }
         }
     }
