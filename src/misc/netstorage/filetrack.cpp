@@ -723,10 +723,12 @@ const string s_GetSection(const string& section)
     return section.empty() ? "filetrack" : section;
 }
 
-const STimeout s_GetDefaultTimeout()
+const unsigned kDefaultCommTimeout = 30;
+
+const STimeout s_GetDefaultTimeout(unsigned sec = kDefaultCommTimeout)
 {
     STimeout result;
-    result.sec = 30;
+    result.sec = sec;
     result.usec = 0;
     return result;
 }
@@ -757,7 +759,8 @@ SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) 
                 IRegistry::fPlaintextAllowed)),
     token(reg.GetEncryptedString(s_GetSection(section), "token",
                 IRegistry::fPlaintextAllowed)),
-    comm_timeout(s_GetDefaultTimeout())
+    comm_timeout(s_GetDefaultTimeout(reg.GetInt(
+                s_GetSection(section), "communication_timeout", kDefaultCommTimeout)))
 {
     if (token.size()) token.insert(0, kAuthPrefix);
 }
