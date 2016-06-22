@@ -13,12 +13,14 @@ dbapi/driver/odbc/unix_odbc$ update-only
 dbapi/driver/ctlib$
 dbapi/driver/dblib$
 dbapi/driver/ftds64$
+dbapi/driver/ftds64/impl$ update-only
 dbapi/driver/ftds64/freetds$
 dbapi/driver/ftds64/freetds/tds$
 dbapi/driver/ftds64/freetds/replacements$
 dbapi/driver/ftds64/freetds/ctlib$
 dbapi/driver/ftds64/ctlib$
 dbapi/driver/ftds95$
+dbapi/driver/ftds95/impl$ update-only
 dbapi/driver/ftds95/freetds$
 dbapi/driver/ftds95/freetds/tds$
 dbapi/driver/ftds95/freetds/replacements$
