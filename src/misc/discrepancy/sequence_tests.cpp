@@ -578,5 +578,138 @@ DISCREPANCY_SUMMARIZE(10_PERCENTN)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// FEATURE_COUNT
+const string kFeatureCountTop = "Feature Counts";
+const string kFeatureCountTotal = "Feature Count Total";
+const string kFeatureCountSub = "temporary";
+const string kFeatureCountSequenceList = "sequence_list";
+
+void AddFeatureCount(CReportNode& m_Objs, const string& key, size_t num)
+{
+    string label = "[n] bioseq[s] [has] " + NStr::NumericToString(num)
+        + " " + key + " features";
+
+    CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(m_Objs[kFeatureCountSequenceList].GetObjects().back().GetNCPointer()));
+    m_Objs[kFeatureCountSub][key][label].Add(*seq_disc_obj, false);
+}
+
+
+void SummarizeFeatureCount(CReportNode& m_Objs)
+{
+    if (!m_Objs[kFeatureCountTop].empty()) {
+        CReportNode::TNodeMap& map = m_Objs[kFeatureCountTop].GetMap(); 
+        NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+            // add zeros to all previous sequences that do not have this feature type
+            if (!m_Objs[kFeatureCountSub].Exist(it->first)) {
+                ITERATE(TReportObjectList, ro, m_Objs[kFeatureCountSequenceList].GetObjects()) {
+                    if (*ro != m_Objs[kFeatureCountSequenceList].GetObjects().back()) {
+                        string label = "[n] bioseq[s] [has] 0 " + it->first + " features";
+                        CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
+                        m_Objs[kFeatureCountSub][it->first][label].Add(*seq_disc_obj, false);
+                    }
+                }
+            }
+
+            // add non-zero count for this sequence
+            AddFeatureCount(m_Objs, it->first, it->second->GetObjects().size());
+        }
+        // add zero for all feature types not found
+        ITERATE(CReportNode::TNodeMap, z, m_Objs[kFeatureCountSub].GetMap()) {
+            if (!m_Objs[kFeatureCountTop].Exist(z->first)) {
+                AddFeatureCount(m_Objs, z->first, 0);
+            }
+        }
+        m_Objs[kFeatureCountTop].clear();
+    }
+}
+
+
+DISCREPANCY_CASE(FEATURE_COUNT, CSeq_feat_BY_BIOSEQ, eOncaller, "Count features present or missing from sequences")
+{
+    if (m_Count != context.GetCountBioseq()) {
+        m_Count = context.GetCountBioseq();
+        SummarizeFeatureCount(m_Objs);
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CBioseq>(context.GetCurrentBioseq()), eKeepRef));
+        m_Objs[kFeatureCountSequenceList].Add(*this_disc_obj, false);
+    }
+    if (obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
+        return;
+    }
+    string key = obj.GetData().IsGene() ? "gene" : obj.GetData().GetKey();
+    m_Objs[kFeatureCountTop][key].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
+    m_Objs[kFeatureCountTotal][key].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
+}
+
+
+DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
+{
+    SummarizeFeatureCount(m_Objs);
+    if (m_Objs.empty()) {
+        return;
+    }
+    
+    NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs[kFeatureCountSub].GetMap()) {
+        string new_label = it->first + ": " +
+            NStr::NumericToString(m_Objs[kFeatureCountTotal][it->first].GetObjects().size()) +
+            " present";
+        if (it->second->GetMap().size() > 1) {
+            new_label += " (inconsistent)";
+        }
+        NON_CONST_ITERATE(CReportNode::TNodeMap, s, it->second->GetMap()){
+            NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+                m_Objs[new_label][s->first].Add(**q).Ext();
+            }
+        }
+    }
+
+    m_Objs.GetMap().erase(kFeatureCountTotal);
+    m_Objs.GetMap().erase(kFeatureCountSub);
+    m_Objs.GetMap().erase(kFeatureCountTop);
+    m_Objs.GetMap().erase(kFeatureCountSequenceList);
+
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+#if 0
+// EXON_ON_MRNA
+
+const string kExonOnMrna = "[n] mRNA bioseq[s] [has] exon features";
+const string kExons = "exon";
+const string kExonBioseq = "exon bioseq";
+
+void SummarizeExonCount(CReportNode& m_Objs)
+{
+    if (!m_Objs[kExons].GetObjects().empty()) {
+        const CDiscrepancyObject* seq_disc_obj = dynamic_cast<CDiscrepancyObject*>(m_Objs[kExonBioseq].GetObjects().front()->GetNCPointer());
+        m_Objs.Add[kExonOnMrna].Add(*seq_disc_obj, false);
+        m_Objs[kExons].clear();
+        m_Objs[kExonBioseq].clear();
+    }
+}
+
+DISCREPANCY_CASE(EXON_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller, "mRNA sequences should not have exons")
+{
+    if (m_Count != context.GetCountBioseq()) {
+        m_Count = context.GetCountBioseq();
+        Summarize(context);
+    }
+    if (!obj.IsSetData() || !obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon) {
+        return;
+    }
+    m_Objs[kExons].Add(*(context.NewDiscObj(&obj)), false);
+}
+
+
+DISCREPANCY_SUMMARIZE(EXON_ON_MRNA)
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+#endif
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

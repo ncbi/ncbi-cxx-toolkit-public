@@ -1,0 +1,46 @@
+Discrepancy Report Results
+
+Summary
+FEATURE_COUNT: CDS: 428 present (inconsistent)
+FEATURE_COUNT: gene: 460 present (inconsistent)
+FEATURE_COUNT: misc_feature: 1 present (inconsistent)
+FEATURE_COUNT: rRNA: 40 present
+FEATURE_COUNT: tRNA: 191 present (inconsistent)
+
+Detailed Report
+
+FEATURE_COUNT: CDS: 428 present (inconsistent)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153021 (length 147880)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153022 (length 147467)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153019 (length 156730)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153020 (length 156770)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153023 (length 156220)
+
+FEATURE_COUNT: gene: 460 present (inconsistent)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153023 (length 156220)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153021 (length 147880)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153022 (length 147467)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153019 (length 156730)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153020 (length 156770)
+
+FEATURE_COUNT: misc_feature: 1 present (inconsistent)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153020 (length 156770)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153021 (length 147880)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153022 (length 147467)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153023 (length 156220)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153019 (length 156730)
+
+FEATURE_COUNT: rRNA: 40 present
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153019 (length 156730)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153020 (length 156770)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153021 (length 147880)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153022 (length 147467)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153023 (length 156220)
+
+FEATURE_COUNT: tRNA: 191 present (inconsistent)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153021 (length 147880)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153022 (length 147467)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153019 (length 156730)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153020 (length 156770)
+D:\toolkit\src\misc\discrepancy\test\test-data\FEATURE_COUNT.asn:KT153023 (length 156220)
+
