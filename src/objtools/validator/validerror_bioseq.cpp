@@ -6213,17 +6213,6 @@ CCdsMatchInfo::EMatchType CCdsMatchInfo::GetMatchType(void) const
 }
 
 
-const list<CRef<CMrnaMatchInfo>>& CCdsMatchInfo::GetOverlappingmRNAs(void) const
-{
-    return m_OtherOverlappingmRNAs;
-}
-
-
-const list<CRef<CMrnaMatchInfo>>& CCdsMatchInfo::GetXrefmRNAs(void) const {
-    return m_Xrefs;
-}
-
-
 bool CCdsMatchInfo::AssignXrefMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas) 
 {
     if (unmatched_mrnas.empty()) {
@@ -6247,7 +6236,7 @@ bool CCdsMatchInfo::AssignXrefMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas)
             if (s_FeatureIdsMatch((*xref_it)->GetId(), mrna->GetSeqfeat().GetId())) {
                 m_BestMatch = *mrna_it;
                 m_BestMatch->SetMatch(*this);
-                m_MatchType = eMatch_XrefOnly;
+                m_MatchType = eMatch_Xref;
                 unmatched_mrnas.erase(mrna_it);
                 return true;
             }

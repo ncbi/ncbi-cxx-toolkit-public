@@ -1396,22 +1396,15 @@ public:
     bool IsPseudo(void) const;
     void SetPseudo(void);
 
-    const list<CRef<CMrnaMatchInfo>>& GetOverlappingmRNAs(void) const;
-    const list<CRef<CMrnaMatchInfo>>& GetXrefmRNAs(void) const;
-
     enum EMatchType {
-        eMatch_OverlappingXref,
+        eMatch_Xref,
         eMatch_Overlap,
-        eMatch_XrefOnly,
         eMatch_None
     };
     EMatchType GetMatchType(void) const;
 
-
 private:
     CConstRef<CSeq_feat> m_Cds;
-    list<CRef<CMrnaMatchInfo>> m_Xrefs;
-    list<CRef<CMrnaMatchInfo>> m_OtherOverlappingmRNAs;
     CRef<CMrnaMatchInfo> m_BestMatch;
 
     sequence::EOverlapType m_OverlapType;
