@@ -1,4 +1,4 @@
 [components]
 infrastructure  17.0
 core            17.0
-# dbase           17.0
+dbase           17.0
