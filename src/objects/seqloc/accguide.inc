@@ -9718,7 +9718,9 @@ static const char* const kBuiltInGuide[] = {
     "special  CTQ86077-CTQ86287  embl_tpa_prot",
     "special  CUS27851-CUS27862  embl_tpa_prot",
     "special  CUS58523-CUS58613  embl_tpa_prot",
+    "",
+    "special  SAQ69746-SAQ69766  embl_tpa_prot",
     "## Err on the side of caution on as yet unassigned IDs, and hope that",
     "## there's not *too* much more backfilling.",
-    "#special CZZ99765-CZZ99999  unreserved_prot"
+    "#special SBF16104-SZZ99999  unreserved_prot"
 };
