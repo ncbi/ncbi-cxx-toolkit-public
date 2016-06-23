@@ -1147,14 +1147,15 @@ if test "$with_mt" != "no" ; then
    esac
 fi
 
+case "$host_os:$compiler" in
+  solaris2.10:GCC ) : ${THREAD_LIBS:="-lposix4"} ;;
+  solaris*        ) : ${THREAD_LIBS:="-lpthread -lposix4"} ;;
+  freebsd*        ) ;; # -pthread already substitutes libc_r for libc
+  *               ) : ${THREAD_LIBS:="-lpthread"} ;;
+esac
+
 if test "$with_mt" != "no" ; then
    CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT -D_THREAD_SAFE"
-   case "$host_os:$compiler" in
-     solaris2.10:GCC ) : ${THREAD_LIBS:="-lposix4"} ;;
-     solaris*        ) : ${THREAD_LIBS:="-lpthread -lposix4"} ;;
-     freebsd*        ) ;; # -pthread already substitutes libc_r for libc
-     *               ) : ${THREAD_LIBS:="-lpthread"} ;;
-   esac
    LIBS="$LIBS $THREAD_LIBS"
    case "$host_os:$compiler" in
      solaris2.??:* | solaris*:GCC | *:Compaq | irix* | aix* | darwin* | cygwin*)
@@ -1201,7 +1202,6 @@ if test "$with_mt" != "no" ; then
 else
    CPPFLAGS="$CPPFLAGS -DNCBI_WITHOUT_MT"
    MT_FLAG=
-   THREAD_LIBS=
    NCBIATOMIC_LIB=
    OPENMP_FLAGS=
    mt_sfx=""
@@ -6783,6 +6783,12 @@ VDB_REQ=VDB
 if test "$with_vdb" != "no" ; then
    # CURL?
    vdb_deps="$LIBXML_LIBS $NETWORK_LIBS $BZ2_LIBS $Z_LIBS $DL_LIBS"
+   # In MT builds, ORIG_LIBS already contains THREAD_LIBS.  However,
+   # VDB is always threaded, and may need explicit THREAD_LIBS when
+   # used statically.
+   if test "$with_mt" = no; then
+      vdb_deps="$vdb_deps $THREAD_LIBS"
+   fi
    if test "${with_vdb:-yes}" != "yes" -a -d "$with_vdb"; then
       VDB_PATH=$with_vdb
    fi
