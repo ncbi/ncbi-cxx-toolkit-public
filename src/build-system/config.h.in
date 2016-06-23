@@ -430,6 +430,9 @@
 /* Define to 1 if the real version of ncbi_crypt support is available. */
 #undef HAVE_NCBI_CRYPT
 
+/* Define to 1 if you have NCBI's SRA/VDB SDK/Toolkit. */
+#undef HAVE_NCBI_VDB
+
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
 
