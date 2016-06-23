@@ -43,6 +43,7 @@ exit 1
 
 :be_build
 set arch=Win32
+if _%5_ == __CONFIGURE__ set arch=x86
 if _%3_ == _64_ set arch=x64
 
 rem Next command should be executed last! No other code after it, please.

@@ -62,7 +62,9 @@ set libdll=%~3
 set arch=%~4
 
 set archw=Win32
-if _%arch%_ == _64_ set archw=x64
+set archwc=x86
+if _%arch%_ == _64_  set archw=x64 
+if _%arch%_ == _64_  set archwc=x64 
 
 shift
 shift
@@ -81,9 +83,9 @@ rem ----------------------------------------------------------------------------
 :NOARGS
 
 if exist configure_make.bat (
-  configure_make.bat
+   configure_make.bat
 ) else (
-  goto USAGE
+   goto USAGE
 )
 
 :USAGE
@@ -152,7 +154,7 @@ if not "%with_openmp%" == "" (
 
 time /t
 echo INFO: Configure "%libdll%\%solution% [ReleaseDLL|%arch%]"
-%DEVENV% %libdll%\build\%solution%.sln /build "ReleaseDLL|%archw%" /project "_CONFIGURE_"
+%DEVENV% %libdll%\build\%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_"
 if errorlevel 1 goto ABORT
 if not _%cmd% == _make goto COMPLETE
 
