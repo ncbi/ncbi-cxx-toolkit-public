@@ -41,7 +41,9 @@ BEGIN_NCBI_SCOPE
 class CLBOSIpCacheKey
 {
 public:
-    CLBOSIpCacheKey(string service, string hostname, string version,
+    CLBOSIpCacheKey(const string& service,
+                    const string& hostname,
+                    const string& version,
                     unsigned short port);
 
     bool operator==(const CLBOSIpCacheKey& rh) const;
@@ -63,27 +65,30 @@ public:
     /** Search the cache for previously resolved hostname with a given 
     * service name, version, port. If not found - return the same hostname.
     */
-    static
-    string HostnameTryFind(string service, string hostname, string version,
-    unsigned short port);
+    static string HostnameTryFind(const string& service,
+                                  const string& hostname,
+                                  const string& version,
+                                  unsigned short port);
 
 
     /** Search the cache for previously resolved hostname with a given 
     * service name, version, port. If not found - resolve, cache and return 
     * result.
     */
-    static
-        string HostnameResolve(string service, string hostname,
-        string version, unsigned short port);
+    static string HostnameResolve(const string& service,
+                                  const string& hostname,
+                                  const string& version,
+                                  unsigned short port);
 
 
     /** We do not need to store hostname<->IP record after the server is
     * de-announced. So we just make sure that we delete the record only one 
     * time, in case if many threads are going to delete it at the same 
     * moment */
-    static
-        void HostnameDelete(string service, string hostname, string version,
-        unsigned short port);
+    static void HostnameDelete(const string& service,
+                               const string& hostname,
+                               const string& version,
+                               unsigned short port);
 
 private:
     static CSafeStatic< map< CLBOSIpCacheKey, string > > sm_IpCache;
