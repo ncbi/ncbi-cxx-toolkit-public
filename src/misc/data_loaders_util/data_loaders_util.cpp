@@ -45,7 +45,6 @@
 #include <objtools/data_loaders/asn_cache/asn_cache_loader.hpp>
 
 #include <dbapi/driver/drivers.hpp>
-#include <dbapi/simple/sdbapi.hpp>
 
 #ifdef HAVE_NCBI_VDB
 #  include <sra/data_loaders/csra/csraloader.hpp>
