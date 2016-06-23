@@ -5024,20 +5024,20 @@ void CValidError_feat::ValidateImpGbquals
                     if (bh) {
                         if (bh.IsNa()) {
                             if (NStr::Equal(key, "variation")) {
-                                if (!s_StringConsistsOf (val, "acgt")) {
+                                if (!s_StringConsistsOf (val, "acgtACGT")) {
                                     PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                                              val + " is not a legal value for qualifier " + qual_str
                                              + " - should only be composed of acgt unambiguous nucleotide bases",
                                              feat);
                                 }
-                            } else if (!s_StringConsistsOf (val, "acgtmrwsykvhdbn")) {
+                            } else if (!s_StringConsistsOf (val, "acgtmrwsykvhdbnACGTMRWSYKVHDBN")) {
                                   PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                                            val + " is not a legal value for qualifier " + qual_str
                                            + " - should only be composed of acgtmrwsykvhdbn nucleotide bases",
                                            feat);
                             }
                         } else if (bh.IsAa()) {
-                            if (!s_StringConsistsOf (val, "acdefghiklmnpqrstuvwy*")) {
+                            if (!s_StringConsistsOf (val, "acdefghiklmnpqrstuvwyACDEFGHIKLMNPQRSTUVWY*")) {
                                 PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                                          val + " is not a legal value for qualifier " + qual_str
                                          + " - should only be composed of acdefghiklmnpqrstuvwy* amino acids",
