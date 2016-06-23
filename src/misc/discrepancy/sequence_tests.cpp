@@ -989,7 +989,7 @@ DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc, "Inconsistent DBLink fie
         m_Objs[kMissingDBLink].Add(*context.NewDiscObj(seq, eKeepRef), false);
         // add missing for all previously seen fields
         ITERATE(CReportNode::TNodeMap, z, m_Objs[kDBLinkCollect].GetMap()) {
-            m_Objs[kDBLinkCollect][z->first]["[n] DBLink object[s] [is] missing field " + z->first]
+            m_Objs[kDBLinkCollect][z->first][" [n] DBLink object[s] [is] missing field " + z->first]
                     .Add(*context.NewDiscObj(seq, eKeepRef), false);
         }
     }
@@ -998,6 +998,7 @@ DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc, "Inconsistent DBLink fie
             ++d;
             continue;
         }
+        CConstRef<CSeqdesc> dr(&(*d));
         ITERATE(CUser_object::TData, f, d->GetUser().GetData()) {
             if ((*f)->IsSetLabel() && (*f)->GetLabel().IsStr() && (*f)->IsSetData()) {
                 string field_name = (*f)->GetLabel().GetStr();
@@ -1011,15 +1012,15 @@ DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc, "Inconsistent DBLink fie
                 }
                 m_Objs[kDBLinkCollect][field_name]
                     ["[n] DBLink object[s] [has] field " + field_name + " value '" + GetFieldValueAsString(**f) + "'"]
-                        .Add(*context.NewDiscObj(seq), false);
+                        .Add(*context.NewDiscObj(dr), false);
                 m_Objs[kDBLinkFieldCountTop][field_name].Add(*context.NewDiscObj(seq), false);
             }
         }
         // add missing for all previously seen fields not on this object
         ITERATE(CReportNode::TNodeMap, z, m_Objs[kDBLinkCollect].GetMap()) {
             if (!m_Objs[kDBLinkFieldCountTop].Exist(z->first)) {
-                m_Objs[kDBLinkCollect][z->first]["[n] DBLink object[s] [is] missing field " + z->first]
-                    .Add(*context.NewDiscObj(seq), false);
+                m_Objs[kDBLinkCollect][z->first][" [n] DBLink object[s] [is] missing field " + z->first]
+                    .Add(*context.NewDiscObj(dr), false);
             }
         }
         m_Objs[kDBLinkFieldCountTop].clear();
@@ -1118,6 +1119,22 @@ void AddSubFieldReport(CReportNode& node, const string& field_name, const string
 }
 
 
+string AdjustDBLinkFieldName(const string& orig_field_name)
+{
+    if (NStr::Equal(orig_field_name, "BioSample")) {
+        return "     " + orig_field_name;
+    } else if (NStr::Equal(orig_field_name, "ProbeDB")) {
+        return "    " + orig_field_name;
+    } else if (NStr::Equal(orig_field_name, "Sequence Read Archive")) {
+        return "   " + orig_field_name;
+    } else if (NStr::Equal(orig_field_name, "BioProject")) {
+        return "  " + orig_field_name;
+    } else if (NStr::Equal(orig_field_name, "Assembly")) {
+        return " " + orig_field_name;
+    }
+}
+
+
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
 //  ----------------------------------------------------------------------------
@@ -1138,22 +1155,18 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
     while (it != m_Objs.GetMap().end()) {
         if (!NStr::Equal(it->first, top_label)
             && !NStr::Equal(it->first, kDBLinkCollect)) {
-            CopyNode(m_Objs[top_label][it->first], *(it->second));
+            CopyNode(m_Objs[top_label]["      " + it->first], *(it->second));
             it = m_Objs.GetMap().erase(it);
         } else {
             ++it;
         }
     }
 
-    if (m_Objs[kDBLinkCollect].Exist("BioSample")) {
-
-    }
-
     NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs[kDBLinkCollect].GetMap()) {
         bool this_present = true;
         bool this_same = true;
         AnalyzeField(*(it->second), this_present, this_same);
-        string new_label = it->first + " " + GetSummaryLabel(this_present, this_same);
+        string new_label = AdjustDBLinkFieldName(it->first) + " " + GetSummaryLabel(this_present, this_same);
         NON_CONST_ITERATE(CReportNode::TNodeMap, s, it->second->GetMap()){
             NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
                 m_Objs[top_label][new_label][s->first].Add(**q);
@@ -1166,6 +1179,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
 
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
 
 
 END_SCOPE(NDiscrepancy)
