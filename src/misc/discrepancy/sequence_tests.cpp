@@ -802,7 +802,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLINFO_TECH)
 
 // TITLE_ENDS_WITH_SEQUENCE
 
-static bool IsATGC(Char ch)
+static bool IsATGC(char ch)
 {
     return (ch == 'A' || ch == 'T' || ch == 'G' || ch == 'C');
 }
@@ -847,6 +847,104 @@ DISCREPANCY_SUMMARIZE(TITLE_ENDS_WITH_SEQUENCE)
         return;
     }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// FEATURE_MOLTYPE_MISMATCH
+
+static const string kMoltypeMismatch = "[n] sequence[s] [has] rRNA or misc_RNA features but [is] not genomic DNA";
+
+DISCREPANCY_CASE(FEATURE_MOLTYPE_MISMATCH, CSeq_inst, eOncaller, "Sequences with rRNA or misc_RNA features should be genomic DNA")
+{
+    if (!obj.IsSetMol() || obj.GetMol() != CSeq_inst::eMol_dna) {
+        return;
+    }
+
+    CBioseq_Handle bioseq_h = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
+    CSeqdesc_CI mi(bioseq_h, CSeqdesc::e_Molinfo);
+
+    if (mi && mi->GetMolinfo().IsSetBiomol() && mi->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_genomic) {
+
+        const CSeq_annot* annot = nullptr;
+        CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+        if (bioseq->IsSetAnnot()) {
+            ITERATE(CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
+                if ((*annot_it)->IsFtable()) {
+                    annot = *annot_it;
+                    break;
+                }
+            }
+        }
+
+        if (annot) {
+
+            ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
+
+                if ((*feat)->IsSetData()) {
+                    CSeqFeatData::ESubtype subtype = (*feat)->GetData().GetSubtype();
+                    
+                    if (subtype == CSeqFeatData::eSubtype_rRNA || subtype == CSeqFeatData::eSubtype_otherRNA) {
+                        
+                        m_Objs[kMoltypeMismatch].Add(*context.NewDiscObj(bioseq, eKeepRef, true));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(FEATURE_MOLTYPE_MISMATCH)
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+static bool FixMoltype(const CBioseq& bioseq, CScope& scope)
+{
+    CBioseq_EditHandle edit_handle = scope.GetBioseqEditHandle(bioseq);
+    edit_handle.SetInst_Mol(CSeq_inst::eMol_dna);
+
+    CSeq_descr& descrs = edit_handle.SetDescr();
+    CMolInfo* molinfo = nullptr;
+
+    if (descrs.IsSet()) {
+        NON_CONST_ITERATE(CSeq_descr::Tdata, descr, descrs.Set()) {
+            if ((*descr)->IsMolinfo()) {
+                molinfo = &((*descr)->SetMolinfo());
+                break;
+            }
+        }
+    }
+
+    if (molinfo == nullptr) {
+        CRef<CSeqdesc> new_descr(new CSeqdesc);
+        molinfo = &(new_descr->SetMolinfo());
+        descrs.Set().push_back(new_descr);
+    }
+
+    if (molinfo == nullptr) {
+        return false;
+    }
+
+    molinfo->SetBiomol(CMolInfo::eBiomol_genomic);
+    return true;
+}
+
+DISCREPANCY_AUTOFIX(FEATURE_MOLTYPE_MISMATCH)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (bioseq && FixMoltype(*bioseq, scope)) {
+            n++;
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("FEATURE_MOLTYPE_MISMATCH: Moltype was set to genomic for [n] bioseq[s]", n) : 0);
 }
 
 END_SCOPE(NDiscrepancy)
