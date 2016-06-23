@@ -905,7 +905,7 @@ static int s_GetNumberOfSubjects(CRef<CLocalDbAdapter> db_adapter)
     }
 
     BlastSeqSrc* seq_src = db_adapter->MakeSeqSrc();
-    _ASSERT(seq_src && seqinfo_src);
+    _ASSERT(seq_src);
 
     int num_seqs = BlastSeqSrcGetNumSeqs(seq_src);
 
@@ -924,7 +924,7 @@ static Uint8 s_GetDbSize(CRef<CLocalDbAdapter> db_adapter)
     }
 
     BlastSeqSrc* seq_src = db_adapter->MakeSeqSrc();
-    _ASSERT(seq_src && seqinfo_src);
+    _ASSERT(seq_src);
 
     return BlastSeqSrcGetTotLen(seq_src);
 }
