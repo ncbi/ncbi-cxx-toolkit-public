@@ -453,11 +453,13 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
 
     ostr << "@HD\t" << "VN:1.2\t" << "GO:query" << endl;
     
-    Int4 num_seqs = BlastSeqSrcGetNumSeqs(seq_src);
+    BlastSeqSrcResetChunkIterator(seq_src);
+    BlastSeqSrcIterator* it = BlastSeqSrcIteratorNew();
     CRef<CSeq_id> seqid(new CSeq_id);
     Uint4 length;
-    for (Int4 i=0;i < num_seqs;i++) {
-        GetSequenceLengthAndId(seqinfo_src, i, seqid, &length);
+    Int4 oid;
+    while ((oid = BlastSeqSrcIteratorNext(seq_src, it)) != BLAST_SEQSRC_EOF) {
+        GetSequenceLengthAndId(seqinfo_src, oid, seqid, &length);
 
         string id;
         if (seqid->IsLocal()) {
@@ -469,6 +471,7 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
 
         ostr << "@SQ\t" << "SN:" << id << "\tLN:" << length << endl;
     }
+    BlastSeqSrcIteratorFree(it);
 
     ostr << "@PG\tID:0\tPN:magicblast\tCL:" << cmd_line_args << endl;
 
@@ -902,7 +905,6 @@ static int s_GetNumberOfSubjects(CRef<CLocalDbAdapter> db_adapter)
     }
 
     BlastSeqSrc* seq_src = db_adapter->MakeSeqSrc();
-    IBlastSeqInfoSrc* seqinfo_src = db_adapter->MakeSeqInfoSrc();
     _ASSERT(seq_src && seqinfo_src);
 
     int num_seqs = BlastSeqSrcGetNumSeqs(seq_src);
@@ -922,7 +924,6 @@ static Uint8 s_GetDbSize(CRef<CLocalDbAdapter> db_adapter)
     }
 
     BlastSeqSrc* seq_src = db_adapter->MakeSeqSrc();
-    IBlastSeqInfoSrc* seqinfo_src = db_adapter->MakeSeqInfoSrc();
     _ASSERT(seq_src && seqinfo_src);
 
     return BlastSeqSrcGetTotLen(seq_src);
@@ -1026,7 +1027,7 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
 int CMagicBlastApp::Run(void)
 {
     int status = BLAST_EXIT_SUCCESS;
-    const int kSamLargeNumSubjects = 10000;
+    const int kSamLargeNumSubjects = INT4_MAX;
     const Uint8 kLargeDb = 1UL << 29;
 
     try {
@@ -1070,7 +1071,7 @@ int CMagicBlastApp::Run(void)
 
         const int kNumSubjects = s_GetNumberOfSubjects(db_adapter);
         if (fmt_args->GetFormattedOutputChoice() == CFormattingArgs::eSAM) {
-            if (kNumSubjects > 1 || kNumSubjects < kSamLargeNumSubjects) {
+            if (kNumSubjects < kSamLargeNumSubjects) {
                 PrintSAMHeader(m_CmdLineArgs->GetOutputStream(), db_adapter,
                                GetCmdlineArgs(GetArguments()));
             }
