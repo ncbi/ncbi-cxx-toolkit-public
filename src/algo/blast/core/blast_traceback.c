@@ -1166,7 +1166,19 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
          (if not a translated search) */
 
       if (program_number == eBlastTypeRpsTblastn) {
-         sbp->psi_matrix->pssm->data = rpsblast_pssms + db_seq_start;
+         if (ext_params->options->compositionBasedStats > 0) {
+         const double* karlin_k = rps_info->aux_info.karlin_k;
+
+        	 sbp->psi_matrix->pssm->data = (Int4**)_PSIAllocateMatrix(
+                                                        seq_arg.seq->length,
+                                                        BLASTAA_SIZE,
+                                                        sizeof(Int4));
+             sbp->kbp_gap[0]->K = RPS_K_MULT * karlin_k[hsp_list->oid];
+             sbp->kbp_gap[0]->logK = log(RPS_K_MULT * karlin_k[hsp_list->oid]);
+         }
+         else {
+        	 sbp->psi_matrix->pssm->data = rpsblast_pssms + db_seq_start;
+         }
       } else {
          const double* karlin_k = rps_info->aux_info.karlin_k;
 

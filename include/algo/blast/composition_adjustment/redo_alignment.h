@@ -487,6 +487,19 @@ int BlastCompo_EarlyTermination(double evalue,
                                 BlastCompo_Heap significantMatches[],
                                 int numQueries);
 
+#ifndef GET_SEQ_FRAME
+#define GET_SEQ_FRAME(f) ((f<0)?ABS(f)+2: f-1)
+#endif
+
+#ifndef GET_NUCL_LENGTH
+#define GET_NUCL_LENGTH(l) ((l-5)/2 +2)
+#endif
+
+#ifndef GET_TRANSLATED_LENGTH
+#define GET_TRANSLATED_LENGTH(l,f) ((l-f% 3)/3)
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -353,6 +353,12 @@ s_HSPListFromDistinctAlignments(BlastHSPList *hsp_list,
     return 0;
 }
 
+Int4 s_GetSubjectLength(Int4 total_subj_length, EBlastProgramType program_number)
+{
+	return ((program_number == eBlastTypeRpsTblastn) ?
+				(GET_NUCL_LENGTH(total_subj_length) - 1 ) /3 : total_subj_length);
+}
+
 
 /**
  * Adding evalues to a list of HSPs and remove those that do not have
@@ -399,8 +405,11 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
                                 subject_length, sbp,
                                 hitParams->link_hsp_params, TRUE);
     } else {
+
+
         status =
-            Blast_HSPListGetEvalues(program_number, queryInfo, subject_length,
+            Blast_HSPListGetEvalues(program_number, queryInfo,
+            		                s_GetSubjectLength(subject_length, program_number),
                                     hsp_list, TRUE, FALSE, sbp,
                                     0.0, /* use a non-zero gap decay
                                             only when linking HSPs */
@@ -1577,6 +1586,16 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
 
     origData = (self->index >= 0) ? local_data->seq_arg.seq->sequence
                             : seq->sequence;
+    if((self->index < 0) && (align->frame != 0)) {
+    	int i=0, offsets =0;
+    	int f = GET_SEQ_FRAME(align->frame);
+    	int nucl_length = GET_NUCL_LENGTH(self->length);
+    	seqData->length = GET_TRANSLATED_LENGTH(nucl_length, f);
+    	for(; i < f; i++) {
+    		offsets = GET_TRANSLATED_LENGTH(nucl_length, i) +1;
+    		origData += offsets;
+    	}
+    }
     for (idx = 0;  idx < seqData->length;  idx++) {
         /* Copy the sequence data, replacing occurrences of amino acid
          * number 24 (Selenocysteine) with number 3 (Cysteine). */
@@ -2379,7 +2398,7 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     Blast_MatrixInfo *
         scaledMatrixInfo;         /* information about the scoring matrix */
     /* does this kind of search translate the database sequence */
-    int subject_is_translated = context->prog_number == eBlastTypeTblastn;
+    int subject_is_translated = (context->prog_number == eBlastTypeTblastn) || (context->prog_number == eBlastTypeRpsTblastn);
     int query_is_translated   = context->prog_number == eBlastTypeBlastx;
     /* is this a positiion-based search */
     Boolean positionBased = (Boolean) (context->sbp->psi_matrix != NULL);
@@ -3008,7 +3027,8 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
            program_number == eBlastTypeTblastn  ||
            program_number == eBlastTypeBlastx   ||
            program_number == eBlastTypePsiBlast ||
-           program_number == eBlastTypeRpsBlast);
+           program_number == eBlastTypeRpsBlast ||
+           program_number == eBlastTypeRpsTblastn);
 
     if (0 == strcmp(scoringParams->options->matrix, "BLOSUM62_20") &&
         compo_adjust_mode == eNoCompositionBasedStats) {
@@ -3816,3 +3836,6 @@ function_cleanup:
 
     return (Int2) status_code;
 }
+
+
+

@@ -41,6 +41,7 @@
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/api/blast_rps_options.hpp>
+#include <algo/blast/api/rpstblastn_options.hpp>
 #include <blast_seqalign.hpp>
 
 #include <algo/blast/core/lookup_wrap.h>
@@ -184,8 +185,11 @@ struct RpsTestFixture {
     }
 
     void NuclSearch(ENa_strand strand) {
-        CRef<CBlastOptionsHandle> 
-            opts(CBlastOptionsFactory::Create(eRPSTblastn));
+        CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eRPSTblastn));
+        opts->SetFilterString("F");
+        CRPSTBlastnOptionsHandle *
+            rpstblastn_opts(dynamic_cast<CRPSTBlastnOptionsHandle*> (opts.GetPointer()));
+        rpstblastn_opts->SetCompositionBasedStats(false);
         opts->SetFilterString("F");
 
         CSeq_id id("gi|19572546");

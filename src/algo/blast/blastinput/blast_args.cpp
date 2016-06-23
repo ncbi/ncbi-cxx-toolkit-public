@@ -790,7 +790,7 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
     const EProgram program = opt.GetProgram();
     if (program == eBlastp || program == eTblastn || 
         program == ePSIBlast || program == ePSITblastn ||
-        program == eRPSBlast ||
+        program == eRPSBlast || program == eRPSTblastn ||
         program == eBlastx  ||  program == eDeltaBlast) {
 
         ECompoAdjustModes compo_mode = eNoCompositionBasedStats;
@@ -803,7 +803,7 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
                 compo_mode = eCompositionBasedStats;
                 break;
             case 'D': case 'd':
-                if (program == eRPSBlast) {
+                if ((program == eRPSBlast) || (program == eRPSTblastn)) {
                     compo_mode = eNoCompositionBasedStats;
                 }
                 else if (program == eDeltaBlast) {
@@ -820,7 +820,7 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
                 compo_mode = eCompoForceFullMatrixAdjust;
                 break;
             case 'T': case 't':
-                compo_mode = (program == eRPSBlast || program == eDeltaBlast) ?
+                compo_mode = (program == eRPSBlast || program == eRPSTblastn || program == eDeltaBlast) ?
                     eCompositionBasedStats : eCompositionMatrixAdjust;
                 break;
         } 

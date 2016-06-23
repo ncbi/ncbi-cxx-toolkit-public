@@ -44,11 +44,13 @@ USING_SCOPE(objects);
 CRPSTBlastnAppArgs::CRPSTBlastnAppArgs()
 {
     CRef<IBlastCmdLineArgs> arg;
+    bool const kFilterByDefault = false;
     static const string kProgram("rpstblastn");
     arg.Reset(new CProgramDescriptionArgs(kProgram,
                                "Translated Reverse Position Specific BLAST"));
     const bool kQueryIsProtein = false;
     const bool kIsRpsBlast = true;
+    const bool kIsCBS2and3Supported = false;
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
@@ -73,7 +75,7 @@ CRPSTBlastnAppArgs::CRPSTBlastnAppArgs()
 
     // N.B.: query is not protein because the filtering is applied on the 
     // translated query
-    arg.Reset(new CFilteringArgs( !kQueryIsProtein ));
+    arg.Reset(new CFilteringArgs( !kQueryIsProtein, kFilterByDefault));
     m_Args.push_back(arg);
 
     arg.Reset(new CWindowSizeArg);
@@ -101,6 +103,10 @@ CRPSTBlastnAppArgs::CRPSTBlastnAppArgs()
     m_DebugArgs.Reset(new CDebugArgs);
     arg.Reset(m_DebugArgs);
     m_Args.push_back(arg);
+
+    arg.Reset(new CCompositionBasedStatsArgs(kIsCBS2and3Supported, kDfltArgCompBasedStatsRPS ));
+    m_Args.push_back(arg);
+
 }
 
 CRef<CBlastOptionsHandle> 

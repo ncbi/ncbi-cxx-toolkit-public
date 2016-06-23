@@ -54,14 +54,12 @@ void
 CRPSTBlastnOptionsHandle::SetGappedExtensionDefaults()
 {
     CBlastRPSOptionsHandle::SetGappedExtensionDefaults();
-    SetCompositionBasedStats(false);
 }
 
 
 void
 CRPSTBlastnOptionsHandle::SetQueryOptionDefaults()
 {
-    SetSegFiltering(true);
     m_Opts->SetQueryGeneticCode(BLAST_GENETIC_CODE);
 }
 

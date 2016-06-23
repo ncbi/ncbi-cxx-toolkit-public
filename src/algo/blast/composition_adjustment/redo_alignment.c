@@ -622,6 +622,28 @@ s_SubjectCompareWindows(const void * vp1, const void *vp2)
     return result;
 }
 
+static
+int s_GetTranslatedLength(int length,int frame, int is_pos_based) {
+	if(is_pos_based) {
+		int f = GET_SEQ_FRAME(frame);
+		int nucl_length = GET_NUCL_LENGTH(length);
+		return GET_TRANSLATED_LENGTH(nucl_length, f);
+	}
+
+	return	((length - ABS(frame) + 1)/3);
+}
+
+static
+Boolean s_UseFullLengthForCBS(void)
+{
+    char* use_full_len_str = getenv("FULL_LEN_CBS");
+    if(use_full_len_str != NULL) {
+    	return TRUE;
+    }
+
+    return FALSE;
+}
+
 /**
  * Read a list of alignments from a translated search and create a
  * new array of pointers to s_WindowInfo so that each alignment is
@@ -635,7 +657,7 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
                               BlastCompo_QueryInfo * query_info,
                               int hspcnt, int border, int sequence_length,
                               s_WindowInfo ***pwindows, int * nWindows,
-                              int subject_is_translated)
+                              int subject_is_translated, int is_pos_based)
 {
     int k;                            /* iteration index */
     s_WindowInfo ** windows;      /* the output list of windows */
@@ -665,12 +687,20 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
         frame = align->frame;
         query_index = align->queryIndex;
         query_length = query_info[query_index].seq.length;
-        translated_length = (sequence_length - ABS(frame) + 1)/3;
+        translated_length = s_GetTranslatedLength(sequence_length, frame, is_pos_based);
 
         align_copy = s_AlignmentCopy(align);
         if (align_copy == NULL)
             goto error_return;
 
+        if(s_UseFullLengthForCBS()) {
+            begin = 0;
+            end  =translated_length;
+            windows[k] = s_WindowInfoNew(begin, end, frame, 0,
+                                query_length, query_index, align_copy);
+
+        }
+        else {
         if (subject_is_translated) {
             begin = MAX(0, align->matchStart - border);
             end   = MIN(translated_length, align->matchEnd + border);
@@ -682,6 +712,7 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
             /* for blastx, temporarily swap subject and query ranges*/
             windows[k] = s_WindowInfoNew(begin, end, query_index, 0,
                                 sequence_length, 0, align_copy);
+        }
         }
         if (windows[k] == NULL)
 	{
@@ -859,19 +890,19 @@ s_WindowsFromAligns(BlastCompo_Alignment * alignments,
                 BlastCompo_QueryInfo * query_info, int hspcnt,
                 int numQueries, int border, int sequence_length,
                 s_WindowInfo ***pwindows, int * nWindows,
-                int query_is_translated, int subject_is_translated)
+                int query_is_translated, int subject_is_translated, int is_pos_based)
 {
     if (subject_is_translated || query_is_translated) {
         return s_WindowsFromTranslatedAligns(alignments, query_info,
                                              hspcnt, border,
                                              sequence_length,
                                              pwindows, nWindows,
-                                             subject_is_translated);
+                                             subject_is_translated, is_pos_based);
     } else {
         return s_WindowsFromProteinAligns(alignments, query_info,
                                           numQueries, sequence_length,
                                           pwindows, nWindows);
-    }
+   }
 }
 
 
@@ -905,8 +936,8 @@ s_GetComposition(Blast_AminoAcidComposition * composition,
 
     data = seq->data;
     length = range->end - range->begin;
-
-    if (query_is_translated || subject_is_translated) {
+    if ((query_is_translated || subject_is_translated)  &&
+    	(!s_UseFullLengthForCBS())){
         int start;
         int end;
         start = ((query_is_translated) ?
@@ -1121,7 +1152,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
     status =
             s_WindowsFromAligns(incoming_aligns, query_info, hspcnt, numQueries,
                     kWindowBorder, matchingSeq->length, &windows,
-                    &nWindows, query_is_translated, subject_is_translated);
+                    &nWindows, query_is_translated, subject_is_translated, params->positionBased);
     if (status != 0) {
         goto function_level_cleanup;
     }
@@ -1340,7 +1371,7 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
     status =
         s_WindowsFromAligns(incoming_aligns, query_info, hspcnt, numQueries,
                             kWindowBorder, matchingSeq->length, &windows,
-                            &nWindows, query_is_translated, subject_is_translated);
+                            &nWindows, query_is_translated, subject_is_translated, params->positionBased);
     if (status != 0)
         goto function_level_cleanup;
     /* We are performing a Smith-Waterman alignment */
