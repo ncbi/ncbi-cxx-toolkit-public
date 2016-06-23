@@ -419,13 +419,15 @@ static void s_PrintAnnouncementDetails(const char* name,
                                        const char* version,
                                        const char* host,
                                        const char* port,
-                                       const char* health)
+                                       const char* health,
+                                       const char* meta)
 {
-    WRITE_LOG("Announcing server \"" << (name ? name : "<NULL>") << "\""    <<
-                "with version "      << (version ? version : "<NULL>")      <<
-                ", port "            << port                                << 
-                ", host "            << host                                << 
-                ", healthcheck \""   << (health ? health : "<NULL>") << "\"");
+    WRITE_LOG("Announcing server \"" << (name ? name : "<NULL>") << "\""     <<
+                "with version "      << (version ? version : "<NULL>")       <<
+                ", port "            << port                                 << 
+                ", host "            << host                                 << 
+                ", healthcheck \""   << (health ? health : "<NULL>") << "\"" <<
+                ", meta \""          << (meta ? meta : "<NULL>") << "\"");
 }
 
 
@@ -433,12 +435,13 @@ static void s_PrintAnnouncementDetails(const char*      name,
                                        const char*      version,
                                        const char*      host,
                                        unsigned short   port,
-                                       const char*      health)
+                                       const char*      health,
+                                       const char*      meta)
 {
     stringstream port_ss;
     port_ss << port;
     s_PrintAnnouncementDetails(name, version, host, port_ss.str().c_str(), 
-                               health);
+                               health, meta);
 }
 
 
@@ -447,6 +450,7 @@ static void s_PrintAnnouncedDetails(const char*       name,
                                     const char*       host,
                                     const char*       port,
                                     const char*       health,
+                                    const char*       meta,
                                     const char*       lbos_ans, 
                                     const char*       lbos_mes, 
                                     unsigned short    result,
@@ -458,7 +462,8 @@ static void s_PrintAnnouncedDetails(const char*       name,
                "with version "        << (version ? version : "<NULL>")     <<
                ", port "              << port                               <<
                ", host \""            << (host ? host : "<NULL>")           <<
-               ", healthcheck \""     << (health ? health : "<NULL>")       << 
+               ", healthcheck \""     << (health ? health : "<NULL>")       <<
+               ", meta \""            << (meta ? meta : "<NULL>")           <<
                " returned code "      << result                             <<
                " after "              << time_elapsed << " seconds, "       <<
                ", status message: \"" << status  << "\""                    <<
@@ -471,6 +476,7 @@ static void s_PrintAnnouncedDetails(const char*       name,
                                     const char*       host,
                                     unsigned short    port,
                                     const char*       health,
+                                    const char*            meta,
                                     const char*       lbos_ans, 
                                     const char*       lbos_mes, 
                                     unsigned short    result,
@@ -479,7 +485,7 @@ static void s_PrintAnnouncedDetails(const char*       name,
     stringstream port_ss;
     port_ss << port;
     s_PrintAnnouncedDetails(name, version, host, port_ss.str().c_str(), health, 
-                            lbos_ans, lbos_mes, result, time_elapsed);
+                            meta, lbos_ans, lbos_mes, result, time_elapsed);
 }
 
 static void s_GetRegistryAnnouncementParams(const char*     registry_section,
@@ -487,7 +493,8 @@ static void s_GetRegistryAnnouncementParams(const char*     registry_section,
                                                   char**    vers,
                                                   char**    host, 
                                                   char**    port,
-                                                  char**    hlth)
+                                                  char**    hlth,
+                                                  char**    meta)
 {
     const char* kLBOSAnnouncementSection    = "LBOS_ANNOUNCEMENT";
     const char* kLBOSServiceVariable        = "SERVICE";
@@ -495,6 +502,7 @@ static void s_GetRegistryAnnouncementParams(const char*     registry_section,
     const char* kLBOSHostVariable           = "HOST";
     const char* kLBOSPortVariable           = "PORT";
     const char* kLBOSHealthcheckUrlVariable = "HEALTHCHECK";
+    const char* kLBOSMetaVariable           = "META";
     if (g_LBOS_StringIsNullOrEmpty(registry_section)) {
         registry_section = kLBOSAnnouncementSection;
     }
@@ -513,21 +521,25 @@ static void s_GetRegistryAnnouncementParams(const char*     registry_section,
     *hlth = g_LBOS_RegGet(registry_section,
                           kLBOSHealthcheckUrlVariable,
                           NULL);
+    *meta = g_LBOS_RegGet(registry_section,
+                          kLBOSMetaVariable,
+                          NULL);
 }
 
 
 static void s_PrintRegistryAnnouncementDetails(const char* registry_section)
 {
-    char* srvc_str, *vers_str, *host_str, *port_str, *hlth_str;
+    char* srvc_str, *vers_str, *host_str, *port_str, *hlth_str, *meta_str;
     s_GetRegistryAnnouncementParams(registry_section, &srvc_str, &vers_str,  
-                                    &host_str, &port_str, &hlth_str);
+                                    &host_str, &port_str, &hlth_str, &meta_str);
     CCObjHolder<char> srvc(srvc_str);
     CCObjHolder<char> vers(vers_str);
     CCObjHolder<char> host(host_str);
     CCObjHolder<char> port(port_str);
     CCObjHolder<char> hlth(hlth_str);
+    CCObjHolder<char> meta(meta_str);
     s_PrintAnnouncementDetails(srvc.Get(), vers.Get(), host.Get(), port.Get(),
-                               hlth.Get());
+                               hlth.Get(), meta.Get());
 }
 
 
@@ -537,16 +549,17 @@ static void s_PrintRegistryAnnouncedDetails(const char*      registry_section,
                                            unsigned short    result,
                                            double            time_elapsed)
 {
-    char *srvc_str, *vers_str, *host_str, *port_str, *hlth_str;
+    char *srvc_str, *vers_str, *host_str, *port_str, *hlth_str, *meta_str;
     s_GetRegistryAnnouncementParams(registry_section, &srvc_str, &vers_str,
-                                    &host_str, &port_str, &hlth_str);
+                                    &host_str, &port_str, &hlth_str, &meta_str);
     CCObjHolder<char> srvc(srvc_str),
                       vers(vers_str),
                       host(host_str),
                       port(port_str),
-                      hlth(hlth_str);
+                      hlth(hlth_str),
+                      meta(meta_str);
     s_PrintAnnouncedDetails(srvc.Get(), vers.Get(), host.Get(), port.Get(), 
-                            hlth.Get(), lbos_ans, lbos_mes, result, 
+                            hlth.Get(), meta.Get(), lbos_ans, lbos_mes, result, 
                             time_elapsed);
 }
 
@@ -577,6 +590,7 @@ static unsigned short s_AnnounceC(const char*       name,
                                   const char*       host,
                                   unsigned short    port,
                                   const char*       health,
+                                  const char*       meta,
                                   char**            lbos_ans,
                                   char**            lbos_mes,
                                   bool              safe = false)
@@ -595,25 +609,25 @@ static unsigned short s_AnnounceC(const char*       name,
     }
     
     s_PrintAnnouncementDetails(name, version, host, port,
-                               healthcheck_cstr);
+                               healthcheck_cstr, meta);
 
     if (safe) {
         /* If announcement finishes with error - return
          * error */
-        result = LBOS_Announce(name, version, host, port, 
-                               healthcheck_cstr, lbos_ans, lbos_mes);
+        result = LBOS_Announce(name, version, host, port, healthcheck_cstr,
+                               meta, lbos_ans, lbos_mes);
     } else {
         /* If announcement finishes with error - try again
          * until success (with invalid parameters means infinite loop) */
-        result = s_LBOS_Announce(name, version, host, port, 
-                                 healthcheck_cstr, lbos_ans, lbos_mes);
+        result = s_LBOS_Announce(name, version, host, port, healthcheck_cstr,
+                                 meta, lbos_ans, lbos_mes);
     }
     MEASURE_TIME_FINISH;
     if (result == 500) {
         s_500sCount++;
     }
-    s_PrintAnnouncedDetails(name, version, host, port, 
-                            healthcheck_cstr, 
+    s_PrintAnnouncedDetails(name, version, host, port,
+                            healthcheck_cstr, meta,
                             lbos_ans ? *lbos_ans : NULL,
                             lbos_mes ? *lbos_mes : NULL,
                             result, time_elapsed);
@@ -626,12 +640,14 @@ static unsigned short s_AnnounceC(const string&    name,
                                   const string&    host,
                                   unsigned short   port,
                                   const string&    health,
+                                  const string&    meta,
                                   char**           lbos_ans,
                                   char**           lbos_mes,
                                   bool             safe = false)
 {
     return s_AnnounceC(name.c_str(), version.c_str(), host.c_str(),
-                       port, health.c_str(), lbos_ans, lbos_mes, safe);
+                       port, health.c_str(), meta.c_str(), lbos_ans, 
+                       lbos_mes, safe);
 }
 
 
@@ -640,6 +656,7 @@ static unsigned short s_AnnounceCSafe(const char*      name,
                                       const char*      host,
                                       unsigned short   port,
                                       const char*      health,
+                                      const char*      meta,
                                       char**           lbos_ans,
                                       char**           lbos_mes)
 {
@@ -657,12 +674,12 @@ static unsigned short s_AnnounceCSafe(const char*      name,
     }
     
     s_PrintAnnouncementDetails(name, version, host, port, 
-                               healthcheck_cstr);
-    result = s_LBOS_Announce(name, version, host, port, 
-                             healthcheck_cstr, lbos_ans, lbos_mes);
+                               healthcheck_cstr, meta);
+    result = s_LBOS_Announce(name, version, host, port, healthcheck_cstr,
+                             meta, lbos_ans, lbos_mes);
     MEASURE_TIME_FINISH;
     s_PrintAnnouncedDetails(name, version, host, port, 
-                            healthcheck_cstr, 
+                            healthcheck_cstr, meta,
                             lbos_ans ? *lbos_ans : NULL,
                             lbos_mes ? *lbos_mes : NULL,
                             result, time_elapsed);
@@ -675,11 +692,13 @@ static unsigned short s_AnnounceCSafe(const string&    name,
                                       const string&    host,
                                       unsigned short   port,
                                       const string&    health,
+                                      const string&    meta,
                                       char**           lbos_ans,
                                       char**           lbos_mes)
 {
     return s_AnnounceCSafe(name.c_str(), version.c_str(), host.c_str(), 
-                           port, health.c_str(), lbos_ans, lbos_mes);
+                           port, health.c_str(), meta.c_str(), 
+                           lbos_ans, lbos_mes);
 }
 
 
@@ -703,38 +722,41 @@ static unsigned short s_AnnounceCRegistry(const char*   registry_section,
 }
 
 
-/** Announce using C++ interface. If annoucement finishes with error - return
+/** Announce using C++ interface. If announcement finishes with error - return
  * error */
 static void s_AnnounceCPP(const string& name,
                           const string& version,
                           const string& host,
                           unsigned short port,
-                          const string& health)
+                          const string& health,
+                          const LBOS::CMetaData& meta = LBOS::CMetaData())
 {
     s_PrintAnnouncementDetails(name.c_str(), version.c_str(), host.c_str(), 
-                               port, health.c_str());
+                               port, health.c_str(),
+                               meta.GetMetaString().c_str());
     stringstream healthcheck;
     healthcheck << health << "/port" << port << "/host" << host <<
                    "/version" << version;
     MEASURE_TIME_START
     try {
-        LBOS::Announce(name, version, host, port, healthcheck.str());
+        LBOS::Announce(name, version, host, port, healthcheck.str(), meta);
     }
     catch (CLBOSException& ex) {
         MEASURE_TIME_FINISH
             if (ex.GetErrCode() == 500) {
                 s_500sCount++;
             }
-            s_PrintAnnouncedDetails(name.c_str(), version.c_str(), 
-                                    host.c_str(), port, health.c_str(),   
-                                    ex.what(), ex.GetErrCodeString(),  
+            s_PrintAnnouncedDetails(name.c_str(), version.c_str(),
+                                    host.c_str(), port, health.c_str(),
+                                    meta.GetMetaString().c_str(),
+                                    ex.what(), ex.GetErrCodeString(),
                                     ex.GetErrCode(), time_elapsed);
         throw; /* Move the exception down the stack */
     }
     MEASURE_TIME_FINISH
     /* Print good result */
     s_PrintAnnouncedDetails(name.c_str(), version.c_str(), host.c_str(), port,
-                            health.c_str(), 
+                            health.c_str(), meta.GetMetaString().c_str(),
                             "<C++ does not show answer from LBOS on success>",
                             "OK", 200, time_elapsed);
 }
@@ -746,19 +768,21 @@ static void s_AnnounceCPPSafe(const string&     name,
                               const string&     version,
                               const string&     host,
                               unsigned short    port,
-                              const string&     health)
+                              const string&     health,
+                              const LBOS::CMetaData& meta = LBOS::CMetaData())
 {
     s_PrintAnnouncementDetails(name.c_str(), version.c_str(), host.c_str(), 
-                               port, health.c_str());
+                               port, health.c_str(),
+                               meta.GetMetaString().c_str());
     stringstream healthcheck;
     healthcheck << health << "/port" << port << "/host" << host <<
                    "/version" << version;
     MEASURE_TIME_START
-    s_LBOS_CPP_Announce(name, version, host, port, healthcheck.str());
+    s_LBOS_CPP_Announce(name, version, host, port, healthcheck.str(), meta);
     MEASURE_TIME_FINISH
     /* Print good result */
     s_PrintAnnouncedDetails(name.c_str(), version.c_str(), host.c_str(), port, 
-                            health.c_str(), 
+                            health.c_str(), meta.GetMetaString().c_str(),
                             "<C++ does not show answer from LBOS on success>",
                             "OK", 200, time_elapsed);
 }
@@ -1396,9 +1420,9 @@ int s_CountServersWithExpectation(const string&     service,
             ConnNetInfo_SetUserHeader(*net_info, "DTab-Local: ");
         }
         CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                       *net_info, 0/*skip*/, 0/*n_skip*/,
-                       0/*external*/, 0/*arg*/, 0/*val*/));
+                                  SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                                  *net_info, 0/*skip*/, 0/*n_skip*/,
+                                  0/*external*/, 0/*arg*/, 0/*val*/));
         do {
             info = SERV_GetNextInfoEx(*iter, NULL);
             if (info != NULL && info->port == port)
@@ -1613,7 +1637,7 @@ namespace Announcement
  *     hostname
  * 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host 
  *     IP: do not announce and return DNS_RESOLVE_ERROR
- * 20. LBOS is OFF - return eLBOSOff                                        
+ * 20. LBOS is OFF - return eLBOS_Disabled                                        
  * 21. Announced successfully, but LBOS return corrupted answer - 
  *     return SERVER_ERROR                                                   
  * 22. Trying to announce server and providing dead healthcheck URL -
@@ -1655,18 +1679,18 @@ namespace AnnouncementRegistry
 {
 void TestNullOrEmptyField(const char* field_tested);
 /*  1.  All parameters good (Custom section has all parameters correct in 
-        config) - return eLBOSSuccess
-    2.  Custom section has nothing in config - return eLBOSInvalidArgs
+        config) - return eLBOS_Success
+    2.  Custom section has nothing in config - return eLBOS_InvalidArgs
     3.  Section empty or NULL (should use default section and return 
-        eLBOSSuccess)
-    4.  Service is empty or NULL - return eLBOSInvalidArgs
-    5.  Version is empty or NULL - return eLBOSInvalidArgs
-    6.  port is empty or NULL - return eLBOSInvalidArgs
-    7.  port is out of range - return eLBOSInvalidArgs
-    8.  port contains letters - return eLBOSInvalidArgs
-    9.  healthcheck is empty or NULL - return eLBOSInvalidArgs
+        eLBOS_Success)
+    4.  Service is empty or NULL - return eLBOS_InvalidArgs
+    5.  Version is empty or NULL - return eLBOS_InvalidArgs
+    6.  port is empty or NULL - return eLBOS_InvalidArgs
+    7.  port is out of range - return eLBOS_InvalidArgs
+    8.  port contains letters - return eLBOS_InvalidArgs
+    9.  healthcheck is empty or NULL - return eLBOS_InvalidArgs
     10. healthcheck does not start with http:// or https:// - return 
-        eLBOSInvalidArgs                                                    */
+        eLBOS_InvalidArgs                                                    */
 void ParamsGood__ReturnSuccess();
 void CustomSectionNoVars__ReturnInvalidArgs();
 void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess();
@@ -1692,7 +1716,7 @@ namespace Deannouncement
  *    to resolve                                                            
  * 6. Another domain - do not deannounce 
  * 7. Deannounce without IP specified - deannounce from local host 
- * 8. LBOS is OFF - return eLBOSOff                                         */
+ * 8. LBOS is OFF - return eLBOS_Disabled                                         */
 void Deannounced__Return1(unsigned short port);
 void Deannounced__AnnouncedServerRemoved();
 void NoLBOS__Return0();
@@ -1835,6 +1859,1080 @@ void TryMultiThread(); /* namespace MultiThreading */
 ///////////////////////////////////////////////////////////////////////////////
 //////////////               DEFINITIONS             //////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+namespace AnnounceMetadata
+{
+void KnowmMetaSpecFunc__SeeMetaInDescovery()
+{
+    CConnNetInfo net_info;
+    const SSERV_Info* info;
+    string version = "1.0.0";
+    string service = s_GetUnknownService();
+    string dtab = "DTab-local: " + service + "=>/zk#" + service + "/" + version;
+    ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    string expected_path = "myextra";
+    unsigned short port = 8080;
+    unsigned short rate = 200;
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+    /* Extra */
+    LBOS::CMetaData meta;
+    meta.SetExtra(expected_path);
+    meta.SetType(LBOS::CMetaData::eHTTP);
+    meta.SetRate(rate);
+    s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
+    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
+                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                              *net_info, 0/*skip*/, 0/*n_skip*/,
+                              0/*external*/, 0/*arg*/, 0/*val*/));
+    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter!=NULL, "Announced server not found");
+    info = SERV_GetNextInfoEx(*iter, NULL);
+    /* Extra */
+    const char* real_path_cstr = SERV_HTTP_PATH(&info->u.http);
+    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(real_path_cstr != NULL, "Extra is empty!");
+    string real_path = real_path_cstr;
+    NCBITEST_CHECK_EQUAL_MT_SAFE(real_path, expected_path);
+    /* Type */
+    NCBITEST_CHECK_EQUAL_MT_SAFE(info->type, fSERV_Http);
+    /* Rate */
+    NCBITEST_CHECK_EQUAL_MT_SAFE(info->rate, rate);
+
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+}
+
+void KnownMetaMainFunc__SeeMetaInDiscovery()
+{
+    CConnNetInfo net_info;
+    const SSERV_Info* info;
+    string version = "1.0.0";
+    string service = s_GetUnknownService();
+    string dtab = "DTab-local: " + service + "=>/zk#" + service + "/" + version;
+    ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    string expected_path = "myextra";
+    unsigned short port = 8080;
+    unsigned short rate = 200;
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+    /* Extra */
+    LBOS::CMetaData meta;
+    meta.Set("extra", expected_path);
+    meta.Set("type", "HTTP");
+    meta.Set("rate", NStr::IntToString(rate));
+    s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
+    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
+                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                              *net_info, 0/*skip*/, 0/*n_skip*/,
+                              0/*external*/, 0/*arg*/, 0/*val*/));
+    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter!=NULL, "Announced server not found");
+    info = SERV_GetNextInfoEx(*iter, NULL);
+    /* Extra */
+    const char* real_path_cstr = SERV_HTTP_PATH(&info->u.http);
+    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(real_path_cstr != NULL, "Extra is empty!");
+    string real_path = real_path_cstr;
+    NCBITEST_CHECK_EQUAL_MT_SAFE(real_path, expected_path);
+    /* Type */
+    NCBITEST_CHECK_EQUAL_MT_SAFE(info->type, fSERV_Http);
+    /* Rate */
+    NCBITEST_CHECK_EQUAL_MT_SAFE(info->rate, 200);
+
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+}
+
+void UnknownMetaMainFunc__SeeMetaInDiscovery()
+{
+    CConnNetInfo net_info;
+    string version = "1.0.0";
+    string service = s_GetUnknownService();
+    string dtab = "DTab-local: " + service + "=>/zk#" + service + "/" + version;
+    ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    string expected_path = "myextra";
+    unsigned short port = 8080;
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+    /* Extra */
+    LBOS::CMetaData meta;
+    meta.Set("mymeta1", "meta");
+    meta.Set("meta with spaces", "word1 word2");
+    meta.Set("meta with end of line", "line1\nline2");
+    meta.Set("meta with tab", "part1\tpart2");
+
+    s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
+
+    /* Check response from LBOS */
+    CCObjHolder<char>   lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                         UrlReadAll(*net_info, 
+                                         (string("http://") + lbos_addr +
+                                         "/lbos/v3/services" + service).c_str(), 
+                                         NULL, NULL));
+    string lbos_output = *lbos_output_orig;
+    /* Search for mymeta1 */
+    string expected1 = "\"meta with spaces\":\"word1 word2\"",
+           expected2 = "\"meta with end of line\":\"line1\\nline2\"",
+           expected3 = "\"meta with tab\":\"part1\\tpart2\"",
+           expected4 = "\"mymeta1\":\"meta\"";
+
+    size_t find_pos1 = lbos_output.find(expected1),
+           find_pos2 = lbos_output.find(expected2),
+           find_pos3 = lbos_output.find(expected3),
+           find_pos4 = lbos_output.find(expected4);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos1, string::npos);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos2, string::npos);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos3, string::npos);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos4, string::npos);
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+}
+
+void KnownAndUnknown__SeeMetaInDiscovery()
+{
+    CConnNetInfo net_info;
+    const SSERV_Info* info;
+    string version = "1.0.0";
+    string service = s_GetUnknownService();
+    string dtab = "DTab-local: " + service + "=>/zk#" + service +  "/" + version;
+    ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    string expected_path = "myextra";
+    unsigned short port = 8080;
+    unsigned short rate = 200;
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+
+    /* Extra */
+    LBOS::CMetaData meta;
+    meta.Set("mymeta1", "meta");
+    meta.Set("meta with spaces", "word1 word2");
+    meta.Set("meta with end of line", "line1\nline2");
+    meta.Set("meta with tab", "part1\tpart2");
+    meta.SetExtra(expected_path);
+    meta.SetType(LBOS::CMetaData::eHTTP);
+    meta.SetRate(rate);
+    s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
+    
+    /* Check known */
+    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
+        SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+        *net_info, 0/*skip*/, 0/*n_skip*/,
+        0/*external*/, 0/*arg*/, 0/*val*/));
+    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter!=NULL, "Announced server not found");
+    info = SERV_GetNextInfoEx(*iter, NULL);
+    /* Extra */
+    const char* real_path_cstr = SERV_HTTP_PATH(&info->u.http);
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(real_path_cstr != NULL, "Extra is empty!");
+    if (real_path_cstr != NULL) {
+        string real_path = real_path_cstr;
+        NCBITEST_CHECK_EQUAL_MT_SAFE(real_path, expected_path);
+    }
+    /* Type */
+    NCBITEST_CHECK_EQUAL_MT_SAFE(info->type, fSERV_Http);
+    /* Rate */
+    NCBITEST_CHECK_EQUAL_MT_SAFE(info->rate, 200);
+
+    /* Check unknown */
+    /* Check response from LBOS */
+    CCObjHolder<char>   lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
+        UrlReadAll(*net_info,
+        (string("http://") + lbos_addr +
+        "/lbos/v3/services"+service).c_str(),
+        NULL, NULL));
+    string lbos_output = *lbos_output_orig;
+    /* Search for mymeta1 */
+    string expected1 = "\"meta with spaces\":\"word1 word2\"",
+           expected2 = "\"meta with end of line\":\"line1\\nline2\"",
+           expected3 = "\"meta with tab\":\"part1\\tpart2\"",
+           expected4 = "\"mymeta1\":\"meta\"";
+
+    size_t find_pos1 = lbos_output.find(expected1),
+           find_pos2 = lbos_output.find(expected2),
+           find_pos3 = lbos_output.find(expected3),
+           find_pos4 = lbos_output.find(expected4);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos1, string::npos);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos2, string::npos);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos3, string::npos);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos4, string::npos);
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+}
+
+void DeleteMeta__NotSeeMetaInMetastring()
+{
+    unsigned short rate = 200;
+    
+    /* 1 */
+    LBOS::CMetaData meta;
+    string meta_string;
+    meta.Set("mymeta1", "meta");
+    meta.Set("mymeta1", "");
+    meta.SetRate(rate);
+    meta.Set("rate", "");
+    meta.SetExtra("myextra2");
+    meta.SetExtra("");
+    meta.SetType(LBOS::CMetaData::eHTTP_POST);
+    meta.SetType(LBOS::CMetaData::eNone);
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string());
+
+    /* 2 */
+    meta.Set("mymeta1", "meta");
+    meta.Set("mymeta1", "");
+    meta.Set("rate", "200");
+    meta.SetRate(0);
+    meta.Set("extra", "myextra2");
+    meta.Set("extra", "");
+    meta.SetType("HTTP_POST");
+    meta.SetType("");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string());
+
+    /* 3 */
+    meta.Set("mymeta1", "meta");
+    meta.Set("mymeta1", "");
+    meta.Set("rate", "200");
+    meta.Set("rate", "");
+    meta.Set("extra", "myextra2");
+    meta.Set("extra", "");
+    meta.Set("type", "HTTP_POST");
+    meta.Set("type", "");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string());
+}
+
+void SetTypeBadEnumVal__Exception()
+{
+    LBOS::CMetaData meta;
+
+    ExceptionComparator<CLBOSException::eInvalidArgs, eLBOS_InvalidArgs> 
+        comparator("Unknown EHostType value. If you are sure that a correct "
+                   "value is used, please tell the developer about this "
+                   "issue\n");
+    BOOST_CHECK_EXCEPTION(meta.SetType(-1), CLBOSException, comparator);
+    BOOST_CHECK_EXCEPTION(meta.SetType(6), CLBOSException, comparator);
+    BOOST_CHECK_EXCEPTION(meta.SetType(7), CLBOSException, comparator);
+    BOOST_CHECK_EXCEPTION(meta.SetType(10), CLBOSException, comparator);
+    BOOST_CHECK_EXCEPTION(meta.SetType(15), CLBOSException, comparator);
+}
+
+void MetaNull__NoMetaInDiscovery()
+{
+    CConnNetInfo net_info;
+    string version = "1.0.0";
+    string service = s_GetUnknownService();
+    string dtab = "DTab-local: " + service + "=>/zk#" + service + "/" + version;
+    ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    string expected_path = "myextra";
+    unsigned short port = 8080;
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+
+    CCObjHolder<char> lbos_answer(NULL);
+    CCObjHolder<char> lbos_status_message(NULL);
+    s_AnnounceC(service.c_str(), version.c_str(), (ANNOUNCEMENT_HOST).c_str(),
+                port, health.c_str(), NULL, &lbos_answer.Get(), 
+                &lbos_status_message.Get());
+
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                       UrlReadAll(*net_info,
+                                       (string("http://") + lbos_addr +
+                                       "/lbos/v3/services" + service).c_str(),
+                                       NULL, NULL));
+    string lbos_output = *lbos_output_orig;
+    /* Search for mymeta1 */
+    string expected = "\"port\":8080},\"meta\":{}}]";
+    size_t find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+}
+
+void NoMetaProvided__NoMetaInDiscovery()
+{
+    CConnNetInfo net_info;
+    string version = "1.0.0";
+    string service = s_GetUnknownService();
+    string dtab = "DTab-local: " + service + "=>/zk#" + service + "/" + version;
+    ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    string expected_path = "myextra";
+    unsigned short port = 8080;
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+
+    CCObjHolder<char> lbos_answer(NULL);
+    CCObjHolder<char> lbos_status_message(NULL);
+    s_AnnounceCPP(service.c_str(), version.c_str(), (ANNOUNCEMENT_HOST).c_str(),
+                  port, health.c_str());
+
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                       UrlReadAll(*net_info,
+                                       (string("http://") + lbos_addr +
+                                       "/lbos/v3/services" + service).c_str(),
+                                       NULL, NULL));
+    string lbos_output = *lbos_output_orig;
+    /* Search for mymeta1 */
+    string expected = "\"port\":8080},\"meta\":{}}]";
+    size_t find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+}
+
+void SetTypeValidVal__SeeMetaInDiscovery()
+{
+    LBOS::CMetaData meta;
+    string meta_string;
+    LBOS::CMetaData::EHostType host_type;
+    string host_type_str, host_type_meta;
+
+    /* 0 */
+    meta.SetType(LBOS::CMetaData::eNone);
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string(""));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string(""));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string(""));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eNone);
+
+    /* 1 */
+    meta.SetType(LBOS::CMetaData::eHTTP);
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("HTTP"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("HTTP"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=HTTP"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eHTTP);
+
+    /* 2 */
+    meta.SetType(LBOS::CMetaData::eHTTP_POST);
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("HTTP_POST"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("HTTP_POST"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=HTTP_POST"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eHTTP_POST);
+
+    /* 3 */
+    meta.SetType(LBOS::CMetaData::eStandalone);
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("STANDALONE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("STANDALONE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=STANDALONE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eStandalone);
+
+    /* 4 */
+    meta.SetType(LBOS::CMetaData::eNCBID);
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("NCBID"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("NCBID"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=NCBID"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eNCBID);
+
+    /* 5 */
+    meta.SetType(LBOS::CMetaData::eDNS);
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("DNS"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("DNS"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=DNS"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eDNS);
+
+    /* 6 */
+    ExceptionComparator<CLBOSException::eInvalidArgs, eLBOS_InvalidArgs>
+        comparator("Unknown EHostType value. If you are sure that a correct "
+                   "value is used, please tell the developer about this "
+                   "issue\n");
+    BOOST_CHECK_EXCEPTION(meta.SetType(LBOS::CMetaData::eUnknown),
+                          CLBOSException, comparator);
+
+    /* String */
+    /* 0 */
+    meta.SetType("");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string(""));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string(""));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string(""));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eNone);
+
+    /* 1 */
+    meta.SetType("HTTP");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("HTTP"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("HTTP"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=HTTP"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eHTTP);
+
+    /* 2 */
+    meta.SetType("HTTP_POST");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("HTTP_POST"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("HTTP_POST"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=HTTP_POST"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eHTTP_POST);
+
+    /* 3 */
+    meta.SetType("sTanDalone");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("STANDALONE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("STANDALONE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=STANDALONE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eStandalone);
+
+    /* 4 */
+    meta.SetType("ncbid");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("NCBID"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("NCBID"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=NCBID"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eNCBID);
+
+    /* 5 */
+    meta.SetType("DnS");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("DNS"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("DNS"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=DNS"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eDNS);
+
+    /* 6 */
+    meta.SetType("MyType");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("MYTYPE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("MYTYPE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=MYTYPE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eUnknown);
+
+    /* Set() */
+    /* 0 */
+    meta.Set("type", "");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string(""));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string(""));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string(""));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eNone);
+
+    /* 1 */
+    meta.Set("type", "HTTP");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("HTTP"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("HTTP"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=HTTP"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eHTTP);
+
+    /* 2 */
+    meta.Set("type", "HTTP_POST");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("HTTP_POST"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("HTTP_POST"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=HTTP_POST"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eHTTP_POST);
+
+    /* 3 */
+    meta.Set("type", "sTanDalone");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("sTanDalone"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("STANDALONE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=sTanDalone"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eStandalone);
+
+    /* 4 */
+    meta.Set("type", "ncbid");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("ncbid"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("NCBID"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=ncbid"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eNCBID);
+
+    /* 5 */
+    meta.Set("type", "DnS");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("DnS"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("DNS"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=DnS"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eDNS);
+
+    /* 6 */
+    meta.Set("type", "MyType");
+    host_type = meta.GetType();
+    host_type_str = meta.GetType(true);
+    host_type_meta = meta.Get("type");
+    meta_string = meta.GetMetaString();
+
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_meta, string("MyType"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type_str, string("MYTYPE"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("type=MyType"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eUnknown);
+}
+
+void SetTypeEmpty__TypeStayInDiscovery()
+{
+    CConnNetInfo net_info;
+    string version = "1.0.0";
+    string service = s_GetUnknownService();
+    string dtab = "DTab-local: " + service + "=>/zk#" + service + "/" + version;
+    ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    unsigned short port = 8080;
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+    string expected = "\"type\":\"HTTP\"";
+    LBOS::CMetaData meta;
+    size_t find_pos;
+    string lbos_output;
+
+    /* Announce with type */
+    meta.SetType(LBOS::CMetaData::eHTTP);
+    s_AnnounceCPP(service.c_str(), version.c_str(), (ANNOUNCEMENT_HOST).c_str(),
+                  port, health.c_str(), meta);
+
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig1(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                        UrlReadAll(*net_info,
+                                        (string("http://") + lbos_addr +
+                                        "/lbos/v3/services"+service).c_str(),
+                                        NULL, NULL));
+    lbos_output = *lbos_output_orig1;
+    find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+    
+
+    /* Announce without type */
+    meta.SetType(LBOS::CMetaData::eNone);
+    s_AnnounceCPP(service.c_str(), version.c_str(), (ANNOUNCEMENT_HOST).c_str(),
+                  port, health.c_str(), meta);
+
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig2(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                        UrlReadAll(*net_info,
+                                        (string("http://") + lbos_addr +
+                                        "/lbos/v3/services"+service).c_str(),
+                                        NULL, NULL));
+    lbos_output = *lbos_output_orig2;
+    find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+}
+
+void SetExtraEmpty__ExtraStayInDiscovery()
+{
+    CConnNetInfo net_info;
+    unsigned short port = s_GeneratePort();
+    string version = "1.0.0";
+    string service = s_GetUnknownService();
+    string dtab = "DTab-local: " + service + "=>/zk#" + service + "/" + version;
+    ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+    string expected = "\"extra\":\"test_extra\"";
+    LBOS::CMetaData meta;
+    size_t find_pos;
+    string lbos_output;
+
+    /* Announce with type */
+    meta.SetExtra("test_extra");
+    s_AnnounceCPP(service.c_str(), version.c_str(), (ANNOUNCEMENT_HOST).c_str(),
+                  port, health.c_str(), meta);
+
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig1(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                        UrlReadAll(*net_info,
+                                        (string("http://") + lbos_addr +
+                                        "/lbos/v3/services"+service).c_str(),
+                                        NULL, NULL));
+    lbos_output = *lbos_output_orig1;
+    find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+    
+
+    /* Announce without type */
+    meta.SetExtra("");
+    s_AnnounceCPP(service.c_str(), version.c_str(), (ANNOUNCEMENT_HOST).c_str(),
+                  port, health.c_str(), meta);
+
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig2(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                        UrlReadAll(*net_info,
+                                        (string("http://") + lbos_addr +
+                                        "/lbos/v3/services"+service).c_str(),
+                                        NULL, NULL));
+    lbos_output = *lbos_output_orig2;
+    find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+}
+
+void Set__CaseInsensitive()
+{
+    LBOS::CMetaData meta;
+    string extra, meta_string, mymeta;
+
+    /* 1 */
+    meta.Set("ExTrA", "extra_val1");
+    meta.Set("MyMeTa", "meta_val1");
+    meta_string = meta.GetMetaString();
+    extra = meta.Get("extra");
+    mymeta = meta.Get("mymeta");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(extra, string("extra_val1"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(mymeta, string("meta_val1"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, 
+                                 string("extra=extra_val1&mymeta=meta_val1"));
+
+    /* 2 */
+    meta.Set("eXTrA", "extra_val2");
+    meta.Set("Mymeta", "meta_val2");
+    meta_string = meta.GetMetaString();
+    extra = meta.Get("extra");
+    mymeta = meta.Get("mymeta");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(extra, string("extra_val2"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(mymeta, string("meta_val2"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, 
+                                 string("extra=extra_val2&mymeta=meta_val2"));
+    
+    /* 3 */
+    meta.Set("EXTRA", "extra_val3");
+    meta.Set("MYMETA", "meta_val3");
+    meta_string = meta.GetMetaString();
+    extra = meta.Get("extra");
+    mymeta = meta.Get("mymeta");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(extra, string("extra_val3"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(mymeta, string("meta_val3"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, 
+                                 string("extra=extra_val3&mymeta=meta_val3"));
+    
+    /* 4 */
+    meta.Set("extra", "extra_val4");
+    meta.Set("mymeta", "meta_val4");
+    meta_string = meta.GetMetaString();
+    extra = meta.Get("extra");
+    mymeta = meta.Get("mymeta");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(extra, string("extra_val4"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(mymeta, string("meta_val4"));
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, 
+                                 string("extra=extra_val4&mymeta=meta_val4"));
+}
+
+void GetDefaultMetas__DefaultValEmpty()
+{
+    LBOS::CMetaData meta;
+
+    /* Extra */
+    string extra = meta.GetExtra();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(extra, string(""));
+
+    /* Type */
+    string type_str = meta.GetType(true);
+    LBOS::CMetaData::EHostType type = meta.GetType();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(type_str, string());
+    NCBITEST_CHECK_EQUAL_MT_SAFE(type, LBOS::CMetaData::eNone);
+
+    /* Rate */
+    double rate = meta.GetRate();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(rate, 0);
+
+    /* Unknown*/
+    string mymeta = meta.Get("mymeta");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(mymeta, string());
+}
+
+void GetMetaString__ValuesAsExpected()
+{
+    LBOS::CMetaData meta;
+    string meta_string;
+
+    /* rate and extra */
+    meta.SetRate(100);
+    meta.SetExtra("myextra");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("extra=myextra&rate=100"));
+    meta.SetRate(0);
+    meta.SetExtra("");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string());
+
+    /* extra */
+    meta.SetExtra("myextra");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string("extra=myextra"));
+    meta.SetExtra("");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string());
+
+    /* type and extra */
+    meta.SetType("mytype");
+    meta.SetExtra("myextra");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, 
+                                 string("extra=myextra&type=MYTYPE"));
+    meta.SetType("");
+    meta.SetExtra("");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string());
+
+    /* mymeta1 and mymeta2 */
+    meta.Set("mymeta1", "mymetaval1");
+    meta.Set("mymeta2", "mymetaval2");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string,
+                               string("mymeta1=mymetaval1&mymeta2=mymetaval2"));
+    meta.Set("mymeta1", "");
+    meta.Set("mymeta2", "");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string());
+
+    /* rate and extra and mymeta1 and mymeta2 */
+    meta.SetRate(100);
+    meta.SetExtra("myextra");
+    meta.Set("mymeta1", "mymetaval1");
+    meta.Set("mymeta2", "mymetaval2");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string,
+        string("extra=myextra&mymeta1=mymetaval1&mymeta2=mymetaval2&rate=100"));
+    meta.SetExtra("");
+    meta.SetRate(0);
+    meta.Set("mymeta1", "");
+    meta.Set("mymeta2", "");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string());
+
+    /* rate and extra and type and mymeta1 and mymeta2 */
+    meta.SetRate(100);
+    meta.SetExtra("myextra");
+    meta.Set("mymeta1", "mymetaval1");
+    meta.Set("mymeta2", "mymetaval2");
+    meta.Set("type", "mytype");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string,
+                                 string("extra=myextra&mymeta1=mymetaval1&"
+                                 "mymeta2=mymetaval2&rate=100&type=mytype"));
+    meta.SetExtra("");
+    meta.SetRate(0);
+    meta.SetType("");
+    meta.Set("mymeta1", "");
+    meta.Set("mymeta2", "");
+    meta_string = meta.GetMetaString();
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta_string, string());
+}
+
+void SetNotMeta__Exception()
+{
+    LBOS::CMetaData meta;
+    ExceptionComparator<CLBOSException::eInvalidArgs, eLBOS_InvalidArgs> 
+        comparator("This name cannot be used for metadata\n");
+    /* version */
+    BOOST_CHECK_EXCEPTION(meta.Set("version","val"),CLBOSException, comparator);
+    /* ip */
+    BOOST_CHECK_EXCEPTION(meta.Set("ip", "val"), CLBOSException, comparator);
+    /* port */
+    BOOST_CHECK_EXCEPTION(meta.Set("port", "val"), CLBOSException, comparator);
+    /* check */
+    BOOST_CHECK_EXCEPTION(meta.Set("check", "val"), CLBOSException, comparator);
+    /* format */
+    BOOST_CHECK_EXCEPTION(meta.Set("format","val"), CLBOSException, comparator);
+    /* name */
+    BOOST_CHECK_EXCEPTION(meta.Set("name", "val"), CLBOSException, comparator);
+}
+
+
+void ExtraOrTypeWhitespace__ThrowException()
+{
+    LBOS::CMetaData meta;
+    ExceptionComparator<CLBOSException::eInvalidArgs, eLBOS_InvalidArgs> 
+        comp_extra("This convenience function throws on whitespace "
+                         "characters in \"extra\" meta parameter. If you know "
+                         "what you are doing, you can use CMetaData::Set"
+                         "(\"extra\", ...)\n");
+    ExceptionComparator<CLBOSException::eInvalidArgs, eLBOS_InvalidArgs> 
+        comp_type("This convenience function throws on whitespace "
+                         "characters in \"type\" meta parameter. If you know "
+                         "what you are doing, you can use CMetaData::Set"
+                         "(\"type\", ...)\n");
+
+    /* Extra */
+    /* Space */
+    BOOST_CHECK_EXCEPTION(meta.SetExtra("a a"), CLBOSException, comp_extra);
+
+    /* Tab */
+    BOOST_CHECK_EXCEPTION(meta.SetExtra("a\ta"), CLBOSException, comp_extra);
+
+    /* Newline */
+    BOOST_CHECK_EXCEPTION(meta.SetExtra("a\na"), CLBOSException, comp_extra);
+
+    /* Vertical tab */
+    BOOST_CHECK_EXCEPTION(meta.SetExtra("a\va"), CLBOSException, comp_extra);
+
+    /* Feed */
+    BOOST_CHECK_EXCEPTION(meta.SetExtra("a\fa"), CLBOSException, comp_extra);
+
+    /* Carriage return */
+    BOOST_CHECK_EXCEPTION(meta.SetExtra("a\ra"), CLBOSException, comp_extra);
+
+    /* Type */
+    /* Space */
+    BOOST_CHECK_EXCEPTION(meta.SetType("a a"), CLBOSException, comp_type);
+
+    /* Tab */
+    BOOST_CHECK_EXCEPTION(meta.SetType("a\ta"), CLBOSException, comp_type);
+
+    /* Newline */
+    BOOST_CHECK_EXCEPTION(meta.SetType("a\na"), CLBOSException, comp_type);
+
+    /* Vertical tab */
+    BOOST_CHECK_EXCEPTION(meta.SetType("a\va"), CLBOSException, comp_type);
+
+    /* Feed */
+    BOOST_CHECK_EXCEPTION(meta.SetType("a\fa"), CLBOSException, comp_type);
+
+    /* Carriage return */
+    BOOST_CHECK_EXCEPTION(meta.SetType("a\ra"), CLBOSException, comp_type);
+}
+
+void SetWithWhitespace__SeeInDiscovery()
+{
+    CConnNetInfo net_info;
+    string version = "1.0.0";
+    string service = s_GetUnknownService();
+    string dtab = "DTab-local: " + service + "=>/zk#" + service + "/" + version;
+    ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    string expected;
+    unsigned short port = 8080;
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+    /* Extra */
+    LBOS::CMetaData meta;
+    string lbos_output;
+    size_t find_pos;
+
+    /* space */
+    meta.Set("extra", "a a");
+    meta.Set("type", "a a");
+    s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig0(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                        UrlReadAll(*net_info,
+                                        (string("http://") + lbos_addr +
+                                        "/lbos/v3/services"+service).c_str(),
+                                        NULL, NULL));
+    expected = "\"extra\":\"a a\",\"type\":\"a a\"";
+    lbos_output = *lbos_output_orig0;
+    find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+    
+    /* Tab */
+    meta.Set("extra", "a\ta");
+    meta.Set("type", "a\ta");
+    s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig1(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                        UrlReadAll(*net_info,
+                                        (string("http://") + lbos_addr +
+                                        "/lbos/v3/services"+service).c_str(),
+                                        NULL, NULL));
+    expected = "\"extra\":\"a\\ta\",\"type\":\"a\\ta\"";
+    lbos_output = *lbos_output_orig1;
+    find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+
+    /* Newline */
+    meta.Set("extra", "a\na");
+    meta.Set("type", "a\na");
+    s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig2(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                        UrlReadAll(*net_info,
+                                        (string("http://") + lbos_addr +
+                                        "/lbos/v3/services"+service).c_str(),
+                                        NULL, NULL));
+    expected = "\"extra\":\"a\\na\",\"type\":\"a\\na\"";
+    lbos_output = *lbos_output_orig2;
+    find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+
+    /* Vertical tab */
+    meta.Set("extra", "a\va");
+    meta.Set("type", "a\va");
+    s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig3(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                        UrlReadAll(*net_info,
+                                        (string("http://") + lbos_addr +
+                                        "/lbos/v3/services"+service).c_str(),
+                                        NULL, NULL));
+    expected = "\"extra\":\"a\\u000Ba\",\"type\":\"a\\u000Ba\"";
+    lbos_output = *lbos_output_orig3;
+    find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+
+    /* Feed */
+    meta.Set("extra", "a\fa");
+    meta.Set("type", "a\fa");
+    s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig4(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                        UrlReadAll(*net_info,
+                                        (string("http://") + lbos_addr +
+                                        "/lbos/v3/services"+service).c_str(),
+                                        NULL, NULL));
+    expected = "\"extra\":\"a\\fa\",\"type\":\"a\\fa\"";
+    lbos_output = *lbos_output_orig4;
+    find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+
+    /* Carriage return */
+    meta.Set("extra", "a\ra");
+    meta.Set("type", "a\ra");
+    s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
+    /* Check HTTP output */
+    CCObjHolder<char> lbos_output_orig5(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                        UrlReadAll(*net_info,
+                                        (string("http://") + lbos_addr +
+                                        "/lbos/v3/services"+service).c_str(),
+                                        NULL, NULL));
+    expected = "\"extra\":\"a\\ra\",\"type\":\"a\\ra\"";
+    lbos_output = *lbos_output_orig5;
+    find_pos = lbos_output.find(expected);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+  
+}
+
+
+void SetRateInvalidString__ThrowException()
+{
+    LBOS::CMetaData meta;
+    ExceptionComparator<CLBOSException::eInvalidArgs, eLBOS_InvalidArgs> 
+                       comp_extra("Could not parse string value for SetRate\n");
+
+    BOOST_CHECK_EXCEPTION(meta.SetRate("integer"), CLBOSException, comp_extra);
+}
+
+
+void SetRateGetRateInt__AllOK()
+{
+    LBOS::CMetaData meta;
+    /* zero */
+    meta.Set("rate", "0");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta.GetRate(), 0);
+    /* positive */
+    meta.Set("rate", "-100");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta.GetRate(), -100);
+    /* negative */
+    meta.Set("rate", "200");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta.GetRate(), 200);
+    /* Double */
+    meta.Set("rate", "0.1");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta.GetRate(), 0.1);
+    meta.Set("rate", "103.7");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta.GetRate(), 103.7);
+    /* negative double */
+    meta.Set("rate", "-0.1");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta.GetRate(), -0.1);
+    /* float point zero */
+    meta.Set("rate", "0.0");
+    NCBITEST_CHECK_EQUAL_MT_SAFE(meta.GetRate(), 0.0);
+}
+
+
+void SetRateGetRateNonInt__Exception()
+{
+    LBOS::CMetaData meta;
+    ExceptionComparator<CLBOSException::eInvalidArgs, eLBOS_InvalidArgs> 
+        comparator("Value in \"rate\" meta parameter cannot be represented "
+                   "as an integer\n");
+    /* String */
+    meta.Set("rate", "myval");
+    BOOST_CHECK_EXCEPTION(meta.GetRate(), CLBOSException, comparator);
+    /* Wrong format */
+    meta.Set("rate", "0,1");
+    BOOST_CHECK_EXCEPTION(meta.GetRate(), CLBOSException, comparator);
+    /* digits and letters mix */
+    meta.Set("rate", "13-29a");
+    BOOST_CHECK_EXCEPTION(meta.GetRate(), CLBOSException, comparator);
+}
+
+} /* namespace AnnounceMetadata */
 
 namespace ExtraResolveData
 {
@@ -1965,39 +3063,39 @@ void CheckErrorCodeStrings()
     /* 400 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::eBadRequest, "",
-                                  eLBOSBadRequest).GetErrCodeString();
+                                  eLBOS_BadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 404 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::eNotFound, "",
-                                  eLBOSBadRequest).GetErrCodeString();
+                                  eLBOS_BadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
     
     /* 500 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::eServer, "",
-                                  eLBOSServerError).GetErrCodeString();
+                                  eLBOS_Server).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "");
 
     /* 450 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::eLbosNotFound, "",
-                                  eLBOSBadRequest).GetErrCodeString();
+                                  eLBOS_BadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "LBOS was not found");
 
     /* 451 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::
                                   eDNSResolve, "",
-                                  eLBOSBadRequest).GetErrCodeString();
+                                  eLBOS_BadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "DNS error. Possibly, cannot "
                                  "get IP of current machine or resolve "
                                  "provided hostname for the server");
     /* 452 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::eInvalidArgs, "",
-                                  eLBOSBadRequest).GetErrCodeString();
+                                  eLBOS_BadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, 
                                  "Invalid arguments were provided. No "
                                  "request to LBOS was sent");
@@ -2005,31 +3103,30 @@ void CheckErrorCodeStrings()
     /* 453 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::eMemAlloc, "",
-                                  eLBOSBadRequest).GetErrCodeString();
+                                  eLBOS_BadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Memory allocation error happened "
                                                "while performing request");
 
     /* 454 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::eProtocol, "",
-                                  eLBOSBadRequest).GetErrCodeString();
+                                  eLBOS_BadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Failed to parse LBOS output.");
 
     /* 550 */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::eDisabled, "",
-                                  eLBOSBadRequest).GetErrCodeString();
+                                  eLBOS_BadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, 
                                  "LBOS functionality is turned OFF. Check "
                                  "config file or connection to LBOS.");
     /* unknown */
     error_string = CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                   CLBOSException::eUnknown, "",
-                                  eLBOSBadRequest).GetErrCodeString();
+                                  eLBOS_BadRequest).GetErrCodeString();
     NCBITEST_CHECK_EQUAL_MT_SAFE(error_string, "Unknown LBOS error code");
 }
 }
-
 
 namespace IPCache
 {
@@ -2194,9 +3291,10 @@ void ResolveIP__TryFindReturnsIP()
 void ResolveEmpty__Error()
 {
     ExceptionComparator<CLBOSException::eUnknown, 400> 
-    comparator("Internal error in LBOS Client IP Cache. Please contact developer\n");
+    comparator("Internal error in LBOS Client IP Cache. "
+               "Please contact developer\n");
     BOOST_CHECK_EXCEPTION(s_LBOSIPCacheTest("", s_GetMyIP()),
-                         CLBOSException, comparator);
+                          CLBOSException, comparator);
 }
 
 
@@ -2359,7 +3457,6 @@ void TryFindTwice__SecondTimeNoOp()
 }
 
 } /* namespace IPCache */
-
 
 // /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 namespace ResetIterator
@@ -2527,9 +3624,9 @@ void AfterOpen__ShouldWork()
     string service = "/lbos";
     CConnNetInfo net_info;
     CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                              *net_info, 0/*skip*/, 0/*n_skip*/,
+                              0/*external*/, 0/*arg*/, 0/*val*/));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
                                "LBOS not found when it should be");
@@ -2547,9 +3644,9 @@ void AfterReset__ShouldWork()
     string service = "/lbos";
     CConnNetInfo net_info;
     CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                              *net_info, 0/*skip*/, 0/*n_skip*/,
+                              0/*external*/, 0/*arg*/, 0/*val*/));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
                                "LBOS not found when it should be");
@@ -2569,10 +3666,9 @@ void AfterGetNextInfo__ShouldWork()
     SLBOS_Data* data;
     CConnNetInfo net_info;
     CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                              *net_info, 0/*skip*/, 0/*n_skip*/,
+                              0/*external*/, 0/*arg*/, 0/*val*/));
     SERV_GetNextInfo(*iter);
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
@@ -2609,21 +3705,21 @@ void FullCycle__ShouldWork()
     SELECT_PORT(count_before, service, port1);
     s_AnnounceCSafe(service.c_str(), "1.0.0", "", port1,
                      (string("http://") + ANNOUNCEMENT_HOST + ":"
-                             + s_PortStr(PORT_N) +  "/health").c_str(),
+                     + s_PortStr(PORT_N) + "/health").c_str(), "",
                     &lbos_answer.Get(), NULL);
     lbos_answer = NULL;
 
     SELECT_PORT(count_before, service, port2);
     s_AnnounceCSafe(service.c_str(), "1.0.0", "", port2,
                      (string("http://") + ANNOUNCEMENT_HOST + ":"
-                             + s_PortStr(PORT_N) +  "/health").c_str(),
+                             + s_PortStr(PORT_N) +  "/health").c_str(), "",
                     &lbos_answer.Get(), NULL);
     lbos_answer = NULL;
 
     SELECT_PORT(count_before, service, port3);
     s_AnnounceCSafe(service.c_str(), "1.0.0", "", port3,
                      (string("http://") + ANNOUNCEMENT_HOST + ":"
-                             + s_PortStr(PORT_N) +  "/health").c_str(),
+                             + s_PortStr(PORT_N) +  "/health").c_str(), "",
                     &lbos_answer.Get(), NULL);
     lbos_answer = NULL;
 
@@ -2646,9 +3742,9 @@ void FullCycle__ShouldWork()
      * 1. We close after first GetNextInfo
      */
     CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                              *net_info, 0/*skip*/, 0/*n_skip*/,
+                              0/*external*/, 0/*arg*/, 0/*val*/));
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter != NULL,
                            "Could not find announced lbostest nodes");
     SERV_GetNextInfo(*iter);
@@ -2766,7 +3862,7 @@ void NonStandardVersion__FoundWithDTab()
 
     s_AnnounceCSafe(service.c_str(), "1.1.0", "", port,
                      (string("http://") + ANNOUNCEMENT_HOST + ":" + 
-                     s_PortStr(PORT_N) +  "/health").c_str(),
+                     s_PortStr(PORT_N) +  "/health").c_str(), "",
                     &lbos_answer.Get(), NULL);
 
     unsigned int servers_found =
@@ -2795,7 +3891,7 @@ void NonStandardVersion__FoundWithDTab()
     }
     s_AnnounceCSafe(service.c_str(), "1.1.0", "", port,
                     ("http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  
-                    "/health").c_str(),
+                    "/health").c_str(), "",
                     &lbos_answer.Get(), NULL);
     servers_found = 
         s_CountServersWithExpectation(service, port, 1, __LINE__, 
@@ -2861,7 +3957,7 @@ void NonStandardVersion__FoundWithRequestContextDTab()
 
     s_AnnounceCSafe(service.c_str(), "1.2.0", "", port,
                     (string("http://") + ANNOUNCEMENT_HOST + ":" + 
-                    s_PortStr(PORT_N) + "/health").c_str(),
+                    s_PortStr(PORT_N) + "/health").c_str(), "",
                     &lbos_answer.Get(), NULL);
 
     CDiagContext::GetRequestContext().SetDtab("DTab-local: /lbostest=>"
@@ -2892,7 +3988,8 @@ void NonStandardVersion__FoundWithRequestContextDTab()
                                "DTab-local: /lbostest1=>/zk#/lbostest1/1.2.0");
     }
     s_AnnounceCSafe(service.c_str(), "1.2.0", "", port,
-                  "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health",
+                  "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                  s_PortStr(PORT_N) +  "/health", "",
                   &lbos_answer.Get(), NULL);
 
     CDiagContext::GetRequestContext().SetDtab("DTab-local: /lbostest1=>/zk#/lbostest1/1.2.0");
@@ -3252,7 +4349,7 @@ void SpecificMethod__FirstInResult()
     CLBOSStatus lbos_status(true, true);
     string custom_lbos = "lbos.custom.host";
     CCObjHolder<char> addresses(
-                           g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_CustomHost,
+                           g_LBOS_GetLBOSAddressEx(eLBOS_FindMethod_CustomHost,
                                                      custom_lbos.c_str()));
     /* I. Custom address */
     WRITE_LOG("Part 1. Testing custom LBOS address");
@@ -3262,7 +4359,7 @@ void SpecificMethod__FirstInResult()
     string registry_lbos =
             CNcbiApplication::Instance()->GetConfig().Get("CONN", "LBOS");
     WRITE_LOG("Part 2. Testing registry LBOS address");
-    addresses = g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_Registry, NULL);
+    addresses = g_LBOS_GetLBOSAddressEx(eLBOS_FindMethod_Registry, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), registry_lbos);
 
     /* We have to fake last method, because its result is dependent on
@@ -3282,7 +4379,7 @@ void SpecificMethod__FirstInResult()
     lbosresolver = NStr::Replace(lbosresolver, "\n", "");
     lbosresolver = NStr::Replace(lbosresolver, "\r", "");
     lbosresolver = lbosresolver.erase(lbosresolver.length() - 5);
-    addresses = g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_Lbosresolve, NULL);
+    addresses = g_LBOS_GetLBOSAddressEx(eLBOS_FindMethod_Lbosresolve, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(addresses.Get()), lbosresolver);
 #endif /* defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN */
 }
@@ -3291,7 +4388,7 @@ void CustomHostNotProvided__SkipCustomHost()
 {
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> addresses(
-                           g_LBOS_GetLBOSAddressEx(eLBOSFindMethod_CustomHost,
+                           g_LBOS_GetLBOSAddressEx(eLBOS_FindMethod_CustomHost,
                                                      NULL));
     /* We check the count of LBOS addresses */
     NCBITEST_CHECK_MESSAGE_MT_SAFE(addresses.Get() !=  NULL,
@@ -3382,7 +4479,6 @@ void LBOSResponds__Finish()
         return;
     }
     static_cast<SLBOS_Data*>(iter->data)->lbos_addr = lbos_addr.c_str();
-    /*ConnNetInfo_Destroy(*net_info);*/
     HOST_INFO hinfo;
     SERV_GetNextInfoEx(*iter, &hinfo);
 
@@ -3419,9 +4515,7 @@ void NetInfoProvided__UseNetInfo()
             "LBOS not found when it should be");
         return;
     }
-    static_cast<SLBOS_Data*>(iter->data)->lbos_addr = 
-                                             lbos_addr.c_str();
-    /*ConnNetInfo_Destroy(*net_info);*/
+    static_cast<SLBOS_Data*>(iter->data)->lbos_addr = lbos_addr.c_str();
     HOST_INFO hinfo;
     SERV_GetNextInfoEx(*iter, &hinfo);
 
@@ -3429,8 +4523,8 @@ void NetInfoProvided__UseNetInfo()
      * to resolve service
      */
     NCBITEST_CHECK_MESSAGE_MT_SAFE(s_LastHeader == "My header fq34facsadf\r\n",
-                           "s_LBOS_FillCandidates: Incorrect "
-                           "transition of header");
+                                   "s_LBOS_FillCandidates: Incorrect "
+                                   "transition of header");
 }
 } /* namespace GetCandidates */
 
@@ -3975,18 +5069,8 @@ void ServerExists__ServOpenPReturnsLbosOperations()
 void LbosExist__ShouldWork()
 {
     CLBOSStatus lbos_status(true, true);
-    ELBOSFindMethod find_methods_arr[] = {
-                                          eLBOSFindMethod_Registry,
-                                          eLBOSFindMethod_CustomHost
-    };
-
-    size_t method_iter/*, error_types_iter = 0*/;
-    /*Iterate through possible errors*/
-    for (method_iter = 0;
-            method_iter < sizeof(find_methods_arr)/sizeof(ELBOSFindMethod);
-            method_iter++) {
-        s_TestFindMethod(find_methods_arr[method_iter]);
-    }
+    s_TestFindMethod(eLBOS_FindMethod_Registry);
+    s_TestFindMethod(eLBOS_FindMethod_CustomHost);
 }
 
 
@@ -4094,15 +5178,15 @@ void AllOK__ReturnSuccess()
                              "",
                              port,
                              "http://" ANNOUNCEMENT_HOST_0000 ":" +
-                             s_PortStr(PORT_N) +  "/health",
+                             s_PortStr(PORT_N) +  "/health", "",
                              &lbos_answer.Get(), &lbos_status_message.Get());
     
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
 
     /* Cleanup */
     deannounce_result = s_DeannounceC(node_name.c_str(), "1.0.0", NULL, 
                                       port, NULL, NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOS_Success);
     lbos_answer = NULL;
     lbos_status_message = NULL;
     
@@ -4116,15 +5200,15 @@ void AllOK__ReturnSuccess()
                     "1.0.0",
                     "", port,
                     (string("http://") + ANNOUNCEMENT_HOST + ":" +
-                    s_PortStr(PORT_N) +  "/health").c_str(),
+                    s_PortStr(PORT_N) +  "/health").c_str(), "",
                     &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
 
     /* Cleanup */
     s_DeannounceC(node_name.c_str(), "1.0.0", ANNOUNCEMENT_HOST.c_str(),
                   port, NULL, NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOS_Success);
     lbos_answer = NULL;
     lbos_status_message = NULL;
 #undef PORT_N
@@ -4155,7 +5239,8 @@ void AllOK__LBOSAnswerProvided()
     SELECT_PORT(count_before, node_name, port);
     /* Announce */
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                  (string("http://") + s_GetMyHost() + ":" + s_PortStr(PORT_N) +  "/health").c_str(),
+                  (string("http://") + s_GetMyHost() + ":" + 
+                  s_PortStr(PORT_N) +  "/health").c_str(), "",
                   &lbos_answer.Get(), &lbos_status_message.Get());
 
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
@@ -4172,7 +5257,7 @@ void AllOK__LBOSAnswerProvided()
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                     (string("http://") + ANNOUNCEMENT_HOST + ":" + 
-                    s_PortStr(PORT_N) + "/health").c_str(),
+                    s_PortStr(PORT_N) + "/health").c_str(), "",
                     &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Announcement function did not return "
@@ -4206,7 +5291,7 @@ void AllOK__LBOSStatusMessageIsOK()
     /* Announce */
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                     (string("http://" ANNOUNCEMENT_HOST_0000 ":") + 
-                    s_PortStr(PORT_N) + "/health").c_str(),
+                    s_PortStr(PORT_N) + "/health").c_str(), "",
                     &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
     NCBITEST_CHECK_EQUAL_MT_SAFE(
@@ -4228,7 +5313,7 @@ void AllOK__LBOSStatusMessageIsOK()
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                     (string("http://") + ANNOUNCEMENT_HOST + ":" + 
-                    s_PortStr(PORT_N) +  "/health").c_str(),
+                    s_PortStr(PORT_N) +  "/health").c_str(), "",
                     &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
@@ -4266,9 +5351,9 @@ void AllOK__AnnouncedServerSaved()
     unsigned short result;
     result = s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                              "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                             s_PortStr(PORT_N) +  "/health",
+                             s_PortStr(PORT_N) +  "/health", "",
                              &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(result == eLBOSSuccess,
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(result == eLBOS_Success,
                                    "Announcement function did not return "
                                    "SUCCESS as expected");
     int find_result = s_FindAnnouncedServer(node_name, "1.0.0", port,
@@ -4281,7 +5366,7 @@ void AllOK__AnnouncedServerSaved()
                                           "1.0.0", "", port,
                                           &lbos_answer.Get(),
                                           &lbos_status_message.Get());
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(deannounce_result == eLBOSSuccess,
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(deannounce_result == eLBOS_Success,
                                    "Deannouncement function did not return "
                                    "SUCCESS as expected");
     /* Cleanup */
@@ -4299,8 +5384,9 @@ void AllOK__AnnouncedServerSaved()
                     port,
                     (string("http://") + ANNOUNCEMENT_HOST +
                             ":" + s_PortStr(PORT_N) +  "/health").c_str(),
+                    "",
                     &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(result == eLBOSSuccess,
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(result == eLBOS_Success,
                                    "Announcement function did not return "
                                    "SUCCESS as expected");
     find_result = s_FindAnnouncedServer(node_name, "1.0.0", port,
@@ -4313,7 +5399,7 @@ void AllOK__AnnouncedServerSaved()
                                       "1.0.0",
                                       "",
                                       port, NULL, NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOS_Success);
     lbos_answer = NULL;
     lbos_status_message = NULL;
 #undef PORT_N
@@ -4326,7 +5412,7 @@ void AllOK__AnnouncedServerSaved()
 void NoLBOS__ReturnNoLBOSAndNotFind()
 {
     WRITE_LOG("Testing behavior of LBOS when no LBOS is found."
-                " Should return eLBOSNoLBOS");
+                " Should return eLBOS_LbosNotFound");
     CLBOSStatus lbos_status(true, true);
     unsigned short result;
     string node_name = s_GenerateNodeName();
@@ -4343,9 +5429,9 @@ void NoLBOS__ReturnNoLBOSAndNotFind()
     result = s_AnnounceC(node_name,
                          "1.0.0", "", port,
                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                         s_PortStr(PORT_N) +  "/health",
+                         s_PortStr(PORT_N) + "/health", "",
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSNoLBOS);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_LbosNotFound);
 
     /* Cleanup*/
     WRITE_LOG("Reverting mock of CONN_Read() with s_FakeReadEmpty()");
@@ -4375,7 +5461,7 @@ void NoLBOS__LBOSAnswerNull()
                 "1.0.0",
                 "", port,
                 "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                s_PortStr(PORT_N) +  "/health",
+                s_PortStr(PORT_N) + "/health", "",
                 &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
@@ -4407,7 +5493,7 @@ void NoLBOS__LBOSStatusMessageNull()
                 "1.0.0",
                 "", port,
                 "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                s_PortStr(PORT_N) +  "/health",
+                s_PortStr(PORT_N) + "/health", "",
                 &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "Answer from LBOS was not NULL");
@@ -4418,7 +5504,7 @@ void NoLBOS__LBOSStatusMessageNull()
 }
 
 
-/*  8. LBOS returned error: return eLBOSServerError                          */
+/*  8. LBOS returned error: return eLBOS_Server                          */
 /* Test is NOT thread-safe. */
 void LBOSError__ReturnServerErrorCode()
 {
@@ -4438,20 +5524,21 @@ void LBOSError__ReturnServerErrorCode()
                                       s_FakeReadAnnouncementWithErrorFromLBOS);
     unsigned short result;
     result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                   "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health",
-                   &lbos_answer.Get(), &lbos_status_message.Get());
+                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) + "/health", "",
+                         &lbos_answer.Get(), &lbos_status_message.Get());
 
     /* Check that error code is the same as in mock*/
     NCBITEST_CHECK_MESSAGE_MT_SAFE(result == 507,
                            "Announcement did not return "
-                           "eLBOSDNSResolveError as expected");
+                           "eLBOS_DNSResolve as expected");
     /* Cleanup*/
     WRITE_LOG(
         "Reverting mock of CONN_Read() with s_FakeReadEmpty()");
 }
 
 
-/*  8.5. LBOS returned error: return eLBOSServerError                         */
+/*  8.5. LBOS returned error: return eLBOS_Server                         */
 /* Test is NOT thread-safe. */
 void LBOSError__ReturnServerStatusMessage()
 {
@@ -4469,13 +5556,14 @@ void LBOSError__ReturnServerStatusMessage()
                                     g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
                                     s_FakeReadAnnouncementWithErrorFromLBOS);
     s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health",
+                "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                s_PortStr(PORT_N) + "/health", "",
                 &lbos_answer.Get(), &lbos_status_message.Get());
 
     /* Check that error code is the same as in mock*/
     NCBITEST_CHECK_MESSAGE_MT_SAFE(strcmp(*lbos_status_message, "LBOS STATUS") == 0,
                            "Announcement did not return "
-                           "eLBOSDNSResolveError as expected");
+                           "eLBOS_DNSResolve as expected");
     /* Cleanup*/
     WRITE_LOG("Reverting mock of CONN_Read() with "
               "s_FakeReadAnnouncementWithErrorFromLBOS()");
@@ -4500,9 +5588,9 @@ void LBOSError__LBOSAnswerProvided()
                                       g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
                                       s_FakeReadAnnouncementWithErrorFromLBOS);
     s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                  "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                  s_PortStr(PORT_N) +  "/health",
-                  &lbos_answer.Get(), &lbos_status_message.Get());
+                "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                s_PortStr(PORT_N) + "/health", "",
+                &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(*lbos_answer ? *lbos_answer : "<NULL>"),
                          "Those lbos errors are scaaary");
     /* Cleanup*/
@@ -4544,7 +5632,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
     WRITE_LOG("Part 1. First time announcing server");
     result = s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                       "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                      s_PortStr(PORT_N) +  "/health",
+                      s_PortStr(PORT_N) +  "/health", "",
                       &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                              "Did not get answer after announcement");
@@ -4557,7 +5645,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
     count_after = s_CountServersWithExpectation(node_name, port, 1,
                                                 __LINE__, kDiscoveryDelaySec);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     WRITE_LOG("Trying to find the announced server in "
               "%LBOS%/lbos/text/service");
     int servers_in_text_service = s_FindAnnouncedServer(node_name, "1.0.0", 
@@ -4575,9 +5663,9 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
     WRITE_LOG("Part 2. Second time announcing server");
     result = s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                       "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                      s_PortStr(PORT_N) +  "/health",
+                      s_PortStr(PORT_N) +  "/health", "",
                       &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                              "Did not get answer after announcement");
     convert_result = SOCK_StringToHostPort(*lbos_answer,
@@ -4605,7 +5693,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
                                             "1.0.0",
                                             ANNOUNCEMENT_HOST.c_str(),
                                             port, NULL, NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOS_Success);
 #undef PORT_N
 #define PORT_N 0 
 }
@@ -4627,7 +5715,7 @@ void ForeignDomain__NoAnnounce()
         string node_name = s_GenerateNodeName();
         WRITE_LOG("Testing behavior of LBOS mapper when no LBOS is "
                    "available in the current region (should "
-                   "return error code eLBOSNoLBOS).");
+                   "return error code eLBOS_LbosNotFound).");
         WRITE_LOG("Mocking region with \"or-wa\"");
         CMockString mock1(*g_LBOS_UnitTesting_CurrentDomain(), "or-wa");
 
@@ -4635,7 +5723,7 @@ void ForeignDomain__NoAnnounce()
         result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
                                "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health",
                                &lbos_answer.Get(), &lbos_status_message.Get());
-        NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSNoLBOS);
+        NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_LbosNotFound);
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                "LBOS status message is not NULL");
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -4661,16 +5749,16 @@ void IncorrectURL__ReturnInvalidArgs()
     unsigned short port = kDefaultPort;
     WRITE_LOG("Testing behavior of LBOS "
              "mapper when passed incorrect healthcheck URL - should return "
-             "eLBOSInvalidArgs");
+             "eLBOS_InvalidArgs");
     /* Count how many servers there are before we announce */
     /*
      * I. Healthcheck URL that equals NULL
      */
     WRITE_LOG("Part I. Healthcheck is <NULL>");
     unsigned short result;
-    result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port, NULL,
-                    &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port, NULL, NULL,
+                         &lbos_answer.Get(), &lbos_status_message.Get());
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4685,9 +5773,9 @@ void IncorrectURL__ReturnInvalidArgs()
     WRITE_LOG("Part II. Healthcheck is \"\" (empty string)");
     port = kDefaultPort;
     node_name = s_GenerateNodeName();
-    s_AnnounceC(node_name.c_str(), "1.0.0", "", port, "",
+    s_AnnounceC(node_name.c_str(), "1.0.0", "", port, "", NULL,
                     &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4701,9 +5789,9 @@ void IncorrectURL__ReturnInvalidArgs()
     port = kDefaultPort;
     node_name = s_GenerateNodeName();
     s_AnnounceC(node_name.c_str(), "1.0.0", "", port, 
-                "lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
+                "lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health", NULL,
                 &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4727,15 +5815,15 @@ void IncorrectPort__ReturnInvalidArgs()
     unsigned short port = kDefaultPort;
     WRITE_LOG("Testing behavior of LBOS "
               "mapper when passed incorrect port (zero) - should return "
-              "eLBOSInvalidArgs");
+              "eLBOS_InvalidArgs");
     unsigned short result;
     /* I. 0 */
     port = 0;
     result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                         s_PortStr(PORT_N) +  "/health",
+                         ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) + "/health").c_str(), NULL,
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                     "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4760,17 +5848,17 @@ void IncorrectVersion__ReturnInvalidArgs()
     unsigned short result;
     WRITE_LOG("Testing behavior of LBOS "
              "mapper when passed incorrect version - should return "
-             "eLBOSInvalidArgs");
+             "eLBOS_InvalidArgs");
     /*
      * I. NULL version
      */
     WRITE_LOG("Part I. Version is <NULL>");
     result = s_AnnounceC(node_name.c_str(), NULL, "", port,
                          ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                         s_PortStr(PORT_N) +  "/health").c_str(),
+                         s_PortStr(PORT_N) + "/health").c_str(), NULL,
                          &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4786,11 +5874,11 @@ void IncorrectVersion__ReturnInvalidArgs()
     WRITE_LOG("Part II. Version is \"\" (empty string)");
     node_name = s_GenerateNodeName();
     result = s_AnnounceC(node_name.c_str(), "", "", port,
-                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                         s_PortStr(PORT_N) +  "/health",
+                         ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) + "/health").c_str(), NULL,
                          &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4815,17 +5903,17 @@ void IncorrectServiceName__ReturnInvalidArgs()
     unsigned short port = kDefaultPort;
     WRITE_LOG("Testing behavior of LBOS "
               "mapper when passed incorrect service name - should return "
-              "eLBOSInvalidArgs");
+              "eLBOS_InvalidArgs");
     /*
      * I. NULL service name
      */
     WRITE_LOG("Part I. Service name is <NULL>");
     result = s_AnnounceC(NULL, "1.0.0", "", port,
                          ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                         s_PortStr(PORT_N) + "/health").c_str(),
+                         s_PortStr(PORT_N) + "/health").c_str(), NULL,
                          &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4843,10 +5931,10 @@ void IncorrectServiceName__ReturnInvalidArgs()
     /* As the call is not supposed to go through mapper to network,
      * we do not need any mocks*/
     result = s_AnnounceC("", "1.0.0", "", port, 
-                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                         s_PortStr(PORT_N) +  "/health",
+                         ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) + "/health").c_str(), NULL,
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -4878,13 +5966,13 @@ void RealLife__VisibleAfterAnnounce()
     SELECT_PORT(count_before, node_name, port);
     unsigned short result;
     result = s_AnnounceCSafe(node_name, "1.0.0", "", port,
-                             "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                             s_PortStr(PORT_N) +  "/health",
+                             ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                             s_PortStr(PORT_N) + "/health").c_str(), "",
                              &lbos_answer.Get(), &lbos_status_message.Get());
     int count_after = s_CountServersWithExpectation(node_name, port, 1, 
                                                     __LINE__,
                                                     kDiscoveryDelaySec);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
     /* Cleanup */
     s_DeannounceC(node_name.c_str(), "1.0.0",
@@ -4924,12 +6012,12 @@ void IP0000__ReplaceWithIP()
     string health = "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) + 
                     "/health";
     result = s_AnnounceC(node_name, "1.0.0", "", port,
-                         health, &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSDNSResolveError);
+                         health.c_str(), "",
+                         &lbos_answer.Get(), &lbos_status_message.Get());
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_DNSResolve);
     stringstream healthcheck;
-    healthcheck << "http%3A%2F%2F1.2.3.4%3A" + s_PortStr(PORT_N) +  "%2Fhealth" << 
-                   "%2Fport" << port <<
-                   "%2Fhost%2Fversion1.0.0";
+    healthcheck << "http%3A%2F%2F1.2.3.4%3A" + s_PortStr(PORT_N) +  "%2Fhealth"
+                << "%2Fport" << port << "%2Fhost%2Fversion1.0.0";
     NCBITEST_CHECK_EQUAL_MT_SAFE(s_LBOS_hostport, healthcheck.str().c_str());
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -4937,10 +6025,10 @@ void IP0000__ReplaceWithIP()
     WRITE_LOG("Mocking SOCK_gethostbyaddr with \"251.252.253.147\"");
     mock1 = s_FakeGetLocalHostAddress<true, 251, 252, 253, 147>;
     s_AnnounceC(node_name, "1.0.0", "", port,
-                "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                s_PortStr(PORT_N) +  "/health",
+                ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                s_PortStr(PORT_N) + "/health").c_str(), "",
                 &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSDNSResolveError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_DNSResolve);
     healthcheck.str(std::string());
     healthcheck << "http%3A%2F%2F251.252.253.147%3A" + s_PortStr(PORT_N) +  
                    "%2Fhealth" << "%2Fport" << port <<
@@ -4953,7 +6041,7 @@ void IP0000__ReplaceWithIP()
 
 
 /* 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host
- *     IP - return eLBOSDNSResolveError                                       */
+ *     IP - return eLBOS_DNSResolve                                       */
 /* Test is NOT thread-safe. */
 void ResolveLocalIPError__ReturnDNSError()
 {
@@ -4972,20 +6060,20 @@ void ResolveLocalIPError__ReturnDNSError()
                               s_FakeGetLocalHostAddress<false,0,0,0,0>);
     unsigned short result;
     result = s_AnnounceC(node_name, "1.0.0", "", port,
-                         "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                         s_PortStr(PORT_N) +  "/health",
+                         ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                         s_PortStr(PORT_N) + "/health").c_str(), "",
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSDNSResolveError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_DNSResolve);
     /* Cleanup*/
     lbos_answer = NULL;
     result = s_DeannounceC(node_name.c_str(), "1.0.0", "", port, 
                            &lbos_answer.Get(), NULL);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSDNSResolveError);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_DNSResolve);
     WRITE_LOG("Reverting mock og SOCK_gethostbyaddr with \"0.0.0.0\"");
 }
 
 
-/* 20. LBOS is OFF - return eLBOSOff                                          */
+/* 20. LBOS is OFF - return eLBOS_Disabled                                          */
 /* Test is NOT thread-safe. */
 void LBOSOff__ReturnKLBOSOff()
 {
@@ -4995,12 +6083,12 @@ void LBOSOff__ReturnKLBOSOff()
     unsigned short port = 8080;
     unsigned short result;
     WRITE_LOG("LBOS mapper is OFF (maybe it is not turned ON in registry " 
-              "or it could not initialize at start) - return eLBOSOff");
+              "or it could not initialize at start) - return eLBOS_Disabled");
     result = s_AnnounceC("lbostest", "1.0.0", "", port,
                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                         s_PortStr(PORT_N) +  "/health",
+                         s_PortStr(PORT_N) + "/health", "",
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSOff);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Disabled);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
@@ -5019,7 +6107,7 @@ void LBOSAnnounceCorruptOutput__Return454()
     CCObjHolder<char> lbos_status_message(NULL);
     unsigned short port = kDefaultPort;
     WRITE_LOG("Announced successfully, but LBOS returns corrupted answer - "
-              "return eLBOSCorruptOutput");
+              "return eLBOS_Protocol");
     WRITE_LOG("Mocking CONN_Read with corrupt output");
     CMockFunction<FLBOS_ConnReadMethod*> mock(
                     g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
@@ -5027,9 +6115,9 @@ void LBOSAnnounceCorruptOutput__Return454()
     unsigned short result;
     result = s_AnnounceC(node_name, "1.0.0", "", port,
                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                         s_PortStr(PORT_N) +  "/health",
+                         s_PortStr(PORT_N) + "/health", "",
                          &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSCorruptOutput);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Protocol);
     /* Cleanup */
     WRITE_LOG("Reverting mock of CONN_Read with corrupt output");
 }
@@ -5054,11 +6142,11 @@ void HealthcheckDead__ReturnKLBOSSuccess()
      * I. Healthcheck is dead completely 
      */
      WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
-                "return  eLBOSBadRequest");
+                "return  eLBOS_BadRequest");
     result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                  "http://badhealth.gov", 
-                  &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSBadRequest);
+                         "http://badhealth.gov",  NULL,
+                         &lbos_answer.Get(), &lbos_status_message.Get());
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_BadRequest);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
                            "Answer from LBOS was not NULL");
     NCBITEST_CHECK_EQUAL_MT_SAFE(
@@ -5073,11 +6161,11 @@ void HealthcheckDead__ReturnKLBOSSuccess()
      * II. Healthcheck returns 404
      */
      WRITE_LOG("Part II. Healthcheck is \"http:/0.0.0.0:4097/healt\" - "
-                "return  eLBOSSuccess");
+                "return  eLBOS_Success");
      result = s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                          "http://0.0.0.0:4097/healt", //wrong port
+                          "http://0.0.0.0:4097/healt"/*wrong port*/, NULL,
                           &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Answer from LBOS was NULL");
     NCBITEST_CHECK_EQUAL_MT_SAFE(
@@ -5103,7 +6191,7 @@ void HealthcheckDead__AnnouncementOK()
               "server should be announced");
     
     s_AnnounceC(node_name.c_str(), "1.0.0", "", port,
-                "http://0.0.0.0:4097/healt",  //wrong port
+                "http://0.0.0.0:4097/healt"/*wrong port*/, NULL,
                 &lbos_answer.Get(), &lbos_status_message.Get());
     stringstream healthcheck;
     healthcheck << ":4097/healt" << "?port=" << port <<
@@ -5123,7 +6211,7 @@ namespace AnnouncementRegistry /* These tests are NOT for multithreading */
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
 /*  1.  All parameters good (Custom section has all parameters correct in 
-        config) - return eLBOSSuccess                                       */
+        config) - return eLBOS_Success                                       */
 void ParamsGood__ReturnSuccess() 
 {
     CLBOSStatus         lbos_status(true, true);
@@ -5131,10 +6219,10 @@ void ParamsGood__ReturnSuccess()
     CCObjHolder<char>   lbos_status_message(NULL);
     unsigned short      result;
     WRITE_LOG("Simple announcement from registry. "
-              "Should return eLBOSSuccess");
+              "Should return eLBOS_Success");
     result = s_AnnounceCRegistry(NULL, &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                                    "Successful announcement did not end up "
                                    "with answer from LBOS");
@@ -5144,7 +6232,7 @@ void ParamsGood__ReturnSuccess()
     s_DeannounceAll();
 }
 
-/*  2.  Custom section has nothing in config - return eLBOSInvalidArgs      */
+/*  2.  Custom section has nothing in config - return eLBOS_InvalidArgs      */
 void CustomSectionNoVars__ReturnInvalidArgs()
 {
     CLBOSStatus         lbos_status(true, true);
@@ -5152,11 +6240,11 @@ void CustomSectionNoVars__ReturnInvalidArgs()
     CCObjHolder<char>   lbos_status_message(NULL);
     unsigned short      result;
     WRITE_LOG("Custom section has nothing in config - "
-              "return eLBOSInvalidArgs");
+              "return eLBOS_InvalidArgs");
     result = s_AnnounceCRegistry("EMPTY_SECTION",
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5164,7 +6252,7 @@ void CustomSectionNoVars__ReturnInvalidArgs()
 }
 
 /*  3.  Section empty or NULL (should use default section and return 
-        eLBOSSuccess, if section is Good)                                   */
+        eLBOS_Success, if section is Good)                                   */
 void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess()
 {
     CLBOSStatus         lbos_status(true, true);
@@ -5172,13 +6260,13 @@ void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess()
     CCObjHolder<char>   lbos_status_message(NULL);
     unsigned short      result;
     WRITE_LOG("Section empty or NULL - should use default section and return "
-              "eLBOSSuccess, if section is Good)");
+              "eLBOS_Success, if section is Good)");
     /*
      * I. NULL section
      */
     result = s_AnnounceCRegistry(NULL, &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                                    "Successful announcement did not end up "
                                    "with answer from LBOS");
@@ -5193,7 +6281,7 @@ void CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess()
      */
     result = s_AnnounceCRegistry("", &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Successful announcement did not end up with "
                            "answer from LBOS");
@@ -5221,7 +6309,7 @@ void TestNullOrEmptyField(const char* field_tested)
     result = s_AnnounceCRegistry((null_section + field_name).c_str(),
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5236,38 +6324,38 @@ void TestNullOrEmptyField(const char* field_tested)
     result = s_AnnounceCRegistry((empty_section + field_name).c_str(),
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
                                    "Answer from LBOS was not NULL");
 }
 
-/*  4.  Service is empty or NULL - return eLBOSInvalidArgs                  */
+/*  4.  Service is empty or NULL - return eLBOS_InvalidArgs                  */
 void ServiceEmptyOrNull__ReturnInvalidArgs()
 {
-    WRITE_LOG("Service is empty or NULL - return eLBOSInvalidArgs");
+    WRITE_LOG("Service is empty or NULL - return eLBOS_InvalidArgs");
     TestNullOrEmptyField("SERVICE");
 }
 
-/*  5.  Version is empty or NULL - return eLBOSInvalidArgs                  */
+/*  5.  Version is empty or NULL - return eLBOS_InvalidArgs                  */
 void VersionEmptyOrNull__ReturnInvalidArgs()
 {
-    WRITE_LOG("Version is empty or NULL - return eLBOSInvalidArgs");
+    WRITE_LOG("Version is empty or NULL - return eLBOS_InvalidArgs");
     TestNullOrEmptyField("VERSION");
 }
 
-/*  6.  Port is empty or NULL - return eLBOSInvalidArgs                     */
+/*  6.  Port is empty or NULL - return eLBOS_InvalidArgs                     */
 void PortEmptyOrNull__ReturnInvalidArgs()
 {
-    WRITE_LOG("Port is empty or NULL - return eLBOSInvalidArgs");
+    WRITE_LOG("Port is empty or NULL - return eLBOS_InvalidArgs");
     TestNullOrEmptyField("PORT");
 }
 
-/*  7.  Port is out of range - return eLBOSInvalidArgs                      */
+/*  7.  Port is out of range - return eLBOS_InvalidArgs                      */
 void PortOutOfRange__ReturnInvalidArgs()
 {
-    WRITE_LOG("Port is out of range - return eLBOSInvalidArgs");
+    WRITE_LOG("Port is out of range - return eLBOS_InvalidArgs");
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> lbos_status_message(NULL);
@@ -5279,7 +6367,7 @@ void PortOutOfRange__ReturnInvalidArgs()
     result = s_AnnounceCRegistry("SECTION_WITH_PORT_OUT_OF_RANGE1",
                                   &lbos_answer.Get(), 
                                   &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5294,7 +6382,7 @@ void PortOutOfRange__ReturnInvalidArgs()
     result = s_AnnounceCRegistry("SECTION_WITH_PORT_OUT_OF_RANGE2",
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5309,17 +6397,17 @@ void PortOutOfRange__ReturnInvalidArgs()
     result = s_AnnounceCRegistry("SECTION_WITH_PORT_OUT_OF_RANGE3",
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
                                    "Answer from LBOS was not NULL");
 }
 
-/*  8.  Port contains letters - return eLBOSInvalidArgs                     */
+/*  8.  Port contains letters - return eLBOS_InvalidArgs                     */
 void PortContainsLetters__ReturnInvalidArgs()
 {
-    WRITE_LOG("Port contains letters - return eLBOSInvalidArgs");
+    WRITE_LOG("Port contains letters - return eLBOS_InvalidArgs");
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> lbos_status_message(NULL);
@@ -5327,7 +6415,7 @@ void PortContainsLetters__ReturnInvalidArgs()
     result = s_AnnounceCRegistry("SECTION_WITH_CORRUPTED_PORT",
                                  &lbos_answer.Get(), 
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5336,19 +6424,19 @@ void PortContainsLetters__ReturnInvalidArgs()
     lbos_answer = NULL;    
 }
 
-/*  9.  Healthcheck is empty or NULL - return eLBOSInvalidArgs              */
+/*  9.  Healthcheck is empty or NULL - return eLBOS_InvalidArgs              */
 void HealthchecktEmptyOrNull__ReturnInvalidArgs()
 {
-    WRITE_LOG("Healthcheck is empty or NULL - return eLBOSInvalidArgs");
+    WRITE_LOG("Healthcheck is empty or NULL - return eLBOS_InvalidArgs");
     TestNullOrEmptyField("HEALTHCHECK");
 }
 
 /*  10. Healthcheck does not start with http:// or https:// - return         
-        eLBOSInvalidArgs                                                    */ 
+        eLBOS_InvalidArgs                                                    */ 
 void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs()
 {
     WRITE_LOG("Healthcheck does not start with http:// or https:// - return "      
-              "eLBOSInvalidArgs");
+              "eLBOS_InvalidArgs");
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> lbos_status_message(NULL);
@@ -5356,7 +6444,7 @@ void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs()
     result = s_AnnounceCRegistry("SECTION_WITH_CORRUPTED_HEALTHCHECK",
                                  &lbos_answer.Get(),
                                  &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSInvalidArgs);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                                    "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5365,21 +6453,21 @@ void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs()
     lbos_answer = NULL;    
 }
 /*  11. Trying to announce server providing dead healthcheck URL -
-        return eLBOSSuccess (previously was eLbosNotFound)                    */
+        return eLBOS_Success (previously was eLbosNotFound)                    */
 void HealthcheckDead__ReturnKLBOSSuccess()
 {
     WRITE_LOG("Trying to announce server providing dead healthcheck URL - "
-              "return eLBOSSuccess(previously was eLbosNotFound)");
+              "return eLBOS_Success(previously was eLbosNotFound)");
     CLBOSStatus         lbos_status         (true, true);
     CCObjHolder<char>   lbos_answer         (NULL);
     CCObjHolder<char>   lbos_status_message (NULL);
     unsigned short      result;
     /* 1. Non-existent domain in healthcheck */
     WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
-              "return  eLBOSBadRequest");
+              "return  eLBOS_BadRequest");
     result = s_AnnounceCRegistry("SECTION_WITH_HEALTHCHECK_DNS_ERROR",
                                  &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSBadRequest);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_BadRequest);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), 
         "Bad Request");
@@ -5390,10 +6478,10 @@ void HealthcheckDead__ReturnKLBOSSuccess()
 
     /* 2. Healthcheck is reachable but does not answer */
      WRITE_LOG("Part II. Healthcheck is \"http:/0.0.0.0:4097/healt\" - "
-                "return  eLBOSSuccess");
+                "return  eLBOS_Success");
      result = s_AnnounceCRegistry("SECTION_WITH_DEAD_HEALTHCHECK",
                                     &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
@@ -5410,13 +6498,13 @@ void HealthcheckDead__ReturnKLBOSSuccess()
 namespace Deannouncement
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
-/* 1. Successfully de-announced: return eLBOSSuccess                          */
+/* 1. Successfully de-announced: return eLBOS_Success                          */
 /*    Test is thread-safe. */
 void Deannounced__Return1(unsigned short port)
 {
 #undef PORT_N
 #define PORT_N 8
-    WRITE_LOG("Successfully de-announced: return eLBOSSuccess");
+    WRITE_LOG("Successfully de-announced: return eLBOS_Success");
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_status_message(NULL);
     CCObjHolder<char> lbos_answer(NULL);
@@ -5432,8 +6520,8 @@ void Deannounced__Return1(unsigned short port)
      */
     WRITE_LOG("Part I. 0.0.0.0");
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                  "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                  s_PortStr(PORT_N) +  "/health",
+                  ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                  s_PortStr(PORT_N) + "/health").c_str(), "",
                   &lbos_answer.Get(), &lbos_status_message.Get());
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -5445,7 +6533,7 @@ void Deannounced__Return1(unsigned short port)
 
     result = s_DeannounceC(node_name.c_str(), "1.0.0", "", port, 
                            &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5462,7 +6550,7 @@ void Deannounced__Return1(unsigned short port)
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                     (string("http://") + ANNOUNCEMENT_HOST + 
-                    ":" + s_PortStr(PORT_N) +  "/health").c_str(),
+                    ":" + s_PortStr(PORT_N) +  "/health").c_str(), "",
                     &lbos_answer.Get(), &lbos_status_message.Get());
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -5475,7 +6563,7 @@ void Deannounced__Return1(unsigned short port)
     result = s_DeannounceC(node_name.c_str(), 
                            "1.0.0", s_GetMyIP().c_str(), port,
                            &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5513,7 +6601,7 @@ void Deannounced__AnnouncedServerRemoved()
     WRITE_LOG("Part I. Check with hostname");
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                    (string("http://") + s_GetMyHost() + ":8080/health").c_str(),
-                   &lbos_answer.Get(), &lbos_status_message.Get());
+                   "", &lbos_answer.Get(), &lbos_status_message.Get());
     lbos_answer = NULL;
     lbos_status_message = NULL;
     int find_result = s_FindAnnouncedServer(node_name, "1.0.0", port, s_GetMyHost());
@@ -5523,7 +6611,7 @@ void Deannounced__AnnouncedServerRemoved()
                            s_GetMyHost().c_str(),
                            port, &lbos_answer.Get(), 
                            &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5541,7 +6629,7 @@ void Deannounced__AnnouncedServerRemoved()
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
                     (string("http://") + ANNOUNCEMENT_HOST + 
-                    ":8080/health").c_str(), 
+                    ":8080/health").c_str(), "",
                     &lbos_answer.Get(), &lbos_status_message.Get());
     /* Count how many servers there are */
     find_result = s_FindAnnouncedServer(node_name, "1.0.0", port, s_GetMyIP());
@@ -5553,7 +6641,7 @@ void Deannounced__AnnouncedServerRemoved()
     result = s_DeannounceC(node_name.c_str(), "1.0.0",
                            s_GetMyIP().c_str(), port,
                            &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5571,7 +6659,7 @@ void Deannounced__AnnouncedServerRemoved()
     node_name = s_GenerateNodeName();
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                    "http://0.0.0.0:8080/health",
+                    "http://0.0.0.0:8080/health", "",
                     &lbos_answer.Get(), &lbos_status_message.Get());
     find_result = s_FindAnnouncedServer(node_name, "1.0.0", port, "0.0.0.0");
     /* Count how many servers there are */
@@ -5583,7 +6671,7 @@ void Deannounced__AnnouncedServerRemoved()
     result = s_DeannounceC(node_name.c_str(), "1.0.0",
                            "", port,
                            &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5612,7 +6700,7 @@ void NoLBOS__Return0()
                                        s_FakeReadEmpty);
     result = s_DeannounceC(node_name.c_str(), "1.0.0", "", port, 
                            &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSNoLBOS);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_LbosNotFound);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                            "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5673,7 +6761,7 @@ void RealLife__InvisibleAfterDeannounce()
 }
 
 
-/*6. If trying to deannounce in another domain - should return eLBOSNoLBOS */
+/*6. If trying to deannounce in another domain - should return eLBOS_LbosNotFound */
 /* We fake our domain so no address looks like our own domain */
 /* Test is NOT thread-safe. */
 void ForeignDomain__DoNothing()
@@ -5681,7 +6769,7 @@ void ForeignDomain__DoNothing()
 #if 0 /* deprecated */
     /* Test is not run in TeamCity*/
     if (!getenv("TEAMCITY_VERSION")) {
-        WRITE_LOG("Deannounce in another domain - return eLBOSNoLBOS");
+        WRITE_LOG("Deannounce in another domain - return eLBOS_LbosNotFound");
         CLBOSStatus lbos_status(true, true);
         CCObjHolder<char> lbos_answer(NULL);
         CCObjHolder<char> lbos_status_message(NULL);
@@ -5692,7 +6780,7 @@ void ForeignDomain__DoNothing()
         CMockString mock(*g_LBOS_UnitTesting_CurrentDomain(), "or-wa");
         result = s_DeannounceC(node_name.c_str(), "1.0.0", "", port, 
                                &lbos_answer.Get(), &lbos_status_message.Get());
-        NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSNoLBOS);
+        NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_LbosNotFound);
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                              "LBOS status message is not NULL");
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5725,8 +6813,8 @@ void NoHostProvided__LocalAddress()
     int count_before;
     SELECT_PORT(count_before, node_name, port);
     s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", port,
-                  "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                  s_PortStr(PORT_N) +  "/health",
+                  ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                  s_PortStr(PORT_N) + "/health").c_str(), "",
                   &lbos_answer.Get(), &lbos_status_message.Get());
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -5744,7 +6832,7 @@ void NoHostProvided__LocalAddress()
                                       ":" + s_PortStr(PORT_N) +  "/health",
                                       false);
     NCBITEST_CHECK_EQUAL_MT_SAFE(is_announced, false);
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSSuccess);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5752,18 +6840,18 @@ void NoHostProvided__LocalAddress()
 }
 
 
-/* 8. LBOS is OFF - return eLBOSOff                                         */
+/* 8. LBOS is OFF - return eLBOS_Disabled                                         */
 /* Test is NOT thread-safe. */
 void LBOSOff__ReturnKLBOSOff()
 {
-    WRITE_LOG("Deannonce when LBOS mapper is OFF - return eLBOSOff");
+    WRITE_LOG("Deannonce when LBOS mapper is OFF - return eLBOS_Disabled");
     CLBOSStatus lbos_status(true, false);
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> lbos_status_message(NULL);
     unsigned short result = 
         s_DeannounceC("lbostest", "1.0.0", "", 8080, 
                       &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSOff);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Disabled);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
                          "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
@@ -5781,7 +6869,7 @@ void NotExists__ReturnKLBOSNotFound()
         s_DeannounceC("notexists", "1.0.0", 
                         "", 8080, 
                         &lbos_answer.Get(), &lbos_status_message.Get());
-    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOSNotFound);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_NotFound);
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), 
         "Not Found");
@@ -5814,8 +6902,8 @@ void AllDeannounced__NoSavedLeft()
         ports.push_back(port);
         counts_before.push_back(count_before);
         s_AnnounceCSafe(node_name.c_str(), "1.0.0", "", ports[i],
-                      "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                      s_PortStr(PORT_N) +  "/health",
+                      ("http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                      s_PortStr(PORT_N) + "/health").c_str(), "",
                       &lbos_answer.Get(), &lbos_status_message.Get());
         lbos_answer = NULL;
         lbos_status_message = NULL;
@@ -5914,10 +7002,9 @@ void AllOK__AnnouncedServerSaved()
     WRITE_LOG("Part II: real IP");
     node_name = s_GenerateNodeName();
     SELECT_PORT(count_before, node_name, port);
-    BOOST_CHECK_NO_THROW(
-        s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
-                          string("http://") + ANNOUNCEMENT_HOST + 
-                          ":8080/health"));
+    BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
+                                           string("http://") +  
+                                           ANNOUNCEMENT_HOST + ":8080/health"));
     find_result = s_FindAnnouncedServer(node_name.c_str(), "1.0.0",
                                         port, s_GetMyIP().c_str());
     NCBITEST_CHECK_NE_MT_SAFE(find_result, -1);
@@ -5932,8 +7019,8 @@ void NoLBOS__ThrowNoLBOSAndNotFind()
 {
     WRITE_LOG("Testing behavior of LBOS when no LBOS is found.");
     WRITE_LOG("Expected exception with error code \"" << "eLbosNotFound" <<
-                "\", status code \"" << 450 << 
-                "\", message \"" << "450\\n" << "\".");
+              "\", status code \"" << 450 << 
+              "\", message \"" << "450\\n" << "\".");
     ExceptionComparator<CLBOSException::eLbosNotFound, 450> comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -5942,15 +7029,13 @@ void NoLBOS__ThrowNoLBOSAndNotFind()
     CMockFunction<FLBOS_ConnReadMethod*> mock(
                                       g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
                                       s_FakeReadEmpty);
-    BOOST_CHECK_EXCEPTION(
-            s_AnnounceCPP(node_name, "1.0.0", "", port,
-                          "http://" ANNOUNCEMENT_HOST_0000 ":" + 
-                          s_PortStr(PORT_N) +  "/health"),
-                          CLBOSException, comparator);
+    BOOST_CHECK_EXCEPTION(s_AnnounceCPP(node_name, "1.0.0", "", port,
+                                        "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                                        s_PortStr(PORT_N) +  "/health"),
+                                        CLBOSException, comparator);
 
     /* Cleanup*/
-    WRITE_LOG(
-        "Reverting mock of CONN_Read() with s_FakeReadEmpty()");
+    WRITE_LOG("Reverting mock of CONN_Read() with s_FakeReadEmpty()");
 }
 
 
@@ -5959,24 +7044,23 @@ void NoLBOS__ThrowNoLBOSAndNotFind()
 void LBOSError__ThrowServerError()
 {
     WRITE_LOG("LBOS returned unknown error: "
-                " Should throw exception with received code (507)");
+              "Should throw exception with received code (507)");
     WRITE_LOG("Expected exception with error code \"" << "eUnknown" <<
-                "\", status code \"" << 507 << 
-                "\", message \"" << 
-                "507 LBOS STATUS Those lbos errors are scaaary\\n" << "\".");
+              "\", status code \"" << 507 << 
+              "\", message \"" << 
+              "507 LBOS STATUS Those lbos errors are scaaary\\n" << "\".");
     ExceptionComparator<CLBOSException::eUnknown, 507> comparator(
         "507 LBOS STATUS Those lbos errors are scaaary\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
     CMockFunction<FLBOS_ConnReadMethod*> mock(
-        g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
-        s_FakeReadAnnouncementWithErrorFromLBOS);
-    BOOST_CHECK_EXCEPTION(
-            s_AnnounceCPP(node_name, "1.0.0", "", port,
+                                       g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
+                                       s_FakeReadAnnouncementWithErrorFromLBOS);
+    BOOST_CHECK_EXCEPTION(s_AnnounceCPP(node_name, "1.0.0", "", port,
                           "http://" ANNOUNCEMENT_HOST_0000 ":" + 
                           s_PortStr(PORT_N) +  "/health"),
-            CLBOSException, comparator);
+                          CLBOSException, comparator);
 }
 
 
@@ -6148,7 +7232,7 @@ void IncorrectVersion__ThrowInvalidArgs()
 {
     WRITE_LOG("Testing behavior of LBOS "
              "mapper when passed incorrect version - should return "
-             "eLBOSInvalidArgs");
+             "eLBOS_InvalidArgs");
     WRITE_LOG("Expected exception with error code \"" << "eInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
@@ -6186,7 +7270,7 @@ void IncorrectServiceName__ThrowInvalidArgs()
     unsigned short port = kDefaultPort;
     WRITE_LOG("Testing behavior of LBOS "
               "mapper when passed incorrect service name - should return "
-              "eLBOSInvalidArgs");
+              "eLBOS_InvalidArgs");
     WRITE_LOG("Expected exception with error code \"" << "eInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
@@ -6309,7 +7393,7 @@ void ResolveLocalIPError__ReturnDNSError()
     WRITE_LOG("Reverting mock og SOCK_gethostbyaddr with \"0.0.0.0\"");
 }
 
-/* 20. LBOS is OFF - return eLBOSOff                                        */
+/* 20. LBOS is OFF - return eLBOS_Disabled                                        */
 /* Test is NOT thread-safe. */
 void LBOSOff__ThrowKLBOSOff()
 {
@@ -6317,7 +7401,7 @@ void LBOSOff__ThrowKLBOSOff()
                                                             comparator("550\n");
     CLBOSStatus lbos_status(true, false);
     WRITE_LOG("LBOS mapper is OFF (maybe it is not turned ON in registry " 
-              "or it could not initialize at start) - return eLBOSOff");
+              "or it could not initialize at start) - return eLBOS_Disabled");
     WRITE_LOG("Expected exception with error code \"" << "eDisabled" <<
               "\", status code \"" << 550 <<
                 "\", message \"" << "550\\n" << "\".");
@@ -6372,7 +7456,7 @@ void HealthcheckDead__ThrowE_NotFound()
      * I. Healthcheck is on non-existent domain
      */
      WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
-                "return  eLBOSBadRequest");
+                "return  eLBOS_BadRequest");
     SELECT_PORT(count_before, node_name, port);
     WRITE_LOG("Expected exception with error code \"" << 
                 "eBadRequest" <<
@@ -6482,7 +7566,7 @@ namespace AnnouncementRegistry_CXX /* These tests are NOT for multithreading */
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
 /*  1.  All parameters good (Default section has all parameters correct in 
-        config) - return eLBOSSuccess                                        */
+        config) - return eLBOS_Success                                        */
 void ParamsGood__ReturnSuccess() 
 {
     WRITE_LOG("Simple announcement from registry. "
@@ -6493,7 +7577,7 @@ void ParamsGood__ReturnSuccess()
     BOOST_CHECK_NO_THROW(LBOS::DeannounceAll());
 }
 
-/*  2.  Custom section has nothing in config - return eLBOSInvalidArgs       */
+/*  2.  Custom section has nothing in config - return eLBOS_InvalidArgs       */
 void CustomSectionNoVars__ThrowInvalidArgs()
 {
     ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
@@ -6510,7 +7594,7 @@ void CustomSectionNoVars__ThrowInvalidArgs()
 }
 
 /*  3.  Section empty (should use default section and return 
-        eLBOSSuccess, if section is Good)                                    */
+        eLBOS_Success, if section is Good)                                    */
 void CustomSectionEmptyOrNullAndSectionIsOk__AllOK()
 {
     CLBOSStatus lbos_status(true, true);
@@ -6557,31 +7641,31 @@ void TestNullOrEmptyField(const char* field_tested)
         CLBOSException, comparator);
 }
 
-/*  4.  Service is empty or NULL - return eLBOSInvalidArgs                  */
+/*  4.  Service is empty or NULL - return eLBOS_InvalidArgs                  */
 void ServiceEmptyOrNull__ThrowInvalidArgs()
 {
     WRITE_LOG("Service is empty or NULL");
     TestNullOrEmptyField("SERVICE");
 }
 
-/*  5.  Version is empty or NULL - return eLBOSInvalidArgs                  */
+/*  5.  Version is empty or NULL - return eLBOS_InvalidArgs                  */
 void VersionEmptyOrNull__ThrowInvalidArgs()
 {
     WRITE_LOG("Version is empty or NULL");
     TestNullOrEmptyField("VERSION");
 }
 
-/*  6.  Port is empty or NULL - return eLBOSInvalidArgs                     */
+/*  6.  Port is empty or NULL - return eLBOS_InvalidArgs                     */
 void PortEmptyOrNull__ThrowInvalidArgs()
 {
     WRITE_LOG("Service is empty or NULL");
     TestNullOrEmptyField("PORT");
 }
 
-/*  7.  Port is out of range - return eLBOSInvalidArgs                      */
+/*  7.  Port is out of range - return eLBOS_InvalidArgs                      */
 void PortOutOfRange__ThrowInvalidArgs()
 {
-    WRITE_LOG("Port is out of range - return eLBOSInvalidArgs");
+    WRITE_LOG("Port is out of range - return eLBOS_InvalidArgs");
     ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
                                                             comparator("452\n");
     /*
@@ -6618,7 +7702,7 @@ void PortOutOfRange__ThrowInvalidArgs()
         s_AnnounceCPPFromRegistry("SECTION_WITH_PORT_OUT_OF_RANGE3"),
         CLBOSException, comparator);
 }
-/*  8.  Port contains letters - return eLBOSInvalidArgs                     */
+/*  8.  Port contains letters - return eLBOS_InvalidArgs                     */
 void PortContainsLetters__ThrowInvalidArgs()
 {
     WRITE_LOG("Port contains letters");
@@ -6633,14 +7717,14 @@ void PortContainsLetters__ThrowInvalidArgs()
         s_AnnounceCPPFromRegistry("SECTION_WITH_CORRUPTED_PORT"),
         CLBOSException, comparator);
 }
-/*  9.  Healthcheck is empty or NULL - return eLBOSInvalidArgs              */
+/*  9.  Healthcheck is empty or NULL - return eLBOS_InvalidArgs              */
 void HealthchecktEmptyOrNull__ThrowInvalidArgs()
 {
     WRITE_LOG("Healthcheck is empty or NULL");
     TestNullOrEmptyField("HEALTHCHECK");
 }
 /*  10. Healthcheck does not start with http:// or https:// - return         
-        eLBOSInvalidArgs                                                    */ 
+        eLBOS_InvalidArgs                                                    */ 
 void HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs()
 {
     WRITE_LOG("Healthcheck does not start with http:// or https://");
@@ -6668,7 +7752,7 @@ void HealthcheckDead__ThrowE_NotFound()
     count_before = s_CountServers(node_name, port);
     /* 1. Non-existent domain in healthcheck */
     WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
-              "return  eLBOSBadRequest");
+              "return  eLBOS_BadRequest");
     WRITE_LOG("Expected exception with error code \"" << 
                 "eBadRequest" <<
                 "\", status code \"" << 400 <<
@@ -6690,7 +7774,7 @@ void HealthcheckDead__ThrowE_NotFound()
 
     /* 2. Healthcheck is reachable but does not answer */
     WRITE_LOG("Part II. Healthcheck is \"http:/0.0.0.0:4097/healt\" - "
-              "return  eLBOSSuccess");
+              "return  eLBOS_Success");
     BOOST_CHECK_NO_THROW(
                    s_AnnounceCPPFromRegistry("SECTION_WITH_DEAD_HEALTHCHECK"));
     count_after = s_CountServersWithExpectation(node_name, port, 0, __LINE__,
@@ -6941,7 +8025,7 @@ void NoHostProvided__LocalAddress()
     NCBITEST_CHECK_EQUAL_MT_SAFE(is_announced, false);
 }
 
-/* 8. LBOS is OFF - return eLBOSOff                                         */
+/* 8. LBOS is OFF - return eLBOS_Disabled                                         */
 /* Test is NOT thread-safe. */
 void LBOSOff__ThrowKLBOSOff()
 {
@@ -7553,10 +8637,9 @@ void GetNext_Reset__ShouldNotCrash()
     double elapsed = 0.0;
 
     CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                              *net_info, 0/*skip*/, 0/*n_skip*/,
+                              0/*external*/, 0/*arg*/, 0/*val*/));
     for (i = 0;  elapsed < secondsBeforeStop;  ++i) {
         do {
             info = SERV_GetNextInfoEx(*iter, NULL);
@@ -7587,7 +8670,6 @@ void FullCycle__ShouldNotCrash()
     CConnNetInfo net_info;
     for (i = 0;  elapsed < secondsBeforeStop;  ++i) {
         CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                          
                           SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                           *net_info, 0/*skip*/, 0/*n_skip*/,
                           0/*external*/, 0/*arg*/, 0/*val*/));
@@ -7667,9 +8749,9 @@ void FullCycle__ShouldNotCrash()
     for (total_iters = 0, cycle_iters = 0;  total_elapsed < secondsBeforeStop;
             ++total_iters, ++cycle_iters) {
         CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                       *net_info, 0/*skip*/, 0/*n_skip*/,
-                       0/*external*/, 0/*arg*/, 0/*val*/));
+                                  SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                                  *net_info, 0/*skip*/, 0/*n_skip*/,
+                                  0/*external*/, 0/*arg*/, 0/*val*/));
         int hosts_found = 0;
         while ((info = SERV_GetNextInfoEx(*iter, NULL)) != NULL) {
             ++hosts_found;
@@ -7988,10 +9070,9 @@ void s_TestFindMethod(ELBOSFindMethod find_method)
         memset(&start, 0, sizeof(start));
     }
     CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                              *net_info, 0/*skip*/, 0/*n_skip*/,
+                              0/*external*/, 0/*arg*/, 0/*val*/));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
             "LBOS not found when it should be");
@@ -8038,7 +9119,7 @@ void s_TestFindMethod(ELBOSFindMethod find_method)
 
 
 /** Result of parsing of /service.
- * is_enabled tell if only enabled servers must be returned */
+ * "is_enabled" tells if only enabled servers must be returned */
 static vector<SServer> s_GetAnnouncedServers(bool is_enabled, 
                                              vector<string> to_find)
 {
@@ -8062,7 +9143,7 @@ static vector<SServer> s_GetAnnouncedServers(bool is_enabled,
 
     unsigned int i = 0;
     for (i = 0; i < to_find.size(); ++i) {
-        WRITE_LOG(Error << "i = " << i);
+        WRITE_LOG("Trying to_find[" << i << "] = " << to_find[i]);
         while (start != string::npos) {
             start = lbos_output.find(to_find[i] + "\t", start);
             if (start == string::npos)

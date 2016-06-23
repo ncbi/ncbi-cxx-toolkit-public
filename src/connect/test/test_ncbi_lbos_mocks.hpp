@@ -62,11 +62,12 @@ unsigned short s_FakeAnnounceEx(const char*     service,
                                const char*      host,
                                unsigned short   port,
                                const char*      healthcheck_url,
+                               const char*      meta,
                                char**           LBOS_answer,
                                char**           http_status_message)  
 {
     s_LBOS_hostport = healthcheck_url;
-    return eLBOSDNSResolveError;
+    return eLBOS_DNSResolve;
 }
 
 
@@ -687,6 +688,7 @@ unsigned short s_LBOS_Announce(const char*             service,
                                unsigned short&         port,
                                const char*             healthcheck_url,
                                /* lbos_answer is never NULL  */
+                               const char*             meta,
                                char**                  lbos_answer,
                                char**                  http_status_message) 
 { 
@@ -705,7 +707,7 @@ unsigned short s_LBOS_Announce(const char*             service,
 #endif
         announce_result =
             LBOS_Announce(service, version, host, port, healthcheck_url,
-                          lbos_answer, http_status_message);
+                          meta, lbos_answer, http_status_message);
 #ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
                           success (remove this hack when LBOS is fixed) */
         if (announce_result != 200) {
@@ -778,7 +780,8 @@ void s_LBOS_CPP_Announce(const string&   service,
                          const string&   version,
                          const string&   host,
                          unsigned short& port,
-                         const string&   healthcheck_url)
+                         const string&   healthcheck_url,
+                         const LBOS::CMetaData& meta = LBOS::CMetaData())
 {
 
 #ifndef NCBI_THREADS // If we have to answer healthcheck in the same thread
@@ -796,7 +799,7 @@ void s_LBOS_CPP_Announce(const string&   service,
             success = true;
 #endif
             LBOS::Announce(service, version, host, port,
-                           healthcheck_url);
+                           healthcheck_url, meta);
 #ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
                 success (remove this hack when LBOS is fixed) */
         }

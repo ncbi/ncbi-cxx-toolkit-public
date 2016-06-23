@@ -40,10 +40,98 @@
 
 BEGIN_NCBI_SCOPE
 
+#define LBOS_METADATA
+
 
 class NCBI_XNCBI_EXPORT LBOS
 {
 public:
+#ifdef LBOS_METADATA
+    class NCBI_XNCBI_EXPORT CMetaData 
+    {
+    public:
+        /** Possible values for "type" meta parameter */
+        enum EHostType {
+            eNone,          /**< no "type" meta parameter */
+            eHTTP,          /**< "HTTP" */
+            eHTTP_POST,     /**< "HTTP_POST" */
+            eStandalone,     /**< "STANDALONE" */
+            eNCBID,         /**< "NCBID" */
+            eDNS,           /**< "DNS" */
+            eUnknown        /**< a value that has no corresponding enum,  
+                                 but still valid */
+        };
+
+        CMetaData();
+        /** Set "rate" meta parameter.
+         * @parameter[i] rate
+         *  Rate to announce. "" to unset the value */
+        void SetRate (const string& rate);
+        /** Set "rate" meta parameter.
+         * @parameter[i] rate
+         *  Rate to announce. 0 to unset the value */
+        void SetRate (double rate);
+        /** Set "type" meta parameter. 
+         * @parameter[i] host_type
+         *  Host type to announce. EHostType has most popular options. 
+         *  LBOS::CMetaData::eNone to clear */
+        void SetType (EHostType host_type);
+        /** Set "type" meta parameter. 
+         * @parameter[i] host_type
+         *  Host type to announce. Integer equivalents of EHostType. 0 to clear
+         *  the value               */
+        void SetType (int host_type);
+        /** Set "type" meta parameter.
+         * @parameter[i] host_type
+         *  Host type to announce. Any string value will be accepted. 
+         *  "" to unset the value.
+         * @note
+         *  host_type will be converted to upper case.    */
+        void SetType (const string& host_type);
+        /** Set "extra" meta parameter. Usually used to store a URL path to the
+         *  HTTP server.
+         * @parameter[i] extra
+         *  Extra to announce. Any string value will be accepted. 
+         *  "" to unset the value    */
+        void SetExtra(const string& extra);
+        /** Set any metadata, including "known types" - "type", "rate", "extra",
+         *  which can also be set by corresponding special functions. 
+         *  "" to unset the value
+         * @parameter[i] name
+         *  Case-insensitive name of meta parameter (will be converted
+         *  to lower case)
+         * @parameter[i] val
+         *  Value to announce. "" to unset the value. Any string value will be
+         *  accepted. If name is "extra", whitespace characters are forbidden
+         *  in val. If name is "type", val is converted to upper case.  */
+        void Set(const string& name, const string& val);
+        /** Get "rate" parameter as double. Returns 0 if value is 
+         *  not set */
+        double GetRate() const;
+        /** Get "server type" meta parameter. Returns a corresponding enumerator
+         *  if "type" meta parameter is set and equal to any of HTTP, HTTP_POST,
+         *  DNS, STANDALONE or NCBID (case-insensitively). 
+         *  If "type is unset - returns eNone. 
+         *  Otherwise, retuns eUknown and actual value can be obtained with 
+         *  GetType(bool()); */
+        LBOS::CMetaData::EHostType GetType() const;
+        /** Get "server type" meta parameter. Returns upper-cased string value
+         *  of the "type" meta parameter.
+         * @param[in] bool_fake_param
+         *  To distinguish between EHostType and string return types */
+        string GetType(bool) const;
+        /** Get "extra" meta parameter */
+        string GetExtra() const;
+        /** Get any meta parameter, including "known types" which can also be
+         * obtained via their corresponding individual functions */
+        string Get(const string& name) const;
+        /** Get a string with all parameters ready to put it into URL */
+        string GetMetaString() const;
+
+    private:
+        map<string, string> m_Meta;
+    };
+#endif /* LBOS_METADATA */
    /** Announce server.
     *
     * @param [in] service
@@ -64,6 +152,9 @@ public:
     * @param [in] healthcheck_url
     *  Full absolute URL starting with "http://" or "https://". Must include 
     *  hostname or IP (and port, if necessary)
+    * @param [in] metadata
+    *  A special container for additional parameters that will be displayed in 
+    * "meta" section in service discovery
     * @note
     *  If you want to announce a server that is on the same machine that
     *  announces it (i.e., if server announces itself), you can write
@@ -72,12 +163,13 @@ public:
     * @exception CLBOSException
     * @sa AnnounceFromRegistry(), Deannounce(), DeannounceAll(), CLBOSException
     */
-    static void Announce(const string&   service,
-                         const string&   version,
-                         const string&   host,
-                         unsigned short  port,
-                         const string&   healthcheck_url);
-                                  
+    static void Announce(const string&    service,
+                         const string&    version,
+                         const string&    host,
+                         unsigned short   port,
+                         const string&    healthcheck_url,
+                         const CMetaData& metadata = CMetaData());
+
 
    /** A variant of Announce() that gets all the needed parameters from 
     *  registry.
@@ -96,11 +188,14 @@ public:
     *  host=0.0.0.0
     *  port=8080
     *  health=http://0.0.0.0:8080/health
+    *  extra=http://myserver.com/index.cgi?param=val&param2=val2
+    *  type=HTTP
+    *  rate=100
     *
     * @exception CLBOSException
     * @sa Announce(), Deannounce(), DeannounceAll(), CLBOSException
     */
-    static void AnnounceFromRegistry(string  registry_section);
+    static void AnnounceFromRegistry(const string& registry_section);
 
 
    /** Deannounce service.

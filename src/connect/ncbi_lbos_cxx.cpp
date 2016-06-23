@@ -24,6 +24,7 @@
  * ===========================================================================
  *
  * Authors:  Dmitriy Elisov
+ * Credits:  Denis Vakatov
  * @file
  * File Description:
  *   C++ Wrapper for the LBOS mapper written in C
@@ -43,12 +44,13 @@
 BEGIN_NCBI_SCOPE
 
 DEFINE_STATIC_FAST_MUTEX(s_IPCacheLock);
-static const char* kLBOSAnnounceRegistrySection("LBOS_ANNOUNCEMENT");
-static const char* kLBOSServiceVariable("SERVICE");
-static const char* kLBOSVersionVariable("VERSION");
-static const char* kLBOSServerHostVariable("HOST");
-static const char* kLBOSPortVariable("PORT");
-static const char* kLBOSHealthcheckUrlVariable("HEALTHCHECK");
+static const char* kLBOSAnnounceRegistrySection = "LBOS_ANNOUNCEMENT";
+static const char* kLBOSServiceVariable         = "SERVICE";
+static const char* kLBOSVersionVariable         = "VERSION";
+static const char* kLBOSServerHostVariable      = "HOST";
+static const char* kLBOSPortVariable            = "PORT";
+static const char* kLBOSHealthcheckUrlVariable  = "HEALTHCHECK";
+static const char* kLBOSMetaVariable            = "META";
 
 const SConnNetInfo* kEmptyNetInfo = ConnNetInfo_Create(NULL);
 
@@ -86,7 +88,10 @@ bool CLBOSIpCacheKey::operator==(const CLBOSIpCacheKey& rh) const
 }
 
 
-CLBOSIpCacheKey::CLBOSIpCacheKey(string service, string hostname, string version, unsigned short port) :
+CLBOSIpCacheKey::CLBOSIpCacheKey(const string& service,
+                                 const string& hostname,
+                                 const string& version,
+                                 unsigned short port) :
 x_Service(service), x_Hostname(hostname), x_Version(version),
 x_Port(port)
 {
@@ -113,11 +118,15 @@ bool CLBOSIpCacheKey::operator>(const CLBOSIpCacheKey& rh) const
 }
 
 
-std::string CLBOSIpCache::HostnameTryFind(string service, string hostname, 
-                                          string version, unsigned short port)
+std::string CLBOSIpCache::HostnameTryFind(const string& service,
+                                          const string& hostname_in,
+                                          const string& version, 
+                                          unsigned short port)
 {
-    if (hostname == "")
-        hostname = CSocketAPI::GetLocalHostAddress();
+    string hostname = hostname_in;
+    if (hostname.empty())
+        hostname = CSocketAPI::HostPortToString(
+                                          CSocketAPI::GetLocalHostAddress(), 0);
     map<CLBOSIpCacheKey, string>::iterator pos;
     CLBOSIpCacheKey key(service, hostname, version, port);
     {{
@@ -129,15 +138,17 @@ std::string CLBOSIpCache::HostnameTryFind(string service, string hostname,
     }}
 }
 
-std::string CLBOSIpCache::HostnameResolve(string service, string hostname, 
-                                          string version, unsigned short port)
+std::string CLBOSIpCache::HostnameResolve(const string& service,
+                                          const string& hostname,
+                                          const string& version,
+                                          unsigned short port)
 {
     /* Hostname should not be empty in any case */
-    if (hostname == "") {
+    if (hostname.empty()) {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
             CLBOSException::eUnknown, 
             "Internal error in LBOS Client IP Cache. Please contact developer",
-            eLBOSBadRequest);
+            eLBOS_BadRequest);
     }
     map<CLBOSIpCacheKey, string>::iterator pos;
     CLBOSIpCacheKey key(service, hostname, version, port);
@@ -170,11 +181,15 @@ std::string CLBOSIpCache::HostnameResolve(string service, string hostname,
     }}
 }
 
-void CLBOSIpCache::HostnameDelete(string service, string hostname, 
-                                  string version, unsigned short port)
+void CLBOSIpCache::HostnameDelete(const string& service,
+                                  const string& hostname_in,
+                                  const string& version,
+                                  unsigned short port)
 {
-    if (hostname == "")
-        hostname = CSocketAPI::GetLocalHostAddress();
+    string hostname = hostname_in;
+    if (hostname.empty())
+        hostname = CSocketAPI::HostPortToString(
+                                          CSocketAPI::GetLocalHostAddress(), 0);
     map<CLBOSIpCacheKey, string>::iterator pos;
     CLBOSIpCacheKey key(service, hostname, version, port);
     {{
@@ -190,7 +205,7 @@ static void s_ProcessResult(unsigned short result,
                             const char* lbos_answer,
                             const char* status_message)
 {
-    if (result == eLBOSSuccess)
+    if (result == eLBOS_Success)
         return;
 
     stringstream message;
@@ -208,9 +223,29 @@ static void s_ProcessResult(unsigned short result,
 }
 
 
-void LBOS::Announce(const string& service, const string& version,
-                    const string& host, unsigned short port,
-                    const string& healthcheck_url)
+/** Convert meta parameter string to char** for C part (it is easier to do in 
+ *  C++ and then pass to C) */
+static char** s_MetaStringToCharArr(const string& metadata)
+{
+    list<CTempString> name_vals;
+    NStr::TSplitFlags flags = NStr::fSplit_Tokenize;
+    NStr::Split(metadata, "?=&", name_vals, flags);
+    char** params_arr = (char**)malloc(sizeof(char*) * (name_vals.size() + 1));
+    auto iter = name_vals.begin();
+    unsigned short i = 0;
+    for (; iter != name_vals.begin();  iter++) {
+        params_arr[i++] = strdup(iter->data());
+    }
+    params_arr[i] = NULL; /* closing item */
+    return params_arr;
+}
+
+void LBOS::Announce(const string& service, 
+                    const string& version,
+                    const string& host, 
+                    unsigned short port,
+                    const string& healthcheck_url,
+                    const CMetaData& metadata)
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
@@ -218,7 +253,7 @@ void LBOS::Announce(const string& service, const string& version,
     string cur_host = host, ip;
     /* If host is empty, it means that host is the same as in healthcheck 
      * (by convention). We have to parse healthcheck and get host */
-    if (cur_host == "")
+    if (cur_host.empty())
     {
         SConnNetInfo * healthcheck_info;
         healthcheck_info = ConnNetInfo_Clone(kEmptyNetInfo);
@@ -228,12 +263,12 @@ void LBOS::Announce(const string& service, const string& version,
         ConnNetInfo_ParseURL(healthcheck_info, healthcheck_url.c_str());
         cur_host = healthcheck_info->host;
         /* If we could not parse healthcheck URL, throw "Invalid Arguments" */
-        if (cur_host == "") {
+        if (cur_host.empty()) {
             ConnNetInfo_Destroy(healthcheck_info);
             throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                                  CLBOSException::eInvalidArgs,
-                                 NStr::IntToString(eLBOSInvalidArgs),
-                                 eLBOSInvalidArgs);
+                                 NStr::IntToString(eLBOS_InvalidArgs),
+                                 eLBOS_InvalidArgs);
         }
         ConnNetInfo_Destroy(healthcheck_info);
     }
@@ -245,26 +280,30 @@ void LBOS::Announce(const string& service, const string& version,
     /* If healthcheck is on the same host as server, we try to replace hostname 
      * with IP in healthcheck URL, too */
     string temp_healthcheck = NStr::Replace(healthcheck_url, cur_host, ip);
-    unsigned short result = LBOS_Announce(service.c_str(), version.c_str(),
-                                          ip.c_str(), port,
+    unsigned short result = LBOS_Announce(service.c_str(), 
+                                          version.c_str(),
+                                          ip.c_str(),
+                                          port,
                                           temp_healthcheck.c_str(),
-                                          &*body_aptr, &*status_message_aptr);
+                                          metadata.GetMetaString().c_str(),
+                                          &*body_aptr, 
+                                          &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
 }
 
 
-void LBOS::AnnounceFromRegistry(string reg_section)
+void LBOS::AnnounceFromRegistry(const string& reg_section)
 {
+    /* If "reg_section" is empty, we use default section. */
+    const string& reg_sec = reg_section.empty() ? 
+                                kLBOSAnnounceRegistrySection : reg_section;
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
-    /* If "registry_section" is empty, we use default section. */
-    if (reg_section == "") {
-        reg_section = kLBOSAnnounceRegistrySection;
-    }
     string host =     config.Get(reg_section, kLBOSServerHostVariable);
     string service =  config.Get(reg_section, kLBOSServiceVariable);
     string version =  config.Get(reg_section, kLBOSVersionVariable);
     string port_str = config.Get(reg_section, kLBOSPortVariable);
     string health =   config.Get(reg_section, kLBOSHealthcheckUrlVariable);
+    string meta   =   config.Get(reg_section, kLBOSMetaVariable);
 
     /* Check that port is a number between 1 and 65535   */
     int port_int = 0;
@@ -274,15 +313,15 @@ void LBOS::AnnounceFromRegistry(string reg_section)
     catch (...) {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                              CLBOSException::eInvalidArgs,
-                             NStr::IntToString(eLBOSInvalidArgs),
-                             eLBOSInvalidArgs);
+                             NStr::IntToString(eLBOS_InvalidArgs),
+                             eLBOS_InvalidArgs);
     }
     if (port_int < 1 || port_int > 65535)
     {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                              CLBOSException::eInvalidArgs, 
-                             NStr::IntToString(eLBOSInvalidArgs),
-                             eLBOSInvalidArgs);
+                             NStr::IntToString(eLBOS_InvalidArgs),
+                             eLBOS_InvalidArgs);
     }
     unsigned short port = static_cast<unsigned short>(port_int);
     Announce(service, version, host, port, health);
@@ -302,7 +341,7 @@ void LBOS::Deannounce(const string&         service,
 {
     char* body_str = NULL, *status_message_str = NULL;
     string ip;
-    if (host == "" || host == "0.0.0.0") {
+    if (host.empty() || host == "0.0.0.0") {
         ip = host;
     } else {
         ip = CLBOSIpCache::HostnameTryFind(service, host, version, port);
@@ -376,7 +415,7 @@ SLbosConfigure ParseLbosConfigureAnswer(const char* lbos_answer)
 
 
 string LBOSPrivate::GetServiceVersion(const string&  service,
-                               bool* exists) 
+                                      bool* exists) 
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
@@ -393,8 +432,8 @@ string LBOSPrivate::GetServiceVersion(const string&  service,
 
 
 string LBOSPrivate::SetServiceVersion(const string&  service,
-                               const string&  new_version,
-                               bool* existed)
+                                      const string&  new_version,
+                                      bool* existed)
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
@@ -413,7 +452,7 @@ string LBOSPrivate::SetServiceVersion(const string&  service,
 
 
 string LBOSPrivate::DeleteServiceVersion(const string&  service,
-                                  bool* existed)
+                                         bool* existed)
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
@@ -430,27 +469,26 @@ string LBOSPrivate::DeleteServiceVersion(const string&  service,
 }
 
 
-CLBOSException::EErrCode 
-    CLBOSException::s_HTTPCodeToEnum(unsigned short http_code) 
+CLBOSException::EErrCode CLBOSException::s_HTTPCodeToEnum(unsigned short code) 
 {
-    switch (http_code) {
-    case eLBOSNoLBOS:
+    switch (code) {
+    case eLBOS_LbosNotFound:
         return eLbosNotFound;
-    case eLBOSNotFound:
+    case eLBOS_NotFound:
         return eNotFound;
-    case eLBOSBadRequest:
+    case eLBOS_BadRequest:
         return eBadRequest;
-    case eLBOSOff:
+    case eLBOS_Disabled:
         return eDisabled;
-    case eLBOSInvalidArgs:
+    case eLBOS_InvalidArgs:
         return eInvalidArgs;
-    case eLBOSDNSResolveError:
+    case eLBOS_DNSResolve:
         return eDNSResolve;
-    case eLBOSMemAllocError:
+    case eLBOS_MemAlloc:
         return eMemAlloc;
-    case eLBOSCorruptOutput:
+    case eLBOS_Protocol:
         return eProtocol;
-    case eLBOSServerError:
+    case eLBOS_Server:
         return eServer;
     default:
         return eUnknown;
@@ -570,5 +608,241 @@ const CException* CLBOSException::x_Clone(void) const
 {
     return new CLBOSException(*this);
 }
+
+#ifdef LBOS_METADATA
+LBOS::CMetaData::CMetaData()
+{
+}
+
+
+void LBOS::CMetaData::Set(const string& name_in, const string& val_in)
+{
+    string name = name_in;
+    /* First, transform name to lower register to search it */
+    NStr::ToLower(name);
+    /* Forbidden names for meta parameters */
+    if (name == "version" || name == "ip" || name == "port" || name == "check" 
+        || name == "format" || name == "name") {
+        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+                             CLBOSException::eInvalidArgs, 
+                             "This name cannot be used for metadata", 
+                             eLBOS_InvalidArgs);
+    }
+    /* If val is empty, we delete the value from m_Meta */
+    if (val_in.empty()) {
+        auto iter = m_Meta.find(name);
+        if (iter != m_Meta.end()) {
+            m_Meta.erase(iter);
+        }
+    }
+    else {
+        /* If val is not empty, save it to m_Meta or rewrite previous value */
+        m_Meta[name] = val_in;
+    }
+}
+
+
+string LBOS::CMetaData::Get(const string& name) const
+{
+    auto iter = m_Meta.find(name);
+    if (iter != m_Meta.end()) {
+        return iter->second;
+    }
+    return "";
+}
+
+
+void LBOS::CMetaData::SetRate(const string& rate)
+{
+    if (rate.empty()) {
+        Set("rate", "");
+    } else {
+        try {
+            SetRate(NStr::StringToInt(rate));
+        } 
+        catch (const CStringException&) {
+            throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+                                 CLBOSException::eInvalidArgs,
+                                 "Could not parse string value for SetRate",
+                                 eLBOS_InvalidArgs);
+        }
+    }
+}
+
+
+void LBOS::CMetaData::SetRate(double rate)
+{
+    if (rate == 0)
+        Set("rate", "");
+    else
+        Set("rate", NStr::DoubleToString(rate));
+}
+
+
+double LBOS::CMetaData::GetRate() const
+{
+    string rate = Get("rate");
+    if (rate.empty())
+        return 0;
+    try {
+        return NStr::StringToDouble(rate);
+    }
+    catch (const CStringException&) {
+        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+                             CLBOSException::eInvalidArgs,
+                             "Value in \"rate\" meta parameter cannot "
+                             "be represented as an integer",
+                             eLBOS_InvalidArgs);
+    }
+}
+
+
+void LBOS::CMetaData::SetType(const string& host_type)
+{
+    if (host_type.find_first_of(" \t\n\v\f\r") != string::npos) {
+        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+            CLBOSException::eInvalidArgs,
+            "This convenience function throws on whitespace characters "
+            "in \"type\" meta parameter. If you know what you are doing, "
+            "you can use CMetaData::Set(\"type\", ...)",
+            eLBOS_InvalidArgs);
+    }
+    string type = host_type;
+    type = NStr::ToUpper(type);
+    Set("type", type);
+}
+
+
+void LBOS::CMetaData::SetType(EHostType host_type)
+{
+    switch (host_type) {
+    case eHTTP:
+        SetType("HTTP");
+        break;
+    case eHTTP_POST:
+        SetType("HTTP_POST");
+        break;
+    case eStandalone:
+        SetType("STANDALONE");
+        break;
+    case eNCBID:
+        SetType("NCBID");
+        break;
+    case eDNS:
+        SetType("DNS");
+        break;
+    case eNone:
+        SetType("");
+        break;
+    default:
+        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+                             CLBOSException::eInvalidArgs, "Unknown EHostType "
+                             "value. If you are sure that a correct value is "
+                             "used, please tell the developer about this issue", 
+                             eLBOS_InvalidArgs);
+    }
+}
+
+
+void LBOS::CMetaData::SetType(int host_type)
+{
+    switch (host_type) {
+    case (int)eHTTP:
+        SetType("HTTP");
+        break;
+    case (int)eHTTP_POST:
+        SetType("HTTP_POST");
+        break;
+    case (int)eStandalone:
+        SetType("STANDALONE");
+        break;
+    case (int)eNCBID:
+        SetType("NCBID");
+        break;
+    case (int)eDNS:
+        SetType("DNS");
+        break;
+    case (int)eNone:
+        SetType("");
+        break;
+    default:
+        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+                             CLBOSException::eInvalidArgs, "Unknown EHostType "
+                             "value. If you are sure that a correct value is "
+                             "used, please tell the developer about this issue",
+                             eLBOS_InvalidArgs);
+    }
+}
+
+
+string LBOS::CMetaData::GetType(bool) const
+{
+    string type = Get("type");
+    return NStr::ToUpper(type);
+}
+
+
+LBOS::CMetaData::EHostType LBOS::CMetaData::GetType() const
+{
+    string type = GetType(true);
+    if (type == "HTTP") {
+        return eHTTP;
+    }
+    else if (type == "HTTP_POST") {
+        return eHTTP_POST;
+    }
+    else if (type == "STANDALONE") {
+        return eStandalone;
+    }
+    else if (type == "NCBID") {
+        return eNCBID;
+    }
+    else if (type == "DNS") {
+        return eDNS;
+    }
+    else if (type.empty()) {
+        return eNone;
+    }
+    else {
+        return eUnknown;
+    }
+}
+
+
+void LBOS::CMetaData::SetExtra(const string& extra)
+{
+    if (extra.find_first_of(" \t\n\v\f\r") != string::npos) {
+        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+            CLBOSException::eInvalidArgs,
+            "This convenience function throws on whitespace characters "
+            "in \"extra\" meta parameter. If you know what you are doing, "
+            "you can use CMetaData::Set(\"extra\", ...)",
+            eLBOS_InvalidArgs);
+    }
+    Set("extra", extra);
+}
+
+
+std::string LBOS::CMetaData::GetExtra() const
+{
+    return Get("extra");
+}
+
+
+string LBOS::CMetaData::GetMetaString() const
+{
+    stringstream meta_stringstream;
+    auto iter = m_Meta.begin();
+    for (  ;  iter != m_Meta.end()  ;  ) {
+        meta_stringstream << NStr::URLEncode(iter->first) << "=" 
+                          << NStr::URLEncode(iter->second);
+        if (++iter != m_Meta.end()) {
+            meta_stringstream << "&";
+        }
+    }
+    return meta_stringstream.str();
+}
+
+#endif /* LBOS_METADATA */
 
 END_NCBI_SCOPE

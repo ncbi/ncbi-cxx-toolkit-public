@@ -26,6 +26,7 @@
  * ===========================================================================
  *
  * Authors:  Dmitriy Elisov
+ * Credits:  Denis Vakatov
  * @file
  * File Description:
  *   This header was made only because of unit testing application. Please, 
@@ -42,6 +43,9 @@
 extern "C" {
 #endif /*__cplusplus*/
 
+#ifndef LBOS_METADATA
+#define LBOS_METADATA
+#endif
 
 /*
  * Additional HTTP codes:
@@ -52,17 +56,24 @@ extern "C" {
  *  454 - LBOS output could not be parsed
  *  550 - LBOS client is OFF in the current process
  */
-enum ELBOSStatusCodes{
-    eLBOSSuccess = 200,
-    eLBOSBadRequest = 400,
-    eLBOSNotFound = 404,
-    eLBOSNoLBOS = 450,
-    eLBOSDNSResolveError = 451,
-    eLBOSInvalidArgs = 452,
-    eLBOSMemAllocError = 453,
-    eLBOSCorruptOutput = 454,
-    eLBOSServerError = 500,
-    eLBOSOff = 550
+enum ELBOSStatusCodes {
+    eLBOS_Success         = 200, /**< HTTP 200 OK */
+    eLBOS_BadRequest      = 400, /**< HTTP 400 Bad Request */
+    eLBOS_NotFound        = 404, /**< HTTP 404 Not Found */
+    eLBOS_LbosNotFound    = 450, /**< Not a HTTP code. LBOS was not found */
+    eLBOS_DNSResolve      = 451, /**< Not a HTTP code. Could not find IP of
+                                      localhost */
+    eLBOS_InvalidArgs     = 452, /**< Not a HTTP code. Some arguments were
+                                      invalid */
+    eLBOS_MemAlloc        = 453, /**< Not a HTTP code. Some memory could not be
+                                      allocated */
+    eLBOS_Protocol        = 454, /**< Not a HTTP code. LBOS response could not
+                                      be parsed */
+    eLBOS_Server          = 500, /**< HTTP 500 Internal Server Error */
+    eLBOS_Disabled        = 550  /**< Not a HTTP code. LBOS Client functionality
+                                      is disabled in registry or during
+                                      initialization (LBOS Client could not
+                                      establish connection with LBOS) */
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -82,10 +93,10 @@ enum ELBOSStatusCodes{
 typedef enum {
     eLBOSFindMethod_None,           /**< do not search. Used to skip
                                          "custom host" method                */
-    eLBOSFindMethod_CustomHost,     /**< Use custom address provided by
+    eLBOS_FindMethod_CustomHost,     /**< Use custom address provided by
                                          s_SetLBOSaddress()                  */
-    eLBOSFindMethod_Registry,       /**< Use value from registry (default)   */
-    eLBOSFindMethod_Lbosresolve,    /**< Use value from /etc/ncbi/lbosresolve*/
+    eLBOS_FindMethod_Registry,       /**< Use value from registry (default)   */
+    eLBOS_FindMethod_Lbosresolve,    /**< Use value from /etc/ncbi/lbosresolve*/
 } ELBOSFindMethod;
 
 
@@ -102,7 +113,7 @@ typedef struct {
     SConnNetInfo*       net_info;    /**< Connection point                   */
     const char*         lbos_addr;   /**< LBOS host:port or IP:port. Used if
                                           find_method == 
-                                          eLBOSFindMethod_CustomHost        */
+                                          eLBOS_FindMethod_CustomHost        */
     SLBOS_Candidate*    cand;        /**< Array of found server to iterate   */
     size_t              pos_cand;    /**< Current candidate                  */
     size_t              n_cand;      /**< Used space for candidates          */
@@ -118,8 +129,8 @@ typedef struct {
     int http_response_code;
     char* http_status_mesage;
     const char* header;
-    size_t content_length; /* Value of "Content-length" HTTP header tag. 
-                              -1 (max value) as no limit */
+    size_t content_length; /**< Value of "Content-length" HTTP header tag. 
+                                -1 (max value) as no limit */
 } SLBOS_UserData;
 
 
@@ -247,6 +258,8 @@ SSERV_Info* FLBOS_GetNextInfoMethod(SERV_ITER  iter,
  * @param healthcheck_url[in]
  *  Full absolute URL starting with "http://" or "https://". Should include
  *  hostname or IP and port, if necessary.
+ * @param metadata[in]
+ *  URL-ready link with additional meta parameters
  * @param LBOS_answer[out]
  *  This variable will be assigned a pointer to char* with exact answer of
  *  LBOS, or NULL. If it is not NULL, must be free()'d by the caller. If
@@ -263,6 +276,9 @@ unsigned short FLBOS_AnnounceMethod(const char*     service,
                                     const char*     host,
                                     unsigned short  port,
                                     const char*     healthcheck_url,
+#ifdef LBOS_METADATA
+                                    const char*     metadata,
+#endif /* LBOS_METADATA */
                                     char**          LBOS_answer,
                                     char**          http_status_message);
 
@@ -350,7 +366,7 @@ char* g_LBOS_GetLBOSAddress(void);
  *  First method to try.
  * @param[in]   lbos_addr
  *  String with "%hostname%:%port%" or "%IP%:%port%". If priority_find_method
- *  is set to eLBOSFindMethod_CustomHost, lbos_addr should be non-NULL
+ *  is set to eLBOS_FindMethod_CustomHost, lbos_addr should be non-NULL
  *  (or else the method will be ignored)
  * @return
  *  LBOS address that needs to be free()'d by the caller.
@@ -395,7 +411,7 @@ NCBI_XCONNECT_EXPORT
 char* g_LBOS_ComposeLBOSAddress(void);
 
 
-/** Set primary method how to find LBOS. Default is eLBOSFindMethod_Registry.
+/** Set primary method how to find LBOS. Default is eLBOS_FindMethod_Registry.
  *  @param[in]  iter
  *   Iterator that represents current request to LBOS.
  *  @param[in]  method
@@ -409,7 +425,7 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSFindMethod(SERV_ITER        iter,
 
 
 /**  Set custom host for LBOS. It will be used when method 
- *  eLBOSFindMethod_CustomHost is used.
+ *  eLBOS_FindMethod_CustomHost is used.
  *  @param[in]  iter
  *   Iterator that represents current request to LBOS.
  *  @param[in]  address

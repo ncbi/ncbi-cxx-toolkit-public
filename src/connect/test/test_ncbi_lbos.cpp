@@ -307,8 +307,198 @@ BOOST_AUTO_TEST_CASE(TESTVERSIONCHECK)
 BOOST_AUTO_TEST_SUITE_END()
 
 
+#ifdef LBOS_METADATA
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE(ExtraResolveDataTest)////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( Metadata ) /////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* Tests:
+ *   1. Announce with known 'extra' meta parameter using a special function for
+ *      "known" metas. Run service discovery and get the announced metadata
+ *      parameter. The same for "rate" and "type"
+ *   2. Announce with known 'extra' meta parameter NOT using a special function
+ *      for "known" metas. Run service discovery and get the announced metadata
+ *      parameter. The same for "rate" and "type"
+ *   3. Announce with unknown meta parameter. Run service discovery and get 
+ *      the announced metadata parameter.
+ *   4. Announce with both known and unknown metas. Run service discovery and
+ *      get the announced metadata parameters.
+ *   5. Add meta parameter to CMetaData, then delete this parameter (to remove 
+ *      "meta", use Set or SetRate(-1) )
+ *   6. Set "type" meta using a bad enum value - get exception
+ *   7. C announce: meta is NULL- find no metas on service discovery
+ *   8. C++ announce: provide no metas (not define this parameter) - find no 
+ *      metas on service discovery
+ *   9. SetType(enum) - check all valid enum values. Announce and then check 
+ *      type on discovery
+ *  10. SetType(string) - remove meta on empty value
+ *  11. SetExtra(string) - remove meta on empty value
+ *  12. Set - provide one name in different case combinations and check
+ *      case insensitivity (the last provided value should be used with 
+ *      lower-cased name)
+ *  13. GetRate() - check normal value (if meta parameter was not set)
+ *  14. GetType(bool) - check normal value. Check if meta parameter is not set
+ *  15. GetType() - check all valid enum values
+ *  16. Check GetMetaString in different combinations of parameters
+ *  17. Try to write a "version" meta parameter - get exception.
+ *      The same for "ip","port", "check", "format", "name"
+ *  18. SetExtra with extra that has \s or \t or \n - throw exception
+ */
+
+ /* 1. Announce with known 'extra' meta parameter using a special function for
+  *    "known" metas. Run service discovery and get the announced metadata
+  *    parameter. The same for "rate" and "type" */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnowmMetaSpecFunc__SeeMetaInDescovery)
+{
+    AnnounceMetadata::KnowmMetaSpecFunc__SeeMetaInDescovery();
+}
+
+
+/* 2. Announce with known 'extra' meta parameter NOT using a special function
+ *    for "known" metas. Run service discovery and get the announced metadata
+ *    parameter.The same for "rate" and "type" */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnownMetaMainFunc__SeeMetaInDiscovery)
+{
+    AnnounceMetadata::KnownMetaMainFunc__SeeMetaInDiscovery();
+}
+
+
+/*3. Announce with unknown meta parameter. Run service discovery and get
+ *   the announced metadata parameter. 
+ *   NOTE: DISCOVERY IS NOT AVAILABLE, CHECKING VIA HTTP */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__UnknownMetaMainFunc__SeeMetaInDiscovery)
+{
+    AnnounceMetadata::UnknownMetaMainFunc__SeeMetaInDiscovery();
+}
+
+/* 4. Announce with both known and unknown metas.Run service discovery and
+ *    get the announced metadata parameters. */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnownAndUnknown__SeeMetaInDiscovery)
+{
+    AnnounceMetadata::KnownAndUnknown__SeeMetaInDiscovery();
+}
+
+/*  5. Add meta parameter to CMetaData, then delete this parameter 
+ *     (to remove "meta", use Set or SetRate(-1)) */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__DeleteMeta__NotSeeMetaInMetastring)
+{
+    AnnounceMetadata::DeleteMeta__NotSeeMetaInMetastring();
+}
+
+
+/*  6. Set "type" meta using a bad enum value - get exception */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeBadEnumVal__Exception)
+{
+    AnnounceMetadata::SetTypeBadEnumVal__Exception();
+}
+
+
+/*  7. C announce : meta is NULL - find no metas on service discovery */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__MetaNull__NoMetaInDiscovery)
+{
+    AnnounceMetadata::MetaNull__NoMetaInDiscovery();
+}
+
+
+/*  8. C++ announce: provide no metas (not define this parameter) - find no
+ *     metas on service discovery */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__NoMetaProvided__NoMetaInDiscovery)
+{
+    AnnounceMetadata::NoMetaProvided__NoMetaInDiscovery();
+}
+
+
+/*  9. SetType and GetType - check all valid enum values. Announce and then
+ *     check type on discovery */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeValidVal__SeeMetaInDiscovery)
+{
+    AnnounceMetadata::SetTypeValidVal__SeeMetaInDiscovery();
+}
+
+
+/* 10. type meta parameter - on re-announce the parameter is saved, even if
+ *     re-announced without type */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeEmpty__TypeStayInDiscovery)
+{
+    AnnounceMetadata::SetTypeEmpty__TypeStayInDiscovery();
+}
+
+
+/* 11. SetExtra(string) - remove meta on empty value. First announce with extra,
+ *     then re-announce without extra */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetExtraEmpty__ExtraStayInDiscovery)
+{
+    AnnounceMetadata::SetExtraEmpty__ExtraStayInDiscovery();
+}
+
+
+/* 12. Set - provide one name in different case combinations and check
+ *     case insensitivity(the last provided value should be used with
+ *     lower - cased name) */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__Set__CaseInsensitive)
+{
+    AnnounceMetadata::Set__CaseInsensitive();
+}
+
+
+/* 13. Check default values for meta parameters  */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__GetDefaultMetas__DefaultValEmpty)
+{
+    AnnounceMetadata::GetDefaultMetas__DefaultValEmpty();
+}
+
+
+/* 14. Check GetMetaString in different combinations of parameters */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__GetMetaString__ValuesAsExpected)
+{
+    AnnounceMetadata::GetMetaString__ValuesAsExpected();
+}
+
+
+/* 15. Try to write a "version" meta parameter - get exception.
+ *     The same for "ip", "port", "check", "format", "name" */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetNotMeta__Exception)
+{
+    AnnounceMetadata::SetNotMeta__Exception();
+}
+
+/* 16. SetExtra or SetType with extra that has a whitespace - throw 
+ *     exception */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__ExtraOrTypeWhitespace__ThrowException)
+{
+    AnnounceMetadata::ExtraOrTypeWhitespace__ThrowException();
+}
+
+/* 17. Set for extra and type - works fine */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetWithWhitespace__SeeInDiscovery)
+{
+    AnnounceMetadata::SetWithWhitespace__SeeInDiscovery();
+}
+
+/* 18. SetRate - string that cannot be parsed - throw exception */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetRateInvalidString__ThrowException)
+{
+    AnnounceMetadata::SetRateInvalidString__ThrowException();
+}
+
+/* 19. Set rate via Set and get via GetRate - good on good value */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetRateGetRateInt__AllOK)
+{
+    AnnounceMetadata::SetRateGetRateInt__AllOK();
+}
+
+
+/* 20. Set rate via Set and get via GetRate - throw exception on unexpected 
+ *     values */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetRateGetRateNonInt__Exception)
+{
+    AnnounceMetadata::SetRateGetRateNonInt__Exception();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+#endif /* LBOS_METADATA */
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( ExtraResolveDataTest ) /////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 BOOST_AUTO_TEST_CASE(ExtraResolveData__ExtraData__DoesNotCrash)
@@ -1922,3 +2112,4 @@ BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash)
     ResolveViaLBOS::FakeErrorInput__ShouldNotCrash();
 }
 BOOST_AUTO_TEST_SUITE_END()
+//#endif

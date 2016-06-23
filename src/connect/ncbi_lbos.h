@@ -26,6 +26,7 @@
 * ===========================================================================
 *
 * Authors:  Dmitriy Elisov
+* Credits:  Denis Vakatov
 * @file
 * File Description:
 *   Possibly public interface to LBOS client if someone ever needs a C version
@@ -40,7 +41,10 @@
 extern "C" {
 #endif /*__cplusplus*/
 
-    
+
+#define LBOS_METADATA
+
+
 /** Announce server.
 *
 * @attention
@@ -66,6 +70,8 @@ extern "C" {
 *  announces it (i.e., if server announces itself), you can write
 *  "0.0.0.0" for IP (this is convention with lbos). You still have to
 *  provide port, even if you write "0.0.0.0".
+* @param [out] meta_args
+*  Array of meta arguments in form { "name1", "val1", "name2", "val2", NULL }
 * @param [out] lbos_answer
 *  This variable will be assigned a pointer to C-string with exact body of
 *  lbos' response (or NULL, if no lbos was reached).
@@ -89,6 +95,9 @@ unsigned short LBOS_Announce(const char*             service,
                              const char*             host,
                              unsigned short          port,
                              const char*             healthcheck_url,
+#ifdef LBOS_METADATA
+                             const char*             meta_args,
+#endif /* LBOS_METADATA */
                              char**                  lbos_answer,
                              char**                  http_status_message);
 
