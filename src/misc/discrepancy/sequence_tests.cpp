@@ -947,5 +947,226 @@ DISCREPANCY_AUTOFIX(FEATURE_MOLTYPE_MISMATCH)
     return CRef<CAutofixReport>(n ? new CAutofixReport("FEATURE_MOLTYPE_MISMATCH: Moltype was set to genomic for [n] bioseq[s]", n) : 0);
 }
 
+
+// INCONSISTENT_DBLINK
+
+const string kMissingDBLink = "[n] Bioseq [is] missing DBLink object";
+const string kDBLinkObjectList = "DBLink Objects";
+const string kDBLinkFieldCountTop = "DBLink Fields";
+const string kDBLinkCollect = "DBLink Collection";
+
+string GetFieldValueAsString(const CUser_field& field)
+{
+    string value = kEmptyStr;
+
+    if (field.GetData().IsStr()) {
+        value = field.GetData().GetStr();
+    } else if (field.GetData().IsStrs()) {
+        ITERATE(CUser_field::TData::TStrs, s, field.GetData().GetStrs()) {
+            if (!NStr::IsBlank(value)) {
+                value += "; ";
+            }
+            value += *s;
+        }
+    }
+    return value;
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc, "Inconsistent DBLink fields")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsAa()) {
+        return;
+    }
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*seq);
+    CSeqdesc_CI d(bsh, CSeqdesc::e_User);
+    while (d && d->GetUser().GetObjectType() != CUser_object::eObjectType_DBLink) {
+        ++d;
+    }
+    if (!d) {
+        m_Objs[kMissingDBLink].Add(*context.NewDiscObj(seq, eKeepRef), false);
+        // add missing for all previously seen fields
+        ITERATE(CReportNode::TNodeMap, z, m_Objs[kDBLinkCollect].GetMap()) {
+            m_Objs[kDBLinkCollect][z->first]["[n] DBLink object[s] [is] missing field " + z->first]
+                    .Add(*context.NewDiscObj(seq, eKeepRef), false);
+        }
+    }
+    while (d) {
+        if (d->GetUser().GetObjectType() != CUser_object::eObjectType_DBLink) {
+            ++d;
+            continue;
+        }
+        ITERATE(CUser_object::TData, f, d->GetUser().GetData()) {
+            if ((*f)->IsSetLabel() && (*f)->GetLabel().IsStr() && (*f)->IsSetData()) {
+                string field_name = (*f)->GetLabel().GetStr();
+                // add missing field to all previous objects that do not have this field
+                if (!m_Objs[kDBLinkCollect].Exist(field_name)) {
+                    ITERATE(TReportObjectList, ro, m_Objs[kDBLinkObjectList].GetObjects()) {
+                        string missing_label = "[n] DBLink object[s] [is] missing field " + field_name;
+                        CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
+                        m_Objs[kDBLinkCollect][field_name][missing_label].Add(*seq_disc_obj, false);
+                    }
+                }
+                m_Objs[kDBLinkCollect][field_name]
+                    ["[n] DBLink object[s] [has] field " + field_name + " value '" + GetFieldValueAsString(**f) + "'"]
+                        .Add(*context.NewDiscObj(seq), false);
+                m_Objs[kDBLinkFieldCountTop][field_name].Add(*context.NewDiscObj(seq), false);
+            }
+        }
+        // add missing for all previously seen fields not on this object
+        ITERATE(CReportNode::TNodeMap, z, m_Objs[kDBLinkCollect].GetMap()) {
+            if (!m_Objs[kDBLinkFieldCountTop].Exist(z->first)) {
+                m_Objs[kDBLinkCollect][z->first]["[n] DBLink object[s] [is] missing field " + z->first]
+                    .Add(*context.NewDiscObj(seq), false);
+            }
+        }
+        m_Objs[kDBLinkFieldCountTop].clear();
+
+
+        // maintain object list for missing fields
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CBioseq>(context.GetCurrentBioseq()), eKeepRef));
+        m_Objs[kDBLinkObjectList].Add(*this_disc_obj, false);
+
+        ++d;
+    }
+
+}
+
+
+void AnalyzeField(CReportNode& node, bool& all_present, bool& all_same)
+{
+    all_present = true;
+    all_same = true;
+    size_t num_values = 0;
+    ITERATE(CReportNode::TNodeMap, s, node.GetMap()) {
+        if (NStr::Find(s->first, " missing field ") != string::npos) {
+            all_present = false;
+        } else {
+            num_values++;
+        }
+        if (num_values > 1) {
+            all_same = false;
+            if (!all_present) {
+                // have all the info we need
+                break;
+            }
+        }
+    }
+}
+
+void AnalyzeFieldReport(CReportNode& node, bool& all_present, bool& all_same)
+{
+    all_present = true;
+    all_same = true;
+    NON_CONST_ITERATE(CReportNode::TNodeMap, s, node.GetMap()) {
+        bool this_present = true;
+        bool this_same = true;
+        AnalyzeField(*(s->second), this_present, this_same);
+        all_present &= this_present;
+        all_same &= this_same;
+        if (!all_present && !all_same) {
+            break;
+        }
+    }
+}
+
+
+string GetSummaryLabel(bool all_present, bool all_same)
+{
+    string summary = "(";
+    if (all_present) {
+        summary += "all present";
+    } else {
+        summary += "some missing";
+    }
+    summary += ", ";
+    if (all_same) {
+        summary += "all same";
+    } else {
+        summary += "inconsistent";
+    }
+    summary += ")";
+    return summary;
+}
+
+
+void CopyNode(CReportNode& new_home, CReportNode& original)
+{
+    NON_CONST_ITERATE(CReportNode::TNodeMap, s, original.GetMap()){
+        NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+            new_home[s->first].Add(**q);
+        }
+    }
+    NON_CONST_ITERATE(TReportObjectList, q, original.GetObjects()) {
+        new_home.Add(**q);
+    }
+}
+
+void AddSubFieldReport(CReportNode& node, const string& field_name, const string& top_label, CReportNode& m_Objs)
+{
+    bool this_present = true;
+    bool this_same = true;
+    AnalyzeField(node, this_present, this_same);
+    string new_label = field_name + " " + GetSummaryLabel(this_present, this_same);
+    NON_CONST_ITERATE(CReportNode::TNodeMap, s, node.GetMap()){
+        NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+            m_Objs[top_label][new_label][s->first].Add(**q);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
+//  ----------------------------------------------------------------------------
+{
+    m_Objs.GetMap().erase(kDBLinkObjectList);
+    m_Objs.GetMap().erase(kDBLinkFieldCountTop);
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    // add top-level category, rename field values
+    bool all_present = true;
+    bool all_same = true;
+    AnalyzeFieldReport(m_Objs[kDBLinkCollect], all_present, all_same);
+    string top_label = "DBLink Report " + GetSummaryLabel(all_present, all_same);
+
+    CReportNode::TNodeMap::iterator it = m_Objs.GetMap().begin();
+    while (it != m_Objs.GetMap().end()) {
+        if (!NStr::Equal(it->first, top_label)
+            && !NStr::Equal(it->first, kDBLinkCollect)) {
+            CopyNode(m_Objs[top_label][it->first], *(it->second));
+            it = m_Objs.GetMap().erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    if (m_Objs[kDBLinkCollect].Exist("BioSample")) {
+
+    }
+
+    NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs[kDBLinkCollect].GetMap()) {
+        bool this_present = true;
+        bool this_same = true;
+        AnalyzeField(*(it->second), this_present, this_same);
+        string new_label = it->first + " " + GetSummaryLabel(this_present, this_same);
+        NON_CONST_ITERATE(CReportNode::TNodeMap, s, it->second->GetMap()){
+            NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+                m_Objs[top_label][new_label][s->first].Add(**q);
+            }
+        }
+    }
+    m_Objs.GetMap().erase(kDBLinkCollect);
+
+
+
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
