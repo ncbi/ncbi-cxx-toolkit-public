@@ -196,7 +196,6 @@ connect needs3party $(NETWORK_LIBS)
 connect needs3party $(ORIG_LIBS)
 connext needs connect
 connssl needs connect
-connssl needs3party $(GCRYPT_LIBS)
 creaders needs3party $(ORIG_LIBS)
 crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
@@ -292,9 +291,10 @@ eutilsapp needs ncqhst
 eutilsapp needs3party $(FASTCGI_LIBS)
 event_g needs generic_db_utils
 expat needs3party $(ORIG_LIBS)
-exslt needs3party $(GCRYPT_LIBS)
 exslt needs3party $(LIBXML_LIBS)
 exslt needs3party $(ORIG_LIBS)
+exslt needs3party gcrypt
+exslt needs3party gpg-error
 fastme needs3party $(ORIG_LIBS)
 fbsdstd_g needs3party $(ORIG_LIBS)
 fcgi needs3party $(ORIG_LIBS)
@@ -329,6 +329,7 @@ gcaccess_utils needs $(GPIPE_GENCOLL_LIBS)
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcrypt needs3party $(ORIG_LIBS)
+gcrypt needs3party gpg-error
 gencoll_client needs $(COMPRESS_LIBS)
 gencoll_client needs genome_collection
 gencoll_client needs xconnect
@@ -447,9 +448,11 @@ gpipe_kmer needs sampling
 gpipe_kpi needs xmlwrapp
 gpipe_meta_access needs gpipe_common
 gpipe_object_edit needs xalgoalignutil
+gpipe_objutil needs $(DATA_LOADERS_UTIL_LIB)
+gpipe_objutil needs $(DATA_LOADERS_UTIL_LIBS)
 gpipe_objutil needs $(OBJEDIT_LIBS)
+gpipe_objutil needs $(OBJMGR_LIBS)
 gpipe_objutil needs $(XFORMAT_LIBS)
-gpipe_objutil needs data_loaders_util
 gpipe_objutil needs gpipe_attr
 gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
@@ -797,7 +800,6 @@ ncbils2_authxml needs xser
 ncbils2_cli needs ncbils2_asn
 ncbils2_cli needs xconnect
 ncbils2_cmn needs $(LIBSSSUTILS)
-ncbils2_cmn needs3party $(GCRYPT_LIBS)
 ncbils2_dispxml needs xser
 ncbimime needs cdd
 ncbimla needs3party ncbiobj
