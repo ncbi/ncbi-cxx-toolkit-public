@@ -42,7 +42,7 @@ set use_debug=yes
 set use_dll=no
 set use_64=no
 set use_staticstd=no
-set use_arch=x86
+set use_arch=Win32
 set use_flags=
 set help_req=no
 set srcroot=../..
@@ -291,7 +291,7 @@ REM target architecture, solution path, configuration and flags
 if "%use_64%"=="yes" (
   set use_arch=x64
 ) else (
-  set use_arch=x86
+  set use_arch=Win32
 )
 if "%use_dll%"=="yes" (
   if "%use_debug%"=="yes" (
