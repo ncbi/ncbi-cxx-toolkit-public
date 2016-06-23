@@ -17,7 +17,8 @@ APP_PROJ = \
     unit_test_wigreader \
     unit_test_vcfreader \
     unit_test_ucscreader \
-    unit_test_gtfreader
+    unit_test_gtfreader \
+	unit_test_alnreader
 
 PROJ_TAG = test
 

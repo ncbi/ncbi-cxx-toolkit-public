@@ -1,0 +1,39 @@
+Seq-align ::= {
+  type not-set,
+  dim 3,
+  segs denseg {
+    dim 3,
+    numseg 5,
+    ids {
+      pdb {
+        mol "2crd"
+      },
+      gi 786430,
+      gi 2500706
+    },
+    starts {
+      -1,
+      -1,
+      0,
+      0,
+      -1,
+      -1,
+      4,
+      -1,
+      1,
+      5,
+      0,
+      2,
+      -1,
+      -1,
+      34
+    },
+    lens {
+      1,
+      4,
+      1,
+      32,
+      1
+    }
+  }
+}
