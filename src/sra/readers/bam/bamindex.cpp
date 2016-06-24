@@ -270,7 +270,7 @@ void CBamIndex::Read(const string& index_file_name)
 static inline
 Uint8 s_EstimatedPos(const CBGZFPos& pos)
 {
-    return pos.GetFileBlockPos() + pos.GetByteOffset()*kEstimatedCompression;
+    return pos.GetFileBlockPos() + Uint8(pos.GetByteOffset()*kEstimatedCompression);
 }
 
 
@@ -380,7 +380,7 @@ CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
         }
     }
     if ( vv.empty() ) vv.push_back(0);
-    uint32_t count = vv.size();
+    uint32_t count = uint32_t(vv.size());
     if ( length == 0 || length == kInvalidSeqPos ) {
         length = count*kBlockSize;
     }

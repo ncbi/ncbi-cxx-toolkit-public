@@ -276,8 +276,8 @@ size_t CBGZFStream::Read(char* buf, size_t count)
     while ( m_ReadPos >= m_BlockInfo.GetDataSize() ) {
         x_ReadBlock();
     }
-    size_t avail = m_BlockInfo.GetDataSize() - m_ReadPos;
-    size_t cnt = min(avail, count);
+    CBGZFBlockInfo::TDataSize avail = m_BlockInfo.GetDataSize() - m_ReadPos;
+    CBGZFBlockInfo::TDataSize cnt = CBGZFBlockInfo::TDataSize(min(size_t(avail), count));
     memcpy(buf, m_Data.get() + m_ReadPos, cnt);
     m_ReadPos += cnt;
     return cnt;
