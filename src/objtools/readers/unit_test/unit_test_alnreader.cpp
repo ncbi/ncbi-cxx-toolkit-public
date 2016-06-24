@@ -306,8 +306,8 @@ BOOST_AUTO_TEST_CASE(RunTests)
             extInput + " file does not exist: " << testInfo.mInFile.GetPath() );
         BOOST_REQUIRE_MESSAGE( testInfo.mOutFile.Exists(),
             extOutput + " file does not exist: " << testInfo.mOutFile.GetPath() );
-        BOOST_REQUIRE_MESSAGE( testInfo.mErrorFile.Exists(),
-            extErrors + " file does not exist: " << testInfo.mErrorFile.GetPath() );
+//        BOOST_REQUIRE_MESSAGE( testInfo.mErrorFile.Exists(),
+//            extErrors + " file does not exist: " << testInfo.mErrorFile.GetPath() );
     }
 
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
