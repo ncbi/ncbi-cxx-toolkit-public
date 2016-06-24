@@ -1627,5 +1627,43 @@ DISCREPANCY_SUMMARIZE(SHOW_TRANSL_EXCEPT)
 }
 
 
+// NO_PRODUCT_STRING
+
+static const string kNoProductStr = "[n] product[s] [has] \"no product string in file\"";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(NO_PRODUCT_STRING, CSeq_feat, eDisc, "Product has string \"no product string in file\"")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData() || !obj.GetData().IsProt()) {
+        return;
+    }
+
+    const CProt_ref& prot = obj.GetData().GetProt();
+
+    if (prot.IsSetName()) {
+
+        const string* no_prot_str = NStr::FindNoCase(prot.GetName(), "no product string in file");
+        if (no_prot_str != nullptr) {
+            const CSeq_feat* product = sequence::GetCDSForProduct(*context.GetCurrentBioseq(), &context.GetScope());
+            if (product != nullptr) {
+                m_Objs[kNoProductStr].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(product)), false);
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(NO_PRODUCT_STRING)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
