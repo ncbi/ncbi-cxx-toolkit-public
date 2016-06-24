@@ -63,9 +63,11 @@ public:
             if ( args["gbload"] ) {
                 CGBDataLoader::RegisterInObjectManager(*m_objmgr);
             }
+#ifdef HAVE_NCBI_VDB
             if ( args["wgsload"] ) {
                 CWGSDataLoader::RegisterInObjectManager(*m_objmgr, CObjectManager::eDefault);
             }
+#endif
         }
     };
 

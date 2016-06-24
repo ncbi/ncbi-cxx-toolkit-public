@@ -93,7 +93,9 @@
 #include <objmgr/seqdesc_ci.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <sra/data_loaders/wgs/wgsloader.hpp>
+#ifdef HAVE_NCBI_VDB
+#  include <sra/data_loaders/wgs/wgsloader.hpp>
+#endif
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 
 
@@ -403,7 +405,9 @@ void CBiosampleChkApp::ProcessList (const string& fname)
 
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*objmgr);
+#ifdef HAVE_NCBI_VDB
     CWGSDataLoader::RegisterInObjectManager(*objmgr);
+#endif
     CScope scope(*objmgr);
     scope.AddDefaults();
 

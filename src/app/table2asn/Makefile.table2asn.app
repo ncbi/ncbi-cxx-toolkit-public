@@ -12,8 +12,8 @@ SRC = table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context fe
 
 LIB  = xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
        xvalidate xobjwrite xobjreadex valerr biotree \
-       ncbi_xloader_wgs \
-       $(OBJEDIT_LIBS) $(XFORMAT_LIBS) $(BLAST_LIBS) \
+       $(ncbi_xloader_wgs) \
+       $(OBJEDIT_LIBS) $(XFORMAT_LIBS) $(BLAST_LIBS) id2cli \
        xregexp $(PCRE_LIB) $(SRAREAD_LIBS) $(OBJMGR_LIBS)
 
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) \
@@ -22,7 +22,7 @@ LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) \
 
 POST_LINK = $(VDB_POST_LINK)
 
-REQUIRES = objects LIBXML LIBXSLT $(VDB_REQ)
+REQUIRES = objects LIBXML LIBXSLT
 
 
 WATCHERS = bollin gotvyans

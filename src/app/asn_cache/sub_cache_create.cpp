@@ -70,7 +70,9 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <sra/data_loaders/wgs/wgsloader.hpp>
+#ifdef HAVE_NCBI_VDB
+#  include <sra/data_loaders/wgs/wgsloader.hpp>
+#endif
 
 #include <db/bdb/bdb_cursor.hpp>
 
@@ -816,7 +818,9 @@ int CAsnCacheApplication::Run(void)
              ? args["max-withdrawn"].AsInteger() : UINT_MAX;
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
+#ifdef HAVE_NCBI_VDB
     CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault, 0);
+#endif
     CGBDataLoader::RegisterInObjectManager(*om);
 
     CStopWatch  sw;

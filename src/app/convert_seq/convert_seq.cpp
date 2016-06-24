@@ -47,7 +47,9 @@
 #include <objects/misc/sequence_macros.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <sra/data_loaders/wgs/wgsloader.hpp>
+#ifdef HAVE_NCBI_VDB
+#  include <sra/data_loaders/wgs/wgsloader.hpp>
+#endif
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -139,8 +141,10 @@ void CConversionApp::Init(void)
 
     arg_desc->AddFlag("gbload",
         "Use GenBank data loader");
+#ifdef HAVE_NCBI_VDB
     arg_desc->AddFlag("wgsload",
         "Use WGS data loader");
+#endif
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -152,10 +156,9 @@ int CConversionApp::Run(void)
 
     m_ObjMgr = CObjectManager::GetInstance();
     if ( args["wgsload"] ) {
-        //CPluginManager_DllResolver::EnableGlobally();
-        //string loader_name = m_ObjMgr->RegisterDataLoader(0, "wgs")->GetName();
-        //m_ObjMgr->SetLoaderOptions(loader_name, CObjectManager::eDefault);
+#ifdef HAVE_NCBI_VDB
         CWGSDataLoader::RegisterInObjectManager(*m_ObjMgr, CObjectManager::eDefault);
+#endif
     }
 	if ( args["gbload"] || !args["no-objmgr"] ) {
         CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);

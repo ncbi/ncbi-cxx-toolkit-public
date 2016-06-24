@@ -50,7 +50,9 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <sra/data_loaders/wgs/wgsloader.hpp>
+#ifdef HAVE_NCBI_VDB
+#  include <sra/data_loaders/wgs/wgsloader.hpp>
+#endif
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <dbapi/driver/drivers.hpp>
 
@@ -429,9 +431,11 @@ int CCleanupApp::Run(void)
 #endif
 
         CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+#ifdef HAVE_NCBI_VDB
         CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
                                             CObjectManager::eDefault,
                                             88);
+#endif
 
     }
     m_Scope->AddDefaults();

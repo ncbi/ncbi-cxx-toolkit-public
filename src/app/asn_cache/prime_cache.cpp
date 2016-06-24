@@ -58,7 +58,9 @@
 #include <objects/submit/Submit_block.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <sra/readers/sra/csraread.hpp>
+#ifdef HAVE_NCBI_VDB
+#  include <sra/readers/sra/csraread.hpp>
+#endif
 
 #include <objtools/readers/fasta.hpp>
 
@@ -161,8 +163,10 @@ private:
                        unsigned delta_level,
                        size_t count);
 
+#ifdef HAVE_NCBI_VDB
     void x_Process_SRA(CNcbiIstream& istr,
                        CNcbiOstream& ostr_seqids);
+#endif
 
     void x_Process_Fasta(CNcbiIstream& istr,
                          CNcbiOstream& ostr_seqids);
@@ -286,7 +290,10 @@ void CPrimeCacheApplication::Init(void)
 
     arg_desc->SetConstraint("ifmt",
                             &(*new CArgAllow_Strings,
-                              "ids", "fasta", "csra",
+                              "ids", "fasta",
+#ifdef HAVE_NCBI_VDB
+                              "csra",
+#endif
                               "asnb-seq-entry",
                               "asn-seq-entry"));
 
@@ -502,6 +509,7 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
 
 }
 
+#ifdef HAVE_NCBI_VDB
 void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
                                            CNcbiOstream& ostr_seqids)
 {
@@ -558,6 +566,7 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
     LOG_POST(Error << "done, dumped " << count << " items");
 
 }
+#endif
 
 void CPrimeCacheApplication::x_Process_SeqEntry(CNcbiIstream& istr,
                                                 CNcbiOstream& ostr_seqids,
@@ -1007,9 +1016,11 @@ int CPrimeCacheApplication::Run(void)
             else if (ifmt == "fasta") {
                 x_Process_Fasta(is, ostr);
             }
+#ifdef HAVE_NCBI_VDB
             else if (ifmt == "csra") {
                 x_Process_SRA(is, ostr);
             }
+#endif
             else if (ifmt == "asn-seq-entry") {
                 x_Process_SeqEntry(is, ostr, eSerial_AsnText, ids, count);
             }
@@ -1030,9 +1041,11 @@ int CPrimeCacheApplication::Run(void)
         else if (ifmt == "fasta") {
             x_Process_Fasta(istr, ostr);
         }
+#ifdef HAVE_NCBI_VDB
             else if (ifmt == "csra") {
                 x_Process_SRA(istr, ostr);
             }
+#endif        
         else if (ifmt == "asn-seq-entry") {
             x_Process_SeqEntry(istr, ostr, eSerial_AsnText, ids, count);
         }

@@ -35,14 +35,6 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <corelib/ncbistl.hpp>
-#include <corelib/ncbitime.hpp>
-
-#include <serial/iterator.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
-#include <serial/objostrasn.hpp>
-#include <serial/serial.hpp>
 
 #include <util/format_guess.hpp>
 
@@ -128,7 +120,8 @@ CFormatGuessApp::Run(void)
     
     FormatIter it = FormatStrings.find( uFormat );
     if ( it == FormatStrings.end() ) {
-        cout << "Unmapped format [" << uFormat << "]";
+        // cout << "Unmapped format [" << uFormat << "]";
+        cout << CFormatGuess::GetFormatName(uFormat);
     }
     else {
         cout << it->second;

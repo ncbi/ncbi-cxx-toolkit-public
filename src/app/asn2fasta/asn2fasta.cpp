@@ -51,7 +51,9 @@
 
 #include <objects/submit/Seq_submit.hpp>
 
-#include <sra/data_loaders/wgs/wgsloader.hpp>
+#ifdef HAVE_NCBI_VDB
+#  include <sra/data_loaders/wgs/wgsloader.hpp>
+#endif
 
 #include <objtools/cleanup/cleanup.hpp>
 
@@ -371,9 +373,11 @@ int CAsn2FastaApp::Run(void)
                    "Could not create object manager");
     }
     CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+#ifdef HAVE_NCBI_VDB
     CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
                                             CObjectManager::eDefault,
                                             88);
+#endif
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 

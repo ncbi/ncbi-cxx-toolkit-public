@@ -65,7 +65,9 @@
 #include <objtools/validator/validator.hpp>
 #include <objtools/writers/agp_write.hpp>
 
-#include <sra/data_loaders/wgs/wgsloader.hpp>
+#ifdef HAVE_NCBI_VDB
+#  include <sra/data_loaders/wgs/wgsloader.hpp>
+#endif
 
 #include <algo/align/prosplign/prosplign.hpp>
 
@@ -201,8 +203,10 @@ void CStreamTestApp::Init()
     arg_desc->AddFlag("gbload",
         "Use GenBank data loader");
 
+#ifdef HAVE_NCBI_VDB
     arg_desc->AddFlag("wgsload",
         "Use WGS data loader");
+#endif
 
     arg_desc->AddFlag( "rf", 
         "Generate final report" );

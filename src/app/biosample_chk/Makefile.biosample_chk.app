@@ -9,7 +9,7 @@
 APP = biosample_chk
 SRC = biosample_chk
 
-LIB  = xbiosample_util ncbi_xloader_wgs $(SRAREAD_LIBS) xmlwrapp xvalidate \
+LIB  = xbiosample_util $(ncbi_xloader_wgs) $(SRAREAD_LIBS) xmlwrapp xvalidate \
        $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil valerr tables \
        xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 

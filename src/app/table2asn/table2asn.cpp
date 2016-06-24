@@ -76,7 +76,9 @@
 #include <objtools/readers/fasta_exception.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <sra/data_loaders/wgs/wgsloader.hpp>
+#ifdef HAVE_NCBI_VDB
+#  include <sra/data_loaders/wgs/wgsloader.hpp>
+#endif
 
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -1102,7 +1104,9 @@ void CTbl2AsnApp::Setup(const CArgs& args)
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
         CGBDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr);
+#ifdef HAVE_NCBI_VDB
         CWGSDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr, CObjectManager::eDefault, 88);
+#endif
     }
     m_context.m_scope->AddDefaults();
 }
