@@ -1,0 +1,15 @@
+Discrepancy Report Results
+
+Summary
+INCONSISTENT_STRUCTURED_COMMENTS: Structured Comment Report (all present, all same)
+
+Detailed Report
+
+INCONSISTENT_STRUCTURED_COMMENTS: Structured Comment Report (all present, all same)
+INCONSISTENT_STRUCTURED_COMMENTS: structured comment field Sequencing Technology (all present, all same)
+INCONSISTENT_STRUCTURED_COMMENTS: All Assembly-Data structured comments have field structured comment field Sequencing Technology value 'Sanger dideoxy sequencing'
+D:\toolkit\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194217|:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194218|:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194219|:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\KT194217.sqn:gb|KT194220|:StructuredComment
+
