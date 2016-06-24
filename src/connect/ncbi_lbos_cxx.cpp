@@ -326,14 +326,16 @@ void LBOS::AnnounceFromRegistry(const string& reg_sec)
     catch (...) {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                              CLBOSException::eInvalidArgs,
-                             NStr::IntToString(eLBOS_InvalidArgs),
+                             "Could not parse port \"" + port_str + 
+                             "\" in section \"" + reg_section + "\"",
                              eLBOS_InvalidArgs);
     }
     if (port_int < 1 || port_int > 65535)
     {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                              CLBOSException::eInvalidArgs, 
-                             NStr::IntToString(eLBOS_InvalidArgs),
+                             "Invalid server port \"" + port_str + 
+                             "\" in section \"" + reg_section + "\"",
                              eLBOS_InvalidArgs);
     }
     unsigned short port = static_cast<unsigned short>(port_int);

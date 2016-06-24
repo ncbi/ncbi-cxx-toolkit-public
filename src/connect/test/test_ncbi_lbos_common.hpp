@@ -2935,18 +2935,19 @@ void SetRateGetRateNonInt__Exception()
 /** 21. Announce from registry test - announce and see metedata in discovery */
 void AnnounceFromRegistry__SeeMetaInDiscovery()
 {
-    CConnNetInfo net_info;
     const SSERV_Info* info;
-    string version = "1.0.0";
-    string service = "/lbostest";
     string dtab = "DTab-local: /lbostest=>/zk#/lbostest/1.0.0";
+    CConnNetInfo net_info;
+    string service = "/lbostest";
     ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
     CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
     string lbos_addr(lbos_address.Get());
     string expected_path = "myextra";
+    string version = "1.0.0";
     unsigned short port = 8080;
+    /*
     unsigned short rate = 200;
-    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";*/
 
     s_AnnounceCPPFromRegistry("SECTION_WITH_METADATA");
     
@@ -2995,6 +2996,17 @@ void AnnounceFromRegistry__SeeMetaInDiscovery()
     s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
 }
 
+/** 22. */
+void RegistryNoSuchSection__Exception()
+{
+    LBOS::CMetaData meta;
+    ExceptionComparator<CLBOSException::eInvalidArgs, eLBOS_InvalidArgs> 
+        comparator("Could not parse port \"\" in section "
+                   "\"SECTION_DOESNOTEXIST\"\n");
+
+    BOOST_CHECK_EXCEPTION(s_AnnounceCPPFromRegistry("SECTION_DOESNOTEXIST"), 
+                          CLBOSException, comparator);
+}
 
 } /* namespace AnnounceMetadata */
 
@@ -7645,7 +7657,8 @@ void ParamsGood__ReturnSuccess()
 void CustomSectionNoVars__ThrowInvalidArgs()
 {
     ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
-                                                            comparator("452\n");
+                       comparator("Could not parse port \"\" in "
+                                  "section \"NON-EXISTENT_SECTION\"\n");
     WRITE_LOG("Testing custom section that has nothing in config");
     WRITE_LOG("Expected exception with error code \"" << 
                 "eInvalidArgs" <<
@@ -7675,34 +7688,40 @@ void CustomSectionEmptyOrNullAndSectionIsOk__AllOK()
 
 void TestNullOrEmptyField(const char* field_tested)
 {
-    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
-                                                            comparator("452\n");
     CLBOSStatus lbos_status(true, true);
-    string null_section = "SECTION_WITHOUT_";
     string empty_section = "SECTION_WITH_EMPTY_";
     string field_name = field_tested;
+    string null_section = "SECTION_WITHOUT_";
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
+                               comparator1(string(field_tested) == "PORT" ? 
+                               "Could not parse port \"\" in "
+                               "section \"" + null_section + field_name + "\"\n"
+                               : "452\n");
     /* 
      * I. NULL section 
      */
     WRITE_LOG("Part I. " << field_tested << " is not in section (NULL)");
     WRITE_LOG("Expected exception with error code \"" << 
-                "eInvalidArgs" <<
-                "\", status code \"" << 452 <<
-                "\", message \"" << "452\\n" << "\".");
-    BOOST_CHECK_EXCEPTION(
-        s_AnnounceCPPFromRegistry((null_section + field_name)),
-        CLBOSException, comparator);
+              "eInvalidArgs" <<
+              "\", status code \"" << 452 <<
+              "\", message \"" << "452\\n" << "\".");
+    BOOST_CHECK_EXCEPTION(s_AnnounceCPPFromRegistry(null_section + field_name),
+                          CLBOSException, comparator1);
     /* 
      * II. Empty section 
      */
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
+                              comparator2(string(field_tested) == "PORT" ? 
+                              "Could not parse port \"\" in "
+                              "section \"" + empty_section + field_name + "\"\n"
+                              : "452\n");
     WRITE_LOG("Part II. " << field_tested << " is an empty string");
     WRITE_LOG("Expected exception with error code \"" << 
-                "eInvalidArgs" <<
-                "\", status code \"" << 452 <<
-                "\", message \"" << "452\\n" << "\".");
-    BOOST_CHECK_EXCEPTION(
-        s_AnnounceCPPFromRegistry((empty_section + field_name)),
-        CLBOSException, comparator);
+              "eInvalidArgs" <<
+              "\", status code \"" << 452 <<
+              "\", message \"" << "452\\n" << "\".");
+    BOOST_CHECK_EXCEPTION(s_AnnounceCPPFromRegistry(empty_section + field_name),
+                          CLBOSException, comparator2);
 }
 
 /*  4.  Service is empty or NULL - return eLBOS_InvalidArgs                  */
@@ -7730,11 +7749,12 @@ void PortEmptyOrNull__ThrowInvalidArgs()
 void PortOutOfRange__ThrowInvalidArgs()
 {
     WRITE_LOG("Port is out of range - return eLBOS_InvalidArgs");
-    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
-                                                            comparator("452\n");
     /*
      * I. port = 0 
      */
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
+                            comparator1("Invalid server port \"0\" in section "
+                                       "\"SECTION_WITH_PORT_OUT_OF_RANGE1\"\n");
     WRITE_LOG("Part I. Port is 0");
     WRITE_LOG("Expected exception with error code \"" << 
                 "eInvalidArgs" <<
@@ -7742,10 +7762,13 @@ void PortOutOfRange__ThrowInvalidArgs()
                 "\", message \"" << "452\\n" << "\".");
     BOOST_CHECK_EXCEPTION(
         LBOS::AnnounceFromRegistry("SECTION_WITH_PORT_OUT_OF_RANGE1"),
-        CLBOSException, comparator);
+        CLBOSException, comparator1);
     /*
      * II. port = 100000 
      */
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
+                        comparator2("Invalid server port \"100000\" in section "
+                                    "\"SECTION_WITH_PORT_OUT_OF_RANGE2\"\n");
     WRITE_LOG("Part II. Port is 100000");
     WRITE_LOG("Expected exception with error code \"" << 
                 "eInvalidArgs" <<
@@ -7753,10 +7776,13 @@ void PortOutOfRange__ThrowInvalidArgs()
                 "\", message \"" << "452\\n" << "\".");
     BOOST_CHECK_EXCEPTION(
        s_AnnounceCPPFromRegistry("SECTION_WITH_PORT_OUT_OF_RANGE2"),
-        CLBOSException, comparator);
+        CLBOSException, comparator2);
     /*
      * III. port = 65536 
      */
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
+                        comparator3("Invalid server port \"65536\" in section "
+                                    "\"SECTION_WITH_PORT_OUT_OF_RANGE3\"\n");
     WRITE_LOG("Part III. Port is 65536");
     WRITE_LOG("Expected exception with error code \"" << 
                 "eInvalidArgs" <<
@@ -7764,18 +7790,19 @@ void PortOutOfRange__ThrowInvalidArgs()
                 "\", message \"" << "452\\n" << "\".");
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPPFromRegistry("SECTION_WITH_PORT_OUT_OF_RANGE3"),
-        CLBOSException, comparator);
+        CLBOSException, comparator3);
 }
 /*  8.  Port contains letters - return eLBOS_InvalidArgs                     */
 void PortContainsLetters__ThrowInvalidArgs()
 {
-    WRITE_LOG("Port contains letters");
+    WRITE_LOG("Port contains letters: 152d");
     WRITE_LOG("Expected exception with error code \"" << 
                 "eInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".");
     ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
-                                                            comparator("452\n");
+                       comparator("Could not parse port \"152d\" in "
+                                  "section \"SECTION_WITH_CORRUPTED_PORT\"\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPPFromRegistry("SECTION_WITH_CORRUPTED_PORT"),

@@ -349,6 +349,7 @@ BOOST_AUTO_TEST_SUITE( Metadata ) /////////////////////////////////////
   *    parameter. The same for "rate" and "type" */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnowmMetaSpecFunc__SeeMetaInDescovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::KnowmMetaSpecFunc__SeeMetaInDescovery();
 }
 
@@ -358,6 +359,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnowmMetaSpecFunc__SeeMetaInDescovery)
  *    parameter.The same for "rate" and "type" */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnownMetaMainFunc__SeeMetaInDiscovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::KnownMetaMainFunc__SeeMetaInDiscovery();
 }
 
@@ -367,6 +369,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnownMetaMainFunc__SeeMetaInDiscovery)
  *   NOTE: DISCOVERY IS NOT AVAILABLE, CHECKING VIA HTTP */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__UnknownMetaMainFunc__SeeMetaInDiscovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::UnknownMetaMainFunc__SeeMetaInDiscovery();
 }
 
@@ -374,6 +377,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__UnknownMetaMainFunc__SeeMetaInDiscovery)
  *    get the announced metadata parameters. */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnownAndUnknown__SeeMetaInDiscovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::KnownAndUnknown__SeeMetaInDiscovery();
 }
 
@@ -381,6 +385,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnownAndUnknown__SeeMetaInDiscovery)
  *     (to remove "meta", use Set or SetRate(-1)) */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__DeleteMeta__NotSeeMetaInMetastring)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::DeleteMeta__NotSeeMetaInMetastring();
 }
 
@@ -388,6 +393,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__DeleteMeta__NotSeeMetaInMetastring)
 /*  6. Set "type" meta using a bad enum value - get exception */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeBadEnumVal__Exception)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::SetTypeBadEnumVal__Exception();
 }
 
@@ -395,6 +401,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeBadEnumVal__Exception)
 /*  7. C announce : meta is NULL - find no metas on service discovery */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__MetaNull__NoMetaInDiscovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::MetaNull__NoMetaInDiscovery();
 }
 
@@ -403,6 +410,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__MetaNull__NoMetaInDiscovery)
  *     metas on service discovery */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__NoMetaProvided__NoMetaInDiscovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::NoMetaProvided__NoMetaInDiscovery();
 }
 
@@ -411,6 +419,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__NoMetaProvided__NoMetaInDiscovery)
  *     check type on discovery */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeValidVal__SeeMetaInDiscovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::SetTypeValidVal__SeeMetaInDiscovery();
 }
 
@@ -419,6 +428,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeValidVal__SeeMetaInDiscovery)
  *     re-announced without type */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeEmpty__TypeStayInDiscovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::SetTypeEmpty__TypeStayInDiscovery();
 }
 
@@ -427,6 +437,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeEmpty__TypeStayInDiscovery)
  *     then re-announce without extra */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetExtraEmpty__ExtraStayInDiscovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::SetExtraEmpty__ExtraStayInDiscovery();
 }
 
@@ -436,6 +447,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetExtraEmpty__ExtraStayInDiscovery)
  *     lower - cased name) */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__Set__CaseInsensitive)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::Set__CaseInsensitive();
 }
 
@@ -443,6 +455,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__Set__CaseInsensitive)
 /* 13. Check default values for meta parameters  */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__GetDefaultMetas__DefaultValEmpty)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::GetDefaultMetas__DefaultValEmpty();
 }
 
@@ -450,6 +463,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__GetDefaultMetas__DefaultValEmpty)
 /* 14. Check GetMetaString in different combinations of parameters */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__GetMetaString__ValuesAsExpected)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::GetMetaString__ValuesAsExpected();
 }
 
@@ -458,6 +472,7 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__GetMetaString__ValuesAsExpected)
  *     The same for "ip", "port", "check", "format", "name" */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetNotMeta__Exception)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::SetNotMeta__Exception();
 }
 
@@ -465,24 +480,28 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetNotMeta__Exception)
  *     exception */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__ExtraOrTypeWhitespace__ThrowException)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::ExtraOrTypeWhitespace__ThrowException();
 }
 
 /* 17. Set for extra and type - works fine */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetWithWhitespace__SeeInDiscovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::SetWithWhitespace__SeeInDiscovery();
 }
 
 /* 18. SetRate - string that cannot be parsed - throw exception */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetRateInvalidString__ThrowException)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::SetRateInvalidString__ThrowException();
 }
 
 /* 19. Set rate via Set and get via GetRate - good on good value */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetRateGetRateInt__AllOK)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::SetRateGetRateInt__AllOK();
 }
 
@@ -491,13 +510,23 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetRateGetRateInt__AllOK)
  *     values */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetRateGetRateNonInt__Exception)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::SetRateGetRateNonInt__Exception();
 }
 
 /** 21. Announce from registry test - announce and see metedata in discovery */
 BOOST_AUTO_TEST_CASE(AnnounceMetadata__AnnounceFromRegistry__SeeMetaInDiscovery)
 {
+    CHECK_LBOS_VERSION();
     AnnounceMetadata::AnnounceFromRegistry__SeeMetaInDiscovery();
+}
+
+/** 22. Announce from registry when section does not exist - 
+ *      throw "Invalid arg" */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__RegistryNoSuchSection__Exception)
+{
+    CHECK_LBOS_VERSION();
+    AnnounceMetadata::RegistryNoSuchSection__Exception();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
