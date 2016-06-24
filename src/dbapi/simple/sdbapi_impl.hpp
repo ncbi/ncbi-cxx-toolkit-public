@@ -149,14 +149,125 @@ private:
 };
 
 
-struct SQueryParamInfo
+class IQueryFieldBasis
 {
-    ESP_ParamType   type;
-    CVariant*       value;
-    CQuery::CField* field;
+public:
+    virtual ~IQueryFieldBasis() { }
+    
+    virtual const CVariant*                GetValue(void) const = 0;
+    virtual const CDB_Exception::SContext& x_GetContext(void) const = 0;
 
-    SQueryParamInfo(void);
+    virtual CNcbiOstream* GetOStream(size_t blob_size,
+                                     TBlobOStreamFlags flags) const;
+    virtual CBlobBookmark GetBookmark(void) const;
 };
+
+class CRemoteQFB : public IQueryFieldBasis
+{
+public:
+    CRemoteQFB(CQueryImpl& query, unsigned int col_num)
+        : m_Query(query), m_ColNum(col_num)
+        { }
+    
+    const CVariant*                GetValue(void) const override;
+    const CDB_Exception::SContext& x_GetContext(void) const override;
+
+    CNcbiOstream* GetOStream(size_t blob_size,
+                             TBlobOStreamFlags flags) const override;
+    CBlobBookmark GetBookmark(void) const override;
+
+private:
+    CQueryImpl&  m_Query;
+    unsigned int m_ColNum;
+};
+
+class CLocalQFB : public IQueryFieldBasis
+{
+public:
+    CLocalQFB(CVariant* value, const CDB_Exception::SContext& context)
+        : m_Value(value), m_Context(new CDB_Exception::SContext(context))
+        { }
+
+    const CVariant*                GetValue(void) const override
+        { return m_Value.get(); }
+    const CDB_Exception::SContext& x_GetContext(void) const override
+        { return *m_Context; }
+
+private:
+    unique_ptr<CVariant>                m_Value;
+    unique_ptr<CDB_Exception::SContext> m_Context;
+};
+
+class CParamQFB : public CLocalQFB
+{
+public:
+    CParamQFB(CVariant* value, const CDB_Exception::SContext& context,
+              ESP_ParamType param_type)
+        : CLocalQFB(value, context), m_ParamType(param_type)
+        { }
+
+    ESP_ParamType GetParamType(void) const         { return m_ParamType; }
+    void          SetParamType(ESP_ParamType type) { m_ParamType = type; }
+
+private:
+    ESP_ParamType m_ParamType;
+};
+
+
+class CQueryFieldImpl : public CObject
+{
+public:
+    CQueryFieldImpl(CQueryImpl* q, unsigned int col_num);
+    CQueryFieldImpl(CQueryImpl* q, CVariant* v, ESP_ParamType param_type);
+
+    virtual CRef<CQueryFieldImpl> Detach(void);
+
+    const CVariant* GetValue(void) const;
+    virtual CNcbiIstream& AsIStream(void) const;
+    virtual const vector<unsigned char>& AsVector(void) const;
+    virtual CNcbiOstream& GetOStream(size_t blob_size,
+                                     TBlobOStreamFlags flags) const;
+    virtual CBlobBookmark GetBookmark(void) const;
+
+protected:
+    friend class CQueryImpl;
+
+    // Takes ownership of *qf.m_Basis!
+    CQueryFieldImpl(CQueryFieldImpl& qf);
+    
+    const CDB_Exception::SContext& x_GetContext(void) const;
+
+    unique_ptr<IQueryFieldBasis> m_Basis;
+};
+
+class CQueryBlobImpl : public CQueryFieldImpl
+{
+public:
+    CQueryBlobImpl(CQueryImpl* q, unsigned int col_num);
+    CQueryBlobImpl(CQueryImpl* q, CVariant* v, ESP_ParamType param_type);
+
+    CRef<CQueryFieldImpl> Detach(void) override;
+
+    CNcbiIstream& AsIStream(void) const override;
+    const vector<unsigned char>& AsVector(void) const override;
+    CNcbiOstream& GetOStream(size_t blob_size,
+                             TBlobOStreamFlags flags) const override;
+    CBlobBookmark GetBookmark(void) const override;
+
+private:
+    // Takes ownership of *qb.m_Basis!
+    CQueryBlobImpl(CQueryBlobImpl& qb);
+
+    /// Vector to cache BLOB value
+    mutable vector<unsigned char>       m_Vector;
+    /// String to cache BLOB value
+    mutable string                      m_ValueForStream;
+    /// Stream to cache BLOB value
+    mutable unique_ptr<CNcbiIstrstream> m_IStream;
+    /// Stream to change BLOB value
+    mutable unique_ptr<CNcbiOstream>    m_OStream;
+};
+
 
 class CQueryImpl: public CObject
 {
@@ -182,7 +293,7 @@ public:
     void RequireRowCount(unsigned int min_rows, unsigned int max_rows);
     void VerifyDone(CQuery::EHowMuch how_much = CQuery::eThisResultSet);
     const CQuery::CField& GetColumn(const CDBParamVariant& col) const;
-    const CVariant& GetFieldValue(const CQuery::CField& field);
+    const CVariant& GetFieldValue(unsigned int col_num);
     bool IsFinished(CQuery::EHowMuch how_much = CQuery::eThisResultSet) const;
 
     void SetIgnoreBounds(bool is_ignore);
@@ -209,10 +320,11 @@ private:
     bool x_Fetch(void);
     void x_InitBeforeExec(void);
     void x_InitRSFields(void);
+    void x_DetachAllFields(void);
     void x_Close(void);
 
 
-    typedef map<string, SQueryParamInfo>        TParamsMap;
+    typedef map<string, CQuery::CField>         TParamsMap;
     typedef map<string, int>                    TColNumsMap;
     typedef vector< AutoPtr<CQuery::CField> >   TFields;
 

@@ -2281,30 +2281,84 @@ EndRow(CBulkInsert& bi)
 }
 
 
-inline
-SQueryParamInfo::SQueryParamInfo(void)
-    : type(eSP_In),
-      value(NULL),
-      field(NULL)
-{}
+const CVariant* CRemoteQFB::GetValue(void) const
+{
+    return &m_Query.GetFieldValue(m_ColNum);
+}
+
+const CDB_Exception::SContext& CRemoteQFB::x_GetContext(void) const
+{
+    return m_Query.x_GetContext();
+}
 
 
 inline
-CQuery::CField::CField(CQueryImpl* q, SQueryParamInfo* param_info)
-    : m_IsParam(true),
-      m_Query(q),
-      m_ParamInfo(param_info)
+CQueryFieldImpl::CQueryFieldImpl(CQueryImpl* q, CVariant* v,
+                                 ESP_ParamType param_type)
+    : m_Basis(new CParamQFB(v, q->x_GetContext(), param_type))
 {}
+
+inline
+CQueryFieldImpl::CQueryFieldImpl(CQueryImpl* q, unsigned int col_num)
+    : m_Basis(new CRemoteQFB(*q, col_num))
+{}
+
+inline
+CQueryFieldImpl::CQueryFieldImpl(CQueryFieldImpl& qf)
+    : m_Basis(qf.m_Basis.release())
+{}
+
+inline
+CQueryBlobImpl::CQueryBlobImpl(CQueryBlobImpl& qb)
+    : CQueryFieldImpl(qb) // don't try to copy extra fields
+{}
+
+inline
+CQueryBlobImpl::CQueryBlobImpl(CQueryImpl* q, CVariant* v,
+                               ESP_ParamType param_type)
+    : CQueryFieldImpl(q, v, param_type)
+{}
+
+inline
+CQueryBlobImpl::CQueryBlobImpl(CQueryImpl* q, unsigned int col_num)
+    : CQueryFieldImpl(q, col_num)
+{}
+
+
+CQuery::CField::CField(const CField& f)
+    : m_Impl(f.m_Impl)
+{}
+
+inline
+CQuery::CField::CField(CQueryImpl* q, CVariant* v, ESP_ParamType param_type)
+{
+    if (CDB_Object::IsBlobType(v->GetType())) {
+        m_Impl.Reset(new CQueryBlobImpl(q, v, param_type));
+    } else {
+        m_Impl.Reset(new CQueryFieldImpl(q, v, param_type));
+    }
+}
 
 inline
 CQuery::CField::CField(CQueryImpl* q, unsigned int col_num)
-    : m_IsParam(false),
-      m_Query(q),
-      m_ColNum(col_num)
-{}
+    : m_Impl(new CQueryFieldImpl(q, col_num))
+{
+    switch (q->GetColumnType(col_num)) {
+    case eSDB_Text:
+    case eSDB_TextUCS2:
+    case eSDB_Image:
+    case eSDB_StringMax:
+    case eSDB_StringMaxUCS2:
+    case eSDB_BinaryMax:
+        m_Impl.Reset(new CQueryBlobImpl(q, col_num));
+        break;
+    default:
+        m_Impl.Reset(new CQueryFieldImpl(q, col_num));
+        break;
+    }
+}
 
-inline
-CQuery::CField::~CField(void)
+CQuery::CField::~CField()
 {}
 
 
@@ -2358,12 +2412,13 @@ CQueryImpl::x_GetContext(void) const
         string delim;
         oss << "; input parameter(s): ";
         ITERATE (TParamsMap, it, m_Params) {
+            const CVariant* value = it->second.m_Impl->GetValue();
             oss << delim;
             oss << it->first << " = ";
-            if (it->second.value == NULL  ||  it->second.value->IsNull()) {
+            if (value == NULL  ||  value->IsNull()) {
                 oss << "NULL";
             } else {
-                oss << it->second.value->GetData()->GetLogString();
+                oss << value->GetData()->GetLogString();
             }
             delim = ", ";
         }
@@ -2395,14 +2450,23 @@ CQueryImpl::SetParameter(CTempString   name,
 {
     x_CheckCanWork();
 
-    SQueryParamInfo& info = m_Params[name];
-    info.type = param_type;
     EDB_Type var_type = s_ConvertType(type);
-    if (!info.value  ||  info.value->GetType() != var_type) {
-        delete info.value;
-        info.value = new CVariant(var_type);
+    TParamsMap::iterator it = m_Params.find(name);
+    if (it == m_Params.end()) {
+        CQuery::CField field(this, new CVariant(var_type), param_type);
+        it = m_Params.insert(make_pair(name, field)).first;
+    } else {
+        it->second.x_Detach();
+        static_cast<CParamQFB&>(*it->second.m_Impl->m_Basis)
+            .SetParamType(param_type);
     }
-    s_ConvertValue(value, *info.value);
+    CQueryFieldImpl& field = *it->second.m_Impl;
+    if (field.GetValue() == NULL
+        ||  field.GetValue()->GetType() != var_type) {
+        it->second = CQuery::CField(this, new CVariant(var_type), param_type);
+    }
+    s_ConvertValue(value,
+                   const_cast<CVariant&>(*it->second.m_Impl->GetValue()));
 }
 
 inline void
@@ -2412,39 +2476,47 @@ CQueryImpl::SetNullParameter(CTempString   name,
 {
     x_CheckCanWork();
 
-    SQueryParamInfo& info = m_Params[name];
-    info.type = param_type;
     EDB_Type var_type = s_ConvertType(type);
-    if (!info.value  ||  info.value->GetType() != var_type) {
-        delete info.value;
-        info.value = new CVariant(var_type);
+    TParamsMap::iterator it = m_Params.find(name);
+    if (it == m_Params.end()) {
+        CQuery::CField field(this, new CVariant(var_type), param_type);
+        it = m_Params.insert(make_pair(name, field)).first;
+    } else {
+        it->second.x_Detach();
+        static_cast<CParamQFB&>(*it->second.m_Impl->m_Basis)
+            .SetParamType(param_type);
     }
-    info.value->SetNull();
+    CQueryFieldImpl& field = *it->second.m_Impl;
+    if (field.GetValue() == NULL
+        ||  field.GetValue()->GetType() != var_type) {
+        it->second = CQuery::CField(this, new CVariant(var_type), param_type);
+    } else {
+        const_cast<CVariant*>(field.GetValue())->SetNull();
+    }
 }
 
 inline void
 CQueryImpl::x_SetOutParameter(const string& name, const CVariant& value)
 {
-    SQueryParamInfo& info = m_Params[name];
-    if (info.value) {
+    TParamsMap::iterator it = m_Params.find(name);
+    if (it == m_Params.end()) {
+        CQuery::CField field(this, new CVariant(value), eSP_InOut);
+        m_Params.insert(make_pair(name, field));
+    } else {
+        it->second.x_Detach();
+        CQueryFieldImpl& field = *it->second.m_Impl;
         try {
-            *info.value = value;
+            const_cast<CVariant&>(*field.GetValue()) = value;
         } catch (CDB_ClientEx&) {
-            delete info.value;
-            info.value = new CVariant(value);
+            it->second = CQuery::CField(this, new CVariant(value), eSP_InOut);
         }
-    }
-    else {
-        info.value = new CVariant(value);
-        info.type = eSP_InOut;
     }
 }
 
 inline const CVariant&
-CQueryImpl::GetFieldValue(const CQuery::CField& field)
+CQueryImpl::GetFieldValue(unsigned int col_num)
 {
-    return field.m_IsParam? *field.m_ParamInfo->value
-                          :  m_CurRS->GetVariant(field.m_ColNum);
+    return m_CurRS->GetVariant(col_num);
 }
 
 inline const CQuery::CField&
@@ -2458,10 +2530,7 @@ CQueryImpl::GetParameter(CTempString name)
                    "Parameter '" + string(name) + "' doesn't exist.  "
                    + x_GetContext());
     }
-    SQueryParamInfo& info = it->second;
-    if (!info.field)
-        info.field = new CQuery::CField(this, &info);
-    return *info.field;
+    return it->second;
 }
 
 inline void
@@ -2471,9 +2540,7 @@ CQueryImpl::ClearParameter(CTempString name)
 
     TParamsMap::iterator it = m_Params.find(name);
     if (it != m_Params.end()) {
-        SQueryParamInfo& info = it->second;
-        delete info.field;
-        delete info.value;
+        it->second.x_Detach();
         m_Params.erase(it);
     }
 }
@@ -2481,10 +2548,8 @@ CQueryImpl::ClearParameter(CTempString name)
 void
 CQueryImpl::x_ClearAllParams(void)
 {
-    ITERATE(TParamsMap, it, m_Params) {
-        const SQueryParamInfo& info = it->second;
-        delete info.field;
-        delete info.value;
+    for (auto& p : m_Params) {
+        p.second.x_Detach();
     }
     m_Params.clear();
 }
@@ -2505,6 +2570,13 @@ CQueryImpl::SetSql(CTempString sql)
     m_Sql = sql.empty() ? CTempString(" ") : sql;
     m_Executed = false;
     m_IsSP = false;
+}
+
+void CQueryImpl::x_DetachAllFields(void)
+{
+    for (auto& f : m_Fields) {
+        f->x_Detach();
+    }
 }
 
 void
@@ -2569,8 +2641,8 @@ CQueryImpl::Execute(const CTimeout& timeout)
 
         m_Stmt->ClearParamList();
         ITERATE(TParamsMap, it, m_Params) {
-            const SQueryParamInfo& info = it->second;
-            m_Stmt->SetParam(*info.value, it->first);
+            const CQueryFieldImpl& field = *it->second.m_Impl;
+            m_Stmt->SetParam(*field.GetValue(), it->first);
         }
         if ( !timeout.IsDefault() ) {
             m_DBImpl->SetTimeout(timeout);
@@ -2596,11 +2668,13 @@ CQueryImpl::ExecuteSP(CTempString sp, const CTimeout& timeout)
 
         m_CallStmt = m_DBImpl->GetConnection()->GetCallableStatement(sp);
         ITERATE(TParamsMap, it, m_Params) {
-            const SQueryParamInfo& info = it->second;
-            if (info.type == eSP_In)
-                m_CallStmt->SetParam(*info.value, it->first);
-            else
-                m_CallStmt->SetOutputParam(*info.value, it->first);
+            const CParamQFB& pqfb
+                = static_cast<const CParamQFB&>(*it->second.m_Impl->m_Basis);
+            if (pqfb.GetParamType() == eSP_InOut) {
+                m_CallStmt->SetOutputParam(*pqfb.GetValue(), it->first);
+            } else {
+                m_CallStmt->SetParam(*pqfb.GetValue(), it->first);
+            }
         }
         if ( !timeout.IsDefault() ) {
             m_DBImpl->SetTimeout(timeout);
@@ -2615,6 +2689,7 @@ CQueryImpl::ExecuteSP(CTempString sp, const CTimeout& timeout)
 inline void
 CQueryImpl::Cancel(void)
 {
+    x_DetachAllFields();
     x_CheckCanWork();
     IStatement* stmt = m_CallStmt ? m_CallStmt : m_Stmt;
     stmt->Cancel();
@@ -2710,6 +2785,7 @@ inline bool
 CQueryImpl::x_Fetch(void)
 {
     try {
+        x_DetachAllFields();
         if (m_CurRS->Next()) {
             ++m_CurRowNo;
             ++m_CurRelRowNo;
@@ -2729,6 +2805,7 @@ CQueryImpl::x_Fetch(void)
 inline void
 CQueryImpl::x_InitRSFields(void)
 {
+    x_DetachAllFields();
     m_Fields.clear();
     m_ColNums.clear();
     unsigned int cols_cnt = m_CurRS->GetTotalColumns();
@@ -3222,17 +3299,49 @@ CQuery::CRowIterator::operator[](CTempString col) const
     return m_Query->GetColumn(string(col));
 }
 
-inline
-const CDB_Exception::SContext& CQuery::CField::x_GetContext(void) const
+
+CRef<CQueryFieldImpl> CQueryFieldImpl::Detach(void)
 {
-    return m_Query->x_GetContext();
+    unique_ptr<IQueryFieldBasis> new_basis
+        (new CLocalQFB(new CVariant(*GetValue()), x_GetContext()));
+    CRef<CQueryFieldImpl> replacement(new CQueryFieldImpl(*this));
+    m_Basis.reset(new_basis.release());
+    return replacement;
+}
+
+CRef<CQueryFieldImpl> CQueryBlobImpl::Detach(void)
+{
+    unique_ptr<IQueryFieldBasis> new_basis
+        (new CLocalQFB(new CVariant(*GetValue()), x_GetContext()));
+    CRef<CQueryFieldImpl> replacement(new CQueryBlobImpl(*this));
+    m_Basis.reset(new_basis.release());
+    return replacement;
+}
+
+void CQuery::CField::x_Detach(void)
+{
+    if ( m_Impl.NotEmpty()  &&  !m_Impl->ReferencedOnlyOnce() ) {
+        m_Impl.Reset(m_Impl->Detach());
+    }
+}
+
+inline
+const CDB_Exception::SContext& CQueryFieldImpl::x_GetContext(void) const
+{
+    return m_Basis->x_GetContext();
+}
+
+inline
+const CVariant* CQueryFieldImpl::GetValue(void) const
+{
+    return m_Basis->GetValue();
 }
 
 string
 CQuery::CField::AsString(void) const
 {
     string value;
-    s_ConvertValue(m_Query->GetFieldValue(*this), value);
+    s_ConvertValue(*m_Impl->GetValue(), value);
     return value;
 }
 
@@ -3240,7 +3349,7 @@ unsigned char
 CQuery::CField::AsByte(void) const
 {
     unsigned char value = 0;
-    s_ConvertValue(m_Query->GetFieldValue(*this), value);
+    s_ConvertValue(*m_Impl->GetValue(), value);
     return value;
 }
 
@@ -3248,7 +3357,7 @@ short
 CQuery::CField::AsShort(void) const
 {
     short value = 0;
-    s_ConvertValue(m_Query->GetFieldValue(*this), value);
+    s_ConvertValue(*m_Impl->GetValue(), value);
     return value;
 }
 
@@ -3256,7 +3365,7 @@ Int4
 CQuery::CField::AsInt4(void) const
 {
     Int4 value = 0;
-    s_ConvertValue(m_Query->GetFieldValue(*this), value);
+    s_ConvertValue(*m_Impl->GetValue(), value);
     return value;
 }
 
@@ -3264,7 +3373,7 @@ Int8
 CQuery::CField::AsInt8(void) const
 {
     Int8 value = 0;
-    s_ConvertValue(m_Query->GetFieldValue(*this), value);
+    s_ConvertValue(*m_Impl->GetValue(), value);
     return value;
 }
 
@@ -3272,7 +3381,7 @@ float
 CQuery::CField::AsFloat(void) const
 {
     float value = 0;
-    s_ConvertValue(m_Query->GetFieldValue(*this), value);
+    s_ConvertValue(*m_Impl->GetValue(), value);
     return value;
 }
 
@@ -3280,7 +3389,7 @@ double
 CQuery::CField::AsDouble(void) const
 {
     double value = 0;
-    s_ConvertValue(m_Query->GetFieldValue(*this), value);
+    s_ConvertValue(*m_Impl->GetValue(), value);
     return value;
 }
 
@@ -3288,7 +3397,7 @@ bool
 CQuery::CField::AsBool(void) const
 {
     bool value = false;
-    s_ConvertValue(m_Query->GetFieldValue(*this), value);
+    s_ConvertValue(*m_Impl->GetValue(), value);
     return value;
 }
 
@@ -3296,20 +3405,22 @@ CTime
 CQuery::CField::AsDateTime(void) const
 {
     CTime value;
-    s_ConvertValue(m_Query->GetFieldValue(*this), value);
+    s_ConvertValue(*m_Impl->GetValue(), value);
     return value;
 }
 
 const vector<unsigned char>&
-CQuery::CField::AsVector(void) const
+CQueryFieldImpl::AsVector(void) const
 {
-    const CVariant& var_val = m_Query->GetFieldValue(*this);
-    EDB_Type var_type = var_val.GetType();
-    if ( !CDB_Object::IsBlobType(var_type) ) {
-        SDBAPI_THROW(eUnsupported,
-                     string("Method is unsupported for this type of data: ")
-                     + CDB_Object::GetTypeName(var_type, false));
-    }
+    SDBAPI_THROW(eUnsupported,
+                 string("Method is unsupported for this type of data: ")
+                 + CDB_Object::GetTypeName(GetValue()->GetType(), false));
+}
+
+const vector<unsigned char>&
+CQueryBlobImpl::AsVector(void) const
+{
+    const CVariant& var_val = *GetValue();
     string value = var_val.GetString();
     // WorkShop cannot eat string::iterators in vector<>::insert (although due
     // to STL he has to eat any iterator-like type) but is okay with pointers
@@ -3321,50 +3432,82 @@ CQuery::CField::AsVector(void) const
     return m_Vector;
 }
 
-CNcbiIstream&
-CQuery::CField::AsIStream(void) const
+const vector<unsigned char>&
+CQuery::CField::AsVector(void) const
 {
-    const CVariant& var_val = m_Query->GetFieldValue(*this);
-    EDB_Type var_type = var_val.GetType();
-    if ( !CDB_Object::IsBlobType(var_type) ) {
-        SDBAPI_THROW(eUnsupported,
-                     string("Method is unsupported for this type of data: ")
-                     + CDB_Object::GetTypeName(var_type, false));
-    }
+    return m_Impl->AsVector();
+}
+
+CNcbiIstream&
+CQueryFieldImpl::AsIStream(void) const
+{
+    SDBAPI_THROW(eUnsupported,
+                 string("Method is unsupported for this type of data: ")
+                 + CDB_Object::GetTypeName(GetValue()->GetType(), false));
+}
+
+CNcbiIstream&
+CQueryBlobImpl::AsIStream(void) const
+{
+    const CVariant& var_val = *GetValue();
     m_ValueForStream = var_val.GetString();
     m_IStream.reset
       (new CNcbiIstrstream(m_ValueForStream.data(), m_ValueForStream.size()));
     return *m_IStream;
 }
 
+CNcbiIstream&
+CQuery::CField::AsIStream(void) const
+{
+    return m_Impl->AsIStream();
+}
+
 bool
 CQuery::CField::IsNull(void) const
 {
-    return m_Query->GetFieldValue(*this).IsNull();
+    return m_Impl->GetValue()->IsNull();
+}
+
+CNcbiOstream* IQueryFieldBasis::GetOStream(size_t, TBlobOStreamFlags) const
+{
+    SDBAPI_THROW(eUnsupported, "Method requires a live field");
+}
+
+CNcbiOstream* CRemoteQFB::GetOStream(size_t blob_size,
+                                     TBlobOStreamFlags flags) const
+{
+    const CVariant& var_val = *GetValue();
+    try {
+        IConnection* conn = m_Query.GetConnection()->CloneConnection();
+        CDB_Connection* db_conn = conn->GetCDB_Connection();
+        return new CWStream
+                        (new CxBlobWriter(db_conn, var_val.GetBlobDescriptor(),
+                                          blob_size, flags, false),
+                         0, 0,
+                         CRWStreambuf::fOwnWriter
+                         | CRWStreambuf::fLogExceptions);
+    }
+    SDBAPI_CATCH_LOWLEVEL()
+}
+
+CNcbiOstream& CQueryFieldImpl::GetOStream(size_t, TBlobOStreamFlags) const
+{
+    SDBAPI_THROW(eUnsupported,
+                 string("Method is unsupported for this type of data: ")
+                 + CDB_Object::GetTypeName(GetValue()->GetType(), false));
+}
+
+CNcbiOstream& CQueryBlobImpl::GetOStream(size_t blob_size,
+                                         TBlobOStreamFlags flags) const
+{
+    m_OStream.reset(m_Basis->GetOStream(blob_size, flags));
+    return *m_OStream;
 }
 
 CNcbiOstream&
 CQuery::CField::GetOStream(size_t blob_size, TBlobOStreamFlags flags) const
 {
-    const CVariant& var_val = m_Query->GetFieldValue(*this);
-    EDB_Type var_type = var_val.GetType();
-    if (m_IsParam  ||  !CDB_Object::IsBlobType(var_type) ) {
-        SDBAPI_THROW(eUnsupported,
-                     string("Method is unsupported for this type of data: ")
-                     + CDB_Object::GetTypeName(var_type, false));
-    }
-    try {
-        IConnection* conn = m_Query->GetConnection()->CloneConnection();
-        CDB_Connection* db_conn = conn->GetCDB_Connection();
-        m_OStream.reset(new CWStream
-                        (new CxBlobWriter(db_conn, var_val.GetBlobDescriptor(),
-                                          blob_size, flags, false),
-                         0, 0,
-                         CRWStreambuf::fOwnWriter
-                         | CRWStreambuf::fLogExceptions));
-        return *m_OStream;
-    }
-    SDBAPI_CATCH_LOWLEVEL()
+    return m_Impl->GetOStream(blob_size, flags);
 }
 
 CNcbiOstream&
@@ -3374,20 +3517,36 @@ CQuery::CField::GetOStream(size_t blob_size, EAllowLog log_it) const
                       (log_it == eDisableLog) ? fBOS_SkipLogging : 0);
 }
 
+CBlobBookmark IQueryFieldBasis::GetBookmark(void) const
+{
+    SDBAPI_THROW(eUnsupported, "Method requires a live field");
+}
+
+CBlobBookmark CRemoteQFB::GetBookmark(void) const
+{
+    const CVariant& var_val = *GetValue();
+    CRef<CBlobBookmarkImpl> bm
+        (new CBlobBookmarkImpl(m_Query.GetDatabase(),
+                               var_val.ReleaseBlobDescriptor()));
+    return CBlobBookmark(bm);
+}
+
+CBlobBookmark CQueryFieldImpl::GetBookmark(void) const
+{
+    SDBAPI_THROW(eUnsupported,
+                 string("Method is unsupported for this type of data: ")
+                 + CDB_Object::GetTypeName(GetValue()->GetType(), false));
+}
+
+CBlobBookmark CQueryBlobImpl::GetBookmark(void) const
+{
+    return m_Basis->GetBookmark();
+}
+
 CBlobBookmark
 CQuery::CField::GetBookmark(void) const
 {
-    const CVariant& var_val = m_Query->GetFieldValue(*this);
-    EDB_Type var_type = var_val.GetType();
-    if (m_IsParam  ||  !CDB_Object::IsBlobType(var_type) ) {
-        SDBAPI_THROW(eUnsupported,
-                     string("Method is unsupported for this type of data: ")
-                     + CDB_Object::GetTypeName(var_type, false));
-    }
-    CRef<CBlobBookmarkImpl> bm
-        (new CBlobBookmarkImpl(m_Query->GetDatabase(),
-                               var_val.ReleaseBlobDescriptor()));
-    return CBlobBookmark(bm);
+    return m_Impl->GetBookmark();
 }
 
 

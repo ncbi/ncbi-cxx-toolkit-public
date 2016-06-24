@@ -50,11 +50,13 @@ class CSDBAPI;
 class CDatabase;
 class CQuery;
 class CBlobBookmark;
+class CVariant;
 class CDatabaseImpl;
 class CBulkInsertImpl;
 class CQueryImpl;
+class CQueryFieldImpl;
+class CRemoteQFB;
 class CBlobBookmarkImpl;
-struct SQueryParamInfo;
 
 
 /// Exception class used throughout the API
@@ -220,6 +222,9 @@ public:
     class CField
     {
     public:
+        CField(const CField& f);
+        ~CField();
+
         /// Get value as UTF-8 string.
         /// Any underlying database type will be converted to a string
         /// using the variable-width UTF-8 encoding.
@@ -317,36 +322,16 @@ public:
 
     private:
         friend class CQueryImpl;
-        friend struct Deleter<CField>;
+        friend class CQueryFieldImpl;
 
-        /// Prohibit any copying
-        CField(const CField& f);
-        CField& operator= (const CField& f);
+        void x_Detach(void);
 
         /// Create field for particular column number in result set
         CField(CQueryImpl* q, unsigned int col_num);
         /// Create field for particular parameter in the query
-        CField(CQueryImpl* q, SQueryParamInfo* param_info);
-        ~CField(void);
+        CField(CQueryImpl* q, CVariant* v, ESP_ParamType param_type);
 
-        const CDB_Exception::SContext& x_GetContext(void) const;
-
-        /// Flag showing whether this field is for parameter or column value
-        bool                             m_IsParam;
-        /// Query the field was created for
-        CQueryImpl*                      m_Query;
-        /// Parameter the field was created for
-        SQueryParamInfo*                 m_ParamInfo;
-        /// Column number the field was created for
-        unsigned int                     m_ColNum;
-        /// Vector to cache BLOB value
-        mutable vector<unsigned char>    m_Vector;
-        /// String to cache BLOB value
-        mutable string                   m_ValueForStream;
-        /// Stream to cache BLOB value
-        mutable auto_ptr<CNcbiIstrstream> m_IStream;
-        /// Stream to change BLOB value
-        mutable auto_ptr<CWStream>       m_OStream;
+        CRef<CQueryFieldImpl> m_Impl;
     };
 
     /// Iterator class doing main navigation through result sets.
@@ -713,7 +698,7 @@ public:
 
 private:
     friend class CDatabase;
-    friend class CQuery::CField;
+    friend class CRemoteQFB;
 
     /// Create bookmark with the given implementation
     CBlobBookmark(CBlobBookmarkImpl* bm_impl);

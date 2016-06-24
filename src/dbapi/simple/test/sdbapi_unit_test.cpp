@@ -596,6 +596,44 @@ BOOST_AUTO_TEST_CASE(Test_RequireRowCount)
     } 
 }
 
+BOOST_AUTO_TEST_CASE(Test_FieldCopying)
+{
+    try {
+        auto_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
+        query->SetSql("DELETE FROM " + GetTableName());
+        query->Execute();
+        query->RequireRowCount(0);
+        BOOST_CHECK_NO_THROW(query->VerifyDone(CQuery::eAllResultSets));
+
+        CBulkInsert bi(GetDatabase().NewBulkInsert(GetTableName(), 9));
+        bi.Bind(1, eSDB_Int8);
+        bi.Bind(2, eSDB_Int4);
+        bi.Bind(3, eSDB_String);
+        bi << 1 << 1 << "one" << EndRow;
+        bi << 2 << 2 << "two" << EndRow;
+        bi << 3 << 3 << "three" << EndRow;
+        bi.Complete();
+
+        query->SetSql("SELECT vc1000_field FROM " + GetTableName());
+        query->Execute();
+        query->RequireRowCount(3);
+        CQuery::CRowIterator it = query->begin();
+        CQuery::CField f1 = it[1];
+        ++it;
+        CQuery::CField f2 = it[1];
+        ++it;
+        CQuery::CField f3 = it[1];
+        BOOST_CHECK(++it == query->end());
+        query->VerifyDone();
+        query.reset();
+        BOOST_CHECK_EQUAL(f1.AsString(), "one");
+        BOOST_CHECK_EQUAL(f2.AsString(), "two");
+        BOOST_CHECK_EQUAL(f3.AsString(), "three");
+    } catch (const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    } 
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 NCBITEST_INIT_TREE()
 {
