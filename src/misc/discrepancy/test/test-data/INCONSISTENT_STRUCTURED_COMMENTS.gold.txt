@@ -1,0 +1,226 @@
+Discrepancy Report Results
+
+Summary
+INCONSISTENT_STRUCTURED_COMMENTS: Structured Comment Report (some missing, inconsistent)
+
+Detailed Report
+
+INCONSISTENT_STRUCTURED_COMMENTS: Structured Comment Report (some missing, inconsistent)
+INCONSISTENT_STRUCTURED_COMMENTS: 18 Bioseqs are missing abc-data structured comment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex1 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex2 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex4 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex6 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex7 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex8 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex9 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex10 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex11 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex12 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex13 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex14 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex15 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex16 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex17 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex18 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex19 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex20 (length 247)
+
+INCONSISTENT_STRUCTURED_COMMENTS: 2 Bioseqs are missing unnamed structured comment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex3 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex5 (length 247)
+
+INCONSISTENT_STRUCTURED_COMMENTS: structured comment field a (some missing, all same)
+INCONSISTENT_STRUCTURED_COMMENTS: 19 abc-data structured comments are missing field structured comment field a
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex1 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex2 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex4 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex5:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex6 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex7 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex8 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex9 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex10 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex11 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex12 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex13 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex14 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex15 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex16 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex17 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex18 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex19 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex20 (length 247)
+
+INCONSISTENT_STRUCTURED_COMMENTS: 2 unnamed structured comments are missing field structured comment field a
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex3 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex5 (length 247)
+
+INCONSISTENT_STRUCTURED_COMMENTS: 1 abc-data structured comment has field structured comment field a value '1'
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex3:StructuredComment
+
+INCONSISTENT_STRUCTURED_COMMENTS: 18 unnamed structured comments have field structured comment field a value '1'
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex1:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex2:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex4:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex6:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex7:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex8:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex9:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex10:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex11:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex12:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex13:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex14:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex15:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex16:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex17:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex18:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex19:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex20:StructuredComment
+
+INCONSISTENT_STRUCTURED_COMMENTS: structured comment field b (some missing, all same)
+INCONSISTENT_STRUCTURED_COMMENTS: 19 abc-data structured comments are missing field structured comment field b
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex1 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex2 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex4 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex5:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex6 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex7 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex8 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex9 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex10 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex11 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex12 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex13 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex14 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex15 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex16 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex17 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex18 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex19 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex20 (length 247)
+
+INCONSISTENT_STRUCTURED_COMMENTS: 2 unnamed structured comments are missing field structured comment field b
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex3 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex5 (length 247)
+
+INCONSISTENT_STRUCTURED_COMMENTS: 1 abc-data structured comment has field structured comment field b value '2'
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex3:StructuredComment
+
+INCONSISTENT_STRUCTURED_COMMENTS: 18 unnamed structured comments have field structured comment field b value '2'
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex1:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex2:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex4:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex6:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex7:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex8:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex9:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex10:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex11:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex12:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex13:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex14:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex15:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex16:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex17:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex18:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex19:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex20:StructuredComment
+
+INCONSISTENT_STRUCTURED_COMMENTS: structured comment field c (some missing, inconsistent)
+INCONSISTENT_STRUCTURED_COMMENTS: 19 abc-data structured comments are missing field structured comment field c
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex1 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex2 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex4 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex5:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex6 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex7 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex8 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex9 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex10 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex11 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex12 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex13 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex14 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex15 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex16 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex17 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex18 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex19 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex20 (length 247)
+
+INCONSISTENT_STRUCTURED_COMMENTS: 2 unnamed structured comments are missing field structured comment field c
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex3 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex5 (length 247)
+
+INCONSISTENT_STRUCTURED_COMMENTS: 1 abc-data structured comment has field structured comment field c value '3'
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex3:StructuredComment
+
+INCONSISTENT_STRUCTURED_COMMENTS: 17 unnamed structured comments have field structured comment field c value '3'
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex1:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex4:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex6:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex7:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex8:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex9:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex10:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex11:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex12:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex13:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex14:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex15:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex16:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex17:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex18:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex19:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex20:StructuredComment
+
+INCONSISTENT_STRUCTURED_COMMENTS: 1 unnamed structured comment has field structured comment field c value '4'
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex2:StructuredComment
+
+INCONSISTENT_STRUCTURED_COMMENTS: structured comment field z (some missing, all same)
+INCONSISTENT_STRUCTURED_COMMENTS: 15 abc-data structured comments are missing field structured comment field z
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex6 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex7 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex8 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex9 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex10 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex11 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex12 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex13 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex14 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex15 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex16 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex17 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex18 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex19 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex20 (length 247)
+
+INCONSISTENT_STRUCTURED_COMMENTS: 16 unnamed structured comments are missing field structured comment field z
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:ex5 (length 247)
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex6:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex7:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex8:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex9:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex10:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex11:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex12:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex13:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex14:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex15:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex16:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex17:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex18:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex19:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex20:StructuredComment
+
+INCONSISTENT_STRUCTURED_COMMENTS: 1 abc-data structured comment has field structured comment field z value 'x'
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex5:StructuredComment
+
+INCONSISTENT_STRUCTURED_COMMENTS: 4 abc-data structured comments are missing field structured comment field z
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex1:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex2:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex3:StructuredComment
+D:\toolkit\src\misc\discrepancy\test\test-data\INCONSISTENT_DBLINK.asn:lcl|ex4:StructuredComment
+

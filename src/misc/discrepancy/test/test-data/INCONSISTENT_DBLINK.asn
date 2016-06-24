@@ -410,26 +410,7 @@ Seq-entry ::= set {
               label
                 str "c" ,
               data
-                str "3" } } } ,
-        user {
-          type
-            str "StructuredComment" ,
-          data {
-            {
-              label
-                str "StructuredCommentPrefix" ,
-              data
-                str "##abc-data-START##" } ,
-            {
-              label
-                str "x" ,
-              data
-                str "1" } ,
-            {
-              label
-                str "StructuredCommentSuffix" ,
-              data
-                str "##abc-data-END##" } } } } ,
+                str "3" } } } } ,
       inst {
         repr raw ,
         mol na ,
@@ -523,19 +504,19 @@ Seq-entry ::= set {
           data {
             {
               label
-                str "a" ,
+                str "z" ,
               data
-                str "1" } ,
+                str "x" } ,
             {
               label
-                str "b" ,
+                str "StructuredCommentPrefix" ,
               data
-                str "2" } ,
+                str "##abc-data-START##" } ,
             {
               label
-                str "c" ,
+                str "StructuredCommentSuffix" ,
               data
-                str "3" } } } } ,
+                str "##abc-data-END##" } } } } ,
       inst {
         repr raw ,
         mol na ,

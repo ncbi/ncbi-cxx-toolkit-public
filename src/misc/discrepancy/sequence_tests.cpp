@@ -972,6 +972,63 @@ string GetFieldValueAsString(const CUser_field& field)
     return value;
 }
 
+
+const string& kPreviouslySeenFields = "Previously Seen Fields";
+const string& kPreviouslySeenFieldsThis = "Previously Seen Fields This";
+const string& kPreviouslySeenObjects = "Previously Seen Objects";
+
+void AddUserObjectFieldItems
+(CConstRef<CSeqdesc> d, 
+ CConstRef<CBioseq> seq, 
+ CReportNode& collector, 
+ CReportNode& previously_seen,
+ CDiscrepancyContext& context,
+ const string& object_name,
+ const string& field_prefix = kEmptyStr)
+{
+    if (!d) {
+        // add missing for all previously seen fields
+        ITERATE(CReportNode::TNodeMap, z, previously_seen[kPreviouslySeenFields].GetMap()) {
+            collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
+                .Add(*context.NewDiscObj(seq, eKeepRef), false);
+        }
+        return;
+    }
+    
+    ITERATE(CUser_object::TData, f, d->GetUser().GetData()) {
+        if ((*f)->IsSetLabel() && (*f)->GetLabel().IsStr() && (*f)->IsSetData()) {
+            string field_name = field_prefix + (*f)->GetLabel().GetStr();
+            // add missing field to all previous objects that do not have this field
+            if (!collector.Exist(field_name)) {
+                ITERATE(TReportObjectList, ro, previously_seen[kPreviouslySeenObjects].GetObjects()) {
+                    string missing_label = "[n] " + object_name + "[s] [is] missing field " + field_name;
+                    CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
+                    collector[field_name][missing_label].Add(*seq_disc_obj, false);
+                }
+            }
+            collector[field_name]
+                ["[n] " + object_name + "[s] [has] field " + field_name + " value '" + GetFieldValueAsString(**f) + "'"]
+                .Add(*context.NewDiscObj(d), false);
+            previously_seen[kPreviouslySeenFieldsThis][(*f)->GetLabel().GetStr()].Add(*context.NewDiscObj(d), false);
+            previously_seen[kPreviouslySeenFields][(*f)->GetLabel().GetStr()].Add(*context.NewDiscObj(d), false);
+        }
+    }
+    // add missing for all previously seen fields not on this object
+    ITERATE(CReportNode::TNodeMap, z, previously_seen[kPreviouslySeenFields].GetMap()) {
+        if (!previously_seen[kPreviouslySeenFieldsThis].Exist(z->first)) {
+            collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
+                .Add(*context.NewDiscObj(d), false);
+        }
+    }
+
+    // maintain object list for missing fields
+    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(d, eKeepRef));
+    previously_seen[kPreviouslySeenObjects].Add(*this_disc_obj, false);
+
+    previously_seen[kPreviouslySeenFieldsThis].clear();
+}
+
+
 //  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc, "Inconsistent DBLink fields")
 //  ----------------------------------------------------------------------------
@@ -988,10 +1045,7 @@ DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc, "Inconsistent DBLink fie
     if (!d) {
         m_Objs[kMissingDBLink].Add(*context.NewDiscObj(seq, eKeepRef), false);
         // add missing for all previously seen fields
-        ITERATE(CReportNode::TNodeMap, z, m_Objs[kDBLinkCollect].GetMap()) {
-            m_Objs[kDBLinkCollect][z->first][" [n] DBLink object[s] [is] missing field " + z->first]
-                    .Add(*context.NewDiscObj(seq, eKeepRef), false);
-        }
+        AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), seq, m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
     }
     while (d) {
         if (d->GetUser().GetObjectType() != CUser_object::eObjectType_DBLink) {
@@ -999,37 +1053,7 @@ DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc, "Inconsistent DBLink fie
             continue;
         }
         CConstRef<CSeqdesc> dr(&(*d));
-        ITERATE(CUser_object::TData, f, d->GetUser().GetData()) {
-            if ((*f)->IsSetLabel() && (*f)->GetLabel().IsStr() && (*f)->IsSetData()) {
-                string field_name = (*f)->GetLabel().GetStr();
-                // add missing field to all previous objects that do not have this field
-                if (!m_Objs[kDBLinkCollect].Exist(field_name)) {
-                    ITERATE(TReportObjectList, ro, m_Objs[kDBLinkObjectList].GetObjects()) {
-                        string missing_label = "[n] DBLink object[s] [is] missing field " + field_name;
-                        CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
-                        m_Objs[kDBLinkCollect][field_name][missing_label].Add(*seq_disc_obj, false);
-                    }
-                }
-                m_Objs[kDBLinkCollect][field_name]
-                    ["[n] DBLink object[s] [has] field " + field_name + " value '" + GetFieldValueAsString(**f) + "'"]
-                        .Add(*context.NewDiscObj(dr), false);
-                m_Objs[kDBLinkFieldCountTop][field_name].Add(*context.NewDiscObj(seq), false);
-            }
-        }
-        // add missing for all previously seen fields not on this object
-        ITERATE(CReportNode::TNodeMap, z, m_Objs[kDBLinkCollect].GetMap()) {
-            if (!m_Objs[kDBLinkFieldCountTop].Exist(z->first)) {
-                m_Objs[kDBLinkCollect][z->first][" [n] DBLink object[s] [is] missing field " + z->first]
-                    .Add(*context.NewDiscObj(dr), false);
-            }
-        }
-        m_Objs[kDBLinkFieldCountTop].clear();
-
-
-        // maintain object list for missing fields
-        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CBioseq>(context.GetCurrentBioseq()), eKeepRef));
-        m_Objs[kDBLinkObjectList].Add(*this_disc_obj, false);
-
+        AddUserObjectFieldItems(dr, seq, m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
         ++d;
     }
 
@@ -1041,11 +1065,22 @@ void AnalyzeField(CReportNode& node, bool& all_present, bool& all_same)
     all_present = true;
     all_same = true;
     size_t num_values = 0;
+    string value = kEmptyStr;
+    bool first = true;
     ITERATE(CReportNode::TNodeMap, s, node.GetMap()) {
         if (NStr::Find(s->first, " missing field ") != string::npos) {
             all_present = false;
         } else {
-            num_values++;
+            size_t pos = NStr::Find(s->first, " value '");
+            if (pos != string::npos) {
+                if (first) {
+                    value = s->first.substr(pos);
+                    num_values++;
+                    first = false;
+                } else if (!NStr::Equal(s->first.substr(pos), value)) {
+                    num_values++;
+                }
+            }
         }
         if (num_values > 1) {
             all_same = false;
@@ -1131,6 +1166,8 @@ string AdjustDBLinkFieldName(const string& orig_field_name)
         return "  " + orig_field_name;
     } else if (NStr::Equal(orig_field_name, "Assembly")) {
         return " " + orig_field_name;
+    } else {
+        return orig_field_name;
     }
 }
 
@@ -1179,6 +1216,133 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
 
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
+
+// INCONSISTENT_STRUCTURED_COMMENTS
+const string kStructuredCommentsSeqs = "sequences";
+const string kStructuredCommentObservedPrefixes = "observed prefixes";
+const string kStructuredCommentObservedPrefixesThis = "observed prefixes this";
+const string kStructuredCommentReport = "collection";
+const string kStructuredCommentPrevious = "previous";
+const string kStructuredCommentFieldPrefix = "structured comment field ";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc, "Inconsistent structured comments")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsAa()) {
+        return;
+    }
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*seq);
+    CSeqdesc_CI d(bsh, CSeqdesc::e_User);
+    while (d) {
+        if (d->GetUser().GetObjectType() != CUser_object::eObjectType_StructuredComment) {
+            ++d;
+            continue;
+        }
+        CConstRef<CSeqdesc> dr(&(*d));
+        string prefix = CComment_rule::GetStructuredCommentPrefix(d->GetUser());
+        if (NStr::IsBlank(prefix)) {
+            prefix = "unnamed";
+        }
+        
+        m_Objs[kStructuredCommentObservedPrefixesThis][prefix].Add(*context.NewDiscObj(dr, eKeepRef), false);
+
+        AddUserObjectFieldItems(dr, seq, m_Objs[kStructuredCommentReport],
+                                m_Objs[kStructuredCommentPrevious], context, 
+                                prefix + " structured comment", kStructuredCommentFieldPrefix);
+        ++d;
+    }
+
+    //report prefixes seen previously, not found on this sequence
+    ITERATE(CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixes].GetMap()) {
+        if (!m_Objs[kStructuredCommentObservedPrefixesThis].Exist(it->first)) {
+            m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"]
+                .Add(*context.NewDiscObj(seq, eKeepRef), false);
+            AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), seq, m_Objs[kStructuredCommentReport],
+                m_Objs[kStructuredCommentPrevious], context,
+                it->first + " structured comment", kStructuredCommentFieldPrefix);
+        }
+    }
+
+    // report prefixes found on this sequence but not on previous sequences
+    ITERATE(CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixesThis].GetMap()) {
+        if (!m_Objs[kStructuredCommentObservedPrefixes].Exist(it->first)) {
+            ITERATE(TReportObjectList, ro, m_Objs[kStructuredCommentsSeqs].GetObjects()) {
+                const CBioseq* this_seq = dynamic_cast<const CBioseq*>((*ro)->GetObject().GetPointer());       
+                CConstRef<CBioseq> this_seq_r(this_seq);
+                m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"]
+                    .Add(*context.NewDiscObj(this_seq_r, eKeepRef), false);
+                AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), this_seq_r, m_Objs[kStructuredCommentReport],
+                    m_Objs[kStructuredCommentPrevious], context,
+                    it->first + " structured comment", kStructuredCommentFieldPrefix);
+            }
+        }
+        // add to list of previously observed prefixes, for next time
+        m_Objs[kStructuredCommentObservedPrefixes][it->first].Add(*context.NewDiscObj(seq, eKeepRef), false);
+    }
+
+    m_Objs[kStructuredCommentObservedPrefixesThis].clear();
+    m_Objs[kStructuredCommentsSeqs].Add(*context.NewDiscObj(seq, eKeepRef), false);
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
+//  ----------------------------------------------------------------------------
+{
+    m_Objs.GetMap().erase(kStructuredCommentObservedPrefixesThis);
+    m_Objs.GetMap().erase(kStructuredCommentsSeqs);
+    m_Objs.GetMap().erase(kStructuredCommentObservedPrefixes);
+    m_Objs.GetMap().erase(kStructuredCommentPrevious);
+
+    m_Objs[kStructuredCommentReport].GetMap().erase(kStructuredCommentFieldPrefix + "StructuredCommentPrefix");
+    m_Objs[kStructuredCommentReport].GetMap().erase(kStructuredCommentFieldPrefix + "StructuredCommentSuffix");
+
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    // add top-level category, rename field values
+    bool all_present = true;
+    bool all_same = true;
+    AnalyzeFieldReport(m_Objs[kStructuredCommentReport], all_present, all_same);
+    string top_label = "Structured Comment Report " + GetSummaryLabel(all_present, all_same);
+
+    CReportNode::TNodeMap::iterator it = m_Objs.GetMap().begin();
+    while (it != m_Objs.GetMap().end()) {
+        if (!NStr::Equal(it->first, top_label)
+            && !NStr::Equal(it->first, kStructuredCommentReport)) {
+            CopyNode(m_Objs[top_label]["      " + it->first], *(it->second));
+            it = m_Objs.GetMap().erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs[kStructuredCommentReport].GetMap()) {
+        bool this_present = true;
+        bool this_same = true;
+        AnalyzeField(*(it->second), this_present, this_same);
+        string new_label = it->first + " " + GetSummaryLabel(this_present, this_same);
+        NON_CONST_ITERATE(CReportNode::TNodeMap, s, it->second->GetMap()) {
+            string sub_label = s->first;
+            if (this_present && this_same) {
+                NStr::ReplaceInPlace(sub_label, "[n]", "All");
+            }
+            NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+                m_Objs[top_label][new_label][sub_label].Add(**q);
+            }
+        }
+    }
+    m_Objs.GetMap().erase(kStructuredCommentReport);
+
+
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
 
 
 
