@@ -653,20 +653,12 @@ void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     switch (peer)
     {
     case IServer_ConnectionHandler::eOurClose:
-        if (m_CmdContext.NotNull()) {
-            m_ConnContext->SetRequestStatus(m_CmdContext->GetRequestStatus());
-        } else {
-            int status = m_ConnContext->GetRequestStatus();
-            if (status != eStatus_HTTPProbe &&
-                status != eStatus_BadRequest &&
-                status != eStatus_SocketIOError)
-                m_ConnContext->SetRequestStatus(eStatus_Inactive);
-        }
+        // All the places where the server closes the connection make sure
+        // that the conn and cmd request statuses are set approprietly
         break;
     case IServer_ConnectionHandler::eClientClose:
-        if (m_CmdContext.NotNull())
-            m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
-        m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+        // All the commands are synchronous so there is no need to set the
+        // request status here.
         break;
     }
 
