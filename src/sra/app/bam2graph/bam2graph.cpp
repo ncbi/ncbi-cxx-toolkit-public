@@ -35,6 +35,7 @@
 #include <corelib/ncbifile.hpp>
 #include <sra/readers/bam/bamgraph.hpp>
 #include <sra/readers/bam/bamread.hpp>
+#include <sra/readers/bam/bamindex.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
@@ -42,6 +43,7 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/seq__.hpp>
+#include <objects/seqset/seqset__.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -102,6 +104,7 @@ void CBam2GraphApp::Init(void)
                              "File with Delta-ext in text ASN.1",
                              CArgDescriptions::eInputFile);
 
+    arg_desc->AddFlag("estimated", "Make estimated graph using index only");
     arg_desc->AddOptionalKey("min_quality", "MinMapQuality",
                              "Minimal alignment map quality",
                              CArgDescriptions::eInteger);
@@ -206,7 +209,7 @@ void CBam2GraphApp::ProcessFile(const string& file)
             ERR_POST(Fatal<<"Cannot determine RefSeq label");
         }
     }
-    CBamMgr mgr;
+
     CBam2Seq_graph cvt;
     cvt.SetRefLabel(ref_label);
     if ( args["seq_id"] ) {
@@ -263,7 +266,24 @@ void CBam2GraphApp::ProcessFile(const string& file)
         cvt.SetSeq_inst(inst);
     }
 
-    CRef<CSeq_entry> entry = cvt.MakeSeq_entry(mgr, path);
+    CRef<CSeq_entry> entry;
+
+    if ( args["estimated"] ) {
+        // faster estimated graph from index only
+        CBamHeader header(path);
+        CBamIndex index(path+".bai");
+        CRef<CSeq_annot> annot =
+            index.MakeEstimatedCoverageAnnot(header, ref_label,
+                                             cvt.GetRefId(),
+                                             cvt.GetAnnotName());
+        entry = new CSeq_entry;
+        entry->SetSet().SetSeq_set();
+        entry->SetSet().SetAnnot().push_back(annot);
+    }
+    else {
+        CBamMgr mgr;
+        entry = cvt.MakeSeq_entry(mgr, path);
+    }
 
     CNcbiOstream& out = args["o"].AsOutputFile();
     if ( args["b"] )
@@ -296,6 +316,8 @@ void CBam2GraphApp::ProcessSrz(string srz_name)
     
     CBamMgr mgr;
     CBamDb db;
+    CBamHeader header;
+    CBamIndex index;
     string db_name;
 
     vector<string> tokens;
@@ -303,7 +325,7 @@ void CBam2GraphApp::ProcessSrz(string srz_name)
     CNcbiIfstream srz(srz_name.c_str());
     while ( getline(srz, line) ) {
         tokens.clear();
-        NStr::Split(line, "\t", tokens, NStr::fSplit_Tokenize);
+        NStr::Split(line, "\t", tokens);
         if ( tokens.size() < 4 ) {
             ERR_POST(Fatal<<"Bad def line: \""<<line<<"\"");
         }
@@ -350,11 +372,29 @@ void CBam2GraphApp::ProcessSrz(string srz_name)
         }
         cvt.SetOutlierDetails(true);
         
-        if ( bam_path != db_name ) {
-            db_name = bam_path;
-            db = CBamDb(mgr, bam_path, bam_path+".bai");
+        CRef<CSeq_entry> entry;
+        if ( args["estimated"] ) {
+            // faster estimated graph from index only
+            if ( bam_path != db_name ) {
+                db_name = bam_path;
+                header.Read(bam_path);
+                index.Read(bam_path+".bai");
+            }
+            CRef<CSeq_annot> annot =
+                index.MakeEstimatedCoverageAnnot(header, ref_label,
+                                                 cvt.GetRefId(),
+                                                 cvt.GetAnnotName());
+            entry = new CSeq_entry;
+            entry->SetSet().SetSeq_set();
+            entry->SetSet().SetAnnot().push_back(annot);
         }
-        CRef<CSeq_entry> entry = cvt.MakeSeq_entry(db, bam_path);
+        else {
+            if ( bam_path != db_name ) {
+                db_name = bam_path;
+                db = CBamDb(mgr, bam_path, bam_path+".bai");
+            }
+            entry = cvt.MakeSeq_entry(db, bam_path);
+        }
 
         AutoPtr<CObjectOStream> out
             (CObjectOStream::Open(eSerial_AsnBinary, out_path));
