@@ -217,7 +217,9 @@ data_loaders_util needs $(ncbi_xreader_pubseqos2)
 data_loaders_util needs ncbi_xdbapi_ftds
 data_loaders_util needs ncbi_xloader_asn_cache
 data_loaders_util needs ncbi_xloader_blastdb
+data_loaders_util needs ncbi_xloader_csra
 data_loaders_util needs ncbi_xloader_lds2
+data_loaders_util needs ncbi_xloader_wgs
 db needs3party $(ORIG_LIBS)
 dbapi needs dbapi_driver
 dbapi_driver needs xncbi
