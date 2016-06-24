@@ -5473,6 +5473,18 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle pr
         return;
     }
 
+    // source should not be bacterial or viral
+    if (context.IsBacterial() || context.IsViral()) {
+        return;
+    }
+
+    //source should not be uncultured non-organelle name
+    const CBioSource* src = context.GetCurrentBiosource();
+    if (src && src->IsSetOrg() && src->GetOrg().IsSetTaxname() &&
+        CDiscrepancyContext::IsUnculturedNonOrganelleName(src->GetOrg().GetTaxname())) {
+        return;
+    }
+
     CConstRef<CSuspect_rule_set> rules = context.GetOrganelleProductRules();
     const CProt_ref& prot = obj.GetProt();
     string prot_name = *(prot.GetName().begin());
@@ -5492,8 +5504,7 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle pr
             const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
             if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
-        CReportNode& node = m_Objs["[n] organelle product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
-        node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
+        m_Objs["[n] suspect product[s] not organelle"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
     }
 }
 

@@ -1,0 +1,421 @@
+Seq-entry ::= set {
+  class pop-set ,
+  descr {
+    user {
+      type
+        str "NcbiCleanup" ,
+      data {
+        {
+          label
+            str "method" ,
+          data
+            str "SequinCleanup" } ,
+        {
+          label
+            str "version" ,
+          data
+            int 8 } ,
+        {
+          label
+            str "month" ,
+          data
+            int 6 } ,
+        {
+          label
+            str "day" ,
+          data
+            int 24 } ,
+        {
+          label
+            str "year" ,
+          data
+            int 2016 } } } } ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex1" ,
+            orgname {
+               } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex1" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+        seq {
+          id {
+            local
+              str "ex1_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "-GWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "photosystem I" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex1_1" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      str "ex1_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 246 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex1" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Escherichia coli" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 562 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Escherichia" ,
+                  species "coli" } ,
+              lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Enterobacteriales; Enterobacteriaceae; Escherichia" ,
+              gcode 11 ,
+              div "BCT" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex2" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+        seq {
+          id {
+            local
+              str "ex2_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "-GWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "photosystem I" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex2_1" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      str "ex2_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 246 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex2" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Influenza A virus" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 11320 } } ,
+            orgname {
+              name
+                virus "Influenza A virus" ,
+              lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
+ Orthomyxoviridae; Influenzavirus A" ,
+              gcode 1 ,
+              div "VRL" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex3" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+        seq {
+          id {
+            local
+              str "ex3_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "-GWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "photosystem I" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex3_1" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      str "ex3_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 246 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex3" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "uncultured microorganism" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex4" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+        seq {
+          id {
+            local
+              str "ex4_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "-GWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "photosystem I" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex4_1" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      str "ex4_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 246 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex4" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "ex5" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex5" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+        seq {
+          id {
+            local
+              str "ex5_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "-GWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "photosystem I" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex5_1" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                product
+                  whole
+                    local
+                      str "ex5_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 246 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex5" } } } } } } } }
