@@ -1344,6 +1344,43 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
 }
 
 
+// COUNT_UNVERIFIED
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(COUNT_UNVERIFIED, CSeq_inst, eOncaller, "Count number of unverified sequences")
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (!seq) return;
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*seq);
+    bool found = false;
+    CSeqdesc_CI d(bsh, CSeqdesc::e_User);
+    while (d) {
+        if (d->GetUser().GetObjectType() == CUser_object::eObjectType_Unverified) {
+            found = true;
+            break;
+        }
+        ++d;
+    }
+    if (found) {
+        m_Objs["[n] sequence[s] [is] unverified"].Add(*context.NewDiscObj(seq), false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(COUNT_UNVERIFIED)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+
+
 
 
 END_SCOPE(NDiscrepancy)
