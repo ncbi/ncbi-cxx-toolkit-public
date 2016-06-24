@@ -31,6 +31,7 @@
 #include "discrepancy_core.hpp"
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -1662,6 +1663,60 @@ DISCREPANCY_SUMMARIZE(NO_PRODUCT_STRING)
         return;
     }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+// DISC_SHORT_RRNA
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(UNWANTED_SPACER, CSeq_feat_BY_BIOSEQ, eOncaller, "Intergenic spacer without plastid location")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature ||
+        !obj.IsSetComment()) {
+        return;
+    }
+    static string kIntergenicSpacerNames[] = {
+        "trnL-trnF intergenic spacer",
+        "trnH-psbA intergenic spacer",
+        "trnS-trnG intergenic spacer",
+        "trnF-trnL intergenic spacer",
+        "psbA-trnH intergenic spacer",
+        "trnG-trnS intergenic spacer"};
+
+    size_t num_names = sizeof(kIntergenicSpacerNames) / sizeof(string);
+    bool found = false;
+    for (size_t i = 0; i < num_names && !found; i++) {
+        if (NStr::FindNoCase(obj.GetComment(), kIntergenicSpacerNames[i]) != string::npos) {
+            found = true;
+        }
+    }
+
+    if (!found) {
+        return;
+    }
+
+    const CBioSource* src = context.GetCurrentBiosource();
+    if (src && src->IsSetGenome() &&
+        (src->GetGenome() == CBioSource::eGenome_chloroplast || src->GetGenome() == CBioSource::eGenome_plastid)) {
+        return;
+    }
+    if (src && src->IsSetOrg() && src->GetOrg().IsSetTaxname() &&
+        CDiscrepancyContext::IsUnculturedNonOrganelleName(src->GetOrg().GetTaxname())) {
+        return;
+    }
+
+    m_Objs["[n] suspect intergenic spacer note[s] not organelle"].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(UNWANTED_SPACER)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

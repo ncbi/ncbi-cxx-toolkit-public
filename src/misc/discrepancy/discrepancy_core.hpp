@@ -343,6 +343,7 @@ public:
     const CMolInfo* GetCurrentMolInfo(void);
     bool IsCurrentSequenceMrna(void);
     CBioSource::TGenome GetCurrentGenome(void);
+    static bool IsUnculturedNonOrganelleName(const string& taxname);
     static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type);
     bool HasLineage(const string& lineage);
     bool IsEukaryotic(void);
