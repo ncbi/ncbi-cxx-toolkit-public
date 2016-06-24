@@ -5030,14 +5030,14 @@ void CValidError_feat::ValidateImpGbquals
                                              + " - should only be composed of acgt unambiguous nucleotide bases",
                                              feat);
                                 }
-                            } else if (!s_StringConsistsOf (val, "acgtmrwsykvhdbnACGTMRWSYKVHDBN")) {
+                            } else if (!s_StringConsistsOf (val, "acgtmrwsykvhdbn")) {
                                   PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                                            val + " is not a legal value for qualifier " + qual_str
                                            + " - should only be composed of acgtmrwsykvhdbn nucleotide bases",
                                            feat);
                             }
                         } else if (bh.IsAa()) {
-                            if (!s_StringConsistsOf (val, "acdefghiklmnpqrstuvwyACDEFGHIKLMNPQRSTUVWY*")) {
+                            if (!s_StringConsistsOf (val, "acdefghiklmnpqrstuvwy*")) {
                                 PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                                          val + " is not a legal value for qualifier " + qual_str
                                          + " - should only be composed of acdefghiklmnpqrstuvwy* amino acids",
