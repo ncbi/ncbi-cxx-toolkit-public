@@ -2516,7 +2516,7 @@ CRemoteBlast::x_GetSearchResultsHTTP(void)
 			}
 		}
     }
-    while( ios.good() );
+    while( ios );
 	swatch.Stop();
     
 	if(!l_cached_ok ){
