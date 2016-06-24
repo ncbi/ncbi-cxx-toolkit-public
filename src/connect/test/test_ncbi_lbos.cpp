@@ -494,6 +494,12 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetRateGetRateNonInt__Exception)
     AnnounceMetadata::SetRateGetRateNonInt__Exception();
 }
 
+/** 21. Announce from registry test - announce and see metedata in discovery */
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__AnnounceFromRegistry__SeeMetaInDiscovery)
+{
+    AnnounceMetadata::AnnounceFromRegistry__SeeMetaInDiscovery();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* LBOS_METADATA */

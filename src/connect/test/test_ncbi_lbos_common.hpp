@@ -2932,6 +2932,70 @@ void SetRateGetRateNonInt__Exception()
     BOOST_CHECK_EXCEPTION(meta.GetRate(), CLBOSException, comparator);
 }
 
+/** 21. Announce from registry test - announce and see metedata in discovery */
+void AnnounceFromRegistry__SeeMetaInDiscovery()
+{
+    CConnNetInfo net_info;
+    const SSERV_Info* info;
+    string version = "1.0.0";
+    string service = "/lbostest";
+    string dtab = "DTab-local: /lbostest=>/zk#/lbostest/1.0.0";
+    ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    CCObjHolder<char> lbos_address(g_LBOS_GetLBOSAddress());
+    string lbos_addr(lbos_address.Get());
+    string expected_path = "myextra";
+    unsigned short port = 8080;
+    unsigned short rate = 200;
+    string health = string("http://") + ANNOUNCEMENT_HOST + ":8080/health";
+
+    s_AnnounceCPPFromRegistry("SECTION_WITH_METADATA");
+    
+    /* Check known */
+    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
+                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                   *net_info, 0/*skip*/, 0/*n_skip*/,
+                   0/*external*/, 0/*arg*/, 0/*val*/));
+    NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter!=NULL, "Announced server not found");
+    info = SERV_GetNextInfoEx(*iter, NULL);
+    /* Extra */
+    const char* real_path_cstr = SERV_HTTP_PATH(&info->u.http);
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(real_path_cstr != NULL, "Extra is empty!");
+    if (real_path_cstr != NULL) {
+        string real_path = real_path_cstr;
+        NCBITEST_CHECK_EQUAL_MT_SAFE(real_path, expected_path);
+    }
+    /* Type */
+    NCBITEST_CHECK_EQUAL_MT_SAFE(info->type, fSERV_Http);
+    /* Rate */
+    NCBITEST_CHECK_EQUAL_MT_SAFE(info->rate, 200);
+
+    /* Check unknown */
+    /* Check response from LBOS */
+    CCObjHolder<char>   lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
+        UrlReadAll(*net_info,
+        (string("http://") + lbos_addr +
+        "/lbos/v3/services"+service).c_str(),
+        NULL, NULL));
+    string lbos_output = *lbos_output_orig;
+    /* Search for mymeta1 */
+    string expected1 = "\"meta with spaces\":\"word1 word2\"",
+           expected2 = "\"meta with end of line\":\"line1\\nline2\"",
+           expected3 = "\"meta with tab\":\"part1\\tpart2\"",
+           expected4 = "\"mymeta1\":\"meta\"";
+
+    size_t find_pos1 = lbos_output.find(expected1),
+           find_pos2 = lbos_output.find(expected2),
+           find_pos3 = lbos_output.find(expected3),
+           find_pos4 = lbos_output.find(expected4);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos1, string::npos);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos2, string::npos);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos3, string::npos);
+    NCBITEST_CHECK_NE_MT_SAFE(find_pos4, string::npos);
+
+    s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
+}
+
+
 } /* namespace AnnounceMetadata */
 
 namespace ExtraResolveData

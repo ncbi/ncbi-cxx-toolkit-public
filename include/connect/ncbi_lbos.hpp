@@ -153,8 +153,8 @@ public:
     *  Full absolute URL starting with "http://" or "https://". Must include 
     *  hostname or IP (and port, if necessary)
     * @param [in] metadata
-    *  A special container for additional parameters that will be displayed in 
-    * "meta" section in service discovery
+    *  Additional meta parameters that will be displayed in  "meta" section in 
+    *  service discovery
     * @note
     *  If you want to announce a server that is on the same machine that
     *  announces it (i.e., if server announces itself), you can write
@@ -168,7 +168,15 @@ public:
                          const string&    host,
                          unsigned short   port,
                          const string&    healthcheck_url,
-                         const CMetaData& metadata = CMetaData());
+                         const CMetaData& metadata);
+
+    /** @copydoc LBOS::Announce() */
+    static void Announce(const string&    service,
+                         const string&    version,
+                         const string&    host,
+                         unsigned short   port,
+                         const string&    healthcheck_url,
+                         const string&    metadata = string());
 
 
    /** A variant of Announce() that gets all the needed parameters from 

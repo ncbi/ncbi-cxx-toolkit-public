@@ -44,13 +44,13 @@
 BEGIN_NCBI_SCOPE
 
 DEFINE_STATIC_FAST_MUTEX(s_IPCacheLock);
-static const char* kLBOSAnnounceRegistrySection = "LBOS_ANNOUNCEMENT";
-static const char* kLBOSServiceVariable         = "SERVICE";
-static const char* kLBOSVersionVariable         = "VERSION";
-static const char* kLBOSServerHostVariable      = "HOST";
-static const char* kLBOSPortVariable            = "PORT";
-static const char* kLBOSHealthcheckUrlVariable  = "HEALTHCHECK";
-static const char* kLBOSMetaVariable            = "META";
+const string kLBOSAnnounceRegistrySection = "LBOS_ANNOUNCEMENT";
+const string kLBOSServiceVariable         = "SERVICE";
+const string kLBOSVersionVariable         = "VERSION";
+const string kLBOSServerHostVariable      = "HOST";
+const string kLBOSPortVariable            = "PORT";
+const string kLBOSHealthcheckUrlVariable  = "HEALTHCHECK";
+const string kLBOSMetaVariable            = "META";
 
 const SConnNetInfo* kEmptyNetInfo = ConnNetInfo_Create(NULL);
 
@@ -245,7 +245,7 @@ void LBOS::Announce(const string& service,
                     const string& host, 
                     unsigned short port,
                     const string& healthcheck_url,
-                    const CMetaData& metadata)
+                    const string& metadata)
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
@@ -285,18 +285,31 @@ void LBOS::Announce(const string& service,
                                           ip.c_str(),
                                           port,
                                           temp_healthcheck.c_str(),
-                                          metadata.GetMetaString().c_str(),
+                                          metadata.c_str(),
                                           &*body_aptr, 
                                           &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
 }
 
 
-void LBOS::AnnounceFromRegistry(const string& reg_section)
+void LBOS::Announce(const string& service, 
+                    const string& version,
+                    const string& host, 
+                    unsigned short port,
+                    const string& healthcheck_url,
+                    const CMetaData& metadata)
+{
+    Announce(service, version, host, port, healthcheck_url, 
+             metadata.GetMetaString());
+}
+
+
+void LBOS::AnnounceFromRegistry(const string& reg_sec)
 {
     /* If "reg_section" is empty, we use default section. */
-    const string& reg_sec = reg_section.empty() ? 
-                                kLBOSAnnounceRegistrySection : reg_section;
+    const string& reg_section = reg_sec.empty() ? kLBOSAnnounceRegistrySection
+                                                : reg_sec;
+    LOG_POST(Error << "Registry section is " << reg_section);
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     string host =     config.Get(reg_section, kLBOSServerHostVariable);
     string service =  config.Get(reg_section, kLBOSServiceVariable);
@@ -324,7 +337,7 @@ void LBOS::AnnounceFromRegistry(const string& reg_section)
                              eLBOS_InvalidArgs);
     }
     unsigned short port = static_cast<unsigned short>(port_int);
-    Announce(service, version, host, port, health);
+    Announce(service, version, host, port, health, meta);
 }
 
 
