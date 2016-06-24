@@ -3657,7 +3657,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
     case eIO_Close:
         if (sock->w_status != eIO_Closed) {
             if ((status = s_WritePending(sock, tv, 0, 0)) != eIO_Success) {
-                if (!sock->pending   &&  sock->w_len) {
+                if (!sock->pending  &&  sock->w_len) {
                     CORE_LOGF_X(13, !tv  ||  (tv->tv_sec | tv->tv_usec)
                                 ? eLOG_Warning : eLOG_Trace,
                                 ("%s[SOCK::%s] "
@@ -3674,7 +3674,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                 } else if (!(dir & eIO_ReadWrite))
                     status = eIO_Success;
             }
-            if (sock->session  &&  !sock->pending) {
+            if (!sock->pending  &&  sock->session) {
                 FSSLClose sslclose = s_SSL ? s_SSL->Close : 0;
                 assert(sock->session != SESSION_INVALID);
                 if (sslclose) {
@@ -3723,11 +3723,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
     }
     assert((EIO_Event)(dir | eIO_ReadWrite) == eIO_ReadWrite);
     
-#ifndef NCBI_OS_MSWIN
-    /* on MS-Win, socket shutdown for write apparently messes up (?!)
-     * with later reading, especially when reading a lot of data... */
-
-#  ifdef NCBI_OS_BSD
+#ifdef NCBI_OS_BSD
     /* at least on FreeBSD: shutting down a socket for write (i.e. forcing to
      * send a FIN) for a socket that has been already closed by another end
      * (e.g. when peer has done writing, so this end has done reading and is
@@ -3735,38 +3731,27 @@ static EIO_Status s_Shutdown(SOCK                  sock,
      * see kern/146845 @ http://www.freebsd.org/cgi/query-pr.cgi?pr=146845 */
     if (dir == eIO_ReadWrite  &&  how != SOCK_SHUTDOWN_RDWR)
         return status;
-#  endif /*NCBI_OS_BSD*/
+#endif /*NCBI_OS_BSD*/
 
-#  ifdef NCBI_OS_UNIX
+#ifdef NCBI_OS_UNIX
     if (sock->path[0])
         return status;
-#  endif /*NCBI_OS_UNIX*/
+#endif /*NCBI_OS_UNIX*/
+
+#ifndef NCBI_OS_MSWIN
+    /* on MS-Win, socket shutdown for write apparently messes up (?!)
+     * with later reading, especially when reading a lot of data... */
 
     if (s_Initialized > 0  &&  shutdown(sock->sock, how) != 0) {
-        error = SOCK_ERRNO;
-#  ifdef NCBI_OS_MSWIN
-        if (error == WSANOTINITIALISED)
-            s_Initialized = -1/*deinited*/;
-        else
-#  endif /*NCBI_OS_MSWIN*/
-        if (
-#  if   defined(NCBI_OS_LINUX)/*bug in the Linux kernel to report*/  || \
-        defined(NCBI_OS_IRIX)                                        || \
-        defined(NCBI_OS_OSF1)
-            error != SOCK_ENOTCONN
-#  else
-            error != SOCK_ENOTCONN  ||  sock->pending
-#  endif /*UNIX flavors*/
-            ) {
-            const char* strerr = SOCK_STRERROR(error);
-            CORE_LOGF_ERRNO_EXX(16, eLOG_Trace,
-                                error, strerr ? strerr : "",
-                                ("%s[SOCK::Shutdown] "
-                                 " Failed shutdown(%s)",
-                                 s_ID(sock, _id), dir == eIO_Read ? "R" :
-                                 dir == eIO_Write ? "W" : "RW"));
-            UTIL_ReleaseBuffer(strerr);
-        }
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
+        CORE_LOGF_ERRNO_EXX(16, eLOG_Trace,
+                            error, strerr ? strerr : "",
+                            ("%s[SOCK::Shutdown] "
+                             " Failed shutdown(%s)",
+                             s_ID(sock, _id), dir == eIO_Read ? "R" :
+                             dir == eIO_Write ? "W" : "RW"));
+        UTIL_ReleaseBuffer(strerr);
+        status = eIO_Unknown;
     }
 #endif /*!NCBI_OS_MSWIN*/
 
@@ -6361,6 +6346,7 @@ extern EIO_Status SOCK_CloseOSHandle(const void* handle, size_t handle_size)
             error == SOCK_ENETRESET   ||
             error == SOCK_ECONNRESET  ||
             error == SOCK_ECONNABORTED) {
+            status = eIO_Closed;
             break;
         }
         if (error != SOCK_EINTR) {
