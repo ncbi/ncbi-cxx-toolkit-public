@@ -157,23 +157,8 @@ public:
         string & out_annotname );
 
 private:
-    // this class uses a singleton internally to manage the specifics
-    // of the feature table reader implementation
-    // these are the variables / functions that control the singleton
-    static auto_ptr<CFeature_table_reader_imp> sm_Implementation;
-
-    static void                       x_InitImplementation(void);
-    static CFeature_table_reader_imp& x_GetImplementation (void);
 };
 
-inline
-CFeature_table_reader_imp& CFeature_table_reader::x_GetImplementation(void)
-{
-    if ( !sm_Implementation.get() ) {
-        x_InitImplementation();
-    }
-    return *sm_Implementation;
-}
 
 
 END_objects_SCOPE

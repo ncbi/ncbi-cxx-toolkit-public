@@ -96,12 +96,12 @@
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Feature
 
-#define FTBL_PROGRESS(_sSeqid, _uLineNum) \
+#define FTBL_PROGRESS(listener, _sSeqid, _uLineNum)                        \
     do {                                                                   \
         const Uint8 uLineNum = (_uLineNum);                                \
         CNcbiOstrstream err_strm;                                          \
         err_strm << "Seq-id " << (_sSeqid) << ", line " << uLineNum;       \
-        pMessageListener->PutProgress(CNcbiOstrstreamToString(err_strm));  \
+        listener->PutProgress(CNcbiOstrstreamToString(err_strm));  \
     } while(false)
 
 BEGIN_NCBI_SCOPE
@@ -276,24 +276,20 @@ public:
     };
 
     // constructor
-    CFeature_table_reader_imp(void);
+    CFeature_table_reader_imp(ILineReader* reader, unsigned int line_num, ILineErrorListener* pMessageListener);
     // destructor
     ~CFeature_table_reader_imp(void);
 
     // read 5-column feature table and return Seq-annot
-    CRef<CSeq_annot> ReadSequinFeatureTable (ILineReader& reader,
-                                             const string& seqid,
+    CRef<CSeq_annot> ReadSequinFeatureTable (const string& seqid,
                                              const string& annotname,
                                              const CFeature_table_reader::TFlags flags, 
-                                             ILineErrorListener* pMessageListener,
                                              ITableFilter *filter);
 
     // create single feature from key
     CRef<CSeq_feat> CreateSeqFeat (const string& feat,
                                    CSeq_loc& location,
                                    const CFeature_table_reader::TFlags flags, 
-                                   ILineErrorListener* pMessageListener,
-                                   unsigned int line,
                                    const string &seq_id,
                                    ITableFilter *filter);
 
@@ -303,8 +299,6 @@ public:
                       const string& qual,
                       const string& val,
                       const CFeature_table_reader::TFlags flags,
-                      ILineErrorListener* pMessageListener,
-                      int line,
                       const string &seq_id );
 
     static bool ParseInitialFeatureLine (
@@ -318,41 +312,36 @@ private:
     CFeature_table_reader_imp(const CFeature_table_reader_imp& value);
     CFeature_table_reader_imp& operator=(const CFeature_table_reader_imp& value);
 
+    void x_InitId(const string& seq_id);
     // returns true if parsed (otherwise, out_offset is left unchanged)
     bool x_TryToParseOffset(const CTempString & sLine, Int4 & out_offset );
 
     bool x_ParseFeatureTableLine (const string& line, Int4* startP, Int4* stopP,
                                   bool* partial5P, bool* partial3P, bool* ispointP, bool* isminusP,
-                                  string& featP, string& qualP, string& valP, Int4 offset,
-                                  ILineErrorListener *pMessageListener, int line_num, const string &seq_id );
+                                  string& featP, string& qualP, string& valP, Int4 offset);
 
     bool x_IsWebComment(CTempString line);
 
     bool x_AddIntervalToFeature (CTempString strFeatureName, CRef<CSeq_feat> sfp, CSeq_loc_mix& mix,
                                  Int4 start, Int4 stop,
-                                 bool partial5, bool partial3, bool ispoint, bool isminus,
-                                 ILineErrorListener *pMessageListener, int line_num, const string& seqid);
+                                 bool partial5, bool partial3, bool ispoint, bool isminus);
 
     bool x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
         const string &feat_name,
         const string& qual, const string& val,
-        const CFeature_table_reader::TFlags flags,
-        ILineErrorListener *pMessageListener, int line_num, const string &seq_id );
+        const CFeature_table_reader::TFlags flags);
 
     bool x_AddQualifierToGene     (CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
     bool x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
-                                   EQual qtype, const string& val,
-                                   ILineErrorListener *pMessageListener, int line_num, const string &seq_id );
+                                   EQual qtype, const string& val);
     bool x_AddQualifierToRna      (CRef<CSeq_feat> sfp,
-                                   EQual qtype, const string& val,
-                                   ILineErrorListener *pMessageListener, int line_num, const string &seq_id );
+                                   EQual qtype, const string& val);
     bool x_AddQualifierToImp      (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& qual, const string& val);
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    const string &feat_name,
-                                   EOrgRef rtype, const string& val,
-                                   ILineErrorListener *pMessageListener, int line, const string &seq_id );
+                                   EOrgRef rtype, const string& val);
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    CSubSource::ESubtype stype, const string& val);
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
@@ -394,23 +383,17 @@ private:
     void x_CreateGenesFromCDSs(
         CRef<CSeq_annot> sap,
         TChoiceToFeatMap & choiceToFeatMap, // an input param, but might get more items added
-        const CFeature_table_reader::TFlags flags,
-        ILineErrorListener *pMessageListener,
-        const string& seqid );
+        const CFeature_table_reader::TFlags flags);
 
     bool x_StringIsJustQuotes (const string& str);
 
     int x_ParseTrnaString (const string& val);
 
-    bool x_ParseTrnaExtString(
-        CTrna_ext & ext_trna, const string & str, const CSeq_id *seq_id );
+    bool x_ParseTrnaExtString(CTrna_ext & ext_trna, const string & str);
     SIZE_TYPE x_MatchingParenPos( const string &str, SIZE_TYPE open_paren_pos );
 
     long x_StringToLongNoThrow (
         CTempString strToConvert,
-        ILineErrorListener *pMessageListener, 
-        const std::string& strSeqId,
-        unsigned int uLine,
         CTempString strFeatureName,
         CTempString strQualifierName,
         // user can override the default problem types that are set on error
@@ -419,39 +402,36 @@ private:
 
     bool x_SetupSeqFeat (CRef<CSeq_feat> sfp, const string& feat,
                          const CFeature_table_reader::TFlags flags, 
-                         unsigned int line,
-                         const string &seq_id,
-                         ILineErrorListener* pMessageListener,
                          ITableFilter *filter);
 
     void  x_ProcessMsg (
-        ILineErrorListener* pMessageListener,
         ILineError::EProblem eProblem,
         EDiagSev eSeverity,
-        const std::string& strSeqId,
-        unsigned int uLine,
         const std::string & strFeatureName = kEmptyStr,
         const std::string & strQualifierName = kEmptyStr,
         const std::string & strQualifierValue = kEmptyStr,
         const ILineError::TVecOfLines & vecOfOtherLines =
             ILineError::TVecOfLines() );
 
+    void  x_ProcessMsg(
+        int line_num,
+        ILineError::EProblem eProblem,
+        EDiagSev eSeverity,
+        const std::string & strFeatureName = kEmptyStr,
+        const std::string & strQualifierName = kEmptyStr,
+        const std::string & strQualifierValue = kEmptyStr,
+        const ILineError::TVecOfLines & vecOfOtherLines =
+        ILineError::TVecOfLines());
+
     void x_TokenizeStrict( const string &line, vector<string> &out_tokens );
     void x_TokenizeLenient( const string &line, vector<string> &out_tokens );
+
+    string m_real_seqid;
+    unsigned int m_line_num;
+    CRef<CSeq_id> m_seq_id;
+    ILineErrorListener* m_pMessageListener;
+    ILineReader* m_reader;
 };
-
-auto_ptr<CFeature_table_reader_imp> CFeature_table_reader::sm_Implementation;
-
-void CFeature_table_reader::x_InitImplementation()
-{
-    DEFINE_STATIC_FAST_MUTEX(s_Implementation_mutex);
-
-    CFastMutexGuard   LOCK(s_Implementation_mutex);
-    if ( !sm_Implementation.get() ) {
-        sm_Implementation.reset(new CFeature_table_reader_imp());
-    }
-}
-
 
 typedef SStaticPair<const char *, CFeature_table_reader_imp::EQual> TQualKey;
 
@@ -801,7 +781,8 @@ DEFINE_STATIC_ARRAY_MAP(TSingleSet, sc_SingleKeys, single_key_list);
 
 
 // constructor
-CFeature_table_reader_imp::CFeature_table_reader_imp(void)
+CFeature_table_reader_imp::CFeature_table_reader_imp(ILineReader* reader, unsigned int line_num, ILineErrorListener* pMessageListener)
+    : m_reader(reader), m_line_num(line_num), m_pMessageListener(pMessageListener)
 {
 }
 
@@ -867,11 +848,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
     string& featP,
     string& qualP,
     string& valP,
-    Int4 offset,
-
-    ILineErrorListener *pMessageListener, 
-    int line_num, 
-    const string &seq_id
+    Int4 offset
 )
 
 {
@@ -929,7 +906,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
           ispoint = true;
           start [len - 1] = '\0';
         }
-        startv = x_StringToLongNoThrow(start, pMessageListener, seq_id, line_num, feat, qual,
+        startv = x_StringToLongNoThrow(start, feat, qual,
             ILineError::eProblem_BadFeatureInterval);
     }
 
@@ -938,7 +915,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
             partial3 = true;
             stop.erase (0, 1);
         }
-        stopv = x_StringToLongNoThrow (stop, pMessageListener, seq_id, line_num, feat, qual,
+        stopv = x_StringToLongNoThrow (stop, feat, qual,
             ILineError::eProblem_BadFeatureInterval);
     }
 
@@ -1135,10 +1112,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToGene (
 bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
     CRef<CSeq_feat> sfp,
     CSeqFeatData& sfdata,
-    EQual qtype, const string& val,
-    ILineErrorListener *pMessageListener, 
-    int line, 
-    const string &seq_id 
+    EQual qtype, const string& val
 )
 
 {
@@ -1146,8 +1120,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
     switch (qtype) {
         case eQual_codon_start:
             {
-                int frame = x_StringToLongNoThrow (val, pMessageListener,
-                    seq_id, line, kCdsFeatName, "codon_start");
+                int frame = x_StringToLongNoThrow (val, kCdsFeatName, "codon_start");
                 switch (frame) {
                     case 0:
                         crp.SetFrame (CCdregion::eFrame_not_set);
@@ -1314,8 +1287,7 @@ int CFeature_table_reader_imp::x_ParseTrnaString (
 }
 
 bool
-CFeature_table_reader_imp::x_ParseTrnaExtString(
-    CTrna_ext & ext_trna, const string & str, const CSeq_id *seq_id )
+CFeature_table_reader_imp::x_ParseTrnaExtString(CTrna_ext & ext_trna, const string & str)
 {
     if (NStr::IsBlank (str)) return false;
 
@@ -1342,7 +1314,7 @@ CFeature_table_reader_imp::x_ParseTrnaExtString(
                 }
             }
             CGetSeqLocFromStringHelper helper;
-            CRef<CSeq_loc> anticodon = GetSeqLocFromString (pos_str, seq_id, & helper);
+            CRef<CSeq_loc> anticodon = GetSeqLocFromString (pos_str, m_seq_id, & helper);
             if (anticodon == NULL) {
                 ext_trna.ResetAa();
                 return false;
@@ -1402,9 +1374,6 @@ SIZE_TYPE CFeature_table_reader_imp::x_MatchingParenPos(
 
 long CFeature_table_reader_imp::x_StringToLongNoThrow (
     CTempString strToConvert,
-    ILineErrorListener *pMessageListener, 
-    const std::string& strSeqId,
-    unsigned int uLine,
     CTempString strFeatureName,
     CTempString strQualifierName,
     ILineError::EProblem eProblem
@@ -1424,10 +1393,10 @@ long CFeature_table_reader_imp::x_StringToLongNoThrow (
                     problem = eProblem;
                 }
 
-                x_ProcessMsg( pMessageListener, 
+                x_ProcessMsg( 
                     problem,
                     eDiag_Warning,
-                    strSeqId, uLine, strFeatureName, strQualifierName, strToConvert );
+                    strFeatureName, strQualifierName, strToConvert );
                 return result;
             } catch( ... ) { } // fall-thru to usual handling
         }
@@ -1438,10 +1407,10 @@ long CFeature_table_reader_imp::x_StringToLongNoThrow (
             problem = eProblem;
         }
 
-        x_ProcessMsg( pMessageListener,
+        x_ProcessMsg(
             problem,
             eDiag_Warning,
-            strSeqId, uLine, strFeatureName, strQualifierName, strToConvert );
+            strFeatureName, strQualifierName, strToConvert );
         // we have no idea, so just return zero
         return 0;
     }
@@ -1451,10 +1420,7 @@ long CFeature_table_reader_imp::x_StringToLongNoThrow (
 bool CFeature_table_reader_imp::x_AddQualifierToRna (
     CRef<CSeq_feat> sfp,
     EQual qtype,
-    const string& val,
-    ILineErrorListener *pMessageListener, 
-    int line_num, 
-    const string &seq_id
+    const string& val
 )
 {
     CSeqFeatData& sfdata = sfp->SetData();
@@ -1529,9 +1495,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
                             taa.SetNcbieaa(aaval);
                         }
                         else {
-                            x_ProcessMsg(pMessageListener,
+                            x_ProcessMsg(
                                 ILineError::eProblem_QualifierBadValue, eDiag_Warning,
-                                seq_id, line_num,
                                 "tRNA", "product", val);
                         }
                         return true;
@@ -1541,11 +1506,9 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
                     {
                         CRNA_ref::TExt& tex = rrp.SetExt ();
                         CRNA_ref::C_Ext::TTRNA & ext_trna = tex.SetTRNA();
-                        CRef<CSeq_id> seq_id_obj( new CSeq_id(seq_id) );
-                        if( ! x_ParseTrnaExtString(ext_trna, val, &*seq_id_obj) ) {
-                            x_ProcessMsg( pMessageListener, 
+                        if( ! x_ParseTrnaExtString(ext_trna, val) ) {
+                            x_ProcessMsg(
                                 ILineError::eProblem_QualifierBadValue, eDiag_Error,
-                                seq_id, line_num,
                                 "tRNA", "anticodon", val );
                         }
                         return true;
@@ -1685,12 +1648,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
     CSeqFeatData& sfdata,
     const string &feat_name,
     EOrgRef rtype,
-    const string& val,
-    ILineErrorListener *pMessageListener, 
-    int line, 	
-    const string &seq_id 
+    const string& val
 )
-
 {
     CBioSource& bsp = sfdata.SetBiosrc ();
 
@@ -1708,9 +1667,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
                     CBioSource::EGenome gtype = g_iter->second;
                     bsp.SetGenome (gtype);
                 } else {
-                    x_ProcessMsg( pMessageListener, 
+                    x_ProcessMsg(
                         ILineError::eProblem_QualifierBadValue, eDiag_Error,
-                        seq_id, line,
                         feat_name, "organelle", val );
                 }
                 return true;
@@ -1733,7 +1691,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
             {
                 CBioSource::TOrg& orp = bsp.SetOrg ();
                 COrg_ref::TOrgname& onp = orp.SetOrgname ();
-                int code = x_StringToLongNoThrow (val, pMessageListener, seq_id, line, feat_name, "gcode");
+                int code = x_StringToLongNoThrow (val, feat_name, "gcode");
                 onp.SetGcode (code);
                 return true;
             }
@@ -1741,7 +1699,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
             {
                 CBioSource::TOrg& orp = bsp.SetOrg ();
                 COrg_ref::TOrgname& onp = orp.SetOrgname ();
-                int code = x_StringToLongNoThrow (val, pMessageListener, seq_id, line, feat_name, "mgcode");
+                int code = x_StringToLongNoThrow (val, feat_name, "mgcode");
                 onp.SetMgcode (code);
                 return true;
             }
@@ -1921,9 +1879,7 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
 void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
     CRef<CSeq_annot> sap,
     TChoiceToFeatMap & choiceToFeatMap,
-    const CFeature_table_reader::TFlags flags,
-    ILineErrorListener *pMessageListener,
-    const string& seq_id )
+    const CFeature_table_reader::TFlags flags)
 {
     // load cds_equal_range to hold the CDSs
     typedef TChoiceToFeatMap::iterator TChoiceCI;
@@ -2037,9 +1993,9 @@ void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
                 if( (flags & CFeature_table_reader::fCreateGenesFromCDSs) != 0 &&
                     gene_line_num < 1 )
                 {
-                    x_ProcessMsg( pMessageListener, 
+                    x_ProcessMsg(
+                        cds_line_num,
                         ILineError::eProblem_CreatedGeneFromMultipleFeats, eDiag_Error,
-                        seq_id, cds_line_num,
                         kCdsFeatName );
                 }
 
@@ -2057,9 +2013,9 @@ void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
                         if( gene_line_num > 0 ) {
                             gene_lines.push_back(gene_line_num);
                         }
-                        x_ProcessMsg( pMessageListener, 
+                        x_ProcessMsg( 
+                            cds_line_num,
                             ILineError::eProblem_FeatMustBeInXrefdGene, eDiag_Error,
-                            seq_id, cds_line_num,
                             kCdsFeatName, 
                             kEmptyStr, kEmptyStr,
                             gene_lines );
@@ -2131,10 +2087,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
     const string &feat_name,
     const string& qual,
     const string& val,
-    const CFeature_table_reader::TFlags flags,
-    ILineErrorListener *pMessageListener, 
-    int line, 	
-    const string &seq_id 
+    const CFeature_table_reader::TFlags flags
 )
 
 {
@@ -2146,9 +2099,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
     if( (flags & CFeature_table_reader::fReportDiscouragedKey) != 0 ) {
         if( CSeqFeatData::IsDiscouragedQual(qual_type) ) {
             x_ProcessMsg(
-                pMessageListener,
                 ILineError::eProblem_DiscouragedQualifierName,
-                eDiag_Warning, seq_id, line, feat_name, qual);
+                eDiag_Warning, feat_name, qual);
         }
     }
 
@@ -2157,7 +2109,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
         TOrgRefMap::const_iterator o_iter = sm_OrgRefKeys.find (qual.c_str ());
         if (o_iter != sm_OrgRefKeys.end ()) {
             EOrgRef rtype = o_iter->second;
-            if (x_AddQualifierToBioSrc (sfdata, feat_name, rtype, val, pMessageListener, line, seq_id)) return true;
+            if (x_AddQualifierToBioSrc (sfdata, feat_name, rtype, val)) return true;
 
         } else {
 
@@ -2189,10 +2141,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
                     break;
                 case CSeqFeatData::e_Cdregion:
-                    if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val, pMessageListener, line, seq_id)) return true;
+                    if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
                     break;
                 case CSeqFeatData::e_Rna:
-                    if (x_AddQualifierToRna (sfp, qtype, val, pMessageListener, line, seq_id)) return true;
+                    if (x_AddQualifierToRna (sfp, qtype, val)) return true;
                     break;
                 case CSeqFeatData::e_Imp:
                     if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
@@ -2224,7 +2176,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case CSeqFeatData::e_Pub:
                     if( qtype == eQual_PubMed ) {
                         CRef<CPub> new_pub( new CPub );
-                        new_pub->SetPmid( CPubMedId( x_StringToLongNoThrow(val, pMessageListener, seq_id, line, feat_name, qual) ) );
+                        new_pub->SetPmid( CPubMedId( x_StringToLongNoThrow(val, feat_name, qual) ) );
                         sfdata.SetPub().SetPub().Set().push_back( new_pub );
                         return true;
                     }
@@ -2293,9 +2245,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                             x_AddGBQualToFeature(sfp, qual, val);
                         }
                         else {
-                            x_ProcessMsg(pMessageListener,
+                            x_ProcessMsg(
                                 ILineError::eProblem_QualifierBadValue, eDiag_Error,
-                                seq_id, line,
                                 feat_name, qual, val);
                         }
                         return true;
@@ -2436,10 +2387,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case eQual_regulatory_class:
                     // This should've been handled up in x_AddQualifierToImp
                     // so it's always a bad value to be here
-                    x_ProcessMsg(
-                        pMessageListener,
+                    x_ProcessMsg(                        
                         ILineError::eProblem_QualifierBadValue, eDiag_Error,
-                        seq_id, line,
                         feat_name, qual, val );
                     return true;
                 default:
@@ -2512,10 +2461,7 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature(
     bool partial5,
     bool partial3,
     bool ispoint,
-    bool isminus,
-    ILineErrorListener *pMessageListener, 
-    int line_num, 
-    const string& seqid
+    bool isminus
 )
 
 {
@@ -2530,19 +2476,17 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature(
     }
 
     // construct loc, which will be added to the mix
-    CRef<CSeq_id> seq_id ( new CSeq_id(seqid) );
     CRef<CSeq_loc> loc(new CSeq_loc);
     if (ispoint || start == stop ) {
         // a point of some kind
-        CRef<CSeq_point> pPoint( new CSeq_point(*seq_id, start, strand) );
+        CRef<CSeq_point> pPoint( new CSeq_point(*m_seq_id, start, strand) );
         if( ispoint ) {
             // between two bases
             pPoint->SetRightOf (true);
             // warning if stop is not start plus one
             if( stop != (start+1) ) {
-                x_ProcessMsg( pMessageListener, 
+                x_ProcessMsg( 
                     ILineError::eProblem_BadFeatureInterval, eDiag_Warning,
-                    seqid, line_num,
                     strFeatureName );
             }
         } else {
@@ -2551,7 +2495,7 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature(
         loc->SetPnt( *pPoint );
     } else {
         // interval
-        CRef<CSeq_interval> pIval( new CSeq_interval(*seq_id, start, stop, strand) );
+        CRef<CSeq_interval> pIval( new CSeq_interval(*m_seq_id, start, stop, strand) );
         if (partial5) {
             pIval->SetPartialStart (true, eExtreme_Biological);
         }
@@ -2569,8 +2513,8 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature(
             loc->IsPartialStart(eExtreme_Biological) ) 
         {
             // internal partials
-            x_ProcessMsg(pMessageListener, ILineError::eProblem_InternalPartialsInFeatLocation,
-                eDiag_Warning, seqid, line_num, strFeatureName );
+            x_ProcessMsg(ILineError::eProblem_InternalPartialsInFeatLocation,
+                eDiag_Warning, strFeatureName );
         }
     }
 
@@ -2589,9 +2533,6 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
     CRef<CSeq_feat> sfp,
     const string& feat,
     const CFeature_table_reader::TFlags flags,
-    unsigned int line,
-    const std::string &seq_id,
-    ILineErrorListener* pMessageListener,
     ITableFilter *filter
 )
 
@@ -2602,9 +2543,9 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
     if( NULL != filter ) {
         ITableFilter::EAction action = filter->GetFeatAction(feat);
         if( action != ITableFilter::eAction_Okay ) {
-            x_ProcessMsg( pMessageListener, 
+            x_ProcessMsg( 
                 ILineError::eProblem_FeatureNameNotAllowed,
-                eDiag_Warning, seq_id, line, feat );
+                eDiag_Warning, feat );
             if( action == ITableFilter::eAction_Disallowed ) {
                 return false;
             }
@@ -2698,9 +2639,8 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
         if( (flags & CFeature_table_reader::fReportDiscouragedKey) != 0 ) {
             if( CSeqFeatData::IsDiscouragedSubtype(sbtyp) ) {
                 x_ProcessMsg(
-                    pMessageListener,
                     ILineError::eProblem_DiscouragedFeatureName,
-                    eDiag_Warning, seq_id, line, feat);
+                    eDiag_Warning, feat);
             }
         }
 
@@ -2710,7 +2650,7 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
     // unrecognized feature key
 
     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-        x_ProcessMsg(pMessageListener, ILineError::eProblem_UnrecognizedFeatureName, eDiag_Warning, seq_id, line, feat );
+        x_ProcessMsg(ILineError::eProblem_UnrecognizedFeatureName, eDiag_Warning, feat );
     }
 
     if ((flags & CFeature_table_reader::fTranslateBadKey) != 0) {
@@ -2719,7 +2659,7 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
         CSeqFeatData& sfdata = sfp->SetData ();
         CImp_feat_Base& imp = sfdata.SetImp ();
         imp.SetKey ("misc_feature");
-        x_AddQualifierToFeature (sfp, kEmptyStr, "standard_name", feat, flags, pMessageListener, line, seq_id);
+        x_AddQualifierToFeature (sfp, kEmptyStr, "standard_name", feat, flags);
 
         return true;
 
@@ -2736,13 +2676,23 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
     return false;
 }
 
-
 void CFeature_table_reader_imp::x_ProcessMsg(
-    ILineErrorListener* pMessageListener,
     ILineError::EProblem eProblem,
     EDiagSev eSeverity,
-    const std::string& strSeqId,
-    unsigned int uLine,
+    const std::string & strFeatureName,
+    const std::string & strQualifierName,
+    const std::string & strQualifierValue,
+    const ILineError::TVecOfLines & vecOfOtherLines)
+{
+    x_ProcessMsg(m_reader ? m_reader->GetLineNumber() : m_line_num,
+        eProblem, eSeverity, strFeatureName, strQualifierName, strQualifierValue, vecOfOtherLines);
+}
+
+
+void CFeature_table_reader_imp::x_ProcessMsg(
+    int line_num,
+    ILineError::EProblem eProblem,
+    EDiagSev eSeverity,
     const std::string & strFeatureName,
     const std::string & strQualifierName,
     const std::string & strQualifierValue,
@@ -2750,16 +2700,16 @@ void CFeature_table_reader_imp::x_ProcessMsg(
 {
     AutoPtr<CObjReaderLineException> pErr ( 
         CObjReaderLineException::Create(
-        eSeverity, uLine, "", eProblem, strSeqId, strFeatureName, 
+        eSeverity, line_num, "", eProblem, m_real_seqid, strFeatureName,
         strQualifierName, strQualifierValue));
     ITERATE( ILineError::TVecOfLines, line_it, vecOfOtherLines ) {
         pErr->AddOtherLine(*line_it);
     }
-    if (pMessageListener == 0) {
+    if (m_pMessageListener == 0) {
         pErr->Throw();
     }
 
-    if ( ! pMessageListener->PutError(*pErr) ) {
+    if ( ! m_pMessageListener->PutError(*pErr) ) {
         pErr->Throw();
     }
 }
@@ -2776,11 +2726,9 @@ namespace {
 }
                                              
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
-    ILineReader& reader,
     const string& seqid,
     const string& annotname,
     const CFeature_table_reader::TFlags flags,
-    ILineErrorListener* pMessageListener,
     ITableFilter *filter
 )
 {
@@ -2795,17 +2743,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
         ( (flags & CFeature_table_reader::fIgnoreWebComments) != 0 );
 
     // if sequence ID is a list, use just one sequence ID string    
-    string real_seqid = seqid;
-    if (!NStr::IsBlank(real_seqid)) {
-        //try {
-        //    CSeq_id seq_id (seqid);
-        //} catch (...) {
-            CBioseq::TId ids;
-            CSeq_id::ParseIDs(ids, seqid);
-            real_seqid.clear();
-            ids.front()->GetLabel(&real_seqid, CSeq_id::eFasta);
-        //}
-    }
+    x_InitId(seqid);
 
     // Use this to efficiently find the best CDS for a prot feature
     // (only add CDS's for it to work right)
@@ -2833,22 +2771,22 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
       descr.Set().push_back (annot);
     }
 
-    while ( !reader.AtEOF() ) {
+    while ( !m_reader->AtEOF() ) {
 
         // since reader's UngetLine doesn't actually push back
         // into the reader's underlying stream, we try to
         // be careful to detect the most common case of
         // "there's another feature next"
-        if( reader.PeekChar() == '>' ) {
+        if( m_reader->PeekChar() == '>' ) {
             break;
         }
 
-        CTempString line = *++reader;
+        CTempString line = *++(*m_reader);
 
-        if( reader.GetLineNumber() % 10000 == 0 &&
-            reader.GetLineNumber() > 0 )
+        if( m_reader->GetLineNumber() % 10000 == 0 &&
+            m_reader->GetLineNumber() > 0 )
         {
-            FTBL_PROGRESS(real_seqid, reader.GetLineNumber());
+            FTBL_PROGRESS(m_pMessageListener, m_real_seqid, m_reader->GetLineNumber());
         }
 
         // skip empty lines.
@@ -2860,7 +2798,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
         // if next line is a new feature table, return current sap
         string dummy1, dummy2;
         if( ParseInitialFeatureLine(line, dummy1, dummy2) ) {
-            reader.UngetLine(); // we'll get this feature line the next time around
+            m_reader->UngetLine(); // we'll get this feature line the next time around
             break;
         } 
 
@@ -2871,10 +2809,9 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                 // okay, known command
             } else {
                 // warn for unknown square-bracket commands
-                x_ProcessMsg( pMessageListener,
+                x_ProcessMsg( 
                     ILineError::eProblem_UnrecognizedSquareBracketCommand,
-                    eDiag_Warning,
-                    seqid, reader.GetLineNumber() );
+                    eDiag_Warning);
             }
 
         } else if ( s_LineIndicatesOrder(line) ) {
@@ -2887,8 +2824,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
             }
 
         } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
-                                            &ispoint, &isminus, feat, qual, val, offset,
-                                            pMessageListener, reader.GetLineNumber(), real_seqid)) {
+                                            &ispoint, &isminus, feat, qual, val, offset)) {
 
             // process line in feature table
 
@@ -2900,7 +2836,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                 s_ResetFeat( sfp, curr_feat_intervals_done );
 
-                if (x_SetupSeqFeat (sfp, feat, flags, reader.GetLineNumber(), real_seqid, pMessageListener, filter)) {
+                if (x_SetupSeqFeat (sfp, feat, flags, filter)) {
 
                     ftable.push_back (sfp);
 
@@ -2917,7 +2853,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     choiceToFeatMap.insert(
                         TChoiceToFeatMap::value_type(
                         eChoice, 
-                        SFeatAndLineNum(sfp, reader.GetLineNumber())));
+                        SFeatAndLineNum(sfp, m_reader->GetLineNumber())));
 
                     // if new feature is a CDS, remember it for later lookups
                     if( eChoice == CSeqFeatData::e_Cdregion ) {
@@ -2926,8 +2862,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                     // and add first interval
                     x_AddIntervalToFeature (curr_feat_name, sfp, location->SetMix(), 
-                        start, stop, partial5, partial3, ispoint, isminus, 
-                        pMessageListener, reader.GetLineNumber(), real_seqid );
+                        start, stop, partial5, partial3, ispoint, isminus);
 
                     ignore_until_next_feature_key = false;
 
@@ -2949,24 +2884,18 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                 if( curr_feat_intervals_done ) {
                     // the feat intervals were done, so it's an error for there to be more intervals
-                    x_ProcessMsg(pMessageListener, ILineError::eProblem_NoFeatureProvidedOnIntervals,
-                            eDiag_Error,
-                            real_seqid,
-                            reader.GetLineNumber() );
+                    x_ProcessMsg(ILineError::eProblem_NoFeatureProvidedOnIntervals, eDiag_Error);
                     // this feature is in bad shape, so we ignore the rest of it
                     ignore_until_next_feature_key = true;
                     s_ResetFeat(sfp, curr_feat_intervals_done);
                 } else if (sfp  &&  sfp->IsSetLocation()  &&  sfp->GetLocation().IsMix()) {
                     // process start - stop multiple interval line
                     x_AddIntervalToFeature (curr_feat_name, sfp, sfp->SetLocation().SetMix(), 
-                                            start, stop, partial5, partial3, ispoint, isminus, 
-                                            pMessageListener, reader.GetLineNumber(), real_seqid);
+                                            start, stop, partial5, partial3, ispoint, isminus);
                 } else {
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                        x_ProcessMsg(pMessageListener, ILineError::eProblem_NoFeatureProvidedOnIntervals,
-                            eDiag_Warning,
-                            real_seqid,
-                            reader.GetLineNumber() );
+                        x_ProcessMsg(ILineError::eProblem_NoFeatureProvidedOnIntervals,
+                            eDiag_Warning);
                     }
                 }
 
@@ -2980,20 +2909,19 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                 if ( !sfp ) {
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                        x_ProcessMsg(pMessageListener, 
+                        x_ProcessMsg( 
                             ILineError::eProblem_QualifierWithoutFeature, 
                             eDiag_Warning,
-                            real_seqid,
-                            reader.GetLineNumber(), kEmptyStr, qual, val );
+                            kEmptyStr, qual, val );
                     }
-                } else if ( !x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, flags, pMessageListener, reader.GetLineNumber(), real_seqid) ) {
+                } else if ( !x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, flags) ) {
 
                     // unrecognized qualifier key
 
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                        x_ProcessMsg(pMessageListener,
+                        x_ProcessMsg(
                             ILineError::eProblem_UnrecognizedQualifierName, 
-                            eDiag_Warning, real_seqid, reader.GetLineNumber(), curr_feat_name, qual, val );
+                            eDiag_Warning, curr_feat_name, qual, val );
                     }
 
                     if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
@@ -3010,16 +2938,15 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                 // check for the few qualifiers that do not need a value
                 if ( !sfp ) {
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                        x_ProcessMsg(pMessageListener, 
+                        x_ProcessMsg(
                             ILineError::eProblem_QualifierWithoutFeature, eDiag_Warning,
-                            real_seqid, reader.GetLineNumber(),
                             kEmptyStr, qual );
                     }
                 } else {
                     TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
                     if (s_iter != sc_SingleKeys.end ()) {
 
-                        x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, flags, pMessageListener, reader.GetLineNumber(), real_seqid);
+                        x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, flags);
                     }
                 }
             } else if (! feat.empty ()) {
@@ -3031,9 +2958,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                 curr_feat_intervals_done = true;
 
                 if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                    x_ProcessMsg( pMessageListener, 
+                    x_ProcessMsg( 
                         ILineError::eProblem_FeatureBadStartAndOrStop, eDiag_Warning,
-                        real_seqid, reader.GetLineNumber(),
                         feat );
                 }
             }
@@ -3043,7 +2969,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     if ((flags & CFeature_table_reader::fCreateGenesFromCDSs) != 0 ||
         (flags & CFeature_table_reader::fCDSsMustBeInTheirGenes) != 0 ) 
     {
-        x_CreateGenesFromCDSs(sap, choiceToFeatMap, flags, pMessageListener, seqid);
+        x_CreateGenesFromCDSs(sap, choiceToFeatMap, flags);
     }
 
     return sap;
@@ -3054,8 +2980,6 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
     const string& feat,
     CSeq_loc& location,
     const CFeature_table_reader::TFlags flags,
-    ILineErrorListener* pMessageListener,
-    unsigned int line,
     const string &seq_id,
     ITableFilter *filter
 )
@@ -3065,7 +2989,7 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
 
     sfp->ResetLocation ();
 
-    if ( ! x_SetupSeqFeat (sfp, feat, flags, line, seq_id, pMessageListener, filter) ) {
+    if ( ! x_SetupSeqFeat (sfp, feat, flags, filter) ) {
 
         // bad feature, make dummy
 
@@ -3083,6 +3007,16 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
     return sfp;
 }
 
+void CFeature_table_reader_imp::x_InitId(const string& seq_id)
+{
+    if (!NStr::IsBlank(seq_id)) {
+        CBioseq::TId ids;
+        CSeq_id::ParseIDs(ids, seq_id);
+        m_real_seqid.clear();
+        ids.front()->GetLabel(&m_real_seqid, CSeq_id::eFasta);
+        m_seq_id = ids.front();
+    }
+}
 
 void CFeature_table_reader_imp::AddFeatQual (
     CRef<CSeq_feat> sfp,
@@ -3090,14 +3024,14 @@ void CFeature_table_reader_imp::AddFeatQual (
     const string& qual,
     const string& val,
     const CFeature_table_reader::TFlags flags,
-    ILineErrorListener* pMessageListener,
-    int line, 	
-    const string &seq_id )
+    const string &seq_id1 )
 
 {
+    x_InitId(seq_id1);
+
     if ((! qual.empty ()) && (! val.empty ())) {
 
-        if (! x_AddQualifierToFeature (sfp, feat_name, qual, val, flags, pMessageListener, line, seq_id)) {
+        if (! x_AddQualifierToFeature (sfp, feat_name, qual, val, flags)) {
 
             // unrecognized qualifier key
 
@@ -3117,7 +3051,7 @@ void CFeature_table_reader_imp::AddFeatQual (
         TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
         if (s_iter != sc_SingleKeys.end ()) {
 
-            x_AddQualifierToFeature (sfp, feat_name, qual, val, flags, pMessageListener, line, seq_id);
+            x_AddQualifierToFeature (sfp, feat_name, qual, val, flags);
 
         }
     }
@@ -3218,9 +3152,8 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 )
 {
     // just read features from 5-column table
-
-    CRef<CSeq_annot> sap = x_GetImplementation().ReadSequinFeatureTable 
-      (reader, seqid, annotname, flags, pMessageListener, filter);
+    CFeature_table_reader_imp impl(&reader, 0, pMessageListener);
+    CRef<CSeq_annot> sap = impl.ReadSequinFeatureTable(seqid, annotname, flags, filter);
 
     // go through all features and demote single interval seqlocmix to seqlocint
     for (CTypeIterator<CSeq_feat> fi(*sap); fi; ++fi) {
@@ -3275,7 +3208,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
         CTempString line = *++reader;
 
         if( ParseInitialFeatureLine(line, seqid, annotname) ) {
-            FTBL_PROGRESS( seqid, reader.GetLineNumber() );
+            FTBL_PROGRESS(pMessageListener, seqid, reader.GetLineNumber());
         }
     }
 
@@ -3374,8 +3307,8 @@ CRef<CSeq_feat> CFeature_table_reader::CreateSeqFeat (
 )
 
 {
-    return x_GetImplementation ().CreateSeqFeat (feat, location, flags, pMessageListener, line, 
-        (seq_id ? *seq_id : string() ), filter);
+    CFeature_table_reader_imp impl(0, line, pMessageListener);
+    return impl.CreateSeqFeat (feat, location, flags, (seq_id ? *seq_id : string() ), filter);
 }
 
 
@@ -3391,7 +3324,8 @@ void CFeature_table_reader::AddFeatQual (
 )
 
 {
-    x_GetImplementation ().AddFeatQual ( sfp, feat_name, qual, val, flags, pMessageListener, line, seq_id ) ;
+    CFeature_table_reader_imp impl(0, line, pMessageListener);
+    impl.AddFeatQual ( sfp, feat_name, qual, val, flags, seq_id ) ;
 }
 
 bool
@@ -3400,7 +3334,7 @@ CFeature_table_reader::ParseInitialFeatureLine (
     string & out_seqid,
     string & out_annotname )
 {
-    return x_GetImplementation ().ParseInitialFeatureLine ( line_arg, out_seqid, out_annotname );
+     return CFeature_table_reader_imp::ParseInitialFeatureLine(line_arg, out_seqid, out_annotname);
 }
 
 
