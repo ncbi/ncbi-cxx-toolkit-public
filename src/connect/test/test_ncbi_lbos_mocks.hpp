@@ -491,9 +491,9 @@ public:
         const char* ex_message = ex.what();
         ex_message = strstr(ex_message, "Error: ") + strlen("Error: ");
         string message;
-        message.append(ex_message);
+        message.append(ex_message); /* to overcome problem with NULL message */
         if (message != m_ExpectedMessage) {
-            ERR_POST("Exception has message \"" << ex.GetStatusCode() << 
+            ERR_POST("Exception has message \"" << message <<
                      "\" and \"" << m_ExpectedMessage << "\" is expected");
             return false;
         }
