@@ -37,46 +37,6 @@ USING_SCOPE(objects);
 
 DISCREPANCY_MODULE(overlapping_features);
 
-// OVERLAPPING_RRNAS
-
-DISCREPANCY_CASE(OVERLAPPING_RRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Overlapping rRNAs")
-{
-    if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
-        return;
-    }
-
-    // See if we have moved to the "next" Bioseq
-    if (m_Count != context.GetCountBioseq()) {
-        m_Count = context.GetCountBioseq();
-        m_Objs["rRNAs"].clear();
-    }
-
-    // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
-    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef));
-    const CSeq_loc& this_location = obj.GetLocation();
-
-    NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["rRNAs"].GetObjects())
-    {
-        const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
-        const CSeq_feat* other_seq_feat = dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer());
-        const CSeq_loc& other_location = other_seq_feat->GetLocation();
-
-        if (sequence::Compare(this_location, other_location, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
-            m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."].Add(**robj).Add(*this_disc_obj);
-        }
-    }
-
-    m_Objs["rRNAs"].Add(*this_disc_obj);
-}
-
-
-DISCREPANCY_SUMMARIZE(OVERLAPPING_RRNAS)
-{
-    m_Objs.GetMap().erase("rRNAs");
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // CDS_TRNA_OVERLAP
 
 DISCREPANCY_CASE(CDS_TRNA_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS tRNA Overlap")
@@ -318,19 +278,78 @@ DISCREPANCY_SUMMARIZE(RNA_CDS_OVERLAP)
     m_Objs.GetMap().erase("coding regions");
     m_Objs.GetMap().erase("tRNAs");
 
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
 
+DISCREPANCY_CASE(OVERLAPPING_RRNAS, COverlappingFeatures, eDisc, "Overlapping rRNAs")
+{
+    const vector<CConstRef<CSeq_feat> >& rrnas = context.FeatRRNAs();
+    for (size_t i = 0; i < rrnas.size(); i++) {
+        const CSeq_loc& loc_i = rrnas[i]->GetLocation();
+        for (size_t j = i + 1; j < rrnas.size(); j++) {
+            const CSeq_loc& loc_j = rrnas[j]->GetLocation();
+            if (sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
+                m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."].Add(*context.NewDiscObj(rrnas[i])).Add(*context.NewDiscObj(rrnas[j])).Fatal();
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(OVERLAPPING_RRNAS)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// OVERLAPPING_GENES
+
 DISCREPANCY_CASE(OVERLAPPING_GENES, COverlappingFeatures, eDisc, "Overlapping Genes")
 {
+    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    for (size_t i = 0; i < genes.size(); i++) {
+        const CSeq_loc& loc_i = genes[i]->GetLocation();
+        for (size_t j = i + 1; j < genes.size(); j++) {
+            const CSeq_loc& loc_j = genes[j]->GetLocation();
+            if (sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
+                m_Objs["[n] gene[s] overlap[S] another gene."].Add(*context.NewDiscObj(genes[i])).Add(*context.NewDiscObj(genes[j]));
+            }
+        }
+    }
 }
+
 
 DISCREPANCY_SUMMARIZE(OVERLAPPING_GENES)
 {
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// FIND_OVERLAPPED_GENES
+
+DISCREPANCY_CASE(FIND_OVERLAPPED_GENES, COverlappingFeatures, eDisc, "Genes completely contained by another gene on the same strand")
+{
+    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    for (size_t i = 0; i < genes.size(); i++) {
+        const CSeq_loc& loc_i = genes[i]->GetLocation();
+        for (size_t j = i + 1; j < genes.size(); j++) {
+            const CSeq_loc& loc_j = genes[j]->GetLocation();
+            sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
+                m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.NewDiscObj(genes[i]));
+            }
+            else if (ovlp == sequence::eContains) {
+                m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.NewDiscObj(genes[j]));
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(FIND_OVERLAPPED_GENES)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 END_SCOPE(NDiscrepancy)
