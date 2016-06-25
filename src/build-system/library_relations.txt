@@ -117,6 +117,7 @@ bacterial_pipeline_proc needs gpipe_objutil
 bag_access needs $(SEQ_LIBS)
 bag_access needs gpipe_common
 bag_access needs pub
+bamread needs $(COMPRESS_LIBS)
 bamread needs seqset
 bamread needs3party $(VDB_LIBS)
 basic_sample_lib needs xncbi
