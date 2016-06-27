@@ -325,15 +325,15 @@ bool CBedFeatureRecord::SetBlocks(
         for (auto pInterval: intervals) {
             const CSeq_interval& interval = *pInterval;
             if (strand == eNa_strand_minus) {
-                blockStarts.push_front(NStr::IntToString(interval.GetFrom()-offset));
-                blockSizes.push_front(NStr::IntToString(interval.GetLength()-1));
+                blockStarts.push_front(NStr::NumericToString(interval.GetFrom()-offset));
+                blockSizes.push_front(NStr::NumericToString(interval.GetLength()-1));
             }
             else {
-                blockStarts.push_back(NStr::IntToString(interval.GetFrom()-offset));
-                blockSizes.push_back(NStr::IntToString(interval.GetLength()-1));
+                blockStarts.push_back(NStr::NumericToString(interval.GetFrom()-offset));
+                blockSizes.push_back(NStr::NumericToString(interval.GetLength()-1));
             }
         }
-        m_strBlockCount = NStr::IntToString(intervals.size());
+        m_strBlockCount = NStr::NumericToString(intervals.size());
         m_strBlockStarts = NStr::Join(blockStarts, ",");
         m_strBlockSizes = NStr::Join(blockSizes, ",");
         return true;
