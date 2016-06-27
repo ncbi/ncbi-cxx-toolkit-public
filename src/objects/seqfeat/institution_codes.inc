@@ -5311,6 +5311,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SAFB	s	University of Saskatchewan, Forestry Department",
 "SAFU	s	University of San Francisco",
 "SAG	c	Sammlung von Algenkulturen at Universitat Gottingen",
+"SAG<CHL>	c	Coleccion de Micoligica Laboratorio Regional, Servicio Agricola y Ganadero",
 "SAIAB	sb	South African Institute of Aquatic Biodiversity",
 "SAIM	s	South African Institute for Medical Research",
 "SAIMR	s	South African Institute for Medical Research",
