@@ -85,7 +85,7 @@ an_euk_pipeline needs $(GPIPE_COMMON_LIBS)
 an_euk_pipeline needs bag_access
 an_euk_pipeline needs gpipe_an_base
 an_euk_pipeline needs gpipe_val
-an_euk_pipeline needs reftrack_admin
+an_euk_pipeline needs reftrack_access
 an_euk_pipeline needs3party $(BOOST_FILESYSTEM_LIBS)
 an_euk_pipeline needs3party $(BOOST_SYSTEM_LIBS)
 an_prok_pipeline needs gpipe_an_base
@@ -100,7 +100,6 @@ asn_cache needs seqset
 asn_config needs build_config_base
 asn_config needs config_access
 asn_config needs gpipe_objutil
-asn_config needs reftrack_access
 asn_sample_lib needs xser
 asngendefs needs xser
 asnmuxdblb needs dbloadb_asn
@@ -449,7 +448,9 @@ gpipe_jira needs3party $(GSOAP_LIBS)
 gpipe_kmer needs gpipe_objutil
 gpipe_kmer needs sampling
 gpipe_kpi needs xmlwrapp
-gpipe_meta_access needs gpipe_common
+gpipe_meta_access needs $(SDBAPI_LIB)
+gpipe_meta_access needs xconnect
+gpipe_meta_access needs xutil
 gpipe_object_edit needs xalgoalignutil
 gpipe_objutil needs $(DATA_LOADERS_UTIL_LIB)
 gpipe_objutil needs $(DATA_LOADERS_UTIL_LIBS)
@@ -913,8 +914,12 @@ refseq_ctl needs bag_access
 refseq_ctl needs gpinit_access
 refseq_ctl needs process_annotation_stats
 refseq_ctl needs xid_utils
-reftrack_access needs gpipe_common
-reftrack_admin needs reftrack_access
+reftrack_access needs $(SDBAPI_LIB)
+reftrack_access needs xconnect
+reftrack_access needs xutil
+reftrack_admin needs $(SDBAPI_LIB)
+reftrack_admin needs xconnect
+reftrack_admin needs xutil
 remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
