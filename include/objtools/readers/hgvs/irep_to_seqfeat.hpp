@@ -11,6 +11,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/// Abstract base class for the classes used to translate variants 
+/// in the intermediate representation into Seq-feats 
 class CHgvsIrepReader 
 {
 public: 
@@ -19,7 +21,7 @@ public:
                     m_IdResolver(Ref(new CIdResolver(scope))),
                     m_MethodUnknown(CVariation_ref::eMethod_E_unknown) {}
 
-    virtual ~CHgvsIrepReader() {}
+    virtual ~CHgvsIrepReader(void) {}
 
     virtual CRef<CSeq_feat> CreateSeqfeat(const CVariantExpression& variant_expr) const = 0;
 protected:

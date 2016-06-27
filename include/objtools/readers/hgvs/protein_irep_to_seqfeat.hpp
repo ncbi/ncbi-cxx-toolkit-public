@@ -19,6 +19,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/// Helper class for constructing a CSeq_loc instance for a protein variant
 class CProtSeqlocHelper 
 {
 public: 
@@ -45,29 +46,19 @@ public:
         CHgvsProtIrepReader(CScope& scope) 
             : CHgvsIrepReader(scope) {}
 
+        /// Construct the CSeq_feat object for a protein variant in the intermediate expression 
         CRef<CSeq_feat> CreateSeqfeat(const CVariantExpression& variant_expr) const;
 
  private:
-        CSeq_data::TNcbieaa x_ConvertToNcbieaa(string aa_seq) const;
-
-        CRef<CVariation_ref> x_CreateInsertionSubvarref(CSeq_literal::TLength length) const;
-
-        CRef<CVariation_ref> x_CreateInsertedRawseqSubvarref(const string& raw_seq) const;
-
-        CRef<CVariation_ref> x_CreateInsertedCountSubvarref(const CCount& count) const;
-
-        CRef<CVariation_ref> x_CreateInsertionSubvarref(const CInsertion::TSeqinfo& insert) const;
-
-        CRef<CVariation_ref> x_CreateDelinsSubvarref(const CDelins::TInserted_seq_info& insert) const;
-
-        CRef<CVariation_ref> x_CreateIdentitySubvarref(const CAaLocation& aa_loc) const;
-
-        CRef<CVariation_ref> x_CreateIdentitySubvarref(const string& seq_str, 
-                                                       CSeq_literal::TLength length) const;
-
+        /// Construct the CSeq_feat object for a "simple" protein variant
+        CRef<CSeq_feat> x_CreateSimpleVariantFeat(const string& var_name,
+                                                  const string& identifier,
+                                                  const CSimpleVariant& simple_var) const;
+          
+        /// Construct the CVariation_ref object for a "simple" variant
         CRef<CVariation_ref> x_CreateVarref(const string& var_name,
                                             const string& identifier, 
-                                            const CSimpleVariant& var_desc) const;
+                                            const CSimpleVariant& simple_var) const;
 
         CRef<CVariation_ref> x_CreateProteinDelVarref(const string& identifier,
                                                       const CDeletion& del,
@@ -77,9 +68,9 @@ public:
                                                       const CDuplication& dup,
                                                       const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
-        CRef<CVariation_ref> x_CreateProteinSubVarref(const string& identifier, 
-                                                      const CProteinSub& sub,
-                                                      const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+        CRef<CVariation_ref> x_CreateProteinSubstVarref(const string& identifier, 
+                                                        const CProteinSub& sub,
+                                                        const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateFrameshiftVarref(const string& identifier,
                                                       const CFrameshift& fs,
@@ -96,10 +87,26 @@ public:
         CRef<CVariation_ref> x_CreateSSRVarref(const string& identifier, 
                                                const CRepeat& ssr,
                                                const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+        
+        /// Construct the first "sub" Variation-ref in the composite Variation-ref appearing in an Insertion Seq-feat
+        CRef<CVariation_ref> x_CreateInsertionSubvarref(const CInsertion::TSeqinfo& insert) const;
 
-        CRef<CSeq_feat> x_CreateSeqfeat(const string& var_name,
-                                        const string& identifier,
-                                        const CSimpleVariant& var_desc) const;
+        /// Construct the "sub" Variation-ref for an insertion where only the size of the insertion is known
+        CRef<CVariation_ref> x_CreateInsertionSubvarref(CSeq_literal::TLength length) const;
+
+        /// Construct the "sub" Variation-ref for a the inserted raw sequence
+        CRef<CVariation_ref> x_CreateInsertedRawseqSubvarref(const string& raw_seq) const;
+
+        // CRef<CVariation_ref> x_CreateInsertedCountSubvarref(const CCount& count) const;
+
+        CRef<CVariation_ref> x_CreateDelinsSubvarref(const CDelins::TInserted_seq_info& insert) const;
+
+        CRef<CVariation_ref> x_CreateIdentitySubvarref(const CAaLocation& aa_loc) const;
+
+        CRef<CVariation_ref> x_CreateIdentitySubvarref(const string& seq_str, 
+                                                       CSeq_literal::TLength length) const;
+
+        CSeq_data::TNcbieaa x_ConvertToNcbieaa(string aa_seq) const;
 
 }; // CHgvsProtIrepReader
 

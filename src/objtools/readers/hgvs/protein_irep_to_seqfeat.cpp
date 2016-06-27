@@ -65,15 +65,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertionSubvarref(
 }
 
 
-CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertedCountSubvarref(
-        const CCount& count) const 
-{
-    const auto seq_length = count.GetVal();
-    return x_CreateInsertionSubvarref(seq_length);
-}
 
-
-// I could template this function, maybe
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertionSubvarref(
         const CInsertion::TSeqinfo& insert) const 
 {
@@ -82,7 +74,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertionSubvarref(
         var_ref = x_CreateInsertedRawseqSubvarref(insert.GetRaw_seq());
     } 
     else if ( insert.IsCount() ) {
-        var_ref = x_CreateInsertedCountSubvarref(insert.GetCount());
+        var_ref = x_CreateInsertionSubvarref(insert.GetCount().GetVal());
     } 
     else {
         NCBI_THROW(CVariationIrepException, eInvalidInsertion, "Unrecognized insertion type");
@@ -136,7 +128,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateIdentitySubvarref(const string
 }
 
 
-CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSeqfeat(const string& var_name,
+CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSimpleVariantFeat(const string& var_name,
         const string& identifier, 
         const CSimpleVariant& simple_var) const 
 {
@@ -154,7 +146,7 @@ CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSeqfeat(const string& var_name,
 
 
 // Make CreateSeqfeat a method of the base class, CHgvsIrepReader.
-// Make x_CreateSeqfeat a virtual method, maybe.
+// Make x_CreateSimpleVarianteat a virtual method, maybe.
 CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(const CVariantExpression& variant_expr) const 
 {
     const auto& sequence_variant = variant_expr.GetSequence_variant();
@@ -189,9 +181,9 @@ CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(const CVariantExpression& var
 
     const CSimpleVariant& simple_variant = subvariant->GetSimple();
 
-    CRef<CSeq_feat> unnormalized_variant = x_CreateSeqfeat(variant_expr.GetInput_expr(),
-                                                           variant_expr.GetReference_id(),
-                                                           simple_variant);
+    CRef<CSeq_feat> unnormalized_variant = x_CreateSimpleVariantFeat(variant_expr.GetInput_expr(),
+                                                                     variant_expr.GetReference_id(),
+                                                                     simple_variant);
 
     return g_NormalizeVariationSeqfeat(*unnormalized_variant, &m_Scope);
 }
@@ -213,7 +205,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarref(const string& var_name,
         default: 
             NCBI_THROW(CVariationIrepException, eUnknownVariation, "Unknown variation type");
         case CSimpleVariant::TType::e_Prot_sub:
-            var_ref = x_CreateProteinSubVarref(identifier, var_type.GetProt_sub(), method);
+            var_ref = x_CreateProteinSubstVarref(identifier, var_type.GetProt_sub(), method);
             break;
         case CSimpleVariant::TType::e_Del:
             var_ref = x_CreateProteinDelVarref(identifier, var_type.GetDel(), method);
@@ -274,7 +266,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertionVarref(const string& 
     auto& var_set = var_ref->SetData().SetSet();
     var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
 
-    // Add first subvariation
+    // Add first Variation-ref
     CRef<CVariation_ref> subvar_ref = x_CreateInsertionSubvarref(ins.GetSeqinfo());
     x_SetMethod(subvar_ref, method);
     var_set.SetVariations().push_back(subvar_ref);
@@ -342,7 +334,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinDupVarref(const string&
     auto& var_set = var_ref->SetData().SetSet();
     var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
 
-    // Add first subvariation
+    // Add first Variation-ref
     CRef<CVariation_ref> subvar_ref = g_CreateDuplication(method);
     var_set.SetVariations().push_back(subvar_ref); 
 
@@ -355,7 +347,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinDupVarref(const string&
 
 
 
-CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinSubVarref(const string& dentifier, 
+CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinSubstVarref(const string& dentifier, 
         const CProteinSub& aa_sub, 
         const CVariation_ref::EMethod_E method) const
 {

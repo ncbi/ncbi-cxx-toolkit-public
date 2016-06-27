@@ -59,7 +59,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaIdentityVarref(const CNtLocati
 }
 
 
-CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSubVarref(const CNtLocation& nt_loc, 
+CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSubstVarref(const CNtLocation& nt_loc, 
                                                           const string& initial_nt,
                                                           const string& final_nt,
                                                           const CVariation_ref::EMethod_E method) const 
@@ -113,14 +113,14 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSubVarref(const CNtLocation& nt_
 
 
 
-CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSubVarref(const CNaSub& sub,
+CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSubstVarref(const CNaSub& sub,
                                                           const CVariation_ref::EMethod_E method) const
 {
     const auto& nt_loc = sub.GetLoc();
     const auto initial_nt = sub.GetInitial();
     const auto final_nt = sub.GetFinal();
 
-    return x_CreateSubVarref(nt_loc, 
+    return x_CreateSubstVarref(nt_loc, 
                              initial_nt,
                              final_nt,
                              method);
@@ -180,7 +180,6 @@ bool CHgvsNaIrepReader::x_LooksLikePolymorphism(const CDelins& delins) const
 {
     // If the deleted and inserted sequences are the same size, the 
     // variation is a substitution/polymorphism.
-
     if (delins.IsSetDeleted_raw_seq() && 
         delins.GetInserted_seq_info().IsRaw_seq() &&
         delins.GetDeleted_raw_seq().size() ==
@@ -401,7 +400,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
                }
            }
            // Not identity - non-trivial substitution
-           var_ref = x_CreateSubVarref(var_type.GetNa_sub(), method);
+           var_ref = x_CreateSubstVarref(var_type.GetNa_sub(), method);
            break;
        case CSimpleVariant::TType::e_Dup:
            var_ref = x_CreateDuplicationVarref(var_type.GetDup(), method);
@@ -422,7 +421,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
                                      delins.GetDeleted_raw_seq() : 
                                      "";
 
-               var_ref = x_CreateSubVarref(delins.GetLoc().GetNtloc(),
+               var_ref = x_CreateSubstVarref(delins.GetLoc().GetNtloc(),
                                            deleted,
                                            delins.GetInserted_seq_info().GetRaw_seq(),
                                            method);

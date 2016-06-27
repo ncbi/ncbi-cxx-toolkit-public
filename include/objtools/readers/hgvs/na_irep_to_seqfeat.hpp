@@ -75,45 +75,59 @@ class CNaSeqlocHelper
 {
 public:
 
+    /// Construct the CSeq_loc for a "simple" variant
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CSimpleVariant& simple_var,
                                        const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope);
 
+    /// Construct the CSeq_loc object for a given Seq-id and nucleotide location 
+    /// in the intermediate variant representation
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtLocation& nt_loc,
                                        const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope);
 
 private:
+    /// Construct the CSeq_loc object for a given Seq-id and nucleotide site 
+    /// in the intermediate rerpresentation.
     static CRef<CSeq_loc> x_CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtSite& nt_site,
                                        const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope);
 
+    /// Construct the CSeq_loc object for a given Seq-id and nucleotide site range
+    /// in the intermediate representation
     static CRef<CSeq_loc> x_CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtSiteRange& nt_range,
                                        const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope);
 
-
+    /// Construct the CSeq_loc object for a given Seq-id and nucleotide site interval 
+    /// in the intermediate representation
     static CRef<CSeq_loc> x_CreateSeqloc(const CSeq_id& seq_id,
                                          const CNtInterval& nt_int,
                                          const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope);
 
+    /// Attempt to translate a nucleotide interval limit in the intermediate 
+    /// variant representation into a residue index on a Bioseq instance.
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtIntLimit& nt_limit,
                                    const CSequenceVariant::TSeqtype& seq_type,
                                    CScope& scope,
                                    TSeqPos& site_index);
 
+    /// Attempt to translate a nucleotide site in the intermediate 
+    /// variant representation into a residue index on a Bioseq instance.
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtSite& nt_site,
                                    const CSequenceVariant::TSeqtype& seq_type,
                                    CScope& scope,
                                    TSeqPos& site_index);
 
+    /// Attempt to translate a nucleotide site range in the intermediate 
+    /// variant representation into a residue index on a Bioseq instance.
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtSiteRange& nt_range,
                                    const CSequenceVariant::TSeqtype& seq_type,
@@ -168,14 +182,14 @@ private:
                                                       const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         /// Return a CVariation_ref describing a nucleotide substituion (SNP or MNP)
-        CRef<CVariation_ref> x_CreateSubVarref(const CNaSub& sub,
-                                               const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+        CRef<CVariation_ref> x_CreateSubstVarref(const CNaSub& sub,
+                                                 const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         /// Return a CVariation_ref describing a nucleotide substituion (SNP or MNP)
-        CRef<CVariation_ref> x_CreateSubVarref(const CNtLocation& nt_loc,
-                                               const string& initial_nt,
-                                               const string& final_nt,
-                                               const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+        CRef<CVariation_ref> x_CreateSubstVarref(const CNtLocation& nt_loc,
+                                                 const string& initial_nt,
+                                                 const string& final_nt,
+                                                 const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateDuplicationVarref(const CDuplication& dup,
                                                        const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
