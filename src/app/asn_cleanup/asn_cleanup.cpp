@@ -468,9 +468,11 @@ int CCleanupApp::Run(void)
             //
             if ( ! args[ "gbload" ] && !args["R"] ) {
                 CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+#ifdef HAVE_NCBI_VDB
                 CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
                                             CObjectManager::eDefault,
                                             88);
+#endif
                 m_Scope->AddDefaults();
             }   
 
