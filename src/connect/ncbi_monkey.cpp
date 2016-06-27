@@ -174,7 +174,7 @@ static void s_TimeoutingSocketInit(void)
         /* If we got here, everything works fine */
     }
     throw CMonkeyException(CDiagCompileInfo(), NULL,
-                            CMonkeyException::EErrCode::e_MonkeyUnknown,
+                            CMonkeyException::e_MonkeyUnknown,
                             "Could not create a peer socket for the "
                             "timeouting socket. Tried ports 8080-8100",
                             ncbi::EDiagSev::eDiagSevMin);
@@ -366,15 +366,21 @@ static string s_PrintActionType(EMonkeyActionType action) {
     default:
         throw CMonkeyException(
             CDiagCompileInfo(__FILE__, __LINE__),
-            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            NULL, CMonkeyException::e_MonkeyInvalidArgs,
             string("Unknown EMonkeyActionType value"));
     }
 }
 
 
+void CMonkeyRuleBase::AddSocket(MONKEY_SOCKTYPE sock)
+{
+    /* Element has to exist */
+    m_RunPos[sock];
+}
+
 /** Check that the rule should trigger on this run */
 bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock, 
-                               unsigned short probability_left)
+                               unsigned short probability_left) const
 {
     bool isRun = false;
     
@@ -384,60 +390,45 @@ bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock,
                   << "for " << s_PrintActionType(m_ActionType) 
                   << " will be run this time. Random value is " 
                   << rand_val << ", probability threshold is " 
-                  << m_Runs[m_RunPos[sock]] * 100);
+                  << m_Runs.at(m_RunPos.at(sock)) * 100);
     LOG_POST(Note << "[CMonkeyRuleBase::CheckRun]  The rule will be " 
                   << (isRun ? "" : "NOT ") << "run");
-    m_RunPos[sock]++;
     return isRun;
 }
 
 
-unsigned short CMonkeyRuleBase::GetProbability(MONKEY_SOCKTYPE sock)
+unsigned short CMonkeyRuleBase::GetProbability(MONKEY_SOCKTYPE sock) const
 {
-    /* If "runs" is not set, rule always triggers */
-    if (m_Runs.empty()) return 100;
-
-    /* In probability mode each item of m_Runs is a probability of each run */
-    if (m_RunMode == eMonkey_RunProbability) {
-        assert(m_RunPos[sock] <= m_Runs.size());
-        if (m_RunPos[sock] == m_Runs.size()) {
-            switch (m_RepeatType) {
-            case eMonkey_RepeatNone:
-                return 0;
-            case eMonkey_RepeatLast:
-                m_RunPos[sock] = m_Runs.size() - 1;
-                break;
-            case eMonkey_RepeatAgain:
-                m_RunPos[sock] = 0;
-                break;
-            }
-        }
-        return m_Runs[m_RunPos[sock]] * 100;
+    if (m_RunPos.find(sock) == m_RunPos.end()) {
+        throw CMonkeyException(
+            CDiagCompileInfo(__FILE__, __LINE__),
+            NULL, CMonkeyException::e_MonkeyInvalidArgs,
+            "The socket provided has not been registered with current rule");
     }
-    /* In "number of the run" mode each item in m_Runs is a specific number of
-    run when the rule should trigger */
-    else {
-        if ((m_RunPos[sock] + 1) > *m_Runs.rbegin()) {
+    if (m_RunMode == eMonkey_RunProbability) {
+        return static_cast<unsigned short>(m_Runs.at(m_RunPos.at(sock)) * 100);
+    } else {
+        if ((m_RunPos.at(sock) + 1) > *m_Runs.rbegin()) {
             switch (m_RepeatType) {
             case eMonkey_RepeatNone:
                 return 0;
             case eMonkey_RepeatLast:
                 return 100;
-            case eMonkey_RepeatAgain:
-                m_RunPos[sock] = 0;
-                break;
             }
         }
         /* If m_Runs has the exact number of current run, the rule triggers */
-        return std::binary_search(m_Runs.begin(), 
-                                   m_Runs.end(), 
-                                   m_RunPos[sock] + 1)  ?  100  : 0;
+        return std::binary_search(m_Runs.begin(),
+                                  m_Runs.end(),
+                                  m_RunPos.at(sock) + 1) ? 100 : 0;
     }
+    /* If "runs" is not set, rule always triggers */
+    if (m_Runs.empty()) return 100;
+
 }
 
-void CMonkeyRuleBase::x_ReadEIOStatus(const string& eIOStatus_str)
+void CMonkeyRuleBase::x_ReadEIOStatus(const string& eIOStatus_in)
 {
-    string eIOStatus = (eIOStatus_str);
+    string eIOStatus = eIOStatus_in;
     NStr::ToLower(eIOStatus);
     if (eIOStatus == "eio_closed") {
         m_ReturnStatus = eIO_Closed;
@@ -456,8 +447,8 @@ void CMonkeyRuleBase::x_ReadEIOStatus(const string& eIOStatus_str)
     } else {
         throw CMonkeyException(
             CDiagCompileInfo(__FILE__, __LINE__),
-            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
-            string("Could not parse 'return_status': ") + eIOStatus_str);
+            NULL, CMonkeyException::e_MonkeyInvalidArgs,
+            string("Could not parse 'return_status': ") + eIOStatus_in);
     }
 }
 
@@ -470,7 +461,7 @@ void CMonkeyRuleBase::x_ReadRuns(const string& runs)
     if (runs_list.size() == 0)
         throw CMonkeyException(
             CDiagCompileInfo(__FILE__, __LINE__),
-            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            NULL, CMonkeyException::e_MonkeyInvalidArgs,
             string("\"Runs\" parameter is empty"));
     if (runs_list.size() == 1)
         runs_list.push_back("...");
@@ -484,35 +475,66 @@ void CMonkeyRuleBase::x_ReadRuns(const string& runs)
         m_RepeatType = eMonkey_RepeatLast;
     }
 
+    ERunFormat run_format = runs_list[0].find_first_of(':') != string::npos ? 
+                                                          eMonkey_RunRanges : 
+                                                         eMonkey_RunSequence;
+
     unsigned int end_pos = (m_RepeatType == eMonkey_RepeatNone)
                                     ? runs_list.size() : runs_list.size() - 1;
+
     for ( unsigned int i = 0;  i < end_pos;  i++ ) {
-        string& num = runs_list[i];
+        string& run = runs_list[i];
+        double prob;
         if (m_RunMode == eMonkey_RunProbability) {
-            if (*num.rbegin() != '%') {
+            if (*run.rbegin() != '%') {
                 throw CMonkeyException(
                         CDiagCompileInfo(__FILE__, __LINE__),
-                        NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
-                        string("Value is not percentage: ") + num + 
-                        string(", values have to be either only percentages or "
-                               "only numbers of tries, not mixed"));
+                        NULL, CMonkeyException::e_MonkeyInvalidArgs,
+                        "Value is not percentage: " + run +
+                        ", values have to be either only percentages or "
+                               "only numbers of tries, not mixed");
             }
-            num = num.substr(0, num.length() - 1);
-            m_Runs.push_back(NStr::StringToDouble(num) / 100);
+            switch (run_format) {
+            default:
+                assert(0);
+                /* In release build - fall through to eMonkey_RunSequence */
+            case eMonkey_RunSequence:
+                prob = NStr::StringToDouble(run.substr(0, run.length() - 1));
+                m_Runs.push_back(prob / 100);
+                break;
+            case eMonkey_RunRanges:
+                size_t prob_start = run.find_first_of(':');
+                size_t step = NStr::StringToSizet(run.substr(0, prob_start));
+                size_t last_step = m_Runs.size();
+                if (last_step == 0 && step != 1) {
+                    throw CMonkeyException(
+                            CDiagCompileInfo(__FILE__, __LINE__),
+                            NULL, CMonkeyException::e_MonkeyInvalidArgs,
+                            "In the string of runs: " + runs + " the first "
+                            "element MUST set value for the first run");
+                }
+                prob = NStr::StringToDouble(run.substr(prob_start+1, run.length() - prob_start - 2));
+                for (size_t j = last_step+1; j > 0 && j < step; j++) {
+                    m_Runs.push_back(*m_Runs.rbegin());
+                }
+                m_Runs.push_back(prob / 100);
+                break;
+            }
         } else {
-            if (*num.rbegin() == '%') {
+            assert(run_format == eMonkey_RunSequence);
+            if (*run.rbegin() == '%') {
                 throw CMonkeyException(
                         CDiagCompileInfo(__FILE__, __LINE__),
-                        NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
-                        string("Value is percentage: ") + num + 
+                        NULL, CMonkeyException::e_MonkeyInvalidArgs,
+                        string("Value is percentage: ") + run +
                         string(", values have to be either only percentages or "
                                "only numbers of tries, not mixed"));
             }
-            int val = NStr::StringToInt(num);
+            int val = NStr::StringToInt(run);
             if (m_Runs.size() > 0 && val <= *m_Runs.rbegin()) {
                 throw CMonkeyException(
                     CDiagCompileInfo(__FILE__, __LINE__),
-                    NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+                    NULL, CMonkeyException::e_MonkeyInvalidArgs,
                     string("\"runs\" should contain values in "
                            "increasing order"));
             }
@@ -522,15 +544,47 @@ void CMonkeyRuleBase::x_ReadRuns(const string& runs)
 }
 
 
-int /* EIO_Status or -1 */ CMonkeyRuleBase::GetReturnStatus()
+int /* EIO_Status or -1 */ CMonkeyRuleBase::GetReturnStatus() const
 {
     return m_ReturnStatus;
 }
 
 
-unsigned long CMonkeyRuleBase::GetDelay()
+unsigned long CMonkeyRuleBase::GetDelay() const
 {
     return m_Delay;
+}
+
+
+void CMonkeyRuleBase::IterateRun(MONKEY_SOCKTYPE sock)
+{
+    if (m_Runs.empty()) 
+        return;
+    m_RunPos[sock]++;
+    /* In probability mode each item of m_Runs is a probability of each run */
+    if (m_RunMode == eMonkey_RunProbability) {
+        assert(m_RunPos[sock] <= m_Runs.size());
+        if (m_RunPos[sock] == m_Runs.size()) {
+            switch (m_RepeatType) {
+            case eMonkey_RepeatNone: case eMonkey_RepeatLast:
+                m_RunPos[sock]--;
+            case eMonkey_RepeatAgain:
+                m_RunPos[sock] = 0;
+                break;
+            }
+        }
+        return;
+    }
+    /* In "number of the run" mode each item in m_Runs is a specific number of
+    run when the rule should trigger */
+    else if ((m_RunPos.at(sock) + 1) > *m_Runs.rbegin()) {
+        switch (m_RepeatType) {
+        case eMonkey_RepeatAgain:
+            m_RunPos[sock] = 0;
+            break;
+        }
+    }
+    return;
 }
 
 
@@ -550,7 +604,7 @@ CMonkeyRWRuleBase::CMonkeyRWRuleBase(EMonkeyActionType           action_type,
             if (GetReturnStatus() != eIO_Success && GetReturnStatus() != -1) {
                 throw CMonkeyException(
                     CDiagCompileInfo(__FILE__, __LINE__),
-                    NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+                    NULL, CMonkeyException::e_MonkeyInvalidArgs,
                     string("Return error status is set in Rule, cannot "
                            "set 'text' parameter"));
             }
@@ -566,7 +620,7 @@ CMonkeyRWRuleBase::CMonkeyRWRuleBase(EMonkeyActionType           action_type,
             } else {
                 throw CMonkeyException(
                     CDiagCompileInfo(__FILE__, __LINE__),
-                    NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+                    NULL, CMonkeyException::e_MonkeyInvalidArgs,
                     string("Could not parse 'text' for Rule: ") + value);
             }
         } else if (name == "text_length") {
@@ -583,7 +637,7 @@ CMonkeyRWRuleBase::CMonkeyRWRuleBase(EMonkeyActionType           action_type,
     if (GetReturnStatus() == eIO_Success && m_Text == "") {
         throw CMonkeyException(
             CDiagCompileInfo(__FILE__, __LINE__),
-            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            NULL, CMonkeyException::e_MonkeyInvalidArgs,
             string("Parameter 'text' not set to a non-empty value for rule, "
                    "but 'return_status' set to eIO_Success requires 'text' to "
                    "be set"));
@@ -591,7 +645,7 @@ CMonkeyRWRuleBase::CMonkeyRWRuleBase(EMonkeyActionType           action_type,
     if (GetReturnStatus() == -1 && m_Text == "") {
         throw CMonkeyException(
             CDiagCompileInfo(__FILE__, __LINE__),
-            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            NULL, CMonkeyException::e_MonkeyInvalidArgs,
             string("Parameter 'text' not set to a non-empty value for rule, "
                    "but 'return_status' not set requires 'text' to "
                    "be set"));
@@ -611,25 +665,25 @@ void CMonkeyRWRuleBase::x_ReadFill(const string& fill_str)
 }
 
 
-string CMonkeyRWRuleBase::GetText()
+string CMonkeyRWRuleBase::GetText() const
 {
     return m_Text;
 }
 
 
-size_t CMonkeyRWRuleBase::GetTextLength()
+size_t CMonkeyRWRuleBase::GetTextLength() const
 {
     return m_TextLength;
 }
 
 
-bool CMonkeyRWRuleBase::GetGarbage()
+bool CMonkeyRWRuleBase::GetGarbage() const
 {
     return m_Garbage;
 }
 
 
-CMonkeyRWRuleBase::EFillType CMonkeyRWRuleBase::GetFillType()
+CMonkeyRWRuleBase::EFillType CMonkeyRWRuleBase::GetFillType() const
 {
     return m_FillType;
 }
@@ -962,7 +1016,7 @@ static bool s_MatchRegex(const string& to_match, const string& regex)
         throw CMonkeyException(
             CDiagCompileInfo(__FILE__, __LINE__),
             NULL,
-            CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            CMonkeyException::e_MonkeyInvalidArgs,
             exception_message);
     }
     size_t pos = 0;
@@ -981,7 +1035,7 @@ static bool s_MatchRegex(const string& to_match, const string& regex)
             throw CMonkeyException(
                 CDiagCompileInfo(__FILE__, __LINE__),
                 NULL,
-                CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+                CMonkeyException::e_MonkeyInvalidArgs,
                 exception_message);
         }
     }
@@ -1092,6 +1146,7 @@ bool CMonkeyPlan::WriteRule(MONKEY_SOCKTYPE        sock,
 {
     short probability_left = 100;
     for (unsigned int i = 0;  i < m_WriteRules.size();  i++) {
+        m_WriteRules[i].AddSocket(sock);
         unsigned short rule_prob = m_WriteRules[i].GetProbability(sock);
         if (m_WriteRules[i].CheckRun(sock)) {
             *bytes_written = m_WriteRules[i].Run(sock, data, size, flags, 
@@ -1107,7 +1162,7 @@ bool CMonkeyPlan::WriteRule(MONKEY_SOCKTYPE        sock,
                 << ". Check config!";
             throw CMonkeyException(
                         CDiagCompileInfo(__FILE__, __LINE__),
-                        NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs, 
+                        NULL, CMonkeyException::e_MonkeyInvalidArgs, 
                         ss.str());
         }
     }
@@ -1125,6 +1180,7 @@ bool CMonkeyPlan::ReadRule(MONKEY_SOCKTYPE        sock,
 {
     short probability_left = 100;
     for (unsigned int i = 0;  i < m_ReadRules.size();  i++) {
+        m_ReadRules[i].AddSocket(sock);
         unsigned short rule_prob = m_ReadRules[i].GetProbability(sock);
         if (m_ReadRules[i].CheckRun(sock)) {
             *bytes_read = m_ReadRules[i].Run(sock, buf, size, flags, sock_ptr);
@@ -1139,7 +1195,7 @@ bool CMonkeyPlan::ReadRule(MONKEY_SOCKTYPE        sock,
                 << ". Check config!";
             throw CMonkeyException(
                         CDiagCompileInfo(__FILE__, __LINE__),
-                        NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs, 
+                        NULL, CMonkeyException::e_MonkeyInvalidArgs, 
                         ss.str());
         }
     }
@@ -1153,7 +1209,8 @@ bool CMonkeyPlan::ConnectRule(MONKEY_SOCKTYPE        sock,
                               int*                   result)
 {
     short probability_left = 100;
-    for (unsigned int i = 0;  i < m_ConnectRules.size();  i++) {
+    for (unsigned int i = 0; i < m_ConnectRules.size(); i++) {
+        m_ConnectRules[i].AddSocket(sock);
         unsigned short rule_prob = m_ConnectRules[i].GetProbability(sock);
         /* Check if the rule will trigger on this run. If not - we go to the 
            next rule in plan */
@@ -1173,7 +1230,7 @@ bool CMonkeyPlan::ConnectRule(MONKEY_SOCKTYPE        sock,
                 << ". Check config!";
             throw CMonkeyException(
                         CDiagCompileInfo(__FILE__, __LINE__),
-                        NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs, 
+                        NULL, CMonkeyException::e_MonkeyInvalidArgs, 
                         ss.str());
         }
     }
@@ -1188,6 +1245,7 @@ bool CMonkeyPlan::PollRule(size_t*     n,
 {
     short probability_left = 100;
     for (unsigned int i = 0;  i < m_PollRules.size();  i++) {
+        m_PollRules[i].AddSocket((*sock)->sock);
         unsigned short rule_prob = m_PollRules[i].GetProbability((*sock)->sock);
         if (m_PollRules[i].CheckRun((*sock)->sock)) {
             return m_PollRules[i].Run(n, sock, return_status);
@@ -1203,7 +1261,7 @@ bool CMonkeyPlan::PollRule(size_t*     n,
                 << ". Check config!";
             throw CMonkeyException(
                         CDiagCompileInfo(__FILE__, __LINE__),
-                        NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs, 
+                        NULL, CMonkeyException::e_MonkeyInvalidArgs, 
                         ss.str());
         }
     }
@@ -1252,7 +1310,7 @@ CMonkey::CMonkey() : m_Probability(1.0), m_Enabled(false)
     if (sm_HookSwitch == NULL) {
         throw CMonkeyException(
             CDiagCompileInfo(__FILE__, __LINE__),
-            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            NULL, CMonkeyException::e_MonkeyInvalidArgs,
             "Launch CONNECT_Init() before initializing CMonkey instance");
     }
     m_TlsToken = new CTls<int>;
@@ -1324,11 +1382,21 @@ void CMonkey::ReloadConfig(const string& config)
     if (probability != "") {
         probability = NStr::Replace(probability, " ", "");
         auto arr = s_Monkey_Split(probability, '=');
-        if (*probability.rbegin() != '%') {
-            m_Probability = NStr::StringToDouble(probability) * 100;
-        } else {
-            probability = probability.substr(0, probability.length() - 1);
-            m_Probability = NStr::StringToDouble(probability);
+        try {
+            if (*probability.rbegin() != '%') {
+                m_Probability = NStr::StringToDouble(probability) * 100;
+            }
+            else {
+                probability = probability.substr(0, probability.length() - 1);
+                m_Probability = NStr::StringToDouble(probability);
+            }
+        }
+        catch (const CStringException&) {
+            throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
+                                   NULL, CMonkeyException::e_MonkeyInvalidArgs,
+                                   "Probability \"" + probability
+                                   + "\" for section " + monkey_section
+                                   + " could not be parsed");
         }
     }
     // Disable hooks while Monkey initializes
@@ -1545,7 +1613,7 @@ bool CMonkey::RegisterThread(int token)
     if (m_RegisteredTokens.find(token) != m_RegisteredTokens.end()) {
         throw CMonkeyException(
             CDiagCompileInfo(__FILE__, __LINE__),
-            NULL, CMonkeyException::EErrCode::e_MonkeyInvalidArgs,
+            NULL, CMonkeyException::e_MonkeyInvalidArgs,
             ss.str());
     }
     m_RegisteredTokens.insert(token);

@@ -123,18 +123,29 @@ public:
         eMonkey_RunProbability,
         eMonkey_RunNumber
     };
+    enum ERunFormat {
+        eMonkey_RunSequence,
+        eMonkey_RunRanges
+    };
+
+    /** Add socket */
+    void AddSocket(MONKEY_SOCKTYPE sock) ;
+
     /** Check that this rule will trigger on this run (host and port have 
      * already been successfully matched if this check is run) */
     bool CheckRun(MONKEY_SOCKTYPE sock,
-                  unsigned short  probability_left = 100);
+                  unsigned short  probability_left = 100) const;
 
     /** Get probability that the rule will run next time */
-    unsigned short GetProbability(MONKEY_SOCKTYPE sock);
+    unsigned short GetProbability(MONKEY_SOCKTYPE sock) const;
 protected:
     CMonkeyRuleBase(EMonkeyActionType     action_type,
                     const vector<string>& name_value);
-    int /* EIO_Status or -1 */ GetReturnStatus(void);
-    unsigned long  GetDelay(void);
+    int /* EIO_Status or -1 */ GetReturnStatus(void) const;
+    unsigned long  GetDelay(void) const;
+
+    /* Iterate m_Runs */
+    void IterateRun(MONKEY_SOCKTYPE sock);
 private:
     void           x_ReadRuns     (const string& runs);
     void           x_ReadEIOStatus(const string& eIOStatus_str);
@@ -170,10 +181,10 @@ public:
 protected:
     CMonkeyRWRuleBase(EMonkeyActionType           action_type, 
                       const vector<string>& name_value);
-    string    GetText(void);
-    size_t    GetTextLength(void);
-    bool      GetGarbage(void);
-    EFillType GetFillType(void);
+    string    GetText     (void) const;
+    size_t    GetTextLength(void) const;
+    bool      GetGarbage   (void) const;
+    EFillType GetFillType   (void) const;
 private:
     void      x_ReadFill(const string& fill_str);
     string    m_Text;
