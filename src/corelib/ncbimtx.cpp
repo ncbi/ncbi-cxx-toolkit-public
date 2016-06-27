@@ -1650,12 +1650,8 @@ void CSemaphore::Post(unsigned int count)
                        "CSemaphore::Post() - "
                        "attempt to exceed max_count and "
                        "pthread_mutex_unlock() failed");
-        xncbi_Validate(m_Sem->count <= kMax_UInt - count,
-                       "CSemaphore::Post() - "
-                       "would result in counter > MAX_UINT");
-        xncbi_Validate(m_Sem->count + count <= m_Sem->max_count,
+        xncbi_Validate(false,
                        "CSemaphore::Post() - attempt to exceed max_count");
-        _TROUBLE;
     }
 
     // Signal some (or all) of the threads waiting on this semaphore
