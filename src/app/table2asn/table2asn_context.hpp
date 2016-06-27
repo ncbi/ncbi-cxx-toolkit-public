@@ -42,7 +42,7 @@ public:
     string m_OrganismName;
     string m_single_source_qual_file;
     string m_Comment;
-    string m_single_table5_file;
+    string m_single_annot_file;
     string m_find_open_read_frame;
     string m_strain;
     string m_ft_url;

@@ -19,6 +19,7 @@ class CSeq_annot;
 
 class CTable2AsnContext;
 class CSerialObject;
+class CAnnotationLoader;
 
 //  ============================================================================
 class CMultiReader
@@ -49,6 +50,7 @@ private:
     bool xReadASN1(CFormatGuess::EFormat format, CNcbiIstream& instream, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
+    bool xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in);
 
     auto_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, CNcbiIstream& instream);
     CRef<objects::CSeq_entry> CreateNewSeqFromTemplate(const CTable2AsnContext& context, objects::CBioseq& bioseq) const;

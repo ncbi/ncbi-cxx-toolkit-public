@@ -14,6 +14,7 @@ namespace objects
     class CSeq_entry_Handle;
     class CScope;
     class CDelta_seq;
+    class CBioseq_Handle;
     class CSeq_feat;
 };
 class CSerialObject;
@@ -36,7 +37,6 @@ public:
    // This method reads 5 column table and attaches these features
 //    to corresponding sequences
 // This method requires certain postprocessing of plain features added
-   void ReadFeatureTable(objects::CSeq_entry& obj, ILineReader& line_reader);
    void FindOpenReadingFrame(objects::CSeq_entry& entry) const;
    CRef<objects::CSeq_entry> ReadProtein(ILineReader& line_reader);
    void AddProteins(const objects::CSeq_entry& possible_proteins, objects::CSeq_entry& entry);

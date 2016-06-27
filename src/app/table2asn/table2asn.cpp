@@ -121,7 +121,6 @@ private:
     void ProcessOneFile(CRef<CSerialObject>& result);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessSecretFiles(CSeq_entry& result);
-    void ProcessTBLFile(const string& pathname, CSeq_entry& result);
     void ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry& result, const string& opt_map_xml);
     void ProcessQVLFile(const string& pathname, CSeq_entry& result);
     void ProcessDSCFile(const string& pathname, CSeq_entry& result);
@@ -236,7 +235,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey
         ("D", "InFile", "Descriptors File", CArgDescriptions::eInputFile); // done
     arg_desc->AddOptionalKey
-        ("f", "InFile", "Single Table File", CArgDescriptions::eInputFile);// done
+        ("f", "InFile", "Single 5 column table file or other annotations", CArgDescriptions::eInputFile);// done
 
     arg_desc->AddOptionalKey
         ("k", "String", "CDS Flags (combine any of the following letters)\n\
@@ -500,7 +499,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_feature_links = f_arg;
     }
     if (args["f"])
-        m_context.m_single_table5_file = args["f"].AsString();
+        m_context.m_single_annot_file = args["f"].AsString();
 
     if (args["w"])
         m_context.m_single_structure_cmt = args["w"].AsString();
@@ -1130,11 +1129,6 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
 
     string name = dir + base;
 
-    if (m_context.m_single_table5_file.empty())
-        ProcessTBLFile(name + ".tbl", result);
-    else
-        ProcessTBLFile(m_context.m_single_table5_file, result);
-
     ProcessSRCFileAndQualifiers(name + ".src", result, ext == ".xml" ? (name + ".xml") : "");
 
     ProcessQVLFile(name + ".qvl", result);
@@ -1145,23 +1139,18 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
     ProcessRNAFile(name + ".rna", result);
     ProcessPRTFile(name + ".prt", result);
 
-    ProcessAnnotFile(name + ".gff", result);
-    ProcessAnnotFile(name + ".gff3", result);
-    ProcessAnnotFile(name + ".gff2", result);
-    ProcessAnnotFile(name + ".gtf", result);
-}
-
-void CTbl2AsnApp::ProcessTBLFile(const string& pathname, CSeq_entry& result)
-{
-    CFile file(pathname);
-    if (!file.Exists()) return;
-
-    m_context.m_avoid_orf_lookup = true;
-    CRef<ILineReader> reader(ILineReader::New(pathname));
-
-    CFeatureTableReader feature_reader(m_context);
-
-    feature_reader.ReadFeatureTable(result, *reader);
+    if (!m_context.m_single_annot_file.empty())
+    {
+        ProcessAnnotFile(m_context.m_single_annot_file, result);
+    }
+    else
+    {
+        ProcessAnnotFile(name + ".tbl", result);
+        ProcessAnnotFile(name + ".gff", result);
+        ProcessAnnotFile(name + ".gff3", result);
+        ProcessAnnotFile(name + ".gff2", result);
+        ProcessAnnotFile(name + ".gtf", result);
+    }
 }
 
 void CTbl2AsnApp::ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry& result, const string& opt_map_xml)
