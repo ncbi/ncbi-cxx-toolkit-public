@@ -1383,6 +1383,54 @@ DISCREPANCY_SUMMARIZE(MISSING_STRUCTURED_COMMENT)
 }
 
 
+// MISSING_PROJECT
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MISSING_PROJECT, CSeq_inst, eDisc, "Project not included")
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (!seq) return;
+
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*seq);
+    bool has_project = false;
+    CSeqdesc_CI d(bsh, CSeqdesc::e_User);
+    while (d) {
+        if (d->GetUser().GetObjectType() == CUser_object::eObjectType_DBLink) {
+            if (d->GetUser().IsSetData()) {
+                ITERATE(CUser_object::TData, it, d->GetUser().GetData()) {
+                    if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr() &&
+                        NStr::Equal((*it)->GetLabel().GetStr(), "BioProject")) {
+                        has_project = true;
+                        break;
+                    }
+                }
+            }
+        } else if (d->GetUser().IsSetType() && d->GetUser().GetType().IsStr() &&
+            NStr::Equal(d->GetUser().GetType().GetStr(), "GenomeProjectsDB")) {
+            has_project = true;
+        }
+        if (has_project) {
+            break;
+        }
+        ++d;
+    }
+    if (!has_project) {
+        m_Objs["[n] sequence[s] [does] not include project."].Add(*context.NewDiscObj(seq), false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MISSING_PROJECT)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
 
 // COUNT_UNVERIFIED
 //  ----------------------------------------------------------------------------
