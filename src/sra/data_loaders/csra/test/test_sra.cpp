@@ -96,7 +96,7 @@ void CTestSraApplication::Init(void)
 int CTestSraApplication::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     if ( !args["no-csra"] ) {
