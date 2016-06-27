@@ -37,6 +37,7 @@
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include "discrepancy_core.hpp"
@@ -1492,6 +1493,71 @@ DISCREPANCY_CASE(DEFLINE_PRESENT, CSeq_inst, eDisc, "Test defline existence")
 
 
 DISCREPANCY_SUMMARIZE(DEFLINE_PRESENT)
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// UNUSUAL_NT
+
+const string kUnusualNT = "[n] sequence[s] contain[S] nucleotides that are not ATCG or N";
+
+static bool IsContainsUnusualNucleotide(const CSeq_data& seq_data)
+{
+    CSeq_data as_iupacna;
+    TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
+
+    bool unusual_found = false;
+    if (nconv) {
+
+        const string& sequence = as_iupacna.GetIupacna().Get();
+
+        for (auto nucleotide = sequence.begin(); nucleotide != sequence.end(); ++nucleotide) {
+            if (!IsATGC(*nucleotide) && *nucleotide != 'N') {
+                unusual_found = true;
+                break;
+            }
+        }
+    }
+
+    return unusual_found;
+}
+
+DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc, "Sequence contains unusual nucleotides")
+{
+    if (obj.IsNa()) {
+
+        if (obj.IsSetSeq_data()) {
+
+            if (IsContainsUnusualNucleotide(obj.GetSeq_data())) {
+                m_Objs[kUnusualNT].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+            }
+        }
+        else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
+
+            const CSeq_ext::TDelta& deltas = obj.GetExt().GetDelta();
+            if (deltas.IsSet()) {
+
+                ITERATE(CDelta_ext::Tdata, delta, deltas.Get()) {
+
+                    if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
+
+                        if (IsContainsUnusualNucleotide((*delta)->GetLiteral().GetSeq_data())) {
+                            m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(UNUSUAL_NT)
 {
     if (m_Objs.empty()) {
         return;
