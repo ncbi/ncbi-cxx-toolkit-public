@@ -7156,6 +7156,64 @@ bool s_SeqLocAnyNull( const CSeq_loc & loc )
     return false;
 }
 
+
+bool SortGBQuals(CSeq_feat& sf)
+{
+    if (!sf.IsSetQual()) {
+        return false;
+    }
+    if (sf.IsSetQual() && sf.GetQual().size() == 0) {
+        sf.ResetQual();
+        return true;
+    }
+
+    CRef<CSeq_feat> orig(new CSeq_feat());
+    orig->Assign(sf);
+
+    // first, extract product qualifier values, because order must be
+    // preserved
+    vector<string> products;
+    CSeq_feat::TQual::iterator it = sf.SetQual().begin();
+    while (it != sf.SetQual().end()) {
+        if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "product")) {
+            if ((*it)->IsSetVal() && !NStr::IsBlank((*it)->GetVal())) {
+                products.push_back((*it)->GetVal());
+            }
+            it = sf.SetQual().erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    if (sf.GetQual().size() > 1) {
+        SORT_GBQUAL_ON_SEQFEAT(sf, s_GbQualCompareLegalFirst);
+    }
+
+    // insert product qualifiers back in list
+    it = sf.SetQual().begin();
+    while (it != sf.SetQual().end()) {
+        if (!(*it)->IsSetQual() ||            
+            s_CompareNoCaseCStyle("product", (*it)->GetQual()) < 0 ||
+            s_IsIllegalQual((*it)->GetQual())) {
+            break;
+        }
+        ++it;
+    }
+    if (it == sf.SetQual().end()) {
+        ITERATE(vector<string>, s, products) {
+            CRef<CGb_qual> pq(new CGb_qual("product", *s));
+            sf.SetQual().push_back(pq);
+        }
+    } else {
+        ITERATE(vector<string>, s, products) {
+            CRef<CGb_qual> pq(new CGb_qual("product", *s));
+            it = sf.SetQual().insert(it, pq);
+        }
+    }
+    return !(orig->Equals(sf));          
+}
+
+
 void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
 {
     // clean before uniquing
@@ -7165,8 +7223,7 @@ void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
     }
 
     // sort/unique gbquals, just alphabetically
-    if (!GBQUAL_ON_SEQFEAT_IS_SORTED(sf, s_GbQualCompare)) {
-        SORT_GBQUAL_ON_SEQFEAT(sf, s_GbQualCompare);
+    if (SortGBQuals(sf)) {
         ChangeMade(CCleanupChange::eCleanQualifiers);
     }
 
@@ -7183,12 +7240,6 @@ void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
             ERASE_GBQUAL_ON_SEQFEAT(gbq_it, sf);
             ChangeMade(CCleanupChange::eRemoveQualifier);
         }
-    }
-
-    // sort again, putting legal qualifiers first
-    if (!GBQUAL_ON_SEQFEAT_IS_SORTED(sf, s_GbQualCompareLegalFirst)) {
-        SORT_GBQUAL_ON_SEQFEAT(sf, s_GbQualCompareLegalFirst);
-        ChangeMade(CCleanupChange::eCleanQualifiers);
     }
 
     REMOVE_IF_EMPTY_GBQUAL_ON_SEQFEAT(sf);

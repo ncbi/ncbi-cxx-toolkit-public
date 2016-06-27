@@ -735,3 +735,69 @@ BOOST_AUTO_TEST_CASE(Test_SetFrameFromLoc)
     BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), false);
     BOOST_CHECK_EQUAL(cdr->GetFrame(), CCdregion::eFrame_one);
 }
+
+
+void CheckQuals(const CSeq_feat::TQual& expected, const CSeq_feat::TQual& actual)
+{
+    BOOST_CHECK_EQUAL(expected.size(), actual.size());
+    CSeq_feat::TQual::const_iterator it1 = expected.cbegin();
+    CSeq_feat::TQual::const_iterator it2 = actual.cbegin();
+    while (it1 != expected.cend() && it2 != actual.cend()) {
+        BOOST_CHECK_EQUAL((*it1)->GetQual(), (*it2)->GetQual());
+        BOOST_CHECK_EQUAL((*it1)->GetVal(), (*it2)->GetVal());
+        ++it1;
+        ++it2;
+    }       
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_3943)
+{
+    // do not change order of product qualifiers
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    CRef<CSeq_feat> sf(new CSeq_feat());
+    sf->SetData().SetImp().SetKey("misc_feature");
+    sf->SetLocation().SetInt().SetId().SetLocal().SetStr("seq");
+    sf->SetLocation().SetInt().SetFrom(0);
+    sf->SetLocation().SetInt().SetTo(10);
+
+    CSeq_feat::TQual expected;   
+
+    sf->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", "c")));
+    sf->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", "b")));
+    sf->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", "f")));
+
+    // expect no change
+    expected.push_back(CRef<CGb_qual>(new CGb_qual("product", "c")));
+    expected.push_back(CRef<CGb_qual>(new CGb_qual("product", "b")));
+    expected.push_back(CRef<CGb_qual>(new CGb_qual("product", "f")));
+
+    cleanup.BasicCleanup(*sf);
+    CheckQuals(expected, sf->GetQual());
+
+    sf->SetQual().push_back((CRef<CGb_qual>(new CGb_qual("satellite", "satellite:s"))));
+    expected.push_back((CRef<CGb_qual>(new CGb_qual("satellite", "satellite:s"))));
+    cleanup.BasicCleanup(*sf);
+    CheckQuals(expected, sf->GetQual());
+
+    // allele should be sorted to the beginning
+    sf->SetQual().push_back((CRef<CGb_qual>(new CGb_qual("allele", "a"))));
+    expected.insert(expected.begin(), CRef<CGb_qual>(new CGb_qual("allele", "a")));
+    cleanup.BasicCleanup(*sf);
+    CheckQuals(expected, sf->GetQual());
+
+    // anticodon should be sorted to the end, because it is illegal
+    sf->SetQual().insert(sf->SetQual().begin(), CRef<CGb_qual>(new CGb_qual("anticodon", "bad")));
+    expected.push_back(CRef<CGb_qual>(new CGb_qual("anticodon", "bad")));
+    cleanup.BasicCleanup(*sf);
+    CheckQuals(expected, sf->GetQual());
+
+    // non-unique anticodon should be removed
+    sf->SetQual().insert(sf->SetQual().begin(), CRef<CGb_qual>(new CGb_qual("anticodon", "bad")));
+    cleanup.BasicCleanup(*sf);
+    CheckQuals(expected, sf->GetQual());
+
+}
+
