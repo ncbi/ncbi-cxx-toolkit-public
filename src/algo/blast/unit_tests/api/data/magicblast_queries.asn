@@ -1,0 +1,74 @@
+Bioseq-set ::= {
+  seq-set {
+    seq {
+      id {
+        local str "SRR1561624.14400126"
+      },
+      descr {
+        title "lcl|SRR1561624.14400126"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 49,
+        seq-data iupacna "CAAAGTTCTCGGACGTACTGGATCTCGTGGTGGTGTTACTCAAGTCCGT"
+      }
+    },
+    seq {
+      id {
+        local str "SRR1561624.14400656"
+      },
+      descr {
+        title "lcl|SRR1561624.14400656"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 49,
+        seq-data iupacna "CTTATACTGAAATATGGGATCTACTTCTTGAAACAAACACAAAATACTG"
+      }
+    },
+    seq {
+      id {
+        local str "SRR1561624.14401073"
+      },
+      descr {
+        title "lcl|SRR1561624.14401073"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 49,
+        seq-data iupacna "CAACATGTCTCTGGTTGTTCCCGACAATTTCCAACACATTCTCCGTCTC"
+      }
+    },
+    seq {
+      id {
+        local str "SRR1561624.14401077"
+      },
+      descr {
+        title "lcl|SRR1561624.14401077"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 49,
+        seq-data iupacna "GGTTGTTCCCGACAATTTCCAACACATTCTCCGTCTCCTCAACACCAAC"
+      }
+    },
+    seq {
+      id {
+        local str "SRR1561624.14401721"
+      },
+      descr {
+        title "lcl|SRR1561624.14401721"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 49,
+        seq-data iupacna "GTTCTGGTTCTAAATTGTCTAAGATTAAGACTACCCGCAAGGACATTGC"
+      }
+    }
+  }
+}

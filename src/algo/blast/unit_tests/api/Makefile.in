@@ -47,7 +47,8 @@ blastfilter_unit_test \
 blastoptions_unit_test \
 gencode_singleton_unit_test \
 bl2seq_unit_test \
-stat_unit_test
+stat_unit_test \
+magicblast_unit_test
 
 REQUIRES = Boost.Test.Included
 
@@ -151,3 +152,5 @@ bl2seq_unit_test: lib
 	${MAKE} ${MFLAGS} -f Makefile.bl2seq_unit_test_app
 stat_unit_test: lib
 	${MAKE} ${MFLAGS} -f Makefile.stat_unit_test_app
+magicblast_unit_test:
+	${MAKE} ${MFLAGS} -f Makefile.magicblast_unit_test_app

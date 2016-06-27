@@ -1,0 +1,41 @@
+Bioseq-set ::= {
+  seq-set {
+    seq {
+      id {
+        local str "SRR2833414.2.1"
+      },
+      descr {
+        title "lcl|SRR2833414.2.1",
+        user {
+          type str "Mapping",
+          data {
+            {
+              label str "has_pair",
+              data bool TRUE
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 75,
+        seq-data iupacna "NACGGAATTCAGCAACGGATCTCTTGGCTCTCGCATCGATGAAGAACGCAGCGAAATGCGATACGTAATGTGAAT"
+      }
+    },
+    seq {
+      id {
+        local str "SRR2833414.2.2"
+      },
+      descr {
+        title "lcl|SRR2833414.2.2"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 75,
+        seq-data iupacna "NATGACACTCAAACAGGCATGCCTTTGGTAGAACCCAAAGGCGCAATGTGCGTTCAAAGATTCGATGATTCACGG"
+      }
+    }
+  }
+}
