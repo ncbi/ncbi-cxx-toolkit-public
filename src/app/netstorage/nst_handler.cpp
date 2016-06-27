@@ -344,11 +344,24 @@ void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
         CDiagContext::SetRequestContext(NULL);
     }
 
-    CSocket&        socket = GetSocket();
-    m_ConnContext->SetBytesRd(socket.GetCount(eIO_Read));
-    m_ConnContext->SetBytesWr(socket.GetCount(eIO_Write));
+    CSocket &           socket = GetSocket();
+    TNCBI_BigCount      read_count  = socket.GetCount(eIO_Read);
+    TNCBI_BigCount      write_count = socket.GetCount(eIO_Write);
 
-    if (peer == IServer_ConnectionHandler::eClientClose) {
+    m_ConnContext->SetBytesRd(read_count);
+    m_ConnContext->SetBytesWr(write_count);
+
+    // Call the socket shutdown only if it was a client close and
+    // there was some data exchange over the connection.
+    // LBSMD - when it checks a connection point - opens and aborts the
+    // connection without any data transferring and in this scenario the
+    // socket.Shutdown() call returns non success.
+    if ((peer == IServer_ConnectionHandler::eClientClose) &&
+        (read_count > 0 || write_count > 0)) {
+
+        // The socket.Shutdown() call will fail if there is some not delivered
+        // data in the socket or if the connection was not closed properly on
+        // the client side.
         EIO_Status  status = socket.Shutdown(EIO_Event::eIO_ReadWrite);
         if (status != EIO_Status::eIO_Success) {
             m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
