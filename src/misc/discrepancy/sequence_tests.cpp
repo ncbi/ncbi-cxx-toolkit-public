@@ -1344,6 +1344,46 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
 }
 
 
+// MISSING_STRUCTURED_COMMENT
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MISSING_STRUCTURED_COMMENT, CSeq_inst, eDisc, "Structured comment not included")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsAa()) {
+        return;
+    }
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (!seq) return;
+
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*seq);
+    size_t num_structured_comment = 0;
+    CSeqdesc_CI d(bsh, CSeqdesc::e_User);
+    while (d) {
+        if (d->GetUser().GetObjectType() == CUser_object::eObjectType_StructuredComment) {
+            num_structured_comment++;
+            break;
+        }
+        ++d;
+    }
+    if (num_structured_comment == 0) {
+        m_Objs["[n] sequence[s] [does] not include structured comments."].Add(*context.NewDiscObj(seq), false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MISSING_STRUCTURED_COMMENT)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+
 // COUNT_UNVERIFIED
 //  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(COUNT_UNVERIFIED, CSeq_inst, eOncaller, "Count number of unverified sequences")
