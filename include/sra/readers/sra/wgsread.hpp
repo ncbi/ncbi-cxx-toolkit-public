@@ -241,6 +241,8 @@ public:
     TVDBRowId GetScaffoldNameRowId(const string& name);
     // get protein row_id (PROTEIN) for protein name or 0 if there is none
     TVDBRowId GetProteinNameRowId(const string& name);
+    // get protein row_id (PROTEIN) for product name or 0 if there is none
+    TVDBRowId GetProductNameRowId(const string& name);
     // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
     TVDBRowId GetProtAccRowId(const string& acc);
 
@@ -357,6 +359,12 @@ protected:
         }
         return m_ProteinNameIndex;
     }
+    const CVDBTableIndex& ProductNameIndex(void) {
+        if ( !m_ProductNameIndexIsOpened ) {
+            OpenProductNameIndex();
+        }
+        return m_ProductNameIndex;
+    }
 
     // get table accessor object for exclusive access
     CRef<SSeqTableCursor> Seq(TVDBRowId row = 0);
@@ -390,6 +398,7 @@ protected:
     void OpenContigNameIndex(void);
     void OpenScaffoldNameIndex(void);
     void OpenProteinNameIndex(void);
+    void OpenProductNameIndex(void);
 
     TVDBRowId Lookup(const string& name,
                      const CVDBTableIndex& index,
@@ -421,6 +430,7 @@ private:
     volatile Int1 m_ContigNameIndexIsOpened;
     volatile Int1 m_ScaffoldNameIndexIsOpened;
     volatile Int1 m_ProteinNameIndexIsOpened;
+    volatile Int1 m_ProductNameIndexIsOpened;
     CVDBTable m_ScfTable;
     CVDBTable m_ProtTable;
     CVDBTable m_FeatTable;
@@ -435,6 +445,7 @@ private:
     CVDBTableIndex m_ContigNameIndex;
     CVDBTableIndex m_ScaffoldNameIndex;
     CVDBTableIndex m_ProteinNameIndex;
+    CVDBTableIndex m_ProductNameIndex;
 
     bool m_IsSetMasterDescr;
     CRef<CSeq_entry> m_MasterEntry;
@@ -545,6 +556,12 @@ public:
     // name not found.
     TVDBRowId GetProteinNameRowId(const string& name) const {
         return GetNCObject().GetProteinNameRowId(name);
+    }
+
+    // get protein row_id (PROTEIN) for a product name or 0 if
+    // name not found.
+    TVDBRowId GetProductNameRowId(const string& name) const {
+        return GetNCObject().GetProductNameRowId(name);
     }
 
     // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
@@ -1159,6 +1176,7 @@ public:
     CRef<CSeq_id> GetGeneralSeq_id(void) const;
 
     CTempString GetProteinName(void) const;
+    CTempString GetProductName(void) const;
 
     TVDBRowIdRange GetLocFeatRowIdRange(void) const;
     size_t GetProductFeatCount(void) const;

@@ -507,6 +507,7 @@ struct CWGSDb_Impl::SProtTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PROTEIN_LEN);
     DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
+    DECLARE_VDB_COLUMN_AS_STRING(PRODUCT_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(REF_ACC);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
@@ -527,6 +528,7 @@ CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(GB_STATE),
       INIT_VDB_COLUMN(PROTEIN_LEN),
       INIT_VDB_COLUMN(PROTEIN_NAME),
+      INIT_OPTIONAL_VDB_COLUMN(PRODUCT_NAME),
       INIT_OPTIONAL_VDB_COLUMN(REF_ACC),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
@@ -614,6 +616,7 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_ContigNameIndexIsOpened(0),
       m_ScaffoldNameIndexIsOpened(0),
       m_ProteinNameIndexIsOpened(0),
+      m_ProductNameIndexIsOpened(0),
       m_IsSetMasterDescr(false)
 {
     PROFILE(sw_WGSOpen);
@@ -885,6 +888,13 @@ void CWGSDb_Impl::OpenProteinNameIndex(void)
 {
     OpenIndex(ProtTable(), m_ProteinNameIndex, m_ProteinNameIndexIsOpened,
               "protein_name_uc", "protein_name");
+}
+
+
+void CWGSDb_Impl::OpenProductNameIndex(void)
+{
+    OpenIndex(ProtTable(), m_ProductNameIndex, m_ProductNameIndexIsOpened,
+              "product_name_uc", "product_name");
 }
 
 
@@ -1673,6 +1683,13 @@ TVDBRowId CWGSDb_Impl::GetProteinNameRowId(const string& name)
 {
     const CVDBTableIndex& index = ProteinNameIndex();
     return Lookup(name, index, m_ProteinNameIndexIsOpened == 1);
+}
+
+
+TVDBRowId CWGSDb_Impl::GetProductNameRowId(const string& name)
+{
+    const CVDBTableIndex& index = ProductNameIndex();
+    return Lookup(name, index, m_ProductNameIndexIsOpened == 1);
 }
 
 
@@ -4583,6 +4600,13 @@ CTempString CWGSProteinIterator::GetProteinName(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetProteinName");
     return *CVDBStringValue(m_Cur->PROTEIN_NAME(m_CurrId));
+}
+
+
+CTempString CWGSProteinIterator::GetProductName(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetProductName");
+    return *CVDBStringValue(m_Cur->PRODUCT_NAME(m_CurrId));
 }
 
 
