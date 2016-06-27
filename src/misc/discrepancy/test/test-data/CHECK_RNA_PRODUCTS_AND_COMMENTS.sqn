@@ -1,0 +1,1382 @@
+Seq-entry ::= set {
+  class genbank,
+  seq-set {
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome chromosome,
+          org {
+            taxname "Hydrogenobaculum sp. HO",
+            db {
+              {
+                db "taxon",
+                tag id 547144
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Hydrogenobaculum",
+                species "sp. HO"
+              },
+              mod {
+                {
+                  subtype strain,
+                  subname "HO"
+                }
+              },
+              lineage "Bacteria; Aquificae; Aquificales; Aquificaceae;
+ Hydrogenobaculum",
+              gcode 11,
+              div "BCT"
+            }
+          }
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "McDermott",
+                      first "Timothy",
+                      initials "T."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Huntemann",
+                      first "Marcel",
+                      initials "M."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Wei",
+                      first "Chia-Lin",
+                      initials "C.-L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Han",
+                      first "James",
+                      initials "J."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Detter",
+                      first "John",
+                      initials "J.C."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Han",
+                      first "Cliff",
+                      initials "C."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Tapia",
+                      first "Roxanne",
+                      initials "R."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Chen",
+                      first "Amy",
+                      initials "A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Kyrpides",
+                      first "Nikos",
+                      initials "N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Mavromatis",
+                      first "Konstantinos",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Markowitz",
+                      first "Victor",
+                      initials "V."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Szeto",
+                      first "Ernest",
+                      initials "E."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Ivanova",
+                      first "Natalia",
+                      initials "N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Mikhailova",
+                      first "Natalia",
+                      initials "N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Ovchinnikova",
+                      first "Galina",
+                      initials "G."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Pagani",
+                      first "Ioanna",
+                      initials "I."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Pati",
+                      first "Amrita",
+                      initials "A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Goodwin",
+                      first "Lynne",
+                      initials "L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Nordberg",
+                      first "Henrik",
+                      initials "H.P."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Cantor",
+                      first "Michael",
+                      initials "M.N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Hua",
+                      first "Susan",
+                      initials "S.X."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Woyke",
+                      first "Tanja",
+                      initials "T."
+                    }
+                  },
+                  {
+                    name consortium "DOE Joint Genome Institute"
+                  }
+                },
+                affil std {
+                  affil "DOE Joint Genome Institute",
+                  city "Walnut Creek",
+                  sub "CA",
+                  country "USA",
+                  street "2800 Mitchell Drive",
+                  postal-code "94598-1698"
+                }
+              },
+              title "FINISHED of Hydrogenobaculum sp. HO"
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "McDermott",
+                      first "Timothy",
+                      initials "T."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Huntemann",
+                      first "Marcel",
+                      initials "M."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Wei",
+                      first "Chia-Lin",
+                      initials "C.-L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Han",
+                      first "James",
+                      initials "J."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Detter",
+                      first "John",
+                      initials "J.C."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Han",
+                      first "Cliff",
+                      initials "C."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Tapia",
+                      first "Roxanne",
+                      initials "R."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Chen",
+                      first "Amy",
+                      initials "A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Kyrpides",
+                      first "Nikos",
+                      initials "N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Mavromatis",
+                      first "Konstantinos",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Markowitz",
+                      first "Victor",
+                      initials "V."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Szeto",
+                      first "Ernest",
+                      initials "E."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Ivanova",
+                      first "Natalia",
+                      initials "N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Mikhailova",
+                      first "Natalia",
+                      initials "N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Ovchinnikova",
+                      first "Galina",
+                      initials "G."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Pagani",
+                      first "Ioanna",
+                      initials "I."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Pati",
+                      first "Amrita",
+                      initials "A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Goodwin",
+                      first "Lynne",
+                      initials "L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Nordberg",
+                      first "Henrik",
+                      initials "H.P."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Cantor",
+                      first "Michael",
+                      initials "M.N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Hua",
+                      first "Susan",
+                      initials "S.X."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Woyke",
+                      first "Tanja",
+                      initials "T."
+                    }
+                  },
+                  {
+                    name consortium "DOE Joint Genome Institute"
+                  }
+                },
+                affil std {
+                  affil "DOE Joint Genome Institute",
+                  city "Walnut Creek",
+                  sub "CA",
+                  country "USA",
+                  street "2800 Mitchell Drive",
+                  postal-code "94598-1698"
+                }
+              },
+              date std {
+                year 2013,
+                month 2,
+                day 21
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            article {
+              title {
+                name "Comparative Genomic Analysis of Phylogenetically Closely
+ Related Hydrogenobaculum sp. Isolates from Yellowstone National Park."
+              },
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Romano",
+                      first "C",
+                      initials "C."
+                    }
+                  },
+                  {
+                    name name {
+                      last "D'Imperio",
+                      first "S",
+                      initials "S."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Woyke",
+                      first "T",
+                      initials "T."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Mavromatis",
+                      first "K",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Lasken",
+                      first "R",
+                      initials "R."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Shock",
+                      first "E",
+                      initials "E.L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "McDermott",
+                      first "T",
+                      initials "T.R."
+                    }
+                  }
+                },
+                affil str "Department of Land Resources and Environmental
+ Sciences, Montana State University, Bozeman, Montana, USA."
+              },
+              from journal {
+                title {
+                  iso-jta "Appl. Environ. Microbiol."
+                },
+                imp {
+                  date std {
+                    year 2013,
+                    month 5
+                  },
+                  volume "79",
+                  issue "9",
+                  pages "2932-2943",
+                  pubstatus ppublish
+                }
+              },
+              ids {
+                doi "10.1128/AEM.03591-12",
+                pubmed 23435891
+              }
+            },
+            pmid 23435891
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##MIGS-Data-START##"
+            },
+            {
+              label str "alt_elev",
+              data str "Missing"
+            },
+            {
+              label str "assembly",
+              data str "ALLPATHS v. R37654"
+            },
+            {
+              label str "collection_date",
+              data str "Missing"
+            },
+            {
+              label str "country",
+              data str "Missing"
+            },
+            {
+              label str "depth",
+              data str "Missing"
+            },
+            {
+              label str "environment",
+              data str "Fresh water"
+            },
+            {
+              label str "investigation_type",
+              data str "bacteria_archaea"
+            },
+            {
+              label str "isol_growth_condt",
+              data str "Missing"
+            },
+            {
+              label str "lat_lon",
+              data str "Missing"
+            },
+            {
+              label str "project_name",
+              data str "Hydrogenobaculum sp. HO"
+            },
+            {
+              label str "sequencing_meth",
+              data str "WGS"
+            },
+            {
+              label str "num_replicons",
+              data str "Missing"
+            },
+            {
+              label str "ref_biomaterial",
+              data str "Missing"
+            },
+            {
+              label str "biotic_relationship",
+              data str "Free living"
+            },
+            {
+              label str "rel_to_oxygen",
+              data str "Aerobe"
+            },
+            {
+              label str "finishing_strategy",
+              data str "Finished"
+            },
+            {
+              label str "trophic_level",
+              data str "Missing"
+            },
+            {
+              label str "Cell Shape",
+              data str "Rod-shaped"
+            },
+            {
+              label str "Motility",
+              data str "Motile"
+            },
+            {
+              label str "Sporulation",
+              data str "Nonsporulating"
+            },
+            {
+              label str "Temperature Range",
+              data str "Thermophile"
+            },
+            {
+              label str "Temperature Optimum",
+              data str "58"
+            },
+            {
+              label str "Gram Staining",
+              data str "Gram-"
+            },
+            {
+              label str "Sequencing Depth",
+              data str "30x"
+            },
+            {
+              label str "Diseases",
+              data str "None"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##MIGS-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Genome-Assembly-Data-START##"
+            },
+            {
+              label str "Finishing Goal",
+              data str "Finished"
+            },
+            {
+              label str "Current Finishing Status",
+              data str "Finished"
+            },
+            {
+              label str "Assembly Method",
+              data str "ALLPATHS v. R37654"
+            },
+            {
+              label str "Genome Coverage",
+              data str "30x"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "454/Illumina"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Genome-Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "DBLink",
+          data {
+            {
+              label str "BioProject",
+              num 1,
+              data strs {
+                "PRJNA41741"
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              data int 2
+            }
+          }
+        },
+        user {
+          type str "NcbiCleanup",
+          data {
+            {
+              label str "method",
+              data str "SequinCleanup"
+            },
+            {
+              label str "version",
+              data int 7
+            },
+            {
+              label str "month",
+              data int 6
+            },
+            {
+              label str "day",
+              data int 12
+            },
+            {
+              label str "year",
+              data int 2013
+            }
+          }
+        },
+        update-date std {
+          year 2013,
+          month 4,
+          day 24
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            genbank {
+              accession "CP004347",
+              version 1
+            },
+            gi 452881637
+          },
+          descr {
+            title "Hydrogenobaculum sp. HO, complete genome.",
+            molinfo {
+              biomol genomic,
+              completeness complete
+            },
+            comment "URL -- http://www.jgi.doe.gov~JGI Project ID:
+ 16085~Source DNA and Organism available from Timothy  McDermott
+ (timmcder@montana.edu)~Source DNA available from Timothy  McDermott
+ (timmcder@montana.edu)~Organism available from Timothy  McDermott
+ (timmcder@montana.edu)~Contacts: Timothy  McDermott (timmcder@montana.edu)~  
+        Tanja Woyke (microbe@cuba.jgi-psf.org)~Whole genome sequencing and
+ draft assembly at JGI-PGF~Annotation by JGI-ORNL~The JGI and collaborators
+ endorse the principles for the distribution and use of large scale sequencing
+ data adopted by the larger genome sequencing community and urge users of this
+ data to follow them. It is our intention to publish the work of this project
+ in a timely fashion and we welcome collaborative interaction on the project
+ and analysis.~(http://www.genome.gov/page.cfm?pageID=10506376)",
+            genbank {
+              keywords {
+                "GSC:MIGS:2.1"
+              }
+            },
+            create-date std {
+              year 2013,
+              month 2,
+              day 26
+            }
+          },
+          inst {
+            repr delta,
+            mol dna,
+            length 11110,
+            topology circular,
+            ext delta {
+              literal {
+                length 11110,
+                seq-data iupacna "TAATTTTTTATTAAGGTTCTTTAAGCATTTAGATAAAAATATGA
+AAGGTATTGATAAGTTTCTATTTTTTCGTATTTTTAGCACTAATGAGGTTTATATACTTAAAACATATGAACAAGAAC
+CTGAACCAATTTAAAAAAATAAAGGTAAATAGGAAAAGTGAATTTTTTGGTGTTTTAGGATTTTCAAATCAAAAAAAT
+ACCAATGAAGACTGTAAAGGCATATGGGACAATATACTTGTTGGTATAAGCAAAAAAATTGACAAACCTACAATGGCC
+CTTGTTAAAAGCTTAAAACCAGTAGCTATTGAAGGTGAAAGCCTCGTATTGGAATGCCCCACAGAGCAATCAAGAAAC
+TGGATACATCAAACCCTTGGCAACATACTAAGAGATGAAGCTTATAAGAAAGGCTTCTCCATAAAGCTTGTGATAAAA
+GAGCAAGACAATCCTAATATAGACGTAAGTTATTCAACTTACAAAGATAGTGTTGATAGGCAAGCTGCCGTAGATAAA
+GCGTCTTTTAGCATATCTACACCTTCATACCCTAACGCTGAAACCAAGTTGAACCTTTCTGATGTAAAAAATAAAAGT
+GCTTTTAAAGAAGGTATATCTTCTAAGTATACGTTTGATAACTTTATAGTAGGTAAGCAAAACGAAGTGGCTTATAGG
+GCATCTTTAGAAGTGGCTACAGATGAAAATTCTATATATAATCCTCTTTTTATATACGGGAAAGTAGGAAGTGGCAAA
+ACACATCTTTTACAGGCTATAGGCAACAAAGCTTACTCTCTTGGAAGAAGCGTTATATATACATCTATGAACGATTTT
+ACAGAGGAGATGGTTTATTATTTAAAAGCTGGCAATATAATAAGCTTTAGAGAGAAATACAAAGGTGTAGATATCTTA
+CTCATAGATGATATACAGTTTTTGTCTGGTAAAGAACGTACTCAGATGGAGCTTTTTAACATATTTAACTATCTTTTT
+CAATACAACAAGCATATAGTATTTGCGAGCGATAAGCATCCAAGGGACATAAAAGATATCTCCGAAAGGCTTGTAAGT
+AGGTTTGAAGGTGGTCTTTTGGTGGAAACCAGCATAGACGATCAAATAAAGCTTTCCATTATAAAGCAAAAAATCCAG
+ATTTATGGACTAAATATAGACGAAAGACTTATATCCTATATAAAAGACAATACCACCAACAACGCTAGAGAGATTGAG
+GGTCTTGTGCTTCAGATAAAGGCAAAAGGTGTTTCTATATTAGAGGCCTACAAGTCTGCCACGGCCAACAACTCTGCC
+ACGCACTACAAGTCTGCCACGGCTTACAAGTCTGCCACGATTACCAACACACCAAAAGAATTAAGTATAGACAAGATT
+AAAAAAACTGTAGCAAACTATTTTAACGTTAGTATGGATATTTTTAATAAAAGCTATAAAAACAAAAAATACGCTACA
+GCAAAACATATAGCTATCTTTTTATCAAGGGAGTTTACAGGCTTTTCTCTTGCTGAGATAGCAAAGGCTTTTAACATA
+AAGTCCCATTCAAGCGTTAACCATTCTATCAAAAAGATAGAAAAACAGATAAAAGAGGACAAAACGATTCAGTACTCT
+GTATCCTCTTTAAGAGAGATTATAAGAAAACTAGATTGATTATCTTATGTTTCTGTATATGATATATAAGCCTACAAG
+TATAACCGCTATAGCGTAAAAGGTTTTTAGTTTTTTTGCGTTTAATCTAGTTGCCAGTTTCACACCTAAGAACCCACC
+TAAAAAACCACCCACTAGATAACAGATGGCTATGAGAAAATCTACCTCGTGTTTTGTAGCATATACTATGGCGGTTGT
+TATACCAAACATACCTACCGATATCAAAGAGGTGCCAATGGCTTTTATAGTACTTAAGTTTGTGCTAAAAAGAAGTGC
+TGGTACTATCAAAAAACCACCGCCTATACCAAAAAAACCAGATAGAATACCCACAAAAAATCCGGACAAAGCTATTAA
+AAAAGGATTTCCTGCAATACCTTCTTTGTGAAACTCTTTCTTTTCTTTCGTAAACATTACGTAGAAAGCTATAGCTAT
+CATCATAAAACCAAAAGCTATTAGTAGGTCCTTACCTTTTAAAGACGCTCCTACAAATGCCCCCAGAAAAGAGCCTAT
+TATACCAGGAATTGCAAATATAAAGCCTTCTTTTATGCTGACGTTTCCATGTTTGAAATGAAATATAGAGTTAATAAA
+TGCGTTTATACCTACTGCCAATGCCGTACTGCCTATAGCAAGATGTTTTACTGCGTCATCTTCTTCAGGATTTAGATT
+TTGATTGTCAAGTCCTACGAAGTAAAGTAGCAACGGTACCGCCAGTATAGAACCACCGCCTCCTATTAAAGAAAGTAT
+AAGCCCTACAAATATACCAGATACAACCGAAAGTACGTATTGAATAAAAGTAATATGTATCATCTTGCAAACGTGCCG
+TCTTTTACATCTTTATCTGGTACTATCAAGGAGAAGTTCTCTCCATCGGACAGGGCTAATACCATACCCTGAGATTCA
+AAGCCCATCATTTTCCTCGGTTTTAAATTATATACCACAAGGATTTTTTTACCTACAAGCTCCTCTTTGTTGTAATGC
+TGTTTTATACCTGCTAATATTGTCCTTTTTTCGTCTCCTATCTTTACTTCCAATTTTAAAAGCTTATCGGATTTTGGC
+ACTTCTTCCACATCTAAAACTTTGGCTAAAGCAAGCTTTACCTTTGAAAAATCTTCTATACTGATTAGTTCTTCGCTT
+GTGATCATTTTGTCTTCCATGTAAATATTATATAATTTTTTGTTTCTTAAAGGTGTTTTTATATGGTAAAATTAAAAT
+ATGAAAATATGCTTTGTGGCTTCTGAGTGCGAACCTCTGGTGAAGGTGGGTGGGCTGGGTGATGTGGTCCAGTCCTTG
+GCAAAAGAGCTTGTAAACCTAGGACATCAAGTTTCAGTGATACTTCCATTTTATAAGTCAATAAAAGCCCAAAATGTT
+CAATTCATCACACAGCATACGTTAAATTTAGGCGGTGTGTATTACGATTTTCATATATATAAAACTAATTTAGACAAT
+GTAGATATATTTCTAATAGACCAAAAGACGTTTTTTGGAAGAGAATATGTTTATGGTACCCCAAAAGGCCCTTACGAG
+GATAATTATCTTAGGTTTGCCTTTTTCTCATTAGCCTCTTTGGAAACACTGTCTCATATTTGTCATATTCCAGATGTA
+ATACACATACACGATTGGCATACAGCGTTGGTGGCTGTTTATAAAGATTTATATTTTAAGCATCTTGATGAGACTGCT
+GCGGTGCTTACTATACATAACATAGCTTTTCAGGGTATATTCCCAGGTCATATTTTGTCTCAGATAGGTATACCTTGG
+GAGCTCTTTAATCCAGAAGATTTAGAATTTTACAATCAGGTTAATTTTTTAAAAGGCGGTATAGTGCATTCTGATGTT
+ATAACCACTGTAAGTAAAACACACGCTAAAGAAATTCAAACAAATATGGGGTTTGGCATTGAGGGTGTGCTGAGGGAG
+AAAAGATACGTTTTTGGGATTTTAAACGGAATAGATACCGAATCTTGGAATCCCGCCACAGATAAAAGTTTGTATCAA
+AACTACGATATTAATACCTTTAAAGAGGGCAAAGAAAAAAATAAAAAATATGTGAAAGAACTTTTTGGGCTTGAAACT
+CCTCATACAAGACCTTTGGCAGCATTTATAGCAAGGCTTGCAAAACAAAAAGGGCTTGATTTGATAGAAAAAGCAATA
+GACGATGCTGTAAAAATAGGTTACGATTTTATATTTTTAGGCTCTGGAGATTATTATTATCAGGGTAAAGTGCTTGAT
+ATGGTTAAAAGAAATATGGGTTATGTTGCAGCTAGGATAGAATATAACGATATTTTATCTAGAAAACTTTACGCTGGA
+GCTGATATTTTTCTGATGCCCTCTGAATACGAGCCTTGCGGTATAGGTCAGATGATTGCTATGAGATACGGAGCTATA
+CCGATAGTGCATAAAACTGGTGGTTTAGCGGATACCGTTATAGATTATAACGAAGATAACGAGCACGGTACTGGTTTT
+TCTTTTGAAGATTACACCTACAAAGATTTTCTTTATACTATGGCAAGGGCTATGACAGTTTATCAGAAAAAATACATT
+CCAGAGTACAACGAGTGGTATAACATTGTCTCAAATGCCATGTCTCAGGATTTTTCTTGGAGAAGAAGCGTTCAAGAG
+TATATAAAAATTTATAAAACTGCAAAGCTTATAAAAATGCGCTGATGAAAATAACATTTTTAAACACATCAAAAGACG
+TCCATGTATACATAAAAAGAAATGTCCATTACAGTATTAAAACCGAAGAACTATCTAAAATAGTGCCATCTTATGCTA
+TAAAGTTTGAGGGCTTTTTAGAGAAAAATGTGCTAGAAAATGCTGCTCGTTTTGGTGTATTTTGCCACAATCAGGGGA
+AATATGCATTTATCATAGGAAATAAGTTTGGTATTTTTGAGCTTTTAAAAGCCACAAAACCAAAAATAGCTCAAGAAC
+TTATAAAGCATATCACTAATTTTGACAAAGAGCACCGCTACAACATATCTTACAACACAAAAGTTTTGCACCTTTCAG
+ACATAAGGCCACTTGTAATGGGAGTTATAAATATAACCAAAGATTCCTTTTATGCACCTTCAAGAGTAGATGAGAAAG
+ATATACTTTTTAGAGTAGAAGAGTTTATAAAAGAGGGTGCAAATATAATAGATATAGGAGCTCAATCTACTAGACCTG
+GAGCAGAGGAAATATCTTCTGAGGAAGAGGTTCGTAAGCTTTTAGAACCCTTAAGAAAGATAAGAAAAGAGTTTAAAA
+ATGTTTGGATATCCATAGATACGTATTTTTCCAATACTGCTAGAGTATGCCTTGAAGAAGGGGCAGATATTATAAACG
+ACATAAGCGGTGGAGTTTTTGACGATAATATGCTAAAAACTATAGCTGTTTATAACTGCCCTTACATCATAGGACATT
+CCTCTTCGTACAAACCAAACCAGTGGCCTCATACAGATTTTGAGTATGAGGATATAACCCTTGAAATTATAAATCATT
+TTAAAAGCCAAGAGACAAAGCTTTTAGAACTTGGGTATAATCTATTTAACGGAATAATCATAGACCCGTGTATAGGCT
+TTGCCAAAAAACCTATGCACAACTTAGAGATTTTAAATCAGATAGAGGCTTTTAGAAGCCTTGATAGGCCAATTCTTA
+TAGGTACTTCAAGAAAATCTTTTATAGGTATAGTGATAAAAGAGTTTTTACAAAAAGAGTCTATACCAGCCCCGGAGC
+AAAGGCTTGTAGGAAGTCTTGGGTCTATAGCACAAAGTATTATAAAAAACGCTTGCCATATTGTAAGAACGCACGATG
+TAGCCGCTACTAAGGAGTTTATAGCGCTTTTAGATGCAATAAGGAATTATCACTATGCTTGAGATACTGCATTTTATC
+ACCCTTAAAGATATTATAGATATAGCTTTGGTATATTTTCTCGTATACGAAGTCATATATTACATGGCAAAATCAAGG
+GGAGGTCAAATACTAAAGGGTGTAATTGTAATAGCTCTTATTTGGATGCTATCTGAAGCCTTGGGTCTTAAGACTATG
+TCTTTTATCTTTGAAAAACTTTGGACCTTAGGCATAGTGGTACTTGTTATAATATTCCAACCGGAGATAAGAAGAGCA
+TTATCAAGACTTGGTGAGAGAACCAGCATACAAAAAAATTCTCAAGCCACCCAAAAGGTAATAGAACGTATAGCAATG
+GCTTGCTCTTTTTTATCCCAAAGACAAATAGGGGCTCTCATTGTCATAGAAAGAAGCCAAAGCTTAGAAGATATCATA
+GATGGTTGTTCTTATATAGATGCAACTGTATCAGTAGAGCTTCTTATAACGATATTTTATCCTATGACACCTTTGCAT
+GATGGTGCTGTTGTAATAAAAGAAGATAAAATATTGTACGCTTCTTGCGTATTGCCATTGTCTAAAAATAAAGACCTT
+CCCAAAAAATACGGTACAAGGCATAGGGCTGCGGTTGGTATCACCGAAGAATCAGATGCTTTAGCGGTGGTGGTATCA
+GAAGAAACCGGTGATATATCCTTTATAAAAGCCGGTGTGATAACGAAGATGGAAAGCCCTGACATGTTAAAAGAGTAC
+TTAGAAAAAGAGTTAAGCTGATTTCTTAATACCCCAATACGTTGTATAAAGACGATATATCTTGTATAAGTTTTAGTT
+TCTGATCTAAAAGGGCTTTTTTAGATTCAATTAGATTTGTTCTATAATTGAGTAGATTGCTGTAAGGAGTAAGTCCTG
+CTTTGTAATTTGCGAGCGCTATGCGGTATTGATCCAGCGTTGTTTGATATGTCTTTTTTAGGCTTTTATAATTAATAT
+CATCTGTTTTGTATTGGGCGATGGCATCGTCCACTTCCTTAAAAGCGTTTAAAACAGTTTGTCTATAGTTTAATATGC
+TTTGAGCCAAAGCTACTTTTGACGCTTTGTATAAACCTAAGTTTTGATTCCAGTTTAGTATAGGTTCTATAATGTTTA
+GGCCAAAATTCCAAGATATGCTTGGCTGGGTCACGAGGTTATTTAGCTGCTGGGATTGAAAGCCGTAGCTACCAGTGA
+GGTCAAAAGATGGAAAGAAGTTTGCTAAAGCCACTTTCTTTTGATAAGCGCTTGATATTACGTTATACATAGCCTCCT
+TGACGTCTGGTCTTGTAATGAGCACTGTGGAGGGTATTGCTTTTGGTATGGCAAAATCCTTTGGCAACGTACCGTATA
+TAGAAAATTTAAAGTCTTCTGGATATTCTCCCAAAAGATAAGCAAAGGCATTTACCAACACTTTTCTTTGAGCTTTAT
+AGGTTTCTAACGTTTGTTCTAAATTTAGCAATGAGCTTTTAGCTTGGTCTACACTTTGATAAGATGTAAGCCCTGCTT
+TGTAATTTGTTTTTGCTAACTCTAAGTTTTTCTTTGCTATATTTATTTCTTTTTCTAAAAGCTTTATATAATGGGCGT
+TTTCTACTATTTGATAGTAGTTGTTTACTGTATTCATGATAAGGGCGTTTTTGATGGCTTTGGCTTCTTCTTTTGTTA
+TTTTTACATTTTCCTTATAGTATCTATAGGCGTTTAGAGCTTTTGCAAAAAGATCTATCTCATAAGAGGCGCTTACGG
+AAAGGTTATAGGTGGTATAGGGCGCTATACTGAAAAATTTTCCAGTAGGTGTGCGCCTGGATAGTTGTTGTTTGGTAC
+CAGAGGCGTTTAGATTAAAACTTGGAAAAAGCACAGATGAGTTTTCAAGCACATAAGCTTTTGATAGTTCTATATTTT
+TAAGAGCTATAAGGTAATTTGGATTGTTCTTTAGAGCCAAATCTACATAGTAATCAAGGGTTTTATCGTTGAAGGTTT
+TCCACCAATCTTTTAGATTGGTATTTAGTTCTTGGTTTGGTAGCTTTTCTTTAAAAGCGCTTGGATATTTTATAGATA
+CATTTGTTGGTTTTGCGTAAAAAGCACAAGAGTTTAATATCAAAGCTCCTATACCGATAACAACTATAGCCTTTCTCA
+TATTATTTGCCCTCTAAATATATGTCTACCAATTGGCCAGGGTAGAGGTTTACGTTTTTAGGCTTTTTAAATCTAAAT
+ATTACAGGTAGAACTCTTACGTCCACTCTTTCTAGTAGCTCATCCGATAGTTCTATCTTAGGTGTTACATAAGGTTCT
+ACCGCTACAAATTTAAGTGGCACAGATACATTGGTACCTCTTATAAACATAACGGCCTTTAAATCTTTTATAGGTGGT
+AGTTTTGTAAGGAGTATCTCATCTATAAACGCTCTAACTTGAAGCTCTCCATTGGAGCTTTGGCCAAGCCTTACAGGT
+GTAACGTAAGCATGTGTATAAGTATAATAAACACCAGAAGGTGATACATAGTCCCCTTTTTCCACGTTTAGCTCTAAA
+ACAGTTCCAGATACCGGCGCTTTTACCGTATATCTTTTTAAAAGCTCTAAAGCACTTTGGTAAGCATGTTTATCGGCT
+TTGTAAAGTTGATACTGGGTTTTTATATCGTAACTCCAAGCTCCTGCTTTTGTTAGTTCATAGTTTTTAATAGCTACT
+TTAAGATTTTCTTTTGCTTCTTTTAAAGCGTTTTTTGCATTGTCTAAATCTTGCTTTGATACAGATTTTGGGTTTAGT
+TTATAAGAGTTTAAAAGCTTTTCATAGTTTGACTGAGCATAAGCAAGCTGGGCTTTGGCATAATCTACTTGAGCTTTT
+GAAACTGCCAAAACTTGGGGTCTTGGTTCGTGTAAAAGCTCTTGATATTTTGTATAGTCTGCTTGCATTTGATGGTAA
+AGCTGTTTGACCGTTTGGGCTTGTACGCTGTCATCCACTTGGAAAAGAGGTTGTCCTTTTTGCACAAACTCACCGTAT
+TTTACAAAAACCTTTGTTACATTTCCAGATACCTCAGGGTATATATTTATGCTCTCCCCGCTATCTTGCACTGGTTCT
+ACTATACCGTTTGCATAAACGCCATTTGTAAAAGGGTCTTTTGTCATAGCTATAGGTGGTGGTGGTTTTGGAGCCGAT
+CCGTATATGTGAGCGCTTATAATACCTGCTATGATACCAAGAATGGCTAACGCTGTGAGGATTTTAACCTTCATATTC
+TACCTCCTCTAAAAAACCATTAAAAAATTTCATTTATAGAAATCTCCTTCAACATGCCATCTTCCATGTGCACTATCC
+TTGTAGCATCTTCAAATATCCTGTTGTCGTGGGTTATAACTATTATGGTTCTGTTTTCATTTAACATCCGTTCTTTTA
+TAAGCTTTATAACCTTTTTACCAGTATCCCCGTCCAAAGCGGCTGTAGGCTCGTCTAAAGCCAATATGGCTGGTTCTG
+TGGATAGAGCCCTTGCTATGGCTACCCTCTGTTGCTCACCGCCAGACATTTTATAGGCTGGAAGCTCGTACTTTTGCT
+CTGGAAGTTGCGCCATCTTTAGCTTTTCTCTTGCTATTTCTAAGGCTTTGTTCCAACTGTATCCTTTTAGGACAAGCG
+GTATCCCTGCGTTTTCCACAGCTGTAAGCCTTGGGAAAAGATGGTAATCTTGGAATACAAATCCTATATGATCTAGTC
+TAAATCTTGCCAAATCGTCTGTGCTAAGTGAAAATATGTCTATACTTTTATCTTTGTTTTCTTTAGATAAACCATAGT
+ATATTACTTTTCCGGAGTCTGGTCTTAAAACTCCAGATATCAAACTAAGAAACGTTGTTTTACCAGAACCAGTGGGTC
+CTACTATGTAAAGCATCTCACCGTAATATATCTCTAAGCTAACGTTTTTTACCGCACAGGTTTTTGCTTCTCCTGTTC
+CAAAGCACTTTGTGAGGTTTTCAACTTTTATAGACAACCTTTTAGGATTTTTGTTTTCTGGCATTAGTTATCCTCTAA
+ATACATCAAAAGCTTCTATCTTTAGTACTTTTCTTATACCTAAAAAGCTTGCAAAAGCCACAATAAAAATGACCATAA
+TGAAAGCTCCTAGCATGTTACCATAGCTTATCATAGCTGCGTAGTTTGGCAATTTTAGGTGCCCAAAGGCTATAAACG
+ATGATGCTAAAAGTACGCCAACTCCGTACCCTATCAGGCCCACTAAAACAGCCTGAAGAATAATTATAAACACAAGCT
+CTTTTCTGGTGGCTCCTATAGCTTTTAAGGCGCCAAACTTTTCAAGATTTTCTAAAACAAACGTATAAAATGTCTGCC
+CTGCTATAGAAAGCCCTACTATGAAGCTCACTAGTGTCATTATAAGCACGTTTGTACCAAAACCGGTTTTAAACATGT
+AAAAATTTGCATTTACTTTTGTAAACTCTTTTGATGTTAGGGCTCTATAACCAAGCTTAGCTATTTCTTTTTTAATCT
+GTGGTATGTATTTGGGGCTTTTAAGCTTAATAAGAACATAAGATATCGTAAATCTTGTGTTGGGTAAATCTTCTGTAG
+CCCTTGTATAGGTGGTATATAAGGTTGGATTTCCAAAAAGCCCAGACATAGCAGTTTTGGCAAAACCTACTATTACCC
+CTTTATGATCGTTTATTTCAAAGGTAGAACCTATATGAACGTTTCCAAGTTTTTTTAAATCTGGATCTTTTATAGCTA
+TAAAAGCGTAGCTTGAGTATATATCGTTTATATTCCCTTGAATCATGATTGGTCTACCCATTAAAGAAACATCGTCAA
+GACCTACTATATCCACAGCTTGATATTTTCCGTTTGGTAGTTTTACGGTGCCAGCTCCAAAGTATATTGGAGCGGCGT
+AAAGAACCCCAGGTAAGCTCCTTGCATAATCAAGCACGTAATCTGGAAGAGGTATGTTTTCTTTTGAATTATCTACAC
+TTCTATCCATCACCCACATATCGGCATCTGTATTGTATATGCTGGAACCAGATTTTGCTATAACACCAAAAAAAATGG
+ATGTCATTTGGAGCATCAAAAACACAGCAAAACTAACACCAAGTATGAGTGTGAAAAACTTGCCGCCATCTCCGGTTA
+AAAGTTTTATAGCTATGGTACCAAGACCCCTTATATTCATACTGATATTATATCAAGTAGTTGATGTTTTTCTATGAT
+ATATGACTGACGATTCAGTTTTCCTATGTCAAAAGCCTAAAAAATGGAGATGAGGGGAGTTGAACCCCCGGCCTATGC
+CTTGCGATGGCATCGCTCTCCCACCTGAGCTACATCCCCTACAGAGTCGGGGTGACAGGACTTGAACCTGCGGCCCCA
+GGCTCCCGAAGCCTGTGCTCTACCACCTGAGCTACACCCCGTACCGTATTAATTATAAGCTATTTTGTGCTAATACAT
+TTAACATATCTAATGTGCTTTCTGAGATGGTATGTAATGCAAACAAATTCAATCCCTCTAATAAATAGAGGGATCGTA
+CTAGAAGCTATTAGCTTACGAATTCCTGGATGTCCTTATAATATCTTTTATTATATCTACGTTTTTATCGTAAGCGTA
+AGAGCAACTAAGAGGCATCACTCTTACTCTTGCTACCCCTTGAGCTAATTGCTCTTAATAGATGCCTC"
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  id local id 1580,
+                  data gene {
+                    locus-tag "HydHO_0001"
+                  },
+                  comment "IMG reference gene:2506376879",
+                  location int {
+                    from 86,
+                    to 1642,
+                    strand plus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1581,
+                  data gene {
+                    locus-tag "HydHO_0002"
+                  },
+                  comment "IMG reference gene:2506376880",
+                  location int {
+                    from 1643,
+                    to 2446,
+                    strand minus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1582,
+                  data gene {
+                    locus-tag "HydHO_0003"
+                  },
+                  comment "IMG reference gene:2506376881",
+                  location int {
+                    from 2443,
+                    to 2781,
+                    strand minus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1583,
+                  data gene {
+                    locus-tag "HydHO_0004"
+                  },
+                  comment "IMG reference gene:2506376882",
+                  location int {
+                    from 2852,
+                    to 4300,
+                    strand plus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1584,
+                  data gene {
+                    locus-tag "HydHO_0005"
+                  },
+                  comment "IMG reference gene:2506376883",
+                  location int {
+                    from 4300,
+                    to 5487,
+                    strand plus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1585,
+                  data gene {
+                    locus-tag "HydHO_0006"
+                  },
+                  comment "IMG reference gene:2506376884",
+                  location int {
+                    from 5480,
+                    to 6226,
+                    strand plus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1586,
+                  data gene {
+                    locus-tag "HydHO_0007"
+                  },
+                  comment "IMG reference gene:2506376885",
+                  location int {
+                    from 6231,
+                    to 7610,
+                    strand minus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1587,
+                  data gene {
+                    locus-tag "HydHO_0008"
+                  },
+                  comment "IMG reference gene:2506376886",
+                  location int {
+                    from 7612,
+                    to 8697,
+                    strand minus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1588,
+                  data gene {
+                    locus-tag "HydHO_0009"
+                  },
+                  comment "IMG reference gene:2506376887",
+                  location int {
+                    from 8721,
+                    to 9467,
+                    strand minus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1589,
+                  data gene {
+                    locus-tag "HydHO_0010"
+                  },
+                  comment "IMG reference gene:2506376888",
+                  location int {
+                    from 9471,
+                    to 10613,
+                    strand minus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1590,
+                  data gene {
+                    locus-tag "HydHO_R0001"
+                  },
+                  comment "IMG reference gene:2506376889",
+                  location int {
+                    from 10696,
+                    to 10768,
+                    strand minus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1591,
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 65
+                    }
+                  },
+                  comment "IMG reference gene:2506376889",
+                  location int {
+                    from 10696,
+                    to 10768,
+                    strand minus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1592,
+                  data gene {
+                    locus-tag "HydHO_R0002"
+                  },
+                  comment "IMG reference gene:2506376890",
+                  location int {
+                    from 10776,
+                    to 10848,
+                    strand minus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1593,
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 80
+                    }
+                  },
+                  comment "IMG reference gene:2506376890",
+                  location int {
+                    from 10776,
+                    to 10848,
+                    strand minus,
+                    id gi 452881637
+                  }
+                },
+                {
+                  id local id 1594,
+                  data gene {
+                    locus-tag "HydHO_0011"
+                  },
+                  comment "IMG reference gene:2506376891",
+                  location int {
+                    from 10979,
+                    to 11109,
+                    strand minus,
+                    id gi 452881637
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            general {
+              db "jgi",
+              tag str "HydHO_1619"
+            },
+            genbank {
+              accession "AGG15920",
+              version 1
+            },
+            gi 452883216
+          },
+          descr {
+            title "protein of unknown function DUF62 [Hydrogenobaculum sp. HO]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans
+            },
+            genbank {
+              keywords {
+                "GSC:MIGS:2.1"
+              }
+            },
+            create-date std {
+              year 2013,
+              month 2,
+              day 26
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 244,
+            seq-data ncbieaa "MIALLTDFGTDDPYVGIVKSVIYSVEKDVEIVDITHNIEPFNILKGAF
+YLVSSYKYFPRETVFMCVVDPGVGSSRLPIACKYKDYFFVGPMNGIFDMVFEEKPYCVDISNHPYILKPTSNTFHGRD
+IFAPASAWIHKLKSIDFLGPKVNYQHSLDIPKPVLKDNTIEGSILFYDRFGNAITNVGCTKIKYAIIEDKKIEYFEYF
+SQAPKNTPGITCGSFGYFEFFINQGSFKEFSHAKSFKLIL"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  id local id 5090,
+                  data prot {
+                    name {
+                      "protein of unknown function DUF62"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 243,
+                    id gi 452883216
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              id local id 1,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376879~PFAM: Bacterial dnaA
+ protein helix-turn-helix; Bacterial dnaA protein~TIGRFAM: chromosomal
+ replication initiator protein DnaA~TIGRFAM: chromosomal replication initiator
+ protein DnaA~PFAM: Chromosomal replication initiator DnaA; Chromosomal
+ replication initiator DnaA domain~SMART: Chromosomal replication initiator
+ DnaA domain; AAA ATPase~SPTR: Chromosomal replication initiator protein
+ dnaA;~KEGG: hth:HTH_0001 chromosomal replication initiation protein~COGs:
+ COG0593 ATPase involved in DNA replication
+ initiation~InterProIPR018312:IPR013317:IPR013159:IPR003593:IPR
+ 020591:IPR001957",
+              product whole gi 452881638,
+              location int {
+                from 86,
+                to 1642,
+                strand plus,
+                id gi 452881637
+              }
+            },
+            {
+              id local id 2,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376880~PFAM: Sulfite exporter
+ TauE/SafE~PFAM: protein of unknown function DUF81~SPTR: Putative
+ uncharacterized protein;~KEGG: sai:Saci_0324 hypothetical protein~COGs:
+ COG0730 permease~InterPro IPR002781",
+              product whole gi 452881639,
+              location int {
+                from 1643,
+                to 2446,
+                strand minus,
+                id gi 452881637
+              }
+            },
+            {
+              id local id 3,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376881~PFAM: Putative tRNA
+ binding domain~TIGRFAM: methionyl-tRNA synthetase C-terminal region/beta
+ chain~PFAM: t-RNA-binding domain-containing protein~SPTR: T-RNA-binding
+ domain protein;~KEGG: aae:aq_422 methionyl-tRNA synthetase beta subunit~COGs:
+ COG0073 EMAP domain~InterPro IPR002547",
+              product whole gi 452881640,
+              location int {
+                from 2443,
+                to 2781,
+                strand minus,
+                id gi 452881637
+              }
+            },
+            {
+              id local id 4,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376882~PFAM: Starch synthase
+ catalytic domain; Glycosyl transferases group 1~TIGRFAM: glycogen/starch
+ synthases, ADP-glucose type~TIGRFAM: glycogen/starch synthase, ADP-glucose
+ type~PFAM: Starch synthase catalytic domain-containing protein; glycosyl
+ transferase group 1~SPTR: Glycogen synthase;~KEGG: tal:Thal_0819
+ glycogen/starch synthase, ADP-glucose type~COGs: COG0297 Glycogen
+ synthase~InterPro IPR013534:IPR001296:IPR011835",
+              product whole gi 452881641,
+              location int {
+                from 2852,
+                to 4300,
+                strand plus,
+                id gi 452881637
+              }
+            },
+            {
+              id local id 5,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376883~PFAM: Pterin binding
+ enzyme~TIGRFAM: dihydropteroate synthase~TIGRFAM: dihydropteroate
+ synthase~PRIAM: Dihydropteroate synthase~PFAM: dihydropteroate synthase
+ DHPS~SPTR: Dihydropteroate synthase;~KEGG: hth:HTH_1666 dihydropteroate
+ synthase~COGs: COG0294 Dihydropteroate synthase~InterPro IPR000489:IPR006390",
+              product whole gi 452881642,
+              location int {
+                from 4300,
+                to 5487,
+                strand plus,
+                id gi 452881637
+              }
+            },
+            {
+              id local id 6,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376884~PFAM: DisA bacterial
+ checkpoint controller nucleotide-binding~TIGRFAM: TIGR00159 family
+ protein~PFAM: protein of unknown function DUF147~SPTR: Putative
+ uncharacterized protein;~KEGG: tal:Thal_0234 protein of unknown function
+ DUF147~COGs: COG1624 conserved hypothetical protein~InterPro
+ IPR003390:IPR014046",
+              product whole gi 452881643,
+              location int {
+                from 5480,
+                to 6226,
+                strand plus,
+                id gi 452881637
+              }
+            },
+            {
+              id local id 7,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376885~PFAM: Outer membrane
+ efflux protein~TIGRFAM: efflux transporter, outer membrane factor (OMF)
+ lipoprotein, NodT family~TIGRFAM: RND efflux system, outer membrane
+ lipoprotein, NodT family~PFAM: outer membrane efflux protein~SPTR: RND efflux
+ system, outer membrane lipoprotein, NodT family;~KEGG: sul:SYO3AOP1_0310 RND
+ efflux system, outer membrane lipoprotein, NodT family~COGs: COG1538 Outer
+ membrane protein~InterPro IPR003423:IPR010131",
+              product whole gi 452881644,
+              location int {
+                from 6231,
+                to 7610,
+                strand minus,
+                id gi 452881637
+              }
+            },
+            {
+              id local id 8,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376886~PFAM: HlyD family
+ secretion protein~KEGG: sul:SYO3AOP1_0311 secretion protein HlyD family
+ protein~PFAM: secretion protein HlyD family protein~SPTR: Secretion protein
+ HlyD family protein;~COGs: COG1566 Multidrug resistance efflux pump~InterPro
+ IPR006143",
+              product whole gi 452881645,
+              location int {
+                from 7612,
+                to 8697,
+                strand minus,
+                id gi 452881637
+              }
+            },
+            {
+              id local id 9,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376887~PFAM: ABC
+ transporter~PFAM: ABC transporter related~SMART: AAA ATPase~SPTR: ABC
+ transporter related protein;~KEGG: sul:SYO3AOP1_0312 ABC transporter
+ related~COGs: COG1136 ABC-type antimicrobial peptide transport system ATPase
+ component~InterPro IPR017871:IPR003439:IPR003593",
+              product whole gi 452881646,
+              location int {
+                from 8721,
+                to 9467,
+                strand minus,
+                id gi 452881637
+              }
+            },
+            {
+              id local id 10,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376888~PFAM: MacB-like
+ periplasmic core domain; FtsX-like permease family~PFAM: protein of unknown
+ function DUF214~SPTR: Putative uncharacterized protein;~KEGG:
+ sul:SYO3AOP1_0313 protein of unknown function DUF214~InterPro IPR003838",
+              product whole gi 452881647,
+              location int {
+                from 9471,
+                to 10613,
+                strand minus,
+                id gi 452881637
+              }
+            },
+            {
+              id local id 11,
+              data cdregion {
+                frame one,
+                code {
+                  id 11
+                }
+              },
+              comment "IMG reference gene:2506376891~PFAM: Rare lipoprotein A
+ (RlpA)-like double-psi beta-barrel~TIGRFAM: rare lipoprotein A~TIGRFAM: rare
+ lipoprotein A~PFAM: Rare lipoprotein A~SPTR: Rare lipoprotein A;~KEGG:
+ aae:aq_1174 rare lipoprotein A~COGs: COG0797 Lipoprotein~InterPro
+ IPR005132:IPR012997",
+              product whole gi 452881648,
+              location int {
+                from 10979,
+                to 11109,
+                strand minus,
+                id gi 452881637
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

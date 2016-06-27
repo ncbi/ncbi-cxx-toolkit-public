@@ -1720,5 +1720,45 @@ DISCREPANCY_SUMMARIZE(UNWANTED_SPACER)
 }
 
 
+// CHECK_RNA_PRODUCTS_AND_COMMENTS
+
+static const string kFeatureHasWeirdStr = "[n] RNA product_name or comment[s] contain[S] 'suspect phrase'";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(CHECK_RNA_PRODUCTS_AND_COMMENTS, CSeq_feat, eOncaller, "Check for gene or genes in rRNA and tRNA products and comments")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData() || !obj.GetData().IsRna()) {
+        return;
+    }
+
+    const CRNA_ref& rna = obj.GetData().GetRna();
+    if (rna.IsSetType() && rna.GetType() != CRNA_ref::eType_rRNA && rna.GetType() != CRNA_ref::eType_tRNA) {
+        return;
+    }
+
+    string product = rna.GetRnaProductName();
+    string comment;
+    if (obj.IsSetComment()) {
+        comment = obj.GetComment();
+    }
+
+    if (NStr::FindNoCase(product, "gene") != NPOS || NStr::FindNoCase(comment, "gene") != NPOS) {
+        m_Objs[kFeatureHasWeirdStr].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(CHECK_RNA_PRODUCTS_AND_COMMENTS)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
