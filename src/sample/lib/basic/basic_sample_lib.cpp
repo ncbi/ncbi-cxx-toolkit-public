@@ -33,9 +33,11 @@
 #include <ncbi_pch.hpp>
 #include <sample/lib/basic/sample_lib_basic.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
-CSampleLibraryObject::CSampleLibraryObject(void)
+
+CSampleLibraryObject::CSampleLibraryObject()
 {
 #if defined(NCBI_OS_UNIX)
     m_EnvPath = "PATH";
@@ -46,28 +48,34 @@ CSampleLibraryObject::CSampleLibraryObject(void)
 #endif
 }
 
-CSampleLibraryObject::~CSampleLibraryObject(void)
-{
-}
 
-bool CSampleLibraryObject::FindInPath(
-    list<string>& found, const string& mask)
+bool CSampleLibraryObject::FindInPath(list<string>& found, const string& mask)
 {
     // Get PATH
     const string path =
         CNcbiApplication::Instance()->GetEnvironment().Get(m_EnvPath);
-    list<string> folders;
+
     // Get PATH folders
-    NStr::Split( path, m_EnvSeparator, folders );
-    // find file(s)
-    ITERATE( list<string>, f, folders ) {
-        CDir::TEntries ent = CDir( *f ).GetEntries( mask );
-        ITERATE( CDir::TEntries, e, ent ) {
-            found.push_back( (*e)->GetPath() );
+    list<string> folders;
+    NStr::Split(path, m_EnvSeparator, folders, NStr::fSplit_Tokenize);
+
+    // Find file(s)
+    for (auto f : folders) {
+        CDir::TEntries entries = CDir(f).GetEntries(mask);
+        for (auto e : entries) {
+            found.push_back( e->GetPath() );
         }
     }
+
     return !found.empty();
 }
+
+
+CSampleLibraryObject::~CSampleLibraryObject()
+{
+}
+
+
 
 END_NCBI_SCOPE
 
