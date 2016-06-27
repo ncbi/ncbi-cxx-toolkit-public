@@ -1,0 +1,15 @@
+Discrepancy Report Results
+
+Summary
+DEFLINE_PRESENT: 6 Bioseqs have definition line
+
+Detailed Report
+
+DEFLINE_PRESENT: 6 Bioseqs have definition line
+test-data/DEFLINE_PRESENT.asn:Seq1 (length 1066, 2 other)
+test-data/DEFLINE_PRESENT.asn:Seq2 (length 1068, 2 other)
+test-data/DEFLINE_PRESENT.asn:Seq3 (length 646)
+test-data/DEFLINE_PRESENT.asn:Seq4 (length 21)
+test-data/DEFLINE_PRESENT.asn:Seq5 (length 23)
+test-data/DEFLINE_PRESENT.asn:Seq6 (length 1074, 2 other)
+

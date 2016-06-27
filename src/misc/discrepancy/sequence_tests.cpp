@@ -1366,7 +1366,6 @@ DISCREPANCY_CASE(COUNT_UNVERIFIED, CSeq_inst, eOncaller, "Count number of unveri
     }
 }
 
-
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(COUNT_UNVERIFIED)
 //  ----------------------------------------------------------------------------
@@ -1380,7 +1379,37 @@ DISCREPANCY_SUMMARIZE(COUNT_UNVERIFIED)
 
 
 
+// DEFLINE_PRESENT
 
+const string kDeflineExists = "[n] Bioseq[s] [has] definition line";
+
+DISCREPANCY_CASE(DEFLINE_PRESENT, CSeq_inst, eDisc, "Test defline existence")
+{
+    if (obj.IsAa()) {
+        return;
+    }
+
+    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+    if (!bioseq) {
+        return;
+    }
+
+    CBioseq_Handle bioseq_h = context.GetScope().GetBioseqHandle(*bioseq);
+
+    CSeqdesc_CI descrs(bioseq_h, CSeqdesc::e_Title);
+    if (descrs) {
+        m_Objs[kDeflineExists].Add(*context.NewDiscObj(bioseq));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(DEFLINE_PRESENT)
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 
 END_SCOPE(NDiscrepancy)
