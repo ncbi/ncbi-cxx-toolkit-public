@@ -1220,7 +1220,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             }
             verify(BUF_Peek(uuu->http, hdr, size) == size);
             if (memcmp(&hdr[size - 4], "\r\n\r\n", 4) == 0) {
-                /*full header captured*/
+                /* full header captured */
                 hdr[size] = '\0';
                 break;
             }
@@ -1580,15 +1580,12 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     if (!retry->data)
         free(hdr);
 
-    if (!http_code) {
-        if (header_parse != eHTTP_HeaderError) {
-            if (url)
-                free(url);
-            return eIO_Success;
-        }
-        http_code = -1;
+    if (http_code == 0) {
+        if (url)
+            free(url);
+        return header_parse == eHTTP_HeaderError ? eIO_Unknown : eIO_Success;
     }
-    /*NB: http_code != 0*/
+    assert(header_parse != eHTTP_HeaderComplete);
 
     if (uuu->net_info->debug_printout
         ||  header_parse == eHTTP_HeaderContinue) {
@@ -1733,7 +1730,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
             assert((uuu->conn_state & eCS_ReadBody)  &&  !retry.mode);
             /* pending output data no longer needed */
             BUF_Erase(uuu->w_buf);
-            return eIO_Success;
+            break;
         }
 
         assert(status != eIO_Timeout  ||  !retry.mode);
@@ -1758,9 +1755,9 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         }
     }
 
-    assert(status != eIO_Success);
     if (BUF_Size(uuu->http)  &&  !BUF_Splice(&uuu->r_buf, uuu->http))
         BUF_Erase(uuu->http);
+    assert(!BUF_Size(uuu->http));
     return status;
 }
 
