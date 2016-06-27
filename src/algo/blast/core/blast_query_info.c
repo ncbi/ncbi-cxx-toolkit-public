@@ -219,7 +219,7 @@ Int4 BSearchContextInfo(Int4 n, const BlastQueryInfo * A)
     size = A->last_context+1;
 
     if (A->min_length > 0 && A->max_length > 0 && A->first_context == 0) {
-        b = n / (A->max_length + 1);
+        b = MIN(n / (A->max_length + 1), size - 1);
         e = MIN(n / (A->min_length + 1) + 1, size);
         ASSERT(e <= size);
     }
