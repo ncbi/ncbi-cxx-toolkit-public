@@ -188,9 +188,10 @@ void CNetStorageHandler::OnRead(void)
 
 
     size_t              n_read;
+    CSocket &           socket = GetSocket();
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
-    EIO_Status          status = GetSocket().Read(m_ReadBuffer, kReadBufferSize,
-                                                  &n_read);
+    EIO_Status          status = socket.Read(m_ReadBuffer, kReadBufferSize,
+                                             &n_read);
     if (m_Server->IsLogTimingClientSocket())
         m_Timing.Append("Client socket read", start);
 
@@ -204,14 +205,23 @@ void CNetStorageHandler::OnRead(void)
         this->OnClose(IServer_ConnectionHandler::eClientClose);
         return;
     case eIO_Interrupt:
+        ERR_POST(Warning << "Error reading from the client socket ("
+                         << socket.GetPeerAddress() + "): "
+                         << "(" << static_cast<int>(status) << ")");
         // Will be repeated again later?
         return;
     case eIO_NotSupported:
+        ERR_POST(Warning << "Error reading from the client socket ("
+                         << socket.GetPeerAddress() + "): "
+                         << "(" << static_cast<int>(status) << ")");
         x_SetConnRequestStatus(eStatus_NotImplemented);
         m_Server->CloseConnection(&GetSocket());
         return;
     default:
         // eIO_InvalidArg, eIO_Unknown
+        ERR_POST(Warning << "Error reading from the client socket ("
+                         << socket.GetPeerAddress() + "): "
+                         << "(" << static_cast<int>(status) << ")");
         x_SetConnRequestStatus(eStatus_ServerError);
         m_Server->CloseConnection(&GetSocket());
         return;
