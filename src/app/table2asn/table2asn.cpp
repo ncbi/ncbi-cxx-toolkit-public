@@ -305,7 +305,7 @@ void CTbl2AsnApp::Init(void)
       p Power Option\n\
       t TSA", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("l", "String", "Add type of evidence used to assert linkage across assembly gaps (only for TSA records). Must be one of the following:\n\
+    arg_desc->AddOptionalKey("l", "String", "Add type of evidence used to assert linkage across assembly gaps. May be used multiple times. Must be one of the following:\n\
       paired-ends\n\
       align-genus\n\
       align-xgenus\n\
