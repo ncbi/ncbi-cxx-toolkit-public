@@ -676,6 +676,16 @@ void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     m_ConnContext->SetBytesRd(socket.GetCount(eIO_Read));
     m_ConnContext->SetBytesWr(socket.GetCount(eIO_Write));
 
+    if (peer == IServer_ConnectionHandler::eClientClose) {
+        EIO_Status  status = socket.Shutdown(EIO_Event::eIO_ReadWrite);
+        if (status != EIO_Status::eIO_Success) {
+            m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+            ERR_POST("Unseccessfull client socket shutdown. "
+                     "The socket may have data not delivered to the client. "
+                     "Error code: " << status << ": " << IO_StatusStr(status));
+        }
+    }
+
     CDiagContext::SetRequestContext(m_ConnContext);
     GetDiagContext().PrintRequestStop();
     m_ConnContext.Reset();
