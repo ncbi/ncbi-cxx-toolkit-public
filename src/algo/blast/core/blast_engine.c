@@ -666,12 +666,6 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
         }
         if (status) break;
 
-	if (getenv("GET_NUMBERS")) {
-	    fprintf(stderr, "Num gapped extensions %d\n", gapped_stats->extensions);
-	    fprintf(stderr, "Num HSPs: %d\n", hsp_list->hspcnt);
-	}
-
-
         /* No need to do this for short reads */
         if (aux_struct->GetGappedScore) {
 

@@ -1241,7 +1241,7 @@ Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 /*   mb_lt->skip = lookup_options->skip; */
    mb_lt->stride = lookup_options->stride > 0;
    mb_lt->lut_word_length = lut_width;
-   mb_lt->hashsize = 1UL << (BITS_PER_NUC * mb_lt->lut_word_length);
+   mb_lt->hashsize = 1ULL << (BITS_PER_NUC * mb_lt->lut_word_length);
 
    mb_lt->hashtable = (Int4*)calloc(mb_lt->hashsize, sizeof(Int4)); 
    if (mb_lt->hashtable == NULL) {
@@ -1466,7 +1466,7 @@ s_NaHashLookupCountWordsInSubject_16_1(const BLAST_SequenceBlk* sequence,
 {
     Uint1 *s;
     Int4 i;
-    Int8 mask = (1UL << (16 * BITS_PER_NUC)) - 1;
+    Int8 mask = (1ULL << (16 * BITS_PER_NUC)) - 1;
     Int8 word, index, w;
     const Int4 kNumWords
         = sequence->length - lookup->lut_word_length;
@@ -1844,7 +1844,7 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
     BlastNaHashLookupTable *lookup = *lut =
         (BlastNaHashLookupTable*) calloc(1, sizeof(BlastNaHashLookupTable));
     /* Number of possible 16-base words */
-    const Int8 kNumWords = (1UL << 32);
+    const Int8 kNumWords = (1ULL << 32);
     Uint1* counts = NULL;
     Int4 num_hash_bits = 24;
     Int8 database_length;

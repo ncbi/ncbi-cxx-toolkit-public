@@ -2149,12 +2149,6 @@ JumperNaWordFinder(BLAST_SequenceBlk * subject,
         s_index = SubjectIndexFree(s_index);
     }
 
-    if (getenv("GET_NUMBERS")) {
-	fprintf(stderr, "Number of look-up table hits: %ld\n", ungapped_stats->lookup_hits);
-	fprintf(stderr, "Number of ungapped extensions: %d\n", ungapped_stats->init_extends);
-	fprintf(stderr, "Number of good initial extensions: %d\n", ungapped_stats->good_init_extends);
-    }
-
     return 0;
 
 }

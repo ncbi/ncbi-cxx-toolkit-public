@@ -2858,7 +2858,7 @@ static Int4 s_BlastNaHashScanSubject_Any(const LookupTableWrap* lookup_wrap,
    BlastNaHashLookupTable* lookup = (BlastNaHashLookupTable*) lookup_wrap->lut;
    Uint1* s;
    Uint1* abs_start = subject->sequence;
-   Int8 mask = (1UL << 32) - 1;
+   Int8 mask = (1ULL << 32) - 1;
    Int4 total_hits = 0;
    Int4 lut_word_length = lookup->lut_word_length;
    Int4 scan_step = lookup->scan_step;
