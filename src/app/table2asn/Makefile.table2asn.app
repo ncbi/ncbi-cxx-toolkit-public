@@ -10,7 +10,7 @@ APP = table2asn
 SRC = table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context feature_table_reader \
       fcs_reader table2asn_validator src_quals
 
-LIB  = xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
+LIB  = xdiscrepancy xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
        xvalidate xobjwrite xobjreadex valerr biotree \
        $(ncbi_xloader_wgs) \
        $(OBJEDIT_LIBS) $(XFORMAT_LIBS) $(BLAST_LIBS) id2cli \

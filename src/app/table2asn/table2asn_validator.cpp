@@ -16,6 +16,9 @@
 
 #include "table2asn_validator.hpp"
 
+#include <misc/discrepancy/discrepancy.hpp>
+
+
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
@@ -144,6 +147,21 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
         }
         out << endl << big_separator << endl;
     }
+}
+
+void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope, CNcbiOstream& output)
+{
+    const char* list[] = { "BACTERIA_SHOULD_NOT_HAVE_MRNA", "COUNT_NUCLEOTIDES" };
+    CRef<NDiscrepancy::CDiscrepancySet> tests = NDiscrepancy::CDiscrepancySet::New(scope);
+    tests->AddTest(list[0]); 
+    tests->AddTest(list[1]);
+
+//    Tests->SetSuspectRules(m_SuspectRules);
+//    Tests->SetLineage(m_Lineage);
+
+    tests->Parse(obj);
+    tests->Summarize();
+    tests->OutputText(output, false, false);
 }
 
 void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream)

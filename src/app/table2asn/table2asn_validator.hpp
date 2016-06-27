@@ -10,6 +10,7 @@ namespace objects
     class CSeq_entry_Handle;
     class CValidError;
     class CSeq_submit;
+    class CScope;
 };
 
 class CTable2AsnValidator
@@ -22,6 +23,7 @@ public:
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
     void ReportErrorStats(CNcbiOstream& out);
     size_t TotalErrors() const; 
+    void ReportDiscrepancies(CSerialObject& obj, objects::CScope& scope, CNcbiOstream& output);
 protected:
     typedef map<int, size_t> TErrorStats;
     vector<TErrorStats> m_stats;

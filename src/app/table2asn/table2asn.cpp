@@ -950,6 +950,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         {
             m_validator.Validate(submit, entry, m_context.m_validate, GenerateOutputFilename(".val"));
         }
+
+        if (m_context.m_discrepancy_file)
+        {
+            m_validator.ReportDiscrepancies(submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope, *m_context.m_discrepancy_file);
+        }
     }
 }
 
