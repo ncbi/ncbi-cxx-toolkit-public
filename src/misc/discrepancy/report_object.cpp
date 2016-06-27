@@ -172,7 +172,7 @@ void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label)
      
      feature::GetLabel(seq_feat, &label, feature::fFGL_Content);
      size_t pos;
-     if (!label.empty() && (string::npos != (pos = label.find("-")) ) ) {
+     if (seq_feat.GetData().IsRna() && !label.empty() && (string::npos != (pos = label.find("-")) ) ) {
           label = CTempString(label).substr(pos+1);
      }
      string number = "/number=";
