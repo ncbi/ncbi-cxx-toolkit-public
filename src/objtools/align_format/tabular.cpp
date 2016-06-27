@@ -265,6 +265,10 @@ void CBlastTabularInfo::x_PrintSubjectAllAccessions(void)
 
 void CBlastTabularInfo::x_PrintSubjectTaxId()
 {
+	if(m_SubjectTaxId == 0) {
+		m_Ostream << NA;
+		return;
+	}
        m_Ostream << m_SubjectTaxId;
 }
 
@@ -284,6 +288,10 @@ void CBlastTabularInfo::x_PrintSubjectTaxIds()
 
 void CBlastTabularInfo::x_PrintSubjectBlastName()
 {
+	if(m_SubjectBlastName == kEmptyStr) {
+		m_Ostream << NA;
+		return;
+	}
 	m_Ostream << m_SubjectBlastName;
 }
 
@@ -303,6 +311,10 @@ void CBlastTabularInfo::x_PrintSubjectBlastNames()
 
 void CBlastTabularInfo::x_PrintSubjectSuperKingdom()
 {
+	if(m_SubjectSuperKingdom == kEmptyStr) {
+		m_Ostream << NA;
+		return;
+	}
 	m_Ostream << m_SubjectSuperKingdom;
 }
 
@@ -322,6 +334,10 @@ void CBlastTabularInfo::x_PrintSubjectSuperKingdoms()
 
 void CBlastTabularInfo::x_PrintSubjectSciName()
 {
+	if(m_SubjectSciName == kEmptyStr) {
+		m_Ostream << NA;
+		return;
+	}
 	m_Ostream << m_SubjectSciName;
 }
 
@@ -341,6 +357,10 @@ void CBlastTabularInfo::x_PrintSubjectSciNames()
 
 void CBlastTabularInfo::x_PrintSubjectCommonName()
 {
+	if(m_SubjectCommonName == kEmptyStr) {
+		m_Ostream << NA;
+		return;
+	}
 	m_Ostream << m_SubjectCommonName;
 }
 
@@ -1059,6 +1079,13 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
                           scope.GetBioseqHandle(align.GetSeq_id(1)));
         }
 
+    }
+    else {
+    	if (x_IsFieldRequested(eSubjFrame) || x_IsFieldRequested(eFrames)) {
+    		if ((s_start - s_end) > 0 ) {
+    			subject_frame = -1;
+    		}
+    	}
     }
     SetCounts(num_ident, align_length, num_gaps, num_gap_opens, num_positives,
               query_frame, subject_frame);
