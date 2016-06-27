@@ -1085,10 +1085,7 @@ CFormatGuess::TestFormatFiveColFeatureTable(
             continue;
         }
 
-        if (it->find(">Feature ") != 0) {
-            return false;
-        }
-        if (it->find_first_of(" \t", 9) != string::npos) {
+        if (it->find(">Feature ") != 0 && it->find(">Features ") != 0) {
             return false;
         }
         break;
