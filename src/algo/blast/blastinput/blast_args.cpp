@@ -2191,7 +2191,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if(m_FormatFlags & eIsSAM) {
     	kOutputFormatDescription += ",\n 17 = Sequence Alignment/Map (SAM)";                
     }    
-    kOutputFormatDescription += ",\n 18 = Tax BLAST\n\n";
+    kOutputFormatDescription += ",\n 18 = Organism Report\n\n";
     if(m_FormatFlags & eIsSAM) {
     	kOutputFormatDescription +=    			
                 "Options 6, 7, 10 and 17 "
