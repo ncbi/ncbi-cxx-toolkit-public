@@ -88,7 +88,8 @@ static const unsigned kChunkSeqDataMul = 8;
 static const unsigned kReadsPerBlob = 1;
 
 // Seq-id parser parameters
-static const unsigned kMaxReadId = 8;
+static const unsigned kMaxReadId = 999;
+static const Uint8 kMaxSpotId = NCBI_CONST_UINT8(999999999999999999);
 
 #define SPOT_GROUP_SEPARATOR ": "
 #define PILEUP_NAME_SUFFIX "pileup graphs"
@@ -160,14 +161,26 @@ SIZE_TYPE CCSRABlobId::ParseReadId(CTempString str,
     const char* begin = str.data();
     const char* ptr = begin+str.size();
     const char* end = ptr;
+    Uint8 number = 0;
+    Uint8 number_digit = 1;
     bool parsing_read_id = true;
     for ( ; ptr != begin; ) {
         char c = *--ptr;
         if ( isdigit(c&0xff) ) {
-            if ( parsing_read_id && ptr < end-1 ) {
-                // too long read_id
-                return NPOS;
+            if ( parsing_read_id ) {
+                if ( number_digit > kMaxReadId ) {
+                    // too long read_id
+                    return NPOS;
+                }
             }
+            else {
+                if ( number_digit > kMaxSpotId ) {
+                    // too long spot_id
+                    return NPOS;
+                }
+            }
+            number += (c-'0')*number_digit;
+            number_digit *= 10;
         }
         else if ( c == '.' ) {
             // end of number
@@ -180,20 +193,19 @@ SIZE_TYPE CCSRABlobId::ParseReadId(CTempString str,
                 return NPOS;
             }
             if ( parsing_read_id ) {
-                Uint4 read_id = ptr[1] - '0';
-                if ( read_id > kMaxReadId ) {
-                    return NPOS;
-                }
+                // got read_id
                 if ( read_id_ptr ) {
-                    *read_id_ptr = read_id;
+                    *read_id_ptr = Uint4(number);
                 }
                 parsing_read_id = false;
+                // prepare parsing spot_id number
+                number = 0;
+                number_digit = 1;
             }
             else {
                 // got both spot_id and read_id
                 if ( spot_id_ptr ) {
-                    *spot_id_ptr =
-                        NStr::StringToNumeric<TVDBRowId>(CTempString(ptr+1, end-ptr-1));
+                    *spot_id_ptr = TVDBRowId(number);
                 }
                 break;
             }
