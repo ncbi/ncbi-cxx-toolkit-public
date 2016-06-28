@@ -11,7 +11,7 @@ SRC = table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context fe
       fcs_reader table2asn_validator src_quals
 
 LIB  = xdiscrepancy xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
-       xvalidate xobjwrite xobjreadex valerr biotree \
+       xvalidate xobjwrite xobjreadex valerr biotree macro \
        $(ncbi_xloader_wgs) \
        $(OBJEDIT_LIBS) $(XFORMAT_LIBS) $(BLAST_LIBS) id2cli \
        xregexp $(PCRE_LIB) $(SRAREAD_LIBS) $(OBJMGR_LIBS)
