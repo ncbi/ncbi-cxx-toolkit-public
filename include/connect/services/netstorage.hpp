@@ -337,7 +337,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
 /// @return
 ///  true, if API should continue current operation; false, if should stop
 ///
-typedef function<bool(const CJsonNode&)> TNetStorageProgressCb;
+typedef function<bool(CJsonNode)> TNetStorageProgressCb;
 
 
 /// Result returned by Remove() methods
