@@ -1505,7 +1505,7 @@ DISCREPANCY_SUMMARIZE(DEFLINE_PRESENT)
 
 const string kUnusualNT = "[n] sequence[s] contain[S] nucleotides that are not ATCG or N";
 
-static bool IsContainsUnusualNucleotide(const CSeq_data& seq_data)
+static bool ContainsUnusualNucleotide(const CSeq_data& seq_data)
 {
     CSeq_data as_iupacna;
     TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
@@ -1532,7 +1532,7 @@ DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc, "Sequence contains unusual nucleo
 
         if (obj.IsSetSeq_data()) {
 
-            if (IsContainsUnusualNucleotide(obj.GetSeq_data())) {
+            if (ContainsUnusualNucleotide(obj.GetSeq_data())) {
                 m_Objs[kUnusualNT].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
             }
         }
@@ -1545,7 +1545,7 @@ DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc, "Sequence contains unusual nucleo
 
                     if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
 
-                        if (IsContainsUnusualNucleotide((*delta)->GetLiteral().GetSeq_data())) {
+                        if (ContainsUnusualNucleotide((*delta)->GetLiteral().GetSeq_data())) {
                             m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
                             break;
                         }

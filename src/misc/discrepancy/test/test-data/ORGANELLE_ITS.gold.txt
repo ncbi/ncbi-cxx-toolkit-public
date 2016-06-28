@@ -1,0 +1,10 @@
+Discrepancy Report Results
+
+Summary
+ORGANELLE_ITS: 1 Bioseq has suspect rRNA / ITS on organelle
+
+Detailed Report
+
+ORGANELLE_ITS: 1 Bioseq has suspect rRNA / ITS on organelle
+test-data/ORGANELLE_ITS.asn:KP754129 (length 569, 2 other)
+
