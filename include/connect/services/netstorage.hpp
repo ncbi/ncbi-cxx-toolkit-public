@@ -75,6 +75,7 @@ public:
         eTimeout,       ///< Timeout encountered while performing an op
         eExpired,       ///< Object has expired on server
         eNotSupported,  ///< Feature is not supported
+        eUserCanceled,  ///< User canceled current operation
         eUnknown        ///< Unknown error
     };
     virtual const char* GetErrCodeString() const;
@@ -335,7 +336,8 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
 /// @param CJsonNode
 ///  progress info (depends on operation)
 /// @return
-///  true, if API should continue current operation; false, if should stop
+///  true, if API should continue current operation;
+///  false, if should stop (will throw CNetStorageException::eUserCanceled).
 ///
 typedef function<bool(CJsonNode)> TNetStorageProgressCb;
 
