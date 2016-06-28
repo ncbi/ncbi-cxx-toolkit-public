@@ -88,6 +88,7 @@ public:
     virtual void      OnTimeout(void);
     virtual void      OnOverflow(EOverflowReason reason);
     virtual void      OnMessage(BUF buffer);
+    virtual void      OnError(const string &  err_message);
 
     /// Statuses of commands to be set in diagnostics' request context
     /// Additional statuses can be taken from

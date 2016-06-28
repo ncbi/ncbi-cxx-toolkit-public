@@ -837,6 +837,12 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
 }
 
 
+void CNetScheduleHandler::OnError(const string &  err_message)
+{
+    ERR_POST(Warning << err_message);
+}
+
+
 void CNetScheduleHandler::x_SetQuickAcknowledge(void)
 {
     int     fd = 0;
