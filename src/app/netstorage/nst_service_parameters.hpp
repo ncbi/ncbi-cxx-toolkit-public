@@ -147,6 +147,19 @@ class CNSTServiceProperties
 };
 
 
+// Specific case for a service info
+enum EServiceMetadataPresence
+{
+    eUnknownService,        // [service_XXX] section is not in the .ini file
+                            // at all.
+    eMetadataOn,            // [service_XXX] section is in the .ini file and
+                            // 'metadata' is set to true
+    eMetadataExplicitOff,   // [service_XXX] section is in the .ini file and
+                            // 'metadata' is set to false
+    eMetadataDefaultOff     // [service_XXX] section is in the .ini file and
+                            // 'metadata' is not found i.e. false by default
+};
+
 
 class CNSTServiceRegistry
 {
@@ -156,7 +169,7 @@ class CNSTServiceRegistry
         size_t  Size(void) const;
         CJsonNode  ReadConfiguration(const IRegistry &  reg);
         CJsonNode  Serialize(void) const;
-        bool  IsKnown(const string &  service) const;
+        EServiceMetadataPresence  IsKnown(const string &  service) const;
         bool  GetTTL(const string &            service,
                      TNSTDBValue<CTimeSpan> &  ttl) const;
         bool  GetProlongOnRead(
@@ -194,6 +207,11 @@ class CNSTServiceRegistry
                      PNocase >          TServiceProperties;
         TServiceProperties              m_Services; // All the services
                                                     // netstorage knows about
+
+        // Auxiliary data to provide a better log messages
+        set<string, PNocase>            m_ServicesExplicitNoMetadata;
+        set<string, PNocase>            m_ServicesDefaultNoMetadata;
+
         mutable CMutex                  m_Lock;     // Lock for the map
 };
 

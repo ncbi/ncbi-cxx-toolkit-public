@@ -387,17 +387,27 @@ CNSTServiceRegistry::Serialize(void) const
 }
 
 
-bool
+EServiceMetadataPresence
 CNSTServiceRegistry::IsKnown(const string &  service) const
 {
     CMutexGuard     guard(m_Lock);
-    bool            found = m_Services.find(service) != m_Services.end();
 
-    if (found)
-        return true;
+    if (m_Services.find(service) != m_Services.end())
+        return EServiceMetadataPresence::eMetadataOn;
 
     // Hardcoded service for LBSMD health check
-    return NStr::EqualNocase(service, k_LBSMDNSTTestService);
+    if (NStr::EqualNocase(service, k_LBSMDNSTTestService))
+        return EServiceMetadataPresence::eMetadataOn;
+
+    if (m_ServicesExplicitNoMetadata.find(service) !=
+            m_ServicesExplicitNoMetadata.end())
+        return EServiceMetadataPresence::eMetadataExplicitOff;
+
+    if (m_ServicesDefaultNoMetadata.find(service) !=
+            m_ServicesDefaultNoMetadata.end())
+        return EServiceMetadataPresence::eMetadataDefaultOff;
+
+    return EServiceMetadataPresence::eUnknownService;
 }
 
 
@@ -623,6 +633,9 @@ CNSTServiceRegistry::x_ReadProlongProperty(const string &  value)
 }
 
 
+// The member also updates the m_ServicesExplicitNoMetadata and
+// m_ServicesDefaultNoMetadata sets. They could be updated directly because
+// they do not participate in forming the difference JSON.
 list<string>
 CNSTServiceRegistry::x_GetMetadataServices(const IRegistry &  reg)
 {
@@ -630,21 +643,29 @@ CNSTServiceRegistry::x_GetMetadataServices(const IRegistry &  reg)
     list<string>    sections;
     const string    prefix = "service_";
 
+    m_ServicesExplicitNoMetadata.clear();
+    m_ServicesDefaultNoMetadata.clear();
+
     reg.EnumerateSections(&sections);
     for (list<string>::const_iterator  k = sections.begin();
             k != sections.end(); ++k) {
         if (NStr::StartsWith(*k, prefix, NStr::eNocase)) {
+            string      service_name = string(k->c_str() + prefix.size());
+            if (service_name.empty())
+                continue;
+
             if (reg.HasEntry(*k, "metadata")) {
                 try {
                     if (reg.GetBool(*k, "metadata", false)) {
-                        string      service_name = string(k->c_str() +
-                                                          prefix.size());
-                        if (!service_name.empty())
-                            metadata_services.push_back(service_name);
+                        metadata_services.push_back(service_name);
+                    } else {
+                        m_ServicesExplicitNoMetadata.insert(service_name);
                     }
                 } catch (...) {
                     ;
                 }
+            } else {
+                m_ServicesDefaultNoMetadata.insert(service_name);
             }
         }
     }

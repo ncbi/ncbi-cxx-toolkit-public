@@ -410,7 +410,8 @@ CNSTDatabase &  CNetStorageServer::GetDb(void)
 }
 
 
-bool  CNetStorageServer::InMetadataServices(const string &  service) const
+EServiceMetadataPresence
+CNetStorageServer::InMetadataServices(const string &  service) const
 {
     return m_MetadataServiceRegistry.IsKnown(service);
 }

@@ -1522,7 +1522,7 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
 
     // Second part might be here
     bool    db_access = (m_MetadataOption == eMetadataMonitoring ||
-                         m_Server->InMetadataServices(m_Service));
+                     m_Server->InMetadataServices(m_Service) == eMetadataOn);
     if (db_access) {
         try {
             vector<string>      client_names;
@@ -3456,10 +3456,25 @@ CNetStorageHandler::x_ConvertMetadataArgument(const CJsonNode &  message) const
     }
 
     if (result == eMetadataRequired) {
-        if (!m_Server->InMetadataServices(m_Service))
-            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "Invalid metadata option. It cannot be required for not "
-                       "configured service");
+        switch (m_Server->InMetadataServices(m_Service))
+        {
+            case eMetadataOn:
+                break;  // all good
+            case eUnknownService:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Invalid metadata option. It cannot be required "
+                           "for not configured service");
+            case eMetadataExplicitOff:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Invalid metadata option. It cannot be required "
+                           "for a service which has metadata explicitly "
+                           "switched off");
+            case eMetadataDefaultOff:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Invalid metadata option. It cannot be required "
+                           "for a service which has metadata "
+                           "switched off (by default)");
+        }
     }
     return result;
 }
@@ -3487,11 +3502,27 @@ CNetStorageHandler::x_ValidateWriteMetaDBAccess(
         string      service = object_loc_struct.GetServiceName();
         if (service.empty())
             service = m_Service;
-        if (!m_Server->InMetadataServices(service))
-            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "Effective object service (" + service +
-                       ") is not in the list of "
-                       "configured services. Metainfo DB access declined.");
+
+        switch (m_Server->InMetadataServices(service))
+        {
+            case eMetadataOn:
+                break;  // all good
+            case eUnknownService:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Effective object service (" + service +
+                           ") is not configured. Metainfo DB access declined.");
+            case eMetadataExplicitOff:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Effective object service (" + service +
+                           ") has metadata explicitly switched off. "
+                           "Metainfo DB access declined.");
+            case eMetadataDefaultOff:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Effective object service (" + service +
+                           ") has metadata switched off (by default). "
+                           "Metainfo DB access declined.");
+        }
+
         return;
     }
 
@@ -3505,11 +3536,25 @@ CNetStorageHandler::x_ValidateWriteMetaDBAccess(
 
     // There is no knowledge of the service and metadata request from the
     // object identifier, so the HELLO service is used
-    if (!m_Server->InMetadataServices(m_Service))
-        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                   "Service provided in HELLO ("+ m_Service +
-                   ") is not in the list of "
-                   "configured services. Metainfo DB access declined.");
+    switch (m_Server->InMetadataServices(m_Service))
+    {
+        case eMetadataOn:
+            break;  // all good
+        case eUnknownService:
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO (" + m_Service +
+                       ") is not configured. Metainfo DB access declined.");
+        case eMetadataExplicitOff:
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO (" + m_Service +
+                       ") has metadata explicitly switched off. "
+                       "Metainfo DB access declined.");
+        case eMetadataDefaultOff:
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO (" + m_Service +
+                       ") has metadata switched off (by default). "
+                       "Metainfo DB access declined.");
+    }
 }
 
 

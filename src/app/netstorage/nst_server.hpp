@@ -125,7 +125,7 @@ public:
     CNSTDatabase &  GetDb(void);
 
     // Metainfo support
-    bool InMetadataServices(const string &  service) const;
+    EServiceMetadataPresence InMetadataServices(const string &  service) const;
     bool GetServiceTTL(const string &            service,
                        TNSTDBValue<CTimeSpan> &  ttl) const;
     bool GetServiceProlongOnRead(
