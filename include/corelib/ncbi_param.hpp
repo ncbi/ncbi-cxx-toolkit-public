@@ -235,7 +235,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
                   const TParamDesc& descr)                                  \
     { return CEnumParser< type, ptype >::EnumToString(val, descr); }
 
-// Defenition of SNcbiParamDesc_XXXX static members common for normal
+// Definition of SNcbiParamDesc_XXXX static members common for normal
 // and enum parameters.
 #define X_NCBI_PARAM_STATIC_DEF(descname, defval)                           \
     descname::TStaticValue descname::sm_Default = defval;                   \
@@ -268,6 +268,11 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
 /// Enum parameter declaration. In addition to NCBI_PARAM_DECL also
 /// specializes CParamParser<type, ptype> to convert between strings and
 /// enum values.
+/// @attention 
+/// Only use this macro in the global or "ncbi" namespace, otherwise you will
+/// get compilation errors. Using this macro in the said namespaces will not 
+/// affect usability of a created CParamParser<type, ptype> specialization
+/// from other namespaces.
 /// @sa NCBI_PARAM_ENUM_ARRAY
 /// @sa NCBI_PARAM_ENUM_DEF
 #define NCBI_PARAM_ENUM_DECL(type, section, name)                             \
@@ -279,6 +284,11 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
 
 
 /// Same as NCBI_PARAM_ENUM_DECL but with export specifier (e.g. NCBI_XNCBI_EXPORT)
+/// @attention 
+/// Only use this macro in the global or "ncbi" namespace, otherwise you will
+/// get compilation errors. Using this macro in the said namespaces will not 
+/// affect usability of a created CParamParser<type, ptype> specialization
+/// from other namespaces.
 /// @sa NCBI_PARAM_ENUM_DECL
 #define NCBI_PARAM_ENUM_DECL_EXPORT(expname, type, section, name)             \
     struct expname X_NCBI_PARAM_DECLNAME(section, name);                      \
