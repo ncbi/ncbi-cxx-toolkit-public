@@ -271,6 +271,7 @@ public:
 
 
 class CSeq_feat_BY_BIOSEQ : public CSeq_feat {};
+class CSeqdesc_BY_BIOSEQ : public CSeqdesc {};
 class COverlappingFeatures : public CBioseq {};
 
 struct CSeqSummary
@@ -306,6 +307,7 @@ public:
             INIT_DISCREPANCY_TYPE(CSeq_feat),
             INIT_DISCREPANCY_TYPE(CSeqFeatData),
             INIT_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ),
+            INIT_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ),
             INIT_DISCREPANCY_TYPE(COverlappingFeatures),
             INIT_DISCREPANCY_TYPE(CBioSource),
             INIT_DISCREPANCY_TYPE(CRNA_ref),
@@ -404,6 +406,7 @@ protected:
     ADD_DISCREPANCY_TYPE(CSeq_feat)
     ADD_DISCREPANCY_TYPE(CSeqFeatData)
     ADD_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
+    ADD_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ)
     ADD_DISCREPANCY_TYPE(COverlappingFeatures)
     ADD_DISCREPANCY_TYPE(CBioSource)
     ADD_DISCREPANCY_TYPE(CRNA_ref)

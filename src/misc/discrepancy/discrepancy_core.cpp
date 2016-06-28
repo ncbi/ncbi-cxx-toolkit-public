@@ -31,6 +31,7 @@
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
 #include <sstream>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
 
@@ -250,6 +251,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     REGISTER_DISCREPANCY_TYPE(CSeq_feat)
     REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
     REGISTER_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
+    REGISTER_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ)
     REGISTER_DISCREPANCY_TYPE(COverlappingFeatures)
     REGISTER_DISCREPANCY_TYPE(CBioSource)
     REGISTER_DISCREPANCY_TYPE(COrgName)
@@ -308,6 +310,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     // ENABLE_DISCREPANCY_TYPE(CSeq_feat) - don't need!
     ENABLE_DISCREPANCY_TYPE(CSeqFeatData)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ), it is handled separately!
+    // Don't ENABLE_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ), it is handled separately!
     // Don't ENABLE_DISCREPANCY_TYPE(COverlappingFeatures), it is handled separately!
     ENABLE_DISCREPANCY_TYPE(CBioSource)
     ENABLE_DISCREPANCY_TYPE(COrgName)
@@ -315,6 +318,8 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     ENABLE_DISCREPANCY_TYPE(CPubdesc)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_annot), it is handled separately!
     // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
+
+    CSeqdesc_CI::TDescChoices desc_choices = {CSeqdesc::e_Source};
 
     for (i = CConstBeginInfo(root); i; ++i) {
         CTypesConstIterator::TIteratorContext ctx = i.GetContextData();
@@ -337,9 +342,17 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
                     CollectFeature(*feat);
                     m_Current_Seq_feat.Reset(feat);
                     m_Count_Seq_feat++;
-                    //const CSeq_feat_BY_BIOSEQ& obj = (const CSeq_feat_BY_BIOSEQ&)*feat;
                     NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeq_feat_BY_BIOSEQ>* >, it, m_All_CSeq_feat_BY_BIOSEQ) {
                         Call(**it, (const CSeq_feat_BY_BIOSEQ&)*feat);
+                    }
+                }
+            }
+            CSeqdesc_CI desc_ci(m_Current_Bioseq_Handle, desc_choices);
+            if (m_Enable_CSeqdesc_BY_BIOSEQ) {
+                for (; desc_ci; ++desc_ci) {
+                    const CSeqdesc& desc = *desc_ci;
+                    NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeqdesc_BY_BIOSEQ>* >, it, m_All_CSeqdesc_BY_BIOSEQ) {
+                        Call(**it, (const CSeqdesc_BY_BIOSEQ&)desc);
                     }
                 }
             }
@@ -485,6 +498,7 @@ DISCREPANCY_LINK_MODULE(discrepancy_case);
 DISCREPANCY_LINK_MODULE(suspect_product_names);
 DISCREPANCY_LINK_MODULE(division_code_conflicts);
 DISCREPANCY_LINK_MODULE(feature_per_bioseq);
+DISCREPANCY_LINK_MODULE(seqdesc_per_bioseq);
 DISCREPANCY_LINK_MODULE(gene_names);
 DISCREPANCY_LINK_MODULE(rna_names);
 DISCREPANCY_LINK_MODULE(spell_check);

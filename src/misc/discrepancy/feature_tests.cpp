@@ -75,9 +75,6 @@ DISCREPANCY_CASE(PSEUDO_MISMATCH, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Pseud
 DISCREPANCY_SUMMARIZE(PSEUDO_MISMATCH)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -131,9 +128,6 @@ DISCREPANCY_CASE(SHORT_RRNA, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Short rRNA
 DISCREPANCY_SUMMARIZE(SHORT_RRNA)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -251,9 +245,6 @@ DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Missing
 DISCREPANCY_SUMMARIZE(MISSING_GENES)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -324,9 +315,6 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Extra Gen
 DISCREPANCY_SUMMARIZE(EXTRA_GENES)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -499,9 +487,6 @@ DISCREPANCY_AUTOFIX(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
 DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -537,9 +522,6 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, CSeq_feat_BY_BIOSEQ,
 DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -589,9 +571,6 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc, "Find partial fea
 DISCREPANCY_SUMMARIZE(PARTIAL_PROBLEMS)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -729,9 +708,6 @@ DISCREPANCY_CASE(NON_GENE_LOCUS_TAG, CSeq_feat, eDisc | eOncaller, "Nongene Locu
 DISCREPANCY_SUMMARIZE(NON_GENE_LOCUS_TAG)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -766,9 +742,6 @@ DISCREPANCY_CASE(FIND_BADLEN_TRNAS, CSeq_feat, eDisc | eOncaller, "Find short an
 DISCREPANCY_SUMMARIZE(FIND_BADLEN_TRNAS)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -900,9 +873,6 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, CSeq_feat_BY_BIOSEQ, eOncaller, "Feature
 DISCREPANCY_SUMMARIZE(GENE_PARTIAL_CONFLICT)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1003,9 +973,6 @@ DISCREPANCY_CASE(BAD_GENE_STRAND, CSeq_feat_BY_BIOSEQ, eOncaller, "Genes and fea
 DISCREPANCY_SUMMARIZE(BAD_GENE_STRAND)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1044,9 +1011,6 @@ DISCREPANCY_CASE(MICROSATELLITE_REPEAT_TYPE, CSeq_feat_BY_BIOSEQ, eOncaller, "Mi
 DISCREPANCY_SUMMARIZE(MICROSATELLITE_REPEAT_TYPE)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -1143,9 +1107,6 @@ DISCREPANCY_CASE(SUSPICIOUS_NOTE_TEXT, CSeq_feat, eOncaller, "Find Suspicious Ph
 DISCREPANCY_SUMMARIZE(SUSPICIOUS_NOTE_TEXT)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1188,9 +1149,6 @@ DISCREPANCY_CASE(CDS_HAS_NEW_EXCEPTION, CSeq_feat, eOncaller|eDisc, "Coding regi
 DISCREPANCY_SUMMARIZE(CDS_HAS_NEW_EXCEPTION)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1226,9 +1184,6 @@ DISCREPANCY_CASE(SHORT_LNCRNA, CSeq_feat, eOncaller | eDisc, "Short lncRNA seque
 DISCREPANCY_SUMMARIZE(SHORT_LNCRNA)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1267,9 +1222,6 @@ DISCREPANCY_CASE(JOINED_FEATURES, CSeq_feat_BY_BIOSEQ, eDisc, "Joined Features: 
 DISCREPANCY_SUMMARIZE(JOINED_FEATURES)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1330,9 +1282,6 @@ DISCREPANCY_CASE(SHORT_INTRON, CSeq_feat, eDisc | eOncaller, "Introns shorter th
 DISCREPANCY_SUMMARIZE(SHORT_INTRON)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1557,9 +1506,6 @@ DISCREPANCY_CASE(UNNECESSARY_VIRUS_GENE, CSeq_feat, eOncaller, "Unnecessary gene
 DISCREPANCY_SUMMARIZE(UNNECESSARY_VIRUS_GENE)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1591,9 +1537,6 @@ DISCREPANCY_CASE(CDS_HAS_CDD_XREF, CSeq_feat, eDisc|eOncaller, "CDS has CDD Xref
 DISCREPANCY_SUMMARIZE(CDS_HAS_CDD_XREF)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1621,9 +1564,6 @@ DISCREPANCY_CASE(SHOW_TRANSL_EXCEPT, CSeq_feat, eDisc, "Show translation excepti
 DISCREPANCY_SUMMARIZE(SHOW_TRANSL_EXCEPT)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1659,9 +1599,6 @@ DISCREPANCY_CASE(NO_PRODUCT_STRING, CSeq_feat, eDisc, "Product has string \"no p
 DISCREPANCY_SUMMARIZE(NO_PRODUCT_STRING)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
@@ -1713,9 +1650,6 @@ DISCREPANCY_CASE(UNWANTED_SPACER, CSeq_feat_BY_BIOSEQ, eOncaller, "Intergenic sp
 DISCREPANCY_SUMMARIZE(UNWANTED_SPACER)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -1753,9 +1687,6 @@ DISCREPANCY_CASE(CHECK_RNA_PRODUCTS_AND_COMMENTS, CSeq_feat, eOncaller, "Check f
 DISCREPANCY_SUMMARIZE(CHECK_RNA_PRODUCTS_AND_COMMENTS)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
