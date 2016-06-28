@@ -39,6 +39,7 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
@@ -1562,6 +1563,63 @@ DISCREPANCY_SUMMARIZE(UNUSUAL_NT)
     if (m_Objs.empty()) {
         return;
     }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// TAXNAME_NOT_IN_DEFLINE
+
+const string kNoTaxnameInDefline = "[n] defline[s] [does] not contain the complete taxname";
+
+DISCREPANCY_CASE(TAXNAME_NOT_IN_DEFLINE, CSeq_inst, eDisc | eOncaller, "Complete taxname should be present in definition line")
+{
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (!seq) {
+        return;
+    }
+
+    CBioseq_Handle seq_h = context.GetScope().GetBioseqHandle(*seq);
+    CSeqdesc_CI source(seq_h, CSeqdesc::e_Source);
+
+    if (source && source->GetSource().IsSetOrg() && source->GetSource().GetOrg().IsSetTaxname()) {
+
+        string taxname = source->GetSource().GetOrg().GetTaxname();
+
+        if (NStr::EqualNocase(taxname, "Human immunodeficiency virus 1")) {
+            taxname = "HIV-1";
+        }
+        else if (NStr::EqualNocase(taxname, "Human immunodeficiency virus 2")) {
+            taxname = "HIV-2";
+        }
+
+        bool no_taxname_in_defline = false;
+        CSeqdesc_CI title(seq_h, CSeqdesc::e_Title);
+        if (title) {
+            const string& title_str = title->GetTitle();
+
+            SIZE_TYPE taxname_pos = NStr::FindNoCase(taxname, title_str);
+            if (taxname_pos == NPOS) {
+                no_taxname_in_defline = true;
+            }
+            else {
+                //capitalization must match for all but the first letter
+                no_taxname_in_defline = NStr::CompareNocase(taxname.c_str(), 1, taxname.size() - 1, title_str.c_str() + 1) != 0;
+
+                if (taxname_pos > 0 && !isspace(title_str[taxname_pos - 1]) && !ispunct(title_str[taxname_pos - 1])) {
+                    no_taxname_in_defline = true;
+                }
+            }
+        }
+
+        if (no_taxname_in_defline) {
+            m_Objs[kNoTaxnameInDefline].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&(*title))), false);
+        }
+    }
+
+}
+
+DISCREPANCY_SUMMARIZE(TAXNAME_NOT_IN_DEFLINE)
+{
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
