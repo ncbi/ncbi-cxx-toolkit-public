@@ -54,11 +54,12 @@ static CSafeStatic<TParamServerCatchExceptions> s_ServerCatchExceptions;
 // IServer_MessageHandler implementation
 void IServer_MessageHandler::OnRead(void)
 {
-    CSocket &socket = GetSocket();
-    CServer_Connection* conn = static_cast<CServer_Connection*>(&socket);
-    char read_buf[4096];
-    size_t n_read;
-    EIO_Status status = socket.Read(read_buf, sizeof(read_buf), &n_read);
+    CSocket &               socket = GetSocket();
+    CServer_Connection *    conn = static_cast<CServer_Connection*>(&socket);
+    char                    read_buf[4096];
+    size_t                  n_read;
+    EIO_Status              status = socket.Read(read_buf, sizeof(read_buf),
+                                                 &n_read);
     switch (status) {
     case eIO_Success:
         break;
@@ -69,19 +70,27 @@ void IServer_MessageHandler::OnRead(void)
         this->OnClose(IServer_ConnectionHandler::eClientClose);
         return;
     default:
-        // TODO: ??? OnError
+        string      err_message("Error reading from the client socket (");
+
+        err_message += socket.GetPeerAddress() + "): " +
+                       string(IO_StatusStr(status)) + "(" +
+                       NStr::NumericToString(static_cast<int>(status)) + ")";
+
+        this->OnError(err_message);
         return;
     }
-    int message_tail;
-    char *buf_ptr = read_buf;
+
+    int         message_tail;
+    char *      buf_ptr = read_buf;
     for ( ;n_read > 0  &&  conn->type == eActiveSocket; ) {
         message_tail = this->CheckMessage(&m_Buffer, buf_ptr, n_read);
+
         // TODO: what should we do if message_tail > n_read?
         if (message_tail < 0) {
             return;
-        } else {
-            this->OnMessage(m_Buffer);
         }
+
+        this->OnMessage(m_Buffer);
         int consumed = int(n_read) - message_tail;
         buf_ptr += consumed;
         n_read -= consumed;

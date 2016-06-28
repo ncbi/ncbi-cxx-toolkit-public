@@ -273,6 +273,9 @@ public:
     // See comment for CAcceptRequest::Process and CServer::CreateRequest
     virtual void OnOverflow(EOverflowReason) { }
 
+    /// Runs when a socket error is detected
+    virtual void OnError(const string &  /*err_message*/) { }
+
     /// Get underlying socket
     CSocket& GetSocket(void) { return *m_Socket; }
 
