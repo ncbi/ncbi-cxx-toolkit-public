@@ -255,7 +255,7 @@ void AugmentPartialness(CSeq_loc& loc, T53Partialness partialness)
 }
 
 
-#if 0
+#if 1
 
 /* 
  * GP-13080
@@ -335,8 +335,6 @@ public:
         Validate(orig_loc, *loc);
         return loc;
     }
-
-private:
 
     template<typename T>
     static CRef<T> Clone(const T& x)
@@ -1060,7 +1058,7 @@ private:
 // Project exon to genomic coordinates, preserving discontinuities.
 //
 // aln_genomic* params are only used if not specified within exon
-static CRef<CSeq_loc> ProjectExon(
+static CRef<CSeq_loc> ProjectExon_newlogic(
         const CSpliced_exon& exon, 
         const CSeq_id& aln_genomic_id, 
         ENa_strand aln_genomic_strand)  
@@ -1119,19 +1117,8 @@ static CRef<CSeq_loc> ProjectExon(
         exon_relative_subj_start += it->diag + it->s_ins;
     }
 
-#if 0
-    {{
-         CRef<CSeq_loc> tmploc = ProjectExon_oldlogic(exon, aln_genomic_id, aln_genomic_strand);
-         if(!exon_loc->Equals(*tmploc)) {
-            NcbiCerr << MSerial_AsnText 
-                     << exon
-                     << "old: " << NTweakExon::AsString(tmploc->GetPacked_int())
-                     << "\nnew: " << NTweakExon::AsString(exon_loc->GetPacked_int())
-                     << "\n";
-         }
-
-     }}
-#endif
+    NTweakExon::SubsumeMicroIntervals(exon_loc->SetPacked_int());
+    NTweakExon::CollapseNonframeshiftting(exon_loc->SetPacked_int());
 
     try { 
         // Validate 
@@ -1164,10 +1151,29 @@ static CRef<CSeq_loc> ProjectExon(
         NCBI_RETHROW_SAME(e, "Invalid result");
     }
 
+
     return exon_loc;
 }
 
+// GP-17626
+static CRef<CSeq_loc> ProjectExon(
+        const CSpliced_exon& exon, 
+        const CSeq_id& aln_genomic_id, 
+        ENa_strand aln_genomic_strand)  
+{
+    CRef<CSeq_loc> exon_loc;
+   
+    try {
+        exon_loc = ProjectExon_oldlogic(exon, aln_genomic_id, aln_genomic_strand);
+    } catch(CException& e) {
+        exon_loc = ProjectExon_newlogic(exon, aln_genomic_id, aln_genomic_strand);
 
+        ERR_POST(Warning << " Project-exon logic failed. Using new logic: " 
+                         << NTweakExon::AsString(exon_loc->GetPacked_int()) << "\n");
+    }
+
+    return exon_loc;
+}
 
 
 /// Create an exon with the structure consisting of 
