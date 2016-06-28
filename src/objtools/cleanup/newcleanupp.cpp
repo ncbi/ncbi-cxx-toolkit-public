@@ -5442,10 +5442,28 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
                 }
             }
         }
-
-        if( FIELD_IS_SET(name, First) ) {
-            NStr::ReplaceInPlace( GET_MUTABLE(name, First), sDot, kEmptyStr);
-            NStr::TruncateSpacesInPlace( GET_MUTABLE(name, First), NStr::eTrunc_Begin );
+        // continue extracting initials from middle name
+        {
+            if ( FIELD_IS_SET(name, Middle) ) {
+                const string &middle = GET_FIELD(name, Middle);
+                string::size_type next_pos = 0;
+                while ( next_pos < middle.length() ) {
+                    // skip initial spaces and hyphens
+                    next_pos = middle.find_first_not_of(" -", next_pos);
+                    if( string::npos == next_pos ) break;
+                    // if we hit an letter after that, copy the letter to inits
+                    if( isalpha( middle[next_pos] ) ) {\
+                        first_initials += middle[next_pos];
+                    }
+                    // find next space or hyphen
+                    next_pos = middle.find_first_of(" -", next_pos);
+                    if( string::npos == next_pos ) break;
+                    // if it's a hyphen, copy it
+                    if( middle[next_pos] == '-' ) {
+                        first_initials += '-';
+                    }
+                }
+            }
         }
 
         if (fix_initials) {
