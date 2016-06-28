@@ -42,6 +42,8 @@
 
 #include <corelib/ncbitime.hpp>
 
+#include <functional>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -328,6 +330,16 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
 };
 
 
+/// Progress callback
+///
+/// @param CJsonNode
+///  progress info (depends on operation)
+/// @return
+///  true, if API should continue current operation; false, if should stop
+///
+typedef function<bool(CJsonNode)> TNetStorageProgressCb;
+
+
 /// Result returned by Remove() methods
 ///
 /// @see CNetStorage::Remove(), CNetStorageByKey::Remove()
@@ -411,13 +423,17 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     ///  An existing object to relocate
     /// @param flags
     ///  Combination of flags that defines the new object location (storage)
-    ///
+    /// @param cb
+    ///  Relocation progress callback (@see TNetStorageProgressCb).
+    ///  CJsonNode input argument (object) will contain two subnodes:
+    ///  number 'BytesRelocated' and string 'Message'
     /// @return
     ///  New object ID that fully reflects the new object location.
     ///  If possible, this new ID should be used for further access to the
     ///  object. Note however that its original ID still can be used as well.
     ///
-    string Relocate(const string& object_loc, TNetStorageFlags flags);
+    string Relocate(const string& object_loc, TNetStorageFlags flags,
+            TNetStorageProgressCb cb = TNetStorageProgressCb());
 
     /// Check if the object addressed by 'object_loc' exists.
     ///
@@ -497,6 +513,10 @@ class NCBI_XCONNECT_EXPORT CNetStorageByKey
     ///  Combination of flags that defines the new object location
     /// @param old_flags
     ///  Combination of flags that defines the current object location
+    /// @param cb
+    ///  Relocation progress callback (@see TNetStorageProgressCb).
+    ///  CJsonNode input argument (object) will contain two subnodes:
+    ///  number 'BytesRelocated' and string 'Message'
     /// @return
     ///  A unique full object ID that reflects the new object location (storage)
     ///  and which can be used with CNetStorage::Open(). Note however that the
@@ -504,7 +524,8 @@ class NCBI_XCONNECT_EXPORT CNetStorageByKey
     ///
     string Relocate(const string&    unique_key,
                     TNetStorageFlags flags,
-                    TNetStorageFlags old_flags = 0);
+                    TNetStorageFlags old_flags = 0,
+                    TNetStorageProgressCb cb = TNetStorageProgressCb());
 
     /// Check if a object with the specified key exists in the storage
     /// hinted by 'flags'
