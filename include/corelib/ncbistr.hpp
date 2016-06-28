@@ -2488,19 +2488,19 @@ public:
 
     /// Variation of Split() wihout flags -- for backward compatibility only.
     /// @attention
-    ///   Automatically use flags: fSplit_MergeDelimiters | fSplit_Truncate
+    ///   Automatically use flags: fSplit_Tokenize
     /// @deprecated  Use Split() with TSplitFlags instead
     inline
     NCBI_DEPRECATED
     static list<string>& Split(const CTempString    str,
                                const CTempString    delim,
                                list<string>&        arr) {
-        return Split(str, delim, arr, fSplit_MergeDelimiters | fSplit_Truncate);
+        return Split(str, delim, arr, fSplit_Tokenize);
     }
 
     /// Variation of Split() wihout flags -- for backward compatibility only.
     /// @attention
-    ///   Automatically use flags: fSplit_MergeDelimiters | fSplit_Truncate
+    ///   Automatically use flags: fSplit_Tokenize
     /// @deprecated  Use Split() with TSplitFlags instead
     inline
     NCBI_DEPRECATED
@@ -2508,7 +2508,7 @@ public:
                                 const CTempString    str,
                                 const CTempString    delim,
                                 list<CTempStringEx>& arr) {
-        return Split(str, delim, arr, fSplit_MergeDelimiters | fSplit_Truncate);
+        return Split(str, delim, arr, fSplit_Tokenize);
     }
 
     /// @deprecated  Use Split() with TSplitFlags instead
