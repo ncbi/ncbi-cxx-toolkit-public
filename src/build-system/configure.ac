@@ -775,10 +775,12 @@ if test -n "$with_experimental"; then
             ;;
          Int8GI )
             CPPFLAGS="$CPPFLAGS -DNCBI_INT8_GI"
+            NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
             NCBI_FEATURE(Int8GI)
             ;;
          StrictGI )
             CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
+            NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
             NCBI_FEATURE(Int8GI)
             NCBI_FEATURE(StrictGI)
             ;;
@@ -5657,6 +5659,14 @@ if test "$with_ncbi_c" != "no" ; then
    : ${NCBI_C_PATH="$NCBI"}
    if test "$ncbi_compiler" = ICC -a -d "$NCBI_C_PATH/ncbi_icc"; then
       NCBI_C_PATH=$NCBI_C_PATH/ncbi_icc
+   fi
+   if test -n "$NCBI_C_PATH_TAGS"; then
+      for x in $NCBI_C_PATH_TAGS; do
+         if test -d "$NCBI_C_PATH$x"; then
+            NCBI_C_PATH=$NCBI_C_PATH$x
+            break
+         fi
+      done
    fi
 
    NCBI_C_INCLUDE="-I$NCBI_C_PATH/include${bit64_sfx}"
