@@ -594,7 +594,7 @@ ideocoord needs $(SDBAPI_LIB)
 ideocoord needs ideocli
 idgen needs dbassist
 idload needs3party ctutils
-idload_utils needs gpipe_common
+idload_utils needs $(SDBAPI_LIB)
 idload_utils needs xid_utils
 idload_utils needs xobjutil
 idxgenome2 needs idxnucleotide2
