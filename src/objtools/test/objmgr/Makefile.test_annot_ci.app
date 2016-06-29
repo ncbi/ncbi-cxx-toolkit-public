@@ -16,4 +16,4 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 CHECK_CMD = test_annot_ci
 CHECK_COPY = test_annot_ci.ini test_annot_entries.asn test_annot_res.asn
 
-WATCHERS = grichenk
+WATCHERS = grichenk elisovdn

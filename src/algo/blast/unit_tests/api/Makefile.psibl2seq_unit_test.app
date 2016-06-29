@@ -11,4 +11,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = psibl2seq_unit_test
 CHECK_COPY = psibl2seq_unit_test.ini data
 
-WATCHERS = boratyng madden camacho
+WATCHERS = boratyng madden camacho elisovdn

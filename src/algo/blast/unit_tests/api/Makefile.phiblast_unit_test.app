@@ -11,4 +11,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = phiblast_unit_test
 CHECK_COPY = phiblast_unit_test.ini
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng madden camacho fongah2 elisovdn

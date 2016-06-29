@@ -12,4 +12,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = aalookup_unit_test
 CHECK_COPY = aalookup_unit_test.ini
 
-WATCHERS = boratyng morgulis madden camacho fongah2
+WATCHERS = boratyng morgulis madden camacho fongah2 elisovdn

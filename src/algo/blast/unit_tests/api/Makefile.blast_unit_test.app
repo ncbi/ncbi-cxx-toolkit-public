@@ -12,4 +12,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = blast_unit_test
 CHECK_COPY = blast_unit_test.ini
 
-WATCHERS = boratyng morgulis madden camacho fongah2
+WATCHERS = boratyng morgulis madden camacho fongah2 elisovdn

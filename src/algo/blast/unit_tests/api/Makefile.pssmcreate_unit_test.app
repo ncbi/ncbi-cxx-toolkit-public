@@ -12,4 +12,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = pssmcreate_unit_test
 CHECK_COPY = pssmcreate_unit_test.ini data
 
-WATCHERS = boratyng madden camacho
+WATCHERS = boratyng madden camacho elisovdn

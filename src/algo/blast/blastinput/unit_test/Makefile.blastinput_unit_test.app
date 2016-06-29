@@ -22,4 +22,4 @@ CHECK_CMD = blastinput_unit_test
 CHECK_COPY = data blastinput_unit_test.ini
 CHECK_TIMEOUT = 900
 
-WATCHERS = madden camacho fongah2
+WATCHERS = madden camacho fongah2 elisovdn

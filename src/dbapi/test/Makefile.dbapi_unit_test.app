@@ -39,4 +39,4 @@ CHECK_CMD = dbapi_unit_test -dr dblib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds64     -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S Sybase
 
-WATCHERS = ucko
+WATCHERS = ucko elisovdn

@@ -12,4 +12,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = delta_unit_test
 CHECK_COPY = delta_unit_test.ini data
 
-WATCHERS = boratyng madden
+WATCHERS = boratyng madden elisovdn

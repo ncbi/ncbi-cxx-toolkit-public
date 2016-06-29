@@ -16,4 +16,4 @@ CHECK_CMD = run_sybase_app.sh ctl_sp_databases_ftds -S MSDEV4 /CHECK_NAME=ctl_sp
 
 REQUIRES = FreeTDS
 
-WATCHERS = ucko
+WATCHERS = ucko elisovdn

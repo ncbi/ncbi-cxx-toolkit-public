@@ -11,4 +11,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = hspfilter_besthit_unit_test
 CHECK_COPY = hspfilter_besthit_unit_test.ini
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng madden camacho fongah2 elisovdn

@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = bl2seq_unit_test
 CHECK_COPY = bl2seq_unit_test.ini
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng madden camacho fongah2 elisovdn

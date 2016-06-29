@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = camacho madden fongah2
+WATCHERS = camacho madden fongah2 elisovdn
 
 LIB = blast_unit_test_util
 SRC = test_objmgr blast_test_util

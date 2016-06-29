@@ -10,4 +10,4 @@ LIB = test_mt $(OBJMGR_LIBS)
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 
-WATCHERS = dicuccio
+WATCHERS = dicuccio elisovdn

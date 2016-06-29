@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = camacho madden fongah2
+WATCHERS = camacho madden fongah2 elisovdn
 
 LIB = seqalign_util
 SRC = seqalign_cmp seqalign_set_convert
