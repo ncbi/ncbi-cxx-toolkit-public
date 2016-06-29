@@ -1243,8 +1243,11 @@ converted to a publication or biosource descriptor." } },
 field on a feature." } },
    { eErr_SEQ_FEAT_CDSwithNoMRNAOverlap,
    { "CDSwithNoMRNAOverlap",
-"The CDS feature has more than one overlapping mRNA with the proper intervals and \
-no other identification assigning it to a different coding region." } },
+"The CDS feature has no overlapping mRNA with the proper intervals." } },
+   { eErr_SEQ_FEAT_CDSwithNoMRNA,
+   {"CDSwithNoMRNA",
+"The CDS feature has no matching mRNA. Matches are identified via xref \
+ or overlap." } },
    { eErr_SEQ_FEAT_FeatureProductInconsistency,
    { "FeatureProductInconsistency",
 "The CDS feature has more than one overlapping mRNA with the proper intervals and \

@@ -410,6 +410,7 @@ enum EErrType {
     eErr_SEQ_FEAT_BadFullLengthFeature,
     eErr_SEQ_FEAT_RedundantFields,
     eErr_SEQ_FEAT_CDSwithNoMRNAOverlap,
+    eErr_SEQ_FEAT_CDSwithNoMRNA,
     eErr_SEQ_FEAT_FeatureProductInconsistency,
     eErr_SEQ_FEAT_ImproperBondLocation,
     eErr_SEQ_FEAT_GeneXrefWithoutGene,
